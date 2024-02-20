@@ -40,7 +40,8 @@ if(process.env.NODE_ENV==="production"){
   console.log(process.env.NODE_ENV);
   console.log("hai")
   const __dirname=path.resolve()
-  const parentDir = path.join(__dirname ,'..'); 
+  // const parentDir = path.join(__dirname ,'..'); 
+  const parentDir = path.join(__dirname ,); 
   console.log(parentDir)
   app.use(express.static(path.join(parentDir,'/frontend/dist')))
   app.get('*',(req,res)=>res.sendFile(path.resolve(parentDir,'frontend','dist','index.html')))
