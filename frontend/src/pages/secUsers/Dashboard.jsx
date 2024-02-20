@@ -138,7 +138,7 @@ function Dashboard() {
                     <h4 className=" sm:text-md md:text-2xl  font-semibold text-gray-700">
                       ₹0
                     </h4>
-                    <div className="text-gray-500">Saleuuu</div>
+                    <div className="text-gray-500">Sale</div>
                   </div>
                 </div>
               </div>
