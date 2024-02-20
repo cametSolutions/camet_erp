@@ -120,7 +120,7 @@ function Dashboard() {
                       <h4 className=" sm:text-md md:text-2xl  font-semibold text-gray-700">
                         ₹{receiptTotal}
                       </h4>
-                      <div className="text-gray-500">Receiptssss</div>
+                      <div className="text-gray-500">Receipts</div>
                     </div>
                   </div>
                 </div>
