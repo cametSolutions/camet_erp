@@ -955,3 +955,105 @@ export const addHsn = async (req, res) => {
       .json({ success: false, message: "Internal server error, try again!" });
   }
 };
+
+
+
+// @desc adding new brands /categories /subcategories
+// route POst/api/pUsers/addDataToOrg
+export const addDataToOrg = async (req, res) => {
+  try {
+ const orgId=req.params.cmp_id
+   
+ console.log(req.body);
+ const org=await OragnizationModel.findById(orgId);
+ console.log(org);
+ if(org){
+  
+  const fieldToUpdate=Object.keys(req.body)[0];
+  const newData=req.body[fieldToUpdate]
+  if(org[fieldToUpdate].includes(newData)){
+    return res.status(400).json({
+      success: false,
+      message: `${newData} already exists in ${fieldToUpdate}`,
+    });
+  }
+  org[fieldToUpdate].push(newData);
+  await org.save();
+  return res.status(200).json({
+    success: true,
+    message: "Data added successfully",
+  });
+ }else{
+  return res.status(404).json({
+    success: false,
+    message: "Organization not found",
+  });
+}
+ 
+  } catch (error) {
+    console.error(error);
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error, try again!" });
+  }
+};
+
+
+// @desc edit brands /categories /subcategories
+// route POst/api/pUsers/editDataInOrg
+export const editDataInOrg = async (req, res) => {
+  try {
+    const orgId = req.params.cmp_id;
+    const fieldToUpdate=Object.keys(req.body)[0];
+    const newData=req.body[fieldToUpdate];
+    const index=parseInt(req.body.index);
+
+    console.log("fieldToUpdate",fieldToUpdate);
+    console.log("index",index);
+
+
+    const org = await OragnizationModel.findById(orgId);
+    if (!org) {
+      return res.status(404).json({ success: false, message: "Organization not found" });
+    }
+      
+    org[fieldToUpdate][index] = newData;
+    await org.save();
+
+    return res.status(200).json({ success: true, message: "Data updated successfully" });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ success: false, message: "Internal server error, try again!" });
+  }
+};
+
+
+// @desc delete brands /categories /subcategories
+// route POst/api/pUsers/deleteDataInOrg
+export const deleteDataInOrg = async (req, res) => {
+  try {
+    const orgId = req.params.cmp_id;
+    console.log(req.body);
+    const fieldToDelete=Object.keys(req.body)[0];
+    const indexToDelete=req.body[fieldToDelete];
+
+
+    const org = await OragnizationModel.findById(orgId);
+    console.log("org",org);
+    if (!org) {
+      return res.status(404).json({ success: false, message: "Organization not found" });
+    }
+    
+    const neededField=org[fieldToDelete];
+    console.log("fieldToDelete",fieldToDelete);
+    console.log("neededField",neededField);
+    neededField.splice(indexToDelete,1);
+    await org.save(); // Save the organization after deletion
+    return res.status(200).json({ success: true, message: "Data deleted successfully" });
+
+    // return res.status(200).json({ success: true, message: "Data deleted successfully" });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ success: false, message: "Internal server error, try again!" });
+  }
+};
