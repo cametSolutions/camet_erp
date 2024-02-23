@@ -10,28 +10,40 @@ import { FaEdit } from "react-icons/fa";
 import { MdDelete } from "react-icons/md";
 import { toast } from "react-toastify";
 import { Tooltip } from "react-tooltip";
-
+import { units } from "../../../constants/units";
 function AddProduct() {
   const [showSidebar, setShowSidebar] = useState(false);
   const [dropdown, setDropdown] = useState({
     brands: false,
     category: false,
     subCategory: false,
+    addLevelName:false,
+    addLocation:false
+
   });
 
-  console.log(dropdown);
   const [addedBrand, setAddedBrand] = useState("");
   const [addedCategory, setAddedCategory] = useState("");
   const [addedSubCategory, setAddedSubCategory] = useState("");
-  // gropdown from bnackend
+  // dropdown from bnackend
   const [brands, setBrands] = useState([]);
   const [categories, setCategories] = useState([]);
   const [subCategories, setSubCategories] = useState([]);
+  const [hsn, setHsn] = useState([]);
+  const [levelNames, setLevelNames] = useState([]);
+  const [locations, setLocations] = useState([]);
+  
+
+  ////tab
+
+  const [tab, setTab] = useState("priceLevel");
 
   // selected ones
   const [selectedBrand, setSelectedBrand] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedSubCategory, setSelectedSubCategory] = useState("");
+  const [unit, setUnit] = useState("");
+  const [altUnit, setAltUnit] = useState("");
 
   const [edit, setEdit] = useState({
     brands: false,
@@ -48,6 +60,9 @@ function AddProduct() {
     (state) => state.setSelectedOrganization.selectedOrg._id
   );
 
+  console.log(orgId);
+
+  // fetching organization for getting brands category etc
   useEffect(() => {
     const fetchSingleOrganization = async () => {
       try {
@@ -59,17 +74,41 @@ function AddProduct() {
         );
 
         console.log(res.data.organizationData);
-        const { brands, categories, subcategories } = res.data.organizationData;
+        const { brands, categories, subcategories,levelNames,locations } = res.data.organizationData;
         console.log(brands);
-        setBrands(brands);
         setCategories(categories);
         setSubCategories(subcategories);
+        setLevelNames(levelNames);
+        setLocations(locations);
+        setLevelNames
       } catch (error) {
         console.log(error);
       }
     };
     fetchSingleOrganization();
-  }, [refresh]);
+  }, [refresh, orgId]);
+
+
+
+
+  // fetching hsn /////////////////////////////////////
+
+  useEffect(() => {
+    const fetchHsn = async () => {
+      try {
+        const res = await api.get(`/api/pUsers/fetchHsn/${orgId}`, {
+          withCredentials: true,
+        });
+
+        setHsn(res.data.data);
+
+        // console.log(res.data.organizationData);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    fetchHsn();
+  }, [refresh, orgId]);
 
   const addDataToOrg = async (params, value) => {
     let body = {};
@@ -273,30 +312,132 @@ function AddProduct() {
                       <div className="relative w-full mb-3">
                         <label
                           className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
-                          htmlfor="grid-password"
+                          htmlFor="brandSelect"
                         >
-                          Brand
+                          unit
                         </label>
-                        <input
-                          type="text"
+                        <select
+                          onChange={(e) => {
+                            setUnit(e.target.value);
+                          }}
+                          id="brandSelect"
                           className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                          value=""
-                          placeholder="Brand"
-                        />
+                        >
+                          <option value="">Select a unit</option>
+                          {units.map((el, index) => (
+                            <option key={index} value={el}>
+                              {el}
+                            </option>
+                          ))}
+                        </select>
                       </div>
                     </div>
+
                     <div className="w-full lg:w-6/12 px-4">
+                      <div className="relative w-full mb-3">
+                        <label
+                          className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
+                          htmlFor="brandSelect"
+                        >
+                          Alt unit
+                        </label>
+                        <select
+                          onChange={(e) => {
+                            setAltUnit(e.target.value);
+                          }}
+                          id="brandSelect"
+                          className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                        >
+                          <option value="">Select an Alt.unit</option>
+                          {units.map((el, index) => (
+                            <option key={index} value={el}>
+                              {el}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    {altUnit !== "" && unit !== "" && (
+                      <div className="w-full  px-4 mt-7">
+                        <div className="relative w-full mb-3 flex items-center gap-1 justify-center">
+                          <div className=" flex flex-col justify-center  md:flex-row items-center gap-2">
+                            <input
+                              type="text"
+                              className="border-0 w-6/12 md:w-4/12 px-3 py-2 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring  ease-linear transition-all duration-150"
+                              // placeholder="Product Name"
+                            />
+                            <label
+                              className="block uppercase text-blueGray-600 text-[9px] md:text-xs font-semibold whitespace-nowrap"
+                              htmlfor="grid-password"
+                            >
+                              {unit}
+                            </label>
+                          </div>
+
+                          <div className=" flex flex-col   md:flex-row justify-center items-center gap-2">
+                            <input
+                              type="text"
+                              className="border-0 w-6/12 md:w-4/12 px-3 py-2 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring  ease-linear transition-all duration-150"
+                              // placeholder="Product Name"
+                            />
+                            <label
+                              className="block uppercase text-blueGray-600 text-[9px] md:text-xs font-semibold whitespace-nowrap"
+                              htmlfor="grid-password"
+                            >
+                              {altUnit}
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="w-full lg:w-6/12 px-4 mt-3">
+                      <div className="relative w-full mb-3">
+                        <label
+                          className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
+                          htmlFor="brandSelect"
+                        >
+                          Hsn
+                        </label>
+                        <select
+                          onChange={(e) => {
+                            setAltUnit(e.target.value);
+                          }}
+                          id="brandSelect"
+                          className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                        >
+                          <option value="">Select Hsn</option>
+                          {hsn.length > 0 ? (
+                            hsn.map((el, index) => (
+                              <option key={index} value={el}>
+                                {el.hsn}
+                              </option>
+                            ))
+                          ) : (
+                            <option>No hsn were added</option>
+                          )}
+                          {/* {hsn.map((el, index) => (
+                            <option key={index} value={el}>
+                              {el.hsn}
+                            </option>
+                          ))} */}
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="w-full lg:w-6/12 px-4 mt-3">
                       <div className="relative w-full mb-3">
                         <label
                           className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
                           htmlfor="grid-password"
                         >
-                          Category
+                          balance stock
                         </label>
                         <input
                           type="text"
                           className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                          placeholder="Category"
+                          placeholder="Product Name"
                         />
                       </div>
                     </div>
@@ -322,7 +463,7 @@ function AddProduct() {
                       }}
                       id="dropdown"
                       data-dropdown-toggle="dropdown"
-                      className="flex-shrink-0 w-4/12 md:w-5/12  inline-flex items-center py-2.5 px-4 text-sm font-medium text-center text-gray-900 bg-green-200 border border-e-0 border-gray-300  hover:bg-green-300 focus:ring-1 focus:outline-none focus:ring-gray-300  "
+                      className="flex-shrink-0 w-4/12 md:w-5/12  inline-flex items-center py-2.5 px-4 text-sm font-medium text-center text-gray-900  bg-slate-300 border border-e-0 border-gray-300  hover:bg-slate-400   focus:ring-1 focus:outline-none focus:ring-gray-300  "
                       type="button"
                     >
                       <span className="md:hidden">
@@ -491,15 +632,15 @@ function AddProduct() {
 
                   <div className="flex">
                     <button
-                      data-tooltip-id=""
-                      data-tooltip-content={selectedBrand}
+                      data-tooltip-id="categories"
+                      data-tooltip-content={selectedCategory}
                       data-tooltip-place="top"
                       onClick={() => {
                         setDropdown({ category: !dropdown.category });
                       }}
                       id=""
                       data-dropdown-toggle="dropdown"
-                      className="flex-shrink-0 w-4/12 md:w-5/12  inline-flex items-center py-2.5 px-4 text-sm font-medium text-center text-gray-900 bg-green-200 border border-e-0 border-gray-300  hover:bg-green-300 focus:ring-1 focus:outline-none focus:ring-gray-300  "
+                      className="flex-shrink-0 w-4/12 md:w-5/12  inline-flex items-center py-2.5 px-4 text-sm font-medium text-center text-gray-900  bg-slate-300 border border-e-0 border-gray-300  hover:bg-slate-400  focus:ring-1 focus:outline-none focus:ring-gray-300  "
                       type="button"
                     >
                       <span className="md:hidden">
@@ -541,7 +682,7 @@ function AddProduct() {
                       </svg>
                     </button>
                     <Tooltip
-                      id="category-tooltip"
+                      id="categories"
                       place="bottom"
                       effect="solid"
                       className="bg-red-500"
@@ -668,7 +809,7 @@ function AddProduct() {
 
                   <div className="flex">
                     <button
-                      data-tooltip-id=""
+                      data-tooltip-id="subcategories"
                       data-tooltip-content={selectedSubCategory}
                       data-tooltip-place="top"
                       onClick={() => {
@@ -676,7 +817,7 @@ function AddProduct() {
                       }}
                       id=""
                       data-dropdown-toggle="dropdown"
-                      className="flex-shrink-0 w-4/12 md:w-5/12  inline-flex items-center py-2.5 px-4 text-sm font-medium text-center text-gray-900 bg-green-200 border border-e-0 border-gray-300  hover:bg-green-300 focus:ring-1 focus:outline-none focus:ring-gray-300  "
+                      className="flex-shrink-0 w-4/12 md:w-5/12  inline-flex items-center py-2.5 px-4 text-sm font-medium text-center text-gray-900  bg-slate-300 border border-e-0 border-gray-300  hover:bg-slate-400  focus:ring-1 focus:outline-none focus:ring-gray-300  "
                       type="button"
                     >
                       <span className="md:hidden">
@@ -687,14 +828,14 @@ function AddProduct() {
                           : "Subcategory"}
                       </span>
                       <span className="hidden md:block lg:hidden">
-                      {selectedSubCategory.length > 0
+                        {selectedSubCategory.length > 0
                           ? selectedSubCategory.length > 10
                             ? `${selectedSubCategory.slice(0, 10)}...`
                             : selectedSubCategory
                           : "Subcategory"}
                       </span>
                       <span className="hidden lg:block">
-                      {selectedSubCategory.length > 0
+                        {selectedSubCategory.length > 0
                           ? selectedSubCategory.length > 10
                             ? `${selectedSubCategory.slice(0, 10)}...`
                             : selectedSubCategory
@@ -785,7 +926,7 @@ function AddProduct() {
                                     <span
                                       onClick={() => {
                                         setSelectedSubCategory(el);
-                                        dropdown.brands = false;
+                                        dropdown.subCategory = false;
                                       }}
                                       className="text-pink-900  whitespace-nowrap "
                                     >
@@ -796,13 +937,20 @@ function AddProduct() {
                                     <div className="flex gap-3 ">
                                       <FaEdit
                                         onClick={() => {
-                                          handleEdit(el, "subcategories", index);
+                                          handleEdit(
+                                            el,
+                                            "subcategories",
+                                            index
+                                          );
                                         }}
                                         className=" hover:scale-110 duration-100 ease-in-out text-blue-500"
                                       />
                                       <MdDelete
                                         onClick={() => {
-                                          deleteDataInOrg("subcategories", index);
+                                          deleteDataInOrg(
+                                            "subcategories",
+                                            index
+                                          );
                                         }}
                                         className="hover:scale-110  duration-100 ease-in-out text-red-700"
                                       />
@@ -827,7 +975,7 @@ function AddProduct() {
                     )}
                   </div>
                   <Tooltip
-                    id="dropdown-tooltip"
+                    id="subcategories"
                     place="bottom"
                     effect="solid"
                     className="bg-red-500"
@@ -836,36 +984,358 @@ function AddProduct() {
                   </Tooltip>
                   {/* adding subcategory end **********************************************************************************/}
                 </form>
-              </div>
-            </div>
-            <footer className="relative  pt-8 pb-6 mt-2">
-              <div className="container mx-auto px-4">
-                <div className="flex flex-wrap items-center md:justify-between justify-center">
-                  <div className="w-full md:w-6/12 px-4 mx-auto text-center">
-                    <div className="text-sm text-blueGray-500 font-semibold py-1">
-                      Made with{" "}
-                      <a
-                        href="https://www.creative-tim.com/product/notus-js"
-                        className="text-blueGray-500 hover:text-gray-800"
-                        target="_blank"
+
+                <div className=" flex flex-col  md:flex-row gap-3 justify-between ">
+                {/* adding level name**********************************************************************************/}
+                <div>
+                  <hr className="mt-6 border-b-1 border-blueGray-300" />
+
+                  <h6 className="text-blueGray-400 text-sm mt-3 mb-6 font-bold uppercase">
+                    Level name
+                  </h6>
+
+                  <div className="flex ">
+                    <button
+                      data-tooltip-id="brand-tooltip"
+                      data-tooltip-content={selectedBrand}
+                      data-tooltip-place="top"
+                      // onClick={() => {
+                      //   setDropdown({ brands: !dropdown.brands });
+                      // }}
+                      onClick={() => {
+                        setDropdown({ addLevelName: !dropdown.addLevelName });
+                      }}
+                      id="dropdown"
+                      data-dropdown-toggle="dropdown"
+                      className="flex-shrink-0   inline-flex items-center py-2.5 px-1  text-sm font-medium text-center text-gray-900 bg-slate-300 border border-e-0 border-gray-300  hover:bg-slate-400  focus:ring-1 focus:outline-none focus:ring-gray-300  "
+                      type="button"
+                    >
+            
+                      <svg
+                        className="w-2.5 h-2.5 "
+                        aria-hidden="true"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 10 6"
                       >
-                        Notus JS
-                      </a>{" "}
-                      by{" "}
-                      <a
-                        href="https://www.creative-tim.com"
-                        className="text-blueGray-500 hover:text-blueGray-800"
-                        target="_blank"
+                        <path
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="m1 1 4 4 4-4"
+                        />
+                      </svg>
+                    </button>
+                    <Tooltip
+                      id="brand-tooltip"
+                      place="bottom"
+                      effect="solid"
+                      className="bg-red-500"
+                    >
+                      {selectedBrand}
+                    </Tooltip>
+                    <a></a>
+
+                    <div className="w-full flex ">
+                      <input
+                        onChange={(e) => {
+                          setAddedBrand(e.target.value);
+                          if (e.target.value === "") {
+                            setEdit((prevState) => ({
+                              ...prevState,
+                              brands: false,
+                            }));
+                          }
+                        }}
+                        value={addedBrand}
+                        type="search"
+                        id="search-dropdown"
+                        className="block p-2.5   text-sm text-gray-900 bg-gray-50  rounded-s-gray-100 rounded-s-2 border border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="Enter a new brand"
+                      />
+                      <button
+                        onClick={() => {
+                          if (edit.brands) {
+                            editDataInOrg("brands", addedBrand); // Call editData if edit.brands is true
+                          } else {
+                            addDataToOrg("brands", addedBrand); // Call addDataToOrg if edit.brands is false
+                          }
+                        }}
+                        type="button"
+                        className="  px-5 h-full text-sm font-medium text-white bg-blue-700 border border-blue-700 hover:bg-blue-800 focus:ring-2 focus:outline-none focus:ring-blue-300 "
                       >
-                        {" "}
-                        Creative Tim
-                      </a>
-                      .
+                        {edit.brands ? "Edit" : "Add"}
+                      </button>
                     </div>
                   </div>
+                  <div className="relative w-full ">
+                    {dropdown.addLevelName && (
+                      <div
+                        id="dropdown"
+                        className="z-50 absolute top-2 left-0 bg-white divide-y divide-gray-100 rounded-lg shadow   "
+                      >
+                        <ul
+                          className="py-2 text-sm text-gray-700  "
+                          aria-labelledby="dropdown-button"
+                        >
+                          {levelNames.length > 0 ? (
+                            levelNames.map((el, index) => (
+                              <li key={index}>
+                                <a
+                                  href="#"
+                                  className="block p-2 hover:bg-gray-100 text-left   "
+                                >
+                                  <div
+                                    data-tooltip-id="dropdown-tooltip"
+                                    data-tooltip-content={el}
+                                    data-tooltip-place="right-end"
+                                    className="flex items-center justify-between gap-12  "
+                                  >
+                                    <span
+                                      onClick={() => {
+                                        setSelectedBrand(el);
+                                        dropdown.brands = false;
+                                      }}
+                                      className="text-pink-900  whitespace-nowrap "
+                                    >
+                                      {el.length > 10
+                                        ? `${el.slice(0, 10)}....`
+                                        : el}
+                                    </span>
+                                    <div className="flex gap-3 ">
+                                      <FaEdit
+                                        onClick={() => {
+                                          handleEdit(el, "brands", index);
+                                        }}
+                                        className=" hover:scale-110 duration-100 ease-in-out text-blue-500"
+                                      />
+                                      <MdDelete
+                                        onClick={() => {
+                                          deleteDataInOrg("brands", index);
+                                        }}
+                                        className="hover:scale-110  duration-100 ease-in-out text-red-700"
+                                      />
+                                    </div>
+                                  </div>
+                                  <hr className="mt-2" />
+                                </a>
+                              </li>
+                            ))
+                          ) : (
+                            <li>
+                              <a
+                                href="#"
+                                className="block px-4 py-2 hover:bg-gray-100 "
+                              >
+                                No level names were added
+                              </a>
+                            </li>
+                          )}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                  <Tooltip
+                    id="dropdown-tooltip"
+                    place="bottom"
+                    effect="solid"
+                    className="bg-red-500"
+                  >
+                    {selectedBrand}
+                  </Tooltip>
+                </div>
+                {/* adding level name end **********************************************************************************/}
+                {/* adding Location name**********************************************************************************/}
+                <div>
+                  <hr className="mt-6 border-b-1 border-blueGray-300" />
+
+                  <h6 className="text-blueGray-400 text-sm mt-3 mb-6 font-bold uppercase">
+                   add Location
+                  </h6>
+
+                  <div className="flex w-6/12">
+                    <button
+                      data-tooltip-id="brand-tooltip"
+                      data-tooltip-content={selectedBrand}
+                      data-tooltip-place="top"
+                      // onClick={() => {
+                      //   setDropdown({ brands: !dropdown.brands });
+                      // }}
+                      onClick={() => {
+                        setDropdown({ addLocation: !dropdown.addLocation });
+                      }}
+                      id="dropdown"
+                      data-dropdown-toggle="dropdown"
+                      className="flex-shrink-0 flex justify-center items-center py-2.5 px-1  text-sm font-medium text-center text-gray-900  bg-slate-300 border border-e-0 border-gray-300  hover:bg-slate-400  focus:ring-1 focus:outline-none focus:ring-gray-300  "
+                      type="button"
+                    >
+ 
+
+                      <svg
+                        className="w-2.5 h-2.5 "
+                        aria-hidden="true"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 10 6"
+                      >
+                        <path
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="m1 1 4 4 4-4"
+                        />
+                      </svg>
+                    </button>
+                    <Tooltip
+                      id="brand-tooltip"
+                      place="bottom"
+                      effect="solid"
+                      className="bg-red-500"
+                    >
+                      {selectedBrand}
+                    </Tooltip>
+                    <a></a>
+
+                    <div className="flex w-full">
+                      <input
+                        onChange={(e) => {
+                          setAddedBrand(e.target.value);
+                          if (e.target.value === "") {
+                            setEdit((prevState) => ({
+                              ...prevState,
+                              brands: false,
+                            }));
+                          }
+                        }}
+                        value={addedBrand}
+                        type="search"
+                        id="search-dropdown"
+                        className="block p-2.5   text-sm text-gray-900 bg-gray-50  rounded-s-gray-100 rounded-s-2 border border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="Enter a new brand"
+                      />
+                      <button
+                        onClick={() => {
+                          if (edit.brands) {
+                            editDataInOrg("brands", addedBrand); // Call editData if edit.brands is true
+                          } else {
+                            addDataToOrg("brands", addedBrand); // Call addDataToOrg if edit.brands is false
+                          }
+                        }}
+                        type="button"
+                        className=" px-5 h-full text-sm font-medium text-white bg-blue-700 border border-blue-700 hover:bg-blue-800 focus:ring-2 focus:outline-none focus:ring-blue-300 "
+                      >
+                        {edit.brands ? "Edit" : "Add"}
+                      </button>
+                    </div>
+                  </div>
+                  <div className="relative w-full ">
+                    {dropdown.addLocation && (
+                      <div
+                        id="dropdown"
+                        className="z-50 absolute top-2 left-0 bg-white divide-y divide-gray-100 rounded-lg shadow   "
+                      >
+                        <ul
+                          className="py-2 text-sm text-gray-700  "
+                          aria-labelledby="dropdown-button"
+                        >
+                          {locations.length > 0 ? (
+                            locations.map((el, index) => (
+                              <li key={index}>
+                                <a
+                                  href="#"
+                                  className="block p-2 hover:bg-gray-100 text-left   "
+                                >
+                                  <div
+                                    data-tooltip-id="dropdown-tooltip"
+                                    data-tooltip-content={el}
+                                    data-tooltip-place="right-end"
+                                    className="flex items-center justify-between gap-12  "
+                                  >
+                                    <span
+                                      onClick={() => {
+                                        setSelectedBrand(el);
+                                        dropdown.brands = false;
+                                      }}
+                                      className="text-pink-900  whitespace-nowrap "
+                                    >
+                                      {el.length > 10
+                                        ? `${el.slice(0, 10)}....`
+                                        : el}
+                                    </span>
+                                    <div className="flex gap-3 ">
+                                      <FaEdit
+                                        onClick={() => {
+                                          handleEdit(el, "brands", index);
+                                        }}
+                                        className=" hover:scale-110 duration-100 ease-in-out text-blue-500"
+                                      />
+                                      <MdDelete
+                                        onClick={() => {
+                                          deleteDataInOrg("brands", index);
+                                        }}
+                                        className="hover:scale-110  duration-100 ease-in-out text-red-700"
+                                      />
+                                    </div>
+                                  </div>
+                                  <hr className="mt-2" />
+                                </a>
+                              </li>
+                            ))
+                          ) : (
+                            <li>
+                              <a
+                                href="#"
+                                className="block px-4 py-2 hover:bg-gray-100 "
+                              >
+                                No locations were added
+                              </a>
+                            </li>
+                          )}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                  <Tooltip
+                    id="dropdown-tooltip"
+                    place="bottom"
+                    effect="solid"
+                    className="bg-red-500"
+                  >
+                    {selectedBrand}
+                  </Tooltip>
+                </div>
+                </div>
+
+                
+                {/* adding level name end **********************************************************************************/}
+              </div>
+
+              <div className="flex justify-center ">
+                <div className="mt-[10px]  border-b border-solid border-[#0066ff43]  ">
+                  <button
+                    type="button"
+                    onClick={() => setTab("priceLevel")}
+                    className={` ${
+                      tab === "priceLevel" &&
+                      "border-b border-solid border-black"
+                    } py-2 px-5 mr-10   text-[16px] leading-7 text-headingColor font-semibold `}
+                  >
+                    Price Level
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setTab("location")}
+                    className={` ${
+                      tab === "location" && "border-b border-solid border-black"
+                    } py-2 px-5  text-[16px] leading-7 text-headingColor font-semibold `}
+                  >
+                    Location
+                  </button>
                 </div>
               </div>
-            </footer>
+            </div>
           </div>
         </section>
       </div>

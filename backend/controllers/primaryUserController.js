@@ -965,6 +965,7 @@ export const addDataToOrg = async (req, res) => {
  const orgId=req.params.cmp_id
    
  console.log(req.body);
+
  const org=await OragnizationModel.findById(orgId);
  console.log(org);
  if(org){
@@ -1055,5 +1056,35 @@ export const deleteDataInOrg = async (req, res) => {
   } catch (error) {
     console.error(error);
     return res.status(500).json({ success: false, message: "Internal server error, try again!" });
+  }
+};
+
+
+// @desc fetch hsn of the companies
+// route get/api/pUsers/fetchHsn
+
+export const fetchHsn = async (req, res) => {
+  const cmp_id = req.params.cmp_id;
+  const userId=req.pUserId;
+  console.log("cmp_id",cmp_id);
+  console.log("userId",userId);
+  try {
+
+  
+    const hsn = await HsnModel.find({cpm_id:cmp_id,Primary_user_id:userId})
+    console.log("hsn",hsn);
+
+    if (hsn) {
+      return res
+        .status(200)
+        .json({ message: "hsn fetched", data: hsn });
+    } else {
+      return res.status(404).json({ message: "hsn data not found" });
+    }
+  } catch (error) {
+    console.log(error);
+    return res
+      .status(500)
+      .json({ status: false, message: "Internal server error" });
   }
 };

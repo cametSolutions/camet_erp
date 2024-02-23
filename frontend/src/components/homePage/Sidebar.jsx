@@ -545,6 +545,24 @@ function Sidebar({ TAB, showBar }) {
                   <span className="mx-4 font-medium">Tax classification</span>
                 </a>
               </Link>
+
+              <Link to={"/pUsers/addProduct"}>
+                <a
+                  onClick={() => {
+                    handleSidebarItemClick("outstanding");
+                  }}
+                  className={` ${
+                    TAB === "outstanding"
+                      ? "bg-gray-800 text-white"
+                      : "text-gray-400"
+                  } hover:bg-gray-800 hover:text-white flex items-center px-4 py-2 mt-5 transition-colors duration-300 transform rounded-lg   `}
+                  href="#"
+                >
+                  <GiTakeMyMoney />
+
+                  <span className="mx-4 font-medium">Add Product</span>
+                </a>
+              </Link>
             
             </nav>
           </div>

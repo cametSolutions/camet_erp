@@ -25,7 +25,9 @@ const organizationSchema = new mongoose.Schema(
     owner:{type:mongoose.Schema.Types.ObjectId,ref:"PrimaryUser"},
     brands:{type:Array},
     categories:{type:Array},
-    subcategories:{type:Array}
+    subcategories:{type:Array},
+    levelNames:{type:Array},
+    locations:{type:Array}
   },
   {
     timestamps: true,
