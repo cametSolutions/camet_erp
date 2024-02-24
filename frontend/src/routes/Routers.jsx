@@ -38,6 +38,8 @@ import DashboardSec from '../pages/secUsers/Dashboard'
 import AddParty from '../pages/primaryUsers/AddParty'
 import Hsn from '../pages/primaryUsers/Hsn'
 import AddProduct from '../pages/primaryUsers/AddProduct'
+import Table from '../pages/primaryUsers/Table'
+import LevelNameTable from '../components/table/LevelNameTable'
 
 
 const Routers = () => {
@@ -65,6 +67,7 @@ const Routers = () => {
         <Route path='/pUsers/addParty' element={<ProtectedPriRoute><AddParty/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/hsn' element={<ProtectedPriRoute><Hsn/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/addProduct' element={<ProtectedPriRoute><AddProduct/></ProtectedPriRoute>}></Route>
+        <Route path='/pUsers/table' element={<ProtectedPriRoute><LevelNameTable/></ProtectedPriRoute>}></Route>
 
 
 

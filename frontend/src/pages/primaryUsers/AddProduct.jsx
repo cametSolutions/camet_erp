@@ -11,20 +11,23 @@ import { MdDelete } from "react-icons/md";
 import { toast } from "react-toastify";
 import { Tooltip } from "react-tooltip";
 import { units } from "../../../constants/units";
+import LevelNameTable from "../../components/table/LevelNameTable";
+import { MdPlaylistAdd } from "react-icons/md";
 function AddProduct() {
   const [showSidebar, setShowSidebar] = useState(false);
   const [dropdown, setDropdown] = useState({
     brands: false,
     category: false,
     subCategory: false,
-    addLevelName:false,
-    addLocation:false
-
+    addLevelName: false,
+    addLocation: false,
   });
 
   const [addedBrand, setAddedBrand] = useState("");
   const [addedCategory, setAddedCategory] = useState("");
   const [addedSubCategory, setAddedSubCategory] = useState("");
+  const [addedLevelName, setAddedLevelName] = useState("");
+  const [addedLocation, setAddedLocation] = useState("");
   // dropdown from bnackend
   const [brands, setBrands] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -32,7 +35,6 @@ function AddProduct() {
   const [hsn, setHsn] = useState([]);
   const [levelNames, setLevelNames] = useState([]);
   const [locations, setLocations] = useState([]);
-  
 
   ////tab
 
@@ -52,15 +54,90 @@ function AddProduct() {
     categoryIndex: null,
     subCategories: false,
     subCategoryIndex: null,
+    levelNames: false,
+    levelNameIndex: null,
+    locations: false,
+    locationIndex: null,
   });
-  console.log(edit);
   const [refresh, setRefresh] = useState(false);
+
+  ///////////// levelname table ///////////////////
+
+  const [rows, setRows] = useState([
+    { id: Math.random(), level: "", rate: "" },
+  ]);
+  const [levelNameData, setLevelNameData] = useState([]);
+
+  useEffect(() => {
+    // Update levelNameData whenever rows change
+    setLevelNameData(rows.map((row) => ({ level: row.level, rate: row.rate })));
+  }, [rows]);
+
+  const handleAddRow = () => {
+    setRows([...rows, { id: Math.random(), level: "", rate: "" }]);
+  };
+
+  const handleDeleteRow = (id) => {
+    setRows(rows.filter((row) => row.id !== id));
+  };
+
+  const handleLevelChange = (index, value) => {
+    const newRows = [...rows];
+    newRows[index].level = value;
+    setRows(newRows);
+  };
+
+  const handleRateChange = (index, value) => {
+    const newRows = [...rows];
+    newRows[index].rate = value;
+    setRows(newRows);
+  };
+console.log(levelNameData);
+
+  ///////////// location table ///////////////////
+
+  const [locationRows, setLocationRows] = useState([
+    { id: Math.random(), location: "", rate: "" },
+  ]);
+  const [locationData, setLocationData] = useState([]);
+
+  useEffect(() => {
+    // Update levelNameData whenever rows change
+    setLocationData(locationRows.map((row) => ({ location: row.location, rate: row.rate })));
+  }, [locationRows]);
+
+  const handleAddLocationRow = () => {
+    setLocationRows([
+      ...locationRows,
+      { id: Math.random(), location: "", rate: "" },
+    ]);
+  };
+
+  const handleDeleteLocationRow = (id) => {
+    setLocationRows(locationRows.filter((row) => row.id !== id));
+  };
+
+  const handleLocationChange = (index, value) => {
+    const newRows = [...locationRows];
+    newRows[index].location = value;
+    setLocationRows(newRows);
+  };
+
+  const handleLocationRateChange = (index, value) => {
+    const newRows = [...locationRows];
+    newRows[index].rate = value;
+    setLocationRows(newRows);
+  };
+  
+  console.log(locationData);
+console.log(levelNameData);
+
+
+  ////////////////////////treble enddddd///////////////////////////////////////////////////////////
 
   const orgId = useSelector(
     (state) => state.setSelectedOrganization.selectedOrg._id
   );
-
-  console.log(orgId);
 
   // fetching organization for getting brands category etc
   useEffect(() => {
@@ -74,22 +151,20 @@ function AddProduct() {
         );
 
         console.log(res.data.organizationData);
-        const { brands, categories, subcategories,levelNames,locations } = res.data.organizationData;
+        const { brands, categories, subcategories, levelNames, locations } =
+          res.data.organizationData;
         console.log(brands);
+        setBrands(brands);
         setCategories(categories);
         setSubCategories(subcategories);
         setLevelNames(levelNames);
         setLocations(locations);
-        setLevelNames
       } catch (error) {
         console.log(error);
       }
     };
     fetchSingleOrganization();
   }, [refresh, orgId]);
-
-
-
 
   // fetching hsn /////////////////////////////////////
 
@@ -121,6 +196,12 @@ function AddProduct() {
     if (params == "subcategories") {
       body["subcategories"] = value;
     }
+    if (params == "levelNames") {
+      body["levelNames"] = value;
+    }
+    if (params == "locations") {
+      body["locations"] = value;
+    }
 
     try {
       const res = await api.post(`/api/pUsers/addDataToOrg/${orgId}`, body, {
@@ -137,6 +218,12 @@ function AddProduct() {
       }
       if (params == "subcategories") {
         setAddedSubCategory("");
+      }
+      if (params == "levelNames") {
+        setAddedLevelName("");
+      }
+      if (params == "locations") {
+        setAddedLocation("");
       }
     } catch (error) {
       console.log(error);
@@ -157,6 +244,16 @@ function AddProduct() {
     if (params == "subcategories") {
       body["subcategories"] = value;
       body["index"] = edit.subCategoryIndex;
+    }
+    if (params == "levelNames") {
+      console.log(value);
+      body["levelNames"] = value;
+      body["index"] = edit.levelNameIndex;
+    }
+    if (params == "locations") {
+      console.log(value);
+      body["locations"] = value;
+      body["index"] = edit.locationIndex;
     }
 
     try {
@@ -181,6 +278,14 @@ function AddProduct() {
         setEdit({ subCategories: false });
         setSelectedSubCategory("");
       }
+      if (params == "levelNames") {
+        setAddedLevelName("");
+        setEdit({ levelNames: false });
+      }
+      if (params == "locations") {
+        setAddedLocation("");
+        setEdit({ locations: false });
+      }
     } catch (error) {
       console.log(error);
       toast.error(error.response.data.message);
@@ -197,6 +302,12 @@ function AddProduct() {
     }
     if (params == "subcategories") {
       body["subcategories"] = index;
+    }
+    if (params == "levelNames") {
+      body["levelNames"] = index;
+    }
+    if (params == "locations") {
+      body["locations"] = index;
     }
 
     try {
@@ -237,6 +348,16 @@ function AddProduct() {
       setAddedSubCategory(el);
       setDropdown({ subCategories: !dropdown.subCategories });
       setEdit({ subCategories: true, subCategoryIndex: index });
+    }
+    if (params === "levelNames") {
+      setAddedLevelName(el);
+      setDropdown({ addLevelName: !dropdown.addLevelName });
+      setEdit({ levelNames: true, levelNameIndex: index });
+    }
+    if (params === "locations") {
+      setAddedLocation(el);
+      setDropdown({ addLocation: !dropdown.addLocation });
+      setEdit({ locations: true, locationIndex: index });
     }
   };
 
@@ -986,329 +1107,297 @@ function AddProduct() {
                 </form>
 
                 <div className=" flex flex-col  md:flex-row gap-3 justify-between ">
-                {/* adding level name**********************************************************************************/}
-                <div>
-                  <hr className="mt-6 border-b-1 border-blueGray-300" />
+                  {/* adding level name**********************************************************************************/}
+                  <div>
+                    <hr className="mt-6 border-b-1 border-blueGray-300" />
 
-                  <h6 className="text-blueGray-400 text-sm mt-3 mb-6 font-bold uppercase">
-                    Level name
-                  </h6>
+                    <h6 className="text-blueGray-400 text-sm mt-3 mb-6 font-bold uppercase">
+                      Level name
+                    </h6>
 
-                  <div className="flex ">
-                    <button
-                      data-tooltip-id="brand-tooltip"
-                      data-tooltip-content={selectedBrand}
-                      data-tooltip-place="top"
-                      // onClick={() => {
-                      //   setDropdown({ brands: !dropdown.brands });
-                      // }}
-                      onClick={() => {
-                        setDropdown({ addLevelName: !dropdown.addLevelName });
-                      }}
-                      id="dropdown"
-                      data-dropdown-toggle="dropdown"
-                      className="flex-shrink-0   inline-flex items-center py-2.5 px-1  text-sm font-medium text-center text-gray-900 bg-slate-300 border border-e-0 border-gray-300  hover:bg-slate-400  focus:ring-1 focus:outline-none focus:ring-gray-300  "
-                      type="button"
-                    >
-            
-                      <svg
-                        className="w-2.5 h-2.5 "
-                        aria-hidden="true"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 10 6"
+                    <div className="flex ">
+                      <button
+                        onClick={() => {
+                          setDropdown({ addLevelName: !dropdown.addLevelName });
+                        }}
+                        id="dropdown"
+                        data-dropdown-toggle="dropdown"
+                        className="flex-shrink-0   inline-flex items-center py-2.5 px-1  text-sm font-medium text-center text-gray-900 bg-slate-300 border border-e-0 border-gray-300  hover:bg-slate-400  focus:ring-1 focus:outline-none focus:ring-gray-300  "
+                        type="button"
                       >
-                        <path
-                          stroke="currentColor"
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="m1 1 4 4 4-4"
+                        <svg
+                          className="w-2.5 h-2.5 "
+                          aria-hidden="true"
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 10 6"
+                        >
+                          <path
+                            stroke="currentColor"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="m1 1 4 4 4-4"
+                          />
+                        </svg>
+                      </button>
+
+                      <div className="w-full flex ">
+                        <input
+                          onChange={(e) => {
+                            setAddedLevelName(e.target.value);
+                            if (e.target.value === "") {
+                              setEdit((prevState) => ({
+                                ...prevState,
+                                levelNames: false,
+                              }));
+                            }
+                          }}
+                          value={addedLevelName}
+                          type="search"
+                          id="search-dropdown"
+                          className="block p-2.5   text-sm text-gray-900 bg-gray-50  rounded-s-gray-100 rounded-s-2 border border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="Enter a new brand"
                         />
-                      </svg>
-                    </button>
+                        <button
+                          onClick={() => {
+                            if (edit.levelNames) {
+                              editDataInOrg("levelNames", addedLevelName); // Call editData if edit.brands is true
+                            } else {
+                              addDataToOrg("levelNames", addedLevelName); // Call addDataToOrg if edit.brands is false
+                            }
+                          }}
+                          type="button"
+                          className="  px-5 h-full text-sm font-medium text-white bg-blue-700 border border-blue-700 hover:bg-blue-800 focus:ring-2 focus:outline-none focus:ring-blue-300 "
+                        >
+                          {edit.levelNames ? "Edit" : "Add"}
+                        </button>
+                      </div>
+                    </div>
+                    <div className="relative w-full ">
+                      {dropdown.addLevelName && (
+                        <div
+                          id="dropdown"
+                          className="z-50 absolute top-2 left-0 bg-white divide-y divide-gray-100 rounded-lg shadow   "
+                        >
+                          <ul
+                            className="py-2 text-sm text-gray-700  "
+                            aria-labelledby="dropdown-button"
+                          >
+                            {levelNames.length > 0 ? (
+                              levelNames.map((el, index) => (
+                                <li key={index}>
+                                  <a
+                                    href="#"
+                                    className="block p-2 hover:bg-gray-100 text-left   "
+                                  >
+                                    <div
+                                      data-tooltip-id="dropdown-tooltip"
+                                      data-tooltip-content={el}
+                                      data-tooltip-place="right-end"
+                                      className="flex items-center justify-between gap-12  "
+                                    >
+                                      <span
+                                        onClick={() => {
+                                          setSelectedBrand(el);
+                                          dropdown.brands = false;
+                                        }}
+                                        className="text-pink-900  whitespace-nowrap "
+                                      >
+                                        {el.length > 10
+                                          ? `${el.slice(0, 10)}....`
+                                          : el}
+                                      </span>
+                                      <div className="flex gap-3 ">
+                                        <FaEdit
+                                          onClick={() => {
+                                            handleEdit(el, "levelNames", index);
+                                          }}
+                                          className=" hover:scale-110 duration-100 ease-in-out text-blue-500"
+                                        />
+                                        <MdDelete
+                                          onClick={() => {
+                                            deleteDataInOrg(
+                                              "levelNames",
+                                              index
+                                            );
+                                          }}
+                                          className="hover:scale-110  duration-100 ease-in-out text-red-700"
+                                        />
+                                      </div>
+                                    </div>
+                                    <hr className="mt-2" />
+                                  </a>
+                                </li>
+                              ))
+                            ) : (
+                              <li>
+                                <a
+                                  href="#"
+                                  className="block px-4 py-2 hover:bg-gray-100 "
+                                >
+                                  No level names were added
+                                </a>
+                              </li>
+                            )}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
                     <Tooltip
-                      id="brand-tooltip"
+                      id="dropdown-tooltip"
                       place="bottom"
                       effect="solid"
                       className="bg-red-500"
                     >
                       {selectedBrand}
                     </Tooltip>
-                    <a></a>
+                  </div>
+                  {/* adding level name end **********************************************************************************/}
+                  {/* adding Location name**********************************************************************************/}
+                  <div>
+                    <hr className="mt-6 border-b-1 border-blueGray-300" />
 
-                    <div className="w-full flex ">
-                      <input
-                        onChange={(e) => {
-                          setAddedBrand(e.target.value);
-                          if (e.target.value === "") {
-                            setEdit((prevState) => ({
-                              ...prevState,
-                              brands: false,
-                            }));
-                          }
-                        }}
-                        value={addedBrand}
-                        type="search"
-                        id="search-dropdown"
-                        className="block p-2.5   text-sm text-gray-900 bg-gray-50  rounded-s-gray-100 rounded-s-2 border border-gray-300 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="Enter a new brand"
-                      />
+                    <h6 className="text-blueGray-400 text-sm mt-3 mb-6 font-bold uppercase">
+                      add Location
+                    </h6>
+
+                    <div className="flex w-6/12">
                       <button
                         onClick={() => {
-                          if (edit.brands) {
-                            editDataInOrg("brands", addedBrand); // Call editData if edit.brands is true
-                          } else {
-                            addDataToOrg("brands", addedBrand); // Call addDataToOrg if edit.brands is false
-                          }
+                          setDropdown({ addLocation: !dropdown.addLocation });
                         }}
-                        type="button"
-                        className="  px-5 h-full text-sm font-medium text-white bg-blue-700 border border-blue-700 hover:bg-blue-800 focus:ring-2 focus:outline-none focus:ring-blue-300 "
-                      >
-                        {edit.brands ? "Edit" : "Add"}
-                      </button>
-                    </div>
-                  </div>
-                  <div className="relative w-full ">
-                    {dropdown.addLevelName && (
-                      <div
                         id="dropdown"
-                        className="z-50 absolute top-2 left-0 bg-white divide-y divide-gray-100 rounded-lg shadow   "
+                        data-dropdown-toggle="dropdown"
+                        className="flex-shrink-0 flex justify-center items-center py-2.5 px-1  text-sm font-medium text-center text-gray-900  bg-slate-300 border border-e-0 border-gray-300  hover:bg-slate-400  focus:ring-1 focus:outline-none focus:ring-gray-300  "
+                        type="button"
                       >
-                        <ul
-                          className="py-2 text-sm text-gray-700  "
-                          aria-labelledby="dropdown-button"
+                        <svg
+                          className="w-2.5 h-2.5 "
+                          aria-hidden="true"
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 10 6"
                         >
-                          {levelNames.length > 0 ? (
-                            levelNames.map((el, index) => (
-                              <li key={index}>
+                          <path
+                            stroke="currentColor"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="m1 1 4 4 4-4"
+                          />
+                        </svg>
+                      </button>
+
+                      <div className="flex w-full">
+                        <input
+                          onChange={(e) => {
+                            setAddedLocation(e.target.value);
+                            if (e.target.value === "") {
+                              setEdit((prevState) => ({
+                                ...prevState,
+                                locations: false,
+                              }));
+                            }
+                          }}
+                          value={addedLocation}
+                          type="search"
+                          id="search-dropdown"
+                          className="block p-2.5   text-sm text-gray-900 bg-gray-50  rounded-s-gray-100 rounded-s-2 border border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="Enter a new brand"
+                        />
+                        <button
+                          onClick={() => {
+                            if (edit.locations) {
+                              editDataInOrg("locations", addedLocation); // Call editData if edit.brands is true
+                            } else {
+                              addDataToOrg("locations", addedLocation); // Call addDataToOrg if edit.brands is false
+                            }
+                          }}
+                          type="button"
+                          className=" px-5 h-full text-sm font-medium text-white bg-blue-700 border border-blue-700 hover:bg-blue-800 focus:ring-2 focus:outline-none focus:ring-blue-300 "
+                        >
+                          {edit.locations ? "Edit" : "Add"}
+                        </button>
+                      </div>
+                    </div>
+                    <div className="relative w-full ">
+                      {dropdown.addLocation && (
+                        <div
+                          id="dropdown"
+                          className="z-50 absolute top-2 left-0 bg-white divide-y divide-gray-100 rounded-lg shadow   "
+                        >
+                          <ul
+                            className="py-2 text-sm text-gray-700  "
+                            aria-labelledby="dropdown-button"
+                          >
+                            {locations.length > 0 ? (
+                              locations.map((el, index) => (
+                                <li key={index}>
+                                  <a
+                                    href="#"
+                                    className="block p-2 hover:bg-gray-100 text-left   "
+                                  >
+                                    <div
+                                      data-tooltip-id="dropdown-tooltip"
+                                      data-tooltip-content={el}
+                                      data-tooltip-place="right-end"
+                                      className="flex items-center justify-between gap-12  "
+                                    >
+                                      <span
+                                        onClick={() => {
+                                          dropdown.addLocation = false;
+                                        }}
+                                        className="text-pink-900  whitespace-nowrap "
+                                      >
+                                        {el.length > 10
+                                          ? `${el.slice(0, 10)}....`
+                                          : el}
+                                      </span>
+                                      <div className="flex gap-3 ">
+                                        <FaEdit
+                                          onClick={() => {
+                                            handleEdit(el, "locations", index);
+                                          }}
+                                          className=" hover:scale-110 duration-100 ease-in-out text-blue-500"
+                                        />
+                                        <MdDelete
+                                          onClick={() => {
+                                            deleteDataInOrg("locations", index);
+                                          }}
+                                          className="hover:scale-110  duration-100 ease-in-out text-red-700"
+                                        />
+                                      </div>
+                                    </div>
+                                    <hr className="mt-2" />
+                                  </a>
+                                </li>
+                              ))
+                            ) : (
+                              <li>
                                 <a
                                   href="#"
-                                  className="block p-2 hover:bg-gray-100 text-left   "
+                                  className="block px-4 py-2 hover:bg-gray-100 "
                                 >
-                                  <div
-                                    data-tooltip-id="dropdown-tooltip"
-                                    data-tooltip-content={el}
-                                    data-tooltip-place="right-end"
-                                    className="flex items-center justify-between gap-12  "
-                                  >
-                                    <span
-                                      onClick={() => {
-                                        setSelectedBrand(el);
-                                        dropdown.brands = false;
-                                      }}
-                                      className="text-pink-900  whitespace-nowrap "
-                                    >
-                                      {el.length > 10
-                                        ? `${el.slice(0, 10)}....`
-                                        : el}
-                                    </span>
-                                    <div className="flex gap-3 ">
-                                      <FaEdit
-                                        onClick={() => {
-                                          handleEdit(el, "brands", index);
-                                        }}
-                                        className=" hover:scale-110 duration-100 ease-in-out text-blue-500"
-                                      />
-                                      <MdDelete
-                                        onClick={() => {
-                                          deleteDataInOrg("brands", index);
-                                        }}
-                                        className="hover:scale-110  duration-100 ease-in-out text-red-700"
-                                      />
-                                    </div>
-                                  </div>
-                                  <hr className="mt-2" />
+                                  No locations were added
                                 </a>
                               </li>
-                            ))
-                          ) : (
-                            <li>
-                              <a
-                                href="#"
-                                className="block px-4 py-2 hover:bg-gray-100 "
-                              >
-                                No level names were added
-                              </a>
-                            </li>
-                          )}
-                        </ul>
-                      </div>
-                    )}
-                  </div>
-                  <Tooltip
-                    id="dropdown-tooltip"
-                    place="bottom"
-                    effect="solid"
-                    className="bg-red-500"
-                  >
-                    {selectedBrand}
-                  </Tooltip>
-                </div>
-                {/* adding level name end **********************************************************************************/}
-                {/* adding Location name**********************************************************************************/}
-                <div>
-                  <hr className="mt-6 border-b-1 border-blueGray-300" />
-
-                  <h6 className="text-blueGray-400 text-sm mt-3 mb-6 font-bold uppercase">
-                   add Location
-                  </h6>
-
-                  <div className="flex w-6/12">
-                    <button
-                      data-tooltip-id="brand-tooltip"
-                      data-tooltip-content={selectedBrand}
-                      data-tooltip-place="top"
-                      // onClick={() => {
-                      //   setDropdown({ brands: !dropdown.brands });
-                      // }}
-                      onClick={() => {
-                        setDropdown({ addLocation: !dropdown.addLocation });
-                      }}
-                      id="dropdown"
-                      data-dropdown-toggle="dropdown"
-                      className="flex-shrink-0 flex justify-center items-center py-2.5 px-1  text-sm font-medium text-center text-gray-900  bg-slate-300 border border-e-0 border-gray-300  hover:bg-slate-400  focus:ring-1 focus:outline-none focus:ring-gray-300  "
-                      type="button"
-                    >
- 
-
-                      <svg
-                        className="w-2.5 h-2.5 "
-                        aria-hidden="true"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 10 6"
-                      >
-                        <path
-                          stroke="currentColor"
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="m1 1 4 4 4-4"
-                        />
-                      </svg>
-                    </button>
+                            )}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
                     <Tooltip
-                      id="brand-tooltip"
+                      id="dropdown-tooltip"
                       place="bottom"
                       effect="solid"
                       className="bg-red-500"
                     >
                       {selectedBrand}
                     </Tooltip>
-                    <a></a>
-
-                    <div className="flex w-full">
-                      <input
-                        onChange={(e) => {
-                          setAddedBrand(e.target.value);
-                          if (e.target.value === "") {
-                            setEdit((prevState) => ({
-                              ...prevState,
-                              brands: false,
-                            }));
-                          }
-                        }}
-                        value={addedBrand}
-                        type="search"
-                        id="search-dropdown"
-                        className="block p-2.5   text-sm text-gray-900 bg-gray-50  rounded-s-gray-100 rounded-s-2 border border-gray-300 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="Enter a new brand"
-                      />
-                      <button
-                        onClick={() => {
-                          if (edit.brands) {
-                            editDataInOrg("brands", addedBrand); // Call editData if edit.brands is true
-                          } else {
-                            addDataToOrg("brands", addedBrand); // Call addDataToOrg if edit.brands is false
-                          }
-                        }}
-                        type="button"
-                        className=" px-5 h-full text-sm font-medium text-white bg-blue-700 border border-blue-700 hover:bg-blue-800 focus:ring-2 focus:outline-none focus:ring-blue-300 "
-                      >
-                        {edit.brands ? "Edit" : "Add"}
-                      </button>
-                    </div>
                   </div>
-                  <div className="relative w-full ">
-                    {dropdown.addLocation && (
-                      <div
-                        id="dropdown"
-                        className="z-50 absolute top-2 left-0 bg-white divide-y divide-gray-100 rounded-lg shadow   "
-                      >
-                        <ul
-                          className="py-2 text-sm text-gray-700  "
-                          aria-labelledby="dropdown-button"
-                        >
-                          {locations.length > 0 ? (
-                            locations.map((el, index) => (
-                              <li key={index}>
-                                <a
-                                  href="#"
-                                  className="block p-2 hover:bg-gray-100 text-left   "
-                                >
-                                  <div
-                                    data-tooltip-id="dropdown-tooltip"
-                                    data-tooltip-content={el}
-                                    data-tooltip-place="right-end"
-                                    className="flex items-center justify-between gap-12  "
-                                  >
-                                    <span
-                                      onClick={() => {
-                                        setSelectedBrand(el);
-                                        dropdown.brands = false;
-                                      }}
-                                      className="text-pink-900  whitespace-nowrap "
-                                    >
-                                      {el.length > 10
-                                        ? `${el.slice(0, 10)}....`
-                                        : el}
-                                    </span>
-                                    <div className="flex gap-3 ">
-                                      <FaEdit
-                                        onClick={() => {
-                                          handleEdit(el, "brands", index);
-                                        }}
-                                        className=" hover:scale-110 duration-100 ease-in-out text-blue-500"
-                                      />
-                                      <MdDelete
-                                        onClick={() => {
-                                          deleteDataInOrg("brands", index);
-                                        }}
-                                        className="hover:scale-110  duration-100 ease-in-out text-red-700"
-                                      />
-                                    </div>
-                                  </div>
-                                  <hr className="mt-2" />
-                                </a>
-                              </li>
-                            ))
-                          ) : (
-                            <li>
-                              <a
-                                href="#"
-                                className="block px-4 py-2 hover:bg-gray-100 "
-                              >
-                                No locations were added
-                              </a>
-                            </li>
-                          )}
-                        </ul>
-                      </div>
-                    )}
-                  </div>
-                  <Tooltip
-                    id="dropdown-tooltip"
-                    place="bottom"
-                    effect="solid"
-                    className="bg-red-500"
-                  >
-                    {selectedBrand}
-                  </Tooltip>
-                </div>
                 </div>
 
-                
                 {/* adding level name end **********************************************************************************/}
               </div>
 
@@ -1335,6 +1424,136 @@ function AddProduct() {
                   </button>
                 </div>
               </div>
+
+              {tab === "priceLevel" && (
+                <div className="p-6">
+                  <div className="container mx-auto mt-8">
+                    <table className="table-fixed w-full bg-white shadow-md rounded-lg ">
+                      <thead className="bg-[#f7f7f7] border">
+                        <tr>
+                          <th className="w-1/2 px-4 py-1">Level Name</th>
+                          <th className="w-1/2 px-4 py-1">Rate</th>
+                          <th className="  w-2/12 px-4 py-1"></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {rows.map((row, index) => (
+                          <tr key={row.id} className="border-b bg-[#EFF6FF] ">
+                            <td className="px-4 py-2">
+                              <select
+                                value={row.level}
+                                onChange={(e) =>
+                                  handleLevelChange(index, e.target.value)
+                                }
+                                className="block w-full  px-4  rounded-md bg-[#EFF6FF] text-sm focus:outline-none"
+                              >
+                                {/* Options for dropdown */}
+                                <option value="">Select Level</option>
+                                {levelNames.map((el, index) => (
+                                  <option key={index} value={el}>
+                                    {el}
+                                  </option>
+                                ))}
+                              </select>
+                            </td>
+                            <td className="px-4 ">
+                              <input
+                                type="text"
+                                value={row.rate}
+                                onChange={(e) =>
+                                  handleRateChange(index, e.target.value)
+                                }
+                                className="w-full py-1 px-4 border bg-[#EFF6FF] border-gray-300   text-sm focus:outline-none"
+                              />
+                            </td>
+                            <td className="px-4 py-2">
+                              <button
+                                onClick={() => handleDeleteRow(row.id)}
+                                className="text-red-600 hover:text-red-800"
+                              >
+                                <MdDelete />
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    <button
+                      onClick={handleAddRow}
+                      className="mt-4 px-3 py-1 bg-green-500 text-white rounded"
+                    >
+                      <MdPlaylistAdd />
+                    </button>
+                  </div>
+                </div>
+              )}
+
+
+{tab === "location" && (
+                <div className="p-6">
+                  <div className="container mx-auto mt-8">
+                    <table className="table-fixed w-full bg-white shadow-md rounded-lg ">
+                      <thead className="bg-[#f7f7f7] border">
+                        <tr>
+                          <th className="w-1/2 px-4 py-1">Location</th>
+                          <th className="w-1/2 px-4 py-1">Rate</th>
+                          <th className="  w-2/12 px-4 py-1"></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {locationRows.map((row, index) => (
+                          <tr key={row.id} className="border-b bg-[#EFF6FF] ">
+                            <td className="px-4 py-2">
+                              <select
+                                value={row.level}
+                                onChange={(e) =>
+                                  handleLocationChange(index, e.target.value)
+                                }
+                                className="block w-full  px-4  rounded-md bg-[#EFF6FF] text-sm focus:outline-none"
+                              >
+                                {/* Options for dropdown */}
+                                <option value="">Select Level</option>
+                                {locations.map((el, index) => (
+                                  <option key={index} value={el}>
+                                    {el}
+                                  </option>
+                                ))}
+                              </select>
+                            </td>
+                            <td className="px-4 ">
+                              <input
+                                type="text"
+                                value={row.rate}
+                                onChange={(e) =>
+                                  handleLocationRateChange(index, e.target.value)
+                                }
+                                className="w-full py-1 px-4 border bg-[#EFF6FF] border-gray-300   text-sm focus:outline-none"
+                              />
+                            </td>
+                            <td className="px-4 py-2">
+                              <button
+                                onClick={() => handleDeleteLocationRow(row.id)}
+                                className="text-red-600 hover:text-red-800"
+                              >
+                                <MdDelete />
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    <button
+                      onClick={handleAddLocationRow}
+                      className="mt-4 px-3 py-1 bg-green-500 text-white rounded"
+                    >
+                      <MdPlaylistAdd />
+                    </button>
+                  </div>
+                </div>
+              )}
+
+
+         
             </div>
           </div>
         </section>
