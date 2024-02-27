@@ -38,8 +38,9 @@ import DashboardSec from '../pages/secUsers/Dashboard'
 import AddParty from '../pages/primaryUsers/AddParty'
 import Hsn from '../pages/primaryUsers/Hsn'
 import AddProduct from '../pages/primaryUsers/AddProduct'
-import Table from '../pages/primaryUsers/Table'
-import LevelNameTable from '../components/table/LevelNameTable'
+import ProductList from '../pages/primaryUsers/ProductList'
+import EditProduct from '../pages/primaryUsers/EditProduct'
+
 
 
 const Routers = () => {
@@ -67,7 +68,9 @@ const Routers = () => {
         <Route path='/pUsers/addParty' element={<ProtectedPriRoute><AddParty/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/hsn' element={<ProtectedPriRoute><Hsn/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/addProduct' element={<ProtectedPriRoute><AddProduct/></ProtectedPriRoute>}></Route>
-        <Route path='/pUsers/table' element={<ProtectedPriRoute><LevelNameTable/></ProtectedPriRoute>}></Route>
+        <Route path='/pUsers/productList' element={<ProtectedPriRoute><ProductList/></ProtectedPriRoute>}></Route>
+        <Route path='/pUsers/editProduct/:id' element={<ProtectedPriRoute><EditProduct/></ProtectedPriRoute>}></Route>
+
 
 
 

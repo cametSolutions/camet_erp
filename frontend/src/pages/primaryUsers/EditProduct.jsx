@@ -12,9 +12,11 @@ import { Tooltip } from "react-tooltip";
 import { units } from "../../../constants/units";
 import { MdPlaylistAdd } from "react-icons/md";
 import { IoIosArrowRoundBack } from "react-icons/io";
-import { useNavigate,Link } from "react-router-dom";
+import { useNavigate, Link, useParams } from "react-router-dom";
 
-function AddProduct() {
+function EditProduct() {
+  const { id } = useParams();
+
   const [showSidebar, setShowSidebar] = useState(false);
   const [dropdown, setDropdown] = useState({
     brands: false,
@@ -213,7 +215,80 @@ function AddProduct() {
       }
     };
     fetchHsn();
-  }, [refresh, orgId]);
+  }, []);
+
+  ////fetching data for edit
+  useEffect(() => {
+    const getProductDetails = async () => {
+      try {
+        const res = await api.get(`/api/pUsers/productDetails/${id}`, {
+          withCredentials: true,
+        });
+
+        console.log(res.data.data);
+        const {
+          _id,
+          product_name,
+          product_code,
+          balance_stock,
+          distributor_id,
+          brand,
+          category,
+          sub_category,
+          unit,
+          alt_unit,
+          unit_conversion,
+          alt_unit_conversion,
+          hsn_code,
+          purchase_price,
+          purchase_stock,
+          Priceleveles,
+          GodownList,
+          cgst,
+          sgst,
+          igst,
+          cess,
+          addl_cess,
+        } = res.data.data;
+
+        setProduct_name(product_name);
+        setProduct_code(product_code);
+        setUnit(unit);
+        setAltUnit(alt_unit);
+        setUnit_conversion(unit_conversion);
+        setAlt_unit_conversion(alt_unit_conversion);
+
+        setBalance_stock(balance_stock);
+        setPurchase_price(purchase_price);
+        set_Purchase_stock(purchase_stock);
+        setSelectedBrand(brand);
+        setSelectedCategory(category);
+        setSelectedSubCategory(sub_category);
+
+        const hsnDetails = hsn.filter((el) => el.hsn === hsn_code);
+        const hsnId = hsnDetails[0]._id;
+
+        setHsn_code(hsnId);
+        const newRows = Priceleveles.map((item) => ({
+          id: Math.random(),
+          pricelevel: item.pricelevel,
+          pricerate: item.pricerate,
+        }));
+        setRows(newRows);
+
+        const newLocationRows=GodownList.map((item)=>({
+            id: Math.random(),
+             godown_name: item.godown_name,
+              godown_stock: item.godown_stock,
+
+        }))
+        setLocationRows(newLocationRows)
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    getProductDetails();
+  }, [hsn]);
 
   const addDataToOrg = async (params, value) => {
     let body = {};
@@ -396,6 +471,8 @@ function AddProduct() {
       setShowSidebar(!showSidebar);
     }
   };
+  const navigate = useNavigate();
+
 
   const submitHandler = async () => {
     console.log("haiii");
@@ -483,7 +560,7 @@ function AddProduct() {
 
     console.log(formData);
     try {
-      const res = await api.post("/api/pUsers/addProduct", formData, {
+      const res = await api.post(`/api/pUsers/editProduct/${id}`, formData, {
         headers: {
           "Content-Type": "application/json",
         },
@@ -492,32 +569,14 @@ function AddProduct() {
 
       console.log(res.data);
       toast.success(res.data.message);
-      setProduct_name("");
-      setProduct_code("");
-      setBalance_stock("");
-      setSelectedBrand("");
-      setSelectedCategory(""),
-        setSelectedSubCategory(""),
-        setUnit(""),
-        setAltUnit(""),
-        setUnit_conversion(""),
-        setAlt_unit_conversion(""),
-        setHsn_code(""),
-        setPurchase_price(""),
-        set_Purchase_stock(""),
-        setLevelNameData(""),
-        setLocationData("");
-      setRows([{ id: Math.random(), pricelevel: "", pricerate: "" }]);
-      setLocationRows([
-        { id: Math.random(), godown_name: "", godown_stock: "" },
-      ]);
+      navigate("/pUsers/productList")
+     
     } catch (error) {
       toast.error(error.response.data.message);
       console.log(error);
     }
   };
 
-  const navigate=useNavigate()
 
   return (
     <div className="flex ">
@@ -526,12 +585,10 @@ function AddProduct() {
       </div>
       <div className="flex-1 h-screen overflow-y-scroll">
         <div className="bg-[#012A4A] sticky top-0 p-3 z-100 text-white text-lg font-bold flex items-center gap-3 z-20">
-           <Link to={"/pUsers/productList"}>
-          <IoIosArrowRoundBack
-            className="block md:hidden text-3xl"
-          />
+          <Link to={"/pUsers/productList"}>
+            <IoIosArrowRoundBack className="block md:hidden text-3xl" />
           </Link>
-          <p>Add Product</p>
+          <p>Edit Product</p>
         </div>
         <section className="  py-1 bg-blueGray-50">
           <div className="w-full lg:w-8/12 px-4 mx-auto mt-6">
@@ -539,7 +596,7 @@ function AddProduct() {
               <div className="rounded-t bg-white mb-0 px-6 py-6">
                 <div className="text-center flex justify-between">
                   <h6 className="text-blueGray-700 text-xl font-bold">
-                    Product Details
+                    Edit Product Details
                   </h6>
                 </div>
               </div>
@@ -1406,8 +1463,7 @@ function AddProduct() {
                                     >
                                       <span
                                         onClick={() => {
-                                       
-                                          setDropdown({addLocation:false})
+                                          setDropdown({ addLocation: false });
                                         }}
                                         className="text-pink-900  whitespace-nowrap "
                                       >
@@ -1553,7 +1609,7 @@ function AddProduct() {
                                     >
                                       <span
                                         onClick={() => {
-                                         setDropdown({addLocation:false})
+                                          setDropdown({ addLocation: false });
                                         }}
                                         className="text-pink-900  whitespace-nowrap "
                                       >
@@ -1768,7 +1824,7 @@ function AddProduct() {
                   className="bg-pink-500 text-white active:bg-pink-600 font-bold uppercase text-xs px-4 py-2 rounded shadow hover:shadow-md outline-none focus:outline-none mr-1 ease-linear transition-all duration-150"
                   type="button"
                 >
-                  Add Product
+                  Edit Product
                 </button>
               </div>
             </div>
@@ -1779,4 +1835,4 @@ function AddProduct() {
   );
 }
 
-export default AddProduct;
+export default EditProduct;

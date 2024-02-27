@@ -7,7 +7,8 @@ import { registerPrimaryUser,login,addOrganizations,
   fetchOutstandingTotal,fetchOutstandingDetails,confirmCollection,
   transactions,cancelTransaction,fetchBanks,bankList,
   sendOtp,submitOtp,resetPassword,getTransactionDetails,getSingleOrganization,
-  editOrg,addParty,addHsn,addDataToOrg,editDataInOrg,deleteDataInOrg,fetchHsn} from '../controllers/primaryUserController.js';
+  editOrg,addParty,addHsn,addDataToOrg,editDataInOrg,deleteDataInOrg,
+  fetchHsn,addProduct,getProducts,deleteProduct,productDetails,editProduct} from '../controllers/primaryUserController.js';
 import { singleUpload } from '../multer/multer.js';
 import { primaryIsBlocked } from '../middlewares/isBlocked.js';
 
@@ -36,6 +37,11 @@ router.post('/addDataToOrg/:cmp_id',authPrimary,primaryIsBlocked,addDataToOrg)
 router.post('/editDataInOrg/:cmp_id',authPrimary,primaryIsBlocked,editDataInOrg)
 router.post('/deleteDataInOrg/:cmp_id',authPrimary,primaryIsBlocked,deleteDataInOrg)
 router.get('/fetchHsn/:cmp_id',authPrimary,primaryIsBlocked,fetchHsn)
+router.post('/addProduct',authPrimary,primaryIsBlocked,addProduct)
+router.get('/getProducts',authPrimary,primaryIsBlocked,getProducts)
+router.delete('/deleteProduct/:id',authPrimary,primaryIsBlocked,deleteProduct)
+router.get('/productDetails/:id',authPrimary,primaryIsBlocked,productDetails)
+router.post('/editProduct/:id',authPrimary,primaryIsBlocked,editProduct)
 
 router.post('/sendOtp',sendOtp)
 router.post('/submitOtp',submitOtp)

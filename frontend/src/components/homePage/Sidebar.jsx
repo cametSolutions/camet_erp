@@ -546,13 +546,13 @@ function Sidebar({ TAB, showBar }) {
                 </a>
               </Link>
 
-              <Link to={"/pUsers/addProduct"}>
+              <Link to={"/pUsers/productList"}>
                 <a
                   onClick={() => {
                     handleSidebarItemClick("outstanding");
                   }}
                   className={` ${
-                    TAB === "outstanding"
+                    TAB === "productList"
                       ? "bg-gray-800 text-white"
                       : "text-gray-400"
                   } hover:bg-gray-800 hover:text-white flex items-center px-4 py-2 mt-5 transition-colors duration-300 transform rounded-lg   `}
