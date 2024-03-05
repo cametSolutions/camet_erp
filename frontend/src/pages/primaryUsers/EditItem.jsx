@@ -6,7 +6,8 @@ import api from "../../api/api";
 import { MdModeEditOutline } from "react-icons/md";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import { useNavigate } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
+import { changeIgstAndDiscount } from "../../../slices/invoice";
 
 function EditItem() {
   const [item, setItem] = useState([]);
@@ -20,7 +21,7 @@ function EditItem() {
   const [taxExclusivePrice, setTaxExclusivePrice] = useState(0);
   const [totalAmount, setTotalAmount] = useState(0);
   const [discountAmount, setDiscountAmount] = useState(0); // State for discount amount
-  const [discountPercentage, setDiscountPercentage] = useState(0); 
+  const [discountPercentage, setDiscountPercentage] = useState(0);
   const { id } = useParams();
   const navigate = useNavigate();
 
@@ -63,15 +64,10 @@ function EditItem() {
       setQuantity(selectedItem[0]?.count || 1);
       setUnit(selectedItem[0]?.unit);
       setIgst(selectedItem[0]?.igst);
-
-   
-
-      
     }
   }, []);
 
-
-  useEffect(()=>{
+  useEffect(() => {
     const taxExclusivePrice = parseFloat(newPrice) * parseInt(quantity);
     setTaxExclusivePrice(taxExclusivePrice);
     // Calculate the discount amount and percentage
@@ -81,10 +77,12 @@ function EditItem() {
     if (discount !== "") {
       if (type === "amount") {
         calculatedDiscountAmount = parseFloat(discount);
-        calculatedDiscountPercentage = (parseFloat(discount) / taxExclusivePrice) * 100;
+        calculatedDiscountPercentage =
+          (parseFloat(discount) / taxExclusivePrice) * 100;
       } else if (type === "percentage") {
         calculatedDiscountPercentage = parseFloat(discount).toFixed(2);
-        calculatedDiscountAmount = (parseFloat(discount) / 100) * taxExclusivePrice;
+        calculatedDiscountAmount =
+          (parseFloat(discount) / 100) * taxExclusivePrice;
       }
     }
 
@@ -101,12 +99,22 @@ function EditItem() {
     }
 
     setTotalAmount(totalAmount);
+  }, [selectedItem, selectedPriceLevel, quantity, discount, type, igst]);
 
+  const dispatch = useDispatch();
 
-  },[selectedItem, selectedPriceLevel, quantity, discount, type, igst])
+  const submitHandler = () => {
+    console.log(item);
+    const newItem = {...item};
 
+    newItem.discount = discountAmount;
+    newItem.total = totalAmount;
+    newItem.newGst = igst;
 
-
+    console.log(newItem);
+    dispatch(changeIgstAndDiscount(newItem));
+    navigate("/pUsers/addItem")
+  };
 
   return (
     <div className="flex ">
@@ -251,35 +259,37 @@ function EditItem() {
                     <div className="bg-slate-200 p-3 font-semibold flex flex-col gap-2 text-gray-500">
                       <div className="flex justify-between">
                         <p className="text-xs">Tax Exclusive Price * Qty</p>
-                        <p className="text-xs">
-                          {" "}
-                          {taxExclusivePrice}
-                        </p>
+                        <p className="text-xs"> {taxExclusivePrice}</p>
                       </div>
                       {type === "amount" ? (
                         <div className="flex justify-between">
                           <p className="text-xs">Discount</p>
                           <div className="flex items-center gap-2">
-                          <p className="text-xs">{`(${discountPercentage.toFixed(2)} % ) `}</p>
+                            <p className="text-xs">{`(${discountPercentage.toFixed(
+                              2
+                            )} % ) `}</p>
                             <p className="text-xs">{`₹ ${discountAmount}`}</p>
                           </div>
                         </div>
                       ) : (
                         <div className="flex justify-between">
-                        <p className="text-xs">Discount</p>
-                        <div className="flex items-center gap-2">
-                        <p className="text-xs">{`(${discountPercentage}) %`}</p>
-                          <p className="text-xs">{`₹ ${discountAmount} `}</p>
+                          <p className="text-xs">Discount</p>
+                          <div className="flex items-center gap-2">
+                            <p className="text-xs">{`(${discountPercentage}) %`}</p>
+                            <p className="text-xs">{`₹ ${discountAmount} `}</p>
+                          </div>
                         </div>
-                      </div>
                       )}
 
                       <div className="flex justify-between">
                         <p className="text-xs">Tax Rate</p>
                         <div className="flex items-center gap-2">
-
-                        <p className="text-xs">{`( ${igst} % )`}</p>
-                          <p className="text-xs">{`₹ ${((taxExclusivePrice-discountAmount)*parseFloat(igst))/100} `}</p>
+                          <p className="text-xs">{`( ${igst} % )`}</p>
+                          <p className="text-xs">{`₹ ${
+                            ((taxExclusivePrice - discountAmount) *
+                              parseFloat(igst)) /
+                            100
+                          } `}</p>
                         </div>
                       </div>
                       <div className="flex justify-between font-bold text-black">
@@ -306,7 +316,10 @@ function EditItem() {
                       </svg>{" "}
                       Cancel
                     </button>
-                    <button className="bg-violet-500 flex justify-center items-center w-full text-white px-4 py-3 rounded-md focus:outline-none">
+                    <button
+                      onClick={submitHandler}
+                      className="bg-violet-500 flex justify-center items-center w-full text-white px-4 py-3 rounded-md focus:outline-none"
+                    >
                       Save
                     </button>
                   </div>

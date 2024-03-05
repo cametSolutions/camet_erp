@@ -11,15 +11,26 @@ import { addItem } from "../../../slices/invoice";
 import { useDispatch } from "react-redux";
 import { changeCount } from "../../../slices/invoice";
 import { setPriceLevel } from "../../../slices/invoice";
+import { changeTotal } from "../../../slices/invoice";
 
 function AddItem() {
   const [item, setItem] = useState([]);
   const [selectedPriceLevel, setSelectedPriceLevel] = useState("");
-  console.log(selectedPriceLevel);
+  const [refresh, setRefresh] = useState(false);
+  const [reduxItem, setReduxItem] = useState([]);
 
   const cpm_id = useSelector(
     (state) => state.setSelectedOrganization.selectedOrg._id
   );
+
+  const itemsFromRedux = useSelector((state) => state.invoice.items);
+  const priceLevelFromRedux =
+    useSelector((state) => state.invoice.selectedPriceLevel) || "";
+  console.log(itemsFromRedux);
+  useEffect(() => {
+    setSelectedPriceLevel(priceLevelFromRedux);
+  }, []);
+
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
@@ -29,36 +40,79 @@ function AddItem() {
         const res = await api.get("/api/pUsers/getProducts", {
           withCredentials: true,
         });
-        setItem(res.data.productData);
+  
+        if (itemsFromRedux.length > 0) {
+          const reduxItemIds = itemsFromRedux.map(el => el._id);
+          const updatedItems = res.data.productData.map(product => {
+            if (reduxItemIds.includes(product._id)) {
+              // If the product ID exists in Redux, replace it with the corresponding Redux item
+              const reduxItem = itemsFromRedux.find(item => item._id === product._id);
+              return reduxItem;
+            } else {
+              return product;
+            }
+          });
+          setItem(updatedItems);
+        } else {
+          setItem(res.data.productData);
+        }
       } catch (error) {
         console.log(error);
       }
     };
     fetchProducts();
-  }, [cpm_id]);
+  }, [cpm_id, itemsFromRedux]);
+  
+
+  useEffect(() => {
+    if (itemsFromRedux.length > 0) {
+      const updatedItems = item.map((currentItem) => {
+        // Find the corresponding item in itemsFromRedux
+        const matchingItem = itemsFromRedux.find(
+          (el) => el._id === currentItem._id
+        );
+        console.log(matchingItem);
+        if (matchingItem) {
+          // If matching item found, return it with updated count and total
+          return {
+            ...currentItem,
+            count: matchingItem.count,
+            total: matchingItem.total,
+          };
+        } else {
+          // If no matching item found, return the current item
+          return currentItem;
+        }
+      });
+
+      // Update the state with the modified items
+      setItem(updatedItems);
+      console.log(updatedItems);
+    }
+  }, [itemsFromRedux]);
 
   const handleAddClick = (index) => {
     // Toggle the state of 'added' for the clicked item
     const updatedItems = [...item];
     updatedItems[index].added = !updatedItems[index].added;
     setItem(updatedItems);
+    setRefresh(!refresh);
     dispatch(addItem(updatedItems[index]));
   };
-
   const handleIncrement = (index) => {
     const updatedItems = [...item]; // Make a copy of the array
     const currentItem = { ...updatedItems[index] }; // Make a copy of the item object
     if (!currentItem.count && currentItem.balance_stock >= 1) {
       currentItem.count = 1;
-      
     } else if (currentItem.count < currentItem.balance_stock) {
       currentItem.count += 1;
     }
     updatedItems[index] = currentItem; // Update the item in the copied array
     setItem(updatedItems);
+    setRefresh(!refresh);
+
     dispatch(changeCount(currentItem));
   };
-
   const handleDecrement = (index) => {
     const updatedItems = [...item]; // Make a copy of the array
     const currentItem = { ...updatedItems[index] }; // Make a copy of the item object
@@ -66,25 +120,53 @@ function AddItem() {
       currentItem.count -= 1;
       updatedItems[index] = currentItem; // Update the item in the copied array
       setItem(updatedItems);
+    setRefresh(!refresh);
+
     }
     dispatch(changeCount(currentItem));
   };
-
-  console.log(item);
-  console.log(selectedPriceLevel);
-
   const handlePriceLevelChange = (e) => {
     const selectedValue = e.target.value;
     setSelectedPriceLevel(selectedValue);
-    dispatch(setPriceLevel(selectedValue))
+    dispatch(setPriceLevel(selectedValue));
   };
 
-  // const submitHandler=()=>{
-  //   const addedItem=item.filter((el)=>el.added==true && el.count >=1)
-  //   console.log(addedItem);
-  //   dispatch(addItem(addedItem))
+  useEffect(() => {
+    const updatedItems = item.map((currentItem) => {
+      // Create a new object with the properties of currentItem
+      const newItem = {
+        ...currentItem,
+        total: 0, // Initialize total property
+      };
+      console.log(newItem);
 
-  // }
+      // Calculate total
+      newItem.total =
+        (newItem.Priceleveles.find(
+          (item) => item.pricelevel === selectedPriceLevel
+        )?.pricerate || 0) *
+          parseInt(newItem?.count) *
+          (1 - (newItem.discount || 0) / 100) +
+          ((newItem.Priceleveles.find(
+            (item) => item.pricelevel === selectedPriceLevel
+          )?.pricerate || 0) *
+            parseInt(newItem?.count) *
+            (newItem.newGst || newItem.igst || 0)) /
+            100 || 0;
+      if (newItem.total > 0) {
+        dispatch(changeTotal(newItem));
+      }
+
+      console.log(newItem.total);
+
+      return newItem;
+    });
+
+    // Update the state with the modified items
+    setItem(updatedItems);
+  }, [refresh, selectedPriceLevel]);
+
+  console.log(item);
 
   return (
     <div className="flex relative">
@@ -107,7 +189,8 @@ function AddItem() {
             <div className="flex items-center gap-4 md:gap-6 ">
               <div>
                 <select
-                  onChange={(e) =>handlePriceLevelChange(e)}
+                  onChange={(e) => handlePriceLevelChange(e)}
+                  value={selectedPriceLevel}
                   className="block w-full p-1 px-3 truncate text-sm  border rounded-lg border-gray-100 bg-[#012a4a] text-white focus:ring-blue-500 focus:border-blue-500"
                 >
                   {item[0]?.Priceleveles.map((el, index) => (
@@ -194,11 +277,9 @@ function AddItem() {
                     <p className="text-red-500">STOCK : </p>
                     <span>{el.balance_stock}</span>
                   </div>
-                  <div className="">
-                   <span>Total :</span>
-                   <span>{(( el.Priceleveles.find(
-                          (item) => item.pricelevel === selectedPriceLevel
-                        )?.pricerate)*parseInt(el?.count))  || 0}</span>
+                  <div>
+                    <span>Total : ₹ </span>
+                    <span>{el.total || 0}</span>
                   </div>
                 </div>
               </div>
@@ -243,7 +324,9 @@ function AddItem() {
                         data-hs-input-number-input
                       />
                       <button
-                        onClick={() => handleIncrement(index)}
+                        onClick={() => {
+                          handleIncrement(index);
+                        }}
                         type="button"
                         className="size-6 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-md border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none "
                         data-hs-input-number-increment
