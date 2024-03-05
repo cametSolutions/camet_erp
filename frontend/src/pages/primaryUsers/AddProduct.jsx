@@ -213,7 +213,7 @@ function AddProduct() {
       }
     };
     fetchHsn();
-  }, [refresh, orgId]);
+  }, []);
 
   const addDataToOrg = async (params, value) => {
     let body = {};

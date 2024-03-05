@@ -511,7 +511,7 @@ function Sidebar({ TAB, showBar }) {
                   <span className="mx-4 font-medium">Outstandings</span>
                 </a>
               </Link>
-              <Link to={"/pUsers/addParty"}>
+              <Link to={"/pUsers/partyList"}>
                 <a
                   onClick={() => {
                     handleSidebarItemClick("addParty");
@@ -525,7 +525,7 @@ function Sidebar({ TAB, showBar }) {
                 >
                   <TiUserAdd />
 
-                  <span className="mx-4 font-medium">Add Party</span>
+                  <span className="mx-4 font-medium">Party</span>
                 </a>
               </Link>
               <Link to={"/pUsers/hsn"}>
@@ -561,6 +561,23 @@ function Sidebar({ TAB, showBar }) {
                   <GiTakeMyMoney />
 
                   <span className="mx-4 font-medium">Add Product</span>
+                </a>
+              </Link>
+              <Link to={"/pUsers/invoice"}>
+                <a
+                  onClick={() => {
+                    handleSidebarItemClick("outstanding");
+                  }}
+                  className={` ${
+                    TAB === "invoice"
+                      ? "bg-gray-800 text-white"
+                      : "text-gray-400"
+                  } hover:bg-gray-800 hover:text-white flex items-center px-4 py-2 mt-5 transition-colors duration-300 transform rounded-lg   `}
+                  href="#"
+                >
+                  <GiTakeMyMoney />
+
+                  <span className="mx-4 font-medium">Invoice</span>
                 </a>
               </Link>
             

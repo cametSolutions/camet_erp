@@ -40,6 +40,12 @@ import Hsn from '../pages/primaryUsers/Hsn'
 import AddProduct from '../pages/primaryUsers/AddProduct'
 import ProductList from '../pages/primaryUsers/ProductList'
 import EditProduct from '../pages/primaryUsers/EditProduct'
+import PartyList from '../pages/primaryUsers/PartyList'
+import EditParty from '../pages/primaryUsers/EditParty'
+import Invoice from '../pages/primaryUsers/Invoice'
+import SearchParty from '../pages/primaryUsers/SearchParty'
+import AddItem from '../pages/primaryUsers/AddItem'
+import EditItem from '../pages/primaryUsers/EditItem'
 
 
 
@@ -70,14 +76,18 @@ const Routers = () => {
         <Route path='/pUsers/addProduct' element={<ProtectedPriRoute><AddProduct/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/productList' element={<ProtectedPriRoute><ProductList/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/editProduct/:id' element={<ProtectedPriRoute><EditProduct/></ProtectedPriRoute>}></Route>
-
-
+        <Route path='/pUsers/partyList' element={<ProtectedPriRoute><PartyList/></ProtectedPriRoute>}></Route>
+        <Route path='/pUsers/editParty/:id' element={<ProtectedPriRoute><EditParty/></ProtectedPriRoute>}></Route>
+        <Route path='/pUsers/invoice' element={<ProtectedPriRoute><Invoice/></ProtectedPriRoute>}></Route>
+        <Route path='/pUsers/searchParty' element={<ProtectedPriRoute><SearchParty/></ProtectedPriRoute>}></Route>
+        <Route path='/pUsers/searchParty' element={<ProtectedPriRoute><SearchParty/></ProtectedPriRoute>}></Route>
+        <Route path='/pUsers/addItem' element={<ProtectedPriRoute><AddItem/></ProtectedPriRoute>}></Route>
+        <Route path='/pUsers/editItem/:id' element={<ProtectedPriRoute><EditItem/></ProtectedPriRoute>}></Route>
 
 
         {/* admin */}
         <Route path='/admin/login' element={<AdminLogin/>}></Route>
         <Route path='/admin/home' element={<ProtectedAdmin><AdminHome/></ProtectedAdmin>}></Route>
-
 
         {/* sec users */}
         <Route path='/sUsers/login' element={<SecLogin/>}></Route>

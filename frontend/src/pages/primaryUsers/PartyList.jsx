@@ -4,41 +4,39 @@ import { toast } from "react-toastify";
 import Pagination from "../../components/common/Pagination";
 import Sidebar from "../../components/homePage/Sidebar";
 import { IoReorderThreeSharp } from "react-icons/io5";
-import { FaEdit } from "react-icons/fa";
-import { Link } from "react-router-dom";
+import { useSelector } from "react-redux";
 import { MdDelete } from "react-icons/md";
+import { FaEdit } from "react-icons/fa";
 import Swal from "sweetalert2";
+import { Link } from "react-router-dom";
 
-function ProductList() {
-  const [products, setProducts] = useState([]);
+function PartyList() {
+  const [parties, setParties] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [postPerPage, setPostPerPage] = useState(5);
   const [showSidebar, setShowSidebar] = useState(false);
   const [refresh, setRefresh] = useState(false);
 
+  const cpm_id = useSelector(
+    (state) => state.setSelectedOrganization.selectedOrg._id
+  );
+
   useEffect(() => {
-    const fetchProducts = async () => {
+    const fetchParties = async () => {
       try {
-        const res = await api.get("/api/pUsers/getProducts", {
+        const res = await api.get(`/api/pUsers/PartyList/${cpm_id}`, {
           withCredentials: true,
         });
 
-        setProducts(res.data.productData);
+        setParties(res.data.partyList);
       } catch (error) {
         console.log(error);
-        toast.error(error.response.data.message);
       }
     };
-    fetchProducts();
-  }, [refresh]);
+    fetchParties();
+  }, [cpm_id, refresh]);
 
-  const handleToggleSidebar = () => {
-    if (window.innerWidth < 768) {
-      setShowSidebar(!showSidebar);
-    }
-  };
-
-  const handleDelete = async (id) => {
+  const deleteHandler = async (id) => {
     // Show confirmation dialog
     const confirmation = await Swal.fire({
       title: "Are you sure?",
@@ -54,7 +52,7 @@ function ProductList() {
     // If user confirms deletion
     if (confirmation.isConfirmed) {
       try {
-        const res = await api.delete(`/api/pUsers/deleteProduct/${id}`, {
+        const res = await api.delete(`/api/pUsers/deleteParty/${id}`, {
           headers: {
             "Content-Type": "application/json",
           },
@@ -80,46 +78,53 @@ function ProductList() {
     }
   };
 
+  console.log(parties);
+
+  const handleToggleSidebar = () => {
+    if (window.innerWidth < 768) {
+      setShowSidebar(!showSidebar);
+    }
+  };
+
   const lastPostIndex = currentPage * postPerPage;
   const firstPostIndex = lastPostIndex - postPerPage;
-  const productData = products.slice(firstPostIndex, lastPostIndex);
+  const partyData = parties.slice(firstPostIndex, lastPostIndex);
 
   return (
     <div className="flex">
       <div className="" style={{ height: "100vh" }}>
-        <Sidebar TAB={"productList"} showBar={showSidebar} />
+        <Sidebar TAB={"bankList"} showBar={showSidebar} />
       </div>
 
-      <section className=" flex-1 antialiased bg-gray-100 text-gray-600 h-screen py-0 md:p-6 overflow-y-scroll">
-        <div className="block md:hidden bg-[#201450] text-white mb-2 p-3 flex items-center gap-3  text-lg">
+      <section className=" flex-1 antialiased bg-gray-100 text-gray-600 h-screen py-0 md:p-6 overflow-y-scroll   ">
+        <div className="block md:hidden bg-[#201450] text-white mb-2 p-3 flex items-center gap-3 text-lg ">
           <IoReorderThreeSharp
             onClick={handleToggleSidebar}
             className="block md:hidden text-3xl"
           />
-          <div className="flex justify-between items-center w-full">
-            <p> Products </p>
-            <Link to={"/pUsers/addProduct"}>
+          <div className="flex items-center justify-between w-full">
+            <p>Your Parties</p>
+            <Link to={"/pUsers/addParty"}>
               <button className="flex gap-2 bg-green-500 px-2 py-1 rounded-md text-sm  hover:scale-105 duration-100 ease-in-out hover:bg-green-600 mr-3">
-                Add Product
+                Add Party
               </button>
             </Link>
           </div>
         </div>
         <div className="flex flex-col h-full px-[5px]">
           {/* <!-- Table --> */}
-          <div className="w-full max-w-[59rem] mx-auto  bg-white shadow-lg rounded-sm border  border-gray-200   ">
-            <header className=" hidden md:block px-5 py-4 border-b border-gray-100 bg bg-[#261b56] text-white ">
-              <div className="flex  justify-between items-center">
-                <h2 className="font-semibold ">Products</h2>
-
-                <Link to={"/pUsers/addProduct"}>
+          <div className="w-full max-w-[59rem] mx-auto  bg-white shadow-lg rounded-sm border  border-gray-200 ">
+            <header className=" hidden md:block px-5 py-4 border-b border-gray-100 bg bg-[#261b56] text-white">
+              <div className="flex justify-between items-center">
+                <h2 className="font-semibold ">Your Parties</h2>
+                <Link to={"/pUsers/addParty"}>
                   <button className="flex gap-2 bg-green-500 px-2 py-1 rounded-md text-sm  hover:scale-105 duration-100 ease-in-out hover:bg-green-600">
-                    Add Product
+                    Add Party
                   </button>
                 </Link>
               </div>
             </header>
-            <div className="p-3 pb-1   ">
+            <div className="p-3">
               <div className="overflow-x-auto">
                 <table className="table-auto w-full">
                   <thead className="text-xs font-semibold uppercase text-gray-400 bg-gray-50">
@@ -128,53 +133,61 @@ function ProductList() {
                         <div className="font-semibold text-left">Name</div>
                       </th>
                       <th className="p-2 whitespace-nowrap">
-                        <div className="font-semibold text-left">HSN</div>
+                        <div className="font-semibold text-left">Acc Group</div>
                       </th>
                       <th className="p-2 whitespace-nowrap">
-                        <div className="font-semibold text-left">GST</div>
+                        <div className="font-semibold text-left">Mobile</div>
                       </th>
-                      <th colSpan={2} className="p-2 whitespace-nowrap ">
-                        <div className="font-semibold text-left">ACTIONS</div>
+                      <th className="p-2 whitespace-nowrap">
+                        <div className="font-semibold text-left">Email</div>
+                      </th>
+                      <th colSpan={2} className="p-2 whitespace-nowrap">
+                        <div className="font-semibold text-left">Action</div>
                       </th>
                     </tr>
                   </thead>
                   <tbody className="text-sm leading-[40px] divide-y divide-gray-100 ">
-                    {productData.length > 0 ? (
-                      productData.map((item, index) => (
+                    {partyData.length > 0 ? (
+                      partyData.map((item, index) => (
                         <tr key={index}>
                           <td className="p-2 whitespace-nowrap">
                             <div className="flex items-center">
                               <div className="font-medium text-gray-800">
-                                {item?.product_name}
+                                {item.partyName}
                               </div>
                             </div>
                           </td>
-                          {/* <td className="p-2 whitespace-nowrap">
-                            <div className="text-left"> {item.place}</div>
-                          </td> */}
                           <td className="p-2 whitespace-nowrap">
-                            <div className="text-left"> {item?.hsn_code}</div>
-                          </td>
-                          <td className="p-2 whitespace-nowrap">
-                            <div className="text-left"> {item?.igst}</div>
-                          </td>
-
-                          <td className="p-2 whitespace-nowrap ">
-                            <div className=" text-center">
+                            <div className="text-left">
                               {" "}
-                              <Link to={`/pUsers/editProduct/${item._id}`}>
-                                <FaEdit className="hover:scale-125 cursor-pointer duration-100 ease-in-out" />
+                              {item.accountGroup}
+                            </div>
+                          </td>
+                          <td className="p-2 whitespace-nowrap">
+                            <div className="text-left">
+                              {" "}
+                              {item.mobileNumber}
+                            </div>
+                          </td>
+                          <td className="p-2 whitespace-nowrap">
+                            <div className="text-left"> {item.emailID}</div>
+                          </td>
+                          <td className="p-2 whitespace-nowrap">
+                            <div className="text-left">
+                              {" "}
+                              <Link to={`/pUsers/editParty/${item._id}`}>
+                                <FaEdit className="hover:scale-125 duration-150 ease-in-out cursor-pointer" />
                               </Link>
                             </div>
                           </td>
-                          <td className="p-2 whitespace-nowrap ">
-                            <div className=" text-center">
+                          <td className="p-2 whitespace-nowrap">
+                            <div className="text-left">
                               {" "}
                               <MdDelete
                                 onClick={() => {
-                                  handleDelete(item._id);
+                                  deleteHandler(item._id);
                                 }}
-                                className="hover:scale-125 cursor-pointer duration-100 ease-in-out"
+                                className="hover:scale-125 duration-150 ease-in-out cursor-pointer "
                               />
                             </div>
                           </td>
@@ -187,7 +200,7 @@ function ProductList() {
                           style={{ marginTop: "20px" }}
                           colSpan={5}
                         >
-                          No organizations found
+                          No parties were found
                         </td>
                       </tr>
                     )}
@@ -196,10 +209,10 @@ function ProductList() {
               </div>
             </div>
           </div>
-          <div className="mt-5 mb-5">
+          <div className="mt-5">
             <Pagination
               postPerPage={postPerPage}
-              totalPosts={products.length}
+              totalPosts={parties.length}
               setCurrentPage={setCurrentPage}
               currentPage={currentPage}
             />
@@ -210,4 +223,4 @@ function ProductList() {
   );
 }
 
-export default ProductList;
+export default PartyList;

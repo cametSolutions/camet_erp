@@ -227,11 +227,11 @@ function EditProduct() {
 
         console.log(res.data.data);
         const {
-          _id,
+       
           product_name,
           product_code,
           balance_stock,
-          distributor_id,
+     
           brand,
           category,
           sub_category,
@@ -244,11 +244,7 @@ function EditProduct() {
           purchase_stock,
           Priceleveles,
           GodownList,
-          cgst,
-          sgst,
-          igst,
-          cess,
-          addl_cess,
+     
         } = res.data.data;
 
         setProduct_name(product_name);

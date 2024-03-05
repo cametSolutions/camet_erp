@@ -841,7 +841,7 @@ export const getTransactionDetails = async (req, res) => {
 export const addParty = async (req, res) => {
   try {
     const {
-      cpm_id,
+      cpm_id: cmp_id,
       Primary_user_id,
       accountGroup,
       partyName,
@@ -858,7 +858,7 @@ export const addParty = async (req, res) => {
     } = req.body;
 
     const party = new PartyModel({
-      cpm_id,
+      cmp_id,
       Primary_user_id,
       accountGroup,
       partyName,
@@ -1316,22 +1316,108 @@ export const editProduct = async (req, res) => {
       addl_cess,
     };
 
-    console.log("dataToSave",dataToSave);
+    console.log("dataToSave", dataToSave);
 
     const updateProduct = await productModel.findOneAndUpdate(
       { _id: productId },
       dataToSave,
       { new: true }
     );
-    res
-      .status(200)
-      .json({
-        success: true,
-        message: "Product updated successfully",
-        data: updateProduct,
-      });
+    res.status(200).json({
+      success: true,
+      message: "Product updated successfully",
+      data: updateProduct,
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
+
+// @desc get party list
+// route get/api/pUsers/PartyList;
+
+export const PartyList = async (req, res) => {
+  const userId = req.pUserId;
+  const cmp_id = req.params.cmp_id;
+  try {
+    const partyList = await PartyModel.find({
+      Primary_user_id: userId,
+      cmp_id: cmp_id,
+    });
+    console.log("partyList", partyList);
+    if (partyList) {
+      res
+        .status(200)
+        .json({ message: "parties fetched", partyList: partyList });
+    } else {
+      res.status(404).json({ message: "No parties found" });
+    }
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Internal server error, try again!" });
+  }
+};
+
+
+// @desc delete party
+// route delete/api/pUsers/deleteParty;
+
+export const deleteParty = async (req, res) => {
+  const partyId = req.params.id;
+  try {
+    const deletePartyFromList = await PartyModel.findByIdAndDelete(partyId);
+    if (deletePartyFromList) {
+      return res.status(200).json({ success: true, message: "Party deleted successfully" });
+    } else {
+      return res.status(400).json({ success: false, message: "Party deletion failed" });
+    }
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ success: false, message: "Internal server error, try again!" });
+  }
+};
+
+
+// @desc  getting a single party detail for edit
+// route get/api/pUsers/getSinglePartyDetails
+
+export const getSinglePartyDetails = async (req, res) => {
+  const partyId = req.params.id;
+  try {
+    const getSinglePartyDetails = await PartyModel.findById(partyId);
+    res.status(200).json({ success: true, data: getSinglePartyDetails });
+  } catch (error) {
+    console.error(error);
+    res
+      .status(500)
+      .json({ success: false, message: "Internal server error, try again!" });
+  }
+};
+
+// @desc  edit editParty details
+// route get/api/pUsers/editParty
+
+export const editParty = async (req, res) => {
+  const party_id = req.params.id;
+
+  console.log(req.body);
+
+  try {
+
+    const updateParty = await PartyModel.findOneAndUpdate(
+      { _id: party_id },
+      req.body,
+      { new: true }
+    );
+    res.status(200).json({
+      success: true,
+      message: "Party updated successfully",
+      data: updateParty,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
+};
+
+

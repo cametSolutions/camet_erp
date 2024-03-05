@@ -31,5 +31,11 @@
     }
   } */
 
+  .hover_scale {
+    @apply hover:scale-105 duration-200 ease-in-out transition-all transform  ;
+  }
+  
+
+
 
   
