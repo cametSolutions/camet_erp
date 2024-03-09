@@ -3,7 +3,9 @@ import { createSlice } from "@reduxjs/toolkit";
 const initialState = {
   party: {},
   items: [],
-  selectedPriceLevel:""
+  selectedPriceLevel:"",
+  additionalCharges:[],
+  finalAmount:0
 };
 
 export const invoiceSlice = createSlice({
@@ -39,6 +41,7 @@ export const invoiceSlice = createSlice({
       const id = action.payload._id;
       const igst = action.payload?.igst|| 0;
       const discount = action.payload?.discount|| 0;
+      const discountPercentage = action.payload?.discountPercentage|| 0;
       const newTotal = action.payload?.total|| 0;
 
       const indexToUpdate = state.items.findIndex((el) => el._id === id);
@@ -46,10 +49,24 @@ export const invoiceSlice = createSlice({
         state.items[indexToUpdate].total = newTotal;
         state.items[indexToUpdate].discount = discount;
         state.items[indexToUpdate].igst = igst;
+        state.items[indexToUpdate].discountPercentage = discountPercentage;
       }
     },
- 
 
+    addAdditionalCharges:(state,action)=>{
+      // state.items.additionalCharges=action.payload
+      const { index, row } = action.payload;
+      state.additionalCharges[index] = row;
+      
+    },
+    deleteRow(state, action) {
+      const index = action.payload;
+      state.additionalCharges.splice(index, 1);
+    },
+     AddFinalAmount:(state,action)=>{ 
+      state.finalAmount=action.payload
+      
+    },
     setPriceLevel:(state,action)=>{
       state.selectedPriceLevel=action.payload
     }
@@ -59,7 +76,7 @@ export const invoiceSlice = createSlice({
 
 
 // Action creators are generated for each case reducer function
-export const { addParty, removeParty, addItem, changeCount ,setPriceLevel,changeTotal,changeIgstAndDiscount} =
+export const { addParty, removeParty, addItem, changeCount ,setPriceLevel,changeTotal,changeIgstAndDiscount,addAdditionalCharges,AddFinalAmount,deleteRow} =
   invoiceSlice.actions;
 
 export default invoiceSlice.reducer;

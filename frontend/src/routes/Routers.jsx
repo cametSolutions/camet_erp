@@ -46,6 +46,7 @@ import Invoice from '../pages/primaryUsers/Invoice'
 import SearchParty from '../pages/primaryUsers/SearchParty'
 import AddItem from '../pages/primaryUsers/AddItem'
 import EditItem from '../pages/primaryUsers/EditItem'
+import Demo from '../pages/primaryUsers/Demo'
 
 
 
@@ -83,6 +84,7 @@ const Routers = () => {
         <Route path='/pUsers/searchParty' element={<ProtectedPriRoute><SearchParty/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/addItem' element={<ProtectedPriRoute><AddItem/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/editItem/:id' element={<ProtectedPriRoute><EditItem/></ProtectedPriRoute>}></Route>
+        <Route path='/pUsers/demo' element={<ProtectedPriRoute><Demo/></ProtectedPriRoute>}></Route>
 
 
         {/* admin */}

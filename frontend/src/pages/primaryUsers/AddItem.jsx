@@ -12,12 +12,13 @@ import { useDispatch } from "react-redux";
 import { changeCount } from "../../../slices/invoice";
 import { setPriceLevel } from "../../../slices/invoice";
 import { changeTotal } from "../../../slices/invoice";
+import { Dropdown } from "flowbite-react";
 
 function AddItem() {
   const [item, setItem] = useState([]);
   const [selectedPriceLevel, setSelectedPriceLevel] = useState("");
   const [refresh, setRefresh] = useState(false);
-  const [reduxItem, setReduxItem] = useState([]);
+  
 
   const cpm_id = useSelector(
     (state) => state.setSelectedOrganization.selectedOrg._id
@@ -26,10 +27,6 @@ function AddItem() {
   const itemsFromRedux = useSelector((state) => state.invoice.items);
   const priceLevelFromRedux =
     useSelector((state) => state.invoice.selectedPriceLevel) || "";
-  console.log(itemsFromRedux);
-  useEffect(() => {
-    setSelectedPriceLevel(priceLevelFromRedux);
-  }, []);
 
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -40,13 +37,15 @@ function AddItem() {
         const res = await api.get("/api/pUsers/getProducts", {
           withCredentials: true,
         });
-  
+
         if (itemsFromRedux.length > 0) {
-          const reduxItemIds = itemsFromRedux.map(el => el._id);
-          const updatedItems = res.data.productData.map(product => {
+          const reduxItemIds = itemsFromRedux.map((el) => el._id);
+          const updatedItems = res.data.productData.map((product) => {
             if (reduxItemIds.includes(product._id)) {
               // If the product ID exists in Redux, replace it with the corresponding Redux item
-              const reduxItem = itemsFromRedux.find(item => item._id === product._id);
+              const reduxItem = itemsFromRedux.find(
+                (item) => item._id === product._id
+              );
               return reduxItem;
             } else {
               return product;
@@ -55,6 +54,13 @@ function AddItem() {
           setItem(updatedItems);
         } else {
           setItem(res.data.productData);
+
+          if (priceLevelFromRedux === "") {
+            const defaultPriceLevel =
+              res.data.productData[0]?.Priceleveles[0]?.pricelevel;
+            setSelectedPriceLevel(defaultPriceLevel);
+            dispatch(setPriceLevel(defaultPriceLevel));
+          }
         }
       } catch (error) {
         console.log(error);
@@ -62,8 +68,10 @@ function AddItem() {
     };
     fetchProducts();
   }, [cpm_id, itemsFromRedux]);
-  
 
+  useEffect(() => {
+    setSelectedPriceLevel(priceLevelFromRedux);
+  }, []);
   useEffect(() => {
     if (itemsFromRedux.length > 0) {
       const updatedItems = item.map((currentItem) => {
@@ -120,8 +128,7 @@ function AddItem() {
       currentItem.count -= 1;
       updatedItems[index] = currentItem; // Update the item in the copied array
       setItem(updatedItems);
-    setRefresh(!refresh);
-
+      setRefresh(!refresh);
     }
     dispatch(changeCount(currentItem));
   };
@@ -141,32 +148,52 @@ function AddItem() {
       console.log(newItem);
 
       // Calculate total
-      newItem.total =
-        (newItem.Priceleveles.find(
+      // Find the price rate for the selected price level
+      const priceRate =
+        newItem.Priceleveles.find(
           (item) => item.pricelevel === selectedPriceLevel
-        )?.pricerate || 0) *
-          parseInt(newItem?.count) *
-          (1 - (newItem.discount || 0) / 100) +
-          ((newItem.Priceleveles.find(
-            (item) => item.pricelevel === selectedPriceLevel
-          )?.pricerate || 0) *
-            parseInt(newItem?.count) *
-            (newItem.newGst || newItem.igst || 0)) /
-            100 || 0;
+        )?.pricerate || 0;
+
+      // Calculate subtotal before discount
+      const subtotal = priceRate * parseInt(newItem?.count);
+      // Apply discount to subtotal
+
+      let discountedSubtotal;
+
+      if (newItem.discount !== 0 && newItem.discount !== undefined) {
+        discountedSubtotal = subtotal - (newItem?.discount || 0);
+      } else if (
+        newItem.discountPercentage !== 0 &&
+        newItem.discountPercentage !== undefined
+      ) {
+        console.log(newItem.discountPercentage);
+
+        discountedSubtotal =
+          subtotal - (subtotal * newItem.discountPercentage) / 100;
+      } else {
+        discountedSubtotal = subtotal;
+      }
+
+      // Calculate GST amount
+      const gstAmount =
+        (discountedSubtotal * (newItem.newGst || newItem.igst || 0)) / 100;
+
+      // Calculate total including discount and GST
+      newItem.total = discountedSubtotal + gstAmount;
+
+      // Dispatch the updated total if it's greater than 0
       if (newItem.total > 0) {
         dispatch(changeTotal(newItem));
       }
 
-      console.log(newItem.total);
+      // Log the total for debugging
 
       return newItem;
     });
-
-    // Update the state with the modified items
     setItem(updatedItems);
   }, [refresh, selectedPriceLevel]);
 
-  console.log(item);
+  const submitHandler = () => {};
 
   return (
     <div className="flex relative">
@@ -242,6 +269,27 @@ function AddItem() {
                 </div>
               </div>
             </div>
+          </div>
+
+          <div className="bg-white text-sm font-semibold p-4 flex items-center  gap-10">
+            <Dropdown label="car" inline>
+              <Dropdown.Item>Dashboard</Dropdown.Item>
+              <Dropdown.Item>Settings</Dropdown.Item>
+              <Dropdown.Item>Earnings</Dropdown.Item>
+              <Dropdown.Item>Sign out</Dropdown.Item>
+            </Dropdown>
+            <Dropdown label="bike" inline>
+              <Dropdown.Item>Dashboard</Dropdown.Item>
+              <Dropdown.Item>Settings</Dropdown.Item>
+              <Dropdown.Item>Earnings</Dropdown.Item>
+              <Dropdown.Item>Sign out</Dropdown.Item>
+            </Dropdown>
+            <Dropdown label="truck" inline>
+              <Dropdown.Item>Dashboard</Dropdown.Item>
+              <Dropdown.Item>Settings</Dropdown.Item>
+              <Dropdown.Item>Earnings</Dropdown.Item>
+              <Dropdown.Item>Sign out</Dropdown.Item>
+            </Dropdown>
           </div>
         </div>
 
@@ -365,14 +413,16 @@ function AddItem() {
         )}
 
         {item.length > 0 && (
-          <div className="sticky bottom-0 bg-white  w-full flex justify-center p-3 border-t  ">
-            <button
-              // onClick={submitHandler}
-              className="bg-violet-700  w-[85%] text-ld font-bold text-white p-2 rounded-md"
-            >
-              Continue
-            </button>
-          </div>
+          <Link to={"/pUsers/invoice"}>
+            <div className="sticky bottom-0 bg-white  w-full flex justify-center p-3 border-t  ">
+              <button
+                onClick={submitHandler}
+                className="bg-violet-700  w-[85%] text-ld font-bold text-white p-2 rounded-md"
+              >
+                Continue
+              </button>
+            </div>
+          </Link>
         )}
       </div>
     </div>

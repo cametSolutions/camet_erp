@@ -27,13 +27,13 @@ function EditItem() {
 
   const ItemsFromRedux = useSelector((state) => state.invoice.items);
   const selectedItem = ItemsFromRedux.filter((el) => el._id === id);
+  console.log(selectedItem);
   const selectedPriceLevel = useSelector(
     (state) => state.invoice.selectedPriceLevel
   );
   const orgId = useSelector(
     (state) => state.setSelectedOrganization.selectedOrg._id
   );
-  console.log(selectedPriceLevel);
   useEffect(() => {
     const fetchHsn = async () => {
       try {
@@ -64,6 +64,17 @@ function EditItem() {
       setQuantity(selectedItem[0]?.count || 1);
       setUnit(selectedItem[0]?.unit);
       setIgst(selectedItem[0]?.igst);
+
+      if (selectedItem[0].discountPercentage > 0) {
+        setDiscount(selectedItem[0].discountPercentage);
+        setType("percentage");
+      } else if (selectedItem[0].discount > 0) {
+        setDiscount(selectedItem[0].discount);
+        setType("amount");
+      }else if(selectedItem[0].discountPercentage==0 && selectedItem[0].discount==0){
+        setDiscount("");
+
+      }
     }
   }, []);
 
@@ -105,15 +116,22 @@ function EditItem() {
 
   const submitHandler = () => {
     console.log(item);
-    const newItem = {...item};
+    const newItem = { ...item };
 
-    newItem.discount = discountAmount;
     newItem.total = totalAmount;
     newItem.newGst = igst;
+    if (type === "amount") {
+      newItem.discount = discountAmount;
+      newItem.discountPercentage = "";
+    } else {
+      newItem.discount = "";
+
+      newItem.discountPercentage = parseFloat(discountPercentage);
+    }
 
     console.log(newItem);
     dispatch(changeIgstAndDiscount(newItem));
-    navigate("/pUsers/addItem")
+    navigate("/pUsers/addItem");
   };
 
   return (
@@ -265,7 +283,7 @@ function EditItem() {
                         <div className="flex justify-between">
                           <p className="text-xs">Discount</p>
                           <div className="flex items-center gap-2">
-                            <p className="text-xs">{`(${discountPercentage.toFixed(
+                            <p className="text-xs">{`(${parseFloat(discountPercentage).toFixed(
                               2
                             )} % ) `}</p>
                             <p className="text-xs">{`₹ ${discountAmount}`}</p>
