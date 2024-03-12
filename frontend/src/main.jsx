@@ -28,7 +28,7 @@ axios.interceptors.response.use(function (response) {
 
 
 ReactDOM.createRoot(document.getElementById("root")).render(
-  <React.StrictMode>
+
     <BrowserRouter>
       <ToastContainer
         theme="dark"
@@ -41,5 +41,5 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         <App />
       </Provider>
     </BrowserRouter>
-  </React.StrictMode>
+
 );

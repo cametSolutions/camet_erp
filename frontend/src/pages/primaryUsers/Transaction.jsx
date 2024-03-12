@@ -1,12 +1,10 @@
 /* eslint-disable react/no-unknown-property */
 import { useEffect, useState } from "react";
 import api from "../../api/api";
-import { toast } from "react-toastify";
 import dayjs from "dayjs";
 import { IoArrowRedoOutline } from "react-icons/io5";
 import Sidebar from "../../components/homePage/Sidebar";
 import { IoReorderThreeSharp } from "react-icons/io5";
-import { Link } from "react-router-dom";
 import {useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { FcCancel } from "react-icons/fc";
@@ -41,7 +39,6 @@ console.log(org);
     fetchTransactions();
   }, []);
 
-  console.log(data);
 
   const filterOutstanding = (data) => {
     return data.filter((item) => {
@@ -68,7 +65,6 @@ console.log(org);
     }
   };
 
-  console.log(data);
 
   return (
     <div className="flex">
@@ -76,7 +72,7 @@ console.log(org);
         <Sidebar TAB={"transaction"}  showBar={showSidebar} />
       </div>
       <div className="flex-1">
-        <div className=" flex-1  lg:px-[110px] h-screen overflow-y-scroll  md:mt-4 pb-   ">
+        <div className=" flex-1  lg:px-[110px] h-screen overflow-y-scroll  md:mt-4    ">
           <div className="sticky top-0 flex flex-col z-30 bg-white">
             <div className="bg-white"></div>
             <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex items-center gap-2  ">

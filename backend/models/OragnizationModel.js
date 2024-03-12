@@ -22,7 +22,12 @@ const organizationSchema = new mongoose.Schema(
     state: { type: String },
     isBlocked: { type: Boolean, default: false },
     isApproved: { type: Boolean, default: false },
-    owner:{type:mongoose.Schema.Types.ObjectId,ref:"PrimaryUser"}
+    owner:{type:mongoose.Schema.Types.ObjectId,ref:"PrimaryUser"},
+    brands:{type:Array},
+    categories:{type:Array},
+    subcategories:{type:Array},
+    levelNames:{type:Array},
+    locations:{type:Array}
   },
   {
     timestamps: true,

@@ -145,6 +145,23 @@ function ReceiptDetails() {
             {data.paymentMethod}
           </p>
 
+          {
+            data.paymentMethod==="cheque" && (
+
+              <div className="flex flex-col text-gray-500">
+
+          <p className="font-semibold text-sm mt-3 uppercase " >
+            {`Cheque Number: ${data.paymentDetails.chequeNumber}`}
+           
+          </p>
+          <p className="font-semibold text-sm  uppercase " >
+          {`Cheque Date: ${data.paymentDetails.chequeDate}`}           
+          </p>
+              </div>
+
+            )
+          }
+
           {(data.paymentMethod == "cheque" || data.paymentMethod == "upi") && (
             <h3 className="text-sm font-semibold mt-1 text-gray-500">
               {data.paymentDetails.bank}

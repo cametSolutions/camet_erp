@@ -1,78 +1,65 @@
 import React, { useState } from 'react';
 
-function YourComponent() {
-  const [rows, setRows] = useState([{ id: 1, greaterThan: '', upto: '', taxabilityType: '', igstRate: '', cgstRate: '', sgstUtgstRate: '', basedOnValue: '', basedOnQuantity: '' }]);
+const Table = () => {
+  const [rows, setRows] = useState([{ level: '', rate: '' }]);
 
   const handleAddRow = () => {
-    const newRow = { id: rows.length + 1, greaterThan: '', upto: '', taxabilityType: '', igstRate: '', cgstRate: '', sgstUtgstRate: '', basedOnValue: '', basedOnQuantity: '' };
-    setRows([...rows, newRow]);
+    setRows([...rows, { level: '', rate: '' }]);
   };
 
-  const handleDeleteRow = (id) => {
-    const updatedRows = rows.filter(row => row.id !== id);
-    setRows(updatedRows);
+  const handleLevelChange = (index, value) => {
+    const newRows = [...rows];
+    newRows[index].level = value;
+    setRows(newRows);
   };
 
-  const handleChange = (id, e) => {
-    const { name, value } = e.target;
-    const updatedRows = rows.map(row => {
-      if (row.id === id) {
-        return { ...row, [name]: value };
-      }
-      return row;
-    });
-    setRows(updatedRows);
-  };
-
-  const isExemptOrNilRatedOrNonGST = (taxabilityType) => {
-    return taxabilityType === 'Exempt' || taxabilityType === 'Nil Rated' || taxabilityType === 'Non GST';
+  const handleRateChange = (index, value) => {
+    const newRows = [...rows];
+    newRows[index].rate = value;
+    setRows(newRows);
   };
 
   return (
-    <div>
-      <table className="min-w-full divide-y divide-gray-200">
-        <thead>
+    <div className="container mx-auto mt-8">
+      <table className="table-fixed w-full bg-white shadow-md rounded-lg">
+        <thead className="bg-gray-200">
           <tr>
-            <th>Actions</th>
-            <th>Greater than</th>
-            <th>Upto</th>
-            <th>Taxability Type</th>
-            <th>IGST Rate</th>
-            <th>CGST Rate</th>
-            <th>SGST/UTGST Rate</th>
-            <th>Based On Value</th>
-            <th>Based On Quantity</th>
+            <th className="w-1/2 px-4 py-2">Level Name</th>
+            <th className="w-1/2 px-4 py-2">Rate</th>
           </tr>
         </thead>
-        <tbody className="bg-white divide-y divide-gray-200">
-          {rows.map((row) => (
-            <tr key={row.id}>
-              <td>
-                <button onClick={() => handleDeleteRow(row.id)}>Delete</button>
-              </td>
-              <td><input type="text" name="greaterThan" value={row.greaterThan} onChange={(e) => handleChange(row.id, e)} /></td>
-              <td><input type="text" name="upto" value={row.upto} onChange={(e) => handleChange(row.id, e)} /></td>
-              <td>
-                <select name="taxabilityType" value={row.taxabilityType} onChange={(e) => handleChange(row.id, e)}>
-                  <option value="">Select</option>
-                  <option value="Exempt">Exempt</option>
-                  <option value="Nil Rated">Nil Rated</option>
-                  <option value="Non GST">Non GST</option>
-                  <option value="Taxable">Taxable</option>
+        <tbody>
+          {rows.map((row, index) => (
+            <tr key={index} className="border-b">
+              <td className="px-4 py-2">
+                <select
+                  value={row.level}
+                  onChange={(e) => handleLevelChange(index, e.target.value)}
+                  className="block w-full py-2 px-4 border border-gray-300 rounded-md bg-white text-sm focus:outline-none"
+                >
+                  {/* Options for dropdown */}
+                  <option value="Option 1">Option 1</option>
+                  <option value="Option 2">Option 2</option>
+                  <option value="Option 3">Option 3</option>
                 </select>
               </td>
-              <td><input type="text" name="igstRate" value={row.igstRate} onChange={(e) => handleChange(row.id, e)} disabled={isExemptOrNilRatedOrNonGST(row.taxabilityType)} /></td>
-              <td><input type="text" name="cgstRate" value={row.cgstRate} onChange={(e) => handleChange(row.id, e)} disabled={isExemptOrNilRatedOrNonGST(row.taxabilityType)} /></td>
-              <td><input type="text" name="sgstUtgstRate" value={row.sgstUtgstRate} onChange={(e) => handleChange(row.id, e)} disabled={isExemptOrNilRatedOrNonGST(row.taxabilityType)} /></td>
-              <td><input type="text" name="basedOnValue" value={row.basedOnValue} onChange={(e) => handleChange(row.id, e)} disabled={!isExemptOrNilRatedOrNonGST(row.taxabilityType)} /></td>
-              <td><input type="text" name="basedOnQuantity" value={row.basedOnQuantity} onChange={(e) => handleChange(row.id, e)} disabled={!isExemptOrNilRatedOrNonGST(row.taxabilityType)} /></td>
+              <td className="px-4 py-2">
+                <input
+                  type="text"
+                  value={row.rate}
+                  onChange={(e) => handleRateChange(index, e.target.value)}
+                  className="w-full py-2 px-4 border border-gray-300 rounded-md bg-white text-sm focus:outline-none"
+                />
+              </td>
             </tr>
           ))}
         </tbody>
       </table>
-      <button onClick={handleAddRow}>Add Row</button>
+      <button onClick={handleAddRow} className="mt-4 px-4 py-2 bg-blue-500 text-white rounded">
+        Add Row
+      </button>
     </div>
   );
-}
+};
 
-export default YourComponent;
+export default Table;

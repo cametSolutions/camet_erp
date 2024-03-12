@@ -13,6 +13,8 @@ import generateNumericOTP from "../utils/generateOtp.js";
 import OragnizationModel from "../models/OragnizationModel.js";
 import PartyModel from "../models/partyModel.js";
 import HsnModel from "../models/hsnModel.js";
+import productModel from "../models/productModel.js";
+import invoiceModel from "../models/invoiceModel.js";
 
 // @desc Register Primary user
 // route POST/api/pUsers/register
@@ -75,7 +77,7 @@ export const login = async (req, res) => {
   try {
     let primaryUser;
     // Check if the provided email looks like an email address
-    if (email.includes('@')) {
+    if (email.includes("@")) {
       // If it's an email address, find the user by email
       primaryUser = await PrimaryUser.findOne({ email: email });
     } else {
@@ -108,13 +110,13 @@ export const login = async (req, res) => {
 
     haveOutstanding.length > 0 ? (haveOut = true) : (haveOut = false);
 
-    const { userName, _id,sms } = primaryUser._doc;
+    const { userName, _id, sms } = primaryUser._doc;
     const token = generatePrimaryUserToken(res, primaryUser._id);
 
     return res.status(200).json({
       message: "Login successful",
       token,
-      data: { email, userName, _id, haveOut,sms},
+      data: { email, userName, _id, haveOut, sms },
     });
   } catch (error) {
     console.log(error);
@@ -168,14 +170,25 @@ export const getPrimaryUserData = async (req, res) => {
 // @desc Adding organizations by primary users
 // route POST/api/pUsers/addOrganizations
 export const addOrganizations = async (req, res) => {
-  const { name,  pin, state, country, email, mobile, gst, logo ,  flat,
+  const {
+    name,
+    pin,
+    state,
+    country,
+    email,
+    mobile,
+    gst,
+    logo,
+    flat,
     road,
-    landmark, senderId, website,
+    landmark,
+    senderId,
+    website,
     pan,
     financialYear,
     username,
-    password} =
-    req.body;
+    password,
+  } = req.body;
   console.log(req.file);
   console.log(req.body);
   const owner = req.pUserId;
@@ -245,24 +258,21 @@ export const getOrganizations = async (req, res) => {
   }
 };
 
-
 // @desc get organization detail foe edit
 // route GET/api/pUsers/getOrganizations
 
 export const getSingleOrganization = async (req, res) => {
   const OrgId = new mongoose.Types.ObjectId(req.params.id);
-  console.log("OrgId",OrgId);
+  console.log("OrgId", OrgId);
   try {
-    const organization = await Organization.findById(OrgId)
+    const organization = await Organization.findById(OrgId);
     if (organization) {
       return res.status(200).json({
         organizationData: organization,
         message: "Organization fetched",
       });
     } else {
-      return res
-        .status(404)
-        .json({ message: "No organization found " });
+      return res.status(404).json({ message: "No organization found " });
     }
   } catch (error) {
     console.log(error);
@@ -272,10 +282,6 @@ export const getSingleOrganization = async (req, res) => {
   }
 };
 
-
-
-
-
 // @desc Edit organization
 // @route POST /api/pUsers/editOrg/:id
 
@@ -283,28 +289,26 @@ export const editOrg = async (req, res) => {
   const orgId = req.params.id;
   try {
     const updatedOrg = await Organization.findByIdAndUpdate(orgId, req.body, {
-      new: true, 
-      runValidators: true, 
+      new: true,
+      runValidators: true,
     });
 
     if (!updatedOrg) {
-      return res.status(404).json({ success: false, message: 'Organization not found' });
+      return res
+        .status(404)
+        .json({ success: false, message: "Organization not found" });
     }
 
-    return res.status(200).json({ success: true, data: updatedOrg ,message: 'Company updated successfully'});
+    return res.status(200).json({
+      success: true,
+      data: updatedOrg,
+      message: "Company updated successfully",
+    });
   } catch (error) {
-    console.error('Error updating organization:', error);
-    return res.status(500).json({ success: false, message: 'Server error' });
+    console.error("Error updating organization:", error);
+    return res.status(500).json({ success: false, message: "Server error" });
   }
 };
-
-
-
-
-
-
-
-
 
 // @desc adding secondary users
 // route GET/api/pUsers/addSecUsers
@@ -400,7 +404,6 @@ export const fetchOutstandingTotal = async (req, res) => {
 
     outstandingData.sort((a, b) => a.party_name.localeCompare(b.party_name));
 
-
     if (outstandingData) {
       return res.status(200).json({
         outstandingData: outstandingData,
@@ -435,7 +438,7 @@ export const fetchOutstandingDetails = async (req, res) => {
       party_id: partyId,
       cmp_id: cmp_id,
       bill_pending_amt: { $gt: 0 },
-    }).sort({bill_date:1});
+    }).sort({ bill_date: 1 });
     if (outstandings) {
       return res.status(200).json({
         outstandings: outstandings,
@@ -467,7 +470,6 @@ export const confirmCollection = async (req, res) => {
   } = req.body;
   const paymentMethod = PaymentMethod;
 
-
   const {
     party_id,
     party_name,
@@ -475,8 +477,7 @@ export const confirmCollection = async (req, res) => {
     cmp_id,
     billData,
     enteredAmount,
-    mobile_no
-
+    mobile_no,
   } = collectionDetails;
 
   console.log("collectionDetails", collectionDetails);
@@ -515,18 +516,20 @@ export const confirmCollection = async (req, res) => {
         paymentDetails,
         agentName,
         agentId,
-        mobile_no
+        mobile_no,
       });
 
-      const savedTransaction=await transaction.save();
-      console.log("savedTransaction",savedTransaction);
+      const savedTransaction = await transaction.save();
+      console.log("savedTransaction", savedTransaction);
 
-      res.status(200).json({ message: "Your Collection is confirmed" ,id:savedTransaction._id});
+      res.status(200).json({
+        message: "Your Collection is confirmed",
+        id: savedTransaction._id,
+      });
       console.log("Documents updated successfully");
     } else {
       console.log("No matching documents found for the given criteria");
     }
-
   } catch (error) {
     console.error("Error updating documents:", error);
     res.status(500).json({ error: "Internal Server Error" });
@@ -753,7 +756,6 @@ export const sendOtp = async (req, res) => {
   }
 };
 
-
 // @desc check otp
 //  route POST/api/pUsers/submitOtp
 
@@ -765,12 +767,12 @@ export const submitOtp = async (req, res) => {
     const user = await primaryUserModel.findOne({ email: otpEmail });
 
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: "User not found" });
     }
 
     // Check if the user has an OTP and if it matches the submitted OTP
     if (user.otp !== parseInt(Otp)) {
-      return res.status(400).json({ message: 'Invalid OTP' });
+      return res.status(400).json({ message: "Invalid OTP" });
     }
 
     // // Check if the OTP has expired
@@ -779,14 +781,12 @@ export const submitOtp = async (req, res) => {
     // }
 
     // If all checks pass, you can consider the OTP valid
-    return res.status(200).json({ message: 'OTP is valid' });
-
+    return res.status(200).json({ message: "OTP is valid" });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ error: 'Internal server error' });
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
-
 
 // @desc reset password
 // route POST/api/pUsers/resetPassword
@@ -799,7 +799,7 @@ export const resetPassword = async (req, res) => {
     const user = await primaryUserModel.findOne({ email: otpEmail });
 
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: "User not found" });
     }
 
     // Update the user's password
@@ -808,11 +808,10 @@ export const resetPassword = async (req, res) => {
     // Save the updated user data
     await user.save();
 
-    return res.status(200).json({ message: 'Password reset successful' });
-
+    return res.status(200).json({ message: "Password reset successful" });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ error: 'Internal server error' });
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -821,12 +820,14 @@ export const resetPassword = async (req, res) => {
 
 export const getTransactionDetails = async (req, res) => {
   const receiptId = req.params.id;
-  
+
   try {
     const receiptDetails = await TransactionModel.findById(receiptId);
-    
+
     if (receiptDetails) {
-      res.status(200).json({message:"reception details fetched",data:receiptDetails });
+      res
+        .status(200)
+        .json({ message: "reception details fetched", data: receiptDetails });
     } else {
       res.status(404).json({ error: "Receipt not found" });
     }
@@ -834,16 +835,14 @@ export const getTransactionDetails = async (req, res) => {
     console.error("Error fetching receipt details:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
-}
-
-
-
+};
 
 // @desc adding new Party
 // route POst/api/pUsers/addParty
 export const addParty = async (req, res) => {
   try {
-    const { cpm_id,
+    const {
+      cpm_id: cmp_id,
       Primary_user_id,
       accountGroup,
       partyName,
@@ -856,10 +855,11 @@ export const addParty = async (req, res) => {
       creditPeriod,
       creditLimit,
       openingBalanceType,
-      openingBalanceAmount } = req.body;
+      openingBalanceAmount,
+    } = req.body;
 
     const party = new PartyModel({
-      cpm_id,
+      cmp_id,
       Primary_user_id,
       accountGroup,
       partyName,
@@ -872,7 +872,7 @@ export const addParty = async (req, res) => {
       creditPeriod,
       creditLimit,
       openingBalanceType,
-      openingBalanceAmount
+      openingBalanceAmount,
     });
 
     const result = await party.save();
@@ -896,14 +896,12 @@ export const addParty = async (req, res) => {
   }
 };
 
-
-
-
 // @desc adding new Hsn
 // route POst/api/pUsers/addHsn
 export const addHsn = async (req, res) => {
   try {
-    const { cpm_id,
+    const {
+      cpm_id,
       Primary_user_id,
       hsn,
       description,
@@ -915,9 +913,8 @@ export const addHsn = async (req, res) => {
       onValue,
       onQuantity,
       isRevisedChargeApplicable,
-      rows
-
-     } = req.body;
+      rows,
+    } = req.body;
 
     const hsnCreation = new HsnModel({
       cpm_id,
@@ -932,7 +929,7 @@ export const addHsn = async (req, res) => {
       onValue,
       onQuantity,
       isRevisedChargeApplicable,
-      rows
+      rows,
     });
 
     const result = await hsnCreation.save();
@@ -953,5 +950,561 @@ export const addHsn = async (req, res) => {
     return res
       .status(500)
       .json({ success: false, message: "Internal server error, try again!" });
+  }
+};
+
+// @desc adding new brands /categories /subcategories
+// route POst/api/pUsers/addDataToOrg
+export const addDataToOrg = async (req, res) => {
+  try {
+    const orgId = req.params.cmp_id;
+
+    console.log(req.body);
+
+    const org = await OragnizationModel.findById(orgId);
+    console.log(org);
+    if (org) {
+      const fieldToUpdate = Object.keys(req.body)[0];
+      const newData = req.body[fieldToUpdate];
+      if (org[fieldToUpdate].includes(newData)) {
+        return res.status(400).json({
+          success: false,
+          message: `${newData} already exists in ${fieldToUpdate}`,
+        });
+      }
+      org[fieldToUpdate].push(newData);
+      await org.save();
+      return res.status(200).json({
+        success: true,
+        message: "Data added successfully",
+      });
+    } else {
+      return res.status(404).json({
+        success: false,
+        message: "Organization not found",
+      });
+    }
+  } catch (error) {
+    console.error(error);
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error, try again!" });
+  }
+};
+
+// @desc edit brands /categories /subcategories
+// route POst/api/pUsers/editDataInOrg
+export const editDataInOrg = async (req, res) => {
+  try {
+    const orgId = req.params.cmp_id;
+    const fieldToUpdate = Object.keys(req.body)[0];
+    const newData = req.body[fieldToUpdate];
+    const index = parseInt(req.body.index);
+
+    console.log("fieldToUpdate", fieldToUpdate);
+    console.log("index", index);
+
+    const org = await OragnizationModel.findById(orgId);
+    if (!org) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Organization not found" });
+    }
+
+    org[fieldToUpdate][index] = newData;
+    await org.save();
+
+    return res
+      .status(200)
+      .json({ success: true, message: "Data updated successfully" });
+  } catch (error) {
+    console.error(error);
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error, try again!" });
+  }
+};
+
+// @desc delete brands /categories /subcategories
+// route POst/api/pUsers/deleteDataInOrg
+export const deleteDataInOrg = async (req, res) => {
+  try {
+    const orgId = req.params.cmp_id;
+    console.log(req.body);
+    const fieldToDelete = Object.keys(req.body)[0];
+    const indexToDelete = req.body[fieldToDelete];
+
+    const org = await OragnizationModel.findById(orgId);
+    console.log("org", org);
+    if (!org) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Organization not found" });
+    }
+
+    const neededField = org[fieldToDelete];
+    console.log("fieldToDelete", fieldToDelete);
+    console.log("neededField", neededField);
+    neededField.splice(indexToDelete, 1);
+    await org.save(); // Save the organization after deletion
+    return res
+      .status(200)
+      .json({ success: true, message: "Data deleted successfully" });
+
+    // return res.status(200).json({ success: true, message: "Data deleted successfully" });
+  } catch (error) {
+    console.error(error);
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error, try again!" });
+  }
+};
+
+// @desc fetch hsn of the companies
+// route get/api/pUsers/fetchHsn
+
+export const fetchHsn = async (req, res) => {
+  const cmp_id = req.params.cmp_id;
+  const userId = req.pUserId;
+  console.log("cmp_id", cmp_id);
+  console.log("userId", userId);
+  try {
+    const hsn = await HsnModel.find({
+      cpm_id: cmp_id,
+      Primary_user_id: userId,
+    });
+    console.log("hsn", hsn);
+
+    if (hsn) {
+      return res.status(200).json({ message: "hsn fetched", data: hsn });
+    } else {
+      return res.status(404).json({ message: "hsn data not found" });
+    }
+  } catch (error) {
+    console.log(error);
+    return res
+      .status(500)
+      .json({ status: false, message: "Internal server error" });
+  }
+};
+
+// @desc fetch filters like category sub category etc
+// route get/api/pUsers/fetchHsn
+
+export const fetchFilters = async (req, res) => {
+  const cmp_id = req.params.cmp_id;
+  const userId = req.pUserId;
+  try {
+    const filers = await OragnizationModel.findById(cmp_id);
+
+    const data = {
+      brands: filers.brands,
+      categories: filers.categories,
+      subcategories: filers.subcategories,
+    };
+
+    if (filers) {
+      return res.status(200).json({ message: "filers fetched", data: data });
+    } else {
+      return res.status(404).json({ message: "filers  not found" });
+    }
+  } catch (error) {
+    console.log(error);
+    return res
+      .status(500)
+      .json({ status: false, message: "Internal server error" });
+  }
+};
+
+// @desc adding new Product
+// route POst/api/pUsers/addProduct
+
+export const addProduct = async (req, res) => {
+  try {
+    const {
+      pUserId: distributor_id,
+      body: {
+        cmp_id,
+        product_name,
+        product_code,
+        balance_stock,
+        brand,
+        category,
+        sub_category,
+        unit,
+        alt_unit,
+        unit_conversion,
+        alt_unit_conversion,
+        // hsn_code,
+        purchase_price,
+        purchase_cost,
+        Priceleveles,
+        GodownList,
+      },
+    } = req;
+
+    let hsn_code = req.body.hsn_code;
+
+    // Fetch HSN details
+    const hsnDetails = await HsnModel.findById(hsn_code);
+
+    // Extract required fields from HSN details
+    let cgst, sgst, igst, cess, addl_cess;
+    if (hsnDetails) {
+      ({
+        igstRate: igst,
+        cgstRate: cgst,
+        sgstUtgstRate: sgst,
+        onValue: cess,
+        onQuantity: addl_cess,
+        hsn: hsn_code,
+      } = hsnDetails);
+    }
+
+    // Prepare data to save
+    const dataToSave = {
+      cmp_id,
+
+      product_name,
+      distributor_id,
+      product_code,
+      balance_stock,
+      brand,
+      category,
+      sub_category,
+      unit,
+      alt_unit,
+      unit_conversion,
+      alt_unit_conversion,
+      hsn_code,
+      purchase_price,
+      purchase_cost,
+      Priceleveles,
+      GodownList,
+      cgst,
+      sgst,
+      igst,
+      cess,
+      addl_cess,
+    };
+
+    // Save the product
+    const newProduct = await productModel.create(dataToSave);
+
+    // Return success response
+    return res.status(200).json({
+      success: true,
+      message: "Product added successfully",
+    });
+  } catch (error) {
+    console.error(error);
+
+    // Return error response
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error, try again!",
+    });
+  }
+};
+
+// @desc getting product list
+// route get/api/pUsers/getProducts
+
+export const getProducts = async (req, res) => {
+  const distributor_id = req.pUserId;
+  console.log(distributor_id);
+  try {
+    const products = await productModel.find({
+      distributor_id: distributor_id,
+    });
+    if (products) {
+      return res.status(200).json({
+        productData: products,
+        message: "Products fetched",
+      });
+    } else {
+      return res.status(404).json({ message: "No products were found " });
+    }
+  } catch (error) {
+    console.log(error);
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error, try again!" });
+  }
+};
+
+// @desc delete product from  product list
+// route get/api/pUsers/deleteProduct
+
+export const deleteProduct = async (req, res) => {
+  const productId = req.params.id;
+  console.log("productId", productId);
+  try {
+    const deletedProduct = await productModel.findByIdAndDelete(productId);
+    if (deletedProduct) {
+      return res.status(200).json({
+        success: true,
+        message: "Product deleted successfully",
+      });
+    } else {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found",
+      });
+    }
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error, try again!",
+    });
+  }
+};
+
+// @desc  getting a single product detail for edit
+// route get/api/pUsers/productDetails
+
+export const productDetails = async (req, res) => {
+  const productId = req.params.id;
+  try {
+    const productDetails = await productModel.findById(productId);
+    res.status(200).json({ success: true, data: productDetails });
+  } catch (error) {
+    console.error(error);
+    res
+      .status(500)
+      .json({ success: false, message: "Internal server error, try again!" });
+  }
+};
+
+// @desc  edit product details
+// route get/api/pUsers/editProduct
+
+export const editProduct = async (req, res) => {
+  const productId = req.params.id;
+
+  try {
+    const {
+      pUserId: distributor_id,
+      body: {
+        product_name,
+        product_code,
+        balance_stock,
+        brand,
+        category,
+        sub_category,
+        unit,
+        alt_unit,
+        unit_conversion,
+        alt_unit_conversion,
+        // hsn_code,
+        purchase_price,
+        purchase_cost,
+        Priceleveles,
+        GodownList,
+      },
+    } = req;
+
+    let hsn_code = req.body.hsn_code;
+
+    // Fetch HSN details
+    const hsnDetails = await HsnModel.findById(hsn_code);
+
+    // Extract required fields from HSN details
+    let cgst, sgst, igst, cess, addl_cess;
+    if (hsnDetails) {
+      ({
+        igstRate: igst,
+        cgstRate: cgst,
+        sgstUtgstRate: sgst,
+        onValue: cess,
+        onQuantity: addl_cess,
+        hsn: hsn_code,
+      } = hsnDetails);
+    }
+
+    // Prepare data to save
+    const dataToSave = {
+      product_name,
+      distributor_id,
+      product_code,
+      balance_stock,
+      brand,
+      category,
+      sub_category,
+      unit,
+      alt_unit,
+      unit_conversion,
+      alt_unit_conversion,
+      hsn_code,
+      purchase_price,
+      purchase_cost,
+      Priceleveles,
+      GodownList,
+      cgst,
+      sgst,
+      igst,
+      cess,
+      addl_cess,
+    };
+
+    console.log("dataToSave", dataToSave);
+
+    const updateProduct = await productModel.findOneAndUpdate(
+      { _id: productId },
+      dataToSave,
+      { new: true }
+    );
+    res.status(200).json({
+      success: true,
+      message: "Product updated successfully",
+      data: updateProduct,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
+};
+
+// @desc get party list
+// route get/api/pUsers/PartyList;
+
+export const PartyList = async (req, res) => {
+  const userId = req.pUserId;
+  const cmp_id = req.params.cmp_id;
+  try {
+    const partyList = await PartyModel.find({
+      Primary_user_id: userId,
+      cmp_id: cmp_id,
+    });
+    console.log("partyList", partyList);
+    if (partyList) {
+      res
+        .status(200)
+        .json({ message: "parties fetched", partyList: partyList });
+    } else {
+      res.status(404).json({ message: "No parties found" });
+    }
+  } catch (error) {
+    res
+      .status(500)
+      .json({ success: false, message: "Internal server error, try again!" });
+  }
+};
+
+// @desc delete party
+// route delete/api/pUsers/deleteParty;
+
+export const deleteParty = async (req, res) => {
+  const partyId = req.params.id;
+  try {
+    const deletePartyFromList = await PartyModel.findByIdAndDelete(partyId);
+    if (deletePartyFromList) {
+      return res
+        .status(200)
+        .json({ success: true, message: "Party deleted successfully" });
+    } else {
+      return res
+        .status(400)
+        .json({ success: false, message: "Party deletion failed" });
+    }
+  } catch (error) {
+    console.error(error);
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error, try again!" });
+  }
+};
+
+// @desc  getting a single party detail for edit
+// route get/api/pUsers/getSinglePartyDetails
+
+export const getSinglePartyDetails = async (req, res) => {
+  const partyId = req.params.id;
+  try {
+    const getSinglePartyDetails = await PartyModel.findById(partyId);
+    res.status(200).json({ success: true, data: getSinglePartyDetails });
+  } catch (error) {
+    console.error(error);
+    res
+      .status(500)
+      .json({ success: false, message: "Internal server error, try again!" });
+  }
+};
+
+// @desc  edit editParty details
+// route get/api/pUsers/editParty
+
+export const editParty = async (req, res) => {
+  const party_id = req.params.id;
+
+  console.log(req.body);
+
+  try {
+    const updateParty = await PartyModel.findOneAndUpdate(
+      { _id: party_id },
+      req.body,
+      { new: true }
+    );
+    res.status(200).json({
+      success: true,
+      message: "Party updated successfully",
+      data: updateParty,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
+};
+
+// @desc create in voice
+
+// route POST /api/pUsers/
+export const createInvoice = async (req, res) => {
+  const Primary_user_id = req.pUserId;
+  try {
+    const {
+      orgId,
+      party,
+      items,
+      priceLevelFromRedux,
+      additionalChargesFromRedux,
+      lastAmount,
+    } = req.body;
+
+    //  // Validate input
+    //  if (!party || !items || !priceLevelFromRedux || !lastAmount) {
+    //    return res.status(400).json({
+    //      success: false,
+    //      message: "Missing required fields",
+    //    });
+    //  }
+
+    console.log(req.body);
+
+    const invoice = new invoiceModel({
+      cmp_id: orgId, // Corrected typo and used correct assignment operator
+      party,
+      items,
+      priceLevel: priceLevelFromRedux, // Corrected typo and used correct assignment operator
+      additionalCharges: additionalChargesFromRedux, // Corrected typo and used correct assignment operator
+      finalAmount: lastAmount, // Corrected typo and used correct assignment operator
+      Primary_user_id,
+    });
+
+    const result = await invoice.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Invoice created successfully",
+      data: result,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error, try again!",
+      error: error.message, // Include error message for debugging
+    });
   }
 };
