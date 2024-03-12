@@ -7,18 +7,27 @@ import { IoIosSearch } from "react-icons/io";
 import api from "../../api/api";
 import { MdOutlineQrCodeScanner } from "react-icons/md";
 import { useSelector } from "react-redux";
-import { addItem } from "../../../slices/invoice";
+import { addItem,removeItem } from "../../../slices/invoice";
 import { useDispatch } from "react-redux";
 import { changeCount } from "../../../slices/invoice";
 import { setPriceLevel } from "../../../slices/invoice";
 import { changeTotal } from "../../../slices/invoice";
 import { Dropdown } from "flowbite-react";
+import { set } from "mongoose";
 
 function AddItem() {
   const [item, setItem] = useState([]);
   const [selectedPriceLevel, setSelectedPriceLevel] = useState("");
   const [refresh, setRefresh] = useState(false);
-  
+  const [filterRefresh, setFilterRefresh] = useState(false);
+  const [brands, setBrands] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [subCategories, setSubCategories] = useState([]);
+  const [selectedBrand, setSelectedBrand] = useState("");
+  const [selectedCategory, setseleCtedCategory] = useState("");
+  const [selectedSubCategory, setSelectedSubCategory] = useState("");
+  const [search, setSearch] = useState("");
+  const [priceLevels, setPriceLevels] = useState([]);
 
   const cpm_id = useSelector(
     (state) => state.setSelectedOrganization.selectedOrg._id
@@ -55,12 +64,12 @@ function AddItem() {
         } else {
           setItem(res.data.productData);
 
-          if (priceLevelFromRedux === "") {
-            const defaultPriceLevel =
-              res.data.productData[0]?.Priceleveles[0]?.pricelevel;
-            setSelectedPriceLevel(defaultPriceLevel);
-            dispatch(setPriceLevel(defaultPriceLevel));
-          }
+          // if (priceLevelFromRedux === "") {
+          //   const defaultPriceLevel =
+          //     res.data.productData[0]?.Priceleveles[0]?.pricelevel;
+          //   setSelectedPriceLevel(defaultPriceLevel);
+          //   dispatch(setPriceLevel(defaultPriceLevel));
+          // }
         }
       } catch (error) {
         console.log(error);
@@ -68,6 +77,25 @@ function AddItem() {
     };
     fetchProducts();
   }, [cpm_id, itemsFromRedux]);
+
+  useEffect(() => {
+    const priceLevelSet = Array.from(
+      new Set(
+        item.flatMap((item) =>
+          item?.Priceleveles.map((level) => level?.pricelevel)
+        )
+      )
+    );
+    setPriceLevels(priceLevelSet);
+    console.log(priceLevelSet);
+
+    if (priceLevelFromRedux === "") {
+      const defaultPriceLevel =
+      priceLevelSet[0]
+      setSelectedPriceLevel(defaultPriceLevel);
+      dispatch(setPriceLevel(defaultPriceLevel));
+    }
+  }, [item]);
 
   useEffect(() => {
     setSelectedPriceLevel(priceLevelFromRedux);
@@ -99,16 +127,84 @@ function AddItem() {
     }
   }, [itemsFromRedux]);
 
+  const orgId = useSelector(
+    (state) => state.setSelectedOrganization.selectedOrg._id
+  );
+  useEffect(() => {
+    const fetchFilters = async () => {
+      try {
+        const res = await api.get(`/api/pUsers/fetchFilters/${orgId}`, {
+          withCredentials: true,
+        });
+
+        const { brands, categories, subcategories } = res.data.data;
+
+        setBrands(brands);
+        setCategories(categories);
+        setSubCategories(subcategories);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    fetchFilters();
+  }, [orgId]);
+
+
+  
+
+  const filterItems = (items, brand, category, subCategory, searchTerm) => {
+    return items.filter((item) => {
+      // Check if the item matches the brand filter
+      const brandMatch = !brand || item.brand === brand;
+
+      // Check if the item matches the category filter
+      const categoryMatch = !category || item.category === category;
+
+      // Check if the item matches the subcategory filter
+      const subCategoryMatch =
+        !subCategory || item.sub_category === subCategory;
+
+      // Check if the item matches the search term
+      const searchMatch =
+        !searchTerm ||
+        item.product_name.toLowerCase().includes(searchTerm.toLowerCase());
+
+      // Return true if all conditions are met
+      return brandMatch && categoryMatch && subCategoryMatch && searchMatch;
+    });
+  };
+
+  const filteredItems = filterItems(
+    item,
+    selectedBrand,
+    selectedCategory,
+    selectedSubCategory,
+    search
+  );
+
+
+  console.log(filteredItems);
+
+
+
+
+
   const handleAddClick = (index) => {
     // Toggle the state of 'added' for the clicked item
-    const updatedItems = [...item];
-    updatedItems[index].added = !updatedItems[index].added;
+    const updatedItems = filteredItems.map((item, i) => {
+      if (i === index) {
+        // Return a new object with the 'added' property toggled
+        return { ...item, added: !item.added };
+      }
+      // Return the item unchanged for other indices
+      return item;
+   });
     setItem(updatedItems);
     setRefresh(!refresh);
     dispatch(addItem(updatedItems[index]));
   };
   const handleIncrement = (index) => {
-    const updatedItems = [...item]; // Make a copy of the array
+    const updatedItems = [...filteredItems]; // Make a copy of the array
     const currentItem = { ...updatedItems[index] }; // Make a copy of the item object
     if (!currentItem.count && currentItem.balance_stock >= 1) {
       currentItem.count = 1;
@@ -122,13 +218,17 @@ function AddItem() {
     dispatch(changeCount(currentItem));
   };
   const handleDecrement = (index) => {
-    const updatedItems = [...item]; // Make a copy of the array
-    const currentItem = { ...updatedItems[index] }; // Make a copy of the item object
+    const updatedItems = [...filteredItems]; // Make a copy of the array
+    const currentItem = { ...updatedItems[index] };
+    
+    console.log(currentItem.count);// Make a copy of the item object
     if (currentItem.count > 0) {
       currentItem.count -= 1;
       updatedItems[index] = currentItem; // Update the item in the copied array
       setItem(updatedItems);
       setRefresh(!refresh);
+    }else{
+      dispatch(removeItem(index))
     }
     dispatch(changeCount(currentItem));
   };
@@ -193,7 +293,10 @@ function AddItem() {
     setItem(updatedItems);
   }, [refresh, selectedPriceLevel]);
 
-  const submitHandler = () => {};
+  console.log(item);
+
+
+  console.log(filteredItems);
 
   return (
     <div className="flex relative">
@@ -201,7 +304,7 @@ function AddItem() {
         <Sidebar TAB={"invoice"} />
       </div>
 
-      <div className="flex-1 bg-slate-50 h-screen overflow-y-scroll relative ">
+      <div className="flex-1 bg-slate-50 h-screen overflow-y-scroll  ">
         <div className="sticky top-0">
           <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex justify-between  items-center gap-2  ">
             <div className="flex items-center gap-2">
@@ -220,11 +323,22 @@ function AddItem() {
                   value={selectedPriceLevel}
                   className="block w-full p-1 px-3 truncate text-sm  border rounded-lg border-gray-100 bg-[#012a4a] text-white focus:ring-blue-500 focus:border-blue-500"
                 >
-                  {item[0]?.Priceleveles.map((el, index) => (
+                  {priceLevels.length > 0 ? (
+                    priceLevels.map((el, index) => (
+                      <option key={index} value={el}>
+                        {el}
+                      </option>
+                    ))
+                  ) : (
+                    <option key="no-price-level" value="No price level added">
+                      No price level added
+                    </option>
+                  )}
+                  {/* {priceLevels.map((el, index) => (
                     <option key={index} value={el?.pricelevel}>
                       {el?.pricelevel}
                     </option>
-                  ))}
+                  ))} */}
                 </select>
               </div>
               <MdOutlineQrCodeScanner className="text-white text-lg  cursor-pointer md:text-xl" />
@@ -254,9 +368,12 @@ function AddItem() {
                 </div>
                 <div class="relative">
                   <input
+                    onChange={(e) => {
+                      setSearch(e.target.value);
+                    }}
                     type="search"
                     id="default-search"
-                    class="block w-full p-2 ps-10 text-sm text-gray-900 border  rounded-lg border-gray-300  bg-gray-50 focus:ring-blue-500 focus:border-blue-500"
+                    className="block w-full p-2 text-sm text-gray-900 border  rounded-lg border-gray-300  bg-gray-50 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="Search party by Item name..."
                     required
                   />
@@ -272,33 +389,84 @@ function AddItem() {
           </div>
 
           <div className="bg-white text-sm font-semibold p-4 flex items-center  gap-10">
-            <Dropdown label="car" inline>
-              <Dropdown.Item>Dashboard</Dropdown.Item>
-              <Dropdown.Item>Settings</Dropdown.Item>
-              <Dropdown.Item>Earnings</Dropdown.Item>
-              <Dropdown.Item>Sign out</Dropdown.Item>
+            <Dropdown
+              label={selectedBrand === "" ? "Brand" : selectedBrand}
+              inline
+            >
+              {brands.length > 0 ? (
+                <>
+                  <Dropdown.Item onClick={() => setSelectedBrand("")}>
+                    All
+                  </Dropdown.Item>
+                  {brands.map((el, index) => (
+                    <Dropdown.Item
+                      onClick={() => setSelectedBrand(el)}
+                      key={index}
+                    >
+                      {el}
+                    </Dropdown.Item>
+                  ))}
+                </>
+              ) : (
+                <Dropdown.Item>No brands</Dropdown.Item>
+              )}
             </Dropdown>
-            <Dropdown label="bike" inline>
-              <Dropdown.Item>Dashboard</Dropdown.Item>
-              <Dropdown.Item>Settings</Dropdown.Item>
-              <Dropdown.Item>Earnings</Dropdown.Item>
-              <Dropdown.Item>Sign out</Dropdown.Item>
+
+            <Dropdown
+              label={selectedCategory === "" ? "Category" : selectedCategory}
+              inline
+            >
+              {categories.length > 0 ? (
+                <>
+                  <Dropdown.Item onClick={() => setseleCtedCategory("")}>
+                    All
+                  </Dropdown.Item>
+                  {categories.map((el, index) => (
+                    <Dropdown.Item
+                      onClick={() => setseleCtedCategory(el)}
+                      key={index}
+                    >
+                      {el}
+                    </Dropdown.Item>
+                  ))}
+                </>
+              ) : (
+                <Dropdown.Item>No Categories</Dropdown.Item>
+              )}
             </Dropdown>
-            <Dropdown label="truck" inline>
-              <Dropdown.Item>Dashboard</Dropdown.Item>
-              <Dropdown.Item>Settings</Dropdown.Item>
-              <Dropdown.Item>Earnings</Dropdown.Item>
-              <Dropdown.Item>Sign out</Dropdown.Item>
+            <Dropdown
+              label={
+                selectedSubCategory === "" ? "Subcategory" : selectedSubCategory
+              }
+              inline
+            >
+              {subCategories.length > 0 ? (
+                <>
+                  <Dropdown.Item onClick={() => setSelectedSubCategory("")}>
+                    All
+                  </Dropdown.Item>
+                  {subCategories.map((el, index) => (
+                    <Dropdown.Item
+                      onClick={() => setSelectedSubCategory(el)}
+                      key={index}
+                    >
+                      {el}
+                    </Dropdown.Item>
+                  ))}
+                </>
+              ) : (
+                <Dropdown.Item>No Subcategories</Dropdown.Item>
+              )}
             </Dropdown>
           </div>
         </div>
 
-        {item.length === 0 ? (
-          <div className="bg-white p-4 py-2 pb-6 mt-4 flex justify-center items-center rounded-sm cursor-pointer border-b-2">
+        {filteredItems.length === 0 ? (
+          <div className="bg-white p-4 py-2 pb-6 mt-4 flex justify-center items-center rounded-sm cursor-pointer border-b-2 h-screen">
             <p>No products available</p>
           </div>
         ) : (
-          item.map((el, index) => (
+          filteredItems.map((el, index) => (
             <div
               key={index}
               className="bg-white p-4 py-2 pb-6  mt-4 flex justify-between items-center  rounded-sm cursor-pointer border-b-2 "
@@ -313,7 +481,7 @@ function AddItem() {
                     <p>
                       ₹{" "}
                       {
-                        el.Priceleveles.find(
+                        el?.Priceleveles.find(
                           (item) => item.pricelevel === selectedPriceLevel
                         )?.pricerate
                       }{" "}
@@ -416,7 +584,7 @@ function AddItem() {
           <Link to={"/pUsers/invoice"}>
             <div className="sticky bottom-0 bg-white  w-full flex justify-center p-3 border-t  ">
               <button
-                onClick={submitHandler}
+                // onClick={submitHandler}
                 className="bg-violet-700  w-[85%] text-ld font-bold text-white p-2 rounded-md"
               >
                 Continue

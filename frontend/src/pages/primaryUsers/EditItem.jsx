@@ -71,15 +71,17 @@ function EditItem() {
       } else if (selectedItem[0].discount > 0) {
         setDiscount(selectedItem[0].discount);
         setType("amount");
-      }else if(selectedItem[0].discountPercentage==0 && selectedItem[0].discount==0){
+      } else if (
+        selectedItem[0].discountPercentage == 0 &&
+        selectedItem[0].discount == 0
+      ) {
         setDiscount("");
-
       }
     }
   }, []);
 
   useEffect(() => {
-    const taxExclusivePrice = parseFloat(newPrice) * parseInt(quantity);
+    const taxExclusivePrice = parseFloat(newPrice) * parseInt(quantity) || 0;
     setTaxExclusivePrice(taxExclusivePrice);
     // Calculate the discount amount and percentage
     let calculatedDiscountAmount = 0;
@@ -158,7 +160,7 @@ function EditItem() {
                     <MdModeEditOutline />
                   </div>
                   <div className="block pl-2 font-semibold text-xl self-start text-gray-700">
-                    <h2 className="leading-relaxed">{item.product_name}</h2>
+                    <h2 className="leading-relaxed">{item?.product_name }</h2>
                     <p className="text-sm text-gray-500 font-normal leading-relaxed">
                       Prices and Discount
                     </p>
@@ -172,10 +174,10 @@ function EditItem() {
                       </label>
                       <input
                         disabled
-                        value={newPrice}
+                        value={newPrice || 0}
                         type="text"
                         className="px-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm border-gray-300 rounded-md focus:outline-none text-gray-600"
-                        placeholder="Event title"
+                        placeholder="Price"
                       />
                     </div>
 
@@ -254,24 +256,16 @@ function EditItem() {
                         Amount
                       </button>
                     </div>
-                    <div className="relative focus-within:text-gray-600 text-gray-400">
-                      <span className="absolute inset-y-0 left-0 flex items-center pl-2">
-                        GST @
-                      </span>
-                      <span className="absolute inset-y-0 left-0 flex items-center pl-[100px]">
-                        %
-                      </span>
-                      <select
-                        value={igst}
-                        onChange={(e) => setIgst(e.target.value)}
-                        className="pr-4  pl-16 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm border-gray-300 rounded-md focus:outline-none text-gray-600 appearance-none"
-                      >
-                        {hsn.map((el, index) => (
-                          <option key={index} value={el.igstRate}>
-                            {el.igstRate}
-                          </option>
-                        ))}
-                      </select>
+
+                    <div className="flex flex-col">
+                      <label className="leading-loose">Tax Rate</label>
+                      <input
+                        disabled
+                        value={` GST @ ${igst} %`}
+                        type="text"
+                        className="px-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm border-gray-300 rounded-md focus:outline-none text-gray-600"
+                        placeholder="Event title"
+                      />
                     </div>
 
                     <div className="bg-slate-200 p-3 font-semibold flex flex-col gap-2 text-gray-500">
@@ -283,9 +277,9 @@ function EditItem() {
                         <div className="flex justify-between">
                           <p className="text-xs">Discount</p>
                           <div className="flex items-center gap-2">
-                            <p className="text-xs">{`(${parseFloat(discountPercentage).toFixed(
-                              2
-                            )} % ) `}</p>
+                            <p className="text-xs">{`(${parseFloat(
+                              discountPercentage
+                            ).toFixed(2)} % ) `}</p>
                             <p className="text-xs">{`₹ ${discountAmount}`}</p>
                           </div>
                         </div>
@@ -317,7 +311,10 @@ function EditItem() {
                     </div>
                   </div>
                   <div className="pt-4 flex items-center space-x-4">
-                    <button className="flex justify-center items-center w-full text-gray-900 px-4 py-3 rounded-md focus:outline-none">
+                    <button
+                      onClick={() => navigate("/pUsers/addItem")}
+                      className="flex justify-center items-center w-full text-gray-900 px-4 py-3 rounded-md focus:outline-none"
+                    >
                       <svg
                         className="w-6 h-6 mr-3"
                         fill="none"

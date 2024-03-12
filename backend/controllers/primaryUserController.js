@@ -14,6 +14,7 @@ import OragnizationModel from "../models/OragnizationModel.js";
 import PartyModel from "../models/partyModel.js";
 import HsnModel from "../models/hsnModel.js";
 import productModel from "../models/productModel.js";
+import invoiceModel from "../models/invoiceModel.js";
 
 // @desc Register Primary user
 // route POST/api/pUsers/register
@@ -1087,6 +1088,34 @@ export const fetchHsn = async (req, res) => {
   }
 };
 
+// @desc fetch filters like category sub category etc
+// route get/api/pUsers/fetchHsn
+
+export const fetchFilters = async (req, res) => {
+  const cmp_id = req.params.cmp_id;
+  const userId = req.pUserId;
+  try {
+    const filers = await OragnizationModel.findById(cmp_id);
+
+    const data = {
+      brands: filers.brands,
+      categories: filers.categories,
+      subcategories: filers.subcategories,
+    };
+
+    if (filers) {
+      return res.status(200).json({ message: "filers fetched", data: data });
+    } else {
+      return res.status(404).json({ message: "filers  not found" });
+    }
+  } catch (error) {
+    console.log(error);
+    return res
+      .status(500)
+      .json({ status: false, message: "Internal server error" });
+  }
+};
+
 // @desc adding new Product
 // route POst/api/pUsers/addProduct
 
@@ -1095,6 +1124,7 @@ export const addProduct = async (req, res) => {
     const {
       pUserId: distributor_id,
       body: {
+        cmp_id,
         product_name,
         product_code,
         balance_stock,
@@ -1133,6 +1163,8 @@ export const addProduct = async (req, res) => {
 
     // Prepare data to save
     const dataToSave = {
+      cmp_id,
+
       product_name,
       distributor_id,
       product_code,
@@ -1354,10 +1386,11 @@ export const PartyList = async (req, res) => {
       res.status(404).json({ message: "No parties found" });
     }
   } catch (error) {
-    res.status(500).json({ success: false, message: "Internal server error, try again!" });
+    res
+      .status(500)
+      .json({ success: false, message: "Internal server error, try again!" });
   }
 };
-
 
 // @desc delete party
 // route delete/api/pUsers/deleteParty;
@@ -1367,16 +1400,21 @@ export const deleteParty = async (req, res) => {
   try {
     const deletePartyFromList = await PartyModel.findByIdAndDelete(partyId);
     if (deletePartyFromList) {
-      return res.status(200).json({ success: true, message: "Party deleted successfully" });
+      return res
+        .status(200)
+        .json({ success: true, message: "Party deleted successfully" });
     } else {
-      return res.status(400).json({ success: false, message: "Party deletion failed" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Party deletion failed" });
     }
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ success: false, message: "Internal server error, try again!" });
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error, try again!" });
   }
 };
-
 
 // @desc  getting a single party detail for edit
 // route get/api/pUsers/getSinglePartyDetails
@@ -1403,7 +1441,6 @@ export const editParty = async (req, res) => {
   console.log(req.body);
 
   try {
-
     const updateParty = await PartyModel.findOneAndUpdate(
       { _id: party_id },
       req.body,
@@ -1420,4 +1457,54 @@ export const editParty = async (req, res) => {
   }
 };
 
+// @desc create in voice
 
+// route POST /api/pUsers/
+export const createInvoice = async (req, res) => {
+  const Primary_user_id = req.pUserId;
+  try {
+    const {
+      orgId,
+      party,
+      items,
+      priceLevelFromRedux,
+      additionalChargesFromRedux,
+      lastAmount,
+    } = req.body;
+
+    //  // Validate input
+    //  if (!party || !items || !priceLevelFromRedux || !lastAmount) {
+    //    return res.status(400).json({
+    //      success: false,
+    //      message: "Missing required fields",
+    //    });
+    //  }
+
+    console.log(req.body);
+
+    const invoice = new invoiceModel({
+      cmp_id: orgId, // Corrected typo and used correct assignment operator
+      party,
+      items,
+      priceLevel: priceLevelFromRedux, // Corrected typo and used correct assignment operator
+      additionalCharges: additionalChargesFromRedux, // Corrected typo and used correct assignment operator
+      finalAmount: lastAmount, // Corrected typo and used correct assignment operator
+      Primary_user_id,
+    });
+
+    const result = await invoice.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Invoice created successfully",
+      data: result,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error, try again!",
+      error: error.message, // Include error message for debugging
+    });
+  }
+};

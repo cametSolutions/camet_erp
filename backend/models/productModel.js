@@ -5,6 +5,11 @@ const productSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  cmp_id:{
+    type:String,
+    required:true
+  },
+
   product_code: {
     type: String,
   },

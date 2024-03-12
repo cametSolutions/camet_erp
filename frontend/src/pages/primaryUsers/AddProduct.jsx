@@ -397,6 +397,9 @@ function AddProduct() {
     }
   };
 
+
+  const cmp_id=useSelector((state)=>state.setSelectedOrganization.selectedOrg._id);
+
   const submitHandler = async () => {
     console.log("haiii");
     // Check required fields
@@ -464,6 +467,7 @@ function AddProduct() {
 
     // Create form data
     const formData = {
+      cmp_id,
       product_name,
       product_code,
       balance_stock,
