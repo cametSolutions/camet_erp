@@ -1122,7 +1122,7 @@ export const fetchFilters = async (req, res) => {
 export const addProduct = async (req, res) => {
   try {
     const {
-      pUserId: distributor_id,
+      pUserId: Primary_user_id,
       body: {
         cmp_id,
         product_name,
@@ -1166,7 +1166,7 @@ export const addProduct = async (req, res) => {
       cmp_id,
 
       product_name,
-      distributor_id,
+      Primary_user_id,
       product_code,
       balance_stock,
       brand,
@@ -1211,11 +1211,11 @@ export const addProduct = async (req, res) => {
 // route get/api/pUsers/getProducts
 
 export const getProducts = async (req, res) => {
-  const distributor_id = req.pUserId;
-  console.log(distributor_id);
+  const Primary_user_id = req.pUserId;
+  console.log(Primary_user_id);
   try {
     const products = await productModel.find({
-      distributor_id: distributor_id,
+      Primary_user_id: Primary_user_id,
     });
     if (products) {
       return res.status(200).json({
@@ -1285,7 +1285,7 @@ export const editProduct = async (req, res) => {
 
   try {
     const {
-      pUserId: distributor_id,
+      pUserId: Primary_user_id,
       body: {
         product_name,
         product_code,
@@ -1326,7 +1326,7 @@ export const editProduct = async (req, res) => {
     // Prepare data to save
     const dataToSave = {
       product_name,
-      distributor_id,
+      Primary_user_id,
       product_code,
       balance_stock,
       brand,
@@ -1508,3 +1508,20 @@ export const createInvoice = async (req, res) => {
     });
   }
 };
+
+
+export const addBulkProducts = async (req,res) => {
+  try {
+     // Assuming `data` is an array of product objects
+     const products = await Promise.all(req.body.data.map(async (product) => {
+       const newProduct = new productModel(product);
+       await newProduct.save();
+       return newProduct;
+     }));
+ 
+     return products;
+  } catch (error) {
+     console.error('Error adding bulk products:', error);
+     throw error; // Rethrow the error to handle it in the calling function
+  }
+ };

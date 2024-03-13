@@ -16,7 +16,7 @@ const productSchema = new mongoose.Schema({
   balance_stock: {
     type: String,
   },
-  distributor_id: {
+  Primary_user_id: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "PrimaryUser",
   },
@@ -82,7 +82,7 @@ const productSchema = new mongoose.Schema({
   state_cess: {
     type: String,
   },
-  product_id: {
+product_master_id: {
     type: String,
   },
   category_id: {
