@@ -1510,7 +1510,7 @@ export const createInvoice = async (req, res) => {
 };
 
 
-export const addBulkProducts = async (req,res) => {
+export const addBulkProducts = async (req, res) => {
   try {
      // Assuming `data` is an array of product objects
      const products = await Promise.all(req.body.data.map(async (product) => {
@@ -1519,9 +1519,18 @@ export const addBulkProducts = async (req,res) => {
        return newProduct;
      }));
  
-     return products;
+     // Send a success response with the added products
+     res.status(201).json({
+       message: 'Bulk products added successfully',
+       products: products,
+     });
   } catch (error) {
      console.error('Error adding bulk products:', error);
-     throw error; // Rethrow the error to handle it in the calling function
+     // Send an error response
+     res.status(500).json({
+       message: 'Error adding bulk products',
+       error: error.message,
+     });
   }
  };
+ 

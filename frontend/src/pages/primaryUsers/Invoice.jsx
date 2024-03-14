@@ -41,7 +41,6 @@ function Invoice() {
       setAdditional(true);
     }
   }, []);
-  const [modal, setModal] = useState(false);
   const [subTotal, setSubTotal] = useState(0);
   const dispatch = useDispatch();
   const handleToggleSidebar = () => {
@@ -131,26 +130,7 @@ function Invoice() {
       toast.error("Select a party first");
       return;
     }
-
-    const fetchHsn = async () => {
-      try {
-        const res = await api.get(`/api/pUsers/fetchHsn/${orgId}`, {
-          withCredentials: true,
-        });
-
-        console.log(res.data.data);
-        if (res.data.data.length <= 0) {
-          // If res.data.data is not empty, set showPopup to true
-          setOpenModal(true);
-        } else {
-          // If res.data.data is empty, navigate to "Puserts/addiertrm"
-          navigate("/pUsers/addItem");
-        }
-      } catch (error) {
-        console.log(error);
-      }
-    };
-    fetchHsn();
+    navigate("/pUsers/addItem")
   };
 
   console.log(party);
@@ -323,7 +303,7 @@ function Invoice() {
             </div>
 
             <div className="mt-3 p-6 border border-gray-300 h-10 rounded-md flex  cursor-pointer justify-center   items-center font-medium text-violet-500">
-              {/* <Link to={"/pUsers/addItem"}> */}
+              {/* <Link to={"/pUsers/addItem"}>  */}
               <div
                 onClick={handleAddItem}
                 className="flex justify-center gap-2 hover_scale "
@@ -331,7 +311,7 @@ function Invoice() {
                 <IoMdAdd className="text-2xl" />
                 <p>Add Item</p>
               </div>
-              {/* </Link> */}
+               {/* </Link> */}
             </div>
           </div>
         )}

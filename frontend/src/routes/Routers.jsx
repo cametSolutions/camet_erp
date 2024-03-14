@@ -47,6 +47,7 @@ import SearchParty from '../pages/primaryUsers/SearchParty'
 import AddItem from '../pages/primaryUsers/AddItem'
 import EditItem from '../pages/primaryUsers/EditItem'
 import Demo from '../pages/primaryUsers/Demo'
+import RetailersList from '../pages/primaryUsers/RetailersList'
 
 
 
@@ -65,6 +66,8 @@ const Routers = () => {
         <Route path='/pUsers/organizationList' element={<ProtectedPriRoute><OrganizationList/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/addSecUsers' element={<ProtectedPriRoute><AddSecUsers/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/secUsersList' element={<ProtectedPriRoute><SecUsersList/></ProtectedPriRoute>}></Route>
+        <Route path='/pUsers/retailers' element={<ProtectedPriRoute><RetailersList/></ProtectedPriRoute>}></Route>
+
         <Route path='/pUsers/payment' element={<ProtectedPriRoute><PaymentPri/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/outstanding' element={<ProtectedPriRoute>< PrimaryOutstanding/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/outstandingDetails/:party_id/:cmp_id/:total' element={<ProtectedPriRoute>< PrOutstandingDetails/></ProtectedPriRoute>}></Route>

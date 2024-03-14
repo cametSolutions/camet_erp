@@ -13,7 +13,6 @@ import { changeCount } from "../../../slices/invoice";
 import { setPriceLevel } from "../../../slices/invoice";
 import { changeTotal } from "../../../slices/invoice";
 import { Dropdown } from "flowbite-react";
-import { set } from "mongoose";
 
 function AddItem() {
   const [item, setItem] = useState([]);

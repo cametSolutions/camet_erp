@@ -16,6 +16,7 @@ import { IoArrowRedoOutline } from "react-icons/io5";
 import { FaCaretDown } from "react-icons/fa";
 import { FcCancel } from "react-icons/fc";
 import { useNavigate } from "react-router-dom";
+import { BiSolidAddToQueue } from "react-icons/bi";
 
 function Dashboard() {
   const [showSidebar, setShowSidebar] = useState(false);
@@ -110,36 +111,38 @@ function Dashboard() {
                 <div className="w-full px-6 ">
                   <div className="flex items-center px-2 py-3 md:px-5 md:py-2 shadow-sm rounded-md bg-slate-100">
                     <div className="p-3 rounded-full bg-green-500 bg-opacity-75 text-2xl text-white">
-                      <IoReceiptSharp />
+                      <BiSolidAddToQueue />
                     </div>
 
                     <div className="mx-5">
                       <h4 className=" sm:text-md md:text-2xl  font-semibold text-gray-700">
                         ₹{receiptTotal}
                       </h4>
-                      <div className="text-gray-500">Receipts</div>
+                      <div className="text-gray-500">Register</div>
                     </div>
                   </div>
                 </div>
               </div>
             </Link>
+            <Link to={"/pUsers/outstanding"}>
+              <div className="flex flex-wrap -mx-6  duration-150 hover:scale-105 ease-in-out cursor-pointer">
+                <div className="w-full px-6 ">
+                  <div className="flex items-center px-2 py-3 md:px-5 md:py-2 shadow-sm rounded-md bg-slate-100">
+                    <div className="p-3 rounded-full bg-red-500 bg-opacity-75 text-2xl text-white">
+                      <IoReceiptSharp />
+                    </div>
 
-            <div className="flex flex-wrap -mx-6  duration-150 hover:scale-105 ease-in-out cursor-pointer">
-              <div className="w-full px-6 ">
-                <div className="flex items-center px-2 py-3 md:px-5 md:py-2 shadow-sm rounded-md bg-slate-100">
-                  <div className="p-3 rounded-full bg-red-500 bg-opacity-75 text-2xl text-white">
-                    <BsGraphUp />
-                  </div>
-
-                  <div className="mx-5">
-                    <h4 className=" sm:text-md md:text-2xl  font-semibold text-gray-700">
-                      ₹0
-                    </h4>
-                    <div className="text-gray-500">Sale</div>
+                    <div className="mx-5">
+                      <h4 className=" sm:text-md md:text-2xl  font-semibold text-gray-700">
+                        ₹0
+                      </h4>
+                      <div className="text-gray-500">Reciept</div>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+            </Link>
+            <Link to={'/pUsers/invoice'}>
             <div className="flex flex-wrap -mx-6  duration-150 hover:scale-105 ease-in-out cursor-pointer">
               <div className="w-full px-6 ">
                 <div className="flex items-center px-2 py-3 md:px-5 md:py-2 shadow-sm rounded-md bg-slate-100">
@@ -156,6 +159,7 @@ function Dashboard() {
                 </div>
               </div>
             </div>
+            </Link>
             <div className="flex flex-wrap -mx-6  duration-150 hover:scale-105 ease-in-out cursor-pointer">
               <div className="w-full px-6 ">
                 <div className="flex items-center px-2 py-3 md:px-5 md:py-2 shadow-sm rounded-md bg-slate-100">

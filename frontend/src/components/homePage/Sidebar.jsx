@@ -18,9 +18,7 @@ import { IoReorderThreeSharp } from "react-icons/io5";
 import { MdDashboard } from "react-icons/md";
 import { TiUserAdd } from "react-icons/ti";
 import { HiDocumentText } from "react-icons/hi2";
-
-
-
+import { MdOutlineProductionQuantityLimits } from "react-icons/md";
 
 function Sidebar({ TAB, showBar }) {
   const [showSidebar, setShowSidebar] = useState(false);
@@ -43,7 +41,6 @@ function Sidebar({ TAB, showBar }) {
     addBank: false,
     bankList: false,
   });
-
 
   const user = localStorage.getItem("pUserData");
 
@@ -153,11 +150,8 @@ function Sidebar({ TAB, showBar }) {
     }
   };
 
-
   return (
     <div className="relative">
-    
-
       <aside
         className={` ${
           showSidebar
@@ -169,12 +163,12 @@ function Sidebar({ TAB, showBar }) {
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
         <div className="w-full relative">
-
-        <div 
-        onClick={handleSidebarItemClick}
-        className="text-white text-3xl absolute right-0 top-[-20px]  md:hidden  ">
-        <IoReorderThreeSharp/>
-        </div>
+          <div
+            onClick={handleSidebarItemClick}
+            className="text-white text-3xl absolute right-0 top-[-20px]  md:hidden  "
+          >
+            <IoReorderThreeSharp />
+          </div>
         </div>
         <div className="flex flex-col items-center mt-6 -mx-2">
           <img
@@ -267,16 +261,13 @@ function Sidebar({ TAB, showBar }) {
         <div className="">
           <div className="flex flex-col justify-between flex-1 mt-6  ">
             <nav>
-
-                <Link to={"/pUsers/dashboard"}>
+              <Link to={"/pUsers/dashboard"}>
                 <a
                   onClick={() => {
                     handleSidebarItemClick("outstanding");
                   }}
                   className={` ${
-                    TAB === "dash"
-                      ? "bg-gray-800 text-white"
-                      : "text-gray-400"
+                    TAB === "dash" ? "bg-gray-800 text-white" : "text-gray-400"
                   } hover:bg-gray-800 hover:text-white flex items-center px-4 py-2 mt-5 transition-colors duration-300 transform rounded-lg   `}
                   href="#"
                 >
@@ -285,156 +276,45 @@ function Sidebar({ TAB, showBar }) {
                   <span className="mx-4 font-medium">Dashboard</span>
                 </a>
               </Link>
-              <a
-                onClick={() => {
-                  // handleSidebarItemClick("addOrganizations");
-                  handleToggleSection("addOrg");
-                }}
-                className={` ${
-                  TAB === "addOrg" || TAB === "orgList"
-                    ? "bg-gray-800 text-white"
-                    : "text-gray-400"
-                } hover:bg-gray-800 hover:text-white flex items-center px-4 py-2 mt-5 transition-colors duration-300 transform rounded-lg   `}
-                href="#"
-              >
-                <BsFillBuildingsFill />
-                <span className="mx-4 font-medium">Company</span>
-              </a>
-              {expandedSections.addOrg && (
-                <div
-                  className="pl-8 mt-2 text-white flex flex-col gap-1 pt-2 animate__animated animate__fadeIn"
-                  style={{ animationDuration: "5s" }}
+
+              <Link to={"/pUsers/organizationList"}>
+                <a
+                  onClick={() => {
+                    handleSidebarItemClick("outstanding");
+                  }}
+                  className={` ${
+                    TAB === "orgList" || TAB === "addOrg"
+                      ? "bg-gray-800 text-white"
+                      : "text-gray-400"
+                  } hover:bg-gray-800 hover:text-white flex items-center px-4 py-2 mt-5 transition-colors duration-300 transform rounded-lg   `}
+                  href="#"
                 >
-                  {/* Add your sections here, for example: */}
-                  <label
-                    onClick={() => {
-                      handleSidebarItemClick("organizationListLive");
-                    }}
-                    className={` ${
-                      TAB === "addOrg" ? " bg-gray-800 text-white " : ""
-                    } rounded-lg flex items-center mb-3 hover:bg-gray-800 hover:text-white  cursor-pointer p-2`}
-                  >
-                    <div className="flex items-center gap-2 ">
-                      <IoIosCreate />
-                      <Link to={"/pUsers/addOrganization"}>
-                        <span className={`mr-2 p-2 `}>Create</span>
-                      </Link>
-                    </div>
-                    <div className="custom-checkbox"></div>
-                  </label>
+                  <BsFillBuildingsFill />
 
-                  <label
-                    onClick={() => {
-                      handleSidebarItemClick("organizationListBlocked");
-                    }}
-                    className={` ${
-                      TAB === "orgList" ? " bg-gray-800 text-white " : ""
-                    } rounded-lg flex items-center mb-3 hover:bg-gray-800 hover:text-white  cursor-pointer p-2`}
-                  >
-                    <div className="flex items-center  gap-2">
-                      <FaEye className="" />
-                      <Link to={"/pUsers/organizationList"}>
-                        <span className="mr-2 p-2">Display</span>
-                      </Link>
-                    </div>
-                    <div className="custom-checkbox"></div>
-                    {/* Add your logic for blocked section */}
-                  </label>
-                </div>
-              )}
-
-              {/* <a
-                onClick={() => {
-                  handleSidebarItemClick("organizationList");
-                }}
-                className={` ${
-                  TAB === "orgList" ? "bg-gray-800 text-white" : "text-gray-400"
-                } hover:bg-gray-800 hover:text-white flex items-center px-4 py-2 mt-5 transition-colors duration-300 transform rounded-lg   `}
-                href="#"
-              >
-                <svg
-                  className="w-5 h-5"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
+                  <span className="mx-4 font-medium">Company</span>
+                </a>
+              </Link>
+              <Link to={"/pUsers/retailers"}>
+                <a
+                  onClick={() => {
+                    handleSidebarItemClick("outstanding");
+                  }}
+                  className={` ${
+                    TAB === "agentLIst" || TAB === "addSec"
+                      ? "bg-gray-800 text-white"
+                      : "text-gray-400"
+                  } hover:bg-gray-800 hover:text-white flex items-center px-4 py-2 mt-5 transition-colors duration-300 transform rounded-lg   `}
+                  href="#"
                 >
-                  <path
-                    d="M16 7C16 9.20914 14.2091 11 12 11C9.79086 11 8 9.20914 8 7C8 4.79086 9.79086 3 12 3C14.2091 3 16 4.79086 16 7Z"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  />
-                  <path
-                    d="M12 14C8.13401 14 5 17.134 5 21H19C19 17.134 15.866 14 12 14Z"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  />
-                </svg>
+                  <SlUserFollow />
 
-                <span className="mx-4 font-medium">Your organizations</span>
-              </a> */}
+                  <span className="mx-4 font-medium">Retailers</span>
+                </a>
+              </Link>
 
-              {/* <Link to={"/pUsers/addSecUsers"}> */}
-              <a
-                onClick={() => {
-                  // handleSidebarItemClick("addAgents");
-                  handleToggleSection("addSec");
-                }}
-                className={` ${
-                  TAB === "addSec" ? "bg-gray-800 text-white" : "text-gray-400"
-                } hover:bg-gray-800 hover:text-white flex items-center px-4 py-2 mt-5 transition-colors duration-300 transform rounded-lg   `}
-                href="#"
-              >
-                <SlUserFollow />
-
-                <span className="mx-4 font-medium">Retailers</span>
-              </a>
-              {expandedSections.addSec && (
-                <div
-                  className="pl-8 mt-2 text-white flex flex-col gap-2 pt-2 animate__animated animate__fadeIn"
-                  style={{ animationDuration: "5s" }}
-                >
-                  {/* Add your sections here, for example: */}
-                  <label
-                    onClick={() => {
-                      handleSidebarItemClick("organizationListLive");
-                    }}
-                    className={` ${
-                      TAB === "addSec" ? " bg-gray-800 text-white " : ""
-                    } rounded-lg flex items-center mb-3 hover:bg-gray-800 hover:text-white  cursor-pointer p-2`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <IoIosCreate />
-                      <Link to={"/pUsers/addSecUsers"}>
-                        <span className="mr-2 p-2">Create</span>
-                      </Link>
-                    </div>
-                    <div className="custom-checkbox"></div>
-                    {/* Add your logic for live section */}
-                  </label>
-
-                  <label
-                    onClick={() => {
-                      handleSidebarItemClick("organizationListBlocked");
-                    }}
-                    className={` ${
-                      TAB === "agentLIst" ? " bg-gray-800 text-white " : ""
-                    } rounded-lg flex items-center mb-3 hover:bg-gray-800 hover:text-white  cursor-pointer p-2`}
-                  >
-                    <div className="flex items-center  gap-2">
-                      <FaEye />
-                      <Link to={"/pUsers/secUsersList"}>
-                        <span className="mr-2 p-2">Display</span>
-                      </Link>
-                    </div>
-                    <div className="custom-checkbox"></div>
-                    {/* Add your logic for blocked section */}
-                  </label>
-                </div>
-              )}
+             
+             
+         
 
               <a
                 onClick={() => {
@@ -494,23 +374,6 @@ function Sidebar({ TAB, showBar }) {
                 </div>
               )}
 
-              <Link to={"/pUsers/outstanding"}>
-                <a
-                  onClick={() => {
-                    handleSidebarItemClick("outstanding");
-                  }}
-                  className={` ${
-                    TAB === "outstanding"
-                      ? "bg-gray-800 text-white"
-                      : "text-gray-400"
-                  } hover:bg-gray-800 hover:text-white flex items-center px-4 py-2 mt-5 transition-colors duration-300 transform rounded-lg   `}
-                  href="#"
-                >
-                  <GiTakeMyMoney />
-
-                  <span className="mx-4 font-medium">Outstandings</span>
-                </a>
-              </Link>
               <Link to={"/pUsers/partyList"}>
                 <a
                   onClick={() => {
@@ -534,9 +397,7 @@ function Sidebar({ TAB, showBar }) {
                     handleSidebarItemClick("addParty");
                   }}
                   className={` ${
-                    TAB === "hsn"
-                      ? "bg-gray-800 text-white"
-                      : "text-gray-400"
+                    TAB === "hsn" ? "bg-gray-800 text-white" : "text-gray-400"
                   } hover:bg-gray-800 hover:text-white flex items-center px-4 py-2 mt-5 transition-colors duration-300 transform rounded-lg   `}
                   href="#"
                 >
@@ -558,29 +419,11 @@ function Sidebar({ TAB, showBar }) {
                   } hover:bg-gray-800 hover:text-white flex items-center px-4 py-2 mt-5 transition-colors duration-300 transform rounded-lg   `}
                   href="#"
                 >
-                  <GiTakeMyMoney />
+                  <MdOutlineProductionQuantityLimits />
 
                   <span className="mx-4 font-medium">Add Product</span>
                 </a>
               </Link>
-              <Link to={"/pUsers/invoice"}>
-                <a
-                  onClick={() => {
-                    handleSidebarItemClick("outstanding");
-                  }}
-                  className={` ${
-                    TAB === "invoice"
-                      ? "bg-gray-800 text-white"
-                      : "text-gray-400"
-                  } hover:bg-gray-800 hover:text-white flex items-center px-4 py-2 mt-5 transition-colors duration-300 transform rounded-lg   `}
-                  href="#"
-                >
-                  <GiTakeMyMoney />
-
-                  <span className="mx-4 font-medium">Invoice</span>
-                </a>
-              </Link>
-            
             </nav>
           </div>
         </div>

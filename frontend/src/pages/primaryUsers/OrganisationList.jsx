@@ -52,13 +52,27 @@ function OrganisationList() {
             onClick={handleToggleSidebar}
             className="block md:hidden text-3xl"
           />
-          <p> Companies </p>
+          <div className="flex items-center justify-between w-full">
+            <p>Your Companies</p>
+            <Link to={"/pUsers/addOrganization"}>
+              <button className="flex gap-2 bg-green-500 px-2 py-1 rounded-md text-sm  hover:scale-105 duration-100 ease-in-out hover:bg-green-600 mr-3">
+                Add Company
+              </button>
+            </Link>
+          </div>
         </div>
         <div className="flex flex-col h-full px-[5px]">
           {/* <!-- Table --> */}
           <div className="w-full max-w-[59rem] mx-auto  bg-white shadow-lg rounded-sm border  border-gray-200">
             <header className=" hidden md:block px-5 py-4 border-b border-gray-100 bg bg-[#261b56] text-white">
-              <h2 className="font-semibold ">Organizations</h2>
+              <div className="flex justify-between items-center">
+                <h2 className="font-semibold ">Your Companies</h2>
+                <Link to={"/pUsers/addOrganization"}>
+                  <button className="flex gap-2 bg-green-500 px-2 py-1 rounded-md text-sm  hover:scale-105 duration-100 ease-in-out hover:bg-green-600">
+                    Add Company
+                  </button>
+                </Link>
+              </div>
             </header>
             <div className="p-3">
               <div className="overflow-x-auto">
@@ -77,7 +91,7 @@ function OrganisationList() {
                       <th className="p-2 whitespace-nowrap">
                         <div className="font-semibold text-left">Mobile</div>
                       </th>
-                     
+
                       <th className="p-2 whitespace-nowrap">
                         <div className="font-semibold text-left">Gst No.</div>
                       </th>
@@ -115,7 +129,6 @@ function OrganisationList() {
                           <td className="p-2 whitespace-nowrap">
                             <div className="text-left"> {item.mobile}</div>
                           </td>
-                         
 
                           <td className="p-2 whitespace-nowrap">
                             <div className="text-left"> {item.gstNum}</div>
