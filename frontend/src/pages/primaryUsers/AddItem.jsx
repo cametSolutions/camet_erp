@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 /* eslint-disable react/no-unknown-property */
 import { useState, useEffect, useMemo } from "react";
 import Sidebar from "../../components/homePage/Sidebar";
@@ -14,7 +15,7 @@ import { setPriceLevel } from "../../../slices/invoice";
 import { changeTotal } from "../../../slices/invoice";
 import { Dropdown } from "flowbite-react";
 import { HashLoader } from "react-spinners";
-
+import { FixedSizeList as List } from "react-window";
 
 function AddItem() {
   const [item, setItem] = useState([]);
@@ -293,6 +294,124 @@ function AddItem() {
     dispatch(setPriceLevel(selectedValue));
   };
 
+
+  const Row = ({ index, style }) => {
+    const el = filteredItems[index];
+    return (
+      <div
+      style={style}
+      key={index}
+      className="bg-white p-4 py-2 pb-6  mt-4 flex justify-between items-center  rounded-sm cursor-pointer border-b-2 "
+    >
+      <div className="flex items-start gap-3 md:gap-4  ">
+        <div className="w-10 mt-1  uppercase h-10 rounded-lg bg-violet-200 flex items-center justify-center font-semibold text-gray-400">
+          {el.product_name.slice(0, 1)}
+        </div>
+        <div className="flex flex-col font-bold text-sm md:text-sm  gap-1 leading-normal">
+          <p>{el.product_name}</p>
+          <div className="flex gap-1 items-center">
+            <p>
+              ₹{" "}
+              {
+                el?.Priceleveles.find(
+                  (item) => item.pricelevel === selectedPriceLevel
+                )?.pricerate
+              }{" "}
+              /
+            </p>{" "}
+            <span className="text-[10px] mt-1">{el.unit}</span>
+          </div>
+          <div className="flex">
+            <p className="text-red-500">STOCK : </p>
+            <span>{el.balance_stock}</span>
+          </div>
+          <div>
+            <span>Total : ₹ </span>
+            <span>{el.total || 0}</span>
+          </div>
+        </div>
+      </div>
+      {el.added ? (
+        <div className="flex items-center flex-col gap-2">
+          <Link to={`/pUsers/editItem/${el._id}`}>
+            <button className=" mt-3  px-2 py-1  rounded-md border-violet-500 font-bold border  text-violet-500 text-xs">
+              Edit
+            </button>
+          </Link>
+          <div
+            className="py-2 px-3 inline-block bg-white  "
+            data-hs-input-number
+          >
+            <div className="flex items-center gap-x-1.5">
+              <button
+                onClick={() => handleDecrement(index)}
+                type="button"
+                className="size-6 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-md border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none"
+                data-hs-input-number-decrement
+              >
+                <svg
+                  className="flex-shrink-0 size-3.5"
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M5 12h14" />
+                </svg>
+              </button>
+              <input
+                className="p-0 w-6 bg-transparent border-0 text-gray-800 text-center focus:ring-0 "
+                type="text"
+                disabled
+                value={el.count ? el.count : 0} // Display the count from the state
+                data-hs-input-number-input
+              />
+              <button
+                onClick={() => {
+                  handleIncrement(index);
+                }}
+                type="button"
+                className="size-6 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-md border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none "
+                data-hs-input-number-increment
+              >
+                <svg
+                  className="flex-shrink-0 size-3.5"
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M5 12h14" />
+                  <path d="M12 5v14" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div>
+          <div
+            className="px-4 py-2 rounded-md border-violet-500 font-bold border-2 text-violet-500 text-xs"
+            onClick={() => handleAddClick(index)}
+          >
+            Add
+          </div>
+        </div>
+      )}
+    </div>
+    );
+  };
+
   return (
     <div className="flex relative">
       <div>
@@ -465,118 +584,17 @@ function AddItem() {
             <p>No products available</p>
           </div>
         ) : (
-          filteredItems.map((el, index) => (
-            <div
-              key={index}
-              className="bg-white p-4 py-2 pb-6  mt-4 flex justify-between items-center  rounded-sm cursor-pointer border-b-2 "
-            >
-              <div className="flex items-start gap-3 md:gap-4  ">
-                <div className="w-10 mt-1  uppercase h-10 rounded-lg bg-violet-200 flex items-center justify-center font-semibold text-gray-400">
-                  {el.product_name.slice(0, 1)}
-                </div>
-                <div className="flex flex-col font-bold text-sm md:text-sm  gap-1 leading-normal">
-                  <p>{el.product_name}</p>
-                  <div className="flex gap-1 items-center">
-                    <p>
-                      ₹{" "}
-                      {
-                        el?.Priceleveles.find(
-                          (item) => item.pricelevel === selectedPriceLevel
-                        )?.pricerate
-                      }{" "}
-                      /
-                    </p>{" "}
-                    <span className="text-[10px] mt-1">{el.unit}</span>
-                  </div>
-                  <div className="flex">
-                    <p className="text-red-500">STOCK : </p>
-                    <span>{el.balance_stock}</span>
-                  </div>
-                  <div>
-                    <span>Total : ₹ </span>
-                    <span>{el.total || 0}</span>
-                  </div>
-                </div>
-              </div>
-              {el.added ? (
-                <div className="flex items-center flex-col gap-2">
-                  <Link to={`/pUsers/editItem/${el._id}`}>
-                    <button className=" mt-3  px-2 py-1  rounded-md border-violet-500 font-bold border  text-violet-500 text-xs">
-                      Edit
-                    </button>
-                  </Link>
-                  <div
-                    className="py-2 px-3 inline-block bg-white  "
-                    data-hs-input-number
-                  >
-                    <div className="flex items-center gap-x-1.5">
-                      <button
-                        onClick={() => handleDecrement(index)}
-                        type="button"
-                        className="size-6 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-md border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none"
-                        data-hs-input-number-decrement
-                      >
-                        <svg
-                          className="flex-shrink-0 size-3.5"
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="24"
-                          height="24"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <path d="M5 12h14" />
-                        </svg>
-                      </button>
-                      <input
-                        className="p-0 w-6 bg-transparent border-0 text-gray-800 text-center focus:ring-0 "
-                        type="text"
-                        disabled
-                        value={el.count ? el.count : 0} // Display the count from the state
-                        data-hs-input-number-input
-                      />
-                      <button
-                        onClick={() => {
-                          handleIncrement(index);
-                        }}
-                        type="button"
-                        className="size-6 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-md border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none "
-                        data-hs-input-number-increment
-                      >
-                        <svg
-                          className="flex-shrink-0 size-3.5"
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="24"
-                          height="24"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <path d="M5 12h14" />
-                          <path d="M12 5v14" />
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div>
-                  <div
-                    className="px-4 py-2 rounded-md border-violet-500 font-bold border-2 text-violet-500 text-xs"
-                    onClick={() => handleAddClick(index)}
-                  >
-                    Add
-                  </div>
-                </div>
-              )}
-            </div>
-          ))
+          
+
+          <List
+          height={500} // Specify the height of your list
+          itemCount={filteredItems.length} // Specify the total number of items
+          itemSize={100} // Specify the height of each item
+          width="100%" // Specify the width of your list
+        >
+          {Row}
+        </List>
+         
         )}
 
         {item.length > 0 && (
