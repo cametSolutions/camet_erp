@@ -22,7 +22,8 @@ export const invoiceSlice = createSlice({
       state.items.push(action.payload);
     },
     removeItem: (state, action) => {
-      const index = action.payload;
+      const id = action.payload._id;
+      const index = state.items.findIndex((el) => el._id === id);
 
       state.items.splice(index, 1);
     },
@@ -37,7 +38,7 @@ export const invoiceSlice = createSlice({
     changeTotal: (state, action) => {
       const id = action.payload._id;
       const newTotal = action.payload?.total || 0;
-      const indexToUpdate = state.items.findIndex((el) => el._id === id);
+      const indexToUpdate = state.items.findIndex((el) => el._id == id);
       if (indexToUpdate !== -1) {
         state.items[indexToUpdate].total = newTotal;
       }
@@ -47,7 +48,7 @@ export const invoiceSlice = createSlice({
       const igst = action.payload?.igst || 0;
       const discount = action.payload?.discount || 0;
       const discountPercentage = action.payload?.discountPercentage || 0;
-      const newTotal = action.payload?.total || 0;
+      const newTotal = action.payload?.total.toFixed(2) || 0;
 
       const indexToUpdate = state.items.findIndex((el) => el._id === id);
       if (indexToUpdate !== -1) {
@@ -63,6 +64,9 @@ export const invoiceSlice = createSlice({
       const { index, row } = action.payload;
       state.additionalCharges[index] = row;
     },
+    removeAdditionalCharge: (state) => {
+      state.additionalCharges = [];
+    },
     deleteRow(state, action) {
       const index = action.payload;
       state.additionalCharges.splice(index, 1);
@@ -72,6 +76,9 @@ export const invoiceSlice = createSlice({
     },
     setPriceLevel: (state, action) => {
       state.selectedPriceLevel = action.payload;
+    },
+    removeAll: (state) => {
+      Object.assign(state, initialState);
     },
   },
 });
@@ -89,7 +96,8 @@ export const {
   addAdditionalCharges,
   AddFinalAmount,
   deleteRow,
-  
+  removeAll,
+  removeAdditionalCharge
 } = invoiceSlice.actions;
 
 export default invoiceSlice.reducer;

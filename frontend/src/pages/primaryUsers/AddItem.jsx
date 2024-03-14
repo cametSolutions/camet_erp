@@ -1,5 +1,5 @@
 /* eslint-disable react/no-unknown-property */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Sidebar from "../../components/homePage/Sidebar";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import { Link, useNavigate } from "react-router-dom";
@@ -14,6 +14,7 @@ import { setPriceLevel } from "../../../slices/invoice";
 import { changeTotal } from "../../../slices/invoice";
 import { Dropdown } from "flowbite-react";
 import { HashLoader } from "react-spinners";
+
 
 function AddItem() {
   const [item, setItem] = useState([]);
@@ -91,7 +92,6 @@ function AddItem() {
       )
     );
     setPriceLevels(priceLevelSet);
-    console.log(priceLevelSet);
 
     if (priceLevelFromRedux === "") {
       const defaultPriceLevel = priceLevelSet[0];
@@ -110,13 +110,13 @@ function AddItem() {
         const matchingItem = itemsFromRedux.find(
           (el) => el._id === currentItem._id
         );
-        console.log(matchingItem);
         if (matchingItem) {
           // If matching item found, return it with updated count and total
           return {
             ...currentItem,
             count: matchingItem.count,
             total: matchingItem.total,
+            
           };
         } else {
           // If no matching item found, return the current item
@@ -126,9 +126,8 @@ function AddItem() {
 
       // Update the state with the modified items
       setItem(updatedItems);
-      console.log(updatedItems);
     }
-  }, [itemsFromRedux]);
+  }, [itemsFromRedux,refresh]);
 
   const orgId = useSelector(
     (state) => state.setSelectedOrganization.selectedOrg._id
@@ -152,6 +151,8 @@ function AddItem() {
     fetchFilters();
   }, [orgId]);
 
+  ///////////////////////////filter items///////////////////////////////////
+
   const filterItems = (items, brand, category, subCategory, searchTerm) => {
     return items.filter((item) => {
       // Check if the item matches the brand filter
@@ -174,123 +175,123 @@ function AddItem() {
     });
   };
 
-  const filteredItems = filterItems(
-    item,
-    selectedBrand,
-    selectedCategory,
-    selectedSubCategory,
-    search
-  );
+  ///////////////////////////filter items call ///////////////////////////////////
 
-  console.log(filteredItems);
+  const filteredItems = useMemo(() => {
+    return filterItems(
+      item,
+      selectedBrand,
+      selectedCategory,
+      selectedSubCategory,
+      search
+    );
+  }, [item, selectedBrand, selectedCategory, selectedSubCategory, search,refresh]);
+
+  ///////////////////////////handleAddClick///////////////////////////////////
 
   const handleAddClick = (index) => {
-    // Toggle the state of 'added' for the clicked item
-    const updatedItems = filteredItems.map((item, i) => {
-      if (i === index) {
-        // Return a new object with the 'added' property toggled
-        return { ...item, added: !item.added };
-      }
-      // Return the item unchanged for other indices
-      return item;
-    });
+    const updatedItems = [...filteredItems]; // Create a shallow copy of the items
+    const itemToUpdate = updatedItems[index];
+    if (itemToUpdate) {
+      // Toggle the 'added' state of the item
+      itemToUpdate.added = !itemToUpdate.added;
+      itemToUpdate.count = 1;
+      const total = calculateTotal(itemToUpdate, selectedPriceLevel).toFixed(2);
+      itemToUpdate.total = total;
+
+      dispatch(changeTotal(itemToUpdate));
+    }
     setItem(updatedItems);
     setRefresh(!refresh);
     dispatch(addItem(updatedItems[index]));
   };
+
+  ///////////////////////////calculateTotal///////////////////////////////////
+
+  const calculateTotal = (item, selectedPriceLevel) => {
+    const priceRate =
+      item.Priceleveles.find((level) => level.pricelevel === selectedPriceLevel)
+        ?.pricerate || 0;
+
+    let subtotal = priceRate * parseInt(item?.count);
+    let discountedSubtotal = subtotal;
+
+    if (item.discount !== 0 && item.discount !== undefined) {
+      discountedSubtotal -= item.discount;
+    } else if (
+      item.discountPercentage !== 0 &&
+      item.discountPercentage !== undefined
+    ) {
+      discountedSubtotal -= (subtotal * item.discountPercentage) / 100;
+    }
+
+    const gstAmount =
+      (discountedSubtotal * (item.newGst || item.igst || 0)) / 100;
+    return discountedSubtotal + gstAmount;
+  };
+
+  ///////////////////////////handleIncrement///////////////////////////////////
+
   const handleIncrement = (index) => {
-    const updatedItems = [...filteredItems]; // Make a copy of the array
-    const currentItem = { ...updatedItems[index] }; // Make a copy of the item object
-    if (!currentItem.count && currentItem.balance_stock >= 1) {
+    const updatedItems = [...filteredItems];
+    const currentItem = { ...updatedItems[index] };
+
+    if (!currentItem.count) {
       currentItem.count = 1;
-    } else if (currentItem.count < currentItem.balance_stock) {
+    } else {
       currentItem.count += 1;
     }
-    updatedItems[index] = currentItem; // Update the item in the copied array
+
+    currentItem.total = calculateTotal(currentItem, selectedPriceLevel).toFixed(
+      2
+    );
+    updatedItems[index] = currentItem;
     setItem(updatedItems);
-    setRefresh(!refresh);
+    // setRefresh(!refresh);
 
     dispatch(changeCount(currentItem));
+    dispatch(changeTotal(currentItem));
   };
+
+  ///////////////////////////handleDecrement///////////////////////////////////
   const handleDecrement = (index) => {
     const updatedItems = [...filteredItems]; // Make a copy of the array
     const currentItem = { ...updatedItems[index] };
 
-    console.log(currentItem.count); // Make a copy of the item object
+    // Decrement the count if it's greater than 0
     if (currentItem.count > 0) {
       currentItem.count -= 1;
+      if (currentItem.count == 0) {
+        dispatch(removeItem(currentItem));
+        updatedItems[index].added=false
+        return
+      }
+
+      // Use the calculateTotal function to calculate the total for the current item
+      currentItem.total = calculateTotal(
+        currentItem,
+        selectedPriceLevel
+      ).toFixed(2);
+      console.log(currentItem.total);
+
       updatedItems[index] = currentItem; // Update the item in the copied array
       setItem(updatedItems);
       setRefresh(!refresh);
-    } else {
-      dispatch(removeItem(index));
+     
     }
+
     dispatch(changeCount(currentItem));
+
+    dispatch(changeTotal(currentItem));
   };
+
+  ///////////////////////////handlePriceLevelChange///////////////////////////////////
+
   const handlePriceLevelChange = (e) => {
     const selectedValue = e.target.value;
     setSelectedPriceLevel(selectedValue);
     dispatch(setPriceLevel(selectedValue));
   };
-
-  useEffect(() => {
-    const updatedItems = item.map((currentItem) => {
-      // Create a new object with the properties of currentItem
-      const newItem = {
-        ...currentItem,
-        total: 0, // Initialize total property
-      };
-      console.log(newItem);
-
-      // Calculate total
-      // Find the price rate for the selected price level
-      const priceRate =
-        newItem.Priceleveles.find(
-          (item) => item.pricelevel === selectedPriceLevel
-        )?.pricerate || 0;
-
-      // Calculate subtotal before discount
-      const subtotal = priceRate * parseInt(newItem?.count);
-      // Apply discount to subtotal
-
-      let discountedSubtotal;
-
-      if (newItem.discount !== 0 && newItem.discount !== undefined) {
-        discountedSubtotal = subtotal - (newItem?.discount || 0);
-      } else if (
-        newItem.discountPercentage !== 0 &&
-        newItem.discountPercentage !== undefined
-      ) {
-        console.log(newItem.discountPercentage);
-
-        discountedSubtotal =
-          subtotal - (subtotal * newItem.discountPercentage) / 100;
-      } else {
-        discountedSubtotal = subtotal;
-      }
-
-      // Calculate GST amount
-      const gstAmount =
-        (discountedSubtotal * (newItem.newGst || newItem.igst || 0)) / 100;
-
-      // Calculate total including discount and GST
-      newItem.total = discountedSubtotal + gstAmount;
-
-      // Dispatch the updated total if it's greater than 0
-      if (newItem.total > 0) {
-        dispatch(changeTotal(newItem));
-      }
-
-      // Log the total for debugging
-
-      return newItem;
-    });
-    setItem(updatedItems);
-  }, [refresh, selectedPriceLevel]);
-
-  console.log(item);
-
-  console.log(filteredItems);
 
   return (
     <div className="flex relative">

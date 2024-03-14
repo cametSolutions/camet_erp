@@ -1,5 +1,5 @@
 /* eslint-disable react/no-unescaped-entities */
-import { useEffect, useState } from "react";
+import { useEffect, useState,useMemo } from "react";
 import Sidebar from "../../components/homePage/Sidebar";
 import { IoReorderThreeSharp } from "react-icons/io5";
 import { IoMdAdd } from "react-icons/io";
@@ -21,6 +21,7 @@ import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import api from "../../api/api";
 import { IoIosAddCircle } from "react-icons/io";
+import { removeAll,removeAdditionalCharge } from "../../../slices/invoice";
 
 function Invoice() {
   const [showSidebar, setShowSidebar] = useState(false);
@@ -32,9 +33,10 @@ function Invoice() {
   const [rows, setRows] = useState(
     additionalChargesFromRedux.length > 0
       ? additionalChargesFromRedux
-      : [{ option: "", value: "", action: "add" }]
+      : [{ option: "option 1", value: "", action: "add" }]
   );
   const [additional, setAdditional] = useState(false);
+  const [refresh, setRefresh] = useState(false)
 
   useEffect(() => {
     if (additionalChargesFromRedux.length) {
@@ -99,23 +101,28 @@ function Invoice() {
   useEffect(() => {
     const subTotal = items
       .reduce((acc, curr) => {
-        return (acc = acc + (curr.total || 0));
+        return (acc = acc + (parseFloat(curr.total) || 0));
       }, 0)
-      .toFixed(2);
+      ;
+      console.log(subTotal);
     setSubTotal(subTotal);
   }, [items]);
 
-  console.log(additional);
 
-  const additionalChargesTotal = rows.reduce((acc, curr) => {
-    const value = curr.value === "" ? 0 : parseFloat(curr.value);
-    if (curr.action === "add") {
-      return acc + value;
-    } else if (curr.action === "sub") {
-      return acc - value;
-    }
-    return acc;
-  }, 0);
+  const additionalChargesTotal = useMemo(() => {
+    console.log("haoii");
+    return rows.reduce((acc, curr) => {
+      const value = curr.value === "" ? 0 : parseFloat(curr.value);
+      if (curr.action === "add") {
+        return acc + value;
+      } else if (curr.action === "sub") {
+        return acc - value;
+      }
+      return acc;
+    }, 0);
+ }, [rows,refresh]);
+
+ console.log(additionalChargesTotal);
   const totalAmount =
     parseFloat(subTotal) + additionalChargesTotal || parseFloat(subTotal);
 
@@ -133,8 +140,15 @@ function Invoice() {
     navigate("/pUsers/addItem")
   };
 
-  console.log(party);
-  console.log(items);
+  const cancelHandler=()=>{
+    setAdditional(false);
+    dispatch(removeAdditionalCharge())
+    setRows([{ option: "Option 1", value: "", action: "add" }])
+    
+
+  }
+
+
 
   const submitHandler = async () => {
     console.log("haii");
@@ -196,7 +210,9 @@ function Invoice() {
 
       console.log(res.data);
       toast.success(res.data.message);
+      
       navigate("/pUsers/dashboard");
+      dispatch(removeAll())
     } catch (error) {
       toast.error(error.response.data.message);
       console.log(error);
@@ -338,7 +354,7 @@ function Invoice() {
                   <div key={index} className="py-3 mt-0 px-4 bg-white ">
                     <div className="flex justify-between font-bold">
                       <p>{el.product_name}</p>
-                      <p> ₹ {el.total?.toFixed(2) ?? 0}</p>
+                      <p> ₹ {el.total ?? 0}</p>
                     </div>
                     <div className="flex justify-between items-center mt-2 ">
                       <div className="w-3/5 md:w-2/5 font-semibold text-gray-500 text-xs md:text-base flex flex-col gap-2 ">
@@ -403,7 +419,8 @@ function Invoice() {
                     <p className="text-blue-800">Additional Charges</p>
                   </div>
                   <button
-                    onClick={() => setAdditional(false)}
+                  onClick={cancelHandler}
+                    // onClick={() => {setAdditional(false);dispatch(removeAdditionalCharge());setRefresh(!refresh);setRows()}}
                     className="text-violet-500 p-1 px-3  text-xs border border-1 border-gray-300 rounded-2xl cursor-pointer"
                   >
                     Cancel
