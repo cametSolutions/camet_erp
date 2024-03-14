@@ -7,12 +7,13 @@ import { IoIosSearch } from "react-icons/io";
 import api from "../../api/api";
 import { MdOutlineQrCodeScanner } from "react-icons/md";
 import { useSelector } from "react-redux";
-import { addItem,removeItem } from "../../../slices/invoice";
+import { addItem, removeItem } from "../../../slices/invoice";
 import { useDispatch } from "react-redux";
 import { changeCount } from "../../../slices/invoice";
 import { setPriceLevel } from "../../../slices/invoice";
 import { changeTotal } from "../../../slices/invoice";
 import { Dropdown } from "flowbite-react";
+import { HashLoader } from "react-spinners";
 
 function AddItem() {
   const [item, setItem] = useState([]);
@@ -27,6 +28,7 @@ function AddItem() {
   const [selectedSubCategory, setSelectedSubCategory] = useState("");
   const [search, setSearch] = useState("");
   const [priceLevels, setPriceLevels] = useState([]);
+  const [loader, setLoader] = useState(false);
 
   const cpm_id = useSelector(
     (state) => state.setSelectedOrganization.selectedOrg._id
@@ -41,6 +43,7 @@ function AddItem() {
 
   useEffect(() => {
     const fetchProducts = async () => {
+      setLoader(true);
       try {
         const res = await api.get("/api/pUsers/getProducts", {
           withCredentials: true,
@@ -72,10 +75,12 @@ function AddItem() {
         }
       } catch (error) {
         console.log(error);
+      } finally {
+        setLoader(false);
       }
     };
     fetchProducts();
-  }, [cpm_id, itemsFromRedux]);
+  }, [cpm_id]);
 
   useEffect(() => {
     const priceLevelSet = Array.from(
@@ -89,8 +94,7 @@ function AddItem() {
     console.log(priceLevelSet);
 
     if (priceLevelFromRedux === "") {
-      const defaultPriceLevel =
-      priceLevelSet[0]
+      const defaultPriceLevel = priceLevelSet[0];
       setSelectedPriceLevel(defaultPriceLevel);
       dispatch(setPriceLevel(defaultPriceLevel));
     }
@@ -148,9 +152,6 @@ function AddItem() {
     fetchFilters();
   }, [orgId]);
 
-
-  
-
   const filterItems = (items, brand, category, subCategory, searchTerm) => {
     return items.filter((item) => {
       // Check if the item matches the brand filter
@@ -181,12 +182,7 @@ function AddItem() {
     search
   );
 
-
   console.log(filteredItems);
-
-
-
-
 
   const handleAddClick = (index) => {
     // Toggle the state of 'added' for the clicked item
@@ -197,7 +193,7 @@ function AddItem() {
       }
       // Return the item unchanged for other indices
       return item;
-   });
+    });
     setItem(updatedItems);
     setRefresh(!refresh);
     dispatch(addItem(updatedItems[index]));
@@ -219,15 +215,15 @@ function AddItem() {
   const handleDecrement = (index) => {
     const updatedItems = [...filteredItems]; // Make a copy of the array
     const currentItem = { ...updatedItems[index] };
-    
-    console.log(currentItem.count);// Make a copy of the item object
+
+    console.log(currentItem.count); // Make a copy of the item object
     if (currentItem.count > 0) {
       currentItem.count -= 1;
       updatedItems[index] = currentItem; // Update the item in the copied array
       setItem(updatedItems);
       setRefresh(!refresh);
-    }else{
-      dispatch(removeItem(index))
+    } else {
+      dispatch(removeItem(index));
     }
     dispatch(changeCount(currentItem));
   };
@@ -293,7 +289,6 @@ function AddItem() {
   }, [refresh, selectedPriceLevel]);
 
   console.log(item);
-
 
   console.log(filteredItems);
 
@@ -460,7 +455,11 @@ function AddItem() {
           </div>
         </div>
 
-        {filteredItems.length === 0 ? (
+        {loader ? (
+          <div className="flex justify-center items-center h-screen">
+            <HashLoader color="#363ad6" />
+          </div>
+        ) : filteredItems.length === 0 ? (
           <div className="bg-white p-4 py-2 pb-6 mt-4 flex justify-center items-center rounded-sm cursor-pointer border-b-2 h-screen">
             <p>No products available</p>
           </div>
