@@ -249,7 +249,7 @@ function ProductList() {
           >
             <List
               className=""
-              height={500} // Specify the height of your list
+              height={1000} // Specify the height of your list
               itemCount={filteredProducts.length} // Specify the total number of items
               itemSize={150} // Specify the height of each item
               width="100%" // Specify the width of your list
