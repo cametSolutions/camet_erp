@@ -1,5 +1,4 @@
 import Sidebar from "../../components/homePage/Sidebar";
-import { IoReorderThreeSharp } from "react-icons/io5";
 import { useState, useEffect } from "react";
 import { accountGroups } from "../../../constants/accountGroups";
 import { toast } from "react-toastify";
@@ -7,6 +6,9 @@ import api from "../../api/api";
 import { useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
+import { IoIosArrowRoundBack } from "react-icons/io";
+import { Link } from "react-router-dom";
+
 
 function EditParty() {
   const [tab, setTab] = useState("business");
@@ -175,10 +177,9 @@ const navigate=useNavigate()
       </div>
       <div className="flex-1 flex flex-col h-screen overflow-y-scroll">
         <div className="bg-[#012A4A] sticky top-0 p-3 z-100 text-white text-lg font-bold flex items-center gap-3 z-20">
-          <IoReorderThreeSharp
-            onClick={handleToggleSidebar}
-            className="block md:hidden text-3xl"
-          />
+        <Link to={"/pUsers/dashboard"}>
+              <IoIosArrowRoundBack className="text-3xl text-white cursor-pointer md:hidden" />
+            </Link>
           <p>Edit Party Details </p>
         </div>
         <section className=" bg-blueGray-50 h-screen overflow-y-scroll ">

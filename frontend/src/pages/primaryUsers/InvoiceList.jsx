@@ -141,14 +141,14 @@ function InvoiceList() {
             </div>
           </div>
           <div className="flex gap-3 mt-5 ">
-            <Link to={`/pUsers/editParty/${el._id}`}>
+            {/* <Link to={`/pUsers/editParty/${el._id}`}> */}
               <FaEdit className="text-blue-500" />
-            </Link>
+            {/* </Link> */}
 
             <MdDelete
-              onClick={() => {
-                deleteHandler(el._id);
-              }}
+              // onClick={() => {
+              //   deleteHandler(el._id);
+              // }}
               className="text-red-500"
             />
           </div>
