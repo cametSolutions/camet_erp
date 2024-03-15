@@ -31,6 +31,7 @@ function AddItem() {
   const [search, setSearch] = useState("");
   const [priceLevels, setPriceLevels] = useState([]);
   const [loader, setLoader] = useState(false);
+  const [listHeight, setListHeight] = useState(0);
 
   const cpm_id = useSelector(
     (state) => state.setSelectedOrganization.selectedOrg._id
@@ -117,7 +118,6 @@ function AddItem() {
             ...currentItem,
             count: matchingItem.count,
             total: matchingItem.total,
-            
           };
         } else {
           // If no matching item found, return the current item
@@ -128,7 +128,7 @@ function AddItem() {
       // Update the state with the modified items
       setItem(updatedItems);
     }
-  }, [itemsFromRedux,refresh]);
+  }, [itemsFromRedux, refresh]);
 
   const orgId = useSelector(
     (state) => state.setSelectedOrganization.selectedOrg._id
@@ -186,7 +186,14 @@ function AddItem() {
       selectedSubCategory,
       search
     );
-  }, [item, selectedBrand, selectedCategory, selectedSubCategory, search,refresh]);
+  }, [
+    item,
+    selectedBrand,
+    selectedCategory,
+    selectedSubCategory,
+    search,
+   
+  ]);
 
   ///////////////////////////handleAddClick///////////////////////////////////
 
@@ -264,8 +271,8 @@ function AddItem() {
       currentItem.count -= 1;
       if (currentItem.count == 0) {
         dispatch(removeItem(currentItem));
-        updatedItems[index].added=false
-        return
+        updatedItems[index].added = false;
+        return;
       }
 
       // Use the calculateTotal function to calculate the total for the current item
@@ -278,7 +285,6 @@ function AddItem() {
       updatedItems[index] = currentItem; // Update the item in the copied array
       setItem(updatedItems);
       setRefresh(!refresh);
-     
     }
 
     dispatch(changeCount(currentItem));
@@ -294,123 +300,141 @@ function AddItem() {
     dispatch(setPriceLevel(selectedValue));
   };
 
-
   const Row = ({ index, style }) => {
     const el = filteredItems[index];
     return (
       <div
-      style={style}
-      key={index}
-      className="bg-white p-4 py-2 pb-6  mt-4 flex justify-between items-center  rounded-sm cursor-pointer border-b-2 "
-    >
-      <div className="flex items-start gap-3 md:gap-4  ">
-        <div className="w-10 mt-1  uppercase h-10 rounded-lg bg-violet-200 flex items-center justify-center font-semibold text-gray-400">
-          {el.product_name.slice(0, 1)}
-        </div>
-        <div className="flex flex-col font-bold text-sm md:text-sm  gap-1 leading-normal">
-          <p>{el.product_name}</p>
-          <div className="flex gap-1 items-center">
-            <p>
-              ₹{" "}
-              {
-                el?.Priceleveles.find(
-                  (item) => item.pricelevel === selectedPriceLevel
-                )?.pricerate
-              }{" "}
-              /
-            </p>{" "}
-            <span className="text-[10px] mt-1">{el.unit}</span>
+        style={style}
+        key={index}
+        className="bg-white p-4 py-2 pb-6  mt-4 flex justify-between items-center  rounded-sm cursor-pointer border-b-2 "
+      >
+        <div className="flex items-start gap-3 md:gap-4  ">
+          <div className="w-10 mt-1  uppercase h-10 rounded-lg bg-violet-200 flex items-center justify-center font-semibold text-gray-400">
+            {el.product_name.slice(0, 1)}
           </div>
-          <div className="flex">
-            <p className="text-red-500">STOCK : </p>
-            <span>{el.balance_stock}</span>
-          </div>
-          <div>
-            <span>Total : ₹ </span>
-            <span>{el.total || 0}</span>
-          </div>
-        </div>
-      </div>
-      {el.added ? (
-        <div className="flex items-center flex-col gap-2">
-          <Link to={`/pUsers/editItem/${el._id}`}>
-            <button className=" mt-3  px-2 py-1  rounded-md border-violet-500 font-bold border  text-violet-500 text-xs">
-              Edit
-            </button>
-          </Link>
-          <div
-            className="py-2 px-3 inline-block bg-white  "
-            data-hs-input-number
-          >
-            <div className="flex items-center gap-x-1.5">
-              <button
-                onClick={() => handleDecrement(index)}
-                type="button"
-                className="size-6 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-md border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none"
-                data-hs-input-number-decrement
-              >
-                <svg
-                  className="flex-shrink-0 size-3.5"
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M5 12h14" />
-                </svg>
-              </button>
-              <input
-                className="p-0 w-6 bg-transparent border-0 text-gray-800 text-center focus:ring-0 "
-                type="text"
-                disabled
-                value={el.count ? el.count : 0} // Display the count from the state
-                data-hs-input-number-input
-              />
-              <button
-                onClick={() => {
-                  handleIncrement(index);
-                }}
-                type="button"
-                className="size-6 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-md border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none "
-                data-hs-input-number-increment
-              >
-                <svg
-                  className="flex-shrink-0 size-3.5"
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M5 12h14" />
-                  <path d="M12 5v14" />
-                </svg>
-              </button>
+          <div className="flex flex-col font-bold text-sm md:text-sm  gap-1 leading-normal">
+            <p>{el.product_name}</p>
+            <div className="flex gap-1 items-center">
+              <p>
+                ₹{" "}
+                {
+                  el?.Priceleveles.find(
+                    (item) => item.pricelevel === selectedPriceLevel
+                  )?.pricerate
+                }{" "}
+                /
+              </p>{" "}
+              <span className="text-[10px] mt-1">{el.unit}</span>
+            </div>
+            <div className="flex">
+              <p className="text-red-500">STOCK : </p>
+              <span>{el.balance_stock}</span>
+            </div>
+            <div>
+              <span>Total : ₹ </span>
+              <span>{el.total || 0}</span>
             </div>
           </div>
         </div>
-      ) : (
-        <div>
-          <div
-            className="px-4 py-2 rounded-md border-violet-500 font-bold border-2 text-violet-500 text-xs"
-            onClick={() => handleAddClick(index)}
-          >
-            Add
+        {el.added ? (
+          <div className="flex items-center flex-col gap-2">
+            <Link to={`/pUsers/editItem/${el._id}`}>
+              <button className=" mt-3  px-2 py-1  rounded-md border-violet-500 font-bold border  text-violet-500 text-xs">
+                Edit
+              </button>
+            </Link>
+            <div
+              className="py-2 px-3 inline-block bg-white  "
+              data-hs-input-number
+            >
+              <div className="flex items-center gap-x-1.5">
+                <button
+                  onClick={() => handleDecrement(index)}
+                  type="button"
+                  className="size-6 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-md border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none"
+                  data-hs-input-number-decrement
+                >
+                  <svg
+                    className="flex-shrink-0 size-3.5"
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M5 12h14" />
+                  </svg>
+                </button>
+                <input
+                  className="p-0 w-6 bg-transparent border-0 text-gray-800 text-center focus:ring-0 "
+                  type="text"
+                  disabled
+                  value={el.count ? el.count : 0} // Display the count from the state
+                  data-hs-input-number-input
+                />
+                <button
+                  onClick={() => {
+                    handleIncrement(index);
+                  }}
+                  type="button"
+                  className="size-6 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-md border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none "
+                  data-hs-input-number-increment
+                >
+                  <svg
+                    className="flex-shrink-0 size-3.5"
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M5 12h14" />
+                    <path d="M12 5v14" />
+                  </svg>
+                </button>
+              </div>
+            </div>
           </div>
-        </div>
-      )}
-    </div>
+        ) : (
+          <div>
+            <div
+              className="px-4 py-2 rounded-md border-violet-500 font-bold border-2 text-violet-500 text-xs"
+              onClick={() => handleAddClick(index)}
+            >
+              Add
+            </div>
+          </div>
+        )}
+      </div>
     );
   };
+
+  useEffect(() => {
+    const calculateHeight = () => {
+      const newHeight = window.innerHeight - 227;
+      setListHeight(newHeight);
+    };
+
+    console.log(window.innerHeight);
+
+    // Calculate the height on component mount and whenever the window is resized
+    calculateHeight();
+    window.addEventListener('resize', calculateHeight);
+
+    // Cleanup the event listener on component unmount
+    return () => window.removeEventListener('resize', calculateHeight);
+ }, []); 
+
+ console.log(listHeight);
+
 
   return (
     <div className="flex relative">
@@ -419,7 +443,7 @@ function AddItem() {
       </div>
 
       <div className="flex-1 bg-slate-50 h-screen overflow-y-scroll  ">
-        <div className="sticky top-0">
+        <div className="sticky top-0 h-[157px]">
           <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex justify-between  items-center gap-2  ">
             <div className="flex items-center gap-2">
               <IoIosArrowRoundBack
@@ -459,7 +483,7 @@ function AddItem() {
             </div>
           </div>
 
-          <div className=" px-3 py-2 bg-white drop-shadow-lg ">
+          <div className=" px-3 py-2 bg-white drop-shadow-lg  ">
             <div className="flex justify-between  items-center"></div>
             <div className="mt-2  md:w-1/2 ">
               <div className="relative ">
@@ -584,22 +608,25 @@ function AddItem() {
             <p>No products available</p>
           </div>
         ) : (
-          
-
           <List
-          height={500} // Specify the height of your list
-          itemCount={filteredItems.length} // Specify the total number of items
-          itemSize={100} // Specify the height of each item
-          width="100%" // Specify the width of your list
-        >
-          {Row}
-        </List>
-         
+          style={{
+            scrollbarWidth: "thin",
+            scrollbarColor: "transparent transparent",
+          }}
+  
+          className=""
+            height={listHeight} // Specify the height of your list
+            itemCount={filteredItems.length} // Specify the total number of items
+            itemSize={170} // Specify the height of each item
+            width="100%" // Specify the width of your list
+          >
+            {Row}
+          </List>
         )}
 
         {item.length > 0 && (
           <Link to={"/pUsers/invoice"}>
-            <div className="sticky bottom-0 bg-white  w-full flex justify-center p-3 border-t  ">
+            <div className=" sticky bottom-0 bg-white  w-full flex justify-center p-3 border-t h-[70px] ">
               <button
                 // onClick={submitHandler}
                 className="bg-violet-700  w-[85%] text-ld font-bold text-white p-2 rounded-md"
