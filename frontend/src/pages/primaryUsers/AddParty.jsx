@@ -5,6 +5,8 @@ import { accountGroups } from "../../../constants/accountGroups";
 import { toast } from "react-toastify";
 import api from "../../api/api";
 import { useSelector } from "react-redux";
+import { IoIosArrowRoundBack } from "react-icons/io";
+import { Link } from "react-router-dom";
 
 function AddParty() {
   const [tab, setTab] = useState("business");
@@ -23,7 +25,6 @@ function AddParty() {
   const [cpm_id, setCmp_id] = useState("");
   const [Primary_user_id, setPrimary_user_id] = useState("");
   const [showSidebar, setShowSidebar] = useState(false);
-
 
   const companytId = useSelector(
     (state) => state.setSelectedOrganization.selectedOrg._id
@@ -51,9 +52,7 @@ function AddParty() {
       toast.error("All fields are required");
       return;
     }
-    if (
-      mobileNumber===""
-    ) {
+    if (mobileNumber === "") {
       toast.error("All fields are required");
       return;
     }
@@ -128,25 +127,21 @@ function AddParty() {
     }
   };
 
-  const handleToggleSidebar = () => {
-    if (window.innerWidth < 768) {
-      setShowSidebar(!showSidebar);
-    }
-  };
+
 
   return (
     <div className="flex">
       <div>
-        <Sidebar TAB={"addParty"} showBar={showSidebar}  />
+        <Sidebar TAB={"addParty"} showBar={showSidebar} />
       </div>
       <div className="flex-1 flex flex-col h-screen overflow-y-scroll">
         <div className="bg-[#012A4A] sticky top-0 p-3 z-100 text-white text-lg font-bold flex items-center gap-3 z-20">
-          <IoReorderThreeSharp
-            onClick={handleToggleSidebar}
-            className="block md:hidden text-3xl"
-          />
+         <Link to={'/pUsers/partyList'}>
+          <IoIosArrowRoundBack className="block md:hidden text-3xl" />
+          </Link>
           <p>Add Party Details </p>
         </div>
+
         <section className=" bg-blueGray-50 h-screen overflow-y-scroll ">
           <div className="w-full lg:w-8/12 px-4 mx-auto  pb-[30px] mt-5  ">
             <div className="relative flex flex-col min-w-0 break-words w-full mb-6 shadow-lg rounded-lg bg-blueGray-100 border-0">
@@ -249,8 +244,7 @@ function AddParty() {
                   <div className="flex justify-center ">
                     <div className="mt-[50px]  border-b border-solid border-[#0066ff43]  ">
                       <button
-                      type="button"
-
+                        type="button"
                         onClick={() => setTab("business")}
                         className={` ${
                           tab === "business" &&
@@ -260,7 +254,7 @@ function AddParty() {
                         Business Info
                       </button>
                       <button
-                      type="button"
+                        type="button"
                         onClick={() => setTab("credit")}
                         className={` ${
                           tab === "credit" &&

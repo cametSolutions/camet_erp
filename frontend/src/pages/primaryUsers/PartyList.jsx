@@ -1,3 +1,5 @@
+/* eslint-disable react/prop-types */
+/* eslint-disable react/no-unknown-property */
 import { useEffect, useState } from "react";
 import api from "../../api/api";
 import { toast } from "react-toastify";
@@ -10,28 +12,36 @@ import { FaEdit } from "react-icons/fa";
 import Swal from "sweetalert2";
 import { Link } from "react-router-dom";
 import { HashLoader } from "react-spinners";
+import { IoIosSearch } from "react-icons/io";
+import { FixedSizeList as List } from "react-window";
+import { IoIosAddCircle } from "react-icons/io";
+
+
+
 
 
 function PartyList() {
   const [parties, setParties] = useState([]);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [postPerPage, setPostPerPage] = useState(5);
+  const [search, setSearch] = useState("");
+
   const [showSidebar, setShowSidebar] = useState(false);
   const [refresh, setRefresh] = useState(false);
   const [loader, setLoader] = useState(false)
+  const [filteredParty, setFilteredParty] = useState([])
 
   const cpm_id = useSelector(
     (state) => state.setSelectedOrganization.selectedOrg._id
   );
 
   useEffect(() => {
+    setLoader(true)
+
     const fetchParties = async () => {
       try {
         const res = await api.get(`/api/pUsers/PartyList/${cpm_id}`, {
           withCredentials: true,
         });
 
-        setLoader(true)
         setTimeout(() => {
           
           setParties(res.data.partyList);
@@ -40,9 +50,22 @@ function PartyList() {
       } catch (error) {
         console.log(error);
       }
+      finally{
+        setLoader(false)
+      }
     };
     fetchParties();
   }, [cpm_id, refresh]);
+  useEffect(() => {
+    if (search === "") {
+      setFilteredParty(parties);
+    } else {
+      const filtered = parties.filter((el) =>
+        el.partyName.toLowerCase().includes(search.toLowerCase())
+      );
+      setFilteredParty(filtered);
+    }
+  }, [search, parties, refresh]);
 
   const deleteHandler = async (id) => {
     // Show confirmation dialog
@@ -94,152 +117,173 @@ function PartyList() {
     }
   };
 
-  const lastPostIndex = currentPage * postPerPage;
-  const firstPostIndex = lastPostIndex - postPerPage;
-  const partyData = parties.slice(firstPostIndex, lastPostIndex);
-
-  return (
-    <div className="flex">
-      <div className="" style={{ height: "100vh" }}>
-        <Sidebar TAB={"bankList"} showBar={showSidebar} />
-      </div>
-
-   {
-    parties.length==0 &&  loader   ? (
-      <div className="h-screen flex items-center justify-center w-full">
-       <HashLoader color="#3636d6" />
-      </div>
-    ): (
-      <section className=" flex-1 antialiased bg-gray-100 text-gray-600 h-screen py-0 md:p-6 overflow-y-scroll   ">
-      <div className="block md:hidden bg-[#201450] text-white mb-2 p-3 flex items-center gap-3 text-lg ">
-        <IoReorderThreeSharp
-          onClick={handleToggleSidebar}
-          className="block md:hidden text-3xl"
-        />
-        <div className="flex items-center justify-between w-full">
-          <p>Your Parties</p>
-          <Link to={"/pUsers/addParty"}>
-            <button className="flex gap-2 bg-green-500 px-2 py-1 rounded-md text-sm  hover:scale-105 duration-100 ease-in-out hover:bg-green-600 mr-3">
-              Add Party
-            </button>
-          </Link>
-        </div>
-      </div>
-      <div className="flex flex-col h-full px-[5px]">
-        {/* <!-- Table --> */}
-        <div className="w-full max-w-[59rem] mx-auto  bg-white shadow-lg rounded-sm border  border-gray-200 ">
-          <header className=" hidden md:block px-5 py-4 border-b border-gray-100 bg bg-[#261b56] text-white">
-            <div className="flex justify-between items-center">
-              <h2 className="font-semibold ">Your Parties</h2>
-              <Link to={"/pUsers/addParty"}>
-                <button className="flex gap-2 bg-green-500 px-2 py-1 rounded-md text-sm  hover:scale-105 duration-100 ease-in-out hover:bg-green-600">
-                  Add Party
-                </button>
-              </Link>
+  const Row = ({ index, style }) => {
+    const el = filteredParty[index];
+    return (
+      <>
+        <div
+          key={index}
+          style={style}
+          className="bg-white p-4 pb-6 drop-shadow-lg mt-4 flex flex-col mx-2 rounded-sm cursor-pointer hover:bg-slate-100  pr-7 "
+        >
+          <div className="flex justify-between w-full gap-3 ">
+            <div className="">
+              <p className="font-bold text-sm">{el?.partyName}</p>
+              {el.accountGroup && (
+                <div className="flex">
+                  {/* <p className="font-medium mt-2 text-gray-500 text-sm text-nowrap">
+                    Acc group :
+                  </p> */}
+                  <p className="font-medium mt-2 text-gray-500 text-sm">
+                    {el?.accountGroup}
+                  </p>
+                </div>
+              )}
             </div>
-          </header>
-          <div className="p-3">
-            <div className="overflow-x-auto">
-              <table className="table-auto w-full">
-                <thead className="text-xs font-semibold uppercase text-gray-400 bg-gray-50">
-                  <tr>
-                    <th className="p-2 whitespace-nowrap">
-                      <div className="font-semibold text-left">Name</div>
-                    </th>
-                    <th className="p-2 whitespace-nowrap">
-                      <div className="font-semibold text-left">Acc Group</div>
-                    </th>
-                    <th className="p-2 whitespace-nowrap">
-                      <div className="font-semibold text-left">Mobile</div>
-                    </th>
-                    <th className="p-2 whitespace-nowrap">
-                      <div className="font-semibold text-left">Email</div>
-                    </th>
-                    <th colSpan={2} className="p-2 whitespace-nowrap">
-                      <div className="font-semibold text-left">Action</div>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="text-sm leading-[40px] divide-y divide-gray-100 ">
-                  {partyData.length > 0 ? (
-                    partyData.map((item, index) => (
-                      <tr key={index}>
-                        <td className="p-2 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <div className="font-medium text-gray-800">
-                              {item.partyName}
-                            </div>
-                          </div>
-                        </td>
-                        <td className="p-2 whitespace-nowrap">
-                          <div className="text-left">
-                            {" "}
-                            {item.accountGroup}
-                          </div>
-                        </td>
-                        <td className="p-2 whitespace-nowrap">
-                          <div className="text-left">
-                            {" "}
-                            {item.mobileNumber}
-                          </div>
-                        </td>
-                        <td className="p-2 whitespace-nowrap">
-                          <div className="text-left"> {item.emailID}</div>
-                        </td>
-                        <td className="p-2 whitespace-nowrap">
-                          <div className="text-left">
-                            {" "}
-                            <Link to={`/pUsers/editParty/${item._id}`}>
-                              <FaEdit className="hover:scale-125 duration-150 ease-in-out cursor-pointer" />
-                            </Link>
-                          </div>
-                        </td>
-                        <td className="p-2 whitespace-nowrap">
-                          <div className="text-left">
-                            {" "}
-                            <MdDelete
-                              onClick={() => {
-                                deleteHandler(item._id);
-                              }}
-                              className="hover:scale-125 duration-150 ease-in-out cursor-pointer "
-                            />
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td
-                        className="text-center  "
-                        style={{ marginTop: "20px" }}
-                        colSpan={5}
-                      >
-                        No parties were found
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+            <div className=" flex flex-col justify-center gap-2">
+              <div className="flex gap-2 text-nowrap">
+                <p className="font-bold">Mobile :</p>
+                <p className="font-semibold text-gray-500"> {el?.mobileNumber}</p>
+              </div>
+              {/* <div className="flex gap-2 ">
+                <p className="font-bold">Email :</p>
+                <p className="font-bold text-green-500"> {`${el?.emailID} %`}</p>
+              </div> */}
             </div>
           </div>
+          <div className="flex gap-3 mt-2 ">
+          <Link to={`/pUsers/editParty/${el._id}`}>
+
+              <FaEdit className="text-blue-500" />
+            </Link>
+
+            <MdDelete
+            onClick={() => {
+              deleteHandler(el._id);
+            }}
+
+              className="text-red-500"
+            />
+          </div>
+
+          <hr className="mt-6" />
         </div>
-        <div className="mt-5">
-          <Pagination
-            postPerPage={postPerPage}
-            totalPosts={parties.length}
-            setCurrentPage={setCurrentPage}
-            currentPage={currentPage}
+      </>
+    );
+  };
+
+
+
+  return (
+    <div className="flex relative h-screen ">
+    <div>
+      <Sidebar TAB={"invoice"} showBar={showSidebar} />
+    </div>
+
+    <div className="flex-1 bg-slate-50 overflow-y-scroll ">
+      <div className="sticky top-0 z-20">
+        <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex  items-center gap-2   ">
+          <IoReorderThreeSharp
+            onClick={handleToggleSidebar}
+            className="text-3xl text-white cursor-pointer md:hidden"
           />
+          <p className="text-white text-lg   font-bold ">Your Parties</p>
+        </div>
+
+        {/* invoiec date */}
+        <div className=" p-4  bg-white drop-shadow-lg">
+          <div className="flex justify-between  items-center">
+            {/* <div className=" flex flex-col gap-1 justify-center">
+          <p className="text-md font-semibold text-violet-400">
+            Search Parties
+          </p>
+        </div>
+        <div className="flex items-center hover_scale cursor-pointer">
+          <p className="text-pink-500 m-2 cursor-pointer  ">Cancel</p>
+          <MdCancel className="text-pink-500" />
+        </div> */}
+          </div>
+          <div className=" md:w-1/2 ">
+            {/* search bar */}
+            <div className="relative  ">
+              <div className="absolute inset-y-0 start-0 flex items-center  pointer-events-none ">
+                <svg
+                  className="w-4 h-4 text-gray-500 "
+                  aria-hidden="true"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"
+                  />
+                </svg>
+              </div>
+              <div class="relative">
+                <input
+                  onChange={(e) => setSearch(e.target.value)}
+                  value={search}
+                  type="search"
+                  id="default-search"
+                  class="block w-full p-2  text-sm text-gray-900 border  rounded-lg border-gray-300  bg-gray-50 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Search party by name..."
+                  required
+                />
+                <button
+                  type="submit"
+                  class="text-white absolute end-[10px] top-1/2 transform -translate-y-1/2 bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-md px-2 py-1"
+                >
+                  <IoIosSearch />
+                </button>
+              </div>
+            </div>
+
+            {/* search bar */}
+          </div>
         </div>
       </div>
-    </section>
-    )
-   }
-          
-      
 
-     
+      {/* adding party */}
+
+      {loader ? (
+        <div className="flex justify-center items-center h-screen">
+          <HashLoader color="#363ad6" />
+        </div>
+      ) : parties.length > 0 ? (
+        <div
+          style={{
+            scrollbarWidth: "thin",
+            scrollbarColor: "transparent transparent",
+          }}
+        >
+          <List
+            className=""
+            height={500} // Specify the height of your list
+            itemCount={filteredParty.length} // Specify the total number of items
+            itemSize={120} // Specify the height of each item
+            width="100%" // Specify the width of your list
+          >
+            {Row}
+          </List>
+        </div>
+      ) : (
+        <div className="font-bold flex justify-center items-center mt-12 text-gray-500">
+          No Parties !!!
+        </div>
+      )}
+
+      <Link to={"/pUsers/addParty"} className="flex justify-center">
+        <div className=" px-4  absolute bottom-2 text-white bg-violet-700 rounded-3xl p-2 flex items-center justify-center gap-2 hover_scale cursor-pointer ">
+          <IoIosAddCircle className="text-2xl" />
+          <p>Create New Party</p>
+        </div>
+      </Link>
     </div>
+  </div>
   );
 }
 

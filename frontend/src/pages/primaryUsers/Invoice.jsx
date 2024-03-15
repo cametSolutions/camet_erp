@@ -21,6 +21,7 @@ import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import api from "../../api/api";
 import { IoIosAddCircle } from "react-icons/io";
+import { MdPlaylistAdd } from "react-icons/md";
 import { removeAll,removeAdditionalCharge } from "../../../slices/invoice";
 
 function Invoice() {
@@ -318,14 +319,14 @@ function Invoice() {
               <span className="text-red-500 mt-[-4px] font-bold">*</span>
             </div>
 
-            <div className="mt-3 p-6 border border-gray-300 h-10 rounded-md flex  cursor-pointer justify-center   items-center font-medium text-violet-500">
+            <div className="mt-3 p-6 border border-gray-300 h-10 rounded-md flex  cursor-pointer justify-center   items-center font-medium text-violet-500 ">
               {/* <Link to={"/pUsers/addItem"}>  */}
               <div
                 onClick={handleAddItem}
                 className="flex justify-center gap-2 hover_scale "
               >
                 <IoMdAdd className="text-2xl" />
-                <p>Add Item</p>
+                <p className="text-sm">Add Item</p>
               </div>
                {/* </Link> */}
             </div>
@@ -351,8 +352,8 @@ function Invoice() {
 
               {items.map((el, index) => (
                 <>
-                  <div key={index} className="py-3 mt-0 px-4 bg-white ">
-                    <div className="flex justify-between font-bold">
+                  <div key={index} className="py-3 mt-0 px-6 bg-white ">
+                    <div className="flex justify-between font-bold text-xs">
                       <p>{el.product_name}</p>
                       <p> ₹ {el.total ?? 0}</p>
                     </div>
@@ -409,7 +410,7 @@ function Invoice() {
             </div>
             <div className="flex  justify-between items-center bg-white p-2 px-4">
               <p className="text-sm md:text-base font-bold">Items Subtotal:</p>
-              <p className="text-sm md:text-base font-bold">{subTotal}</p>
+              <p className="text-sm md:text-base font-bold">{` ₹ ${subTotal.toFixed(2)}`}</p>
             </div>
             {additional ? (
               <div className="container mx-auto mt-2 bg-white p-4 text-xs">
@@ -500,9 +501,9 @@ function Invoice() {
                   </table>
                   <button
                     onClick={handleAddRow}
-                    className="mt-4 px-4 py-2 bg-blue-500 text-white rounded"
+                    className="mt-4 px-4 py-1 bg-pink-500 text-white rounded"
                   >
-                    Add Row
+                  <MdPlaylistAdd/>
                   </button>
                 </div>
               </div>
