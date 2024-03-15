@@ -246,7 +246,7 @@ function InvoiceList() {
           >
             <List
               className=""
-              height={600} // Specify the height of your list
+              height={1000} // Specify the height of your list
               itemCount={filteredInvoice.length} // Specify the total number of items
               itemSize={120} // Specify the height of each item
               width="100%" // Specify the width of your list

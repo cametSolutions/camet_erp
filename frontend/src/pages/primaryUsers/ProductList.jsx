@@ -264,7 +264,7 @@ function ProductList() {
         )}
 
         <Link to={"/pUsers/addProduct"} className="flex justify-center">
-          <div className=" px-4 absolute bottom-2 text-white bg-violet-700 rounded-3xl p-2 flex items-center justify-center gap-2 hover_scale cursor-pointer ">
+          <div className=" px-4 absolute bottom-9 text-white bg-violet-700 rounded-3xl p-2 flex items-center justify-center gap-2 hover_scale cursor-pointer ">
             <IoIosAddCircle className="text-2xl" />
             <p>Create New Product</p>
           </div>
