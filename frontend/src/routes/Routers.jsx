@@ -48,6 +48,7 @@ import AddItem from '../pages/primaryUsers/AddItem'
 import EditItem from '../pages/primaryUsers/EditItem'
 import Demo from '../pages/primaryUsers/Demo'
 import RetailersList from '../pages/primaryUsers/RetailersList'
+import InvoiceList from '../pages/primaryUsers/InvoiceList'
 
 
 
@@ -88,6 +89,7 @@ const Routers = () => {
         <Route path='/pUsers/addItem' element={<ProtectedPriRoute><AddItem/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/editItem/:id' element={<ProtectedPriRoute><EditItem/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/demo' element={<ProtectedPriRoute><Demo/></ProtectedPriRoute>}></Route>
+        <Route path='/pUsers/invoiceList' element={<ProtectedPriRoute><InvoiceList/></ProtectedPriRoute>}></Route>
 
 
         {/* admin */}

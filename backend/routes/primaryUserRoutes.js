@@ -8,7 +8,9 @@ import { registerPrimaryUser,login,addOrganizations,
   transactions,cancelTransaction,fetchBanks,bankList,
   sendOtp,submitOtp,resetPassword,getTransactionDetails,getSingleOrganization,
   editOrg,addParty,addHsn,addDataToOrg,editDataInOrg,deleteDataInOrg,
-  fetchHsn,addProduct,getProducts,deleteProduct,productDetails,editProduct,PartyList,deleteParty,getSinglePartyDetails,editParty,fetchFilters,createInvoice,addBulkProducts} from '../controllers/primaryUserController.js';
+  fetchHsn,addProduct,getProducts,deleteProduct,productDetails,
+  editProduct,PartyList,deleteParty,getSinglePartyDetails,editParty,
+  fetchFilters,createInvoice,addBulkProducts,invoiceList} from '../controllers/primaryUserController.js';
 import { singleUpload } from '../multer/multer.js';
 import { primaryIsBlocked } from '../middlewares/isBlocked.js';
 
@@ -50,6 +52,8 @@ router.post('/editParty/:id',authPrimary,primaryIsBlocked,editParty)
 router.post('/editParty/:id',authPrimary,primaryIsBlocked,editParty)
 router.post('/createInvoice',authPrimary,primaryIsBlocked,createInvoice)
 router.post('/addBulkProducts',addBulkProducts)
+router.get('/invoiceList/:cmp_id',authPrimary,primaryIsBlocked,invoiceList)
+
 
 router.post('/sendOtp',sendOtp)
 router.post('/submitOtp',submitOtp)

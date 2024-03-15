@@ -118,7 +118,7 @@ function Dashboard() {
                       <h4 className=" sm:text-md md:text-2xl  font-semibold text-gray-700">
                         ₹{receiptTotal}
                       </h4>
-                      <div className="text-gray-500">Register</div>
+                      <div className="text-gray-500  text-sm "> Receipt Register</div>
                     </div>
                   </div>
                 </div>
@@ -132,11 +132,11 @@ function Dashboard() {
                       <IoReceiptSharp />
                     </div>
 
-                    <div className="mx-5">
+                    <div className="mx-5 py-2.5">
                       <h4 className=" sm:text-md md:text-2xl  font-semibold text-gray-700">
                         ₹0
                       </h4>
-                      <div className="text-gray-500">Reciept</div>
+                      <div className="text-gray-500 text-sm">Reciept</div>
                     </div>
                   </div>
                 </div>
@@ -154,12 +154,13 @@ function Dashboard() {
                     <h4 className=" sm:text-md md:text-2xl  font-semibold text-gray-700">
                       ₹0
                     </h4>
-                    <div className="text-gray-500">Quotation</div>
+                    <div className="text-gray-500 text-sm">Quotation Register</div>
                   </div>
                 </div>
               </div>
             </div>
             </Link>
+            <Link to={"/pUsers/invoiceList"}>
             <div className="flex flex-wrap -mx-6  duration-150 hover:scale-105 ease-in-out cursor-pointer">
               <div className="w-full px-6 ">
                 <div className="flex items-center px-2 py-3 md:px-5 md:py-2 shadow-sm rounded-md bg-slate-100">
@@ -167,15 +168,16 @@ function Dashboard() {
                     <FaCartArrowDown />
                   </div>
 
-                  <div className="mx-5">
+                  <div className="mx-5 py-2.5">
                     <h4 className=" sm:text-md md:text-2xl  font-semibold text-gray-700">
                       ₹0
                     </h4>
-                    <div className="text-gray-500">Stock</div>
+                    <div className="text-gray-500 text-sm">Quotation</div>
                   </div>
                 </div>
               </div>
             </div>
+            </Link>
           </div>
 
           {/* tiles */}

@@ -1533,4 +1533,59 @@ export const addBulkProducts = async (req, res) => {
      });
   }
  };
+// export const addBulkParties = async (req, res) => {
+//   try {
+//      // Assuming `data` is an array of product objects
+//      const products = await Promise.all(req.body.data.map(async (product) => {
+//        const newProduct = new productModel(product);
+//        await newProduct.save();
+//        return newProduct;
+//      }));
+ 
+//      // Send a success response with the added products
+//      res.status(201).json({
+//        message: 'Bulk products added successfully',
+//        products: products,
+//      });
+//   } catch (error) {
+//      console.error('Error adding bulk products:', error);
+//      // Send an error response
+//      res.status(500).json({
+//        message: 'Error adding bulk products',
+//        error: error.message,
+//      });
+//   }
+//  };
+
+
+
+
+
+
+ // @desc get invoiceList
+// route get/api/pUsers/invoiceList;
+
+export const invoiceList = async (req, res) => {
+  const userId = req.pUserId;
+  const cmp_id = req.params.cmp_id;
+  try {
+    const invoiceList = await invoiceModel.find({
+      Primary_user_id: userId,
+      cmp_id: cmp_id,
+    });
+    console.log("invoiceList", invoiceList);
+    if (invoiceList) {
+      res
+        .status(200)
+        .json({ message: "invoiceList fetched", invoiceList: invoiceList });
+    } else {
+      res.status(404).json({ message: "No parties found" });
+    }
+  } catch (error) {
+    res
+      .status(500)
+      .json({ success: false, message: "Internal server error, try again!" });
+  }
+};
+
  

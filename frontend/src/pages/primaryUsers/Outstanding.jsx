@@ -11,7 +11,7 @@ import Sidebar from "../../components/homePage/Sidebar";
 import { Link } from "react-router-dom";
 import { FaWhatsapp } from "react-icons/fa";
 import { prRemoveSettlementData } from "../../../slices/prSettlementDataSlice";
-import { IoReorderThreeSharp } from "react-icons/io5";
+import { IoIosArrowRoundBack } from "react-icons/io";
 
 function Outstanding({ onTabChange }) {
   const [data, setData] = useState([]);
@@ -79,11 +79,11 @@ function Outstanding({ onTabChange }) {
       <div className="  flex-1 lg:px-[110px] h-screen overflow-y-scroll  md:mt-4 pb-   ">
         <div className="sticky top-0 flex flex-col z-30 bg-white">
           <div className="bg-white"></div>
-          <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex items-center gap-2  ">
-            <IoReorderThreeSharp
-              onClick={handleToggleSidebar}
-              className="block md:hidden text-white text-3xl"
-            />
+          <div className="bg-[rgb(1,42,74)] shadow-lg px-4 py-3 pb-3 flex items-center gap-2  ">
+          <Link to={"/pUsers/dashboard"}>
+              <IoIosArrowRoundBack className="text-3xl text-white cursor-pointer md:hidden" />
+            </Link>
+
 
             <p className="text-white text-lg   font-bold ">Parties</p>
           </div>

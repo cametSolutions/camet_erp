@@ -4,10 +4,12 @@ import api from "../../api/api";
 import dayjs from "dayjs";
 import { IoArrowRedoOutline } from "react-icons/io5";
 import Sidebar from "../../components/homePage/Sidebar";
-import { IoReorderThreeSharp } from "react-icons/io5";
 import {useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { FcCancel } from "react-icons/fc";
+import { IoIosArrowRoundBack } from "react-icons/io";
+import { Link } from "react-router-dom";
+
 
 
 function Transaction() {
@@ -59,11 +61,6 @@ console.log(org);
 
 
 
-  const handleToggleSidebar = () => {
-    if (window.innerWidth < 768) {
-      setShowSidebar(!showSidebar);
-    }
-  };
 
 
   return (
@@ -76,10 +73,14 @@ console.log(org);
           <div className="sticky top-0 flex flex-col z-30 bg-white">
             <div className="bg-white"></div>
             <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex items-center gap-2  ">
-            <IoReorderThreeSharp
+            {/* <IoReorderThreeSharp
               onClick={handleToggleSidebar}
               className="block md:hidden text-white text-3xl"
-            />
+            /> */}
+              <Link to={"/pUsers/dashboard"}>
+              <IoIosArrowRoundBack className="text-3xl text-white cursor-pointer md:hidden" />
+            </Link>
+
               <p className="text-white text-lg   font-bold  ">Receipts</p>
             </div>
             <div className=" mt-0 shadow-lg p-2 md:p-0">

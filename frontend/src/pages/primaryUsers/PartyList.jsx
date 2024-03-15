@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import api from "../../api/api";
 import { toast } from "react-toastify";
-import Pagination from "../../components/common/Pagination";
 import Sidebar from "../../components/homePage/Sidebar";
 import { IoReorderThreeSharp } from "react-icons/io5";
 import { useSelector } from "react-redux";

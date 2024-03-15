@@ -23,6 +23,7 @@ import api from "../../api/api";
 import { IoIosAddCircle } from "react-icons/io";
 import { MdPlaylistAdd } from "react-icons/md";
 import { removeAll,removeAdditionalCharge } from "../../../slices/invoice";
+import { IoIosArrowRoundBack } from "react-icons/io";
 
 function Invoice() {
   const [showSidebar, setShowSidebar] = useState(false);
@@ -228,10 +229,13 @@ function Invoice() {
 
       <div className="flex-1 bg-slate-100  h-screen overflow-y-scroll  ">
         <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex  items-center gap-2 sticky top-0 z-50  ">
-          <IoReorderThreeSharp
+          {/* <IoReorderThreeSharp
             onClick={handleToggleSidebar}
             className="block md:hidden text-white text-3xl"
-          />
+          /> */}
+            <Link to={"/pUsers/dashboard"}>
+              <IoIosArrowRoundBack className="text-3xl text-white cursor-pointer md:hidden" />
+            </Link>
           <p className="text-white text-lg   font-bold ">
             Create Bill / Invoice
           </p>
