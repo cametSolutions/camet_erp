@@ -1,6 +1,6 @@
 /* eslint-disable react/prop-types */
 /* eslint-disable react/no-unknown-property */
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo ,useRef} from "react";
 import Sidebar from "../../components/homePage/Sidebar";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import { Link, useNavigate } from "react-router-dom";
@@ -12,7 +12,7 @@ import { addItem, removeItem } from "../../../slices/invoice";
 import { useDispatch } from "react-redux";
 import { changeCount } from "../../../slices/invoice";
 import { setPriceLevel } from "../../../slices/invoice";
-import { changeTotal } from "../../../slices/invoice";
+import { changeTotal,persistScroll } from "../../../slices/invoice";
 import { Dropdown } from "flowbite-react";
 import { HashLoader } from "react-spinners";
 import { FixedSizeList as List } from "react-window";
@@ -33,16 +33,33 @@ function AddItem() {
   const [loader, setLoader] = useState(false);
   const [listHeight, setListHeight] = useState(0);
 
+
+
+
+  ///////////////////////////cpm_id///////////////////////////////////
+
   const cpm_id = useSelector(
     (state) => state.setSelectedOrganization.selectedOrg._id
   );
 
+  ///////////////////////////itemsFromRedux///////////////////////////////////
+
   const itemsFromRedux = useSelector((state) => state.invoice.items);
+
+
+
+  ///////////////////////////priceLevelFromRedux///////////////////////////////////
+
   const priceLevelFromRedux =
     useSelector((state) => state.invoice.selectedPriceLevel) || "";
 
+  ///////////////////////////navigate dispatch///////////////////////////////////
+
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const listRef = useRef(null);
+
+  ///////////////////////////fetchProducts///////////////////////////////////
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -85,6 +102,8 @@ function AddItem() {
     fetchProducts();
   }, [cpm_id]);
 
+  ///////////////////////////priceLevelSet///////////////////////////////////
+
   useEffect(() => {
     const priceLevelSet = Array.from(
       new Set(
@@ -102,9 +121,14 @@ function AddItem() {
     }
   }, [item]);
 
+  ///////////////////////////setSelectedPriceLevel fom redux///////////////////////////////////
+
   useEffect(() => {
     setSelectedPriceLevel(priceLevelFromRedux);
   }, []);
+
+  ///////////////////////////sdo persisting of products///////////////////////////////////
+
   useEffect(() => {
     if (itemsFromRedux.length > 0) {
       const updatedItems = item.map((currentItem) => {
@@ -130,9 +154,13 @@ function AddItem() {
     }
   }, [itemsFromRedux, refresh]);
 
+  //////////////////////////////orgId////////////////////////////////
+
   const orgId = useSelector(
     (state) => state.setSelectedOrganization.selectedOrg._id
   );
+  //////////////////////////////fetchFilters////////////////////////////////
+
   useEffect(() => {
     const fetchFilters = async () => {
       try {
@@ -186,14 +214,7 @@ function AddItem() {
       selectedSubCategory,
       search
     );
-  }, [
-    item,
-    selectedBrand,
-    selectedCategory,
-    selectedSubCategory,
-    search,
-   
-  ]);
+  }, [item, selectedBrand, selectedCategory, selectedSubCategory, search]);
 
   ///////////////////////////handleAddClick///////////////////////////////////
 
@@ -300,6 +321,8 @@ function AddItem() {
     dispatch(setPriceLevel(selectedValue));
   };
 
+  ///////////////////////////react window ///////////////////////////////////
+
   const Row = ({ index, style }) => {
     const el = filteredItems[index];
     return (
@@ -338,7 +361,11 @@ function AddItem() {
         </div>
         {el.added ? (
           <div className="flex items-center flex-col gap-2">
-            <Link to={`/pUsers/editItem/${el._id}`}>
+            <Link
+              // to={`/pUsers/editItem/${el._id}`}
+              // onClick={() => dispatch(persistScroll(el._id))}
+              onClick={()=>{setScrollPosition(window.scrollY)}}
+            >
               <button className=" mt-3  px-2 py-1  rounded-md border-violet-500 font-bold border  text-violet-500 text-xs">
                 Edit
               </button>
@@ -417,6 +444,8 @@ function AddItem() {
     );
   };
 
+  /////////////////////////// calculateHeight ///////////////////////////////////
+
   useEffect(() => {
     const calculateHeight = () => {
       const newHeight = window.innerHeight - 227;
@@ -427,14 +456,16 @@ function AddItem() {
 
     // Calculate the height on component mount and whenever the window is resized
     calculateHeight();
-    window.addEventListener('resize', calculateHeight);
+    window.addEventListener("resize", calculateHeight);
 
     // Cleanup the event listener on component unmount
-    return () => window.removeEventListener('resize', calculateHeight);
- }, []); 
+    return () => window.removeEventListener("resize", calculateHeight);
+  }, []);
 
- console.log(listHeight);
 
+
+
+  console.log(listHeight);
 
   return (
     <div className="flex relative">
@@ -609,12 +640,12 @@ function AddItem() {
           </div>
         ) : (
           <List
-          style={{
-            scrollbarWidth: "thin",
-            scrollbarColor: "transparent transparent",
-          }}
-  
-          className=""
+          ref={listRef}
+            style={{
+              scrollbarWidth: "thin",
+              scrollbarColor: "transparent transparent",
+            }}
+            className=""
             height={listHeight} // Specify the height of your list
             itemCount={filteredItems.length} // Specify the total number of items
             itemSize={170} // Specify the height of each item

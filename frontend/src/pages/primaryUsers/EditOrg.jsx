@@ -5,7 +5,7 @@ import uploadImageToCloudinary from "../../../utils/uploadCloudinary.js";
 import { HashLoader } from "react-spinners";
 import Sidebar from "../../components/homePage/Sidebar.jsx";
 import { IoReorderThreeSharp } from "react-icons/io5";
-import { useParams,useNavigate } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 
 const EditOrg = () => {
   const [name, setName] = useState("");
@@ -22,78 +22,91 @@ const EditOrg = () => {
   const [logo, setLogo] = useState("");
   const [loader, setLoader] = useState(false);
   const [showSidebar, setShowSidebar] = useState(false);
-  const [showInputs, setShowInputs] = useState(false); 
-  const [senderId, setSenderId] = useState('');
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [showInputs, setShowInputs] = useState(false);
+  const [senderId, setSenderId] = useState("");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [userData, setUserData] = useState("");
   const [website, setWebsite] = useState("");
   const [pan, setPan] = useState("");
   const [financialYear, setFinancialYear] = useState("");
+  const [type, setType] = useState("self");
 
+  const { id } = useParams();
+  const navigate = useNavigate();
 
-const {id}=useParams();
-const navigate=useNavigate()
+  useEffect(() => {
+    const fetchSingleOrganization = async () => {
+      try {
+        const res = await api.get(`/api/pUsers/getSingleOrganization/${id}`, {
+          withCredentials: true,
+        });
 
-    useEffect(() => {
-      const fetchSingleOrganization = async () => {
-        try {
-          const res = await api.get(`/api/pUsers/getSingleOrganization/${id}`, {
-            withCredentials: true,
-          });
+        const {
+          name,
+          flat,
+          road,
+          landmark,
+          email,
+          mobile,
+          senderId,
+          username,
+          password,
+          pin,
+          gstNum,
+          country,
+          logo,
+          state,
+          website,
+          type,
+          pan,
+          financialYear,
+          
+        } = res.data.organizationData;
 
-        
-          const { name, flat, road, landmark, email, mobile, senderId, username, password, pin, gstNum, country, logo, state ,website,
-            pan,
-            financialYear, } = res.data.organizationData
+        setName(name);
+        setFlat(flat);
+        setRoad(road);
+        setLandmark(landmark);
+        setEmail(email);
+        setMobile(mobile);
+        setSenderId(senderId);
+        setUsername(username);
+        setPassword(password);
+        setPin(pin);
+        setGst(gstNum);
+        setCountry(country);
+        setLogo(logo);
+        setState(state);
+        setWebsite(website);
+        setPan(pan);
+        setFinancialYear(financialYear);
+        setType(type);
 
-          setName(name);
-          setFlat(flat);
-          setRoad(road);
-          setLandmark(landmark);
-          setEmail(email);
-          setMobile(mobile);
-          setSenderId(senderId);
-          setUsername(username);
-          setPassword(password);
-          setPin(pin);
-          setGst(gstNum);
-          setCountry(country);
-          setLogo(logo);
-          setState(state);
-          setWebsite(website);
-          setPan(pan);
-          setFinancialYear(financialYear)
-
-          if(senderId.length>0){
-
-            setShowInputs(true)
-
-          }
-  
-        } catch (error) {
-          console.log(error);
-          toast.error(error.response.data.message);
+        if (senderId.length > 0) {
+          setShowInputs(true);
         }
-      };
-      fetchSingleOrganization();
-    }, []);
+      } catch (error) {
+        console.log(error);
+        toast.error(error.response.data.message);
+      }
+    };
+    fetchSingleOrganization();
+  }, []);
 
-    useEffect(() => {
-      const getUserData = async () => {
-        try {
-          const res = await api.get("/api/pUsers/getPrimaryUserData", {
-            withCredentials: true,
-          });
-          setUserData(res.data.data.userData);
-        } catch (error) {
-          console.log(error);
-        }
-      };
-      getUserData();
-    }, []);
-    
-  
+  useEffect(() => {
+    const getUserData = async () => {
+      try {
+        const res = await api.get("/api/pUsers/getPrimaryUserData", {
+          withCredentials: true,
+        });
+        setUserData(res.data.data.userData);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    getUserData();
+  }, []);
 
   const handleCheckboxChange = () => {
     setShowInputs(!showInputs);
@@ -125,16 +138,15 @@ const navigate=useNavigate()
       !country ||
       !flat.trim() ||
       !road.trim() ||
-      !website.trim() || 
+      !website.trim() ||
       !financialYear.trim() ||
-      !landmark.trim()||
-      !pin||
+      !landmark.trim() ||
+      !pin ||
       !mobile
     ) {
       toast.error("All fields must be filled");
       return;
     }
-    
 
     if (showInputs) {
       if (!senderId.trim() || !username.trim() || !password.trim()) {
@@ -147,8 +159,6 @@ const navigate=useNavigate()
       toast.error("Name must be at most 30 characters");
       return;
     }
-
-
 
     if (!/^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/.test(email)) {
       toast.error("Invalid email address");
@@ -218,6 +228,7 @@ const navigate=useNavigate()
       website,
       pan,
       financialYear,
+      type
     };
 
     console.log(formData);
@@ -233,8 +244,7 @@ const navigate=useNavigate()
       });
 
       toast.success(res.data.message);
-      navigate('/pUsers/organizationList')
-    
+      navigate("/pUsers/organizationList");
     } catch (error) {
       toast.error(error.response.data.message);
       console.log(error);
@@ -481,8 +491,6 @@ const navigate=useNavigate()
                   {/* address */}
                   {/* sms*/}
 
-
-
                   {userData.sms && (
                     <>
                       <hr className="mt-6 border-b-1 border-blueGray-300" />
@@ -582,7 +590,7 @@ const navigate=useNavigate()
                       />
                     </div> */}
                     </div>
-                   
+
                     <div className="w-full lg:w-6/12 px-4">
                       <div className="relative w-full mb-3">
                         <label
@@ -721,6 +729,42 @@ const navigate=useNavigate()
                         </select>
                       </div>
                     </div>
+                      <div className="flex items-center mt-8 px-4 w-full">
+                        <div className="flex items-center mr-4">
+                          <input
+                            type="checkbox"
+                            id="valueCheckbox"
+                            className="form-checkbox h-5 w-5 text-indigo-600 transition duration-150 ease-in-out"
+                            checked={type === "self"}
+                            onChange={() => {
+                              setType("self");
+                            }}
+                          />
+                          <label
+                            htmlFor="valueCheckbox"
+                            className="ml-2 text-gray-700"
+                          >
+                            Self
+                          </label>
+                        </div>
+                        <div className="flex items-center">
+                          <input
+                            type="checkbox"
+                            id="itemRateCheckbox"
+                            className="form-checkbox h-5 w-5 text-indigo-600 transition duration-150 ease-in-out"
+                            checked={type === "integrated"}
+                            onChange={() => {
+                              setType("integrated");
+                            }}
+                          />
+                          <label
+                            htmlFor="itemRateCheckbox"
+                            className="ml-2 text-gray-700"
+                          >
+                            Integrated
+                          </label>
+                        </div>
+                      </div>
 
                     <div className="flex items-center justify-center gap-0 mt-4 m-4 relative ">
                       {logo && !loader && (
@@ -767,7 +811,7 @@ const navigate=useNavigate()
                     type="button"
                     onClick={submitHandler}
                   >
-                   Edit
+                    Edit
                   </button>
                 </form>
               </div>

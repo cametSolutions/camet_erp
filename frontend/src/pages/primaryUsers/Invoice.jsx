@@ -237,7 +237,7 @@ function Invoice() {
               <IoIosArrowRoundBack className="text-3xl text-white cursor-pointer md:hidden" />
             </Link>
           <p className="text-white text-lg   font-bold ">
-            Create Bill / Invoice
+            Create Bill / Sales Order
           </p>
         </div>
 
@@ -245,7 +245,7 @@ function Invoice() {
 
         <div className="flex justify-between  p-4 bg-white drop-shadow-lg items-center text-xs md:text-base ">
           <div className=" flex flex-col gap-1 justify-center">
-            <p className="text-md font-semibold text-violet-400">Invoice</p>
+            <p className="text-md font-semibold text-violet-400">Sales Order</p>
             <p className="font-semibold   text-gray-500 text-xs md:text-base">
               {new Date().toDateString()}
             </p>
@@ -527,16 +527,16 @@ function Invoice() {
           </>
         )}
 
-        <div className="flex justify-between bg-white mt-2 p-3 mb-10">
+        <div className="flex justify-between bg-white mt-2 p-3">
           <p className="font-bold text-lg">Total Amount</p>
           <p className="font-bold text-lg">₹ {totalAmount.toFixed(2) ?? 0}</p>
         </div>
 
-        <div className="mt-auto md:hidden ">
+        <div className=" md:hidden ">
           <div className="flex justify-center overflow-hidden w-full">
             <button
               onClick={submitHandler}
-              className="fixed bottom-0 text-white bg-violet-700  w-full  p-2 flex items-center justify-center gap-2 hover_scale cursor-pointer "
+              className="fixed bottom-0 text-white bg-violet-700  w-full  p-2 py-4 flex items-center justify-center gap-2 hover_scale cursor-pointer "
             >
               <IoIosAddCircle className="text-2xl" />
               <p>Generate Bill</p>

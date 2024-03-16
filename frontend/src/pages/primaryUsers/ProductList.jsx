@@ -14,6 +14,7 @@ import { useNavigate } from "react-router-dom";
 import { IoIosSearch } from "react-icons/io";
 import { IoIosAddCircle } from "react-icons/io";
 import { FixedSizeList as List } from "react-window";
+import { useSelector } from "react-redux";
 
 function ProductList() {
   const [products, setProducts] = useState([]);
@@ -23,12 +24,23 @@ function ProductList() {
   const [loader, setLoader] = useState(false);
   const [search, setSearch] = useState("");
   const [filteredProducts, setFilteredProducts] = useState([]);
+  const [listHeight, setListHeight] = useState(0);
+
+
+  const cmp_id = useSelector(
+    (state) => state.setSelectedOrganization.selectedOrg._id
+  );
+  const type = useSelector(
+    (state) => state.setSelectedOrganization.selectedOrg.type
+  );
+
+  console.log(type);
 
   useEffect(() => {
     const fetchProducts = async () => {
       setLoader(true);
       try {
-        const res = await api.get("/api/pUsers/getProducts", {
+        const res = await api.get(`/api/pUsers/getProducts/${cmp_id}`, {
           withCredentials: true,
         });
         setLoader(true);
@@ -44,7 +56,7 @@ function ProductList() {
       }
     };
     fetchProducts();
-  }, [refresh]);
+  }, [refresh,cmp_id]);
 
   const handleToggleSidebar = () => {
     if (window.innerWidth < 768) {
@@ -54,7 +66,6 @@ function ProductList() {
 
   console.log(products);
 
-  const navigate = useNavigate();
   useEffect(() => {
     if (search === "") {
       setFilteredProducts(products);
@@ -108,6 +119,26 @@ function ProductList() {
     }
   };
 
+
+  useEffect(() => {
+    const calculateHeight = () => {
+      const newHeight = window.innerHeight - 117;
+      setListHeight(newHeight);
+    };
+
+    console.log(window.innerHeight);
+
+    // Calculate the height on component mount and whenever the window is resized
+    calculateHeight();
+    window.addEventListener("resize", calculateHeight);
+
+    // Cleanup the event listener on component unmount
+    return () => window.removeEventListener("resize", calculateHeight);
+  }, []);
+
+
+  console.log(listHeight);
+
   const Row = ({ index, style }) => {
     const el = filteredProducts[index];
     return (
@@ -142,7 +173,7 @@ function ProductList() {
               </div>
             </div>
           </div>
-          <div className="flex gap-3 mt-2 px-4">
+          <div className={` ${type !=="self" ? "pointer-events-none opacity-50" : ""}  flex gap-3 mt-2 px-4`}>
             <Link to={`/pUsers/editProduct/${el._id}`}>
               <FaEdit className="text-blue-500" />
             </Link>
@@ -168,7 +199,7 @@ function ProductList() {
       </div>
 
       <div className="flex-1 bg-slate-50 overflow-y-scroll ">
-        <div className="sticky top-0 z-20">
+        <div className="sticky top-0 z-20 h-[117px]">
           <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex  items-center gap-2   ">
             <IoReorderThreeSharp
               onClick={handleToggleSidebar}
@@ -249,7 +280,7 @@ function ProductList() {
           >
             <List
               className=""
-              height={1000} // Specify the height of your list
+              height={listHeight} // Specify the height of your list
               itemCount={filteredProducts.length} // Specify the total number of items
               itemSize={150} // Specify the height of each item
               width="100%" // Specify the width of your list
@@ -263,7 +294,7 @@ function ProductList() {
           </div>
         )}
 
-        <Link to={"/pUsers/addProduct"} className="flex justify-center">
+        <Link to={"/pUsers/addProduct"} className={`${type!=="self" ? "hidden " : ""}  flex justify-center`}>
           <div className=" px-4 absolute bottom-12 text-white bg-violet-700 rounded-3xl p-2 flex items-center justify-center gap-2 hover_scale cursor-pointer ">
             <IoIosAddCircle className="text-2xl" />
             <p>Create New Product</p>

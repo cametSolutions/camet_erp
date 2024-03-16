@@ -128,7 +128,7 @@ function InvoiceList() {
             </div>
             <div className=" flex flex-col justify-center gap-2">
               <div className="flex gap-2 text-nowrap">
-                <p className="font-bold">Amount :</p>
+                {/* <p className="font-bold">Amount :</p> */}
                 <p className="font-semibold text-gray-500">
                   {" "}
                   {`₹ ${el?.finalAmount}`}
@@ -171,21 +171,13 @@ function InvoiceList() {
             <Link to={"/pUsers/dashboard"}>
               <IoIosArrowRoundBack className="text-3xl text-white cursor-pointer md:hidden" />
             </Link>
-            <p className="text-white text-lg   font-bold ">Invoices</p>
+            <p className="text-white text-lg   font-bold ">Sales Orders</p>
           </div>
 
           {/* invoiec date */}
           <div className=" p-4  bg-white drop-shadow-lg">
             <div className="flex justify-between  items-center">
-              {/* <div className=" flex flex-col gap-1 justify-center">
-          <p className="text-md font-semibold text-violet-400">
-            Search Parties
-          </p>
-        </div>
-        <div className="flex items-center hover_scale cursor-pointer">
-          <p className="text-pink-500 m-2 cursor-pointer  ">Cancel</p>
-          <MdCancel className="text-pink-500" />
-        </div> */}
+      
             </div>
             <div className=" md:w-1/2 ">
               {/* search bar */}
@@ -260,12 +252,7 @@ function InvoiceList() {
           </div>
         )}
 
-        {/* <Link to={"/pUsers/addParty"} className="flex justify-center">
-        <div className=" px-4  absolute bottom-2 text-white bg-violet-700 rounded-3xl p-2 flex items-center justify-center gap-2 hover_scale cursor-pointer ">
-          <IoIosAddCircle className="text-2xl" />
-          <p>Create New Party</p>
-        </div>
-      </Link> */}
+ 
       </div>
     </div>
   );

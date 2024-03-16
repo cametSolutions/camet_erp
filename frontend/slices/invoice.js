@@ -6,6 +6,7 @@ const initialState = {
   selectedPriceLevel: "",
   additionalCharges: [],
   finalAmount: 0,
+  persistScrollId:""
 };
 
 export const invoiceSlice = createSlice({
@@ -80,6 +81,11 @@ export const invoiceSlice = createSlice({
     removeAll: (state) => {
       Object.assign(state, initialState);
     },
+    persistScroll:(state,action)=>{
+
+      state.persistScrollId=action.payload
+
+    }
   },
 });
 
@@ -97,7 +103,8 @@ export const {
   AddFinalAmount,
   deleteRow,
   removeAll,
-  removeAdditionalCharge
+  removeAdditionalCharge,
+  persistScroll
 } = invoiceSlice.actions;
 
 export default invoiceSlice.reducer;

@@ -49,6 +49,8 @@ import EditItem from '../pages/primaryUsers/EditItem'
 import Demo from '../pages/primaryUsers/Demo'
 import RetailersList from '../pages/primaryUsers/RetailersList'
 import InvoiceList from '../pages/primaryUsers/InvoiceList'
+import HsnList from '../pages/primaryUsers/HsnList'
+import EditHsn from '../pages/primaryUsers/EditHsn'
 
 
 
@@ -90,6 +92,8 @@ const Routers = () => {
         <Route path='/pUsers/editItem/:id' element={<ProtectedPriRoute><EditItem/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/demo' element={<ProtectedPriRoute><Demo/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/invoiceList' element={<ProtectedPriRoute><InvoiceList/></ProtectedPriRoute>}></Route>
+        <Route path='/pUsers/hsnList' element={<ProtectedPriRoute><HsnList/></ProtectedPriRoute>}></Route>
+        <Route path='/pUsers/editHsn/:id' element={<ProtectedPriRoute><EditHsn/></ProtectedPriRoute>}></Route>
 
 
         {/* admin */}

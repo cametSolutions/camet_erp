@@ -188,6 +188,7 @@ export const addOrganizations = async (req, res) => {
     financialYear,
     username,
     password,
+    type,
   } = req.body;
   console.log(req.file);
   console.log(req.body);
@@ -213,6 +214,7 @@ export const addOrganizations = async (req, res) => {
       pan,
       financialYear,
       gstNum: gst,
+      type,
     });
 
     if (organization) {
@@ -1148,8 +1150,10 @@ export const addProduct = async (req, res) => {
     // Fetch HSN details
     const hsnDetails = await HsnModel.findById(hsn_code);
 
+    console.log("hsnDetails", hsnDetails);
+
     // Extract required fields from HSN details
-    let cgst, sgst, igst, cess, addl_cess;
+    let cgst, sgst, igst, cess, addl_cess, hsn_id;
     if (hsnDetails) {
       ({
         igstRate: igst,
@@ -1158,6 +1162,7 @@ export const addProduct = async (req, res) => {
         onValue: cess,
         onQuantity: addl_cess,
         hsn: hsn_code,
+        _id: hsn_id,
       } = hsnDetails);
     }
 
@@ -1186,6 +1191,7 @@ export const addProduct = async (req, res) => {
       igst,
       cess,
       addl_cess,
+      hsn_id,
     };
 
     // Save the product
@@ -1212,10 +1218,13 @@ export const addProduct = async (req, res) => {
 
 export const getProducts = async (req, res) => {
   const Primary_user_id = req.pUserId;
-  console.log(Primary_user_id);
+  const cmp_id = req.params.cmp_id;
+  console.log("Primary_user_id", Primary_user_id);
+  console.log("cmp_id", cmp_id);
   try {
     const products = await productModel.find({
       Primary_user_id: Primary_user_id,
+      cmp_id: cmp_id,
     });
     if (products) {
       return res.status(200).json({
@@ -1509,30 +1518,31 @@ export const createInvoice = async (req, res) => {
   }
 };
 
-
 export const addBulkProducts = async (req, res) => {
   try {
-     // Assuming `data` is an array of product objects
-     const products = await Promise.all(req.body.data.map(async (product) => {
-       const newProduct = new productModel(product);
-       await newProduct.save();
-       return newProduct;
-     }));
- 
-     // Send a success response with the added products
-     res.status(201).json({
-       message: 'Bulk products added successfully',
-       products: products,
-     });
+    // Assuming `data` is an array of product objects
+    const products = await Promise.all(
+      req.body.data.map(async (product) => {
+        const newProduct = new productModel(product);
+        await newProduct.save();
+        return newProduct;
+      })
+    );
+
+    // Send a success response with the added products
+    res.status(201).json({
+      message: "Bulk products added successfully",
+      products: products,
+    });
   } catch (error) {
-     console.error('Error adding bulk products:', error);
-     // Send an error response
-     res.status(500).json({
-       message: 'Error adding bulk products',
-       error: error.message,
-     });
+    console.error("Error adding bulk products:", error);
+    // Send an error response
+    res.status(500).json({
+      message: "Error adding bulk products",
+      error: error.message,
+    });
   }
- };
+};
 // export const addBulkParties = async (req, res) => {
 //   try {
 //      // Assuming `data` is an array of product objects
@@ -1541,7 +1551,7 @@ export const addBulkProducts = async (req, res) => {
 //        await newProduct.save();
 //        return newProduct;
 //      }));
- 
+
 //      // Send a success response with the added products
 //      res.status(201).json({
 //        message: 'Bulk products added successfully',
@@ -1557,12 +1567,7 @@ export const addBulkProducts = async (req, res) => {
 //   }
 //  };
 
-
-
-
-
-
- // @desc get invoiceList
+// @desc get invoiceList
 // route get/api/pUsers/invoiceList;
 
 export const invoiceList = async (req, res) => {
@@ -1588,4 +1593,96 @@ export const invoiceList = async (req, res) => {
   }
 };
 
- 
+// @desc delete hsn
+// route get/api/pUsers/deleteProduct
+
+export const deleteHsn = async (req, res) => {
+  const hsnId = req.params.id;
+  console.log("hsnId", hsnId);
+  try {
+    const newHsnId = new mongoose.Types.ObjectId(hsnId);
+
+    const attachedProduct = await productModel.find({ hsn_id: newHsnId });
+
+    console.log("attachedProduct", attachedProduct);
+
+    if (attachedProduct.length > 0) {
+      return res.status(404).json({
+        success: false,
+        message: `HSN is linked with product ${attachedProduct[0].product_name}`,
+      });
+    } else {
+      const deletedHsn = await HsnModel.findByIdAndDelete(hsnId);
+      if (deletedHsn) {
+        return res.status(200).json({
+          success: true,
+          message: "HSN deleted successfully",
+        });
+      } else {
+        return res.status(404).json({
+          success: false,
+          message: "HSN not found",
+        });
+      }
+    }
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error, try again!",
+    });
+  }
+};
+
+// @desc  getting a single hsn detail for edit
+// route get/api/pUsers/getSinglePartyDetails
+
+export const getSingleHsn = async (req, res) => {
+
+  console.log("haiiiiiiiiiiiiiiiiiiiii");
+  const id = req.params.hsnId;
+  try {
+     const hsn = await HsnModel.findById(id);
+
+     console.log("hsn",hsn);
+     if (hsn) {
+       return res.status(200).json({ success: true, data: hsn });
+     } else {
+       return res.status(404).json({ success: false, message: "HSN not found" });
+     }
+  } catch (error) {
+     console.error(error);
+     return res.status(500).json({
+       success: false,
+       message: "Internal server error, try again!",
+     });
+  }
+ };
+
+
+
+
+ // @desc  editHsn details
+// route get/api/pUsers/editHsn
+
+export const editHsn = async (req, res) => {
+  const hsnId = req.params.hsnId;
+
+  console.log(req.body);
+
+  try {
+    const updateHsn = await HsnModel.findOneAndUpdate(
+      { _id: hsnId },
+      req.body,
+      { new: true }
+    );
+    res.status(200).json({
+      success: true,
+      message: "HSN updated successfully",
+      data: updateHsn,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
+};

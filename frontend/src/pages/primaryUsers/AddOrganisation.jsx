@@ -6,6 +6,7 @@ import { HashLoader } from "react-spinners";
 import Sidebar from "../../components/homePage/Sidebar.jsx";
 // import { useNavigate } from "react-router-dom";
 import { IoReorderThreeSharp } from "react-icons/io5";
+import { useNavigate } from "react-router-dom";
 
 const AddOrganisation = () => {
   const [name, setName] = useState("");
@@ -29,8 +30,7 @@ const AddOrganisation = () => {
   const [website, setWebsite] = useState("");
   const [pan, setPan] = useState("");
   const [financialYear, setFinancialYear] = useState("");
-
-  console.log(country);
+  const [type, setType] = useState("self");
 
   const handleCheckboxChange = () => {
     setShowInputs(!showInputs);
@@ -53,8 +53,9 @@ const AddOrganisation = () => {
     setLogo(data.url);
   };
 
-  const submitHandler = async () => {
+  const navigate = useNavigate();
 
+  const submitHandler = async () => {
     if (
       !name.trim() ||
       !gst.trim() ||
@@ -63,16 +64,15 @@ const AddOrganisation = () => {
       !country ||
       !flat.trim() ||
       !road.trim() ||
-      !website.trim() || 
+      !website.trim() ||
       !financialYear.trim() ||
-      !landmark.trim()||
-      !pin||
+      !landmark.trim() ||
+      !pin ||
       !mobile
     ) {
       toast.error("All fields must be filled");
       return;
     }
-    
 
     if (showInputs) {
       if (!senderId.trim() || !username.trim() || !password.trim()) {
@@ -85,8 +85,6 @@ const AddOrganisation = () => {
       toast.error("Name must be at most 30 characters");
       return;
     }
-
-
 
     if (!/^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/.test(email)) {
       toast.error("Invalid email address");
@@ -158,6 +156,7 @@ const AddOrganisation = () => {
       website,
       pan,
       financialYear,
+      type,
     };
 
     console.log(formData);
@@ -190,6 +189,8 @@ const AddOrganisation = () => {
       setWebsite("");
       setPan("");
       setFinancialYear("");
+      setType("self");
+      navigate("/pUsers/organizationList");
     } catch (error) {
       toast.error(error.response.data.message);
       console.log(error);
@@ -204,7 +205,7 @@ const AddOrganisation = () => {
     "Bihar",
     "Chandigarh",
     "Chhattisgarh",
-    "Dadra and Nagar Haveli and Daman and Diu",
+    "Dadra ",
     "Delhi",
     "Goa",
     "Gujarat",
@@ -703,6 +704,43 @@ const AddOrganisation = () => {
                             </option>
                           ))}
                         </select>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-center mt-8 px-4">
+                      <div className="flex items-center mr-4">
+                        <input
+                          type="checkbox"
+                          id="valueCheckbox"
+                          className="form-checkbox h-5 w-5 text-indigo-600 transition duration-150 ease-in-out"
+                          checked={type === "self"}
+                          onChange={() => {
+                            setType("self");
+                          }}
+                        />
+                        <label
+                          htmlFor="valueCheckbox"
+                          className="ml-2 text-gray-700"
+                        >
+                          Self
+                        </label>
+                      </div>
+                      <div className="flex items-center">
+                        <input
+                          type="checkbox"
+                          id="itemRateCheckbox"
+                          className="form-checkbox h-5 w-5 text-indigo-600 transition duration-150 ease-in-out"
+                          checked={type === "integrated"}
+                          onChange={() => {
+                            setType("integrated");
+                          }}
+                        />
+                        <label
+                          htmlFor="itemRateCheckbox"
+                          className="ml-2 text-gray-700"
+                        >
+                          Integrated
+                        </label>
                       </div>
                     </div>
                   </div>

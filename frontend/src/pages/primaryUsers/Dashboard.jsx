@@ -150,11 +150,11 @@ function Dashboard() {
                     <HiDocumentText />
                   </div>
 
-                  <div className="mx-5">
+                  <div className="mx-5 py-2.5">
                     <h4 className=" sm:text-md md:text-2xl  font-semibold text-gray-700">
                       ₹0
                     </h4>
-                    <div className="text-gray-500 text-sm">Quotation Register</div>
+                    <div className="text-gray-500 text-sm">Sale Order </div>
                   </div>
                 </div>
               </div>
@@ -168,11 +168,11 @@ function Dashboard() {
                     <FaCartArrowDown />
                   </div>
 
-                  <div className="mx-5 py-2.5">
+                  <div className="mx-5 ">
                     <h4 className=" sm:text-md md:text-2xl  font-semibold text-gray-700">
                       ₹0
                     </h4>
-                    <div className="text-gray-500 text-sm">Quotation</div>
+                    <div className="text-gray-500 text-sm">Order Register</div>
                   </div>
                 </div>
               </div>

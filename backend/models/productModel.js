@@ -52,6 +52,10 @@ const productSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  hsn_id: {
+    type: mongoose.Schema.Types.ObjectId,ref:"Hsn",
+    
+  },
   purchase_price: {
     type: String,
   },

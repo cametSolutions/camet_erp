@@ -8,10 +8,12 @@ import { MdDeleteSweep } from "react-icons/md";
 import { RiArrowRightSFill } from "react-icons/ri";
 import { toast } from "react-toastify";
 import api from "../../api/api";
+import { useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 // import "./hsn.css";
 
-function Hsn() {
+function EditHsn() {
   const [tab, setTab] = useState("onValue");
   const [hsn, setHsn] = useState("");
   const [description, setDescription] = useState("");
@@ -26,18 +28,7 @@ function Hsn() {
   const [showSidebar, setShowSidebar] = useState(false);
   const [isRevisedChargeApplicable, setIsRevisedChargeApplicable] =
     useState(false);
-
-  console.log(taxabilityType);
-  console.log(hsn);
-  console.log(description);
-  console.log(igstRate);
-  console.log(cgstRate);
-  console.log(sgstUtgstRate);
-  console.log(onValue);
-  console.log(onQuantity);
-
-  //   table    ///////////////////////////
-
+  const [hsnData, setHsnData] = useState([]);
   const [rows, setRows] = useState([
     {
       greaterThan: "0",
@@ -50,13 +41,79 @@ function Hsn() {
       basedOnQuantity: "",
     },
   ]);
-  console.log(rows);
+
+
+
+
+  const { id } = useParams();
+  const navigate=useNavigate()
+
+  useEffect(() => {
+    const fetchSingleOrganization = async () => {
+      try {
+        const res = await api.get(`/api/pUsers/getSingleHsn/${id}`, {
+          withCredentials: true,
+        });
+
+        setHsnData(res.data.data);
+        const {
+          hsn,
+          description,
+          tab,
+          taxabilityType,
+          igstRate,
+          cgstRate,
+          sgstUtgstRate,
+          onValue,
+          onQuantity,
+          isRevisedChargeApplicable,
+          rows,
+        } = res.data.data;
+
+        setHsn(hsn);
+        setDescription(description);
+        setTab(tab);
+        setTaxabilityType(taxabilityType);
+        setIgstRate(igstRate);
+        setCgstRate(cgstRate);
+        setSgstUtgstRate(sgstUtgstRate);
+        setOnValue(onValue);
+        setCheckedValue(tab);
+        setOnQuantity(onQuantity);
+        setIsRevisedChargeApplicable(isRevisedChargeApplicable);
+
+        if (tab === "onItemRate") {
+          const newRows = rows.map((item) => {
+            return {
+              greaterThan: item.greaterThan,
+              upto: item.upto,
+              taxabilityType: item.taxabilityType,
+              igstRate: item.igstRate,
+              cgstRate: item.cgstRate,
+              sgstUtgstRate: item.sgstUtgstRate,
+              basedOnValue: item.basedOnValue, // Fixed the typo here, it was 'tem' instead of 'item'
+              basedOnQuantity: item.basedOnQuantity,
+            };
+          });
+          setRows(newRows);
+        }
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    fetchSingleOrganization();
+  }, []);
+
+  console.log(isRevisedChargeApplicable);
+
+
+  //   table    ///////////////////////////
+
 
   const handleAddRow = () => {
     let hasEmptyField = false;
 
-    rows.forEach((row, ) => {
-    
+    rows.forEach((row) => {
       if (row.taxabilityType === "") {
         // toast.error("Select taxability type");
         hasEmptyField = true; // Set the flag to true to indicate an error
@@ -199,8 +256,6 @@ function Hsn() {
           }
         }
       } else {
-       
-
         const lastRow = rows[rows.length - 1];
 
         if (lastRow.taxabilityType === "") {
@@ -263,38 +318,17 @@ function Hsn() {
     //     console.log(formData);
 
     try {
-      const res = await api.post("/api/pUsers/addHsn", formData, {
+      const res = await api.post(`/api/pUsers/editHsn/${id}`, formData, {
         headers: {
           "Content-Type": "application/json",
         },
         withCredentials: true,
       });
       toast.success(res.data.message);
+      navigate("/pUsers/hsnList")
       
-      // Resetting individual state variables
+
   
-      setHsn("");
-      setDescription("");
-      // setTab("");
-      setTaxabilityType("");
-      setIgstRate("");
-      setCgstRate("");
-      setSgstUtgstRate("");
-      setOnQuantity("");
-      setOnValue("");
-      setIsRevisedChargeApplicable("");
-    
-      // Resetting the rows state
-      setRows(rows.map((row) => ({
-        greaterThan: "",
-        upto: "",
-        taxabilityType: "",
-        igstRate: "",
-        cgstRate: "",
-        sgstUtgstRate: "",
-        basedOnValue: "",
-        basedOnQuantity: "",
-      })));
     } catch (error) {
       toast.error(error.response.data.message);
       console.log(error);
@@ -306,6 +340,8 @@ function Hsn() {
       setShowSidebar(!showSidebar);
     }
   };
+
+  console.log(isRevisedChargeApplicable);
 
   return (
     <div className="flex">
@@ -847,4 +883,4 @@ function Hsn() {
   );
 }
 
-export default Hsn;
+export default EditHsn;

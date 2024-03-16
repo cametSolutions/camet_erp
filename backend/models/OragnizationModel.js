@@ -27,7 +27,8 @@ const organizationSchema = new mongoose.Schema(
     categories:{type:Array},
     subcategories:{type:Array},
     levelNames:{type:Array},
-    locations:{type:Array}
+    locations:{type:Array},
+    type:{type:String,default:"self"}
   },
   {
     timestamps: true,

@@ -9,7 +9,6 @@ import { BsFillBuildingsFill } from "react-icons/bs";
 import { FaEye } from "react-icons/fa6";
 import { SlUserFollow } from "react-icons/sl";
 import { IoIosCreate } from "react-icons/io";
-import { GiTakeMyMoney } from "react-icons/gi";
 import { PiBankFill } from "react-icons/pi";
 import { useDispatch, useSelector } from "react-redux";
 import { removeSelectedOrganization } from "../../../slices/PrimarySelectedOrgSlice";
@@ -32,6 +31,8 @@ function Sidebar({ TAB, showBar }) {
   const selectedOrgFromRedux = useSelector(
     (state) => state.setSelectedOrganization.selectedOrg
   );
+
+  console.log(selectedOrgFromRedux);
 
   const [expandedSections, setExpandedSections] = useState({
     orgList: false,
@@ -312,67 +313,25 @@ function Sidebar({ TAB, showBar }) {
                 </a>
               </Link>
 
-             
-             
          
-
-              <a
-                onClick={() => {
-                  // handleSidebarItemClick("addOrganizations");
-                  handleToggleSection("addBank");
-                }}
-                className={` ${
-                  TAB === "addBank" || TAB === "bankList"
-                    ? "bg-gray-800 text-white"
-                    : "text-gray-400"
-                } hover:bg-gray-800 hover:text-white flex items-center px-4 py-2 mt-5 transition-colors duration-300 transform rounded-lg   `}
-                href="#"
-              >
-                <PiBankFill />
-                <span className="mx-4 font-medium">Banks</span>
-              </a>
-              {expandedSections.addBank && (
-                <div
-                  className="pl-8 mt-2 text-white flex flex-col gap-1 pt-2 animate__animated animate__fadeIn"
-                  style={{ animationDuration: "5s" }}
-                >
-                  {/* Add your sections here, for example: */}
-                  <label
+                <Link to={"/pUsers/bankList"}>
+                  <a
                     onClick={() => {
-                      handleSidebarItemClick("organizationListLive");
+                      handleSidebarItemClick("outstanding");
                     }}
                     className={` ${
-                      TAB === "addBank" ? " bg-gray-800 text-white " : ""
-                    } rounded-lg flex items-center mb-3 hover:bg-gray-800 hover:text-white  cursor-pointer p-2`}
+                      TAB === "bankList" || TAB === "addBank"
+                        ? "bg-gray-800 text-white"
+                        : "text-gray-400"
+                    } hover:bg-gray-800 hover:text-white flex items-center px-4 py-2 mt-5 transition-colors duration-300 transform rounded-lg   `}
+                    href="#"
                   >
-                    <div className="flex items-center gap-2 ">
-                      <IoIosCreate />
-                      {/* <Link to={"/pUsers/addOrganization"}> */}
-                      <span className={`mr-2  `}>Create</span>
-                      {/* </Link> */}
-                    </div>
-                    <div className="custom-checkbox"></div>
-                  </label>
+                    <PiBankFill />
 
-                  <label
-                    onClick={() => {
-                      handleSidebarItemClick("organizationListBlocked");
-                    }}
-                    className={` ${
-                      TAB === "bankList" ? " bg-gray-800 text-white " : ""
-                    } rounded-lg flex items-center mb-3 hover:bg-gray-800 hover:text-white  cursor-pointer p-2`}
-                  >
-                    <div className="flex items-center  gap-2">
-                      <FaEye className="" />
-                      <Link to={"/pUsers/bankList"}>
-                        <span className="mr-2 p-2">Display</span>
-                      </Link>
-                    </div>
-                    <div className="custom-checkbox"></div>
-                    {/* Add your logic for blocked section */}
-                  </label>
-                </div>
-              )}
+                    <span className="mx-4 font-medium">Banks</span>
+                  </a>
+                </Link>
+              
 
               <Link to={"/pUsers/partyList"}>
                 <a
@@ -391,7 +350,8 @@ function Sidebar({ TAB, showBar }) {
                   <span className="mx-4 font-medium">Party</span>
                 </a>
               </Link>
-              <Link to={"/pUsers/hsn"}>
+
+              <Link to={"/pUsers/hsnList"}>
                 <a
                   onClick={() => {
                     handleSidebarItemClick("addParty");
