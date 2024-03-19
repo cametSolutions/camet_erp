@@ -365,7 +365,7 @@ function Sidebar({ TAB, showBar }) {
                 </a>
               </Link>
 
-              <Link to={"/sUsers/productList"}>
+              <Link to={"/pUsers/productList"}>
                 <a
                   onClick={() => {
                     handleSidebarItemClick("outstanding");
