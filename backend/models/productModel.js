@@ -20,6 +20,10 @@ const productSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "PrimaryUser",
   },
+  Secondary_user_id: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "SecondaryUser",
+  },
   brand: {
     type: String,
   },

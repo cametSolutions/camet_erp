@@ -1468,7 +1468,7 @@ export const editParty = async (req, res) => {
 
 // @desc create in voice
 
-// route POST /api/pUsers/
+// route POST /api/pUsers/createInvoice
 export const createInvoice = async (req, res) => {
   const Primary_user_id = req.pUserId;
   try {

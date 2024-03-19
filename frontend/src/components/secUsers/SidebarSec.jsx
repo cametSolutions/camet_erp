@@ -8,9 +8,12 @@ import { useSelector, useDispatch } from "react-redux";
 import { setSecSelectedOrganization ,removeSecSelectedOrg} from "../../../slices/secSelectedOrgSlice";
 import { Link } from "react-router-dom";
 import { GiTakeMyMoney } from "react-icons/gi";
-import { IoReceipt } from "react-icons/io5";
 import { IoReorderThreeSharp } from "react-icons/io5";
 import { MdDashboard } from "react-icons/md";
+import { TiUserAdd } from "react-icons/ti";
+import { MdOutlineProductionQuantityLimits } from "react-icons/md";
+
+
 
 
 
@@ -251,21 +254,42 @@ function SidebarSec({ onTabChange, TAB,showBar }) {
 
 
 
-              <Link to={"/sUsers/outstanding"}>
+           
+
+
+              <Link to={"/sUsers/partyList"}>
                 <a
                   onClick={() => {
-                    handleSidebarItemClick("addOrganizations");
+                    handleSidebarItemClick("addParty");
                   }}
                   className={` ${
-                    TAB === "outstanding"
+                    TAB === "addParty"
                       ? "bg-gray-800 text-white"
                       : "text-gray-400"
                   } hover:bg-gray-800 hover:text-white flex items-center px-4 py-2 mt-5 transition-colors duration-300 transform rounded-lg   `}
                   href="#"
                 >
-                 <GiTakeMyMoney/>
+                  <TiUserAdd />
 
-                  <span className="mx-4 font-medium">Out Standings</span>
+                  <span className="mx-4 font-medium">Party</span>
+                </a>
+              </Link>
+
+              <Link to={"/sUsers/productList"}>
+                <a
+                  onClick={() => {
+                    handleSidebarItemClick("outstanding");
+                  }}
+                  className={` ${
+                    TAB === "productList"
+                      ? "bg-gray-800 text-white"
+                      : "text-gray-400"
+                  } hover:bg-gray-800 hover:text-white flex items-center px-4 py-2 mt-5 transition-colors duration-300 transform rounded-lg   `}
+                  href="#"
+                >
+                  <MdOutlineProductionQuantityLimits />
+
+                  <span className="mx-4 font-medium">Add Product</span>
                 </a>
               </Link>
 

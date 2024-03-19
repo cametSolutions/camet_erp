@@ -10,11 +10,12 @@ import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
 import api from "../../api/api";
 import { useDispatch } from "react-redux";
-import { addParty } from "../../../slices/invoice";
+import { addParty } from "../../../slices/invoiceSecondary";
+import SidebarSec from "../../components/secUsers/SidebarSec";
 
 // import { MdCancel } from "react-icons/md";
 
-function SearchParty() {
+function SearchPartySecondary() {
   const [showSidebar, setShowSidebar] = useState(false);
   const [parties, setParties] = useState([]);
   const [search, setSearch] = useState("");
@@ -25,12 +26,12 @@ function SearchParty() {
   console.log(parties);
 
   const cpm_id = useSelector(
-    (state) => state.setSelectedOrganization.selectedOrg._id
+    (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
   useEffect(() => {
     const fetchParties = async () => {
       try {
-        const res = await api.get(`/api/pUsers/PartyList/${cpm_id}`, {
+        const res = await api.get(`/api/sUsers/PartyList/${cpm_id}`, {
           withCredentials: true,
         });
 
@@ -44,7 +45,7 @@ function SearchParty() {
 
   const selectHandler = (el) => {
     dispatch(addParty(el));
-    navigate("/pUsers/invoice");
+    navigate("/sUsers/invoice");
   };
 
   console.log(parties);
@@ -62,7 +63,7 @@ function SearchParty() {
   return (
     <div className="flex relative h-screen ">
       <div>
-        <Sidebar TAB={"invoice"} showBar={showSidebar} />
+        <SidebarSec TAB={"invoice"} showBar={showSidebar} />
       </div>
 
       <div className="flex-1 bg-slate-50 overflow-y-scroll ">
@@ -70,7 +71,7 @@ function SearchParty() {
           <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex  items-center gap-2  ">
             <IoIosArrowRoundBack
               onClick={() => {
-                navigate("/pUsers/invoice");
+                navigate("/sUsers/invoice");
               }}
               className="text-3xl text-white cursor-pointer"
             />
@@ -161,7 +162,7 @@ function SearchParty() {
           </div>
         )}
 
-        <Link to={"/pUsers/addParty"} className="flex justify-center">
+        <Link to={"/sUsers/addParty"} className="flex justify-center">
           <div className="absolute bottom-2 text-white bg-violet-700 rounded-3xl p-2 flex items-center justify-center gap-2 hover_scale cursor-pointer ">
             <IoIosAddCircle className="text-2xl" />
             <p>Create New Party</p>
@@ -172,4 +173,4 @@ function SearchParty() {
   );
 }
 
-export default SearchParty;
+export default SearchPartySecondary;

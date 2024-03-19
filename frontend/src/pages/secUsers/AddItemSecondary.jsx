@@ -8,16 +8,17 @@ import { IoIosSearch } from "react-icons/io";
 import api from "../../api/api";
 import { MdOutlineQrCodeScanner } from "react-icons/md";
 import { useSelector } from "react-redux";
-import { addItem, removeItem } from "../../../slices/invoice";
+import { addItem, removeItem } from "../../../slices/invoiceSecondary";
 import { useDispatch } from "react-redux";
-import { changeCount } from "../../../slices/invoice";
-import { setPriceLevel } from "../../../slices/invoice";
-import { changeTotal,persistScroll } from "../../../slices/invoice";
+import { changeCount } from "../../../slices/invoiceSecondary";
+import { setPriceLevel } from "../../../slices/invoiceSecondary";
+import { changeTotal,persistScroll } from "../../../slices/invoiceSecondary";
 import { Dropdown } from "flowbite-react";
 import { HashLoader } from "react-spinners";
 import { FixedSizeList as List } from "react-window";
+import SidebarSec from "../../components/secUsers/SidebarSec";
 
-function AddItem() {
+function AddItemSecondary() {
   const [item, setItem] = useState([]);
   const [selectedPriceLevel, setSelectedPriceLevel] = useState("");
   const [refresh, setRefresh] = useState(false);
@@ -39,19 +40,19 @@ function AddItem() {
   ///////////////////////////cpm_id///////////////////////////////////
 
   const cpm_id = useSelector(
-    (state) => state.setSelectedOrganization.selectedOrg._id
+    (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
 
   ///////////////////////////itemsFromRedux///////////////////////////////////
 
-  const itemsFromRedux = useSelector((state) => state.invoice.items);
+  const itemsFromRedux = useSelector((state) => state.invoiceSecondary.items);
 
 
 
   ///////////////////////////priceLevelFromRedux///////////////////////////////////
 
   const priceLevelFromRedux =
-    useSelector((state) => state.invoice.selectedPriceLevel) || "";
+    useSelector((state) => state.invoiceSecondary.selectedPriceLevel) || "";
 
   ///////////////////////////navigate dispatch///////////////////////////////////
 
@@ -65,7 +66,7 @@ function AddItem() {
     const fetchProducts = async () => {
       setLoader(true);
       try {
-        const res = await api.get(`/api/pUsers/getProducts/${cpm_id}`, {
+        const res = await api.get(`/api/sUsers/getProducts/${cpm_id}`, {
           withCredentials: true,
         });
 
@@ -164,7 +165,7 @@ function AddItem() {
   useEffect(() => {
     const fetchFilters = async () => {
       try {
-        const res = await api.get(`/api/pUsers/fetchFilters/${orgId}`, {
+        const res = await api.get(`/api/sUsers/fetchFilters/${orgId}`, {
           withCredentials: true,
         });
 
@@ -362,9 +363,9 @@ function AddItem() {
         {el.added ? (
           <div className="flex items-center flex-col gap-2">
             <Link
-              // to={`/pUsers/editItem/${el._id}`}
+              to={`/sUsers/editItem/${el._id}`}
               // onClick={() => dispatch(persistScroll(el._id))}
-              onClick={()=>{setScrollPosition(window.scrollY)}}
+              // onClick={()=>{setScrollPosition(window.scrollY)}}
             >
               <button className=" mt-3  px-2 py-1  rounded-md border-violet-500 font-bold border  text-violet-500 text-xs">
                 Edit
@@ -470,7 +471,7 @@ function AddItem() {
   return (
     <div className="flex relative">
       <div>
-        <Sidebar TAB={"invoice"} />
+        <SidebarSec TAB={"invoice"} />
       </div>
 
       <div className="flex-1 bg-slate-50 h-screen overflow-y-scroll  ">
@@ -479,7 +480,7 @@ function AddItem() {
             <div className="flex items-center gap-2">
               <IoIosArrowRoundBack
                 onClick={() => {
-                  navigate("/pUsers/invoice");
+                  navigate("/sUsers/invoice");
                 }}
                 className="text-3xl text-white cursor-pointer"
               />
@@ -656,7 +657,7 @@ function AddItem() {
         )}
 
         {item.length > 0 && (
-          <Link to={"/pUsers/invoice"}>
+          <Link to={"/sUsers/invoice"}>
             <div className=" sticky bottom-0 bg-white  w-full flex justify-center p-3 border-t h-[70px] ">
               <button
                 // onClick={submitHandler}
@@ -672,4 +673,4 @@ function AddItem() {
   );
 }
 
-export default AddItem;
+export default AddItemSecondary;

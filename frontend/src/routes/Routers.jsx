@@ -51,6 +51,17 @@ import RetailersList from '../pages/primaryUsers/RetailersList'
 import InvoiceList from '../pages/primaryUsers/InvoiceList'
 import HsnList from '../pages/primaryUsers/HsnList'
 import EditHsn from '../pages/primaryUsers/EditHsn'
+import InvoiceSecondary from '../pages/secUsers/InvoiceSecondary'
+import SearchPartySecondary from '../pages/secUsers/SearchPartySecondary'
+import PartyListSecondary from '../pages/secUsers/PartyListSecondary'
+import AddPartySecondary from '../pages/secUsers/AddPartySecondary'
+import ProductListSecondary from '../pages/secUsers/ProductListSecondary'
+import AddItemSecondary from '../pages/secUsers/AddItemSecondary'
+import EditItemSecondary from '../pages/secUsers/EditItemSecondary'
+import InvoiceListSecondary from '../pages/secUsers/InvoiceListSecondary'
+import EditPartySecondary from '../pages/secUsers/EditPartySecondary'
+import AddProductSecondary from '../pages/secUsers/AddProductSecondary'
+import EditProductSecondary from '../pages/secUsers/EditProductSecondary'
 
 
 
@@ -107,6 +118,8 @@ const Routers = () => {
         <Route path='/sUsers/resetPassword' element={<ResetPasswordSec/>}></Route>
 
 
+
+
         <Route path='/sUsers/home' element={<ProtectedSecRoute><SecHome/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/outstanding' element={<ProtectedSecRoute><Outstanding/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/outstandingDetails/:party_id/:cmp_id/:total' element={<ProtectedSecRoute><OutstandingDetails/></ProtectedSecRoute>}></Route>
@@ -114,6 +127,19 @@ const Routers = () => {
         <Route path='/sUsers/transaction' element={<ProtectedSecRoute><Transaction /></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/receiptDetails/:id' element={<ProtectedSecRoute><SecReceptionDetails/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/dashboard' element={<ProtectedSecRoute><DashboardSec/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/invoice' element={<ProtectedSecRoute><InvoiceSecondary/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/searchParty' element={<ProtectedPriRoute><SearchPartySecondary/></ProtectedPriRoute>}></Route>
+        <Route path='/sUsers/partyList' element={<ProtectedPriRoute><PartyListSecondary/></ProtectedPriRoute>}></Route>
+        <Route path='/sUsers/addParty' element={<ProtectedPriRoute><AddPartySecondary/></ProtectedPriRoute>}></Route>
+        <Route path='/sUsers/productList' element={<ProtectedPriRoute><ProductListSecondary/></ProtectedPriRoute>}></Route>
+        <Route path='/sUsers/addItem' element={<ProtectedPriRoute><AddItemSecondary/></ProtectedPriRoute>}></Route>
+        <Route path='/sUsers/editItem/:id' element={<ProtectedPriRoute><EditItemSecondary/></ProtectedPriRoute>}></Route>
+        <Route path='/sUsers/invoiceList' element={<ProtectedPriRoute><InvoiceListSecondary/></ProtectedPriRoute>}></Route>
+        <Route path='/sUsers/editParty/:id' element={<ProtectedPriRoute><EditPartySecondary/></ProtectedPriRoute>}></Route>
+        <Route path='/sUsers/addProduct' element={<ProtectedPriRoute><AddProductSecondary/></ProtectedPriRoute>}></Route>
+        <Route path='/sUsers/editProduct/:id' element={<ProtectedPriRoute><EditProductSecondary/></ProtectedPriRoute>}></Route>
+
+
 
     </Routes>
   )

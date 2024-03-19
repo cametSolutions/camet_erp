@@ -6,9 +6,7 @@ import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
 import { BsFillBuildingsFill } from "react-icons/bs";
-import { FaEye } from "react-icons/fa6";
 import { SlUserFollow } from "react-icons/sl";
-import { IoIosCreate } from "react-icons/io";
 import { PiBankFill } from "react-icons/pi";
 import { useDispatch, useSelector } from "react-redux";
 import { removeSelectedOrganization } from "../../../slices/PrimarySelectedOrgSlice";
@@ -367,7 +365,7 @@ function Sidebar({ TAB, showBar }) {
                 </a>
               </Link>
 
-              <Link to={"/pUsers/productList"}>
+              <Link to={"/sUsers/productList"}>
                 <a
                   onClick={() => {
                     handleSidebarItemClick("outstanding");

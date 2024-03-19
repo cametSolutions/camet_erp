@@ -2,9 +2,15 @@ import SecondaryUser from "../models/secondaryUserModel.js";
 import generateSecToken from "../utils/generateSecondaryToken.js";
 import TallyData from "../models/TallyData.js";
 import TransactionModel from "../models/TransactionModel.js";
-import  BankDetails from '../models/bankModel.js'
+import BankDetails from "../models/bankModel.js";
 import generateNumericOTP from "../utils/generateOtp.js";
-import nodemailer from 'nodemailer'
+import nodemailer from "nodemailer";
+import PartyModel from "../models/partyModel.js";
+import productModel from "../models/productModel.js";
+import invoiceModel from "../models/invoiceModel.js";
+import HsnModel from "../models/hsnModel.js";
+import OragnizationModel from "../models/OragnizationModel.js";
+import Organization from "../models/OragnizationModel.js";
 
 import bcrypt from "bcryptjs";
 import mongoose from "mongoose";
@@ -18,7 +24,7 @@ export const login = async (req, res) => {
   try {
     let secUser;
     // Check if the provided email looks like an email address
-    if (email.includes('@')) {
+    if (email.includes("@")) {
       // If it's an email address, find the user by email
       secUser = await SecondaryUser.findOne({ email: email });
     } else {
@@ -44,17 +50,15 @@ export const login = async (req, res) => {
       return res.status(400).json({ message: "Invalid email or password" });
     }
 
-    const { name, _id,mobile } = secUser._doc;
-    console.log("mobile",mobile);
+    const { name, _id, mobile } = secUser._doc;
+    console.log("mobile", mobile);
     const token = generateSecToken(res, secUser._id);
 
     return res.status(200).json({
       message: "Login successful",
       token,
-      data: { email, name, _id,mobile },
+      data: { email, name, _id, mobile },
     });
-
-    
   } catch (error) {
     console.log(error);
     return res.status(500).json({ status: false, message: "Failed to login!" });
@@ -104,13 +108,12 @@ export const fetchOutstandingTotal = async (req, res) => {
           totalBillAmount: { $sum: "$bill_pending_amt" },
           party_name: { $first: "$party_name" },
           cmp_id: { $first: "$cmp_id" },
-          user_id:{ $first: "$user_id"}
+          user_id: { $first: "$user_id" },
         },
       },
     ]);
 
     outstandingData.sort((a, b) => a.party_name.localeCompare(b.party_name));
-
 
     if (outstandingData) {
       return res.status(200).json({
@@ -142,8 +145,8 @@ export const fetchOutstandingDetails = async (req, res) => {
     const outstandings = await TallyData.find({
       party_id: partyId,
       cmp_id: cmp_id,
-      bill_pending_amt: { $gt: 0 } 
-    }).sort({bill_date:1});
+      bill_pending_amt: { $gt: 0 },
+    }).sort({ bill_date: 1 });
     if (outstandings) {
       return res.status(200).json({
         outstandings: outstandings,
@@ -227,13 +230,17 @@ export const confirmCollection = async (req, res) => {
         agentId,
       });
 
-      const savedTransaction=await transaction.save();
+      const savedTransaction = await transaction.save();
 
-      res.status(200).json({ message: "Your Collection is confirmed",id:savedTransaction._id });
+      res
+        .status(200)
+        .json({
+          message: "Your Collection is confirmed",
+          id: savedTransaction._id,
+        });
     } else {
       console.log("No matching documents found for the given criteria");
     }
-
   } catch (error) {
     console.error("Error updating documents:", error);
     res.status(500).json({ error: "Internal Server Error" });
@@ -276,8 +283,8 @@ export const transactions = async (req, res) => {
           party_id: 1,
           party_name: 1,
           enteredAmount: 1,
-          isCancelled:1,
-          createdAt:1,
+          isCancelled: 1,
+          createdAt: 1,
           // totalBillAmount: 1,
           cmp_id: 1,
           // billNo: "$billData.billNo",
@@ -315,7 +322,6 @@ export const transactions = async (req, res) => {
 export const cancelTransaction = async (req, res) => {
   try {
     const transactionId = new mongoose.Types.ObjectId(req.params.id);
-    
 
     const transactions = await TransactionModel.aggregate([
       { $match: { _id: transactionId } },
@@ -324,32 +330,38 @@ export const cancelTransaction = async (req, res) => {
         $project: {
           _id: 0,
           billNo: "$billData.billNo",
-          currentAmount: { $sum: ["$billData.settledAmount", "$billData.remainingAmount"] }
-        }
+          currentAmount: {
+            $sum: ["$billData.settledAmount", "$billData.remainingAmount"],
+          },
+        },
       },
     ]);
 
     console.log("Transactions to update:", transactions);
 
     for (const { billNo, currentAmount } of transactions) {
-      await TallyData.updateOne({ bill_no: billNo }, { $set: { bill_pending_amt: currentAmount } });
+      await TallyData.updateOne(
+        { bill_no: billNo },
+        { $set: { bill_pending_amt: currentAmount } }
+      );
       console.log(`Updated bill_pending_amt for ${billNo}`);
     }
 
-    await TransactionModel.updateOne({ _id: transactionId }, { $set: { isCancelled: true } });
+    await TransactionModel.updateOne(
+      { _id: transactionId },
+      { $set: { isCancelled: true } }
+    );
 
-
-    
-
-    res.status(200).json({ success: true, message: "Transaction canceled successfully" });
+    res
+      .status(200)
+      .json({ success: true, message: "Transaction canceled successfully" });
   } catch (error) {
     console.error("Error canceling transaction:", error);
     res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
 
-
-// @desc fetch banks for payment page 
+// @desc fetch banks for payment page
 // route GET/api/sUsers/fetchBanks/:cmp_id
 
 export const fetchBanks = async (req, res) => {
@@ -365,16 +377,19 @@ export const fetchBanks = async (req, res) => {
     ]);
 
     if (bankData.length > 0) {
-      return res.status(200).json({ message: "bankData fetched", data: bankData });
+      return res
+        .status(200)
+        .json({ message: "bankData fetched", data: bankData });
     } else {
       return res.status(404).json({ message: "Bank data not found" });
     }
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ status: false, message: "Internal server error" });
+    return res
+      .status(500)
+      .json({ status: false, message: "Internal server error" });
   }
 };
-
 
 // @desc send otp for forgot password
 // route GET/api/sUsers/fetchBanks/:cmp_id
@@ -393,10 +408,7 @@ export const sendOtp = async (req, res) => {
     console.log("otp", otp);
 
     // Save OTP in the database
-    const saveOtp = await SecondaryUser.updateOne(
-      { email },
-      { $set: { otp } }
-    );
+    const saveOtp = await SecondaryUser.updateOne({ email }, { $set: { otp } });
 
     // Create Nodemailer transporter
     const transporter = nodemailer.createTransport({
@@ -433,25 +445,24 @@ export const sendOtp = async (req, res) => {
   }
 };
 
-
 // @desc check otp
 //  route POST/api/sUsers/submitOtp
 
 export const submitOtp = async (req, res) => {
   const { Otp, otpEmailSec } = req.body;
-  console.log("otpEmailSec",otpEmailSec);
+  console.log("otpEmailSec", otpEmailSec);
 
   try {
     // Retrieve user data based on the provided email
     const user = await SecondaryUser.findOne({ email: otpEmailSec });
 
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: "User not found" });
     }
 
     // Check if the user has an OTP and if it matches the submitted OTP
     if (user.otp !== parseInt(Otp)) {
-      return res.status(400).json({ message: 'Invalid OTP' });
+      return res.status(400).json({ message: "Invalid OTP" });
     }
 
     // // Check if the OTP has expired
@@ -460,11 +471,10 @@ export const submitOtp = async (req, res) => {
     // }
 
     // If all checks pass, you can consider the OTP valid
-    return res.status(200).json({ message: 'OTP is valid' });
-
+    return res.status(200).json({ message: "OTP is valid" });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ error: 'Internal server error' });
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -479,7 +489,7 @@ export const resetPassword = async (req, res) => {
     const user = await SecondaryUser.findOne({ email: otpEmailSec });
 
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: "User not found" });
     }
 
     // Update the user's password
@@ -488,26 +498,26 @@ export const resetPassword = async (req, res) => {
     // Save the updated user data
     await user.save();
 
-    return res.status(200).json({ message: 'Password reset successful' });
-
+    return res.status(200).json({ message: "Password reset successful" });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ error: 'Internal server error' });
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
-
 
 // @desc to get the details of transaction or receipt
 // route GET/api/sUsers/getTransactionDetails
 
 export const getTransactionDetails = async (req, res) => {
   const receiptId = req.params.id;
-  
+
   try {
     const receiptDetails = await TransactionModel.findById(receiptId);
-    
+
     if (receiptDetails) {
-      res.status(200).json({message:"reception details fetched",data:receiptDetails });
+      res
+        .status(200)
+        .json({ message: "reception details fetched", data: receiptDetails });
     } else {
       res.status(404).json({ error: "Receipt not found" });
     }
@@ -515,8 +525,632 @@ export const getTransactionDetails = async (req, res) => {
     console.error("Error fetching receipt details:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
-}
+};
+
+// @desc get party list
+// route get/api/pUsers/PartyList;
+
+export const PartyList = async (req, res) => {
+  const cmp_id = req.params.cmp_id;
+  const Secondary_user_id = req.sUserId;
+  try {
+    const partyList = await PartyModel.find({
+      cmp_id: cmp_id,
+      Secondary_user_id: Secondary_user_id,
+    });
+    console.log("partyList", partyList);
+    if (partyList) {
+      res
+        .status(200)
+        .json({ message: "parties fetched", partyList: partyList });
+    } else {
+      res.status(404).json({ message: "No parties found" });
+    }
+  } catch (error) {
+    console.log(error);
+    res
+      .status(500)
+      .json({ success: false, message: "Internal server error, try again!" });
+  }
+};
+
+// @desc adding new Party
+// route POst/api/pUsers/addParty
+export const addParty = async (req, res) => {
+  try {
+    const {
+      cpm_id: cmp_id,
+      Secondary_user_id,
+      accountGroup,
+      partyName,
+      mobileNumber,
+      emailID,
+      gstNo,
+      panNo,
+      billingAddress,
+      shippingAddress,
+      creditPeriod,
+      creditLimit,
+      openingBalanceType,
+      openingBalanceAmount,
+    } = req.body;
+
+    const Primary_user = await SecondaryUser.findById(Secondary_user_id);
+    const Primary_user_id = await Primary_user.primaryUser;
+
+    const party = new PartyModel({
+      cmp_id,
+      Primary_user_id,
+      Secondary_user_id,
+      accountGroup,
+      partyName,
+      mobileNumber,
+      emailID,
+      gstNo,
+      panNo,
+      billingAddress,
+      shippingAddress,
+      creditPeriod,
+      creditLimit,
+      openingBalanceType,
+      openingBalanceAmount,
+    });
+
+    const result = await party.save();
+
+    if (result) {
+      return res.status(200).json({
+        success: true,
+        message: "Party added successfully",
+      });
+    } else {
+      return res.status(400).json({
+        success: false,
+        message: "Party adding failed",
+      });
+    }
+  } catch (error) {
+    console.error(error);
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error, try again!" });
+  }
+};
+
+// @desc getting product list
+// route get/api/pUsers/getProducts
+
+export const getProducts = async (req, res) => {
+  const Secondary_user_id = req.sUserId;
+  const cmp_id = req.params.cmp_id;
+  console.log("Primary_user_id", Secondary_user_id);
+  console.log("cmp_id", cmp_id);
+  try {
+    const products = await productModel.find({
+      // Secondary_user_id: Secondary_user_id,
+      cmp_id: cmp_id,
+    });
+
+    console.log(products);
+    if (products) {
+      return res.status(200).json({
+        productData: products,
+        message: "Products fetched",
+      });
+    } else {
+      return res.status(404).json({ message: "No products were found " });
+    }
+  } catch (error) {
+    console.log(error);
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error, try again!" });
+  }
+};
+
+// route POST /api/pUsers/createInvoice
+export const createInvoice = async (req, res) => {
+  const Secondary_user_id = req.sUserId;
+  const owner = req.owner.toString();
+  console.log("ownerrr", owner);
+
+  try {
+    const {
+      orgId,
+      party,
+      items,
+      priceLevelFromRedux,
+      additionalChargesFromRedux,
+      lastAmount,
+    } = req.body;
+
+    //  // Validate input
+    //  if (!party || !items || !priceLevelFromRedux || !lastAmount) {
+    //    return res.status(400).json({
+    //      success: false,
+    //      message: "Missing required fields",
+    //    });
+    //  }
+
+    console.log(req.body);
+
+    const invoice = new invoiceModel({
+      cmp_id: orgId, // Corrected typo and used correct assignment operator
+      party,
+      items,
+      priceLevel: priceLevelFromRedux, // Corrected typo and used correct assignment operator
+      additionalCharges: additionalChargesFromRedux, // Corrected typo and used correct assignment operator
+      finalAmount: lastAmount, // Corrected typo and used correct assignment operator
+      Primary_user_id: owner,
+      Secondary_user_id,
+    });
+
+    const result = await invoice.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Invoice created successfully",
+      data: result,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error, try again!",
+      error: error.message, // Include error message for debugging
+    });
+  }
+};
+
+// @desc get invoiceList
+// route get/api/pUsers/invoiceList;
+
+export const invoiceList = async (req, res) => {
+  const userId = req.sUserId;
+  const cmp_id = req.params.cmp_id;
+
+  try {
+    const invoiceList = await invoiceModel.find({
+      Secondary_user_id: userId,
+      cmp_id: cmp_id,
+    });
+    console.log("invoiceList", invoiceList);
+    if (invoiceList) {
+      res
+        .status(200)
+        .json({ message: "invoiceList fetched", invoiceList: invoiceList });
+    } else {
+      res.status(404).json({ message: "No parties found" });
+    }
+  } catch (error) {
+    res
+      .status(500)
+      .json({ success: false, message: "Internal server error, try again!" });
+  }
+};
+
+// @desc  getting a single party detail for edit
+// route get/api/sUsers/getSinglePartyDetails
+
+export const getSinglePartyDetails = async (req, res) => {
+  const partyId = req.params.id;
+  try {
+    const getSinglePartyDetails = await PartyModel.findById(partyId);
+    res.status(200).json({ success: true, data: getSinglePartyDetails });
+  } catch (error) {
+    console.error(error);
+    res
+      .status(500)
+      .json({ success: false, message: "Internal server error, try again!" });
+  }
+};
+
+// @desc  edit editParty details
+// route get/api/pUsers/editParty
+
+export const editParty = async (req, res) => {
+  const party_id = req.params.id;
+
+  console.log(req.body);
+
+  try {
+    const updateParty = await PartyModel.findOneAndUpdate(
+      { _id: party_id },
+      req.body,
+      { new: true }
+    );
+    res.status(200).json({
+      success: true,
+      message: "Party updated successfully",
+      data: updateParty,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
+};
+
+// @desc delete party
+// route delete/api/sUsers/deleteParty;
+
+export const deleteParty = async (req, res) => {
+  const partyId = req.params.id;
+  try {
+    const deletePartyFromList = await PartyModel.findByIdAndDelete(partyId);
+    if (deletePartyFromList) {
+      return res
+        .status(200)
+        .json({ success: true, message: "Party deleted successfully" });
+    } else {
+      return res
+        .status(400)
+        .json({ success: false, message: "Party deletion failed" });
+    }
+  } catch (error) {
+    console.error(error);
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error, try again!" });
+  }
+};
+
+// @desc get organization detail foe edit
+// route GET/api/pUsers/getOrganizations
+
+export const getSingleOrganization = async (req, res) => {
+  const OrgId = new mongoose.Types.ObjectId(req.params.id);
+  console.log("OrgId", OrgId);
+  try {
+    const organization = await Organization.findById(OrgId);
+    if (organization) {
+      return res.status(200).json({
+        organizationData: organization,
+        message: "Organization fetched",
+      });
+    } else {
+      return res.status(404).json({ message: "No organization found " });
+    }
+  } catch (error) {
+    console.log(error);
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error, try again!" });
+  }
+};
+
+// @desc fetch hsn of the companies
+// route get/api/pUsers/fetchHsn
+
+export const fetchHsn = async (req, res) => {
+  const cmp_id = req.params.cmp_id;
+  console.log("cmp_id", cmp_id);
+  try {
+    const hsn = await HsnModel.find({
+      cpm_id: cmp_id,
+    });
+    console.log("hsn", hsn);
+
+    if (hsn) {
+      return res.status(200).json({ message: "hsn fetched", data: hsn });
+    } else {
+      return res.status(404).json({ message: "hsn data not found" });
+    }
+  } catch (error) {
+    console.log(error);
+    return res
+      .status(500)
+      .json({ status: false, message: "Internal server error" });
+  }
+};
+
+// @desc adding new brands /categories /subcategories
+// route POst/api/pUsers/addDataToOrg
+export const addDataToOrg = async (req, res) => {
+  try {
+    const orgId = req.params.cmp_id;
+
+    console.log(req.body);
+
+    const org = await OragnizationModel.findById(orgId);
+    console.log(org);
+    if (org) {
+      const fieldToUpdate = Object.keys(req.body)[0];
+      const newData = req.body[fieldToUpdate];
+      if (org[fieldToUpdate].includes(newData)) {
+        return res.status(400).json({
+          success: false,
+          message: `${newData} already exists in ${fieldToUpdate}`,
+        });
+      }
+      org[fieldToUpdate].push(newData);
+      await org.save();
+      return res.status(200).json({
+        success: true,
+        message: "Data added successfully",
+      });
+    } else {
+      return res.status(404).json({
+        success: false,
+        message: "Organization not found",
+      });
+    }
+  } catch (error) {
+    console.error(error);
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error, try again!" });
+  }
+};
+
+// @desc edit brands /categories /subcategories
+// route POst/api/pUsers/editDataInOrg
+export const editDataInOrg = async (req, res) => {
+  try {
+    const orgId = req.params.cmp_id;
+    const fieldToUpdate = Object.keys(req.body)[0];
+    const newData = req.body[fieldToUpdate];
+    const index = parseInt(req.body.index);
+
+    console.log("fieldToUpdate", fieldToUpdate);
+    console.log("index", index);
+
+    const org = await OragnizationModel.findById(orgId);
+    if (!org) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Organization not found" });
+    }
+
+    org[fieldToUpdate][index] = newData;
+    await org.save();
+
+    return res
+      .status(200)
+      .json({ success: true, message: "Data updated successfully" });
+  } catch (error) {
+    console.error(error);
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error, try again!" });
+  }
+};
+
+// @desc delete brands /categories /subcategories
+// route POst/api/pUsers/deleteDataInOrg
+export const deleteDataInOrg = async (req, res) => {
+  try {
+    const orgId = req.params.cmp_id;
+    console.log(req.body);
+    const fieldToDelete = Object.keys(req.body)[0];
+    const indexToDelete = req.body[fieldToDelete];
+
+    const org = await OragnizationModel.findById(orgId);
+    console.log("org", org);
+    if (!org) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Organization not found" });
+    }
+
+    const neededField = org[fieldToDelete];
+    console.log("fieldToDelete", fieldToDelete);
+    console.log("neededField", neededField);
+    neededField.splice(indexToDelete, 1);
+    await org.save(); // Save the organization after deletion
+    return res
+      .status(200)
+      .json({ success: true, message: "Data deleted successfully" });
+
+    // return res.status(200).json({ success: true, message: "Data deleted successfully" });
+  } catch (error) {
+    console.error(error);
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error, try again!" });
+  }
+};
+
+// @desc adding new Product
+// route POst/api/pUsers/addProduct
+
+export const addProduct = async (req, res) => {
+  try {
+    const Secondary_user_id = req.sUserId.toString();
+    const Primary_user_id = req.owner.toString();
+    const {
+      body: {
+        cmp_id,
+        product_name,
+        product_code,
+        balance_stock,
+        brand,
+        category,
+        sub_category,
+        unit,
+        alt_unit,
+        unit_conversion,
+        alt_unit_conversion,
+        // hsn_code,
+        purchase_price,
+        purchase_cost,
+        Priceleveles,
+        GodownList,
+      },
+    } = req;
+
+    let hsn_code = req.body.hsn_code;
+
+    // Fetch HSN details
+    const hsnDetails = await HsnModel.findById(hsn_code);
+
+    console.log("hsnDetails", hsnDetails);
+
+    // Extract required fields from HSN details
+    let cgst, sgst, igst, cess, addl_cess, hsn_id;
+    if (hsnDetails) {
+      ({
+        igstRate: igst,
+        cgstRate: cgst,
+        sgstUtgstRate: sgst,
+        onValue: cess,
+        onQuantity: addl_cess,
+        hsn: hsn_code,
+        _id: hsn_id,
+      } = hsnDetails);
+    }
+
+    // Prepare data to save
+    const dataToSave = {
+      cmp_id,
+
+      product_name,
+      Primary_user_id,
+      Secondary_user_id,
+      product_code,
+      balance_stock,
+      brand,
+      category,
+      sub_category,
+      unit,
+      alt_unit,
+      unit_conversion,
+      alt_unit_conversion,
+      hsn_code,
+      purchase_price,
+      purchase_cost,
+      Priceleveles,
+      GodownList,
+      cgst,
+      sgst,
+      igst,
+      cess,
+      addl_cess,
+      hsn_id,
+    };
+
+    // Save the product
+    const newProduct = await productModel.create(dataToSave);
+
+    // Return success response
+    return res.status(200).json({
+      success: true,
+      message: "Product added successfully",
+    });
+  } catch (error) {
+    console.error(error);
+
+    // Return error response
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error, try again!",
+    });
+  }
+};
 
 
+// @desc  getting a single product detail for edit
+// route get/api/sUsers/productDetails
+
+export const productDetails = async (req, res) => {
+  const productId = req.params.id;
+  try {
+    const productDetails = await productModel.findById(productId);
+    res.status(200).json({ success: true, data: productDetails });
+  } catch (error) {
+    console.error(error);
+    res
+      .status(500)
+      .json({ success: false, message: "Internal server error, try again!" });
+  }
+};
 
 
+export const editProduct = async (req, res) => {
+  const productId = req.params.id;
+
+  try {
+
+    const Secondary_user_id = req.sUserId.toString();
+    const Primary_user_id = req.owner.toString();
+    const {
+     
+      body: {
+        product_name,
+        product_code,
+        balance_stock,
+        brand,
+        category,
+        sub_category,
+        unit,
+        alt_unit,
+        unit_conversion,
+        alt_unit_conversion,
+        // hsn_code,
+        purchase_price,
+        purchase_cost,
+        Priceleveles,
+        GodownList,
+      },
+    } = req;
+
+    let hsn_code = req.body.hsn_code;
+
+    // Fetch HSN details
+    const hsnDetails = await HsnModel.findById(hsn_code);
+
+    // Extract required fields from HSN details
+    let cgst, sgst, igst, cess, addl_cess;
+    if (hsnDetails) {
+      ({
+        igstRate: igst,
+        cgstRate: cgst,
+        sgstUtgstRate: sgst,
+        onValue: cess,
+        onQuantity: addl_cess,
+        hsn: hsn_code,
+      } = hsnDetails);
+    }
+
+    // Prepare data to save
+    const dataToSave = {
+      product_name,
+      Primary_user_id,
+      Secondary_user_id,
+      product_code,
+      balance_stock,
+      brand,
+      category,
+      sub_category,
+      unit,
+      alt_unit,
+      unit_conversion,
+      alt_unit_conversion,
+      hsn_code,
+      purchase_price,
+      purchase_cost,
+      Priceleveles,
+      GodownList,
+      cgst,
+      sgst,
+      igst,
+      cess,
+      addl_cess,
+    };
+
+    console.log("dataToSave", dataToSave);
+
+    const updateProduct = await productModel.findOneAndUpdate(
+      { _id: productId },
+      dataToSave,
+      { new: true }
+    );
+    res.status(200).json({
+      success: true,
+      message: "Product updated successfully",
+      data: updateProduct,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
+};
