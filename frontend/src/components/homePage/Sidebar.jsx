@@ -307,7 +307,7 @@ function Sidebar({ TAB, showBar }) {
                 >
                   <SlUserFollow />
 
-                  <span className="mx-4 font-medium">Retailers</span>
+                  <span className="mx-4 font-medium">Users</span>
                 </a>
               </Link>
 
@@ -345,7 +345,7 @@ function Sidebar({ TAB, showBar }) {
                 >
                   <TiUserAdd />
 
-                  <span className="mx-4 font-medium">Party</span>
+                  <span className="mx-4 font-medium">Customers</span>
                 </a>
               </Link>
 

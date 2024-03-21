@@ -138,7 +138,7 @@ function AddParty() {
          <Link to={'/pUsers/partyList'}>
           <IoIosArrowRoundBack className="block md:hidden text-3xl" />
           </Link>
-          <p>Add Party Details </p>
+          <p>Add Customers Details </p>
         </div>
 
         <section className=" bg-blueGray-50 h-screen overflow-y-scroll ">
@@ -161,7 +161,7 @@ function AddParty() {
               <div className="flex-auto px-4 lg:px-10 py-10 pt-0">
                 <form encType="multipart/form-data">
                   <h6 className="text-blueGray-400 text-sm mt-3 mb-6 font-bold uppercase">
-                    Add New Party Details
+                    Add New Customers Details
                   </h6>
                   <div className="flex flex-wrap">
                     <div className="w-full lg:w-6/12 px-4">

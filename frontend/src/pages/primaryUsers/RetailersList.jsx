@@ -95,10 +95,10 @@ function RetailersList() {
             className="block md:hidden text-3xl"
           />
           <div className="flex items-center justify-between w-full">
-            <p>Your Retailers</p>
+            <p>Your Users</p>
             <Link to={"/pUsers/addSecUsers"}>
               <button className="flex gap-2 bg-green-500 px-2 py-1 rounded-md text-sm  hover:scale-105 duration-100 ease-in-out hover:bg-green-600 mr-3">
-                Add Retailers
+                Add Users
               </button>
             </Link>
           </div>
@@ -108,10 +108,10 @@ function RetailersList() {
           <div className="w-full max-w-[59rem] mx-auto  bg-white shadow-lg rounded-sm border  border-gray-200 ">
             <header className=" hidden md:block px-5 py-4 border-b border-gray-100 bg bg-[#261b56] text-white">
               <div className="flex justify-between items-center">
-                <h2 className="font-semibold ">Your Retailers</h2>
+                <h2 className="font-semibold ">Your Users</h2>
                 <Link to={"/pUsers/addSecUsers"}>
                   <button className="flex gap-2 bg-green-500 px-2 py-1 rounded-md text-sm  hover:scale-105 duration-100 ease-in-out hover:bg-green-600">
-                    Add Retailers
+                    Add Users
                   </button>
                 </Link>
               </div>
@@ -157,6 +157,11 @@ function RetailersList() {
                           Organzations
                         </div>
                       </th>
+                      <th className="p-2 whitespace-nowrap">
+                        <div className="font-semibold text-left">
+                          Edit
+                        </div>
+                      </th>
                       {/* <th colSpan={2} className="p-2 whitespace-nowrap">
                         <div className="font-semibold text-left">Action</div>
                       </th> */}
@@ -194,6 +199,11 @@ function RetailersList() {
                               {/* Add more options as needed */}
                             </select>
                           </td>
+                          <Link to={`/pUsers/editUser/${item._id}`}>
+                          <td className="p-2 whitespace-nowrap">
+                            <div className="cursor-pointer"> <FaEdit/></div>
+                          </td>
+                          </Link>
                           {/* <td className="p-2 whitespace-nowrap">
                             <div className="text-left">
                               {" "}

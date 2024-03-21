@@ -213,7 +213,7 @@ function Invoice() {
       console.log(res.data);
       toast.success(res.data.message);
       
-      navigate("/pUsers/dashboard");
+      navigate("/pUsers/invoiceList");
       dispatch(removeAll())
     } catch (error) {
       toast.error(error.response.data.message);
@@ -257,7 +257,7 @@ function Invoice() {
                 className=" bottom-0 text-white bg-violet-700  w-full rounded-md  p-2 flex items-center justify-center gap-2 hover_scale cursor-pointer "
               >
                 <IoIosAddCircle className="text-2xl" />
-                <p>Generate Bill</p>
+                <p>Generate Order</p>
               </button>
               <div>
                 <p className="text-violet-500 text-xs  p-1 px-3  border border-1 border-gray-300 rounded-2xl cursor-pointer">
@@ -327,7 +327,7 @@ function Invoice() {
               {/* <Link to={"/pUsers/addItem"}>  */}
               <div
                 onClick={handleAddItem}
-                className="flex justify-center gap-2 hover_scale "
+                className="flex justify-center gap-2 hover_scale items-center "
               >
                 <IoMdAdd className="text-2xl" />
                 <p className="text-sm">Add Item</p>
@@ -539,7 +539,7 @@ function Invoice() {
               className="fixed bottom-0 text-white bg-violet-700  w-full  p-2 py-4 flex items-center justify-center gap-2 hover_scale cursor-pointer "
             >
               <IoIosAddCircle className="text-2xl" />
-              <p>Generate Bill</p>
+              <p>Generate Order</p>
             </button>
           </div>
         </div>

@@ -115,7 +115,7 @@ function EditItem() {
     }
 
     setTotalAmount(totalAmount);
-  }, [selectedItem, selectedPriceLevel, quantity, discount, type, igst]);
+  }, [selectedItem, quantity, discount]);
 
   const dispatch = useDispatch();
 
@@ -124,6 +124,7 @@ function EditItem() {
     const newItem = { ...item };
 
     newItem.total = totalAmount;
+    newItem.count=parseInt(quantity);
     newItem.newGst = igst;
     if (type === "amount") {
       newItem.discount = discountAmount;
@@ -173,7 +174,7 @@ function EditItem() {
                   <div className="py-8 text-base leading-6 space-y-4 text-gray-700 sm:text-md sm:leading-7">
                     <div className="flex flex-col">
                       <label className="leading-loose">
-                        New Price (With Tax)
+                        Price 
                       </label>
                       <input
                         disabled
@@ -189,7 +190,8 @@ function EditItem() {
                         <label className="leading-loose">Quantity</label>
                         <div className="relative focus-within:text-gray-600 text-gray-400">
                           <input
-                            disabled
+                            // disabled
+                            onChange={(e)=>setQuantity(e.target.value)}
                             value={quantity}
                             type="text"
                             className="pr-4 pl-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm border-gray-300 rounded-md focus:outline-none text-gray-600"
@@ -300,11 +302,8 @@ function EditItem() {
                         <p className="text-xs">Tax Rate</p>
                         <div className="flex items-center gap-2">
                           <p className="text-xs">{`( ${igst} % )`}</p>
-                          <p className="text-xs">{`₹ ${
-                            ((taxExclusivePrice - discountAmount) *
-                              parseFloat(igst)).toFixed(2) /
-                            100
-                          } `}</p>
+                          <p className="text-xs">{`₹ ${(((taxExclusivePrice - discountAmount) * parseFloat(igst)) / 100).toFixed(2)}`}</p>
+
                         </div>
                       </div>
                       <div className="flex justify-between font-bold text-black">

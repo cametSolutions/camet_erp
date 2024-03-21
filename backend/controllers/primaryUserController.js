@@ -15,6 +15,7 @@ import PartyModel from "../models/partyModel.js";
 import HsnModel from "../models/hsnModel.js";
 import productModel from "../models/productModel.js";
 import invoiceModel from "../models/invoiceModel.js";
+import bankModel from "../models/bankModel.js";
 
 // @desc Register Primary user
 // route POST/api/pUsers/register
@@ -84,6 +85,8 @@ export const login = async (req, res) => {
       // If it's not an email address, assume it's a mobile number and find the user by mobile number
       primaryUser = await PrimaryUser.findOne({ mobile: email });
     }
+
+    console.log("primaryUser", primaryUser);
 
     if (!primaryUser.isApproved) {
       return res.status(401).json({ message: "User approval is pending" });
@@ -665,26 +668,28 @@ export const fetchBanks = async (req, res) => {
 // route GET/api/sUsers/fetchBanks/:cmp_id
 
 export const bankList = async (req, res) => {
-  console.log("jdasjdbakdak");
   const userId = req.pUserId;
+  const cmp_id = req.params.cmp_id;
+  console.log("cmp_id",cmp_id);
   console.log("userId", userId);
   try {
     const bankData = await BankDetails.aggregate([
       {
         $match: {
           Primary_user_id: userId,
+          cmp_id:cmp_id
         },
       },
       {
         $project: {
-          bank_ledname: 1,
+          bank_name: 1,
           ac_no: 1,
           ifsc: 1,
         },
       },
     ]);
 
-    console.log(bankData);
+    // console.log(bankData);
 
     if (bankData.length > 0) {
       return res
@@ -1638,31 +1643,27 @@ export const deleteHsn = async (req, res) => {
 // route get/api/pUsers/getSinglePartyDetails
 
 export const getSingleHsn = async (req, res) => {
-
   console.log("haiiiiiiiiiiiiiiiiiiiii");
   const id = req.params.hsnId;
   try {
-     const hsn = await HsnModel.findById(id);
+    const hsn = await HsnModel.findById(id);
 
-     console.log("hsn",hsn);
-     if (hsn) {
-       return res.status(200).json({ success: true, data: hsn });
-     } else {
-       return res.status(404).json({ success: false, message: "HSN not found" });
-     }
+    console.log("hsn", hsn);
+    if (hsn) {
+      return res.status(200).json({ success: true, data: hsn });
+    } else {
+      return res.status(404).json({ success: false, message: "HSN not found" });
+    }
   } catch (error) {
-     console.error(error);
-     return res.status(500).json({
-       success: false,
-       message: "Internal server error, try again!",
-     });
+    console.error(error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error, try again!",
+    });
   }
- };
+};
 
-
-
-
- // @desc  editHsn details
+// @desc  editHsn details
 // route get/api/pUsers/editHsn
 
 export const editHsn = async (req, res) => {
@@ -1680,6 +1681,150 @@ export const editHsn = async (req, res) => {
       success: true,
       message: "HSN updated successfully",
       data: updateHsn,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
+};
+
+// @desc  editHsn details
+// route get/api/pUsers/addBank
+
+export const addBank = async (req, res) => {
+  const { acholder_name, ac_no, ifsc, bank_name, branch, upi_id, cmp_id } =
+    req.body;
+  const Primary_user_id = req.pUserId;
+  try {
+    const bank = await bankModel.create({
+      acholder_name,
+      ac_no,
+      ifsc,
+      bank_name,
+      branch,
+      upi_id,
+      cmp_id,
+      Primary_user_id,
+    });
+
+    if (bank) {
+      return res
+        .status(200)
+        .json({ success: true, message: "Bank added successfully" });
+    } else {
+      return res
+        .status(400)
+        .json({ success: false, message: "Adding bank failed" });
+    }
+  } catch (error) {
+    console.error(error);
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error, try again!" });
+  }
+};
+
+// @desc Get bank details by ID
+// @route GET /api/pUsers/getBankDetails/:id
+export const getBankDetails = async (req, res) => {
+  try {
+    const bankId = req.params.id;
+    if (!bankId) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Bank ID is required" });
+    }
+
+    const bankDetails = await bankModel.findById(bankId);
+
+    if (!bankDetails) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Bank details not found" });
+    }
+
+    return res.status(200).json({ success: true, data: bankDetails });
+  } catch (error) {
+    console.error(`Error fetching bank details: ${error.message}`);
+
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error, try again!" });
+  }
+};
+
+// @desc  edit edit bank details
+// route get/api/pUsers/editBank
+
+export const editBank = async (req, res) => {
+  const bank_id = req.params.id;
+
+  console.log(req.body);
+
+  try {
+    const updateParty = await bankModel.findOneAndUpdate(
+      { _id: bank_id },
+      req.body,
+      { new: true }
+    );
+    res.status(200).json({
+      success: true,
+      message: "Bank updated successfully",
+      data: updateParty,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
+};
+
+// @desc Get secuser details by ID
+// @route GET /api/pUsers/getSecUserDetails/:id
+export const getSecUserDetails = async (req, res) => {
+  try {
+    const secId = req.params.id;
+
+    const secUserDetails = await SecondaryUser.findById(secId);
+
+    if (!secUserDetails) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User details not found" });
+    }
+
+    return res.status(200).json({ success: true, data: secUserDetails });
+  } catch (error) {
+    console.error(`Error fetching bank details: ${error.message}`);
+
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error, try again!" });
+  }
+};
+
+// @desc   edit editSecUSer details
+// route get/api/pUsers/editSecUSer/id
+
+export const editSecUSer = async (req, res) => {
+  const secUserId = req.params.id;
+  const { name, mobile, email, organization, password } = req.body;
+
+  try {
+    if (password) {
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(password, salt);
+      req.body.password = hashedPassword;
+    }
+
+    const updateParty = await SecondaryUser.findOneAndUpdate(
+      { _id: secUserId },
+      req.body,
+      { new: true }
+    );
+    res.status(200).json({
+      success: true,
+      message: "User updated successfully",
+      data: updateParty,
     });
   } catch (error) {
     console.error(error);

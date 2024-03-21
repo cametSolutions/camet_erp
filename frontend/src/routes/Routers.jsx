@@ -62,6 +62,9 @@ import InvoiceListSecondary from '../pages/secUsers/InvoiceListSecondary'
 import EditPartySecondary from '../pages/secUsers/EditPartySecondary'
 import AddProductSecondary from '../pages/secUsers/AddProductSecondary'
 import EditProductSecondary from '../pages/secUsers/EditProductSecondary'
+import AddBank from '../pages/primaryUsers/AddBank'
+import EditBank from '../pages/primaryUsers/EditBank'
+import EditSecUsers from '../pages/primaryUsers/EditSecUsers'
 
 
 
@@ -88,6 +91,7 @@ const Routers = () => {
         <Route path='/pUsers/transaction' element={<ProtectedPriRoute><PriTransaction /></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/receiptDetails/:id' element={<ProtectedPriRoute><ReceiptDetails/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/bankLIst' element={<ProtectedPriRoute><BankList/></ProtectedPriRoute>}></Route>
+        <Route path='/pUsers/addBank' element={<ProtectedPriRoute><AddBank/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/dashboard' element={<ProtectedPriRoute><Dashboard/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/addParty' element={<ProtectedPriRoute><AddParty/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/hsn' element={<ProtectedPriRoute><Hsn/></ProtectedPriRoute>}></Route>
@@ -105,6 +109,8 @@ const Routers = () => {
         <Route path='/pUsers/invoiceList' element={<ProtectedPriRoute><InvoiceList/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/hsnList' element={<ProtectedPriRoute><HsnList/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/editHsn/:id' element={<ProtectedPriRoute><EditHsn/></ProtectedPriRoute>}></Route>
+        <Route path='/pUsers/editBank/:id' element={<ProtectedPriRoute><EditBank/></ProtectedPriRoute>}></Route>
+        <Route path='/pUsers/editUser/:id' element={<ProtectedPriRoute><EditSecUsers/></ProtectedPriRoute>}></Route>
 
 
         {/* admin */}

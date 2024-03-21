@@ -167,7 +167,7 @@ function HsnList() {
                               </div>
                             </td> */}
                           <td className="p-2 whitespace-nowrap">
-                              <div className=" text-center cursor-pointer">
+                              <div className={` ${org.type !== "self" && "pointer-events-none opacity-55"} text-center cursor-pointer`}>
                                 {" "}
                             <Link to={`/pUsers/editHsn/${item._id}`}>
                                 <FaEdit />
@@ -181,7 +181,7 @@ function HsnList() {
                               onClick={() => {
                                 handleDelete(item._id);
                               }}
-                              className=" text-center cursor-pointer"
+                              className={` ${org.type !== "self" && "pointer-events-none opacity-55"} text-center cursor-pointer`}
                             >
                               {" "}
                               <MdDelete />

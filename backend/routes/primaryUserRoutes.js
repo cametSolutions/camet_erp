@@ -10,7 +10,8 @@ import { registerPrimaryUser,login,addOrganizations,
   editOrg,addParty,addHsn,addDataToOrg,editDataInOrg,deleteDataInOrg,
   fetchHsn,addProduct,getProducts,deleteProduct,productDetails,
   editProduct,PartyList,deleteParty,getSinglePartyDetails,editParty,
-  fetchFilters,createInvoice,addBulkProducts,invoiceList,deleteHsn,getSingleHsn,editHsn} from '../controllers/primaryUserController.js';
+  fetchFilters,createInvoice,addBulkProducts,invoiceList,deleteHsn,
+  getSingleHsn,editHsn,addBank,getBankDetails,editBank,getSecUserDetails,editSecUSer} from '../controllers/primaryUserController.js';
 import { singleUpload } from '../multer/multer.js';
 import { primaryIsBlocked } from '../middlewares/isBlocked.js';
 
@@ -31,7 +32,7 @@ router.post('/confirmCollection',authPrimary,primaryIsBlocked,confirmCollection)
 router.get('/transactions',authPrimary,primaryIsBlocked,transactions)
 router.post('/cancelTransaction/:id',authPrimary,primaryIsBlocked,cancelTransaction)
 router.get('/fetchBanks/:cmp_id',authPrimary,primaryIsBlocked,fetchBanks)
-router.get('/bankList',authPrimary,primaryIsBlocked,bankList)
+router.get('/bankList/:cmp_id',authPrimary,primaryIsBlocked,bankList)
 router.get('/getTransactionDetails/:id',authPrimary,primaryIsBlocked,getTransactionDetails)
 router.post('/addParty',authPrimary,primaryIsBlocked,addParty)
 router.post('/addHsn',authPrimary,primaryIsBlocked,addHsn)
@@ -56,6 +57,13 @@ router.get('/invoiceList/:cmp_id',authPrimary,primaryIsBlocked,invoiceList)
 router.delete('/deleteHsn/:id',authPrimary,primaryIsBlocked,deleteHsn)
 router.get('/getSingleHsn/:hsnId',authPrimary,primaryIsBlocked,getSingleHsn)
 router.post('/editHsn/:hsnId',authPrimary,primaryIsBlocked,editHsn)
+router.post('/addBank',authPrimary,primaryIsBlocked,addBank)
+router.get('/getBankDetails/:id',authPrimary,primaryIsBlocked,getBankDetails)
+router.post('/editBank/:id',authPrimary,primaryIsBlocked,editBank)
+router.get('/getSecUserDetails/:id',authPrimary,primaryIsBlocked,getSecUserDetails)
+router.post('/editSecUSer/:id',authPrimary,primaryIsBlocked,editSecUSer)
+
+
 
 
 router.post('/sendOtp',sendOtp)

@@ -47,6 +47,7 @@ export const invoiceSlice = createSlice({
     changeIgstAndDiscount: (state, action) => {
       const id = action.payload._id;
       const igst = action.payload?.igst || 0;
+      const count=action.payload?.count || 0;
       const discount = action.payload?.discount || 0;
       const discountPercentage = action.payload?.discountPercentage || 0;
       const newTotal = action.payload?.total.toFixed(2) || 0;
@@ -57,6 +58,7 @@ export const invoiceSlice = createSlice({
         state.items[indexToUpdate].discount = discount;
         state.items[indexToUpdate].igst = igst;
         state.items[indexToUpdate].discountPercentage = discountPercentage;
+        state.items[indexToUpdate].count = count;
       }
     },
 

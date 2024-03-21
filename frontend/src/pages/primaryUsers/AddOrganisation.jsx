@@ -58,13 +58,13 @@ const AddOrganisation = () => {
   const submitHandler = async () => {
     if (
       !name.trim() ||
-      !gst.trim() ||
+      // (gst && !gst.trim()) ||
       !email.trim() ||
       !state ||
       !country ||
       !flat.trim() ||
       !road.trim() ||
-      !website.trim() ||
+      // (website && !website.trim()) ||
       !financialYear.trim() ||
       !landmark.trim() ||
       !pin ||
@@ -118,16 +118,16 @@ const AddOrganisation = () => {
 
     const gstRegex = /^[0-9A-Za-z]{15}$/;
 
-    if (!gstRegex.test(gst)) {
+    if (gst && !gstRegex.test(gst)) {
       toast.error("Invalid GST number");
       return;
     }
 
-    if (!/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(pan)) {
+    if (pan && !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(pan)) {
       toast.error("Invalid PAN number");
       return;
     }
-    if (
+    if ( website && 
       !/^((https?|ftp):\/\/)?(www\.)?[\w-]+\.[a-zA-Z]{2,}(\/\S*)?$/.test(
         website
       )
@@ -261,7 +261,7 @@ const AddOrganisation = () => {
               onClick={handleToggleSidebar}
               className="block md:hidden text-3xl"
             />
-            <p>Add organization</p>
+            <p>Add Company</p>
           </div>
 
           <div className="w-full lg:w-8/12 px-4 mx-auto  pb-[30px] mt-5  ">
@@ -283,7 +283,7 @@ const AddOrganisation = () => {
               <div className="flex-auto px-4 lg:px-10 py-10 pt-0">
                 <form encType="multipart/form-data">
                   <h6 className="text-blueGray-400 text-sm mt-3 mb-6 font-bold uppercase">
-                    Organization Information
+                    Company Information
                   </h6>
                   <div className="flex flex-wrap">
                     <div className="w-full lg:w-6/12 px-4">
@@ -788,7 +788,7 @@ const AddOrganisation = () => {
                     type="button"
                     onClick={submitHandler}
                   >
-                    Add
+                    Update
                   </button>
                 </form>
               </div>

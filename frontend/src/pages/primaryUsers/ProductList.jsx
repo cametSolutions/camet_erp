@@ -26,7 +26,6 @@ function ProductList() {
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [listHeight, setListHeight] = useState(0);
 
-
   const cmp_id = useSelector(
     (state) => state.setSelectedOrganization.selectedOrg._id
   );
@@ -56,7 +55,7 @@ function ProductList() {
       }
     };
     fetchProducts();
-  }, [refresh,cmp_id]);
+  }, [refresh, cmp_id]);
 
   const handleToggleSidebar = () => {
     if (window.innerWidth < 768) {
@@ -119,7 +118,6 @@ function ProductList() {
     }
   };
 
-
   useEffect(() => {
     const calculateHeight = () => {
       const newHeight = window.innerHeight - 117;
@@ -136,7 +134,6 @@ function ProductList() {
     return () => window.removeEventListener("resize", calculateHeight);
   }, []);
 
-
   console.log(listHeight);
 
   const Row = ({ index, style }) => {
@@ -151,42 +148,46 @@ function ProductList() {
           <div className="flex justify-between w-full gap-3 ">
             <div className="">
               <p className="font-bold text-sm">{el?.product_name}</p>
-              {el.product_code && (
+              {/* {el.product_code && (
                 <div className="flex">
-                  <p className="font-medium mt-2 text-gray-500 text-sm">
+                  <p className="mt-2 font-bold text-sm">
                     code :
                   </p>
                   <p className="font-medium mt-2 text-gray-500 text-sm">
                     {el?.product_code}
                   </p>
                 </div>
-              )}
+              )} */}
             </div>
-            <div className=" flex flex-col justify-center gap-2">
-              <div className="flex gap-2 text-nowrap">
-                <p className="font-bold">Hsn :</p>
-                <p className="font-semibold text-gray-500"> {el?.hsn_code}</p>
-              </div>
-              <div className="flex gap-2 ">
-                <p className="font-bold">Igst :</p>
-                <p className="font-bold text-green-500"> {`${el?.igst} %`}</p>
-              </div>
+            <div
+              className={` ${
+                type !== "self" ? "pointer-events-none opacity-50" : ""
+              }  flex gap-3 mt-2 px-4`}
+            >
+              <Link to={`/pUsers/editProduct/${el._id}`}>
+                <FaEdit className="text-blue-500" />
+              </Link>
+
+              <MdDelete
+                onClick={() => {
+                  handleDelete(el._id);
+                }}
+                className="text-red-500"
+              />
             </div>
           </div>
-          <div className={` ${type !=="self" ? "pointer-events-none opacity-50" : ""}  flex gap-3 mt-2 px-4`}>
-            <Link to={`/pUsers/editProduct/${el._id}`}>
-              <FaEdit className="text-blue-500" />
-            </Link>
 
-            <MdDelete
-              onClick={() => {
-                handleDelete(el._id);
-              }}
-              className="text-red-500"
-            />
-
+          <div className=" flex flex-col justify-center gap-2 text-sm">
+            <div className="flex gap-2 text-nowrap">
+              <p className="font-bold">Hsn :</p>
+              <p className="font-semibold text-gray-500"> {el?.hsn_code}</p>
+            </div>
+            <div className="flex gap-2 ">
+              <p className="font-bold">Igst :</p>
+              <p className="font-bold text-green-500"> {`${el?.igst} %`}</p>
+            </div>
           </div>
-            <hr className="mt-6" style={{ borderWidth: "1px" }} />
+          <hr className="mt-6" style={{ borderWidth: "1px" }} />
         </div>
       </>
     );
@@ -200,12 +201,24 @@ function ProductList() {
 
       <div className="flex-1 bg-slate-50 overflow-y-scroll ">
         <div className="sticky top-0 z-20 h-[117px]">
-          <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex  items-center gap-2   ">
-            <IoReorderThreeSharp
-              onClick={handleToggleSidebar}
-              className="text-3xl text-white cursor-pointer md:hidden"
-            />
-            <p className="text-white text-lg   font-bold ">Your Products</p>
+          <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3  flex justify-between items-center  ">
+            <div className="flex items-center justify-center gap-2">
+              <IoReorderThreeSharp
+                onClick={handleToggleSidebar}
+                className="text-3xl text-white cursor-pointer md:hidden"
+              />
+              <p className="text-white text-lg   font-bold ">Your Products</p>
+            </div>
+            {type === "self" && (
+              <div>
+                <Link to={"/pUsers/addProduct"}>
+                  <button className="flex items-center gap-2 text-white bg-[#40679E] px-2 py-1 rounded-md text-sm  hover:scale-105 duration-100 ease-in-out ">
+                    <IoIosAddCircle className="text-xl" />
+                    Add Products
+                  </button>
+                </Link>
+              </div>
+            )}
           </div>
 
           {/* invoiec date */}
@@ -294,12 +307,12 @@ function ProductList() {
           </div>
         )}
 
-        <Link to={"/pUsers/addProduct"} className={`${type!=="self" ? "hidden " : ""}  flex justify-center`}>
+        {/* <Link to={"/pUsers/addProduct"} className={`${type!=="self" ? "hidden " : ""}  flex justify-center`}>
           <div className=" px-4 absolute bottom-12 text-white bg-violet-700 rounded-3xl p-2 flex items-center justify-center gap-2 hover_scale cursor-pointer ">
             <IoIosAddCircle className="text-2xl" />
             <p>Create New Product</p>
           </div>
-        </Link>
+        </Link> */}
       </div>
     </div>
   );

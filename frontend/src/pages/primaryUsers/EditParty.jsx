@@ -180,7 +180,7 @@ const navigate=useNavigate()
         <Link to={"/pUsers/dashboard"}>
               <IoIosArrowRoundBack className="text-3xl text-white cursor-pointer md:hidden" />
             </Link>
-          <p>Edit Party Details </p>
+          <p>Edit Customers Details </p>
         </div>
         <section className=" bg-blueGray-50 h-screen overflow-y-scroll ">
           <div className="w-full lg:w-8/12 px-4 mx-auto  pb-[30px] mt-5  ">
@@ -202,7 +202,7 @@ const navigate=useNavigate()
               <div className="flex-auto px-4 lg:px-10 py-10 pt-0">
                 <form encType="multipart/form-data">
                   <h6 className="text-blueGray-400 text-sm mt-3 mb-6 font-bold uppercase">
-                    Edit Party Details
+                    Edit Customers Details
                   </h6>
                   <div className="flex flex-wrap">
                     <div className="w-full lg:w-6/12 px-4">
@@ -473,7 +473,7 @@ const navigate=useNavigate()
                     type="button"
                     onClick={submitHandler}
                   >
-                    Edit
+                    Update
                   </button>
                 </form>
               </div>

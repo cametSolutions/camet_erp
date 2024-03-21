@@ -8,6 +8,7 @@ import { MdDeleteSweep } from "react-icons/md";
 import { RiArrowRightSFill } from "react-icons/ri";
 import { toast } from "react-toastify";
 import api from "../../api/api";
+import { useNavigate } from "react-router-dom";
 
 // import "./hsn.css";
 
@@ -26,15 +27,7 @@ function Hsn() {
   const [showSidebar, setShowSidebar] = useState(false);
   const [isRevisedChargeApplicable, setIsRevisedChargeApplicable] =
     useState(false);
-
-  console.log(taxabilityType);
-  console.log(hsn);
-  console.log(description);
-  console.log(igstRate);
-  console.log(cgstRate);
-  console.log(sgstUtgstRate);
-  console.log(onValue);
-  console.log(onQuantity);
+const navigate=useNavigate()
 
   //   table    ///////////////////////////
 
@@ -158,13 +151,13 @@ function Hsn() {
       if (
         [hsn, description, taxabilityType].some((field) => field.trim() === "")
       ) {
-        toast.error("All gene fields are required");
+        toast.error("All fields are required");
         return;
       }
 
       if (taxabilityType === "taxable") {
         if (igstRate === "" || cgstRate === "" || sgstUtgstRate === "") {
-          toast.error("All tax fields are required");
+          toast.error("All fields are required");
           return;
         }
       }
@@ -270,31 +263,10 @@ function Hsn() {
         withCredentials: true,
       });
       toast.success(res.data.message);
+      navigate("/pUsers/hsnList")
       
       // Resetting individual state variables
   
-      setHsn("");
-      setDescription("");
-      // setTab("");
-      setTaxabilityType("");
-      setIgstRate("");
-      setCgstRate("");
-      setSgstUtgstRate("");
-      setOnQuantity("");
-      setOnValue("");
-      setIsRevisedChargeApplicable("");
-    
-      // Resetting the rows state
-      setRows(rows.map((row) => ({
-        greaterThan: "",
-        upto: "",
-        taxabilityType: "",
-        igstRate: "",
-        cgstRate: "",
-        sgstUtgstRate: "",
-        basedOnValue: "",
-        basedOnQuantity: "",
-      })));
     } catch (error) {
       toast.error(error.response.data.message);
       console.log(error);

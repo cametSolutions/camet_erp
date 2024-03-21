@@ -329,7 +329,7 @@ function AddItem() {
       <div
         style={style}
         key={index}
-        className="bg-white p-4 py-2 pb-6  mt-4 flex justify-between items-center  rounded-sm cursor-pointer border-b-2 "
+        className="bg-white p-4 py-2 pb-6  mt-4 flex justify-between items-center  rounded-sm cursor-pointer border-b-2  "
       >
         <div className="flex items-start gap-3 md:gap-4  ">
           <div className="w-10 mt-1  uppercase h-10 rounded-lg bg-violet-200 flex items-center justify-center font-semibold text-gray-400">
@@ -362,11 +362,13 @@ function AddItem() {
         {el.added ? (
           <div className="flex items-center flex-col gap-2">
             <Link
-              // to={`/pUsers/editItem/${el._id}`}
+              to={`/pUsers/editItem/${el._id}`}
               // onClick={() => dispatch(persistScroll(el._id))}
-              onClick={()=>{setScrollPosition(window.scrollY)}}
+              // onClick={()=>{setScrollPosition(window.scrollY)}}
             >
-              <button className=" mt-3  px-2 py-1  rounded-md border-violet-500 font-bold border  text-violet-500 text-xs">
+              <button
+              type="button"
+               className="  mt-3  px-2 py-1  rounded-md border-violet-500 font-bold border  text-violet-500 text-xs">
                 Edit
               </button>
             </Link>
@@ -557,16 +559,16 @@ function AddItem() {
             </div>
           </div>
 
-          <div className="bg-white text-sm font-semibold p-4 flex items-center  gap-10">
+          <div className="bg-white text-sm font-semibold p-4 flex items-center  gap-10 z-20" style={{position: "relative", zIndex: "20"}}>
             <Dropdown
               label={selectedBrand === "" ? "Brand" : selectedBrand}
               inline
             >
               {brands.length > 0 ? (
                 <>
-                  <Dropdown.Item onClick={() => setSelectedBrand("")}>
+                  <Dropdown.Item style={{position:"relative", zIndex:"1000"}} onClick={() => setSelectedBrand("")}>
                     All
-                  </Dropdown.Item>
+                  </Dropdown.Item >
                   {brands.map((el, index) => (
                     <Dropdown.Item
                       onClick={() => setSelectedBrand(el)}
@@ -584,6 +586,7 @@ function AddItem() {
             <Dropdown
               label={selectedCategory === "" ? "Category" : selectedCategory}
               inline
+              placement="top"
             >
               {categories.length > 0 ? (
                 <>

@@ -6,10 +6,9 @@ import { IoMdEyeOff } from "react-icons/io";
 import Sidebar from "../../components/homePage/Sidebar";
 import { Link } from "react-router-dom";
 import { IoIosArrowRoundBack } from "react-icons/io";
-import { useNavigate } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 
-
-function AddSecUsers() {
+function EditSecUsers() {
   const [organizations, setOrganizations] = useState([]);
   const [name, setName] = useState("");
   const [mobile, setMobile] = useState("");
@@ -18,9 +17,9 @@ function AddSecUsers() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showSidebar, setShowSidebar] = useState(false);
+  const [oldPassword, setOldPassword] = useState("");
 
-  const navigate=useNavigate()
-
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchOrganizations = async () => {
@@ -38,19 +37,47 @@ function AddSecUsers() {
     fetchOrganizations();
   }, []);
 
-  // const handleToggleSidebar = () => {
-  //   if (window.innerWidth < 768) {
-  //     setShowSidebar(!showSidebar);
-  //   }
-  // };
+  const { id } = useParams();
 
+  useEffect(() => {
+    const fetchSingleBank = async () => {
+      try {
+        const res = await api.get(`/api/pUsers/getSecUserDetails/${id}`, {
+          withCredentials: true,
+        });
+        console.log(res.data.data);
+
+        const { name, email, mobile, password, organization } = res.data.data;
+        setName(name);
+        setEmail(email);
+        setMobile(mobile);
+        setSelectedOrg(organization);
+        setOldPassword(password);
+        // setPassword(" ")
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    fetchSingleBank();
+  }, []);
+
+  console.log(selectedOrg);
+
+  const handleToggleSidebar = () => {
+    if (window.innerWidth < 768) {
+      setShowSidebar(!showSidebar);
+    }
+  };
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
   };
 
   const submitHandler = async () => {
-    if (!name || !mobile || !selectedOrg || !email || !password) {
+    const newPassword = password ? password : oldPassword;
+    console.log(newPassword);
+
+    if (!name || !mobile || !selectedOrg || !email) {
       toast.error("All fields must be filled");
       return;
     }
@@ -76,27 +103,31 @@ function AddSecUsers() {
     }
 
     if (
-      password.length < 8 ||
-      !/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/.test(
-        password
-      )
+      (password && password.length < 8) ||
+      (password &&
+        !/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/.test(
+          password
+        ))
     ) {
       toast.error(
         "Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character"
       );
       return;
     }
+    console.log(password);
 
     const formData = {
       name,
       mobile,
       email,
-      selectedOrg,
-      password,
+      organization:selectedOrg,
+      password:newPassword,
     };
 
+    console.log(formData);
+
     try {
-      const res = await api.post("/api/pUsers/addSecUsers", formData, {
+      const res = await api.post(`/api/pUsers/editSecUSer/${id}`, formData, {
         headers: {
           "Content-Type": "application/json",
         },
@@ -104,7 +135,7 @@ function AddSecUsers() {
       });
 
       toast.success(res.data.message);
-      navigate("/pUsers/retailers")
+      navigate("/pUsers/retailers");
     } catch (error) {
       toast.error(error.response.data.message);
       console.log(error);
@@ -127,17 +158,17 @@ function AddSecUsers() {
   return (
     <div className="flex">
       <div className="" style={{ height: "100vh" }}>
-        <Sidebar TAB={"addSec"}  showBar={showSidebar} />
+        <Sidebar TAB={"addSec"} showBar={showSidebar} />
       </div>
 
       <div className="flex-1 ">
         <section className=" bg-blueGray-50 h-screen overflow-y-scroll">
-        <div className="block  bg-[#201450] text-white mb-2 p-3 flex items-center gap-3 sticky top-0 z-20 text-lg  ">
-        <Link to={"/pUsers/retailers"}>
+          <div className="block  bg-[#201450] text-white mb-2 p-3 flex items-center gap-3 sticky top-0 z-20 text-lg  ">
+            <Link to={"/pUsers/retailers"}>
               <IoIosArrowRoundBack className="text-3xl text-white cursor-pointer " />
             </Link>
-          <p> Add Users </p>
-        </div>
+            <p> Edit Users </p>
+          </div>
           <div className="w-full lg:w-8/12 px-4 mx-auto mt-6 pb-[30px]">
             <div className="relative flex flex-col min-w-0 break-words w-full mb-6 shadow-lg rounded-lg bg-blueGray-100 border-0">
               <div className="rounded-t bg-white mb-0 px-6 py-6">
@@ -238,37 +269,6 @@ function AddSecUsers() {
                         </div>
                       </div>
                     </div>
-
-                    {/* <div className="w-full lg:w-6/12 px-4">
-                    <div className="relative w-full mb-3">
-                      <label
-                        className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
-                        htmlFor="grid-password"
-                      >
-                        First Name
-                      </label>
-                      <input
-                        type="text"
-                        className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                        value="Lucky"
-                      />
-                    </div>
-                  </div> */}
-                    {/* <div className="w-full lg:w-6/12 px-4">
-                    <div className="relative w-full mb-3">
-                      <label
-                        className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
-                        htmlFor="grid-password"
-                      >
-                        Last Name
-                      </label>
-                      <input
-                        type="text"
-                        className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                        value="Jesse"
-                      />
-                    </div>
-                  </div> */}
                   </div>
                   <hr className="mt-5 border-b-1 border-blueGray-300" />
                   <h6 className="text-blueGray-400 text-sm mt-3 mb-6 font-bold uppercase">
@@ -316,10 +316,11 @@ function AddSecUsers() {
                           className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
                           htmlFor="grid-password"
                         >
-                          Password
+                          New Password
                         </label>
                         <input
                           type={showPassword ? "text" : "password"}
+                          autoComplete="new-password"
                           className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                           onChange={(e) => {
                             setPassword(e.target.value);
@@ -347,4 +348,4 @@ function AddSecUsers() {
   );
 }
 
-export default AddSecUsers;
+export default EditSecUsers;

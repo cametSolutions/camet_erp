@@ -215,13 +215,13 @@ function EditHsn() {
       if (
         [hsn, description, taxabilityType].some((field) => field.trim() === "")
       ) {
-        toast.error("All gene fields are required");
+        toast.error("All fields are required");
         return;
       }
 
       if (taxabilityType === "taxable") {
         if (igstRate === "" || cgstRate === "" || sgstUtgstRate === "") {
-          toast.error("All tax fields are required");
+          toast.error("All fields are required");
           return;
         }
       }

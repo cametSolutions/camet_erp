@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 const BankDetailsSchema = new mongoose.Schema({
   cmp_id: { type: String },
   Primary_user_id: { type: String },
-  bank_ledname: { type: String ,required:true},
+  bank_ledname: { type: String ,},
   acholder_name: { type: String },
   bank_id: { type: Number },
   ac_no: { type: String },
