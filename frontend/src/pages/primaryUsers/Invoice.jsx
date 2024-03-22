@@ -1,5 +1,5 @@
 /* eslint-disable react/no-unescaped-entities */
-import { useEffect, useState,useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
 import Sidebar from "../../components/homePage/Sidebar";
 import { IoReorderThreeSharp } from "react-icons/io5";
 import { IoMdAdd } from "react-icons/io";
@@ -22,7 +22,7 @@ import { useNavigate } from "react-router-dom";
 import api from "../../api/api";
 import { IoIosAddCircle } from "react-icons/io";
 import { MdPlaylistAdd } from "react-icons/md";
-import { removeAll,removeAdditionalCharge } from "../../../slices/invoice";
+import { removeAll, removeAdditionalCharge } from "../../../slices/invoice";
 import { IoIosArrowRoundBack } from "react-icons/io";
 
 function Invoice() {
@@ -38,7 +38,7 @@ function Invoice() {
       : [{ option: "option 1", value: "", action: "add" }]
   );
   const [additional, setAdditional] = useState(false);
-  const [refresh, setRefresh] = useState(false)
+  const [refresh, setRefresh] = useState(false);
 
   useEffect(() => {
     if (additionalChargesFromRedux.length) {
@@ -101,15 +101,12 @@ function Invoice() {
     useSelector((state) => state.invoice.selectedPriceLevel) || "";
 
   useEffect(() => {
-    const subTotal = items
-      .reduce((acc, curr) => {
-        return (acc = acc + (parseFloat(curr.total) || 0));
-      }, 0)
-      ;
-      console.log(subTotal);
+    const subTotal = items.reduce((acc, curr) => {
+      return (acc = acc + (parseFloat(curr.total) || 0));
+    }, 0);
+    console.log(subTotal);
     setSubTotal(subTotal);
   }, [items]);
-
 
   const additionalChargesTotal = useMemo(() => {
     console.log("haoii");
@@ -122,9 +119,9 @@ function Invoice() {
       }
       return acc;
     }, 0);
- }, [rows,refresh]);
+  }, [rows, refresh]);
 
- console.log(additionalChargesTotal);
+  console.log(additionalChargesTotal);
   const totalAmount =
     parseFloat(subTotal) + additionalChargesTotal || parseFloat(subTotal);
 
@@ -139,18 +136,14 @@ function Invoice() {
       toast.error("Select a party first");
       return;
     }
-    navigate("/pUsers/addItem")
+    navigate("/pUsers/addItem");
   };
 
-  const cancelHandler=()=>{
+  const cancelHandler = () => {
     setAdditional(false);
-    dispatch(removeAdditionalCharge())
-    setRows([{ option: "Option 1", value: "", action: "add" }])
-    
-
-  }
-
-
+    dispatch(removeAdditionalCharge());
+    setRows([{ option: "Option 1", value: "", action: "add" }]);
+  };
 
   const submitHandler = async () => {
     console.log("haii");
@@ -212,9 +205,9 @@ function Invoice() {
 
       console.log(res.data);
       toast.success(res.data.message);
-      
+
       navigate("/pUsers/invoiceList");
-      dispatch(removeAll())
+      dispatch(removeAll());
     } catch (error) {
       toast.error(error.response.data.message);
       console.log(error);
@@ -233,9 +226,9 @@ function Invoice() {
             onClick={handleToggleSidebar}
             className="block md:hidden text-white text-3xl"
           /> */}
-            <Link to={"/pUsers/dashboard"}>
-              <IoIosArrowRoundBack className="text-3xl text-white cursor-pointer md:hidden" />
-            </Link>
+          <Link to={"/pUsers/dashboard"}>
+            <IoIosArrowRoundBack className="text-3xl text-white cursor-pointer md:hidden" />
+          </Link>
           <p className="text-white text-lg   font-bold ">
             Create Bill / Sales Order
           </p>
@@ -332,7 +325,7 @@ function Invoice() {
                 <IoMdAdd className="text-2xl" />
                 <p className="text-sm">Add Item</p>
               </div>
-               {/* </Link> */}
+              {/* </Link> */}
             </div>
           </div>
         )}
@@ -399,13 +392,22 @@ function Invoice() {
                           </div>
                         )}
                       </div>
-                      <Link to={`/pUsers/editItem/${el._id}`}>
+                      {/* <Link
+                        to={{
+                          pathname: `/pUsers/editItem/${el._id}`,
+                          state: { from: "invoice" }, // Set the state to indicate where the user is coming from
+                        }}
+                      > */}
                         <div className="">
-                          <p className="text-violet-500 text-xs md:text-base font-bold  p-1  px-4   border border-1 border-gray-300 rounded-2xl cursor-pointer">
+                          <p
+                          onClick={()=>{
+                            navigate(`/pUsers/editItem/${el._id}`, { state: { from: 'invoice' } });
+                           }}
+                           className="text-violet-500 text-xs md:text-base font-bold  p-1  px-4   border border-1 border-gray-300 rounded-2xl cursor-pointer">
                             Edit
                           </p>
                         </div>
-                      </Link>
+                      {/* </Link> */}
                     </div>
                   </div>
                   <hr />
@@ -414,7 +416,9 @@ function Invoice() {
             </div>
             <div className="flex  justify-between items-center bg-white p-2 px-4">
               <p className="text-sm md:text-base font-bold">Items Subtotal:</p>
-              <p className="text-sm md:text-base font-bold">{` ₹ ${subTotal.toFixed(2)}`}</p>
+              <p className="text-sm md:text-base font-bold">{` ₹ ${subTotal.toFixed(
+                2
+              )}`}</p>
             </div>
             {additional ? (
               <div className="container mx-auto mt-2 bg-white p-4 text-xs">
@@ -424,7 +428,7 @@ function Invoice() {
                     <p className="text-blue-800">Additional Charges</p>
                   </div>
                   <button
-                  onClick={cancelHandler}
+                    onClick={cancelHandler}
                     // onClick={() => {setAdditional(false);dispatch(removeAdditionalCharge());setRefresh(!refresh);setRows()}}
                     className="text-violet-500 p-1 px-3  text-xs border border-1 border-gray-300 rounded-2xl cursor-pointer"
                   >
@@ -507,7 +511,7 @@ function Invoice() {
                     onClick={handleAddRow}
                     className="mt-4 px-4 py-1 bg-pink-500 text-white rounded"
                   >
-                  <MdPlaylistAdd/>
+                    <MdPlaylistAdd />
                   </button>
                 </div>
               </div>

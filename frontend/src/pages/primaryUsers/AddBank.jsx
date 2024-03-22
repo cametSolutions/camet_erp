@@ -244,7 +244,7 @@ const AddBank = () => {
                     type="button"
                     onClick={submitHandler}
                   >
-                    Add
+                    Update
                   </button>
                 </form>
               </div>

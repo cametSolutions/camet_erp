@@ -261,10 +261,7 @@ function EditProduct() {
         setSelectedCategory(category);
         setSelectedSubCategory(sub_category);
 
-        const hsnDetails = hsn.filter((el) => el.hsn === hsn_code);
-        const hsnId = hsnDetails[0]._id;
-
-        setHsn_code(hsnId);
+     
         const newRows = Priceleveles.map((item) => ({
           id: Math.random(),
           pricelevel: item.pricelevel,
@@ -279,6 +276,10 @@ function EditProduct() {
 
         }))
         setLocationRows(newLocationRows)
+        const hsnDetails = hsn.filter((el) => el.hsn === hsn_code);
+        const hsnId = hsnDetails[0]._id;
+
+        setHsn_code(hsnId);
       } catch (error) {
         console.log(error);
       }
@@ -1820,7 +1821,7 @@ function EditProduct() {
                   className="bg-pink-500 text-white active:bg-pink-600 font-bold uppercase text-xs px-4 py-2 rounded shadow hover:shadow-md outline-none focus:outline-none mr-1 ease-linear transition-all duration-150"
                   type="button"
                 >
-                  Edit Product
+                  Update 
                 </button>
               </div>
             </div>

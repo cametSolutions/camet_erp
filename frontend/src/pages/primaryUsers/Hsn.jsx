@@ -807,7 +807,7 @@ const navigate=useNavigate()
                     type="button"
                     onClick={submitHandler}
                   >
-                    Add
+                    Update
                   </button>
                 </form>
               </div>

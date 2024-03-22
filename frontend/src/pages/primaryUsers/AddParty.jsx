@@ -432,7 +432,7 @@ function AddParty() {
                     type="button"
                     onClick={submitHandler}
                   >
-                    Add
+                    Update
                   </button>
                 </form>
               </div>

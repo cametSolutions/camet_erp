@@ -871,7 +871,7 @@ function EditHsn() {
                     type="button"
                     onClick={submitHandler}
                   >
-                    Add
+                    Update
                   </button>
                 </form>
               </div>

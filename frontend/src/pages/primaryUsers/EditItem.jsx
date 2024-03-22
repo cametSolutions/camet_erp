@@ -5,7 +5,7 @@ import Sidebar from "../../components/homePage/Sidebar";
 import api from "../../api/api";
 import { MdModeEditOutline } from "react-icons/md";
 import { IoIosArrowRoundBack } from "react-icons/io";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { changeIgstAndDiscount } from "../../../slices/invoice";
 
@@ -24,6 +24,7 @@ function EditItem() {
   const [discountPercentage, setDiscountPercentage] = useState(0);
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const ItemsFromRedux = useSelector((state) => state.invoice.items);
   const selectedItem = ItemsFromRedux.filter((el) => el._id === id);
@@ -124,7 +125,7 @@ function EditItem() {
     const newItem = { ...item };
 
     newItem.total = totalAmount;
-    newItem.count=parseInt(quantity);
+    newItem.count = parseInt(quantity);
     newItem.newGst = igst;
     if (type === "amount") {
       newItem.discount = discountAmount;
@@ -140,6 +141,17 @@ function EditItem() {
     navigate("/pUsers/addItem");
   };
 
+  const handleBackClick = () => {
+    console.log(location.state.from);
+    if (location.state.from === "invoice") {
+      navigate("/pUsers/invoice");
+    } else if (location.state.from === "addItem") {
+      navigate("/pUsers/addItem");
+    } else {
+      navigate("/pUsers/addItem");
+    }
+  };
+
   return (
     <div className="flex ">
       <div>
@@ -148,9 +160,10 @@ function EditItem() {
       <div className=" h-screen overflow-y-auto flex-1">
         <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex  items-center gap-2 sticky top-0 z-20 ">
           <IoIosArrowRoundBack
-            onClick={() => {
-              navigate("/pUsers/addItem");
-            }}
+            // onClick={() => {
+            //   navigate("/pUsers/addItem");
+            // }}
+            onClick={handleBackClick}
             className="text-3xl text-white cursor-pointer"
           />
           <p className="text-white text-lg   font-bold ">Edit Item</p>
@@ -164,7 +177,7 @@ function EditItem() {
                     <MdModeEditOutline />
                   </div>
                   <div className="block pl-2 font-semibold text-xl self-start text-gray-700">
-                    <h2 className="leading-relaxed">{item?.product_name }</h2>
+                    <h2 className="leading-relaxed">{item?.product_name}</h2>
                     <p className="text-sm text-gray-500 font-normal leading-relaxed">
                       Prices and Discount
                     </p>
@@ -173,9 +186,7 @@ function EditItem() {
                 <div className="divide-y divide-gray-200">
                   <div className="py-8 text-base leading-6 space-y-4 text-gray-700 sm:text-md sm:leading-7">
                     <div className="flex flex-col">
-                      <label className="leading-loose">
-                        Price 
-                      </label>
+                      <label className="leading-loose">Price</label>
                       <input
                         disabled
                         value={newPrice || 0}
@@ -191,7 +202,7 @@ function EditItem() {
                         <div className="relative focus-within:text-gray-600 text-gray-400">
                           <input
                             // disabled
-                            onChange={(e)=>setQuantity(e.target.value)}
+                            onChange={(e) => setQuantity(e.target.value)}
                             value={quantity}
                             type="text"
                             className="pr-4 pl-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm border-gray-300 rounded-md focus:outline-none text-gray-600"
@@ -276,7 +287,10 @@ function EditItem() {
                     <div className="bg-slate-200 p-3 font-semibold flex flex-col gap-2 text-gray-500">
                       <div className="flex justify-between">
                         <p className="text-xs">Tax Exclusive Price * Qty</p>
-                        <p className="text-xs"> {taxExclusivePrice.toFixed(2)}</p>
+                        <p className="text-xs">
+                          {" "}
+                          {taxExclusivePrice.toFixed(2)}
+                        </p>
                       </div>
                       {type === "amount" ? (
                         <div className="flex justify-between">
@@ -285,7 +299,9 @@ function EditItem() {
                             <p className="text-xs">{`(${parseFloat(
                               discountPercentage
                             ).toFixed(2)} % ) `}</p>
-                            <p className="text-xs">{`₹ ${discountAmount.toFixed(2)}`}</p>
+                            <p className="text-xs">{`₹ ${discountAmount.toFixed(
+                              2
+                            )}`}</p>
                           </div>
                         </div>
                       ) : (
@@ -293,7 +309,9 @@ function EditItem() {
                           <p className="text-xs">Discount</p>
                           <div className="flex items-center gap-2">
                             <p className="text-xs">{`(${discountPercentage}) %`}</p>
-                            <p className="text-xs">{`₹ ${discountAmount.toFixed(2)} `}</p>
+                            <p className="text-xs">{`₹ ${discountAmount.toFixed(
+                              2
+                            )} `}</p>
                           </div>
                         </div>
                       )}
@@ -302,8 +320,11 @@ function EditItem() {
                         <p className="text-xs">Tax Rate</p>
                         <div className="flex items-center gap-2">
                           <p className="text-xs">{`( ${igst} % )`}</p>
-                          <p className="text-xs">{`₹ ${(((taxExclusivePrice - discountAmount) * parseFloat(igst)) / 100).toFixed(2)}`}</p>
-
+                          <p className="text-xs">{`₹ ${(
+                            ((taxExclusivePrice - discountAmount) *
+                              parseFloat(igst)) /
+                            100
+                          ).toFixed(2)}`}</p>
                         </div>
                       </div>
                       <div className="flex justify-between font-bold text-black">

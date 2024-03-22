@@ -1,6 +1,6 @@
 /* eslint-disable react/prop-types */
 /* eslint-disable react/no-unknown-property */
-import { useState, useEffect, useMemo ,useRef} from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import Sidebar from "../../components/homePage/Sidebar";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import { Link, useNavigate } from "react-router-dom";
@@ -12,8 +12,7 @@ import { addItem, removeItem } from "../../../slices/invoice";
 import { useDispatch } from "react-redux";
 import { changeCount } from "../../../slices/invoice";
 import { setPriceLevel } from "../../../slices/invoice";
-import { changeTotal,persistScroll } from "../../../slices/invoice";
-import { Dropdown } from "flowbite-react";
+import { changeTotal, persistScroll } from "../../../slices/invoice";
 import { HashLoader } from "react-spinners";
 import { FixedSizeList as List } from "react-window";
 
@@ -33,9 +32,6 @@ function AddItem() {
   const [loader, setLoader] = useState(false);
   const [listHeight, setListHeight] = useState(0);
 
-
-
-
   ///////////////////////////cpm_id///////////////////////////////////
 
   const cpm_id = useSelector(
@@ -45,8 +41,6 @@ function AddItem() {
   ///////////////////////////itemsFromRedux///////////////////////////////////
 
   const itemsFromRedux = useSelector((state) => state.invoice.items);
-
-
 
   ///////////////////////////priceLevelFromRedux///////////////////////////////////
 
@@ -159,7 +153,14 @@ function AddItem() {
   const orgId = useSelector(
     (state) => state.setSelectedOrganization.selectedOrg._id
   );
+  const type = useSelector(
+    (state) => state.setSelectedOrganization.selectedOrg.type
+  );
+
   //////////////////////////////fetchFilters////////////////////////////////
+
+  console.log(item);
+  console.log(type);
 
   useEffect(() => {
     const fetchFilters = async () => {
@@ -170,15 +171,27 @@ function AddItem() {
 
         const { brands, categories, subcategories } = res.data.data;
 
-        setBrands(brands);
-        setCategories(categories);
-        setSubCategories(subcategories);
+        if (type === "self") {
+          setBrands(brands);
+          setCategories(categories);
+          setSubCategories(subcategories);
+        } else {
+          const uniqueBrands = [...new Set(item.map((el) => el?.brand))];
+          const uniqueCategories = [...new Set(item.map((el) => el?.category))];
+          const uniqueSubCategories = [
+            ...new Set(item.map((item) => item?.sub_category)),
+          ];
+
+          setBrands(uniqueBrands);
+          setCategories(uniqueCategories);
+          setSubCategories(uniqueSubCategories);
+        }
       } catch (error) {
         console.log(error);
       }
     };
     fetchFilters();
-  }, [orgId]);
+  }, [item, orgId, type]);
 
   ///////////////////////////filter items///////////////////////////////////
 
@@ -329,7 +342,7 @@ function AddItem() {
       <div
         style={style}
         key={index}
-        className="bg-white p-4 py-2 pb-6  mt-4 flex justify-between items-center  rounded-sm cursor-pointer border-b-2  "
+        className="bg-white p-4 py-2 pb-6  mt-0 flex justify-between items-center  rounded-sm cursor-pointer border-b-2 z-0 "
       >
         <div className="flex items-start gap-3 md:gap-4  ">
           <div className="w-10 mt-1  uppercase h-10 rounded-lg bg-violet-200 flex items-center justify-center font-semibold text-gray-400">
@@ -361,17 +374,23 @@ function AddItem() {
         </div>
         {el.added ? (
           <div className="flex items-center flex-col gap-2">
-            <Link
-              to={`/pUsers/editItem/${el._id}`}
-              // onClick={() => dispatch(persistScroll(el._id))}
-              // onClick={()=>{setScrollPosition(window.scrollY)}}
-            >
+            {/* <Link
+              // to={`/pUsers/editItem/${el._id}`}
+              to={{
+                pathname: `/pUsers/editItem/${el._id}`,
+                state: { from: "addItem" },
+              }}
+            > */}
               <button
-              type="button"
-               className="  mt-3  px-2 py-1  rounded-md border-violet-500 font-bold border  text-violet-500 text-xs">
+              onClick={()=> {
+                navigate(`/pUsers/editItem/${el._id}`, { state: { from: 'addItem' } });
+               }}
+                type="button"
+                className="  mt-3  px-2 py-1  rounded-md border-violet-500 font-bold border  text-violet-500 text-xs"
+              >
                 Edit
               </button>
-            </Link>
+            {/* </Link> */}
             <div
               className="py-2 px-3 inline-block bg-white  "
               data-hs-input-number
@@ -464,9 +483,6 @@ function AddItem() {
     return () => window.removeEventListener("resize", calculateHeight);
   }, []);
 
-
-
-
   console.log(listHeight);
 
   return (
@@ -476,7 +492,7 @@ function AddItem() {
       </div>
 
       <div className="flex-1 bg-slate-50 h-screen overflow-y-scroll  ">
-        <div className="sticky top-0 h-[157px]">
+        <div className="sticky top-0 h-[157px] ">
           <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex justify-between  items-center gap-2  ">
             <div className="flex items-center gap-2">
               <IoIosArrowRoundBack
@@ -559,77 +575,55 @@ function AddItem() {
             </div>
           </div>
 
-          <div className="bg-white text-sm font-semibold p-4 flex items-center  gap-10 z-20" style={{position: "relative", zIndex: "20"}}>
-            <Dropdown
-              label={selectedBrand === "" ? "Brand" : selectedBrand}
-              inline
-            >
-              {brands.length > 0 ? (
-                <>
-                  <Dropdown.Item style={{position:"relative", zIndex:"1000"}} onClick={() => setSelectedBrand("")}>
-                    All
-                  </Dropdown.Item >
-                  {brands.map((el, index) => (
-                    <Dropdown.Item
-                      onClick={() => setSelectedBrand(el)}
-                      key={index}
-                    >
-                      {el}
-                    </Dropdown.Item>
+          <div
+            className="bg-white text-sm font-semibold py-0 px-2 flex items-center z-20 w-full gap-2  "
+            style={{ position: "relative", zIndex: "20" }}
+          >
+            <div className="w-4/12">
+              <select
+                value={selectedBrand}
+                onChange={(e) => setSelectedBrand(e.target.value)}
+                className="  form-select block border-none  py-1.5 text-sm md:text-base font-normal text-gray-700 bg-white bg-clip-padding bg-no-repeat border rounded transition ease-in-out m-0 focus:ring-0 focus:border-none"
+              >
+                <option value="">Brands</option>
+                {brands.length > 0 &&
+                  brands.map((brand, index) => (
+                    <option key={index} value={brand}>
+                      {brand}
+                    </option>
                   ))}
-                </>
-              ) : (
-                <Dropdown.Item>No brands</Dropdown.Item>
-              )}
-            </Dropdown>
+              </select>
+            </div>
 
-            <Dropdown
-              label={selectedCategory === "" ? "Category" : selectedCategory}
-              inline
-              placement="top"
-            >
-              {categories.length > 0 ? (
-                <>
-                  <Dropdown.Item onClick={() => setseleCtedCategory("")}>
-                    All
-                  </Dropdown.Item>
-                  {categories.map((el, index) => (
-                    <Dropdown.Item
-                      onClick={() => setseleCtedCategory(el)}
-                      key={index}
-                    >
-                      {el}
-                    </Dropdown.Item>
-                  ))}
-                </>
-              ) : (
-                <Dropdown.Item>No Categories</Dropdown.Item>
-              )}
-            </Dropdown>
-            <Dropdown
-              label={
-                selectedSubCategory === "" ? "Subcategory" : selectedSubCategory
-              }
-              inline
-            >
-              {subCategories.length > 0 ? (
-                <>
-                  <Dropdown.Item onClick={() => setSelectedSubCategory("")}>
-                    All
-                  </Dropdown.Item>
-                  {subCategories.map((el, index) => (
-                    <Dropdown.Item
-                      onClick={() => setSelectedSubCategory(el)}
-                      key={index}
-                    >
-                      {el}
-                    </Dropdown.Item>
-                  ))}
-                </>
-              ) : (
-                <Dropdown.Item>No Subcategories</Dropdown.Item>
-              )}
-            </Dropdown>
+            <div className="w-4/12">
+              <select
+                value={selectedCategory}
+                onChange={(e) => setseleCtedCategory(e.target.value)}
+                className="  form-select block border-none  py-1.5 text-sm md:text-base font-normal text-gray-700 bg-white bg-clip-padding bg-no-repeat border rounded transition ease-in-out m-0 focus:ring-0 focus:border-none"
+              >
+                <option value="">Categories</option>
+                {categories.map((category, index) => (
+                  <option key={index} value={category}>
+                    {category}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="w-4/12">
+              <select
+                value={selectedSubCategory}
+                onChange={(e) => setSelectedSubCategory(e.target.value)}
+                className="form-select block  py-1.5 text-sm md:text-base font-normal text-gray-700 bg-white bg-clip-padding bg-no-repeat border  border-none rounded transition ease-in-out m-0 focus:ring-0 focus:border-none "
+              >
+                <option value="">Subcategories</option>
+                {subCategories.map((el, index) => (
+                  <option key={index} value={el}>
+                    {el}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
 
@@ -643,15 +637,16 @@ function AddItem() {
           </div>
         ) : (
           <List
-          ref={listRef}
+            ref={listRef}
             style={{
               scrollbarWidth: "thin",
               scrollbarColor: "transparent transparent",
+              zIndex: 0,
             }}
             className=""
             height={listHeight} // Specify the height of your list
             itemCount={filteredItems.length} // Specify the total number of items
-            itemSize={170} // Specify the height of each item
+            itemSize={160} // Specify the height of each item
             width="100%" // Specify the width of your list
           >
             {Row}
