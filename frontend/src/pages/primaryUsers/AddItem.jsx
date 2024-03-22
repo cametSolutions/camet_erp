@@ -576,14 +576,14 @@ function AddItem() {
           </div>
 
           <div
-            className="bg-white text-sm font-semibold py-0 px-2 flex items-center z-20 w-full gap-2  "
+            className="bg-white text-sm font-semibold py-0 px-2 flex items-center justify-evenly z-20 w-full gap-2  "
             style={{ position: "relative", zIndex: "20" }}
           >
             <div className="w-4/12">
               <select
                 value={selectedBrand}
                 onChange={(e) => setSelectedBrand(e.target.value)}
-                className="  form-select block border-none  py-1.5 text-sm md:text-base font-normal text-gray-700 bg-white bg-clip-padding bg-no-repeat border rounded transition ease-in-out m-0 focus:ring-0 focus:border-none"
+                className="full form-select block border-none  py-1.5 text-sm md:text-base font-normal text-gray-700 bg-white bg-clip-padding bg-no-repeat border rounded transition ease-in-out m-0 focus:ring-0 focus:border-none"
               >
                 <option value="">Brands</option>
                 {brands.length > 0 &&
@@ -599,7 +599,7 @@ function AddItem() {
               <select
                 value={selectedCategory}
                 onChange={(e) => setseleCtedCategory(e.target.value)}
-                className="  form-select block border-none  py-1.5 text-sm md:text-base font-normal text-gray-700 bg-white bg-clip-padding bg-no-repeat border rounded transition ease-in-out m-0 focus:ring-0 focus:border-none"
+                className="w-full   form-select block border-none  py-1.5 text-sm md:text-base font-normal text-gray-700 bg-white bg-clip-padding bg-no-repeat border rounded transition ease-in-out m-0 focus:ring-0 focus:border-none"
               >
                 <option value="">Categories</option>
                 {categories.map((category, index) => (
@@ -614,7 +614,7 @@ function AddItem() {
               <select
                 value={selectedSubCategory}
                 onChange={(e) => setSelectedSubCategory(e.target.value)}
-                className="form-select block  py-1.5 text-sm md:text-base font-normal text-gray-700 bg-white bg-clip-padding bg-no-repeat border  border-none rounded transition ease-in-out m-0 focus:ring-0 focus:border-none "
+                className=" w-full  form-select block  py-1.5 text-sm md:text-base font-normal text-gray-700 bg-white bg-clip-padding bg-no-repeat border  border-none rounded transition ease-in-out m-0 focus:ring-0 focus:border-none "
               >
                 <option value="">Subcategories</option>
                 {subCategories.map((el, index) => (
