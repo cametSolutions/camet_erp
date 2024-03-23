@@ -670,14 +670,14 @@ export const fetchBanks = async (req, res) => {
 export const bankList = async (req, res) => {
   const userId = req.pUserId;
   const cmp_id = req.params.cmp_id;
-  console.log("cmp_id",cmp_id);
+  console.log("cmp_id", cmp_id);
   console.log("userId", userId);
   try {
     const bankData = await BankDetails.aggregate([
       {
         $match: {
           Primary_user_id: userId,
-          cmp_id:cmp_id
+          cmp_id: cmp_id,
         },
       },
       {
@@ -1484,15 +1484,9 @@ export const createInvoice = async (req, res) => {
       priceLevelFromRedux,
       additionalChargesFromRedux,
       lastAmount,
+      orderNumber,
     } = req.body;
-
-    //  // Validate input
-    //  if (!party || !items || !priceLevelFromRedux || !lastAmount) {
-    //    return res.status(400).json({
-    //      success: false,
-    //      message: "Missing required fields",
-    //    });
-    //  }
+    console.log("orderNumber",orderNumber);
 
     console.log(req.body);
 
@@ -1504,9 +1498,20 @@ export const createInvoice = async (req, res) => {
       additionalCharges: additionalChargesFromRedux, // Corrected typo and used correct assignment operator
       finalAmount: lastAmount, // Corrected typo and used correct assignment operator
       Primary_user_id,
+      orderNumber,
     });
 
     const result = await invoice.save();
+    // const company=await OragnizationModel.findById(orgId);
+    // const prevOrdernum=parseInt(company.orderNumber);
+    // const neworderNumber=prevOrdernum+1;
+    // company.save();
+    const increaseOrderNumber = await OragnizationModel.findByIdAndUpdate(
+      orgId,
+      { $inc: { orderNumber: 1 } },
+      {new:true}
+    );
+   
 
     return res.status(200).json({
       success: true,
@@ -1829,5 +1834,28 @@ export const editSecUSer = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
+};
+
+// @desc   saveOrderNumber
+// route get/api/pUsers/saveOrderNumber/cmp_id
+
+export const saveOrderNumber = async (req, res) => {
+  const cmp_id = req.params.cmp_id;
+  try {
+    const company = await OragnizationModel.findById(cmp_id);
+    company.OrderNumberDetails = req.body;
+
+    const save = await company.save();
+    return res.status(200).json({
+      success: true,
+      message: "Order number saved successfully",
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error, try again!",
+    });
   }
 };

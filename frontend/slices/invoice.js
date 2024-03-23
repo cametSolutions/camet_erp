@@ -6,7 +6,10 @@ const initialState = {
   selectedPriceLevel: "",
   additionalCharges: [],
   finalAmount: 0,
-  persistScrollId:""
+  persistScrollId: "",
+  brand: "",
+  category: "",
+  subcategory: "",
 };
 
 export const invoiceSlice = createSlice({
@@ -47,7 +50,7 @@ export const invoiceSlice = createSlice({
     changeIgstAndDiscount: (state, action) => {
       const id = action.payload._id;
       const igst = action.payload?.igst || 0;
-      const count=action.payload?.count || 0;
+      const count = action.payload?.count || 0;
       const discount = action.payload?.discount || 0;
       const discountPercentage = action.payload?.discountPercentage || 0;
       const newTotal = action.payload?.total.toFixed(2) || 0;
@@ -83,11 +86,18 @@ export const invoiceSlice = createSlice({
     removeAll: (state) => {
       Object.assign(state, initialState);
     },
-    persistScroll:(state,action)=>{
-
-      state.persistScrollId=action.payload
-
-    }
+    persistScroll: (state, action) => {
+      state.persistScrollId = action.payload;
+    },
+    setBrandInRedux: (state, action) => {
+      state.brand = action.payload;
+    },
+    setCategoryInRedux: (state, action) => {
+      state.category = action.payload;
+    },
+    setSubCategoryInRedux: (state, action) => {
+      state.subcategory = action.payload;
+    },
   },
 });
 
@@ -106,7 +116,10 @@ export const {
   deleteRow,
   removeAll,
   removeAdditionalCharge,
-  persistScroll
+  persistScroll,
+  setBrandInRedux,
+  setCategoryInRedux,
+  setSubCategoryInRedux,
 } = invoiceSlice.actions;
 
 export default invoiceSlice.reducer;

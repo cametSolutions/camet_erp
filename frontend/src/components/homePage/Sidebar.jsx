@@ -16,6 +16,7 @@ import { MdDashboard } from "react-icons/md";
 import { TiUserAdd } from "react-icons/ti";
 import { HiDocumentText } from "react-icons/hi2";
 import { MdOutlineProductionQuantityLimits } from "react-icons/md";
+import { RingLoader } from "react-spinners";
 
 function Sidebar({ TAB, showBar }) {
   const [showSidebar, setShowSidebar] = useState(false);
@@ -23,6 +24,8 @@ function Sidebar({ TAB, showBar }) {
   const [dropdown, setDropdown] = useState(false);
   const [organizations, setOrganizations] = useState([]);
   const [selectedOrg, setSelectedOrg] = useState("");
+  const [loader, setLoader] = useState(false);
+  // const [refresh, setRefresh] = useState(false)
 
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -68,29 +71,31 @@ function Sidebar({ TAB, showBar }) {
     }));
   };
 
-  const fetchOrganizations = async () => {
-    try {
-      const res = await api.get("/api/pUsers/getOrganizations", {
-        withCredentials: true,
-      });
+  useEffect(() => {
+    const fetchOrganizations = async () => {
+      try {
+        const res = await api.get("/api/pUsers/getOrganizations", {
+          withCredentials: true,
+        });
 
-      setOrganizations(res.data.organizationData);
+        setOrganizations(res.data.organizationData);
 
-      if (selectedOrgFromRedux) {
-        setSelectedOrg(selectedOrgFromRedux);
-      } else {
-        // If no organization is selected, set the first organization as selectedOrg
-        setSelectedOrg(res.data.organizationData[0]);
-        dispatch(setSelectedOrganization(res.data.organizationData[0]));
+        if (selectedOrgFromRedux) {
+          setSelectedOrg(selectedOrgFromRedux);
+        } else {
+          // If no organization is selected, set the first organization as selectedOrg
+          setSelectedOrg(res.data.organizationData[0]);
+          dispatch(setSelectedOrganization(res.data.organizationData[0]));
+        }
+      } catch (error) {
+        console.log(error);
+        toast.error(error.response.data.message);
       }
-    } catch (error) {
-      console.log(error);
-      toast.error(error.response.data.message);
-    }
-  };
+    };
+    fetchOrganizations();
+  }, []);
 
   useEffect(() => {
-    fetchOrganizations();
     const getUserData = async () => {
       try {
         const res = await api.get("/api/pUsers/getPrimaryUserData", {
@@ -151,11 +156,20 @@ function Sidebar({ TAB, showBar }) {
 
   return (
     <div className="relative">
+      {loader && (
+        <div className=" absolute top-0 w-screen h-screen z-50  flex justify-center items-center bg-black/[0.5]">
+          <RingLoader color="#1c14a0" />
+        </div>
+      )}
+      {/* <div className=" absolute top-0 w-screen h-screen z-50  flex justify-center items-center bg-black/[0.5]">
+        <RingLoader color="#1c14a0" />
+      </div> */}
+
       <aside
         className={` ${
           showSidebar
             ? "z-50 absolute h-[125vh] transform translate-x-0 "
-            : "-translate-x-full md:translate-x-0  z-50 absolute md:relative "
+            : "-translate-x-full md:translate-x-0  z-40 absolute md:relative "
         }  transition-transform duration-500 ease-in-out flex flex-col w-64 h-screen  px-4 py-8  bg-gray-900  border-r rtl:border-r-0 rtl:border-l dark:bg-gray-900 dark:border-gray-700   
           
         overflow-y-auto`}
@@ -228,8 +242,16 @@ function Sidebar({ TAB, showBar }) {
                       <a
                         onClick={() => {
                           setDropdown(!dropdown);
-                          setSelectedOrg(el);
-                          dispatch(setSelectedOrganization(el));
+                          if (window.innerWidth <= 640) {
+                            setShowSidebar(!showSidebar);
+                          }
+                          setLoader(true);
+                          setTimeout(() => {
+                            setSelectedOrg(el);
+                            dispatch(setSelectedOrganization(el));
+                            navigate("/pUsers/dashboard");
+                            setLoader(false);
+                          }, 1000);
                         }}
                         // onClick={() => handleDropDownchange(el)}
                         href="#"
@@ -311,25 +333,23 @@ function Sidebar({ TAB, showBar }) {
                 </a>
               </Link>
 
-         
-                <Link to={"/pUsers/bankList"}>
-                  <a
-                    onClick={() => {
-                      handleSidebarItemClick("outstanding");
-                    }}
-                    className={` ${
-                      TAB === "bankList" || TAB === "addBank"
-                        ? "bg-gray-800 text-white"
-                        : "text-gray-400"
-                    } hover:bg-gray-800 hover:text-white flex items-center px-4 py-2 mt-5 transition-colors duration-300 transform rounded-lg   `}
-                    href="#"
-                  >
-                    <PiBankFill />
+              <Link to={"/pUsers/bankList"}>
+                <a
+                  onClick={() => {
+                    handleSidebarItemClick("outstanding");
+                  }}
+                  className={` ${
+                    TAB === "bankList" || TAB === "addBank"
+                      ? "bg-gray-800 text-white"
+                      : "text-gray-400"
+                  } hover:bg-gray-800 hover:text-white flex items-center px-4 py-2 mt-5 transition-colors duration-300 transform rounded-lg   `}
+                  href="#"
+                >
+                  <PiBankFill />
 
-                    <span className="mx-4 font-medium">Banks</span>
-                  </a>
-                </Link>
-              
+                  <span className="mx-4 font-medium">Banks</span>
+                </a>
+              </Link>
 
               <Link to={"/pUsers/partyList"}>
                 <a
@@ -371,7 +391,7 @@ function Sidebar({ TAB, showBar }) {
                     handleSidebarItemClick("outstanding");
                   }}
                   className={` ${
-                    TAB === "productList"
+                    TAB === "product"
                       ? "bg-gray-800 text-white"
                       : "text-gray-400"
                   } hover:bg-gray-800 hover:text-white flex items-center px-4 py-2 mt-5 transition-colors duration-300 transform rounded-lg   `}

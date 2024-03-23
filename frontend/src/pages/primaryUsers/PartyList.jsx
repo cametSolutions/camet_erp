@@ -14,6 +14,9 @@ import { HashLoader } from "react-spinners";
 import { IoIosSearch } from "react-icons/io";
 import { FixedSizeList as List } from "react-window";
 import { IoIosAddCircle } from "react-icons/io";
+import { removeAll } from "../../../slices/invoice";
+
+import { useDispatch } from "react-redux";
 
 function PartyList() {
   const [parties, setParties] = useState([]);
@@ -31,6 +34,7 @@ function PartyList() {
   const type = useSelector(
     (state) => state.setSelectedOrganization.selectedOrg.type
   );
+  const dispatch=useDispatch()
 
   useEffect(() => {
     setLoader(true);
@@ -51,6 +55,8 @@ function PartyList() {
       }
     };
     fetchParties();
+  dispatch(removeAll())
+
   }, [cpm_id, refresh]);
   useEffect(() => {
     if (search === "") {
@@ -166,7 +172,7 @@ function PartyList() {
   return (
     <div className="flex relative h-screen ">
       <div>
-        <Sidebar TAB={"invoice"} showBar={showSidebar} />
+        <Sidebar TAB={"addParty"} showBar={showSidebar} />
       </div>
 
       <div className="flex-1 bg-slate-50 overflow-y-scroll ">

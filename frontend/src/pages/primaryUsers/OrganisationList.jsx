@@ -6,12 +6,17 @@ import Sidebar from "../../components/homePage/Sidebar";
 import { IoReorderThreeSharp } from "react-icons/io5";
 import { FaEdit } from "react-icons/fa";
 import { Link } from "react-router-dom";
+import { removeAll } from "../../../slices/invoice";
+import { useDispatch } from "react-redux";
 
 function OrganisationList() {
   const [organizations, setOrganizations] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [postPerPage, setPostPerPage] = useState(6);
   const [showSidebar, setShowSidebar] = useState(false);
+
+
+  const dispatch=useDispatch()
 
   useEffect(() => {
     const fetchOrganiszations = async () => {
@@ -27,6 +32,8 @@ function OrganisationList() {
       }
     };
     fetchOrganiszations();
+    dispatch(removeAll())
+
   }, []);
 
   const handleToggleSidebar = () => {

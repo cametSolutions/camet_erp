@@ -4,11 +4,12 @@ import { toast } from "react-toastify";
 import Pagination from "../../components/common/Pagination";
 import Sidebar from "../../components/homePage/Sidebar";
 import { IoReorderThreeSharp } from "react-icons/io5";
-import { useSelector } from "react-redux";
-import { MdDelete } from "react-icons/md";
+
 import { FaEdit } from "react-icons/fa";
-import Swal from "sweetalert2";
 import { Link } from "react-router-dom";
+import { removeAll } from "../../../slices/invoice";
+
+import { useDispatch } from "react-redux";
 
 function RetailersList() {
   const [organizations, setOrganizations] = useState([]);
@@ -19,6 +20,8 @@ function RetailersList() {
   const [currentPage, setCurrentPage] = useState(1);
   const [postPerPage, setPostPerPage] = useState(5);
   const [showSidebar, setShowSidebar] = useState(false);
+  const dispatch=useDispatch()
+
 
   useEffect(() => {
     const fetchOrganizations = async () => {
@@ -47,6 +50,8 @@ function RetailersList() {
       }
     };
     fetchSecondaryUsers();
+    dispatch(removeAll())
+
   }, []);
 
   const handleToggleSidebar = () => {

@@ -1,14 +1,16 @@
 import { useEffect, useState } from "react";
 import api from "../../api/api";
-import { toast } from "react-toastify";
 import Pagination from "../../components/common/Pagination";
 import Sidebar from "../../components/homePage/Sidebar";
-import { IoLogIn, IoReorderThreeSharp } from "react-icons/io5";
+import {  IoReorderThreeSharp } from "react-icons/io5";
 import { FaEdit } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { MdDelete } from "react-icons/md";
 import Swal from "sweetalert2";
+import { removeAll } from "../../../slices/invoice";
+
+import { useDispatch } from "react-redux";
 
 function HsnList() {
   const [hsn, setHsn] = useState([]);
@@ -18,6 +20,8 @@ function HsnList() {
   const [refresh, setRefresh] = useState(false);
 
   const org = useSelector((state) => state.setSelectedOrganization.selectedOrg);
+  
+  const dispatch=useDispatch()
 
   const orgId = org._id;
 
@@ -36,6 +40,8 @@ function HsnList() {
       }
     };
     fetchHsn();
+    dispatch(removeAll())
+
   }, [orgId, refresh]);
 
   const handleToggleSidebar = () => {
@@ -87,7 +93,7 @@ function HsnList() {
   return (
     <div className="flex">
       <div className="" style={{ height: "100vh" }}>
-        <Sidebar TAB={"orgList"} showBar={showSidebar} />
+        <Sidebar TAB={"hsn"} showBar={showSidebar} />
       </div>
 
       <section className=" flex-1 antialiased bg-gray-100 text-gray-600 h-screen py-0 md:p-6 overflow-y-scroll   ">

@@ -12,7 +12,12 @@ import { addItem, removeItem } from "../../../slices/invoice";
 import { useDispatch } from "react-redux";
 import { changeCount } from "../../../slices/invoice";
 import { setPriceLevel } from "../../../slices/invoice";
-import { changeTotal, persistScroll } from "../../../slices/invoice";
+import {
+  changeTotal,
+  setBrandInRedux,
+  setCategoryInRedux,
+  setSubCategoryInRedux,
+} from "../../../slices/invoice";
 import { HashLoader } from "react-spinners";
 import { FixedSizeList as List } from "react-window";
 
@@ -47,6 +52,14 @@ function AddItem() {
   const priceLevelFromRedux =
     useSelector((state) => state.invoice.selectedPriceLevel) || "";
 
+  ///////////////////////////filters FromRedux///////////////////////////////////
+
+  const brandFromRedux = useSelector((state) => state.invoice.brand) || "";
+  const categoryFromRedux =
+    useSelector((state) => state.invoice.category) || "";
+  const subCategoryFromRedux =
+    useSelector((state) => state.invoice.subcategory) || "";
+
   ///////////////////////////navigate dispatch///////////////////////////////////
 
   const navigate = useNavigate();
@@ -79,14 +92,18 @@ function AddItem() {
           setItem(updatedItems);
         } else {
           setItem(res.data.productData);
-
-          // if (priceLevelFromRedux === "") {
-          //   const defaultPriceLevel =
-          //     res.data.productData[0]?.Priceleveles[0]?.pricelevel;
-          //   setSelectedPriceLevel(defaultPriceLevel);
-          //   dispatch(setPriceLevel(defaultPriceLevel));
-          // }
         }
+
+        if (brandFromRedux) {
+          setSelectedBrand(brandFromRedux);
+        } 
+        if (categoryFromRedux) {
+          setseleCtedCategory(categoryFromRedux);
+        } 
+         if (subCategoryFromRedux) {
+          setSelectedSubCategory(subCategoryFromRedux);
+        }
+        
       } catch (error) {
         console.log(error);
       } finally {
@@ -381,15 +398,17 @@ function AddItem() {
                 state: { from: "addItem" },
               }}
             > */}
-              <button
-              onClick={()=> {
-                navigate(`/pUsers/editItem/${el._id}`, { state: { from: 'addItem' } });
-               }}
-                type="button"
-                className="  mt-3  px-2 py-1  rounded-md border-violet-500 font-bold border  text-violet-500 text-xs"
-              >
-                Edit
-              </button>
+            <button
+              onClick={() => {
+                navigate(`/pUsers/editItem/${el._id}`, {
+                  state: { from: "addItem" },
+                });
+              }}
+              type="button"
+              className="  mt-3  px-2 py-1  rounded-md border-violet-500 font-bold border  text-violet-500 text-xs"
+            >
+              Edit
+            </button>
             {/* </Link> */}
             <div
               className="py-2 px-3 inline-block bg-white  "
@@ -482,8 +501,6 @@ function AddItem() {
     // Cleanup the event listener on component unmount
     return () => window.removeEventListener("resize", calculateHeight);
   }, []);
-
-  console.log(listHeight);
 
   return (
     <div className="flex relative">
@@ -582,7 +599,10 @@ function AddItem() {
             <div className="w-4/12">
               <select
                 value={selectedBrand}
-                onChange={(e) => setSelectedBrand(e.target.value)}
+                onChange={(e) => {
+                  setSelectedBrand(e.target.value);
+                  dispatch(setBrandInRedux(e.target.value));
+                }}
                 className="full form-select block border-none  py-1.5 text-sm md:text-base font-normal text-gray-700 bg-white bg-clip-padding bg-no-repeat border rounded transition ease-in-out m-0 focus:ring-0 focus:border-none"
               >
                 <option value="">Brands</option>
@@ -598,7 +618,10 @@ function AddItem() {
             <div className="w-4/12">
               <select
                 value={selectedCategory}
-                onChange={(e) => setseleCtedCategory(e.target.value)}
+                onChange={(e) => {
+                  setseleCtedCategory(e.target.value);
+                  dispatch(setCategoryInRedux(e.target.value));
+                }}
                 className="w-full   form-select block border-none  py-1.5 text-sm md:text-base font-normal text-gray-700 bg-white bg-clip-padding bg-no-repeat border rounded transition ease-in-out m-0 focus:ring-0 focus:border-none"
               >
                 <option value="">Categories</option>
@@ -613,7 +636,10 @@ function AddItem() {
             <div className="w-4/12">
               <select
                 value={selectedSubCategory}
-                onChange={(e) => setSelectedSubCategory(e.target.value)}
+                onChange={(e) => {
+                  setSelectedSubCategory(e.target.value);
+                  dispatch(setSubCategoryInRedux(e.target.value));
+                }}
                 className=" w-full  form-select block  py-1.5 text-sm md:text-base font-normal text-gray-700 bg-white bg-clip-padding bg-no-repeat border  border-none rounded transition ease-in-out m-0 focus:ring-0 focus:border-none "
               >
                 <option value="">Subcategories</option>

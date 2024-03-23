@@ -28,7 +28,11 @@ const organizationSchema = new mongoose.Schema(
     subcategories:{type:Array},
     levelNames:{type:Array},
     locations:{type:Array},
-    type:{type:String,default:"self"}
+    type:{type:String,default:"self"},
+    orderNumber:{type:Number,default:1},
+    OrderNumberValue:{type:String},
+    OrderNumberDetails:{type:Object}
+    
   },
   {
     timestamps: true,

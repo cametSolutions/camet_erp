@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 
 const invoiceSchema = new mongoose.Schema(
   {
+    orderNumber: { type: String, required: true },
     Primary_user_id: { type: String, required: true },
     Secondary_user_id: { type: String },
     cmp_id:{ type: String, required: true },

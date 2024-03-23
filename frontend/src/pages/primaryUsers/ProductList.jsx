@@ -15,6 +15,9 @@ import { IoIosSearch } from "react-icons/io";
 import { IoIosAddCircle } from "react-icons/io";
 import { FixedSizeList as List } from "react-window";
 import { useSelector } from "react-redux";
+import { removeAll } from "../../../slices/invoice";
+
+import { useDispatch } from "react-redux";
 
 function ProductList() {
   const [products, setProducts] = useState([]);
@@ -32,6 +35,8 @@ function ProductList() {
   const type = useSelector(
     (state) => state.setSelectedOrganization.selectedOrg.type
   );
+
+  const dispatch = useDispatch();
 
   console.log(type);
 
@@ -55,6 +60,7 @@ function ProductList() {
       }
     };
     fetchProducts();
+    dispatch(removeAll());
   }, [refresh, cmp_id]);
 
   const handleToggleSidebar = () => {
@@ -196,7 +202,7 @@ function ProductList() {
   return (
     <div className="flex relative h-screen ">
       <div>
-        <Sidebar TAB={"invoice"} showBar={showSidebar} />
+        <Sidebar TAB={"product"} showBar={showSidebar} />
       </div>
 
       <div className="flex-1 bg-slate-50 overflow-y-scroll ">

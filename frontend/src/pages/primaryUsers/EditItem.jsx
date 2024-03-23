@@ -138,7 +138,8 @@ function EditItem() {
 
     console.log(newItem);
     dispatch(changeIgstAndDiscount(newItem));
-    navigate("/pUsers/addItem");
+    // navigate("/pUsers/addItem");
+    handleBackClick()
   };
 
   const handleBackClick = () => {
@@ -335,7 +336,7 @@ function EditItem() {
                   </div>
                   <div className="pt-4 flex items-center space-x-4">
                     <button
-                      onClick={() => navigate("/pUsers/addItem")}
+                      onClick={handleBackClick}
                       className="flex justify-center items-center w-full text-gray-900 px-4 py-3 rounded-md focus:outline-none"
                     >
                       <svg

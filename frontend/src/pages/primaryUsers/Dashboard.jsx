@@ -17,6 +17,8 @@ import { FaCaretDown } from "react-icons/fa";
 import { FcCancel } from "react-icons/fc";
 import { useNavigate } from "react-router-dom";
 import { BiSolidAddToQueue } from "react-icons/bi";
+import { removeAll } from "../../../slices/invoice";
+import { useDispatch } from "react-redux";
 
 function Dashboard() {
   const [showSidebar, setShowSidebar] = useState(false);
@@ -25,6 +27,7 @@ function Dashboard() {
 
   const org = useSelector((state) => state.setSelectedOrganization.selectedOrg);
   console.log(org);
+  const dispatch=useDispatch()
 
   const handleToggleSidebar = () => {
     if (window.innerWidth < 768) {
@@ -49,6 +52,7 @@ function Dashboard() {
       }
     };
     fetchTransactions();
+    dispatch(removeAll())
   }, []);
 
   console.log(data);

@@ -7,6 +7,9 @@ import { FaEdit } from "react-icons/fa";
 import { IoReorderThreeSharp } from "react-icons/io5";
 import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
+import { removeAll } from "../../../slices/invoice";
+
+import { useDispatch } from "react-redux";
 
 function BankList() {
   const [banks, setBanks] = useState([]);
@@ -20,6 +23,7 @@ function BankList() {
   const type = useSelector(
     (state) => state.setSelectedOrganization.selectedOrg.type
   );
+  const dispatch = useDispatch();
 
   useEffect(() => {
     const fetchBanks = async () => {
@@ -34,6 +38,7 @@ function BankList() {
       }
     };
     fetchBanks();
+    dispatch(removeAll());
   }, [cmp_id]);
 
   const handleToggleSidebar = () => {
@@ -56,14 +61,12 @@ function BankList() {
 
       <section className=" flex-1 antialiased bg-gray-100 text-gray-600 h-screen py-0 md:p-6 overflow-y-scroll   ">
         <div className="block md:hidden bg-[#201450] text-white mb-2 p-3 flex items-center gap-3 text-lg justify-between ">
-
           <div className="flex items-center justify-center gap-2">
-
-          <IoReorderThreeSharp
-            onClick={handleToggleSidebar}
-            className="block md:hidden text-3xl"
-          />
-          <p> Your Banks</p>
+            <IoReorderThreeSharp
+              onClick={handleToggleSidebar}
+              className="block md:hidden text-3xl"
+            />
+            <p> Your Banks</p>
           </div>
           {type === "self" && (
             <Link to={"/pUsers/addBank"}>

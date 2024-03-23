@@ -1,7 +1,6 @@
 /* eslint-disable react/no-unescaped-entities */
 import { useEffect, useState, useMemo } from "react";
 import Sidebar from "../../components/homePage/Sidebar";
-import { IoReorderThreeSharp } from "react-icons/io5";
 import { IoMdAdd } from "react-icons/io";
 import { Link } from "react-router-dom";
 import { IoPerson } from "react-icons/io5";
@@ -24,10 +23,23 @@ import { IoIosAddCircle } from "react-icons/io";
 import { MdPlaylistAdd } from "react-icons/md";
 import { removeAll, removeAdditionalCharge } from "../../../slices/invoice";
 import { IoIosArrowRoundBack } from "react-icons/io";
+import { Button, Label, Modal, TextInput } from "flowbite-react";
 
 function Invoice() {
   const [showSidebar, setShowSidebar] = useState(false);
   const [openModal, setOpenModal] = useState(false);
+  const [modalInputs, setModalInputs] = useState({
+    startingNumber: "1",
+    widthOfNumericalPart: "",
+    prefixDetails: "",
+    suffixDetails: "",
+  });
+  const [additional, setAdditional] = useState(false);
+  const [refresh, setRefresh] = useState(false);
+  const [refreshCmp, setrefreshCmp] = useState(false);
+  const [orderNumber, setOrderNumber] = useState("");
+  const [company, setCompany] = useState([]);
+  console.log(modalInputs);
   const additionalChargesFromRedux = useSelector(
     (state) => state.invoice.additionalCharges
   );
@@ -37,8 +49,6 @@ function Invoice() {
       ? additionalChargesFromRedux
       : [{ option: "option 1", value: "", action: "add" }]
   );
-  const [additional, setAdditional] = useState(false);
-  const [refresh, setRefresh] = useState(false);
 
   useEffect(() => {
     if (additionalChargesFromRedux.length) {
@@ -130,6 +140,62 @@ function Invoice() {
   const orgId = useSelector(
     (state) => state.setSelectedOrganization.selectedOrg._id
   );
+
+  useEffect(() => {
+    const fetchSingleOrganization = async () => {
+      try {
+        const res = await api.get(
+          `/api/pUsers/getSingleOrganization/${orgId}`,
+          {
+            withCredentials: true,
+          }
+        );
+
+        console.log(res.data.organizationData);
+        setCompany(res.data.organizationData);
+        const { orderNumber, OrderNumberDetails } = res.data.organizationData;
+
+        console.log(orderNumber);
+
+        if (OrderNumberDetails) {
+          console.log("haii");
+          const { widthOfNumericalPart, prefixDetails, suffixDetails } =
+            OrderNumberDetails;
+            const newOrderNumber=(orderNumber+1).toString()
+            console.log(newOrderNumber);
+          console.log(widthOfNumericalPart);
+          console.log(prefixDetails);
+          console.log(suffixDetails);
+
+
+          const padedNumber = newOrderNumber.padStart(widthOfNumericalPart, 0);
+          console.log(padedNumber);
+          const finalOrderNumber = prefixDetails + padedNumber + suffixDetails;
+          console.log(finalOrderNumber);
+          setOrderNumber(finalOrderNumber);
+          setModalInputs({
+            widthOfNumericalPart: widthOfNumericalPart,
+            prefixDetails: prefixDetails,
+            suffixDetails: suffixDetails,
+          });
+        } else {
+          setOrderNumber(orderNumber);
+          setModalInputs({
+            startingNumber: "1",
+            widthOfNumericalPart: "",
+            prefixDetails: "",
+            suffixDetails: "",
+          });
+        }
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    fetchSingleOrganization();
+  }, [refreshCmp, orgId]);
+
+  console.log(orderNumber);
+
   const handleAddItem = () => {
     console.log(Object.keys(party).length);
     if (Object.keys(party).length === 0) {
@@ -191,6 +257,7 @@ function Invoice() {
       additionalChargesFromRedux,
       lastAmount,
       orgId,
+        orderNumber
     };
 
     console.log(formData);
@@ -214,10 +281,39 @@ function Invoice() {
     }
   };
 
+  function onCloseModal() {
+    setOpenModal(false);
+    // setEmail('');
+  }
+
+  const saveOrderNumber = async () => {
+    try {
+      const res = await api.post(
+        `/api/pUsers/saveOrderNumber/${orgId}`,
+        modalInputs,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+          withCredentials: true,
+        }
+      );
+
+      toast(res.data.message);
+      setOpenModal(false);
+      setrefreshCmp(!refreshCmp);
+
+      console.log(res);
+    } catch (error) {
+      console.log(error);
+      toast.error(error.response.data.message);
+    }
+  };
+
   return (
     <div className="flex relative ">
       <div>
-        <Sidebar TAB={"invoice"} showBar={showSidebar} />
+        <Sidebar TAB={"invoice"} showBar={showSidebar} refresh={refreshCmp} />
       </div>
 
       <div className="flex-1 bg-slate-100  h-screen overflow-y-scroll  ">
@@ -238,24 +334,41 @@ function Invoice() {
 
         <div className="flex justify-between  p-4 bg-white drop-shadow-lg items-center text-xs md:text-base ">
           <div className=" flex flex-col gap-1 justify-center">
-            <p className="text-md font-semibold text-violet-400">Sales Order</p>
+            <p className="text-md font-semibold text-violet-400">
+              Order #{orderNumber}
+            </p>
             <p className="font-semibold   text-gray-500 text-xs md:text-base">
               {new Date().toDateString()}
             </p>
           </div>
-          <div className=" hidden md:block ">
+          <div className="  ">
             <div className="  flex gap-5 items-center ">
-              <button
-                onClick={submitHandler}
-                className=" bottom-0 text-white bg-violet-700  w-full rounded-md  p-2 flex items-center justify-center gap-2 hover_scale cursor-pointer "
-              >
-                <IoIosAddCircle className="text-2xl" />
-                <p>Generate Order</p>
-              </button>
+              <div className="hidden md:block">
+                <button
+                  onClick={submitHandler}
+                  className=" bottom-0 text-white bg-violet-700  w-full rounded-md  p-2 flex items-center justify-center gap-2 hover_scale cursor-pointer "
+                >
+                  <IoIosAddCircle className="text-2xl" />
+                  <p>Generate Order</p>
+                </button>
+              </div>
               <div>
-                <p className="text-violet-500 text-xs  p-1 px-3  border border-1 border-gray-300 rounded-2xl cursor-pointer">
+                <button
+                  onClick={() => setOpenModal(true)}
+                  className="  text-violet-500 text-xs  p-1 px-3  border border-1 border-gray-300 rounded-2xl cursor-pointer"
+                >
                   Edit
-                </p>
+                </button>
+              </div>
+              <div>
+                <button
+                  onClick={() => {
+                    dispatch(removeAll());
+                  }}
+                  className="  text-red-500 text-xs  p-1 px-3  border border-1 border-gray-300 rounded-2xl cursor-pointer"
+                >
+                  Cancel
+                </button>
               </div>
             </div>
           </div>
@@ -355,7 +468,7 @@ function Invoice() {
                       <p> ₹ {el.total ?? 0}</p>
                     </div>
                     <div className="flex justify-between items-center mt-2 ">
-                      <div className="w-3/5 md:w-2/5 font-semibold text-gray-500 text-xs md:text-base flex flex-col gap-2 ">
+                      <div className="w-3/5 md:w-2/5 font-semibold text-gray-500 text-xs  flex flex-col gap-2 ">
                         <div className="flex justify-between">
                           <p className="text-nowrap">
                             Qty <span className="text-xs">x</span> Rate
@@ -398,15 +511,18 @@ function Invoice() {
                           state: { from: "invoice" }, // Set the state to indicate where the user is coming from
                         }}
                       > */}
-                        <div className="">
-                          <p
-                          onClick={()=>{
-                            navigate(`/pUsers/editItem/${el._id}`, { state: { from: 'invoice' } });
-                           }}
-                           className="text-violet-500 text-xs md:text-base font-bold  p-1  px-4   border border-1 border-gray-300 rounded-2xl cursor-pointer">
-                            Edit
-                          </p>
-                        </div>
+                      <div className="">
+                        <p
+                          onClick={() => {
+                            navigate(`/pUsers/editItem/${el._id}`, {
+                              state: { from: "invoice" },
+                            });
+                          }}
+                          className="text-violet-500 text-xs md:text-base font-bold  p-1  px-4   border border-1 border-gray-300 rounded-2xl cursor-pointer"
+                        >
+                          Edit
+                        </p>
+                      </div>
                       {/* </Link> */}
                     </div>
                   </div>
@@ -621,6 +737,103 @@ function Invoice() {
           </div>
         )}
       </div>
+
+      <Modal
+        style={{
+          scrollbarWidth: "thin",
+          scrollbarColor: "transparent transparent",
+        }}
+        show={openModal}
+        size="md"
+        onClose={onCloseModal}
+        popup
+      >
+        <Modal.Header />
+        <Modal.Body>
+          <div className="space-y-6">
+            <h3 className="text-xl font-medium text-gray-900 dark:text-white ">
+              Enter Details
+            </h3>
+            <div>
+              <div className="mb-2 block">
+                <Label htmlFor="startingNumber" value="Starting Number" />
+              </div>
+              <TextInput
+              disabled
+                id="startingNumber"
+                placeholder="1"
+                type="number"
+                value={modalInputs.startingNumber}
+                onChange={(e) =>
+                  setModalInputs({
+                    ...modalInputs,
+                    startingNumber: e.target.value,
+                  })
+                }
+                required
+              />
+            </div>
+            <div>
+              <div className="mb-2 block">
+                <Label
+                  htmlFor="widthOfNumericalPart"
+                  value="Width of Numerical Part"
+                />
+              </div>
+              <TextInput
+                id="widthOfNumericalPart"
+                placeholder="4"
+                type="number"
+                value={modalInputs.widthOfNumericalPart}
+                onChange={(e) =>
+                  setModalInputs({
+                    ...modalInputs,
+                    widthOfNumericalPart: e.target.value,
+                  })
+                }
+                required
+              />
+            </div>
+            <div>
+              <div className="mb-2 block">
+                <Label htmlFor="prefixDetails" value="Prefix Details" />
+              </div>
+              <TextInput
+                id="prefixDetails"
+                placeholder="ABC"
+                value={modalInputs.prefixDetails}
+                onChange={(e) =>
+                  setModalInputs({
+                    ...modalInputs,
+                    prefixDetails: e.target.value,
+                  })
+                }
+                required
+              />
+            </div>
+            <div>
+              <div className="mb-2 block">
+                <Label htmlFor="suffixDetails" value="Suffix Details" />
+              </div>
+              <TextInput
+                id="suffixDetails"
+                placeholder="XYZ"
+                value={modalInputs.suffixDetails}
+                onChange={(e) =>
+                  setModalInputs({
+                    ...modalInputs,
+                    suffixDetails: e.target.value,
+                  })
+                }
+                required
+              />
+            </div>
+            <div className="w-full">
+              <Button onClick={saveOrderNumber}>Submit</Button>
+            </div>
+          </div>
+        </Modal.Body>
+      </Modal>
     </div>
   );
 }

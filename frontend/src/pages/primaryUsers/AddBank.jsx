@@ -91,7 +91,7 @@ const AddBank = () => {
   return (
     <div className="flex ">
       <div className="" style={{ height: "100vh" }}>
-        <Sidebar TAB={"addOrg"} showBar={showSidebar} />
+        <Sidebar TAB={"addBank"} showBar={showSidebar} />
       </div>
       <div className=" ">
         <section className=" bg-blueGray-50 h-screen overflow-y-scroll ">
