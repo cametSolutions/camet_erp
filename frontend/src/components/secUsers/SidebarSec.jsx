@@ -289,7 +289,7 @@ function SidebarSec({ onTabChange, TAB,showBar }) {
                 >
                   <MdOutlineProductionQuantityLimits />
 
-                  <span className="mx-4 font-medium">Add Product</span>
+                  <span className="mx-4 font-medium">Products</span>
                 </a>
               </Link>
 
