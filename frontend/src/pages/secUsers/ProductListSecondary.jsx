@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import api from "../../api/api";
 import { toast } from "react-toastify";
-import Sidebar from "../../components/homePage/Sidebar";
 import { IoReorderThreeSharp } from "react-icons/io5";
 import { FaEdit } from "react-icons/fa";
 import { Link } from "react-router-dom";
@@ -32,7 +31,7 @@ function ProductListSecondary() {
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
   const type = useSelector(
-    (state) => state.setSelectedOrganization.selectedOrg.type
+    (state) => state.secSelectedOrganization.secSelectedOrg.type
   );
 
   console.log(type);

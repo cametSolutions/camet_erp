@@ -18,7 +18,7 @@ import { MdOutlineProductionQuantityLimits } from "react-icons/md";
 
 
 
-function SidebarSec({ onTabChange, TAB,showBar }) {
+function SidebarSec({ TAB,showBar }) {
   console.log(TAB);
   const [showSidebar, setShowSidebar] = useState(false);
   const [userData, setUserData] = useState({});
@@ -81,7 +81,7 @@ function SidebarSec({ onTabChange, TAB,showBar }) {
     }
 
     setTab(newTab);
-    onTabChange(newTab);
+    // onTabChange(newTab);
   };
 
   const handleLogout = async () => {

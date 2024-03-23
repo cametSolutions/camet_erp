@@ -134,16 +134,16 @@ const Routers = () => {
         <Route path='/sUsers/receiptDetails/:id' element={<ProtectedSecRoute><SecReceptionDetails/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/dashboard' element={<ProtectedSecRoute><DashboardSec/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/invoice' element={<ProtectedSecRoute><InvoiceSecondary/></ProtectedSecRoute>}></Route>
-        <Route path='/sUsers/searchParty' element={<ProtectedPriRoute><SearchPartySecondary/></ProtectedPriRoute>}></Route>
-        <Route path='/sUsers/partyList' element={<ProtectedPriRoute><PartyListSecondary/></ProtectedPriRoute>}></Route>
-        <Route path='/sUsers/addParty' element={<ProtectedPriRoute><AddPartySecondary/></ProtectedPriRoute>}></Route>
-        <Route path='/sUsers/productList' element={<ProtectedPriRoute><ProductListSecondary/></ProtectedPriRoute>}></Route>
-        <Route path='/sUsers/addItem' element={<ProtectedPriRoute><AddItemSecondary/></ProtectedPriRoute>}></Route>
-        <Route path='/sUsers/editItem/:id' element={<ProtectedPriRoute><EditItemSecondary/></ProtectedPriRoute>}></Route>
-        <Route path='/sUsers/invoiceList' element={<ProtectedPriRoute><InvoiceListSecondary/></ProtectedPriRoute>}></Route>
-        <Route path='/sUsers/editParty/:id' element={<ProtectedPriRoute><EditPartySecondary/></ProtectedPriRoute>}></Route>
-        <Route path='/sUsers/addProduct' element={<ProtectedPriRoute><AddProductSecondary/></ProtectedPriRoute>}></Route>
-        <Route path='/sUsers/editProduct/:id' element={<ProtectedPriRoute><EditProductSecondary/></ProtectedPriRoute>}></Route>
+        <Route path='/sUsers/searchParty' element={<ProtectedSecRoute><SearchPartySecondary/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/partyList' element={<ProtectedSecRoute><PartyListSecondary/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/addParty' element={<ProtectedSecRoute><AddPartySecondary/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/productList' element={<ProtectedSecRoute><ProductListSecondary/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/addItem' element={<ProtectedSecRoute><AddItemSecondary/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/editItem/:id' element={<ProtectedSecRoute><EditItemSecondary/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/invoiceList' element={<ProtectedSecRoute><InvoiceListSecondary/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/editParty/:id' element={<ProtectedSecRoute><EditPartySecondary/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/addProduct' element={<ProtectedSecRoute><AddProductSecondary/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/editProduct/:id' element={<ProtectedSecRoute><EditProductSecondary/></ProtectedSecRoute>}></Route>
 
 
 

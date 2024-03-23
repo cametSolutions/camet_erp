@@ -158,7 +158,7 @@ function AddItemSecondary() {
   //////////////////////////////orgId////////////////////////////////
 
   const orgId = useSelector(
-    (state) => state.setSelectedOrganization.selectedOrg._id
+    (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
   //////////////////////////////fetchFilters////////////////////////////////
 
