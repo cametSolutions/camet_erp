@@ -228,7 +228,7 @@ function Dashboard() {
                   <div className=" h-full p-2 lg:p-6 w-[150px] md:w-[180px] lg:w-[300px] flex justify-center items-end relative flex-col">
                     <div className="flex-col  ">
                       <p className=" font-semibold text-green-600  ">
-                        ₹{el.enteredAmount}
+                        ₹{el?.enteredAmount}
                       </p>
                     </div>
                   </div>
