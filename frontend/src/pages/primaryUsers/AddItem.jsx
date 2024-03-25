@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import Sidebar from "../../components/homePage/Sidebar";
 import { IoIosArrowRoundBack } from "react-icons/io";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { IoIosSearch } from "react-icons/io";
 import api from "../../api/api";
 import { MdOutlineQrCodeScanner } from "react-icons/md";
@@ -65,6 +65,8 @@ function AddItem() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const listRef = useRef(null);
+  const location = useLocation();
+  console.log(location);
 
   ///////////////////////////fetchProducts///////////////////////////////////
 
@@ -96,14 +98,13 @@ function AddItem() {
 
         if (brandFromRedux) {
           setSelectedBrand(brandFromRedux);
-        } 
+        }
         if (categoryFromRedux) {
           setseleCtedCategory(categoryFromRedux);
-        } 
-         if (subCategoryFromRedux) {
+        }
+        if (subCategoryFromRedux) {
           setSelectedSubCategory(subCategoryFromRedux);
         }
-        
       } catch (error) {
         console.log(error);
       } finally {
@@ -401,7 +402,7 @@ function AddItem() {
             <button
               onClick={() => {
                 navigate(`/pUsers/editItem/${el._id}`, {
-                  state: { from: "addItem" },
+                  state: { from: "addItem" ,id:location?.state?.id},
                 });
               }}
               type="button"
@@ -501,6 +502,15 @@ function AddItem() {
     // Cleanup the event listener on component unmount
     return () => window.removeEventListener("resize", calculateHeight);
   }, []);
+console.log(location);
+  const continueHandler = () => {
+    console.log(location.state);
+    if (location?.state?.from === "editInvoice") {
+      navigate(`/pUsers/editInvoice/${location.state.id}`);
+    } else {
+      navigate("/pUsers/invoice");
+    }
+  };
 
   return (
     <div className="flex relative">
@@ -680,16 +690,15 @@ function AddItem() {
         )}
 
         {item.length > 0 && (
-          <Link to={"/pUsers/invoice"}>
-            <div className=" sticky bottom-0 bg-white  w-full flex justify-center p-3 border-t h-[70px] ">
-              <button
-                // onClick={submitHandler}
-                className="bg-violet-700  w-[85%] text-ld font-bold text-white p-2 rounded-md"
-              >
-                Continue
-              </button>
-            </div>
-          </Link>
+          // <Link to={"/pUsers/invoice"}>
+          <div className=" sticky bottom-0 bg-white  w-full flex justify-center p-3 border-t h-[70px] ">
+            <button
+              onClick={continueHandler}
+              className="bg-violet-700  w-[85%] text-ld font-bold text-white p-2 rounded-md"
+            >
+              Continue
+            </button>
+          </div>
         )}
       </div>
     </div>

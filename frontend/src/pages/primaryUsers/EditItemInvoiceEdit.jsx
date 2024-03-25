@@ -9,7 +9,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { changeIgstAndDiscount } from "../../../slices/invoice";
 
-function EditItem() {
+function EditItemInvoiceEdit() {
   const [item, setItem] = useState([]);
   const [newPrice, setNewPrice] = useState("");
   const [quantity, setQuantity] = useState("");
@@ -145,26 +145,19 @@ function EditItem() {
   const handleBackClick = () => {
     console.log(location.state);
 
-    if (location.state.id && location.state.from =="addItem") {
+    if (location.state.id) {
       console.log("haii");
       navigate("/pUsers/addItem", {
         state: { from: "editInvoice", id: location.state.id },
       });
-    } else if (location.state.from === "invoice") {
-      console.log("haii");
-
+    }
+    if (location.state.from === "invoice") {
       navigate("/pUsers/invoice");
     } else if (location?.state?.from === "addItem") {
-      console.log("haii");
-
       navigate("/pUsers/addItem");
     } else if (location?.state?.from === "editInvoice") {
-      console.log("haii");
-
       navigate(`/pUsers/editInvoice/${location.state.id}`);
     } else {
-      console.log("haii");
-
       navigate("/pUsers/addItem");
     }
   };
@@ -388,4 +381,4 @@ function EditItem() {
   );
 }
 
-export default EditItem;
+export default EditItemInvoiceEdit;

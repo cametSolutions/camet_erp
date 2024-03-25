@@ -11,6 +11,7 @@ import { useSelector } from "react-redux";
 import api from "../../api/api";
 import { useDispatch } from "react-redux";
 import { addParty } from "../../../slices/invoice";
+import { useLocation } from "react-router-dom";
 
 // import { MdCancel } from "react-icons/md";
 
@@ -21,6 +22,7 @@ function SearchParty() {
   const [filteredParties, setFilteredParties] = useState([]);
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const location = useLocation();
 
   console.log(parties);
 
@@ -44,7 +46,11 @@ function SearchParty() {
 
   const selectHandler = (el) => {
     dispatch(addParty(el));
-    navigate("/pUsers/invoice");
+    if (location?.state?.from === "editInvoice") {
+      navigate(`/pUsers/editinvoice/${location?.state?.id}`);
+    } else {
+      navigate("/pUsers/invoice");
+    }
   };
 
   console.log(parties);

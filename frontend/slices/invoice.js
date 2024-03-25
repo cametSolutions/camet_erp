@@ -10,6 +10,7 @@ const initialState = {
   brand: "",
   category: "",
   subcategory: "",
+  id:""
 };
 
 export const invoiceSlice = createSlice({
@@ -98,6 +99,26 @@ export const invoiceSlice = createSlice({
     setSubCategoryInRedux: (state, action) => {
       state.subcategory = action.payload;
     },
+    setParty:(state,action)=>{
+      state.party=action.payload
+    },
+    setItem:(state,action)=>{
+      state.items=action.payload
+    },
+    setSelectedPriceLevel:(state,action)=>{
+      state.selectedPriceLevel=action.payload
+    },
+    setAdditionalCharges:(state,action)=>{
+      state.additionalCharges=action.payload
+    },
+    setFinalAmount:(state,action)=>{
+      state.finalAmount=action.payload
+    },
+    
+    saveId:(state,action)=>{
+      state.id=action.payload
+    },
+    
   },
 });
 
@@ -120,6 +141,12 @@ export const {
   setBrandInRedux,
   setCategoryInRedux,
   setSubCategoryInRedux,
+  setParty,
+  setItem,
+  setSelectedPriceLevel,
+  setFinalAmount,
+  setAdditionalCharges,
+  saveId
 } = invoiceSlice.actions;
 
 export default invoiceSlice.reducer;

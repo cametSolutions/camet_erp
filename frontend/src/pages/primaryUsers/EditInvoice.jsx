@@ -21,11 +21,21 @@ import { useNavigate } from "react-router-dom";
 import api from "../../api/api";
 import { IoIosAddCircle } from "react-icons/io";
 import { MdPlaylistAdd } from "react-icons/md";
-import { removeAll, removeAdditionalCharge } from "../../../slices/invoice";
+import {
+  removeAll,
+  removeAdditionalCharge,
+  setItem,
+  setParty,
+  setFinalAmount,
+  setAdditionalCharges,
+  setSelectedPriceLevel,
+  saveId
+} from "../../../slices/invoice";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import { Button, Label, Modal, TextInput } from "flowbite-react";
+import { useParams } from "react-router-dom";
 
-function Invoice() {
+function EditInvoice() {
   const [showSidebar, setShowSidebar] = useState(false);
   const [openModal, setOpenModal] = useState(false);
   const [modalInputs, setModalInputs] = useState({
@@ -39,10 +49,21 @@ function Invoice() {
   const [refreshCmp, setrefreshCmp] = useState(false);
   const [orderNumber, setOrderNumber] = useState("");
   const [company, setCompany] = useState([]);
+
   console.log(modalInputs);
+
   const additionalChargesFromRedux = useSelector(
     (state) => state.invoice.additionalCharges
   );
+  const orgId = useSelector(
+    (state) => state.setSelectedOrganization.selectedOrg._id
+  );
+  const dispatch = useDispatch();
+
+
+  const { id } = useParams();
+  console.log(id);
+
 
   const [rows, setRows] = useState(
     additionalChargesFromRedux.length > 0
@@ -54,17 +75,19 @@ function Invoice() {
     if (additionalChargesFromRedux.length) {
       setAdditional(true);
     }
+    else if(id!==undefined){
+      console.log("haii");
+      dispatch(saveId(id))
+    }
   }, []);
   const [subTotal, setSubTotal] = useState(0);
-  const dispatch = useDispatch();
   const handleToggleSidebar = () => {
     if (window.innerWidth < 768) {
       setShowSidebar(!showSidebar);
     }
   };
 
-  console.log(additionalChargesFromRedux);
-  console.log(rows);
+console.log(id);
 
   const handleAddRow = () => {
     const hasEmptyValue = rows.some((row) => row.value === "");
@@ -106,40 +129,12 @@ function Invoice() {
     dispatch(deleteRow(index)); // You need to create an action to handle row deletion in Redux
   };
   const party = useSelector((state) => state.invoice.party);
+  const partyFromRedux = useSelector((state) => state.invoice.party);
   const items = useSelector((state) => state.invoice.items);
+  const itemsFromRedux = useSelector((state) => state.invoice.items);
+  console.log(itemsFromRedux);
   const priceLevelFromRedux =
     useSelector((state) => state.invoice.selectedPriceLevel) || "";
-
-  useEffect(() => {
-    const subTotal = items.reduce((acc, curr) => {
-      return (acc = acc + (parseFloat(curr.total) || 0));
-    }, 0);
-    console.log(subTotal);
-    setSubTotal(subTotal);
-  }, [items]);
-
-  const additionalChargesTotal = useMemo(() => {
-    console.log("haoii");
-    return rows.reduce((acc, curr) => {
-      const value = curr.value === "" ? 0 : parseFloat(curr.value);
-      if (curr.action === "add") {
-        return acc + value;
-      } else if (curr.action === "sub") {
-        return acc - value;
-      }
-      return acc;
-    }, 0);
-  }, [rows, refresh]);
-
-  console.log(additionalChargesTotal);
-  const totalAmount =
-    parseFloat(subTotal) + additionalChargesTotal || parseFloat(subTotal);
-
-  const navigate = useNavigate();
-
-  const orgId = useSelector(
-    (state) => state.setSelectedOrganization.selectedOrg._id
-  );
 
   useEffect(() => {
     const fetchSingleOrganization = async () => {
@@ -154,24 +149,14 @@ function Invoice() {
         console.log(res.data.organizationData);
         setCompany(res.data.organizationData);
         const { orderNumber, OrderNumberDetails } = res.data.organizationData;
-
         console.log(orderNumber);
-
         if (OrderNumberDetails) {
-          console.log("haii");
           const { widthOfNumericalPart, prefixDetails, suffixDetails } =
             OrderNumberDetails;
-            const newOrderNumber=(orderNumber+1).toString()
-            console.log(newOrderNumber);
-          console.log(widthOfNumericalPart);
-          console.log(prefixDetails);
-          console.log(suffixDetails);
-
+          const newOrderNumber = (orderNumber + 1).toString();
 
           const padedNumber = newOrderNumber.padStart(widthOfNumericalPart, 0);
-          console.log(padedNumber);
           const finalOrderNumber = prefixDetails + padedNumber + suffixDetails;
-          console.log(finalOrderNumber);
           setOrderNumber(finalOrderNumber);
           setModalInputs({
             widthOfNumericalPart: widthOfNumericalPart,
@@ -194,6 +179,87 @@ function Invoice() {
     fetchSingleOrganization();
   }, [refreshCmp, orgId]);
 
+  useEffect(() => {
+    const fetchInvoiceDetails = async () => {
+      try {
+        const res = await api.get(`/api/pUsers/getInvoiceDetails/${id}`, {
+          withCredentials: true,
+        });
+
+        console.log(res.data.data);
+        const {
+          party,
+          items,
+          priceLevel,
+          additionalCharges,
+          finalAmount,
+          orderNumber,
+        } = res.data.data;
+
+        // additionalCharges: [ { option: 'option 1', value: '95', action: 'add' } ],
+        if (Object.keys(partyFromRedux) == 0) {
+          console.log("haii");
+          dispatch(setParty(party));
+        }
+
+        if (itemsFromRedux.length == 0) {
+          dispatch(setItem(items));
+        }
+        if (itemsFromRedux.length == 0) {
+          dispatch(setItem(items));
+        }
+
+        if (priceLevelFromRedux == "") {
+          dispatch(setSelectedPriceLevel(priceLevel));
+        }
+        if (additionalChargesFromRedux.length == 0) {
+          dispatch(setAdditionalCharges(additionalCharges));
+        }
+
+        dispatch(setFinalAmount(finalAmount));
+        setOrderNumber(orderNumber);
+
+        if (additionalCharges && additionalCharges.length > 0) {
+          setAdditional(true);
+
+          const newRows = additionalCharges.map((el, index) => {
+            return { option: el.option, value: el.value, action: el.action };
+          });
+          setRows(newRows);
+        }
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    fetchInvoiceDetails();
+  }, []);
+
+  useEffect(() => {
+    const subTotal = items.reduce((acc, curr) => {
+      return (acc = acc + (parseFloat(curr.total) || 0));
+    }, 0);
+    console.log(subTotal);
+    setSubTotal(subTotal);
+  }, [items]);
+
+  const additionalChargesTotal = useMemo(() => {
+    return rows.reduce((acc, curr) => {
+      const value = curr.value === "" ? 0 : parseFloat(curr.value);
+      if (curr.action === "add") {
+        return acc + value;
+      } else if (curr.action === "sub") {
+        return acc - value;
+      }
+      return acc;
+    }, 0);
+  }, [rows, refresh]);
+
+  console.log(additionalChargesTotal);
+  const totalAmount =
+    parseFloat(subTotal) + additionalChargesTotal || parseFloat(subTotal);
+
+  const navigate = useNavigate();
+
   console.log(orderNumber);
 
   const handleAddItem = () => {
@@ -202,7 +268,7 @@ function Invoice() {
       toast.error("Select a party first");
       return;
     }
-    navigate("/pUsers/addItem");
+    navigate("/pUsers/addItem", { state: { from: "editInvoice", id: id } });
   };
 
   const cancelHandler = () => {
@@ -211,7 +277,16 @@ function Invoice() {
     setRows([{ option: "Option 1", value: "", action: "add" }]);
   };
 
+
+  
+  const InvoiceIdForEdit = useSelector(
+    (state) => state.invoice.id
+    );
+
+console.log(InvoiceIdForEdit);
+
   const submitHandler = async () => {
+     
     console.log("haii");
     if (Object.keys(party).length == 0) {
       console.log("haii");
@@ -257,13 +332,13 @@ function Invoice() {
       additionalChargesFromRedux,
       lastAmount,
       orgId,
-        orderNumber
+      orderNumber,
     };
 
     console.log(formData);
-
+    console.log(id);
     try {
-      const res = await api.post("/api/pUsers/createInvoice", formData, {
+      const res = await api.post(`/api/pUsers/editInvoice/${InvoiceIdForEdit}`, formData, {
         headers: {
           "Content-Type": "application/json",
         },
@@ -349,11 +424,12 @@ function Invoice() {
                   className=" bottom-0 text-white bg-violet-700  w-full rounded-md  p-2 flex items-center justify-center gap-2 hover_scale cursor-pointer "
                 >
                   <IoIosAddCircle className="text-2xl" />
-                  <p>Generate Order</p>
+                  <p>Edit Orderr</p>
                 </button>
               </div>
               <div>
                 <button
+                  disabled
                   onClick={() => setOpenModal(true)}
                   className="  text-violet-500 text-xs  p-1 px-3  border border-1 border-gray-300 rounded-2xl cursor-pointer"
                 >
@@ -384,11 +460,18 @@ function Invoice() {
             </div>
             {Object.keys(party).length !== 0 && (
               <div>
-                <Link to={"/pUsers/searchParty"}>
-                  <p className="text-violet-500 p-1 px-3  text-xs border border-1 border-gray-300 rounded-2xl cursor-pointer">
-                    Change
-                  </p>
-                </Link>
+                {/* <Link to={"/pUsers/searchParty"}> */}
+                <p
+                  onClick={() => {
+                    navigate(`/pUsers/searchParty`, {
+                      state: { from: "editInvoice", id: id },
+                    });
+                  }}
+                  className="text-violet-500 p-1 px-3  text-xs border border-1 border-gray-300 rounded-2xl cursor-pointer"
+                >
+                  Change
+                </p>
+                {/* </Link> */}
               </div>
             )}
           </div>
@@ -425,7 +508,7 @@ function Invoice() {
         {items.length == 0 && (
           <div className="bg-white p-4 pb-6  drop-shadow-lg mt-2 md:mt-3">
             <div className="flex gap-2 ">
-              <p className="font-bold uppercase text-sm">Items</p>
+              <p className="font-bold uppercase text-sm">Item</p>
               <span className="text-red-500 mt-[-4px] font-bold">*</span>
             </div>
 
@@ -452,12 +535,15 @@ function Invoice() {
                   <p>Items ({items.length})</p>
                 </div>
 
-                <Link to={"/pUsers/addItem"}>
-                  <div className=" flex items-center gap-2 font-bold text-violet-500">
-                    <IoMdAdd className="text-2xl" />
-                    <p>Add Item</p>
-                  </div>
-                </Link>
+                {/* <Link to={"/pUsers/addItem"}> */}
+                <div
+                  onClick={handleAddItem}
+                  className=" flex items-center gap-2 font-bold text-violet-500 cursor-pointer"
+                >
+                  <IoMdAdd className="text-2xl" />
+                  <p>Add Item</p>
+                </div>
+                {/* </Link> */}
               </div>
 
               {items.map((el, index) => (
@@ -515,7 +601,7 @@ function Invoice() {
                         <p
                           onClick={() => {
                             navigate(`/pUsers/editItem/${el._id}`, {
-                              state: { from: "invoice" },
+                              state: { from: "editInvoice",id:id },
                             });
                           }}
                           className="text-violet-500 text-xs md:text-base font-bold  p-1  px-4   border border-1 border-gray-300 rounded-2xl cursor-pointer"
@@ -659,7 +745,7 @@ function Invoice() {
               className="fixed bottom-0 text-white bg-violet-700  w-full  p-2 py-4 flex items-center justify-center gap-2 hover_scale cursor-pointer "
             >
               <IoIosAddCircle className="text-2xl" />
-              <p>Generate Order</p>
+              <p>Edit Order</p>
             </button>
           </div>
         </div>
@@ -759,7 +845,7 @@ function Invoice() {
                 <Label htmlFor="startingNumber" value="Starting Number" />
               </div>
               <TextInput
-              disabled
+                disabled
                 id="startingNumber"
                 placeholder="1"
                 type="number"
@@ -838,4 +924,4 @@ function Invoice() {
   );
 }
 
-export default Invoice;
+export default EditInvoice;
