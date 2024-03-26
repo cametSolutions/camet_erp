@@ -136,48 +136,48 @@ console.log(id);
   const priceLevelFromRedux =
     useSelector((state) => state.invoice.selectedPriceLevel) || "";
 
-  useEffect(() => {
-    const fetchSingleOrganization = async () => {
-      try {
-        const res = await api.get(
-          `/api/pUsers/getSingleOrganization/${orgId}`,
-          {
-            withCredentials: true,
-          }
-        );
+  // useEffect(() => {
+  //   const fetchSingleOrganization = async () => {
+  //     try {
+  //       const res = await api.get(
+  //         `/api/pUsers/getSingleOrganization/${orgId}`,
+  //         {
+  //           withCredentials: true,
+  //         }
+  //       );
 
-        console.log(res.data.organizationData);
-        setCompany(res.data.organizationData);
-        const { orderNumber, OrderNumberDetails } = res.data.organizationData;
-        console.log(orderNumber);
-        if (OrderNumberDetails) {
-          const { widthOfNumericalPart, prefixDetails, suffixDetails } =
-            OrderNumberDetails;
-          const newOrderNumber = (orderNumber + 1).toString();
+  //       console.log(res.data.organizationData);
+  //       setCompany(res.data.organizationData);
+  //       const { orderNumber, OrderNumberDetails } = res.data.organizationData;
+  //       console.log(orderNumber);
+  //       if (OrderNumberDetails) {
+  //         const { widthOfNumericalPart, prefixDetails, suffixDetails } =
+  //           OrderNumberDetails;
+  //         const newOrderNumber = (orderNumber + 1).toString();
 
-          const padedNumber = newOrderNumber.padStart(widthOfNumericalPart, 0);
-          const finalOrderNumber = prefixDetails + padedNumber + suffixDetails;
-          setOrderNumber(finalOrderNumber);
-          setModalInputs({
-            widthOfNumericalPart: widthOfNumericalPart,
-            prefixDetails: prefixDetails,
-            suffixDetails: suffixDetails,
-          });
-        } else {
-          setOrderNumber(orderNumber);
-          setModalInputs({
-            startingNumber: "1",
-            widthOfNumericalPart: "",
-            prefixDetails: "",
-            suffixDetails: "",
-          });
-        }
-      } catch (error) {
-        console.log(error);
-      }
-    };
-    fetchSingleOrganization();
-  }, [refreshCmp, orgId]);
+  //         const padedNumber = newOrderNumber.padStart(widthOfNumericalPart, 0);
+  //         const finalOrderNumber = prefixDetails + padedNumber + suffixDetails;
+  //         setOrderNumber(finalOrderNumber);
+  //         setModalInputs({
+  //           widthOfNumericalPart: widthOfNumericalPart,
+  //           prefixDetails: prefixDetails,
+  //           suffixDetails: suffixDetails,
+  //         });
+  //       } else {
+  //         setOrderNumber(orderNumber);
+  //         setModalInputs({
+  //           startingNumber: "1",
+  //           widthOfNumericalPart: "",
+  //           prefixDetails: "",
+  //           suffixDetails: "",
+  //         });
+  //       }
+  //     } catch (error) {
+  //       console.log(error);
+  //     }
+  //   };
+  //   fetchSingleOrganization();
+  // }, [refreshCmp]);
 
   useEffect(() => {
     const fetchInvoiceDetails = async () => {
@@ -424,10 +424,10 @@ console.log(InvoiceIdForEdit);
                   className=" bottom-0 text-white bg-violet-700  w-full rounded-md  p-2 flex items-center justify-center gap-2 hover_scale cursor-pointer "
                 >
                   <IoIosAddCircle className="text-2xl" />
-                  <p>Edit Orderr</p>
+                  <p>Edit Order</p>
                 </button>
               </div>
-              <div>
+              {/* <div>
                 <button
                   disabled
                   onClick={() => setOpenModal(true)}
@@ -435,8 +435,8 @@ console.log(InvoiceIdForEdit);
                 >
                   Edit
                 </button>
-              </div>
-              <div>
+              </div> */}
+              {/* <div>
                 <button
                   onClick={() => {
                     dispatch(removeAll());
@@ -445,7 +445,7 @@ console.log(InvoiceIdForEdit);
                 >
                   Cancel
                 </button>
-              </div>
+              </div> */}
             </div>
           </div>
         </div>

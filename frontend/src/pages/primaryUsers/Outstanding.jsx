@@ -71,12 +71,12 @@ function Outstanding({ onTabChange }) {
   const finalData = filterOutstanding(data);
 
   return (
-    <div className="flex">
+    <div className="flex h-screen overflow-hidden">
       <div className="" style={{ height: "100vh" }}>
         <Sidebar TAB={"outstanding"} showBar={showSidebar} />
       </div>
 
-      <div className="  flex-1 lg:px-[110px] h-screen overflow-y-scroll  md:mt-4 pb-   ">
+      <div className="  flex-1  h-screen overflow-y-scroll      ">
         <div className="sticky top-0 flex flex-col z-30 bg-white">
           <div className="bg-white"></div>
           <div className="bg-[rgb(1,42,74)] shadow-lg px-4 py-3 pb-3 flex items-center gap-2  ">

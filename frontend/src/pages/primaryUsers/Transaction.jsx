@@ -61,12 +61,12 @@ function Transaction() {
   console.log(finalData);
 
   return (
-    <div className="flex">
+    <div className="flex h-screen overflow-hidden">
       <div>
         <Sidebar TAB={"transaction"} showBar={showSidebar} />
       </div>
       <div className="flex-1">
-        <div className=" flex-1  lg:px-[110px] h-screen overflow-y-scroll  md:mt-4    ">
+        <div className=" flex-1   h-screen overflow-y-scroll ">
           <div className="sticky top-0 flex flex-col z-30 bg-white">
             <div className="bg-white"></div>
             <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex items-center gap-2  ">
@@ -127,7 +127,7 @@ function Transaction() {
                 <div className="">
                   <input
                     type="date"
-                    className=" bg-blue-300 p-1 m-4 rounded-md"
+                    className=" bg-blue-300 p-0 px-3 m-4 rounded-md"
                     value={dateFilter}
                     onChange={(e) => setDateFilter(e.target.value)}
                   />
@@ -142,14 +142,14 @@ function Transaction() {
                 key={index}
                 onClick={() => {
                   // navigate(`/pUsers/receiptDetails/${el._id}`);
-                  navigate(el.type==="Outstanding"?`/pUsers/receiptDetails/${el._id}`:`/pUsers/InvoiceDetails/${el._id}`)
+                  navigate(el.type==="Receipt"?`/pUsers/receiptDetails/${el._id}`:`/pUsers/InvoiceDetails/${el._id}`)
                 }}
                 className={`${
                   el?.isCancelled ? "bg-gray-200 pointer-events-none " : ""
                 } bg-[#f8ffff] cursor-pointer rounded-md shadow-xl border border-gray-100 flex flex-col justify-between px-4 transition-all duration-150 transform hover:scale-105 ease-in-out`}
               >
                 <div className=" flex justify-start text-xs mt-2 ">
-                  <div className="bg-[#3ed57a] flex items-center text-white px-2 rounded-sm ">
+                  <div className={` ${el.type==="Receipt" ? "bg-[#FB6D48]" :"bg-[#3ed57a]" }   flex items-center text-white px-2 rounded-sm `}>
                     <FaRegCircleDot />
                     <p className=" p-1  rounded-lg px-3 font-semibold">
                       {" "}

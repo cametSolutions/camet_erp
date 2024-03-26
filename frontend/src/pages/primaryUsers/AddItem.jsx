@@ -356,11 +356,17 @@ function AddItem() {
 
   const Row = ({ index, style }) => {
     const el = filteredItems[index];
+    const adjustedStyle = {
+      ...style,
+      marginTop: '16px',
+      height: '160px', 
+   
+   };
     return (
       <div
-        style={style}
+        style={adjustedStyle}
         key={index}
-        className="bg-white p-4 py-2 pb-6  mt-0 flex justify-between items-center  rounded-sm cursor-pointer border-b-2 z-0 "
+        className="bg-white p-4 py-2 pb-6  mt-0 flex justify-between items-center  rounded-sm cursor-pointer border-b-2 z-0 shadow-lg"
       >
         <div className="flex items-start gap-3 md:gap-4  ">
           <div className="w-10 mt-1  uppercase h-10 rounded-lg bg-violet-200 flex items-center justify-center font-semibold text-gray-400">
@@ -512,6 +518,15 @@ console.log(location);
     }
   };
 
+  const backHandler=()=>{
+    if (location?.state?.from === "editInvoice") {
+      navigate(`/pUsers/editInvoice/${location.state.id}`);
+    } else {
+      navigate("/pUsers/invoice");
+    }
+
+  }
+
   return (
     <div className="flex relative">
       <div>
@@ -523,9 +538,10 @@ console.log(location);
           <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex justify-between  items-center gap-2  ">
             <div className="flex items-center gap-2">
               <IoIosArrowRoundBack
-                onClick={() => {
-                  navigate("/pUsers/invoice");
-                }}
+                // onClick={() => {
+                //   navigate("/pUsers/invoice");
+                // }}
+                onClick={backHandler}
                 className="text-3xl text-white cursor-pointer"
               />
               <p className="text-white text-lg   font-bold ">Add Item</p>
@@ -682,7 +698,7 @@ console.log(location);
             className=""
             height={listHeight} // Specify the height of your list
             itemCount={filteredItems.length} // Specify the total number of items
-            itemSize={160} // Specify the height of each item
+            itemSize={170} // Specify the height of each item
             width="100%" // Specify the width of your list
           >
             {Row}
