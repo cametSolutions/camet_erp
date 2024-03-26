@@ -136,7 +136,7 @@ function Transaction() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-4  text-center pb-7 mt-5 ">
+          <div className="grid grid-cols-1 gap-4  text-center pb-7 mt-5 md:px-8 ">
             {finalData?.map((el, index) => (
               <div
                 key={index}

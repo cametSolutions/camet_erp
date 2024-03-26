@@ -114,6 +114,8 @@ function AddItem() {
     fetchProducts();
   }, [cpm_id]);
 
+  // console.log("item",item);
+
   ///////////////////////////priceLevelSet///////////////////////////////////
 
   useEffect(() => {
@@ -177,8 +179,7 @@ function AddItem() {
 
   //////////////////////////////fetchFilters////////////////////////////////
 
-  console.log(item);
-  console.log(type);
+
 
   useEffect(() => {
     const fetchFilters = async () => {
@@ -248,6 +249,8 @@ function AddItem() {
   }, [item, selectedBrand, selectedCategory, selectedSubCategory, search]);
 
   ///////////////////////////handleAddClick///////////////////////////////////
+
+  console.log("filteredItems",filteredItems);
 
   const handleAddClick = (index) => {
     const updatedItems = [...filteredItems]; // Create a shallow copy of the items

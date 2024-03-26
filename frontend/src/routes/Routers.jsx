@@ -67,6 +67,7 @@ import EditBank from '../pages/primaryUsers/EditBank'
 import EditSecUsers from '../pages/primaryUsers/EditSecUsers'
 import InvoiceDetails from '../pages/primaryUsers/InvoiceDetails'
 import EditInvoice from '../pages/primaryUsers/EditInvoice'
+import ShareInvoice from '../pages/primaryUsers/ShareInvoice'
 
 
 
@@ -115,6 +116,7 @@ const Routers = () => {
         <Route path='/pUsers/editUser/:id' element={<ProtectedPriRoute><EditSecUsers/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/InvoiceDetails/:id' element={<ProtectedPriRoute><InvoiceDetails/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/editInvoice/:id' element={<ProtectedPriRoute><EditInvoice/></ProtectedPriRoute>}></Route>
+        <Route path='/pUsers/shareInvoice/:id' element={<ProtectedPriRoute><ShareInvoice/></ProtectedPriRoute>}></Route>
 
 
         {/* admin */}

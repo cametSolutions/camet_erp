@@ -186,14 +186,15 @@ function Sidebar({ TAB, showBar }) {
         <div className="flex flex-col items-center mt-6 -mx-2">
           <img
             className="object-cover w-24 h-24 mx-2 rounded-full"
-            src="https://i.pinimg.com/736x/8b/16/7a/8b167af653c2399dd93b952a48740620.jpg"
+            // src="https://i.pinimg.com/736x/8b/16/7a/8b167af653c2399dd93b952a48740620.jpg"
+            src={selectedOrg?.logo || "https://i.pinimg.com/736x/8b/16/7a/8b167af653c2399dd93b952a48740620.jpg"  }
             alt="avatar"
           />
           <h4 className="mx-2 mt-2 font-medium text-white dark:text-gray-200">
-            {userData.userName}
+            {userData?.userName}
           </h4>
           <p className="mx-2 mt-1 text-sm font-medium text-white dark:text-gray-400">
-            {userData.email}
+            {userData?.email}
           </p>
 
           <button
