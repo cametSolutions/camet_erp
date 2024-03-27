@@ -81,19 +81,19 @@ function ShareInvoice() {
             <div className="font-bold text-sm md:text-xl mb-2">QUOTATION</div>
           </div>
           <div className="flex items-center justify-between">
-            <div className="text-xs md:text-sm">
+            <div className="text-xs md:text-sm font-semibold">
               Invoice #:{data?.orderNumber}{" "}
             </div>
-            <div className="text-xs md:text-sm">
+            <div className="text-xs md:text-sm  font-semibold">
               Date:{new Date().toDateString()}{" "}
             </div>
           </div>
 
-          <div className="flex mt-6 justify-between">
+          <div className="flex mt-8 justify-between">
             <div className=" flex ">
-              <img className="h-28 w-28 mr-2" src={org.logo} alt="Logo" />
+              <img className=" h-16 w-16 md:h-28 md:w-28 mr-2 " src={org.logo} alt="Logo" />
               <div className="flex flex-col ">
-                <div className="text-gray-700 font-semibold text-sm md:text-lg">
+                <div className="text-gray-700 font-semibold text-sm md:text-lg mb-0.5">
                   {org?.name}
                 </div>
                 <div className="">
@@ -136,7 +136,6 @@ function ShareInvoice() {
             </div>
           </div>
 
-       
           <div className="flex md:gap-[130px] justify-between md:justify-normal text-[8px] md:text-xs mt-4">
             <div className=" border-gray-300 pb-8 mb-2">
               <h2 className="md:text-lg text-base font-bold mb-4">Bill To:</h2>
@@ -242,8 +241,8 @@ function ShareInvoice() {
                 })}
             </tbody>
           </table>
-          <div className="flex justify-between mb-8 border-y-2 border-black py-2">
-            <div className="text-gray-700 mr-2">Subtotal:</div>
+          <div className="flex justify-between mb-5 border-y-2 border-black py-2">
+            <div className="text-gray-700 mr-2 font-bold">Subtotal:</div>
             <div className="text-black font-bold ">
               ₹{" "}
               {data?.items
@@ -251,24 +250,30 @@ function ShareInvoice() {
                 ?.toFixed(2)}
             </div>
           </div>
-          <div className=" mb-8 flex justify-end">
-            <div className="text-gray-700 mr-2">Add on charge:</div>
-            <div className="text-gray-700">
+          <div className="  flex justify-end border-t-2 pt-2">
+            <div className="text-gray-700 mr-2 font-bold">Add on charges:</div>
+            <div className="text-gray-700 font-bold">
               ₹{" "}
               {data?.additionalCharges
                 ?.reduce((acc, curr) => acc + parseFloat(curr?.value || 0), 0)
                 ?.toFixed(2)}
             </div>
           </div>
-          <div className="flex justify-end mb-8">
-            <div className="text-gray-700 mr-2">Total:</div>
+          {data?.additionalCharges?.map((el, index) => (
+            <div key={index} className="text-gray-700  text-right text-xs  leading-5">
+              {el?.option}: ₹ {el?.value}
+            </div>
+          ))}
+
+          <div className="flex justify-end mb-6 mt-4 border-t-2 pt-5 ">
+            <div className="text-gray-700 mr-2 font-bold  ">Total Amount:</div>
             <div className="text-gray-700 font-bold text-xl">
               ₹ {data.finalAmount}
             </div>
           </div>
           <div className="border-t-2 border-gray-300 pt-8 mb-8">
-            <div className="text-gray-700 mb-2">
-              Payment is due within 30 days. Late payments are subject to fees.
+            <div className="text-gray-700 mb-2 uppercase font-bold">
+              Terms and Conditions
             </div>
             <div className="text-gray-700 mb-2">
               Please make checks payable to Your Company Name and mail to:
