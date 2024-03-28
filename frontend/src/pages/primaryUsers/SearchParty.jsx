@@ -53,6 +53,15 @@ function SearchParty() {
     }
   };
 
+  const backHandler=()=>{
+    if (location?.state?.from === "editInvoice") {
+      navigate(`/pUsers/editinvoice/${location?.state?.id}`);
+    } else {
+      navigate("/pUsers/invoice");
+    }
+
+  }
+
   console.log(parties);
   useEffect(() => {
     if (search === "") {
@@ -75,9 +84,10 @@ function SearchParty() {
         <div className="sticky top-0 z-20">
           <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex  items-center gap-2  ">
             <IoIosArrowRoundBack
-              onClick={() => {
-                navigate("/pUsers/invoice");
-              }}
+            onClick={backHandler}
+              // onClick={() => {
+              //   navigate("/pUsers/invoice");
+              // }}
               className="text-3xl text-white cursor-pointer"
             />
             <p className="text-white text-lg   font-bold ">Select Party</p>
@@ -167,12 +177,12 @@ function SearchParty() {
           </div>
         )}
 
-        <Link to={"/pUsers/addParty"} className="flex justify-center">
+        {/* <Link to={"/pUsers/addParty"} className="flex justify-center">
           <div className="absolute bottom-2 text-white bg-violet-700 rounded-3xl p-2 flex items-center justify-center gap-2 hover_scale cursor-pointer ">
             <IoIosAddCircle className="text-2xl" />
             <p>Create New Party</p>
           </div>
-        </Link>
+        </Link> */}
       </div>
     </div>
   );
