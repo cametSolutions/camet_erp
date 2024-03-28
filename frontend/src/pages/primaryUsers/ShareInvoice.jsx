@@ -8,20 +8,18 @@ import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import { MdPrint } from "react-icons/md";
 import numberToWords from "number-to-words";
+import { Link } from "react-router-dom";
 
 function ShareInvoice() {
   const [data, setData] = useState([]);
   const [org, setOrg] = useState([]);
+  const [subTotal, setSubTotal] = useState("");
+  const [additinalCharge, setAdditinalCharge] = useState("");
+  const [finalAmount, setFinalAmount] = useState("");
   const [inWords, setInWords] = useState("");
   const { id } = useParams();
 
   const contentToPrint = useRef(null);
-  const handlePrint = useReactToPrint({
-    documentTitle: "Print This Document",
-    onBeforePrint: () => console.log("before printing..."),
-    onAfterPrint: () => console.log("after printing..."),
-    removeAfterPrint: true,
-  });
 
   const cmp_id = useSelector(
     (state) => state.setSelectedOrganization.selectedOrg._id
@@ -49,30 +47,56 @@ function ShareInvoice() {
     getTransactionDetails();
   }, []);
 
-  console.log(data);
-  console.log(org);
 
-  const totalAmount = data?.items
-    ?.reduce((acc, curr) => acc + parseFloat(curr?.total), 0)
-    ?.toFixed(2);
-  console.log(totalAmount);
-  
 
-  if (totalAmount) {
-    const [integerPart, decimalPart] = totalAmount.toString().split(".");
-    const integerWords = numberToWords.toWords(parseInt(integerPart, 10));
-    const decimalWords = decimalPart
-      ? `and ${numberToWords.toWords(parseInt(decimalPart, 10))} `
-      : "";
-    console.log(integerWords);
-    console.log(decimalWords);
-    const mergedWord = [...integerWords, "and", ...decimalWords].join("");
-    console.log(mergedWord);
-    // setInWords(mergedWord)
-  }
+  useEffect(() => {
+    if (data && data.items) {
+      const subTotal = data.items
+        .reduce((acc, curr) => acc + parseFloat(curr?.total), 0)
+        .toFixed(2);
+      setSubTotal(subTotal);
 
-  // let words = ToWords.convert(123);
-  // console.log(words);
+      const addiTionalCharge = data?.additionalCharges
+        ?.reduce((acc, curr) => acc + parseFloat(curr?.value || 0), 0)
+        ?.toFixed(2);
+      setAdditinalCharge(addiTionalCharge);
+
+      const finalAmount = parseFloat(subTotal) + parseFloat(addiTionalCharge);
+
+      setFinalAmount(finalAmount);
+
+      const [integerPart, decimalPart] = finalAmount.toString().split(".");
+      const integerWords = numberToWords.toWords(parseInt(integerPart, 10));
+      const decimalWords = decimalPart
+        ? ` and ${numberToWords.toWords(parseInt(decimalPart, 10))} `
+        : "";
+
+      const mergedWord = [
+        ...integerWords,
+        " Rupees",
+        ...decimalWords,
+        "Paisa",
+      ].join("");
+
+      setInWords(mergedWord);
+    }
+  }, [data]);
+
+
+  // if (totalAmount) {
+
+  //   // setInWords(mergedWord)
+  // }
+
+  const handlePrint = useReactToPrint({
+    documentTitle: `Sale Order ${data.orderNumber}`,
+    onBeforePrint: () => console.log("before printing..."),
+    onAfterPrint: () => console.log("after printing..."),
+    removeAfterPrint: true,
+  });
+
+
+
 
   return (
     <div className="flex">
@@ -82,7 +106,9 @@ function ShareInvoice() {
       <div className="flex-1 h-screen overflow-y-scroll">
         <div className="bg-[#012a4a]   sticky top-0 p-3 px-5 text-white text-lg font-bold flex items-center gap-3  shadow-lg justify-between">
           <div className="flex gap-2 ">
+            <Link to={`/pUsers/InvoiceDetails/${id}`}>
             <IoIosArrowRoundBack className="text-3xl" />
+            </Link>
             <p>Share Your Order</p>
           </div>
           <div>
@@ -142,7 +168,7 @@ function ShareInvoice() {
               </div>
             </div>
           </div>
-          <div className="flex justify-start px-5 gap-6 mt-2  bg-slate-100 py-2">
+          <div className="flex justify-between px-5 gap-6 mt-2  bg-slate-100 py-2">
             <div className="">
               <div className="text-gray-500  mb-0.5 md:text-xs text-[9px]">
                 Pan No: {org?.pan}
@@ -151,11 +177,11 @@ function ShareInvoice() {
                 Gst No: {org?.gstNum}
               </div>
             </div>
-            <div className="">
-              <div className="text-gray-500  mb-0.5 md:text-xs text-[9px]">
+            <div className="flex  flex-col ">
+              <div className="text-gray-500  mb-0.5 md:text-xs text-[9px] text-right">
                 {org?.email}
               </div>
-              <div className="text-gray-500 mb-0.5 md:text-xs text-[9px]">
+              <div className="text-gray-500 mb-0.5 md:text-xs text-[9px] text-right">
                 {org?.website}
               </div>
             </div>
@@ -173,7 +199,7 @@ function ShareInvoice() {
                   </div>
                 ))}{" "}
               {/* <div className="text-gray-700 mb-0.5">Anytown, USA 12345</div> */}
-              <div className="text-gray-700 ">{data?.party?.emailID}</div>
+              <div className="text-gray-700   ">{data?.party?.emailID}</div>
               <div className="text-gray-700">{data?.party?.mobileNumber}</div>
             </div>
             <div className=" border-gray-300 pb-4 mb-0.5">
@@ -225,13 +251,14 @@ function ShareInvoice() {
                       key={index}
                       className="border-b-2 border-t-1 text-[9px] bg-white"
                     >
-                      <td className="py-4 text-gray-700 pr-2">
-                        {el.product_name}
+                      <td className="py-4 text-black pr-2">
+                        {el.product_name} <br />
+                        <p className="text-gray-400 mt-1">HSN: {el?.hsn_code} ({el.igst}%)</p>
                       </td>
-                      <td className="py-4 text-gray-700 text-right pr-2">
+                      <td className="py-4 text-black text-right pr-2">
                         {el?.count} {el?.unit}
                       </td>
-                      <td className="py-4 text-gray-700 text-right pr-2 text-nowrap">
+                      <td className="py-4 text-black text-right pr-2 text-nowrap">
                         ₹{" "}
                         {
                           el.Priceleveles.find(
@@ -239,7 +266,7 @@ function ShareInvoice() {
                           )?.pricerate
                         }
                       </td>
-                      <td className="py-4 text-gray-700 text-right pr-2 ">
+                      <td className="py-4 text-black text-right pr-2 ">
                         {discountAmount > 0
                           ? ` ₹${discountAmount?.toFixed(2)} `
                           : "₹ 0"}
@@ -247,14 +274,14 @@ function ShareInvoice() {
                         {el?.discountPercentage > 0 &&
                           `(${el?.discountPercentage}%)`} */}
                       </td>
-                      <td className="py-4 text-gray-700 text-right pr-2">
+                      <td className="py-4 text-black text-right pr-2">
                         {(
                           el?.total -
                           (el?.total * 100) / (parseFloat(el.igst) + 100)
                         )?.toFixed(2)}
                         {/* <br /> ({el?.igst}%) */}
                       </td>
-                      <td className="py-4 text-gray-700 text-right">
+                      <td className="py-4 text-black text-right">
                         ₹ {el?.total}
                       </td>
                     </tr>
@@ -268,10 +295,7 @@ function ShareInvoice() {
               Subtotal:
             </div>
             <div className="text-black font-bold text-[10px]  ">
-              ₹{" "}
-              {data?.items
-                ?.reduce((acc, curr) => acc + parseFloat(curr.total), 0)
-                ?.toFixed(2)}
+              ₹ {subTotal}
             </div>
           </div>
           <div className="grid grid-cols-2">
@@ -297,13 +321,7 @@ function ShareInvoice() {
                     Add on charges:
                   </div>
                   <div className="text-gray-700 font-bold text-[10px]">
-                    ₹{" "}
-                    {data?.additionalCharges
-                      ?.reduce(
-                        (acc, curr) => acc + parseFloat(curr?.value || 0),
-                        0
-                      )
-                      ?.toFixed(2)}
+                    ₹ {additinalCharge}
                   </div>
                 </div>
                 {data?.additionalCharges?.map((el, index) => (
@@ -326,20 +344,20 @@ function ShareInvoice() {
                   </div>
                 </div>
               </div>
-              <div className="flex justify-end border-black py-3 ">
-                <div className="w-3/4"></div>
+              <div className="flex justify-end border-black pb-3 w-full ">
+                <div className="w-2/4"></div>
 
-                <div className=" w-2/4 text-gray-700  font-bold text-[10px] flex justify-end   ">
-                  <p className="text-nowrap border-y-2 py-2">TOTAL AMOUNT:</p>
-                  <div className="text-gray-700  font-bold text-[10px] text-nowrap  border-y-2 py-2   ">
-                    ₹ {}
+                <div className="  text-gray-700  font-bold text-[10px] flex flex-col justify-end text-right   ">
+                  <p className="text-nowrap ">Total Amount(in words)</p>
+                  <div className="text-gray-700  font-bold text-[7.5px] text-nowrap uppercase mt-1 ">
+                    ₹ {inWords}
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="border-gray-300 mb-5">
+          <div className="border-gray-300 mb-5 mt-4">
             <div className="text-gray-700 mb-2 font-bold text-[10px]">
               Terms and Conditions
             </div>
