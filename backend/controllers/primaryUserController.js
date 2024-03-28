@@ -546,10 +546,11 @@ export const confirmCollection = async (req, res) => {
 
 export const transactions = async (req, res) => {
   const userId = req.pUserId;
+  const cmp_id = req.params.cmp_id;
 
   try {
     const transactions = await TransactionModel.aggregate([
-      { $match: { agentId: userId } },
+      { $match: { agentId: userId, cmp_id: cmp_id } },
       {
         $project: {
           _id: 1,
@@ -560,6 +561,8 @@ export const transactions = async (req, res) => {
           createdAt: 1,
           // totalBillAmount: 1,
           cmp_id: 1,
+          type: "Receipt",
+
           // billNo: "$billData.billNo",
           // settledAmount: "$billData.settledAmount",
           // remainingAmount: "$billData.remainingAmount",
@@ -572,10 +575,29 @@ export const transactions = async (req, res) => {
       { $sort: { createdAt: -1 } },
     ]);
 
-    if (transactions.length > 0) {
+    const invoices = await invoiceModel.aggregate([
+      { $match: { Primary_user_id: userId, cmp_id: cmp_id } },
+      {
+        $project: {
+          party_name: "$party.partyName",
+          // mobileNumber:"$party.mobileNumber",
+          type: "Sale Order",
+          enteredAmount: "$finalAmount",
+          createdAt: 1,
+          itemsLength: { $size: "$items" },
+        },
+      },
+    ]);
+
+    const combined = [...transactions, ...invoices];
+    combined.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    console.log("combined", combined);
+
+    if (combined.length > 0) {
       return res.status(200).json({
         message: "Transactions fetched",
-        data: { transactions },
+        data: { combined },
       });
     } else {
       return res.status(404).json({ message: "Transactions not found" });
@@ -1486,7 +1508,7 @@ export const createInvoice = async (req, res) => {
       lastAmount,
       orderNumber,
     } = req.body;
-    console.log("orderNumber",orderNumber);
+    console.log("orderNumber", orderNumber);
 
     console.log(req.body);
 
@@ -1509,9 +1531,8 @@ export const createInvoice = async (req, res) => {
     const increaseOrderNumber = await OragnizationModel.findByIdAndUpdate(
       orgId,
       { $inc: { orderNumber: 1 } },
-      {new:true}
+      { new: true }
     );
-   
 
     return res.status(200).json({
       success: true,
@@ -1856,6 +1877,78 @@ export const saveOrderNumber = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Internal server error, try again!",
+    });
+  }
+};
+
+// @desc toget the details of transaction or receipt
+// route POST/api/pUsers/getTransactionDetails
+
+export const getInvoiceDetails = async (req, res) => {
+  const invoiceId = req.params.id;
+
+  try {
+    const invoiceDetails = await invoiceModel.findById(invoiceId);
+
+    if (invoiceDetails) {
+      res
+        .status(200)
+        .json({ message: "Invoice details fetched", data: invoiceDetails });
+    } else {
+      res.status(404).json({ error: "Invoice not found" });
+    }
+  } catch (error) {
+    console.error("Error fetching receipt details:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+// @desc edit in voice
+// route POST /api/pUsers/createInvoice
+export const editInvoice = async (req, res) => {
+  const Primary_user_id = req.pUserId;
+  const invoiceId = req.params.id;
+  console.log("invoiceId",invoiceId);
+  try {
+    const {
+      orgId,
+      party,
+      items,
+      priceLevelFromRedux,
+      additionalChargesFromRedux,
+      lastAmount,
+      orderNumber,
+    } = req.body;
+    console.log("orderNumber", orderNumber);
+
+    console.log(req.body);
+
+    const result = await invoiceModel.findByIdAndUpdate(
+      invoiceId, // Use the invoiceId to find the document
+      {
+        cmp_id: orgId,
+        party,
+        items,
+        priceLevel: priceLevelFromRedux,
+        additionalCharges: additionalChargesFromRedux,
+        finalAmount: lastAmount,
+        Primary_user_id,
+        orderNumber,
+      },
+      { new: true } // This option returns the updated document
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Invoice Updated successfully",
+      data: result,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error, try again!",
+      error: error.message, // Include error message for debugging
     });
   }
 };

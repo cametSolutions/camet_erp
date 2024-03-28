@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import Sidebar from "../../components/homePage/Sidebar";
 import { IoIosArrowRoundBack } from "react-icons/io";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { IoIosSearch } from "react-icons/io";
 import api from "../../api/api";
 import { MdOutlineQrCodeScanner } from "react-icons/md";
@@ -65,6 +65,8 @@ function AddItem() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const listRef = useRef(null);
+  const location = useLocation();
+  console.log(location);
 
   ///////////////////////////fetchProducts///////////////////////////////////
 
@@ -96,14 +98,13 @@ function AddItem() {
 
         if (brandFromRedux) {
           setSelectedBrand(brandFromRedux);
-        } 
+        }
         if (categoryFromRedux) {
           setseleCtedCategory(categoryFromRedux);
-        } 
-         if (subCategoryFromRedux) {
+        }
+        if (subCategoryFromRedux) {
           setSelectedSubCategory(subCategoryFromRedux);
         }
-        
       } catch (error) {
         console.log(error);
       } finally {
@@ -112,6 +113,8 @@ function AddItem() {
     };
     fetchProducts();
   }, [cpm_id]);
+
+  // console.log("item",item);
 
   ///////////////////////////priceLevelSet///////////////////////////////////
 
@@ -176,8 +179,7 @@ function AddItem() {
 
   //////////////////////////////fetchFilters////////////////////////////////
 
-  console.log(item);
-  console.log(type);
+
 
   useEffect(() => {
     const fetchFilters = async () => {
@@ -247,6 +249,8 @@ function AddItem() {
   }, [item, selectedBrand, selectedCategory, selectedSubCategory, search]);
 
   ///////////////////////////handleAddClick///////////////////////////////////
+
+  console.log("filteredItems",filteredItems);
 
   const handleAddClick = (index) => {
     const updatedItems = [...filteredItems]; // Create a shallow copy of the items
@@ -355,11 +359,17 @@ function AddItem() {
 
   const Row = ({ index, style }) => {
     const el = filteredItems[index];
+    const adjustedStyle = {
+      ...style,
+      marginTop: '16px',
+      height: '160px', 
+   
+   };
     return (
       <div
-        style={style}
+        style={adjustedStyle}
         key={index}
-        className="bg-white p-4 py-2 pb-6  mt-0 flex justify-between items-center  rounded-sm cursor-pointer border-b-2 z-0 "
+        className="bg-white p-4 py-2 pb-6  mt-0 flex justify-between items-center  rounded-sm cursor-pointer border-b-2 z-0 shadow-lg"
       >
         <div className="flex items-start gap-3 md:gap-4  ">
           <div className="w-10 mt-1  uppercase h-10 rounded-lg bg-violet-200 flex items-center justify-center font-semibold text-gray-400">
@@ -401,7 +411,7 @@ function AddItem() {
             <button
               onClick={() => {
                 navigate(`/pUsers/editItem/${el._id}`, {
-                  state: { from: "addItem" },
+                  state: { from: "addItem" ,id:location?.state?.id},
                 });
               }}
               type="button"
@@ -501,6 +511,24 @@ function AddItem() {
     // Cleanup the event listener on component unmount
     return () => window.removeEventListener("resize", calculateHeight);
   }, []);
+console.log(location);
+  const continueHandler = () => {
+    console.log(location.state);
+    if (location?.state?.from === "editInvoice") {
+      navigate(`/pUsers/editInvoice/${location.state.id}`);
+    } else {
+      navigate("/pUsers/invoice");
+    }
+  };
+
+  const backHandler=()=>{
+    if (location?.state?.from === "editInvoice") {
+      navigate(`/pUsers/editInvoice/${location.state.id}`);
+    } else {
+      navigate("/pUsers/invoice");
+    }
+
+  }
 
   return (
     <div className="flex relative">
@@ -513,9 +541,10 @@ function AddItem() {
           <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex justify-between  items-center gap-2  ">
             <div className="flex items-center gap-2">
               <IoIosArrowRoundBack
-                onClick={() => {
-                  navigate("/pUsers/invoice");
-                }}
+                // onClick={() => {
+                //   navigate("/pUsers/invoice");
+                // }}
+                onClick={backHandler}
                 className="text-3xl text-white cursor-pointer"
               />
               <p className="text-white text-lg   font-bold ">Add Item</p>
@@ -672,7 +701,7 @@ function AddItem() {
             className=""
             height={listHeight} // Specify the height of your list
             itemCount={filteredItems.length} // Specify the total number of items
-            itemSize={160} // Specify the height of each item
+            itemSize={170} // Specify the height of each item
             width="100%" // Specify the width of your list
           >
             {Row}
@@ -680,16 +709,15 @@ function AddItem() {
         )}
 
         {item.length > 0 && (
-          <Link to={"/pUsers/invoice"}>
-            <div className=" sticky bottom-0 bg-white  w-full flex justify-center p-3 border-t h-[70px] ">
-              <button
-                // onClick={submitHandler}
-                className="bg-violet-700  w-[85%] text-ld font-bold text-white p-2 rounded-md"
-              >
-                Continue
-              </button>
-            </div>
-          </Link>
+          // <Link to={"/pUsers/invoice"}>
+          <div className=" sticky bottom-0 bg-white  w-full flex justify-center p-3 border-t h-[70px] ">
+            <button
+              onClick={continueHandler}
+              className="bg-violet-700  w-[85%] text-ld font-bold text-white p-2 rounded-md"
+            >
+              Continue
+            </button>
+          </div>
         )}
       </div>
     </div>

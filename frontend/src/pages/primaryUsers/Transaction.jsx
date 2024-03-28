@@ -4,34 +4,35 @@ import api from "../../api/api";
 import dayjs from "dayjs";
 import { IoArrowRedoOutline } from "react-icons/io5";
 import Sidebar from "../../components/homePage/Sidebar";
-import {useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { FcCancel } from "react-icons/fc";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import { Link } from "react-router-dom";
-
-
+import { FaRegCircleDot } from "react-icons/fa6";
 
 function Transaction() {
   const [data, setData] = useState([]);
   const [search, setSearch] = useState("");
-  const [dateFilter, setDateFilter] = useState(new Date().toISOString().split('T')[0]);
+  const [dateFilter, setDateFilter] = useState(
+    new Date().toISOString().split("T")[0]
+  );
   const [showSidebar, setShowSidebar] = useState(false);
 
-const navigate=useNavigate()
-const org=useSelector((state)=>state.setSelectedOrganization.selectedOrg);
-console.log(org);
+  const navigate = useNavigate();
+  const org = useSelector((state) => state.setSelectedOrganization.selectedOrg);
+  console.log(org);
 
   useEffect(() => {
     const fetchTransactions = async () => {
       try {
-        const res = await api.get(`/api/pUsers/transactions`, {
+        const res = await api.get(`/api/pUsers/transactions/${org._id}`, {
           withCredentials: true,
         });
 
         console.log(res.data);
 
-        setData(res.data.data.transactions);
+        setData(res.data.data.combined);
 
         // dispatch(addData(res.data.outstandingData));
       } catch (error) {
@@ -41,45 +42,41 @@ console.log(org);
     fetchTransactions();
   }, []);
 
+  console.log(data);
 
   const filterOutstanding = (data) => {
-    return data.filter((item) => {
+    return data?.filter((item) => {
       const searchFilter = item.party_name
         ?.toLowerCase()
         .includes(search.toLowerCase());
 
-        const dateFilterCondition =
+      const dateFilterCondition =
         !dateFilter || item.createdAt?.startsWith(dateFilter);
 
-        const companyFilter=item.cmp_id===org._id
-
-      return searchFilter && dateFilterCondition && companyFilter  ;
+      return searchFilter && dateFilterCondition;
     });
   };
 
   const finalData = filterOutstanding(data);
-
-
-
-
+  console.log(finalData);
 
   return (
-    <div className="flex">
+    <div className="flex h-screen overflow-hidden">
       <div>
-        <Sidebar TAB={"transaction"}  showBar={showSidebar} />
+        <Sidebar TAB={"transaction"} showBar={showSidebar} />
       </div>
       <div className="flex-1">
-        <div className=" flex-1  lg:px-[110px] h-screen overflow-y-scroll  md:mt-4    ">
+        <div className=" flex-1   h-screen overflow-y-scroll ">
           <div className="sticky top-0 flex flex-col z-30 bg-white">
             <div className="bg-white"></div>
             <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex items-center gap-2  ">
-            {/* <IoReorderThreeSharp
+              {/* <IoReorderThreeSharp
               onClick={handleToggleSidebar}
               className="block md:hidden text-white text-3xl"
             /> */}
               <Link to={"/pUsers/dashboard"}>
-              <IoIosArrowRoundBack className="text-3xl text-white cursor-pointer md:hidden" />
-            </Link>
+                <IoIosArrowRoundBack className="text-3xl text-white cursor-pointer md:hidden" />
+              </Link>
 
               <p className="text-white text-lg   font-bold  ">Receipts</p>
             </div>
@@ -130,7 +127,7 @@ console.log(org);
                 <div className="">
                   <input
                     type="date"
-                    className=" bg-blue-300 p-1 m-4 rounded-md"
+                    className=" bg-blue-300 p-0 px-3 m-4 rounded-md"
                     value={dateFilter}
                     onChange={(e) => setDateFilter(e.target.value)}
                   />
@@ -139,43 +136,54 @@ console.log(org);
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-4  text-center pb-7  ">
-            {finalData.map((el, index) => (
-                <div
+          <div className="grid grid-cols-1 gap-4  text-center pb-7 mt-5 md:px-8 ">
+            {finalData?.map((el, index) => (
+              <div
                 key={index}
-                onClick={()=>{navigate(`/pUsers/receiptDetails/${el._id}`)}}
-                  className={`${
-                    el?.isCancelled
-                      ? "bg-gray-200 pointer-events-none "
-                      : ""
-                  } bg-[#f8ffff] cursor-pointer rounded-md shadow-xl border border-gray-100 flex flex-col justify-between px-4 transition-all duration-150 transform hover:scale-105 ease-in-out`}
-                >
-                  <div className="flex justify-between ">
-                    <div className=" h-full px-2 py-4  lg:p-6 w-[150px] md:w-[180px] lg:w-[300px] flex justify-center items-start relative flex-col ">
-                      <p className="font-bold md:font-semibold text-[11.3px] md:text-[15px] text-left mb-3 ">
-                        {el.party_name}
-                      </p>
-                      <p className="font-bold md:font-semibold text-[11.3px] md:text-[15px] text-left text-violet-500 ">
-                        {el.billNo}
-                      </p>
+                onClick={() => {
+                  // navigate(`/pUsers/receiptDetails/${el._id}`);
+                  navigate(el.type==="Receipt"?`/pUsers/receiptDetails/${el._id}`:`/pUsers/InvoiceDetails/${el._id}`)
+                }}
+                className={`${
+                  el?.isCancelled ? "bg-gray-200 pointer-events-none " : ""
+                } bg-[#f8ffff] cursor-pointer rounded-md shadow-xl border border-gray-100 flex flex-col justify-between px-4 transition-all duration-150 transform hover:scale-105 ease-in-out`}
+              >
+                <div className=" flex justify-start text-xs mt-2 ">
+                  <div className={` ${el.type==="Receipt" ? "bg-[#FB6D48]" :"bg-[#3ed57a]" }   flex items-center text-white px-2 rounded-sm `}>
+                    <FaRegCircleDot />
+                    <p className=" p-1  rounded-lg px-3 font-semibold">
+                      {" "}
+                    {el.type}
+                    </p>
+                  </div>
+                </div>
 
-                      <p className="text-gray-400 text-sm  ">
-                        {dayjs(el?.createdAt).format("DD/MM/YYYY")}
+                <div className="flex justify-between ">
+                  <div className=" h-full px-2 py-4  lg:p-6 w-[150px] md:w-[180px] lg:w-[300px] flex justify-center items-start relative flex-col ">
+                    <p className="font-bold md:font-semibold text-[11.3px] md:text-[15px] text-left mb-3 ">
+                      {el.party_name}
+                    </p>
+                    <p className="font-bold md:font-semibold text-[11.3px] md:text-[15px] text-left text-violet-500 ">
+                      {el.billNo}
+                    </p>
+
+                    <p className="text-gray-400 text-sm  ">
+                      {dayjs(el?.createdAt).format("DD/MM/YYYY")}
+                    </p>
+                  </div>
+                  <div className=" h-full p-2 lg:p-6 w-[150px] md:w-[180px] lg:w-[300px] flex justify-center items-end relative flex-col">
+                    <div className="flex-col  ">
+                      <p className=" font-semibold text-green-600  ">
+                        ₹{el.enteredAmount}
                       </p>
-                    </div>
-                    <div className=" h-full p-2 lg:p-6 w-[150px] md:w-[180px] lg:w-[300px] flex justify-center items-end relative flex-col">
-                      <div className="flex-col  ">
-                        <p className=" font-semibold text-green-600  ">
-                          ₹{el.enteredAmount}
-                        </p>
-                      </div>
                     </div>
                   </div>
-                  <hr />
-                  <hr />
-                  <hr />
-                  <div className="flex justify-between p-4">
-                    {/* <button
+                </div>
+                <hr />
+                <hr />
+                <hr />
+                <div className="flex justify-between p-4">
+                  {/* <button
                     onClick={() => {
                       handleCancel(el._id);
                     }}
@@ -185,21 +193,21 @@ console.log(org);
                     {el.isCancelled ? "Cancelled" : "Cancel"}
                   </button> */}
 
-                    <div className=" flex items-center justify-between w-full gap-2 text-md text-violet-500">
-                      <div className="flex items-center gap-2">
-                        <IoArrowRedoOutline />
+                  <div className=" flex items-center justify-between w-full gap-2 text-md text-violet-500">
+                    <div className="flex items-center gap-2">
+                      <IoArrowRedoOutline />
 
-                        <p>Send Receipt</p>
-                      </div>
-                      {el.isCancelled && (
-                        <div className="flex justify-center items-center gap-2 text-red-500">
-                          <FcCancel />
-                          <p>Canelled</p>
-                        </div>
-                      )}
+                      <p>Send Receipt</p>
                     </div>
+                    {el.isCancelled && (
+                      <div className="flex justify-center items-center gap-2 text-red-500">
+                        <FcCancel />
+                        <p>Canelled</p>
+                      </div>
+                    )}
                   </div>
                 </div>
+              </div>
             ))}
           </div>
         </div>

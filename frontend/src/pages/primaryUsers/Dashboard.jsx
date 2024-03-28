@@ -147,7 +147,7 @@ function Dashboard() {
               </div>
             </Link>
            
-            <Link to={"/pUsers/invoiceList"}>
+            {/* <Link to={"/pUsers/invoiceList"}> */}
             <div className="flex flex-wrap -mx-6  duration-150 hover:scale-105 ease-in-out cursor-pointer">
               <div className="w-full px-6 ">
                 <div className="flex items-center px-2 py-3 md:px-5 md:py-2 shadow-sm rounded-md bg-slate-100 h-24">
@@ -164,7 +164,7 @@ function Dashboard() {
                 </div>
               </div>
             </div>
-            </Link>
+            {/* </Link> */}
             <Link to={'/pUsers/invoice'} >
             <div className="flex flex-wrap -mx-6  duration-150 hover:scale-105 ease-in-out cursor-pointer">
               <div className="w-full px-6 ">
