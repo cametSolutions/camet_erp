@@ -1270,7 +1270,7 @@ export const getProducts = async (req, res) => {
 };
 
 // @desc delete product from  product list
-// route get/api/pUsers/deleteProduct
+// route delete/api/pUsers/deleteProduct
 
 export const deleteProduct = async (req, res) => {
   const productId = req.params.id;
@@ -1524,10 +1524,7 @@ export const createInvoice = async (req, res) => {
     });
 
     const result = await invoice.save();
-    // const company=await OragnizationModel.findById(orgId);
-    // const prevOrdernum=parseInt(company.orderNumber);
-    // const neworderNumber=prevOrdernum+1;
-    // company.save();
+
     const increaseOrderNumber = await OragnizationModel.findByIdAndUpdate(
       orgId,
       { $inc: { orderNumber: 1 } },
@@ -1859,7 +1856,7 @@ export const editSecUSer = async (req, res) => {
 };
 
 // @desc   saveOrderNumber
-// route get/api/pUsers/saveOrderNumber/cmp_id
+// route post/api/pUsers/saveOrderNumber/cmp_id
 
 export const saveOrderNumber = async (req, res) => {
   const cmp_id = req.params.cmp_id;
@@ -1882,7 +1879,7 @@ export const saveOrderNumber = async (req, res) => {
 };
 
 // @desc toget the details of transaction or receipt
-// route POST/api/pUsers/getTransactionDetails
+// route get/api/pUsers/getTransactionDetails
 
 export const getInvoiceDetails = async (req, res) => {
   const invoiceId = req.params.id;

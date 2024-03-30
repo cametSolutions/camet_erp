@@ -1,11 +1,10 @@
 /* eslint-disable react/no-unknown-property */
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import Sidebar from "../../components/homePage/Sidebar";
-import api from "../../api/api";
+
 import { MdModeEditOutline } from "react-icons/md";
 import { IoIosArrowRoundBack } from "react-icons/io";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { changeIgstAndDiscount } from "../../../slices/invoiceSecondary";
 import SidebarSec from "../../components/secUsers/SidebarSec";
@@ -25,6 +24,8 @@ function EditItemSecondary() {
   const [discountPercentage, setDiscountPercentage] = useState(0);
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+
 
   const ItemsFromRedux = useSelector((state) => state.invoiceSecondary.items);
   const selectedItem = ItemsFromRedux.filter((el) => el._id === id);
@@ -139,6 +140,34 @@ function EditItemSecondary() {
     console.log(newItem);
     dispatch(changeIgstAndDiscount(newItem));
     navigate("/sUsers/addItem");
+    handleBackClick()
+  };
+
+  const handleBackClick = () => {
+    console.log(location.state);
+
+    if (location?.state?.id && location?.state?.from =="addItem") {
+      console.log("haii");
+      navigate("/sUsers/addItem", {
+        state: { from: "editInvoice", id: location.state.id },
+      });
+    } else if (location.state.from === "invoice") {
+      console.log("haii");
+
+      navigate("/sUsers/invoice");
+    } else if (location?.state?.from === "addItem") {
+      console.log("haii");
+
+      navigate("/sUsers/addItem");
+    } else if (location?.state?.from === "editInvoice") {
+      console.log("haii");
+
+      navigate(`/sUsers/editInvoice/${location.state.id}`);
+    } else {
+      console.log("haii");
+
+      navigate("/sUsers/addItem");
+    }
   };
 
   return (
@@ -149,9 +178,8 @@ function EditItemSecondary() {
       <div className=" h-screen overflow-y-auto flex-1">
         <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex  items-center gap-2 sticky top-0 z-20 ">
           <IoIosArrowRoundBack
-            onClick={() => {
-              navigate("/sUsers/addItem");
-            }}
+             onClick={handleBackClick}
+
             className="text-3xl text-white cursor-pointer"
           />
           <p className="text-white text-lg   font-bold ">Edit Item</p>
@@ -324,7 +352,8 @@ function EditItemSecondary() {
                   </div>
                   <div className="pt-4 flex items-center space-x-4">
                     <button
-                      onClick={() => navigate("/sUsers/addItem")}
+                      onClick={handleBackClick}
+
                       className="flex justify-center items-center w-full text-gray-900 px-4 py-3 rounded-md focus:outline-none"
                     >
                       <svg

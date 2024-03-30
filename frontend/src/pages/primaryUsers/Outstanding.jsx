@@ -136,7 +136,7 @@ function Outstanding({ onTabChange }) {
        
         </div>
 
-        <div className="grid grid-cols-1 gap-4 mt-6 text-center  md:px-8 ">
+        <div className="grid grid-cols-1 gap-4 mt-6 text-center pb-10   md:px-8 ">
           {finalData.map((el, index) => (
             <Link
               key={index}

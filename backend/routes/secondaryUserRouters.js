@@ -6,7 +6,8 @@ import {login,getSecUserData,fetchOutstandingTotal,
     submitOtp,resetPassword,getTransactionDetails,PartyList,addParty,getProducts,
     createInvoice,invoiceList,getSinglePartyDetails,editParty,
     deleteParty,getSingleOrganization,fetchHsn,
-    addDataToOrg,editDataInOrg,deleteDataInOrg,addProduct,productDetails,editProduct} from "../controllers/secondaryUserController.js"
+    addDataToOrg,editDataInOrg,deleteDataInOrg,addProduct,
+    productDetails,editProduct,deleteProduct,saveOrderNumber,getInvoiceDetails,editInvoice} from "../controllers/secondaryUserController.js"
 import { authSecondary } from '../middlewares/authSecUsers.js';
 import { secondaryIsBlocked } from '../middlewares/isBlocked.js';
 
@@ -21,7 +22,7 @@ router.get('/getSecUserData',authSecondary,secondaryIsBlocked,getSecUserData)
 router.get('/fetchOutstandingTotal/:cmp_id',authSecondary,secondaryIsBlocked,fetchOutstandingTotal)
 router.get('/fetchOutstandingDetails/:party_id/:cmp_id',authSecondary,secondaryIsBlocked,fetchOutstandingDetails)
 router.post('/confirmCollection',authSecondary,secondaryIsBlocked,confirmCollection)
-router.get('/transactions',authSecondary,secondaryIsBlocked,transactions)
+router.get('/transactions/:cmp_id',authSecondary,secondaryIsBlocked,transactions)
 router.get('/getTransactionDetails/:id',authSecondary,secondaryIsBlocked,getTransactionDetails)
 router.post('/cancelTransaction/:id',authSecondary,secondaryIsBlocked,cancelTransaction)
 router.get('/fetchBanks/:cmp_id',authSecondary,secondaryIsBlocked,fetchBanks)
@@ -41,6 +42,14 @@ router.post('/deleteDataInOrg/:cmp_id',authSecondary,secondaryIsBlocked,deleteDa
 router.post('/addProduct',authSecondary,secondaryIsBlocked,addProduct)
 router.get('/productDetails/:id',authSecondary,secondaryIsBlocked,productDetails)
 router.post('/editProduct/:id',authSecondary,secondaryIsBlocked,editProduct)
+router.delete('/deleteProduct/:id',authSecondary,secondaryIsBlocked,deleteProduct)
+router.post('/saveOrderNumber/:cmp_id',authSecondary,secondaryIsBlocked,saveOrderNumber)
+router.get('/getInvoiceDetails/:id',authSecondary,secondaryIsBlocked,getInvoiceDetails)
+router.post('/editInvoice/:id',authSecondary,secondaryIsBlocked,editInvoice)
+
+
+
+
 
 
 

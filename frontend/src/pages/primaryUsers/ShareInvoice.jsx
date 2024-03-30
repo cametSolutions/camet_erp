@@ -21,21 +21,24 @@ function ShareInvoice() {
 
   const contentToPrint = useRef(null);
 
-  const cmp_id = useSelector(
-    (state) => state.setSelectedOrganization.selectedOrg._id
-  );
+
 
   useEffect(() => {
     const getTransactionDetails = async () => {
       try {
-        const [res, companyDetails] = await Promise.all([
-          api.get(`/api/pUsers/getInvoiceDetails/${id}`, {
-            withCredentials: true,
-          }),
-          api.get(`/api/pUsers/getSingleOrganization/${cmp_id}`, {
-            withCredentials: true,
-          }),
-        ]);
+        // Fetch invoice details
+        const res = await api.get(`/api/pUsers/getInvoiceDetails/${id}`, {
+          withCredentials: true,
+        });
+
+        // Extract cmp_id from the response
+        const cmpId = res.data.data.cmp_id; // Assuming cmp_id is a property of the data
+       // Update the state with the cmp_id
+
+        // Fetch company details using the cmp_id
+        const companyDetails = await api.get(`/api/sUsers/getSingleOrganization/${cmpId}`, {
+          withCredentials: true,
+        });
 
         setData(res.data.data);
         setOrg(companyDetails.data.organizationData);
@@ -44,8 +47,9 @@ function ShareInvoice() {
         toast.error(error.response.data.message);
       }
     };
+
     getTransactionDetails();
-  }, []);
+ }, [id]);
 
 
 
@@ -61,15 +65,18 @@ function ShareInvoice() {
         ?.toFixed(2);
       setAdditinalCharge(addiTionalCharge);
 
-      const finalAmount = parseFloat(subTotal) + parseFloat(addiTionalCharge);
+      const finalAmount = data.finalAmount
+      console.log(finalAmount);
 
       setFinalAmount(finalAmount);
 
       const [integerPart, decimalPart] = finalAmount.toString().split(".");
       const integerWords = numberToWords.toWords(parseInt(integerPart, 10));
+      console.log(integerWords);
       const decimalWords = decimalPart
         ? ` and ${numberToWords.toWords(parseInt(decimalPart, 10))} `
-        : "";
+        : " and Zero";
+        console.log(decimalWords);
 
       const mergedWord = [
         ...integerWords,
@@ -144,9 +151,14 @@ function ShareInvoice() {
 
           <div className="flex mt-2 border-t-2 py-3">
             <div className="w-0.5/5">
-              <img className="h-16 w-16 mr-2 mt-1 " src={org.logo} alt="Logo" />
+              {
+                org.logo && (
+
+                  <img className="h-16 w-16 mr-2 mt-1 " src={org.logo} alt="Logo" />
+                )
+              }
             </div>
-            <div className="w-4/5 flex flex-col mt-1">
+            <div className="w-4/5 flex flex-col mt-1 ml-2">
               <div className="">
                 <p className="text-gray-700 font-semibold text-base pb-1">
                   {org?.name}

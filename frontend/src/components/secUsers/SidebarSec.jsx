@@ -43,6 +43,7 @@ function SidebarSec({ TAB,showBar }) {
           withCredentials: true,
         });
         setUserData(res.data.data.userData);
+       
         if(prevOrg=='' || prevOrg==null){
           console.log("haiii");
           setOrg(res.data.data.userData.organization[0])
@@ -109,6 +110,8 @@ function SidebarSec({ TAB,showBar }) {
     setOrg(el);
     dispatch(setSecSelectedOrganization(el));
   };
+
+
 
   return (
     <div>
@@ -271,7 +274,7 @@ function SidebarSec({ TAB,showBar }) {
                 >
                   <TiUserAdd />
 
-                  <span className="mx-4 font-medium">Party</span>
+                  <span className="mx-4 font-medium">Customers</span>
                 </a>
               </Link>
 

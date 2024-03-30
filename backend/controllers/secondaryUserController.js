@@ -73,7 +73,7 @@ export const getSecUserData = async (req, res) => {
   try {
     const userData = await SecondaryUser.findById(userId).populate({
       path: "organization",
-      select: "_id name",
+      // select: "_id name",
     });
     if (userData) {
       return res
@@ -272,11 +272,12 @@ export const logout = async (req, res) => {
 
 export const transactions = async (req, res) => {
   const userId = req.sUserId;
+  const cmp_id = req.params.cmp_id;
+
 
   try {
     const transactions = await TransactionModel.aggregate([
-      { $match: { agentId: userId } },
-      // { $unwind: "$billData" }, // Unwind the billData array
+      { $match: { agentId: userId, cmp_id: cmp_id } },
       {
         $project: {
           _id: 1,
@@ -287,6 +288,8 @@ export const transactions = async (req, res) => {
           createdAt: 1,
           // totalBillAmount: 1,
           cmp_id: 1,
+          type: "Receipt",
+
           // billNo: "$billData.billNo",
           // settledAmount: "$billData.settledAmount",
           // remainingAmount: "$billData.remainingAmount",
@@ -299,10 +302,30 @@ export const transactions = async (req, res) => {
       { $sort: { createdAt: -1 } },
     ]);
 
-    if (transactions.length > 0) {
+    const invoices = await invoiceModel.aggregate([
+      { $match: { Secondary_user_id: userId, cmp_id: cmp_id } },
+      {
+        $project: {
+          party_name: "$party.partyName",
+          // mobileNumber:"$party.mobileNumber",
+          type: "Sale Order",
+          enteredAmount: "$finalAmount",
+          createdAt: 1,
+          itemsLength: { $size: "$items" },
+        },
+      },
+    ]);
+
+
+    const combined = [...transactions, ...invoices];
+    combined.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    console.log("combined", combined);
+
+    if (combined.length > 0) {
       return res.status(200).json({
         message: "Transactions fetched",
-        data: { transactions },
+        data: { combined },
       });
     } else {
       return res.status(404).json({ message: "Transactions not found" });
@@ -662,15 +685,11 @@ export const createInvoice = async (req, res) => {
       priceLevelFromRedux,
       additionalChargesFromRedux,
       lastAmount,
+      orderNumber,
+
     } = req.body;
 
-    //  // Validate input
-    //  if (!party || !items || !priceLevelFromRedux || !lastAmount) {
-    //    return res.status(400).json({
-    //      success: false,
-    //      message: "Missing required fields",
-    //    });
-    //  }
+
 
     console.log(req.body);
 
@@ -683,15 +702,24 @@ export const createInvoice = async (req, res) => {
       finalAmount: lastAmount, // Corrected typo and used correct assignment operator
       Primary_user_id: owner,
       Secondary_user_id,
+      orderNumber,
+
     });
 
     const result = await invoice.save();
+
+    const increaseOrderNumber = await OragnizationModel.findByIdAndUpdate(
+      orgId,
+      { $inc: { orderNumber: 1 } },
+      { new: true }
+    );
 
     return res.status(200).json({
       success: true,
       message: "Invoice created successfully",
       data: result,
     });
+    
   } catch (error) {
     console.error(error);
     return res.status(500).json({
@@ -1152,5 +1180,136 @@ export const editProduct = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
+};
+
+
+
+// @desc delete product from  product list
+// route delete/api/pUsers/deleteProduct
+
+export const deleteProduct = async (req, res) => {
+  const productId = req.params.id;
+  console.log("productId", productId);
+  try {
+    const deletedProduct = await productModel.findByIdAndDelete(productId);
+    if (deletedProduct) {
+      return res.status(200).json({
+        success: true,
+        message: "Product deleted successfully",
+      });
+    } else {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found",
+      });
+    }
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error, try again!",
+    });
+  }
+};
+
+
+// @desc   saveOrderNumber
+// route post/api/pUsers/saveOrderNumber/cmp_id
+
+export const saveOrderNumber = async (req, res) => {
+  const cmp_id = req.params.cmp_id;
+  try {
+    const company = await OragnizationModel.findById(cmp_id);
+    company.OrderNumberDetails = req.body;
+
+    const save = await company.save();
+    return res.status(200).json({
+      success: true,
+      message: "Order number saved successfully",
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error, try again!",
+    });
+  }
+};
+
+
+// @desc toget the details of transaction or receipt
+// route get/api/sUsers/getTransactionDetails
+
+export const getInvoiceDetails = async (req, res) => {
+  const invoiceId = req.params.id;
+
+  try {
+    const invoiceDetails = await invoiceModel.findById(invoiceId);
+
+    if (invoiceDetails) {
+      res
+        .status(200)
+        .json({ message: "Invoice details fetched", data: invoiceDetails });
+    } else {
+      res.status(404).json({ error: "Invoice not found" });
+    }
+  } catch (error) {
+    console.error("Error fetching receipt details:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+
+
+// @desc edit in voice
+// route POST /api/sUsers/createInvoice
+export const editInvoice = async (req, res) => {
+  const Secondary_user_id = req.sUserId;
+  const Primary_user_id = req.owner;
+  const invoiceId = req.params.id;
+  console.log("invoiceId",invoiceId);
+  try {
+    const {
+      orgId,
+      party,
+      items,
+      priceLevelFromRedux,
+      additionalChargesFromRedux,
+      lastAmount,
+      orderNumber,
+    } = req.body;
+    console.log("orderNumber", orderNumber);
+
+    console.log(req.body);
+
+    const result = await invoiceModel.findByIdAndUpdate(
+      invoiceId, // Use the invoiceId to find the document
+      {
+        cmp_id: orgId,
+        party,
+        items,
+        priceLevel: priceLevelFromRedux,
+        additionalCharges: additionalChargesFromRedux,
+        finalAmount: lastAmount,
+        Primary_user_id,
+        Secondary_user_id,
+        orderNumber,
+      },
+      { new: true } // This option returns the updated document
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Invoice Updated successfully",
+      data: result,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error, try again!",
+      error: error.message, // Include error message for debugging
+    });
   }
 };

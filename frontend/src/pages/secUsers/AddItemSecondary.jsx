@@ -1,9 +1,8 @@
 /* eslint-disable react/prop-types */
 /* eslint-disable react/no-unknown-property */
-import { useState, useEffect, useMemo ,useRef} from "react";
-import Sidebar from "../../components/homePage/Sidebar";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { IoIosArrowRoundBack } from "react-icons/io";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { IoIosSearch } from "react-icons/io";
 import api from "../../api/api";
 import { MdOutlineQrCodeScanner } from "react-icons/md";
@@ -12,7 +11,7 @@ import { addItem, removeItem } from "../../../slices/invoiceSecondary";
 import { useDispatch } from "react-redux";
 import { changeCount } from "../../../slices/invoiceSecondary";
 import { setPriceLevel } from "../../../slices/invoiceSecondary";
-import { changeTotal,persistScroll } from "../../../slices/invoiceSecondary";
+import { changeTotal, persistScroll } from "../../../slices/invoiceSecondary";
 import { Dropdown } from "flowbite-react";
 import { HashLoader } from "react-spinners";
 import { FixedSizeList as List } from "react-window";
@@ -34,9 +33,6 @@ function AddItemSecondary() {
   const [loader, setLoader] = useState(false);
   const [listHeight, setListHeight] = useState(0);
 
-
-
-
   ///////////////////////////cpm_id///////////////////////////////////
 
   const cpm_id = useSelector(
@@ -46,8 +42,6 @@ function AddItemSecondary() {
   ///////////////////////////itemsFromRedux///////////////////////////////////
 
   const itemsFromRedux = useSelector((state) => state.invoiceSecondary.items);
-
-
 
   ///////////////////////////priceLevelFromRedux///////////////////////////////////
 
@@ -59,6 +53,7 @@ function AddItemSecondary() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const listRef = useRef(null);
+  const location = useLocation();
 
   ///////////////////////////fetchProducts///////////////////////////////////
 
@@ -362,15 +357,18 @@ function AddItemSecondary() {
         </div>
         {el.added ? (
           <div className="flex items-center flex-col gap-2">
-            <Link
-              to={`/sUsers/editItem/${el._id}`}
-              // onClick={() => dispatch(persistScroll(el._id))}
-              // onClick={()=>{setScrollPosition(window.scrollY)}}
+           
+           <button
+              onClick={() => {
+                navigate(`/sUsers/editItem/${el._id}`, {
+                  state: { from: "addItem" ,id:location?.state?.id},
+                });
+              }}
+              type="button"
+              className="  mt-3  px-2 py-1  rounded-md border-violet-500 font-bold border  text-violet-500 text-xs"
             >
-              <button className=" mt-3  px-2 py-1  rounded-md border-violet-500 font-bold border  text-violet-500 text-xs">
-                Edit
-              </button>
-            </Link>
+              Edit
+            </button>
             <div
               className="py-2 px-3 inline-block bg-white  "
               data-hs-input-number
@@ -463,8 +461,22 @@ function AddItemSecondary() {
     return () => window.removeEventListener("resize", calculateHeight);
   }, []);
 
+  const continueHandler = () => {
+    console.log(location.state);
+    if (location?.state?.from === "editInvoice") {
+      navigate(`/sUsers/editInvoice/${location.state.id}`);
+    } else {
+      navigate("/sUsers/invoice");
+    }
+  };
 
-
+  const backHandler = () => {
+    if (location?.state?.from === "editInvoice") {
+      navigate(`/sUsers/editInvoice/${location.state.id}`);
+    } else {
+      navigate("/sUsers/invoice");
+    }
+  };
 
   console.log(listHeight);
 
@@ -479,9 +491,7 @@ function AddItemSecondary() {
           <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex justify-between  items-center gap-2  ">
             <div className="flex items-center gap-2">
               <IoIosArrowRoundBack
-                onClick={() => {
-                  navigate("/sUsers/invoice");
-                }}
+                onClick={backHandler}
                 className="text-3xl text-white cursor-pointer"
               />
               <p className="text-white text-lg   font-bold ">Add Item</p>
@@ -641,7 +651,7 @@ function AddItemSecondary() {
           </div>
         ) : (
           <List
-          ref={listRef}
+            ref={listRef}
             style={{
               scrollbarWidth: "thin",
               scrollbarColor: "transparent transparent",
@@ -657,16 +667,14 @@ function AddItemSecondary() {
         )}
 
         {item.length > 0 && (
-          <Link to={"/sUsers/invoice"}>
-            <div className=" sticky bottom-0 bg-white  w-full flex justify-center p-3 border-t h-[70px] ">
-              <button
-                // onClick={submitHandler}
-                className="bg-violet-700  w-[85%] text-ld font-bold text-white p-2 rounded-md"
-              >
-                Continue
-              </button>
-            </div>
-          </Link>
+          <div className=" sticky bottom-0 bg-white  w-full flex justify-center p-3 border-t h-[70px] ">
+            <button
+              onClick={continueHandler}
+              className="bg-violet-700  w-[85%] text-ld font-bold text-white p-2 rounded-md"
+            >
+              Continue
+            </button>
+          </div>
         )}
       </div>
     </div>

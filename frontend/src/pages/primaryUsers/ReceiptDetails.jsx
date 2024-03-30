@@ -10,12 +10,16 @@ import api from "../../api/api";
 import { toast } from "react-toastify";
 import dayjs from "dayjs";
 import Swal from "sweetalert2";
+import { useLocation, useNavigate } from "react-router-dom";
 
 function ReceiptDetails() {
   const [data, setData] = useState("");
   const [refresh, setRefresh] = useState(false);
 
   const { id } = useParams();
+  const location = useLocation();
+  const navigate = useNavigate();
+
   console.log(id);
 
   useEffect(() => {
@@ -70,6 +74,14 @@ function ReceiptDetails() {
       }
     }
   };
+
+  const backHandler = () => {
+    if (location?.state?.from === "dashboard") {
+      navigate("/pUsers/dashboard");
+    } else {
+      navigate("/pUsers/transaction");
+    }
+  };
   console.log(data);
 
   return (
@@ -82,9 +94,10 @@ function ReceiptDetails() {
         {/* headinh section  */}
         <div className="flex bg-[#012a4a] items-center justify-between">
           <div className="flex items-center gap-3  text-white text-md p-4 ">
-            <Link to={'/pUsers/transaction'}>
-              <MdOutlineArrowBack className="text-2xl" />
-            </Link>
+            <MdOutlineArrowBack
+              onClick={backHandler}
+              className="text-2xl cursor-pointer"
+            />
             <h3 className="font-bold">Received Payment</h3>
           </div>
           {/* <div className="text-white mr-4 bg-pink-700 p-0 px-2 rounded-md text-center transition-all duration-150 transform hover:scale-105">
@@ -113,7 +126,7 @@ function ReceiptDetails() {
               <p className="text-black">
                 Current Balance :{" "}
                 <span className="text-green-500 font-bold">
-                ₹{(data.totalBillAmount - data.enteredAmount).toFixed(2)}
+                  ₹{(data.totalBillAmount - data.enteredAmount).toFixed(2)}
                 </span>
               </p>
               <FaArrowDown />
@@ -134,7 +147,9 @@ function ReceiptDetails() {
 
         <div className="flex justify-between p-4 bg-white mt-2">
           <p className="font-bold">Settled Amount</p>
-          <p className="font-bold">₹ {parseInt((data.enteredAmount)).toFixed(2)}</p>
+          <p className="font-bold">
+            ₹ {parseInt(data.enteredAmount).toFixed(2)}
+          </p>
         </div>
         {/* party Total Mount */}
         {/* payment method */}
@@ -145,22 +160,16 @@ function ReceiptDetails() {
             {data.paymentMethod}
           </p>
 
-          {
-            data.paymentMethod==="cheque" && (
-
-              <div className="flex flex-col text-gray-500">
-
-          <p className="font-semibold text-sm mt-3 uppercase " >
-            {`Cheque Number: ${data.paymentDetails.chequeNumber}`}
-           
-          </p>
-          <p className="font-semibold text-sm  uppercase " >
-          {`Cheque Date: ${data.paymentDetails.chequeDate}`}           
-          </p>
-              </div>
-
-            )
-          }
+          {data.paymentMethod === "cheque" && (
+            <div className="flex flex-col text-gray-500">
+              <p className="font-semibold text-sm mt-3 uppercase ">
+                {`Cheque Number: ${data.paymentDetails.chequeNumber}`}
+              </p>
+              <p className="font-semibold text-sm  uppercase ">
+                {`Cheque Date: ${data.paymentDetails.chequeDate}`}
+              </p>
+            </div>
+          )}
 
           {(data.paymentMethod == "cheque" || data.paymentMethod == "upi") && (
             <h3 className="text-sm font-semibold mt-1 text-gray-500">

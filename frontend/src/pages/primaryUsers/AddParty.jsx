@@ -6,6 +6,8 @@ import api from "../../api/api";
 import { useSelector } from "react-redux";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+
 
 function AddParty() {
   const [tab, setTab] = useState("business");
@@ -28,6 +30,8 @@ function AddParty() {
   const companytId = useSelector(
     (state) => state.setSelectedOrganization.selectedOrg._id
   );
+
+  const navigate=useNavigate()
   const user = JSON.parse(localStorage.getItem("pUserData"));
   const userId = user._id;
   useEffect(() => {
@@ -106,20 +110,8 @@ function AddParty() {
       });
 
       toast.success(res.data.message);
-      setCmp_id("");
-      setPrimary_user_id("");
-      setAccountGroup("");
-      setPartyName("");
-      setMobileNumber("");
-      setEmailID("");
-      setGstNo("");
-      setPanNo("");
-      setBillingAddress("");
-      setShippingAddress("");
-      setCreditPeriod("");
-      setCreditLimit("");
-      setOpeningBalanceType("");
-      setOpeningBalanceAmount("");
+      navigate('/pUsers/partylist')
+
     } catch (error) {
       toast.error(error.response.data.message);
       console.log(error);

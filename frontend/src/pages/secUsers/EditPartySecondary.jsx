@@ -183,7 +183,7 @@ const companytId = useSelector(
       </div>
       <div className="flex-1 flex flex-col h-screen overflow-y-scroll">
         <div className="bg-[#012A4A] sticky top-0 p-3 z-100 text-white text-lg font-bold flex items-center gap-3 z-20">
-        <Link to={"/sUsers/dashboard"}>
+        <Link to={"/sUsers/partyList"}>
               <IoIosArrowRoundBack className="text-3xl text-white cursor-pointer md:hidden" />
             </Link>
           <p>Edit Party Details </p>
@@ -479,7 +479,7 @@ const companytId = useSelector(
                     type="button"
                     onClick={submitHandler}
                   >
-                    Edit
+                    Update
                   </button>
                 </form>
               </div>

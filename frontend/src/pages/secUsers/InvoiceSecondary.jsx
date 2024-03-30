@@ -1,5 +1,5 @@
 /* eslint-disable react/no-unescaped-entities */
-import { useEffect, useState,useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
 
 import { IoMdAdd } from "react-icons/io";
 import { Link } from "react-router-dom";
@@ -21,40 +21,109 @@ import { useNavigate } from "react-router-dom";
 import api from "../../api/api";
 import { IoIosAddCircle } from "react-icons/io";
 import { MdPlaylistAdd } from "react-icons/md";
-import { removeAll,removeAdditionalCharge } from "../../../slices/invoiceSecondary";
+import {
+  removeAll,
+  removeAdditionalCharge,
+} from "../../../slices/invoiceSecondary";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import SidebarSec from "../../components/secUsers/SidebarSec";
+import { Button, Label, Modal, TextInput } from "flowbite-react";
 
 function InvoiceSecondary() {
   const [showSidebar, setShowSidebar] = useState(false);
   const [openModal, setOpenModal] = useState(false);
+  const [modalInputs, setModalInputs] = useState({
+    startingNumber: "1",
+    widthOfNumericalPart: "",
+    prefixDetails: "",
+    suffixDetails: "",
+  });
+  const [subTotal, setSubTotal] = useState(0);
+  const [additional, setAdditional] = useState(false);
+  const [refresh, setRefresh] = useState(false);
+  const [orderNumber, setOrderNumber] = useState("");
+  const [refreshCmp, setrefreshCmp] = useState(false);
+
+
+
   const additionalChargesFromRedux = useSelector(
     (state) => state.invoiceSecondary.additionalCharges
   );
+
+  const orgId = useSelector(
+    (state) => state?.secSelectedOrganization?.secSelectedOrg?._id
+  );
+
+
+  useEffect(() => {
+    const fetchSingleOrganization = async () => {
+      try {
+        const res = await api.get(
+          `/api/sUsers/getSingleOrganization/${orgId}`,
+          {
+            withCredentials: true,
+          }
+        );
+
+        console.log(res.data.organizationData);
+        const { orderNumber, OrderNumberDetails } = res.data.organizationData;
+
+        console.log(orderNumber);
+
+        if (OrderNumberDetails) {
+          console.log("haii");
+          const { widthOfNumericalPart, prefixDetails, suffixDetails } =
+            OrderNumberDetails;
+            const newOrderNumber=(orderNumber).toString()
+            console.log(newOrderNumber);
+          console.log(widthOfNumericalPart);
+          console.log(prefixDetails);
+          console.log(suffixDetails);
+
+
+          const padedNumber = newOrderNumber.padStart(widthOfNumericalPart, 0);
+          console.log(padedNumber);
+          const finalOrderNumber = prefixDetails + padedNumber + suffixDetails;
+          console.log(finalOrderNumber);
+          setOrderNumber(finalOrderNumber);
+          setModalInputs({
+            widthOfNumericalPart: widthOfNumericalPart,
+            prefixDetails: prefixDetails,
+            suffixDetails: suffixDetails,
+          });
+        } else {
+          setOrderNumber(orderNumber);
+          setModalInputs({
+            startingNumber: "1",
+            widthOfNumericalPart: "",
+            prefixDetails: "",
+            suffixDetails: "",
+          });
+        }
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    fetchSingleOrganization();
+  }, [refreshCmp, orgId]);
+
+  
 
   const [rows, setRows] = useState(
     additionalChargesFromRedux.length > 0
       ? additionalChargesFromRedux
       : [{ option: "option 1", value: "", action: "add" }]
   );
-  const [additional, setAdditional] = useState(false);
-  const [refresh, setRefresh] = useState(false)
+
 
   useEffect(() => {
     if (additionalChargesFromRedux.length) {
       setAdditional(true);
     }
   }, []);
-  const [subTotal, setSubTotal] = useState(0);
   const dispatch = useDispatch();
-  const handleToggleSidebar = () => {
-    if (window.innerWidth < 768) {
-      setShowSidebar(!showSidebar);
-    }
-  };
 
-  console.log(additionalChargesFromRedux);
-  console.log(rows);
+
 
   const handleAddRow = () => {
     const hasEmptyValue = rows.some((row) => row.value === "");
@@ -101,15 +170,12 @@ function InvoiceSecondary() {
     useSelector((state) => state.invoiceSecondary.selectedPriceLevel) || "";
 
   useEffect(() => {
-    const subTotal = items
-      .reduce((acc, curr) => {
-        return (acc = acc + (parseFloat(curr.total) || 0));
-      }, 0)
-      ;
-      console.log(subTotal);
+    const subTotal = items.reduce((acc, curr) => {
+      return (acc = acc + (parseFloat(curr.total) || 0));
+    }, 0);
+    console.log(subTotal);
     setSubTotal(subTotal);
   }, [items]);
-
 
   const additionalChargesTotal = useMemo(() => {
     console.log("haoii");
@@ -122,35 +188,28 @@ function InvoiceSecondary() {
       }
       return acc;
     }, 0);
- }, [rows,refresh]);
+  }, [rows, refresh]);
 
- console.log(additionalChargesTotal);
   const totalAmount =
     parseFloat(subTotal) + additionalChargesTotal || parseFloat(subTotal);
 
   const navigate = useNavigate();
 
-  const orgId = useSelector(
-    (state) => state?.secSelectedOrganization?.secSelectedOrg?._id
-  );
+
   const handleAddItem = () => {
     console.log(Object.keys(party).length);
     if (Object.keys(party).length === 0) {
       toast.error("Select a party first");
       return;
     }
-    navigate("/sUsers/addItem")
+    navigate("/sUsers/addItem");
   };
 
-  const cancelHandler=()=>{
+  const cancelHandler = () => {
     setAdditional(false);
-    dispatch(removeAdditionalCharge())
-    setRows([{ option: "Option 1", value: "", action: "add" }])
-    
-
-  }
-
-
+    dispatch(removeAdditionalCharge());
+    setRows([{ option: "Option 1", value: "", action: "add" }]);
+  };
 
   const submitHandler = async () => {
     console.log("haii");
@@ -198,6 +257,7 @@ function InvoiceSecondary() {
       additionalChargesFromRedux,
       lastAmount,
       orgId,
+      orderNumber
     };
 
     console.log(formData);
@@ -212,12 +272,41 @@ function InvoiceSecondary() {
 
       console.log(res.data);
       toast.success(res.data.message);
-      
+
       navigate("/sUsers/dashboard");
-      dispatch(removeAll())
+      dispatch(removeAll());
     } catch (error) {
       toast.error(error.response.data.message);
       console.log(error);
+    }
+  };
+
+  function onCloseModal() {
+    setOpenModal(false);
+    // setEmail('');
+  }
+
+  const saveOrderNumber = async () => {
+    try {
+      const res = await api.post(
+        `/api/sUsers/saveOrderNumber/${orgId}`,
+        modalInputs,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+          withCredentials: true,
+        }
+      );
+
+      toast(res.data.message);
+      setOpenModal(false);
+      setrefreshCmp(!refreshCmp);
+
+      console.log(res);
+    } catch (error) {
+      console.log(error);
+      toast.error(error.response.data.message);
     }
   };
 
@@ -233,9 +322,9 @@ function InvoiceSecondary() {
             onClick={handleToggleSidebar}
             className="block md:hidden text-white text-3xl"
           /> */}
-            <Link to={"/sUsers/dashboard"}>
-              <IoIosArrowRoundBack className="text-3xl text-white cursor-pointer md:hidden" />
-            </Link>
+          <Link to={"/sUsers/dashboard"}>
+            <IoIosArrowRoundBack className="text-3xl text-white cursor-pointer md:hidden" />
+          </Link>
           <p className="text-white text-lg   font-bold ">
             Create Bill / Sales Order
           </p>
@@ -245,7 +334,7 @@ function InvoiceSecondary() {
 
         <div className="flex justify-between  p-4 bg-white drop-shadow-lg items-center text-xs md:text-base ">
           <div className=" flex flex-col gap-1 justify-center">
-            <p className="text-md font-semibold text-violet-400">Sales Order</p>
+            <p className="text-md font-semibold text-violet-400">  Order #{orderNumber}</p>
             <p className="font-semibold   text-gray-500 text-xs md:text-base">
               {new Date().toDateString()}
             </p>
@@ -260,7 +349,10 @@ function InvoiceSecondary() {
                 <p>Generate Order</p>
               </button>
               <div>
-                <p className="text-violet-500 text-xs  p-1 px-3  border border-1 border-gray-300 rounded-2xl cursor-pointer">
+                <p 
+                  onClick={() => setOpenModal(true)}
+
+                className="text-violet-500 text-xs  p-1 px-3  border border-1 border-gray-300 rounded-2xl cursor-pointer">
                   Edit
                 </p>
               </div>
@@ -332,7 +424,7 @@ function InvoiceSecondary() {
                 <IoMdAdd className="text-2xl" />
                 <p className="text-sm">Add Item</p>
               </div>
-               {/* </Link> */}
+              {/* </Link> */}
             </div>
           </div>
         )}
@@ -414,7 +506,9 @@ function InvoiceSecondary() {
             </div>
             <div className="flex  justify-between items-center bg-white p-2 px-4">
               <p className="text-sm md:text-base font-bold">Items Subtotal:</p>
-              <p className="text-sm md:text-base font-bold">{` ₹ ${subTotal.toFixed(2)}`}</p>
+              <p className="text-sm md:text-base font-bold">{` ₹ ${subTotal.toFixed(
+                2
+              )}`}</p>
             </div>
             {additional ? (
               <div className="container mx-auto mt-2 bg-white p-4 text-xs">
@@ -424,7 +518,7 @@ function InvoiceSecondary() {
                     <p className="text-blue-800">Additional Charges</p>
                   </div>
                   <button
-                  onClick={cancelHandler}
+                    onClick={cancelHandler}
                     // onClick={() => {setAdditional(false);dispatch(removeAdditionalCharge());setRefresh(!refresh);setRows()}}
                     className="text-violet-500 p-1 px-3  text-xs border border-1 border-gray-300 rounded-2xl cursor-pointer"
                   >
@@ -507,7 +601,7 @@ function InvoiceSecondary() {
                     onClick={handleAddRow}
                     className="mt-4 px-4 py-1 bg-pink-500 text-white rounded"
                   >
-                  <MdPlaylistAdd/>
+                    <MdPlaylistAdd />
                   </button>
                 </div>
               </div>
@@ -617,6 +711,103 @@ function InvoiceSecondary() {
           </div>
         )}
       </div>
+
+      <Modal
+        style={{
+          scrollbarWidth: "thin",
+          scrollbarColor: "transparent transparent",
+        }}
+        show={openModal}
+        size="md"
+        onClose={onCloseModal}
+        popup
+      >
+        <Modal.Header />
+        <Modal.Body>
+          <div className="space-y-6">
+            <h3 className="text-xl font-medium text-gray-900 dark:text-white ">
+              Enter Details
+            </h3>
+            <div>
+              <div className="mb-2 block">
+                <Label htmlFor="startingNumber" value="Starting Number" />
+              </div>
+              <TextInput
+                disabled
+                id="startingNumber"
+                placeholder="1"
+                type="number"
+                value={modalInputs.startingNumber}
+                onChange={(e) =>
+                  setModalInputs({
+                    ...modalInputs,
+                    startingNumber: e.target.value,
+                  })
+                }
+                required
+              />
+            </div>
+            <div>
+              <div className="mb-2 block">
+                <Label
+                  htmlFor="widthOfNumericalPart"
+                  value="Width of Numerical Part"
+                />
+              </div>
+              <TextInput
+                id="widthOfNumericalPart"
+                placeholder="4"
+                type="number"
+                value={modalInputs.widthOfNumericalPart}
+                onChange={(e) =>
+                  setModalInputs({
+                    ...modalInputs,
+                    widthOfNumericalPart: e.target.value,
+                  })
+                }
+                required
+              />
+            </div>
+            <div>
+              <div className="mb-2 block">
+                <Label htmlFor="prefixDetails" value="Prefix Details" />
+              </div>
+              <TextInput
+                id="prefixDetails"
+                placeholder="ABC"
+                value={modalInputs.prefixDetails}
+                onChange={(e) =>
+                  setModalInputs({
+                    ...modalInputs,
+                    prefixDetails: e.target.value,
+                  })
+                }
+                required
+              />
+            </div>
+            <div>
+              <div className="mb-2 block">
+                <Label htmlFor="suffixDetails" value="Suffix Details" />
+              </div>
+              <TextInput
+                id="suffixDetails"
+                placeholder="XYZ"
+                value={modalInputs.suffixDetails}
+                onChange={(e) =>
+                  setModalInputs({
+                    ...modalInputs,
+                    suffixDetails: e.target.value,
+                  })
+                }
+                required
+              />
+            </div>
+            <div className="w-full">
+              <Button onClick={saveOrderNumber}>Submit</Button>
+            </div>
+          </div>
+        </Modal.Body>
+      </Modal>
     </div>
   );
 }

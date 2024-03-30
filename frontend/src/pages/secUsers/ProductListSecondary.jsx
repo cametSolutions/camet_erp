@@ -16,6 +16,9 @@ import { FixedSizeList as List } from "react-window";
 import { useSelector } from "react-redux";
 import SidebarSec from "../../components/secUsers/SidebarSec";
 
+import { useDispatch } from "react-redux";
+import { removeAll } from "../../../slices/invoiceSecondary";
+
 function ProductListSecondary() {
   const [products, setProducts] = useState([]);
 
@@ -33,6 +36,7 @@ function ProductListSecondary() {
   const type = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg.type
   );
+  const dispatch=useDispatch()
 
   console.log(type);
 
@@ -56,6 +60,8 @@ function ProductListSecondary() {
       }
     };
     fetchProducts();
+  dispatch(removeAll())
+
   }, [refresh,cmp_id]);
 
   const handleToggleSidebar = () => {
@@ -141,71 +147,89 @@ function ProductListSecondary() {
 
   const Row = ({ index, style }) => {
     const el = filteredProducts[index];
+    const adjustedStyle = {
+      ...style,
+      marginTop: '16px',
+      height: '150px', 
+   
+   };
+
+
     return (
       <>
         <div
           key={index}
-          style={style}
+          style={adjustedStyle}
           className="bg-white p-4 pb-6 drop-shadow-lg mt-4 flex flex-col mx-2 rounded-sm cursor-pointer hover:bg-slate-100  pr-7 "
         >
           <div className="flex justify-between w-full gap-3 ">
             <div className="">
               <p className="font-bold text-sm">{el?.product_name}</p>
-              {el.product_code && (
-                <div className="flex">
-                  <p className="font-medium mt-2 text-gray-500 text-sm">
-                    code :
-                  </p>
-                  <p className="font-medium mt-2 text-gray-500 text-sm">
-                    {el?.product_code}
-                  </p>
-                </div>
-              )}
+          
             </div>
-            <div className=" flex flex-col justify-center gap-2">
-              <div className="flex gap-2 text-nowrap">
-                <p className="font-bold">Hsn :</p>
-                <p className="font-semibold text-gray-500"> {el?.hsn_code}</p>
-              </div>
-              <div className="flex gap-2 ">
-                <p className="font-bold">Igst :</p>
-                <p className="font-bold text-green-500"> {`${el?.igst} %`}</p>
-              </div>
+            <div
+              className={` ${
+                type !== "self" ? "pointer-events-none opacity-50" : ""
+              }  flex gap-3 mt-2 px-4`}
+            >
+              <Link to={`/sUsers/editProduct/${el._id}`}>
+                <FaEdit className="text-blue-500" />
+              </Link>
+
+              <MdDelete
+                onClick={() => {
+                  handleDelete(el._id);
+                }}
+                className="text-red-500"
+              />
             </div>
           </div>
-          <div className={` ${type !=="self" ? "pointer-events-none opacity-50" : ""}  flex gap-3 mt-2 px-4`}>
-            <Link to={`/sUsers/editProduct/${el._id}`}>
-              <FaEdit className="text-blue-500" />
-            </Link>
 
-            <MdDelete
-              onClick={() => {
-                handleDelete(el._id);
-              }}
-              className="text-red-500"
-            />
-
+          <div className=" flex flex-col justify-center gap-2 text-sm">
+            <div className="flex gap-2 text-nowrap">
+              <p className="font-bold">Hsn :</p>
+              <p className="font-semibold text-gray-500"> {el?.hsn_code}</p>
+            </div>
+            <div className="flex gap-2 ">
+              <p className="font-bold">Igst :</p>
+              <p className="font-bold text-green-500"> {`${el?.igst} %`}</p>
+            </div>
           </div>
-            <hr className="mt-6" style={{ borderWidth: "1px" }} />
+          <hr className="mt-6" style={{ borderWidth: "1px" }} />
         </div>
       </>
     );
   };
 
+
+  
+
   return (
     <div className="flex relative h-screen ">
       <div>
-        <SidebarSec TAB={"invoice"} showBar={showSidebar} />
+        <SidebarSec TAB={"product"} showBar={showSidebar} />
       </div>
 
       <div className="flex-1 bg-slate-50 overflow-y-scroll ">
         <div className="sticky top-0 z-20 h-[117px]">
-          <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex  items-center gap-2   ">
-            <IoReorderThreeSharp
-              onClick={handleToggleSidebar}
-              className="text-3xl text-white cursor-pointer md:hidden"
-            />
-            <p className="text-white text-lg   font-bold ">Your Products</p>
+          <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3  flex justify-between items-center  ">
+            <div className="flex items-center justify-center gap-2">
+              <IoReorderThreeSharp
+                onClick={handleToggleSidebar}
+                className="text-3xl text-white cursor-pointer md:hidden"
+              />
+              <p className="text-white text-lg   font-bold ">Your Products</p>
+            </div>
+            {type === "self" && (
+              <div>
+                <Link to={"/sUsers/addProduct"}>
+                  <button className="flex items-center gap-2 text-white bg-[#40679E] px-2 py-1 rounded-md text-sm  hover:scale-105 duration-100 ease-in-out ">
+                    <IoIosAddCircle className="text-xl" />
+                    Add Products
+                  </button>
+                </Link>
+              </div>
+            )}
           </div>
 
           {/* invoiec date */}
@@ -282,7 +306,7 @@ function ProductListSecondary() {
               className=""
               height={listHeight} // Specify the height of your list
               itemCount={filteredProducts.length} // Specify the total number of items
-              itemSize={150} // Specify the height of each item
+              itemSize={165} // Specify the height of each item
               width="100%" // Specify the width of your list
             >
               {Row}
@@ -294,12 +318,12 @@ function ProductListSecondary() {
           </div>
         )}
 
-        <Link to={"/sUsers/addProduct"} className={`${type!=="self" ? "hidden " : ""}  flex justify-center`}>
+        {/* <Link to={"/sUsers/addProduct"} className={`${type!=="self" ? "hidden " : ""}  flex justify-center`}>
           <div className=" px-4 absolute bottom-12 text-white bg-violet-700 rounded-3xl p-2 flex items-center justify-center gap-2 hover_scale cursor-pointer ">
             <IoIosAddCircle className="text-2xl" />
             <p>Create New Product</p>
           </div>
-        </Link>
+        </Link> */}
       </div>
     </div>
   );

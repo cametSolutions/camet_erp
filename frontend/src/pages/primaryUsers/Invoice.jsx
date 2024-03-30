@@ -161,7 +161,7 @@ function Invoice() {
           console.log("haii");
           const { widthOfNumericalPart, prefixDetails, suffixDetails } =
             OrderNumberDetails;
-            const newOrderNumber=(orderNumber+1).toString()
+            const newOrderNumber=(orderNumber).toString()
             console.log(newOrderNumber);
           console.log(widthOfNumericalPart);
           console.log(prefixDetails);

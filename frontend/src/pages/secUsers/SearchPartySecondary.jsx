@@ -1,6 +1,5 @@
 /* eslint-disable react/no-unknown-property */
 import { useState, useEffect } from "react";
-import Sidebar from "../../components/homePage/Sidebar";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import { useNavigate } from "react-router-dom";
 import { IoIosSearch } from "react-icons/io";
@@ -12,6 +11,8 @@ import api from "../../api/api";
 import { useDispatch } from "react-redux";
 import { addParty } from "../../../slices/invoiceSecondary";
 import SidebarSec from "../../components/secUsers/SidebarSec";
+import { useLocation } from "react-router-dom";
+
 
 // import { MdCancel } from "react-icons/md";
 
@@ -22,6 +23,7 @@ function SearchPartySecondary() {
   const [filteredParties, setFilteredParties] = useState([]);
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const location = useLocation();
 
   console.log(parties);
 
@@ -45,8 +47,21 @@ function SearchPartySecondary() {
 
   const selectHandler = (el) => {
     dispatch(addParty(el));
-    navigate("/sUsers/invoice");
+    if (location?.state?.from === "editInvoice") {
+      navigate(`/sUsers/editinvoice/${location?.state?.id}`);
+    } else {
+      navigate("/sUsers/invoice");
+    }
   };
+  const backHandler=()=>{
+    if (location?.state?.from === "editInvoice") {
+      navigate(`/sUsers/editinvoice/${location?.state?.id}`);
+    } else {
+      navigate("/sUsers/invoice");
+    }
+
+  }
+
 
   console.log(parties);
   useEffect(() => {
@@ -70,9 +85,7 @@ function SearchPartySecondary() {
         <div className="sticky top-0 z-20">
           <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex  items-center gap-2  ">
             <IoIosArrowRoundBack
-              onClick={() => {
-                navigate("/sUsers/invoice");
-              }}
+              onClick={backHandler}
               className="text-3xl text-white cursor-pointer"
             />
             <p className="text-white text-lg   font-bold ">Select Party</p>
@@ -162,12 +175,12 @@ function SearchPartySecondary() {
           </div>
         )}
 
-        <Link to={"/sUsers/addParty"} className="flex justify-center">
+        {/* <Link to={"/sUsers/addParty"} className="flex justify-center">
           <div className="absolute bottom-2 text-white bg-violet-700 rounded-3xl p-2 flex items-center justify-center gap-2 hover_scale cursor-pointer ">
             <IoIosAddCircle className="text-2xl" />
             <p>Create New Party</p>
           </div>
-        </Link>
+        </Link> */}
       </div>
     </div>
   );

@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import Sidebar from "../../components/homePage/Sidebar";
 import { IoIosArrowRoundBack } from "react-icons/io";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { IoIosSearch } from "react-icons/io";
 import api from "../../api/api";
 import { MdOutlineQrCodeScanner } from "react-icons/md";
@@ -512,6 +512,8 @@ function AddItem() {
     return () => window.removeEventListener("resize", calculateHeight);
   }, []);
 console.log(location);
+
+
   const continueHandler = () => {
     console.log(location.state);
     if (location?.state?.from === "editInvoice") {
@@ -541,9 +543,7 @@ console.log(location);
           <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex justify-between  items-center gap-2  ">
             <div className="flex items-center gap-2">
               <IoIosArrowRoundBack
-                // onClick={() => {
-                //   navigate("/pUsers/invoice");
-                // }}
+            
                 onClick={backHandler}
                 className="text-3xl text-white cursor-pointer"
               />

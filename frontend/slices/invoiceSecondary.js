@@ -81,11 +81,37 @@ export const invoiceSliceSecondary = createSlice({
     removeAll: (state) => {
       Object.assign(state, initialState);
     },
-    persistScroll:(state,action)=>{
-
-      state.persistScrollId=action.payload
-
-    }
+    persistScroll: (state, action) => {
+      state.persistScrollId = action.payload;
+    },
+    setBrandInRedux: (state, action) => {
+      state.brand = action.payload;
+    },
+    setCategoryInRedux: (state, action) => {
+      state.category = action.payload;
+    },
+    setSubCategoryInRedux: (state, action) => {
+      state.subcategory = action.payload;
+    },
+    setParty:(state,action)=>{
+      state.party=action.payload
+    },
+    setItem:(state,action)=>{
+      state.items=action.payload
+    },
+    setSelectedPriceLevel:(state,action)=>{
+      state.selectedPriceLevel=action.payload
+    },
+    setAdditionalCharges:(state,action)=>{
+      state.additionalCharges=action.payload
+    },
+    setFinalAmount:(state,action)=>{
+      state.finalAmount=action.payload
+    },
+    
+    saveId:(state,action)=>{
+      state.id=action.payload
+    },
   },
 });
 
@@ -104,7 +130,16 @@ export const {
   deleteRow,
   removeAll,
   removeAdditionalCharge,
-  persistScroll
+  persistScroll,
+  setBrandInRedux,
+  setCategoryInRedux,
+  setSubCategoryInRedux,
+  setParty,
+  setItem,
+  setSelectedPriceLevel,
+  setFinalAmount,
+  setAdditionalCharges,
+  saveId
 } = invoiceSliceSecondary.actions;
 
 export default invoiceSliceSecondary.reducer;

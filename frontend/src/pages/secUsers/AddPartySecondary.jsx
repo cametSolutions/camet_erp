@@ -6,6 +6,7 @@ import { useSelector } from "react-redux";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import { Link } from "react-router-dom";
 import SidebarSec from "../../components/secUsers/SidebarSec";
+import { useNavigate } from "react-router-dom";
 
 function AddPartySecondary() {
   const [tab, setTab] = useState("business");
@@ -28,6 +29,8 @@ function AddPartySecondary() {
   const companytId = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
+
+  const navigate=useNavigate()
   const user = JSON.parse(localStorage.getItem("sUserData"));
   const userId = user._id;
   useEffect(() => {
@@ -106,20 +109,7 @@ function AddPartySecondary() {
       });
 
       toast.success(res.data.message);
-      setCmp_id("");
-      setSecondary_user_id("");
-      setAccountGroup("");
-      setPartyName("");
-      setMobileNumber("");
-      setEmailID("");
-      setGstNo("");
-      setPanNo("");
-      setBillingAddress("");
-      setShippingAddress("");
-      setCreditPeriod("");
-      setCreditLimit("");
-      setOpeningBalanceType("");
-      setOpeningBalanceAmount("");
+  navigate('/sUsers/partylist')
     } catch (error) {
       toast.error(error.response.data.message);
       console.log(error);
@@ -432,7 +422,7 @@ function AddPartySecondary() {
                     type="button"
                     onClick={submitHandler}
                   >
-                    Add
+                    Update
                   </button>
                 </form>
               </div>

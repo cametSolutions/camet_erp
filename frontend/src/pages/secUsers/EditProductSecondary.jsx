@@ -248,7 +248,6 @@ function EditProductSecondary() {
      
         } = res.data.data;
 
-        console.log(Priceleveles);
 
         setProduct_name(product_name);
         setProduct_code(product_code);
@@ -264,10 +263,10 @@ function EditProductSecondary() {
         setSelectedCategory(category);
         setSelectedSubCategory(sub_category);
 
-        // const hsnDetails = hsn.filter((el) => el.hsn === hsn_code);
-        // const hsnId = hsnDetails[0]._id;
+        const hsnDetails = hsn.filter((el) => el.hsn === hsn_code);
+        const hsnId = hsnDetails[0]._id;
 
-        // setHsn_code(hsnId);
+        setHsn_code(hsnId);
 
 
         console.log(Priceleveles);

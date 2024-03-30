@@ -4,11 +4,13 @@ import { useEffect, useState } from "react";
 import api from "../../api/api";
 import dayjs from "dayjs";
 import { IoArrowRedoOutline } from "react-icons/io5";
-import { IoReorderThreeSharp } from "react-icons/io5";
+import { IoIosArrowRoundBack } from "react-icons/io";
 import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { FcCancel } from "react-icons/fc";
+import { FaRegCircleDot } from "react-icons/fa6";
+
 
 function Transaction() {
   const [data, setData] = useState([]);
@@ -28,13 +30,13 @@ function Transaction() {
   useEffect(() => {
     const fetchTransactions = async () => {
       try {
-        const res = await api.get(`/api/sUsers/transactions`, {
+        const res = await api.get(`/api/sUsers/transactions/${org._id}`, {
           withCredentials: true,
         });
 
         console.log(res.data);
 
-        setData(res.data.data.transactions);
+        setData(res.data.data.combined);
 
         // dispatch(addData(res.data.outstandingData));
       } catch (error) {
@@ -47,7 +49,7 @@ function Transaction() {
   console.log(data);
 
   const filterOutstanding = (data) => {
-    return data.filter((item) => {
+    return data?.filter((item) => {
       const searchFilter = item.party_name
         ?.toLowerCase()
         .includes(search.toLowerCase());
@@ -55,9 +57,8 @@ function Transaction() {
       const dateFilterCondition =
         !dateFilter || item.createdAt?.startsWith(dateFilter);
 
-      const companyFilter = item.cmp_id === org._id;
 
-      return searchFilter && dateFilterCondition && companyFilter;
+      return searchFilter && dateFilterCondition ;
     });
   };
 
@@ -80,29 +81,28 @@ function Transaction() {
   //   }
   // };
 
-  const handleToggleSidebar = () => {
-    if (window.innerWidth < 768) {
-      setShowSidebar(!showSidebar);
-    }
-  };
 
   console.log(data);
 
   return (
-    <div className="flex">
+    <div className="flex h-screen overflow-hidden">
       <div>
         <SidebarSec TAB={"transaction"} showBar={showSidebar} />
       </div>
       <div className="flex-1">
-        <div className=" flex-1  lg:px-[110px] h-screen overflow-y-scroll  md:mt-4 pb-   ">
+        <div className=" flex-1   h-screen overflow-y-scroll ">
           <div className="sticky top-0 flex flex-col z-30 bg-white">
             <div className="bg-white"></div>
             <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex items-center gap-2  ">
-              <IoReorderThreeSharp
-                onClick={handleToggleSidebar}
-                className="block md:hidden text-white text-3xl"
-              />
-              <p className="text-white text-lg   font-bold ">Transactions</p>
+              {/* <IoReorderThreeSharp
+              onClick={handleToggleSidebar}
+              className="block md:hidden text-white text-3xl"
+            /> */}
+              <Link to={"/sUsers/dashboard"}>
+                <IoIosArrowRoundBack className="text-3xl text-white cursor-pointer md:hidden" />
+              </Link>
+
+              <p className="text-white text-lg   font-bold  ">Receipts</p>
             </div>
             <div className=" mt-0 shadow-lg p-2 md:p-0">
               <form>
@@ -151,7 +151,7 @@ function Transaction() {
                 <div className="">
                   <input
                     type="date"
-                    className=" bg-blue-300 p-1 m-4 rounded-md"
+                    className=" bg-blue-300 p-0 px-3 m-4 rounded-md"
                     value={dateFilter}
                     onChange={(e) => setDateFilter(e.target.value)}
                   />
@@ -160,18 +160,28 @@ function Transaction() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 mt-6 text-center pb-7  ">
-            {finalData.map((el, index) => (
-              // <Link  to={`/sUsers/receiptDetails/${el._id}`}>
+          <div className="grid grid-cols-1 gap-4  text-center pb-7 mt-5 md:px-8 ">
+            {finalData?.map((el, index) => (
               <div
                 key={index}
                 onClick={() => {
-                  navigate(`/sUsers/receiptDetails/${el._id}`);
+                  // navigate(`/sUsers/receiptDetails/${el._id}`);
+                  navigate(el.type==="Receipt"?`/sUsers/receiptDetails/${el._id}`:`/sUsers/InvoiceDetails/${el._id}`)
                 }}
                 className={`${
                   el?.isCancelled ? "bg-gray-200 pointer-events-none " : ""
                 } bg-[#f8ffff] cursor-pointer rounded-md shadow-xl border border-gray-100 flex flex-col justify-between px-4 transition-all duration-150 transform hover:scale-105 ease-in-out`}
               >
+                <div className=" flex justify-start text-xs mt-2 ">
+                  <div className={` ${el.type==="Receipt" ? "bg-[#FB6D48]" :"bg-[#3ed57a]" }   flex items-center text-white px-2 rounded-sm `}>
+                    <FaRegCircleDot />
+                    <p className=" p-1  rounded-lg px-3 font-semibold">
+                      {" "}
+                    {el.type}
+                    </p>
+                  </div>
+                </div>
+
                 <div className="flex justify-between ">
                   <div className=" h-full px-2 py-4  lg:p-6 w-[150px] md:w-[180px] lg:w-[300px] flex justify-center items-start relative flex-col ">
                     <p className="font-bold md:font-semibold text-[11.3px] md:text-[15px] text-left mb-3 ">

@@ -160,16 +160,7 @@ function ProductList() {
           <div className="flex justify-between w-full gap-3 ">
             <div className="">
               <p className="font-bold text-sm">{el?.product_name}</p>
-              {/* {el.product_code && (
-                <div className="flex">
-                  <p className="mt-2 font-bold text-sm">
-                    code :
-                  </p>
-                  <p className="font-medium mt-2 text-gray-500 text-sm">
-                    {el?.product_code}
-                  </p>
-                </div>
-              )} */}
+          
             </div>
             <div
               className={` ${

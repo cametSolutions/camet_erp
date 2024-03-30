@@ -17,6 +17,11 @@ import SidebarSec from "../../components/secUsers/SidebarSec";
 import { useNavigate } from "react-router-dom";
 import { FcCancel } from "react-icons/fc";
 import { BiSolidAddToQueue } from "react-icons/bi";
+import { useDispatch } from "react-redux";
+import { removeAll } from "../../../slices/invoiceSecondary";
+
+
+
 
 
 
@@ -29,7 +34,7 @@ function Dashboard() {
   const org = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
-  console.log(org);
+  const dispatch=useDispatch()
 
   const handleToggleSidebar = () => {
     if (window.innerWidth < 768) {
@@ -40,13 +45,13 @@ function Dashboard() {
   useEffect(() => {
     const fetchTransactions = async () => {
       try {
-        const res = await api.get(`/api/sUsers/transactions`, {
+        const res = await api.get(`/api/sUsers/transactions/${org._id}`, {
           withCredentials: true,
         });
 
         console.log(res.data);
 
-        setData(res.data.data.transactions);
+        setData(res.data.data.combined);
 
         // dispatch(addData(res.data.outstandingData));
       } catch (error) {
@@ -54,6 +59,8 @@ function Dashboard() {
       }
     };
     fetchTransactions();
+    dispatch(removeAll())
+
   }, []);
 
   console.log(data);
@@ -61,25 +68,22 @@ function Dashboard() {
   const today = new Date();
 
   // Filter data based on today's date
-  const filteredData = data.filter((item) => {
-    const companyFilter = item.cmp_id === org?._id;
+  const filteredData = data?.filter((item) => {
     const createdAtDate = new Date(item.createdAt);
     return (
-      createdAtDate.toDateString() === today.toDateString() && companyFilter
+      createdAtDate.toDateString() === today.toDateString() 
     );
   });
 
-  const receiptTotal = filteredData.reduce((acc, curr) => {
+  const receiptTotal = filteredData?.reduce((acc, curr) => {
     if (!curr.isCancelled) {
-      return (acc = acc + curr.enteredAmount);
+      return (acc = acc + parseFloat(curr.enteredAmount));
     } else {
       return acc;
     }
   }, 0);
 
-  console.log(receiptTotal);
 
-  console.log(filteredData);
   return (
     <div className="flex bg-[#f9fdff]  ">
       <div>
@@ -111,18 +115,18 @@ function Dashboard() {
           </div>
           <div className="grid grid-cols-2 lg:grid-cols-4 p-6 lg:px-12 gap-4 md:gap-6 bg-white  ">
             <Link to={"/sUsers/transaction"}>
-              <div className="flex flex-wrap -mx-6   duration-150 hover:scale-105 ease-in-out cursor-pointer ">
+              <div className="flex flex-wrap -mx-6   duration-150 hover:scale-105 ease-in-out cursor-pointer  ">
                 <div className="w-full px-6 ">
-                  <div className="flex items-center px-2 py-3 md:px-5 md:py-2 shadow-sm rounded-md bg-slate-100">
+                  <div className="flex items-center px-2 py-3 md:px-5 md:py-2 shadow-sm rounded-md bg-slate-100 h-24">
                     <div className="p-3 rounded-full bg-green-500 bg-opacity-75 text-2xl text-white">
                       <BiSolidAddToQueue />
                     </div>
 
-                    <div className="mx-5">
-                      <h4 className=" sm:text-md md:text-2xl  font-semibold text-gray-700">
-                        ₹{receiptTotal}
+                    <div className="mx-2 md:mx-5">
+                      <h4 className=" sm:text-md md:text-lg  font-semibold text-gray-700">
+                        ₹{receiptTotal.toFixed(2)}
                       </h4>
-                      <div className="text-gray-500  text-sm "> Receipt Register</div>
+                      <div className="text-gray-500  text-[15px] ">Transactions</div>
                     </div>
                   </div>
                 </div>
@@ -131,52 +135,53 @@ function Dashboard() {
             <Link to={"/sUsers/outstanding"}>
               <div className="flex flex-wrap -mx-6  duration-150 hover:scale-105 ease-in-out cursor-pointer">
                 <div className="w-full px-6 ">
-                  <div className="flex items-center px-2 py-3 md:px-5 md:py-2 shadow-sm rounded-md bg-slate-100">
+                  <div className="flex items-center px-2 py-3 md:px-5 md:py-2 shadow-sm rounded-md bg-slate-100 h-24">
                     <div className="p-3 rounded-full bg-red-500 bg-opacity-75 text-2xl text-white">
                       <IoReceiptSharp />
                     </div>
 
                     <div className="mx-5 py-2.5">
-                      <h4 className=" sm:text-md md:text-2xl  font-semibold text-gray-700">
+                      {/* <h4 className=" sm:text-md md:text-2xl  font-semibold text-gray-700">
                         ₹0
-                      </h4>
-                      <div className="text-gray-500 text-sm">Reciept</div>
+                      </h4> */}
+                      <div className="text-gray-500 text-md">Reciept</div>
                     </div>
                   </div>
                 </div>
               </div>
             </Link>
-            <Link to={'/sUsers/invoice'}>
+           
+            {/* <Link to={"/Users/invoiceList"}> */}
             <div className="flex flex-wrap -mx-6  duration-150 hover:scale-105 ease-in-out cursor-pointer">
               <div className="w-full px-6 ">
-                <div className="flex items-center px-2 py-3 md:px-5 md:py-2 shadow-sm rounded-md bg-slate-100">
-                  <div className="p-3 rounded-full bg-blue-500 bg-opacity-75 text-2xl text-white">
-                    <HiDocumentText />
-                  </div>
-
-                  <div className="mx-5 py-2.5">
-                    <h4 className=" sm:text-md md:text-2xl  font-semibold text-gray-700">
-                      ₹0
-                    </h4>
-                    <div className="text-gray-500 text-sm">Sale Order </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            </Link>
-            <Link to={"/sUsers/invoiceList"}>
-            <div className="flex flex-wrap -mx-6  duration-150 hover:scale-105 ease-in-out cursor-pointer">
-              <div className="w-full px-6 ">
-                <div className="flex items-center px-2 py-3 md:px-5 md:py-2 shadow-sm rounded-md bg-slate-100">
+                <div className="flex items-center px-2 py-3 md:px-5 md:py-2 shadow-sm rounded-md bg-slate-100 h-24">
                   <div className="p-3 rounded-full bg-orange-500 bg-opacity-75 text-2xl  text-white">
                     <FaCartArrowDown />
                   </div>
 
                   <div className="mx-5 ">
-                    <h4 className=" sm:text-md md:text-2xl  font-semibold text-gray-700">
+                    {/* <h4 className=" sm:text-md md:text-2xl  font-semibold text-gray-700">
                       ₹0
-                    </h4>
-                    <div className="text-gray-500 text-sm">Order Register</div>
+                    </h4> */}
+                    <div className="text-gray-500 text-sm">Order </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            {/* </Link> */}
+            <Link to={'/sUsers/invoice'} >
+            <div className="flex flex-wrap -mx-6  duration-150 hover:scale-105 ease-in-out cursor-pointer">
+              <div className="w-full px-6 ">
+                <div className="flex items-center px-2 py-3 md:px-5 md:py-2 shadow-sm rounded-md bg-slate-100 h-24" >
+                  <div className="p-3 rounded-full bg-blue-500 bg-opacity-75 text-2xl text-white">
+                    <HiDocumentText />
+                  </div>
+
+                  <div className="mx-5 py-2.5">
+                    {/* <h4 className=" sm:text-md md:text-2xl  font-semibold text-gray-700">
+                      ₹0
+                    </h4> */}
+                    <div className="text-gray-500 text-md">Sale Order </div>
                   </div>
                 </div>
               </div>
@@ -200,18 +205,28 @@ function Dashboard() {
 
         <div className="z-0 p-3 md:p-5 lg:p-6">
           {/* one */}
-          <div className="grid grid-cols-1 gap-4  text-center pb-7  ">
-            {filteredData.map((el, index) => (
-              // <Link key={index} to={`/sUsers/receiptDetails/${el._id}`} >
+          <div className="grid grid-cols-1 gap-4  text-center pb-7 mt-5 md:px-8 ">
+            {filteredData?.map((el, index) => (
               <div
                 key={index}
                 onClick={() => {
-                  navigate(`/sUsers/receiptDetails/${el._id}`);
-                }}
+                  const navigationPath = el.type === "Receipt" ? `/sUsers/receiptDetails/${el._id}` : `/sUsers/InvoiceDetails/${el._id}`;
+                  navigate(navigationPath, { state: {from:"dashboard" } });
+                 }}
                 className={`${
                   el?.isCancelled ? "bg-gray-200 pointer-events-none " : ""
                 } bg-[#f8ffff] cursor-pointer rounded-md shadow-xl border border-gray-100 flex flex-col justify-between px-4 transition-all duration-150 transform hover:scale-105 ease-in-out`}
               >
+                <div className=" flex justify-start text-xs mt-2 ">
+                  <div className={` ${el.type==="Receipt" ? "bg-[#FB6D48]" :"bg-[#3ed57a]" }   flex items-center text-white px-2 rounded-sm `}>
+                    {/* <FaRegCircleDot /> */}
+                    <p className=" p-1  rounded-lg px-3 font-semibold">
+                      {" "}
+                    {el.type}
+                    </p>
+                  </div>
+                </div>
+
                 <div className="flex justify-between ">
                   <div className=" h-full px-2 py-4  lg:p-6 w-[150px] md:w-[180px] lg:w-[300px] flex justify-center items-start relative flex-col ">
                     <p className="font-bold md:font-semibold text-[11.3px] md:text-[15px] text-left mb-3 ">
@@ -228,7 +243,7 @@ function Dashboard() {
                   <div className=" h-full p-2 lg:p-6 w-[150px] md:w-[180px] lg:w-[300px] flex justify-center items-end relative flex-col">
                     <div className="flex-col  ">
                       <p className=" font-semibold text-green-600  ">
-                        ₹{el?.enteredAmount}
+                        ₹{el.enteredAmount}
                       </p>
                     </div>
                   </div>
@@ -262,7 +277,6 @@ function Dashboard() {
                   </div>
                 </div>
               </div>
-              // </Link>
             ))}
           </div>
           {/* one */}

@@ -1,7 +1,6 @@
 import { MdOutlineArrowBack } from "react-icons/md";
 import Sidebar from "../../components/homePage/Sidebar";
-import { FaArrowDown } from "react-icons/fa6";
-import { FcCancel } from "react-icons/fc";
+
 import { IoMdShareAlt } from "react-icons/io";
 import { MdTextsms } from "react-icons/md";
 import { useEffect, useState } from "react";
@@ -9,9 +8,8 @@ import { useParams, Link } from "react-router-dom";
 import api from "../../api/api";
 import { toast } from "react-toastify";
 import dayjs from "dayjs";
-import Swal from "sweetalert2";
 import { FaEdit } from "react-icons/fa";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 function InvoiceDetails() {
   const [data, setData] = useState("");
@@ -19,7 +17,8 @@ function InvoiceDetails() {
 
   const { id } = useParams();
   console.log(id);
-  const navigate=useNavigate()
+  const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const getTransactionDetails = async () => {
@@ -36,44 +35,16 @@ function InvoiceDetails() {
     getTransactionDetails();
   }, [refresh]);
 
-  const handleCancel = async (id) => {
-    const confirmed = await Swal.fire({
-      icon: "warning",
-      title: "Are you sure?",
-      text: "Once cancelled, you cannot undo this action!",
-      showCancelButton: true,
-      confirmButtonColor: "#3085d6",
-      cancelButtonColor: "#d33",
-      confirmButtonText: "Yes, cancel it!",
-    });
-
-    if (confirmed.isConfirmed) {
-      try {
-        const res = await api.post(
-          `/api/pUsers/cancelTransaction/${id}`,
-          {},
-          {
-            withCredentials: true,
-          }
-        );
-
-        await Swal.fire({
-          icon: "success",
-          title: "Success",
-          text: res.data.message,
-        });
-
-        setRefresh(!refresh);
-      } catch (error) {
-        await Swal.fire({
-          icon: "error",
-          title: "Error",
-          text: error.response.data.message,
-        });
-      }
-    }
-  };
+  
   console.log(data);
+  const backHandler = () => {
+    if (location?.state?.from === "dashboard") {
+      navigate("/pUsers/dashboard");
+    }else{
+      navigate("/pUsers/transaction");
+
+    }
+  }
 
   return (
     <div className="flex relative">
@@ -85,9 +56,8 @@ function InvoiceDetails() {
         {/* headinh section  */}
         <div className="flex bg-[#012a4a] items-center justify-between">
           <div className="flex items-center gap-3  text-white text-md p-4 ">
-            <Link to={"/pUsers/transaction"}>
-              <MdOutlineArrowBack className="text-2xl" />
-            </Link>
+          <MdOutlineArrowBack onClick={backHandler} className="text-2xl cursor-pointer" />
+
             <h3 className="font-bold">Order Details</h3>
           </div>
           {/* <div className="text-white mr-4 bg-pink-700 p-0 px-2 rounded-md text-center transition-all duration-150 transform hover:scale-105">
@@ -109,7 +79,7 @@ function InvoiceDetails() {
 
           <div className="hidden md:block">
             <div className="  flex justify-center p-4 gap-12 text-lg text-violet-500 mr-4">
-              <div
+              {/* <div
                 onClick={() => handleCancel(data._id)}
                 disabled={data?.isCancelled}
                 className={`flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110 cursor-pointer ${
@@ -120,7 +90,7 @@ function InvoiceDetails() {
                 <p className="text-black font-bold text-sm">
                   {data?.isCancelled ? "Cancelled" : "Cancel"}
                 </p>
-              </div>
+              </div> */}
               <div
               onClick={()=>navigate(`/pUsers/editInvoice/${data._id}`)}
                className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer">
@@ -207,7 +177,7 @@ function InvoiceDetails() {
 
         <div className=" block md:hidden ">
           <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 flex justify-center p-4 gap-12 text-lg text-violet-500  ">
-            <div
+            {/* <div
               onClick={() => handleCancel(data?._id)}
               disabled={data?.isCancelled}
               className={`flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110 cursor-pointer ${
@@ -218,8 +188,11 @@ function InvoiceDetails() {
               <p className="text-black font-bold text-sm">
                 {data?.isCancelled ? "Cancelled" : "Cancel"}
               </p>
-            </div>
-            <div className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer">
+            </div> */}
+            <div 
+              onClick={()=>navigate(`/pUsers/editInvoice/${data._id}`)}
+
+            className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer">
                 <FaEdit className="text-blue-500" />
                 <p className="text-black font-bold text-sm">Edit</p>
               </div>

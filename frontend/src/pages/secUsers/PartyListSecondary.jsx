@@ -15,6 +15,8 @@ import { IoIosSearch } from "react-icons/io";
 import { FixedSizeList as List } from "react-window";
 import { IoIosAddCircle } from "react-icons/io";
 import SidebarSec from "../../components/secUsers/SidebarSec";
+import { useDispatch } from "react-redux";
+import { removeAll } from "../../../slices/invoiceSecondary";
 
 
 
@@ -32,6 +34,12 @@ function PartyListSecondary() {
   const cpm_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
+  const type = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg.type
+  );
+  const dispatch=useDispatch()
+
+
 
   useEffect(() => {
     setLoader(true)
@@ -55,6 +63,8 @@ function PartyListSecondary() {
       }
     };
     fetchParties();
+    dispatch(removeAll())
+
   }, [cpm_id, refresh]);
   useEffect(() => {
     if (search === "") {
@@ -119,12 +129,18 @@ function PartyListSecondary() {
 
   const Row = ({ index, style }) => {
     const el = filteredParty[index];
+    const adjustedStyle = {
+      ...style,
+      marginTop: '16px',
+      height: '150px', 
+   
+   };
     return (
       <>
         <div
           key={index}
-          style={{...style}}
-          className="bg-white p-4 pb-6 drop-shadow-lg mt-4 flex flex-col mx-2 rounded-sm cursor-pointer hover:bg-slate-100  pr-7 h-[120px] "
+          style={adjustedStyle}
+          className="bg-white p-4 pb-6 drop-shadow-lg mt-4 flex flex-col mx-2 rounded-sm cursor-pointer hover:bg-slate-100  pr-7 "
         >
           <div className="flex justify-between w-full gap-3 ">
             <div className="">
@@ -140,61 +156,65 @@ function PartyListSecondary() {
                 </div>
               )}
             </div>
-            <div className=" flex flex-col justify-center gap-2">
-              <div className="flex gap-2 text-nowrap">
-                <p className="font-bold">Mobile :</p>
-                <p className="font-semibold text-gray-500"> {el?.mobileNumber}</p>
-              </div>
+            <div className={` ${type!=="self" ? "pointer-events-none cursor-default opacity-50" : ""} flex justify-center items-center gap-4`}>
+              <Link to={`/sUsers/editParty/${el._id}`}>
+                <FaEdit className="text-blue-500" />
+              </Link>
+              <MdDelete
+                onClick={() => {
+                  deleteHandler(el._id);
+                }}
+                className="text-red-500"
+              />
               {/* <div className="flex gap-2 ">
                 <p className="font-bold">Email :</p>
                 <p className="font-bold text-green-500"> {`${el?.emailID} %`}</p>
               </div> */}
             </div>
           </div>
-          <div className="flex gap-3 mt-2 ">
-          <Link to={`/sUsers/editParty/${el._id}`}>
-
-              <FaEdit className="text-blue-500" />
-            </Link>
-
-            <MdDelete
-            onClick={() => {
-              deleteHandler(el._id);
-            }}
-
-              className="text-red-500"
-            />
+          <div className="flex gap-2 text-nowrap text-sm mt-1">
+            <p className="font-semibold">Mobile :</p>
+            <p className="font-semibold text-gray-500"> {el?.mobileNumber}</p>
           </div>
 
           <hr className="mt-6" />
-          
         </div>
       </>
     );
   };
 
-
-
   return (
     <div className="flex relative h-screen ">
-    <div>
-      <SidebarSec TAB={"invoice"} showBar={showSidebar} />
-    </div>
+      <div>
+        <SidebarSec TAB={"addParty"} showBar={showSidebar} />
+      </div>
 
-    <div className="flex-1 bg-slate-50 overflow-y-scroll ">
-      <div className="sticky top-0 z-20">
-        <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex  items-center gap-2   ">
-          <IoReorderThreeSharp
-            onClick={handleToggleSidebar}
-            className="text-3xl text-white cursor-pointer md:hidden"
-          />
-          <p className="text-white text-lg   font-bold ">Your Parties</p>
-        </div>
+      <div className="flex-1 bg-slate-50 overflow-y-scroll ">
+        <div className="sticky top-0 z-20">
+          <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3  flex justify-between items-center  ">
+            <div className="flex items-center justify-center gap-2">
+              <IoReorderThreeSharp
+                onClick={handleToggleSidebar}
+                className="text-3xl text-white cursor-pointer md:hidden"
+              />
+              <p className="text-white text-lg   font-bold ">Your Customers</p>
+            </div>
+            <div>
+              {type === "self" && (
+                <Link to={"/sUsers/addParty"}>
+                  <button className="flex items-center gap-2 text-white bg-[#40679E] px-2 py-1 rounded-md text-sm  hover:scale-105 duration-100 ease-in-out ">
+                    <IoIosAddCircle className="text-xl" />
+                    Add Customers
+                  </button>
+                </Link>
+              )}
+            </div>
+          </div>
 
-        {/* invoiec date */}
-        <div className=" p-4  bg-white drop-shadow-lg">
-          <div className="flex justify-between  items-center">
-            {/* <div className=" flex flex-col gap-1 justify-center">
+          {/* invoiec date */}
+          <div className=" p-4  bg-white drop-shadow-lg">
+            <div className="flex justify-between  items-center">
+              {/* <div className=" flex flex-col gap-1 justify-center">
           <p className="text-md font-semibold text-violet-400">
             Search Parties
           </p>
@@ -203,89 +223,85 @@ function PartyListSecondary() {
           <p className="text-pink-500 m-2 cursor-pointer  ">Cancel</p>
           <MdCancel className="text-pink-500" />
         </div> */}
-          </div>
-          <div className=" md:w-1/2 ">
-            {/* search bar */}
-            <div className="relative  ">
-              <div className="absolute inset-y-0 start-0 flex items-center  pointer-events-none ">
-                <svg
-                  className="w-4 h-4 text-gray-500 "
-                  aria-hidden="true"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    stroke="currentColor"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"
-                  />
-                </svg>
-              </div>
-              <div class="relative">
-                <input
-                  onChange={(e) => setSearch(e.target.value)}
-                  value={search}
-                  type="search"
-                  id="default-search"
-                  class="block w-full p-2  text-sm text-gray-900 border  rounded-lg border-gray-300  bg-gray-50 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Search party by name..."
-                  required
-                />
-                <button
-                  type="submit"
-                  class="text-white absolute end-[10px] top-1/2 transform -translate-y-1/2 bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-md px-2 py-1"
-                >
-                  <IoIosSearch />
-                </button>
-              </div>
             </div>
+            <div className=" md:w-1/2 ">
+              {/* search bar */}
+              <div className="relative  ">
+                <div className="absolute inset-y-0 start-0 flex items-center  pointer-events-none ">
+                  <svg
+                    className="w-4 h-4 text-gray-500 "
+                    aria-hidden="true"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      stroke="currentColor"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"
+                    />
+                  </svg>
+                </div>
+                <div class="relative">
+                  <input
+                    onChange={(e) => setSearch(e.target.value)}
+                    value={search}
+                    type="search"
+                    id="default-search"
+                    class="block w-full p-2  text-sm text-gray-900 border  rounded-lg border-gray-300  bg-gray-50 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Search party by name..."
+                    required
+                  />
+                  <button
+                    type="submit"
+                    class="text-white absolute end-[10px] top-1/2 transform -translate-y-1/2 bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-md px-2 py-1"
+                  >
+                    <IoIosSearch />
+                  </button>
+                </div>
+              </div>
 
-            {/* search bar */}
+              {/* search bar */}
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* adding party */}
+        {/* adding party */}
 
-      {loader ? (
-        <div className="flex justify-center items-center h-screen">
-          <HashLoader color="#363ad6" />
-        </div>
-      ) : parties.length > 0 ? (
-        <div
-          style={{
-            scrollbarWidth: "thin",
-            scrollbarColor: "transparent transparent",
-          }}
-        >
-          <List
-            className=""
-            height={500} // Specify the height of your list
-            itemCount={filteredParty.length} // Specify the total number of items
-            itemSize={150} // Specify the height of each item
-            width="100%" // Specify the width of your list
+        {loader ? (
+          <div className="flex justify-center items-center h-screen">
+            <HashLoader color="#363ad6" />
+          </div>
+        ) : parties.length > 0 ? (
+          <div
+            style={{
+              scrollbarWidth: "thin",
+              scrollbarColor: "transparent transparent",
+            }}
           >
-            {Row}
-          </List>
-        </div>
-      ) : (
-        <div className="font-bold flex justify-center items-center mt-12 text-gray-500">
-          No Parties !!!
-        </div>
-      )}
+            <List
+              className=""
+              height={500} // Specify the height of your list
+              itemCount={filteredParty.length} // Specify the total number of items
+              itemSize={160} // Specify the height of each item
+              width="100%" // Specify the width of your list
+            >
+              {Row}
+            </List>
+          </div>
+        ) : (
+          <div className="font-bold flex justify-center items-center mt-12 text-gray-500">
+            No Parties !!!
+          </div>
+        )}
 
-      <Link to={"/sUsers/addParty"} className="flex justify-center">
-        <div className=" px-4  absolute bottom-2 text-white bg-violet-700 rounded-3xl p-2 flex items-center justify-center gap-2 hover_scale cursor-pointer ">
-          <IoIosAddCircle className="text-2xl" />
-          <p>Create New Party</p>
-        </div>
-      </Link>
+
+      </div>
     </div>
-  </div>
   );
 }
+
 
 export default PartyListSecondary;

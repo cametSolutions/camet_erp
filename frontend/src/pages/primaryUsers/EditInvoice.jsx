@@ -81,11 +81,7 @@ function EditInvoice() {
     }
   }, []);
   const [subTotal, setSubTotal] = useState(0);
-  const handleToggleSidebar = () => {
-    if (window.innerWidth < 768) {
-      setShowSidebar(!showSidebar);
-    }
-  };
+
 
 console.log(id);
 
@@ -219,7 +215,7 @@ console.log(id);
         dispatch(setFinalAmount(finalAmount));
         setOrderNumber(orderNumber);
 
-        if (additionalCharges && additionalCharges.length > 0) {
+        if (additionalCharges && additionalCharges.length > 0 && additionalChargesFromRedux.length ==0) {
           setAdditional(true);
 
           const newRows = additionalCharges.map((el, index) => {
@@ -397,7 +393,7 @@ console.log(InvoiceIdForEdit);
             onClick={handleToggleSidebar}
             className="block md:hidden text-white text-3xl"
           /> */}
-          <Link to={"/pUsers/dashboard"}>
+          <Link to={`/pUsers/InvoiceDetails/${id}`}>
             <IoIosArrowRoundBack className="text-3xl text-white cursor-pointer md:hidden" />
           </Link>
           <p className="text-white text-lg   font-bold ">
@@ -478,12 +474,18 @@ console.log(InvoiceIdForEdit);
 
           {Object.keys(party).length === 0 ? (
             <div className="mt-3 p-6 border border-gray-300 h-10 rounded-md flex  cursor-pointer justify-center   items-center font-medium text-violet-500">
-              <Link to={"/pUsers/searchParty"}>
-                <div className="flex justify-center gap-2 hover_scale text-base ">
+          
+                <button 
+                   onClick={() => {
+                    navigate(`/pUsers/searchParty`, {
+                      state: { from: "editInvoice", id: id },
+                    });
+                  }}
+                className="flex justify-center gap-2 hover_scale text-base ">
                   <IoMdAdd className="text-2xl" />
                   <p>Add Party Name</p>
-                </div>
-              </Link>
+                </button>
+           
             </div>
           ) : (
             <div className="mt-3 p-3 py-2 border  border-gray-300  rounded-md   cursor-pointer items-center font-medium flex justify-between gap-4">

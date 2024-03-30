@@ -68,6 +68,9 @@ import EditSecUsers from '../pages/primaryUsers/EditSecUsers'
 import InvoiceDetails from '../pages/primaryUsers/InvoiceDetails'
 import EditInvoice from '../pages/primaryUsers/EditInvoice'
 import ShareInvoice from '../pages/primaryUsers/ShareInvoice'
+import InvoiceDetailsSecondary from '../pages/secUsers/InvoiceDetailsSecondary'
+import EditInvoiceSecondary from '../pages/secUsers/EditInvoiceSecondary'
+import ShareInvoiceSecondary from '../pages/secUsers/ShareInvoiceSecondary'
 
 
 
@@ -150,6 +153,9 @@ const Routers = () => {
         <Route path='/sUsers/editParty/:id' element={<ProtectedSecRoute><EditPartySecondary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/addProduct' element={<ProtectedSecRoute><AddProductSecondary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/editProduct/:id' element={<ProtectedSecRoute><EditProductSecondary/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/InvoiceDetails/:id' element={<ProtectedSecRoute><InvoiceDetailsSecondary/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/editInvoice/:id' element={<ProtectedSecRoute><EditInvoiceSecondary/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/shareInvoice/:id' element={<ProtectedSecRoute><ShareInvoiceSecondary/></ProtectedSecRoute>}></Route>
 
 
 
