@@ -393,7 +393,7 @@ console.log(InvoiceIdForEdit);
             onClick={handleToggleSidebar}
             className="block md:hidden text-white text-3xl"
           /> */}
-                    <Link to={`/pUsers/InvoiceDetails/${id}`}>
+                    <Link to={`/sUsers/InvoiceDetails/${id}`}>
 
             <IoIosArrowRoundBack className="text-3xl text-white cursor-pointer md:hidden" />
           </Link>

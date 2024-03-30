@@ -35,16 +35,14 @@ function InvoiceDetails() {
     getTransactionDetails();
   }, [refresh]);
 
-  
   console.log(data);
   const backHandler = () => {
     if (location?.state?.from === "dashboard") {
       navigate("/pUsers/dashboard");
-    }else{
+    } else {
       navigate("/pUsers/transaction");
-
     }
-  }
+  };
 
   return (
     <div className="flex relative">
@@ -56,7 +54,10 @@ function InvoiceDetails() {
         {/* headinh section  */}
         <div className="flex bg-[#012a4a] items-center justify-between">
           <div className="flex items-center gap-3  text-white text-md p-4 ">
-          <MdOutlineArrowBack onClick={backHandler} className="text-2xl cursor-pointer" />
+            <MdOutlineArrowBack
+              onClick={backHandler}
+              className="text-2xl cursor-pointer"
+            />
 
             <h3 className="font-bold">Order Details</h3>
           </div>
@@ -92,16 +93,17 @@ function InvoiceDetails() {
                 </p>
               </div> */}
               <div
-              onClick={()=>navigate(`/pUsers/editInvoice/${data._id}`)}
-               className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer">
+                onClick={() => navigate(`/pUsers/editInvoice/${data._id}`)}
+                className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer"
+              >
                 <FaEdit className="text-blue-500" />
                 <p className="text-black font-bold text-sm">Edit</p>
               </div>
               <Link to={`/pUsers/shareInvoice/${data._id}`}>
-              <div className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer">
-                <IoMdShareAlt />
-                <p className="text-black font-bold text-sm">Share</p>
-              </div>
+                <div className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer">
+                  <IoMdShareAlt />
+                  <p className="text-black font-bold text-sm">Share</p>
+                </div>
               </Link>
               <div className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer">
                 <MdTextsms className="text-green-500" />
@@ -189,17 +191,19 @@ function InvoiceDetails() {
                 {data?.isCancelled ? "Cancelled" : "Cancel"}
               </p>
             </div> */}
-            <div 
-              onClick={()=>navigate(`/pUsers/editInvoice/${data._id}`)}
-
-            className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer">
-                <FaEdit className="text-blue-500" />
-                <p className="text-black font-bold text-sm">Edit</p>
-              </div>
-            <div className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer">
-              <IoMdShareAlt />
-              <p className="text-black font-bold text-sm">Share</p>
+            <div
+              onClick={() => navigate(`/pUsers/editInvoice/${data._id}`)}
+              className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer"
+            >
+              <FaEdit className="text-blue-500" />
+              <p className="text-black font-bold text-sm">Edit</p>
             </div>
+            <Link to={`/pUsers/shareInvoice/${data._id}`}>
+              <div className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer">
+                <IoMdShareAlt />
+                <p className="text-black font-bold text-sm">Share</p>
+              </div>
+            </Link>
             <div className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer">
               <MdTextsms className="text-green-500" />
               <p className="text-black font-bold text-sm">Sms</p>

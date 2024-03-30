@@ -36,7 +36,7 @@ function ShareInvoice() {
        // Update the state with the cmp_id
 
         // Fetch company details using the cmp_id
-        const companyDetails = await api.get(`/api/sUsers/getSingleOrganization/${cmpId}`, {
+        const companyDetails = await api.get(`/api/pUsers/getSingleOrganization/${cmpId}`, {
           withCredentials: true,
         });
 
