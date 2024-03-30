@@ -34,6 +34,8 @@ function Dashboard() {
   const org = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
+
+  console.log(org);
   const dispatch=useDispatch()
 
   const handleToggleSidebar = () => {
@@ -56,12 +58,13 @@ function Dashboard() {
         // dispatch(addData(res.data.outstandingData));
       } catch (error) {
         console.log(error);
+        setData([])
       }
     };
     fetchTransactions();
     dispatch(removeAll())
 
-  }, []);
+  }, [org]);
 
   console.log(data);
 

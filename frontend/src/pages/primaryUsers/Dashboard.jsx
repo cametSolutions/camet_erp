@@ -52,7 +52,7 @@ function Dashboard() {
     };
     fetchTransactions();
     dispatch(removeAll())
-  }, []);
+  }, [org]);
 
   console.log(data);
 

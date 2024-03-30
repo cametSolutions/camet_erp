@@ -7,11 +7,12 @@ import { useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { setSecSelectedOrganization ,removeSecSelectedOrg} from "../../../slices/secSelectedOrgSlice";
 import { Link } from "react-router-dom";
-import { GiTakeMyMoney } from "react-icons/gi";
 import { IoReorderThreeSharp } from "react-icons/io5";
 import { MdDashboard } from "react-icons/md";
 import { TiUserAdd } from "react-icons/ti";
 import { MdOutlineProductionQuantityLimits } from "react-icons/md";
+import { RingLoader } from "react-spinners";
+
 
 
 
@@ -25,6 +26,8 @@ function SidebarSec({ TAB,showBar }) {
   const [tab, setTab] = useState("");
   const [dropdown, setDropdown] = useState(false);
   const [org, setOrg] = useState("");
+  const [loader, setLoader] = useState(false);
+
   const navigate = useNavigate();
 
   const dispatch = useDispatch();
@@ -105,19 +108,33 @@ function SidebarSec({ TAB,showBar }) {
   };
 
   const handleDropDownchange = (el) => {
-    console.log(el);
+    // console.log(el);
+    // setDropdown(!dropdown);
+    // setOrg(el);
+    // dispatch(setSecSelectedOrganization(el));
     setDropdown(!dropdown);
-    setOrg(el);
-    dispatch(setSecSelectedOrganization(el));
-  };
+    if (window.innerWidth <= 640) {
+      setShowSidebar(!showSidebar);
+    }
+    setLoader(true);
+    setTimeout(() => {
+      setOrg(el);
+      dispatch(setSecSelectedOrganization(el));
+      navigate("/sUsers/dashboard");
+      setLoader(false);
+
+  }, 1000);
+}
 
 
 
   return (
     <div>
-      <div className={`md:hidden absolute`}>
-     
-      </div>
+       {loader && (
+        <div className=" absolute top-0 w-screen h-screen z-50  flex justify-center items-center bg-black/[0.5]">
+          <RingLoader color="#1c14a0" />
+        </div>
+      )}
 
       <aside
         className={` ${
