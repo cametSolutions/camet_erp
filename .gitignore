@@ -1,3 +1,3 @@
 node_modules
 .env
-/src/api/api.js
+/frontend/src/api/api.js
