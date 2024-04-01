@@ -114,7 +114,7 @@ function AddItem() {
     fetchProducts();
   }, [cpm_id]);
 
-  // console.log("item",item);
+  console.log("item",item);
 
   ///////////////////////////priceLevelSet///////////////////////////////////
 
@@ -180,6 +180,7 @@ function AddItem() {
   //////////////////////////////fetchFilters////////////////////////////////
 
 
+console.log(type);
 
   useEffect(() => {
     const fetchFilters = async () => {

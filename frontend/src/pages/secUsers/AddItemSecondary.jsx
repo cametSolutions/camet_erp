@@ -155,6 +155,12 @@ function AddItemSecondary() {
   const orgId = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
+  const type = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg.type
+  );
+
+  console.log(type);
+
   //////////////////////////////fetchFilters////////////////////////////////
 
   useEffect(() => {
@@ -165,10 +171,21 @@ function AddItemSecondary() {
         });
 
         const { brands, categories, subcategories } = res.data.data;
+        if (type === "self") {
+          setBrands(brands);
+          setCategories(categories);
+          setSubCategories(subcategories);
+        } else {
+          const uniqueBrands = [...new Set(item.map((el) => el?.brand))];
+          const uniqueCategories = [...new Set(item.map((el) => el?.category))];
+          const uniqueSubCategories = [
+            ...new Set(item.map((item) => item?.sub_category)),
+          ];
 
-        setBrands(brands);
-        setCategories(categories);
-        setSubCategories(subcategories);
+          setBrands(uniqueBrands);
+          setCategories(uniqueCategories);
+          setSubCategories(uniqueSubCategories);
+        }
       } catch (error) {
         console.log(error);
       }
@@ -357,11 +374,10 @@ function AddItemSecondary() {
         </div>
         {el.added ? (
           <div className="flex items-center flex-col gap-2">
-           
-           <button
+            <button
               onClick={() => {
                 navigate(`/sUsers/editItem/${el._id}`, {
-                  state: { from: "addItem" ,id:location?.state?.id},
+                  state: { from: "addItem", id: location?.state?.id },
                 });
               }}
               type="button"
@@ -568,76 +584,64 @@ function AddItemSecondary() {
             </div>
           </div>
 
-          <div className="bg-white text-sm font-semibold p-4 flex items-center  gap-10">
-            <Dropdown
-              label={selectedBrand === "" ? "Brand" : selectedBrand}
-              inline
-            >
-              {brands.length > 0 ? (
-                <>
-                  <Dropdown.Item onClick={() => setSelectedBrand("")}>
-                    All
-                  </Dropdown.Item>
-                  {brands.map((el, index) => (
-                    <Dropdown.Item
-                      onClick={() => setSelectedBrand(el)}
-                      key={index}
-                    >
-                      {el}
-                    </Dropdown.Item>
+          <div
+            className="bg-white text-sm font-semibold py-0 px-2 flex items-center justify-evenly z-20 w-full gap-2  "
+            style={{ position: "relative", zIndex: "20" }}
+          >
+            <div className="w-4/12">
+              <select
+                value={selectedBrand}
+                onChange={(e) => {
+                  setSelectedBrand(e.target.value);
+                  dispatch(setBrandInRedux(e.target.value));
+                }}
+                className="full form-select block border-none  py-1.5 text-sm md:text-base font-normal text-gray-700 bg-white bg-clip-padding bg-no-repeat border rounded transition ease-in-out m-0 focus:ring-0 focus:border-none"
+              >
+                <option value="">Brands</option>
+                {brands.length > 0 &&
+                  brands.map((brand, index) => (
+                    <option key={index} value={brand}>
+                      {brand}
+                    </option>
                   ))}
-                </>
-              ) : (
-                <Dropdown.Item>No brands</Dropdown.Item>
-              )}
-            </Dropdown>
+              </select>
+            </div>
 
-            <Dropdown
-              label={selectedCategory === "" ? "Category" : selectedCategory}
-              inline
-            >
-              {categories.length > 0 ? (
-                <>
-                  <Dropdown.Item onClick={() => setseleCtedCategory("")}>
-                    All
-                  </Dropdown.Item>
-                  {categories.map((el, index) => (
-                    <Dropdown.Item
-                      onClick={() => setseleCtedCategory(el)}
-                      key={index}
-                    >
-                      {el}
-                    </Dropdown.Item>
-                  ))}
-                </>
-              ) : (
-                <Dropdown.Item>No Categories</Dropdown.Item>
-              )}
-            </Dropdown>
-            <Dropdown
-              label={
-                selectedSubCategory === "" ? "Subcategory" : selectedSubCategory
-              }
-              inline
-            >
-              {subCategories.length > 0 ? (
-                <>
-                  <Dropdown.Item onClick={() => setSelectedSubCategory("")}>
-                    All
-                  </Dropdown.Item>
-                  {subCategories.map((el, index) => (
-                    <Dropdown.Item
-                      onClick={() => setSelectedSubCategory(el)}
-                      key={index}
-                    >
-                      {el}
-                    </Dropdown.Item>
-                  ))}
-                </>
-              ) : (
-                <Dropdown.Item>No Subcategories</Dropdown.Item>
-              )}
-            </Dropdown>
+            <div className="w-4/12">
+              <select
+                value={selectedCategory}
+                onChange={(e) => {
+                  setseleCtedCategory(e.target.value);
+                  dispatch(setCategoryInRedux(e.target.value));
+                }}
+                className="w-full   form-select block border-none  py-1.5 text-sm md:text-base font-normal text-gray-700 bg-white bg-clip-padding bg-no-repeat border rounded transition ease-in-out m-0 focus:ring-0 focus:border-none"
+              >
+                <option value="">Categories</option>
+                {categories.map((category, index) => (
+                  <option key={index} value={category}>
+                    {category}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="w-4/12">
+              <select
+                value={selectedSubCategory}
+                onChange={(e) => {
+                  setSelectedSubCategory(e.target.value);
+                  dispatch(setSubCategoryInRedux(e.target.value));
+                }}
+                className=" w-full  form-select block  py-1.5 text-sm md:text-base font-normal text-gray-700 bg-white bg-clip-padding bg-no-repeat border  border-none rounded transition ease-in-out m-0 focus:ring-0 focus:border-none "
+              >
+                <option value="">Subcategories</option>
+                {subCategories.map((el, index) => (
+                  <option key={index} value={el}>
+                    {el}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
 

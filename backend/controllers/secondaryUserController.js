@@ -555,11 +555,11 @@ export const getTransactionDetails = async (req, res) => {
 
 export const PartyList = async (req, res) => {
   const cmp_id = req.params.cmp_id;
-  const Secondary_user_id = req.sUserId;
+  const Primary_user_id = req.owner;
   try {
     const partyList = await PartyModel.find({
       cmp_id: cmp_id,
-      Secondary_user_id: Secondary_user_id,
+      Primary_user_id: Primary_user_id,
     });
     console.log("partyList", partyList);
     if (partyList) {
@@ -1311,5 +1311,31 @@ export const editInvoice = async (req, res) => {
       message: "Internal server error, try again!",
       error: error.message, // Include error message for debugging
     });
+  }
+};
+
+
+
+export const fetchFilters = async (req, res) => {
+  const cmp_id = req.params.cmp_id;
+  try {
+    const filers = await OragnizationModel.findById(cmp_id);
+
+    const data = {
+      brands: filers.brands,
+      categories: filers.categories,
+      subcategories: filers.subcategories,
+    };
+
+    if (filers) {
+      return res.status(200).json({ message: "filers fetched", data: data });
+    } else {
+      return res.status(404).json({ message: "filers  not found" });
+    }
+  } catch (error) {
+    console.log(error);
+    return res
+      .status(500)
+      .json({ status: false, message: "Internal server error" });
   }
 };

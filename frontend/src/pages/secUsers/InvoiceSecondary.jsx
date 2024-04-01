@@ -419,7 +419,7 @@ function InvoiceSecondary() {
               {/* <Link to={"/pUsers/addItem"}>  */}
               <div
                 onClick={handleAddItem}
-                className="flex justify-center gap-2 hover_scale "
+                className="flex justify-center gap-2 hover_scale items-center "
               >
                 <IoMdAdd className="text-2xl" />
                 <p className="text-sm">Add Item</p>
@@ -440,7 +440,7 @@ function InvoiceSecondary() {
 
                 <Link to={"/sUsers/addItem"}>
                   <div className=" flex items-center gap-2 font-bold text-violet-500">
-                    <IoMdAdd className="text-2xl" />
+                    <IoMdAdd className="text-xl" />
                     <p>Add Item</p>
                   </div>
                 </Link>
