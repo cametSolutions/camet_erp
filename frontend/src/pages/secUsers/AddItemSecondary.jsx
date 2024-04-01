@@ -191,7 +191,7 @@ function AddItemSecondary() {
       }
     };
     fetchFilters();
-  }, [orgId]);
+  }, [item, orgId, type]);
 
   ///////////////////////////filter items///////////////////////////////////
 
