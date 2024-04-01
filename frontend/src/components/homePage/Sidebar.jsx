@@ -17,6 +17,7 @@ import { TiUserAdd } from "react-icons/ti";
 import { HiDocumentText } from "react-icons/hi2";
 import { MdOutlineProductionQuantityLimits } from "react-icons/md";
 import { RingLoader } from "react-spinners";
+import { GiMoneyStack } from "react-icons/gi";
 
 function Sidebar({ TAB, showBar }) {
   const [showSidebar, setShowSidebar] = useState(false);
@@ -401,6 +402,23 @@ function Sidebar({ TAB, showBar }) {
                   <MdOutlineProductionQuantityLimits />
 
                   <span className="mx-4 font-medium">Products</span>
+                </a>
+              </Link>
+              <Link to={"/pUsers/additionalCharges"}>
+                <a
+                  onClick={() => {
+                    handleSidebarItemClick("outstanding");
+                  }}
+                  className={` ${
+                    TAB === "product"
+                      ? "bg-gray-800 text-white"
+                      : "text-gray-400"
+                  } hover:bg-gray-800 hover:text-white flex items-center px-4 py-2 mt-5 transition-colors duration-300 transform rounded-lg   `}
+                  href="#"
+                >
+                  <GiMoneyStack />
+
+                  <span className="mx-4 font-medium">Additional Charges</span>
                 </a>
               </Link>
             </nav>

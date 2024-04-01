@@ -71,6 +71,7 @@ import ShareInvoice from '../pages/primaryUsers/ShareInvoice'
 import InvoiceDetailsSecondary from '../pages/secUsers/InvoiceDetailsSecondary'
 import EditInvoiceSecondary from '../pages/secUsers/EditInvoiceSecondary'
 import ShareInvoiceSecondary from '../pages/secUsers/ShareInvoiceSecondary'
+import AdditionalCharges from '../pages/primaryUsers/AdditionalCharges'
 
 
 
@@ -120,7 +121,7 @@ const Routers = () => {
         <Route path='/pUsers/InvoiceDetails/:id' element={<ProtectedPriRoute><InvoiceDetails/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/editInvoice/:id' element={<ProtectedPriRoute><EditInvoice/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/shareInvoice/:id' element={<ProtectedPriRoute><ShareInvoice/></ProtectedPriRoute>}></Route>
-
+        <Route path='/pUsers/additionalCharges' element={<ProtectedPriRoute><AdditionalCharges/></ProtectedPriRoute>}></Route>
 
         {/* admin */}
         <Route path='/admin/login' element={<AdminLogin/>}></Route>

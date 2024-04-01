@@ -12,7 +12,7 @@ import { registerPrimaryUser,login,addOrganizations,
   editProduct,PartyList,deleteParty,getSinglePartyDetails,editParty,
   fetchFilters,createInvoice,addBulkProducts,invoiceList,deleteHsn,
   getSingleHsn,editHsn,addBank,getBankDetails,editBank,getSecUserDetails,
-  editSecUSer,saveOrderNumber,getInvoiceDetails,editInvoice} from '../controllers/primaryUserController.js';
+  editSecUSer,saveOrderNumber,getInvoiceDetails,editInvoice,addAditionalCharge} from '../controllers/primaryUserController.js';
 import { singleUpload } from '../multer/multer.js';
 import { primaryIsBlocked } from '../middlewares/isBlocked.js';
 
@@ -67,6 +67,7 @@ router.post('/editSecUSer/:id',authPrimary,primaryIsBlocked,editSecUSer)
 router.post('/saveOrderNumber/:cmp_id',authPrimary,primaryIsBlocked,saveOrderNumber)
 router.get('/getInvoiceDetails/:id',authPrimary,primaryIsBlocked,getInvoiceDetails)
 router.post('/editInvoice/:id',authPrimary,primaryIsBlocked,editInvoice)
+router.post('/addAditionalCharge/:cmp_id',authPrimary,primaryIsBlocked,addAditionalCharge)
 
 
 

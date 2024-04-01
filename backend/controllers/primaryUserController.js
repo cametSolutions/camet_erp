@@ -1905,7 +1905,7 @@ export const getInvoiceDetails = async (req, res) => {
 export const editInvoice = async (req, res) => {
   const Primary_user_id = req.pUserId;
   const invoiceId = req.params.id;
-  console.log("invoiceId",invoiceId);
+  console.log("invoiceId", invoiceId);
   try {
     const {
       orgId,
@@ -1939,6 +1939,44 @@ export const editInvoice = async (req, res) => {
       success: true,
       message: "Invoice Updated successfully",
       data: result,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error, try again!",
+      error: error.message, // Include error message for debugging
+    });
+  }
+};
+
+// @desc adding additional charges in orgData
+// route POST /api/pUsers/addAditionalCharge
+
+export const addAditionalCharge = async (req, res) => {
+  const cmp_id = req.params.cmp_id;
+  try {
+    const org = await OragnizationModel.findById(cmp_id);
+    if (!org) {
+      res.status(404).json({ message: "Organization not found" });
+    }
+
+    const chargeExist = org.additionalCharges.some(
+      (charge) => charge.name === req.body.name
+    );
+    if (chargeExist) {
+      return res.status(400).json({
+        success: false,
+        message: "Additional charge with the same name already exists",
+      });
+    }
+
+    org.additionalCharges.push(req.body);
+    await org.save();
+    return res.status(200).json({
+      success: true,
+      message: "Additional charge added successfully",
+      data: org,
     });
   } catch (error) {
     console.error(error);

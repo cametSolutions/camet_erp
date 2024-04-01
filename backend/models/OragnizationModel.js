@@ -31,7 +31,12 @@ const organizationSchema = new mongoose.Schema(
     type:{type:String,default:"self"},
     orderNumber:{type:Number,default:1},
     OrderNumberValue:{type:String},
-    OrderNumberDetails:{type:Object}
+    OrderNumberDetails:{type:Object},
+    additionalCharges:[{
+      name: { type: String, required: true },
+      hsn: { type: String,  },
+      taxPercentage: { type: String, },
+    }],
     
   },
   {

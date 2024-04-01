@@ -39,6 +39,8 @@ function Invoice() {
   const [refreshCmp, setrefreshCmp] = useState(false);
   const [orderNumber, setOrderNumber] = useState("");
   const [company, setCompany] = useState([]);
+  const [additionalChragesFromCompany, setAdditionalChragesFromCompany] =
+    useState([]);
   console.log(modalInputs);
   const additionalChargesFromRedux = useSelector(
     (state) => state.invoice.additionalCharges
@@ -57,11 +59,7 @@ function Invoice() {
   }, []);
   const [subTotal, setSubTotal] = useState(0);
   const dispatch = useDispatch();
-  const handleToggleSidebar = () => {
-    if (window.innerWidth < 768) {
-      setShowSidebar(!showSidebar);
-    }
-  };
+
 
   console.log(additionalChargesFromRedux);
   console.log(rows);
@@ -152,7 +150,10 @@ function Invoice() {
         );
 
         console.log(res.data.organizationData);
-        setCompany(res.data.organizationData);
+        // setCompany(res.data.organizationData);
+        setAdditionalChragesFromCompany(
+          res.data.organizationData.additionalCharges
+        );
         const { orderNumber, OrderNumberDetails } = res.data.organizationData;
 
         console.log(orderNumber);
@@ -161,12 +162,11 @@ function Invoice() {
           console.log("haii");
           const { widthOfNumericalPart, prefixDetails, suffixDetails } =
             OrderNumberDetails;
-            const newOrderNumber=(orderNumber).toString()
-            console.log(newOrderNumber);
+          const newOrderNumber = orderNumber.toString();
+          console.log(newOrderNumber);
           console.log(widthOfNumericalPart);
           console.log(prefixDetails);
           console.log(suffixDetails);
-
 
           const padedNumber = newOrderNumber.padStart(widthOfNumericalPart, 0);
           console.log(padedNumber);
@@ -257,7 +257,7 @@ function Invoice() {
       additionalChargesFromRedux,
       lastAmount,
       orgId,
-        orderNumber
+      orderNumber,
     };
 
     console.log(formData);
@@ -309,6 +309,8 @@ function Invoice() {
       toast.error(error.response.data.message);
     }
   };
+
+  console.log(additionalChragesFromCompany);
 
   return (
     <div className="flex relative ">
@@ -573,10 +575,34 @@ function Invoice() {
                               className="block w-full py-2 px-4  bg-white text-sm focus:outline-none border-none border-b-gray-500 "
                             >
                               {/* Options for dropdown */}
-                              <option value="Option 1">Option 1</option>
-                              <option value="Option 2">Option 2</option>
-                              <option value="Option 3">Option 3</option>
+                              <option disabled>Select</option>
+                              {additionalChragesFromCompany.length > 0 ? (
+                                additionalChragesFromCompany.map(
+                                  (el, index) => (
+                                    <option key={index} value={el.name}>
+                                      {" "}
+                                      {el.name}{" "}
+                                    </option>
+                                  )
+                                )
+                              ) : (
+                                <option value="Option 1">
+                                  No charges available
+                                </option>
+                              )}
                             </select>
+                            <br />
+
+                            {row[index]!==""? (
+                              <p>"Hai"</p>
+
+                            ): (
+                              <p>"Hai"</p>
+
+                            )}
+                            
+
+                            
                           </td>
                           <td className="">
                             <div className="flex gap-3 px-5 ">
@@ -759,7 +785,7 @@ function Invoice() {
                 <Label htmlFor="startingNumber" value="Starting Number" />
               </div>
               <TextInput
-              disabled
+                disabled
                 id="startingNumber"
                 placeholder="1"
                 type="number"
