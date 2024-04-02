@@ -12,7 +12,8 @@ import { registerPrimaryUser,login,addOrganizations,
   editProduct,PartyList,deleteParty,getSinglePartyDetails,editParty,
   fetchFilters,createInvoice,addBulkProducts,invoiceList,deleteHsn,
   getSingleHsn,editHsn,addBank,getBankDetails,editBank,getSecUserDetails,
-  editSecUSer,saveOrderNumber,getInvoiceDetails,editInvoice,addAditionalCharge} from '../controllers/primaryUserController.js';
+  editSecUSer,saveOrderNumber,getInvoiceDetails,editInvoice,addAditionalCharge,
+  deleteAdditionalCharge,EditAditionalCharge,addconfigurations} from '../controllers/primaryUserController.js';
 import { singleUpload } from '../multer/multer.js';
 import { primaryIsBlocked } from '../middlewares/isBlocked.js';
 
@@ -68,6 +69,10 @@ router.post('/saveOrderNumber/:cmp_id',authPrimary,primaryIsBlocked,saveOrderNum
 router.get('/getInvoiceDetails/:id',authPrimary,primaryIsBlocked,getInvoiceDetails)
 router.post('/editInvoice/:id',authPrimary,primaryIsBlocked,editInvoice)
 router.post('/addAditionalCharge/:cmp_id',authPrimary,primaryIsBlocked,addAditionalCharge)
+router.delete('/deleteAdditionalCharge/:id/:cmp_id',authPrimary,primaryIsBlocked,deleteAdditionalCharge)
+router.post('/EditAditionalCharge/:cmp_id/:id',authPrimary,primaryIsBlocked,EditAditionalCharge)
+router.post('/addconfigurations/:cmp_id',authPrimary,primaryIsBlocked,addconfigurations)
+
 
 
 

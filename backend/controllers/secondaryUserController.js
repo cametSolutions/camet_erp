@@ -394,7 +394,7 @@ export const fetchBanks = async (req, res) => {
       { $match: { cmp_id: bankId } },
       {
         $project: {
-          bank_ledname: 1,
+          bank_name: 1,
         },
       },
     ]);

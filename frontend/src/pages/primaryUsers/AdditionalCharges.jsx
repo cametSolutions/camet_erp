@@ -4,6 +4,8 @@ import { useSelector } from "react-redux";
 import api from "../../api/api";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
+import { IoIosArrowRoundBack } from "react-icons/io";
+
 
 function AdditionalCharges() {
   const [name, setName] = useState("");
@@ -13,12 +15,10 @@ function AdditionalCharges() {
   const cmp_id = useSelector(
     (state) => state.setSelectedOrganization.selectedOrg._id
   );
-  const navigate=useNavigate()
-
-
+  const navigate = useNavigate();
 
   const submitHandler = async () => {
-    if (!name.trim() ) {
+    if (!name.trim()) {
       toast.error("Fill Name and Bank");
       return;
     }
@@ -38,17 +38,20 @@ function AdditionalCharges() {
     };
 
     try {
-      const res = await api.post(`/api/pUsers/addAditionalCharge/${cmp_id}`, formData, {
-        headers: {
-          "Content-Type": "application/json",
-        },
-        withCredentials: true,
-      });
+      const res = await api.post(
+        `/api/pUsers/addAditionalCharge/${cmp_id}`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+          withCredentials: true,
+        }
+      );
 
       console.log(res.data);
       toast.success(res.data.message);
-      // navigate('/pUsers/additionalChargesList')
-
+      navigate("/pUsers/additionalChargesList");
     } catch (error) {
       toast.error(error.response.data.message);
       console.log(error);
@@ -62,15 +65,17 @@ function AdditionalCharges() {
   return (
     <div className="flex">
       <div className="">
-        <Sidebar />
+        <Sidebar TAB={"additionalCharge"} />
       </div>
       <div className=" flex-1 h-screen overflow-y-scroll">
         <div className="bg-[#201450] sticky top-0 p-3 z-100 text-white text-lg font-bold flex items-center gap-3 z-20">
-          {/* <IoReorderThreeSharp
-              onClick={handleToggleSidebar}
-              className="block md:hidden text-3xl"
-            /> */}
-          <p>Addional Charges</p>
+          <IoIosArrowRoundBack
+            onClick={() => {
+              navigate("/pUsers/additionalChargesList");
+            }}
+            className="text-3xl cursor-pointer"
+          />
+          <p>Add Addional Charge</p>
         </div>
 
         {/* form  */}
@@ -138,7 +143,6 @@ function AdditionalCharges() {
                       />
                     </div>
                   </div>
-                 
                 </div>
                 <button
                   className="bg-pink-500 mt-4 ml-4 w-20 text-white active:bg-pink-600 font-bold uppercase text-xs px-4 py-2 rounded shadow hover:shadow-md outline-none focus:outline-none mr-1 ease-linear transition-all duration-150 transform hover:scale-105"

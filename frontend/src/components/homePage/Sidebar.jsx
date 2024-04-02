@@ -404,13 +404,13 @@ function Sidebar({ TAB, showBar }) {
                   <span className="mx-4 font-medium">Products</span>
                 </a>
               </Link>
-              <Link to={"/pUsers/additionalCharges"}>
+              <Link to={"/pUsers/additionalChargesList"}>
                 <a
                   onClick={() => {
                     handleSidebarItemClick("outstanding");
                   }}
                   className={` ${
-                    TAB === "product"
+                    TAB === "additionalCharge"
                       ? "bg-gray-800 text-white"
                       : "text-gray-400"
                   } hover:bg-gray-800 hover:text-white flex items-center px-4 py-2 mt-5 transition-colors duration-300 transform rounded-lg   `}
@@ -419,6 +419,23 @@ function Sidebar({ TAB, showBar }) {
                   <GiMoneyStack />
 
                   <span className="mx-4 font-medium">Additional Charges</span>
+                </a>
+              </Link>
+              <Link to={"/pUsers/OrderConfigurations"}>
+                <a
+                  onClick={() => {
+                    handleSidebarItemClick("outstanding");
+                  }}
+                  className={` ${
+                    TAB === "terms"
+                      ? "bg-gray-800 text-white"
+                      : "text-gray-400"
+                  } hover:bg-gray-800 hover:text-white flex items-center px-4 py-2 mt-5 transition-colors duration-300 transform rounded-lg   `}
+                  href="#"
+                >
+                  <GiMoneyStack />
+
+                  <span className="mx-4 font-medium">Order Configurations</span>
                 </a>
               </Link>
             </nav>

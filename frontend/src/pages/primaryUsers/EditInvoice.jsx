@@ -29,7 +29,7 @@ import {
   setFinalAmount,
   setAdditionalCharges,
   setSelectedPriceLevel,
-  saveId
+  saveId,
 } from "../../../slices/invoice";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import { Button, Label, Modal, TextInput } from "flowbite-react";
@@ -45,11 +45,10 @@ function EditInvoice() {
     suffixDetails: "",
   });
   const [additional, setAdditional] = useState(false);
-  const [refresh, setRefresh] = useState(false);
   const [refreshCmp, setrefreshCmp] = useState(false);
   const [orderNumber, setOrderNumber] = useState("");
-  const [company, setCompany] = useState([]);
-
+  const [additionalChragesFromCompany, setAdditionalChragesFromCompany] =
+    useState([]);
   console.log(modalInputs);
 
   const additionalChargesFromRedux = useSelector(
@@ -59,31 +58,57 @@ function EditInvoice() {
     (state) => state.setSelectedOrganization.selectedOrg._id
   );
   const dispatch = useDispatch();
-
-
   const { id } = useParams();
-  console.log(id);
+  
 
+  useEffect(() => {
+    const fetchSingleOrganization = async () => {
+      try {
+        const res = await api.get(
+          `/api/pUsers/getSingleOrganization/${orgId}`,
+          {
+            withCredentials: true,
+          }
+        );
+
+        setAdditionalChragesFromCompany(
+          res.data.organizationData.additionalCharges
+        );
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    fetchSingleOrganization();
+  }, [refreshCmp, orgId]);
 
   const [rows, setRows] = useState(
     additionalChargesFromRedux.length > 0
       ? additionalChargesFromRedux
-      : [{ option: "option 1", value: "", action: "add" }]
+      : additionalChragesFromCompany.length > 0
+      ? [
+          {
+            option: additionalChragesFromCompany[0].name,
+            value: "",
+            action: "add",
+            taxPercentage: additionalChragesFromCompany[0].taxPercentage,
+            hsn: additionalChragesFromCompany[0].hsn,
+            _id: additionalChragesFromCompany[0]._id,
+            finalValue: "",
+          },
+        ]
+      : [] // Fallback to an empty array if additionalChragesFromCompany is also empty
   );
 
   useEffect(() => {
-    if (additionalChargesFromRedux.length) {
+    if (additionalChargesFromRedux.length > 0) {
       setAdditional(true);
-    }
-    else if(id!==undefined){
-      console.log("haii");
-      dispatch(saveId(id))
+    } else if (id !== undefined) {
+      dispatch(saveId(id));
     }
   }, []);
   const [subTotal, setSubTotal] = useState(0);
 
-
-console.log(id);
+  console.log(id);
 
   const handleAddRow = () => {
     const hasEmptyValue = rows.some((row) => row.value === "");
@@ -93,20 +118,53 @@ console.log(id);
       return;
     }
 
-    setRows([...rows, { option: "Option 1", value: "", action: "add" }]);
+    setRows([
+      ...rows,
+      {
+        option: additionalChragesFromCompany[0]?.name,
+        value: "",
+        action: "add",
+        taxPercentage: additionalChragesFromCompany[0]?.taxPercentage,
+        hsn: additionalChragesFromCompany[0]?.hsn,
+        _id: additionalChragesFromCompany[0]?._id,
+        finalValue: "",
+      },
+    ]);
   };
 
-  const handleLevelChange = (index, value) => {
+  const handleLevelChange = (index, id) => {
+    const selectedOption = additionalChragesFromCompany.find(
+      (option) => option._id === id
+    );
+    console.log(selectedOption);
+
     const newRows = [...rows];
-    newRows[index] = { ...newRows[index], option: value };
+    newRows[index] = {
+      ...newRows[index],
+      option: selectedOption?.name,
+      taxPercentage: selectedOption?.taxPercentage,
+      hsn: selectedOption?.hsn,
+      _id: selectedOption?._id,
+      finalValue: "",
+    };
+    console.log(newRows);
     setRows(newRows);
+
     dispatch(addAdditionalCharges({ index, row: newRows[index] }));
   };
 
   const handleRateChange = (index, value) => {
     const newRows = [...rows];
-    const updatedRow = { ...newRows[index], value: value }; // Create a new object with the updated value
-    newRows[index] = updatedRow; // Replace the old row with the updated one in the newRows array
+    let updatedRow = { ...newRows[index], value: value }; // Create a new object with the updated value
+
+    if (updatedRow.taxPercentage && updatedRow.taxPercentage !== "") {
+      const taxAmount =
+        (parseFloat(value) * parseFloat(updatedRow.taxPercentage)) / 100;
+      updatedRow.finalValue = parseFloat(value) + taxAmount;
+    } else {
+      updatedRow.finalValue = parseFloat(value);
+    }
+    newRows[index] = updatedRow;
     setRows(newRows);
     dispatch(addAdditionalCharges({ index, row: updatedRow }));
   };
@@ -131,49 +189,6 @@ console.log(id);
   console.log(itemsFromRedux);
   const priceLevelFromRedux =
     useSelector((state) => state.invoice.selectedPriceLevel) || "";
-
-  // useEffect(() => {
-  //   const fetchSingleOrganization = async () => {
-  //     try {
-  //       const res = await api.get(
-  //         `/api/pUsers/getSingleOrganization/${orgId}`,
-  //         {
-  //           withCredentials: true,
-  //         }
-  //       );
-
-  //       console.log(res.data.organizationData);
-  //       setCompany(res.data.organizationData);
-  //       const { orderNumber, OrderNumberDetails } = res.data.organizationData;
-  //       console.log(orderNumber);
-  //       if (OrderNumberDetails) {
-  //         const { widthOfNumericalPart, prefixDetails, suffixDetails } =
-  //           OrderNumberDetails;
-  //         const newOrderNumber = (orderNumber + 1).toString();
-
-  //         const padedNumber = newOrderNumber.padStart(widthOfNumericalPart, 0);
-  //         const finalOrderNumber = prefixDetails + padedNumber + suffixDetails;
-  //         setOrderNumber(finalOrderNumber);
-  //         setModalInputs({
-  //           widthOfNumericalPart: widthOfNumericalPart,
-  //           prefixDetails: prefixDetails,
-  //           suffixDetails: suffixDetails,
-  //         });
-  //       } else {
-  //         setOrderNumber(orderNumber);
-  //         setModalInputs({
-  //           startingNumber: "1",
-  //           widthOfNumericalPart: "",
-  //           prefixDetails: "",
-  //           suffixDetails: "",
-  //         });
-  //       }
-  //     } catch (error) {
-  //       console.log(error);
-  //     }
-  //   };
-  //   fetchSingleOrganization();
-  // }, [refreshCmp]);
 
   useEffect(() => {
     const fetchInvoiceDetails = async () => {
@@ -215,11 +230,23 @@ console.log(id);
         dispatch(setFinalAmount(finalAmount));
         setOrderNumber(orderNumber);
 
-        if (additionalCharges && additionalCharges.length > 0 && additionalChargesFromRedux.length ==0) {
+        if (
+          additionalCharges &&
+          additionalCharges.length > 0 &&
+          additionalChargesFromRedux.length == 0
+        ) {
           setAdditional(true);
 
           const newRows = additionalCharges.map((el, index) => {
-            return { option: el.option, value: el.value, action: el.action };
+            return {
+              option: el.option,
+              value: el.value,
+              action: el.action,
+              _id:el._id,
+              taxPercentage: el.taxPercentage,
+              hsn: el.hsn,
+              finalValue: el.finalValue,
+            };
           });
           setRows(newRows);
         }
@@ -230,17 +257,18 @@ console.log(id);
     fetchInvoiceDetails();
   }, []);
 
+
+
   useEffect(() => {
     const subTotal = items.reduce((acc, curr) => {
       return (acc = acc + (parseFloat(curr.total) || 0));
     }, 0);
-    console.log(subTotal);
     setSubTotal(subTotal);
   }, [items]);
 
   const additionalChargesTotal = useMemo(() => {
     return rows.reduce((acc, curr) => {
-      const value = curr.value === "" ? 0 : parseFloat(curr.value);
+      let value = curr.finalValue === "" ? 0 : parseFloat(curr.finalValue);
       if (curr.action === "add") {
         return acc + value;
       } else if (curr.action === "sub") {
@@ -248,7 +276,7 @@ console.log(id);
       }
       return acc;
     }, 0);
-  }, [rows, refresh]);
+  }, [rows]);
 
   console.log(additionalChargesTotal);
   const totalAmount =
@@ -273,16 +301,11 @@ console.log(id);
     setRows([{ option: "Option 1", value: "", action: "add" }]);
   };
 
+  const InvoiceIdForEdit = useSelector((state) => state.invoice.id);
 
-  
-  const InvoiceIdForEdit = useSelector(
-    (state) => state.invoice.id
-    );
-
-console.log(InvoiceIdForEdit);
+  console.log(InvoiceIdForEdit);
 
   const submitHandler = async () => {
-     
     console.log("haii");
     if (Object.keys(party).length == 0) {
       console.log("haii");
@@ -334,12 +357,16 @@ console.log(InvoiceIdForEdit);
     console.log(formData);
     console.log(id);
     try {
-      const res = await api.post(`/api/pUsers/editInvoice/${InvoiceIdForEdit}`, formData, {
-        headers: {
-          "Content-Type": "application/json",
-        },
-        withCredentials: true,
-      });
+      const res = await api.post(
+        `/api/pUsers/editInvoice/${InvoiceIdForEdit}`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+          withCredentials: true,
+        }
+      );
 
       console.log(res.data);
       toast.success(res.data.message);
@@ -380,6 +407,9 @@ console.log(InvoiceIdForEdit);
       toast.error(error.response.data.message);
     }
   };
+
+
+  console.log(rows);
 
   return (
     <div className="flex relative ">
@@ -474,18 +504,17 @@ console.log(InvoiceIdForEdit);
 
           {Object.keys(party).length === 0 ? (
             <div className="mt-3 p-6 border border-gray-300 h-10 rounded-md flex  cursor-pointer justify-center   items-center font-medium text-violet-500">
-          
-                <button 
-                   onClick={() => {
-                    navigate(`/pUsers/searchParty`, {
-                      state: { from: "editInvoice", id: id },
-                    });
-                  }}
-                className="flex justify-center gap-2 hover_scale text-base ">
-                  <IoMdAdd className="text-2xl" />
-                  <p>Add Party Name</p>
-                </button>
-           
+              <button
+                onClick={() => {
+                  navigate(`/pUsers/searchParty`, {
+                    state: { from: "editInvoice", id: id },
+                  });
+                }}
+                className="flex justify-center gap-2 hover_scale text-base "
+              >
+                <IoMdAdd className="text-2xl" />
+                <p>Add Party Name</p>
+              </button>
             </div>
           ) : (
             <div className="mt-3 p-3 py-2 border  border-gray-300  rounded-md   cursor-pointer items-center font-medium flex justify-between gap-4">
@@ -603,7 +632,7 @@ console.log(InvoiceIdForEdit);
                         <p
                           onClick={() => {
                             navigate(`/pUsers/editItem/${el._id}`, {
-                              state: { from: "editInvoice",id:id },
+                              state: { from: "editInvoice", id: id },
                             });
                           }}
                           className="text-violet-500 text-xs md:text-base font-bold  p-1  px-4   border border-1 border-gray-300 rounded-2xl cursor-pointer"
@@ -644,7 +673,7 @@ console.log(InvoiceIdForEdit);
                     <tbody>
                       {rows.map((row, index) => (
                         <tr key={index} className="">
-                          <td className=" w-2 py-2 ">
+                          <td className=" w-2  ">
                             <MdCancel
                               onClick={() => {
                                 handleDeleteRow(index);
@@ -652,19 +681,33 @@ console.log(InvoiceIdForEdit);
                               className="text-sm cursor-pointer text-gray-500 hover:text-black"
                             />
                           </td>
-                          <td className="py-2 ">
+                          <td className=" flex flex-col justify-center ml-2 mt-3.5 ">
                             <select
-                              value={row.option}
+                              value={row._id}
                               onChange={(e) =>
                                 handleLevelChange(index, e.target.value)
                               }
-                              className="block w-full py-2 px-4  bg-white text-sm focus:outline-none border-none border-b-gray-500 "
+                              className="block w-full   bg-white text-sm focus:outline-none border-none border-b-gray-500 "
                             >
-                              {/* Options for dropdown */}
-                              <option value="Option 1">Option 1</option>
-                              <option value="Option 2">Option 2</option>
-                              <option value="Option 3">Option 3</option>
+                              {additionalChragesFromCompany.length > 0 ? (
+                                additionalChragesFromCompany.map(
+                                  (el, index) => (
+                                    <option key={index} value={el._id}>
+                                      {" "}
+                                      {el.name}{" "}
+                                    </option>
+                                  )
+                                )
+                              ) : (
+                                <option>No charges available</option>
+                              )}
                             </select>
+
+                            {row?.taxPercentage !== "" && (
+                              <div className="ml-3 text-[9px] text-gray-400">
+                                GST @ {row?.taxPercentage} %
+                              </div>
+                            )}
                           </td>
                           <td className="">
                             <div className="flex gap-3 px-5 ">
@@ -706,6 +749,15 @@ console.log(InvoiceIdForEdit);
                                 className="block w-full py-2 px-4 bg-white text-sm focus:outline-none border-b-2 border-t-0 border-l-0 border-r-0 "
                               />
                             </div>
+
+                            {row?.taxPercentage !== "" && row.value !== "" && (
+                              <div className="ml-3 text-[9.5px] text-gray-400 mt-2">
+                                With tax : ₹{" "}
+                                {(parseFloat(row?.value) *
+                                  (100 + parseFloat(row.taxPercentage))) /
+                                  100}{" "}
+                              </div>
+                            )}
                           </td>
                         </tr>
                       ))}

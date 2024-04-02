@@ -300,8 +300,8 @@ function Payment() {
                       >
                         {/* Map through the array of banks and create options */}
                         {banks.map((bank, index) => (
-                          <option key={index} value={bank.bank_ledname}>
-                            {bank.bank_ledname}
+                          <option key={index} value={bank.bank_name}>
+                            {bank.bank_name}
                           </option>
                         ))}
                       </select>
@@ -343,8 +343,8 @@ function Payment() {
                       >
                         {/* Map through the array of banks and create options */}
                         {banks.map((bank, index) => (
-                          <option key={index} value={bank.bank_ledname}>
-                            {bank.bank_ledname}
+                          <option key={index} value={bank.bank_name}>
+                            {bank.bank_name}
                           </option>
                         ))}
                       </select>

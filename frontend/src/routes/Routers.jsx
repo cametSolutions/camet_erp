@@ -72,6 +72,10 @@ import InvoiceDetailsSecondary from '../pages/secUsers/InvoiceDetailsSecondary'
 import EditInvoiceSecondary from '../pages/secUsers/EditInvoiceSecondary'
 import ShareInvoiceSecondary from '../pages/secUsers/ShareInvoiceSecondary'
 import AdditionalCharges from '../pages/primaryUsers/AdditionalCharges'
+import AddChargesList from '../pages/primaryUsers/AddChargesList'
+import EditAdditionalCharges from '../pages/primaryUsers/EditAdditionalCharges'
+
+import OrderConfigurations from '../pages/primaryUsers/OrderConfigurations'
 
 
 
@@ -122,6 +126,9 @@ const Routers = () => {
         <Route path='/pUsers/editInvoice/:id' element={<ProtectedPriRoute><EditInvoice/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/shareInvoice/:id' element={<ProtectedPriRoute><ShareInvoice/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/additionalCharges' element={<ProtectedPriRoute><AdditionalCharges/></ProtectedPriRoute>}></Route>
+        <Route path='/pUsers/additionalChargesList' element={<ProtectedPriRoute><AddChargesList/></ProtectedPriRoute>}></Route>
+        <Route path='/pUsers/editAdditionalCharge/:id' element={<ProtectedPriRoute><EditAdditionalCharges/></ProtectedPriRoute>}></Route>
+        <Route path='/pUsers/OrderConfigurations' element={<ProtectedPriRoute><OrderConfigurations/></ProtectedPriRoute>}></Route>
 
         {/* admin */}
         <Route path='/admin/login' element={<AdminLogin/>}></Route>
