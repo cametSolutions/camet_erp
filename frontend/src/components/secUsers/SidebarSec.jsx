@@ -13,11 +13,7 @@ import { TiUserAdd } from "react-icons/ti";
 import { MdOutlineProductionQuantityLimits } from "react-icons/md";
 import { RingLoader } from "react-spinners";
 import { GiMoneyStack } from "react-icons/gi";
-
-
-
-
-
+import { IoMdSettings } from "react-icons/io";
 
 
 
@@ -385,7 +381,7 @@ function SidebarSec({ TAB,showBar }) {
                   } hover:bg-gray-800 hover:text-white flex items-center px-4 py-2 mt-5 transition-colors duration-300 transform rounded-lg   `}
                   href="#"
                 >
-                  <GiMoneyStack />
+                  <IoMdSettings />
 
                   <span className="mx-4 font-medium">Order Configurations</span>
                 </a>
