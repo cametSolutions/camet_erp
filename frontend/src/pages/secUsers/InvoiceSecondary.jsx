@@ -323,7 +323,8 @@ function InvoiceSecondary() {
       console.log(res.data);
       toast.success(res.data.message);
 
-      navigate("/sUsers/dashboard");
+      navigate(`/sUsers/InvoiceDetails/${res.data.data._id}`);
+
       dispatch(removeAll());
     } catch (error) {
       toast.error(error.response.data.message);
@@ -466,7 +467,6 @@ function InvoiceSecondary() {
             </div>
 
             <div className="mt-3 p-6 border border-gray-300 h-10 rounded-md flex  cursor-pointer justify-center   items-center font-medium text-violet-500 ">
-              {/* <Link to={"/pUsers/addItem"}>  */}
               <div
                 onClick={handleAddItem}
                 className="flex justify-center gap-2 hover_scale items-center "
@@ -474,7 +474,6 @@ function InvoiceSecondary() {
                 <IoMdAdd className="text-2xl" />
                 <p className="text-sm">Add Item</p>
               </div>
-              {/* </Link> */}
             </div>
           </div>
         )}

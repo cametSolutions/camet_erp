@@ -194,7 +194,6 @@ function OutStandingDetails({ onTabChange }) {
                   className="border-  px-3 py-4 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow-lg focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                 />
               </div>
-              {/* <Link to={"/sUsers/payment"}> */}
               <div>
                 <button
                   onClick={handleNextClick}

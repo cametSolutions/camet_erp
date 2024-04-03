@@ -48,7 +48,6 @@ import AddItem from '../pages/primaryUsers/AddItem'
 import EditItem from '../pages/primaryUsers/EditItem'
 import Demo from '../pages/primaryUsers/Demo'
 import RetailersList from '../pages/primaryUsers/RetailersList'
-import InvoiceList from '../pages/primaryUsers/InvoiceList'
 import HsnList from '../pages/primaryUsers/HsnList'
 import EditHsn from '../pages/primaryUsers/EditHsn'
 import InvoiceSecondary from '../pages/secUsers/InvoiceSecondary'
@@ -58,7 +57,6 @@ import AddPartySecondary from '../pages/secUsers/AddPartySecondary'
 import ProductListSecondary from '../pages/secUsers/ProductListSecondary'
 import AddItemSecondary from '../pages/secUsers/AddItemSecondary'
 import EditItemSecondary from '../pages/secUsers/EditItemSecondary'
-import InvoiceListSecondary from '../pages/secUsers/InvoiceListSecondary'
 import EditPartySecondary from '../pages/secUsers/EditPartySecondary'
 import AddProductSecondary from '../pages/secUsers/AddProductSecondary'
 import EditProductSecondary from '../pages/secUsers/EditProductSecondary'
@@ -121,7 +119,6 @@ const Routers = () => {
         <Route path='/pUsers/addItem' element={<ProtectedPriRoute><AddItem/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/editItem/:id' element={<ProtectedPriRoute><EditItem/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/demo' element={<ProtectedPriRoute><Demo/></ProtectedPriRoute>}></Route>
-        <Route path='/pUsers/invoiceList' element={<ProtectedPriRoute><InvoiceList/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/hsnList' element={<ProtectedPriRoute><HsnList/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/editHsn/:id' element={<ProtectedPriRoute><EditHsn/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/editBank/:id' element={<ProtectedPriRoute><EditBank/></ProtectedPriRoute>}></Route>
@@ -161,7 +158,6 @@ const Routers = () => {
         <Route path='/sUsers/productList' element={<ProtectedSecRoute><ProductListSecondary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/addItem' element={<ProtectedSecRoute><AddItemSecondary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/editItem/:id' element={<ProtectedSecRoute><EditItemSecondary/></ProtectedSecRoute>}></Route>
-        <Route path='/sUsers/invoiceList' element={<ProtectedSecRoute><InvoiceListSecondary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/editParty/:id' element={<ProtectedSecRoute><EditPartySecondary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/addProduct' element={<ProtectedSecRoute><AddProductSecondary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/editProduct/:id' element={<ProtectedSecRoute><EditProductSecondary/></ProtectedSecRoute>}></Route>

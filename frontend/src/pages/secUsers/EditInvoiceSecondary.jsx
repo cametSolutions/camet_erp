@@ -382,7 +382,8 @@ console.log(InvoiceIdForEdit);
       console.log(res.data);
       toast.success(res.data.message);
 
-      navigate("/sUsers/transaction");
+      navigate(`/sUsers/InvoiceDetails/${res.data.data._id}`);
+
       dispatch(removeAll());
     } catch (error) {
       toast.error(error.response.data.message);

@@ -138,7 +138,6 @@ function Payment() {
         // Navigate upon clicking "OK"
         if (result.isConfirmed) {
           navigate(`/pUsers/receiptDetails/${res.data.id}`);
-          // history.replace(`/sUsers/receiptDetails/${res.data.id}`);
         }
       });
 

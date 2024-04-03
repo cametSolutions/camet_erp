@@ -335,7 +335,7 @@ function Invoice() {
       console.log(res.data);
       toast.success(res.data.message);
 
-      navigate("/pUsers/transaction");
+      navigate(`/pUsers/InvoiceDetails/${res.data.data._id}`);
       dispatch(removeAll());
     } catch (error) {
       toast.error(error.response.data.message);
@@ -387,7 +387,7 @@ function Invoice() {
             onClick={handleToggleSidebar}
             className="block md:hidden text-white text-3xl"
           /> */}
-          <Link to={"/pUsers/dashboard"}>
+          <Link to={"/pUsers/transaction"}>
             <IoIosArrowRoundBack className="text-3xl text-white cursor-pointer md:hidden" />
           </Link>
           <p className="text-white text-lg   font-bold ">

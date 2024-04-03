@@ -36,6 +36,9 @@ function AddItem() {
   const [priceLevels, setPriceLevels] = useState([]);
   const [loader, setLoader] = useState(false);
   const [listHeight, setListHeight] = useState(0);
+  const [scrollPosition, setScrollPosition] = useState(0);
+
+  console.log(scrollPosition);
 
   ///////////////////////////cpm_id///////////////////////////////////
 
@@ -112,9 +115,17 @@ function AddItem() {
       }
     };
     fetchProducts();
+    const scrollPosition = parseInt(localStorage.getItem("scrollPosition"))
+    console.log(scrollPosition);
+    // restoreScrollPosition(scrollPosition);
+  
+    if (scrollPosition) {
+      // listRef?.current?.scrollTo(parseInt(scrollPosition, 10));\
+      window.scrollTo(0, scrollPosition);
+    }
   }, [cpm_id]);
 
-  console.log("item",item);
+  console.log("item", item);
 
   ///////////////////////////priceLevelSet///////////////////////////////////
 
@@ -179,8 +190,7 @@ function AddItem() {
 
   //////////////////////////////fetchFilters////////////////////////////////
 
-
-console.log(type);
+  console.log(type);
 
   useEffect(() => {
     const fetchFilters = async () => {
@@ -251,7 +261,7 @@ console.log(type);
 
   ///////////////////////////handleAddClick///////////////////////////////////
 
-  console.log("filteredItems",filteredItems);
+  console.log("filteredItems", filteredItems);
 
   const handleAddClick = (index) => {
     const updatedItems = [...filteredItems]; // Create a shallow copy of the items
@@ -362,10 +372,9 @@ console.log(type);
     const el = filteredItems[index];
     const adjustedStyle = {
       ...style,
-      marginTop: '16px',
-      height: '160px', 
-   
-   };
+      marginTop: "16px",
+      height: "160px",
+    };
     return (
       <div
         style={adjustedStyle}
@@ -412,8 +421,9 @@ console.log(type);
             <button
               onClick={() => {
                 navigate(`/pUsers/editItem/${el._id}`, {
-                  state: { from: "addItem" ,id:location?.state?.id},
+                  state: { from: "addItem", id: location?.state?.id },
                 });
+                saveScrollPosition();
               }}
               type="button"
               className="  mt-3  px-2 py-1  rounded-md border-violet-500 font-bold border  text-violet-500 text-xs"
@@ -512,8 +522,35 @@ console.log(type);
     // Cleanup the event listener on component unmount
     return () => window.removeEventListener("resize", calculateHeight);
   }, []);
-console.log(location);
+  console.log(location);
 
+  /////////////////////////// save scroll ///////////////////////////////////
+  // Function to save scroll position
+  const saveScrollPosition = () => {
+    localStorage.setItem("scrollPosition", scrollPosition);
+  };
+
+  // // Function to restore scroll position
+  // const restoreScrollPosition = (scrollPosition) => {
+  //   console.log(scrollPosition);
+  //   if (scrollPosition) {
+  //     listRef?.current?.scrollTo(parseInt(scrollPosition, 10));
+  //   }
+  // };
+
+  // // Use effect to save scroll position when navigating away
+  // useEffect(() => {
+  //   return () => {
+  //     saveScrollPosition();
+  //   };
+  // }, []);
+
+  // Use effect to restore scroll position when navigating back
+  // useEffect(() => {
+  //   restoreScrollPosition();
+  // }, []);
+
+  /////////////////////////// save scroll end ///////////////////////////////////
 
   const continueHandler = () => {
     console.log(location.state);
@@ -524,14 +561,13 @@ console.log(location);
     }
   };
 
-  const backHandler=()=>{
+  const backHandler = () => {
     if (location?.state?.from === "editInvoice") {
       navigate(`/pUsers/editInvoice/${location.state.id}`);
     } else {
       navigate("/pUsers/invoice");
     }
-
-  }
+  };
 
   return (
     <div className="flex relative">
@@ -544,7 +580,6 @@ console.log(location);
           <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex justify-between  items-center gap-2  ">
             <div className="flex items-center gap-2">
               <IoIosArrowRoundBack
-            
                 onClick={backHandler}
                 className="text-3xl text-white cursor-pointer"
               />
@@ -704,6 +739,7 @@ console.log(location);
             itemCount={filteredItems.length} // Specify the total number of items
             itemSize={170} // Specify the height of each item
             width="100%" // Specify the width of your list
+            onScroll={({ scrollOffset }) => setScrollPosition(scrollOffset)}
           >
             {Row}
           </List>
