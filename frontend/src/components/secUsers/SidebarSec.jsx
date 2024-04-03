@@ -17,6 +17,10 @@ import { IoMdSettings } from "react-icons/io";
 
 
 
+
+
+
+
 function SidebarSec({ TAB,showBar }) {
   console.log(TAB);
   const [showSidebar, setShowSidebar] = useState(false);
@@ -25,10 +29,6 @@ function SidebarSec({ TAB,showBar }) {
   const [dropdown, setDropdown] = useState(false);
   const [org, setOrg] = useState("");
   const [loader, setLoader] = useState(false);
-  const [organizations, setOrganizations] = useState([]);
-  const [selectedOrg, setSelectedOrg] = useState("");
-
-  
 
   const navigate = useNavigate();
 
@@ -41,32 +41,6 @@ function SidebarSec({ TAB,showBar }) {
 
   console.log(tab);
 
-
-  
-  useEffect(() => {
-    const fetchOrganizations = async () => {
-      try {
-        const res = await api.get("/api/pUsers/getOrganizations", {
-          withCredentials: true,
-        });
-
-        setOrganizations(res.data.organizationData);
-
-        if (prevOrg) {
-          setSelectedOrg(prevOrg);
-        } else {
-          // If no organization is selected, set the first organization as selectedOrg
-          setSelectedOrg(res.data.organizationData[0]);
-          dispatch(setSecSelectedOrganization(res.data.organizationData[0]));
-        }
-      } catch (error) {
-        console.log(error);
-        toast.error(error.response.data.message);
-      }
-    };
-    fetchOrganizations();
-  }, []);
-
   useEffect(() => {
     const getUserData = async () => {
       try {
@@ -75,13 +49,15 @@ function SidebarSec({ TAB,showBar }) {
         });
         setUserData(res.data.data.userData);
        
-        // if(prevOrg=='' || prevOrg==null){
-        //   setOrg(res.data.data.userData.organization[0])
-        //   dispatch(setSecSelectedOrganization(res.data.data.userData.organization[0]))
-        // }else{
-        //   setOrg(prevOrg);
+        if(prevOrg=='' || prevOrg==null){
+          console.log("haiii");
+          setOrg(res.data.data.userData.organization[0])
+          dispatch(setSecSelectedOrganization(res.data.data.userData.organization[0]))
+        }else{
+          setOrg(prevOrg);
+          console.log("haiii");
          
-        // }
+        }
       } catch (error) {
         console.log(error);
       }
@@ -212,7 +188,7 @@ function SidebarSec({ TAB,showBar }) {
             className="text-white mt-6 bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
             type="button"
           >
-            {selectedOrg?.name}{" "}
+            {org?.name}{" "}
             <svg
               class="w-2.5 h-2.5 ms-3"
               aria-hidden="true"
@@ -243,25 +219,13 @@ function SidebarSec({ TAB,showBar }) {
                   class="py-2 text-sm text-gray-200"
                   aria-labelledby="dropdownDefaultButton"
                 >
-                   {organizations.map((el, index) => (
+                  {userData.organization.map((el, index) => (
                     <li key={index}>
                       <a
-                        onClick={() => {
-                          setDropdown(!dropdown);
-                          if (window.innerWidth <= 640) {
-                            setShowSidebar(!showSidebar);
-                          }
-                          setLoader(true);
-                          setTimeout(() => {
-                            setSelectedOrg(el);
-                            dispatch(setSecSelectedOrganization(el));
-                            navigate("/sUsers/dashboard");
-                            setLoader(false);
-                          }, 1000);
-                        }}
-                        // onClick={() => handleDropDownchange(el)}
+                        // onClick={()=>{setDropdown(!dropdown);setOrg(el)}}
+                        onClick={() => handleDropDownchange(el)}
                         href="#"
-                        className="block px-4 py-2 hover:bg-gray-500 "
+                        className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
                       >
                         {el.name}
                       </a>
@@ -350,7 +314,6 @@ function SidebarSec({ TAB,showBar }) {
                   <span className="mx-4 font-medium">Products</span>
                 </a>
               </Link>
-
 
               <Link to={"/sUsers/additionalChargesList"}>
                 <a

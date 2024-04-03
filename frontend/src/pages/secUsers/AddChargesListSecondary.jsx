@@ -22,8 +22,9 @@ function AddChargesListSecondary() {
   const [org, setOrg] = useState([]);
 
   const cmp_id = useSelector(
-    (state) => state.setSelectedOrganization.selectedOrg._id
+    (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
+  console.log(cmp_id);
 
   console.log(org);
 
@@ -48,7 +49,7 @@ function AddChargesListSecondary() {
     };
     fetchAdditionalCharges();
     dispatch(removeAll());
-  }, [cmp_id]);
+  }, [cmp_id,refresh]);
 
   console.log(org);
 
@@ -74,7 +75,7 @@ function AddChargesListSecondary() {
     if (confirmResult.isConfirmed) {
       try {
         const res = await api.delete(
-          `/api/sUsers/deleteAdditionalCharge/${id}/${orgId}`,
+          `/api/sUsers/deleteAdditionalCharge/${id}/${cmp_id}`,
 
           {
             withCredentials: true,
