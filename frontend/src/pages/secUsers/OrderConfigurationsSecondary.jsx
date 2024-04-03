@@ -3,7 +3,7 @@ import { useSelector } from "react-redux";
 import api from "../../api/api";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
-import { IoIosArrowRoundBack } from "react-icons/io";
+import {  IoReorderThreeSharp } from "react-icons/io5";
 import SidebarSec from "../../components/secUsers/SidebarSec";
 
 function OrderConfigurationsSecondary() {
@@ -12,6 +12,8 @@ function OrderConfigurationsSecondary() {
   const [selectedBank, setSelectedBank] = useState("");
   const [termsInput, setTermsInput] = useState("");
   const [termsList, setTermsList] = useState([]);
+  const [showSidebar, setShowSidebar] = useState(false);
+
 
   console.log(termsList);
 
@@ -127,18 +129,22 @@ function OrderConfigurationsSecondary() {
     }
   };
 
+  const handleToggleSidebar = () => {
+    if (window.innerWidth < 768) {
+      setShowSidebar(!showSidebar);
+    }
+  };
+
   return (
     <div className="flex">
       <div className="">
-        <SidebarSec TAB={"terms"} />
+        <SidebarSec TAB={"terms"} showBar={showSidebar} />
       </div>
       <div className=" flex-1 h-screen overflow-y-scroll">
         <div className="bg-[#201450] sticky top-0 p-3 z-100 text-white text-lg font-bold flex items-center gap-3 z-20">
-          <IoIosArrowRoundBack
-            onClick={() => {
-              navigate("/sUsers/additionalChargesList");
-            }}
-            className="text-3xl cursor-pointer"
+        <IoReorderThreeSharp
+            onClick={handleToggleSidebar}
+            className="block md:hidden text-3xl cursor-pointer"
           />
           <p className="">Order Configurations</p>
         </div>
