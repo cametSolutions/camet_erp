@@ -76,6 +76,10 @@ import AddChargesList from '../pages/primaryUsers/AddChargesList'
 import EditAdditionalCharges from '../pages/primaryUsers/EditAdditionalCharges'
 
 import OrderConfigurations from '../pages/primaryUsers/OrderConfigurations'
+import AddChargesListSecondary from '../pages/secUsers/AddChargesListSecondary'
+import AdditionalChargesSecondary from '../pages/secUsers/AdditionalChargesSecondary'
+import EditAdditionalChargesSecondary from '../pages/secUsers/EditAdditionalChargesSecondary'
+import OrderConfigurationsSecondary from '../pages/secUsers/OrderConfigurationsSecondary'
 
 
 
@@ -164,6 +168,10 @@ const Routers = () => {
         <Route path='/sUsers/InvoiceDetails/:id' element={<ProtectedSecRoute><InvoiceDetailsSecondary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/editInvoice/:id' element={<ProtectedSecRoute><EditInvoiceSecondary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/shareInvoice/:id' element={<ProtectedSecRoute><ShareInvoiceSecondary/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/additionalChargesList' element={<ProtectedSecRoute><AddChargesListSecondary/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/additionalCharges' element={<ProtectedSecRoute><AdditionalChargesSecondary/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/editAdditionalCharge/:id' element={<ProtectedSecRoute><EditAdditionalChargesSecondary/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/OrderConfigurations' element={<ProtectedSecRoute><OrderConfigurationsSecondary/></ProtectedSecRoute>}></Route>
 
 
 

@@ -829,7 +829,10 @@ export const getSingleOrganization = async (req, res) => {
   const OrgId = new mongoose.Types.ObjectId(req.params.id);
   console.log("OrgId", OrgId);
   try {
-    const organization = await Organization.findById(OrgId);
+    const organization = await Organization.findById(OrgId).populate({
+      path: "configurations.bank",
+    });
+
     if (organization) {
       return res.status(200).json({
         organizationData: organization,
@@ -1337,5 +1340,176 @@ export const fetchFilters = async (req, res) => {
     return res
       .status(500)
       .json({ status: false, message: "Internal server error" });
+  }
+};
+
+
+
+// @desc delete AdditionalCharge
+// route get/api/pUsers/deleteAdditionalCharge
+
+export const deleteAdditionalCharge = async (req, res) => {
+  try {
+    const id = req.params.id;
+    const addlId = new mongoose.Types.ObjectId(id);
+
+    console.log(addlId);
+    const cmp_id = req.params.cmp_id;
+    const org = await OragnizationModel.findById(cmp_id);
+    console.log("org", org);
+
+    const indexToDelete = org.additionalCharges.findIndex((item) =>
+      item._id.equals(addlId)
+    );
+    console.log("indexToDelete", indexToDelete);
+
+    if (indexToDelete !== -1) {
+      org.additionalCharges.splice(indexToDelete, 1);
+      // Save the updated document
+      await org.save();
+
+      return res.status(200).json({
+        success: true,
+        message: "Additional charge deleted successfully.",
+      });
+    } else {
+      return res.status(404).json({
+        success: false,
+        message: "Additional charge not found.",
+      });
+    }
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error, try again!",
+    });
+  }
+};
+
+
+// @desc adding additional charges in orgData
+// route POST /api/sUsers/addAdditionalCharge
+
+export const addAditionalCharge = async (req, res) => {
+  const cmp_id = req.params.cmp_id;
+  try {
+    const org = await OragnizationModel.findById(cmp_id);
+    if (!org) {
+      res.status(404).json({ message: "Organization not found" });
+    }
+
+    const chargeExist = org.additionalCharges.some(
+      (charge) => charge.name === req.body.name
+    );
+    if (chargeExist) {
+      return res.status(400).json({
+        success: false,
+        message: "Additional charge with the same name already exists",
+      });
+    }
+
+    org.additionalCharges.push(req.body);
+    await org.save();
+    return res.status(200).json({
+      success: true,
+      message: "Additional charge added successfully",
+      data: org,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error, try again!",
+      error: error.message, // Include error message for debugging
+    });
+  }
+};
+
+
+// @desc update AdditionalCharge
+// route get/api/sUsers/EditAditionalCharge
+
+export const EditAditionalCharge = async (req, res) => {
+  try {
+    const id = req.params.id;
+    const addlId = new mongoose.Types.ObjectId(id);
+
+    console.log(addlId);
+    const cmp_id = req.params.cmp_id;
+    const org = await OragnizationModel.findById(cmp_id);
+    console.log("org", org);
+
+    const indexToUpdate = org.additionalCharges.findIndex((item) =>
+      item._id.equals(addlId)
+    );
+    console.log("indexToUpdate", indexToUpdate);
+
+    if (indexToUpdate !== -1) {
+      // Assuming req.body contains the updated fields for the additional charge
+      const updatedFields = req.body;
+
+      // Update the additional charge with the new values
+      org.additionalCharges[indexToUpdate] = {
+        ...org.additionalCharges[indexToUpdate],
+        ...updatedFields,
+      };
+
+      // Save the updated document
+      await org.save();
+
+      return res.status(200).json({
+        success: true,
+        message: "Additional charge updated successfully.",
+      });
+    } else {
+      return res.status(404).json({
+        success: false,
+        message: "Additional charge not found.",
+      });
+    }
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error, try again!",
+    });
+  }
+};
+
+
+// @desc update AdditionalCharge
+// route get/api/sUsers/addconfigurations
+
+export const addconfigurations = async (req, res) => {
+  const cmp_id = req.params.cmp_id;
+  try {
+    const org = await OragnizationModel.findById(cmp_id);
+    if (!org) {
+      res.status(404).json({ message: "Organization not found" });
+    }
+
+    // org.termsAndConditions.push(req.body);
+
+    const { selectedBank, termsList } = req.body;
+    const newConfigurations = {
+      bank: selectedBank, 
+      terms: termsList, 
+    };
+    org.configurations=[newConfigurations];
+
+    await org.save();
+    return res.status(200).json({
+      success: true,
+      message: "Terms and conditions added successfully",
+      data: org,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error, try again!",
+      error: error.message, // Include error message for debugging
+    });
   }
 };

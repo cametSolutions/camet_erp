@@ -17,11 +17,11 @@ function ShareInvoice() {
   const [additinalCharge, setAdditinalCharge] = useState("");
   const [finalAmount, setFinalAmount] = useState("");
   const [inWords, setInWords] = useState("");
+  const [bank, setBank] = useState([]);
+
   const { id } = useParams();
 
   const contentToPrint = useRef(null);
-
-
 
   useEffect(() => {
     const getTransactionDetails = async () => {
@@ -33,15 +33,21 @@ function ShareInvoice() {
 
         // Extract cmp_id from the response
         const cmpId = res.data.data.cmp_id; // Assuming cmp_id is a property of the data
-       // Update the state with the cmp_id
+        // Update the state with the cmp_id
 
         // Fetch company details using the cmp_id
-        const companyDetails = await api.get(`/api/pUsers/getSingleOrganization/${cmpId}`, {
-          withCredentials: true,
-        });
+        const companyDetails = await api.get(
+          `/api/pUsers/getSingleOrganization/${cmpId}`,
+          {
+            withCredentials: true,
+          }
+        );
 
         setData(res.data.data);
-        setOrg(companyDetails.data.organizationData);
+        setOrg(companyDetails?.data?.organizationData);
+        setBank(
+          companyDetails?.data?.organizationData?.configurations[0]?.bank
+        );
       } catch (error) {
         console.log(error);
         toast.error(error.response.data.message);
@@ -49,9 +55,11 @@ function ShareInvoice() {
     };
 
     getTransactionDetails();
- }, [id]);
+  }, [id]);
 
+  console.log(data);
 
+  //  console.log(org?.configurations[0]?.terms);
 
   useEffect(() => {
     if (data && data.items) {
@@ -61,11 +69,20 @@ function ShareInvoice() {
       setSubTotal(subTotal);
 
       const addiTionalCharge = data?.additionalCharges
-        ?.reduce((acc, curr) => acc + parseFloat(curr?.value || 0), 0)
+        ?.reduce((acc, curr) => {
+          let value = curr?.finalValue === "" ? 0 : parseFloat(curr.finalValue);
+          if (curr?.action === "add") {
+            return acc + value;
+          } else if (curr?.action === "sub") {
+            return acc - value;
+          }
+          return acc;
+        }, 0)
+
         ?.toFixed(2);
       setAdditinalCharge(addiTionalCharge);
 
-      const finalAmount = data.finalAmount
+      const finalAmount = data.finalAmount;
       console.log(finalAmount);
 
       setFinalAmount(finalAmount);
@@ -76,7 +93,7 @@ function ShareInvoice() {
       const decimalWords = decimalPart
         ? ` and ${numberToWords.toWords(parseInt(decimalPart, 10))} `
         : " and Zero";
-        console.log(decimalWords);
+      console.log(decimalWords);
 
       const mergedWord = [
         ...integerWords,
@@ -88,7 +105,6 @@ function ShareInvoice() {
       setInWords(mergedWord);
     }
   }, [data]);
-
 
   // if (totalAmount) {
 
@@ -102,9 +118,6 @@ function ShareInvoice() {
     removeAfterPrint: true,
   });
 
-
-
-
   return (
     <div className="flex">
       <div className="">
@@ -114,7 +127,7 @@ function ShareInvoice() {
         <div className="bg-[#012a4a]   sticky top-0 p-3 px-5 text-white text-lg font-bold flex items-center gap-3  shadow-lg justify-between">
           <div className="flex gap-2 ">
             <Link to={`/pUsers/InvoiceDetails/${id}`}>
-            <IoIosArrowRoundBack className="text-3xl" />
+              <IoIosArrowRoundBack className="text-3xl" />
             </Link>
             <p>Share Your Order</p>
           </div>
@@ -151,12 +164,13 @@ function ShareInvoice() {
 
           <div className="flex mt-2 border-t-2 py-3">
             <div className="w-0.5/5">
-              {
-                org.logo && (
-
-                  <img className="h-16 w-16 mr-2 mt-1 " src={org.logo} alt="Logo" />
-                )
-              }
+              {org.logo && (
+                <img
+                  className="h-16 w-16 mr-2 mt-1 "
+                  src={org.logo}
+                  alt="Logo"
+                />
+              )}
             </div>
             <div className="w-4/5 flex flex-col mt-1 ml-2">
               <div className="">
@@ -265,7 +279,9 @@ function ShareInvoice() {
                     >
                       <td className="py-4 text-black pr-2">
                         {el.product_name} <br />
-                        <p className="text-gray-400 mt-1">HSN: {el?.hsn_code} ({el.igst}%)</p>
+                        <p className="text-gray-400 mt-1">
+                          HSN: {el?.hsn_code} ({el.igst}%)
+                        </p>
                       </td>
                       <td className="py-4 text-black text-right pr-2">
                         {el?.count} {el?.unit}
@@ -310,24 +326,30 @@ function ShareInvoice() {
               ₹ {subTotal}
             </div>
           </div>
-          <div className="grid grid-cols-2">
-            <div className="mt-3">
-              <div className="text-gray-500 font-semibold text-[10px] leading-5">
-                Bank Name: Dummy Bank
-              </div>
-              <div className="text-gray-500 font-semibold text-[10px] leading-5">
-                IFSC Code: DUMMY1234567
-              </div>
-              <div className="text-gray-500 font-semibold text-[10px] leading-5">
-                Account Number: 1234567890
-              </div>
-              <div className="text-gray-500 font-semibold text-[10px] leading-5">
-                Branch: Dummy Branch
-              </div>
+          <div className="flex justify-between">
+            <div className="mt-3 w-1/2 ">
+              {bank && Object.keys(bank).length > 0 ? (
+                <>
+                  <div className="text-gray-500 font-semibold text-[10px] leading-5">
+                    Bank Name: {bank?.bank_name}
+                  </div>
+                  <div className="text-gray-500 font-semibold text-[10px] leading-5">
+                    IFSC Code: {bank?.ifsc}
+                  </div>
+                  <div className="text-gray-500 font-semibold text-[10px] leading-5">
+                    Account Number: {bank?.ac_no}
+                  </div>
+                  <div className="text-gray-500 font-semibold text-[10px] leading-5">
+                    Branch: {bank?.branch}
+                  </div>
+                </>
+              ) : (
+                <div className="text-gray-500 font-semibold text-[10px] leading-5"></div>
+              )}
             </div>
 
-            <div>
-              <div className=" py-3 ">
+            <div className="w-1/2">
+              <div className=" py-3   ">
                 <div className="  flex justify-end ">
                   <div className="text-gray-700 mr-2 font-bold text-[10px] mb-1">
                     Add on charges:
@@ -337,12 +359,20 @@ function ShareInvoice() {
                   </div>
                 </div>
                 {data?.additionalCharges?.map((el, index) => (
-                  <div
-                    key={index}
-                    className="text-gray-700  text-right font-semibold text-[9px]  leading-5  "
-                  >
-                    {el?.option}: ₹ {el?.value}
-                  </div>
+                  <>
+                    <div
+                      key={index}
+                      className="text-gray-700  text-right font-semibold text-[10px]    "
+                    >
+                      <span>({el?.action === "add" ? "+" : "-"})</span>{" "}
+                      {el?.option}: ₹ {el?.finalValue}
+                    </div>
+                    {el?.taxPercentage && (
+                      <div className="text-gray-700  text-right font-semibold text-[8px] mb-2">
+                        ( {el?.value} + {el?.taxPercentage}% )
+                      </div>
+                    )}
+                  </>
                 ))}
               </div>
 
@@ -352,7 +382,7 @@ function ShareInvoice() {
                 <div className=" w-2/4 text-gray-700  font-bold text-[10px] flex justify-end   ">
                   <p className="text-nowrap border-y-2 py-2">TOTAL AMOUNT:</p>
                   <div className="text-gray-700  font-bold text-[10px] text-nowrap  border-y-2 py-2   ">
-                    ₹ {data.finalAmount}
+                    ₹ {data?.finalAmount}
                   </div>
                 </div>
               </div>
@@ -369,58 +399,21 @@ function ShareInvoice() {
             </div>
           </div>
 
-          <div className="border-gray-300 mb-5 mt-4">
-            <div className="text-gray-700 mb-2 font-bold text-[10px]">
-              Terms and Conditions
+          {org && org.configurations?.length > 0 && (
+            <div className="border-gray-300 mb-5 mt-4">
+              <div className="text-gray-700 mb-2 font-bold text-[10px]">
+                Terms and Conditions
+              </div>
+              <div className="text-gray-700 text-[9px] leading-5">
+                {org?.configurations[0]?.terms?.map((el, index) => (
+                  <p key={index}>
+                    {" "}
+                    <span className="font-bold">{index + 1}.</span> {el}
+                  </p>
+                ))}
+              </div>
             </div>
-            <div className="text-gray-700 text-[9px] leading-5">
-              <p>
-                1. <strong>Payment Terms:</strong> Payment is due within 30 days
-                of the invoice date. Late payment will result in a 5% late fee
-                per month.
-              </p>
-              <p>
-                2. <strong>Delivery:</strong> Delivery will be made within 10
-                business days of receipt of payment. Delivery outside the
-                specified area may incur additional charges.
-              </p>
-              <p>
-                3. <strong>Returns and Refunds:</strong> Returns must be made
-                within 30 days of delivery. Products must be returned in their
-                original condition, with all packaging and accessories. Refunds
-                will be processed within 14 days of receipt of the returned
-                product.
-              </p>
-              <p>
-                4. <strong>Warranty:</strong> All products come with a 1-year
-                warranty. Warranty claims must be made within 30 days of
-                purchase.
-              </p>
-              <p>
-                5. <strong>Intellectual Property:</strong> All products and
-                designs are the property of [Your Company Name]. Unauthorized
-                use or reproduction of our products is strictly prohibited.
-              </p>
-              <p>
-                6. <strong>Dispute Resolution:</strong> Any disputes arising
-                from this agreement will be resolved through mediation. Failure
-                to reach a resolution through mediation will result in the
-                dispute being submitted to arbitration.
-              </p>
-              <p>
-                7. <strong>Force Majeure:</strong> Neither party will be liable
-                for any failure to perform its obligations under this agreement
-                if such failure is due to events beyond the reasonable control
-                of the party, including but not limited to acts of God, war,
-                terrorism, civil unrest, or natural disaster.
-              </p>
-              <p>
-                8. <strong>Governing Law:</strong> This agreement shall be
-                governed by and construed in accordance with the laws of [Your
-                Country].
-              </p>
-            </div>
-          </div>
+          )}
         </div>
       </div>
     </div>
