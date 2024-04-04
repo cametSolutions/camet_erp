@@ -5,6 +5,9 @@ import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import {  IoReorderThreeSharp } from "react-icons/io5";
 import SidebarSec from "../../components/secUsers/SidebarSec";
+import { useDispatch } from "react-redux";
+import { removeAll } from "../../../slices/invoiceSecondary";
+
 
 function OrderConfigurationsSecondary() {
   const [bank, setBank] = useState("");
@@ -22,6 +25,7 @@ function OrderConfigurationsSecondary() {
   );
 
   console.log(org);
+  const dispatch=useDispatch()
 
   useEffect(() => {
     const getSingleOrganization = async () => {
@@ -56,6 +60,8 @@ function OrderConfigurationsSecondary() {
       }
     };
     getSingleOrganization();
+  dispatch(removeAll())
+
   }, [org]);
 
   console.log(company);

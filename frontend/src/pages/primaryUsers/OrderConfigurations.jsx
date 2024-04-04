@@ -5,6 +5,9 @@ import api from "../../api/api";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import {  IoReorderThreeSharp } from "react-icons/io5";
+import { useDispatch } from "react-redux";
+import { removeAll } from "../../../slices/invoiceSecondary";
+
 
 function OrderConfigurations() {
   const [bank, setBank] = useState("");
@@ -62,6 +65,7 @@ function OrderConfigurations() {
   console.log(selectedBank);
 
   const navigate = useNavigate();
+  const dispatch=useDispatch()
 
   useEffect(() => {
     const fetchBank = async () => {
@@ -77,6 +81,8 @@ function OrderConfigurations() {
       }
     };
     fetchBank();
+  dispatch(removeAll())
+
   }, []);
 
   const handleTermsChange = (e) => {

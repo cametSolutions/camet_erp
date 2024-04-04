@@ -17,6 +17,7 @@ import {
   setBrandInRedux,
   setCategoryInRedux,
   setSubCategoryInRedux,
+  removeAll
 } from "../../../slices/invoice";
 import { HashLoader } from "react-spinners";
 import { FixedSizeList as List } from "react-window";
@@ -562,6 +563,7 @@ function AddItem() {
   };
 
   const backHandler = () => {
+    dispatch(removeAll())
     if (location?.state?.from === "editInvoice") {
       navigate(`/pUsers/editInvoice/${location.state.id}`);
     } else {

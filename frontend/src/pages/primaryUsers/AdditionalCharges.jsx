@@ -5,7 +5,8 @@ import api from "../../api/api";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import { IoIosArrowRoundBack } from "react-icons/io";
-
+import { useDispatch } from "react-redux";
+import { removeAll } from "../../../slices/invoice";
 
 function AdditionalCharges() {
   const [name, setName] = useState("");
@@ -16,6 +17,12 @@ function AdditionalCharges() {
     (state) => state.setSelectedOrganization.selectedOrg._id
   );
   const navigate = useNavigate();
+
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    dispatch(removeAll());
+  }, []);
 
   const submitHandler = async () => {
     if (!name.trim()) {

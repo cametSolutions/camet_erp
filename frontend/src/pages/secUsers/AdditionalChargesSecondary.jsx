@@ -5,7 +5,8 @@ import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import SidebarSec from "../../components/secUsers/SidebarSec";
-
+import { useDispatch } from "react-redux";
+import { removeAll } from "../../../slices/invoiceSecondary";
 
 function AdditionalChargesSecondary() {
   const [name, setName] = useState("");
@@ -16,6 +17,11 @@ function AdditionalChargesSecondary() {
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    dispatch(removeAll());
+  }, []);
 
   const submitHandler = async () => {
     if (!name.trim()) {
