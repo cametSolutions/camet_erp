@@ -9,7 +9,7 @@ import {login,getSecUserData,fetchOutstandingTotal,
     addDataToOrg,editDataInOrg,deleteDataInOrg,addProduct,
     productDetails,editProduct,deleteProduct,saveOrderNumber,
     getInvoiceDetails,editInvoice,fetchFilters,deleteAdditionalCharge,
-    addAditionalCharge,EditAditionalCharge,addconfigurations} from "../controllers/secondaryUserController.js"
+    addAditionalCharge,EditAditionalCharge,addconfigurations,createSale,getSalesDetails,saveSalesNumber} from "../controllers/secondaryUserController.js"
 import { authSecondary } from '../middlewares/authSecUsers.js';
 import { secondaryIsBlocked } from '../middlewares/isBlocked.js';
 
@@ -54,6 +54,12 @@ router.post('/addAditionalCharge/:cmp_id',authSecondary,secondaryIsBlocked,addAd
 router.delete('/deleteAdditionalCharge/:id/:cmp_id',authSecondary,secondaryIsBlocked,deleteAdditionalCharge)
 router.post('/EditAditionalCharge/:cmp_id/:id',authSecondary,secondaryIsBlocked,EditAditionalCharge)
 router.post('/addconfigurations/:cmp_id',authSecondary,secondaryIsBlocked,addconfigurations)
+router.post('/createSale',authSecondary,secondaryIsBlocked,createSale)
+router.get('/getSalesDetails/:id',authSecondary,secondaryIsBlocked,getSalesDetails)
+router.post('/saveSalesNumber/:cmp_id',authSecondary,secondaryIsBlocked,saveSalesNumber)
+
+
+
 
 
 

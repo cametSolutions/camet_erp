@@ -9,6 +9,7 @@ import { MdPrint } from "react-icons/md";
 import numberToWords from "number-to-words";
 import { Link } from "react-router-dom";
 import SidebarSec from "../../components/secUsers/SidebarSec";
+import QRCode from "react-qr-code";
 
 function ShareInvoiceSecondary() {
   const [data, setData] = useState([]);
@@ -343,6 +344,26 @@ function ShareInvoiceSecondary() {
                   </div>
                   <div className="text-gray-500 font-semibold text-[10px] leading-5">
                     Branch: {bank?.branch}
+                  </div>
+                  <div
+                    style={{
+                      height: "auto",
+                      margin: "0 ",
+                      marginTop: "10px",
+                      maxWidth: 64,
+                      width: "100%",
+                    }}
+                  >
+                    <QRCode
+                      size={250}
+                      style={{
+                        height: "auto",
+                        maxWidth: "100%",
+                        width: "100%",
+                      }}
+                      value={`upi://pay?pa=${bank?.upi_id}&am=${data?.finalAmount}`}
+                      viewBox={`0 0 256 256`}
+                    />
                   </div>
                 </>
               ) : (

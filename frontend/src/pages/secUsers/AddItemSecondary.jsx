@@ -376,8 +376,8 @@ function AddItemSecondary() {
           <div className="flex items-center flex-col gap-2">
             <button
               onClick={() => {
-                navigate(`/sUsers/editItem/${el._id}`, {
-                  state: { from: "addItem", id: location?.state?.id },
+                navigate(`/sUsers/editItemSales/${el._id}`, {
+                  state: { from: "addItemSales", id: location?.state?.id },
                 });
               }}
               type="button"

@@ -16,6 +16,7 @@ import HsnModel from "../models/hsnModel.js";
 import productModel from "../models/productModel.js";
 import invoiceModel from "../models/invoiceModel.js";
 import bankModel from "../models/bankModel.js";
+import salesModel from "../models/salesModel.js";
 
 // @desc Register Primary user
 // route POST/api/pUsers/register
@@ -591,11 +592,24 @@ export const transactions = async (req, res) => {
         },
       },
     ]);
+    const sales = await salesModel.aggregate([
+      { $match: { Primary_user_id: userId, cmp_id: cmp_id } },
+      {
+        $project: {
+          party_name: "$party.partyName",
+          // mobileNumber:"$party.mobileNumber",
+          type: "Tax Invoice",
+          enteredAmount: "$finalAmount",
+          createdAt: 1,
+          itemsLength: { $size: "$items" },
+        },
+      },
+    ]);
 
-    const combined = [...transactions, ...invoices];
+    console.log(sales);
+
+    const combined = [...transactions, ...invoices,...sales];
     combined.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-
-    console.log("combined", combined);
 
     if (combined.length > 0) {
       return res.status(200).json({
@@ -2098,10 +2112,10 @@ export const addconfigurations = async (req, res) => {
 
     const { selectedBank, termsList } = req.body;
     const newConfigurations = {
-      bank: selectedBank, 
-      terms: termsList, 
+      bank: selectedBank,
+      terms: termsList,
     };
-    org.configurations=[newConfigurations];
+    org.configurations = [newConfigurations];
 
     await org.save();
     return res.status(200).json({
@@ -2118,3 +2132,151 @@ export const addconfigurations = async (req, res) => {
     });
   }
 };
+
+// @desc   saveSalesNumber
+// route post/api/pUsers/saveSalesNumber/cmp_id
+
+export const saveSalesNumber = async (req, res) => {
+  const cmp_id = req.params.cmp_id;
+  try {
+    const company = await OragnizationModel.findById(cmp_id);
+    company.salesNumberDetails = req.body;
+
+    const save = await company.save();
+    return res.status(200).json({
+      success: true,
+      message: "Order number saved successfully",
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error, try again!",
+    });
+  }
+};
+
+// route POST /api/pUsers/createSale
+
+export const createSale = async (req, res) => {
+ const Primary_user_id = req.pUserId;
+ try {
+    const {
+      orgId,
+      party,
+      items,
+      priceLevelFromRedux,
+      additionalChargesFromRedux,
+      lastAmount,
+      salesNumber,
+    } = req.body;
+
+    // Prepare bulk operations for product and godown updates
+    const productUpdates = [];
+    const godownUpdates = [];
+
+    // Process each item to update product stock and godown stock
+    for (const item of items) {
+      // Find the product in the product model
+      const product = await productModel.findOne({ _id: item._id });
+      if (!product) {
+        throw new Error(`Product not found for item ID: ${item._id}`);
+      }
+
+      // Calculate the new balance stock
+      const newBalanceStock = parseInt(product.balance_stock) - item.count;
+
+      // Prepare product update operation
+      productUpdates.push({
+        updateOne: {
+          filter: { _id: product._id },
+          update: { $set: { balance_stock: newBalanceStock } },
+        },
+      });
+
+      // Update the godown stock for each specified godown
+      for (const godown of item.GodownList) {
+        // Find the corresponding godown in the product's GodownList
+        const godownIndex = product.GodownList.findIndex(
+          (g) => g.godown === godown.godown
+        );
+        if (godownIndex !== -1) {
+          // Calculate the new godown stock
+          const newGodownStock =
+            parseInt(product.GodownList[godownIndex].balance_stock) -
+            godown.count;
+
+          // Prepare godown update operation
+          godownUpdates.push({
+            updateOne: {
+              filter: { _id: product._id, "GodownList.godown": godown.godown },
+              update: { $set: { "GodownList.$.balance_stock": newGodownStock } },
+            },
+          });
+        }
+      }
+    }
+
+    // Execute bulk operations
+    await productModel.bulkWrite(productUpdates);
+    await productModel.bulkWrite(godownUpdates);
+
+    // Continue with the rest of your function...
+    const sales = new salesModel({
+      cmp_id: orgId,
+      party,
+      items,
+      priceLevel: priceLevelFromRedux,
+      additionalCharges: additionalChargesFromRedux,
+      finalAmount: lastAmount,
+      Primary_user_id,
+      salesNumber,
+    });
+
+    const result = await sales.save();
+
+    const increaseSalesNumber = await OragnizationModel.findByIdAndUpdate(
+      orgId,
+      { $inc: { salesNumber: 1 } },
+      { new: true }
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Sale created successfully",
+      data: result,
+    });
+ } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error, try again!",
+      error: error.message,
+    });
+ }
+};
+
+
+
+// @desc toget the details of transaction or sale
+// route get/api/pUsers/getSalesDetails
+
+export const getSalesDetails = async (req, res) => {
+  const saleId = req.params.id;
+
+  try {
+    const saleDetails = await salesModel.findById(saleId);
+
+    if (saleDetails) {
+      res
+        .status(200)
+        .json({ message: "Sales details fetched", data: saleDetails });
+    } else {
+      res.status(404).json({ error: "Sale not found" });
+    }
+  } catch (error) {
+    console.error("Error fetching sale details:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+

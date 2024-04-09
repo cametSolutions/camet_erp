@@ -567,14 +567,14 @@ function AddItem() {
     if (location?.state?.from === "editInvoice") {
       navigate(`/pUsers/editInvoice/${location.state.id}`);
     } else {
-      navigate("/pUsers/invoice");
+      navigate("/pUsers/editInvoice");
     }
   };
 
   return (
     <div className="flex relative">
       <div>
-        <Sidebar TAB={"invoice"} />
+        <Sidebar  />
       </div>
 
       <div className="flex-1 bg-slate-50 h-screen overflow-y-scroll  ">

@@ -93,9 +93,7 @@ const productSchema = new mongoose.Schema({
 product_master_id: {
     type: String,
   },
-  category_id: {
-    type: String,
-  },
+
   subcategory_id: {
     type: String,
   },

@@ -540,7 +540,7 @@ function InvoiceSecondary() {
                           </div>
                         )}
                       </div>
-                      <Link to={`/pUsers/editItem/${el._id}`}>
+                      <Link to={`/sUsers/editItem/${el._id}`}>
                         <div className="">
                           <p className="text-violet-500 text-xs md:text-base font-bold  p-1  px-4   border border-1 border-gray-300 rounded-2xl cursor-pointer">
                             Edit
