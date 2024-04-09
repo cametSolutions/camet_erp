@@ -608,7 +608,7 @@ export const transactions = async (req, res) => {
 
     console.log(sales);
 
-    const combined = [...transactions, ...invoices,...sales];
+    const combined = [...transactions, ...invoices, ...sales];
     combined.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
     if (combined.length > 0) {
@@ -2159,8 +2159,8 @@ export const saveSalesNumber = async (req, res) => {
 // route POST /api/pUsers/createSale
 
 export const createSale = async (req, res) => {
- const Primary_user_id = req.pUserId;
- try {
+  const Primary_user_id = req.pUserId;
+  try {
     const {
       orgId,
       party,
@@ -2210,7 +2210,9 @@ export const createSale = async (req, res) => {
           godownUpdates.push({
             updateOne: {
               filter: { _id: product._id, "GodownList.godown": godown.godown },
-              update: { $set: { "GodownList.$.balance_stock": newGodownStock } },
+              update: {
+                $set: { "GodownList.$.balance_stock": newGodownStock },
+              },
             },
           });
         }
@@ -2246,17 +2248,15 @@ export const createSale = async (req, res) => {
       message: "Sale created successfully",
       data: result,
     });
- } catch (error) {
+  } catch (error) {
     console.error(error);
     return res.status(500).json({
       success: false,
       message: "Internal server error, try again!",
       error: error.message,
     });
- }
+  }
 };
-
-
 
 // @desc toget the details of transaction or sale
 // route get/api/pUsers/getSalesDetails
@@ -2280,3 +2280,62 @@ export const getSalesDetails = async (req, res) => {
   }
 };
 
+
+// @desc toget the godown list
+// route get/api/pUsers/fetchGodowns
+
+export const fetchGodownsAndPriceLevels = async (req, res) => {
+ const Primary_user_id = req.pUserId;
+ const cmp_id=req.params.cmp_id;
+ try {
+    // First, collect all price levels across products
+    const priceLevelsResult = await productModel.aggregate([
+      { $match: { "Primary_user_id": new mongoose.Types.ObjectId(Primary_user_id) ,"cmp_id": cmp_id } },
+      { $unwind: "$Priceleveles" },
+      { $match: { "Priceleveles.pricelevel": { $ne: null }, "Priceleveles.pricelevel": { $ne: "" } } },
+      { $group: {
+           _id: "$Priceleveles.pricelevel", // Group by price level
+           priceRate: { $first: "$Priceleveles.pricerate" } // Take the first pricerate as an example
+         }
+      },
+    ]);
+
+    // Then, collect godowns as before
+    const godownsResult = await productModel.aggregate([
+      { $match: { "Primary_user_id": new mongoose.Types.ObjectId(Primary_user_id),"cmp_id": cmp_id  } },
+      { $unwind: "$GodownList" },
+      { $match: { "GodownList.godown": { $ne: null }, "GodownList.godown": { $ne: "" } } },
+      { $group: {
+           _id: "$GodownList.godown",
+           companies: { $addToSet: "$cmp_id" } // Collect unique cmp_id values for each godown
+         }
+      },
+      { $match: { _id: { $ne: null } } }
+    ]);
+
+    const godownsWithPriceLevels = godownsResult.map(item => ({
+      godown: item._id,
+      companies: item.companies,
+    }));
+
+    const uniquePriceLevels = priceLevelsResult.map(item => ({
+      priceLevel: item._id,
+      priceRate: item.priceRate,
+    }));
+
+    res
+      .status(200)
+      .json({ 
+        message: "Godowns and Unique Price Levels fetched", 
+        data: {
+          godowns: godownsWithPriceLevels,
+          priceLevels: uniquePriceLevels
+        } 
+      });
+ } catch (error) {
+    console.error("Error fetching sale details:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+ }
+};
+
+ 

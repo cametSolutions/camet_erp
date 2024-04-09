@@ -91,6 +91,7 @@ import AddItemSalesSecondary from '../pages/secUsers/AddItemSalesSecondary'
 import SalesDetailsSecondary from '../pages/secUsers/SalesDetailsSecondary'
 import EditItemSalesSecondary from '../pages/secUsers/EditItemSalesSecondary'
 import ShareSalesSecondary from '../pages/secUsers/ShareSalesSecondary'
+import ConfigureSecondaryUser from '../pages/primaryUsers/ConfigureSecondaryUser'
 
 
 const Routers = () => {
@@ -149,6 +150,7 @@ const Routers = () => {
         <Route path='/pUsers/modal' element={<ProtectedPriRoute><SelectDefaultModal/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/salesDetails/:id' element={<ProtectedPriRoute><SalesDetails/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/shareSales/:id' element={<ProtectedPriRoute><ShareSales/></ProtectedPriRoute>}></Route>
+        <Route path='/pUsers/configureSecondaryUser/:id' element={<ProtectedPriRoute><ConfigureSecondaryUser/></ProtectedPriRoute>}></Route>
 
 
         {/* admin */}

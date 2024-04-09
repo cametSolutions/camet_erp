@@ -19,6 +19,8 @@ const productSchema = new mongoose.Schema({
   Primary_user_id: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "PrimaryUser",
+    required:true
+
   },
   Secondary_user_id: {
     type: mongoose.Schema.Types.ObjectId,
