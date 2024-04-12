@@ -271,7 +271,7 @@ function EditSecUsers() {
                                 </button> */}
 
                                 {selectedOrg.includes(item._id) && (
-                                  <Link to={`/pUsers/configureSecondaryUser/${item._id}`}>
+                                  <Link to={`/pUsers/configureSecondaryUser/${item._id}/${id}/${item.name}`}>
                                   <IoIosSettings className="cursor-pointer" />
                                 </Link>
                                 )}

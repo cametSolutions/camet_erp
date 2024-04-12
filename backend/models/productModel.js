@@ -56,7 +56,7 @@ const productSchema = new mongoose.Schema({
   },
   hsn_code: {
     type: String,
-    required: true,
+    // required: true,
   },
   hsn_id: {
     type: mongoose.Schema.Types.ObjectId,ref:"Hsn",

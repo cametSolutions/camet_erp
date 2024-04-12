@@ -2280,62 +2280,241 @@ export const getSalesDetails = async (req, res) => {
   }
 };
 
-
 // @desc toget the godown list
 // route get/api/pUsers/fetchGodowns
 
 export const fetchGodownsAndPriceLevels = async (req, res) => {
- const Primary_user_id = req.pUserId;
- const cmp_id=req.params.cmp_id;
- try {
+  const Primary_user_id = req.pUserId;
+  const cmp_id = req.params.cmp_id;
+  try {
     // First, collect all price levels across products
     const priceLevelsResult = await productModel.aggregate([
-      { $match: { "Primary_user_id": new mongoose.Types.ObjectId(Primary_user_id) ,"cmp_id": cmp_id } },
+      {
+        $match: {
+          Primary_user_id: new mongoose.Types.ObjectId(Primary_user_id),
+          cmp_id: cmp_id,
+        },
+      },
       { $unwind: "$Priceleveles" },
-      { $match: { "Priceleveles.pricelevel": { $ne: null }, "Priceleveles.pricelevel": { $ne: "" } } },
-      { $group: {
-           _id: "$Priceleveles.pricelevel", // Group by price level
-           priceRate: { $first: "$Priceleveles.pricerate" } // Take the first pricerate as an example
-         }
+      {
+        $match: {
+          "Priceleveles.pricelevel": { $ne: null },
+          "Priceleveles.pricelevel": { $ne: "" },
+        },
+      },
+      {
+        $group: {
+          _id: "$Priceleveles.pricelevel", // Group by price level
+          //  priceRate: { $first: "$Priceleveles.pricerate" } // Take the first pricerate as an example
+        },
       },
     ]);
 
     // Then, collect godowns as before
     const godownsResult = await productModel.aggregate([
-      { $match: { "Primary_user_id": new mongoose.Types.ObjectId(Primary_user_id),"cmp_id": cmp_id  } },
-      { $unwind: "$GodownList" },
-      { $match: { "GodownList.godown": { $ne: null }, "GodownList.godown": { $ne: "" } } },
-      { $group: {
-           _id: "$GodownList.godown",
-           companies: { $addToSet: "$cmp_id" } // Collect unique cmp_id values for each godown
-         }
+      {
+        $match: {
+          Primary_user_id: new mongoose.Types.ObjectId(Primary_user_id),
+          cmp_id: cmp_id,
+        },
       },
-      { $match: { _id: { $ne: null } } }
+      { $unwind: "$GodownList" },
+      {
+        $match: {
+          "GodownList.godown_id": { $ne: null },
+          "GodownList.godown_id": { $ne: "" },
+        },
+      },
+      {
+        $group: {
+          _id: "$GodownList.godown_id",
+          godown: { $addToSet: "$GodownList.godown" }, // Collect unique cmp_id values for each godown
+        },
+      },
+      { $match: { _id: { $ne: null } } },
     ]);
 
-    const godownsWithPriceLevels = godownsResult.map(item => ({
-      godown: item._id,
-      companies: item.companies,
+    console.log(godownsResult);
+
+    const godownsWithPriceLevels = godownsResult.map((item) => ({
+      id: item._id,
+      godown: item.godown,
     }));
 
-    const uniquePriceLevels = priceLevelsResult.map(item => ({
+    const uniquePriceLevels = priceLevelsResult.map((item) => ({
       priceLevel: item._id,
       priceRate: item.priceRate,
     }));
 
-    res
-      .status(200)
-      .json({ 
-        message: "Godowns and Unique Price Levels fetched", 
-        data: {
-          godowns: godownsWithPriceLevels,
-          priceLevels: uniquePriceLevels
-        } 
-      });
- } catch (error) {
+    res.status(200).json({
+      message: "Godowns and Unique Price Levels fetched",
+      data: {
+        godowns: godownsWithPriceLevels,
+        priceLevels: uniquePriceLevels,
+      },
+    });
+  } catch (error) {
     console.error("Error fetching sale details:", error);
     res.status(500).json({ error: "Internal Server Error" });
- }
+  }
 };
 
- 
+// @desc  fetchAdditionalDetails
+// route get/api/pUsers/fetchAdditionalDetails
+
+export const fetchAdditionalDetails = async (req, res) => {
+  const cmp_id = req.params.cmp_id;
+  const Primary_user_id = req.pUserId;
+
+  try {
+    const priceLevelsResult = await productModel.aggregate([
+      {
+        $match: {
+          Primary_user_id: new mongoose.Types.ObjectId(Primary_user_id),
+          cmp_id: cmp_id,
+        },
+      },
+      { $unwind: "$Priceleveles" },
+      {
+        $match: {
+          "Priceleveles.pricelevel": { $ne: null },
+          "Priceleveles.pricelevel": { $ne: "" },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          pricelevels: { $addToSet: "$Priceleveles.pricelevel" },
+        },
+      },
+      { $project: { _id: 0, pricelevels: 1 } },
+    ]);
+
+    const brandResults = await productModel.aggregate([
+      {
+        $match: {
+          Primary_user_id: new mongoose.Types.ObjectId(Primary_user_id),
+          cmp_id: cmp_id,
+        },
+      },
+      { $group: { _id: null, brands: { $addToSet: "$brand" } } },
+      { $project: { _id: 0, brands: 1 } },
+    ]);
+
+    const categoryResults = await productModel.aggregate([
+      {
+        $match: {
+          Primary_user_id: new mongoose.Types.ObjectId(Primary_user_id),
+          cmp_id: cmp_id,
+        },
+      },
+      { $group: { _id: null, categories: { $addToSet: "$category" } } },
+      { $project: { _id: 0, categories: 1 } },
+    ]);
+
+    const subCategoryResults = await productModel.aggregate([
+      {
+        $match: {
+          Primary_user_id: new mongoose.Types.ObjectId(Primary_user_id),
+          cmp_id: cmp_id,
+        },
+      },
+      { $group: { _id: null, subcategories: { $addToSet: "$sub_category" } } },
+      { $project: { _id: 0, subcategories: 1 } },
+    ]);
+
+    // Send the aggregated results back to the client
+    res.json({
+      message: "additional details fetched",
+      priceLevels: priceLevelsResult[0]?.pricelevels || [],
+      brands: brandResults[0]?.brands || [],
+      categories: categoryResults[0]?.categories || [],
+      subcategories: subCategoryResults[0]?.subcategories || [],
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+// @desc  adding configurations for secondary
+// route get/api/pUsers/addSecondaryConfigurations
+
+export const addSecondaryConfigurations = async (req, res) => {
+  const cmp_id = req.params.cmp_id;
+  const Primary_user_id = req.pUserId;
+  const secondary_user_id = req.params.userId;
+
+  console.log("req.body",req.body);
+
+  try {
+    const {
+      selectedGodowns = [],
+      selectedPriceLevels,
+      salesConfiguration,
+      salesOrderConfiguration,
+      receiptConfiguration,
+      vanSaleConfiguration = [],
+      vanSale
+    } = req.body;
+
+    console.log(selectedGodowns);
+    console.log(vanSaleConfiguration);
+
+    const dataToAdd = {
+      organization: cmp_id,
+      selectedGodowns,
+      selectedPriceLevels,
+      salesConfiguration,
+      salesOrderConfiguration,
+      receiptConfiguration,
+      vanSaleConfiguration,
+      vanSale
+    };
+
+
+    console.log("dataToAdd",dataToAdd);
+
+    const secUser = await SecondaryUser.findById(secondary_user_id);
+
+    if (!secUser) {
+      return res.status(404).json({ error: "Secondary user not found" });
+    }
+    // console.log("seccc",secUser);
+
+    const newCmpId=new mongoose.Types.ObjectId(cmp_id)
+    console.log("newCmpId",newCmpId);
+
+    const existingConfigIndex = secUser.configurations.findIndex(
+      (config) => {
+        return config.organization.equals(newCmpId);
+      }
+    );
+
+    console.log(existingConfigIndex);
+
+    if (existingConfigIndex !== -1) {
+      // Update existing configuration
+      secUser.configurations[existingConfigIndex] = dataToAdd;
+    } else {
+      // Add new configuration
+      secUser.configurations.push(dataToAdd);
+    }
+
+    const result=await secUser.save()
+
+
+    if (result) {
+      return res
+        .status(200)
+        .json({ success: true, message: "User configuration is successful" });
+    } else {
+      return res
+        .status(400)
+        .json({ success: false, message: "User configuration failed" });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};

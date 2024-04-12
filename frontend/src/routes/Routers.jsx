@@ -150,7 +150,7 @@ const Routers = () => {
         <Route path='/pUsers/modal' element={<ProtectedPriRoute><SelectDefaultModal/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/salesDetails/:id' element={<ProtectedPriRoute><SalesDetails/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/shareSales/:id' element={<ProtectedPriRoute><ShareSales/></ProtectedPriRoute>}></Route>
-        <Route path='/pUsers/configureSecondaryUser/:id' element={<ProtectedPriRoute><ConfigureSecondaryUser/></ProtectedPriRoute>}></Route>
+        <Route path='/pUsers/configureSecondaryUser/:id/:userId/:cmp_name' element={<ProtectedPriRoute><ConfigureSecondaryUser/></ProtectedPriRoute>}></Route>
 
 
         {/* admin */}

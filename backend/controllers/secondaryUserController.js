@@ -661,15 +661,18 @@ export const addParty = async (req, res) => {
 export const getProducts = async (req, res) => {
   const Secondary_user_id = req.sUserId;
   const cmp_id = req.params.cmp_id;
-  console.log("Primary_user_id", Secondary_user_id);
-  console.log("cmp_id", cmp_id);
+
   try {
+
+    const secUser=await SecondaryUser.findById(Secondary_user_id)
+
+    console.log("secUser",secUser);
+
     const products = await productModel.find({
       // Secondary_user_id: Secondary_user_id,
       cmp_id: cmp_id,
     });
 
-    console.log(products);
     if (products) {
       return res.status(200).json({
         productData: products,

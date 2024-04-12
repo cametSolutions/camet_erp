@@ -13,7 +13,8 @@ import { registerPrimaryUser,login,addOrganizations,
   fetchFilters,createInvoice,addBulkProducts,invoiceList,deleteHsn,
   getSingleHsn,editHsn,addBank,getBankDetails,editBank,getSecUserDetails,
   editSecUSer,saveOrderNumber,getInvoiceDetails,editInvoice,addAditionalCharge,
-  deleteAdditionalCharge,EditAditionalCharge,addconfigurations,createSale,saveSalesNumber,getSalesDetails,fetchGodownsAndPriceLevels} from '../controllers/primaryUserController.js';
+  deleteAdditionalCharge,EditAditionalCharge,addconfigurations,
+  createSale,saveSalesNumber,getSalesDetails,fetchGodownsAndPriceLevels,fetchAdditionalDetails,addSecondaryConfigurations} from '../controllers/primaryUserController.js';
 import { singleUpload } from '../multer/multer.js';
 import { primaryIsBlocked } from '../middlewares/isBlocked.js';
 
@@ -76,6 +77,9 @@ router.post('/createSale',authPrimary,primaryIsBlocked,createSale)
 router.post('/saveSalesNumber/:cmp_id',authPrimary,primaryIsBlocked,saveSalesNumber)
 router.get('/getSalesDetails/:id',authPrimary,primaryIsBlocked,getSalesDetails)
 router.get('/fetchGodownsAndPriceLevels/:cmp_id',authPrimary,primaryIsBlocked,fetchGodownsAndPriceLevels)
+router.get('/fetchAdditionalDetails/:cmp_id',authPrimary,primaryIsBlocked,fetchAdditionalDetails)
+router.post('/addSecondaryConfigurations/:cmp_id/:userId',authPrimary,primaryIsBlocked,addSecondaryConfigurations)
+
 
 
 
