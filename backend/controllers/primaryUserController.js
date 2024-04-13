@@ -89,7 +89,7 @@ export const login = async (req, res) => {
 
     console.log("primaryUser", primaryUser);
 
-    if (!primaryUser.isApproved) {
+    if (primaryUser.isApproved===false) {
       return res.status(401).json({ message: "User approval is pending" });
     }
 
@@ -2445,7 +2445,7 @@ export const addSecondaryConfigurations = async (req, res) => {
   const Primary_user_id = req.pUserId;
   const secondary_user_id = req.params.userId;
 
-  console.log("req.body",req.body);
+  console.log("req.body", req.body);
 
   try {
     const {
@@ -2455,7 +2455,7 @@ export const addSecondaryConfigurations = async (req, res) => {
       salesOrderConfiguration,
       receiptConfiguration,
       vanSaleConfiguration = [],
-      vanSale
+      vanSale,
     } = req.body;
 
     console.log(selectedGodowns);
@@ -2465,31 +2465,27 @@ export const addSecondaryConfigurations = async (req, res) => {
       organization: cmp_id,
       selectedGodowns,
       selectedPriceLevels,
-      salesConfiguration,
-      salesOrderConfiguration,
-      receiptConfiguration,
-      vanSaleConfiguration,
-      vanSale
+      salesConfiguration: modifyFieldNames(salesConfiguration),
+      salesOrderConfiguration: modifyFieldNames(salesOrderConfiguration),
+      receiptConfiguration: modifyFieldNames(receiptConfiguration),
+      vanSaleConfiguration: modifyFieldNames(vanSaleConfiguration),
+      vanSale,
     };
 
-
-    console.log("dataToAdd",dataToAdd);
+    console.log("dataToAdd", dataToAdd);
 
     const secUser = await SecondaryUser.findById(secondary_user_id);
 
     if (!secUser) {
       return res.status(404).json({ error: "Secondary user not found" });
     }
-    // console.log("seccc",secUser);
 
-    const newCmpId=new mongoose.Types.ObjectId(cmp_id)
-    console.log("newCmpId",newCmpId);
+    const newCmpId = new mongoose.Types.ObjectId(cmp_id);
+    console.log("newCmpId", newCmpId);
 
-    const existingConfigIndex = secUser.configurations.findIndex(
-      (config) => {
-        return config.organization.equals(newCmpId);
-      }
-    );
+    const existingConfigIndex = secUser.configurations.findIndex((config) => {
+      return config.organization.equals(newCmpId);
+    });
 
     console.log(existingConfigIndex);
 
@@ -2501,8 +2497,7 @@ export const addSecondaryConfigurations = async (req, res) => {
       secUser.configurations.push(dataToAdd);
     }
 
-    const result=await secUser.save()
-
+    const result = await secUser.save();
 
     if (result) {
       return res
@@ -2518,3 +2513,16 @@ export const addSecondaryConfigurations = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
+// Helper function to modify field names in configuration objects
+const modifyFieldNames = (config) => {
+  // Modify the field names here as needed
+  return {
+    prefixDetails: config.prefix,
+    suffixDetails: config.suffix,
+    startingNumber: config.startingNumber,
+    widthOfNumericalPart: config.numericalWidth,
+    configurationNumber:config.configurationNumber
+  };
+};
+

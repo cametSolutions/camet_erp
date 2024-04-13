@@ -70,20 +70,74 @@ function InvoiceSecondary() {
         setAdditionalChragesFromCompany(
           res.data.organizationData.additionalCharges
         );
-        const { orderNumber, OrderNumberDetails } = res.data.organizationData;
+        // const { orderNumber, OrderNumberDetails } = res.data.organizationData;
 
-        console.log(orderNumber);
+        // console.log(orderNumber);
 
-        if (OrderNumberDetails) {
-          console.log("haii");
+        // if (OrderNumberDetails) {
+        //   console.log("haii");
+        //   const { widthOfNumericalPart, prefixDetails, suffixDetails } =
+        //     OrderNumberDetails;
+        //     const newOrderNumber=(orderNumber).toString()
+        //     console.log(newOrderNumber);
+        //   console.log(widthOfNumericalPart);
+        //   console.log(prefixDetails);
+        //   console.log(suffixDetails);
+
+
+        //   const padedNumber = newOrderNumber.padStart(widthOfNumericalPart, 0);
+        //   console.log(padedNumber);
+        //   const finalOrderNumber = prefixDetails + padedNumber + suffixDetails;
+        //   console.log(finalOrderNumber);
+        //   setOrderNumber(finalOrderNumber);
+        //   setModalInputs({
+        //     widthOfNumericalPart: widthOfNumericalPart,
+        //     prefixDetails: prefixDetails,
+        //     suffixDetails: suffixDetails,
+        //   });
+        // } else {
+        //   setOrderNumber(orderNumber);
+        //   setModalInputs({
+        //     startingNumber: "1",
+        //     widthOfNumericalPart: "",
+        //     prefixDetails: "",
+        //     suffixDetails: "",
+        //   });
+        // }
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    fetchSingleOrganization();
+  }, [refreshCmp, orgId]);
+
+
+
+  useEffect(() => {
+    const fetchConfigurationNumber = async () => {
+      try {
+        const res = await api.get(
+          `/api/sUsers/fetchConfigurationNumber/${orgId}/salesOrder`,
+
+          {
+            withCredentials: true,
+          }
+        );
+
+        console.log(res.data);
+
+        const { configDetails, configurationNumber } = res.data;
+        console.log(configDetails);
+        console.log(configurationNumber);
+
+        if (configDetails) {
           const { widthOfNumericalPart, prefixDetails, suffixDetails } =
-            OrderNumberDetails;
-            const newOrderNumber=(orderNumber).toString()
-            console.log(newOrderNumber);
+            configDetails;
+          const newOrderNumber = configurationNumber.toString();
+          console.log(newOrderNumber);
           console.log(widthOfNumericalPart);
           console.log(prefixDetails);
           console.log(suffixDetails);
-
 
           const padedNumber = newOrderNumber.padStart(widthOfNumericalPart, 0);
           console.log(padedNumber);
@@ -108,8 +162,9 @@ function InvoiceSecondary() {
         console.log(error);
       }
     };
-    fetchSingleOrganization();
-  }, [refreshCmp, orgId]);
+
+    fetchConfigurationNumber();
+  }, []);
 
   
 

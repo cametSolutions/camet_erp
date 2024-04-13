@@ -2,7 +2,7 @@
 /* eslint-disable react/no-unknown-property */
 import { useState, useEffect, useMemo, useRef } from "react";
 import { IoIosArrowRoundBack } from "react-icons/io";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import {  useNavigate, useLocation } from "react-router-dom";
 import { IoIosSearch } from "react-icons/io";
 import api from "../../api/api";
 import { MdOutlineQrCodeScanner } from "react-icons/md";

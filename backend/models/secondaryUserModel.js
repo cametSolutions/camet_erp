@@ -24,9 +24,11 @@ const secondaryUserSchema = new mongoose.Schema(
         salesOrderConfiguration: { type: Object },
         receiptConfiguration: { type: Object },
         vanSaleConfiguration: { type: Object },
-        vanSale:{type:Boolean}
+        vanSale: { type: Boolean },
       },
     ],
+    orderNumber: { type: Number, default: 1 },
+    salesNumber: { type: Number, default: 1 },
   },
   {
     timestamps: true,
