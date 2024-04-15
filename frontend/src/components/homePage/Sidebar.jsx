@@ -209,7 +209,7 @@ function Sidebar({ TAB, showBar }) {
             className="text-white mt-6 bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
             type="button"
           >
-            {selectedOrg.name}
+            {selectedOrg?.name  || "No Companies"}
 
             <svg
               class="w-2.5 h-2.5 ms-3"

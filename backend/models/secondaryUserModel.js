@@ -29,6 +29,7 @@ const secondaryUserSchema = new mongoose.Schema(
     ],
     orderNumber: { type: Number, default: 1 },
     salesNumber: { type: Number, default: 1 },
+    vanSalesNumber: { type: Number, default: 1 },
   },
   {
     timestamps: true,

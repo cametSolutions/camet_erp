@@ -1657,11 +1657,51 @@ export const createSale = async (req, res) => {
 
     const result = await sales.save();
 
-    const increaseSalesNumber = await OragnizationModel.findByIdAndUpdate(
-      orgId,
-      { $inc: { salesNumber: 1 } },
-      { new: true }
+    const secondaryUser = await SecondaryUser.findById(Secondary_user_id);
+
+    if (!secondaryUser) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Secondary user not found" });
+    }
+
+    let salesConfig = false;
+
+    const configuration = secondaryUser.configurations.find(
+      (config) => config.organization.toString() === orgId
     );
+    if (configuration) {
+      if (
+        configuration.salesConfiguration &&
+        Object.values(configuration.salesConfiguration).every(
+          (value) => value !== ""
+        )
+      ) {
+        salesConfig = true;
+      }
+    }
+
+    const vanSaleConfig = configuration?.vanSale;
+
+    if (vanSaleConfig) {
+      const increaseSalesNumber = await SecondaryUser.findByIdAndUpdate(
+        Secondary_user_id,
+        { $inc: { vanSalesNumber: 1 } },
+        { new: true }
+      );
+    } else if (salesConfig) {
+      const increaseSalesNumber = await SecondaryUser.findByIdAndUpdate(
+        Secondary_user_id,
+        { $inc: { salesNumber: 1 } },
+        { new: true }
+      );
+    } else {
+      const increaseSalesNumber = await OragnizationModel.findByIdAndUpdate(
+        orgId,
+        { $inc: { salesNumber: 1 } },
+        { new: true }
+      );
+    }
 
     return res.status(200).json({
       success: true,
@@ -1827,6 +1867,8 @@ export const fetchConfigurationNumber = async (req, res) => {
     const secUser = await SecondaryUser.findById(secUserId);
     const company = await OragnizationModel.findById(cmp_id);
 
+    console.log("companyyyy",company);
+
     if (!secUser) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -1838,7 +1880,7 @@ export const fetchConfigurationNumber = async (req, res) => {
       (item) => item.organization.toString() === cmp_id
     );
 
-    console.log("configuration",configuration);
+    console.log("configuration", configuration);
 
     if (!configuration) {
       switch (title) {
@@ -1849,7 +1891,6 @@ export const fetchConfigurationNumber = async (req, res) => {
         case "salesOrder":
           configDetails = company?.OrderNumberDetails;
           configurationNumber = company?.orderNumber;
-
           break;
         case "receipt":
           configDetails = company?.receiptNumberDetails;
@@ -1861,17 +1902,25 @@ export const fetchConfigurationNumber = async (req, res) => {
     } else {
       switch (title) {
         case "sales":
-          configDetails =
-            configuration.salesConfiguration || company?.salesNumberDetails;
-          configurationNumber = secUser?.salesNumber;
-
+          if (
+            configuration.vanSale &&
+            Object.values(configuration.salesConfiguration).every(
+              (value) => value === ""
+            )
+          ) {
+            configDetails = configuration.vanSaleConfiguration;
+            configurationNumber = secUser?.vanSalesNumber;
+          } else {
+            configDetails =
+              configuration.salesConfiguration || company?.salesNumberDetails;
+            configurationNumber = secUser?.salesNumber;
+          }
           break;
         case "salesOrder":
           configDetails =
             configuration.salesOrderConfiguration ||
             company?.OrderNumberDetails;
           configurationNumber = secUser?.orderNumber;
-
           break;
         case "receipt":
           configDetails =
@@ -1890,16 +1939,14 @@ export const fetchConfigurationNumber = async (req, res) => {
       switch (title) {
         case "sales":
           configDetails = company?.salesNumberDetails;
-          configurationNumber = secUser?.salesNumber;
-
+          configurationNumber = company?.salesNumber;
           break;
         case "salesOrder":
           configDetails = company?.OrderNumberDetails;
-          configurationNumber = secUser?.orderNumber;
+          configurationNumber = company?.orderNumber;
           break;
         case "receipt":
           configDetails = company?.receiptNumberDetails;
-
           break;
         default:
           configDetails = null;
@@ -1910,7 +1957,11 @@ export const fetchConfigurationNumber = async (req, res) => {
     console.log(configDetails);
 
     if (configDetails) {
-      res.json({ message: "Configuration details fetched", configDetails ,configurationNumber});
+      res.json({
+        message: "Configuration details fetched",
+        configDetails,
+        configurationNumber,
+      });
     } else {
       res.status(404).json({ message: "Configuration details not found" });
     }

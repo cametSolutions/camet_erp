@@ -454,14 +454,14 @@ function InvoiceSecondary() {
                 <IoIosAddCircle className="text-2xl" />
                 <p>Generate Order</p>
               </button>
-              <div>
+              {/* <div>
                 <p 
                   onClick={() => setOpenModal(true)}
 
                 className="text-violet-500 text-xs  p-1 px-3  border border-1 border-gray-300 rounded-2xl cursor-pointer">
                   Edit
                 </p>
-              </div>
+              </div> */}
             </div>
           </div>
         </div>

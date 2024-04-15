@@ -2461,14 +2461,16 @@ export const addSecondaryConfigurations = async (req, res) => {
     console.log(selectedGodowns);
     console.log(vanSaleConfiguration);
 
+
+
     const dataToAdd = {
       organization: cmp_id,
       selectedGodowns,
       selectedPriceLevels,
-      salesConfiguration: modifyFieldNames(salesConfiguration),
-      salesOrderConfiguration: modifyFieldNames(salesOrderConfiguration),
-      receiptConfiguration: modifyFieldNames(receiptConfiguration),
-      vanSaleConfiguration: modifyFieldNames(vanSaleConfiguration),
+      salesConfiguration,
+      salesOrderConfiguration,
+      receiptConfiguration,
+      vanSaleConfiguration,
       vanSale,
     };
 
@@ -2514,15 +2516,15 @@ export const addSecondaryConfigurations = async (req, res) => {
   }
 };
 
-// Helper function to modify field names in configuration objects
-const modifyFieldNames = (config) => {
-  // Modify the field names here as needed
-  return {
-    prefixDetails: config.prefix,
-    suffixDetails: config.suffix,
-    startingNumber: config.startingNumber,
-    widthOfNumericalPart: config.numericalWidth,
-    configurationNumber:config.configurationNumber
-  };
-};
+// // Helper function to modify field names in configuration objects
+// const modifyFieldNames = (config) => {
+//   // Modify the field names here as needed
+//   return {
+//     prefixDetails: config.prefix,
+//     suffixDetails: config.suffix,
+//     startingNumber: config.startingNumber,
+//     widthOfNumericalPart: config.numericalWidth,
+//     configurationNumber:config.configurationNumber
+//   };
+// };
 
