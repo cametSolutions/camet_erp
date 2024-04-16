@@ -29,6 +29,7 @@ function SidebarSec({ TAB,showBar }) {
   const [dropdown, setDropdown] = useState(false);
   const [org, setOrg] = useState("");
   const [loader, setLoader] = useState(false);
+  const [companies, setCompanies] = useState([])
 
   const navigate = useNavigate();
 
@@ -47,7 +48,8 @@ function SidebarSec({ TAB,showBar }) {
         const res = await api.get("/api/sUsers/getSecUserData", {
           withCredentials: true,
         });
-        setUserData(res.data.data.userData);
+        setUserData(res?.data?.data?.userData);
+        setCompanies(res?.data?.data?.userData.organization)
        
         if(prevOrg=='' || prevOrg==null){
           console.log("haiii");
@@ -66,6 +68,7 @@ function SidebarSec({ TAB,showBar }) {
   }, []);
 
   console.log(userData);
+ console.log(companies);
 
   useEffect(() => {
     if (window.innerWidth < 768) {
@@ -188,7 +191,7 @@ function SidebarSec({ TAB,showBar }) {
             className="text-white mt-6 bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
             type="button"
           >
-            {org?.name}{" "}
+            {org?.name || "No company added"}{" "}
             <svg
               class="w-2.5 h-2.5 ms-3"
               aria-hidden="true"
@@ -276,79 +279,70 @@ function SidebarSec({ TAB,showBar }) {
 
 
 
-           
+           {
+            companies && companies.length >0 && org.isApproved===true &&  (
+
+              <><Link to={"/sUsers/partyList"}>
+                    <a
+                      onClick={() => {
+                        handleSidebarItemClick("addParty");
+                      } }
+                      className={` ${TAB === "addParty"
+                          ? "bg-gray-800 text-white"
+                          : "text-gray-400"} hover:bg-gray-800 hover:text-white flex items-center px-4 py-2 mt-5 transition-colors duration-300 transform rounded-lg   `}
+                      href="#"
+                    >
+                      <TiUserAdd />
+
+                      <span className="mx-4 font-medium">Customers</span>
+                    </a>
+                  </Link><Link to={"/sUsers/productList"}>
+                      <a
+                        onClick={() => {
+                          handleSidebarItemClick("outstanding");
+                        } }
+                        className={` ${TAB === "productList"
+                            ? "bg-gray-800 text-white"
+                            : "text-gray-400"} hover:bg-gray-800 hover:text-white flex items-center px-4 py-2 mt-5 transition-colors duration-300 transform rounded-lg   `}
+                        href="#"
+                      >
+                        <MdOutlineProductionQuantityLimits />
+
+                        <span className="mx-4 font-medium">Products</span>
+                      </a>
+                    </Link><Link to={"/sUsers/additionalChargesList"}>
+                      <a
+                        onClick={() => {
+                          handleSidebarItemClick("outstanding");
+                        } }
+                        className={` ${TAB === "additionalCharge"
+                            ? "bg-gray-800 text-white"
+                            : "text-gray-400"} hover:bg-gray-800 hover:text-white flex items-center px-4 py-2 mt-5 transition-colors duration-300 transform rounded-lg   `}
+                        href="#"
+                      >
+                        <GiMoneyStack />
+
+                        <span className="mx-4 font-medium">Additional Charges</span>
+                      </a>
+                    </Link><Link to={"/sUsers/OrderConfigurations"}>
+                      <a
+                        onClick={() => {
+                          handleSidebarItemClick("outstanding");
+                        } }
+                        className={` ${TAB === "terms"
+                            ? "bg-gray-800 text-white"
+                            : "text-gray-400"} hover:bg-gray-800 hover:text-white flex items-center px-4 py-2 mt-5 transition-colors duration-300 transform rounded-lg   `}
+                        href="#"
+                      >
+                        <IoMdSettings />
+
+                        <span className="mx-4 font-medium">Order Configurations</span>
+                      </a>
+                    </Link></>
+            )
+           }
 
 
-              <Link to={"/sUsers/partyList"}>
-                <a
-                  onClick={() => {
-                    handleSidebarItemClick("addParty");
-                  }}
-                  className={` ${
-                    TAB === "addParty"
-                      ? "bg-gray-800 text-white"
-                      : "text-gray-400"
-                  } hover:bg-gray-800 hover:text-white flex items-center px-4 py-2 mt-5 transition-colors duration-300 transform rounded-lg   `}
-                  href="#"
-                >
-                  <TiUserAdd />
-
-                  <span className="mx-4 font-medium">Customers</span>
-                </a>
-              </Link>
-
-              <Link to={"/sUsers/productList"}>
-                <a
-                  onClick={() => {
-                    handleSidebarItemClick("outstanding");
-                  }}
-                  className={` ${
-                    TAB === "productList"
-                      ? "bg-gray-800 text-white"
-                      : "text-gray-400"
-                  } hover:bg-gray-800 hover:text-white flex items-center px-4 py-2 mt-5 transition-colors duration-300 transform rounded-lg   `}
-                  href="#"
-                >
-                  <MdOutlineProductionQuantityLimits />
-
-                  <span className="mx-4 font-medium">Products</span>
-                </a>
-              </Link>
-
-              <Link to={"/sUsers/additionalChargesList"}>
-                <a
-                  onClick={() => {
-                    handleSidebarItemClick("outstanding");
-                  }}
-                  className={` ${
-                    TAB === "additionalCharge"
-                      ? "bg-gray-800 text-white"
-                      : "text-gray-400"
-                  } hover:bg-gray-800 hover:text-white flex items-center px-4 py-2 mt-5 transition-colors duration-300 transform rounded-lg   `}
-                  href="#"
-                >
-                  <GiMoneyStack />
-
-                  <span className="mx-4 font-medium">Additional Charges</span>
-                </a>
-              </Link>
-              <Link to={"/sUsers/OrderConfigurations"}>
-                <a
-                  onClick={() => {
-                    handleSidebarItemClick("outstanding");
-                  }}
-                  className={` ${
-                    TAB === "terms"
-                      ? "bg-gray-800 text-white"
-                      : "text-gray-400"
-                  } hover:bg-gray-800 hover:text-white flex items-center px-4 py-2 mt-5 transition-colors duration-300 transform rounded-lg   `}
-                  href="#"
-                >
-                  <IoMdSettings />
-
-                  <span className="mx-4 font-medium">Order Configurations</span>
-                </a>
-              </Link>
 
              
             </nav>

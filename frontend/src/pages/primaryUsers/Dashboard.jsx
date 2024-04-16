@@ -19,6 +19,7 @@ import { useNavigate } from "react-router-dom";
 import { BiSolidAddToQueue } from "react-icons/bi";
 import { removeAll } from "../../../slices/invoice";
 import { useDispatch } from "react-redux";
+import { toast } from "react-toastify";
 
 function Dashboard() {
   const [showSidebar, setShowSidebar] = useState(false);
@@ -75,9 +76,30 @@ function Dashboard() {
     }
   }, 0);
 
+
+   // Handle click event of link
+   const handleLinkClick = (to) => {
+    if (org == undefined) {
+      toast.error("No company available");
+    } 
+    else if (
+      org.isApproved===false
+    ){
+      toast.error("Company approval pending ");
+
+    }
+    
+    else {
+      navigate(to);
+    }
+  };
+
   console.log(receiptTotal);
 
   console.log(filteredData);
+
+
+
   return (
     <div className="flex bg-[#f9fdff]  ">
       <div>
@@ -108,8 +130,10 @@ function Dashboard() {
             </div>
           </div>
           <div className="grid grid-cols-2 lg:grid-cols-4 p-6 lg:px-12 gap-4 md:gap-6 bg-white  ">
-            <Link to={"/pUsers/transaction"}>
-              <div className="flex flex-wrap -mx-6   duration-150 hover:scale-105 ease-in-out cursor-pointer  ">
+            {/* <Link to={"/pUsers/transaction"}> */}
+              <div 
+             onClick={() => handleLinkClick("/pUsers/transaction")}
+              className="flex flex-wrap -mx-6   duration-150 hover:scale-105 ease-in-out cursor-pointer  ">
                 <div className="w-full px-6 ">
                   <div className="flex items-center px-2 py-3 md:px-5 md:py-2 shadow-sm rounded-md bg-slate-100 h-24">
                     <div className="p-3 rounded-full bg-green-500 bg-opacity-75 text-2xl text-white">
@@ -125,9 +149,13 @@ function Dashboard() {
                   </div>
                 </div>
               </div>
-            </Link>
-            <Link to={"/pUsers/outstanding"}>
-              <div className="flex flex-wrap -mx-6  duration-150 hover:scale-105 ease-in-out cursor-pointer">
+            {/* </Link> */}
+            {/* <Link to={"/pUsers/outstanding"}> */}
+              <div
+              
+             onClick={() => handleLinkClick("/pUsers/outstanding")}
+              
+              className="flex flex-wrap -mx-6  duration-150 hover:scale-105 ease-in-out cursor-pointer">
                 <div className="w-full px-6 ">
                   <div className="flex items-center px-2 py-3 md:px-5 md:py-2 shadow-sm rounded-md bg-slate-100 h-24">
                     <div className="p-3 rounded-full bg-red-500 bg-opacity-75 text-2xl text-white">
@@ -143,7 +171,7 @@ function Dashboard() {
                   </div>
                 </div>
               </div>
-            </Link>
+            {/* </Link> */}
            
             {/* <Link to={"/Users/invoiceList"}> */}
             <div className="flex flex-wrap -mx-6  duration-150 hover:scale-105 ease-in-out cursor-pointer">
@@ -163,8 +191,11 @@ function Dashboard() {
               </div>
             </div>
             {/* </Link> */}
-            <Link to={'/pUsers/invoice'} >
-            <div className="flex flex-wrap -mx-6  duration-150 hover:scale-105 ease-in-out cursor-pointer">
+            {/* <Link to={'/pUsers/invoice'} > */}
+            <div 
+             onClick={() => handleLinkClick("/pUsers/invoice")}
+
+            className="flex flex-wrap -mx-6  duration-150 hover:scale-105 ease-in-out cursor-pointer">
               <div className="w-full px-6 ">
                 <div className="flex items-center px-2 py-3 md:px-5 md:py-2 shadow-sm rounded-md bg-slate-100 h-24" >
                   <div className="p-3 rounded-full bg-blue-500 bg-opacity-75 text-2xl text-white">
@@ -180,7 +211,7 @@ function Dashboard() {
                 </div>
               </div>
             </div>
-            </Link>
+            {/* </Link> */}
           </div>
 
           {/* tiles */}

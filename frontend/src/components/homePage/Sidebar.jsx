@@ -81,6 +81,8 @@ function Sidebar({ TAB, showBar }) {
           withCredentials: true,
         });
 
+        console.log(res.data);
+
         setOrganizations(res.data.organizationData);
 
         if (selectedOrgFromRedux) {
@@ -157,6 +159,8 @@ function Sidebar({ TAB, showBar }) {
     }
   };
 
+  console.log(organizations);
+
   return (
     <div className="relative">
       {loader && (
@@ -209,7 +213,7 @@ function Sidebar({ TAB, showBar }) {
             className="text-white mt-6 bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
             type="button"
           >
-            {selectedOrg.name}
+            {selectedOrg?.name || "No Company Added"}
 
             <svg
               class="w-2.5 h-2.5 ms-3"
@@ -319,130 +323,115 @@ function Sidebar({ TAB, showBar }) {
                   <span className="mx-4 font-medium">Company</span>
                 </a>
               </Link>
-              <Link to={"/pUsers/retailers"}>
-                <a
-                  onClick={() => {
-                    handleSidebarItemClick("outstanding");
-                  }}
-                  className={` ${
-                    TAB === "agentLIst" || TAB === "addSec"
-                      ? "bg-gray-800 text-white"
-                      : "text-gray-400"
-                  } hover:bg-gray-800 hover:text-white flex items-center px-4 py-2 mt-5 transition-colors duration-300 transform rounded-lg   `}
-                  href="#"
-                >
-                  <SlUserFollow />
 
-                  <span className="mx-4 font-medium">Users</span>
-                </a>
-              </Link>
 
-              <Link to={"/pUsers/bankList"}>
-                <a
-                  onClick={() => {
-                    handleSidebarItemClick("outstanding");
-                  }}
-                  className={` ${
-                    TAB === "bankList" || TAB === "addBank"
-                      ? "bg-gray-800 text-white"
-                      : "text-gray-400"
-                  } hover:bg-gray-800 hover:text-white flex items-center px-4 py-2 mt-5 transition-colors duration-300 transform rounded-lg   `}
-                  href="#"
-                >
-                  <PiBankFill />
+              {
 
-                  <span className="mx-4 font-medium">Banks</span>
-                </a>
-              </Link>
+                organizations && organizations.length >0 && selectedOrgFromRedux?.isApproved===true  &&(
 
-              <Link to={"/pUsers/partyList"}>
-                <a
-                  onClick={() => {
-                    handleSidebarItemClick("addParty");
-                  }}
-                  className={` ${
-                    TAB === "addParty"
-                      ? "bg-gray-800 text-white"
-                      : "text-gray-400"
-                  } hover:bg-gray-800 hover:text-white flex items-center px-4 py-2 mt-5 transition-colors duration-300 transform rounded-lg   `}
-                  href="#"
-                >
-                  <TiUserAdd />
+              <><Link to={"/pUsers/retailers"}>
+                    <a
+                      onClick={() => {
+                        handleSidebarItemClick("outstanding");
+                      } }
+                      className={` ${TAB === "agentLIst" || TAB === "addSec"
+                          ? "bg-gray-800 text-white"
+                          : "text-gray-400"} hover:bg-gray-800 hover:text-white flex items-center px-4 py-2 mt-5 transition-colors duration-300 transform rounded-lg   `}
+                      href="#"
+                    >
+                      <SlUserFollow />
 
-                  <span className="mx-4 font-medium">Customers</span>
-                </a>
-              </Link>
+                      <span className="mx-4 font-medium">Users</span>
+                    </a>
+                  </Link><Link to={"/pUsers/bankList"}>
+                      <a
+                        onClick={() => {
+                          handleSidebarItemClick("outstanding");
+                        } }
+                        className={` ${TAB === "bankList" || TAB === "addBank"
+                            ? "bg-gray-800 text-white"
+                            : "text-gray-400"} hover:bg-gray-800 hover:text-white flex items-center px-4 py-2 mt-5 transition-colors duration-300 transform rounded-lg   `}
+                        href="#"
+                      >
+                        <PiBankFill />
 
-              <Link to={"/pUsers/hsnList"}>
-                <a
-                  onClick={() => {
-                    handleSidebarItemClick("addParty");
-                  }}
-                  className={` ${
-                    TAB === "hsn" ? "bg-gray-800 text-white" : "text-gray-400"
-                  } hover:bg-gray-800 hover:text-white flex items-center px-4 py-2 mt-5 transition-colors duration-300 transform rounded-lg   `}
-                  href="#"
-                >
-                  <HiDocumentText />
+                        <span className="mx-4 font-medium">Banks</span>
+                      </a>
+                    </Link><Link to={"/pUsers/partyList"}>
+                      <a
+                        onClick={() => {
+                          handleSidebarItemClick("addParty");
+                        } }
+                        className={` ${TAB === "addParty"
+                            ? "bg-gray-800 text-white"
+                            : "text-gray-400"} hover:bg-gray-800 hover:text-white flex items-center px-4 py-2 mt-5 transition-colors duration-300 transform rounded-lg   `}
+                        href="#"
+                      >
+                        <TiUserAdd />
 
-                  <span className="mx-4 font-medium">Tax classification</span>
-                </a>
-              </Link>
+                        <span className="mx-4 font-medium">Customers</span>
+                      </a>
+                    </Link><Link to={"/pUsers/hsnList"}>
+                      <a
+                        onClick={() => {
+                          handleSidebarItemClick("addParty");
+                        } }
+                        className={` ${TAB === "hsn" ? "bg-gray-800 text-white" : "text-gray-400"} hover:bg-gray-800 hover:text-white flex items-center px-4 py-2 mt-5 transition-colors duration-300 transform rounded-lg   `}
+                        href="#"
+                      >
+                        <HiDocumentText />
 
-              <Link to={"/pUsers/productList"}>
-                <a
-                  onClick={() => {
-                    handleSidebarItemClick("outstanding");
-                  }}
-                  className={` ${
-                    TAB === "product"
-                      ? "bg-gray-800 text-white"
-                      : "text-gray-400"
-                  } hover:bg-gray-800 hover:text-white flex items-center px-4 py-2 mt-5 transition-colors duration-300 transform rounded-lg   `}
-                  href="#"
-                >
-                  <MdOutlineProductionQuantityLimits />
+                        <span className="mx-4 font-medium">Tax classification</span>
+                      </a>
+                    </Link><Link to={"/pUsers/productList"}>
+                      <a
+                        onClick={() => {
+                          handleSidebarItemClick("outstanding");
+                        } }
+                        className={` ${TAB === "product"
+                            ? "bg-gray-800 text-white"
+                            : "text-gray-400"} hover:bg-gray-800 hover:text-white flex items-center px-4 py-2 mt-5 transition-colors duration-300 transform rounded-lg   `}
+                        href="#"
+                      >
+                        <MdOutlineProductionQuantityLimits />
 
-                  <span className="mx-4 font-medium">Products</span>
-                </a>
-              </Link>
-              <Link to={"/pUsers/additionalChargesList"}>
-                <a
-                  onClick={() => {
-                    handleSidebarItemClick("outstanding");
-                  }}
-                  className={` ${
-                    TAB === "additionalCharge"
-                      ? "bg-gray-800 text-white"
-                      : "text-gray-400"
-                  } hover:bg-gray-800 hover:text-white flex items-center px-4 py-2 mt-5 transition-colors duration-300 transform rounded-lg   `}
-                  href="#"
-                >
-                  <GiMoneyStack />
+                        <span className="mx-4 font-medium">Products</span>
+                      </a>
+                    </Link><Link to={"/pUsers/additionalChargesList"}>
+                      <a
+                        onClick={() => {
+                          handleSidebarItemClick("outstanding");
+                        } }
+                        className={` ${TAB === "additionalCharge"
+                            ? "bg-gray-800 text-white"
+                            : "text-gray-400"} hover:bg-gray-800 hover:text-white flex items-center px-4 py-2 mt-5 transition-colors duration-300 transform rounded-lg   `}
+                        href="#"
+                      >
+                        <GiMoneyStack />
 
-                  <span className="mx-4 font-medium">Additional Charges</span>
-                </a>
-              </Link>
-              <Link to={"/pUsers/OrderConfigurations"}>
-                <a
-                  onClick={() => {
-                    handleSidebarItemClick("outstanding");
-                  }}
-                  className={` ${
-                    TAB === "terms"
-                      ? "bg-gray-800 text-white"
-                      : "text-gray-400"
-                  } hover:bg-gray-800 hover:text-white flex items-center px-4 py-2 mt-5 transition-colors duration-300 transform rounded-lg   `}
-                  href="#"
-                >
-                  <IoMdSettings />
+                        <span className="mx-4 font-medium">Additional Charges</span>
+                      </a>
+                    </Link><Link to={"/pUsers/OrderConfigurations"}>
+                      <a
+                        onClick={() => {
+                          handleSidebarItemClick("outstanding");
+                        } }
+                        className={` ${TAB === "terms"
+                            ? "bg-gray-800 text-white"
+                            : "text-gray-400"} hover:bg-gray-800 hover:text-white flex items-center px-4 py-2 mt-5 transition-colors duration-300 transform rounded-lg   `}
+                        href="#"
+                      >
+                        <IoMdSettings />
 
-                  <span className="mx-4 font-medium">Order Configurations</span>
-                </a>
-              </Link>
+                        <span className="mx-4 font-medium">Order Configurations</span>
+                      </a>
+                    </Link></>
+                )
+              }
             </nav>
           </div>
         </div>
+
       </aside>
     </div>
   );

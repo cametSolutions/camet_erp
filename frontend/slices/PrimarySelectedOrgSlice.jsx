@@ -2,7 +2,7 @@ import { createSlice } from '@reduxjs/toolkit';
 
 const storedSecOrg = localStorage.getItem('primaryOrg');
 const initialState = {
-  selectedOrg: storedSecOrg ? JSON.parse(storedSecOrg) : null,
+  selectedOrg: storedSecOrg && storedSecOrg!=="undefined" ? JSON.parse(storedSecOrg) : null,
 };
 
 const selectedOrganizationSlice = createSlice({
