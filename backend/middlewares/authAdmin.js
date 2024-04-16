@@ -2,7 +2,11 @@ import jwt from "jsonwebtoken";
 
 export const authAdmin = async (req, res, next) => {
   let token;
+
+  console.log(req.cookies);
+
   token = req.cookies.jwt_admin;
+  console.log(token);
 
   if (!token) {
     return res

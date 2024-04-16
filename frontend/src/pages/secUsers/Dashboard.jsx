@@ -137,7 +137,7 @@ function Dashboard() {
           <div className="grid grid-cols-2 lg:grid-cols-4 p-6 lg:px-12 gap-4 md:gap-6 bg-white  ">
             {/* <Link to={"/sUsers/transaction"}> */}
               <div
-             onClick={() => handleLinkClick("/pUsers/transaction")}
+             onClick={() => handleLinkClick("/sUsers/transaction")}
 
                className="flex flex-wrap -mx-6   duration-150 hover:scale-105 ease-in-out cursor-pointer  ">
                 <div className="w-full px-6 ">
@@ -158,7 +158,7 @@ function Dashboard() {
             {/* </Link> */}
             {/* <Link to={"/sUsers/outstanding"}> */}
               <div
-             onClick={() => handleLinkClick("/pUsers/outstanding")}
+             onClick={() => handleLinkClick("/sUsers/outstanding")}
 
                className="flex flex-wrap -mx-6  duration-150 hover:scale-105 ease-in-out cursor-pointer">
                 <div className="w-full px-6 ">
@@ -198,7 +198,7 @@ function Dashboard() {
             {/* </Link> */}
             {/* <Link to={'/sUsers/invoice'} > */}
             <div 
-             onClick={() => handleLinkClick("/pUsers/invoice")}
+             onClick={() => handleLinkClick("/sUsers/invoice")}
 
             className="flex flex-wrap -mx-6  duration-150 hover:scale-105 ease-in-out cursor-pointer">
               <div className="w-full px-6 ">
