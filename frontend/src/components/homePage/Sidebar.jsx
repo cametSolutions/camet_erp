@@ -90,7 +90,7 @@ function Sidebar({ TAB, showBar }) {
         } else {
           // If no organization is selected, set the first organization as selectedOrg
           setSelectedOrg(res.data.organizationData[0]);
-          dispatch(setSelectedOrganization(res.data.organizationData[0]));
+          dispatch(setSelectedOrganization(res.data.organizationData));
         }
       } catch (error) {
         console.log(error);

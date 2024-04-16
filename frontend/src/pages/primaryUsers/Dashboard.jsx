@@ -125,7 +125,7 @@ function Dashboard() {
                   <p>{org?.name?.slice(0, 1)}</p>
                 </div>
               </div>
-              <p className="font-bold text-md md:text-lg">{org?.name}</p>
+              <p className="font-bold text-md md:text-lg">{org?.name || "Company Name"}</p>
               <FaCaretDown />
             </div>
           </div>
