@@ -273,12 +273,6 @@ function SidebarSec({ TAB,showBar }) {
               </Link>
 
 
-
-
-
-           
-
-
               <Link to={"/sUsers/partyList"}>
                 <a
                   onClick={() => {
