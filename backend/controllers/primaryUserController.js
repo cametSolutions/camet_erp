@@ -1836,10 +1836,14 @@ export const editSecUSer = async (req, res) => {
   const { name, mobile, email, organization, password } = req.body;
 
   try {
-    if (password) {
+    if (password !== "") {
+      // If password is not empty, hash and update it
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = await bcrypt.hash(password, salt);
       req.body.password = hashedPassword;
+    } else {
+      // If password is empty, remove it from req.body to prevent updating
+      delete req.body.password;
     }
 
     const updateParty = await SecondaryUser.findOneAndUpdate(
@@ -1847,6 +1851,7 @@ export const editSecUSer = async (req, res) => {
       req.body,
       { new: true }
     );
+
     res.status(200).json({
       success: true,
       message: "User updated successfully",
@@ -1857,6 +1862,7 @@ export const editSecUSer = async (req, res) => {
     res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
+
 
 // @desc   saveOrderNumber
 // route post/api/pUsers/saveOrderNumber/cmp_id

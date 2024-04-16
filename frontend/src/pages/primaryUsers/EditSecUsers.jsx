@@ -74,8 +74,18 @@ function EditSecUsers() {
   };
 
   const submitHandler = async () => {
-    const newPassword = password ? password : oldPassword;
-    console.log(newPassword);
+
+    // let newPassword;
+
+    // if(password){
+
+    //   newPassword=pass
+
+    // }
+
+    
+    // const newPassword = password ? password : oldPassword;
+    // console.log(newPassword);
 
     if (!name || !mobile || !selectedOrg || !email) {
       toast.error("All fields must be filled");
@@ -114,14 +124,14 @@ function EditSecUsers() {
       );
       return;
     }
-    console.log(password);
+    // console.log(newPassword);
 
     const formData = {
       name,
       mobile,
       email,
       organization:selectedOrg,
-      password:newPassword,
+      password,
     };
 
     console.log(formData);
