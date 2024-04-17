@@ -100,22 +100,22 @@ function AddItemSecondary() {
 
   ///////////////////////////priceLevelSet///////////////////////////////////
 
-  useEffect(() => {
-    const priceLevelSet = Array.from(
-      new Set(
-        item.flatMap((item) =>
-          item?.Priceleveles.map((level) => level?.pricelevel)
-        )
-      )
-    );
-    setPriceLevels(priceLevelSet);
+  // useEffect(() => {
+  //   const priceLevelSet = Array.from(
+  //     new Set(
+  //       item.flatMap((item) =>
+  //         item?.Priceleveles.map((level) => level?.pricelevel)
+  //       )
+  //     )
+  //   );
+  //   setPriceLevels(priceLevelSet);
 
-    if (priceLevelFromRedux === "") {
-      const defaultPriceLevel = priceLevelSet[0];
-      setSelectedPriceLevel(defaultPriceLevel);
-      dispatch(setPriceLevel(defaultPriceLevel));
-    }
-  }, [item]);
+  //   if (priceLevelFromRedux === "") {
+  //     const defaultPriceLevel = priceLevelSet[0];
+  //     setSelectedPriceLevel(defaultPriceLevel);
+  //     dispatch(setPriceLevel(defaultPriceLevel));
+  //   }
+  // }, [item]);
 
   ///////////////////////////setSelectedPriceLevel fom redux///////////////////////////////////
 
@@ -163,35 +163,86 @@ function AddItemSecondary() {
 
   //////////////////////////////fetchFilters////////////////////////////////
 
+  // useEffect(() => {
+  //   const fetchFilters = async () => {
+  //     try {
+  //       const res = await api.get(`/api/sUsers/fetchFilters/${orgId}`, {
+  //         withCredentials: true,
+  //       });
+
+  //       const { brands, categories, subcategories } = res.data.data;
+  //       if (type === "self") {
+  //         setBrands(brands);
+  //         setCategories(categories);
+  //         setSubCategories(subcategories);
+  //       } else {
+  //         const uniqueBrands = [...new Set(item.map((el) => el?.brand))];
+  //         const uniqueCategories = [...new Set(item.map((el) => el?.category))];
+  //         const uniqueSubCategories = [
+  //           ...new Set(item.map((item) => item?.sub_category)),
+  //         ];
+
+  //         setBrands(uniqueBrands);
+  //         setCategories(uniqueCategories);
+  //         setSubCategories(uniqueSubCategories);
+  //       }
+  //     } catch (error) {
+  //       console.log(error);
+  //     }
+  //   };
+  //   fetchFilters();
+  // }, [item, orgId, type]);
+
+
   useEffect(() => {
     const fetchFilters = async () => {
       try {
-        const res = await api.get(`/api/sUsers/fetchFilters/${orgId}`, {
-          withCredentials: true,
-        });
 
-        const { brands, categories, subcategories } = res.data.data;
+        let res;
+        if(type=="self"){
+
+          res = await api.get(`/api/sUsers/fetchFilters/${orgId}`, {
+           withCredentials: true,
+         });
+        }else{
+
+          res = await api.get(`/api/sUsers/fetchAdditionalDetails/${orgId}`, {
+            withCredentials: true,
+          });
+
+        }
+
+        
         if (type === "self") {
+          const { brands, categories, subcategories,priceLevels } = res.data.data;
+
+          console.log(priceLevels);
           setBrands(brands);
           setCategories(categories);
           setSubCategories(subcategories);
+          setPriceLevels(priceLevels)
         } else {
-          const uniqueBrands = [...new Set(item.map((el) => el?.brand))];
-          const uniqueCategories = [...new Set(item.map((el) => el?.category))];
-          const uniqueSubCategories = [
-            ...new Set(item.map((item) => item?.sub_category)),
-          ];
 
-          setBrands(uniqueBrands);
-          setCategories(uniqueCategories);
-          setSubCategories(uniqueSubCategories);
+          const { priceLevels, brands, categories, subcategories } = res.data;
+
+          setBrands(brands);
+          setCategories(categories);
+          setSubCategories(subcategories);
+          console.log(priceLevels);
+
+          setPriceLevels(priceLevels);
+
+        
         }
       } catch (error) {
         console.log(error);
       }
     };
     fetchFilters();
-  }, [item, orgId, type]);
+  }, [ orgId, type]);
+
+
+  console.log(priceLevels);
 
   ///////////////////////////filter items///////////////////////////////////
 

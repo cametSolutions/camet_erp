@@ -1147,6 +1147,8 @@ export const fetchFilters = async (req, res) => {
       brands: filers.brands,
       categories: filers.categories,
       subcategories: filers.subcategories,
+      priceLevels:filers?.levelNames
+
     };
 
     if (filers) {

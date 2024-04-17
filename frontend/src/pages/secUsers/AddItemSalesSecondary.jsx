@@ -218,10 +218,11 @@ function AddItemSalesSecondary() {
 
         
         if (type === "self") {
-          const { brands, categories, subcategories } = res.data.data;
+          const { brands, categories, subcategories,priceLevels } = res.data.data;
           setBrands(brands);
           setCategories(categories);
           setSubCategories(subcategories);
+          setPriceLevels(priceLevels);
         } else {
 
           const { priceLevels, brands, categories, subcategories } = res.data;

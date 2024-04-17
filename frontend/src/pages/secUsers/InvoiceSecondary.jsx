@@ -125,6 +125,13 @@ function InvoiceSecondary() {
         );
 
         console.log(res.data);
+        if (res.data.message==="default"){
+
+          
+          const {configurationNumber}=res.data;
+          setOrderNumber(configurationNumber)
+          return
+        }
 
         const { configDetails, configurationNumber } = res.data;
         console.log(configDetails);

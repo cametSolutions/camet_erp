@@ -785,11 +785,43 @@ export const createInvoice = async (req, res) => {
 
     const result = await invoice.save();
 
-    const increaseOrderNumber = await OragnizationModel.findByIdAndUpdate(
-      orgId,
-      { $inc: { orderNumber: 1 } },
-      { new: true }
+    const secondaryUser = await SecondaryUser.findById(Secondary_user_id);
+
+    if (!secondaryUser) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Secondary user not found" });
+    }
+
+    let orderConfig = false;
+
+    const configuration = secondaryUser.configurations.find(
+      (config) => config.organization.toString() === orgId
     );
+    if (configuration) {
+      if (
+        configuration.salesOrderConfiguration &&
+        Object.values(configuration.salesOrderConfiguration).every(
+          (value) => value !== ""
+        )
+      ) {
+        orderConfig = true;
+      }
+    }
+
+    if (orderConfig) {
+      const increaseSalesNumber = await SecondaryUser.findByIdAndUpdate(
+        Secondary_user_id,
+        { $inc: { orderNumber: 1 } },
+        { new: true }
+      );
+    } else {
+      const increaseOrderNumber = await OragnizationModel.findByIdAndUpdate(
+        orgId,
+        { $inc: { orderNumber: 1 } },
+        { new: true }
+      );
+    }
 
     return res.status(200).json({
       success: true,
@@ -1389,10 +1421,13 @@ export const fetchFilters = async (req, res) => {
     const filers = await OragnizationModel.findById(cmp_id);
 
     const data = {
-      brands: filers.brands,
-      categories: filers.categories,
-      subcategories: filers.subcategories,
+      brands: filers?.brands,
+      categories: filers?.categories,
+      subcategories: filers?.subcategories,
+      priceLevels:filers?.levelNames
     };
+
+    
 
     if (filers) {
       return res.status(200).json({ message: "filers fetched", data: data });
@@ -1867,7 +1902,7 @@ export const fetchConfigurationNumber = async (req, res) => {
     const secUser = await SecondaryUser.findById(secUserId);
     const company = await OragnizationModel.findById(cmp_id);
 
-    console.log("companyyyy",company);
+    console.log("companyyyy", company);
 
     if (!secUser) {
       return res.status(404).json({ message: "User not found" });
@@ -1954,7 +1989,28 @@ export const fetchConfigurationNumber = async (req, res) => {
       }
     }
 
-    console.log(configDetails);
+    if (configDetails == undefined && configuration == undefined) {
+      console.log("haiii");
+
+      switch (title) {
+        case "sales":
+          // configDetails = company?.salesNumberDetails;
+          configurationNumber = company?.salesNumber;
+          break;
+        case "salesOrder":
+          // configDetails = company?.OrderNumberDetails;
+          configurationNumber = company?.orderNumber;
+          break;
+        // case "receipt":
+        //   configDetails = company?.receiptNumberDetails;
+        //   break;
+        default:
+          configurationNumber = null;
+          break;
+      }
+    }
+
+    console.log("configDetails", configDetails);
 
     if (configDetails) {
       res.json({
@@ -1963,7 +2019,7 @@ export const fetchConfigurationNumber = async (req, res) => {
         configurationNumber,
       });
     } else {
-      res.status(404).json({ message: "Configuration details not found" });
+      res.status(200).json({ message: "default", configurationNumber });
     }
   } catch (error) {
     console.error(error);

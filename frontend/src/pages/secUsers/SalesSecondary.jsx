@@ -117,6 +117,13 @@ function SalesSecondary() {
         );
 
         console.log(res.data);
+        if (res.data.message==="default"){
+
+          
+          const {configurationNumber}=res.data;
+          setSalesNumber(configurationNumber)
+          return
+        }
 
         const { configDetails, configurationNumber } = res.data;
         console.log(configDetails);
@@ -157,6 +164,8 @@ function SalesSecondary() {
 
     fetchConfigurationNumber();
   }, []);
+
+  console.log(salesNumber);
 
   const [rows, setRows] = useState(
     additionalChargesFromRedux.length > 0
@@ -480,7 +489,7 @@ function SalesSecondary() {
 
         {/* adding party */}
 
-        <div className="bg-white  py-3 px-4 pb-3 drop-shadow-lg mt-2 md:mt-3 text-xs md:text-base">
+        <div className="bg-white  py-3 px-4 pb-3 drop-shadow-lg mt-2 md:mt-3 text-xs md:text-base ">
           <div className="flex justify-between">
             <div className="flex gap-2 ">
               <p className="font-bold uppercase text-xs">Party name</p>
