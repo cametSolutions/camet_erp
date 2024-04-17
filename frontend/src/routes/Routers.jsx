@@ -78,7 +78,20 @@ import AddChargesListSecondary from '../pages/secUsers/AddChargesListSecondary'
 import AdditionalChargesSecondary from '../pages/secUsers/AdditionalChargesSecondary'
 import EditAdditionalChargesSecondary from '../pages/secUsers/EditAdditionalChargesSecondary'
 import OrderConfigurationsSecondary from '../pages/secUsers/OrderConfigurationsSecondary'
-
+import Sales from '../pages/primaryUsers/Sales'
+import SearchPartySales from '../pages/primaryUsers/SearchPartySales'
+import AddItemSales from '../pages/primaryUsers/AddItemSales'
+import EditItemSales from '../pages/primaryUsers/EditItemSales'
+import SelectDefaultModal from '../../constants/components/SelectDefaultModal'
+import SalesDetails from '../pages/primaryUsers/SalesDetails'
+import ShareSales from '../pages/primaryUsers/ShareSales'
+import SalesSecondary from '../pages/secUsers/SalesSecondary'
+import SearchPartySalesSecondary from '../pages/secUsers/SearchPartySalesSecondary'
+import AddItemSalesSecondary from '../pages/secUsers/AddItemSalesSecondary'
+import SalesDetailsSecondary from '../pages/secUsers/SalesDetailsSecondary'
+import EditItemSalesSecondary from '../pages/secUsers/EditItemSalesSecondary'
+import ShareSalesSecondary from '../pages/secUsers/ShareSalesSecondary'
+import ConfigureSecondaryUser from '../pages/primaryUsers/ConfigureSecondaryUser'
 
 
 const Routers = () => {
@@ -130,6 +143,15 @@ const Routers = () => {
         <Route path='/pUsers/additionalChargesList' element={<ProtectedPriRoute><AddChargesList/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/editAdditionalCharge/:id' element={<ProtectedPriRoute><EditAdditionalCharges/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/OrderConfigurations' element={<ProtectedPriRoute><OrderConfigurations/></ProtectedPriRoute>}></Route>
+        <Route path='/pUsers/sales' element={<ProtectedPriRoute><Sales/></ProtectedPriRoute>}></Route>
+        <Route path='/pUsers/searchPartySales' element={<ProtectedPriRoute><SearchPartySales/></ProtectedPriRoute>}></Route>
+        <Route path='/pUsers/addItemSales' element={<ProtectedPriRoute><AddItemSales/></ProtectedPriRoute>}></Route>
+        <Route path='/pUsers/editItemSales/:id' element={<ProtectedPriRoute><EditItemSales/></ProtectedPriRoute>}></Route>
+        <Route path='/pUsers/modal' element={<ProtectedPriRoute><SelectDefaultModal/></ProtectedPriRoute>}></Route>
+        <Route path='/pUsers/salesDetails/:id' element={<ProtectedPriRoute><SalesDetails/></ProtectedPriRoute>}></Route>
+        <Route path='/pUsers/shareSales/:id' element={<ProtectedPriRoute><ShareSales/></ProtectedPriRoute>}></Route>
+        <Route path='/pUsers/configureSecondaryUser/:id/:userId/:cmp_name' element={<ProtectedPriRoute><ConfigureSecondaryUser/></ProtectedPriRoute>}></Route>
+
 
         {/* admin */}
         <Route path='/admin/login' element={<AdminLogin/>}></Route>
@@ -169,7 +191,12 @@ const Routers = () => {
         <Route path='/sUsers/editAdditionalCharge/:id' element={<ProtectedSecRoute><EditAdditionalChargesSecondary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/OrderConfigurations' element={<ProtectedSecRoute><OrderConfigurationsSecondary/></ProtectedSecRoute>}></Route>
 
-
+        <Route path='/sUsers/sales' element={<ProtectedSecRoute><SalesSecondary/></ProtectedSecRoute>}></Route>
+         <Route path='/sUsers/searchPartySales' element={<ProtectedSecRoute><SearchPartySalesSecondary/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/addItemSales' element={<ProtectedSecRoute><AddItemSalesSecondary/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/editItemSales/:id' element={<ProtectedSecRoute><EditItemSalesSecondary/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/salesDetails/:id' element={<ProtectedSecRoute><SalesDetailsSecondary/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/shareSales/:id' element={<ProtectedSecRoute><ShareSalesSecondary/></ProtectedSecRoute>}></Route> 
 
     </Routes>
   )

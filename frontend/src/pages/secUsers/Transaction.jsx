@@ -166,14 +166,13 @@ function Transaction() {
                 key={index}
                 onClick={() => {
                   // navigate(`/sUsers/receiptDetails/${el._id}`);
-                  navigate(el.type==="Receipt"?`/sUsers/receiptDetails/${el._id}`:`/sUsers/InvoiceDetails/${el._id}`)
-                }}
+                  navigate(el.type==="Receipt"?`/sUsers/receiptDetails/${el._id}`: el.type==="Tax Invoice"?`/sUsers/salesDetails/${el._id}`:`/sUsers/InvoiceDetails/${el._id}`)}}
                 className={`${
                   el?.isCancelled ? "bg-gray-200 pointer-events-none " : ""
                 } bg-[#f8ffff] cursor-pointer rounded-md shadow-xl border border-gray-100 flex flex-col justify-between px-4 transition-all duration-150 transform hover:scale-105 ease-in-out`}
               >
                 <div className=" flex justify-start text-xs mt-2 ">
-                  <div className={` ${el.type==="Receipt" ? "bg-[#FB6D48]" :"bg-[#3ed57a]" }   flex items-center text-white px-2 rounded-sm `}>
+                <div className={` ${el.type==="Receipt" ? "bg-[#FB6D48]" : el.type==="Tax Invoice" ? "bg-violet-500":"bg-[#3ed57a]" }   flex items-center text-white px-2 rounded-sm `}>
                     <FaRegCircleDot />
                     <p className=" p-1  rounded-lg px-3 font-semibold">
                       {" "}

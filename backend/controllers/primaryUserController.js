@@ -16,6 +16,7 @@ import HsnModel from "../models/hsnModel.js";
 import productModel from "../models/productModel.js";
 import invoiceModel from "../models/invoiceModel.js";
 import bankModel from "../models/bankModel.js";
+import salesModel from "../models/salesModel.js";
 
 // @desc Register Primary user
 // route POST/api/pUsers/register
@@ -88,7 +89,7 @@ export const login = async (req, res) => {
 
     console.log("primaryUser", primaryUser);
 
-    if (!primaryUser.isApproved) {
+    if (primaryUser.isApproved===false) {
       return res.status(401).json({ message: "User approval is pending" });
     }
 
@@ -591,11 +592,24 @@ export const transactions = async (req, res) => {
         },
       },
     ]);
+    const sales = await salesModel.aggregate([
+      { $match: { Primary_user_id: userId, cmp_id: cmp_id } },
+      {
+        $project: {
+          party_name: "$party.partyName",
+          // mobileNumber:"$party.mobileNumber",
+          type: "Tax Invoice",
+          enteredAmount: "$finalAmount",
+          createdAt: 1,
+          itemsLength: { $size: "$items" },
+        },
+      },
+    ]);
 
-    const combined = [...transactions, ...invoices];
+    console.log(sales);
+
+    const combined = [...transactions, ...invoices, ...sales];
     combined.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-
-    console.log("combined", combined);
 
     if (combined.length > 0) {
       return res.status(200).json({
@@ -1133,6 +1147,8 @@ export const fetchFilters = async (req, res) => {
       brands: filers.brands,
       categories: filers.categories,
       subcategories: filers.subcategories,
+      priceLevels:filers?.levelNames
+
     };
 
     if (filers) {
@@ -2104,10 +2120,10 @@ export const addconfigurations = async (req, res) => {
 
     const { selectedBank, termsList } = req.body;
     const newConfigurations = {
-      bank: selectedBank, 
-      terms: termsList, 
+      bank: selectedBank,
+      terms: termsList,
     };
-    org.configurations=[newConfigurations];
+    org.configurations = [newConfigurations];
 
     await org.save();
     return res.status(200).json({
@@ -2124,3 +2140,399 @@ export const addconfigurations = async (req, res) => {
     });
   }
 };
+
+// @desc   saveSalesNumber
+// route post/api/pUsers/saveSalesNumber/cmp_id
+
+export const saveSalesNumber = async (req, res) => {
+  const cmp_id = req.params.cmp_id;
+  try {
+    const company = await OragnizationModel.findById(cmp_id);
+    company.salesNumberDetails = req.body;
+
+    const save = await company.save();
+    return res.status(200).json({
+      success: true,
+      message: "Order number saved successfully",
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error, try again!",
+    });
+  }
+};
+
+// route POST /api/pUsers/createSale
+
+export const createSale = async (req, res) => {
+  const Primary_user_id = req.pUserId;
+  try {
+    const {
+      orgId,
+      party,
+      items,
+      priceLevelFromRedux,
+      additionalChargesFromRedux,
+      lastAmount,
+      salesNumber,
+    } = req.body;
+
+    // Prepare bulk operations for product and godown updates
+    const productUpdates = [];
+    const godownUpdates = [];
+
+    // Process each item to update product stock and godown stock
+    for (const item of items) {
+      // Find the product in the product model
+      const product = await productModel.findOne({ _id: item._id });
+      if (!product) {
+        throw new Error(`Product not found for item ID: ${item._id}`);
+      }
+
+      // Calculate the new balance stock
+      const newBalanceStock = parseInt(product.balance_stock) - item.count;
+
+      // Prepare product update operation
+      productUpdates.push({
+        updateOne: {
+          filter: { _id: product._id },
+          update: { $set: { balance_stock: newBalanceStock } },
+        },
+      });
+
+      // Update the godown stock for each specified godown
+      for (const godown of item.GodownList) {
+        // Find the corresponding godown in the product's GodownList
+        const godownIndex = product.GodownList.findIndex(
+          (g) => g.godown === godown.godown
+        );
+        if (godownIndex !== -1) {
+          // Calculate the new godown stock
+          const newGodownStock =
+            parseInt(product.GodownList[godownIndex].balance_stock) -
+            godown.count;
+
+          // Prepare godown update operation
+          godownUpdates.push({
+            updateOne: {
+              filter: { _id: product._id, "GodownList.godown": godown.godown },
+              update: {
+                $set: { "GodownList.$.balance_stock": newGodownStock },
+              },
+            },
+          });
+        }
+      }
+    }
+
+    // Execute bulk operations
+    await productModel.bulkWrite(productUpdates);
+    await productModel.bulkWrite(godownUpdates);
+
+    // Continue with the rest of your function...
+    const sales = new salesModel({
+      cmp_id: orgId,
+      party,
+      items,
+      priceLevel: priceLevelFromRedux,
+      additionalCharges: additionalChargesFromRedux,
+      finalAmount: lastAmount,
+      Primary_user_id,
+      salesNumber,
+    });
+
+    const result = await sales.save();
+
+    const increaseSalesNumber = await OragnizationModel.findByIdAndUpdate(
+      orgId,
+      { $inc: { salesNumber: 1 } },
+      { new: true }
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Sale created successfully",
+      data: result,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error, try again!",
+      error: error.message,
+    });
+  }
+};
+
+// @desc toget the details of transaction or sale
+// route get/api/pUsers/getSalesDetails
+
+export const getSalesDetails = async (req, res) => {
+  const saleId = req.params.id;
+
+  try {
+    const saleDetails = await salesModel.findById(saleId);
+
+    if (saleDetails) {
+      res
+        .status(200)
+        .json({ message: "Sales details fetched", data: saleDetails });
+    } else {
+      res.status(404).json({ error: "Sale not found" });
+    }
+  } catch (error) {
+    console.error("Error fetching sale details:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+// @desc toget the godown list
+// route get/api/pUsers/fetchGodowns
+
+export const fetchGodownsAndPriceLevels = async (req, res) => {
+  const Primary_user_id = req.pUserId;
+  const cmp_id = req.params.cmp_id;
+  try {
+    // First, collect all price levels across products
+    const priceLevelsResult = await productModel.aggregate([
+      {
+        $match: {
+          Primary_user_id: new mongoose.Types.ObjectId(Primary_user_id),
+          cmp_id: cmp_id,
+        },
+      },
+      { $unwind: "$Priceleveles" },
+      {
+        $match: {
+          "Priceleveles.pricelevel": { $ne: null },
+          "Priceleveles.pricelevel": { $ne: "" },
+        },
+      },
+      {
+        $group: {
+          _id: "$Priceleveles.pricelevel", // Group by price level
+          //  priceRate: { $first: "$Priceleveles.pricerate" } // Take the first pricerate as an example
+        },
+      },
+    ]);
+
+    // Then, collect godowns as before
+    const godownsResult = await productModel.aggregate([
+      {
+        $match: {
+          Primary_user_id: new mongoose.Types.ObjectId(Primary_user_id),
+          cmp_id: cmp_id,
+        },
+      },
+      { $unwind: "$GodownList" },
+      {
+        $match: {
+          "GodownList.godown_id": { $ne: null },
+          "GodownList.godown_id": { $ne: "" },
+        },
+      },
+      {
+        $group: {
+          _id: "$GodownList.godown_id",
+          godown: { $addToSet: "$GodownList.godown" }, // Collect unique cmp_id values for each godown
+        },
+      },
+      { $match: { _id: { $ne: null } } },
+    ]);
+
+    console.log(godownsResult);
+
+    const godownsWithPriceLevels = godownsResult.map((item) => ({
+      id: item._id,
+      godown: item.godown,
+    }));
+
+    const uniquePriceLevels = priceLevelsResult.map((item) => ({
+      priceLevel: item._id,
+      priceRate: item.priceRate,
+    }));
+
+    res.status(200).json({
+      message: "Godowns and Unique Price Levels fetched",
+      data: {
+        godowns: godownsWithPriceLevels,
+        priceLevels: uniquePriceLevels,
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching sale details:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+// @desc  fetchAdditionalDetails
+// route get/api/pUsers/fetchAdditionalDetails
+
+export const fetchAdditionalDetails = async (req, res) => {
+  const cmp_id = req.params.cmp_id;
+  const Primary_user_id = req.pUserId;
+
+  try {
+    const priceLevelsResult = await productModel.aggregate([
+      {
+        $match: {
+          Primary_user_id: new mongoose.Types.ObjectId(Primary_user_id),
+          cmp_id: cmp_id,
+        },
+      },
+      { $unwind: "$Priceleveles" },
+      {
+        $match: {
+          "Priceleveles.pricelevel": { $ne: null },
+          "Priceleveles.pricelevel": { $ne: "" },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          pricelevels: { $addToSet: "$Priceleveles.pricelevel" },
+        },
+      },
+      { $project: { _id: 0, pricelevels: 1 } },
+    ]);
+
+    const brandResults = await productModel.aggregate([
+      {
+        $match: {
+          Primary_user_id: new mongoose.Types.ObjectId(Primary_user_id),
+          cmp_id: cmp_id,
+        },
+      },
+      { $group: { _id: null, brands: { $addToSet: "$brand" } } },
+      { $project: { _id: 0, brands: 1 } },
+    ]);
+
+    const categoryResults = await productModel.aggregate([
+      {
+        $match: {
+          Primary_user_id: new mongoose.Types.ObjectId(Primary_user_id),
+          cmp_id: cmp_id,
+        },
+      },
+      { $group: { _id: null, categories: { $addToSet: "$category" } } },
+      { $project: { _id: 0, categories: 1 } },
+    ]);
+
+    const subCategoryResults = await productModel.aggregate([
+      {
+        $match: {
+          Primary_user_id: new mongoose.Types.ObjectId(Primary_user_id),
+          cmp_id: cmp_id,
+        },
+      },
+      { $group: { _id: null, subcategories: { $addToSet: "$sub_category" } } },
+      { $project: { _id: 0, subcategories: 1 } },
+    ]);
+
+    // Send the aggregated results back to the client
+    res.json({
+      message: "additional details fetched",
+      priceLevels: priceLevelsResult[0]?.pricelevels || [],
+      brands: brandResults[0]?.brands || [],
+      categories: categoryResults[0]?.categories || [],
+      subcategories: subCategoryResults[0]?.subcategories || [],
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+// @desc  adding configurations for secondary
+// route get/api/pUsers/addSecondaryConfigurations
+
+export const addSecondaryConfigurations = async (req, res) => {
+  const cmp_id = req.params.cmp_id;
+  const Primary_user_id = req.pUserId;
+  const secondary_user_id = req.params.userId;
+
+  console.log("req.body", req.body);
+
+  try {
+    const {
+      selectedGodowns = [],
+      selectedPriceLevels,
+      salesConfiguration,
+      salesOrderConfiguration,
+      receiptConfiguration,
+      vanSaleConfiguration = [],
+      vanSale,
+    } = req.body;
+
+    console.log(selectedGodowns);
+    console.log(vanSaleConfiguration);
+
+
+
+    const dataToAdd = {
+      organization: cmp_id,
+      selectedGodowns,
+      selectedPriceLevels,
+      salesConfiguration,
+      salesOrderConfiguration,
+      receiptConfiguration,
+      vanSaleConfiguration,
+      vanSale,
+    };
+
+    console.log("dataToAdd", dataToAdd);
+
+    const secUser = await SecondaryUser.findById(secondary_user_id);
+
+    if (!secUser) {
+      return res.status(404).json({ error: "Secondary user not found" });
+    }
+
+    const newCmpId = new mongoose.Types.ObjectId(cmp_id);
+    console.log("newCmpId", newCmpId);
+
+    const existingConfigIndex = secUser.configurations.findIndex((config) => {
+      return config.organization.equals(newCmpId);
+    });
+
+    console.log(existingConfigIndex);
+
+    if (existingConfigIndex !== -1) {
+      // Update existing configuration
+      secUser.configurations[existingConfigIndex] = dataToAdd;
+    } else {
+      // Add new configuration
+      secUser.configurations.push(dataToAdd);
+    }
+
+    const result = await secUser.save();
+
+    if (result) {
+      return res
+        .status(200)
+        .json({ success: true, message: "User configuration is successful" });
+    } else {
+      return res
+        .status(400)
+        .json({ success: false, message: "User configuration failed" });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+// // Helper function to modify field names in configuration objects
+// const modifyFieldNames = (config) => {
+//   // Modify the field names here as needed
+//   return {
+//     prefixDetails: config.prefix,
+//     suffixDetails: config.suffix,
+//     startingNumber: config.startingNumber,
+//     widthOfNumericalPart: config.numericalWidth,
+//     configurationNumber:config.configurationNumber
+//   };
+// };
+

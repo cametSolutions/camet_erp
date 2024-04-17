@@ -7,13 +7,29 @@ const secondaryUserSchema = new mongoose.Schema(
     email: { type: String },
     mobile: { type: Number },
     password: { type: String },
-    organization: [{ type: mongoose.Schema.Types.ObjectId, ref: "Organization" }],
-    primaryUser:{type:mongoose.Schema.Types.ObjectId,ref:"PrimaryUser"},
-    otp:{type:Number},
-
-
-    isBlocked: { type: Boolean, default: false },
-    isApproved: { type: Boolean, default: true },
+    organization: [
+      { type: mongoose.Schema.Types.ObjectId, ref: "Organization" },
+    ],
+    primaryUser: { type: mongoose.Schema.Types.ObjectId, ref: "PrimaryUser" },
+    otp: { type: Number },
+    configurations: [
+      {
+        organization: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Organization",
+        },
+        selectedGodowns: { type: Array },
+        selectedPriceLevels: { type: Array },
+        salesConfiguration: { type: Object },
+        salesOrderConfiguration: { type: Object },
+        receiptConfiguration: { type: Object },
+        vanSaleConfiguration: { type: Object },
+        vanSale: { type: Boolean },
+      },
+    ],
+    orderNumber: { type: Number, default: 1 },
+    salesNumber: { type: Number, default: 1 },
+    vanSalesNumber: { type: Number, default: 1 },
   },
   {
     timestamps: true,

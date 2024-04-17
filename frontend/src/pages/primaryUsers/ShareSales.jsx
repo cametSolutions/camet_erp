@@ -1,50 +1,50 @@
 import { useRef, useEffect, useState } from "react";
 import { useReactToPrint } from "react-to-print";
+import Sidebar from "../../components/homePage/Sidebar";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import api from "../../api/api";
 import { useParams } from "react-router-dom";
-import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import { MdPrint } from "react-icons/md";
 import numberToWords from "number-to-words";
 import { Link } from "react-router-dom";
-import SidebarSec from "../../components/secUsers/SidebarSec";
 import QRCode from "react-qr-code";
 
-function ShareInvoiceSecondary() {
+function ShareSales() {
   const [data, setData] = useState([]);
   const [org, setOrg] = useState([]);
   const [subTotal, setSubTotal] = useState("");
   const [additinalCharge, setAdditinalCharge] = useState("");
   const [finalAmount, setFinalAmount] = useState("");
   const [inWords, setInWords] = useState("");
-  const { id } = useParams();
   const [bank, setBank] = useState([]);
 
+  const { id } = useParams();
 
   const contentToPrint = useRef(null);
-
-
 
   useEffect(() => {
     const getTransactionDetails = async () => {
       try {
         // Fetch invoice details
-        const res = await api.get(`/api/sUsers/getInvoiceDetails/${id}`, {
+        const res = await api.get(`/api/pUsers/getSalesDetails/${id}`, {
           withCredentials: true,
         });
 
         // Extract cmp_id from the response
         const cmpId = res.data.data.cmp_id; // Assuming cmp_id is a property of the data
-       // Update the state with the cmp_id
+        // Update the state with the cmp_id
 
         // Fetch company details using the cmp_id
-        const companyDetails = await api.get(`/api/sUsers/getSingleOrganization/${cmpId}`, {
-          withCredentials: true,
-        });
+        const companyDetails = await api.get(
+          `/api/pUsers/getSingleOrganization/${cmpId}`,
+          {
+            withCredentials: true,
+          }
+        );
 
         setData(res.data.data);
-        setOrg(companyDetails.data.organizationData);
+        setOrg(companyDetails?.data?.organizationData);
         setBank(
           companyDetails?.data?.organizationData?.configurations[0]?.bank
         );
@@ -55,11 +55,11 @@ function ShareInvoiceSecondary() {
     };
 
     getTransactionDetails();
- }, [id]);
+  }, [id]);
 
-  console.log(data);
+  console.log(bank);
 
-
+  //  console.log(org?.configurations[0]?.terms);
 
   useEffect(() => {
     if (data && data.items) {
@@ -83,19 +83,17 @@ function ShareInvoiceSecondary() {
       setAdditinalCharge(addiTionalCharge);
 
       const finalAmount = data.finalAmount;
+      console.log(finalAmount);
 
       setFinalAmount(finalAmount);
 
       const [integerPart, decimalPart] = finalAmount.toString().split(".");
       const integerWords = numberToWords.toWords(parseInt(integerPart, 10));
       console.log(integerWords);
-
       const decimalWords = decimalPart
         ? ` and ${numberToWords.toWords(parseInt(decimalPart, 10))} `
-        : " and Zero ";
-
-        console.log(decimalWords);
-
+        : " and Zero";
+      console.log(decimalWords);
 
       const mergedWord = [
         ...integerWords,
@@ -108,14 +106,13 @@ function ShareInvoiceSecondary() {
     }
   }, [data]);
 
-
   // if (totalAmount) {
 
   //   // setInWords(mergedWord)
   // }
 
   const handlePrint = useReactToPrint({
-    documentTitle: `Sale Order ${data.orderNumber}`,
+    documentTitle: `Sale Order ${data.salesNumber}`,
     onBeforePrint: () => console.log("before printing..."),
     onAfterPrint: () => console.log("after printing..."),
     removeAfterPrint: true,
@@ -123,17 +120,16 @@ function ShareInvoiceSecondary() {
 
 
 
-
   return (
     <div className="flex">
       <div className="">
-        <SidebarSec/>
+        <Sidebar />
       </div>
       <div className="flex-1 h-screen overflow-y-scroll">
         <div className="bg-[#012a4a]   sticky top-0 p-3 px-5 text-white text-lg font-bold flex items-center gap-3  shadow-lg justify-between">
           <div className="flex gap-2 ">
-            <Link to={`/sUsers/InvoiceDetails/${id}`}>
-            <IoIosArrowRoundBack className="text-3xl" />
+            <Link to={`/pUsers/salesDetails/${id}`}>
+              <IoIosArrowRoundBack className="text-3xl" />
             </Link>
             <p>Share Your Order</p>
           </div>
@@ -153,15 +149,16 @@ function ShareInvoiceSecondary() {
         >
           <div className="flex ">
             <div className="font-bold text-sm md:text-xl mb-2 mt-6">
-              QUOTATION
+              Tax Invoice
             </div>
           </div>
           <div>
             <div className="bg-gray-500 h-2 w-full mt-1"></div>
             <div className="flex items-center justify-between  bg-gray-300 px-3 py-1 ">
               <div className="text-xs md:text-sm">
-                Invoice #:{data?.orderNumber}{" "}
+                Invoice #:{data?.salesNumber}{" "}
               </div>
+
               <div className="text-xs md:text-sm">
                 Date:{new Date().toDateString()}{" "}
               </div>
@@ -170,12 +167,13 @@ function ShareInvoiceSecondary() {
 
           <div className="flex mt-2 border-t-2 py-3">
             <div className="w-0.5/5">
-            {
-                org.logo && (
-
-                  <img className="h-16 w-16 mr-2 mt-1 " src={org.logo} alt="Logo" />
-                )
-              }
+              {org.logo && (
+                <img
+                  className="h-16 w-16 mr-2 mt-1 "
+                  src={org.logo}
+                  alt="Logo"
+                />
+              )}
             </div>
             <div className="w-4/5 flex flex-col mt-1 ml-2">
               <div className="">
@@ -284,7 +282,9 @@ function ShareInvoiceSecondary() {
                     >
                       <td className="py-4 text-black pr-2">
                         {el.product_name} <br />
-                        <p className="text-gray-400 mt-1">HSN: {el?.hsn_code} ({el.igst}%)</p>
+                        <p className="text-gray-400 mt-1">
+                          HSN: {el?.hsn_code} ({el.igst}%)
+                        </p>
                       </td>
                       <td className="py-4 text-black text-right pr-2">
                         {el?.count} {el?.unit}
@@ -333,16 +333,16 @@ function ShareInvoiceSecondary() {
             <div className="mt-3 w-1/2 ">
               {bank && Object.keys(bank).length > 0 ? (
                 <>
-                  <div className="text-gray-500 font-semibold text-[10px] leading-5">
+                  <div className="text-gray-500 font-semibold text-[8px] leading-5">
                     Bank Name: {bank?.bank_name}
                   </div>
-                  <div className="text-gray-500 font-semibold text-[10px] leading-5">
+                  <div className="text-gray-500 font-semibold text-[8px] leading-5">
                     IFSC Code: {bank?.ifsc}
                   </div>
-                  <div className="text-gray-500 font-semibold text-[10px] leading-5">
+                  <div className="text-gray-500 font-semibold text-[8px] leading-5">
                     Account Number: {bank?.ac_no}
                   </div>
-                  <div className="text-gray-500 font-semibold text-[10px] leading-5">
+                  <div className="text-gray-500 font-semibold text-[8px] leading-5">
                     Branch: {bank?.branch}
                   </div>
                   <div
@@ -443,4 +443,4 @@ function ShareInvoiceSecondary() {
   );
 }
 
-export default ShareInvoiceSecondary;
+export default ShareSales;

@@ -178,8 +178,11 @@ function Dashboard() {
               </div>
             {/* </Link> */}
            
-            {/* <Link to={"/Users/invoiceList"}> */}
-            <div className="flex flex-wrap -mx-6  duration-150 hover:scale-105 ease-in-out cursor-pointer">
+            {/* <Link to={"/sUsers/sales"}> */}
+            <div 
+             onClick={() => handleLinkClick("/sUsers/sales")}
+
+            className="flex flex-wrap -mx-6  duration-150 hover:scale-105 ease-in-out cursor-pointer">
               <div className="w-full px-6 ">
                 <div className="flex items-center px-2 py-3 md:px-5 md:py-2 shadow-sm rounded-md bg-slate-100 h-24">
                   <div className="p-3 rounded-full bg-orange-500 bg-opacity-75 text-2xl  text-white">
@@ -240,7 +243,7 @@ function Dashboard() {
               <div
                 key={index}
                 onClick={() => {
-                  const navigationPath = el.type === "Receipt" ? `/sUsers/receiptDetails/${el._id}` : `/sUsers/InvoiceDetails/${el._id}`;
+                  const navigationPath = el.type === "Receipt" ? `/sUsers/receiptDetails/${el._id}` :el.type==="Tax Invoice"?`/sUsers/salesDetails/${el._id}`: `/sUsers/InvoiceDetails/${el._id}`;
                   navigate(navigationPath, { state: {from:"dashboard" } });
                  }}
                 className={`${
@@ -248,7 +251,7 @@ function Dashboard() {
                 } bg-[#f8ffff] cursor-pointer rounded-md shadow-xl border border-gray-100 flex flex-col justify-between px-4 transition-all duration-150 transform hover:scale-105 ease-in-out`}
               >
                 <div className=" flex justify-start text-xs mt-2 ">
-                  <div className={` ${el.type==="Receipt" ? "bg-[#FB6D48]" :"bg-[#3ed57a]" }   flex items-center text-white px-2 rounded-sm `}>
+                  <div className={` ${el.type==="Receipt" ? "bg-[#FB6D48]" :el.type==="Tax Invoice"? "bg-violet-500": "bg-[#3ed57a]" }   flex items-center text-white px-2 rounded-sm `}>
                     {/* <FaRegCircleDot /> */}
                     <p className=" p-1  rounded-lg px-3 font-semibold">
                       {" "}

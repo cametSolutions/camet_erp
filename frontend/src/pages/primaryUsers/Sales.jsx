@@ -1,6 +1,6 @@
 /* eslint-disable react/no-unescaped-entities */
 import { useEffect, useState, useMemo } from "react";
-
+import Sidebar from "../../components/homePage/Sidebar";
 import { IoMdAdd } from "react-icons/io";
 import { Link } from "react-router-dom";
 import { IoPerson } from "react-icons/io5";
@@ -11,7 +11,7 @@ import {
   addAdditionalCharges,
   AddFinalAmount,
   deleteRow,
-} from "../../../slices/invoiceSecondary";
+} from "../../../slices/sales";
 import { useDispatch } from "react-redux";
 import { IoIosArrowDown } from "react-icons/io";
 import { MdCancel } from "react-icons/md";
@@ -21,15 +21,11 @@ import { useNavigate } from "react-router-dom";
 import api from "../../api/api";
 import { IoIosAddCircle } from "react-icons/io";
 import { MdPlaylistAdd } from "react-icons/md";
-import {
-  removeAll,
-  removeAdditionalCharge,
-} from "../../../slices/invoiceSecondary";
+import { removeAll, removeAdditionalCharge } from "../../../slices/sales";
 import { IoIosArrowRoundBack } from "react-icons/io";
-import SidebarSec from "../../components/secUsers/SidebarSec";
 import { Button, Label, Modal, TextInput } from "flowbite-react";
 
-function InvoiceSecondary() {
+function Sales() {
   const [showSidebar, setShowSidebar] = useState(false);
   const [openModal, setOpenModal] = useState(false);
   const [modalInputs, setModalInputs] = useState({
@@ -38,109 +34,46 @@ function InvoiceSecondary() {
     prefixDetails: "",
     suffixDetails: "",
   });
-  const [subTotal, setSubTotal] = useState(0);
   const [additional, setAdditional] = useState(false);
-  const [refresh, setRefresh] = useState(false);
-  const [orderNumber, setOrderNumber] = useState("");
   const [refreshCmp, setrefreshCmp] = useState(false);
-  const [additionalChragesFromCompany, setAdditionalChragesFromCompany] =   useState([]);
-
-
-
+  const [salesNumber, setSalesNumber] = useState("");
+  const [additionalChragesFromCompany, setAdditionalChragesFromCompany] =
+    useState([]);
+  console.log(modalInputs);
   const additionalChargesFromRedux = useSelector(
-    (state) => state.invoiceSecondary.additionalCharges
+    (state) => state.sales.additionalCharges
+  );
+  const orgId = useSelector(
+    (state) => state.setSelectedOrganization.selectedOrg._id
   );
 
-  const orgId = useSelector(
-    (state) => state?.secSelectedOrganization?.secSelectedOrg?._id
-  );
+
 
 
   useEffect(() => {
     const fetchSingleOrganization = async () => {
       try {
         const res = await api.get(
-          `/api/sUsers/getSingleOrganization/${orgId}`,
+          `/api/pUsers/getSingleOrganization/${orgId}`,
           {
             withCredentials: true,
           }
         );
 
         console.log(res.data.organizationData);
+        // setCompany(res.data.organizationData);
         setAdditionalChragesFromCompany(
           res.data.organizationData.additionalCharges
         );
-        // const { orderNumber, OrderNumberDetails } = res.data.organizationData;
+        const { salesNumber, salesNumberDetails } = res.data.organizationData;
 
-        // console.log(orderNumber);
+        console.log(salesNumber);
 
-        // if (OrderNumberDetails) {
-        //   console.log("haii");
-        //   const { widthOfNumericalPart, prefixDetails, suffixDetails } =
-        //     OrderNumberDetails;
-        //     const newOrderNumber=(orderNumber).toString()
-        //     console.log(newOrderNumber);
-        //   console.log(widthOfNumericalPart);
-        //   console.log(prefixDetails);
-        //   console.log(suffixDetails);
-
-
-        //   const padedNumber = newOrderNumber.padStart(widthOfNumericalPart, 0);
-        //   console.log(padedNumber);
-        //   const finalOrderNumber = prefixDetails + padedNumber + suffixDetails;
-        //   console.log(finalOrderNumber);
-        //   setOrderNumber(finalOrderNumber);
-        //   setModalInputs({
-        //     widthOfNumericalPart: widthOfNumericalPart,
-        //     prefixDetails: prefixDetails,
-        //     suffixDetails: suffixDetails,
-        //   });
-        // } else {
-        //   setOrderNumber(orderNumber);
-        //   setModalInputs({
-        //     startingNumber: "1",
-        //     widthOfNumericalPart: "",
-        //     prefixDetails: "",
-        //     suffixDetails: "",
-        //   });
-        // }
-      } catch (error) {
-        console.log(error);
-      }
-    };
-    fetchSingleOrganization();
-  }, [refreshCmp, orgId]);
-
-
-
-  useEffect(() => {
-    const fetchConfigurationNumber = async () => {
-      try {
-        const res = await api.get(
-          `/api/sUsers/fetchConfigurationNumber/${orgId}/salesOrder`,
-
-          {
-            withCredentials: true,
-          }
-        );
-
-        console.log(res.data);
-        if (res.data.message==="default"){
-
-          
-          const {configurationNumber}=res.data;
-          setOrderNumber(configurationNumber)
-          return
-        }
-
-        const { configDetails, configurationNumber } = res.data;
-        console.log(configDetails);
-        console.log(configurationNumber);
-
-        if (configDetails) {
+        if (salesNumberDetails) {
+          console.log("haii");
           const { widthOfNumericalPart, prefixDetails, suffixDetails } =
-            configDetails;
-          const newOrderNumber = configurationNumber.toString();
+            salesNumberDetails;
+          const newOrderNumber = salesNumber.toString();
           console.log(newOrderNumber);
           console.log(widthOfNumericalPart);
           console.log(prefixDetails);
@@ -150,14 +83,14 @@ function InvoiceSecondary() {
           console.log(padedNumber);
           const finalOrderNumber = prefixDetails + padedNumber + suffixDetails;
           console.log(finalOrderNumber);
-          setOrderNumber(finalOrderNumber);
+          setSalesNumber(finalOrderNumber);
           setModalInputs({
             widthOfNumericalPart: widthOfNumericalPart,
             prefixDetails: prefixDetails,
             suffixDetails: suffixDetails,
           });
         } else {
-          setOrderNumber(orderNumber);
+          setSalesNumber(salesNumber);
           setModalInputs({
             startingNumber: "1",
             widthOfNumericalPart: "",
@@ -169,11 +102,8 @@ function InvoiceSecondary() {
         console.log(error);
       }
     };
-
-    fetchConfigurationNumber();
-  }, []);
-
-  
+    fetchSingleOrganization();
+  }, [refreshCmp, orgId]);
 
   const [rows, setRows] = useState(
     additionalChargesFromRedux.length > 0
@@ -192,6 +122,8 @@ function InvoiceSecondary() {
          ]
        : [] // Fallback to an empty array if additionalChragesFromCompany is also empty
    );
+   
+  console.log(rows);
 
 
   useEffect(() => {
@@ -199,9 +131,12 @@ function InvoiceSecondary() {
       setAdditional(true);
     }
   }, []);
+  const [subTotal, setSubTotal] = useState(0);
   const dispatch = useDispatch();
 
-
+  console.log(additionalChargesFromRedux);
+  console.log(additionalChragesFromCompany);
+  console.log(rows);
 
   const handleAddRow = () => {
     const hasEmptyValue = rows.some((row) => row.value === "");
@@ -249,6 +184,8 @@ function InvoiceSecondary() {
     dispatch(addAdditionalCharges({ index, row: newRows[index] }));
   };
 
+  console.log(rows);
+
   const handleRateChange = (index, value) => {
     const newRows = [...rows];
     let updatedRow = { ...newRows[index], value: value }; // Create a new object with the updated value
@@ -263,6 +200,7 @@ function InvoiceSecondary() {
     setRows(newRows);
     dispatch(addAdditionalCharges({ index, row: updatedRow }));
    };
+   
 
   const actionChange = (index, value) => {
     const newRows = [...rows];
@@ -277,10 +215,10 @@ function InvoiceSecondary() {
     setRows(newRows);
     dispatch(deleteRow(index)); // You need to create an action to handle row deletion in Redux
   };
-  const party = useSelector((state) => state.invoiceSecondary.party);
-  const items = useSelector((state) => state.invoiceSecondary.items);
+  const party = useSelector((state) => state.sales.party);
+  const items = useSelector((state) => state.sales.items);
   const priceLevelFromRedux =
-    useSelector((state) => state.invoiceSecondary.selectedPriceLevel) || "";
+    useSelector((state) => state.sales.selectedPriceLevel) || "";
 
   useEffect(() => {
     const subTotal = items.reduce((acc, curr) => {
@@ -301,11 +239,15 @@ function InvoiceSecondary() {
        return acc;
     }, 0);
    }, [rows]);
+   
 
+  console.log(additionalChargesTotal);
   const totalAmount =
     parseFloat(subTotal) + additionalChargesTotal || parseFloat(subTotal);
 
   const navigate = useNavigate();
+
+
 
 
   const handleAddItem = () => {
@@ -314,13 +256,21 @@ function InvoiceSecondary() {
       toast.error("Select a party first");
       return;
     }
-    navigate("/sUsers/addItem");
+    navigate("/pUsers/addItemSales");
   };
 
   const cancelHandler = () => {
     setAdditional(false);
     dispatch(removeAdditionalCharge());
-    setRows([{ option: "Option 1", value: "", action: "add" }]);
+    setRows([
+      {
+        option: additionalChragesFromCompany[0].name,
+        value: "",
+        action: "add",
+        taxPercentage: additionalChragesFromCompany[0].taxPercentage,
+        hsn: additionalChragesFromCompany[0].hsn,
+      },
+    ]);
   };
 
   const submitHandler = async () => {
@@ -369,13 +319,13 @@ function InvoiceSecondary() {
       additionalChargesFromRedux,
       lastAmount,
       orgId,
-      orderNumber
+      salesNumber,
     };
 
     console.log(formData);
 
     try {
-      const res = await api.post("/api/sUsers/createInvoice", formData, {
+      const res = await api.post("/api/pUsers/createSale", formData, {
         headers: {
           "Content-Type": "application/json",
         },
@@ -385,8 +335,7 @@ function InvoiceSecondary() {
       console.log(res.data);
       toast.success(res.data.message);
 
-      navigate(`/sUsers/InvoiceDetails/${res.data.data._id}`);
-
+      navigate(`/pUsers/salesDetails/${res.data.data._id}`);
       dispatch(removeAll());
     } catch (error) {
       toast.error(error.response.data.message);
@@ -399,10 +348,10 @@ function InvoiceSecondary() {
     // setEmail('');
   }
 
-  const saveOrderNumber = async () => {
+  const saveSalesNumber = async () => {
     try {
       const res = await api.post(
-        `/api/sUsers/saveOrderNumber/${orgId}`,
+        `/api/pUsers/saveSalesNumber/${orgId}`,
         modalInputs,
         {
           headers: {
@@ -423,10 +372,13 @@ function InvoiceSecondary() {
     }
   };
 
+  console.log(additionalChragesFromCompany);
+  console.log(rows);
+
   return (
     <div className="flex relative ">
       <div>
-        <SidebarSec TAB={"invoice"} showBar={showSidebar} />
+        <Sidebar TAB={"Sales"} showBar={showSidebar} refresh={refreshCmp} />
       </div>
 
       <div className="flex-1 bg-slate-100  h-screen overflow-y-scroll  ">
@@ -435,11 +387,11 @@ function InvoiceSecondary() {
             onClick={handleToggleSidebar}
             className="block md:hidden text-white text-3xl"
           /> */}
-          <Link to={"/sUsers/dashboard"}>
+          <Link to={"/pUsers/transaction"}>
             <IoIosArrowRoundBack className="text-3xl text-white cursor-pointer md:hidden" />
           </Link>
           <p className="text-white text-lg   font-bold ">
-            Create Bill / Sales Order
+            Sales
           </p>
         </div>
 
@@ -447,28 +399,42 @@ function InvoiceSecondary() {
 
         <div className="flex justify-between  p-4 bg-white drop-shadow-lg items-center text-xs md:text-base ">
           <div className=" flex flex-col gap-1 justify-center">
-            <p className="text-md font-semibold text-violet-400">  Order #{orderNumber}</p>
+            <p className="text-md font-semibold text-violet-400">
+              Sale #{salesNumber}
+            </p>
             <p className="font-semibold   text-gray-500 text-xs md:text-base">
               {new Date().toDateString()}
             </p>
           </div>
-          <div className=" hidden md:block ">
+          <div className="  ">
             <div className="  flex gap-5 items-center ">
-              <button
-                onClick={submitHandler}
-                className=" bottom-0 text-white bg-violet-700  w-full rounded-md  p-2 flex items-center justify-center gap-2 hover_scale cursor-pointer "
-              >
-                <IoIosAddCircle className="text-2xl" />
-                <p>Generate Order</p>
-              </button>
-              {/* <div>
-                <p 
+              <div className="hidden md:block">
+                <button
+                  onClick={submitHandler}
+                  className=" bottom-0 text-white bg-violet-700  w-full rounded-md  p-2 flex items-center justify-center gap-2 hover_scale cursor-pointer "
+                >
+                  <IoIosAddCircle className="text-2xl" />
+                  <p>Generate Sale</p>
+                </button>
+              </div>
+              <div>
+                <button
                   onClick={() => setOpenModal(true)}
-
-                className="text-violet-500 text-xs  p-1 px-3  border border-1 border-gray-300 rounded-2xl cursor-pointer">
+                  className="  text-violet-500 text-xs  p-1 px-3  border border-1 border-gray-300 rounded-2xl cursor-pointer"
+                >
                   Edit
-                </p>
-              </div> */}
+                </button>
+              </div>
+              <div>
+                <button
+                  onClick={() => {
+                    dispatch(removeAll());
+                  }}
+                  className="  text-red-500 text-xs  p-1 px-3  border border-1 border-gray-300 rounded-2xl cursor-pointer"
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -483,7 +449,7 @@ function InvoiceSecondary() {
             </div>
             {Object.keys(party).length !== 0 && (
               <div>
-                <Link to={"/sUsers/searchParty"}>
+                <Link to={"/pUsers/searchPartySales"}>
                   <p className="text-violet-500 p-1 px-3  text-xs border border-1 border-gray-300 rounded-2xl cursor-pointer">
                     Change
                   </p>
@@ -494,7 +460,7 @@ function InvoiceSecondary() {
 
           {Object.keys(party).length === 0 ? (
             <div className="mt-3 p-6 border border-gray-300 h-10 rounded-md flex  cursor-pointer justify-center   items-center font-medium text-violet-500">
-              <Link to={"/sUsers/searchParty"}>
+              <Link to={"/pUsers/searchPartySales"}>
                 <div className="flex justify-center gap-2 hover_scale text-base ">
                   <IoMdAdd className="text-2xl" />
                   <p>Add Party Name</p>
@@ -529,6 +495,7 @@ function InvoiceSecondary() {
             </div>
 
             <div className="mt-3 p-6 border border-gray-300 h-10 rounded-md flex  cursor-pointer justify-center   items-center font-medium text-violet-500 ">
+              {/* <Link to={"/pUsers/addItem"}>  */}
               <div
                 onClick={handleAddItem}
                 className="flex justify-center gap-2 hover_scale items-center "
@@ -536,6 +503,7 @@ function InvoiceSecondary() {
                 <IoMdAdd className="text-2xl" />
                 <p className="text-sm">Add Item</p>
               </div>
+              {/* </Link> */}
             </div>
           </div>
         )}
@@ -549,9 +517,9 @@ function InvoiceSecondary() {
                   <p>Items ({items.length})</p>
                 </div>
 
-                <Link to={"/sUsers/addItem"}>
+                <Link to={"/pUsers/addItemSales"}>
                   <div className=" flex items-center gap-2 font-bold text-violet-500">
-                    <IoMdAdd className="text-xl" />
+                    <IoMdAdd className="text-2xl" />
                     <p>Add Item</p>
                   </div>
                 </Link>
@@ -565,7 +533,7 @@ function InvoiceSecondary() {
                       <p> ₹ {el.total ?? 0}</p>
                     </div>
                     <div className="flex justify-between items-center mt-2 ">
-                      <div className="w-3/5 md:w-2/5 font-semibold text-gray-500 text-xs md:text-base flex flex-col gap-2 ">
+                      <div className="w-3/5 md:w-2/5 font-semibold text-gray-500 text-xs  flex flex-col gap-2 ">
                         <div className="flex justify-between">
                           <p className="text-nowrap">
                             Qty <span className="text-xs">x</span> Rate
@@ -579,15 +547,7 @@ function InvoiceSecondary() {
                         </div>
                         <div className="flex justify-between">
                           <p className="text-nowrap"> Tax </p>
-                          <p className="text-nowrap">
-                            ({el.igst} %)
-                            {/* {(el.Priceleveles.find(
-              (item) => item.pricelevel == priceLevelFromRedux
-            ).pricerate *
-              el.count *
-              el.igst) /
-              100}{" "} */}
-                          </p>
+                          <p className="text-nowrap">({el.igst} %)</p>
                         </div>
                         {(el.discount > 0 || el.discountPercentage > 0) && (
                           <div className="flex justify-between">
@@ -602,13 +562,20 @@ function InvoiceSecondary() {
                           </div>
                         )}
                       </div>
-                      <Link to={`/sUsers/editItem/${el._id}`}>
-                        <div className="">
-                          <p className="text-violet-500 text-xs md:text-base font-bold  p-1  px-4   border border-1 border-gray-300 rounded-2xl cursor-pointer">
-                            Edit
-                          </p>
-                        </div>
-                      </Link>
+                    
+                      <div className="">
+                        <p
+                          onClick={() => {
+                            navigate(`/pUsers/editItemSales/${el._id}`, {
+                              state: { from: "sales" },
+                            });
+                          }}
+                          className="text-violet-500 text-xs md:text-base font-bold  p-1  px-4   border border-1 border-gray-300 rounded-2xl cursor-pointer"
+                        >
+                          Edit
+                        </p>
+                      </div>
+                      {/* </Link> */}
                     </div>
                   </div>
                   <hr />
@@ -750,7 +717,7 @@ function InvoiceSecondary() {
           </>
         )}
 
-        <div className="flex justify-between bg-white mt-2 mb-14 p-3">
+        <div className="flex justify-between bg-white mt-2 p-3">
           <p className="font-bold text-lg">Total Amount</p>
           <p className="font-bold text-lg">₹ {totalAmount.toFixed(2) ?? 0}</p>
         </div>
@@ -759,10 +726,10 @@ function InvoiceSecondary() {
           <div className="flex justify-center overflow-hidden w-full">
             <button
               onClick={submitHandler}
-              className="fixed bottom-0 text-white bg-violet-700  w-full  p-2 py-2.5 flex items-center justify-center gap-2 hover_scale cursor-pointer "
+              className="fixed bottom-0 text-white bg-violet-700  w-full  p-2 py-4 flex items-center justify-center gap-2 hover_scale cursor-pointer "
             >
               <IoIosAddCircle className="text-2xl" />
-              <p>Generate Order</p>
+              <p>Generate Sale</p>
             </button>
           </div>
         </div>
@@ -821,7 +788,7 @@ function InvoiceSecondary() {
                     type="button"
                     className="text-white bg-blue-600 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-500  font-medium rounded-lg text-sm inline-flex items-center px-5 py-2.5 text-center mr-3"
                     onClick={() => {
-                      navigate("/sUsers/hsn");
+                      navigate("/pUsers/hsn");
                     }}
                   >
                     Add HSN
@@ -932,13 +899,16 @@ function InvoiceSecondary() {
               />
             </div>
             <div className="w-full">
-              <Button onClick={saveOrderNumber}>Submit</Button>
+              <Button onClick={saveSalesNumber}>Submit</Button>
             </div>
           </div>
         </Modal.Body>
       </Modal>
+
+
+      
     </div>
   );
 }
 
-export default InvoiceSecondary;
+export default Sales;
