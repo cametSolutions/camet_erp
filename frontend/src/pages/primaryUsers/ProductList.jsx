@@ -32,9 +32,12 @@ function ProductList() {
   const cmp_id = useSelector(
     (state) => state.setSelectedOrganization.selectedOrg._id
   );
+
+
   const type = useSelector(
     (state) => state.setSelectedOrganization.selectedOrg.type
   );
+
 
   const dispatch = useDispatch();
 
@@ -52,6 +55,7 @@ function ProductList() {
         setTimeout(() => {
           setProducts(res.data.productData);
         }, 1000);
+
       } catch (error) {
         console.log(error);
         toast.error(error.response.data.message);
@@ -81,6 +85,7 @@ function ProductList() {
       setFilteredProducts(filtered);
     }
   }, [search, products, refresh]);
+
 
   const handleDelete = async (id) => {
     // Show confirmation dialog
@@ -303,6 +308,7 @@ function ProductList() {
             >
               {Row}
             </List>
+            
           </div>
         ) : (
           <div className="font-bold flex justify-center items-center mt-12 text-gray-500">
