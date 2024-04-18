@@ -79,7 +79,9 @@ import AdditionalChargesSecondary from '../pages/secUsers/AdditionalChargesSecon
 import EditAdditionalChargesSecondary from '../pages/secUsers/EditAdditionalChargesSecondary'
 import OrderConfigurationsSecondary from '../pages/secUsers/OrderConfigurationsSecondary'
 
-
+// inventory 
+import InventoryPrimaryUser from '../pages/primaryUsers/InventoryPrimaryUser'
+import InventorySecondaryUser from '../pages/secUsers/InventorySecondaryUser'
 
 const Routers = () => {
   return (
@@ -169,6 +171,9 @@ const Routers = () => {
         <Route path='/sUsers/editAdditionalCharge/:id' element={<ProtectedSecRoute><EditAdditionalChargesSecondary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/OrderConfigurations' element={<ProtectedSecRoute><OrderConfigurationsSecondary/></ProtectedSecRoute>}></Route>
 
+   {/* inventory */}
+        <Route path='/pUsers/Inventory' element={<ProtectedPriRoute><InventoryPrimaryUser/></ProtectedPriRoute>}></Route>
+        <Route path='/sUsers/Inventory' element={<ProtectedSecRoute><InventorySecondaryUser/></ProtectedSecRoute>}></Route>
 
 
     </Routes>
