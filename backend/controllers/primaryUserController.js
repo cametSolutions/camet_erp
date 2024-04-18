@@ -270,6 +270,7 @@ export const getOrganizations = async (req, res) => {
 export const getSingleOrganization = async (req, res) => {
   const OrgId = new mongoose.Types.ObjectId(req.params.id);
   console.log("OrgId", OrgId);
+  console.log(req.params.id)
   try {
     const organization = await Organization.findById(OrgId).populate({
       path: "configurations.bank",

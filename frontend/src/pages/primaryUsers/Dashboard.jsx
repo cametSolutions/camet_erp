@@ -5,6 +5,8 @@ import Sidebar from "../../components/homePage/Sidebar";
 import { IoReorderThreeSharp } from "react-icons/io5";
 import { useSelector } from "react-redux";
 import { IoReceiptSharp } from "react-icons/io5";
+import { MdInventory } from "react-icons/md";
+import { BsGraphUp } from "react-icons/bs";
 import { HiDocumentText } from "react-icons/hi2";
 import { FaCartArrowDown } from "react-icons/fa6";
 import { CiCalendarDate } from "react-icons/ci";
@@ -27,7 +29,7 @@ function Dashboard() {
 
   const org = useSelector((state) => state.setSelectedOrganization.selectedOrg);
   console.log(org);
-  const dispatch=useDispatch()
+  const dispatch = useDispatch()
 
   const handleToggleSidebar = () => {
     if (window.innerWidth < 768) {
@@ -62,7 +64,7 @@ function Dashboard() {
   const filteredData = data.filter((item) => {
     const createdAtDate = new Date(item.createdAt);
     return (
-      createdAtDate.toDateString() === today.toDateString() 
+      createdAtDate.toDateString() === today.toDateString()
     );
   });
   console.log(filteredData);
@@ -76,18 +78,18 @@ function Dashboard() {
   }, 0);
 
 
-   // Handle click event of link
-   const handleLinkClick = (to) => {
+  // Handle click event of link
+  const handleLinkClick = (to) => {
     if (org == undefined) {
       toast.error("No company available");
-    } 
+    }
     else if (
-      org.isApproved===false
-    ){
+      org.isApproved === false
+    ) {
       toast.error("Company approval pending ");
 
     }
-    
+
     else {
       navigate(to);
     }
@@ -130,53 +132,55 @@ function Dashboard() {
           </div>
           <div className="grid grid-cols-2 lg:grid-cols-4 p-6 lg:px-12 gap-4 md:gap-6 bg-white  ">
             {/* <Link to={"/pUsers/transaction"}> */}
-              <div 
-             onClick={() => handleLinkClick("/pUsers/transaction")}
+            <div
+              onClick={() => handleLinkClick("/pUsers/transaction")}
               className="flex flex-wrap -mx-6   duration-150 hover:scale-105 ease-in-out cursor-pointer  ">
-                <div className="w-full px-6 ">
-                  <div className="flex items-center px-2 py-3 md:px-5 md:py-2 shadow-sm rounded-md bg-slate-100 h-24">
-                    <div className="p-3 rounded-full bg-green-500 bg-opacity-75 text-2xl text-white">
-                      <BiSolidAddToQueue />
-                    </div>
+              <div className="w-full px-6 ">
+                <div className="flex items-center px-2 py-3 md:px-5 md:py-2 shadow-sm rounded-md bg-slate-100 h-24">
+                  <div className="p-3 rounded-full bg-green-500 bg-opacity-75 text-2xl text-white">
+                    <BiSolidAddToQueue />
+                  </div>
 
-                    <div className="mx-2 md:mx-5">
-                      <h4 className=" sm:text-md md:text-lg  font-semibold text-gray-700">
-                        ₹{receiptTotal.toFixed(2)}
-                      </h4>
-                      <div className="text-gray-500  text-[15px] ">Transactions</div>
-                    </div>
+                  <div className="mx-2 md:mx-5">
+                    <h4 className=" sm:text-md md:text-lg  font-semibold text-gray-700">
+                      ₹{receiptTotal.toFixed(2)}
+                    </h4>
+                    <div className="text-gray-500  text-[15px] ">Transactions</div>
                   </div>
                 </div>
               </div>
+            </div>
             {/* </Link> */}
             {/* <Link to={"/pUsers/outstanding"}> */}
-              <div
-              
-             onClick={() => handleLinkClick("/pUsers/outstanding")}
-              
-              className="flex flex-wrap -mx-6  duration-150 hover:scale-105 ease-in-out cursor-pointer">
-                <div className="w-full px-6 ">
-                  <div className="flex items-center px-2 py-3 md:px-5 md:py-2 shadow-sm rounded-md bg-slate-100 h-24">
-                    <div className="p-3 rounded-full bg-red-500 bg-opacity-75 text-2xl text-white">
-                      <IoReceiptSharp />
-                    </div>
+            <div
 
-                    <div className="mx-5 py-2.5">
-                      {/* <h4 className=" sm:text-md md:text-2xl  font-semibold text-gray-700">
+              onClick={() => handleLinkClick("/pUsers/outstanding")}
+
+              className="flex flex-wrap -mx-6  duration-150 hover:scale-105 ease-in-out cursor-pointer">
+              <div className="w-full px-6 ">
+                <div className="flex items-center px-2 py-3 md:px-5 md:py-2 shadow-sm rounded-md bg-slate-100 h-24">
+                  <div className="p-3 rounded-full bg-red-500 bg-opacity-75 text-2xl text-white">
+                    <IoReceiptSharp />
+                  </div>
+
+                  <div className="mx-5 py-2.5">
+                    {/* <h4 className=" sm:text-md md:text-2xl  font-semibold text-gray-700">
                         ₹0
                       </h4> */}
-                      <div className="text-gray-500 text-md">Reciept</div>
-                    </div>
+                    <div className="text-gray-500 text-md">Reciept</div>
                   </div>
                 </div>
               </div>
+            </div>
             {/* </Link> */}
+
            
             {/* <Link to={"/pUsers/sales"}> */}
             <div
              onClick={() => handleLinkClick("/pUsers/sales")}
 
              className="flex flex-wrap -mx-6  duration-150 hover:scale-105 ease-in-out cursor-pointer">
+
               <div className="w-full px-6 ">
                 <div className="flex items-center px-2 py-3 md:px-5 md:py-2 shadow-sm rounded-md bg-slate-100 h-24">
                   <div className="p-3 rounded-full bg-orange-500 bg-opacity-75 text-2xl  text-white">
@@ -194,10 +198,10 @@ function Dashboard() {
             </div>
             {/* </Link> */}
             {/* <Link to={'/pUsers/invoice'} > */}
-            <div 
-             onClick={() => handleLinkClick("/pUsers/invoice")}
+            <div
+              onClick={() => handleLinkClick("/pUsers/invoice")}
 
-            className="flex flex-wrap -mx-6  duration-150 hover:scale-105 ease-in-out cursor-pointer">
+              className="flex flex-wrap -mx-6  duration-150 hover:scale-105 ease-in-out cursor-pointer">
               <div className="w-full px-6 ">
                 <div className="flex items-center px-2 py-3 md:px-5 md:py-2 shadow-sm rounded-md bg-slate-100 h-24" >
                   <div className="p-3 rounded-full bg-blue-500 bg-opacity-75 text-2xl text-white">
@@ -208,12 +212,32 @@ function Dashboard() {
                     {/* <h4 className=" sm:text-md md:text-2xl  font-semibold text-gray-700">
                       ₹0
                     </h4> */}
-                    <div className="text-gray-500 text-md">Sale Order </div>
+                    <div className="text-gray-500 text-md">Sale Order</div>
                   </div>
                 </div>
               </div>
             </div>
             {/* </Link> */}
+            <div
+              onClick={() => handleLinkClick("/pUsers/invoice")}
+
+              className="flex flex-wrap -mx-6  duration-150 hover:scale-105 ease-in-out cursor-pointer">
+              <div className="w-full px-6 ">
+                <div className="flex items-center px-2 py-3 md:px-5 md:py-2 shadow-sm rounded-md bg-slate-100 h-24" >
+                  <div className="p-3 rounded-full bg-blue-500 bg-opacity-75 text-2xl text-white">
+                  <MdInventory />
+                  </div>
+
+                  <div className="mx-5 py-2.5">
+                    {/* <h4 className=" sm:text-md md:text-2xl  font-semibold text-gray-700">
+                      ₹0
+                    </h4> */}
+                    <div className="text-gray-500 text-md">Inventory </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+        
           </div>
 
           {/* tiles */}
@@ -237,19 +261,20 @@ function Dashboard() {
               <div
                 key={index}
                 onClick={() => {
-                  const navigationPath = el.type === "Receipt" ? `/pUsers/receiptDetails/${el._id}` :el.type==="Tax Invoice"?`/pUsers/salesDetails/${el._id}`: `/pUsers/InvoiceDetails/${el._id}`;
-                  navigate(navigationPath, { state: {from:"dashboard" } });
-                 }}
-                className={`${
-                  el?.isCancelled ? "bg-gray-200 pointer-events-none " : ""
-                } bg-[#f8ffff] cursor-pointer rounded-md shadow-xl border border-gray-100 flex flex-col justify-between px-4 transition-all duration-150 transform hover:scale-105 ease-in-out`}
+
+                  const navigationPath = el.type === "Receipt" ? `/pUsers/receiptDetails/${el._id}` : `/pUsers/InvoiceDetails/${el._id}`;
+                  navigate(navigationPath, { state: { from: "dashboard" } });
+                }}
+                className={`${el?.isCancelled ? "bg-gray-200 pointer-events-none " : ""
+                  } bg-[#f8ffff] cursor-pointer rounded-md shadow-xl border border-gray-100 flex flex-col justify-between px-4 transition-all duration-150 transform hover:scale-105 ease-in-out`}
               >
                 <div className=" flex justify-start text-xs mt-2 ">
-                <div className={` ${el.type==="Receipt" ? "bg-[#FB6D48]" :el.type==="Tax Invoice"? "bg-violet-500": "bg-[#3ed57a]" }   flex items-center text-white px-2 rounded-sm `}>
+                  <div className={` ${el.type === "Receipt" ? "bg-[#FB6D48]" : "bg-[#3ed57a]"}   flex items-center text-white px-2 rounded-sm `}>
+
                     {/* <FaRegCircleDot /> */}
                     <p className=" p-1  rounded-lg px-3 font-semibold">
                       {" "}
-                    {el.type}
+                      {el.type}
                     </p>
                   </div>
                 </div>
