@@ -7,6 +7,8 @@ import prSettlementDataReducer from "../slices/prSettlementDataSlice";
 import adminDataReducer from "../slices/adminData";
 import invoice from "../slices/invoice";
 import invoiceSecondary from "../slices/invoiceSecondary";
+import sales from '../slices/sales'
+import salesSecondary from '../slices/salesSecondary'
 
 export const store = configureStore({
   reducer: {
@@ -18,5 +20,7 @@ export const store = configureStore({
     adminData: adminDataReducer,
     invoice: invoice,
     invoiceSecondary: invoiceSecondary,
+    sales:sales,
+    salesSecondary:salesSecondary
   },
 });

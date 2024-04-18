@@ -14,6 +14,7 @@ import Organization from "../models/OragnizationModel.js";
 
 import bcrypt from "bcryptjs";
 import mongoose from "mongoose";
+import salesModel from "../models/salesModel.js";
 
 // @desc Login secondary user
 // route POST/api/sUsers/login
@@ -32,11 +33,13 @@ export const login = async (req, res) => {
       secUser = await SecondaryUser.findOne({ mobile: email });
     }
 
+    console.log(secUser);
+
     if (!secUser) {
       return res.status(404).json({ message: "Invalid User" });
     }
 
-    if (!secUser.isApproved) {
+    if (secUser.isApproved === false) {
       return res.status(401).json({ message: "User approval is pending" });
     }
 
@@ -232,12 +235,10 @@ export const confirmCollection = async (req, res) => {
 
       const savedTransaction = await transaction.save();
 
-      res
-        .status(200)
-        .json({
-          message: "Your Collection is confirmed",
-          id: savedTransaction._id,
-        });
+      res.status(200).json({
+        message: "Your Collection is confirmed",
+        id: savedTransaction._id,
+      });
     } else {
       console.log("No matching documents found for the given criteria");
     }
@@ -273,7 +274,6 @@ export const logout = async (req, res) => {
 export const transactions = async (req, res) => {
   const userId = req.sUserId;
   const cmp_id = req.params.cmp_id;
-
 
   try {
     const transactions = await TransactionModel.aggregate([
@@ -316,8 +316,21 @@ export const transactions = async (req, res) => {
       },
     ]);
 
+    const sales = await salesModel.aggregate([
+      { $match: { Secondary_user_id: userId, cmp_id: cmp_id } },
+      {
+        $project: {
+          party_name: "$party.partyName",
+          // mobileNumber:"$party.mobileNumber",
+          type: "Tax Invoice",
+          enteredAmount: "$finalAmount",
+          createdAt: 1,
+          itemsLength: { $size: "$items" },
+        },
+      },
+    ]);
 
-    const combined = [...transactions, ...invoices];
+    const combined = [...transactions, ...invoices, ...sales];
     combined.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
     console.log("combined", combined);
@@ -646,16 +659,84 @@ export const addParty = async (req, res) => {
 export const getProducts = async (req, res) => {
   const Secondary_user_id = req.sUserId;
   const cmp_id = req.params.cmp_id;
-  console.log("Primary_user_id", Secondary_user_id);
-  console.log("cmp_id", cmp_id);
-  try {
-    const products = await productModel.find({
-      // Secondary_user_id: Secondary_user_id,
-      cmp_id: cmp_id,
-    });
+  const Primary_user_id = new mongoose.Types.ObjectId(req.owner);
 
-    console.log(products);
-    if (products) {
+  try {
+    const secUser = await SecondaryUser.findById(Secondary_user_id);
+
+    if (!secUser) {
+      return res.status(404).json({ message: "Secondary user not found" });
+    }
+
+    const configuration = secUser.configurations.find(
+      (item) => item.organization == cmp_id
+    );
+
+    let products;
+
+    if (configuration) {
+      const { selectedGodowns } = configuration;
+
+      if (selectedGodowns && selectedGodowns.length > 0) {
+        products = await productModel.aggregate([
+          {
+            $match: {
+              cmp_id: cmp_id,
+              Primary_user_id: Primary_user_id,
+              "GodownList.godown_id": { $in: selectedGodowns },
+            },
+          },
+          {
+            $project: {
+              product_name: 1,
+              cmp_id: 1,
+              product_code: 1,
+              balance_stock: 1,
+              Primary_user_id: 1,
+              brand: 1,
+              category: 1,
+              sub_category: 1,
+              unit: 1,
+              alt_unit: 1,
+              unit_conversion: 1,
+              alt_unit_conversion: 1,
+              hsn_code: 1,
+              purchase_price: 1,
+              purchase_cost: 1,
+              Priceleveles: 1,
+              GodownList: {
+                $filter: {
+                  input: "$GodownList",
+                  as: "godown",
+                  cond: { $in: ["$$godown.godown_id", selectedGodowns] },
+                },
+              },
+              cgst: 1,
+              sgst: 1,
+              igst: 1,
+              cess: 1,
+              addl_cess: 1,
+              state_cess: 1,
+              product_master_id: 1,
+              __v: 1,
+            },
+          },
+        ]);
+      } else {
+        products = await productModel.find({
+          Primary_user_id: Primary_user_id,
+          cmp_id: cmp_id,
+        });
+      }
+    } else {
+      // If configuration is not present, fetch all products
+      products = await productModel.find({
+        Primary_user_id: Primary_user_id,
+        cmp_id: cmp_id,
+      });
+    }
+
+    if (products.length > 0) {
       return res.status(200).json({
         productData: products,
         message: "Products fetched",
@@ -686,10 +767,7 @@ export const createInvoice = async (req, res) => {
       additionalChargesFromRedux,
       lastAmount,
       orderNumber,
-
     } = req.body;
-
-
 
     console.log(req.body);
 
@@ -703,23 +781,53 @@ export const createInvoice = async (req, res) => {
       Primary_user_id: owner,
       Secondary_user_id,
       orderNumber,
-
     });
 
     const result = await invoice.save();
 
-    const increaseOrderNumber = await OragnizationModel.findByIdAndUpdate(
-      orgId,
-      { $inc: { orderNumber: 1 } },
-      { new: true }
+    const secondaryUser = await SecondaryUser.findById(Secondary_user_id);
+
+    if (!secondaryUser) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Secondary user not found" });
+    }
+
+    let orderConfig = false;
+
+    const configuration = secondaryUser.configurations.find(
+      (config) => config.organization.toString() === orgId
     );
+    if (configuration) {
+      if (
+        configuration.salesOrderConfiguration &&
+        Object.values(configuration.salesOrderConfiguration).every(
+          (value) => value !== ""
+        )
+      ) {
+        orderConfig = true;
+      }
+    }
+
+    if (orderConfig) {
+      const increaseSalesNumber = await SecondaryUser.findByIdAndUpdate(
+        Secondary_user_id,
+        { $inc: { orderNumber: 1 } },
+        { new: true }
+      );
+    } else {
+      const increaseOrderNumber = await OragnizationModel.findByIdAndUpdate(
+        orgId,
+        { $inc: { orderNumber: 1 } },
+        { new: true }
+      );
+    }
 
     return res.status(200).json({
       success: true,
       message: "Invoice created successfully",
       data: result,
     });
-    
   } catch (error) {
     console.error(error);
     return res.status(500).json({
@@ -1078,7 +1186,6 @@ export const addProduct = async (req, res) => {
   }
 };
 
-
 // @desc  getting a single product detail for edit
 // route get/api/sUsers/productDetails
 
@@ -1095,16 +1202,13 @@ export const productDetails = async (req, res) => {
   }
 };
 
-
 export const editProduct = async (req, res) => {
   const productId = req.params.id;
 
   try {
-
     const Secondary_user_id = req.sUserId.toString();
     const Primary_user_id = req.owner.toString();
     const {
-     
       body: {
         product_name,
         product_code,
@@ -1186,8 +1290,6 @@ export const editProduct = async (req, res) => {
   }
 };
 
-
-
 // @desc delete product from  product list
 // route delete/api/pUsers/deleteProduct
 
@@ -1216,7 +1318,6 @@ export const deleteProduct = async (req, res) => {
   }
 };
 
-
 // @desc   saveOrderNumber
 // route post/api/pUsers/saveOrderNumber/cmp_id
 
@@ -1240,7 +1341,6 @@ export const saveOrderNumber = async (req, res) => {
   }
 };
 
-
 // @desc toget the details of transaction or receipt
 // route get/api/sUsers/getTransactionDetails
 
@@ -1263,15 +1363,13 @@ export const getInvoiceDetails = async (req, res) => {
   }
 };
 
-
-
 // @desc edit in voice
 // route POST /api/sUsers/createInvoice
 export const editInvoice = async (req, res) => {
   const Secondary_user_id = req.sUserId;
   const Primary_user_id = req.owner;
   const invoiceId = req.params.id;
-  console.log("invoiceId",invoiceId);
+  console.log("invoiceId", invoiceId);
   try {
     const {
       orgId,
@@ -1317,18 +1415,19 @@ export const editInvoice = async (req, res) => {
   }
 };
 
-
-
 export const fetchFilters = async (req, res) => {
   const cmp_id = req.params.cmp_id;
   try {
     const filers = await OragnizationModel.findById(cmp_id);
 
     const data = {
-      brands: filers.brands,
-      categories: filers.categories,
-      subcategories: filers.subcategories,
+      brands: filers?.brands,
+      categories: filers?.categories,
+      subcategories: filers?.subcategories,
+      priceLevels:filers?.levelNames
     };
+
+    
 
     if (filers) {
       return res.status(200).json({ message: "filers fetched", data: data });
@@ -1342,8 +1441,6 @@ export const fetchFilters = async (req, res) => {
       .json({ status: false, message: "Internal server error" });
   }
 };
-
-
 
 // @desc delete AdditionalCharge
 // route get/api/pUsers/deleteAdditionalCharge
@@ -1387,7 +1484,6 @@ export const deleteAdditionalCharge = async (req, res) => {
   }
 };
 
-
 // @desc adding additional charges in orgData
 // route POST /api/sUsers/addAdditionalCharge
 
@@ -1425,7 +1521,6 @@ export const addAditionalCharge = async (req, res) => {
     });
   }
 };
-
 
 // @desc update AdditionalCharge
 // route get/api/sUsers/EditAditionalCharge
@@ -1477,7 +1572,6 @@ export const EditAditionalCharge = async (req, res) => {
   }
 };
 
-
 // @desc update AdditionalCharge
 // route get/api/sUsers/addconfigurations
 
@@ -1493,10 +1587,10 @@ export const addconfigurations = async (req, res) => {
 
     const { selectedBank, termsList } = req.body;
     const newConfigurations = {
-      bank: selectedBank, 
-      terms: termsList, 
+      bank: selectedBank,
+      terms: termsList,
     };
-    org.configurations=[newConfigurations];
+    org.configurations = [newConfigurations];
 
     await org.save();
     return res.status(200).json({
@@ -1511,5 +1605,424 @@ export const addconfigurations = async (req, res) => {
       message: "Internal server error, try again!",
       error: error.message, // Include error message for debugging
     });
+  }
+};
+
+// route POST /api/pUsers/createSale
+
+export const createSale = async (req, res) => {
+  const Primary_user_id = req.owner;
+  const Secondary_user_id = req.sUserId;
+
+  try {
+    const {
+      orgId,
+      party,
+      items,
+      priceLevelFromRedux,
+      additionalChargesFromRedux,
+      lastAmount,
+      salesNumber,
+    } = req.body;
+
+    // Prepare bulk operations for product and godown updates
+    const productUpdates = [];
+    const godownUpdates = [];
+
+    // Process each item to update product stock and godown stock
+    for (const item of items) {
+      // Find the product in the product model
+      const product = await productModel.findOne({ _id: item._id });
+      if (!product) {
+        throw new Error(`Product not found for item ID: ${item._id}`);
+      }
+
+      // Calculate the new balance stock
+      const newBalanceStock = parseInt(product.balance_stock) - item.count;
+
+      // Prepare product update operation
+      productUpdates.push({
+        updateOne: {
+          filter: { _id: product._id },
+          update: { $set: { balance_stock: newBalanceStock } },
+        },
+      });
+
+      // Update the godown stock for each specified godown
+      for (const godown of item.GodownList) {
+        // Find the corresponding godown in the product's GodownList
+        const godownIndex = product.GodownList.findIndex(
+          (g) => g.godown === godown.godown
+        );
+        if (godownIndex !== -1) {
+          // Calculate the new godown stock
+          const newGodownStock =
+            parseInt(product.GodownList[godownIndex].balance_stock) -
+            godown.count;
+
+          // Prepare godown update operation
+          godownUpdates.push({
+            updateOne: {
+              filter: { _id: product._id, "GodownList.godown": godown.godown },
+              update: {
+                $set: { "GodownList.$.balance_stock": newGodownStock },
+              },
+            },
+          });
+        }
+      }
+    }
+
+    // Execute bulk operations
+    await productModel.bulkWrite(productUpdates);
+    await productModel.bulkWrite(godownUpdates);
+
+    // Continue with the rest of your function...
+    const sales = new salesModel({
+      cmp_id: orgId,
+      party,
+      items,
+      priceLevel: priceLevelFromRedux,
+      additionalCharges: additionalChargesFromRedux,
+      finalAmount: lastAmount,
+      Primary_user_id,
+      Secondary_user_id,
+      salesNumber,
+    });
+
+    const result = await sales.save();
+
+    const secondaryUser = await SecondaryUser.findById(Secondary_user_id);
+
+    if (!secondaryUser) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Secondary user not found" });
+    }
+
+    let salesConfig = false;
+
+    const configuration = secondaryUser.configurations.find(
+      (config) => config.organization.toString() === orgId
+    );
+    if (configuration) {
+      if (
+        configuration.salesConfiguration &&
+        Object.values(configuration.salesConfiguration).every(
+          (value) => value !== ""
+        )
+      ) {
+        salesConfig = true;
+      }
+    }
+
+    const vanSaleConfig = configuration?.vanSale;
+
+    if (vanSaleConfig) {
+      const increaseSalesNumber = await SecondaryUser.findByIdAndUpdate(
+        Secondary_user_id,
+        { $inc: { vanSalesNumber: 1 } },
+        { new: true }
+      );
+    } else if (salesConfig) {
+      const increaseSalesNumber = await SecondaryUser.findByIdAndUpdate(
+        Secondary_user_id,
+        { $inc: { salesNumber: 1 } },
+        { new: true }
+      );
+    } else {
+      const increaseSalesNumber = await OragnizationModel.findByIdAndUpdate(
+        orgId,
+        { $inc: { salesNumber: 1 } },
+        { new: true }
+      );
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Sale created successfully",
+      data: result,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error, try again!",
+      error: error.message,
+    });
+  }
+};
+
+// @desc toget the details of transaction or sale
+// route get/api/sUsers/getSalesDetails
+
+export const getSalesDetails = async (req, res) => {
+  const saleId = req.params.id;
+
+  try {
+    const saleDetails = await salesModel.findById(saleId);
+
+    if (saleDetails) {
+      res
+        .status(200)
+        .json({ message: "Sales details fetched", data: saleDetails });
+    } else {
+      res.status(404).json({ error: "Sale not found" });
+    }
+  } catch (error) {
+    console.error("Error fetching sale details:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+// @desc   saveSalesNumber
+// route post/api/sUsers/saveSalesNumber/cmp_id
+
+export const saveSalesNumber = async (req, res) => {
+  const cmp_id = req.params.cmp_id;
+  try {
+    const company = await OragnizationModel.findById(cmp_id);
+    company.salesNumberDetails = req.body;
+
+    const save = await company.save();
+    return res.status(200).json({
+      success: true,
+      message: "Order number saved successfully",
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error, try again!",
+    });
+  }
+};
+
+// @desc  fetchAdditionalDetails
+// route get/api/sUsers/fetchAdditionalDetails
+
+export const fetchAdditionalDetails = async (req, res) => {
+  const cmp_id = req.params.cmp_id;
+  const Primary_user_id = req.owner;
+  const secondary_user_id = req.sUserId;
+
+  try {
+    const secUser = await SecondaryUser.findById(secondary_user_id);
+    console.log("secUserrr", secUser);
+
+    const { selectedPriceLevels } = secUser.configurations[0];
+    console.log(selectedPriceLevels);
+    let priceLevelsResult = [];
+    if (selectedPriceLevels && selectedPriceLevels.length == 0) {
+      priceLevelsResult = await productModel.aggregate([
+        {
+          $match: {
+            Primary_user_id: new mongoose.Types.ObjectId(Primary_user_id),
+            cmp_id: cmp_id,
+          },
+        },
+        { $unwind: "$Priceleveles" },
+        {
+          $match: {
+            "Priceleveles.pricelevel": { $ne: null },
+            "Priceleveles.pricelevel": { $ne: "" },
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            pricelevels: { $addToSet: "$Priceleveles.pricelevel" },
+          },
+        },
+        { $project: { _id: 0, pricelevels: 1 } },
+      ]);
+    }
+
+    const brandResults = await productModel.aggregate([
+      {
+        $match: {
+          Primary_user_id: new mongoose.Types.ObjectId(Primary_user_id),
+          cmp_id: cmp_id,
+        },
+      },
+      { $group: { _id: null, brands: { $addToSet: "$brand" } } },
+      { $project: { _id: 0, brands: 1 } },
+    ]);
+
+    const categoryResults = await productModel.aggregate([
+      {
+        $match: {
+          Primary_user_id: new mongoose.Types.ObjectId(Primary_user_id),
+          cmp_id: cmp_id,
+        },
+      },
+      { $group: { _id: null, categories: { $addToSet: "$category" } } },
+      { $project: { _id: 0, categories: 1 } },
+    ]);
+
+    const subCategoryResults = await productModel.aggregate([
+      {
+        $match: {
+          Primary_user_id: new mongoose.Types.ObjectId(Primary_user_id),
+          cmp_id: cmp_id,
+        },
+      },
+      { $group: { _id: null, subcategories: { $addToSet: "$sub_category" } } },
+      { $project: { _id: 0, subcategories: 1 } },
+    ]);
+
+    // Send the aggregated results back to the client
+    res.json({
+      message: "additional details fetched",
+      priceLevels:
+        selectedPriceLevels && selectedPriceLevels.length > 0
+          ? selectedPriceLevels
+          : priceLevelsResult.length > 0
+          ? priceLevelsResult[0].pricelevels
+          : [],
+      brands: brandResults[0]?.brands || [],
+      categories: categoryResults[0]?.categories || [],
+      subcategories: subCategoryResults[0]?.subcategories || [],
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+// @desc  fetchConfigurationNumber
+// route get/api/sUsers/fetchConfigurationNumber
+
+export const fetchConfigurationNumber = async (req, res) => {
+  const cmp_id = req.params.cmp_id;
+  const title = req.params.title;
+  const secUserId = req.sUserId;
+
+  try {
+    const secUser = await SecondaryUser.findById(secUserId);
+    const company = await OragnizationModel.findById(cmp_id);
+
+    console.log("companyyyy", company);
+
+    if (!secUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    let configDetails;
+    let configurationNumber;
+
+    const configuration = secUser.configurations.find(
+      (item) => item.organization.toString() === cmp_id
+    );
+
+    console.log("configuration", configuration);
+
+    if (!configuration) {
+      switch (title) {
+        case "sales":
+          configDetails = company?.salesNumberDetails;
+          configurationNumber = company?.salesNumber;
+          break;
+        case "salesOrder":
+          configDetails = company?.OrderNumberDetails;
+          configurationNumber = company?.orderNumber;
+          break;
+        case "receipt":
+          configDetails = company?.receiptNumberDetails;
+          break;
+        default:
+          configDetails = null;
+          break;
+      }
+    } else {
+      switch (title) {
+        case "sales":
+          if (
+            configuration.vanSale &&
+            Object.values(configuration.salesConfiguration).every(
+              (value) => value === ""
+            )
+          ) {
+            configDetails = configuration.vanSaleConfiguration;
+            configurationNumber = secUser?.vanSalesNumber;
+          } else {
+            configDetails =
+              configuration.salesConfiguration || company?.salesNumberDetails;
+            configurationNumber = secUser?.salesNumber;
+          }
+          break;
+        case "salesOrder":
+          configDetails =
+            configuration.salesOrderConfiguration ||
+            company?.OrderNumberDetails;
+          configurationNumber = secUser?.orderNumber;
+          break;
+        case "receipt":
+          configDetails =
+            configuration.receiptConfiguration || company?.receiptNumberDetails;
+          break;
+        default:
+          configDetails = null;
+          break;
+      }
+    }
+
+    if (
+      !configDetails ||
+      Object.values(configDetails).every((value) => value === "")
+    ) {
+      switch (title) {
+        case "sales":
+          configDetails = company?.salesNumberDetails;
+          configurationNumber = company?.salesNumber;
+          break;
+        case "salesOrder":
+          configDetails = company?.OrderNumberDetails;
+          configurationNumber = company?.orderNumber;
+          break;
+        case "receipt":
+          configDetails = company?.receiptNumberDetails;
+          break;
+        default:
+          configDetails = null;
+          break;
+      }
+    }
+
+    if (configDetails == undefined && configuration == undefined) {
+      console.log("haiii");
+
+      switch (title) {
+        case "sales":
+          // configDetails = company?.salesNumberDetails;
+          configurationNumber = company?.salesNumber;
+          break;
+        case "salesOrder":
+          // configDetails = company?.OrderNumberDetails;
+          configurationNumber = company?.orderNumber;
+          break;
+        // case "receipt":
+        //   configDetails = company?.receiptNumberDetails;
+        //   break;
+        default:
+          configurationNumber = null;
+          break;
+      }
+    }
+
+    console.log("configDetails", configDetails);
+
+    if (configDetails) {
+      res.json({
+        message: "Configuration details fetched",
+        configDetails,
+        configurationNumber,
+      });
+    } else {
+      res.status(200).json({ message: "default", configurationNumber });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 };
