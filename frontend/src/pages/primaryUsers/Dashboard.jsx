@@ -262,7 +262,7 @@ function Dashboard() {
                 key={index}
                 onClick={() => {
 
-                  const navigationPath = el.type === "Receipt" ? `/pUsers/receiptDetails/${el._id}` : `/pUsers/InvoiceDetails/${el._id}`;
+                  const navigationPath = el.type === "Receipt" ? `/pUsers/receiptDetails/${el._id}` :el.type==="Tax Invoice"?`/pUsers/salesDetails/${el._id}`: `/pUsers/InvoiceDetails/${el._id}`;
                   navigate(navigationPath, { state: { from: "dashboard" } });
                 }}
                 className={`${el?.isCancelled ? "bg-gray-200 pointer-events-none " : ""

@@ -315,7 +315,7 @@ function AddItemSales() {
     console.log(itemToUpdate);
 
     if (itemToUpdate) {
-      if (itemToUpdate?.GodownList.length > 1) {
+      if (itemToUpdate?.GodownList.length > 0) {
         setOpenModal(true);
         const updatedGodownList = itemToUpdate.GodownList.map((el) => ({
           ...el,
@@ -390,7 +390,7 @@ function AddItemSales() {
     const updatedItems = [...filteredItems];
     const currentItem = { ...updatedItems[index] };
 
-    if (currentItem?.GodownList?.length > 1) {
+    if (currentItem?.GodownList?.length > 0) {
       setOpenModal(true);
 
       setGodown(currentItem?.GodownList);
@@ -419,7 +419,7 @@ function AddItemSales() {
     const updatedItems = [...filteredItems]; // Make a copy of the array
     const currentItem = { ...updatedItems[index] };
 
-    if (currentItem?.GodownList?.length > 1) {
+    if (currentItem?.GodownList?.length > 0) {
       setOpenModal(true);
       setGodown(currentItem?.GodownList);
     } else {
