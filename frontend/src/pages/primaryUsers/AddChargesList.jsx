@@ -20,6 +20,7 @@ function AddChargesList() {
   const [showSidebar, setShowSidebar] = useState(false);
   const [refresh, setRefresh] = useState(false);
 
+
   const org = useSelector((state) => state.setSelectedOrganization.selectedOrg);
   const type = useSelector(
     (state) => state.setSelectedOrganization.selectedOrg.type
@@ -49,7 +50,7 @@ function AddChargesList() {
 
 
 
-  }, []);
+  }, [refresh]);
 
   console.log(additional);
 

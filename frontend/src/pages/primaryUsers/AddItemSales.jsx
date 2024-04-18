@@ -712,6 +712,11 @@ function AddItemSales() {
   /////////////////////////// save scroll end ///////////////////////////////////
 
   const continueHandler = () => {
+    console.log(selectedPriceLevel);
+    if(selectedPriceLevel===""){
+      toast.error("Select a Pricelevel")
+      return
+    }
     console.log(location.state);
     if (location?.state?.from === "editSales") {
       navigate(`/pUsers/editSales/${location.state.id}`);

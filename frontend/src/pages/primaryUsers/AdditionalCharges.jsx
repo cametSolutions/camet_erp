@@ -28,7 +28,7 @@ function AdditionalCharges() {
 
   const submitHandler = async () => {
     if (!name.trim()) {
-      toast.error("Fill Name and Bank");
+      toast.error("Fill Name ");
       return;
     }
     if (name.length > 30) {
