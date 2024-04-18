@@ -19,6 +19,7 @@ import { FcCancel } from "react-icons/fc";
 import { useNavigate } from "react-router-dom";
 import { BiSolidAddToQueue } from "react-icons/bi";
 import { removeAll } from "../../../slices/invoice";
+import { removeAllSales } from "../../../slices/sales";
 import { useDispatch } from "react-redux";
 import { toast } from "react-toastify";
 
@@ -54,6 +55,7 @@ function Dashboard() {
     };
     fetchTransactions();
     dispatch(removeAll())
+    dispatch(removeAllSales())
   }, [org]);
 
   console.log(data);
@@ -269,7 +271,7 @@ function Dashboard() {
                   } bg-[#f8ffff] cursor-pointer rounded-md shadow-xl border border-gray-100 flex flex-col justify-between px-4 transition-all duration-150 transform hover:scale-105 ease-in-out`}
               >
                 <div className=" flex justify-start text-xs mt-2 ">
-                  <div className={` ${el.type === "Receipt" ? "bg-[#FB6D48]" : "bg-[#3ed57a]"}   flex items-center text-white px-2 rounded-sm `}>
+                <div className={` ${el.type==="Receipt" ? "bg-[#FB6D48]" :el.type==="Tax Invoice"? "bg-violet-500": "bg-[#3ed57a]" }   flex items-center text-white px-2 rounded-sm `}>
 
                     {/* <FaRegCircleDot /> */}
                     <p className=" p-1  rounded-lg px-3 font-semibold">

@@ -17,7 +17,7 @@ import {
   setBrandInRedux,
   setCategoryInRedux,
   setSubCategoryInRedux,
-  removeAll,
+  removeAllSales,
 } from "../../../slices/sales";
 import { HashLoader } from "react-spinners";
 import { FixedSizeList as List } from "react-window";
@@ -721,7 +721,7 @@ function AddItemSales() {
   };
 
   const backHandler = () => {
-    dispatch(removeAll());
+    // dispatch(removeAll());
     if (location?.state?.from === "editSales") {
       navigate(`/pUsers/editSales/${location.state.id}`);
     } else {

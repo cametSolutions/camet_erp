@@ -86,7 +86,7 @@ export const salesSlice = createSlice({
     setPriceLevel: (state, action) => {
       state.selectedPriceLevel = action.payload;
     },
-    removeAll: (state) => {
+    removeAllSales: (state) => {
       Object.assign(state, initialState);
     },
     persistScroll: (state, action) => {
@@ -137,7 +137,7 @@ export const {
   addAdditionalCharges,
   AddFinalAmount,
   deleteRow,
-  removeAll,
+  removeAllSales,
   removeAdditionalCharge,
   persistScroll,
   setBrandInRedux,

@@ -182,7 +182,7 @@ function EditItemSales() {
 
   const openModalHandler = () => {
     console.log(selectedItem);
-    if (selectedItem[0]?.GodownList?.length > 1 ) {
+    if (selectedItem[0]?.GodownList?.length > 0 ) {
       setOpenModal(true);
       if(godown.length===0){
 

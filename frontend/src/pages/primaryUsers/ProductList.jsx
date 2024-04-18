@@ -16,6 +16,7 @@ import { IoIosAddCircle } from "react-icons/io";
 import { FixedSizeList as List } from "react-window";
 import { useSelector } from "react-redux";
 import { removeAll } from "../../../slices/invoice";
+import { removeAllSales } from "../../../slices/sales";
 
 import { useDispatch } from "react-redux";
 
@@ -65,6 +66,7 @@ function ProductList() {
     };
     fetchProducts();
     dispatch(removeAll());
+    dispatch(removeAllSales());
   }, [refresh, cmp_id]);
 
   const handleToggleSidebar = () => {

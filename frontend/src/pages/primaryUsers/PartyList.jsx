@@ -15,6 +15,7 @@ import { IoIosSearch } from "react-icons/io";
 import { FixedSizeList as List } from "react-window";
 import { IoIosAddCircle } from "react-icons/io";
 import { removeAll } from "../../../slices/invoice";
+import { removeAllSales } from "../../../slices/sales";
 
 import { useDispatch } from "react-redux";
 
@@ -56,6 +57,7 @@ function PartyList() {
     };
     fetchParties();
   dispatch(removeAll())
+  dispatch(removeAllSales())
 
   }, [cpm_id, refresh]);
   useEffect(() => {

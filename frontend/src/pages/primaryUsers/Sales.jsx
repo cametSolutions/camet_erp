@@ -21,7 +21,7 @@ import { useNavigate } from "react-router-dom";
 import api from "../../api/api";
 import { IoIosAddCircle } from "react-icons/io";
 import { MdPlaylistAdd } from "react-icons/md";
-import { removeAll, removeAdditionalCharge } from "../../../slices/sales";
+import { removeAllSales, removeAdditionalCharge } from "../../../slices/sales";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import { Button, Label, Modal, TextInput } from "flowbite-react";
 
@@ -336,7 +336,7 @@ function Sales() {
       toast.success(res.data.message);
 
       navigate(`/pUsers/salesDetails/${res.data.data._id}`);
-      dispatch(removeAll());
+      dispatch(removeAllSales());
     } catch (error) {
       toast.error(error.response.data.message);
       console.log(error);
