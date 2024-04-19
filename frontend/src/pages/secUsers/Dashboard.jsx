@@ -20,6 +20,7 @@ import { BiSolidAddToQueue } from "react-icons/bi";
 import { useDispatch } from "react-redux";
 import { removeAll } from "../../../slices/invoiceSecondary";
 import { toast } from "react-toastify";
+import { MdInventory } from "react-icons/md";
 
 
 
@@ -215,6 +216,25 @@ function Dashboard() {
                       ₹0
                     </h4> */}
                     <div className="text-gray-500 text-md">Sale Order </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div
+              onClick={() => handleLinkClick("/sUsers/Inventory")}
+
+              className="flex flex-wrap -mx-6  duration-150 hover:scale-105 ease-in-out cursor-pointer">
+              <div className="w-full px-6 ">
+                <div className="flex items-center px-2 py-3 md:px-5 md:py-2 shadow-sm rounded-md bg-slate-100 h-24" >
+                  <div className="p-3 rounded-full bg-blue-500 bg-opacity-75 text-2xl text-white">
+                  <MdInventory />
+                  </div>
+
+                  <div className="mx-5 py-2.5">
+                    {/* <h4 className=" sm:text-md md:text-2xl  font-semibold text-gray-700">
+                      ₹0
+                    </h4> */}
+                    <div className="text-gray-500 text-md">Inventory </div>
                   </div>
                 </div>
               </div>
