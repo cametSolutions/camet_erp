@@ -38,20 +38,20 @@ function Organisation() {
     // Ensure organizations is not empty before processing
     if (organizations.length > 0) {
       const ownerNames = Array.from(
-        new Set(organizations.map((org) => org.owner.userName))
+        new Set(organizations.map((org) => org?.owner?.userName))
       );
       setOwners(ownerNames);
     }
   }, [organizations]);
 
   // Filter organizations based on selected owner
-  const filteredOrganizations = organizations.filter((org) => {
-    const live=org.isApproved=== true;
+  const filteredOrganizations = organizations?.filter((org) => {
+    const live=org?.isApproved=== true;
     const ownerFilter =
-      selectedOwner === "" || org.owner.userName === selectedOwner;
-    const searchFilter = org.name
+      selectedOwner === "" || org?.owner?.userName === selectedOwner;
+    const searchFilter = org?.name
       .toLowerCase()
-      .includes(searchQuery.toLowerCase());
+      .includes(searchQuery?.toLowerCase());
 
     return ownerFilter && searchFilter && live;
   });
@@ -68,7 +68,7 @@ function Organisation() {
       );
       console.log(res);
       setRefresh(!refresh);
-      toast.success(res.data.message);
+      toast.success(res?.data?.message);
     } catch (error) {
       console.error(error);
     }
@@ -76,7 +76,7 @@ function Organisation() {
 
   const lastPostIndex = currentPage * postPerPage;
   const firstPostIndex = lastPostIndex - postPerPage;
-  const finalOrganizations = filteredOrganizations.slice(
+  const finalOrganizations = filteredOrganizations?.slice(
     firstPostIndex,
     lastPostIndex
   );
@@ -100,7 +100,7 @@ function Organisation() {
                 <div className="relative">
                   <select
                     value={selectedOwner}
-                    onChange={(e) => setSelectedOwner(e.target.value)}
+                    onChange={(e) => setSelectedOwner(e?.target?.value)}
                     className="appearance-none h-full rounded-l border block w-full bg-white border-gray-400 text-gray-700 py-2 px-4 pr-8 leading-tight focus:outline-none focus:bg-white focus:border-gray-500"
                   >
                     <option value={""}>All</option>
@@ -131,7 +131,7 @@ function Organisation() {
                 </span>
                 <input
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) => setSearchQuery(e?.target?.value)}
                   placeholder="Search"
                   className="appearance-none rounded-r rounded-l sm:rounded-l-none border border-gray-400 border-b block pl-8 pr-6 py-2 w-full bg-white text-sm placeholder-gray-400 text-gray-700 focus:bg-white focus:placeholder-gray-600 focus:text-gray-700 focus:outline-none"
                 />
@@ -177,8 +177,8 @@ function Organisation() {
                     </tr>
                   </thead>
                   <tbody>
-                    {finalOrganizations.length > 0 ? (
-                      finalOrganizations.map((item, index) => (
+                    {finalOrganizations?.length > 0 ? (
+                      finalOrganizations?.map((item, index) => (
                         <tr key={index}>
                           <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
                             <div className="flex items-center">
@@ -191,56 +191,56 @@ function Organisation() {
                               </div> */}
                               <div className="ml-3">
                                 <p className="text-gray-900 whitespace-nowrap">
-                                  {item.name}
+                                  {item?.name}
                                 </p>
                               </div>
                             </div>
                           </td>
                           <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
                             <p className="text-gray-900 whitespace-no-wrap">
-                              {item.place}
+                              {item?.place}
                             </p>
                           </td>
                           <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
                             <p className="text-gray-900 whitespace-no-wrap">
-                              {item.email}
+                              {item?.email}
                             </p>
                           </td>
                           <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
                             <p className="text-gray-900 whitespace-no-wrap">
-                              {item.mobile}
+                              {item?.mobile}
                             </p>
                           </td>
                           <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
                             <p className="text-gray-900 whitespace-no-wrap">
-                              {item.gstNum}
+                              {item?.gstNum}
+                            </p>?
+                          </td>
+                          <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+                            <p className="text-gray-900 whitespace-no-wrap">
+                              {item?.pin}
                             </p>
                           </td>
                           <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
                             <p className="text-gray-900 whitespace-no-wrap">
-                              {item.pin}
+                              {item?.country}
                             </p>
                           </td>
                           <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
                             <p className="text-gray-900 whitespace-no-wrap">
-                              {item.country}
-                            </p>
-                          </td>
-                          <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
-                            <p className="text-gray-900 whitespace-no-wrap">
-                              {item.state}
+                              {item?.state}
                             </p>
                           </td>
                           <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
                           <div
                             onClick={() => {
-                              handleApprove(item._id);
+                              handleApprove(item?._id);
                             }}
                             class="toggle-button-cover"
                           >
                             <div id="button-4" class="button r">
                               <input
-                                checked={item.isApproved === true}
+                                checked={item?.isApproved === true}
                                 className="checkbox"
                                 type="checkbox"
                               />
@@ -269,12 +269,12 @@ function Organisation() {
                 </table>
                 <div className="px-5 py-5 bg-white border-t flex flex-col xs:flex-row items-center xs:justify-between          ">
                   <span className="text-xs xs:text-sm text-gray-900">
-                    Showing {firstPostIndex+1} to {lastPostIndex} of {filteredOrganizations.length} Entries
+                    Showing {firstPostIndex+1} to {lastPostIndex} of {filteredOrganizations?.length} Entries
                   </span>
                   <div className="inline-flex mt-2 xs:mt-0">
                     <Pagination
                       postPerPage={postPerPage}
-                      totalPosts={filteredOrganizations.length}
+                      totalPosts={filteredOrganizations?.length}
                       setCurrentPage={setCurrentPage}
                       currentPage={currentPage}
                     />

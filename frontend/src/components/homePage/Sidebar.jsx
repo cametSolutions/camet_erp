@@ -84,13 +84,14 @@ function Sidebar({ TAB, showBar }) {
         console.log(res.data);
 
         setOrganizations(res.data.organizationData);
+        console.log(res.data.organizationData[0]);
 
         if (selectedOrgFromRedux) {
           setSelectedOrg(selectedOrgFromRedux);
         } else {
           // If no organization is selected, set the first organization as selectedOrg
           setSelectedOrg(res.data.organizationData[0]);
-          dispatch(setSelectedOrganization(res.data.organizationData));
+          dispatch(setSelectedOrganization(res.data.organizationData[0]));
         }
       } catch (error) {
         console.log(error);
@@ -98,7 +99,7 @@ function Sidebar({ TAB, showBar }) {
       }
     };
     fetchOrganizations();
-  }, []);
+  }, [selectedOrg]);
 
   useEffect(() => {
     const getUserData = async () => {
@@ -159,7 +160,7 @@ function Sidebar({ TAB, showBar }) {
     }
   };
 
-  console.log(organizations);
+  console.log(selectedOrg);
 
   return (
     <div className="relative">

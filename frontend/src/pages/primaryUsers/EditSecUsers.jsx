@@ -7,6 +7,7 @@ import Sidebar from "../../components/homePage/Sidebar";
 import { Link } from "react-router-dom";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import { useParams, useNavigate } from "react-router-dom";
+import { IoIosSettings } from "react-icons/io";
 
 function EditSecUsers() {
   const [organizations, setOrganizations] = useState([]);
@@ -74,8 +75,18 @@ function EditSecUsers() {
   };
 
   const submitHandler = async () => {
-    const newPassword = password ? password : oldPassword;
-    console.log(newPassword);
+
+    // let newPassword;
+
+    // if(password){
+
+    //   newPassword=pass
+
+    // }
+
+    
+    // const newPassword = password ? password : oldPassword;
+    // console.log(newPassword);
 
     if (!name || !mobile || !selectedOrg || !email) {
       toast.error("All fields must be filled");
@@ -114,14 +125,14 @@ function EditSecUsers() {
       );
       return;
     }
-    console.log(password);
+    // console.log(newPassword);
 
     const formData = {
       name,
       mobile,
       email,
       organization:selectedOrg,
-      password:newPassword,
+      password,
     };
 
     console.log(formData);
@@ -242,23 +253,38 @@ function EditSecUsers() {
                         <div className="space-y-2">
                           {organizations.length > 0 ? (
                             organizations.map((item, index) => (
-                              <div key={index} className="flex items-center">
-                                <input
-                                  type="checkbox"
-                                  id={`organizationCheckbox${index}`}
-                                  value={item._id}
-                                  checked={selectedOrg.includes(item._id)}
-                                  onChange={(e) =>
-                                    handleCheckboxChange(e.target.value)
-                                  }
-                                  className="mr-2"
-                                />
-                                <label
-                                  htmlFor={`organizationCheckbox${index}`}
-                                  className="text-blueGray-600"
+                              <div key={index} className="flex justify-between">
+                                {/* <button type="button" className="bg-purple-500 p-1.5 py-1 text-white mr-2 rounded-md text-xs">Configure</button> */}
+                                <div className="flex items-center">
+                                  <input
+                                    type="checkbox"
+                                    id={`organizationCheckbox${index}`}
+                                    value={item._id}
+                                    checked={selectedOrg.includes(item._id)}
+                                    onChange={(e) =>
+                                      handleCheckboxChange(e.target.value)
+                                    }
+                                    className="mr-2"
+                                  />
+                                  <label
+                                    htmlFor={`organizationCheckbox${index}`}
+                                    className="text-blueGray-600"
+                                  >
+                                    {item.name}
+                                  </label>
+                                </div>
+                                {/* <button
+                                  type="button"
+                                  className="bg-purple-400 p-1.5 py-1 text-white mr-2 rounded-md text-xs"
                                 >
-                                  {item.name}
-                                </label>
+                                  Configure
+                                </button> */}
+
+                                {selectedOrg.includes(item._id) && (
+                                  <Link to={`/pUsers/configureSecondaryUser/${item._id}/${id}/${item.name}`}>
+                                  <IoIosSettings className="cursor-pointer" />
+                                </Link>
+                                )}
                               </div>
                             ))
                           ) : (

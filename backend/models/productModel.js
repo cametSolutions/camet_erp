@@ -19,6 +19,8 @@ const productSchema = new mongoose.Schema({
   Primary_user_id: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "PrimaryUser",
+    required:true
+
   },
   Secondary_user_id: {
     type: mongoose.Schema.Types.ObjectId,
@@ -54,7 +56,7 @@ const productSchema = new mongoose.Schema({
   },
   hsn_code: {
     type: String,
-    required: true,
+    // required: true,
   },
   hsn_id: {
     type: mongoose.Schema.Types.ObjectId,ref:"Hsn",
@@ -93,9 +95,7 @@ const productSchema = new mongoose.Schema({
 product_master_id: {
     type: String,
   },
-  category_id: {
-    type: String,
-  },
+
   subcategory_id: {
     type: String,
   },

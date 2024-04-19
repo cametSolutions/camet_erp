@@ -18,6 +18,7 @@ import { useSelector } from "react-redux";
 import { removeAll } from "../../../slices/invoice";
 
 import { useDispatch } from "react-redux";
+import { all } from "axios";
 
 function InventoryPrimaryUser() {
   const [products, setProducts] = useState([]);
@@ -28,6 +29,9 @@ function InventoryPrimaryUser() {
   const [search, setSearch] = useState("");
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [listHeight, setListHeight] = useState(0);
+  const [ingodowns, setIngodowns] = useState("")
+  const [selfgodowns, setSelfGodowms] = useState("")
+  const [manageAll,setManageAll]=useState(false)
 
   const cmp_id = useSelector(
     (state) => state.setSelectedOrganization.selectedOrg._id
@@ -38,7 +42,54 @@ function InventoryPrimaryUser() {
 
   const dispatch = useDispatch();
 
-  console.log(type);
+     // filter Concept  of seclect box
+
+     const handleFilterProduct = async (selectedValue) => {
+      setLoader(true);
+      try {
+        if(selectedValue == ""){
+          setRefresh(!refresh)
+        }else{
+        const res = await api.get(`/api/pUsers/godownProductFilter/${cmp_id}/${selectedValue}`, {
+          withCredentials: true,
+        });
+        setLoader(true);
+        console.log(res.data)
+        setTimeout(() => {
+          setProducts(res.data);
+        }, 1000);
+      }
+      } catch (error) {
+        console.log(error);
+        toast.error(error.response.data.message);
+      } finally {
+        setLoader(false);
+      }
+    
+    };
+    const handleFilterProductSelf = async (selectedValue) => {
+      setLoader(true);
+      try {
+        if(selectedValue == ""){
+          setRefresh(!refresh)
+        }else{
+        const res = await api.get(`/api/pUsers/godownProductFilterSelf/${cmp_id}/${selectedValue}`, {
+          withCredentials: true,
+        });
+        setLoader(true);
+        console.log(res.data)
+        setTimeout(() => {
+          setProducts(res.data);
+        }, 1000);
+      }
+      } catch (error) {
+        console.log(error);
+        toast.error(error.response.data.message);
+      } finally {
+        setLoader(false);
+      }
+    
+    };
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -62,67 +113,69 @@ function InventoryPrimaryUser() {
     fetchProducts();
     dispatch(removeAll());
   }, [refresh, cmp_id]);
-
+  
   const handleToggleSidebar = () => {
     if (window.innerWidth < 768) {
       setShowSidebar(!showSidebar);
     }
   };
+  // getting godowns data
 
-  console.log(products);
+  useEffect(() => {
+    const fetchgetGodowms = async () => {
+      setLoader(true);
+      try {
+        const res = await api.get(`/api/pUsers/getGodowns/${cmp_id}`, {
+          withCredentials: true,
+        });
+        setLoader(true);
+        setTimeout(() => {
+          setIngodowns(res.data.godowndata);
+        }, 1000);
+      } catch (error) {
+        console.log(error);
+        toast.error(error.response.data.message);
+      } finally {
+        setLoader(false);
+      }
+    };
+    fetchgetGodowms()
+    const fetchgetGodowmsSelf = async () => {
+      setLoader(true);
+      try {
+        const res = await api.get(`/api/pUsers/getGodownsSelf/${cmp_id}`, {
+          withCredentials: true,
+        });
+        setLoader(true);
+console.log(res.data.godowndata.locations)
+        setTimeout(() => {
+          setSelfGodowms(res.data.godowndata.locations);
+        }, 1000);
+      } catch (error) {
+        console.log(error);
+        toast.error(error.response.data.message);
+      } finally {
+        setLoader(false);
+      }
+    };
+    fetchgetGodowmsSelf()
+  }, [])
+
+
 
   useEffect(() => {
     if (search === "") {
       setFilteredProducts(products);
     } else {
-      const filtered = products.filter((el) =>
+      console.log(products)
+      if(products && products.length > 0){
+      const filtered = products?.filter((el) =>
         el.product_name.toLowerCase().includes(search.toLowerCase())
       );
       setFilteredProducts(filtered);
     }
+  }
   }, [search, products, refresh]);
-
-  const handleDelete = async (id) => {
-    // Show confirmation dialog
-    const confirmation = await Swal.fire({
-      title: "Are you sure?",
-      text: "This action cannot be undone!",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#d33",
-      cancelButtonColor: "#3085d6",
-      confirmButtonText: "Yes, delete it!",
-      cancelButtonText: "Cancel",
-    });
-
-    // If user confirms deletion
-    if (confirmation.isConfirmed) {
-      try {
-        const res = await api.delete(`/api/pUsers/deleteProduct/${id}`, {
-          headers: {
-            "Content-Type": "application/json",
-          },
-          withCredentials: true,
-        });
-
-        // Display success message
-        await Swal.fire({
-          title: "Deleted!",
-          text: res.data.message,
-          icon: "success",
-          timer: 2000, // Auto close after 2 seconds
-          timerProgressBar: true,
-          showConfirmButton: false,
-        });
-
-        // Refresh the page
-        setRefresh(!refresh);
-      } catch (error) {
-        toast.error(error.response.data.message);
-        console.log(error);
-      }
-    }
-  };
 
   useEffect(() => {
     const calculateHeight = () => {
@@ -147,9 +200,10 @@ function InventoryPrimaryUser() {
     const adjustedStyle = {
       ...style,
       marginTop: '16px',
-      height: '150px', 
-   
-   };
+      height: '150px',
+
+    };
+
     return (
       <>
         <div
@@ -160,17 +214,16 @@ function InventoryPrimaryUser() {
           <div className="flex justify-between w-full gap-3 ">
             <div className="">
               <p className="font-bold text-sm">{el?.product_name}</p>
-          
+
             </div>
             <div
-            className={`${
-              type !== "self" ? "pointer-events-none " : ""
-            }  flex gap-3 mt-2 px-4`}
-          >
-            <p className="font-semibold text-black">Stock : </p>
-            <h2 className="font-semibold text-black"> {el?.balance_stock}</h2>
-          </div>
-          
+              className={`${type !== "self" ? "pointer-events-none " : ""
+                }  flex gap-3 mt-2 px-4`}
+            >
+              <p className="font-semibold text-black">Stock : </p>
+              <h2 className="font-semibold text-black"> {el?.balance_stock}</h2>
+            </div>
+
           </div>
 
           <div className=" flex flex-col justify-center gap-2 text-sm">
@@ -205,16 +258,84 @@ function InventoryPrimaryUser() {
               />
               <p className="text-white text-lg   font-bold ">Inventory</p>
             </div>
-            {type === "self" && (
+            {type !== "self" && (
               <div>
-                <Link to={"/pUsers/addProduct"}>
-                  <button className="flex items-center gap-2 text-white bg-[#40679E] px-2 py-1 rounded-md text-sm  hover:scale-105 duration-100 ease-in-out ">
-                    <IoIosAddCircle className="text-xl" />
-                    Add Products
-                  </button>
+                <Link>
+                  <div className="relative">
+                    <select
+                      className="appearance-none flex items-center gap-2 text-white bg-[#40679E] px-2 py-1 rounded-md text-sm hover:scale-105 duration-100 ease-in-out"
+                      onChange={(e) => {handleFilterProduct(e.target.value)}}
+                    >
+                      <option disabled>Select an Organization</option>
+                      <option value="">All</option>
+                      {
+                      ingodowns && ingodowns?.length > 0 && ingodowns?.map((godown, index) => (
+                        <option key={index} value={godown?._id}>
+                          <IoIosAddCircle className="text-xl" />
+                          {godown?.godown[0]}
+                        </option>
+                      ))}
+                    </select>
+
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                      <svg
+                        className="w-4 h-4 text-white pointer-events-none"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M9 5l7 7-7 7"
+                        ></path>
+                      </svg>
+                    </div>
+                  </div>
                 </Link>
               </div>
             )}
+            {type === "self" && (
+              <div>
+                <Link>
+                  <div className="relative">
+                    <select
+                      className="appearance-none flex items-center gap-2 text-white bg-[#40679E] px-2 py-1 rounded-md text-sm hover:scale-105 duration-100 ease-in-out"
+                      onChange={(e) => handleFilterProductSelf(e.target.value)}
+                    >
+                     <option disabled>Select an Organization</option>
+                      <option value="">All</option>
+                      {selfgodowns && selfgodowns.map((godown, index) => (
+                        <option key={index} value={godown}>
+                          <IoIosAddCircle className="text-xl" />
+                          {godown}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                      <svg
+                        className="w-4 h-4 text-white pointer-events-none"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M9 5l7 7-7 7"
+                        ></path>
+                      </svg>
+                    </div>
+                  </div>
+                </Link>
+              </div>
+            )}
+
+
           </div>
 
           {/* invoiec date */}

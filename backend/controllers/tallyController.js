@@ -1,6 +1,8 @@
 import TallyData from "../models/TallyData.js";
 import TransactionModel from "../models/TransactionModel.js";
 import BankDetailsModel from "../models/bankModel.js";
+import productModel from "../models/productModel.js";
+
 
 export const saveDataFromTally = async (req, res) => {
   try {
@@ -162,3 +164,58 @@ export const addBankData = async (req, res) => {
     });
   }
 };
+
+// @desc for saving products to tally
+// route GET/api/tally/giveTransaction
+
+export const saveProductsFromTally = async (req, res) => {
+  try {
+    // console.log("body", req.body);
+    const productsToSave = req?.body?.data;
+
+
+    // Extract primary user id and company id from the first product
+    const { Primary_user_id, cmp_id } = productsToSave[0];
+
+    // Delete existing documents with the same primary user id and company id
+    await productModel.deleteMany({ Primary_user_id, cmp_id });
+
+    // Loop through each product to save
+    const savedProducts = await Promise.all(
+      productsToSave.map(async (productItem) => {
+        // Check if the product already exists
+        const existingProduct = await productModel.findOne({
+          cmp_id: productItem.cmp_id,
+          product_name: productItem.product_name,
+          Primary_user_id: productItem.Primary_user_id,
+        });
+
+
+        console.log("existingProduct",existingProduct);
+
+        // If the product doesn't exist, create a new one; otherwise, update it
+        if (!existingProduct) {
+          const newProduct = new productModel(productItem);
+          return await newProduct.save();
+        } else {
+          // Update the existing product
+          return await productModel.findOneAndUpdate(
+            {
+              cmp_id: productItem.cmp_id,
+              product_name: productItem.product_name,
+              Primary_user_id: productItem.Primary_user_id,
+            },
+            productItem,
+            { new: true }
+          );
+        }
+      })
+    );
+
+    res.status(201).json({ message: "Products saved successfully", savedProducts });
+  } catch (error) {
+    console.error("Error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
