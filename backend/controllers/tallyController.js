@@ -231,6 +231,10 @@ export const savePartyFromTally = async (req, res) => {
     // console.log("body", req.body);
     const partyToSave = req?.body?.data;
 
+    // Check if partyToSave is defined and has elements
+    if (!partyToSave || partyToSave.length === 0) {
+      return res.status(400).json({ error: "No data provided" });
+    }
 
     // Extract primary user id and company id from the first product
     const { Primary_user_id, cmp_id } = partyToSave[0];
@@ -247,7 +251,6 @@ export const savePartyFromTally = async (req, res) => {
           partyName: party.partyName,
           Primary_user_id: party.Primary_user_id,
         });
-
 
         console.log("existingParty",existingParty);
 
@@ -276,4 +279,5 @@ export const savePartyFromTally = async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 };
+
 

@@ -18,7 +18,8 @@ import { useSelector } from "react-redux";
 import { removeAll } from "../../../slices/invoice";
 
 import { useDispatch } from "react-redux";
-import { all } from "axios";
+import { IoIosArrowRoundBack } from "react-icons/io";
+
 
 function InventoryPrimaryUser() {
   const [products, setProducts] = useState([]);
@@ -55,9 +56,9 @@ function InventoryPrimaryUser() {
         });
         setLoader(true);
         console.log(res.data)
-        setTimeout(() => {
+       
           setProducts(res.data);
-        }, 1000);
+      
       }
       } catch (error) {
         console.log(error);
@@ -78,9 +79,9 @@ function InventoryPrimaryUser() {
         });
         setLoader(true);
         console.log(res.data)
-        setTimeout(() => {
+       
           setProducts(res.data);
-        }, 1000);
+     
       }
       } catch (error) {
         console.log(error);
@@ -93,21 +94,21 @@ function InventoryPrimaryUser() {
 
   useEffect(() => {
     const fetchProducts = async () => {
-      setLoader(true);
       try {
         const res = await api.get(`/api/pUsers/getProducts/${cmp_id}`, {
           withCredentials: true,
         });
         setLoader(true);
 
-        setTimeout(() => {
           setProducts(res.data.productData);
-        }, 1000);
       } catch (error) {
         console.log(error);
         toast.error(error.response.data.message);
       } finally {
-        setLoader(false);
+        setTimeout(() => {
+          
+          setLoader(false);
+        }, 2000);
       }
     };
     fetchProducts();
@@ -129,9 +130,7 @@ function InventoryPrimaryUser() {
           withCredentials: true,
         });
         setLoader(true);
-        setTimeout(() => {
           setIngodowns(res.data.godowndata);
-        }, 1000);
       } catch (error) {
         console.log(error);
         toast.error(error.response.data.message);
@@ -148,9 +147,7 @@ function InventoryPrimaryUser() {
         });
         setLoader(true);
 console.log(res.data.godowndata.locations)
-        setTimeout(() => {
           setSelfGodowms(res.data.godowndata.locations);
-        }, 1000);
       } catch (error) {
         console.log(error);
         toast.error(error.response.data.message);
@@ -252,10 +249,14 @@ console.log(res.data.godowndata.locations)
         <div className="sticky top-0 z-20 h-[117px]">
           <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3  flex justify-between items-center  ">
             <div className="flex items-center justify-center gap-2">
-              <IoReorderThreeSharp
+          <Link to={"/pUsers/dashboard"}>
+
+              <IoIosArrowRoundBack
                 onClick={handleToggleSidebar}
-                className="text-3xl text-white cursor-pointer md:hidden"
+                className="text-3xl text-white cursor-pointer"
               />
+          </Link>
+
               <p className="text-white text-lg   font-bold ">Inventory</p>
             </div>
             {type !== "self" && (
@@ -266,7 +267,6 @@ console.log(res.data.godowndata.locations)
                       className="appearance-none flex items-center gap-2 text-white bg-[#40679E] px-2 py-1 rounded-md text-sm hover:scale-105 duration-100 ease-in-out"
                       onChange={(e) => {handleFilterProduct(e.target.value)}}
                     >
-                      <option disabled>Select an Organization</option>
                       <option value="">All</option>
                       {
                       ingodowns && ingodowns?.length > 0 && ingodowns?.map((godown, index) => (
@@ -305,7 +305,6 @@ console.log(res.data.godowndata.locations)
                       className="appearance-none flex items-center gap-2 text-white bg-[#40679E] px-2 py-1 rounded-md text-sm hover:scale-105 duration-100 ease-in-out"
                       onChange={(e) => handleFilterProductSelf(e.target.value)}
                     >
-                     <option disabled>Select an Organization</option>
                       <option value="">All</option>
                       {selfgodowns && selfgodowns.map((godown, index) => (
                         <option key={index} value={godown}>
