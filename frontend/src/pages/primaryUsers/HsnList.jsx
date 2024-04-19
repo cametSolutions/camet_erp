@@ -9,6 +9,7 @@ import { useSelector } from "react-redux";
 import { MdDelete } from "react-icons/md";
 import Swal from "sweetalert2";
 import { removeAll } from "../../../slices/invoice";
+import { removeAllSales } from "../../../slices/sales";
 
 import { useDispatch } from "react-redux";
 
@@ -41,6 +42,7 @@ function HsnList() {
     };
     fetchHsn();
     dispatch(removeAll())
+    dispatch(removeAllSales())
 
   }, [orgId, refresh]);
 

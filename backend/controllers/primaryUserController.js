@@ -2207,7 +2207,7 @@ export const createSale = async (req, res) => {
       for (const godown of item.GodownList) {
         // Find the corresponding godown in the product's GodownList
         const godownIndex = product.GodownList.findIndex(
-          (g) => g.godown === godown.godown
+          (g) => g.godown_id === godown.godown_id
         );
         if (godownIndex !== -1) {
           // Calculate the new godown stock

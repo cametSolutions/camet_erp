@@ -747,7 +747,7 @@ function EditInvoice() {
                                 onChange={(e) =>
                                   handleRateChange(index, e.target.value)
                                 }
-                                className="block w-full py-2 px-4 bg-white text-sm focus:outline-none border-b-2 border-t-0 border-l-0 border-r-0 "
+                                className={` ${additionalChragesFromCompany.length===0 ? "pointer-events-none opacity-20 " : ""}   block w-full py-2 px-4 bg-white text-sm focus:outline-none border-b-2 border-t-0 border-l-0 border-r-0 `}
                               />
                             </div>
 

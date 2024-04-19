@@ -5,9 +5,7 @@ import api from "../../api/api";
 import { toast } from "react-toastify";
 import { Link } from "react-router-dom";
 import { IoIosArrowRoundBack } from "react-icons/io";
-import { useParams } from "react-router-dom";
-import { useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 
 function ConfigureSecondaryUser() {
   const [godowns, setGodowns] = useState([]);
@@ -54,9 +52,9 @@ function ConfigureSecondaryUser() {
   // console.log(sales);
   // console.log(godowns);
 
-  const { id, userId ,cmp_name} = useParams();
+  const { id, userId, cmp_name } = useParams();
   // const org = useSelector((state) => state.setSelectedOrganization.selectedOrg);
-  // const naviagte = useNavigate();
+  const naviagte = useNavigate();
 
   useEffect(() => {
     const fetchGodowns = async () => {
@@ -88,7 +86,10 @@ function ConfigureSecondaryUser() {
           withCredentials: true,
         });
         const fullConfigurations = res?.data?.data?.configurations;
-        const configurations=new Array(fullConfigurations.find((item)=>item.organization===id)) || []
+        const configurations =
+          new Array(
+            fullConfigurations.find((item) => item.organization === id)
+          ) || [];
 
         console.log(res?.data?.data?.configurations);
         console.log(configurations);
@@ -100,12 +101,17 @@ function ConfigureSecondaryUser() {
             salesOrderConfiguration,
             salesConfiguration,
             receiptConfiguration,
-           vanSaleConfiguration,
-           vanSale
-
+            vanSaleConfiguration,
+            vanSale,
           } = configurations[0];
 
-          const { godownConfigOption, prefixDetails, suffixDetails,startingNumber,widthOfNumericalPart } = vanSaleConfiguration;
+          const {
+            godownConfigOption,
+            prefixDetails,
+            suffixDetails,
+            startingNumber,
+            widthOfNumericalPart,
+          } = vanSaleConfiguration;
 
           setSelectedGodowns(selectedGodowns);
           setSelectedPriceLevels(selectedPriceLevels);
@@ -114,10 +120,10 @@ function ConfigureSecondaryUser() {
           setReceipt([receiptConfiguration]);
           setGodownPrefix(prefixDetails);
           setGodownConfigOption(godownConfigOption);
-          setGodownSuffix(suffixDetails)
-          setGodownStartingNumber(startingNumber)
-          setGodownWidth(widthOfNumericalPart)
-          setVanSale(vanSale)
+          setGodownSuffix(suffixDetails);
+          setGodownStartingNumber(startingNumber);
+          setGodownWidth(widthOfNumericalPart);
+          setVanSale(vanSale);
         }
       } catch (error) {
         console.log(error);
@@ -178,6 +184,21 @@ function ConfigureSecondaryUser() {
     }
   };
 
+  function validateObject(obj) {
+    let isAllFilled = true;
+    let isAllEmpty = true;
+
+    for (let key in obj) {
+      if (obj[key] !== "") {
+        isAllEmpty = false;
+      } else {
+        isAllFilled = false;
+      }
+    }
+
+    return isAllFilled || isAllEmpty;
+  }
+
   // console.log(godownConfigOption);
   // console.log(godownPrefix);
   // console.log(godownSuffix);
@@ -191,34 +212,31 @@ function ConfigureSecondaryUser() {
     const newSalesOrder = salesOrder[0];
     const newReceipt = receipt[0];
 
-    const Initial={
+    const Initial = {
       prefixDetails: "",
       suffixDetails: "",
       startingNumber: "",
       widthOfNumericalPart: "",
-
-    }
+    };
 
     let formData = {};
 
     if (vanSale) {
       const vanSaleConfiguration = {
         godownConfigOption,
-        prefixDetails:godownPrefix,
+        prefixDetails: godownPrefix,
         suffixDetails: godownSuffix,
         startingNumber: godownStartingNumber,
-        widthOfNumericalPart:godownWidth
-        
+        widthOfNumericalPart: godownWidth,
       };
       formData = {
         selectedPriceLevels,
-        selectedGodowns:[godownConfigOption],
-        salesConfiguration:Initial,
+        selectedGodowns: [godownConfigOption],
+        salesConfiguration: Initial,
         salesOrderConfiguration: newSalesOrder,
         receiptConfiguration: newReceipt,
         vanSaleConfiguration,
-        vanSale:vanSale
-        
+        vanSale: vanSale,
       };
     } else {
       formData = {
@@ -227,13 +245,48 @@ function ConfigureSecondaryUser() {
         salesConfiguration: newSales,
         salesOrderConfiguration: newSalesOrder,
         receiptConfiguration: newReceipt,
-        vanSaleConfiguration:Initial,
-        vanSale:vanSale
-
+        vanSaleConfiguration: Initial,
+        vanSale: vanSale,
       };
     }
 
     console.log(formData);
+
+    const salesValidation = validateObject(formData.salesConfiguration);
+    const salesOrderValidation = validateObject(
+      formData.salesOrderConfiguration
+    );
+    const receiptValidation = validateObject(formData.receiptConfiguration);
+
+    if (salesOrderValidation === false) {
+      toast.error("Fill all sales order details or leave all fields empty");
+      return;
+    } else if (receiptValidation === false) {
+      toast.error("Fill all receipt details or leave all fields empty");
+      return;
+    }
+    if (vanSale) {
+      const vanSaleConfiguration = formData.vanSaleConfiguration;
+
+      let vanSaleValidation = true;
+      for (let key in vanSaleConfiguration) {
+        if (vanSaleConfiguration[key] === "") {
+          vanSaleValidation = false;
+        }
+      }
+
+      if (vanSaleValidation === false) {
+        toast.error("Fill all van sale details or leave all fields empty");
+        return;
+      }
+    } else {
+      if (salesValidation === false) {
+        toast.error("Fill all sales details or leave all fields empty");
+        return;
+      }
+    }
+
+    console.log(salesValidation);
 
     try {
       const res = await api.post(
@@ -248,7 +301,7 @@ function ConfigureSecondaryUser() {
       );
 
       toast.success(res.data.message);
-      // naviagte(`/pUsers/editUser/${userId}`);
+      naviagte(`/pUsers/editUser/${userId}`);
     } catch (error) {
       toast.error(error.response.data.message);
       console.log(error);
@@ -278,8 +331,7 @@ function ConfigureSecondaryUser() {
                     type="button"
                     className="text-sm font-semibold    bg-violet-500 p-0.5 text-white rounded-sm px-3"
                   >
-                    { cmp_name}
-
+                    {cmp_name}
                   </button>
                 </div>
               </div>
@@ -334,7 +386,11 @@ function ConfigureSecondaryUser() {
                           : ""
                       }    border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150`}
                       onChange={(e) =>
-                        updateConfig(selectedConfig, "prefixDetails", e.target.value)
+                        updateConfig(
+                          selectedConfig,
+                          "prefixDetails",
+                          e.target.value
+                        )
                       }
                       value={getConfigValue(selectedConfig, "prefixDetails")}
                       placeholder="prefixDetails"
@@ -362,7 +418,11 @@ function ConfigureSecondaryUser() {
                           : ""
                       }    border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150`}
                       onChange={(e) =>
-                        updateConfig(selectedConfig, "suffixDetails", e.target.value)
+                        updateConfig(
+                          selectedConfig,
+                          "suffixDetails",
+                          e.target.value
+                        )
                       }
                       value={getConfigValue(selectedConfig, "suffixDetails")}
                       placeholder="suffixDetails"
@@ -429,7 +489,10 @@ function ConfigureSecondaryUser() {
                           e.target.value
                         )
                       }
-                      value={getConfigValue(selectedConfig, "widthOfNumericalPart")}
+                      value={getConfigValue(
+                        selectedConfig,
+                        "widthOfNumericalPart"
+                      )}
                       placeholder="Width of Numerical Part"
                     />
                   </div>

@@ -6,7 +6,8 @@ import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import {  IoReorderThreeSharp } from "react-icons/io5";
 import { useDispatch } from "react-redux";
-import { removeAll } from "../../../slices/invoiceSecondary";
+import { removeAll } from "../../../slices/invoice";
+import { removeAllSales } from "../../../slices/sales";
 
 
 function OrderConfigurations() {
@@ -82,6 +83,7 @@ function OrderConfigurations() {
     };
     fetchBank();
   dispatch(removeAll())
+  dispatch(removeAllSales())
 
   }, []);
 

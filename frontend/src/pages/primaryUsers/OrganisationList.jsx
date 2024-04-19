@@ -7,6 +7,7 @@ import { IoReorderThreeSharp } from "react-icons/io5";
 import { FaEdit } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import { removeAll } from "../../../slices/invoice";
+import { removeAllSales } from "../../../slices/sales";
 import { useDispatch } from "react-redux";
 
 function OrganisationList() {
@@ -33,6 +34,7 @@ function OrganisationList() {
     };
     fetchOrganiszations();
     dispatch(removeAll())
+    dispatch(removeAllSales())
 
   }, []);
 

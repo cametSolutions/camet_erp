@@ -8,6 +8,7 @@ import { IoReorderThreeSharp } from "react-icons/io5";
 import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { removeAll } from "../../../slices/invoice";
+import { removeAllSales } from "../../../slices/sales";
 
 import { useDispatch } from "react-redux";
 
@@ -39,6 +40,7 @@ function BankList() {
     };
     fetchBanks();
     dispatch(removeAll());
+    dispatch(removeAllSales());
   }, [cmp_id]);
 
   const handleToggleSidebar = () => {

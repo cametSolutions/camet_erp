@@ -43,9 +43,8 @@ function InvoiceSecondary() {
   const [refresh, setRefresh] = useState(false);
   const [orderNumber, setOrderNumber] = useState("");
   const [refreshCmp, setrefreshCmp] = useState(false);
-  const [additionalChragesFromCompany, setAdditionalChragesFromCompany] =   useState([]);
-
-
+  const [additionalChragesFromCompany, setAdditionalChragesFromCompany] =
+    useState([]);
 
   const additionalChargesFromRedux = useSelector(
     (state) => state.invoiceSecondary.additionalCharges
@@ -54,7 +53,6 @@ function InvoiceSecondary() {
   const orgId = useSelector(
     (state) => state?.secSelectedOrganization?.secSelectedOrg?._id
   );
-
 
   useEffect(() => {
     const fetchSingleOrganization = async () => {
@@ -84,7 +82,6 @@ function InvoiceSecondary() {
         //   console.log(prefixDetails);
         //   console.log(suffixDetails);
 
-
         //   const padedNumber = newOrderNumber.padStart(widthOfNumericalPart, 0);
         //   console.log(padedNumber);
         //   const finalOrderNumber = prefixDetails + padedNumber + suffixDetails;
@@ -111,8 +108,6 @@ function InvoiceSecondary() {
     fetchSingleOrganization();
   }, [refreshCmp, orgId]);
 
-
-
   useEffect(() => {
     const fetchConfigurationNumber = async () => {
       try {
@@ -125,12 +120,10 @@ function InvoiceSecondary() {
         );
 
         console.log(res.data);
-        if (res.data.message==="default"){
-
-          
-          const {configurationNumber}=res.data;
-          setOrderNumber(configurationNumber)
-          return
+        if (res.data.message === "default") {
+          const { configurationNumber } = res.data;
+          setOrderNumber(configurationNumber);
+          return;
         }
 
         const { configDetails, configurationNumber } = res.data;
@@ -173,35 +166,30 @@ function InvoiceSecondary() {
     fetchConfigurationNumber();
   }, []);
 
-  
-
   const [rows, setRows] = useState(
     additionalChargesFromRedux.length > 0
-       ? additionalChargesFromRedux
-       : additionalChragesFromCompany.length > 0
-       ? [
-           {
-             option: additionalChragesFromCompany[0].name,
-             value: "",
-             action: "add",
-             taxPercentage: additionalChragesFromCompany[0].taxPercentage,
-             hsn: additionalChragesFromCompany[0].hsn,
-             _id: additionalChragesFromCompany[0]._id,
-             finalValue:""
-           },
-         ]
-       : [] // Fallback to an empty array if additionalChragesFromCompany is also empty
-   );
-
+      ? additionalChargesFromRedux
+      : additionalChragesFromCompany.length > 0
+      ? [
+          {
+            option: additionalChragesFromCompany[0].name,
+            value: "",
+            action: "add",
+            taxPercentage: additionalChragesFromCompany[0].taxPercentage,
+            hsn: additionalChragesFromCompany[0].hsn,
+            _id: additionalChragesFromCompany[0]._id,
+            finalValue: "",
+          },
+        ]
+      : [] // Fallback to an empty array if additionalChragesFromCompany is also empty
+  );
 
   useEffect(() => {
-    if (additionalChargesFromRedux.length>0) {
+    if (additionalChargesFromRedux.length > 0) {
       setAdditional(true);
     }
   }, []);
   const dispatch = useDispatch();
-
-
 
   const handleAddRow = () => {
     const hasEmptyValue = rows.some((row) => row.value === "");
@@ -219,10 +207,8 @@ function InvoiceSecondary() {
         action: "add",
         taxPercentage: additionalChragesFromCompany[0]?.taxPercentage,
         hsn: additionalChragesFromCompany[0]?.hsn,
-        _id:additionalChragesFromCompany[0]?._id,
-        finalValue:""
-
-
+        _id: additionalChragesFromCompany[0]?._id,
+        finalValue: "",
       },
     ]);
   };
@@ -240,8 +226,7 @@ function InvoiceSecondary() {
       taxPercentage: selectedOption?.taxPercentage,
       hsn: selectedOption?.hsn,
       _id: selectedOption?._id,
-      finalValue:""
-
+      finalValue: "",
     };
     console.log(newRows);
     setRows(newRows);
@@ -252,17 +237,18 @@ function InvoiceSecondary() {
   const handleRateChange = (index, value) => {
     const newRows = [...rows];
     let updatedRow = { ...newRows[index], value: value }; // Create a new object with the updated value
-   
+
     if (updatedRow.taxPercentage && updatedRow.taxPercentage !== "") {
-       const taxAmount = (parseFloat(value) * parseFloat(updatedRow.taxPercentage)) / 100;
-       updatedRow.finalValue = parseFloat(value) + taxAmount;
+      const taxAmount =
+        (parseFloat(value) * parseFloat(updatedRow.taxPercentage)) / 100;
+      updatedRow.finalValue = parseFloat(value) + taxAmount;
     } else {
-       updatedRow.finalValue = parseFloat(value);
+      updatedRow.finalValue = parseFloat(value);
     }
-    newRows[index] = updatedRow; 
+    newRows[index] = updatedRow;
     setRows(newRows);
     dispatch(addAdditionalCharges({ index, row: updatedRow }));
-   };
+  };
 
   const actionChange = (index, value) => {
     const newRows = [...rows];
@@ -292,21 +278,20 @@ function InvoiceSecondary() {
 
   const additionalChargesTotal = useMemo(() => {
     return rows.reduce((acc, curr) => {
-       let value = curr.finalValue === "" ? 0 : parseFloat(curr.finalValue);
-       if (curr.action === "add") {
-         return acc + value;
-       } else if (curr.action === "sub") {
-         return acc - value;
-       }
-       return acc;
+      let value = curr.finalValue === "" ? 0 : parseFloat(curr.finalValue);
+      if (curr.action === "add") {
+        return acc + value;
+      } else if (curr.action === "sub") {
+        return acc - value;
+      }
+      return acc;
     }, 0);
-   }, [rows]);
+  }, [rows]);
 
   const totalAmount =
     parseFloat(subTotal) + additionalChargesTotal || parseFloat(subTotal);
 
   const navigate = useNavigate();
-
 
   const handleAddItem = () => {
     console.log(Object.keys(party).length);
@@ -369,7 +354,7 @@ function InvoiceSecondary() {
       additionalChargesFromRedux,
       lastAmount,
       orgId,
-      orderNumber
+      orderNumber,
     };
 
     console.log(formData);
@@ -447,11 +432,15 @@ function InvoiceSecondary() {
 
         <div className="flex justify-between  p-4 bg-white drop-shadow-lg items-center text-xs md:text-base ">
           <div className=" flex flex-col gap-1 justify-center">
-            <p className="text-md font-semibold text-violet-400">  Order #{orderNumber}</p>
+            <p className="text-md font-semibold text-violet-400">
+              {" "}
+              Order #{orderNumber}
+            </p>
             <p className="font-semibold   text-gray-500 text-xs md:text-base">
               {new Date().toDateString()}
             </p>
           </div>
+          <div className="flex items-center gap-3">
           <div className=" hidden md:block ">
             <div className="  flex gap-5 items-center ">
               <button
@@ -461,15 +450,19 @@ function InvoiceSecondary() {
                 <IoIosAddCircle className="text-2xl" />
                 <p>Generate Order</p>
               </button>
-              {/* <div>
-                <p 
-                  onClick={() => setOpenModal(true)}
-
-                className="text-violet-500 text-xs  p-1 px-3  border border-1 border-gray-300 rounded-2xl cursor-pointer">
-                  Edit
-                </p>
-              </div> */}
             </div>
+          </div>
+          <div>
+            <button
+              onClick={() => {
+                dispatch(removeAll());
+              }}
+              className="  text-red-500 text-xs  p-1 px-3  border border-1 border-gray-300 rounded-2xl cursor-pointer"
+            >
+              Cancel
+            </button>
+          </div>
+
           </div>
         </div>
 
@@ -565,7 +558,7 @@ function InvoiceSecondary() {
                       <p> ₹ {el.total ?? 0}</p>
                     </div>
                     <div className="flex justify-between items-center mt-2 ">
-                      <div className="w-3/5 md:w-2/5 font-semibold text-gray-500 text-xs md:text-base flex flex-col gap-2 ">
+                      <div className="w-3/5 md:w-2/5 font-semibold text-gray-500 text-xs  flex flex-col gap-2 ">
                         <div className="flex justify-between">
                           <p className="text-nowrap">
                             Qty <span className="text-xs">x</span> Rate
@@ -667,14 +660,14 @@ function InvoiceSecondary() {
                                   )
                                 )
                               ) : (
-                                <option >
-                                  No charges available
-                                </option>
+                                <option>No charges available</option>
                               )}
                             </select>
 
                             {row?.taxPercentage !== "" && (
-                              <div className="ml-3 text-[9px] text-gray-400">GST @ {row?.taxPercentage} %</div>
+                              <div className="ml-3 text-[9px] text-gray-400">
+                                GST @ {row?.taxPercentage} %
+                              </div>
                             )}
                           </td>
                           <td className="">
@@ -714,12 +707,21 @@ function InvoiceSecondary() {
                                 onChange={(e) =>
                                   handleRateChange(index, e.target.value)
                                 }
-                                className="block w-full py-2 px-4 bg-white text-sm focus:outline-none border-b-2 border-t-0 border-l-0 border-r-0 "
+                                className={` ${
+                                  additionalChragesFromCompany.length === 0
+                                    ? "pointer-events-none opacity-20 "
+                                    : ""
+                                }   block w-full py-2 px-4 bg-white text-sm focus:outline-none border-b-2 border-t-0 border-l-0 border-r-0 `}
                               />
                             </div>
 
-                            {row?.taxPercentage !== "" && row.value!=="" &&  (
-                              <div className="ml-3 text-[9.5px] text-gray-400 mt-2">With tax : ₹ {(parseFloat(row?.value)*(100+ parseFloat(row.taxPercentage)))/100} </div>
+                            {row?.taxPercentage !== "" && row.value !== "" && (
+                              <div className="ml-3 text-[9.5px] text-gray-400 mt-2">
+                                With tax : ₹{" "}
+                                {(parseFloat(row?.value) *
+                                  (100 + parseFloat(row.taxPercentage))) /
+                                  100}{" "}
+                              </div>
                             )}
                           </td>
                         </tr>

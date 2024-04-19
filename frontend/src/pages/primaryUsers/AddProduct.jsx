@@ -117,7 +117,7 @@ function AddProduct() {
   ///////////// location table ///////////////////
 
   const [locationRows, setLocationRows] = useState([
-    { id: Math.random(), godown_name: "", godown_stock: "" },
+    { id: Math.random(), godown: "", balance_stock: "" },
   ]);
   const [locationData, setLocationData] = useState([]);
 
@@ -125,22 +125,22 @@ function AddProduct() {
     // Update levelNameData whenever rows change
     setLocationData(
       locationRows.map((row) => ({
-        godown_name: row.godown_name,
-        godown_stock: row.godown_stock,
+        godown: row.godown,
+        balance_stock: row.balance_stock,
       }))
     );
   }, [locationRows]);
 
   const handleAddLocationRow = () => {
     const lastRow = locationRows[locationRows.length - 1];
-    if (!lastRow.godown_name || !lastRow.godown_stock) {
+    if (!lastRow.godown || !lastRow.balance_stock) {
       toast.error("Add Location  and Stock");
       return;
     }
 
     setLocationRows([
       ...locationRows,
-      { id: Math.random(), godown_name: "", godown_stock: "" },
+      { id: Math.random(), godown: "", balance_stock: "" },
     ]);
   };
 
@@ -152,13 +152,13 @@ function AddProduct() {
 
   const handleLocationChange = (index, value) => {
     const newRows = [...locationRows];
-    newRows[index].godown_name = value;
+    newRows[index].godown = value;
     setLocationRows(newRows);
   };
 
   const handleLocationRateChange = (index, value) => {
     const newRows = [...locationRows];
-    newRows[index].godown_stock = value;
+    newRows[index].balance_stock = value;
     console.log(newRows);
     setLocationRows(newRows);
   };
@@ -443,17 +443,17 @@ function AddProduct() {
     isError = false;
 
     if (
-      locationData[0].godown_name !== "" ||
-      locationData[0].godown_stock !== ""
+      locationData[0].godown !== "" ||
+      locationData[0].balance_stock !== ""
     ) {
       locationData.map((el) => {
-        if (el.godown_stock === "") {
+        if (el.balance_stock === "") {
           toast.error("stock must be filled");
           isError = true;
 
           return;
         }
-        if (el.godown_name === "") {
+        if (el.godown === "") {
           toast.error("location name must be filled");
           isError = true;
 
@@ -513,7 +513,7 @@ function AddProduct() {
         setLocationData("");
       setRows([{ id: Math.random(), pricelevel: "", pricerate: "" }]);
       setLocationRows([
-        { id: Math.random(), godown_name: "", godown_stock: "" },
+        { id: Math.random(), godown: "", balance_stock: "" },
       ]);
     } catch (error) {
       toast.error(error.response.data.message);
@@ -1716,7 +1716,7 @@ function AddProduct() {
                           <tr key={row.id} className="border-b bg-[#EFF6FF] ">
                             <td className="px-4 py-2">
                               <select
-                                value={row.godown_name}
+                                value={row.godown}
                                 onChange={(e) =>
                                   handleLocationChange(index, e.target.value)
                                 }
@@ -1735,7 +1735,7 @@ function AddProduct() {
                               <input
                                 type="number"
                                 min="0"
-                                value={row.godown_stock}
+                                value={row.balance_stock}
                                 onChange={(e) =>
                                   handleLocationRateChange(
                                     index,

@@ -62,6 +62,8 @@ function AddItemSalesSecondary() {
   const priceLevelFromRedux =
     useSelector((state) => state.salesSecondary.selectedPriceLevel) || "";
 
+    console.log(priceLevelFromRedux);
+
   ///////////////////////////filters FromRedux///////////////////////////////////
 
   const brandFromRedux = useSelector((state) => state.salesSecondary.brand) || "";
@@ -223,6 +225,13 @@ function AddItemSalesSecondary() {
           setCategories(categories);
           setSubCategories(subcategories);
           setPriceLevels(priceLevels);
+          if (priceLevelFromRedux == "") {
+            console.log("haii");
+            const defaultPriceLevel = priceLevels[0];
+            setSelectedPriceLevel(defaultPriceLevel);
+            dispatch(setPriceLevel(defaultPriceLevel));
+          }
+
         } else {
 
           const { priceLevels, brands, categories, subcategories } = res.data;
@@ -233,6 +242,13 @@ function AddItemSalesSecondary() {
           console.log(priceLevels);
 
           setPriceLevels(priceLevels);
+          if (priceLevelFromRedux == "") {
+            console.log("haii");
+            const defaultPriceLevel = priceLevels[0];
+            setSelectedPriceLevel(defaultPriceLevel);
+            dispatch(setPriceLevel(defaultPriceLevel));
+          }
+
 
         
         }

@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import { useDispatch } from "react-redux";
 import { removeAll } from "../../../slices/invoice";
+import { removeAllSales } from "../../../slices/sales";
 
 function AdditionalCharges() {
   const [name, setName] = useState("");
@@ -22,11 +23,12 @@ function AdditionalCharges() {
 
   useEffect(() => {
     dispatch(removeAll());
+    dispatch(removeAllSales());
   }, []);
 
   const submitHandler = async () => {
     if (!name.trim()) {
-      toast.error("Fill Name and Bank");
+      toast.error("Fill Name ");
       return;
     }
     if (name.length > 30) {

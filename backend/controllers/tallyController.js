@@ -1,7 +1,9 @@
 import TallyData from "../models/TallyData.js";
 import TransactionModel from "../models/TransactionModel.js";
 import BankDetailsModel from "../models/bankModel.js";
+import partyModel from "../models/partyModel.js";
 import productModel from "../models/productModel.js";
+
 
 
 export const saveDataFromTally = async (req, res) => {
@@ -213,6 +215,62 @@ export const saveProductsFromTally = async (req, res) => {
     );
 
     res.status(201).json({ message: "Products saved successfully", savedProducts });
+  } catch (error) {
+    console.error("Error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+
+
+// @desc for saving parties/costumers from tally
+// route GET/api/tally/giveTransaction
+
+export const savePartyFromTally = async (req, res) => {
+  try {
+    // console.log("body", req.body);
+    const partyToSave = req?.body?.data;
+
+
+    // Extract primary user id and company id from the first product
+    const { Primary_user_id, cmp_id } = partyToSave[0];
+
+    // Delete existing documents with the same primary user id and company id
+    await partyModel.deleteMany({ Primary_user_id, cmp_id });
+
+    // Loop through each product to save
+    const savedParty = await Promise.all(
+      partyToSave.map(async (party) => {
+        // Check if the product already exists
+        const existingParty = await partyModel.findOne({
+          cmp_id: party.cmp_id,
+          partyName: party.partyName,
+          Primary_user_id: party.Primary_user_id,
+        });
+
+
+        console.log("existingParty",existingParty);
+
+        // If the product doesn't exist, create a new one; otherwise, update it
+        if (!existingParty) {
+          const newParty = new partyModel(party);
+          return await newParty.save();
+        } else {
+          // Update the existing product
+          return await partyModel.findOneAndUpdate(
+            {
+              cmp_id: party.cmp_id,
+              partyName: party.partyName,
+              Primary_user_id: party.Primary_user_id,
+            },
+            party,
+            { new: true }
+          );
+        }
+      })
+    );
+
+    res.status(201).json({ message: "Party saved successfully", savedParty });
   } catch (error) {
     console.error("Error:", error);
     res.status(500).json({ error: "Internal server error" });

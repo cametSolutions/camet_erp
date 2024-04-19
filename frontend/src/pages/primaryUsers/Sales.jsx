@@ -21,7 +21,7 @@ import { useNavigate } from "react-router-dom";
 import api from "../../api/api";
 import { IoIosAddCircle } from "react-icons/io";
 import { MdPlaylistAdd } from "react-icons/md";
-import { removeAll, removeAdditionalCharge } from "../../../slices/sales";
+import { removeAllSales, removeAdditionalCharge } from "../../../slices/sales";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import { Button, Label, Modal, TextInput } from "flowbite-react";
 
@@ -336,7 +336,7 @@ function Sales() {
       toast.success(res.data.message);
 
       navigate(`/pUsers/salesDetails/${res.data.data._id}`);
-      dispatch(removeAll());
+      dispatch(removeAllSales());
     } catch (error) {
       toast.error(error.response.data.message);
       console.log(error);
@@ -428,7 +428,7 @@ function Sales() {
               <div>
                 <button
                   onClick={() => {
-                    dispatch(removeAll());
+                    dispatch(removeAllSales());
                   }}
                   className="  text-red-500 text-xs  p-1 px-3  border border-1 border-gray-300 rounded-2xl cursor-pointer"
                 >
@@ -676,12 +676,13 @@ function Sales() {
                             <div className="flex items-center">
                               <span className="mr-0 ">₹</span>
                               <input
+                              // disabled={addAdditionalCharges.length===0}
                                 type="number"
                                 value={row.value}
                                 onChange={(e) =>
                                   handleRateChange(index, e.target.value)
                                 }
-                                className="block w-full py-2 px-4 bg-white text-sm focus:outline-none border-b-2 border-t-0 border-l-0 border-r-0 "
+                                className={` ${additionalChragesFromCompany.length===0? "pointer-events-none opacity-20" : ""}   block w-full py-2 px-4 bg-white text-sm focus:outline-none border-b-2 border-t-0 border-l-0 border-r-0 `}
                               />
                             </div>
 

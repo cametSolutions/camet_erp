@@ -17,7 +17,7 @@ import {
   setBrandInRedux,
   setCategoryInRedux,
   setSubCategoryInRedux,
-  removeAll,
+  removeAllSales,
 } from "../../../slices/sales";
 import { HashLoader } from "react-spinners";
 import { FixedSizeList as List } from "react-window";
@@ -228,6 +228,7 @@ function AddItemSales() {
   // }, [item, orgId, type]);
 
   ///////////////////////////filter items///////////////////////////////////
+console.log(type);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -244,10 +245,17 @@ function AddItemSales() {
         }
 
         if (type === "self") {
-          const { brands, categories, subcategories } = res.data.data;
+          const { brands, categories, subcategories,priceLevels } = res.data.data;
           setBrands(brands);
           setCategories(categories);
           setSubCategories(subcategories);
+          setPriceLevels(priceLevels);
+          if (priceLevelFromRedux === "") {
+            const defaultPriceLevel = priceLevels[0];
+            setSelectedPriceLevel(defaultPriceLevel);
+            dispatch(setPriceLevel(defaultPriceLevel));
+          }
+
         } else {
           const { priceLevels, brands, categories, subcategories } = res.data;
 
@@ -315,7 +323,7 @@ function AddItemSales() {
     console.log(itemToUpdate);
 
     if (itemToUpdate) {
-      if (itemToUpdate?.GodownList.length > 1) {
+      if (itemToUpdate?.GodownList.length > 0) {
         setOpenModal(true);
         const updatedGodownList = itemToUpdate.GodownList.map((el) => ({
           ...el,
@@ -390,7 +398,7 @@ function AddItemSales() {
     const updatedItems = [...filteredItems];
     const currentItem = { ...updatedItems[index] };
 
-    if (currentItem?.GodownList?.length > 1) {
+    if (currentItem?.GodownList?.length > 0) {
       setOpenModal(true);
 
       setGodown(currentItem?.GodownList);
@@ -419,7 +427,7 @@ function AddItemSales() {
     const updatedItems = [...filteredItems]; // Make a copy of the array
     const currentItem = { ...updatedItems[index] };
 
-    if (currentItem?.GodownList?.length > 1) {
+    if (currentItem?.GodownList?.length > 0) {
       setOpenModal(true);
       setGodown(currentItem?.GodownList);
     } else {
@@ -712,6 +720,11 @@ function AddItemSales() {
   /////////////////////////// save scroll end ///////////////////////////////////
 
   const continueHandler = () => {
+    console.log(selectedPriceLevel);
+    if(selectedPriceLevel===""){
+      toast.error("Select a Pricelevel")
+      return
+    }
     console.log(location.state);
     if (location?.state?.from === "editSales") {
       navigate(`/pUsers/editSales/${location.state.id}`);
@@ -721,7 +734,7 @@ function AddItemSales() {
   };
 
   const backHandler = () => {
-    dispatch(removeAll());
+    // dispatch(removeAll());
     if (location?.state?.from === "editSales") {
       navigate(`/pUsers/editSales/${location.state.id}`);
     } else {

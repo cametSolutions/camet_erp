@@ -21,6 +21,7 @@ import {
 } from "../../../slices/invoice";
 import { HashLoader } from "react-spinners";
 import { FixedSizeList as List } from "react-window";
+import { toast } from "react-toastify";
 
 function AddItem() {
   const [item, setItem] = useState([]);
@@ -38,8 +39,9 @@ function AddItem() {
   const [loader, setLoader] = useState(false);
   const [listHeight, setListHeight] = useState(0);
   const [scrollPosition, setScrollPosition] = useState(0);
+  const [finalItems,setFinalItems]=useState([]);
 
-  console.log(scrollPosition);
+
 
   ///////////////////////////cpm_id///////////////////////////////////
 
@@ -55,6 +57,8 @@ function AddItem() {
 
   const priceLevelFromRedux =
     useSelector((state) => state.invoice.selectedPriceLevel) || "";
+
+    console.log(priceLevelFromRedux);
 
   ///////////////////////////filters FromRedux///////////////////////////////////
 
@@ -130,22 +134,22 @@ function AddItem() {
 
   ///////////////////////////priceLevelSet///////////////////////////////////
 
-  useEffect(() => {
-    const priceLevelSet = Array.from(
-      new Set(
-        item.flatMap((item) =>
-          item?.Priceleveles.map((level) => level?.pricelevel)
-        )
-      )
-    );
-    setPriceLevels(priceLevelSet);
+  // useEffect(() => {
+  //   const priceLevelSet = Array.from(
+  //     new Set(
+  //       item.flatMap((item) =>
+  //         item?.Priceleveles.map((level) => level?.pricelevel)
+  //       )
+  //     )
+  //   );
+  //   setPriceLevels(priceLevelSet);
 
-    if (priceLevelFromRedux === "") {
-      const defaultPriceLevel = priceLevelSet[0];
-      setSelectedPriceLevel(defaultPriceLevel);
-      dispatch(setPriceLevel(defaultPriceLevel));
-    }
-  }, [item]);
+  //   if (priceLevelFromRedux === "") {
+  //     const defaultPriceLevel = priceLevelSet[0];
+  //     setSelectedPriceLevel(defaultPriceLevel);
+  //     dispatch(setPriceLevel(defaultPriceLevel));
+  //   }
+  // }, [item]);
 
   ///////////////////////////setSelectedPriceLevel fom redux///////////////////////////////////
 
@@ -193,38 +197,72 @@ function AddItem() {
 
   console.log(type);
 
-  useEffect(() => {
-    const fetchFilters = async () => {
-      try {
-        const res = await api.get(`/api/pUsers/fetchFilters/${orgId}`, {
-          withCredentials: true,
-        });
 
-        const { brands, categories, subcategories } = res.data.data;
+  ///////////////////////////filter items///////////////////////////////////
+
+
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        let res;
+        if (type === "self") {
+          res = await api.get(`/api/pUsers/fetchFilters/${orgId}`, {
+            withCredentials: true,
+          });
+        } else {
+          res = await api.get(`/api/pUsers/fetchAdditionalDetails/${orgId}`, {
+            withCredentials: true,
+          });
+        }
 
         if (type === "self") {
+          console.log(res.data.data);
+          const { brands, categories, subcategories ,priceLevels} = res.data.data;
           setBrands(brands);
           setCategories(categories);
           setSubCategories(subcategories);
-        } else {
-          const uniqueBrands = [...new Set(item.map((el) => el?.brand))];
-          const uniqueCategories = [...new Set(item.map((el) => el?.category))];
-          const uniqueSubCategories = [
-            ...new Set(item.map((item) => item?.sub_category)),
-          ];
+          setPriceLevels(priceLevels);
+          if (priceLevelFromRedux == "") {
+            console.log("haii");
+            const defaultPriceLevel = priceLevels[0];
+            setSelectedPriceLevel(defaultPriceLevel);
+            dispatch(setPriceLevel(defaultPriceLevel));
+          }
 
-          setBrands(uniqueBrands);
-          setCategories(uniqueCategories);
-          setSubCategories(uniqueSubCategories);
+
+
+        } else {
+          const { priceLevels, brands, categories, subcategories } = res.data;
+
+          setBrands(brands);
+          setCategories(categories);
+          setSubCategories(subcategories);
+          console.log(priceLevels);
+
+          setPriceLevels(priceLevels);
+
+          if (priceLevelFromRedux == "") {
+            console.log("haii");
+            const defaultPriceLevel = priceLevels[0];
+            setSelectedPriceLevel(defaultPriceLevel);
+            dispatch(setPriceLevel(defaultPriceLevel));
+          }
         }
       } catch (error) {
         console.log(error);
       }
     };
-    fetchFilters();
-  }, [item, orgId, type]);
 
-  ///////////////////////////filter items///////////////////////////////////
+    fetchData();
+  }, [orgId, type]);
+
+  console.log(priceLevels);
+
+
+
+
+
 
   const filterItems = (items, brand, category, subCategory, searchTerm) => {
     return items.filter((item) => {
@@ -553,7 +591,15 @@ function AddItem() {
 
   /////////////////////////// save scroll end ///////////////////////////////////
 
+
   const continueHandler = () => {
+
+    console.log(selectedPriceLevel);
+
+    if(selectedPriceLevel===""){
+      toast.error("Select a price Level")
+      return;
+    }
     console.log(location.state);
     if (location?.state?.from === "editInvoice") {
       navigate(`/pUsers/editInvoice/${location.state.id}`);
