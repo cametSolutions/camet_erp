@@ -228,6 +228,7 @@ function AddItemSales() {
   // }, [item, orgId, type]);
 
   ///////////////////////////filter items///////////////////////////////////
+console.log(type);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -244,10 +245,17 @@ function AddItemSales() {
         }
 
         if (type === "self") {
-          const { brands, categories, subcategories } = res.data.data;
+          const { brands, categories, subcategories,priceLevels } = res.data.data;
           setBrands(brands);
           setCategories(categories);
           setSubCategories(subcategories);
+          setPriceLevels(priceLevels);
+          if (priceLevelFromRedux === "") {
+            const defaultPriceLevel = priceLevels[0];
+            setSelectedPriceLevel(defaultPriceLevel);
+            dispatch(setPriceLevel(defaultPriceLevel));
+          }
+
         } else {
           const { priceLevels, brands, categories, subcategories } = res.data;
 

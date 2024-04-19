@@ -7,7 +7,7 @@ import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { MdDelete } from "react-icons/md";
 import Swal from "sweetalert2";
-import { removeAll } from "../../../slices/invoice";
+import { removeAll } from "../../../slices/invoiceSecondary";
 
 import { useDispatch } from "react-redux";
 import SidebarSec from "../../components/secUsers/SidebarSec";

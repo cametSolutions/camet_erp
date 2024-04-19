@@ -16,6 +16,7 @@ import { Dropdown } from "flowbite-react";
 import { HashLoader } from "react-spinners";
 import { FixedSizeList as List } from "react-window";
 import SidebarSec from "../../components/secUsers/SidebarSec";
+import { toast } from "react-toastify";
 
 function AddItemSecondary() {
   const [item, setItem] = useState([]);
@@ -221,6 +222,12 @@ function AddItemSecondary() {
           setCategories(categories);
           setSubCategories(subcategories);
           setPriceLevels(priceLevels)
+          if (priceLevelFromRedux == "") {
+            console.log("haii");
+            const defaultPriceLevel = priceLevels[0];
+            setSelectedPriceLevel(defaultPriceLevel);
+            dispatch(setPriceLevel(defaultPriceLevel));
+          }
         } else {
 
           const { priceLevels, brands, categories, subcategories } = res.data;
@@ -231,6 +238,12 @@ function AddItemSecondary() {
           console.log(priceLevels);
 
           setPriceLevels(priceLevels);
+          if (priceLevelFromRedux == "") {
+            console.log("haii");
+            const defaultPriceLevel = priceLevels[0];
+            setSelectedPriceLevel(defaultPriceLevel);
+            dispatch(setPriceLevel(defaultPriceLevel));
+          }
 
         
         }
@@ -427,8 +440,8 @@ function AddItemSecondary() {
           <div className="flex items-center flex-col gap-2">
             <button
               onClick={() => {
-                navigate(`/sUsers/editItemSales/${el._id}`, {
-                  state: { from: "addItemSales", id: location?.state?.id },
+                navigate(`/sUsers/editItem/${el._id}`, {
+                  state: { from: "editItem", id: location?.state?.id },
                 });
               }}
               type="button"
@@ -529,6 +542,10 @@ function AddItemSecondary() {
   }, []);
 
   const continueHandler = () => {
+
+    if(selectedPriceLevel===""){
+      toast.error("Select a price level ")
+    }
     console.log(location.state);
     if (location?.state?.from === "editInvoice") {
       navigate(`/sUsers/editInvoice/${location.state.id}`);

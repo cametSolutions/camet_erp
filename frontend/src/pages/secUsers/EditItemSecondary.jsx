@@ -33,6 +33,7 @@ function EditItemSecondary() {
   const selectedPriceLevel = useSelector(
     (state) => state.invoiceSecondary.selectedPriceLevel
   );
+  console.log(selectedPriceLevel);
   const orgId = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
@@ -127,6 +128,8 @@ function EditItemSecondary() {
     const newItem = { ...item };
 
     newItem.total = totalAmount;
+    newItem.count = parseInt(quantity);
+
     newItem.newGst = igst;
     if (type === "amount") {
       newItem.discount = discountAmount;
@@ -219,7 +222,8 @@ function EditItemSecondary() {
                         <label className="leading-loose">Quantity</label>
                         <div className="relative focus-within:text-gray-600 text-gray-400">
                           <input
-                            disabled
+                            onChange={(e) => setQuantity(e.target.value)}
+
                             value={quantity}
                             type="text"
                             className="pr-4 pl-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm border-gray-300 rounded-md focus:outline-none text-gray-600"
