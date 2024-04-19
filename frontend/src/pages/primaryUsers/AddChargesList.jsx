@@ -218,7 +218,7 @@ function AddChargesList() {
                           style={{ marginTop: "20px" }}
                           colSpan={5}
                         >
-                          No HSN found
+                          No additional charges found
                         </td>
                       </tr>
                     )}
