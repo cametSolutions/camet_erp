@@ -221,7 +221,7 @@ function Dashboard() {
             </div>
             {/* </Link> */}
             <div
-              onClick={() => handleLinkClick("/pUsers/invoice")}
+              onClick={() => handleLinkClick("/pUsers/Inventory")}
 
               className="flex flex-wrap -mx-6  duration-150 hover:scale-105 ease-in-out cursor-pointer">
               <div className="w-full px-6 ">

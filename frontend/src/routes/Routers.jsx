@@ -78,6 +78,10 @@ import AddChargesListSecondary from '../pages/secUsers/AddChargesListSecondary'
 import AdditionalChargesSecondary from '../pages/secUsers/AdditionalChargesSecondary'
 import EditAdditionalChargesSecondary from '../pages/secUsers/EditAdditionalChargesSecondary'
 import OrderConfigurationsSecondary from '../pages/secUsers/OrderConfigurationsSecondary'
+
+// inventory 
+import InventoryPrimaryUser from '../pages/primaryUsers/InventoryPrimaryUser'
+import InventorySecondaryUser from '../pages/secUsers/InventorySecondaryUser'
 import Sales from '../pages/primaryUsers/Sales'
 import SearchPartySales from '../pages/primaryUsers/SearchPartySales'
 import AddItemSales from '../pages/primaryUsers/AddItemSales'
@@ -151,7 +155,7 @@ const Routers = () => {
         <Route path='/pUsers/salesDetails/:id' element={<ProtectedPriRoute><SalesDetails/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/shareSales/:id' element={<ProtectedPriRoute><ShareSales/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/configureSecondaryUser/:id/:userId/:cmp_name' element={<ProtectedPriRoute><ConfigureSecondaryUser/></ProtectedPriRoute>}></Route>
-
+        <Route path='/pUsers/Inventory' element={<ProtectedPriRoute><InventoryPrimaryUser/></ProtectedPriRoute>}></Route>
 
         {/* admin */}
         <Route path='/admin/login' element={<AdminLogin/>}></Route>
@@ -190,6 +194,7 @@ const Routers = () => {
         <Route path='/sUsers/additionalCharges' element={<ProtectedSecRoute><AdditionalChargesSecondary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/editAdditionalCharge/:id' element={<ProtectedSecRoute><EditAdditionalChargesSecondary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/OrderConfigurations' element={<ProtectedSecRoute><OrderConfigurationsSecondary/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/Inventory' element={<ProtectedSecRoute><InventorySecondaryUser/></ProtectedSecRoute>}></Route>
 
         <Route path='/sUsers/sales' element={<ProtectedSecRoute><SalesSecondary/></ProtectedSecRoute>}></Route>
          <Route path='/sUsers/searchPartySales' element={<ProtectedSecRoute><SearchPartySalesSecondary/></ProtectedSecRoute>}></Route>
