@@ -39,6 +39,7 @@ function AddItem() {
   const [loader, setLoader] = useState(false);
   const [listHeight, setListHeight] = useState(0);
   const [scrollPosition, setScrollPosition] = useState(0);
+  const [finalItems,setFinalItems]=useState([]);
 
 
 
@@ -196,36 +197,6 @@ function AddItem() {
 
   console.log(type);
 
-  // useEffect(() => {
-  //   const fetchFilters = async () => {
-  //     try {
-  //       const res = await api.get(`/api/pUsers/fetchFilters/${orgId}`, {
-  //         withCredentials: true,
-  //       });
-
-  //       const { brands, categories, subcategories } = res.data.data;
-
-  //       if (type === "self") {
-  //         setBrands(brands);
-  //         setCategories(categories);
-  //         setSubCategories(subcategories);
-  //       } else {
-  //         const uniqueBrands = [...new Set(item.map((el) => el?.brand))];
-  //         const uniqueCategories = [...new Set(item.map((el) => el?.category))];
-  //         const uniqueSubCategories = [
-  //           ...new Set(item.map((item) => item?.sub_category)),
-  //         ];
-
-  //         setBrands(uniqueBrands);
-  //         setCategories(uniqueCategories);
-  //         setSubCategories(uniqueSubCategories);
-  //       }
-  //     } catch (error) {
-  //       console.log(error);
-  //     }
-  //   };
-  //   fetchFilters();
-  // }, [item, orgId, type]);
 
   ///////////////////////////filter items///////////////////////////////////
 

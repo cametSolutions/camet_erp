@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 
 const partySchema = new mongoose.Schema({
-  Primary_user_id: { type: String, required: true },  
+  Primary_user_id: { type: String, required: true },
   Secondary_user_id: { type: String },
   cmp_id: { type: String, required: true },
   accountGroup: { type: String, required: true },
@@ -9,6 +9,10 @@ const partySchema = new mongoose.Schema({
   mobileNumber: { type: String, required: true },
   emailID: { type: String, required: true },
   gstNo: { type: String },
+  pricelevel: { type: String },
+  state_reference: { type: String },
+  pincode: { type: String },
+  party_master_id: { type: String },
   panNo: { type: String },
   billingAddress: { type: String },
   shippingAddress: { type: String },
