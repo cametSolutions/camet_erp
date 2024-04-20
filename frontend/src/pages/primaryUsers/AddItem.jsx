@@ -17,7 +17,9 @@ import {
   setBrandInRedux,
   setCategoryInRedux,
   setSubCategoryInRedux,
-  removeAll
+  removeAll,
+  removeAllItem
+  
 } from "../../../slices/invoice";
 import { HashLoader } from "react-spinners";
 import { FixedSizeList as List } from "react-window";
@@ -27,7 +29,7 @@ function AddItem() {
   const [item, setItem] = useState([]);
   const [selectedPriceLevel, setSelectedPriceLevel] = useState("");
   const [refresh, setRefresh] = useState(false);
-  const [filterRefresh, setFilterRefresh] = useState(false);
+  const [productRefresh, setProductRefresh] = useState(false)
   const [brands, setBrands] = useState([]);
   const [categories, setCategories] = useState([]);
   const [subCategories, setSubCategories] = useState([]);
@@ -39,7 +41,6 @@ function AddItem() {
   const [loader, setLoader] = useState(false);
   const [listHeight, setListHeight] = useState(0);
   const [scrollPosition, setScrollPosition] = useState(0);
-  const [finalItems,setFinalItems]=useState([]);
 
 
 
@@ -86,6 +87,8 @@ function AddItem() {
           withCredentials: true,
         });
 
+        console.log(itemsFromRedux);
+
         if (itemsFromRedux.length > 0) {
           const reduxItemIds = itemsFromRedux.map((el) => el._id);
           const updatedItems = res.data.productData.map((product) => {
@@ -101,6 +104,7 @@ function AddItem() {
           });
           setItem(updatedItems);
         } else {
+          console.log("haii");
           setItem(res.data.productData);
         }
 
@@ -128,7 +132,7 @@ function AddItem() {
       // listRef?.current?.scrollTo(parseInt(scrollPosition, 10));\
       window.scrollTo(0, scrollPosition);
     }
-  }, [cpm_id]);
+  }, [cpm_id,productRefresh]);
 
   console.log("item", item);
 
@@ -159,30 +163,31 @@ function AddItem() {
 
   ///////////////////////////sdo persisting of products///////////////////////////////////
 
-  useEffect(() => {
-    if (itemsFromRedux.length > 0) {
-      const updatedItems = item.map((currentItem) => {
-        // Find the corresponding item in itemsFromRedux
-        const matchingItem = itemsFromRedux.find(
-          (el) => el._id === currentItem._id
-        );
-        if (matchingItem) {
-          // If matching item found, return it with updated count and total
-          return {
-            ...currentItem,
-            count: matchingItem.count,
-            total: matchingItem.total,
-          };
-        } else {
-          // If no matching item found, return the current item
-          return currentItem;
-        }
-      });
+  // useEffect(() => {
+  //   console.log(itemsFromRedux);
+  //   if (itemsFromRedux.length > 0) {
+  //     const updatedItems = item.map((currentItem) => {
+  //       // Find the corresponding item in itemsFromRedux
+  //       const matchingItem = itemsFromRedux.find(
+  //         (el) => el._id === currentItem._id
+  //       );
+  //       if (matchingItem) {
+  //         // If matching item found, return it with updated count and total
+  //         return {
+  //           ...currentItem,
+  //           count: matchingItem.count,
+  //           total: matchingItem.total,
+  //         };
+  //       } else {
+  //         // If no matching item found, return the current item
+  //         return currentItem;
+  //       }
+  //     });
 
-      // Update the state with the modified items
-      setItem(updatedItems);
-    }
-  }, [itemsFromRedux, refresh]);
+  //     // Update the state with the modified items
+  //     setItem(updatedItems);
+  //   }
+  // }, [itemsFromRedux, refresh]);
 
   //////////////////////////////orgId////////////////////////////////
 
@@ -403,6 +408,8 @@ function AddItem() {
     const selectedValue = e.target.value;
     setSelectedPriceLevel(selectedValue);
     dispatch(setPriceLevel(selectedValue));
+    dispatch(removeAllItem())
+    setProductRefresh(!productRefresh)  
   };
 
   ///////////////////////////react window ///////////////////////////////////

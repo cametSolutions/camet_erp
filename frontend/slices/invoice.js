@@ -118,6 +118,9 @@ export const invoiceSlice = createSlice({
     saveId:(state,action)=>{
       state.id=action.payload
     },
+    removeAllItem: (state)=>{
+      state.items=[]
+    }
     
   },
 });
@@ -146,7 +149,8 @@ export const {
   setSelectedPriceLevel,
   setFinalAmount,
   setAdditionalCharges,
-  saveId
+  saveId,
+  removeAllItem
 } = invoiceSlice.actions;
 
 export default invoiceSlice.reducer;
