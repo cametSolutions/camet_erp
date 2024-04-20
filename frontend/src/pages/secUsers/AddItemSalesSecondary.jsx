@@ -133,24 +133,7 @@ function AddItemSalesSecondary() {
     }
   }, [cpm_id]);
 
-  ///////////////////////////priceLevelSet///////////////////////////////////
 
-  // useEffect(() => {
-  //   const priceLevelSet = Array.from(
-  //     new Set(
-  //       item.flatMap((item) =>
-  //         item?.Priceleveles.map((level) => level?.pricelevel)
-  //       )
-  //     )
-  //   );
-  //   setPriceLevels(priceLevelSet);
-
-  //   if (priceLevelFromRedux === "") {
-  //     const defaultPriceLevel = priceLevelSet[0];
-  //     setSelectedPriceLevel(defaultPriceLevel);
-  //     dispatch(setPriceLevel(defaultPriceLevel));
-  //   }
-  // }, [item]);
 
   ///////////////////////////setSelectedPriceLevel fom redux///////////////////////////////////
 
@@ -401,6 +384,28 @@ function AddItemSalesSecondary() {
     }
   };
 
+
+     ///////////////////////////handleTotalChangeWithPriceLevel///////////////////////////////////
+
+
+     const handleTotalChangeWithPriceLevel = (pricelevel) => {
+      const updatedItems = filteredItems.map((item) => {
+        if (item.added === true) {
+          const newTotal = calculateTotal(item, pricelevel).toFixed(2);
+          return {
+            ...item,
+            total: newTotal,
+          };
+        }
+        return item;
+      });
+  
+      setItem(updatedItems);
+    };
+  
+
+
+
   ///////////////////////////handleDecrement///////////////////////////////////
   const handleDecrement = (index) => {
     const updatedItems = [...filteredItems]; // Make a copy of the array
@@ -510,6 +515,8 @@ function AddItemSalesSecondary() {
     const selectedValue = e.target.value;
     setSelectedPriceLevel(selectedValue);
     dispatch(setPriceLevel(selectedValue));
+    handleTotalChangeWithPriceLevel(selectedValue);
+
   };
 
   ///////////////////////////react window ///////////////////////////////////

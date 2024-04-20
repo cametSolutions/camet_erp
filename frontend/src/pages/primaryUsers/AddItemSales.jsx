@@ -131,24 +131,6 @@ function AddItemSales() {
     }
   }, [cpm_id]);
 
-  ///////////////////////////priceLevelSet///////////////////////////////////
-
-  // useEffect(() => {
-  //   const priceLevelSet = Array.from(
-  //     new Set(
-  //       item.flatMap((item) =>
-  //         item?.Priceleveles.map((level) => level?.pricelevel)
-  //       )
-  //     )
-  //   );
-  //   setPriceLevels(priceLevelSet);
-
-  //   if (priceLevelFromRedux === "") {
-  //     const defaultPriceLevel = priceLevelSet[0];
-  //     setSelectedPriceLevel(defaultPriceLevel);
-  //     dispatch(setPriceLevel(defaultPriceLevel));
-  //   }
-  // }, [item]);
 
   ///////////////////////////setSelectedPriceLevel fom redux///////////////////////////////////
 
@@ -196,36 +178,6 @@ function AddItemSales() {
 
   console.log(type);
 
-  // useEffect(() => {
-  //   const fetchFilters = async () => {
-  //     try {
-  //       const res = await api.get(`/api/pUsers/fetchFilters/${orgId}`, {
-  //         withCredentials: true,
-  //       });
-
-  //       const { brands, categories, subcategories } = res.data.data;
-
-  //       if (type === "self") {
-  //         setBrands(brands);
-  //         setCategories(categories);
-  //         setSubCategories(subcategories);
-  //       } else {
-  //         const uniqueBrands = [...new Set(item.map((el) => el?.brand))];
-  //         const uniqueCategories = [...new Set(item.map((el) => el?.category))];
-  //         const uniqueSubCategories = [
-  //           ...new Set(item.map((item) => item?.sub_category)),
-  //         ];
-
-  //         setBrands(uniqueBrands);
-  //         setCategories(uniqueCategories);
-  //         setSubCategories(uniqueSubCategories);
-  //       }
-  //     } catch (error) {
-  //       console.log(error);
-  //     }
-  //   };
-  //   fetchFilters();
-  // }, [item, orgId, type]);
 
   ///////////////////////////filter items///////////////////////////////////
 console.log(type);
@@ -422,6 +374,25 @@ console.log(type);
     }
   };
 
+    ///////////////////////////handleTotalChangeWithPriceLevel///////////////////////////////////
+
+
+    const handleTotalChangeWithPriceLevel = (pricelevel) => {
+      const updatedItems = filteredItems.map((item) => {
+        if (item.added === true) {
+          const newTotal = calculateTotal(item, pricelevel).toFixed(2);
+          return {
+            ...item,
+            total: newTotal,
+          };
+        }
+        return item;
+      });
+  
+      setItem(updatedItems);
+    };
+  
+
   ///////////////////////////handleDecrement///////////////////////////////////
   const handleDecrement = (index) => {
     const updatedItems = [...filteredItems]; // Make a copy of the array
@@ -530,6 +501,8 @@ console.log(type);
     const selectedValue = e.target.value;
     setSelectedPriceLevel(selectedValue);
     dispatch(setPriceLevel(selectedValue));
+    handleTotalChangeWithPriceLevel(selectedValue);
+
   };
 
   ///////////////////////////react window ///////////////////////////////////

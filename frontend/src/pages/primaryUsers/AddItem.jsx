@@ -132,24 +132,7 @@ function AddItem() {
 
   console.log("item", item);
 
-  ///////////////////////////priceLevelSet///////////////////////////////////
 
-  // useEffect(() => {
-  //   const priceLevelSet = Array.from(
-  //     new Set(
-  //       item.flatMap((item) =>
-  //         item?.Priceleveles.map((level) => level?.pricelevel)
-  //       )
-  //     )
-  //   );
-  //   setPriceLevels(priceLevelSet);
-
-  //   if (priceLevelFromRedux === "") {
-  //     const defaultPriceLevel = priceLevelSet[0];
-  //     setSelectedPriceLevel(defaultPriceLevel);
-  //     dispatch(setPriceLevel(defaultPriceLevel));
-  //   }
-  // }, [item]);
 
   ///////////////////////////setSelectedPriceLevel fom redux///////////////////////////////////
 
