@@ -399,11 +399,16 @@ function AddItemSecondary() {
 
   const Row = ({ index, style }) => {
     const el = filteredItems[index];
+    const adjustedStyle = {
+      ...style,
+      marginTop: "16px",
+      height: "160px",
+    };
     return (
       <div
-        style={style}
+        style={adjustedStyle}
         key={index}
-        className="bg-white p-4 py-2 pb-6  mt-4 flex justify-between items-center  rounded-sm cursor-pointer border-b-2 "
+        className="bg-white p-4 py-2 pb-6  mt-4 flex justify-between items-center  rounded-sm cursor-pointer border-b-2 shadow-lg "
       >
         <div className="flex items-start gap-3 md:gap-4  ">
           <div className="w-10 mt-1  uppercase h-10 rounded-lg bg-violet-200 flex items-center justify-center font-semibold text-gray-400">

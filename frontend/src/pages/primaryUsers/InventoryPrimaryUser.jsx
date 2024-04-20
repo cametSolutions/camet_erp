@@ -20,7 +20,6 @@ import { removeAll } from "../../../slices/invoice";
 import { useDispatch } from "react-redux";
 import { IoIosArrowRoundBack } from "react-icons/io";
 
-
 function InventoryPrimaryUser() {
   const [products, setProducts] = useState([]);
 
@@ -30,9 +29,9 @@ function InventoryPrimaryUser() {
   const [search, setSearch] = useState("");
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [listHeight, setListHeight] = useState(0);
-  const [ingodowns, setIngodowns] = useState("")
-  const [selfgodowns, setSelfGodowms] = useState("")
-  const [manageAll,setManageAll]=useState(false)
+  const [ingodowns, setIngodowns] = useState("");
+  const [selfgodowns, setSelfGodowms] = useState("");
+  const [manageAll, setManageAll] = useState(false);
 
   const cmp_id = useSelector(
     (state) => state.setSelectedOrganization.selectedOrg._id
@@ -43,54 +42,56 @@ function InventoryPrimaryUser() {
 
   const dispatch = useDispatch();
 
-     // filter Concept  of seclect box
+  // filter Concept  of seclect box
 
-     const handleFilterProduct = async (selectedValue) => {
-      setLoader(true);
-      try {
-        if(selectedValue == ""){
-          setRefresh(!refresh)
-        }else{
-        const res = await api.get(`/api/pUsers/godownProductFilter/${cmp_id}/${selectedValue}`, {
-          withCredentials: true,
-        });
+  const handleFilterProduct = async (selectedValue) => {
+    setLoader(true);
+    try {
+      if (selectedValue == "") {
+        setRefresh(!refresh);
+      } else {
+        const res = await api.get(
+          `/api/pUsers/godownProductFilter/${cmp_id}/${selectedValue}`,
+          {
+            withCredentials: true,
+          }
+        );
         setLoader(true);
-        console.log(res.data)
-       
-          setProducts(res.data);
-      
+        console.log(res.data);
+
+        setProducts(res.data);
       }
-      } catch (error) {
-        console.log(error);
-        toast.error(error.response.data.message);
-      } finally {
-        setLoader(false);
-      }
-    
-    };
-    const handleFilterProductSelf = async (selectedValue) => {
-      setLoader(true);
-      try {
-        if(selectedValue == ""){
-          setRefresh(!refresh)
-        }else{
-        const res = await api.get(`/api/pUsers/godownProductFilterSelf/${cmp_id}/${selectedValue}`, {
-          withCredentials: true,
-        });
+    } catch (error) {
+      console.log(error);
+      toast.error(error.response.data.message);
+    } finally {
+      setLoader(false);
+    }
+  };
+  const handleFilterProductSelf = async (selectedValue) => {
+    setLoader(true);
+    try {
+      if (selectedValue == "") {
+        setRefresh(!refresh);
+      } else {
+        const res = await api.get(
+          `/api/pUsers/godownProductFilterSelf/${cmp_id}/${selectedValue}`,
+          {
+            withCredentials: true,
+          }
+        );
         setLoader(true);
-        console.log(res.data)
-       
-          setProducts(res.data);
-     
+        console.log(res.data);
+
+        setProducts(res.data);
       }
-      } catch (error) {
-        console.log(error);
-        toast.error(error.response.data.message);
-      } finally {
-        setLoader(false);
-      }
-    
-    };
+    } catch (error) {
+      console.log(error);
+      toast.error(error.response.data.message);
+    } finally {
+      setLoader(false);
+    }
+  };
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -100,13 +101,12 @@ function InventoryPrimaryUser() {
         });
         setLoader(true);
 
-          setProducts(res.data.productData);
+        setProducts(res.data.productData);
       } catch (error) {
         console.log(error);
         toast.error(error.response.data.message);
       } finally {
         setTimeout(() => {
-          
           setLoader(false);
         }, 2000);
       }
@@ -114,7 +114,7 @@ function InventoryPrimaryUser() {
     fetchProducts();
     dispatch(removeAll());
   }, [refresh, cmp_id]);
-  
+
   const handleToggleSidebar = () => {
     if (window.innerWidth < 768) {
       setShowSidebar(!showSidebar);
@@ -130,7 +130,7 @@ function InventoryPrimaryUser() {
           withCredentials: true,
         });
         setLoader(true);
-          setIngodowns(res.data.godowndata);
+        setIngodowns(res.data.godowndata);
       } catch (error) {
         console.log(error);
         toast.error(error.response.data.message);
@@ -138,7 +138,7 @@ function InventoryPrimaryUser() {
         setLoader(false);
       }
     };
-    fetchgetGodowms()
+    fetchgetGodowms();
     const fetchgetGodowmsSelf = async () => {
       setLoader(true);
       try {
@@ -146,8 +146,8 @@ function InventoryPrimaryUser() {
           withCredentials: true,
         });
         setLoader(true);
-console.log(res.data.godowndata.locations)
-          setSelfGodowms(res.data.godowndata.locations);
+        console.log(res.data.godowndata.locations);
+        setSelfGodowms(res.data.godowndata.locations);
       } catch (error) {
         console.log(error);
         toast.error(error.response.data.message);
@@ -155,23 +155,21 @@ console.log(res.data.godowndata.locations)
         setLoader(false);
       }
     };
-    fetchgetGodowmsSelf()
-  }, [])
-
-
+    fetchgetGodowmsSelf();
+  }, []);
 
   useEffect(() => {
     if (search === "") {
       setFilteredProducts(products);
     } else {
-      console.log(products)
-      if(products && products.length > 0){
-      const filtered = products?.filter((el) =>
-        el.product_name.toLowerCase().includes(search.toLowerCase())
-      );
-      setFilteredProducts(filtered);
+      console.log(products);
+      if (products && products.length > 0) {
+        const filtered = products?.filter((el) =>
+          el.product_name.toLowerCase().includes(search.toLowerCase())
+        );
+        setFilteredProducts(filtered);
+      }
     }
-  }
   }, [search, products, refresh]);
 
   useEffect(() => {
@@ -196,9 +194,8 @@ console.log(res.data.godowndata.locations)
     const el = filteredProducts[index];
     const adjustedStyle = {
       ...style,
-      marginTop: '16px',
-      height: '150px',
-
+      marginTop: "16px",
+      height: "150px",
     };
 
     return (
@@ -211,16 +208,11 @@ console.log(res.data.godowndata.locations)
           <div className="flex justify-between w-full gap-3 ">
             <div className="">
               <p className="font-bold text-sm">{el?.product_name}</p>
-
             </div>
-            <div
-              className={`${type !== "self" ? "pointer-events-none " : ""
-                }  flex gap-3 mt-2 px-4`}
-            >
-              <p className="font-semibold text-black">Stock : </p>
-              <h2 className="font-semibold text-black"> {el?.balance_stock}</h2>
+            <div className=" flex mt-2 px-4 items-center gap-2">
+              <p className="font-semibold text-black text-sm flex-nowrap ">Stock </p>
+              <h2 className="font-semibold text-black  text-sm">{el?.balance_stock}</h2>
             </div>
-
           </div>
 
           <div className=" flex flex-col justify-center gap-2 text-sm">
@@ -249,13 +241,12 @@ console.log(res.data.godowndata.locations)
         <div className="sticky top-0 z-20 h-[117px]">
           <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3  flex justify-between items-center  ">
             <div className="flex items-center justify-center gap-2">
-          <Link to={"/pUsers/dashboard"}>
-
-              <IoIosArrowRoundBack
-                onClick={handleToggleSidebar}
-                className="text-3xl text-white cursor-pointer"
-              />
-          </Link>
+              <Link to={"/pUsers/dashboard"}>
+                <IoIosArrowRoundBack
+                  onClick={handleToggleSidebar}
+                  className="text-3xl text-white cursor-pointer"
+                />
+              </Link>
 
               <p className="text-white text-lg   font-bold ">Inventory</p>
             </div>
@@ -265,16 +256,19 @@ console.log(res.data.godowndata.locations)
                   <div className="relative">
                     <select
                       className="appearance-none flex items-center gap-2 text-white bg-[#40679E] px-2 py-1 rounded-md text-sm hover:scale-105 duration-100 ease-in-out"
-                      onChange={(e) => {handleFilterProduct(e.target.value)}}
+                      onChange={(e) => {
+                        handleFilterProduct(e.target.value);
+                      }}
                     >
                       <option value="">All</option>
-                      {
-                      ingodowns && ingodowns?.length > 0 && ingodowns?.map((godown, index) => (
-                        <option key={index} value={godown?._id}>
-                          <IoIosAddCircle className="text-xl" />
-                          {godown?.godown[0]}
-                        </option>
-                      ))}
+                      {ingodowns &&
+                        ingodowns?.length > 0 &&
+                        ingodowns?.map((godown, index) => (
+                          <option key={index} value={godown?._id}>
+                            <IoIosAddCircle className="text-xl" />
+                            {godown?.godown[0]}
+                          </option>
+                        ))}
                     </select>
 
                     <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
@@ -306,12 +300,13 @@ console.log(res.data.godowndata.locations)
                       onChange={(e) => handleFilterProductSelf(e.target.value)}
                     >
                       <option value="">All</option>
-                      {selfgodowns && selfgodowns.map((godown, index) => (
-                        <option key={index} value={godown}>
-                          <IoIosAddCircle className="text-xl" />
-                          {godown}
-                        </option>
-                      ))}
+                      {selfgodowns &&
+                        selfgodowns.map((godown, index) => (
+                          <option key={index} value={godown}>
+                            <IoIosAddCircle className="text-xl" />
+                            {godown}
+                          </option>
+                        ))}
                     </select>
                     <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
                       <svg
@@ -333,8 +328,6 @@ console.log(res.data.godowndata.locations)
                 </Link>
               </div>
             )}
-
-
           </div>
 
           {/* invoiec date */}
