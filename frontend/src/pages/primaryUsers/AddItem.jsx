@@ -18,7 +18,6 @@ import {
   setCategoryInRedux,
   setSubCategoryInRedux,
   removeAll,
-  removeAllItem,
 } from "../../../slices/invoice";
 import { HashLoader } from "react-spinners";
 import { FixedSizeList as List } from "react-window";
@@ -362,6 +361,9 @@ function AddItem() {
     dispatch(changeCount(currentItem));
     dispatch(changeTotal(currentItem));
   };
+
+  ///////////////////////////handleTotalChangeWithPriceLevel///////////////////////////////////
+
 
   const handleTotalChangeWithPriceLevel = (pricelevel) => {
     const updatedItems = filteredItems.map((item) => {
