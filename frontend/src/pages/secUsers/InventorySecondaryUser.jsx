@@ -9,12 +9,13 @@ import { Link } from "react-router-dom";
 // import { MdDelete } from "react-icons/md";
 // import Swal from "sweetalert2";
 import { HashLoader } from "react-spinners";
-import { useNavigate } from "react-router-dom";
+
 import { IoIosSearch } from "react-icons/io";
 import { IoIosAddCircle } from "react-icons/io";
 import { FixedSizeList as List } from "react-window";
 import { useSelector } from "react-redux";
 import SidebarSec from "../../components/secUsers/SidebarSec";
+import { IoIosArrowRoundBack } from "react-icons/io";
 
 import { useDispatch } from "react-redux";
 import { removeAll } from "../../../slices/invoiceSecondary";
@@ -28,6 +29,8 @@ function InventorySecondaryUser() {
   const [search, setSearch] = useState("");
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [listHeight, setListHeight] = useState(0);
+  const [ingodowns, setIngodowns] = useState("")
+  const [selfgodowns, setSelfGodowms] = useState("")
 
 
   const cmp_id = useSelector(
@@ -36,9 +39,99 @@ function InventorySecondaryUser() {
   const type = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg.type
   );
-  const dispatch=useDispatch()
+  const dispatch = useDispatch()
 
   console.log(type);
+
+  const handleFilterProduct = async (selectedValue) => {
+    setLoader(true);
+    try {
+      if (selectedValue == "") {
+        setRefresh(!refresh)
+      } else {
+        const res = await api.get(`/api/sUsers/godownProductFilter/${cmp_id}/${selectedValue}`, {
+          withCredentials: true,
+        });
+        setLoader(true);
+        console.log(res.data)
+
+        setProducts(res.data);
+
+      }
+    } catch (error) {
+      console.log(error);
+      toast.error(error.response.data.message);
+    } finally {
+      setLoader(false);
+    }
+
+  };
+  const handleFilterProductSelf = async (selectedValue) => {
+    setLoader(true);
+    try {
+      if (selectedValue == "") {
+        setRefresh(!refresh)
+      } else {
+        const res = await api.get(`/api/sUsers/godownProductFilterSelf/${cmp_id}/${selectedValue}`, {
+          withCredentials: true,
+        });
+        setLoader(true);
+        console.log(res.data)
+
+        setProducts(res.data);
+
+      }
+    } catch (error) {
+      console.log(error);
+      toast.error(error.response.data.message);
+    } finally {
+      setLoader(false);
+    }
+
+  };
+  // getting godowns data
+
+  useEffect(() => {
+    const fetchgetGodowms = async () => {
+      setLoader(true);
+      try {
+        const res = await api.get(`/api/sUsers/getGodowns/${cmp_id}`, {
+          withCredentials: true,
+        });
+        setLoader(true);
+
+        setIngodowns(res.data.godowndata);
+
+
+      } catch (error) {
+        console.log(error);
+        toast.error(error.response.data.message);
+      } finally {
+        setLoader(false);
+      }
+    };
+    fetchgetGodowms()
+    const fetchgetGodowmsSelf = async () => {
+      setLoader(true);
+      try {
+        const res = await api.get(`/api/sUsers/getGodownsSelf/${cmp_id}`, {
+          withCredentials: true,
+        });
+        setLoader(true);
+        console.log("welocme", res.data.godowndata)
+
+        setSelfGodowms(res.data.godowndata);
+
+      } catch (error) {
+        console.log(error);
+        toast.error(error.response.data.message);
+      } finally {
+        setLoader(false);
+      }
+    };
+    fetchgetGodowmsSelf()
+  }, [])
+
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -48,10 +141,8 @@ function InventorySecondaryUser() {
           withCredentials: true,
         });
         setLoader(true);
-
-        setTimeout(() => {
           setProducts(res.data.productData);
-        }, 1000);
+     
       } catch (error) {
         console.log(error);
         toast.error(error.response.data.message);
@@ -60,15 +151,10 @@ function InventorySecondaryUser() {
       }
     };
     fetchProducts();
-  dispatch(removeAll())
+    dispatch(removeAll())
 
-  }, [refresh,cmp_id]);
+  }, [refresh, cmp_id]);
 
-  const handleToggleSidebar = () => {
-    if (window.innerWidth < 768) {
-      setShowSidebar(!showSidebar);
-    }
-  };
 
   console.log(products);
 
@@ -82,49 +168,6 @@ function InventorySecondaryUser() {
       setFilteredProducts(filtered);
     }
   }, [search, products, refresh]);
-
-//   const handleDelete = async (id) => {
-//     // Show confirmation dialog
-//     const confirmation = await Swal.fire({
-//       title: "Are you sure?",
-//       text: "This action cannot be undone!",
-//       icon: "warning",
-//       showCancelButton: true,
-//       confirmButtonColor: "#d33",
-//       cancelButtonColor: "#3085d6",
-//       confirmButtonText: "Yes, delete it!",
-//       cancelButtonText: "Cancel",
-//     });
-
-//     // If user confirms deletion
-//     if (confirmation.isConfirmed) {
-//       try {
-//         const res = await api.delete(`/api/sUsers/deleteProduct/${id}`, {
-//           headers: {
-//             "Content-Type": "application/json",
-//           },
-//           withCredentials: true,
-//         });
-
-//         // Display success message
-//         await Swal.fire({
-//           title: "Deleted!",
-//           text: res.data.message,
-//           icon: "success",
-//           timer: 2000, // Auto close after 2 seconds
-//           timerProgressBar: true,
-//           showConfirmButton: false,
-//         });
-
-//         // Refresh the page
-//         setRefresh(!refresh);
-//       } catch (error) {
-//         toast.error(error.response.data.message);
-//         console.log(error);
-//       }
-//     }
-//   };
-
 
   useEffect(() => {
     const calculateHeight = () => {
@@ -150,9 +193,9 @@ function InventorySecondaryUser() {
     const adjustedStyle = {
       ...style,
       marginTop: '16px',
-      height: '150px', 
-   
-   };
+      height: '150px',
+
+    };
 
 
     return (
@@ -165,15 +208,14 @@ function InventorySecondaryUser() {
           <div className="flex justify-between w-full gap-3 ">
             <div className="">
               <p className="font-bold text-sm">{el?.product_name}</p>
-          
+
             </div>
             <div
-              className={` ${
-                type !== "self" ? "pointer-events-none " : ""
-              }  flex gap-3 mt-2 px-4`}
+              className={` ${type !== "self" ? "pointer-events-none " : ""
+                }  flex gap-3 mt-2 px-4`}
             >
-               <p className="font-semibold text-black">Stock : </p>
-            <h2 className="font-semibold text-black"> {el?.balance_stock}</h2>
+              <p className="font-semibold text-black">Stock</p>
+              <h2 className="font-semibold text-green-500"> {el?.balance_stock}</h2>
             </div>
           </div>
 
@@ -194,7 +236,7 @@ function InventorySecondaryUser() {
   };
 
 
-  
+
 
   return (
     <div className="flex relative h-screen ">
@@ -206,22 +248,88 @@ function InventorySecondaryUser() {
         <div className="sticky top-0 z-20 h-[117px]">
           <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3  flex justify-between items-center  ">
             <div className="flex items-center justify-center gap-2">
-              <IoReorderThreeSharp
-                onClick={handleToggleSidebar}
-                className="text-3xl text-white cursor-pointer md:hidden"
-              />
-              <p className="text-white text-lg   font-bold ">Your Products</p>
+              <Link to={"/sUsers/dashboard"}>
+                <IoIosArrowRoundBack className="text-3xl text-white cursor-pointer "  />
+              </Link>
+              <p className="text-white text-lg   font-bold ">Inventory</p>
             </div>
-            {type === "self" && (
+            {type !== "self" && (
               <div>
-                <Link to={"/sUsers/addProduct"}>
-                  <button className="flex items-center gap-2 text-white bg-[#40679E] px-2 py-1 rounded-md text-sm  hover:scale-105 duration-100 ease-in-out ">
-                    <IoIosAddCircle className="text-xl" />
-                    Add Products
-                  </button>
+                <Link>
+                  <div className="relative">
+                    <select
+                      className="appearance-none flex items-center gap-2 text-white bg-[#40679E] px-2 py-1 rounded-md text-sm hover:scale-105 duration-100 ease-in-out"
+                      onChange={(e) => { handleFilterProduct(e.target.value) }}
+                    >
+
+                      <option value="">All</option>
+                      {
+                        ingodowns && ingodowns?.length > 0 && ingodowns?.map((godown, index) => (
+                          <option key={index} value={godown?._id}>
+                            <IoIosAddCircle className="text-xl" />
+                            {godown?.godown[0]}
+                          </option>
+                        ))}
+                    </select>
+
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                      <svg
+                        className="w-4 h-4 text-white pointer-events-none"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M9 5l7 7-7 7"
+                        ></path>
+                      </svg>
+                    </div>
+                  </div>
                 </Link>
               </div>
             )}
+            {type === "self" && (
+              <div>
+                <Link>
+                  <div className="relative">
+                    <select
+                      className="appearance-none flex items-center gap-2 text-white bg-[#40679E] px-2 py-1 rounded-md text-sm hover:scale-105 duration-100 ease-in-out"
+                      onChange={(e) => handleFilterProductSelf(e.target.value)}
+                    >
+
+                      <option value="">All</option>
+                      {selfgodowns && selfgodowns.map((godown, index) => (
+                        <option key={index} value={godown}>
+                          <IoIosAddCircle className="text-xl" />
+                          {godown}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                      <svg
+                        className="w-4 h-4 text-white pointer-events-none"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M9 5l7 7-7 7"
+                        ></path>
+                      </svg>
+                    </div>
+                  </div>
+                </Link>
+              </div>
+            )}
+
           </div>
 
           {/* invoiec date */}
@@ -321,4 +429,4 @@ function InventorySecondaryUser() {
   );
 }
 
-export default InventorySecondaryUser;
+export default InventorySecondaryUser

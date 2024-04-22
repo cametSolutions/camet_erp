@@ -2026,3 +2026,187 @@ export const fetchConfigurationNumber = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+export const findSecondaryUserGodowns = async (req, res) => {
+  const cmp_id = req.params.cmp_id;
+  const secondary_user_id=req.sUserId
+  const primaryUser = req.owner
+
+  try {
+    const godownsResult = await productModel.aggregate([
+      {
+        $match: {
+          Primary_user_id: new mongoose.Types.ObjectId(primaryUser),
+          cmp_id: cmp_id,
+        },
+      },
+      { $unwind: "$GodownList" },
+      {
+        $match: {
+          "GodownList.godown_id": { $ne: null },
+          "GodownList.godown_id": { $ne: "" },
+        },
+      },
+      {
+        $group: {
+          _id: "$GodownList.godown_id",
+          godown: { $addToSet: "$GodownList.godown" }, // Collect unique cmp_id values for each godown
+        },
+      },
+      { $match: { _id: { $ne: null } } },
+    ]);
+const secondaryUserGodown = await SecondaryUser.findOne(
+  { 
+    _id: secondary_user_id, // User ID
+    'configurations.organization': cmp_id // Organization ID
+  },
+  { 'configurations.$': 1 } // Projection to get only the matched organization's configuration
+).exec();
+const secondaryUserGodownsId = secondaryUserGodown.configurations[0].selectedGodowns
+if(secondaryUserGodownsId && secondaryUserGodownsId.length > 0){
+const result = godownsResult.filter(item => secondaryUserGodownsId.includes(item._id));
+    if (result) {
+      res.json({
+        message: "additional details fetched",
+        godowndata: result
+      })
+    }
+  }else{
+    if (godownsResult) {
+      res.json({
+        message: "additional details fetched",
+        godowndata: godownsResult
+      })
+  }
+  }
+ } catch (error) {
+
+    res.status(500).json({ error: "Internal Server Error" })
+  }
+
+}
+export const findPrimaryUserGodownsSelf = async (req, res) => {
+  const cmp_id = req.params.cmp_id;
+  const sUser = req.sUserId;
+  const pUserid = await SecondaryUser.find({ _id: sUser }, { primaryUser: 1, _id: 0 });
+  const pUser = pUserid[0].primaryUser;
+  
+  try {
+    
+    const godowns = await Organization.find({ _id: cmp_id, owner: pUser });  
+    const Allgodowns = godowns[0].locations;
+  
+    const secondaryUserGodown = await SecondaryUser.findOne(
+      { _id: sUser, 'configurations.organization': cmp_id },
+      { 'configurations.$': 1 } 
+    ).exec();
+  
+    const secondaryUserGodownsId = secondaryUserGodown.configurations[0].selectedGodowns
+ 
+    const result = Allgodowns.filter(item => secondaryUserGodownsId.includes(item._id));
+    if (! result && result.length > 0) {
+  
+      if (result) {
+        res.json({
+          message: "additional details fetched",
+          godowndata: result
+        });
+      }
+    } else {
+      if (Allgodowns) {
+        console.log(Allgodowns)
+        res.json({
+          message: "additional details fetched",
+          godowndata: Allgodowns
+        });
+      }
+    }
+  } catch (error) {
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+export const godownwiseProducts = async (req, res) => {
+  try {
+    
+    const cmp_id = req.params.cmp_id;
+    const godown_id = req.params.godown_id;
+     
+    const products = await productModel.aggregate([
+      // Match products based on cmp_id, puser_id, and godown_id
+      {
+        $match: {
+          cmp_id: cmp_id,
+          Primary_user_id: new mongoose.Types.ObjectId(req.owner),
+          "GodownList.godown_id": godown_id
+        }
+      },
+      // Unwind the GodownList array to denormalize the data
+      { $unwind: "$GodownList" },
+      // Match again to filter based on godown_id
+      {
+        $match: {
+          "GodownList.godown_id": godown_id
+        }
+      },
+      // Project to include necessary fields and add balance_stock
+      {
+        $project: {
+          _id: 1,
+          product_name: 1,
+          cmp_id: 1,
+          balance_stock: "$GodownList.balance_stock",
+          hsn_code:1,
+          igst:1,
+        }
+      }
+    ]);
+    // console.log(products)
+    res.json(products);
+
+  } catch (error) {
+    console.error("Error fetching godownwise products:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+export const godownwiseProductsSelf =async (req,res)=>{
+  try {
+    const cmp_id = req.params.cmp_id;
+    const godown = req.params.godown_name;
+    const products = await productModel.aggregate([
+      // Match products based on cmp_id, puser_id, and godown_id
+      {
+        $match: {
+          cmp_id: cmp_id,
+          Primary_user_id: new mongoose.Types.ObjectId(req.owner),
+          "GodownList.godown": godown
+        }
+      },
+      // Unwind the GodownList array to denormalize the data
+      { $unwind: "$GodownList" },
+      // Match again to filter based on godown_id
+      {
+        $match: {
+          "GodownList.godown": godown
+        }
+      },
+      // Project to include necessary fields and add balance_stock
+      {
+        $project: {
+          _id: 1,
+          product_name: 1,
+          cmp_id: 1,
+          balance_stock: "$GodownList.balance_stock",
+          hsn_code:1,
+          igst:1,
+        }
+      }
+    ]);
+    // console.log(products)
+    res.json(products);
+
+  } catch (error) {
+    console.error("Error fetching godownwise products:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+
+}

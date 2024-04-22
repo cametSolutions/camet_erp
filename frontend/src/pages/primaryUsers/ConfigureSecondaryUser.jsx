@@ -6,6 +6,7 @@ import { toast } from "react-toastify";
 import { Link } from "react-router-dom";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import { useParams, useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 
 function ConfigureSecondaryUser() {
   const [godowns, setGodowns] = useState([]);
@@ -19,6 +20,10 @@ function ConfigureSecondaryUser() {
   const [godownStartingNumber, setGodownStartingNumber] = useState("");
   const [selectedConfig, setSelectedConfig] = useState("sales");
   const [vanSale, setVanSale] = useState(false);
+
+  const type = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg.type
+  );
 
   console.log(godowns);
 
@@ -544,6 +549,7 @@ function ConfigureSecondaryUser() {
                       )}
                     </div>
                   </div>
+                  {type !== "self" && (
                   <div className="lg:col-span-1">
                     <h6 className="text-blueGray-400 text-sm mb-4 font-bold uppercase">
                       Locations
@@ -583,6 +589,48 @@ function ConfigureSecondaryUser() {
                       )}
                     </div>
                   </div>
+                   )}
+                     {type == "self" && (
+                  <div className="lg:col-span-1">
+                    <h6 className="text-blueGray-400 text-sm mb-4 font-bold uppercase">
+                      Locations
+                    </h6>
+                    <div
+                      className={` ${
+                        vanSale ? "pointer-events-none opacity-45" : ""
+                      } space-y-2 `}
+                    >
+                      {godowns?.length > 0 ? (
+                        godowns?.map((item, index) => (
+                          <div key={index} className="flex items-center">
+                            <input
+                              type="checkbox"
+                              id={`godownCheckbox${index}`}
+                              value={item?.id}
+                              checked={selectedGodowns.includes(item?.id)}
+                              onChange={(e) =>
+                                handleCheckboxChange(
+                                  "godown",
+                                  e.target.value,
+                                  e.target.checked
+                                )
+                              }
+                              className="mr-2"
+                            />
+                            <label
+                              htmlFor={`godownCheckbox${index}`}
+                              className="text-blueGray-600"
+                            >
+                              {item?.godown}
+                            </label>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-blueGray-600">No Godowns added</p>
+                      )}
+                    </div>
+                  </div>
+                   )}
                 </div>
 
                 <hr className="mt-5 border-b-1 border-blueGray-300" />

@@ -8,17 +8,19 @@ import { IoReorderThreeSharp } from "react-icons/io5";
 // import { FaEdit } from "react-icons/fa";
 import { Link } from "react-router-dom";
 // import { MdDelete } from "react-icons/md";
-import Swal from "sweetalert2";
 import { HashLoader } from "react-spinners";
-import { useNavigate } from "react-router-dom";
 import { IoIosSearch } from "react-icons/io";
 import { IoIosAddCircle } from "react-icons/io";
 import { FixedSizeList as List } from "react-window";
 import { useSelector } from "react-redux";
 import { removeAll } from "../../../slices/invoice";
+import { IoIosArrowRoundBack } from "react-icons/io";
+
 
 import { useDispatch } from "react-redux";
+
 import { IoIosArrowRoundBack } from "react-icons/io";
+
 
 function InventoryPrimaryUser() {
   const [products, setProducts] = useState([]);
@@ -29,9 +31,11 @@ function InventoryPrimaryUser() {
   const [search, setSearch] = useState("");
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [listHeight, setListHeight] = useState(0);
+
   const [ingodowns, setIngodowns] = useState("");
   const [selfgodowns, setSelfGodowms] = useState("");
   const [manageAll, setManageAll] = useState(false);
+
 
   const cmp_id = useSelector(
     (state) => state.setSelectedOrganization.selectedOrg._id
@@ -57,9 +61,11 @@ function InventoryPrimaryUser() {
           }
         );
         setLoader(true);
+
         console.log(res.data);
 
         setProducts(res.data);
+
       }
     } catch (error) {
       console.log(error);
@@ -81,9 +87,11 @@ function InventoryPrimaryUser() {
           }
         );
         setLoader(true);
+
         console.log(res.data);
 
         setProducts(res.data);
+
       }
     } catch (error) {
       console.log(error);
@@ -102,6 +110,7 @@ function InventoryPrimaryUser() {
         setLoader(true);
 
         setProducts(res.data.productData);
+
       } catch (error) {
         console.log(error);
         toast.error(error.response.data.message);
@@ -130,7 +139,9 @@ function InventoryPrimaryUser() {
           withCredentials: true,
         });
         setLoader(true);
+
         setIngodowns(res.data.godowndata);
+
       } catch (error) {
         console.log(error);
         toast.error(error.response.data.message);
@@ -146,8 +157,10 @@ function InventoryPrimaryUser() {
           withCredentials: true,
         });
         setLoader(true);
+
         console.log(res.data.godowndata.locations);
         setSelfGodowms(res.data.godowndata.locations);
+
       } catch (error) {
         console.log(error);
         toast.error(error.response.data.message);
@@ -209,9 +222,14 @@ function InventoryPrimaryUser() {
             <div className="">
               <p className="font-bold text-sm">{el?.product_name}</p>
             </div>
-            <div className=" flex mt-2 px-4 items-center gap-2">
-              <p className="font-semibold text-black text-sm flex-nowrap ">Stock </p>
-              <h2 className="font-semibold text-black  text-sm">{el?.balance_stock}</h2>
+
+            <div
+              className={`${type !== "self" ? "pointer-events-none " : ""
+                }  flex gap-3 mt-2 px-4`}
+            >
+              <p className="font-semibold text-black">Stock </p>
+              <h2 className="font-semibold text-green-500"> {el?.balance_stock}</h2>
+
             </div>
           </div>
 
@@ -241,11 +259,9 @@ function InventoryPrimaryUser() {
         <div className="sticky top-0 z-20 h-[117px]">
           <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3  flex justify-between items-center  ">
             <div className="flex items-center justify-center gap-2">
-              <Link to={"/pUsers/dashboard"}>
-                <IoIosArrowRoundBack
-                  onClick={handleToggleSidebar}
-                  className="text-3xl text-white cursor-pointer"
-                />
+
+               <Link to={"/pUsers/dashboard"}>
+                <IoIosArrowRoundBack className="text-3xl text-white cursor-pointer "  />
               </Link>
 
               <p className="text-white text-lg   font-bold ">Inventory</p>
@@ -260,6 +276,7 @@ function InventoryPrimaryUser() {
                         handleFilterProduct(e.target.value);
                       }}
                     >
+
                       <option value="">All</option>
                       {ingodowns &&
                         ingodowns?.length > 0 &&
@@ -299,6 +316,7 @@ function InventoryPrimaryUser() {
                       className="appearance-none flex items-center gap-2 text-white bg-[#40679E] px-2 py-1 rounded-md text-sm hover:scale-105 duration-100 ease-in-out"
                       onChange={(e) => handleFilterProductSelf(e.target.value)}
                     >
+
                       <option value="">All</option>
                       {selfgodowns &&
                         selfgodowns.map((godown, index) => (
