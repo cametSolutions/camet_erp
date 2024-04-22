@@ -349,13 +349,13 @@ function AddItem() {
     const updatedItems = filteredItems.map((item) => {
       if (item.added === true) {
         const newTotal = calculateTotal(item, pricelevel).toFixed(2);
-        
+        dispatch(changeTotal({ ...item, total: newTotal }));
         return {
           ...item,
           total: newTotal,
         };
       }
-      dispatch(changeTotal(item));
+      // dispatch(changeTotal(item));
       return item;
     });
 

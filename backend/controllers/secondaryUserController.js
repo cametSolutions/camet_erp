@@ -100,11 +100,12 @@ export const getSecUserData = async (req, res) => {
 
 export const fetchOutstandingTotal = async (req, res) => {
   const cmp_id = req.params.cmp_id;
-  console.log("cmp_id", cmp_id);
+  const Primary_user_id=req.owner.toString();
+
   try {
     // const tallyData = await TallyData.find({ Primary_user_id: userId });
     const outstandingData = await TallyData.aggregate([
-      { $match: { cmp_id: cmp_id } },
+      { $match: { cmp_id: cmp_id,Primary_user_id:Primary_user_id } },
       {
         $group: {
           _id: "$party_id",
@@ -1743,30 +1744,27 @@ export const createSale = async (req, res) => {
       Primary_user_id,
       bill_no: salesNumber,
       cmp_id: orgId,
-      party_id: party?._id,
+      party_id:party?.party_master_id,
       bill_amount: lastAmount,
       bill_date: new Date(),
       bill_pending_amt: lastAmount,
       email: party?.emailID,
       mobile_no: party?.mobileNumber,
       party_name: party?.partyName,
+      user_id:"null"
 
     }
-
-
 
       const updatedDocument = await TallyData.findOneAndUpdate(
         {
           cmp_id: orgId,
           bill_no:salesNumber,
           Primary_user_id: Primary_user_id,
-          party_id: party?._id,
+          party_id:party?.party_master_id,
         },
         billData,
         { upsert: true, new: true }
       )
-
-
 
 
     return res.status(200).json({
