@@ -1738,6 +1738,37 @@ export const createSale = async (req, res) => {
       );
     }
 
+
+    const billData={
+      Primary_user_id,
+      bill_no: salesNumber,
+      cmp_id: orgId,
+      party_id: party?._id,
+      bill_amount: lastAmount,
+      bill_date: new Date(),
+      bill_pending_amt: lastAmount,
+      email: party?.emailID,
+      mobile_no: party?.mobileNumber,
+      party_name: party?.partyName,
+
+    }
+
+
+
+      const updatedDocument = await TallyData.findOneAndUpdate(
+        {
+          cmp_id: orgId,
+          bill_no:salesNumber,
+          Primary_user_id: Primary_user_id,
+          party_id: party?._id,
+        },
+        billData,
+        { upsert: true, new: true }
+      )
+
+
+
+
     return res.status(200).json({
       success: true,
       message: "Sale created successfully",

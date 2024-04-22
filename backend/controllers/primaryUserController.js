@@ -398,10 +398,11 @@ export const fetchSecondaryUsers = async (req, res) => {
 
 export const fetchOutstandingTotal = async (req, res) => {
   const userId = req.pUserId;
+  const cmp_id=req.params.cmp_id;
   try {
     // const tallyData = await TallyData.find({ Primary_user_id: userId });
     const outstandingData = await TallyData.aggregate([
-      { $match: { Primary_user_id: userId } },
+      { $match: { Primary_user_id: userId,cmp_id:cmp_id } },
       {
         $group: {
           _id: "$party_id",
@@ -2250,11 +2251,13 @@ export const createSale = async (req, res) => {
       { new: true }
     );
 
+  
+
     const billData={
       Primary_user_id,
       bill_no: salesNumber,
       cmp_id: orgId,
-      party_id: party?._id,
+      party_id:party?.party_master_id,
       bill_amount: lastAmount,
       bill_date: new Date(),
       bill_pending_amt: lastAmount,
@@ -2264,13 +2267,6 @@ export const createSale = async (req, res) => {
 
     }
 
-    // const existingDocument = await TallyData.findOne({
-    //   cmp_id: orgId,
-    //   bill_no:salesNumber,
-    //   Primary_user_id: Primary_user_id,
-    //   party_id: party?._id,
-    // });
-
 
 
       const updatedDocument = await TallyData.findOneAndUpdate(
@@ -2278,7 +2274,7 @@ export const createSale = async (req, res) => {
           cmp_id: orgId,
           bill_no:salesNumber,
           Primary_user_id: Primary_user_id,
-          party_id: party?._id,
+          party_id:party?.party_master_id,
         },
         billData,
         { upsert: true, new: true }

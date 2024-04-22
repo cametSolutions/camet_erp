@@ -30,7 +30,7 @@ router.get('/getOrganizations', authPrimary,primaryIsBlocked,getOrganizations);
 router.get('/getSingleOrganization/:id', authPrimary,primaryIsBlocked,getSingleOrganization);
 router.post('/addSecUsers', authPrimary,primaryIsBlocked,addSecUsers);
 router.get('/fetchSecondaryUsers', authPrimary,primaryIsBlocked,fetchSecondaryUsers);
-router.get('/fetchOutstandingTotal', authPrimary,primaryIsBlocked,fetchOutstandingTotal);
+router.get('/fetchOutstandingTotal/:cmp_id', authPrimary,primaryIsBlocked,fetchOutstandingTotal);
 router.get('/fetchOutstandingDetails/:id/:cmp_id', authPrimary,primaryIsBlocked,fetchOutstandingDetails);
 router.get('/fetchOutstandingDetails/:id', authPrimary,primaryIsBlocked,fetchOutstandingDetails);
 router.post('/confirmCollection',authPrimary,primaryIsBlocked,confirmCollection)

@@ -132,8 +132,6 @@ function AddItem() {
 
   console.log("item", item);
 
-
-
   ///////////////////////////setSelectedPriceLevel fom redux///////////////////////////////////
 
   useEffect(() => {
@@ -347,16 +345,17 @@ function AddItem() {
 
   ///////////////////////////handleTotalChangeWithPriceLevel///////////////////////////////////
 
-
   const handleTotalChangeWithPriceLevel = (pricelevel) => {
     const updatedItems = filteredItems.map((item) => {
       if (item.added === true) {
         const newTotal = calculateTotal(item, pricelevel).toFixed(2);
+        
         return {
           ...item,
           total: newTotal,
         };
       }
+      dispatch(changeTotal(item));
       return item;
     });
 
