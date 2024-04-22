@@ -366,32 +366,30 @@ function AddItem() {
   const handleDecrement = (index) => {
     const updatedItems = [...filteredItems]; // Make a copy of the array
     const currentItem = { ...updatedItems[index] };
-
+  
     // Decrement the count if it's greater than 0
     if (currentItem.count > 0) {
       currentItem.count -= 1;
-      if (currentItem.count == 0) {
+      if (currentItem.count === 0) {
         dispatch(removeItem(currentItem));
-        updatedItems[index].added = false;
-        return;
+        updatedItems[index] = { ...currentItem, added: false }; // Make a copy and update the 'added' property
+      } else {
+        // Use the calculateTotal function to calculate the total for the current item
+        currentItem.total = calculateTotal(
+          currentItem,
+          selectedPriceLevel
+        ).toFixed(2);
+        updatedItems[index] = currentItem; // Update the item in the copied array
       }
-
-      // Use the calculateTotal function to calculate the total for the current item
-      currentItem.total = calculateTotal(
-        currentItem,
-        selectedPriceLevel
-      ).toFixed(2);
-      console.log(currentItem.total);
-
-      updatedItems[index] = currentItem; // Update the item in the copied array
+  
       setItem(updatedItems);
       setRefresh(!refresh);
     }
-
+  
     dispatch(changeCount(currentItem));
-
     dispatch(changeTotal(currentItem));
   };
+  
 
   ///////////////////////////handlePriceLevelChange///////////////////////////////////
 
