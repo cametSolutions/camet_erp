@@ -17,7 +17,7 @@ import {
   setBrandInRedux,
   setCategoryInRedux,
   setSubCategoryInRedux,
-  removeAll
+  removeAll,
 } from "../../../slices/invoice";
 import { HashLoader } from "react-spinners";
 import { FixedSizeList as List } from "react-window";
@@ -27,7 +27,7 @@ function AddItem() {
   const [item, setItem] = useState([]);
   const [selectedPriceLevel, setSelectedPriceLevel] = useState("");
   const [refresh, setRefresh] = useState(false);
-  const [filterRefresh, setFilterRefresh] = useState(false);
+  const [productRefresh, setProductRefresh] = useState(false);
   const [brands, setBrands] = useState([]);
   const [categories, setCategories] = useState([]);
   const [subCategories, setSubCategories] = useState([]);
@@ -39,9 +39,6 @@ function AddItem() {
   const [loader, setLoader] = useState(false);
   const [listHeight, setListHeight] = useState(0);
   const [scrollPosition, setScrollPosition] = useState(0);
-  const [finalItems,setFinalItems]=useState([]);
-
-
 
   ///////////////////////////cpm_id///////////////////////////////////
 
@@ -58,7 +55,7 @@ function AddItem() {
   const priceLevelFromRedux =
     useSelector((state) => state.invoice.selectedPriceLevel) || "";
 
-    console.log(priceLevelFromRedux);
+  console.log(priceLevelFromRedux);
 
   ///////////////////////////filters FromRedux///////////////////////////////////
 
@@ -86,6 +83,8 @@ function AddItem() {
           withCredentials: true,
         });
 
+        console.log(itemsFromRedux);
+
         if (itemsFromRedux.length > 0) {
           const reduxItemIds = itemsFromRedux.map((el) => el._id);
           const updatedItems = res.data.productData.map((product) => {
@@ -101,6 +100,7 @@ function AddItem() {
           });
           setItem(updatedItems);
         } else {
+          console.log("haii");
           setItem(res.data.productData);
         }
 
@@ -120,36 +120,19 @@ function AddItem() {
       }
     };
     fetchProducts();
-    const scrollPosition = parseInt(localStorage.getItem("scrollPosition"))
+    const scrollPosition = parseInt(localStorage.getItem("scrollPosition"));
     console.log(scrollPosition);
     // restoreScrollPosition(scrollPosition);
-  
+
     if (scrollPosition) {
       // listRef?.current?.scrollTo(parseInt(scrollPosition, 10));\
       window.scrollTo(0, scrollPosition);
     }
-  }, [cpm_id]);
+  }, [cpm_id, productRefresh]);
 
   console.log("item", item);
 
-  ///////////////////////////priceLevelSet///////////////////////////////////
 
-  // useEffect(() => {
-  //   const priceLevelSet = Array.from(
-  //     new Set(
-  //       item.flatMap((item) =>
-  //         item?.Priceleveles.map((level) => level?.pricelevel)
-  //       )
-  //     )
-  //   );
-  //   setPriceLevels(priceLevelSet);
-
-  //   if (priceLevelFromRedux === "") {
-  //     const defaultPriceLevel = priceLevelSet[0];
-  //     setSelectedPriceLevel(defaultPriceLevel);
-  //     dispatch(setPriceLevel(defaultPriceLevel));
-  //   }
-  // }, [item]);
 
   ///////////////////////////setSelectedPriceLevel fom redux///////////////////////////////////
 
@@ -159,30 +142,31 @@ function AddItem() {
 
   ///////////////////////////sdo persisting of products///////////////////////////////////
 
-  useEffect(() => {
-    if (itemsFromRedux.length > 0) {
-      const updatedItems = item.map((currentItem) => {
-        // Find the corresponding item in itemsFromRedux
-        const matchingItem = itemsFromRedux.find(
-          (el) => el._id === currentItem._id
-        );
-        if (matchingItem) {
-          // If matching item found, return it with updated count and total
-          return {
-            ...currentItem,
-            count: matchingItem.count,
-            total: matchingItem.total,
-          };
-        } else {
-          // If no matching item found, return the current item
-          return currentItem;
-        }
-      });
+  // useEffect(() => {
+  //   console.log(itemsFromRedux);
+  //   if (itemsFromRedux.length > 0) {
+  //     const updatedItems = item.map((currentItem) => {
+  //       // Find the corresponding item in itemsFromRedux
+  //       const matchingItem = itemsFromRedux.find(
+  //         (el) => el._id === currentItem._id
+  //       );
+  //       if (matchingItem) {
+  //         // If matching item found, return it with updated count and total
+  //         return {
+  //           ...currentItem,
+  //           count: matchingItem.count,
+  //           total: matchingItem.total,
+  //         };
+  //       } else {
+  //         // If no matching item found, return the current item
+  //         return currentItem;
+  //       }
+  //     });
 
-      // Update the state with the modified items
-      setItem(updatedItems);
-    }
-  }, [itemsFromRedux, refresh]);
+  //     // Update the state with the modified items
+  //     setItem(updatedItems);
+  //   }
+  // }, [itemsFromRedux, refresh]);
 
   //////////////////////////////orgId////////////////////////////////
 
@@ -197,10 +181,7 @@ function AddItem() {
 
   console.log(type);
 
-
   ///////////////////////////filter items///////////////////////////////////
-
-
 
   useEffect(() => {
     const fetchData = async () => {
@@ -218,7 +199,8 @@ function AddItem() {
 
         if (type === "self") {
           console.log(res.data.data);
-          const { brands, categories, subcategories ,priceLevels} = res.data.data;
+          const { brands, categories, subcategories, priceLevels } =
+            res.data.data;
           setBrands(brands);
           setCategories(categories);
           setSubCategories(subcategories);
@@ -229,9 +211,6 @@ function AddItem() {
             setSelectedPriceLevel(defaultPriceLevel);
             dispatch(setPriceLevel(defaultPriceLevel));
           }
-
-
-
         } else {
           const { priceLevels, brands, categories, subcategories } = res.data;
 
@@ -258,11 +237,6 @@ function AddItem() {
   }, [orgId, type]);
 
   console.log(priceLevels);
-
-
-
-
-
 
   const filterItems = (items, brand, category, subCategory, searchTerm) => {
     return items.filter((item) => {
@@ -340,6 +314,11 @@ function AddItem() {
 
     const gstAmount =
       (discountedSubtotal * (item.newGst || item.igst || 0)) / 100;
+
+    console.log(discountedSubtotal);
+    console.log(gstAmount);
+    console.log(selectedPriceLevel);
+
     return discountedSubtotal + gstAmount;
   };
 
@@ -364,6 +343,24 @@ function AddItem() {
 
     dispatch(changeCount(currentItem));
     dispatch(changeTotal(currentItem));
+  };
+
+  ///////////////////////////handleTotalChangeWithPriceLevel///////////////////////////////////
+
+
+  const handleTotalChangeWithPriceLevel = (pricelevel) => {
+    const updatedItems = filteredItems.map((item) => {
+      if (item.added === true) {
+        const newTotal = calculateTotal(item, pricelevel).toFixed(2);
+        return {
+          ...item,
+          total: newTotal,
+        };
+      }
+      return item;
+    });
+
+    setItem(updatedItems);
   };
 
   ///////////////////////////handleDecrement///////////////////////////////////
@@ -400,9 +397,12 @@ function AddItem() {
   ///////////////////////////handlePriceLevelChange///////////////////////////////////
 
   const handlePriceLevelChange = (e) => {
+    // setProductRefresh(!productRefresh)
     const selectedValue = e.target.value;
     setSelectedPriceLevel(selectedValue);
     dispatch(setPriceLevel(selectedValue));
+    handleTotalChangeWithPriceLevel(selectedValue);
+    // dispatch(removeAllItem())
   };
 
   ///////////////////////////react window ///////////////////////////////////
@@ -591,13 +591,11 @@ function AddItem() {
 
   /////////////////////////// save scroll end ///////////////////////////////////
 
-
   const continueHandler = () => {
-
     console.log(selectedPriceLevel);
 
-    if(selectedPriceLevel===""){
-      toast.error("Select a price Level")
+    if (selectedPriceLevel === "") {
+      toast.error("Select a price Level");
       return;
     }
     console.log(location.state);
@@ -609,18 +607,18 @@ function AddItem() {
   };
 
   const backHandler = () => {
-    dispatch(removeAll())
+    dispatch(removeAll());
     if (location?.state?.from === "editInvoice") {
       navigate(`/pUsers/editInvoice/${location.state.id}`);
     } else {
-      navigate("/pUsers/editInvoice");
+      navigate("/pUsers/invoice");
     }
   };
 
   return (
     <div className="flex relative">
       <div>
-        <Sidebar  />
+        <Sidebar />
       </div>
 
       <div className="flex-1 bg-slate-50 h-screen overflow-y-scroll  ">

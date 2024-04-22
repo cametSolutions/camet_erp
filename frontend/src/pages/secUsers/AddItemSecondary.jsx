@@ -2,7 +2,7 @@
 /* eslint-disable react/no-unknown-property */
 import { useState, useEffect, useMemo, useRef } from "react";
 import { IoIosArrowRoundBack } from "react-icons/io";
-import {  useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { IoIosSearch } from "react-icons/io";
 import api from "../../api/api";
 import { MdOutlineQrCodeScanner } from "react-icons/md";
@@ -11,8 +11,12 @@ import { addItem, removeItem } from "../../../slices/invoiceSecondary";
 import { useDispatch } from "react-redux";
 import { changeCount } from "../../../slices/invoiceSecondary";
 import { setPriceLevel } from "../../../slices/invoiceSecondary";
-import { changeTotal, persistScroll } from "../../../slices/invoiceSecondary";
-import { Dropdown } from "flowbite-react";
+import {
+  changeTotal,
+  setBrandInRedux,
+  setCategoryInRedux,
+  setSubCategoryInRedux,
+} from "../../../slices/invoiceSecondary";
 import { HashLoader } from "react-spinners";
 import { FixedSizeList as List } from "react-window";
 import SidebarSec from "../../components/secUsers/SidebarSec";
@@ -22,7 +26,6 @@ function AddItemSecondary() {
   const [item, setItem] = useState([]);
   const [selectedPriceLevel, setSelectedPriceLevel] = useState("");
   const [refresh, setRefresh] = useState(false);
-  const [filterRefresh, setFilterRefresh] = useState(false);
   const [brands, setBrands] = useState([]);
   const [categories, setCategories] = useState([]);
   const [subCategories, setSubCategories] = useState([]);
@@ -48,6 +51,15 @@ function AddItemSecondary() {
 
   const priceLevelFromRedux =
     useSelector((state) => state.invoiceSecondary.selectedPriceLevel) || "";
+
+
+  ///////////////////////////filters FromRedux///////////////////////////////////
+
+  const brandFromRedux = useSelector((state) => state.invoiceSecondary.brand) || "";
+  const categoryFromRedux =
+    useSelector((state) => state.invoiceSecondary.category) || "";
+  const subCategoryFromRedux =
+    useSelector((state) => state.invoiceSecondary.subcategory) || "";
 
   ///////////////////////////navigate dispatch///////////////////////////////////
 
@@ -83,12 +95,16 @@ function AddItemSecondary() {
         } else {
           setItem(res.data.productData);
 
-          // if (priceLevelFromRedux === "") {
-          //   const defaultPriceLevel =
-          //     res.data.productData[0]?.Priceleveles[0]?.pricelevel;
-          //   setSelectedPriceLevel(defaultPriceLevel);
-          //   dispatch(setPriceLevel(defaultPriceLevel));
-          // }
+       
+        }
+        if (brandFromRedux) {
+          setSelectedBrand(brandFromRedux);
+        }
+        if (categoryFromRedux) {
+          setseleCtedCategory(categoryFromRedux);
+        }
+        if (subCategoryFromRedux) {
+          setSelectedSubCategory(subCategoryFromRedux);
         }
       } catch (error) {
         console.log(error);
@@ -164,64 +180,31 @@ function AddItemSecondary() {
 
   //////////////////////////////fetchFilters////////////////////////////////
 
-  // useEffect(() => {
-  //   const fetchFilters = async () => {
-  //     try {
-  //       const res = await api.get(`/api/sUsers/fetchFilters/${orgId}`, {
-  //         withCredentials: true,
-  //       });
-
-  //       const { brands, categories, subcategories } = res.data.data;
-  //       if (type === "self") {
-  //         setBrands(brands);
-  //         setCategories(categories);
-  //         setSubCategories(subcategories);
-  //       } else {
-  //         const uniqueBrands = [...new Set(item.map((el) => el?.brand))];
-  //         const uniqueCategories = [...new Set(item.map((el) => el?.category))];
-  //         const uniqueSubCategories = [
-  //           ...new Set(item.map((item) => item?.sub_category)),
-  //         ];
-
-  //         setBrands(uniqueBrands);
-  //         setCategories(uniqueCategories);
-  //         setSubCategories(uniqueSubCategories);
-  //       }
-  //     } catch (error) {
-  //       console.log(error);
-  //     }
-  //   };
-  //   fetchFilters();
-  // }, [item, orgId, type]);
 
 
   useEffect(() => {
     const fetchFilters = async () => {
       try {
-
         let res;
-        if(type=="self"){
-
+        if (type == "self") {
           res = await api.get(`/api/sUsers/fetchFilters/${orgId}`, {
-           withCredentials: true,
-         });
-        }else{
-
+            withCredentials: true,
+          });
+        } else {
           res = await api.get(`/api/sUsers/fetchAdditionalDetails/${orgId}`, {
             withCredentials: true,
           });
-
         }
 
-        
         if (type === "self") {
-          const { brands, categories, subcategories,priceLevels } = res.data.data;
+          const { brands, categories, subcategories, priceLevels } =
+            res.data.data;
 
           console.log(priceLevels);
           setBrands(brands);
           setCategories(categories);
           setSubCategories(subcategories);
-          setPriceLevels(priceLevels)
+          setPriceLevels(priceLevels);
           if (priceLevelFromRedux == "") {
             console.log("haii");
             const defaultPriceLevel = priceLevels[0];
@@ -229,7 +212,6 @@ function AddItemSecondary() {
             dispatch(setPriceLevel(defaultPriceLevel));
           }
         } else {
-
           const { priceLevels, brands, categories, subcategories } = res.data;
 
           setBrands(brands);
@@ -244,16 +226,13 @@ function AddItemSecondary() {
             setSelectedPriceLevel(defaultPriceLevel);
             dispatch(setPriceLevel(defaultPriceLevel));
           }
-
-        
         }
       } catch (error) {
         console.log(error);
       }
     };
     fetchFilters();
-  }, [ orgId, type]);
-
+  }, [orgId, type]);
 
   console.log(priceLevels);
 
@@ -336,6 +315,23 @@ function AddItemSecondary() {
     return discountedSubtotal + gstAmount;
   };
 
+  ///////////////////////////handleTotalChangeWithPriceLevel///////////////////////////////////
+
+  const handleTotalChangeWithPriceLevel = (pricelevel) => {
+    const updatedItems = filteredItems.map((item) => {
+      if (item.added === true) {
+        const newTotal = calculateTotal(item, pricelevel).toFixed(2);
+        return {
+          ...item,
+          total: newTotal,
+        };
+      }
+      return item;
+    });
+
+    setItem(updatedItems);
+  };
+
   ///////////////////////////handleIncrement///////////////////////////////////
 
   const handleIncrement = (index) => {
@@ -396,17 +392,23 @@ function AddItemSecondary() {
     const selectedValue = e.target.value;
     setSelectedPriceLevel(selectedValue);
     dispatch(setPriceLevel(selectedValue));
+    handleTotalChangeWithPriceLevel(selectedValue);
   };
 
   ///////////////////////////react window ///////////////////////////////////
 
   const Row = ({ index, style }) => {
     const el = filteredItems[index];
+    const adjustedStyle = {
+      ...style,
+      marginTop: "16px",
+      height: "160px",
+    };
     return (
       <div
-        style={style}
+        style={adjustedStyle}
         key={index}
-        className="bg-white p-4 py-2 pb-6  mt-4 flex justify-between items-center  rounded-sm cursor-pointer border-b-2 "
+        className="bg-white p-4 py-2 pb-6  mt-4 flex justify-between items-center  rounded-sm cursor-pointer border-b-2 shadow-lg "
       >
         <div className="flex items-start gap-3 md:gap-4  ">
           <div className="w-10 mt-1  uppercase h-10 rounded-lg bg-violet-200 flex items-center justify-center font-semibold text-gray-400">
@@ -542,9 +544,8 @@ function AddItemSecondary() {
   }, []);
 
   const continueHandler = () => {
-
-    if(selectedPriceLevel===""){
-      toast.error("Select a price level ")
+    if (selectedPriceLevel === "") {
+      toast.error("Select a price level ");
     }
     console.log(location.state);
     if (location?.state?.from === "editInvoice") {
