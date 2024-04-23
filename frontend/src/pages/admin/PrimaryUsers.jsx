@@ -388,14 +388,14 @@ function PrimaryUsers() {
                         </td>
                         <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
                           <p className="text-gray-900 whitespace-no-wrap">
-                            {item?.mobile}
+                            {item.mobile}
                           </p>
                         </td>
                         <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
                           <p className="text-gray-900 whitespace-no-wrap">
                             {org.filter((ele) => ele?.owner === item?._id)?.length}
                           </p>
-                        </td>?
+                        </td>
                         <td
                           onClick={() => handleSecUsersPopup(item._id)}
                           className="px-5 py-5 border-b border-gray-200 bg-white text-sm cursor-pointer "
