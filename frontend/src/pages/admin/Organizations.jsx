@@ -24,10 +24,10 @@ function Organisation() {
           withCredentials: true,
         });
 
-        setOrganizations(res.data.data);
+        setOrganizations(res?.data?.data);
       } catch (error) {
         console.log(error);
-        toast.error(error.response.data.message);
+        toast.error(error?.response?.data?.message);
       }
     };
     fetchOrganizations();
@@ -36,10 +36,10 @@ function Organisation() {
   console.log(organizations);
   useEffect(() => {
     // Ensure organizations is not empty before processing
-    if (organizations.length > 0) {
+    if (organizations?.length > 0) {
       const ownerNames = Array.from(
-        new Set(organizations.map((org) => org?.owner?.userName))
-      );
+        new Set(organizations?.map((org) => org?.owner?.userName))
+      ).filter(Boolean);
       setOwners(ownerNames);
     }
   }, [organizations]);
@@ -81,6 +81,8 @@ function Organisation() {
     lastPostIndex
   );
 
+  console.log(owners);
+
   return (
     <div>
       <body className="antialiased font-sans h-screen overflow-y-scroll"  
@@ -106,17 +108,11 @@ function Organisation() {
                     <option value={""}>All</option>
 
                     {owners.map((item, index) => (
-                      <option key={index}>{item}</option>
+                      <option key={index} value={item}>{item}</option>
                     ))}
                   </select>
                   <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                    <svg
-                      className="fill-current h-4 w-4"
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 20 20"
-                    >
-                      <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
-                    </svg>
+                    
                   </div>
                 </div>
               </div>
@@ -214,7 +210,7 @@ function Organisation() {
                           <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
                             <p className="text-gray-900 whitespace-no-wrap">
                               {item?.gstNum}
-                            </p>?
+                            </p>
                           </td>
                           <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
                             <p className="text-gray-900 whitespace-no-wrap">

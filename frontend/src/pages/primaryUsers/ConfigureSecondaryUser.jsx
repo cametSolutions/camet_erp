@@ -22,7 +22,8 @@ function ConfigureSecondaryUser() {
   const [vanSale, setVanSale] = useState(false);
 
   const type = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg.type
+    (state) => state.setSelectedOrganization.selectedOrg.type
+
   );
 
   console.log(godowns);

@@ -556,7 +556,7 @@ export const transactions = async (req, res) => {
 
   try {
     const transactions = await TransactionModel.aggregate([
-      { $match: { agentId: userId, cmp_id: cmp_id } },
+      { $match: { cmp_id: cmp_id } },
       {
         $project: {
           _id: 1,
@@ -582,7 +582,7 @@ export const transactions = async (req, res) => {
     ]);
 
     const invoices = await invoiceModel.aggregate([
-      { $match: { Primary_user_id: userId, cmp_id: cmp_id } },
+      { $match: {  cmp_id: cmp_id } },
       {
         $project: {
           party_name: "$party.partyName",
@@ -595,7 +595,7 @@ export const transactions = async (req, res) => {
       },
     ]);
     const sales = await salesModel.aggregate([
-      { $match: { Primary_user_id: userId, cmp_id: cmp_id } },
+      { $match: { cmp_id: cmp_id } },
       {
         $project: {
           party_name: "$party.partyName",

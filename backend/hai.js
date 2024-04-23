@@ -1,190 +1,317 @@
-order = [
-  {
-    _id: "6610f49fbea18bc8fdf51a94",
-    salesNumber: "CS-001-24",
-    Primary_user_id: "65bcc9346b50fc180e8e804d",
-    cmp_id: "65bccad36b50fc180e8e805d",
-    party: {
-      _id: "65e98d54436dba3e4e0b60cb",
-      Primary_user_id: "65bcc9346b50fc180e8e804d",
-      cmp_id: "65bccad36b50fc180e8e805d",
-      accountGroup: "Sundry Debtors",
-      partyName: "EBBY",
-      mobileNumber: "6282971061",
-      emailID: "midhunmohan210@gmail.com",
-      gstNo: "",
-      panNo: "",
-      billingAddress:
-        "Njaralakuzhiyil (h)\nKuravilangad p.o\nKottayam \n686633",
-      shippingAddress: "Njaralakuzhiyil(h), Kuravilangad p.o, Kottayam, 686633",
-      creditPeriod: "",
-      creditLimit: "",
-      openingBalanceType: "",
-      openingBalanceAmount: "",
-      __v: 0,
-    },
-    priceLevel: "WHOLESALE PRICE",
-    items: [
+{
+  "secondaryUsers": [
       {
-        _id: "65f1717b88f8212270d4e972",
-        product_name: "1000 ML DISPO JAR 750/BAG(WIDE)",
-        cmp_id: "65bccad36b50fc180e8e805d",
-        product_code: "MPL/J06",
-        balance_stock: "1167",
-        Primary_user_id: "65bcc9346b50fc180e8e804d",
-        brand: "PET JARS",
-        category: "MEGA POLYMERS",
-        sub_category: "\u0004 Primary",
-        unit: "NOS",
-        alt_unit: "null",
-        unit_conversion: 0,
-        alt_unit_conversion: 1,
-        godownCount: 3,
-        hsn_code: "39231020",
-        purchase_price: "6.04",
-        purchase_cost: "6.04",
-        Priceleveles: [
-          {
-            alt_unit: "null",
-            pricelevel: "WHOLESALE PRICE",
-            pricerate: 115.28,
+          "_id": "65bc81096b50fc180e8e6d94",
+          "name": "SHIBU",
+          "email": "knshibushibu@gmail.com",
+          "mobile": 9946046078,
+          "organization": [
+              {
+                  "_id": "65bc7f1a6b50fc180e8e6d8c",
+                  "name": "EVEREST CHEMICALS"
+              }
+          ],
+          "primaryUser": {
+              "_id": "65bc7c906b50fc180e8e6d87",
+              "userName": "EVEREST CHEMICALS"
           },
-          {
-            alt_unit: "null",
-            pricelevel: "RETAIL PRICE",
-            pricerate: 170.35,
-          },
-          {
-            alt_unit: "null",
-            pricelevel: "INSTITUTION PRICE",
-            pricerate: 420,
-          },
-          {
-            alt_unit: "null",
-            pricelevel: "SPECIAL",
-          },
-          {
-            alt_unit: "null",
-            pricelevel: "OTHERS",
-          },
-        ],
-        GodownList: [
-          {
-            balance_stock: 457,
-            godown: "STAR BOTTLES",
-            count: 2,
-            _id: "65f1717b88f8212270d4e972",
-          },
-          {
-            balance_stock: 549,
-            godown: "Star Bottles Godown 1/I",
-            count: 1,
-            _id: "65f1717b88f8212270d4e972",
-          },
-          {
-            balance_stock: 156,
-            godown: "V Godown",
-            count: 2,
-            _id: "65f1717b88f8212270d4e972",
-          },
-        ],
-        cgst: "9",
-        sgst: "9",
-        igst: "18",
-        cess: "0",
-        addl_cess: "0",
-        product_master_id: "ID:47062",
-        __v: 0,
-        count: 5,
-        total: "680.15",
-        added: true,
+          "isBlocked": false
       },
       {
-        _id: "65f1717b88f8212270d4e974",
-        product_name: "1000 ML LONG NECK BOTTLE 90/BAG",
-        cmp_id: "65bccad36b50fc180e8e805d",
-        balance_stock: "457",
-        Primary_user_id: "65bcc9346b50fc180e8e804d",
-        brand: "PET BOTTLES",
-        category: "WIN PET INDUSTRIES",
-        sub_category: "\u0004 Primary",
-        unit: "NOS",
-        alt_unit: "null",
-        unit_conversion: 0,
-        alt_unit_conversion: 1,
-        godownCount: 2,
-        hsn_code: "39159042",
-        purchase_price: "6.56",
-        purchase_cost: "6.56",
-        Priceleveles: [
-          {
-            alt_unit: "null",
-            pricelevel: "WHOLESALE PRICE",
-            pricerate: 101.62,
+          "_id": "65bc81926b50fc180e8e6d97",
+          "name": "ANSIL",
+          "email": "pouloseancil45@gmail.com",
+          "mobile": 7560868181,
+          "organization": [
+              {
+                  "_id": "65bc7f1a6b50fc180e8e6d8c",
+                  "name": "EVEREST CHEMICALS"
+              }
+          ],
+          "primaryUser": {
+              "_id": "65bc7c906b50fc180e8e6d87",
+              "userName": "EVEREST CHEMICALS"
           },
-          {
-            alt_unit: "null",
-            pricelevel: "RETAIL PRICE",
-            pricerate: 170.6,
-          },
-          {
-            alt_unit: "null",
-            pricelevel: "INSTITUTION PRICE",
-            pricerate: 310,
-          },
-          {
-            alt_unit: "null",
-            pricelevel: "SPECIAL",
-          },
-          {
-            alt_unit: "null",
-            pricelevel: "OTHERS",
-          },
-        ],
-        GodownList: [
-          {
-            balance_stock: 304,
-            godown: "STAR BOTTLES",
-            count: 3,
-            _id: "65f1717b88f8212270d4e974",
-          },
-          {
-            balance_stock: 149,
-            godown: "V Godown",
-            count: 1,
-            _id: "65f1717b88f8212270d4e974",
-          },
-        ],
-        cgst: "9",
-        sgst: "9",
-        igst: "18",
-        cess: "0",
-        addl_cess: "0",
-        product_master_id: "ID:64401",
-        __v: 0,
-        count: 4,
-        total: "479.65",
-        added: true,
+          "isBlocked": false
       },
-    ],
-    additionalCharges: [
       {
-        option: "Fair",
-        value: "100",
-        action: "add",
-        taxPercentage: "30",
-        hsn: "11e",
-        _id: "660d4ea506fdb9a59b2981ca",
-        finalValue: 130,
+          "_id": "65bdf71717c99bb475607b22",
+          "name": "Abin",
+          "email": "abin@gmail.com",
+          "mobile": 7559925084,
+          "organization": [
+              {
+                  "_id": "65bdf25e17c99bb4756079ae",
+                  "name": "Honda"
+              },
+              {
+                  "_id": "65c0fcea1b922172c4839a8a",
+                  "name": "BMW"
+              }
+          ],
+          "primaryUser": {
+              "_id": "65bdb6c721e197e403ca2c1f",
+              "userName": "Midhun"
+          },
+          "isBlocked": false
       },
-    ],
-    finalAmount: "1289.80",
-    createdAt: {
-      $date: "2024-04-06T07:07:11.203Z",
-    },
-    updatedAt: {
-      $date: "2024-04-06T07:07:11.203Z",
-    },
-    __v: 0,
-  },
-];
+      {
+          "_id": "65be01706b50fc180e8e8c8f",
+          "name": "EBBY",
+          "email": "ebey143@gmail.com",
+          "mobile": 8891280118,
+          "organization": [
+              {
+                  "_id": "65bccad36b50fc180e8e805d",
+                  "name": "CAMET IT SOLUTIONS LLP"
+              },
+              {
+                  "_id": "65bccc186b50fc180e8e806f",
+                  "name": "ACCUANET INFO SOLUTIONS"
+              }
+          ],
+          "primaryUser": {
+              "_id": "65bcc9346b50fc180e8e804d",
+              "userName": "EBBY MANJOORAN"
+          },
+          "isBlocked": false
+      },
+      {
+          "_id": "65c0fd131b922172c4839a91",
+          "name": "Adharsh",
+          "email": "midhunmohan3210@gmail.com",
+          "mobile": 7559925086,
+          "organization": [
+              {
+                  "_id": "65c0fcea1b922172c4839a8a",
+                  "name": "BMW"
+              },
+              {
+                  "_id": "65bdf25e17c99bb4756079ae",
+                  "name": "Honda"
+              }
+          ],
+          "primaryUser": {
+              "_id": "65bdb6c721e197e403ca2c1f",
+              "userName": "Midhun"
+          },
+          "isBlocked": false
+      },
+      {
+          "_id": "65c47cb4ff021987242309dd",
+          "name": "Manuu",
+          "email": "manu@gmail.com",
+          "mobile": 9446861854,
+          "organization": [
+              {
+                  "_id": "65c0fcea1b922172c4839a8a",
+                  "name": "BMW"
+              },
+              {
+                  "_id": "65c47c69ff021987242309c1",
+                  "name": "Ford"
+              },
+              {
+                  "_id": "65c744a384d494bbf06d38be",
+                  "name": "Mikha"
+              },
+              {
+                  "_id": "65c7587d23470e7297855000",
+                  "name": "N M Mohanan"
+              }
+          ],
+          "primaryUser": {
+              "_id": "65bdb6c721e197e403ca2c1f",
+              "userName": "Midhun"
+          },
+          "isBlocked": true
+      },
+      {
+          "_id": "65c47ce2ff021987242309e1",
+          "name": "Rahul",
+          "email": "rahul@gmail.com",
+          "mobile": 8281335854,
+          "organization": [
+              {
+                  "_id": "65bdf25e17c99bb4756079ae",
+                  "name": "Honda"
+              },
+              {
+                  "_id": "65c0fcea1b922172c4839a8a",
+                  "name": "BMW"
+              }
+          ],
+          "primaryUser": {
+              "_id": "65bdb6c721e197e403ca2c1f",
+              "userName": "Midhun"
+          },
+          "isBlocked": false
+      },
+      {
+          "_id": "65f42a020ff00d0c7ccab5fc",
+          "name": "Umesh",
+          "email": "umeshambattu@gmail.com",
+          "mobile": 9072632604,
+          "organization": [
+              {
+                  "_id": "65bccc186b50fc180e8e806f",
+                  "name": "ACCUANET INFO SOLUTIONS"
+              },
+              {
+                  "_id": "65bccad36b50fc180e8e805d",
+                  "name": "CAMET IT SOLUTIONS LLP"
+              }
+          ],
+          "primaryUser": {
+              "_id": "65bcc9346b50fc180e8e804d",
+              "userName": "EBBY MANJOORAN"
+          },
+          "isBlocked": false
+      },
+      {
+          "_id": "65f42a3b0ff00d0c7ccab600",
+          "name": "Riyas",
+          "email": "riyaskuttamassery@gmail.com",
+          "mobile": 9072632603,
+          "organization": [
+              {
+                  "_id": "65bccc186b50fc180e8e806f",
+                  "name": "ACCUANET INFO SOLUTIONS"
+              },
+              {
+                  "_id": "65bccad36b50fc180e8e805d",
+                  "name": "CAMET IT SOLUTIONS LLP"
+              },
+              {
+                  "_id": "65d48157db87d6d520b89b62",
+                  "name": "ERP CAMET"
+              }
+          ],
+          "primaryUser": {
+              "_id": "65bcc9346b50fc180e8e804d",
+              "userName": "EBBY MANJOORAN"
+          },
+          "isBlocked": false
+      },
+      {
+          "_id": "661a59c75ecdaca005c55782",
+          "name": "Sreerajj",
+          "email": "sreeraj@gmail.com",
+          "mobile": 6282971061,
+          "organization": [
+              {
+                  "_id": "65bccad36b50fc180e8e805d",
+                  "name": "CAMET IT SOLUTIONS LLP"
+              },
+              {
+                  "_id": "65bccc186b50fc180e8e806f",
+                  "name": "ACCUANET INFO SOLUTIONS"
+              },
+              {
+                  "_id": "65d48157db87d6d520b89b62",
+                  "name": "ERP CAMET"
+              }
+          ],
+          "primaryUser": {
+              "_id": "65bcc9346b50fc180e8e804d",
+              "userName": "EBBY MANJOORAN"
+          },
+          "isBlocked": false
+      },
+      {
+          "_id": "661e2563cf2c443ad0c42b6b",
+          "name": "Sachin",
+          "email": "sachin@gmail.com",
+          "mobile": 7559925086,
+          "organization": [
+              {
+                  "_id": "661e245dcf2c443ad0c42ad5",
+                  "name": "kkcoffee"
+              }
+          ],
+          "primaryUser": null,
+          "isBlocked": false
+      },
+      {
+          "_id": "662644b20f8eaae096742116",
+          "name": "User1",
+          "email": "user1@gmail.com",
+          "mobile": 8089603026,
+          "organization": [
+              {
+                  "_id": "662643690f8eaae096742018",
+                  "name": "DIGITAL TECHNOLOGIES "
+              }
+          ],
+          "primaryUser": {
+              "_id": "662642680f8eaae096741fef",
+              "userName": "NAISION FRANCIS"
+          },
+          "isBlocked": false
+      },
+      {
+          "_id": "662644d90f8eaae09674212d",
+          "name": "User2",
+          "email": "user2@gmail.com",
+          "mobile": 8089603027,
+          "organization": [
+              {
+                  "_id": "662643690f8eaae096742018",
+                  "name": "DIGITAL TECHNOLOGIES "
+              }
+          ],
+          "primaryUser": {
+              "_id": "662642680f8eaae096741fef",
+              "userName": "NAISION FRANCIS"
+          },
+          "isBlocked": false
+      },
+      {
+          "_id": "662645410f8eaae0967421cc",
+          "name": "Happy",
+          "email": "happy@gmail.com",
+          "mobile": 6282971061,
+          "organization": [
+              {
+                  "_id": "65d48157db87d6d520b89b62",
+                  "name": "ERP CAMET"
+              },
+              {
+                  "_id": "65fbe9e82f28c9e3ddaf0dcd",
+                  "name": "abc"
+              },
+              {
+                  "_id": "65bccc186b50fc180e8e806f",
+                  "name": "ACCUANET INFO SOLUTIONS"
+              },
+              {
+                  "_id": "65bccad36b50fc180e8e805d",
+                  "name": "CAMET IT SOLUTIONS LLP"
+              }
+          ],
+          "primaryUser": {
+              "_id": "65bcc9346b50fc180e8e804d",
+              "userName": "EBBY MANJOORAN"
+          },
+          "isBlocked": false
+      },
+      {
+          "_id": "662756e5214f88f7ebc798d1",
+          "name": "asaasd",
+          "email": "anandhu@gmail.com",
+          "mobile": 6282971061,
+          "organization": [
+              {
+                  "_id": "65d48157db87d6d520b89b62",
+                  "name": "ERP CAMET"
+              }
+          ],
+          "primaryUser": {
+              "_id": "65bcc9346b50fc180e8e804d",
+              "userName": "EBBY MANJOORAN"
+          },
+          "isBlocked": false
+      }
+  ],
+  "message": "secondaryUsers fetched"
+}

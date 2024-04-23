@@ -372,7 +372,14 @@ function Sidebar({ TAB, showBar }) {
 
                         <span className="mx-4 font-medium">Customers</span>
                       </a>
-                    </Link><Link to={"/pUsers/hsnList"}>
+                    </Link>
+
+                    {
+
+                    selectedOrg.type==="self" && (
+                    <Link to={"/pUsers/hsnList"}>
+
+
                       <a
                         onClick={() => {
                           handleSidebarItemClick("addParty");
@@ -384,7 +391,10 @@ function Sidebar({ TAB, showBar }) {
 
                         <span className="mx-4 font-medium">Tax classification</span>
                       </a>
-                    </Link><Link to={"/pUsers/productList"}>
+                    </Link>
+                    )
+                    }
+                    <Link to={"/pUsers/productList"}>
                       <a
                         onClick={() => {
                           handleSidebarItemClick("outstanding");

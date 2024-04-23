@@ -8,12 +8,12 @@ import "react-toastify/dist/ReactToastify.css";
 import { store } from "../app/store.js";
 import { Provider } from "react-redux";
 
-import axios from "axios";
+import api from "./api/api.js";
 
 
 
 
-axios.interceptors.response.use(function (response) {
+api.interceptors.response.use(function (response) {
 
   console.log("response",response);
 

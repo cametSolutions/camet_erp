@@ -470,8 +470,16 @@ export const getOrganizations = async (req, res) => {
 export const fetchSecondaryUsers = async (req, res) => {
   try {
     const secondaryUsers = await SecondaryUser.find({})
-      .populate(["organization", "primaryUser"])
-      .exec();
+    .populate({
+      path: "organization",
+      select: "name" 
+    })
+    .populate({
+      path:"primaryUser",
+      select:"userName"
+    }) 
+    .select("name email mobile isBlocked")
+    .exec();
     if (secondaryUsers) {
       return res.status(200).json({
         secondaryUsers: secondaryUsers,

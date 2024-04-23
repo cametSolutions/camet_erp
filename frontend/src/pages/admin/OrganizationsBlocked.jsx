@@ -38,7 +38,7 @@ function OrganisationsBlocked() {
     // Ensure organizations is not empty before processing
     if (organizations?.length > 0) {
       const ownerNames = Array.from(
-        new Set(organizations.map((org) => org?.owner?.userName))
+        new Set(organizations?.map((org) => org?.owner?.userName))
       );
       setOwners(ownerNames);
     }
@@ -230,7 +230,7 @@ function OrganisationsBlocked() {
                           <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
                           <div
                             onClick={() => {
-                              handleApprove(item._id);
+                              handleApprove(item?._id);
                             }}
                             class="toggle-button-cover"
                           >
