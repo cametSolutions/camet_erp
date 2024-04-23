@@ -89,6 +89,10 @@ export const addBankData = async (req, res) => {
   try {
     const bankDetailsArray = req.body.bankdetails;
 
+    const { Primary_user_id, cmp_id } = bankDetailsArray[0];
+
+    await BankDetailsModel.deleteMany({ Primary_user_id, cmp_id });
+
     // Loop through each bank detail in the array
     for (const bankDetail of bankDetailsArray) {
       const {
@@ -125,6 +129,7 @@ export const addBankData = async (req, res) => {
         bsr_code,
         client_code,
       });
+
 
       if (existingData) {
         // If data exists, update the existing document
