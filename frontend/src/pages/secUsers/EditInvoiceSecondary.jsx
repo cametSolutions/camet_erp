@@ -36,6 +36,12 @@ import { useParams } from "react-router-dom";
 import SidebarSec from "../../components/secUsers/SidebarSec";
 
 function EditInvoiceSecondary() {
+  const cmp_id = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg._id
+  );
+  const type = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg.type
+  );
   const [showSidebar, setShowSidebar] = useState(false);
   const [openModal, setOpenModal] = useState(false);
   const [modalInputs, setModalInputs] = useState({
@@ -61,10 +67,30 @@ function EditInvoiceSecondary() {
   const orgId = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
+
   const dispatch = useDispatch();
 
 
   const { id } = useParams();
+  
+  useEffect(()=>{
+   
+    const getAdditionalChargesIntegrated = async () => {
+      try {
+        const res = await api.get(`/api/sUsers/additionalcharges/${cmp_id}`, {
+          withCredentials: true,
+        });
+        console.log(res.data)
+        setAdditionalChragesFromCompany(res.data);
+      } catch (error) {
+        console.log(error);
+        toast.error(error.response.data.message);
+      }
+    };
+  if(type != "self" ){
+    getAdditionalChargesIntegrated()
+  }
+  },[])
 
   useEffect(() => {
     const fetchSingleOrganization = async () => {
@@ -75,11 +101,11 @@ function EditInvoiceSecondary() {
             withCredentials: true,
           }
         );
-
-
+        if(type == "self"){
         setAdditionalChragesFromCompany(
           res.data.organizationData.additionalCharges
         );
+      }
       } catch (error) {
         console.log(error);
       }

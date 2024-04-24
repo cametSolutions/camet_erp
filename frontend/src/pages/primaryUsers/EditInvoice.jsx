@@ -36,6 +36,7 @@ import { Button, Label, Modal, TextInput } from "flowbite-react";
 import { useParams } from "react-router-dom";
 
 function EditInvoice() {
+
   const [showSidebar, setShowSidebar] = useState(false);
   const [openModal, setOpenModal] = useState(false);
   const [modalInputs, setModalInputs] = useState({
@@ -57,9 +58,31 @@ function EditInvoice() {
   const orgId = useSelector(
     (state) => state.setSelectedOrganization.selectedOrg._id
   );
+  const type = useSelector(
+    (state) => state.setSelectedOrganization.selectedOrg.type
+  );
+
   const dispatch = useDispatch();
   const { id } = useParams();
   
+  useEffect(()=>{
+   
+    const getAdditionalChargesIntegrated = async () => {
+      try {
+        const res = await api.get(`/api/pUsers/additionalcharges/${orgId}`, {
+          withCredentials: true,
+        });
+        console.log(res.data)
+        setAdditionalChragesFromCompany(res.data);
+      } catch (error) {
+        console.log(error);
+        toast.error(error.response.data.message);
+      }
+    };
+  if(type != "self" ){
+    getAdditionalChargesIntegrated()
+  }
+  },[])
 
   useEffect(() => {
     const fetchSingleOrganization = async () => {
@@ -70,10 +93,11 @@ function EditInvoice() {
             withCredentials: true,
           }
         );
-
+        if(type == "self"){
         setAdditionalChragesFromCompany(
           res.data.organizationData.additionalCharges
         );
+      }
       } catch (error) {
         console.log(error);
       }
