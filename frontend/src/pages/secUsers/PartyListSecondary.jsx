@@ -17,6 +17,7 @@ import { IoIosAddCircle } from "react-icons/io";
 import SidebarSec from "../../components/secUsers/SidebarSec";
 import { useDispatch } from "react-redux";
 import { removeAll } from "../../../slices/invoiceSecondary";
+import { removeAllSales } from "../../../slices/salesSecondary";
 
 
 
@@ -64,6 +65,7 @@ function PartyListSecondary() {
     };
     fetchParties();
     dispatch(removeAll())
+    dispatch(removeAllSales())
 
   }, [cpm_id, refresh]);
   useEffect(() => {

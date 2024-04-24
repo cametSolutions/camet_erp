@@ -18,6 +18,7 @@ import SidebarSec from "../../components/secUsers/SidebarSec";
 
 import { useDispatch } from "react-redux";
 import { removeAll } from "../../../slices/invoiceSecondary";
+import { removeAllSales } from "../../../slices/salesSecondary";
 
 function ProductListSecondary() {
   const [products, setProducts] = useState([]);
@@ -61,6 +62,7 @@ function ProductListSecondary() {
     };
     fetchProducts();
   dispatch(removeAll())
+  dispatch(removeAllSales())
 
   }, [refresh,cmp_id]);
 

@@ -120,6 +120,9 @@ export const salesSecondarySlice = createSlice({
     saveId:(state,action)=>{
       state.id=action.payload
     },
+    removeAllSales: (state) => {
+      Object.assign(state, initialState);
+    },
     
   },
 });
@@ -148,7 +151,8 @@ export const {
   setSelectedPriceLevel,
   setFinalAmount,
   setAdditionalCharges,
-  saveId
+  saveId,
+  removeAllSales
 } = salesSecondarySlice.actions;
 
 export default salesSecondarySlice.reducer;
