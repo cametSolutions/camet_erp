@@ -18,7 +18,7 @@ function AdminLogin() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  const adminData=useSelector((state)=>state.adminData.loginData)
+  const adminData=useSelector((state)=>state?.adminData?.loginData)
   console.log("adminData",adminData);
 
 useEffect(()=>{
@@ -63,15 +63,15 @@ useEffect(()=>{
 
       setTimeout(() => {
         setLoader(false);
-        toast.success(res.data.message);
-        dispatch(addAdminData(res.data.data));
-        const loginData = JSON.stringify(res.data.data);
+        toast.success(res?.data?.message);
+        dispatch(addAdminData(res?.data?.data));
+        const loginData = JSON.stringify(res?.data?.data);
         localStorage.setItem("adminData", loginData);
         navigate("/admin/home");
       }, 1000);
     } catch (error) {
       setTimeout(() => {
-        toast.error(error.response.data.message);
+        toast.error(error?.response?.data?.message);
         setLoader(false);
       }, 1000);
     }

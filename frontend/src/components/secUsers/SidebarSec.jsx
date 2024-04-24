@@ -310,7 +310,8 @@ function SidebarSec({ TAB,showBar }) {
 
                         <span className="mx-4 font-medium">Products</span>
                       </a>
-                    </Link><Link to={"/sUsers/additionalChargesList"}>
+                    </Link>
+                    {/* <Link to={"/sUsers/additionalChargesList"}>
                       <a
                         onClick={() => {
                           handleSidebarItemClick("outstanding");
@@ -324,7 +325,8 @@ function SidebarSec({ TAB,showBar }) {
 
                         <span className="mx-4 font-medium">Additional Charges</span>
                       </a>
-                    </Link><Link to={"/sUsers/OrderConfigurations"}>
+                    </Link> */}
+                    <Link to={"/sUsers/OrderConfigurations"}>
                       <a
                         onClick={() => {
                           handleSidebarItemClick("outstanding");

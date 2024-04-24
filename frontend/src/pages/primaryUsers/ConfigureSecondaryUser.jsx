@@ -22,7 +22,8 @@ function ConfigureSecondaryUser() {
   const [vanSale, setVanSale] = useState(false);
 
   const type = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg.type
+    (state) => state.setSelectedOrganization.selectedOrg.type
+
   );
 
   console.log(godowns);
@@ -31,7 +32,7 @@ function ConfigureSecondaryUser() {
     {
       prefixDetails: "",
       suffixDetails: "",
-      startingNumber: "",
+      startingNumber: "1",
       widthOfNumericalPart: "",
     },
   ]);
@@ -39,7 +40,7 @@ function ConfigureSecondaryUser() {
     {
       prefixDetails: "",
       suffixDetails: "",
-      startingNumber: "",
+      startingNumber: "1",
       widthOfNumericalPart: "",
     },
   ]);
@@ -47,7 +48,7 @@ function ConfigureSecondaryUser() {
     {
       prefixDetails: "",
       suffixDetails: "",
-      startingNumber: "",
+      startingNumber: "1",
       widthOfNumericalPart: "",
     },
   ]);
@@ -220,7 +221,7 @@ function ConfigureSecondaryUser() {
     const Initial = {
       prefixDetails: "",
       suffixDetails: "",
-      startingNumber: "",
+      startingNumber: "1",
       widthOfNumericalPart: "",
     };
 
@@ -447,6 +448,7 @@ function ConfigureSecondaryUser() {
                       Starting Number
                     </label>
                     <input
+                    disabled
                       type="number"
                       id="startingNumber"
                       className={`  ${
@@ -461,7 +463,7 @@ function ConfigureSecondaryUser() {
                           e.target.value
                         )
                       }
-                      value={getConfigValue(selectedConfig, "startingNumber")}
+                      value={1}
                       placeholder="Starting Number"
                     />
                   </div>

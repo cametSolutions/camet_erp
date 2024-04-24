@@ -3,6 +3,8 @@ import TransactionModel from "../models/TransactionModel.js";
 import BankDetailsModel from "../models/bankModel.js";
 import partyModel from "../models/partyModel.js";
 import productModel from "../models/productModel.js";
+import AdditionalCharges from "../models/additionalChargesModel.js";
+
 
 
 
@@ -87,6 +89,10 @@ export const addBankData = async (req, res) => {
   try {
     const bankDetailsArray = req.body.bankdetails;
 
+    const { Primary_user_id, cmp_id } = bankDetailsArray[0];
+
+    await BankDetailsModel.deleteMany({ Primary_user_id, cmp_id });
+
     // Loop through each bank detail in the array
     for (const bankDetail of bankDetailsArray) {
       const {
@@ -123,6 +129,7 @@ export const addBankData = async (req, res) => {
         bsr_code,
         client_code,
       });
+
 
       if (existingData) {
         // If data exists, update the existing document
@@ -274,6 +281,63 @@ export const savePartyFromTally = async (req, res) => {
     );
 
     res.status(201).json({ message: "Party saved successfully", savedParty });
+  } catch (error) {
+    console.error("Error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+
+
+// @desc for saving additionalCharges from tally
+// route GET/api/tally/giveTransaction
+
+
+export const saveAdditionalChargesFromTally = async (req, res) => {
+  try {
+    const additionalChargesToSave = req?.body?.data;
+
+    // Check if additionalChargesToSave is defined and has elements
+    if (!additionalChargesToSave || additionalChargesToSave.length === 0) {
+      return res.status(400).json({ error: "No data provided" });
+    }
+
+    // Extract primary user id and company id from the first additional charge
+    const { Primary_user_id, cmp_id } = additionalChargesToSave[0];
+
+    // Delete existing documents with the same primary user id and company id
+    await AdditionalCharges.deleteMany({ Primary_user_id, cmp_id });
+
+    // Loop through each additional charge to save
+    const savedAdditionalCharges = await Promise.all(
+      additionalChargesToSave.map(async (charge) => {
+        // Check if the additional charge already exists
+        const existingCharge = await AdditionalCharges.findOne({
+          cmp_id: charge.cmp_id,
+          name: charge.name,
+          Primary_user_id: charge.Primary_user_id,
+        });
+
+        // If the additional charge doesn't exist, create a new one; otherwise, update it
+        if (!existingCharge) {
+          const newCharge = new AdditionalCharges(charge);
+          return await newCharge.save();
+        } else {
+          // Update the existing additional charge
+          return await AdditionalCharges.findOneAndUpdate(
+            {
+              cmp_id: charge.cmp_id,
+              name: charge.name,
+              Primary_user_id: charge.Primary_user_id,
+            },
+            charge,
+            { new: true }
+          );
+        }
+      })
+    );
+
+    res.status(201).json({ message: "Additional charges saved successfully", savedAdditionalCharges });
   } catch (error) {
     console.error("Error:", error);
     res.status(500).json({ error: "Internal server error" });

@@ -6,6 +6,7 @@ const api = axios.create({
   // baseURL:"https://www.erp.camet.in/"
 });
 
+
 api.interceptors.response.use(
   function (response) {
     console.log(response)
@@ -28,6 +29,7 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
 
 const showAlert = (message, redirectUrl, removeItem) => {
   const alertDiv = document.createElement('div');

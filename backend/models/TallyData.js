@@ -12,12 +12,14 @@ const tallySchema = new mongoose.Schema({
     bill_date: { type: Date, required: true },
     bill_no: { type: String, required: true },
     bill_amount: { type: Number, required: true },
-    bill_due_date: { type: Date, required: true },
+    bill_due_date: { type: Date },
     bill_pending_amt:{ type: Number, required: true },
-    group_name: { type: String, required: true },
+    group_name: { type: String },
     user_id:{type:String}
   });
   
+
+
 
   
   // Create a Mongoose model based on the schema

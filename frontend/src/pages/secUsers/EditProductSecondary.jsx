@@ -169,7 +169,8 @@ function EditProductSecondary() {
   ////////////////////////treble enddddd///////////////////////////////////////////////////////////
 
   const orgId = useSelector(
-    (state) => state.setSelectedOrganization.selectedOrg._id
+    (state) => state.secSelectedOrganization.secSelectedOrg._id
+
   );
 
   // fetching organization for getting brands category etc

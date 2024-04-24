@@ -42,7 +42,7 @@ function Outstanding({ onTabChange }) {
 
     const fetchOutstanding = async () => {
       try {
-        const res = await api.get("/api/pUsers/fetchOutstandingTotal", {
+        const res = await api.get(`/api/pUsers/fetchOutstandingTotal/${selectedOrgFromRedux?._id}`, {
           withCredentials: true,
         });
 
@@ -69,6 +69,8 @@ function Outstanding({ onTabChange }) {
   };
 
   const finalData = filterOutstanding(data);
+
+  console.log(finalData);
 
   return (
     <div className="flex h-screen overflow-hidden">

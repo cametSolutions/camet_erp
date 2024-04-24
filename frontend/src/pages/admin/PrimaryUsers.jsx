@@ -31,9 +31,9 @@ function PrimaryUsers() {
           withCredentials: true,
         });
         console.log(res);
-        setData(res.data.priUsers);
-        setOrg(res.data.org);
-        setSecUsers(res.data.secUsers);
+        setData(res?.data?.priUsers);
+        setOrg(res?.data?.org);
+        setSecUsers(res?.data?.secUsers);
       } catch (error) {
         console.log(error);
       }
@@ -68,14 +68,14 @@ function PrimaryUsers() {
         setRefresh(!refresh);
         Swal.fire({
           title: "Done!",
-          text: `${res.data.message}`,
+          text: `${res?.data?.message}`,
           icon: "success",
         });
       } catch (error) {
         console.error(error);
         Swal.fire({
           title: "Error!",
-          text: `${error.response.message}`,
+          text: `${error?.response?.message}`,
           icon: "error",
         });
       }
@@ -106,14 +106,14 @@ function PrimaryUsers() {
         setRefresh(!refresh);
         Swal.fire({
           title: "Done!",
-          text: `${res.data.message}`,
+          text: `${res?.data?.message}`,
           icon: "success",
         });
       } catch (error) {
         console.error(error);
         Swal.fire({
           title: "Error!",
-          text: `${error.response.message}`,
+          text: `${error?.response?.message}`,
           icon: "error",
         });
       }
@@ -130,7 +130,7 @@ function PrimaryUsers() {
       confirmButtonText: "Yes, do it!",
       cancelButtonText: "Cancel it",
     });
-    if (confirmResult.isConfirmed) {
+    if (confirmResult?.isConfirmed) {
       try {
         const res = await api.delete(
           `/api/admin/handlePrimaryDelete/${userId}`,
@@ -143,26 +143,26 @@ function PrimaryUsers() {
         setRefresh(!refresh);
         Swal.fire({
           title: "Done!",
-          text: `${res.data.message}`,
+          text: `${res?.data?.message}`,
           icon: "success",
         });
       } catch (error) {
         console.error(error);
         Swal.fire({
           title: "Error!",
-          text: `${error.response.message}`,
+          text: `${error?.response?.message}`,
           icon: "error",
         });
       }
     }
   };
 
-  const filteredData = data.filter((item) => {
+  const filteredData = data?.filter((item) => {
     const isBlocked = item.isBlocked;
 
     return (
-      (item.userName.toLowerCase().includes(search.toLowerCase()) ||
-        item.email.toLowerCase().includes(search.toLowerCase())) &&
+      (item.userName.toLowerCase()?.includes(search?.toLowerCase()) ||
+        item.email.toLowerCase()?.includes(search?.toLowerCase())) &&
       (option === "" ||
         (option === "blocked" && isBlocked) ||
         (option === "unblocked" && !isBlocked))
@@ -173,12 +173,12 @@ function PrimaryUsers() {
     let expirationDate = dayjs(createdAt);
 
     if (period === "monthly") {
-      expirationDate = expirationDate.add(30, "days"); // create a new instance
+      expirationDate = expirationDate?.add(30, "days"); // create a new instance
     } else if (period === "yearly") {
-      expirationDate = expirationDate.add(1, "year"); // create a new instance
+      expirationDate = expirationDate?.add(1, "year"); // create a new instance
     }
 
-    return expirationDate.format("DD/MM/YYYY");
+    return expirationDate?.format("DD/MM/YYYY");
   };
 
   const handleSubscriptionToggle = async (userId) => {
@@ -192,7 +192,7 @@ function PrimaryUsers() {
       );
       console.log(res);
       setRefresh(!refresh);
-      toast.success(res.data.message);
+      toast.success(res?.data?.message);
     } catch (error) {
       console.error(error);
     }
@@ -209,7 +209,7 @@ function PrimaryUsers() {
       );
       console.log(res);
       setRefresh(!refresh);
-      toast.success(res.data.message);
+      toast.success(res?.data?.message);
     } catch (error) {
       console.error(error);
     }
@@ -226,7 +226,7 @@ function PrimaryUsers() {
       );
       console.log(res);
       setRefresh(!refresh);
-      toast.success(res.data.message);
+      toast.success(res?.data?.message);
     } catch (error) {
       console.error(error);
     }
@@ -369,21 +369,21 @@ function PrimaryUsers() {
                   </tr>
                 </thead>
                 <tbody>
-                  {currentUsers.length > 0 ? (
-                    currentUsers.map((item, index) => (
+                  {currentUsers?.length > 0 ? (
+                    currentUsers?.map((item, index) => (
                       <tr key={index}>
                         <td className="  px-5 py-5 border-b border-gray-200 bg-white text-sm">
                           <div className="flex">
                             <div className="">
                               <p className="text-gray-900 whitespace-nowrap">
-                                {item.userName}
+                                {item?.userName}
                               </p>
                             </div>
                           </div>
                         </td>
                         <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
                           <p className="text-gray-900 whitespace-no-wrap">
-                            {item.email}
+                            {item?.email}
                           </p>
                         </td>
                         <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
@@ -393,7 +393,7 @@ function PrimaryUsers() {
                         </td>
                         <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
                           <p className="text-gray-900 whitespace-no-wrap">
-                            {org.filter((ele) => ele.owner === item._id).length}
+                            {org.filter((ele) => ele?.owner === item?._id)?.length}
                           </p>
                         </td>
                         <td
@@ -402,23 +402,23 @@ function PrimaryUsers() {
                         >
                           <p className="text-gray-900 whitespace-no-wrap ">
                             {
-                              secUsers.filter(
-                                (ele) => ele.primaryUser === item._id
-                              ).length
+                              secUsers?.filter(
+                                (ele) => ele?.primaryUser === item?._id
+                              )?.length
                             }
                           </p>
                         </td>
 
                         <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
                           <p className="text-gray-900 whitespace-no-wrap">
-                            {dayjs(item.createdAt).format("DD/MM/YYYY")}
+                            {dayjs(item?.createdAt).format("DD/MM/YYYY")}
                           </p>
                         </td>
                         <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
                           <p className="text-red-700 whitespace-no-wrap">
                             {calculateExpiresAt(
-                              item.createdAt,
-                              item.subscription
+                              item?.createdAt,
+                              item?.subscription
                             )}
                             {/* {calculateExpiresAt('16/01/2024',"monthly")} */}
                           </p>
@@ -478,14 +478,14 @@ function PrimaryUsers() {
                           <div
                             class="toggle-button-cover"
                             onClick={() => {
-                              handleBlock(item._id);
+                              handleBlock(item?._id);
                             }}
                           >
                             <div id="button-5" class="button r">
                               <input
                                 className="checkbox"
                                 type="checkbox"
-                                checked={item.isBlocked === true}
+                                checked={item?.isBlocked === true}
                               />
                               <div className="knobs"></div>
                               <div className="layer"></div>
@@ -496,14 +496,14 @@ function PrimaryUsers() {
                           <div
                             class="toggle-button-cover"
                             onClick={() => {
-                              handleSubscriptionToggle(item._id);
+                              handleSubscriptionToggle(item?._id);
                             }}
                           >
                             <div id="button-3" class="button r">
                               <input
                                 className="checkbox"
                                 type="checkbox"
-                                checked={item.subscription === "yearly"}
+                                checked={item?.subscription === "yearly"}
                               />
                               <div className="knobs"></div>
                               <div className="layer"></div>
@@ -514,13 +514,13 @@ function PrimaryUsers() {
                         <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
                           <div
                             onClick={() => {
-                              handleSms(item._id);
+                              handleSms(item?._id);
                             }}
                             class="toggle-button-cover"
                           >
                             <div id="button-4" class="button r">
                               <input
-                                checked={item.sms === true}
+                                checked={item?.sms === true}
                                 className="checkbox"
                                 type="checkbox"
                               />
@@ -532,16 +532,16 @@ function PrimaryUsers() {
                         <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
                           <div
                             onClick={() => {
-                              handleWhatsApp(item._id);
+                              handleWhatsApp(item?._id);
                             }}
                             class="toggle-button-cover"
                           >
                             <div id="button-4" class="button r">
                               <input
-                                checked={item.whatsApp === true}
+                                checked={item?.whatsApp === true}
                                 className="checkbox"
                                 type="checkbox"
-                              />
+                              />?
                               <div className="knobs"></div>
                               <div className="layer"></div>
                             </div>
@@ -549,7 +549,7 @@ function PrimaryUsers() {
                         </td>
 
                         <td className="flex justify-center items-center">
-                          <RiDeleteBin5Fill onClick={()=>{handleDelete(item._id)}} className="cursor-pointer mt-4 text-[#72283b] transform duration-100 hover:scale-125 text-lg" />
+                          <RiDeleteBin5Fill onClick={()=>{handleDelete(item?._id)}} className="cursor-pointer mt-4 text-[#72283b] transform duration-100 hover:scale-125 text-lg" />
                         </td>
                       </tr>
                     ))
@@ -568,7 +568,7 @@ function PrimaryUsers() {
                 <div className="inline-flex mt-2 xs:mt-0">
                   <Pagination
                     postPerPage={postPerPage}
-                    totalPosts={filteredData.length}
+                    totalPosts={filteredData?.length}
                     setCurrentPage={setCurrentPage}
                     currentPage={currentPage}
                   />

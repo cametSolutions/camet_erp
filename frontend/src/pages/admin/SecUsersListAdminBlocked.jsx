@@ -132,7 +132,7 @@ function SecUsersListAdminBlocked() {
 
   const lastPostIndex = currentPage * postPerPage;
   const firstPostIndex = lastPostIndex - postPerPage;
-  const finalSecUsers = filteredSecUsers.slice(firstPostIndex, lastPostIndex);
+  const finalSecUsers = filteredSecUsers?.slice(firstPostIndex, lastPostIndex);
 
   return (
     <div>
@@ -155,19 +155,13 @@ function SecUsersListAdminBlocked() {
                     <option value={""}>All</option>
 
                     {organizationNames?.map((item, index) => (
-                      <option key={index}>{item}</option>
+                      <option key={index} value={item}>{item}</option>
                     ))}
                   </select>
                   <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                    <svg
-                      className="fill-current h-4 w-4"
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 20 20"
-                    >
-                      <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
-                    </svg>
+                
                   </div>
-                </div>
+                </div>?
               </div>
 
               {/* p users */}
@@ -181,17 +175,11 @@ function SecUsersListAdminBlocked() {
                     <option value={""}>Primary Users</option>
 
                     {primaryUsers?.map((item, index) => (
-                      <option key={index}>{item.userName}</option>
+                      <option key={index} value={item?.userName}>{item?.userName}</option>
                     ))}
                   </select>
                   <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                    <svg
-                      className="fill-current h-4 w-4"
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 20 20"
-                    >
-                      <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
-                    </svg>
+                   
                   </div>
                 </div>
               </div>
@@ -240,8 +228,8 @@ function SecUsersListAdminBlocked() {
                     </tr>
                   </thead>
                   <tbody>
-                    {finalSecUsers.length > 0 ? (
-                      finalSecUsers.map((item, index) => (
+                    {finalSecUsers?.length > 0 ? (
+                      finalSecUsers?.map((item, index) => (
                         <tr key={index}>
                           <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
                             <div className="flex items-center">
@@ -254,7 +242,7 @@ function SecUsersListAdminBlocked() {
                               </div> */}
                               <div className="ml-3">
                                 <p className="text-gray-900 whitespace-nowrap">
-                                  {item.name}
+                                  {item?.name}
                                 </p>
                               </div>
                             </div>
@@ -262,24 +250,24 @@ function SecUsersListAdminBlocked() {
 
                           <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
                             <p className="text-gray-900 whitespace-no-wrap">
-                              {item.email}
+                              {item?.email}
                             </p>
                           </td>
                           <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
                             <p className="text-green-500 whitespace-no-wrap">
-                              {item.mobile}
+                              {item?.mobile}
                             </p>
                           </td>
 
                           <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
                             <select className="text-gray-900 whitespace-no-wrap p-2 text-base border rounded-md focus:outline-none focus:ring focus:border-blue-300">
-                              {item.organization?.map((org, index) => (
+                              {item?.organization?.map((org, index) => (
                                 <option
                                   key={index}
                                   value="option1"
                                   className="bg-white hover:bg-gray-100 text-gray-900"
                                 >
-                                  {org.name}
+                                  {org?.name}
                                 </option>
                               ))}
                               {/* Add more options as needed */}
@@ -289,26 +277,26 @@ function SecUsersListAdminBlocked() {
                           <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
                             <span
                               onClick={() => {
-                                handleBlock(item._id);
+                                handleBlock(item?._id);
                               }}
                               className="relative inline-block px-3 py-1 font-semibold text-green-900 leading-tight duration-150  transform hover:scale-110 cursor-pointer"
                             >
                               <span
                                 aria-hidden
                                 className={` ${
-                                  item.isBlocked
+                                  item?.isBlocked
                                     ? " bg-green-200 text-white"
                                     : " bg-red-500"
                                 } absolute inset-0 opacity-90 rounded-full  `}
                               ></span>
                               <span
                                 className={`relative ${
-                                  item.isBlocked
+                                  item?.isBlocked
                                     ? "  text-black "
                                     : " text-white"
                                 } `}
                               >
-                                {item.isBlocked ? "Unblock " : "Block"}
+                                {item?.isBlocked ? "Unblock " : "Block"}
                               </span>
                             </span>
                           </td>
@@ -328,7 +316,7 @@ function SecUsersListAdminBlocked() {
                   <div className="inline-flex mt-2 xs:mt-0">
                     <Pagination
                       postPerPage={postPerPage}
-                      totalPosts={filteredSecUsers.length}
+                      totalPosts={filteredSecUsers?.length}
                       setCurrentPage={setCurrentPage}
                       currentPage={currentPage}
                     />

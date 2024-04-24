@@ -40,6 +40,9 @@ function AddItem() {
   const [listHeight, setListHeight] = useState(0);
   const [scrollPosition, setScrollPosition] = useState(0);
 
+
+
+  console.log(search);
   ///////////////////////////cpm_id///////////////////////////////////
 
   const cpm_id = useSelector(
@@ -55,7 +58,6 @@ function AddItem() {
   const priceLevelFromRedux =
     useSelector((state) => state.invoice.selectedPriceLevel) || "";
 
-  console.log(priceLevelFromRedux);
 
   ///////////////////////////filters FromRedux///////////////////////////////////
 
@@ -71,7 +73,6 @@ function AddItem() {
   const dispatch = useDispatch();
   const listRef = useRef(null);
   const location = useLocation();
-  console.log(location);
 
   ///////////////////////////fetchProducts///////////////////////////////////
 
@@ -130,9 +131,6 @@ function AddItem() {
     }
   }, [cpm_id, productRefresh]);
 
-  console.log("item", item);
-
-
 
   ///////////////////////////setSelectedPriceLevel fom redux///////////////////////////////////
 
@@ -142,31 +140,7 @@ function AddItem() {
 
   ///////////////////////////sdo persisting of products///////////////////////////////////
 
-  // useEffect(() => {
-  //   console.log(itemsFromRedux);
-  //   if (itemsFromRedux.length > 0) {
-  //     const updatedItems = item.map((currentItem) => {
-  //       // Find the corresponding item in itemsFromRedux
-  //       const matchingItem = itemsFromRedux.find(
-  //         (el) => el._id === currentItem._id
-  //       );
-  //       if (matchingItem) {
-  //         // If matching item found, return it with updated count and total
-  //         return {
-  //           ...currentItem,
-  //           count: matchingItem.count,
-  //           total: matchingItem.total,
-  //         };
-  //       } else {
-  //         // If no matching item found, return the current item
-  //         return currentItem;
-  //       }
-  //     });
 
-  //     // Update the state with the modified items
-  //     setItem(updatedItems);
-  //   }
-  // }, [itemsFromRedux, refresh]);
 
   //////////////////////////////orgId////////////////////////////////
 
@@ -236,31 +210,36 @@ function AddItem() {
     fetchData();
   }, [orgId, type]);
 
-  console.log(priceLevels);
 
   const filterItems = (items, brand, category, subCategory, searchTerm) => {
     return items.filter((item) => {
       // Check if the item matches the brand filter
       const brandMatch = !brand || item.brand === brand;
-
+  
       // Check if the item matches the category filter
       const categoryMatch = !category || item.category === category;
-
+  
       // Check if the item matches the subcategory filter
       const subCategoryMatch =
         !subCategory || item.sub_category === subCategory;
-
+  
       // Check if the item matches the search term
       const searchMatch =
         !searchTerm ||
         item.product_name.toLowerCase().includes(searchTerm.toLowerCase());
-
+  
       // Return true if all conditions are met
       return brandMatch && categoryMatch && subCategoryMatch && searchMatch;
     });
   };
+  
+
+
+
 
   ///////////////////////////filter items call ///////////////////////////////////
+
+  console.log(item);
 
   const filteredItems = useMemo(() => {
     return filterItems(
@@ -272,9 +251,11 @@ function AddItem() {
     );
   }, [item, selectedBrand, selectedCategory, selectedSubCategory, search]);
 
+  console.log(filteredItems.length);
+
+
   ///////////////////////////handleAddClick///////////////////////////////////
 
-  console.log("filteredItems", filteredItems);
 
   const handleAddClick = (index) => {
     const updatedItems = [...filteredItems]; // Create a shallow copy of the items
@@ -347,16 +328,17 @@ function AddItem() {
 
   ///////////////////////////handleTotalChangeWithPriceLevel///////////////////////////////////
 
-
   const handleTotalChangeWithPriceLevel = (pricelevel) => {
     const updatedItems = filteredItems.map((item) => {
       if (item.added === true) {
         const newTotal = calculateTotal(item, pricelevel).toFixed(2);
+        dispatch(changeTotal({ ...item, total: newTotal }));
         return {
           ...item,
           total: newTotal,
         };
       }
+      // dispatch(changeTotal(item));
       return item;
     });
 
@@ -367,32 +349,30 @@ function AddItem() {
   const handleDecrement = (index) => {
     const updatedItems = [...filteredItems]; // Make a copy of the array
     const currentItem = { ...updatedItems[index] };
-
+  
     // Decrement the count if it's greater than 0
     if (currentItem.count > 0) {
       currentItem.count -= 1;
-      if (currentItem.count == 0) {
+      if (currentItem.count === 0) {
         dispatch(removeItem(currentItem));
-        updatedItems[index].added = false;
-        return;
+        updatedItems[index] = { ...currentItem, added: false }; // Make a copy and update the 'added' property
+      } else {
+        // Use the calculateTotal function to calculate the total for the current item
+        currentItem.total = calculateTotal(
+          currentItem,
+          selectedPriceLevel
+        ).toFixed(2);
+        updatedItems[index] = currentItem; // Update the item in the copied array
       }
-
-      // Use the calculateTotal function to calculate the total for the current item
-      currentItem.total = calculateTotal(
-        currentItem,
-        selectedPriceLevel
-      ).toFixed(2);
-      console.log(currentItem.total);
-
-      updatedItems[index] = currentItem; // Update the item in the copied array
+  
       setItem(updatedItems);
       setRefresh(!refresh);
     }
-
+  
     dispatch(changeCount(currentItem));
-
     dispatch(changeTotal(currentItem));
   };
+  
 
   ///////////////////////////handlePriceLevelChange///////////////////////////////////
 
@@ -561,7 +541,6 @@ function AddItem() {
     // Cleanup the event listener on component unmount
     return () => window.removeEventListener("resize", calculateHeight);
   }, []);
-  console.log(location);
 
   /////////////////////////// save scroll ///////////////////////////////////
   // Function to save scroll position
@@ -680,12 +659,15 @@ function AddItem() {
                       d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"
                     />
                   </svg>
+
+                  
                 </div>
                 <div class="relative">
                   <input
                     onChange={(e) => {
                       setSearch(e.target.value);
                     }}
+                    value={search}
                     type="search"
                     id="default-search"
                     className="block w-full p-2 text-sm text-gray-900 border  rounded-lg border-gray-300  bg-gray-50 focus:ring-blue-500 focus:border-blue-500"
@@ -697,7 +679,9 @@ function AddItem() {
                     class="text-white absolute end-[10px] top-1/2 transform -translate-y-1/2 bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-md px-2 py-1"
                   >
                     <IoIosSearch />
+                  
                   </button>
+                  
                 </div>
               </div>
             </div>

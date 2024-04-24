@@ -37,10 +37,10 @@ function SecUsersListAdmin() {
         const res = await api.get("/api/admin/getPrimaryUsers", {
           withCredentials: true,
         });
-        setPrimaryUsers(res.data.priUsers);
+        setPrimaryUsers(res?.data?.priUsers);
       } catch (error) {
         console.log(error);
-        toast.error(error.response.data.message);
+        toast.error(error?.response?.data?.message);
       }
     };
     fetchPrimaryUsers();
@@ -53,10 +53,10 @@ function SecUsersListAdmin() {
           withCredentials: true,
         });
 
-        setSecondaryUsers(res.data.secondaryUsers);
+        setSecondaryUsers(res?.data?.secondaryUsers);
       } catch (error) {
         console.log(error);
-        toast.error(error.response.data.message);
+        toast.error(error?.response?.data?.message);
       }
     };
     fetchSecondaryUsers();
@@ -74,22 +74,48 @@ function SecUsersListAdmin() {
     }
   }, [organizations]);
 
-  //   Filter organizations based on selected owner
-  const filteredSecUsers = secondaryUsers.filter((user) => {
-    const live=user.isBlocked===false
+
+  
+  // const filteredSecUsers = secondaryUsers.filter((user) => {
+  //   const live=user.isBlocked===false
+  //   const orgFilter =
+  //     selectedOrg === "" ||
+  //     user.organization.some((org) => org.name === selectedOrg);
+
+  //   const primaryUserFilter =
+  //     selectedPrimary === "" || user?.primaryUser?.userName === selectedPrimary;
+
+  //   const searchFilter = user.name
+  //     ?.toLowerCase()
+  //     .includes(searchQuery.toLowerCase());
+
+  //   return orgFilter && searchFilter && primaryUserFilter && live;
+  // });
+
+  console.log(selectedOrg.toLowerCase());
+
+  const filteredSecUsers = secondaryUsers?.filter((user) => {
+    const live=user?.isBlocked===false
     const orgFilter =
       selectedOrg === "" ||
-      user.organization.some((org) => org.name === selectedOrg);
+      user?.organization?.some((org) => org?.name=== selectedOrg);
 
-    const primaryUserFilter =
-      selectedPrimary === "" || user.primaryUser.userName === selectedPrimary;
+      console.log(orgFilter);
 
-    const searchFilter = user.name
+
+      const primaryUserFilter =
+      selectedPrimary === "" || user?.primaryUser?.userName === selectedPrimary;
+      
+      console.log(primaryUserFilter);
+
+    const searchFilter = user?.name
       ?.toLowerCase()
-      .includes(searchQuery.toLowerCase());
+      .includes(searchQuery?.toLowerCase());
 
-    return orgFilter && searchFilter && primaryUserFilter && live;
+    return orgFilter && searchFilter && primaryUserFilter && live
   });
+
+  console.log(filteredSecUsers);
 
   const handleBlock = async (userId) => {
     const confirmResult = await Swal.fire({
@@ -115,14 +141,14 @@ function SecUsersListAdmin() {
         setRefresh(!refresh);
         Swal.fire({
           title: "Done!",
-          text: `${res.data.message}`,
+          text: `${res?.data?.message}`,
           icon: "success",
         });
       } catch (error) {
         console.error(error);
         Swal.fire({
           title: "Error!",
-          text: `${error.response.message}`,
+          text: `${error?.response?.message}`,
           icon: "error",
         });
       }
@@ -131,7 +157,9 @@ function SecUsersListAdmin() {
 
   const lastPostIndex = currentPage * postPerPage;
   const firstPostIndex = lastPostIndex - postPerPage;
-  const finalSecUsers = filteredSecUsers.slice(firstPostIndex, lastPostIndex);
+  const finalSecUsers = filteredSecUsers?.slice(firstPostIndex, lastPostIndex);
+
+  console.log(finalSecUsers);
 
   return (
     <div>
@@ -154,17 +182,12 @@ function SecUsersListAdmin() {
                     <option value={""}>All</option>
 
                     {organizationNames?.map((item, index) => (
-                      <option key={index}>{item}</option>
+                      <option key={index} value={item}>{item}</option>
                     ))}
                   </select>
                   <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                    <svg
-                      className="fill-current h-4 w-4"
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 20 20"
-                    >
-                      <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
-                    </svg>
+                
+                    
                   </div>
                 </div>
               </div>
@@ -180,17 +203,11 @@ function SecUsersListAdmin() {
                     <option value={""}>Primary Users</option>
 
                     {primaryUsers?.map((item, index) => (
-                      <option key={index}>{item.userName}</option>
+                      <option key={index} value={item?.userName}>{item?.userName}</option>
                     ))}
                   </select>
                   <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                    <svg
-                      className="fill-current h-4 w-4"
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 20 20"
-                    >
-                      <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
-                    </svg>
+                  
                   </div>
                 </div>
               </div>
@@ -239,8 +256,8 @@ function SecUsersListAdmin() {
                     </tr>
                   </thead>
                   <tbody>
-                    {finalSecUsers.length > 0 ? (
-                      finalSecUsers.map((item, index) => (
+                    {finalSecUsers?.length > 0 ? (
+                      finalSecUsers?.map((item, index) => (
                         <tr key={index}>
                           <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
                             <div className="flex items-center">
@@ -253,7 +270,7 @@ function SecUsersListAdmin() {
                               </div> */}
                               <div className="ml-3">
                                 <p className="text-gray-900 whitespace-nowrap">
-                                  {item.name}
+                                  {item?.name}
                                 </p>
                               </div>
                             </div>
@@ -261,24 +278,24 @@ function SecUsersListAdmin() {
 
                           <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
                             <p className="text-gray-900 whitespace-no-wrap">
-                              {item.email}
+                              {item?.email}
                             </p>
                           </td>
                           <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
                             <p className="text-green-500 whitespace-no-wrap">
-                              {item.mobile}
+                              {item?.mobile}
                             </p>
                           </td>
 
                           <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
                             <select className="text-gray-900 whitespace-no-wrap p-2 text-base border rounded-md focus:outline-none focus:ring focus:border-blue-300">
-                              {item.organization?.map((org, index) => (
+                              {item?.organization?.map((org, index) => (
                                 <option
                                   key={index}
                                   value="option1"
                                   className="bg-white hover:bg-gray-100 text-gray-900"
                                 >
-                                  {org.name}
+                                  {org?.name}
                                 </option>
                               ))}
                               {/* Add more options as needed */}
@@ -288,26 +305,26 @@ function SecUsersListAdmin() {
                           <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
                             <span
                               onClick={() => {
-                                handleBlock(item._id);
+                                handleBlock(item?._id);
                               }}
                               className="relative inline-block px-3 py-1 font-semibold text-green-900 leading-tight duration-150  transform hover:scale-110 cursor-pointer"
                             >
                               <span
                                 aria-hidden
                                 className={` ${
-                                  item.isBlocked
+                                  item?.isBlocked
                                     ? " bg-green-200 text-white"
                                     : " bg-red-500"
                                 } absolute inset-0 opacity-90 rounded-full  `}
                               ></span>
                               <span
                                 className={`relative ${
-                                  item.isBlocked
+                                  item?.isBlocked
                                     ? "  text-black "
                                     : " text-white"
                                 } `}
                               >
-                                {item.isBlocked ? "Unblock " : "Block"}
+                                {item?.isBlocked ? "Unblock " : "Block"}
                               </span>
                             </span>
                           </td>
@@ -327,7 +344,7 @@ function SecUsersListAdmin() {
                   <div className="inline-flex mt-2 xs:mt-0">
                     <Pagination
                       postPerPage={postPerPage}
-                      totalPosts={filteredSecUsers.length}
+                      totalPosts={filteredSecUsers?.length}
                       setCurrentPage={setCurrentPage}
                       currentPage={currentPage}
                     />

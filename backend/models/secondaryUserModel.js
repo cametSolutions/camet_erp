@@ -27,6 +27,7 @@ const secondaryUserSchema = new mongoose.Schema(
         vanSale: { type: Boolean },
       },
     ],
+    isBlocked:{type:Boolean,default:false},
     orderNumber: { type: Number, default: 1 },
     salesNumber: { type: Number, default: 1 },
     vanSalesNumber: { type: Number, default: 1 },
