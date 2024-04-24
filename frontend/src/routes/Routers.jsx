@@ -97,6 +97,8 @@ import EditItemSalesSecondary from '../pages/secUsers/EditItemSalesSecondary'
 import ShareSalesSecondary from '../pages/secUsers/ShareSalesSecondary'
 import ConfigureSecondaryUser from '../pages/primaryUsers/ConfigureSecondaryUser'
 
+// Error Page
+import ErrorPage from '../pages/errorPages/errorPage'
 
 const Routers = () => {
   return (
@@ -203,6 +205,9 @@ const Routers = () => {
         <Route path='/sUsers/salesDetails/:id' element={<ProtectedSecRoute><SalesDetailsSecondary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/shareSales/:id' element={<ProtectedSecRoute><ShareSalesSecondary/></ProtectedSecRoute>}></Route> 
 
+        {/* errorPage */}
+        <Route path='/errorPage' element={<ErrorPage />} />
+    
     </Routes>
   )
 }

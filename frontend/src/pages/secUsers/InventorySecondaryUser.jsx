@@ -99,7 +99,7 @@ function InventorySecondaryUser() {
           withCredentials: true,
         });
         setLoader(true);
-
+        console.log(res)
         setIngodowns(res.data.godowndata);
 
 
