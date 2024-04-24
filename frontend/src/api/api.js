@@ -1,5 +1,4 @@
 import axios from 'axios';
-import { FaWindows } from 'react-icons/fa';
 
 const api = axios.create({
   baseURL: 'http://localhost:7000',
