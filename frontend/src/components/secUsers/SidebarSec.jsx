@@ -222,7 +222,7 @@ function SidebarSec({ TAB,showBar }) {
                   class="py-2 text-sm text-gray-200"
                   aria-labelledby="dropdownDefaultButton"
                 >
-                  {userData.organization.map((el, index) => (
+                  {userData && userData?.organization?.map((el, index) => (
                     <li key={index}>
                       <a
                         // onClick={()=>{setDropdown(!dropdown);setOrg(el)}}

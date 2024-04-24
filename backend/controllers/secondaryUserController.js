@@ -38,6 +38,11 @@ export const login = async (req, res) => {
     if (!secUser) {
       return res.status(404).json({ message: "Invalid User" });
     }
+    const Blocked = secUser.get("isBlocked")
+    console.log(Blocked)
+    if (Blocked == true) {
+      return res.status(401).json({ message: "User is blocked" });
+    }
 
     if (secUser.isApproved === false) {
       return res.status(401).json({ message: "User approval is pending" });
@@ -2209,4 +2214,16 @@ export const godownwiseProductsSelf =async (req,res)=>{
     res.status(500).json({ error: "Internal Server Error" });
   }
 
+}
+const fetchAdditionalCharges =async()=>{
+  try{
+    const cmp_id=req.params.cmp_id
+    const  id=req.params.id
+
+
+
+  }catch (error) {
+    console.error("Error fetching godownwise products:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
 }

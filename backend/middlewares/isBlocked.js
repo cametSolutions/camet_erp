@@ -8,12 +8,17 @@ export const primaryIsBlocked = async (req, res, next) => {
     if (!priUser) {
       return res.status(404).send("User not found.");
     }
-    const isBlocked = priUser.isBlocked;
-
+    const isBlocked =await priUser.get("isBlocked");
+  
     if (isBlocked) {
+      res.cookie("jwt_primary", "", {
+        httpOnly: true,
+        expires: new Date(0),
+      });
+  
       return res
         .status(403)
-        .json({ message: "User is blocked and cannot access this resource." });
+        .json({ message: "User is blocked and cannot access this resource.",is_blocked:isBlocked });
       // return res.redirect('/pUsers/login'); 
     }
 
@@ -29,15 +34,21 @@ export const secondaryIsBlocked = async (req, res, next) => {
     try {
       const userId = req.sUserId;
       const secUser = await Secondary.findById(userId);
+     
       if (!secUser) {
         return res.status(404).send("User not found.");
       }
-      const isBlocked = secUser.isBlocked;
-  
+      
+      const isBlocked = secUser.get('isBlocked');
+      console.log("isBlocked:", isBlocked); // Add this line to check isBlocked
       if (isBlocked) {
+        res.cookie("jwt_secondary", "", {
+          httpOnly: true,
+          expires: new Date(0),
+        });
         return res
           .status(403)
-          .json({ message: "User is blocked and cannot access this resource." });
+          .json({ message: "User is blocked and cannot access this resource.",is_blocked:isBlocked });
       }
   
       next();

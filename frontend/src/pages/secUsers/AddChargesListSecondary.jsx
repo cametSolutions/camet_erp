@@ -231,7 +231,7 @@ function AddChargesListSecondary() {
                           style={{ marginTop: "20px" }}
                           colSpan={5}
                         >
-                          No HSN found
+                          No Additional Charges Found
                         </td>
                       </tr>
                     )}

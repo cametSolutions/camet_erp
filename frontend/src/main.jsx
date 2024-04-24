@@ -8,24 +8,6 @@ import "react-toastify/dist/ReactToastify.css";
 import { store } from "../app/store.js";
 import { Provider } from "react-redux";
 
-import axios from "axios";
-
-
-
-
-axios.interceptors.response.use(function (response) {
-
-  console.log("response",response);
-
-  return response;
-}, function (error) {
-
-  return Promise.reject(error);
-});
-
-
-
-
 
 ReactDOM.createRoot(document.getElementById("root")).render(
 
