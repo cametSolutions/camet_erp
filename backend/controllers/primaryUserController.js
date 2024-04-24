@@ -17,6 +17,7 @@ import productModel from "../models/productModel.js";
 import invoiceModel from "../models/invoiceModel.js";
 import bankModel from "../models/bankModel.js";
 import salesModel from "../models/salesModel.js";
+import AdditionalChargesModel from "../models/additionalChargesModel.js";
 
 // @desc Register Primary user
 // route POST/api/pUsers/register
@@ -2709,3 +2710,22 @@ export const godownwiseProductsSelf = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+export const fetchAdditionalCharges =async(req,res)=>{
+  try{
+    const cmp_id = req.params.cmp_id;
+    const pUser = req.pUserId 
+    console.log(pUser)
+    
+    const aditionalDetails = await AdditionalChargesModel.find({
+      cmp_id: cmp_id,
+      Primary_user_id: pUser 
+    });
+    
+    console.log(aditionalDetails);
+    res.json(aditionalDetails);
+    
+  }catch (error) {
+    console.error("Error fetching godownwise products:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+}

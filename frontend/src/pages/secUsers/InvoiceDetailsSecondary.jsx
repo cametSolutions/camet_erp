@@ -9,25 +9,17 @@ import dayjs from "dayjs";
 import { FaEdit } from "react-icons/fa";
 import SidebarSec from "../../components/secUsers/SidebarSec";
 import { useLocation, useNavigate } from "react-router-dom";
-import { useSelector } from "react-redux";
 
 function InvoiceDetailsSecondary() {
-  const cmp_id = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg._id
-  );
-  const type = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg.type
-  );
-
   const [data, setData] = useState("");
   const [refresh, setRefresh] = useState(false);
-  const [indata,setIndata]=useState("")
 
   const { id } = useParams();
   console.log(id);
   const navigate=useNavigate()
   const location = useLocation();
- 
+
+
   useEffect(() => {
     const getTransactionDetails = async () => {
       try {
@@ -42,21 +34,6 @@ function InvoiceDetailsSecondary() {
     };
     getTransactionDetails();
   }, [refresh]);
-
-  useEffect(()=>{
-    const getAdditionalChargesIntegrated = async () => {
-      try {
-        const res = await api.get(`/api/sUsers/additionalcharges/${id}`, {
-          withCredentials: true,
-        });
-        setData(res.data.data);
-      } catch (error) {
-        console.log(error);
-        toast.error(error.response.data.message);
-      }
-    };
-    getAdditionalChargesIntegrated()
-  },[])
 
   const backHandler = () => {
     if (location?.state?.from === "dashboard") {
@@ -199,9 +176,7 @@ function InvoiceDetailsSecondary() {
                 : " (0 discount)"}
             </div>
           ))}
-          {type == self && ( 
-          <div>
-            <h3 className="font-bold text-md px-4 py-2 bg-white mt-2">Additional Charges</h3>
+           <h3 className="font-bold text-md px-4 py-2 bg-white mt-2">Additional Charges</h3>
             {data.additionalCharges && data.additionalCharges.length > 0 && (
           <div className="p-4 bg-white text-gray-500 text-xs md:text-base">
             {data.additionalCharges.map((values, index) => (
@@ -212,25 +187,7 @@ function InvoiceDetailsSecondary() {
             ))}
           </div>
         )}
-        </div>
-      ) }
-      
-      {type != self && ( 
-          <div>
-            <h3 className="font-bold text-md px-4 py-2 bg-white mt-2">Additional Charges</h3>
-            {data.additionalCharges && data.additionalCharges.length > 0 && (
-          <div className="p-4 bg-white text-gray-500 text-xs md:text-base">
-            {data.additionalCharges.map((values, index) => (
-              <div key={index}>
-                <p className="font-semibold text-black">{values.option}</p>
-                <p> ₹{values?.value} + {values.taxPercentage ? `(${values.taxPercentage}%)` : ('0%')} = ₹{parseInt(values.value) + (parseInt(values.value) * ((parseInt(values.taxPercentage) || 0) / 100))}</p>
-              </div>
-            ))}
-          </div>
-        )}
-        </div>
-      ) }
-      
+
         {/* payment method */}
 
         <div className=" block md:hidden ">

@@ -12,7 +12,7 @@ import {login,getSecUserData,fetchOutstandingTotal,
     addAditionalCharge,EditAditionalCharge,addconfigurations,createSale,
     getSalesDetails,saveSalesNumber,fetchAdditionalDetails,
     fetchConfigurationNumber,findSecondaryUserGodowns,findPrimaryUserGodownsSelf,
-    godownwiseProducts,godownwiseProductsSelf} from "../controllers/secondaryUserController.js"
+    godownwiseProducts,godownwiseProductsSelf,fetchAdditionalCharges} from "../controllers/secondaryUserController.js"
 import { authSecondary } from '../middlewares/authSecUsers.js';
 import { secondaryIsBlocked } from '../middlewares/isBlocked.js';
 
@@ -66,10 +66,7 @@ router.get("/getGodowns/:cmp_id",authSecondary,secondaryIsBlocked,findSecondaryU
 router.get("/getGodownsSelf/:cmp_id",authSecondary,secondaryIsBlocked,findPrimaryUserGodownsSelf)
 router.get("/godownProductFilter/:cmp_id/:godown_id",authSecondary,secondaryIsBlocked,godownwiseProducts)
 router.get("/godownProductFilterSelf/:cmp_id/:godown_name",authSecondary,secondaryIsBlocked,godownwiseProductsSelf)
-router.get("/additionalcharges/:cmp_id/:id",authSecondary,secondaryIsBlocked,)
-
-
-
+router.get("/additionalcharges/:cmp_id",authSecondary,secondaryIsBlocked,fetchAdditionalCharges)
 
 
 
