@@ -52,10 +52,10 @@ function AddItemSecondary() {
   const priceLevelFromRedux =
     useSelector((state) => state.invoiceSecondary.selectedPriceLevel) || "";
 
-
   ///////////////////////////filters FromRedux///////////////////////////////////
 
-  const brandFromRedux = useSelector((state) => state.invoiceSecondary.brand) || "";
+  const brandFromRedux =
+    useSelector((state) => state.invoiceSecondary.brand) || "";
   const categoryFromRedux =
     useSelector((state) => state.invoiceSecondary.category) || "";
   const subCategoryFromRedux =
@@ -94,8 +94,6 @@ function AddItemSecondary() {
           setItem(updatedItems);
         } else {
           setItem(res.data.productData);
-
-       
         }
         if (brandFromRedux) {
           setSelectedBrand(brandFromRedux);
@@ -179,8 +177,6 @@ function AddItemSecondary() {
   console.log(type);
 
   //////////////////////////////fetchFilters////////////////////////////////
-
-
 
   useEffect(() => {
     const fetchFilters = async () => {
@@ -274,8 +270,10 @@ function AddItemSecondary() {
 
   ///////////////////////////handleAddClick///////////////////////////////////
 
-  const handleAddClick = (index) => {
-    const updatedItems = [...filteredItems]; // Create a shallow copy of the items
+  const handleAddClick = (_id) => {
+    const updatedItems = [...item];
+    const index = updatedItems.findIndex((item) => item._id === _id);
+    // Create a shallow copy of the items
     const itemToUpdate = updatedItems[index];
     if (itemToUpdate) {
       // Toggle the 'added' state of the item
@@ -336,8 +334,10 @@ function AddItemSecondary() {
 
   ///////////////////////////handleIncrement///////////////////////////////////
 
-  const handleIncrement = (index) => {
-    const updatedItems = [...filteredItems];
+  const handleIncrement = (_id) => {
+    const updatedItems = [...item];
+    const index = updatedItems.findIndex((item) => item._id === _id);
+
     const currentItem = { ...updatedItems[index] };
 
     if (!currentItem.count) {
@@ -358,10 +358,12 @@ function AddItemSecondary() {
   };
 
   ///////////////////////////handleDecrement///////////////////////////////////
-  const handleDecrement = (index) => {
-    const updatedItems = [...filteredItems]; // Make a copy of the array
+  const handleDecrement = (_id) => {
+    const updatedItems = [...item]; 
+    const index = updatedItems.findIndex(item => item._id === _id);
+    // Make a copy of the array
     const currentItem = { ...updatedItems[index] };
-  
+
     // Decrement the count if it's greater than 0
     if (currentItem.count > 0) {
       currentItem.count -= 1;
@@ -376,15 +378,15 @@ function AddItemSecondary() {
         ).toFixed(2);
         updatedItems[index] = currentItem; // Update the item in the copied array
       }
-  
+
       setItem(updatedItems);
       setRefresh(!refresh);
     }
-  
+
     dispatch(changeCount(currentItem));
     dispatch(changeTotal(currentItem));
   };
-  
+
   ///////////////////////////handlePriceLevelChange///////////////////////////////////
 
   const handlePriceLevelChange = (e) => {
@@ -456,7 +458,7 @@ function AddItemSecondary() {
             >
               <div className="flex items-center gap-x-1.5">
                 <button
-                  onClick={() => handleDecrement(index)}
+                  onClick={() => handleDecrement(el._id)}
                   type="button"
                   className="size-6 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-md border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none"
                   data-hs-input-number-decrement
@@ -485,7 +487,7 @@ function AddItemSecondary() {
                 />
                 <button
                   onClick={() => {
-                    handleIncrement(index);
+                    handleIncrement(el._id);
                   }}
                   type="button"
                   className="size-6 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-md border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none "
@@ -514,7 +516,7 @@ function AddItemSecondary() {
           <div>
             <div
               className="px-4 py-2 rounded-md border-violet-500 font-bold border-2 text-violet-500 text-xs"
-              onClick={() => handleAddClick(index)}
+              onClick={() => handleAddClick(el._id)}
             >
               Add
             </div>
