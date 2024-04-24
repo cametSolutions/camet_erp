@@ -323,7 +323,7 @@ function ConfigureSecondaryUser() {
       </div>
       <div className="flex-1 h-screen overflow-y-scroll   ">
         <div className="  bg-[#201450] text-white mb-2 p-3 flex items-center gap-3 sticky top-0 z-20 text-lg   ">
-          <Link to={"/pUsers/retailers"}>
+          <Link to={`/pUsers/editUser/${userId}`}>
             <IoIosArrowRoundBack className="text-3xl text-white cursor-pointer " />
           </Link>
           <p> Configure Users </p>
