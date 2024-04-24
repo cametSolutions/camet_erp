@@ -11,6 +11,7 @@ import invoiceModel from "../models/invoiceModel.js";
 import HsnModel from "../models/hsnModel.js";
 import OragnizationModel from "../models/OragnizationModel.js";
 import Organization from "../models/OragnizationModel.js";
+import AdditionalChargesModel from "../models/additionalChargesModel.js";
 
 import bcrypt from "bcryptjs";
 import mongoose from "mongoose";
@@ -2251,13 +2252,20 @@ export const godownwiseProductsSelf =async (req,res)=>{
   }
 
 }
-const fetchAdditionalCharges =async()=>{
+export const fetchAdditionalCharges =async(req,res)=>{
   try{
-    const cmp_id=req.params.cmp_id
-    const  id=req.params.id
-
-
-
+    const cmp_id = req.params.cmp_id;
+    const pUser = req.owner.toString(); 
+    console.log(pUser)
+    
+    const aditionalDetails = await AdditionalChargesModel.find({
+      cmp_id: cmp_id,
+      Primary_user_id: pUser 
+    });
+    
+    console.log(aditionalDetails);
+    res.json(aditionalDetails);
+    
   }catch (error) {
     console.error("Error fetching godownwise products:", error);
     res.status(500).json({ error: "Internal Server Error" });
