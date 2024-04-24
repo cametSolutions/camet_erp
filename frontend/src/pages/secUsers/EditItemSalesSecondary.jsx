@@ -132,7 +132,7 @@ function EditItemSalesSecondary() {
     newItem.total = totalAmount;
     newItem.count = parseInt(quantity);
     newItem.newGst = igst;
-    newItem.godownList=godown;
+    newItem.godownList = godown;
     if (type === "amount") {
       newItem.discount = discountAmount;
       newItem.discountPercentage = "";
@@ -183,10 +183,9 @@ function EditItemSalesSecondary() {
 
   const openModalHandler = () => {
     console.log(selectedItem);
-    if (selectedItem[0]?.GodownList?.length > 0 ) {
+    if (selectedItem[0]?.GodownList?.length > 0) {
       setOpenModal(true);
-      if(godown.length===0){
-
+      if (godown.length === 0) {
         setGodown(selectedItem[0]?.GodownList);
       }
     }
@@ -463,25 +462,21 @@ function EditItemSalesSecondary() {
           <Modal.Header />
           <Modal.Body>
             <div className="space-y-6">
-             
               {/* Existing sign-in form */}
               <div>
-
                 <div className="flex justify-between  bg-[#579BB1] p-2 rounded-sm items-center">
+                  <h3 className=" text-base md:text-xl  font-medium text-gray-900 dark:text-white ">
+                    Godown List
+                  </h3>
 
-                <h3 className=" text-base md:text-xl  font-medium text-gray-900 dark:text-white ">
-                Godown List
-              </h3>
-
-                <h3 className="font-medium  text-right  text-white ">
-                  Total Count:{" "}
-                  <span className="text-white  font-bold">
-                  {godown.reduce((acc, curr) => {
-                    return (acc = acc + curr.count);
-                  }, 0)}
-
-                  </span>
-                </h3>
+                  <h3 className="font-medium  text-right  text-white ">
+                    Total Count:{" "}
+                    <span className="text-white  font-bold">
+                      {godown.reduce((acc, curr) => {
+                        return (acc = acc + curr.count);
+                      }, 0)}
+                    </span>
+                  </h3>
                 </div>
                 <div className="table-container overflow-y-auto max-h-[250px]">
                   <table className="min-w-full divide-y divide-gray-200">
@@ -512,14 +507,16 @@ function EditItemSalesSecondary() {
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                       {godown.map((item, index) => (
-                        <tr key={index} >
+                        <tr key={index}>
                           <td className="px-6 py-4 ">
                             <div className="text-sm text-gray-900">
                               {item.godown}
                             </div>
                             <div className="text-sm text-gray-900 mt-1">
-                             Stock : <span className="text-green-500 font-bold">{item.balance_stock}</span>
-
+                              Stock :{" "}
+                              <span className="text-green-500 font-bold">
+                                {item.balance_stock}
+                              </span>
                             </div>
                           </td>
                           {/* <td className="px-6 py-4 whitespace-nowrap">
@@ -534,21 +531,22 @@ function EditItemSalesSecondary() {
                           </td> */}
                           <td className=" px-6 py-4 whitespace-nowrap text-sm font-medium flex justify-center  ">
                             <div className="flex gap-3 items-center justify-center">
+                              <button
+                                onClick={() => decrementCount(index)}
+                                className="text-indigo-600 hover:text-indigo-900  text-lg"
+                              >
+                                -
+                              </button>
 
-                            <button
-                              onClick={() => incrementCount(index)}
-                              className="text-indigo-600 hover:text-indigo-900 text-lg"
-                            >
-                              +
-                            </button>
                               {item.count}
-                            <div></div>
-                            <button
-                              onClick={() => decrementCount(index)}
-                              className="text-indigo-600 hover:text-indigo-900  text-lg"
-                            >
-                              -
-                            </button>
+                              <div></div>
+
+                              <button
+                                onClick={() => incrementCount(index)}
+                                className="text-indigo-600 hover:text-indigo-900 text-lg"
+                              >
+                                +
+                              </button>
                             </div>
                           </td>
                         </tr>

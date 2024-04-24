@@ -131,7 +131,6 @@ function AddItemSales() {
     }
   }, [cpm_id]);
 
-
   ///////////////////////////setSelectedPriceLevel fom redux///////////////////////////////////
 
   useEffect(() => {
@@ -178,9 +177,8 @@ function AddItemSales() {
 
   console.log(type);
 
-
   ///////////////////////////filter items///////////////////////////////////
-console.log(type);
+  console.log(type);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -197,7 +195,8 @@ console.log(type);
         }
 
         if (type === "self") {
-          const { brands, categories, subcategories,priceLevels } = res.data.data;
+          const { brands, categories, subcategories, priceLevels } =
+            res.data.data;
           setBrands(brands);
           setCategories(categories);
           setSubCategories(subcategories);
@@ -207,7 +206,6 @@ console.log(type);
             setSelectedPriceLevel(defaultPriceLevel);
             dispatch(setPriceLevel(defaultPriceLevel));
           }
-
         } else {
           const { priceLevels, brands, categories, subcategories } = res.data;
 
@@ -374,26 +372,24 @@ console.log(type);
     }
   };
 
-    ///////////////////////////handleTotalChangeWithPriceLevel///////////////////////////////////
+  ///////////////////////////handleTotalChangeWithPriceLevel///////////////////////////////////
 
-
-    const handleTotalChangeWithPriceLevel = (pricelevel) => {
-      const updatedItems = filteredItems.map((item) => {
-        if (item.added === true) {
-          const newTotal = calculateTotal(item, pricelevel).toFixed(2);
+  const handleTotalChangeWithPriceLevel = (pricelevel) => {
+    const updatedItems = filteredItems.map((item) => {
+      if (item.added === true) {
+        const newTotal = calculateTotal(item, pricelevel).toFixed(2);
         dispatch(changeTotal({ ...item, total: newTotal }));
 
-          return {
-            ...item,
-            total: newTotal,
-          };
-        }
-        return item;
-      });
-  
-      setItem(updatedItems);
-    };
-  
+        return {
+          ...item,
+          total: newTotal,
+        };
+      }
+      return item;
+    });
+
+    setItem(updatedItems);
+  };
 
   ///////////////////////////handleDecrement///////////////////////////////////
   const handleDecrement = (index) => {
@@ -504,7 +500,6 @@ console.log(type);
     setSelectedPriceLevel(selectedValue);
     dispatch(setPriceLevel(selectedValue));
     handleTotalChangeWithPriceLevel(selectedValue);
-
   };
 
   ///////////////////////////react window ///////////////////////////////////
@@ -696,9 +691,9 @@ console.log(type);
 
   const continueHandler = () => {
     console.log(selectedPriceLevel);
-    if(selectedPriceLevel===""){
-      toast.error("Select a Pricelevel")
-      return
+    if (selectedPriceLevel === "") {
+      toast.error("Select a Pricelevel");
+      return;
     }
     console.log(location.state);
     if (location?.state?.from === "editSales") {
@@ -1026,18 +1021,19 @@ console.log(type);
                           <td className=" px-6 py-4 whitespace-nowrap text-sm font-medium flex justify-center  ">
                             <div className="flex gap-3 items-center justify-center">
                               <button
-                                onClick={() => incrementCount(index)}
-                                className="text-indigo-600 hover:text-indigo-900 text-lg"
-                              >
-                                +
-                              </button>
-                              {item.count}
-                              <div></div>
-                              <button
                                 onClick={() => decrementCount(index)}
                                 className="text-indigo-600 hover:text-indigo-900  text-lg"
                               >
                                 -
+                              </button>
+                              {item.count}
+                              
+
+                              <button
+                                onClick={() => incrementCount(index)}
+                                className="text-indigo-600 hover:text-indigo-900 text-lg"
+                              >
+                                +
                               </button>
                             </div>
                           </td>

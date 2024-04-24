@@ -535,18 +535,19 @@ function EditItemSales() {
                             <div className="flex gap-3 items-center justify-center">
 
                             <button
-                              onClick={() => incrementCount(index)}
-                              className="text-indigo-600 hover:text-indigo-900 text-lg"
-                            >
-                              +
-                            </button>
-                              {item.count}
-                            <div></div>
-                            <button
                               onClick={() => decrementCount(index)}
                               className="text-indigo-600 hover:text-indigo-900  text-lg"
                             >
                               -
+                            </button>
+                              {item.count}
+                            <div></div>
+                          
+                            <button
+                              onClick={() => incrementCount(index)}
+                              className="text-indigo-600 hover:text-indigo-900 text-lg"
+                            >
+                              +
                             </button>
                             </div>
                           </td>

@@ -49,7 +49,7 @@ function AddItemSalesSecondary() {
 
   ///////////////////////////cpm_id///////////////////////////////////
 
-   const cpm_id = useSelector(
+  const cpm_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
 
@@ -62,12 +62,14 @@ function AddItemSalesSecondary() {
   const priceLevelFromRedux =
     useSelector((state) => state.salesSecondary.selectedPriceLevel) || "";
 
-    console.log(priceLevelFromRedux);
+  console.log(priceLevelFromRedux);
 
   ///////////////////////////filters FromRedux///////////////////////////////////
 
-  const brandFromRedux = useSelector((state) => state.salesSecondary.brand) || "";
-  const categoryFromRedux = useSelector((state) => state.salesSecondary.category) || "";
+  const brandFromRedux =
+    useSelector((state) => state.salesSecondary.brand) || "";
+  const categoryFromRedux =
+    useSelector((state) => state.salesSecondary.category) || "";
   const subCategoryFromRedux =
     useSelector((state) => state.salesSecondary.subcategory) || "";
 
@@ -133,8 +135,6 @@ function AddItemSalesSecondary() {
     }
   }, [cpm_id]);
 
-
-
   ///////////////////////////setSelectedPriceLevel fom redux///////////////////////////////////
 
   useEffect(() => {
@@ -170,14 +170,13 @@ function AddItemSalesSecondary() {
 
   //////////////////////////////orgId////////////////////////////////
 
-  const orgId =useSelector(
+  const orgId = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
 
   const type = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg.type
   );
-
 
   //////////////////////////////fetchFilters////////////////////////////////
 
@@ -186,24 +185,20 @@ function AddItemSalesSecondary() {
   useEffect(() => {
     const fetchFilters = async () => {
       try {
-
         let res;
-        if(type=="self"){
-
+        if (type == "self") {
           res = await api.get(`/api/sUsers/fetchFilters/${orgId}`, {
-           withCredentials: true,
-         });
-        }else{
-
+            withCredentials: true,
+          });
+        } else {
           res = await api.get(`/api/sUsers/fetchAdditionalDetails/${orgId}`, {
             withCredentials: true,
           });
-
         }
 
-        
         if (type === "self") {
-          const { brands, categories, subcategories,priceLevels } = res.data.data;
+          const { brands, categories, subcategories, priceLevels } =
+            res.data.data;
           setBrands(brands);
           setCategories(categories);
           setSubCategories(subcategories);
@@ -214,9 +209,7 @@ function AddItemSalesSecondary() {
             setSelectedPriceLevel(defaultPriceLevel);
             dispatch(setPriceLevel(defaultPriceLevel));
           }
-
         } else {
-
           const { priceLevels, brands, categories, subcategories } = res.data;
 
           setBrands(brands);
@@ -231,16 +224,13 @@ function AddItemSalesSecondary() {
             setSelectedPriceLevel(defaultPriceLevel);
             dispatch(setPriceLevel(defaultPriceLevel));
           }
-
-
-        
         }
       } catch (error) {
         console.log(error);
       }
     };
     fetchFilters();
-  }, [ orgId, type]);
+  }, [orgId, type]);
 
   console.log(priceLevels);
 
@@ -335,13 +325,17 @@ function AddItemSalesSecondary() {
 
     if (item.discount !== 0 && item.discount !== undefined) {
       discountedSubtotal -= item.discount;
-      console.log(`Applied absolute discount: New subtotal = ${discountedSubtotal}`);
+      console.log(
+        `Applied absolute discount: New subtotal = ${discountedSubtotal}`
+      );
     } else if (
       item.discountPercentage !== 0 &&
       item.discountPercentage !== undefined
     ) {
       discountedSubtotal -= (subtotal * item.discountPercentage) / 100;
-      console.log(`Applied percentage discount: New subtotal = ${discountedSubtotal}`);
+      console.log(
+        `Applied percentage discount: New subtotal = ${discountedSubtotal}`
+      );
     }
 
     const gstAmount =
@@ -384,36 +378,31 @@ function AddItemSalesSecondary() {
     }
   };
 
+  ///////////////////////////handleTotalChangeWithPriceLevel///////////////////////////////////
 
-     ///////////////////////////handleTotalChangeWithPriceLevel///////////////////////////////////
-
-
-     const handleTotalChangeWithPriceLevel = (pricelevel) => {
-      const updatedItems = filteredItems.map((item) => {
-        if (item.added === true) {
-          const newTotal = calculateTotal(item, pricelevel).toFixed(2);
+  const handleTotalChangeWithPriceLevel = (pricelevel) => {
+    const updatedItems = filteredItems.map((item) => {
+      if (item.added === true) {
+        const newTotal = calculateTotal(item, pricelevel).toFixed(2);
         dispatch(changeTotal({ ...item, total: newTotal }));
 
-          return {
-            ...item,
-            total: newTotal,
-          };
-        }
-        return item;
-      });
-  
-      setItem(updatedItems);
-    };
-  
+        return {
+          ...item,
+          total: newTotal,
+        };
+      }
+      return item;
+    });
 
-
+    setItem(updatedItems);
+  };
 
   ///////////////////////////handleDecrement///////////////////////////////////
   const handleDecrement = (index) => {
     const updatedItems = [...filteredItems]; // Make a copy of the array
     const currentItem = { ...updatedItems[index] };
 
-    if (currentItem?.GodownList?.length > 0 ) {
+    if (currentItem?.GodownList?.length > 0) {
       setOpenModal(true);
       setGodown(currentItem?.GodownList);
     } else {
@@ -449,7 +438,7 @@ function AddItemSalesSecondary() {
   const modalSubmit = (id) => {
     setOpenModal(false);
     console.log(id);
-    const updatedItems = [...filteredItems]; 
+    const updatedItems = [...filteredItems];
 
     // Find the itemToUpdate by id
     const itemToUpdateIndex = updatedItems.findIndex((item) => item._id === id);
@@ -469,15 +458,17 @@ function AddItemSalesSecondary() {
     );
     const itemWithUpdatedCount = {
       ...itemToUpdate,
-      count: totalCount
+      count: totalCount,
     };
 
     // Update itemToUpdate.count with the total count
     const updatedItem = {
       ...itemToUpdate,
       count: totalCount,
-      total: calculateTotal(itemWithUpdatedCount, selectedPriceLevel).toFixed(2),
-      GodownList: godown
+      total: calculateTotal(itemWithUpdatedCount, selectedPriceLevel).toFixed(
+        2
+      ),
+      GodownList: godown,
     };
 
     console.log(updatedItem.total);
@@ -485,13 +476,12 @@ function AddItemSalesSecondary() {
     // Update the item in the copied array
 
     if (updatedItem.count === 0) {
-      dispatch(removeItem(itemToUpdate)); 
-      updatedItem.added = false; 
-   }
-   updatedItems[itemToUpdateIndex] = updatedItem;
+      dispatch(removeItem(itemToUpdate));
+      updatedItem.added = false;
+    }
+    updatedItems[itemToUpdateIndex] = updatedItem;
 
-   console.log(updatedItems[itemToUpdateIndex]);
-
+    console.log(updatedItems[itemToUpdateIndex]);
 
     setItem(updatedItems);
     // updatedItems[itemToUpdateIndex]; // Update the local state
@@ -500,16 +490,14 @@ function AddItemSalesSecondary() {
       dispatch(addItem(updatedItem)); // Add or update the item in the Redux store
     }
 
-
     if (updatedItem.count === 0) {
       dispatch(removeItem(updatedItem)); // Dispatch an action to remove the item
       updatedItem.added = false; // Update the 'added' property of the item
-   }
-  
+    }
+
     dispatch(changeCount(updatedItem)); // Update the count in the Redux store
     dispatch(changeTotal(updatedItem)); // Update the total in the Redux store
   };
-
 
   ///////////////////////////handlePriceLevelChange///////////////////////////////////
 
@@ -518,12 +506,9 @@ function AddItemSalesSecondary() {
     setSelectedPriceLevel(selectedValue);
     dispatch(setPriceLevel(selectedValue));
     handleTotalChangeWithPriceLevel(selectedValue);
-
   };
 
   ///////////////////////////react window ///////////////////////////////////
-
-
 
   /////////////////////////// calculateHeight ///////////////////////////////////
 
@@ -625,7 +610,6 @@ function AddItemSalesSecondary() {
       console.log(godown);
     } else {
       toast("Cannot decrement count as it is already at 0.");
-     
     }
   };
 
@@ -671,7 +655,7 @@ function AddItemSalesSecondary() {
             </div>
           </div>
         </div>
-        {el.added && el?.count>0 ? (
+        {el.added && el?.count > 0 ? (
           <div className="flex items-center flex-col gap-2">
             {/* <Link
               // to={`/sUsers/editItem/${el._id}`}
@@ -765,8 +749,7 @@ function AddItemSalesSecondary() {
         )}
       </div>
     );
-  };  
-
+  };
 
   return (
     <div className="flex relative">
@@ -778,37 +761,35 @@ function AddItemSalesSecondary() {
         <div className="sticky top-0 h-[157px] ">
           <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3  ">
             <div className="flex justify-between  items-center gap-2 ">
-
-            <div className="flex items-center gap-2">
-              <IoIosArrowRoundBack
-                onClick={backHandler}
-                className="text-2xl text-white cursor-pointer"
-              />
-              <p className="text-white text-sm   font-bold ">Add Item</p>
-            </div>
-            <div className="flex items-center gap-4 md:gap-6 ">
-              <div>
-                <select
-                  onChange={(e) => handlePriceLevelChange(e)}
-                  value={selectedPriceLevel}
-                  className="block w-full p-1 px-3 truncate text-xs  border rounded-lg border-gray-100 bg-[#012a4a] text-white focus:ring-blue-500 focus:border-blue-500"
-                >
-                  {priceLevels.length > 0 ? (
-                    priceLevels.map((el, index) => (
-                      <option key={index} value={el}>
-                        {el}
+              <div className="flex items-center gap-2">
+                <IoIosArrowRoundBack
+                  onClick={backHandler}
+                  className="text-2xl text-white cursor-pointer"
+                />
+                <p className="text-white text-sm   font-bold ">Add Item</p>
+              </div>
+              <div className="flex items-center gap-4 md:gap-6 ">
+                <div>
+                  <select
+                    onChange={(e) => handlePriceLevelChange(e)}
+                    value={selectedPriceLevel}
+                    className="block w-full p-1 px-3 truncate text-xs  border rounded-lg border-gray-100 bg-[#012a4a] text-white focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    {priceLevels.length > 0 ? (
+                      priceLevels.map((el, index) => (
+                        <option key={index} value={el}>
+                          {el}
+                        </option>
+                      ))
+                    ) : (
+                      <option key="no-price-level" value="No price level added">
+                        No price level added
                       </option>
-                    ))
-                  ) : (
-                    <option key="no-price-level" value="No price level added">
-                      No price level added
-                    </option>
-                  )}
-               
-               </select> 
-               </div> 
-              <MdOutlineQrCodeScanner className="text-white text-lg  cursor-pointer md:text-xl" />
-            </div>
+                    )}
+                  </select>
+                </div>
+                <MdOutlineQrCodeScanner className="text-white text-lg  cursor-pointer md:text-xl" />
+              </div>
             </div>
             {/* <div className="flex justify-end">
               <p className="text-sm text-white">Showroom</p>
@@ -816,7 +797,6 @@ function AddItemSalesSecondary() {
           </div>
 
           <div className=" px-3 py-1  bg-white drop-shadow-lg  ">
-              
             <div className="flex justify-between  items-center"></div>
             <div className="mt-2  md:w-1/2 ">
               <div className="relative ">
@@ -918,7 +898,7 @@ function AddItemSalesSecondary() {
               </select>
             </div>
           </div>
-{/* 
+          {/* 
           <div type="button" className="flex  px-4 bg-white ">
               <p className="text-xs bg-green-500 p-0.5 px-1 text-white rounded-sm mb-2  ">Showroom</p>
               </div> */}
@@ -979,25 +959,21 @@ function AddItemSalesSecondary() {
           <Modal.Header />
           <Modal.Body>
             <div className="space-y-6">
-             
               {/* Existing sign-in form */}
               <div>
-
                 <div className="flex justify-between  bg-[#579BB1] p-2 rounded-sm items-center">
+                  <h3 className=" text-base md:text-xl  font-medium text-gray-900 dark:text-white ">
+                    Godown List
+                  </h3>
 
-                <h3 className=" text-base md:text-xl  font-medium text-gray-900 dark:text-white ">
-                Godown List
-              </h3>
-
-                <h3 className="font-medium  text-right  text-white ">
-                  Total Count:{" "}
-                  <span className="text-white  font-bold">
-                  {godown.reduce((acc, curr) => {
-                    return (acc = acc + curr.count);
-                  }, 0)}
-
-                  </span>
-                </h3>
+                  <h3 className="font-medium  text-right  text-white ">
+                    Total Count:{" "}
+                    <span className="text-white  font-bold">
+                      {godown.reduce((acc, curr) => {
+                        return (acc = acc + curr.count);
+                      }, 0)}
+                    </span>
+                  </h3>
                 </div>
                 <div className="table-container overflow-y-auto max-h-[250px]">
                   <table className="min-w-full divide-y divide-gray-200">
@@ -1028,14 +1004,16 @@ function AddItemSalesSecondary() {
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                       {godown.map((item, index) => (
-                        <tr key={index} >
+                        <tr key={index}>
                           <td className="px-6 py-4 ">
                             <div className="text-sm text-gray-900">
                               {item.godown}
                             </div>
                             <div className="text-sm text-gray-900 mt-1">
-                             Stock : <span className="text-green-500 font-bold">{item.balance_stock}</span>
-
+                              Stock :{" "}
+                              <span className="text-green-500 font-bold">
+                                {item.balance_stock}
+                              </span>
                             </div>
                           </td>
                           {/* <td className="px-6 py-4 whitespace-nowrap">
@@ -1050,21 +1028,21 @@ function AddItemSalesSecondary() {
                           </td> */}
                           <td className=" px-6 py-4 whitespace-nowrap text-sm font-medium flex justify-center  ">
                             <div className="flex gap-3 items-center justify-center">
+                              <button
+                                onClick={() => decrementCount(index)}
+                                className="text-indigo-600 hover:text-indigo-900  text-lg"
+                              >
+                                -
+                              </button>
 
-                            <button
-                              onClick={() => incrementCount(index)}
-                              className="text-indigo-600 hover:text-indigo-900 text-lg"
-                            >
-                              +
-                            </button>
                               {item.count}
-                            <div></div>
-                            <button
-                              onClick={() => decrementCount(index)}
-                              className="text-indigo-600 hover:text-indigo-900  text-lg"
-                            >
-                              -
-                            </button>
+                              <div></div>
+                              <button
+                                onClick={() => incrementCount(index)}
+                                className="text-indigo-600 hover:text-indigo-900 text-lg"
+                              >
+                                +
+                              </button>
                             </div>
                           </td>
                         </tr>
