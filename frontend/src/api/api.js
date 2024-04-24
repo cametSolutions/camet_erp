@@ -2,8 +2,8 @@ import axios from 'axios';
 import { FaWindows } from 'react-icons/fa';
 
 const api = axios.create({
-  baseURL: 'http://localhost:7000',
-  // baseURL:"https://www.erp.camet.in/"
+  // baseURL: 'http://localhost:7000',
+  baseURL:"https://www.erp.camet.in/"
 });
 
 
