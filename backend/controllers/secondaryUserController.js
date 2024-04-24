@@ -1935,6 +1935,10 @@ export const fetchAdditionalDetails = async (req, res) => {
 // route get/api/sUsers/fetchConfigurationNumber
 
 export const fetchConfigurationNumber = async (req, res) => {
+
+  console.log("haiiii");
+
+
   const cmp_id = req.params.cmp_id;
   const title = req.params.title;
   const secUserId = req.sUserId;
@@ -1943,7 +1947,7 @@ export const fetchConfigurationNumber = async (req, res) => {
     const secUser = await SecondaryUser.findById(secUserId);
     const company = await OragnizationModel.findById(cmp_id);
 
-    console.log("companyyyy", company);
+
 
     if (!secUser) {
       return res.status(404).json({ message: "User not found" });

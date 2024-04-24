@@ -17,8 +17,12 @@ export const authSecondary = async (req, res, next) => {
       token,
       process.env.JWT_SECRET_KEY_SECONDARY
     );
-    console.log(decodedToken);
+    // console.log(decodedToken);
+
+    // console.log("decodedToken",decodedToken.userId);
     req.sUserId = decodedToken.userId;
+
+    console.log("ssss",req.sUserId);
 
     const secUser = await secondaryUserModel.findById(req.sUserId);
     // console.log("secUser", secUser);

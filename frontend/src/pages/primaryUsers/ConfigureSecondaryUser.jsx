@@ -32,7 +32,7 @@ function ConfigureSecondaryUser() {
     {
       prefixDetails: "",
       suffixDetails: "",
-      startingNumber: "1",
+      startingNumber: "",
       widthOfNumericalPart: "",
     },
   ]);
@@ -40,7 +40,7 @@ function ConfigureSecondaryUser() {
     {
       prefixDetails: "",
       suffixDetails: "",
-      startingNumber: "1",
+      startingNumber: "",
       widthOfNumericalPart: "",
     },
   ]);
@@ -48,7 +48,7 @@ function ConfigureSecondaryUser() {
     {
       prefixDetails: "",
       suffixDetails: "",
-      startingNumber: "1",
+      startingNumber: "",
       widthOfNumericalPart: "",
     },
   ]);
@@ -221,7 +221,7 @@ function ConfigureSecondaryUser() {
     const Initial = {
       prefixDetails: "",
       suffixDetails: "",
-      startingNumber: "1",
+      startingNumber: "",
       widthOfNumericalPart: "",
     };
 

@@ -32,8 +32,14 @@ export const primaryIsBlocked = async (req, res, next) => {
 
 export const secondaryIsBlocked = async (req, res, next) => {
     try {
+
+      // console.log("haiiiiiyyyyy");
       const userId = req.sUserId;
+      console.log("userIddddd",userId);
+
       const secUser = await Secondary.findById(userId);
+      console.log("secUser",secUser);
+
      
       if (!secUser) {
         return res.status(404).send("User not found.");
