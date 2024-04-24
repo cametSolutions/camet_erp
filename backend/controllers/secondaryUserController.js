@@ -1756,7 +1756,7 @@ export const createSale = async (req, res) => {
       email: party?.emailID,
       mobile_no: party?.mobileNumber,
       party_name: party?.partyName,
-      user_id:"null"
+      user_id:party?.mobileNumber || "null"
 
     }
 

@@ -257,8 +257,29 @@ function AddItem() {
   ///////////////////////////handleAddClick///////////////////////////////////
 
 
-  const handleAddClick = (index) => {
-    const updatedItems = [...filteredItems]; // Create a shallow copy of the items
+
+  // const handleAddClick = (index,_id) => {
+  //   console.log(_id);
+  //   const updatedItems = [...filteredItems]; 
+  //   const itemToUpdate = updatedItems[index];
+  //   if (itemToUpdate) {
+  //     // Toggle the 'added' state of the item
+  //     itemToUpdate.added = !itemToUpdate.added;
+  //     itemToUpdate.count = 1;
+  //     const total = calculateTotal(itemToUpdate, selectedPriceLevel).toFixed(2);
+  //     itemToUpdate.total = total;
+
+  //     dispatch(changeTotal(itemToUpdate));  
+  //   }
+  //   setItem(updatedItems);
+  //   setRefresh(!refresh);
+  //   dispatch(addItem(updatedItems[index]));
+  // };
+
+
+  const handleAddClick = (_id) => {
+    const updatedItems = [...item]; 
+    const index = updatedItems.findIndex(item => item._id === _id);
     const itemToUpdate = updatedItems[index];
     if (itemToUpdate) {
       // Toggle the 'added' state of the item
@@ -267,7 +288,7 @@ function AddItem() {
       const total = calculateTotal(itemToUpdate, selectedPriceLevel).toFixed(2);
       itemToUpdate.total = total;
 
-      dispatch(changeTotal(itemToUpdate));
+      dispatch(changeTotal(itemToUpdate));  
     }
     setItem(updatedItems);
     setRefresh(!refresh);
@@ -305,8 +326,10 @@ function AddItem() {
 
   ///////////////////////////handleIncrement///////////////////////////////////
 
-  const handleIncrement = (index) => {
-    const updatedItems = [...filteredItems];
+  const handleIncrement = (_id) => {
+    const updatedItems = [...item];
+    const index = updatedItems.findIndex(item => item._id === _id);
+
     const currentItem = { ...updatedItems[index] };
 
     if (!currentItem.count) {
@@ -346,8 +369,10 @@ function AddItem() {
   };
 
   ///////////////////////////handleDecrement///////////////////////////////////
-  const handleDecrement = (index) => {
-    const updatedItems = [...filteredItems]; // Make a copy of the array
+  const handleDecrement = (_id) => {
+    const updatedItems = [...item];
+    const index = updatedItems.findIndex(item => item._id === _id);
+    // Make a copy of the array
     const currentItem = { ...updatedItems[index] };
   
     // Decrement the count if it's greater than 0
@@ -456,7 +481,7 @@ function AddItem() {
             >
               <div className="flex items-center gap-x-1.5">
                 <button
-                  onClick={() => handleDecrement(index)}
+                  onClick={() => handleDecrement(el._id)}
                   type="button"
                   className="size-6 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-md border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none"
                   data-hs-input-number-decrement
@@ -485,7 +510,7 @@ function AddItem() {
                 />
                 <button
                   onClick={() => {
-                    handleIncrement(index);
+                    handleIncrement(el._id);
                   }}
                   type="button"
                   className="size-6 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-md border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none "
@@ -514,7 +539,7 @@ function AddItem() {
           <div>
             <div
               className="px-4 py-2 rounded-md border-violet-500 font-bold border-2 text-violet-500 text-xs"
-              onClick={() => handleAddClick(index)}
+              onClick={() => handleAddClick(el._id)}
             >
               Add
             </div>
