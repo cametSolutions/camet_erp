@@ -272,8 +272,10 @@ function AddItemSalesSecondary() {
 
   ///////////////////////////handleAddClick///////////////////////////////////
 
-  const handleAddClick = (index) => {
-    const updatedItems = [...filteredItems]; // Create a shallow copy of the items
+  const handleAddClick = (_id) => {
+    const updatedItems = [...item]; 
+    const index = updatedItems.findIndex(item => item._id === _id);
+    // Create a shallow copy of the items
     const itemToUpdate = updatedItems[index];
 
     console.log(itemToUpdate);
@@ -350,8 +352,10 @@ function AddItemSalesSecondary() {
 
   ///////////////////////////handleIncrement///////////////////////////////////
 
-  const handleIncrement = (index) => {
-    const updatedItems = [...filteredItems];
+  const handleIncrement = (_id) => {
+    const updatedItems = [...item];
+    const index = updatedItems.findIndex(item => item._id === _id);
+
     const currentItem = { ...updatedItems[index] };
 
     if (currentItem?.GodownList?.length > 0) {
@@ -398,8 +402,10 @@ function AddItemSalesSecondary() {
   };
 
   ///////////////////////////handleDecrement///////////////////////////////////
-  const handleDecrement = (index) => {
-    const updatedItems = [...filteredItems]; // Make a copy of the array
+  const handleDecrement = (_id) => {
+    const updatedItems = [...item]; 
+    const index = updatedItems.findIndex(item => item._id === _id);
+    // Make a copy of the array
     const currentItem = { ...updatedItems[index] };
 
     if (currentItem?.GodownList?.length > 0) {
@@ -438,7 +444,7 @@ function AddItemSalesSecondary() {
   const modalSubmit = (id) => {
     setOpenModal(false);
     console.log(id);
-    const updatedItems = [...filteredItems];
+    const updatedItems = [...item];
 
     // Find the itemToUpdate by id
     const itemToUpdateIndex = updatedItems.findIndex((item) => item._id === id);
@@ -683,7 +689,7 @@ function AddItemSalesSecondary() {
             >
               <div className="flex items-center gap-x-1.5">
                 <button
-                  onClick={() => handleDecrement(index)}
+                  onClick={() => handleDecrement(el._id)}
                   type="button"
                   className="size-6 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-md border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none"
                   data-hs-input-number-decrement
@@ -712,7 +718,7 @@ function AddItemSalesSecondary() {
                 />
                 <button
                   onClick={() => {
-                    handleIncrement(index);
+                    handleIncrement(el._id);
                   }}
                   type="button"
                   className="size-6 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-md border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none "
@@ -741,7 +747,7 @@ function AddItemSalesSecondary() {
           <div>
             <div
               className="px-4 py-2 rounded-md border-violet-500 font-bold border-2 text-violet-500 text-xs"
-              onClick={() => handleAddClick(index)}
+              onClick={() => handleAddClick(el._id)}
             >
               Add
             </div>

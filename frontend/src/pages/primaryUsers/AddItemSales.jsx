@@ -268,7 +268,6 @@ function AddItemSales() {
 
   const handleAddClick = (_id) => {
     const updatedItems = [...item]; 
-    console.log(updatedItems);
     const index = updatedItems.findIndex(item => item._id === _id);
     // Create a shallow copy of the items
     const itemToUpdate = updatedItems[index];
