@@ -46,18 +46,15 @@ function Sales() {
   const orgId = useSelector(
     (state) => state.setSelectedOrganization.selectedOrg._id
   );
-  const cmp_id = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg._id
-  );
   const type = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg.type
+    (state) => state.setSelectedOrganization.selectedOrg.type
   );
   
   useEffect(()=>{
    
     const getAdditionalChargesIntegrated = async () => {
       try {
-        const res = await api.get(`/api/pUsers/additionalcharges/${cmp_id}`, {
+        const res = await api.get(`/api/pUsers/additionalcharges/${orgId}`, {
           withCredentials: true,
         });
         console.log(res.data)

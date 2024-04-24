@@ -55,6 +55,7 @@ function SalesSecondary() {
   const type = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg.type
   );
+  console.log(type)
   useEffect(()=>{
    
     const getAdditionalChargesIntegrated = async () => {
