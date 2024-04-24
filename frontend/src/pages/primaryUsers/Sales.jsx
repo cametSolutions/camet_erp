@@ -61,10 +61,11 @@ function Sales() {
         );
 
         console.log(res.data.organizationData);
-        // setCompany(res.data.organizationData);
+
         setAdditionalChragesFromCompany(
           res.data.organizationData.additionalCharges
         );
+        
         const { salesNumber, salesNumberDetails } = res.data.organizationData;
 
         console.log(salesNumber);

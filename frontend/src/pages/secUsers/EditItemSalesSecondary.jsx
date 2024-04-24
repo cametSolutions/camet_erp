@@ -1,7 +1,7 @@
 /* eslint-disable react/no-unknown-property */
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import Sidebar from "../../components/homePage/Sidebar";
+import SidebarSec from "../../components/secUsers/SidebarSec";
 import api from "../../api/api";
 import { MdModeEditOutline } from "react-icons/md";
 import { IoIosArrowRoundBack } from "react-icons/io";
@@ -236,7 +236,7 @@ function EditItemSalesSecondary() {
   return (
     <div className="flex ">
       <div>
-        <Sidebar />
+        <SidebarSec />
       </div>
       <div className=" h-screen overflow-y-auto flex-1">
         <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex  items-center gap-2 sticky top-0 z-20 ">

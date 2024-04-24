@@ -31,7 +31,7 @@ function InvoiceDetailsSecondary() {
   useEffect(() => {
     const getTransactionDetails = async () => {
       try {
-        const res = await api.get(`/api/sUsers/getInvoiceDetails/${cmp_id}/${id}`, {
+        const res = await api.get(`/api/sUsers/getInvoiceDetails/${id}`, {
           withCredentials: true,
         });
         setData(res.data.data);

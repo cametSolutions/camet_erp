@@ -595,13 +595,18 @@ function InvoiceSecondary() {
                           </div>
                         )}
                       </div>
-                      <Link to={`/sUsers/editItem/${el._id}`}>
+                      {/* <Link to={`/sUsers/editItem/${el._id}`}> */}
                         <div className="">
-                          <p className="text-violet-500 text-xs md:text-base font-bold  p-1  px-4   border border-1 border-gray-300 rounded-2xl cursor-pointer">
+                          <p
+                          onClick={() => {
+                            navigate(`/sUsers/editItem/${el._id}`, {
+                              state: { from: "invoice" },
+                            });
+                          }} className="text-violet-500 text-xs md:text-base font-bold  p-1  px-4   border border-1 border-gray-300 rounded-2xl cursor-pointer">
                             Edit
                           </p>
                         </div>
-                      </Link>
+                      {/* </Link> */}
                     </div>
                   </div>
                   <hr />
