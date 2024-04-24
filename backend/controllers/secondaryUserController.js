@@ -1839,7 +1839,14 @@ export const fetchAdditionalDetails = async (req, res) => {
     const secUser = await SecondaryUser.findById(secondary_user_id);
     console.log("secUserrr", secUser);
 
-    const { selectedPriceLevels } = secUser.configurations[0];
+
+    const configuration = secUser.configurations.find(
+      (item) => item.organization.toString() === cmp_id
+    );
+
+    console.log(configuration);
+
+    const { selectedPriceLevels } = configuration
     console.log(selectedPriceLevels);
     let priceLevelsResult = [];
     if (selectedPriceLevels && selectedPriceLevels.length == 0) {
