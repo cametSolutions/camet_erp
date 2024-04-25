@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 
 const salesSchema = new mongoose.Schema(
   {
+    serialNumber: { type: Number }, // Add this line to include a serial number field
     salesNumber: { type: String, required: true },
     Primary_user_id: { type: String, required: true },
     Secondary_user_id: { type: String },
