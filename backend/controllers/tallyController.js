@@ -4,6 +4,7 @@ import BankDetailsModel from "../models/bankModel.js";
 import partyModel from "../models/partyModel.js";
 import productModel from "../models/productModel.js";
 import AdditionalCharges from "../models/additionalChargesModel.js";
+import invoiceModel from "../models/invoiceModel.js";
 
 
 
@@ -343,5 +344,38 @@ export const saveAdditionalChargesFromTally = async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 };
+
+
+
+// @desc for giving invoices to tally
+// route GET/api/tally/giveInvoice
+
+
+export const giveInvoice = async (req, res) => {
+ const cmp_id = req.params.cmp_id;
+ const serialNumber = req.params.SNo;
+ try {
+    const invoices = await invoiceModel.find({
+      cmp_id: cmp_id,
+      serialNumber: { $gt: serialNumber }, // Assuming serialNumber is the correct field name
+    });
+    if (invoices.length > 0) {
+      return res.status(200).json({
+        message: "Invoices fetched",
+        data: invoices,
+        count:invoices.length
+      });
+    } else {
+      return res.status(404).json({ message: "Invoices not found" });
+    }
+ } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      status: false,
+      message: "Internal server error",
+    });
+ }
+};
+
 
 

@@ -1533,9 +1533,18 @@ export const createInvoice = async (req, res) => {
     } = req.body;
     console.log("orderNumber", orderNumber);
 
-    console.log(req.body);
+  // Manually fetch the last invoice to get the serial number
+  const lastInvoice = await invoiceModel.findOne({}, {}, { sort: { 'serialNumber': -1 } });
+  let newSerialNumber = 1; // Default value in case no previous invoices exist
+
+  // Check if there's a last invoice and calculate the new serial number
+  if (lastInvoice && !isNaN(lastInvoice.serialNumber)) {
+    newSerialNumber = lastInvoice.serialNumber + 1;
+  }
+
 
     const invoice = new invoiceModel({
+      serialNumber: newSerialNumber,
       cmp_id: orgId, // Corrected typo and used correct assignment operator
       party,
       items,
