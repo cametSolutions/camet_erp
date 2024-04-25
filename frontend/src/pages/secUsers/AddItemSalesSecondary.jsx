@@ -900,10 +900,10 @@ function AddItemSalesSecondary() {
               </select>
             </div>
           </div>
-          {/* 
+          
           <div type="button" className="flex  px-4 bg-white ">
               <p className="text-xs bg-green-500 p-0.5 px-1 text-white rounded-sm mb-2  ">Showroom</p>
-              </div> */}
+              </div>
         </div>
 
         {loader ? (

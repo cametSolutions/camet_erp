@@ -28,6 +28,11 @@ api.interceptors.response.use(
       console.log(window.location);
       window.location.href = "http://localhost:5173/serverError";
     }
+    else if(error.response.status == 403 && error.response.data.companyRestricted){
+      console.log("welcome")
+      showSwalAlert2("This company is restricted","warning")
+
+    }
     
     return Promise.reject(error);
   }
@@ -41,10 +46,20 @@ const showSwalAlert = (message, icon, redirectUrl, removeItem) => {
     confirmButtonText: 'OK',
   }).then((result) => {
     if (result.isConfirmed) {
-      window.location.href = redirectUrl;
-      localStorage.removeItem(removeItem);
+      if(redirectUrl){
+        window.location.href = redirectUrl;
+        localStorage.removeItem(removeItem);
+      }  
     }
   });
+};
+const showSwalAlert2 = (message, icon) => {
+  Swal.fire({
+    title: 'Alert',
+    text: message,
+    icon: icon,
+    confirmButtonText: 'OK',
+  })
 };
 
 export default api;
