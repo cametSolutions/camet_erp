@@ -774,9 +774,20 @@ export const createInvoice = async (req, res) => {
       orderNumber,
     } = req.body;
 
-    console.log(req.body);
+  // Manually fetch the last invoice to get the serial number
+  const lastInvoice = await invoiceModel.findOne({}, {}, { sort: { 'serialNumber': -1 } });
+
+  console.log("lastInvoice",lastInvoice);
+  let newSerialNumber = 1; 
+
+   // Check if there's a last invoice and calculate the new serial number
+   if (lastInvoice && !isNaN(lastInvoice.serialNumber)) {
+    newSerialNumber = lastInvoice.serialNumber + 1;
+  }
+
 
     const invoice = new invoiceModel({
+      serialNumber: newSerialNumber,
       cmp_id: orgId, // Corrected typo and used correct assignment operator
       party,
       items,
@@ -1682,8 +1693,17 @@ export const createSale = async (req, res) => {
     await productModel.bulkWrite(productUpdates);
     await productModel.bulkWrite(godownUpdates);
 
+    const lastSale = await salesModel.findOne({}, {}, { sort: { 'serialNumber': -1 } });
+    let newSerialNumber = 1; 
+  
+    // Check if there's a last invoice and calculate the new serial number
+    if (lastSale && !isNaN(lastSale.serialNumber)) {
+      newSerialNumber = lastSale.serialNumber + 1;
+    }
+
     // Continue with the rest of your function...
     const sales = new salesModel({
+      serialNumber: newSerialNumber,
       cmp_id: orgId,
       party,
       items,

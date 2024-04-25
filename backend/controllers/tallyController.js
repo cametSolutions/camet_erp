@@ -4,19 +4,17 @@ import BankDetailsModel from "../models/bankModel.js";
 import partyModel from "../models/partyModel.js";
 import productModel from "../models/productModel.js";
 import AdditionalCharges from "../models/additionalChargesModel.js";
-
-
-
+import invoiceModel from "../models/invoiceModel.js";
+import salesModel from "../models/salesModel.js";
 
 export const saveDataFromTally = async (req, res) => {
   try {
     console.log("body", req.body);
     const dataToSave = await req.body.data;
-      console.log("dataToSave", dataToSave);
+    console.log("dataToSave", dataToSave);
     const { Primary_user_id, cmp_id } = dataToSave[0];
 
     await TallyData.deleteMany({ Primary_user_id, cmp_id });
-  
 
     // Use Promise.all to parallelize document creation or update
     const savedData = await Promise.all(
@@ -130,7 +128,6 @@ export const addBankData = async (req, res) => {
         client_code,
       });
 
-
       if (existingData) {
         // If data exists, update the existing document
         const updatedData = await BankDetailsModel.findOneAndUpdate(
@@ -182,7 +179,6 @@ export const saveProductsFromTally = async (req, res) => {
     // console.log("body", req.body);
     const productsToSave = req?.body?.data;
 
-
     // Extract primary user id and company id from the first product
     const { Primary_user_id, cmp_id } = productsToSave[0];
 
@@ -199,8 +195,7 @@ export const saveProductsFromTally = async (req, res) => {
           Primary_user_id: productItem.Primary_user_id,
         });
 
-
-        console.log("existingProduct",existingProduct);
+        console.log("existingProduct", existingProduct);
 
         // If the product doesn't exist, create a new one; otherwise, update it
         if (!existingProduct) {
@@ -221,14 +216,14 @@ export const saveProductsFromTally = async (req, res) => {
       })
     );
 
-    res.status(201).json({ message: "Products saved successfully", savedProducts });
+    res
+      .status(201)
+      .json({ message: "Products saved successfully", savedProducts });
   } catch (error) {
     console.error("Error:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };
-
-
 
 // @desc for saving parties/costumers from tally
 // route GET/api/tally/giveTransaction
@@ -259,7 +254,7 @@ export const savePartyFromTally = async (req, res) => {
           Primary_user_id: party.Primary_user_id,
         });
 
-        console.log("existingParty",existingParty);
+        console.log("existingParty", existingParty);
 
         // If the product doesn't exist, create a new one; otherwise, update it
         if (!existingParty) {
@@ -287,11 +282,8 @@ export const savePartyFromTally = async (req, res) => {
   }
 };
 
-
-
 // @desc for saving additionalCharges from tally
 // route GET/api/tally/giveTransaction
-
 
 export const saveAdditionalChargesFromTally = async (req, res) => {
   try {
@@ -337,11 +329,71 @@ export const saveAdditionalChargesFromTally = async (req, res) => {
       })
     );
 
-    res.status(201).json({ message: "Additional charges saved successfully", savedAdditionalCharges });
+    res.status(201).json({
+      message: "Additional charges saved successfully",
+      savedAdditionalCharges,
+    });
   } catch (error) {
     console.error("Error:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };
 
+// @desc for giving invoices to tally
+// route GET/api/tally/giveInvoice
 
+export const giveInvoice = async (req, res) => {
+  const cmp_id = req.params.cmp_id;
+  const serialNumber = req.params.SNo;
+  try {
+    const invoices = await invoiceModel.find({
+      cmp_id: cmp_id,
+      serialNumber: { $gt: serialNumber }, // Assuming serialNumber is the correct field name
+    });
+    if (invoices.length > 0) {
+      return res.status(200).json({
+        message: "Invoices fetched",
+        data: invoices,
+        count: invoices.length,
+      });
+    } else {
+      return res.status(404).json({ message: "Invoices not found" });
+    }
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      status: false,
+      message: "Internal server error",
+    });
+  }
+};
+
+// @desc for giving sales to tally
+// route GET/api/tally/giveSales
+
+export const giveSales = async (req, res) => {
+  const cmp_id = req.params.cmp_id;
+  const serialNumber = req.params.SNo; // Assuming SNo is the correct parameter name for serial number
+
+  try {
+    const sales = await salesModel.find({
+      cmp_id: cmp_id,
+      serialNumber: { $gt: serialNumber }, // Assuming serialNumber is the correct field name in your sales schema
+    });
+    if (sales.length > 0) {
+      return res.status(200).json({
+        message: "Sales fetched",
+        data: sales,
+        count: sales.length,
+      });
+    } else {
+      return res.status(404).json({ message: "Sales not found" });
+    }
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      status: false,
+      message: "Internal server error",
+    });
+  }
+};
