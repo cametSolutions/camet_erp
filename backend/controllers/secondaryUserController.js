@@ -34,7 +34,6 @@ export const login = async (req, res) => {
       secUser = await SecondaryUser.findOne({ mobile: email });
     }
 
-    console.log(secUser);
 
     if (!secUser) {
       return res.status(404).json({ message: "Invalid User" });
@@ -340,7 +339,6 @@ export const transactions = async (req, res) => {
     const combined = [...transactions, ...invoices, ...sales];
     combined.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-    console.log("combined", combined);
 
     if (combined.length > 0) {
       return res.status(200).json({

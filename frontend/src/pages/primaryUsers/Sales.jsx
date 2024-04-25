@@ -411,7 +411,7 @@ function Sales() {
             onClick={handleToggleSidebar}
             className="block md:hidden text-white text-3xl"
           /> */}
-          <Link to={"/pUsers/transaction"}>
+          <Link to={"/pUsers/dashboard"}>
             <IoIosArrowRoundBack className="text-3xl text-white cursor-pointer md:hidden" />
           </Link>
           <p className="text-white text-lg   font-bold ">

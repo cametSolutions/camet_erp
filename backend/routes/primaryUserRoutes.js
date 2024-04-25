@@ -19,6 +19,7 @@ import { registerPrimaryUser,login,addOrganizations,
   godownwiseProducts,godownwiseProductsSelf,fetchAdditionalCharges} from '../controllers/primaryUserController.js';
 import { singleUpload } from '../multer/multer.js';
 import { primaryIsBlocked } from '../middlewares/isBlocked.js';
+import { companyAuthentication } from '../middlewares/authCompany.js';
 
 router.post('/register', registerPrimaryUser);
 router.post('/login', login);
@@ -85,7 +86,7 @@ router.get("/getGodowns/:cmp_id",authPrimary,primaryIsBlocked,findPrimaryUserGod
 router.get("/getGodownsSelf/:cmp_id",authPrimary,primaryIsBlocked,findPrimaryUserGodownsSelf)
 router.get("/godownProductFilter/:cmp_id/:godown_id",authPrimary,primaryIsBlocked,godownwiseProducts)
 router.get("/godownProductFilterSelf/:cmp_id/:godown_name",authPrimary,primaryIsBlocked,godownwiseProductsSelf)
-router.get("/additionalcharges/:cmp_id",authPrimary,primaryIsBlocked,fetchAdditionalCharges)
+router.get("/additionalcharges/:cmp_id",authPrimary,primaryIsBlocked,companyAuthentication,fetchAdditionalCharges)
 
 
 

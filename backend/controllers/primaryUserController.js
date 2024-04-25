@@ -556,6 +556,7 @@ export const transactions = async (req, res) => {
   const cmp_id = req.params.cmp_id;
 
   try {
+
     const transactions = await TransactionModel.aggregate([
       { $match: { cmp_id: cmp_id } },
       {
@@ -619,6 +620,7 @@ export const transactions = async (req, res) => {
         message: "Transactions fetched",
         data: { combined },
       });
+   
     } else {
       return res.status(404).json({ message: "Transactions not found" });
     }

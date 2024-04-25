@@ -589,18 +589,14 @@ function AddItemSalesSecondary() {
 
   // Function to handle incrementing the count
   const incrementCount = (index) => {
-    const newGodownItems = godown.map((item) => ({ ...item })); // Deep copy each item object
-    console.log(newGodownItems);
 
-    if (newGodownItems[index].balance_stock >= 1) {
+    const newGodownItems = godown.map((item) => ({ ...item }));
+
       newGodownItems[index].count += 1;
       newGodownItems[index].balance_stock -= 1;
       setGodown(newGodownItems);
       setTotalCount(totalCount + 1);
-      console.log(godown);
-    } else {
-      toast("Insufficient stock to increment count.");
-    }
+
   };
 
   // Function to handle decrementing the count
@@ -1017,7 +1013,8 @@ function AddItemSalesSecondary() {
                             </div>
                             <div className="text-sm text-gray-900 mt-1">
                               Stock :{" "}
-                              <span className="text-green-500 font-bold">
+                              <span className={`${item.balance_stock <=0 ? "text-red-500  font-bold" : ""} text-green-500 font-bold"`}>
+
                                 {item.balance_stock}
                               </span>
                             </div>

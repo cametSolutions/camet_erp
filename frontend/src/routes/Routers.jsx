@@ -98,12 +98,17 @@ import ShareSalesSecondary from '../pages/secUsers/ShareSalesSecondary'
 import ConfigureSecondaryUser from '../pages/primaryUsers/ConfigureSecondaryUser'
 
 // Error Page
+import ErrorPage from '../pages/errorPages/Notfound'
+import Notfound from '../pages/errorPages/Notfound'
+import ServerError from '../pages/errorPages/ServerError'
 import ErrorPage from '../pages/errorPages/errorPage'
 import ErrorPage500 from '../pages/errorPages/errorPage500'
 
 const Routers = () => {
   return (
     <Routes>
+      <Route path='*' element={<Notfound/>}></Route>
+      <Route path='/notFound' element={<Notfound/>}></Route>
         <Route path='/' element={<Login/>}></Route>
         <Route path='/pUsers/register' element={<Register/>}></Route>
         <Route path='/pUsers/login' element={<Login></Login>}></Route>
@@ -207,8 +212,9 @@ const Routers = () => {
         <Route path='/sUsers/shareSales/:id' element={<ProtectedSecRoute><ShareSalesSecondary/></ProtectedSecRoute>}></Route> 
 
         {/* errorPage */}
-        <Route path='/404errorPage' element={<ErrorPage />} />
-        <Route path='/500errorPage' element={<ErrorPage500 />} />
+        <Route path='/errorPage' element={<ErrorPage />} />
+        <Route path='/serverError' element={<ServerError />} />
+
     
     </Routes>
   )

@@ -7,6 +7,8 @@ import {  IoReorderThreeSharp } from "react-icons/io5";
 import SidebarSec from "../../components/secUsers/SidebarSec";
 import { useDispatch } from "react-redux";
 import { removeAll } from "../../../slices/invoiceSecondary";
+import { removeAllSales } from "../../../slices/salesSecondary";
+
 
 
 function OrderConfigurationsSecondary() {
@@ -61,6 +63,7 @@ function OrderConfigurationsSecondary() {
     };
     getSingleOrganization();
   dispatch(removeAll())
+  dispatch(removeAllSales())
 
   }, [org]);
 

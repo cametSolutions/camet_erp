@@ -19,6 +19,7 @@ import { FcCancel } from "react-icons/fc";
 import { BiSolidAddToQueue } from "react-icons/bi";
 import { useDispatch } from "react-redux";
 import { removeAll } from "../../../slices/invoiceSecondary";
+import { removeAllSales } from "../../../slices/salesSecondary";
 import { toast } from "react-toastify";
 import { MdInventory } from "react-icons/md";
 
@@ -65,6 +66,7 @@ function Dashboard() {
     };
     fetchTransactions();
     dispatch(removeAll())
+    dispatch(removeAllSales())
 
   }, [org]);
 
