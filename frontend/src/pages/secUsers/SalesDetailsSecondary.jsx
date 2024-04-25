@@ -202,13 +202,13 @@ function SalesDetailsSecondary() {
                 {data?.isCancelled ? "Cancelled" : "Cancel"}
               </p>
             </div> */}
-            <div
+            {/* <div
               onClick={() => navigate(`/sUsers/editInvoice/${data._id}`)}
               className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer"
             >
               <FaEdit className="text-blue-500" />
               <p className="text-black font-bold text-sm">Edit</p>
-            </div>
+            </div> */}
             <Link to={`/sUsers/shareSales/${data._id}`}>
               <div className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer">
                 <IoMdShareAlt />

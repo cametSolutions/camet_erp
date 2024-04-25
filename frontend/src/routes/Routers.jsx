@@ -101,9 +101,6 @@ import ConfigureSecondaryUser from '../pages/primaryUsers/ConfigureSecondaryUser
 import ErrorPage from '../pages/errorPages/Notfound'
 import Notfound from '../pages/errorPages/Notfound'
 import ServerError from '../pages/errorPages/ServerError'
-import ErrorPage from '../pages/errorPages/errorPage'
-import ErrorPage500 from '../pages/errorPages/errorPage500'
-
 const Routers = () => {
   return (
     <Routes>
