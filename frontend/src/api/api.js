@@ -2,8 +2,8 @@ import axios from 'axios';
 import Swal from 'sweetalert2';
 
 const api = axios.create({
-  // baseURL: 'http://localhost:7000',
-  baseURL:"https://www.erp.camet.in/"
+  baseURL: 'http://localhost:7000',
+  // baseURL:"https://www.erp.camet.in/"
 });
 
 api.interceptors.response.use(
@@ -18,10 +18,11 @@ api.interceptors.response.use(
     }
     else if(error.response.config.url === '/api/pUsers/getPrimaryUserData' || error.response.data.is_blocked) {
         showSwalAlert("Your Account is Blocked", 'warning', '/pUsers/login', 'pUserData');
-    } else if(error.response.status == 404){
-      window.location.href = "http://localhost:5173/notFound";
+    } 
+    // else if(error.response.status == 404){
+    //   window.location.href = "http://localhost:5173/notFound";
 
-    }
+    // }
     else if(error.response.status == 500){
       console.log("haii");
       console.log(window.location);

@@ -399,11 +399,11 @@ export const fetchSecondaryUsers = async (req, res) => {
 
 export const fetchOutstandingTotal = async (req, res) => {
   const userId = req.pUserId;
-  const cmp_id=req.params.cmp_id;
+  const cmp_id = req.params.cmp_id;
   try {
     // const tallyData = await TallyData.find({ Primary_user_id: userId });
     const outstandingData = await TallyData.aggregate([
-      { $match: { Primary_user_id: userId,cmp_id:cmp_id } },
+      { $match: { Primary_user_id: userId, cmp_id: cmp_id } },
       {
         $group: {
           _id: "$party_id",
@@ -556,7 +556,6 @@ export const transactions = async (req, res) => {
   const cmp_id = req.params.cmp_id;
 
   try {
-
     const transactions = await TransactionModel.aggregate([
       { $match: { cmp_id: cmp_id } },
       {
@@ -584,7 +583,7 @@ export const transactions = async (req, res) => {
     ]);
 
     const invoices = await invoiceModel.aggregate([
-      { $match: {  cmp_id: cmp_id } },
+      { $match: { cmp_id: cmp_id } },
       {
         $project: {
           party_name: "$party.partyName",
@@ -620,7 +619,6 @@ export const transactions = async (req, res) => {
         message: "Transactions fetched",
         data: { combined },
       });
-   
     } else {
       return res.status(404).json({ message: "Transactions not found" });
     }
@@ -1533,15 +1531,18 @@ export const createInvoice = async (req, res) => {
     } = req.body;
     console.log("orderNumber", orderNumber);
 
-  // Manually fetch the last invoice to get the serial number
-  const lastInvoice = await invoiceModel.findOne({}, {}, { sort: { 'serialNumber': -1 } });
-  let newSerialNumber = 1; 
+    // Manually fetch the last invoice to get the serial number
+    const lastInvoice = await invoiceModel.findOne(
+      {},
+      {},
+      { sort: { serialNumber: -1 } }
+    );
+    let newSerialNumber = 1;
 
-  // Check if there's a last invoice and calculate the new serial number
-  if (lastInvoice && !isNaN(lastInvoice.serialNumber)) {
-    newSerialNumber = lastInvoice.serialNumber + 1;
-  }
-
+    // Check if there's a last invoice and calculate the new serial number
+    if (lastInvoice && !isNaN(lastInvoice.serialNumber)) {
+      newSerialNumber = lastInvoice.serialNumber + 1;
+    }
 
     const invoice = new invoiceModel({
       serialNumber: newSerialNumber,
@@ -2179,6 +2180,7 @@ export const saveSalesNumber = async (req, res) => {
 // route POST /api/pUsers/createSale
 
 export const createSale = async (req, res) => {
+  const changedGodowns = [];
   const Primary_user_id = req.pUserId;
   try {
     const {
@@ -2235,6 +2237,18 @@ export const createSale = async (req, res) => {
               },
             },
           });
+
+          // If a godown was updated and the stock has actually changed, add it to the changedGodowns array
+          if (
+            godownIndex !== -1 &&
+            newGodownStock !==
+              parseInt(product.GodownList[godownIndex].balance_stock)
+          ) {
+            changedGodowns.push({
+              godown_id: godown.godown_id,
+              newBalanceStock: newGodownStock,
+            });
+          }
         }
       }
     }
@@ -2243,9 +2257,13 @@ export const createSale = async (req, res) => {
     await productModel.bulkWrite(productUpdates);
     await productModel.bulkWrite(godownUpdates);
 
-    const lastSale = await salesModel.findOne({}, {}, { sort: { 'serialNumber': -1 } });
-    let newSerialNumber = 1; 
-  
+    const lastSale = await salesModel.findOne(
+      {},
+      {},
+      { sort: { serialNumber: -1 } }
+    );
+    let newSerialNumber = 1;
+
     // Check if there's a last invoice and calculate the new serial number
     if (lastSale && !isNaN(lastSale.serialNumber)) {
       newSerialNumber = lastSale.serialNumber + 1;
@@ -2273,34 +2291,31 @@ export const createSale = async (req, res) => {
       { new: true }
     );
 
-  
-
-    const billData={
+    const billData = {
       Primary_user_id,
       bill_no: salesNumber,
       cmp_id: orgId,
-      party_id:party?.party_master_id,
+      party_id: party?.party_master_id,
       bill_amount: lastAmount,
       bill_date: new Date(),
       bill_pending_amt: lastAmount,
       email: party?.emailID,
       mobile_no: party?.mobileNumber,
       party_name: party?.partyName,
+    };
 
-    }
+    const updatedDocument = await TallyData.findOneAndUpdate(
+      {
+        cmp_id: orgId,
+        bill_no: salesNumber,
+        Primary_user_id: Primary_user_id,
+        party_id: party?.party_master_id,
+      },
+      billData,
+      { upsert: true, new: true }
+    );
 
-
-
-      const updatedDocument = await TallyData.findOneAndUpdate(
-        {
-          cmp_id: orgId,
-          bill_no:salesNumber,
-          Primary_user_id: Primary_user_id,
-          party_id:party?.party_master_id,
-        },
-        billData,
-        { upsert: true, new: true }
-      )
+    console.log("changedGodowns",changedGodowns);
 
     return res.status(200).json({
       success: true,
@@ -2308,8 +2323,6 @@ export const createSale = async (req, res) => {
       data: result,
       // billData: addedInBillData,
     });
-
-
   } catch (error) {
     console.error(error);
     return res.status(500).json({
@@ -2731,22 +2744,21 @@ export const godownwiseProductsSelf = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
-export const fetchAdditionalCharges =async(req,res)=>{
-  try{
+export const fetchAdditionalCharges = async (req, res) => {
+  try {
     const cmp_id = req.params.cmp_id;
-    const pUser = req.pUserId 
-    console.log(pUser)
-    
+    const pUser = req.pUserId;
+    console.log(pUser);
+
     const aditionalDetails = await AdditionalChargesModel.find({
       cmp_id: cmp_id,
-      Primary_user_id: pUser 
+      Primary_user_id: pUser,
     });
-    
+
     console.log(aditionalDetails);
     res.json(aditionalDetails);
-    
-  }catch (error) {
+  } catch (error) {
     console.error("Error fetching godownwise products:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
-}
+};
