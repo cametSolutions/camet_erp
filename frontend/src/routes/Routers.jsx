@@ -99,6 +99,7 @@ import ConfigureSecondaryUser from '../pages/primaryUsers/ConfigureSecondaryUser
 
 // Error Page
 import ErrorPage from '../pages/errorPages/errorPage'
+import ErrorPage500 from '../pages/errorPages/errorPage500'
 
 const Routers = () => {
   return (
@@ -206,7 +207,8 @@ const Routers = () => {
         <Route path='/sUsers/shareSales/:id' element={<ProtectedSecRoute><ShareSalesSecondary/></ProtectedSecRoute>}></Route> 
 
         {/* errorPage */}
-        <Route path='/errorPage' element={<ErrorPage />} />
+        <Route path='/404errorPage' element={<ErrorPage />} />
+        <Route path='/500errorPage' element={<ErrorPage500 />} />
     
     </Routes>
   )

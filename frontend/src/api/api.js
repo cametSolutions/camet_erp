@@ -19,10 +19,10 @@ api.interceptors.response.use(
     else if(error.response.config.url === '/api/pUsers/getPrimaryUserData' || error.response.data.is_blocked) {
         showAlert("Your Account is Blocked", '/pUsers/login', 'pUserData');
     }else if(error.response.status == 404){
-      window.location.href("error")
+      window.location.href("/404errorPage")
     }
     else if(error.response.status == 500){
-      window.location.href("error")
+      window.location.href("/500errorPage")
     }
     
     return Promise.reject(error);
