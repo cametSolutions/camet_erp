@@ -43,6 +43,7 @@ function AddItemSalesSecondary() {
   const [openModal, setOpenModal] = useState(false);
   const [totalCount, setTotalCount] = useState(0);
   const [godown, setGodown] = useState([]);
+  const [godownname,setGodownname]=useState("")
   console.log(godown);
 
   console.log(scrollPosition);
@@ -81,6 +82,22 @@ function AddItemSalesSecondary() {
   const location = useLocation();
   console.log(location);
 
+   ///////////////////////////Godown name///////////////////////////////////
+   useEffect(()=>{
+    const fetchGodownname = async () => {
+      try {
+        const godown = await api.get(`/api/sUsers/godownsName/${cpm_id}`, {
+          withCredentials: true,
+        });
+        console.log(godown)
+       setGodownname(godown.data)
+      } catch (error) {
+        console.log(error)
+        toast.error(error.message);
+      }
+    };
+    fetchGodownname()
+   },[])
   ///////////////////////////fetchProducts///////////////////////////////////
 
   useEffect(() => {
@@ -620,7 +637,7 @@ function AddItemSalesSecondary() {
     console.log(filteredItems[index]);
     const adjustedStyle = {
       ...style,
-      marginTop: "16px",
+      marginTop: "36px",
       height: "160px",
     };
     return (
@@ -760,7 +777,7 @@ function AddItemSalesSecondary() {
       </div>
 
       <div className="flex-1 bg-slate-50 h-screen overflow-y-scroll  ">
-        <div className="sticky top-0 h-[157px] ">
+        <div className="sticky top-0 h-[165px] ">
           <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3  ">
             <div className="flex justify-between  items-center gap-2 ">
               <div className="flex items-center gap-2">
@@ -899,12 +916,13 @@ function AddItemSalesSecondary() {
                 ))}
               </select>
             </div>
+            
           </div>
-          
           <div type="button" className="flex  px-4 bg-white ">
-              <p className="text-xs bg-green-500 p-0.5 px-1 text-white rounded-sm mb-2  ">Showroom</p>
+              <p className="text-xs  p-0.5 px-1 text-black font-bold opacity-60 mb-2  ">{godownname}</p>
               </div>
         </div>
+
 
         {loader ? (
           <div className="flex justify-center items-center h-screen">
