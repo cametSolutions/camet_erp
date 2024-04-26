@@ -1547,6 +1547,8 @@ export const createInvoice = async (req, res) => {
     const invoice = new invoiceModel({
       serialNumber: newSerialNumber,
       cmp_id: orgId, // Corrected typo and used correct assignment operator
+      partyAccount:party?.partyName,
+
       party,
       items,
       priceLevel: priceLevelFromRedux, // Corrected typo and used correct assignment operator
@@ -2272,7 +2274,7 @@ export const createSale = async (req, res) => {
     // Continue with the rest of your function...
     const sales = new salesModel({
       serialNumber: newSerialNumber,
-
+      partyAccount:party?.partyName,
       cmp_id: orgId,
       party,
       items,

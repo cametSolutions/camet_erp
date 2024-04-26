@@ -14,12 +14,17 @@ function ConfigureSecondaryUser() {
   const [selectedPriceLevels, setSelectedPriceLevels] = useState([]);
   const [selectedGodowns, setSelectedGodowns] = useState([]);
   const [godownConfigOption, setGodownConfigOption] = useState("");
+  const [vanSaleGodownName, setVanSaleGodownName] = useState('')
   const [godownPrefix, setGodownPrefix] = useState("");
   const [godownWidth, setGodownWidth] = useState("");
   const [godownSuffix, setGodownSuffix] = useState("");
   const [godownStartingNumber, setGodownStartingNumber] = useState("");
   const [selectedConfig, setSelectedConfig] = useState("sales");
   const [vanSale, setVanSale] = useState(false);
+
+  console.log(godowns);
+  console.log(godownConfigOption);
+  console.log(vanSaleGodownName);
 
   const type = useSelector(
     (state) => state.setSelectedOrganization.selectedOrg.type
@@ -159,7 +164,10 @@ function ConfigureSecondaryUser() {
     }
   };
 
+  console.log(sales[0]["prefixDetails"]);
+
   const getConfigValue = (section, field) => {
+    console.log(field);
     switch (section) {
       case "sales":
         return sales[0][field];
@@ -234,6 +242,7 @@ function ConfigureSecondaryUser() {
         suffixDetails: godownSuffix,
         startingNumber: godownStartingNumber,
         widthOfNumericalPart: godownWidth,
+        vanSaleGodownName
       };
       formData = {
         selectedPriceLevels,
@@ -676,15 +685,16 @@ function ConfigureSecondaryUser() {
                         </label>
                         <select
                           className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                          onChange={(e) =>
-                            setGodownConfigOption(e.target.value)
-                          }
+                          onChange={(e) => {
+                            setGodownConfigOption(e.target.value); // Save the id
+                            setVanSaleGodownName(e.target.options[e.target.selectedIndex].text); // Save the godown name
+                         }}
                           value={godownConfigOption}
                         >
                           {godowns?.length > 0 ? (
                             godowns?.map((el, index) => (
                               <option key={index} value={el.id}>
-                                {el.godown}
+                                {el.godown[0]}
                               </option>
                             ))
                           ) : (

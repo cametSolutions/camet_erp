@@ -25,6 +25,7 @@ const secondaryUserSchema = new mongoose.Schema(
         receiptConfiguration: { type: Object },
         vanSaleConfiguration: { type: Object },
         vanSale: { type: Boolean },
+        // vanSaleGodown:{type:String}
       },
     ],
     isBlocked:{type:Boolean,default:false},

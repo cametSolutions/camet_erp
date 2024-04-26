@@ -19,10 +19,7 @@ api.interceptors.response.use(
     else if(error.response.config.url === '/api/pUsers/getPrimaryUserData' || error.response.data.is_blocked) {
         showSwalAlert("Your Account is Blocked", 'warning', '/pUsers/login', 'pUserData');
     } 
-    // else if(error.response.status == 404){
-    //   window.location.href = "http://localhost:5173/notFound";
-
-    // }
+  
     else if(error.response.status == 500){
       console.log("haii");
       console.log(window.location);
