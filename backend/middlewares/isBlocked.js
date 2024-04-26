@@ -32,7 +32,6 @@ export const primaryIsBlocked = async (req, res, next) => {
 
 export const secondaryIsBlocked = async (req, res, next) => {
 
-  console.log("haiiooo");
     try {
 
       // console.log("haiiiiiyyyyy");
@@ -46,7 +45,6 @@ export const secondaryIsBlocked = async (req, res, next) => {
       }
       
       const isBlocked = secUser.get('isBlocked');
-      console.log("isBlocked:", isBlocked); // Add this line to check isBlocked
       if (isBlocked) {
         res.cookie("jwt_secondary", "", {
           httpOnly: true,

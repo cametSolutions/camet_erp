@@ -5,7 +5,6 @@ export const authSecondary = async (req, res, next) => {
   let token;
   token = req.cookies.jwt_secondary;
 
-  console.log("tookrnn", token);
 
   if (!token) {
     return res
