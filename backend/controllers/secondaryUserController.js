@@ -39,7 +39,6 @@ export const login = async (req, res) => {
       return res.status(404).json({ message: "Invalid User" });
     }
     const Blocked = secUser.get("isBlocked")
-    console.log(Blocked)
     if (Blocked == true) {
       return res.status(401).json({ message: "User is blocked" });
     }
@@ -59,7 +58,7 @@ export const login = async (req, res) => {
     }
 
     const { name, _id, mobile } = secUser._doc;
-    console.log("mobile", mobile);
+   
     const token = generateSecToken(res, secUser._id);
 
     return res.status(200).json({
@@ -68,7 +67,7 @@ export const login = async (req, res) => {
       data: { email, name, _id, mobile },
     });
   } catch (error) {
-    console.log(error);
+
     return res.status(500).json({ status: false, message: "Failed to login!" });
   }
 };
@@ -93,7 +92,7 @@ export const getSecUserData = async (req, res) => {
         .json({ message: "secondaryUSerData not found", data: { userData } });
     }
   } catch (error) {
-    console.log(error);
+  
     return res
       .status(500)
       .json({ status: false, message: "internal sever error" });
@@ -135,7 +134,7 @@ export const fetchOutstandingTotal = async (req, res) => {
         .json({ message: "No outstandingData were found for user" });
     }
   } catch (error) {
-    console.log(error);
+   
     return res
       .status(500)
       .json({ success: false, message: "Internal server error, try again!" });
@@ -148,8 +147,6 @@ export const fetchOutstandingTotal = async (req, res) => {
 export const fetchOutstandingDetails = async (req, res) => {
   const partyId = req.params.party_id;
   const cmp_id = req.params.cmp_id;
-  console.log("cmp_id", cmp_id);
-  console.log("partyId", partyId);
   try {
     const outstandings = await TallyData.find({
       party_id: partyId,
@@ -167,7 +164,7 @@ export const fetchOutstandingDetails = async (req, res) => {
         .json({ message: "No outstandings were found for user" });
     }
   } catch (error) {
-    console.log(error);
+  
     return res
       .status(500)
       .json({ success: false, message: "Internal server error, try again!" });
@@ -187,11 +184,6 @@ export const confirmCollection = async (req, res) => {
   } = req.body;
   const paymentMethod = PaymentMethod;
 
-  console.log("PaymentMethod", PaymentMethod);
-  console.log("paymentDetails", paymentDetails);
-  console.log("agentName", agentName);
-  console.log("agentId", agentId);
-
   const {
     party_id,
     party_name,
@@ -200,8 +192,6 @@ export const confirmCollection = async (req, res) => {
     billData,
     enteredAmount,
   } = collectionDetails;
-
-  console.log("collectionDetails", collectionDetails);
 
   try {
     const outstandingData = await TallyData.find({
@@ -349,7 +339,7 @@ export const transactions = async (req, res) => {
       return res.status(404).json({ message: "Transactions not found" });
     }
   } catch (error) {
-    console.log(error);
+
     return res.status(500).json({
       status: false,
       message: "Internal server error",
@@ -378,14 +368,13 @@ export const cancelTransaction = async (req, res) => {
       },
     ]);
 
-    console.log("Transactions to update:", transactions);
 
     for (const { billNo, currentAmount } of transactions) {
       await TallyData.updateOne(
         { bill_no: billNo },
         { $set: { bill_pending_amt: currentAmount } }
       );
-      console.log(`Updated bill_pending_amt for ${billNo}`);
+ 
     }
 
     await TransactionModel.updateOne(
@@ -425,7 +414,7 @@ export const fetchBanks = async (req, res) => {
       return res.status(404).json({ message: "Bank data not found" });
     }
   } catch (error) {
-    console.log(error);
+   
     return res
       .status(500)
       .json({ status: false, message: "Internal server error" });
@@ -437,7 +426,7 @@ export const fetchBanks = async (req, res) => {
 
 export const sendOtp = async (req, res) => {
   const { email } = req.body;
-  console.log("email", email);
+  
 
   try {
     const validEmail = await SecondaryUser.findOne({ email: email });
@@ -446,7 +435,7 @@ export const sendOtp = async (req, res) => {
     }
 
     const otp = generateNumericOTP(6);
-    console.log("otp", otp);
+ 
 
     // Save OTP in the database
     const saveOtp = await SecondaryUser.updateOne({ email }, { $set: { otp } });
@@ -471,17 +460,17 @@ export const sendOtp = async (req, res) => {
     // Send the email
     transporter.sendMail(mailOptions, function (error, info) {
       if (error) {
-        console.log(error);
+    
         return res.status(500).json({ error: "Error sending email" });
       } else {
-        console.log("Email Sent:" + info.response);
+      
         return res
           .status(200)
           .json({ message: "OTP sent successfully", data: otp });
       }
     });
   } catch (error) {
-    console.log(error);
+  
     return res.status(500).json({ error: "Internal server error" });
   }
 };
@@ -491,7 +480,7 @@ export const sendOtp = async (req, res) => {
 
 export const submitOtp = async (req, res) => {
   const { Otp, otpEmailSec } = req.body;
-  console.log("otpEmailSec", otpEmailSec);
+ 
 
   try {
     // Retrieve user data based on the provided email
@@ -579,7 +568,7 @@ export const PartyList = async (req, res) => {
       cmp_id: cmp_id,
       Primary_user_id: Primary_user_id,
     });
-    console.log("partyList", partyList);
+   
     if (partyList) {
       res
         .status(200)
@@ -588,7 +577,7 @@ export const PartyList = async (req, res) => {
       res.status(404).json({ message: "No parties found" });
     }
   } catch (error) {
-    console.log(error);
+    
     res
       .status(500)
       .json({ success: false, message: "Internal server error, try again!" });
@@ -750,7 +739,7 @@ export const getProducts = async (req, res) => {
       return res.status(404).json({ message: "No products were found " });
     }
   } catch (error) {
-    console.log(error);
+ 
     return res
       .status(500)
       .json({ success: false, message: "Internal server error, try again!" });
@@ -761,7 +750,7 @@ export const getProducts = async (req, res) => {
 export const createInvoice = async (req, res) => {
   const Secondary_user_id = req.sUserId;
   const owner = req.owner.toString();
-  console.log("ownerrr", owner);
+
 
   try {
     const {
@@ -777,7 +766,7 @@ export const createInvoice = async (req, res) => {
   // Manually fetch the last invoice to get the serial number
   const lastInvoice = await invoiceModel.findOne({}, {}, { sort: { 'serialNumber': -1 } });
 
-  console.log("lastInvoice",lastInvoice);
+ 
   let newSerialNumber = 1; 
 
    // Check if there's a last invoice and calculate the new serial number
@@ -866,7 +855,7 @@ export const invoiceList = async (req, res) => {
       Secondary_user_id: userId,
       cmp_id: cmp_id,
     });
-    console.log("invoiceList", invoiceList);
+   
     if (invoiceList) {
       res
         .status(200)
@@ -903,7 +892,6 @@ export const getSinglePartyDetails = async (req, res) => {
 export const editParty = async (req, res) => {
   const party_id = req.params.id;
 
-  console.log(req.body);
 
   try {
     const updateParty = await PartyModel.findOneAndUpdate(
@@ -951,7 +939,7 @@ export const deleteParty = async (req, res) => {
 
 export const getSingleOrganization = async (req, res) => {
   const OrgId = new mongoose.Types.ObjectId(req.params.id);
-  console.log("OrgId", OrgId);
+
   try {
     const organization = await Organization.findById(OrgId).populate({
       path: "configurations.bank",
@@ -966,7 +954,7 @@ export const getSingleOrganization = async (req, res) => {
       return res.status(404).json({ message: "No organization found " });
     }
   } catch (error) {
-    console.log(error);
+    
     return res
       .status(500)
       .json({ success: false, message: "Internal server error, try again!" });
@@ -978,12 +966,12 @@ export const getSingleOrganization = async (req, res) => {
 
 export const fetchHsn = async (req, res) => {
   const cmp_id = req.params.cmp_id;
-  console.log("cmp_id", cmp_id);
+  
   try {
     const hsn = await HsnModel.find({
       cpm_id: cmp_id,
     });
-    console.log("hsn", hsn);
+   
 
     if (hsn) {
       return res.status(200).json({ message: "hsn fetched", data: hsn });
@@ -991,7 +979,7 @@ export const fetchHsn = async (req, res) => {
       return res.status(404).json({ message: "hsn data not found" });
     }
   } catch (error) {
-    console.log(error);
+
     return res
       .status(500)
       .json({ status: false, message: "Internal server error" });
@@ -1004,10 +992,10 @@ export const addDataToOrg = async (req, res) => {
   try {
     const orgId = req.params.cmp_id;
 
-    console.log(req.body);
+   
 
     const org = await OragnizationModel.findById(orgId);
-    console.log(org);
+  
     if (org) {
       const fieldToUpdate = Object.keys(req.body)[0];
       const newData = req.body[fieldToUpdate];
@@ -1046,8 +1034,7 @@ export const editDataInOrg = async (req, res) => {
     const newData = req.body[fieldToUpdate];
     const index = parseInt(req.body.index);
 
-    console.log("fieldToUpdate", fieldToUpdate);
-    console.log("index", index);
+   
 
     const org = await OragnizationModel.findById(orgId);
     if (!org) {
@@ -1075,12 +1062,12 @@ export const editDataInOrg = async (req, res) => {
 export const deleteDataInOrg = async (req, res) => {
   try {
     const orgId = req.params.cmp_id;
-    console.log(req.body);
+   
     const fieldToDelete = Object.keys(req.body)[0];
     const indexToDelete = req.body[fieldToDelete];
 
     const org = await OragnizationModel.findById(orgId);
-    console.log("org", org);
+    
     if (!org) {
       return res
         .status(404)
@@ -1088,8 +1075,7 @@ export const deleteDataInOrg = async (req, res) => {
     }
 
     const neededField = org[fieldToDelete];
-    console.log("fieldToDelete", fieldToDelete);
-    console.log("neededField", neededField);
+   
     neededField.splice(indexToDelete, 1);
     await org.save(); // Save the organization after deletion
     return res
@@ -1137,8 +1123,6 @@ export const addProduct = async (req, res) => {
 
     // Fetch HSN details
     const hsnDetails = await HsnModel.findById(hsn_code);
-
-    console.log("hsnDetails", hsnDetails);
 
     // Extract required fields from HSN details
     let cgst, sgst, igst, cess, addl_cess, hsn_id;
@@ -1288,7 +1272,7 @@ export const editProduct = async (req, res) => {
       addl_cess,
     };
 
-    console.log("dataToSave", dataToSave);
+    
 
     const updateProduct = await productModel.findOneAndUpdate(
       { _id: productId },
@@ -1311,7 +1295,7 @@ export const editProduct = async (req, res) => {
 
 export const deleteProduct = async (req, res) => {
   const productId = req.params.id;
-  console.log("productId", productId);
+ 
   try {
     const deletedProduct = await productModel.findByIdAndDelete(productId);
     if (deletedProduct) {
@@ -1385,7 +1369,7 @@ export const editInvoice = async (req, res) => {
   const Secondary_user_id = req.sUserId;
   const Primary_user_id = req.owner;
   const invoiceId = req.params.id;
-  console.log("invoiceId", invoiceId);
+
   try {
     const {
       orgId,
@@ -1396,9 +1380,9 @@ export const editInvoice = async (req, res) => {
       lastAmount,
       orderNumber,
     } = req.body;
-    console.log("orderNumber", orderNumber);
+    
 
-    console.log(req.body);
+
 
     const result = await invoiceModel.findByIdAndUpdate(
       invoiceId, // Use the invoiceId to find the document
@@ -1451,7 +1435,7 @@ export const fetchFilters = async (req, res) => {
       return res.status(404).json({ message: "filers  not found" });
     }
   } catch (error) {
-    console.log(error);
+    
     return res
       .status(500)
       .json({ status: false, message: "Internal server error" });
@@ -1466,15 +1450,15 @@ export const deleteAdditionalCharge = async (req, res) => {
     const id = req.params.id;
     const addlId = new mongoose.Types.ObjectId(id);
 
-    console.log(addlId);
+    
     const cmp_id = req.params.cmp_id;
     const org = await OragnizationModel.findById(cmp_id);
-    console.log("org", org);
+   
 
     const indexToDelete = org.additionalCharges.findIndex((item) =>
       item._id.equals(addlId)
     );
-    console.log("indexToDelete", indexToDelete);
+ 
 
     if (indexToDelete !== -1) {
       org.additionalCharges.splice(indexToDelete, 1);
@@ -1546,15 +1530,15 @@ export const EditAditionalCharge = async (req, res) => {
     const id = req.params.id;
     const addlId = new mongoose.Types.ObjectId(id);
 
-    console.log(addlId);
+
     const cmp_id = req.params.cmp_id;
     const org = await OragnizationModel.findById(cmp_id);
-    console.log("org", org);
+ 
 
     const indexToUpdate = org.additionalCharges.findIndex((item) =>
       item._id.equals(addlId)
     );
-    console.log("indexToUpdate", indexToUpdate);
+
 
     if (indexToUpdate !== -1) {
       // Assuming req.body contains the updated fields for the additional charge
@@ -1861,17 +1845,17 @@ export const fetchAdditionalDetails = async (req, res) => {
 
   try {
     const secUser = await SecondaryUser.findById(secondary_user_id);
-    console.log("secUserrr", secUser);
+
 
 
     const configuration = secUser.configurations.find(
       (item) => item.organization.toString() === cmp_id
     );
 
-    console.log(configuration);
+
 
     const { selectedPriceLevels } = configuration
-    console.log(selectedPriceLevels);
+    
     let priceLevelsResult = [];
     if (selectedPriceLevels && selectedPriceLevels.length == 0) {
       priceLevelsResult = await productModel.aggregate([
@@ -1955,7 +1939,7 @@ export const fetchAdditionalDetails = async (req, res) => {
 
 export const fetchConfigurationNumber = async (req, res) => {
 
-  console.log("haiiii");
+
 
 
   const cmp_id = req.params.cmp_id;
@@ -1979,7 +1963,6 @@ export const fetchConfigurationNumber = async (req, res) => {
       (item) => item.organization.toString() === cmp_id
     );
 
-    console.log("configuration", configuration);
 
     if (!configuration) {
       switch (title) {
@@ -2054,7 +2037,7 @@ export const fetchConfigurationNumber = async (req, res) => {
     }
 
     if (configDetails == undefined && configuration == undefined) {
-      console.log("haiii");
+      
 
       switch (title) {
         case "sales":
@@ -2074,8 +2057,7 @@ export const fetchConfigurationNumber = async (req, res) => {
       }
     }
 
-    console.log("configDetails", configDetails);
-
+   
     if (configDetails) {
       res.json({
         message: "Configuration details fetched",
@@ -2177,7 +2159,7 @@ export const findPrimaryUserGodownsSelf = async (req, res) => {
       }
     } else {
       if (Allgodowns) {
-        console.log(Allgodowns)
+  
         res.json({
           message: "additional details fetched",
           godowndata: Allgodowns
@@ -2223,7 +2205,7 @@ export const godownwiseProducts = async (req, res) => {
         }
       }
     ]);
-    // console.log(products)
+   
     res.json(products);
 
   } catch (error) {
@@ -2265,7 +2247,7 @@ export const godownwiseProductsSelf =async (req,res)=>{
         }
       }
     ]);
-    // console.log(products)
+    
     res.json(products);
 
   } catch (error) {
@@ -2278,18 +2260,42 @@ export const fetchAdditionalCharges =async(req,res)=>{
   try{
     const cmp_id = req.params.cmp_id;
     const pUser = req.owner.toString(); 
-    console.log(pUser)
+
     
     const aditionalDetails = await AdditionalChargesModel.find({
       cmp_id: cmp_id,
       Primary_user_id: pUser 
     });
     
-    console.log(aditionalDetails);
+  
     res.json(aditionalDetails);
     
   }catch (error) {
     console.error("Error fetching godownwise products:", error);
     res.status(500).json({ error: "Internal Server Error" });
+  }
+}
+export const findGodownsNames =async(req,res)=>{
+  const cmp_id=req.params.cmp_id
+  const selectedUser=req.sUserId
+  try{
+    const secUser = await SecondaryUser.findById(selectedUser);
+    if (!secUser) {
+      return res.status(404).json({ message: "Secondary user not found" });
+    }
+
+    const configuration = secUser.configurations.find(
+      (item) => item.organization == cmp_id
+    );
+    if (configuration) {
+      const { vanSaleConfiguration } = configuration;
+      const godownname=vanSaleConfiguration.vanSaleGodownName
+      console.log(godownname)
+      res.status(200).json(godownname)
+
+  }
+    
+}catch(error){
+    res.status(500).json({message:"internal server error"})
   }
 }
