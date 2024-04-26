@@ -34,11 +34,15 @@ export const login = async (req, res) => {
       secUser = await SecondaryUser.findOne({ mobile: email });
     }
 
-
     if (!secUser) {
       return res.status(404).json({ message: "Invalid User" });
     }
+<<<<<<< HEAD
     const Blocked = secUser.get("isBlocked")
+=======
+    const Blocked = secUser.get("isBlocked");
+    console.log(Blocked);
+>>>>>>> b86b5ab6e578d2b0b263469dc78b8ff51bb58c46
     if (Blocked == true) {
       return res.status(401).json({ message: "User is blocked" });
     }
@@ -104,12 +108,12 @@ export const getSecUserData = async (req, res) => {
 
 export const fetchOutstandingTotal = async (req, res) => {
   const cmp_id = req.params.cmp_id;
-  const Primary_user_id=req.owner.toString();
+  const Primary_user_id = req.owner.toString();
 
   try {
     // const tallyData = await TallyData.find({ Primary_user_id: userId });
     const outstandingData = await TallyData.aggregate([
-      { $match: { cmp_id: cmp_id,Primary_user_id:Primary_user_id } },
+      { $match: { cmp_id: cmp_id, Primary_user_id: Primary_user_id } },
       {
         $group: {
           _id: "$party_id",
@@ -328,7 +332,6 @@ export const transactions = async (req, res) => {
 
     const combined = [...transactions, ...invoices, ...sales];
     combined.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-
 
     if (combined.length > 0) {
       return res.status(200).json({
@@ -763,6 +766,7 @@ export const createInvoice = async (req, res) => {
       orderNumber,
     } = req.body;
 
+<<<<<<< HEAD
   // Manually fetch the last invoice to get the serial number
   const lastInvoice = await invoiceModel.findOne({}, {}, { sort: { 'serialNumber': -1 } });
 
@@ -773,11 +777,25 @@ export const createInvoice = async (req, res) => {
    if (lastInvoice && !isNaN(lastInvoice.serialNumber)) {
     newSerialNumber = lastInvoice.serialNumber + 1;
   }
+=======
+    const lastInvoice = await invoiceModel.findOne(
+      {},
+      {},
+      { sort: { serialNumber: -1 } }
+    );
+    let newSerialNumber = 1;
+>>>>>>> b86b5ab6e578d2b0b263469dc78b8ff51bb58c46
 
+    // Check if there's a last invoice and calculate the new serial number
+    if (lastInvoice && !isNaN(lastInvoice.serialNumber)) {
+      newSerialNumber = lastInvoice.serialNumber + 1;
+    }
 
     const invoice = new invoiceModel({
       serialNumber: newSerialNumber,
       cmp_id: orgId, // Corrected typo and used correct assignment operator
+      partyAccount: party?.partyName,
+
       party,
       items,
       priceLevel: priceLevelFromRedux, // Corrected typo and used correct assignment operator
@@ -1424,10 +1442,8 @@ export const fetchFilters = async (req, res) => {
       brands: filers?.brands,
       categories: filers?.categories,
       subcategories: filers?.subcategories,
-      priceLevels:filers?.levelNames
+      priceLevels: filers?.levelNames,
     };
-
-    
 
     if (filers) {
       return res.status(200).json({ message: "filers fetched", data: data });
@@ -1677,18 +1693,27 @@ export const createSale = async (req, res) => {
     await productModel.bulkWrite(productUpdates);
     await productModel.bulkWrite(godownUpdates);
 
-    const lastSale = await salesModel.findOne({}, {}, { sort: { 'serialNumber': -1 } });
-    let newSerialNumber = 1; 
-  
+
+    const lastSale = await salesModel.findOne(
+      {},
+      {},
+      { sort: { serialNumber: -1 } }
+    );
+    let newSerialNumber = 1;
+
     // Check if there's a last invoice and calculate the new serial number
     if (lastSale && !isNaN(lastSale.serialNumber)) {
       newSerialNumber = lastSale.serialNumber + 1;
     }
 
+
     // Continue with the rest of your function...
     const sales = new salesModel({
       serialNumber: newSerialNumber,
+
       cmp_id: orgId,
+      partyAccount: party?.partyName,
+
       party,
       items,
       priceLevel: priceLevelFromRedux,
@@ -1747,33 +1772,30 @@ export const createSale = async (req, res) => {
       );
     }
 
-
-    const billData={
+    const billData = {
       Primary_user_id,
       bill_no: salesNumber,
       cmp_id: orgId,
-      party_id:party?.party_master_id,
+      party_id: party?.party_master_id,
       bill_amount: lastAmount,
       bill_date: new Date(),
       bill_pending_amt: lastAmount,
       email: party?.emailID,
       mobile_no: party?.mobileNumber,
       party_name: party?.partyName,
-      user_id:party?.mobileNumber || "null"
+      user_id: party?.mobileNumber || "null",
+    };
 
-    }
-
-      const updatedDocument = await TallyData.findOneAndUpdate(
-        {
-          cmp_id: orgId,
-          bill_no:salesNumber,
-          Primary_user_id: Primary_user_id,
-          party_id:party?.party_master_id,
-        },
-        billData,
-        { upsert: true, new: true }
-      )
-
+    const updatedDocument = await TallyData.findOneAndUpdate(
+      {
+        cmp_id: orgId,
+        bill_no: salesNumber,
+        Primary_user_id: Primary_user_id,
+        party_id: party?.party_master_id,
+      },
+      billData,
+      { upsert: true, new: true }
+    );
 
     return res.status(200).json({
       success: true,
@@ -1847,15 +1869,12 @@ export const fetchAdditionalDetails = async (req, res) => {
     const secUser = await SecondaryUser.findById(secondary_user_id);
 
 
-
     const configuration = secUser.configurations.find(
       (item) => item.organization.toString() === cmp_id
     );
 
-
-
     const { selectedPriceLevels } = configuration
-    
+  
     let priceLevelsResult = [];
     if (selectedPriceLevels && selectedPriceLevels.length == 0) {
       priceLevelsResult = await productModel.aggregate([
@@ -1938,10 +1957,6 @@ export const fetchAdditionalDetails = async (req, res) => {
 // route get/api/sUsers/fetchConfigurationNumber
 
 export const fetchConfigurationNumber = async (req, res) => {
-
-
-
-
   const cmp_id = req.params.cmp_id;
   const title = req.params.title;
   const secUserId = req.sUserId;
@@ -1949,8 +1964,6 @@ export const fetchConfigurationNumber = async (req, res) => {
   try {
     const secUser = await SecondaryUser.findById(secUserId);
     const company = await OragnizationModel.findById(cmp_id);
-
-
 
     if (!secUser) {
       return res.status(404).json({ message: "User not found" });
@@ -2074,8 +2087,8 @@ export const fetchConfigurationNumber = async (req, res) => {
 };
 export const findSecondaryUserGodowns = async (req, res) => {
   const cmp_id = req.params.cmp_id;
-  const secondary_user_id=req.sUserId
-  const primaryUser = req.owner
+  const secondary_user_id = req.sUserId;
+  const primaryUser = req.owner;
 
   try {
     const godownsResult = await productModel.aggregate([
@@ -2100,69 +2113,73 @@ export const findSecondaryUserGodowns = async (req, res) => {
       },
       { $match: { _id: { $ne: null } } },
     ]);
-const secondaryUserGodown = await SecondaryUser.findOne(
-  { 
-    _id: secondary_user_id, // User ID
-    'configurations.organization': cmp_id // Organization ID
-  },
-  { 'configurations.$': 1 } // Projection to get only the matched organization's configuration
-).exec();
-const secondaryUserGodownsId = secondaryUserGodown.configurations[0].selectedGodowns
-if(secondaryUserGodownsId && secondaryUserGodownsId.length > 0){
-const result = godownsResult.filter(item => secondaryUserGodownsId.includes(item._id));
-    if (result) {
-      res.json({
-        message: "additional details fetched",
-        godowndata: result
-      })
-    }
-  }else{
-    if (godownsResult) {
-      res.json({
-        message: "additional details fetched",
-        godowndata: godownsResult
-      })
-  }
-  }
- } catch (error) {
-
-    res.status(500).json({ error: "Internal Server Error" })
-  }
-
-}
-export const findPrimaryUserGodownsSelf = async (req, res) => {
-  const cmp_id = req.params.cmp_id;
-  const sUser = req.sUserId;
-  const pUserid = await SecondaryUser.find({ _id: sUser }, { primaryUser: 1, _id: 0 });
-  const pUser = pUserid[0].primaryUser;
-  
-  try {
-    
-    const godowns = await Organization.find({ _id: cmp_id, owner: pUser });  
-    const Allgodowns = godowns[0].locations;
-  
     const secondaryUserGodown = await SecondaryUser.findOne(
-      { _id: sUser, 'configurations.organization': cmp_id },
-      { 'configurations.$': 1 } 
+      {
+        _id: secondary_user_id, // User ID
+        "configurations.organization": cmp_id, // Organization ID
+      },
+      { "configurations.$": 1 } // Projection to get only the matched organization's configuration
     ).exec();
-  
-    const secondaryUserGodownsId = secondaryUserGodown.configurations[0].selectedGodowns
- 
-    const result = Allgodowns.filter(item => secondaryUserGodownsId.includes(item._id));
-    if (! result && result.length > 0) {
-  
+    const secondaryUserGodownsId =
+      secondaryUserGodown.configurations[0].selectedGodowns;
+    if (secondaryUserGodownsId && secondaryUserGodownsId.length > 0) {
+      const result = godownsResult.filter((item) =>
+        secondaryUserGodownsId.includes(item._id)
+      );
       if (result) {
         res.json({
           message: "additional details fetched",
-          godowndata: result
+          godowndata: result,
+        });
+      }
+    } else {
+      if (godownsResult) {
+        res.json({
+          message: "additional details fetched",
+          godowndata: godownsResult,
+        });
+      }
+    }
+  } catch (error) {
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+export const findPrimaryUserGodownsSelf = async (req, res) => {
+  const cmp_id = req.params.cmp_id;
+  const sUser = req.sUserId;
+  const pUserid = await SecondaryUser.find(
+    { _id: sUser },
+    { primaryUser: 1, _id: 0 }
+  );
+  const pUser = pUserid[0].primaryUser;
+
+  try {
+    const godowns = await Organization.find({ _id: cmp_id, owner: pUser });
+    const Allgodowns = godowns[0].locations;
+
+    const secondaryUserGodown = await SecondaryUser.findOne(
+      { _id: sUser, "configurations.organization": cmp_id },
+      { "configurations.$": 1 }
+    ).exec();
+
+    const secondaryUserGodownsId =
+      secondaryUserGodown.configurations[0].selectedGodowns;
+
+    const result = Allgodowns.filter((item) =>
+      secondaryUserGodownsId.includes(item._id)
+    );
+    if (!result && result.length > 0) {
+      if (result) {
+        res.json({
+          message: "additional details fetched",
+          godowndata: result,
         });
       }
     } else {
       if (Allgodowns) {
-  
         res.json({
           message: "additional details fetched",
-          godowndata: Allgodowns
+          godowndata: Allgodowns,
         });
       }
     }
@@ -2172,26 +2189,25 @@ export const findPrimaryUserGodownsSelf = async (req, res) => {
 };
 export const godownwiseProducts = async (req, res) => {
   try {
-    
     const cmp_id = req.params.cmp_id;
     const godown_id = req.params.godown_id;
-     
+
     const products = await productModel.aggregate([
       // Match products based on cmp_id, puser_id, and godown_id
       {
         $match: {
           cmp_id: cmp_id,
           Primary_user_id: new mongoose.Types.ObjectId(req.owner),
-          "GodownList.godown_id": godown_id
-        }
+          "GodownList.godown_id": godown_id,
+        },
       },
       // Unwind the GodownList array to denormalize the data
       { $unwind: "$GodownList" },
       // Match again to filter based on godown_id
       {
         $match: {
-          "GodownList.godown_id": godown_id
-        }
+          "GodownList.godown_id": godown_id,
+        },
       },
       // Project to include necessary fields and add balance_stock
       {
@@ -2200,21 +2216,20 @@ export const godownwiseProducts = async (req, res) => {
           product_name: 1,
           cmp_id: 1,
           balance_stock: "$GodownList.balance_stock",
-          hsn_code:1,
-          igst:1,
-        }
-      }
+          hsn_code: 1,
+          igst: 1,
+        },
+      },
     ]);
    
     res.json(products);
-
   } catch (error) {
     console.error("Error fetching godownwise products:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
 
-export const godownwiseProductsSelf =async (req,res)=>{
+export const godownwiseProductsSelf = async (req, res) => {
   try {
     const cmp_id = req.params.cmp_id;
     const godown = req.params.godown_name;
@@ -2224,16 +2239,16 @@ export const godownwiseProductsSelf =async (req,res)=>{
         $match: {
           cmp_id: cmp_id,
           Primary_user_id: new mongoose.Types.ObjectId(req.owner),
-          "GodownList.godown": godown
-        }
+          "GodownList.godown": godown,
+        },
       },
       // Unwind the GodownList array to denormalize the data
       { $unwind: "$GodownList" },
       // Match again to filter based on godown_id
       {
         $match: {
-          "GodownList.godown": godown
-        }
+          "GodownList.godown": godown,
+        },
       },
       // Project to include necessary fields and add balance_stock
       {
@@ -2242,38 +2257,36 @@ export const godownwiseProductsSelf =async (req,res)=>{
           product_name: 1,
           cmp_id: 1,
           balance_stock: "$GodownList.balance_stock",
-          hsn_code:1,
-          igst:1,
-        }
-      }
+          hsn_code: 1,
+          igst: 1,
+        },
+      },
     ]);
     
     res.json(products);
-
   } catch (error) {
     console.error("Error fetching godownwise products:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
-
-}
-export const fetchAdditionalCharges =async(req,res)=>{
-  try{
+};
+export const fetchAdditionalCharges = async (req, res) => {
+  try {
     const cmp_id = req.params.cmp_id;
-    const pUser = req.owner.toString(); 
+    const pUser = req.owner.toString();
+    console.log(pUser);
 
-    
     const aditionalDetails = await AdditionalChargesModel.find({
       cmp_id: cmp_id,
-      Primary_user_id: pUser 
+      Primary_user_id: pUser,
     });
     
   
     res.json(aditionalDetails);
-    
-  }catch (error) {
+  } catch (error) {
     console.error("Error fetching godownwise products:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
+<<<<<<< HEAD
 }
 export const findGodownsNames =async(req,res)=>{
   const cmp_id=req.params.cmp_id
@@ -2299,3 +2312,4 @@ export const findGodownsNames =async(req,res)=>{
     res.status(500).json({message:"internal server error"})
   }
 }
+b5ab6e578d2b0b263469dc78b8ff51bb58c46
