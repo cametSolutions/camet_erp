@@ -298,7 +298,7 @@ function AddItemSalesSecondary() {
     console.log(itemToUpdate);
 
     if (itemToUpdate) {
-      if (itemToUpdate?.GodownList.length > 0) {
+      if (itemToUpdate?.GodownList.length > 0 && !godownname) {
         setOpenModal(true);
         const updatedGodownList = itemToUpdate.GodownList.map((el) => ({
           ...el,
@@ -375,7 +375,7 @@ function AddItemSalesSecondary() {
 
     const currentItem = { ...updatedItems[index] };
 
-    if (currentItem?.GodownList?.length > 0) {
+    if (currentItem?.GodownList?.length > 0 &&  !godownname) {
       setOpenModal(true);
 
       setGodown(currentItem?.GodownList);
@@ -425,7 +425,7 @@ function AddItemSalesSecondary() {
     // Make a copy of the array
     const currentItem = { ...updatedItems[index] };
 
-    if (currentItem?.GodownList?.length > 0) {
+    if (currentItem?.GodownList?.length > 0 &&  !godownname) {
       setOpenModal(true);
       setGodown(currentItem?.GodownList);
     } else {
@@ -769,6 +769,11 @@ function AddItemSalesSecondary() {
       </div>
     );
   };
+
+
+
+
+
 
   return (
     <div className="flex relative">

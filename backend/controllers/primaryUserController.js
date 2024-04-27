@@ -1515,8 +1515,8 @@ export const editParty = async (req, res) => {
 };
 
 // @desc create in voice
-
 // route POST /api/pUsers/createInvoice
+
 export const createInvoice = async (req, res) => {
   const Primary_user_id = req.pUserId;
   try {
@@ -1544,16 +1544,44 @@ export const createInvoice = async (req, res) => {
       newSerialNumber = lastInvoice.serialNumber + 1;
     }
 
+    const updatedItems = items.map(item => {
+      const selectedPriceLevel = item.Priceleveles.find(priceLevel => priceLevel.pricelevel === priceLevelFromRedux);
+      const selectedPrice = selectedPriceLevel ? selectedPriceLevel.pricerate : null;
+
+      let totalPrice = selectedPrice * (item.count || 1) || 0; 
+      if (item.discount) {
+        totalPrice -= item.discount;
+      } else if (item.discountPercentage) {
+        const discountAmount = (totalPrice * item.discountPercentage) / 100;
+        totalPrice -= discountAmount;
+      }
+
+      // Calculate tax amounts
+      const { cgst, sgst, igst } = item;
+      const cgstAmt = (totalPrice * cgst) / 100;
+      const sgstAmt = (totalPrice * sgst) / 100;
+      const igstAmt = (totalPrice * igst) / 100;
+
+     
+      return {
+        ...item,
+        selectedPrice: selectedPrice,
+        cgstAmt: parseFloat(cgstAmt.toFixed(2)),
+        sgstAmt:parseFloat(sgstAmt.toFixed(2)),
+        igstAmt: parseFloat(igstAmt.toFixed(2)),
+        subTotal: totalPrice 
+      };
+    });
+
     const invoice = new invoiceModel({
       serialNumber: newSerialNumber,
-      cmp_id: orgId, // Corrected typo and used correct assignment operator
-      partyAccount:party?.partyName,
-
+      cmp_id: orgId,
+      partyAccount: party?.partyName,
       party,
-      items,
-      priceLevel: priceLevelFromRedux, // Corrected typo and used correct assignment operator
-      additionalCharges: additionalChargesFromRedux, // Corrected typo and used correct assignment operator
-      finalAmount: lastAmount, // Corrected typo and used correct assignment operator
+      items: updatedItems, // Use updated items array
+      priceLevel: priceLevelFromRedux,
+      additionalCharges: additionalChargesFromRedux,
+      finalAmount: lastAmount,
       Primary_user_id,
       orderNumber,
     });
@@ -1571,17 +1599,25 @@ export const createInvoice = async (req, res) => {
       message: "Invoice created successfully",
       data: result,
     });
+
+
   } catch (error) {
     console.error(error);
     return res.status(500).json({
       success: false,
       message: "Internal server error, try again!",
-      error: error.message, // Include error message for debugging
+      error: error.message,
     });
   }
 };
 
+
+
+
+
+
 export const addBulkProducts = async (req, res) => {
+  
   try {
     // Assuming `data` is an array of product objects
     const products = await Promise.all(
@@ -2271,13 +2307,46 @@ export const createSale = async (req, res) => {
       newSerialNumber = lastSale.serialNumber + 1;
     }
 
+
+    const updatedItems = items.map(item => {
+      const selectedPriceLevel = item.Priceleveles.find(priceLevel => priceLevel.pricelevel === priceLevelFromRedux);
+      const selectedPrice = selectedPriceLevel ? selectedPriceLevel.pricerate : null;
+
+      let totalPrice = selectedPrice * (item.count || 1) || 0; // Default count to 1 if not provided
+      if (item.discount) {
+        totalPrice -= item.discount;
+      } else if (item.discountPercentage) {
+        const discountAmount = (totalPrice * item.discountPercentage) / 100;
+        totalPrice -= discountAmount;
+      }
+
+      // Calculate tax amounts
+      const { cgst, sgst, igst } = item;
+      const cgstAmt = (totalPrice * cgst) / 100;
+      const sgstAmt = (totalPrice * sgst) / 100;
+      const igstAmt = (totalPrice * igst) / 100;
+
+
+      return {
+        ...item,
+        selectedPrice: selectedPrice,
+        cgstAmt: parseFloat(cgstAmt.toFixed(2)),
+        sgstAmt:parseFloat(sgstAmt.toFixed(2)),
+        igstAmt: parseFloat(igstAmt.toFixed(2)),
+        subTotal: totalPrice // Optional: Include total price in the item object
+      };
+    });
+
+
+
+
     // Continue with the rest of your function...
     const sales = new salesModel({
       serialNumber: newSerialNumber,
       partyAccount:party?.partyName,
       cmp_id: orgId,
       party,
-      items,
+      items:updatedItems,
       priceLevel: priceLevelFromRedux,
       additionalCharges: additionalChargesFromRedux,
       finalAmount: lastAmount,

@@ -778,6 +778,46 @@ export const createInvoice = async (req, res) => {
       newSerialNumber = lastInvoice.serialNumber + 1;
     }
 
+
+    const updatedItems = items.map(item => {
+      // Find the corresponding price rate for the selected price level
+      const selectedPriceLevel = item.Priceleveles.find(priceLevel => priceLevel.pricelevel === priceLevelFromRedux);
+      // If a corresponding price rate is found, assign it to selectedPrice, otherwise assign null
+      const selectedPrice = selectedPriceLevel ? selectedPriceLevel.pricerate : null;
+
+      // Calculate total price after applying discount
+      let totalPrice = selectedPrice * (item.count || 1) || 0; // Default count to 1 if not provided
+      if (item.discount) {
+        // If discount is present (amount), subtract it from the total price
+        totalPrice -= item.discount;
+      } else if (item.discountPercentage) {
+        // If discount is present (percentage), calculate the discount amount and subtract it from the total price
+        const discountAmount = (totalPrice * item.discountPercentage) / 100;
+        totalPrice -= discountAmount;
+      }
+
+      // Calculate tax amounts
+      const { cgst, sgst, igst } = item;
+      const cgstAmt = (totalPrice * cgst) / 100;
+      const sgstAmt = (totalPrice * sgst) / 100;
+      const igstAmt = (totalPrice * igst) / 100;
+
+      // console.log("haii",typeof(parseFloat(sgstAmt.toFixed(2))),);
+
+      return {
+        ...item,
+        selectedPrice: selectedPrice,
+        cgstAmt: parseFloat(cgstAmt.toFixed(2)),
+        sgstAmt:parseFloat(sgstAmt.toFixed(2)),
+        igstAmt: parseFloat(igstAmt.toFixed(2)),
+        subTotal: totalPrice // Optional: Include total price in the item object
+      };
+    });
+
+
+
+    
+
     const invoice = new invoiceModel({
       serialNumber: newSerialNumber,
       cmp_id: orgId, // Corrected typo and used correct assignment operator
@@ -1616,6 +1656,8 @@ export const addconfigurations = async (req, res) => {
 export const createSale = async (req, res) => {
   const Primary_user_id = req.owner;
   const Secondary_user_id = req.sUserId;
+  const changedGodowns = [];
+
 
   try {
     const {
@@ -1627,6 +1669,18 @@ export const createSale = async (req, res) => {
       lastAmount,
       salesNumber,
     } = req.body;
+
+    const secondaryUser = await SecondaryUser.findById(Secondary_user_id);
+    if (!secondaryUser) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Secondary user not found" });
+    }
+    const configuration = secondaryUser.configurations.find(
+      (config) => config.organization.toString() === orgId
+    );
+    
+    const vanSaleConfig = configuration?.vanSale;
 
     // Prepare bulk operations for product and godown updates
     const productUpdates = [];
@@ -1651,29 +1705,81 @@ export const createSale = async (req, res) => {
         },
       });
 
-      // Update the godown stock for each specified godown
-      for (const godown of item.GodownList) {
-        // Find the corresponding godown in the product's GodownList
-        const godownIndex = product.GodownList.findIndex(
-          (g) => g.godown === godown.godown
-        );
-        if (godownIndex !== -1) {
-          // Calculate the new godown stock
-          const newGodownStock =
-            parseInt(product.GodownList[godownIndex].balance_stock) -
-            godown.count;
-
-          // Prepare godown update operation
-          godownUpdates.push({
-            updateOne: {
-              filter: { _id: product._id, "GodownList.godown": godown.godown },
-              update: {
-                $set: { "GodownList.$.balance_stock": newGodownStock },
+      if(vanSaleConfig){
+        for (const godown of item.GodownList) {
+          // Find the corresponding godown in the product's GodownList
+          const godownIndex = product.GodownList.findIndex(
+            (g) => g.godown_id === godown.godown_id
+          );
+          if (godownIndex !== -1) {
+            // Calculate the new godown stock
+            const newGodownStock =
+              parseInt(product.GodownList[godownIndex].balance_stock) -
+              item.count;
+  
+            // Prepare godown update operation
+            godownUpdates.push({
+              updateOne: {
+                filter: { _id: product._id, "GodownList.godown": godown.godown },
+                update: {
+                  $set: { "GodownList.$.balance_stock": newGodownStock },
+                },
               },
-            },
-          });
+            });
+  
+            // If a godown was updated and the stock has actually changed, add it to the changedGodowns array
+            if (
+              godownIndex !== -1 &&
+              newGodownStock !==
+                parseInt(product.GodownList[godownIndex].balance_stock)
+            ) {
+              changedGodowns.push({
+                godown_id: godown.godown_id,
+                newBalanceStock: newGodownStock,
+              });
+            }
+          }
+        }
+
+      }else{
+
+        // Update the godown stock for each specified godown
+        for (const godown of item.GodownList) {
+          // Find the corresponding godown in the product's GodownList
+          const godownIndex = product.GodownList.findIndex(
+            (g) => g.godown_id === godown.godown_id
+          );
+          if (godownIndex !== -1) {
+            // Calculate the new godown stock
+            const newGodownStock =
+              parseInt(product.GodownList[godownIndex].balance_stock) -
+              godown.count;
+  
+            // Prepare godown update operation
+            godownUpdates.push({
+              updateOne: {
+                filter: { _id: product._id, "GodownList.godown": godown.godown },
+                update: {
+                  $set: { "GodownList.$.balance_stock": newGodownStock },
+                },
+              },
+            });
+  
+            // If a godown was updated and the stock has actually changed, add it to the changedGodowns array
+            if (
+              godownIndex !== -1 &&
+              newGodownStock !==
+                parseInt(product.GodownList[godownIndex].balance_stock)
+            ) {
+              changedGodowns.push({
+                godown_id: godown.godown_id,
+                newBalanceStock: newGodownStock,
+              });
+            }
+          }
         }
       }
+
     }
 
     // Execute bulk operations
@@ -1693,6 +1799,42 @@ export const createSale = async (req, res) => {
       newSerialNumber = lastSale.serialNumber + 1;
     }
 
+    const updatedItems = items.map(item => {
+      // Find the corresponding price rate for the selected price level
+      const selectedPriceLevel = item.Priceleveles.find(priceLevel => priceLevel.pricelevel === priceLevelFromRedux);
+      // If a corresponding price rate is found, assign it to selectedPrice, otherwise assign null
+      const selectedPrice = selectedPriceLevel ? selectedPriceLevel.pricerate : null;
+
+      // Calculate total price after applying discount
+      let totalPrice = selectedPrice * (item.count || 1) || 0; // Default count to 1 if not provided
+      if (item.discount) {
+        // If discount is present (amount), subtract it from the total price
+        totalPrice -= item.discount;
+      } else if (item.discountPercentage) {
+        // If discount is present (percentage), calculate the discount amount and subtract it from the total price
+        const discountAmount = (totalPrice * item.discountPercentage) / 100;
+        totalPrice -= discountAmount;
+      }
+
+      // Calculate tax amounts
+      const { cgst, sgst, igst } = item;
+      const cgstAmt = (totalPrice * cgst) / 100;
+      const sgstAmt = (totalPrice * sgst) / 100;
+      const igstAmt = (totalPrice * igst) / 100;
+
+      // console.log("haii",typeof(parseFloat(sgstAmt.toFixed(2))),);
+
+      return {
+        ...item,
+        selectedPrice: selectedPrice,
+        cgstAmt: parseFloat(cgstAmt.toFixed(2)),
+        sgstAmt:parseFloat(sgstAmt.toFixed(2)),
+        igstAmt: parseFloat(igstAmt.toFixed(2)),
+        subTotal: totalPrice // Optional: Include total price in the item object
+      };
+    });
+
+
 
     // Continue with the rest of your function...
     const sales = new salesModel({
@@ -1702,7 +1844,7 @@ export const createSale = async (req, res) => {
       partyAccount: party?.partyName,
 
       party,
-      items,
+      items:updatedItems,
       priceLevel: priceLevelFromRedux,
       additionalCharges: additionalChargesFromRedux,
       finalAmount: lastAmount,
@@ -1713,19 +1855,19 @@ export const createSale = async (req, res) => {
 
     const result = await sales.save();
 
-    const secondaryUser = await SecondaryUser.findById(Secondary_user_id);
+    // const secondaryUser = await SecondaryUser.findById(Secondary_user_id);
 
-    if (!secondaryUser) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Secondary user not found" });
-    }
+    // if (!secondaryUser) {
+    //   return res
+    //     .status(404)
+    //     .json({ success: false, message: "Secondary user not found" });
+    // }
 
     let salesConfig = false;
 
-    const configuration = secondaryUser.configurations.find(
-      (config) => config.organization.toString() === orgId
-    );
+    // const configuration = secondaryUser.configurations.find(
+    //   (config) => config.organization.toString() === orgId
+    // );
     if (configuration) {
       if (
         configuration.salesConfiguration &&
@@ -1737,7 +1879,7 @@ export const createSale = async (req, res) => {
       }
     }
 
-    const vanSaleConfig = configuration?.vanSale;
+    // const vanSaleConfig = configuration?.vanSale;
 
     if (vanSaleConfig) {
       const increaseSalesNumber = await SecondaryUser.findByIdAndUpdate(
