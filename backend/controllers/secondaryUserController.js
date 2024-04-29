@@ -58,7 +58,7 @@ export const login = async (req, res) => {
     }
 
     const { name, _id, mobile } = secUser._doc;
-   
+
     const token = generateSecToken(res, secUser._id);
 
     return res.status(200).json({
@@ -67,7 +67,6 @@ export const login = async (req, res) => {
       data: { email, name, _id, mobile },
     });
   } catch (error) {
-
     return res.status(500).json({ status: false, message: "Failed to login!" });
   }
 };
@@ -92,7 +91,6 @@ export const getSecUserData = async (req, res) => {
         .json({ message: "secondaryUSerData not found", data: { userData } });
     }
   } catch (error) {
-  
     return res
       .status(500)
       .json({ status: false, message: "internal sever error" });
@@ -134,7 +132,6 @@ export const fetchOutstandingTotal = async (req, res) => {
         .json({ message: "No outstandingData were found for user" });
     }
   } catch (error) {
-   
     return res
       .status(500)
       .json({ success: false, message: "Internal server error, try again!" });
@@ -164,7 +161,6 @@ export const fetchOutstandingDetails = async (req, res) => {
         .json({ message: "No outstandings were found for user" });
     }
   } catch (error) {
-  
     return res
       .status(500)
       .json({ success: false, message: "Internal server error, try again!" });
@@ -338,7 +334,6 @@ export const transactions = async (req, res) => {
       return res.status(404).json({ message: "Transactions not found" });
     }
   } catch (error) {
-
     return res.status(500).json({
       status: false,
       message: "Internal server error",
@@ -367,13 +362,11 @@ export const cancelTransaction = async (req, res) => {
       },
     ]);
 
-
     for (const { billNo, currentAmount } of transactions) {
       await TallyData.updateOne(
         { bill_no: billNo },
         { $set: { bill_pending_amt: currentAmount } }
       );
- 
     }
 
     await TransactionModel.updateOne(
@@ -413,7 +406,6 @@ export const fetchBanks = async (req, res) => {
       return res.status(404).json({ message: "Bank data not found" });
     }
   } catch (error) {
-   
     return res
       .status(500)
       .json({ status: false, message: "Internal server error" });
@@ -425,7 +417,6 @@ export const fetchBanks = async (req, res) => {
 
 export const sendOtp = async (req, res) => {
   const { email } = req.body;
-  
 
   try {
     const validEmail = await SecondaryUser.findOne({ email: email });
@@ -434,7 +425,6 @@ export const sendOtp = async (req, res) => {
     }
 
     const otp = generateNumericOTP(6);
- 
 
     // Save OTP in the database
     const saveOtp = await SecondaryUser.updateOne({ email }, { $set: { otp } });
@@ -459,17 +449,14 @@ export const sendOtp = async (req, res) => {
     // Send the email
     transporter.sendMail(mailOptions, function (error, info) {
       if (error) {
-    
         return res.status(500).json({ error: "Error sending email" });
       } else {
-      
         return res
           .status(200)
           .json({ message: "OTP sent successfully", data: otp });
       }
     });
   } catch (error) {
-  
     return res.status(500).json({ error: "Internal server error" });
   }
 };
@@ -479,7 +466,6 @@ export const sendOtp = async (req, res) => {
 
 export const submitOtp = async (req, res) => {
   const { Otp, otpEmailSec } = req.body;
- 
 
   try {
     // Retrieve user data based on the provided email
@@ -567,7 +553,7 @@ export const PartyList = async (req, res) => {
       cmp_id: cmp_id,
       Primary_user_id: Primary_user_id,
     });
-   
+
     if (partyList) {
       res
         .status(200)
@@ -576,7 +562,6 @@ export const PartyList = async (req, res) => {
       res.status(404).json({ message: "No parties found" });
     }
   } catch (error) {
-    
     res
       .status(500)
       .json({ success: false, message: "Internal server error, try again!" });
@@ -668,9 +653,10 @@ export const getProducts = async (req, res) => {
     let products;
 
     if (configuration) {
-      const { selectedGodowns } = configuration;
+      const { selectedGodowns, vanSale } = configuration;
 
-      if (selectedGodowns && selectedGodowns.length > 0) {
+
+      if (vanSale && selectedGodowns && selectedGodowns.length === 1) {
         products = await productModel.aggregate([
           {
             $match: {
@@ -684,7 +670,19 @@ export const getProducts = async (req, res) => {
               product_name: 1,
               cmp_id: 1,
               product_code: 1,
-              balance_stock: 1,
+              balance_stock: {
+                $map: {
+                  input: {
+                    $filter: {
+                      input: "$GodownList",
+                      as: "godown",
+                      cond: { $in: ["$$godown.godown_id", selectedGodowns] },
+                    },
+                  },
+                  as: "godown",
+                  in: "$$godown.balance_stock",
+                },
+              },
               Primary_user_id: 1,
               brand: 1,
               category: 1,
@@ -716,10 +714,51 @@ export const getProducts = async (req, res) => {
           },
         ]);
       } else {
-        products = await productModel.find({
-          Primary_user_id: Primary_user_id,
-          cmp_id: cmp_id,
-        });
+        products = await productModel.aggregate([
+          {
+            $match: {
+              cmp_id: cmp_id,
+              Primary_user_id: Primary_user_id,
+              "GodownList.godown_id": { $in: selectedGodowns },
+            },
+          },
+          {
+            $project: {
+              product_name: 1,
+              cmp_id: 1,
+              product_code: 1,
+              balance_stock: 1,
+               
+              Primary_user_id: 1,
+              brand: 1,
+              category: 1,
+              sub_category: 1,
+              unit: 1,
+              alt_unit: 1,
+              unit_conversion: 1,
+              alt_unit_conversion: 1,
+              hsn_code: 1,
+              purchase_price: 1,
+              purchase_cost: 1,
+              Priceleveles: 1,
+              GodownList: {
+                $filter: {
+                  input: "$GodownList",
+                  as: "godown",
+                  cond: { $in: ["$$godown.godown_id", selectedGodowns] },
+                },
+              },
+              cgst: 1,
+              sgst: 1,
+              igst: 1,
+              cess: 1,
+              addl_cess: 1,
+              state_cess: 1,
+              product_master_id: 1,
+              __v: 1,
+            },
+          },
+        ]);
       }
     } else {
       // If configuration is not present, fetch all products
@@ -738,7 +777,6 @@ export const getProducts = async (req, res) => {
       return res.status(404).json({ message: "No products were found " });
     }
   } catch (error) {
- 
     return res
       .status(500)
       .json({ success: false, message: "Internal server error, try again!" });
@@ -749,7 +787,6 @@ export const getProducts = async (req, res) => {
 export const createInvoice = async (req, res) => {
   const Secondary_user_id = req.sUserId;
   const owner = req.owner.toString();
-
 
   try {
     const {
@@ -762,28 +799,34 @@ export const createInvoice = async (req, res) => {
       orderNumber,
     } = req.body;
 
-  // Manually fetch the last invoice to get the serial number
-  const lastInvoice = await invoiceModel.findOne({}, {}, { sort: { 'serialNumber': -1 } });
+    // Manually fetch the last invoice to get the serial number
+    const lastInvoice = await invoiceModel.findOne(
+      {},
+      {},
+      { sort: { serialNumber: -1 } }
+    );
 
- 
-  let newSerialNumber = 1; 
-
-   // Check if there's a last invoice and calculate the new serial number
-   if (lastInvoice && !isNaN(lastInvoice.serialNumber)) {
-    newSerialNumber = lastInvoice.serialNumber + 1;
-  }
+    let newSerialNumber = 1;
 
     // Check if there's a last invoice and calculate the new serial number
     if (lastInvoice && !isNaN(lastInvoice.serialNumber)) {
       newSerialNumber = lastInvoice.serialNumber + 1;
     }
 
+    // Check if there's a last invoice and calculate the new serial number
+    if (lastInvoice && !isNaN(lastInvoice.serialNumber)) {
+      newSerialNumber = lastInvoice.serialNumber + 1;
+    }
 
-    const updatedItems = items.map(item => {
+    const updatedItems = items.map((item) => {
       // Find the corresponding price rate for the selected price level
-      const selectedPriceLevel = item.Priceleveles.find(priceLevel => priceLevel.pricelevel === priceLevelFromRedux);
+      const selectedPriceLevel = item.Priceleveles.find(
+        (priceLevel) => priceLevel.pricelevel === priceLevelFromRedux
+      );
       // If a corresponding price rate is found, assign it to selectedPrice, otherwise assign null
-      const selectedPrice = selectedPriceLevel ? selectedPriceLevel.pricerate : null;
+      const selectedPrice = selectedPriceLevel
+        ? selectedPriceLevel.pricerate
+        : null;
 
       // Calculate total price after applying discount
       let totalPrice = selectedPrice * (item.count || 1) || 0; // Default count to 1 if not provided
@@ -808,15 +851,11 @@ export const createInvoice = async (req, res) => {
         ...item,
         selectedPrice: selectedPrice,
         cgstAmt: parseFloat(cgstAmt.toFixed(2)),
-        sgstAmt:parseFloat(sgstAmt.toFixed(2)),
+        sgstAmt: parseFloat(sgstAmt.toFixed(2)),
         igstAmt: parseFloat(igstAmt.toFixed(2)),
-        subTotal: totalPrice // Optional: Include total price in the item object
+        subTotal: totalPrice, // Optional: Include total price in the item object
       };
     });
-
-
-
-    
 
     const invoice = new invoiceModel({
       serialNumber: newSerialNumber,
@@ -900,7 +939,7 @@ export const invoiceList = async (req, res) => {
       Secondary_user_id: userId,
       cmp_id: cmp_id,
     });
-   
+
     if (invoiceList) {
       res
         .status(200)
@@ -936,7 +975,6 @@ export const getSinglePartyDetails = async (req, res) => {
 
 export const editParty = async (req, res) => {
   const party_id = req.params.id;
-
 
   try {
     const updateParty = await PartyModel.findOneAndUpdate(
@@ -999,7 +1037,6 @@ export const getSingleOrganization = async (req, res) => {
       return res.status(404).json({ message: "No organization found " });
     }
   } catch (error) {
-    
     return res
       .status(500)
       .json({ success: false, message: "Internal server error, try again!" });
@@ -1011,12 +1048,11 @@ export const getSingleOrganization = async (req, res) => {
 
 export const fetchHsn = async (req, res) => {
   const cmp_id = req.params.cmp_id;
-  
+
   try {
     const hsn = await HsnModel.find({
       cpm_id: cmp_id,
     });
-   
 
     if (hsn) {
       return res.status(200).json({ message: "hsn fetched", data: hsn });
@@ -1024,7 +1060,6 @@ export const fetchHsn = async (req, res) => {
       return res.status(404).json({ message: "hsn data not found" });
     }
   } catch (error) {
-
     return res
       .status(500)
       .json({ status: false, message: "Internal server error" });
@@ -1037,10 +1072,8 @@ export const addDataToOrg = async (req, res) => {
   try {
     const orgId = req.params.cmp_id;
 
-   
-
     const org = await OragnizationModel.findById(orgId);
-  
+
     if (org) {
       const fieldToUpdate = Object.keys(req.body)[0];
       const newData = req.body[fieldToUpdate];
@@ -1079,8 +1112,6 @@ export const editDataInOrg = async (req, res) => {
     const newData = req.body[fieldToUpdate];
     const index = parseInt(req.body.index);
 
-   
-
     const org = await OragnizationModel.findById(orgId);
     if (!org) {
       return res
@@ -1107,12 +1138,12 @@ export const editDataInOrg = async (req, res) => {
 export const deleteDataInOrg = async (req, res) => {
   try {
     const orgId = req.params.cmp_id;
-   
+
     const fieldToDelete = Object.keys(req.body)[0];
     const indexToDelete = req.body[fieldToDelete];
 
     const org = await OragnizationModel.findById(orgId);
-    
+
     if (!org) {
       return res
         .status(404)
@@ -1120,7 +1151,7 @@ export const deleteDataInOrg = async (req, res) => {
     }
 
     const neededField = org[fieldToDelete];
-   
+
     neededField.splice(indexToDelete, 1);
     await org.save(); // Save the organization after deletion
     return res
@@ -1317,8 +1348,6 @@ export const editProduct = async (req, res) => {
       addl_cess,
     };
 
-    
-
     const updateProduct = await productModel.findOneAndUpdate(
       { _id: productId },
       dataToSave,
@@ -1340,7 +1369,7 @@ export const editProduct = async (req, res) => {
 
 export const deleteProduct = async (req, res) => {
   const productId = req.params.id;
- 
+
   try {
     const deletedProduct = await productModel.findByIdAndDelete(productId);
     if (deletedProduct) {
@@ -1425,9 +1454,6 @@ export const editInvoice = async (req, res) => {
       lastAmount,
       orderNumber,
     } = req.body;
-    
-
-
 
     const result = await invoiceModel.findByIdAndUpdate(
       invoiceId, // Use the invoiceId to find the document
@@ -1478,7 +1504,6 @@ export const fetchFilters = async (req, res) => {
       return res.status(404).json({ message: "filers  not found" });
     }
   } catch (error) {
-    
     return res
       .status(500)
       .json({ status: false, message: "Internal server error" });
@@ -1493,15 +1518,12 @@ export const deleteAdditionalCharge = async (req, res) => {
     const id = req.params.id;
     const addlId = new mongoose.Types.ObjectId(id);
 
-    
     const cmp_id = req.params.cmp_id;
     const org = await OragnizationModel.findById(cmp_id);
-   
 
     const indexToDelete = org.additionalCharges.findIndex((item) =>
       item._id.equals(addlId)
     );
- 
 
     if (indexToDelete !== -1) {
       org.additionalCharges.splice(indexToDelete, 1);
@@ -1573,15 +1595,12 @@ export const EditAditionalCharge = async (req, res) => {
     const id = req.params.id;
     const addlId = new mongoose.Types.ObjectId(id);
 
-
     const cmp_id = req.params.cmp_id;
     const org = await OragnizationModel.findById(cmp_id);
- 
 
     const indexToUpdate = org.additionalCharges.findIndex((item) =>
       item._id.equals(addlId)
     );
-
 
     if (indexToUpdate !== -1) {
       // Assuming req.body contains the updated fields for the additional charge
@@ -1658,7 +1677,6 @@ export const createSale = async (req, res) => {
   const Secondary_user_id = req.sUserId;
   const changedGodowns = [];
 
-
   try {
     const {
       orgId,
@@ -1679,7 +1697,7 @@ export const createSale = async (req, res) => {
     const configuration = secondaryUser.configurations.find(
       (config) => config.organization.toString() === orgId
     );
-    
+
     const vanSaleConfig = configuration?.vanSale;
 
     // Prepare bulk operations for product and godown updates
@@ -1705,7 +1723,7 @@ export const createSale = async (req, res) => {
         },
       });
 
-      if(vanSaleConfig){
+      if (vanSaleConfig) {
         for (const godown of item.GodownList) {
           // Find the corresponding godown in the product's GodownList
           const godownIndex = product.GodownList.findIndex(
@@ -1716,17 +1734,20 @@ export const createSale = async (req, res) => {
             const newGodownStock =
               parseInt(product.GodownList[godownIndex].balance_stock) -
               item.count;
-  
+
             // Prepare godown update operation
             godownUpdates.push({
               updateOne: {
-                filter: { _id: product._id, "GodownList.godown": godown.godown },
+                filter: {
+                  _id: product._id,
+                  "GodownList.godown": godown.godown,
+                },
                 update: {
                   $set: { "GodownList.$.balance_stock": newGodownStock },
                 },
               },
             });
-  
+
             // If a godown was updated and the stock has actually changed, add it to the changedGodowns array
             if (
               godownIndex !== -1 &&
@@ -1740,9 +1761,7 @@ export const createSale = async (req, res) => {
             }
           }
         }
-
-      }else{
-
+      } else {
         // Update the godown stock for each specified godown
         for (const godown of item.GodownList) {
           // Find the corresponding godown in the product's GodownList
@@ -1754,17 +1773,20 @@ export const createSale = async (req, res) => {
             const newGodownStock =
               parseInt(product.GodownList[godownIndex].balance_stock) -
               godown.count;
-  
+
             // Prepare godown update operation
             godownUpdates.push({
               updateOne: {
-                filter: { _id: product._id, "GodownList.godown": godown.godown },
+                filter: {
+                  _id: product._id,
+                  "GodownList.godown": godown.godown,
+                },
                 update: {
                   $set: { "GodownList.$.balance_stock": newGodownStock },
                 },
               },
             });
-  
+
             // If a godown was updated and the stock has actually changed, add it to the changedGodowns array
             if (
               godownIndex !== -1 &&
@@ -1779,13 +1801,11 @@ export const createSale = async (req, res) => {
           }
         }
       }
-
     }
 
     // Execute bulk operations
     await productModel.bulkWrite(productUpdates);
     await productModel.bulkWrite(godownUpdates);
-
 
     const lastSale = await salesModel.findOne(
       {},
@@ -1799,11 +1819,15 @@ export const createSale = async (req, res) => {
       newSerialNumber = lastSale.serialNumber + 1;
     }
 
-    const updatedItems = items.map(item => {
+    const updatedItems = items.map((item) => {
       // Find the corresponding price rate for the selected price level
-      const selectedPriceLevel = item.Priceleveles.find(priceLevel => priceLevel.pricelevel === priceLevelFromRedux);
+      const selectedPriceLevel = item.Priceleveles.find(
+        (priceLevel) => priceLevel.pricelevel === priceLevelFromRedux
+      );
       // If a corresponding price rate is found, assign it to selectedPrice, otherwise assign null
-      const selectedPrice = selectedPriceLevel ? selectedPriceLevel.pricerate : null;
+      const selectedPrice = selectedPriceLevel
+        ? selectedPriceLevel.pricerate
+        : null;
 
       // Calculate total price after applying discount
       let totalPrice = selectedPrice * (item.count || 1) || 0; // Default count to 1 if not provided
@@ -1828,13 +1852,11 @@ export const createSale = async (req, res) => {
         ...item,
         selectedPrice: selectedPrice,
         cgstAmt: parseFloat(cgstAmt.toFixed(2)),
-        sgstAmt:parseFloat(sgstAmt.toFixed(2)),
+        sgstAmt: parseFloat(sgstAmt.toFixed(2)),
         igstAmt: parseFloat(igstAmt.toFixed(2)),
-        subTotal: totalPrice // Optional: Include total price in the item object
+        subTotal: totalPrice, // Optional: Include total price in the item object
       };
     });
-
-
 
     // Continue with the rest of your function...
     const sales = new salesModel({
@@ -1844,7 +1866,7 @@ export const createSale = async (req, res) => {
       partyAccount: party?.partyName,
 
       party,
-      items:updatedItems,
+      items: updatedItems,
       priceLevel: priceLevelFromRedux,
       additionalCharges: additionalChargesFromRedux,
       finalAmount: lastAmount,
@@ -1997,13 +2019,12 @@ export const fetchAdditionalDetails = async (req, res) => {
   try {
     const secUser = await SecondaryUser.findById(secondary_user_id);
 
-
     const configuration = secUser.configurations.find(
       (item) => item.organization.toString() === cmp_id
     );
 
-    const { selectedPriceLevels } = configuration
-  
+    const { selectedPriceLevels } = configuration;
+
     let priceLevelsResult = [];
     if (selectedPriceLevels && selectedPriceLevels.length == 0) {
       priceLevelsResult = await productModel.aggregate([
@@ -2105,7 +2126,6 @@ export const fetchConfigurationNumber = async (req, res) => {
       (item) => item.organization.toString() === cmp_id
     );
 
-
     if (!configuration) {
       switch (title) {
         case "sales":
@@ -2179,8 +2199,6 @@ export const fetchConfigurationNumber = async (req, res) => {
     }
 
     if (configDetails == undefined && configuration == undefined) {
-      
-
       switch (title) {
         case "sales":
           // configDetails = company?.salesNumberDetails;
@@ -2199,7 +2217,6 @@ export const fetchConfigurationNumber = async (req, res) => {
       }
     }
 
-   
     if (configDetails) {
       res.json({
         message: "Configuration details fetched",
@@ -2350,7 +2367,7 @@ export const godownwiseProducts = async (req, res) => {
         },
       },
     ]);
-   
+
     res.json(products);
   } catch (error) {
     console.error("Error fetching godownwise products:", error);
@@ -2391,7 +2408,7 @@ export const godownwiseProductsSelf = async (req, res) => {
         },
       },
     ]);
-    
+
     res.json(products);
   } catch (error) {
     console.error("Error fetching godownwise products:", error);
@@ -2408,19 +2425,17 @@ export const fetchAdditionalCharges = async (req, res) => {
       cmp_id: cmp_id,
       Primary_user_id: pUser,
     });
-    
-  
+
     res.json(aditionalDetails);
   } catch (error) {
     console.error("Error fetching godownwise products:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
-
-}
-export const findGodownsNames =async(req,res)=>{
-  const cmp_id=req.params.cmp_id
-  const selectedUser=req.sUserId
-  try{
+};
+export const findGodownsNames = async (req, res) => {
+  const cmp_id = req.params.cmp_id;
+  const selectedUser = req.sUserId;
+  try {
     const secUser = await SecondaryUser.findById(selectedUser);
     if (!secUser) {
       return res.status(404).json({ message: "Secondary user not found" });
@@ -2431,13 +2446,11 @@ export const findGodownsNames =async(req,res)=>{
     );
     if (configuration) {
       const { vanSaleConfiguration } = configuration;
-      const godownname=vanSaleConfiguration.vanSaleGodownName
-      console.log(godownname)
-      res.status(200).json(godownname)
-
+      const godownname = vanSaleConfiguration.vanSaleGodownName;
+      console.log(godownname);
+      res.status(200).json(godownname);
+    }
+  } catch (error) {
+    res.status(500).json({ message: "internal server error" });
   }
-    
-}catch(error){
-    res.status(500).json({message:"internal server error"})
-  }
-}
+};

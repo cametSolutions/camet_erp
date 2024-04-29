@@ -20,11 +20,11 @@ api.interceptors.response.use(
         showSwalAlert("Your Account is Blocked", 'warning', '/pUsers/login', 'pUserData');
     } 
   
-    else if(error.response.status == 500){
-      console.log("haii");
-      console.log(window.location);
-      window.location.href = "http://localhost:5173/serverError";
-    }
+    // else if(error.response.status == 500){
+    //   console.log("haii");
+    //   console.log(window.location);
+    //   window.location.href = "http://localhost:5173/serverError";
+    // }
     else if(error.response.status == 403 && error.response.data.companyRestricted){
       console.log("welcome")
       showSwalAlert2("This company is restricted","warning")

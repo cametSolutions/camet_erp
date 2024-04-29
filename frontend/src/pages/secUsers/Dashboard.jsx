@@ -48,25 +48,28 @@ function Dashboard() {
   };
 
   useEffect(() => {
-    const fetchTransactions = async () => {
-      try {
-        const res = await api.get(`/api/sUsers/transactions/${org._id}`, {
-          withCredentials: true,
-        });
+    if(org){
 
-        console.log(res.data);
-
-        setData(res.data.data.combined);
-
-        // dispatch(addData(res.data.outstandingData));
-      } catch (error) {
-        console.log(error);
-        setData([])
-      }
-    };
-    fetchTransactions();
-    dispatch(removeAll())
-    dispatch(removeAllSales())
+      const fetchTransactions = async () => {
+        try {
+          const res = await api.get(`/api/sUsers/transactions/${org._id}`, {
+            withCredentials: true,
+          });
+  
+          console.log(res.data);
+  
+          setData(res.data.data.combined);
+  
+          // dispatch(addData(res.data.outstandingData));
+        } catch (error) {
+          console.log(error);
+          setData([])
+        }
+      };
+      fetchTransactions();
+      dispatch(removeAll())
+      dispatch(removeAllSales())
+    }
 
   }, [org]);
 
