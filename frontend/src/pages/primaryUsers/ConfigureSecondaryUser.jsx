@@ -24,7 +24,11 @@ function ConfigureSecondaryUser() {
 
   console.log(godowns);
   console.log(godownConfigOption);
-  console.log(vanSaleGodownName);
+  console.log(godownWidth);
+  console.log(godownSuffix);
+  console.log(godownStartingNumber);
+
+
 
   const type = useSelector(
     (state) => state.setSelectedOrganization.selectedOrg.type
@@ -116,12 +120,15 @@ function ConfigureSecondaryUser() {
             vanSale,
           } = configurations[0];
 
+          console.log(vanSaleConfiguration);
+
           const {
             godownConfigOption,
             prefixDetails,
             suffixDetails,
             startingNumber,
             widthOfNumericalPart,
+            vanSaleGodownName
           } = vanSaleConfiguration;
 
           setSelectedGodowns(selectedGodowns);
@@ -135,6 +142,7 @@ function ConfigureSecondaryUser() {
           setGodownStartingNumber(startingNumber);
           setGodownWidth(widthOfNumericalPart);
           setVanSale(vanSale);
+          setVanSaleGodownName(vanSaleGodownName)
         }
       } catch (error) {
         console.log(error);
@@ -143,7 +151,10 @@ function ConfigureSecondaryUser() {
     fetchSingleUser();
   }, []);
 
-  console.log(selectedPriceLevels);
+  console.log(godownConfigOption);
+  console.log(godownPrefix);
+  console.log(godownPrefix);
+  console.log(godownPrefix);
 
   const handleConfigSelection = (e) => {
     setSelectedConfig(e.target.value);
@@ -164,7 +175,6 @@ function ConfigureSecondaryUser() {
     }
   };
 
-  console.log(sales[0]["prefixDetails"]);
 
   const getConfigValue = (section, field) => {
     console.log(field);
@@ -206,6 +216,7 @@ function ConfigureSecondaryUser() {
       if (obj[key] !== "") {
         isAllEmpty = false;
       } else {
+       
         isAllFilled = false;
       }
     }
@@ -213,10 +224,6 @@ function ConfigureSecondaryUser() {
     return isAllFilled || isAllEmpty;
   }
 
-  // console.log(godownConfigOption);
-  // console.log(godownPrefix);
-  // console.log(godownSuffix);
-  // console.log(godownStartingNumber);
 
   const submitHandler = async () => {
     // Existing validation and submission logic...
@@ -234,6 +241,7 @@ function ConfigureSecondaryUser() {
     };
 
     let formData = {};
+    console.log(godownWidth);
 
     if (vanSale) {
       const vanSaleConfiguration = {
