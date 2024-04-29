@@ -562,7 +562,7 @@ function PrimaryUsers() {
               </table>
               <div className="px-5 py-5 bg-white border-t flex flex-col xs:flex-row sm:items-start md:items-center xs:justify-between ">
                 <span className="text-xs xs:text-sm text-gray-900">
-                  Showing {firstPostIndex + 1} to {lastPostIndex} of{" "}
+                Showing {firstPostIndex+1} to {lastPostIndex>filteredData?.length ? filteredData?.length:lastPostIndex} of {filteredData?.length} Entries
                   {filteredData.length} Entries
                 </span>
                 <div className="inline-flex mt-2 xs:mt-0">
