@@ -857,15 +857,31 @@ export const createInvoice = async (req, res) => {
       };
     });
 
+
+    let updateAdditionalCharge;
+    if (additionalChargesFromRedux.length > 0) {
+      updateAdditionalCharge = additionalChargesFromRedux.map((charge) => {
+        const { value, taxPercentage } = charge;
+
+        const taxAmt = (parseFloat(value) * parseFloat(taxPercentage)) / 100;
+        console.log(taxAmt);
+
+        return {
+          ...charge,
+          taxAmt: taxAmt,
+        };
+      });
+    }
+
     const invoice = new invoiceModel({
       serialNumber: newSerialNumber,
       cmp_id: orgId, // Corrected typo and used correct assignment operator
       partyAccount: party?.partyName,
 
       party,
-      items,
+      items: updatedItems, 
       priceLevel: priceLevelFromRedux, // Corrected typo and used correct assignment operator
-      additionalCharges: additionalChargesFromRedux, // Corrected typo and used correct assignment operator
+      additionalCharges: updateAdditionalCharge, // Corrected typo and used correct assignment operator
       finalAmount: lastAmount, // Corrected typo and used correct assignment operator
       Primary_user_id: owner,
       Secondary_user_id,
@@ -1858,6 +1874,25 @@ export const createSale = async (req, res) => {
       };
     });
 
+    let updateAdditionalCharge
+
+
+    if (additionalChargesFromRedux.length>0){
+
+      updateAdditionalCharge=additionalChargesFromRedux.map((charge)=>{
+        const {value,taxPercentage}=charge;
+        
+        const taxAmt=(parseFloat(value)*parseFloat(taxPercentage)/100)
+        console.log(taxAmt);
+  
+        return{
+          ...charge,
+          taxAmt:taxAmt
+        }
+  
+      })
+    }
+
     // Continue with the rest of your function...
     const sales = new salesModel({
       serialNumber: newSerialNumber,
@@ -1868,7 +1903,7 @@ export const createSale = async (req, res) => {
       party,
       items: updatedItems,
       priceLevel: priceLevelFromRedux,
-      additionalCharges: additionalChargesFromRedux,
+      additionalCharges: updateAdditionalCharge,
       finalAmount: lastAmount,
       Primary_user_id,
       Secondary_user_id,

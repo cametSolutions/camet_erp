@@ -1544,11 +1544,15 @@ export const createInvoice = async (req, res) => {
       newSerialNumber = lastInvoice.serialNumber + 1;
     }
 
-    const updatedItems = items.map(item => {
-      const selectedPriceLevel = item.Priceleveles.find(priceLevel => priceLevel.pricelevel === priceLevelFromRedux);
-      const selectedPrice = selectedPriceLevel ? selectedPriceLevel.pricerate : null;
+    const updatedItems = items.map((item) => {
+      const selectedPriceLevel = item.Priceleveles.find(
+        (priceLevel) => priceLevel.pricelevel === priceLevelFromRedux
+      );
+      const selectedPrice = selectedPriceLevel
+        ? selectedPriceLevel.pricerate
+        : null;
 
-      let totalPrice = selectedPrice * (item.count || 1) || 0; 
+      let totalPrice = selectedPrice * (item.count || 1) || 0;
       if (item.discount) {
         totalPrice -= item.discount;
       } else if (item.discountPercentage) {
@@ -1562,16 +1566,30 @@ export const createInvoice = async (req, res) => {
       const sgstAmt = (totalPrice * sgst) / 100;
       const igstAmt = (totalPrice * igst) / 100;
 
-     
       return {
         ...item,
         selectedPrice: selectedPrice,
         cgstAmt: parseFloat(cgstAmt.toFixed(2)),
-        sgstAmt:parseFloat(sgstAmt.toFixed(2)),
+        sgstAmt: parseFloat(sgstAmt.toFixed(2)),
         igstAmt: parseFloat(igstAmt.toFixed(2)),
-        subTotal: totalPrice 
+        subTotal: totalPrice,
       };
     });
+
+    let updateAdditionalCharge;
+    if (additionalChargesFromRedux.length > 0) {
+      updateAdditionalCharge = additionalChargesFromRedux.map((charge) => {
+        const { value, taxPercentage } = charge;
+
+        const taxAmt = (parseFloat(value) * parseFloat(taxPercentage)) / 100;
+        console.log(taxAmt);
+
+        return {
+          ...charge,
+          taxAmt: taxAmt,
+        };
+      });
+    }
 
     const invoice = new invoiceModel({
       serialNumber: newSerialNumber,
@@ -1580,7 +1598,7 @@ export const createInvoice = async (req, res) => {
       party,
       items: updatedItems, // Use updated items array
       priceLevel: priceLevelFromRedux,
-      additionalCharges: additionalChargesFromRedux,
+      additionalCharges: updateAdditionalCharge,
       finalAmount: lastAmount,
       Primary_user_id,
       orderNumber,
@@ -1599,8 +1617,6 @@ export const createInvoice = async (req, res) => {
       message: "Invoice created successfully",
       data: result,
     });
-
-
   } catch (error) {
     console.error(error);
     return res.status(500).json({
@@ -1611,13 +1627,7 @@ export const createInvoice = async (req, res) => {
   }
 };
 
-
-
-
-
-
 export const addBulkProducts = async (req, res) => {
-  
   try {
     // Assuming `data` is an array of product objects
     const products = await Promise.all(
@@ -2307,10 +2317,13 @@ export const createSale = async (req, res) => {
       newSerialNumber = lastSale.serialNumber + 1;
     }
 
-
-    const updatedItems = items.map(item => {
-      const selectedPriceLevel = item.Priceleveles.find(priceLevel => priceLevel.pricelevel === priceLevelFromRedux);
-      const selectedPrice = selectedPriceLevel ? selectedPriceLevel.pricerate : null;
+    const updatedItems = items.map((item) => {
+      const selectedPriceLevel = item.Priceleveles.find(
+        (priceLevel) => priceLevel.pricelevel === priceLevelFromRedux
+      );
+      const selectedPrice = selectedPriceLevel
+        ? selectedPriceLevel.pricerate
+        : null;
 
       let totalPrice = selectedPrice * (item.count || 1) || 0; // Default count to 1 if not provided
       if (item.discount) {
@@ -2326,29 +2339,41 @@ export const createSale = async (req, res) => {
       const sgstAmt = (totalPrice * sgst) / 100;
       const igstAmt = (totalPrice * igst) / 100;
 
-
       return {
         ...item,
         selectedPrice: selectedPrice,
         cgstAmt: parseFloat(cgstAmt.toFixed(2)),
-        sgstAmt:parseFloat(sgstAmt.toFixed(2)),
+        sgstAmt: parseFloat(sgstAmt.toFixed(2)),
         igstAmt: parseFloat(igstAmt.toFixed(2)),
-        subTotal: totalPrice // Optional: Include total price in the item object
+        subTotal: totalPrice, // Optional: Include total price in the item object
       };
     });
 
+    let updateAdditionalCharge;
 
+    if (additionalChargesFromRedux.length > 0) {
+      updateAdditionalCharge = additionalChargesFromRedux.map((charge) => {
+        const { value, taxPercentage } = charge;
 
+        const taxAmt = (parseFloat(value) * parseFloat(taxPercentage)) / 100;
+        console.log(taxAmt);
+
+        return {
+          ...charge,
+          taxAmt: taxAmt,
+        };
+      });
+    }
 
     // Continue with the rest of your function...
     const sales = new salesModel({
       serialNumber: newSerialNumber,
-      partyAccount:party?.partyName,
+      partyAccount: party?.partyName,
       cmp_id: orgId,
       party,
-      items:updatedItems,
+      items: updatedItems,
       priceLevel: priceLevelFromRedux,
-      additionalCharges: additionalChargesFromRedux,
+      additionalCharges: updateAdditionalCharge,
       finalAmount: lastAmount,
       Primary_user_id,
       salesNumber,
@@ -2386,14 +2411,14 @@ export const createSale = async (req, res) => {
       { upsert: true, new: true }
     );
 
-    console.log("changedGodowns",changedGodowns);
+    console.log("changedGodowns", changedGodowns);
 
-    return res.status(200).json({
-      success: true,
-      message: "Sale created successfully",
-      data: result,
-      // billData: addedInBillData,
-    });
+    // return res.status(200).json({
+    //   success: true,
+    //   message: "Sale created successfully",
+    //   data: result,
+    //   // billData: addedInBillData,
+    // });
   } catch (error) {
     console.error(error);
     return res.status(500).json({

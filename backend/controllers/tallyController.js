@@ -352,19 +352,19 @@ export const giveInvoice = async (req, res) => {
     });
     if (invoices.length > 0) {
       return res.status(200).json({
-        message: "Invoices fetched",
+        message: "Orders fetched",
         data: invoices,
         count: invoices.length,
       });
     } else {
-      return res.status(404).json({ message: "Invoices not found" });
+      return res.status(404).json({ message: "Order not found" });
     }
   } catch (error) {
     console.log(error);
     return res.status(500).json({
       status: false,
       message: "Internal server error",
-    });
+    });``
   }
 };
 
