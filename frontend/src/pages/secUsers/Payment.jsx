@@ -53,14 +53,7 @@ function Payment() {
     note: "",
   });
 
-  const banksInKerala = [
-    "Select a bank",
-    "State Bank of India",
-    "Federal Bank",
-    "ICICI Bank",
-    "South Indian Bank",
-    "Canara Bank",
-  ];
+
 
   const settlementDetails = useSelector(
     (state) => state.settlementData.settlementData
@@ -343,7 +336,7 @@ function Payment() {
                       >
                         {/* Map through the array of banks and create options */}
                         {banks.map((bank, index) => (
-                          <option key={index} value={bank.bank_name}>
+                          <option key={index} value={bank.bank_ledname}>
                             {bank.bank_name}
                           </option>
                         ))}

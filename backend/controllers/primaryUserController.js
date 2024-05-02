@@ -687,6 +687,7 @@ export const fetchBanks = async (req, res) => {
       {
         $project: {
           bank_name: 1,
+          bank_ledname:1,
         },
       },
     ]);

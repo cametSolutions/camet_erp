@@ -354,7 +354,7 @@ export const giveInvoice = async (req, res) => {
       return res.status(200).json({
         message: "Orders fetched",
         data: invoices,
-        count: invoices.length,
+      
       });
     } else {
       return res.status(404).json({ message: "Order not found" });
@@ -384,7 +384,6 @@ export const giveSales = async (req, res) => {
       return res.status(200).json({
         message: "Sales fetched",
         data: sales,
-        count: sales.length,
       });
     } else {
       return res.status(404).json({ message: "Sales not found" });
