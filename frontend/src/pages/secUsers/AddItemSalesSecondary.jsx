@@ -23,6 +23,8 @@ import { FixedSizeList as List } from "react-window";
 import { Button, Modal } from "flowbite-react";
 import { toast } from "react-toastify";
 import SidebarSec from "../../components/secUsers/SidebarSec";
+import { IoIosCloseCircleOutline } from "react-icons/io";
+
 // import SelectDefaultModal from "../../../constants/components/SelectDefaultModal";
 
 function AddItemSalesSecondary() {
@@ -820,7 +822,7 @@ function AddItemSalesSecondary() {
               </div> */}
           </div>
 
-          <div className=" px-3 py-1  bg-white drop-shadow-lg  ">
+          <div className=" px-3 py-2 bg-white drop-shadow-lg  ">
             <div className="flex justify-between  items-center"></div>
             <div className="mt-2  md:w-1/2 ">
               <div className="relative ">
@@ -846,6 +848,7 @@ function AddItemSalesSecondary() {
                     onChange={(e) => {
                       setSearch(e.target.value);
                     }}
+                    value={search}
                     type="search"
                     id="default-search"
                     className="block w-full p-2 text-sm text-gray-900 border  rounded-lg border-gray-300  bg-gray-50 focus:ring-blue-500 focus:border-blue-500"
@@ -857,6 +860,13 @@ function AddItemSalesSecondary() {
                     class="text-white absolute end-[10px] top-1/2 transform -translate-y-1/2 bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-md px-2 py-1"
                   >
                     <IoIosSearch />
+                  </button>
+                  <button
+                  onClick={()=>{setSearch("")}}
+                    type="submit"
+                    class={`${search.length>0 ? "block":"hidden"}  absolute end-[40px] top-1/2 transform -translate-y-1/2 text-gray-500  text-md px-2 py-1`}
+                  >
+                    <IoIosCloseCircleOutline />
                   </button>
                 </div>
               </div>
