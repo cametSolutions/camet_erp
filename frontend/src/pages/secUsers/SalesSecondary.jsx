@@ -325,8 +325,11 @@ function SalesSecondary() {
   }, [rows]);
 
   console.log(additionalChargesTotal);
-  const totalAmount =
+  const totalAmountNotRounded =
     parseFloat(subTotal) + additionalChargesTotal || parseFloat(subTotal);
+  const totalAmount = Math.round(totalAmountNotRounded);
+
+  console.log(totalAmount);
 
   const navigate = useNavigate();
 

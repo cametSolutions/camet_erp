@@ -266,8 +266,9 @@ function Sales() {
    
 
   console.log(additionalChargesTotal);
-  const totalAmount =
+  const totalAmountNotRounded =
     parseFloat(subTotal) + additionalChargesTotal || parseFloat(subTotal);
+  const totalAmount = Math.round(totalAmountNotRounded);
 
   const navigate = useNavigate();
 

@@ -2464,12 +2464,12 @@ export const createSale = async (req, res) => {
 
     console.log("changedGodowns", changedGodowns);
 
-    // return res.status(200).json({
-    //   success: true,
-    //   message: "Sale created successfully",
-    //   data: result,
-    //   // billData: addedInBillData,
-    // });
+    return res.status(200).json({
+      success: true,
+      message: "Sale created successfully",
+      data: result,
+      // billData: addedInBillData,
+    });
   } catch (error) {
     console.error(error);
     return res.status(500).json({

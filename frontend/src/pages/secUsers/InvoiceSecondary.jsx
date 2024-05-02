@@ -283,8 +283,9 @@ function InvoiceSecondary() {
     }, 0);
   }, [rows]);
 
-  const totalAmount =
+  const totalAmountNotRounded =
     parseFloat(subTotal) + additionalChargesTotal || parseFloat(subTotal);
+  const totalAmount = Math.round(totalAmountNotRounded);
 
   const navigate = useNavigate();
 
