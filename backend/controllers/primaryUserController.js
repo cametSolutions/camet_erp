@@ -2007,19 +2007,68 @@ export const editInvoice = async (req, res) => {
 
     console.log(req.body);
 
+    // Calculate updated items
+    const updatedItems = items.map((item) => {
+      const selectedPriceLevel = item.Priceleveles.find(
+        (priceLevel) => priceLevel.pricelevel === priceLevelFromRedux
+      );
+      const selectedPrice = selectedPriceLevel
+        ? selectedPriceLevel.pricerate
+        : null;
+
+      let totalPrice = selectedPrice * (item.count || 1) || 0;
+      if (item.discount) {
+        totalPrice -= item.discount;
+      } else if (item.discountPercentage) {
+        const discountAmount = (totalPrice * item.discountPercentage) / 100;
+        totalPrice -= discountAmount;
+      }
+
+      // Calculate tax amounts
+      const { cgst, sgst, igst } = item;
+      const cgstAmt = (totalPrice * cgst) / 100;
+      const sgstAmt = (totalPrice * sgst) / 100;
+      const igstAmt = (totalPrice * igst) / 100;
+
+      return {
+        ...item,
+        selectedPrice: selectedPrice,
+        cgstAmt: parseFloat(cgstAmt.toFixed(2)),
+        sgstAmt: parseFloat(sgstAmt.toFixed(2)),
+        igstAmt: parseFloat(igstAmt.toFixed(2)),
+        subTotal: totalPrice,
+      };
+    });
+
+    let updateAdditionalCharge;
+    if (additionalChargesFromRedux.length > 0) {
+      updateAdditionalCharge = additionalChargesFromRedux.map((charge) => {
+        const { value, taxPercentage } = charge;
+
+        const taxAmt = (parseFloat(value) * parseFloat(taxPercentage)) / 100;
+        console.log(taxAmt);
+
+        return {
+          ...charge,
+          taxAmt: taxAmt,
+        };
+      });
+    }
+
+    // Update the invoice document
     const result = await invoiceModel.findByIdAndUpdate(
-      invoiceId, // Use the invoiceId to find the document
+      invoiceId,
       {
         cmp_id: orgId,
         party,
-        items,
+        items: updatedItems,
         priceLevel: priceLevelFromRedux,
-        additionalCharges: additionalChargesFromRedux,
+        additionalCharges: updateAdditionalCharge,
         finalAmount: lastAmount,
         Primary_user_id,
         orderNumber,
       },
-      { new: true } // This option returns the updated document
+      { new: true }
     );
 
     return res.status(200).json({
@@ -2032,10 +2081,11 @@ export const editInvoice = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Internal server error, try again!",
-      error: error.message, // Include error message for debugging
+      error: error.message,
     });
   }
 };
+
 
 // @desc adding additional charges in orgData
 // route POST /api/pUsers/addAdditionalCharge

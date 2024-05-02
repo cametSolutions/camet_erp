@@ -831,7 +831,7 @@ export const createInvoice = async (req, res) => {
 
       // Calculate total price after applying discount
       let totalPrice = selectedPrice * (item.count || 1) || 0; // Default count to 1 if not provided
-      if (item.discount) {
+      if (item.discount!=="0") {
         // If discount is present (amount), subtract it from the total price
         totalPrice -= item.discount;
       } else if (item.discountPercentage) {
