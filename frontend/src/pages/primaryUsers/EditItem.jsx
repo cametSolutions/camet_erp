@@ -82,11 +82,10 @@ function EditItem() {
   }, []);
 
   useEffect(() => {
-    console.log(parseFloat(newPrice));
-    console.log(parseInt(quantity));
-    const taxExclusivePrice = parseFloat(newPrice) * parseInt(quantity) || 0;
+  
+    const taxExclusivePrice = parseFloat(newPrice) * quantity || 0;
     console.log(taxExclusivePrice);
-    setTaxExclusivePrice(taxExclusivePrice);
+    setTaxExclusivePrice(taxExclusivePrice);quantity
     // Calculate the discount amount and percentage
     let calculatedDiscountAmount = 0;
     let calculatedDiscountPercentage = 0;
@@ -125,7 +124,18 @@ function EditItem() {
     const newItem = { ...item };
 
     newItem.total = totalAmount;
-    newItem.count = parseInt(quantity);
+    if (typeof newItem.count === 'number' && newItem.count % 1!== 0) {
+      console.log("haii");
+      console.log(parseFloat(newItem.count.toFixed(2)));
+
+  
+    } else {
+      console.log("haii");
+
+      // If it's an integer, keep it as is
+      // newItem.count = newItem.count;
+    }
+    newItem.count = quantity;
     newItem.newGst = igst;
     if (type === "amount") {
       newItem.discount = discountAmount;
@@ -168,6 +178,27 @@ function EditItem() {
       navigate("/pUsers/addItem");
     }
   };
+
+
+  const changeQuantity = (quantity) => {
+    // Check if the quantity includes a dot (decimal point)
+    if (quantity.includes(".")) {
+      // Split the quantity into parts before and after the decimal point
+      const parts = quantity.split('.');
+      // Check the length of the part after the decimal point
+      if (parts[1].length > 2) {
+        // Display a toast notification if the length exceeds two characters
+        // toast('You cannot enter more than two decimal places.');
+        return; // Prevent further execution
+      }
+      // If the length is valid, update the state with the formatted value
+      setQuantity(quantity);
+    } else {
+      // If there's no decimal point, just update the state with the current value
+      setQuantity(quantity);
+    }
+  };
+
 
   return (
     <div className="flex ">
@@ -219,9 +250,11 @@ function EditItem() {
                         <div className="relative focus-within:text-gray-600 text-gray-400">
                           <input
                             // disabled
-                            onChange={(e) => setQuantity(e.target.value)}
+                            // onChange={(e) => setQuantity(e.target.value)}
+                            onChange={(e)=>{changeQuantity(e.target.value)}}
                             value={quantity}
                             type="text"
+                            step="0.01"
                             className="pr-4 pl-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm border-gray-300 rounded-md focus:outline-none text-gray-600"
                             placeholder=""
                           />
