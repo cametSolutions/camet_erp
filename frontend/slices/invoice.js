@@ -28,7 +28,10 @@ export const invoiceSlice = createSlice({
     },
     removeItem: (state, action) => {
       const id = action.payload._id;
+      console.log(id);
       const index = state.items.findIndex((el) => el._id === id);
+
+      console.log(index);
 
       state.items.splice(index, 1);
     },

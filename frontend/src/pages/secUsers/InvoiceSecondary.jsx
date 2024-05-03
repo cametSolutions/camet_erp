@@ -549,7 +549,7 @@ function InvoiceSecondary() {
               {items.map((el, index) => (
                 <>
                   <div key={index} className="py-3 mt-0 px-3 md:px-6 bg-white flex items-center gap-1.5 md:gap-4">
-                    <div onClick={()=>{dispatch(removeItem(el._id))}} className=" text-gray-500 text-sm cursor-pointer "><MdCancel/></div>
+                    <div onClick={()=>{dispatch(removeItem(el))}} className=" text-gray-500 text-sm cursor-pointer "><MdCancel/></div>
                     <div className=" flex-1">
                       <div className="flex justify-between font-bold text-xs gap-10">
                         <p>{el.product_name}</p>
