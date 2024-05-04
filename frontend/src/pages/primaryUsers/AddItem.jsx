@@ -367,7 +367,7 @@ function AddItem() {
     // Decrement the count if it's greater than 0
     if (currentItem.count > 0) {
       currentItem.count=new Decimal( currentItem.count)
-      currentItem.count = currentItem.count.sub(new Decimal(1));
+      currentItem.count = (currentItem.count).sub(new Decimal(1));
       currentItem.count = parseFloat(currentItem.count.toString());
       if (currentItem.count <= 0) {
         dispatch(removeItem(currentItem));

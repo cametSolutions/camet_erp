@@ -349,10 +349,12 @@ function AddItemSales() {
   ///////////////////////////handleIncrement///////////////////////////////////
 
   const handleIncrement = (_id) => {
+
     const updatedItems = [...item];
     const index = updatedItems.findIndex((item) => item._id === _id);
 
     const currentItem = { ...updatedItems[index] };
+    console.log(currentItem);
 
     if (currentItem?.GodownList?.length > 0) {
       setOpenModal(true);
@@ -362,7 +364,8 @@ function AddItemSales() {
       if (!currentItem.count) {
         currentItem.count = 1;
       } else {
-        currentItem.count += 1;
+        console.log( currentItem.count);
+        currentItem.count = Number(currentItem.count)+1
       }
 
       currentItem.total = calculateTotal(
@@ -514,6 +517,16 @@ function AddItemSales() {
 
   ///////////////////////////react window ///////////////////////////////////
 
+
+  function truncateToNDecimals(num, n) {
+    const parts = num.toString().split(".");
+    if (parts.length === 1) return num; // No decimal part
+    parts[1] = parts[1].substring(0, n); // Truncate the decimal part
+    return parseFloat(parts.join("."));
+  }
+
+
+
   const Row = ({ index, style }) => {
     const el = filteredItems[index];
     console.log(filteredItems[index]);
@@ -605,7 +618,7 @@ function AddItemSales() {
                   </svg>
                 </button>
                 <input
-                  className="p-0 w-6 bg-transparent border-0 text-gray-800 text-center focus:ring-0 "
+                  className="p-0 w-12 bg-transparent border-0 text-gray-800 text-center focus:ring-0 "
                   type="text"
                   disabled
                   value={el.count ? el.count : 0} // Display the count from the state
@@ -986,11 +999,15 @@ function AddItemSales() {
 
                   <h3 className="font-medium  text-right  text-white ">
                     Total Count:{" "}
-                    <span className="text-white  font-bold">
-                      {godown.reduce((acc, curr) => {
-                        return (acc = acc + curr.count);
-                      }, 0)}
-                    </span>
+                    <span className="text-white font-bold">
+                      {truncateToNDecimals(
+                        godown.reduce(
+                          (acc, curr) => acc + parseFloat(curr.count),
+                          0
+                        ),
+                        3 // Specify the number of decimal places you want
+                      )}
+                      </span>
                   </h3>
                 </div>
                 <div className="table-container overflow-y-auto max-h-[250px]">
