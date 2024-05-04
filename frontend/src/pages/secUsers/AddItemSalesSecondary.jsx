@@ -17,6 +17,7 @@ import {
   setCategoryInRedux,
   setSubCategoryInRedux,
   removeAll,
+  changeGodownCount
 } from "../../../slices/salesSecondary";
 import { HashLoader } from "react-spinners";
 import { FixedSizeList as List } from "react-window";
@@ -522,6 +523,7 @@ function AddItemSalesSecondary() {
 
     dispatch(changeCount(updatedItem)); // Update the count in the Redux store
     dispatch(changeTotal(updatedItem)); // Update the total in the Redux store
+    dispatch(changeGodownCount(updatedItem)); // Update the total in the Redux store
   };
 
   ///////////////////////////handlePriceLevelChange///////////////////////////////////
