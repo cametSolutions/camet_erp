@@ -2610,7 +2610,7 @@ export const fetchAdditionalDetails = async (req, res) => {
 };
 
 // @desc  adding configurations for secondary
-// route get/api/pUsers/addSecondaryConfigurations
+// route post/api/pUsers/addSecondaryConfigurations
 
 export const addSecondaryConfigurations = async (req, res) => {
   const cmp_id = req.params.cmp_id;
@@ -2621,14 +2621,20 @@ export const addSecondaryConfigurations = async (req, res) => {
 
   try {
     const {
-      selectedGodowns = [],
+    
       selectedPriceLevels,
       salesConfiguration,
       salesOrderConfiguration,
       receiptConfiguration,
-      vanSaleConfiguration = [],
+      vanSaleConfiguration ,
       vanSale,
     } = req.body;
+    let {selectedGodowns}= req.body;
+
+    if (selectedGodowns.every(godown => godown === null)) {
+      selectedGodowns = [];
+    }
+
 
     console.log(selectedGodowns);
     console.log(vanSaleConfiguration);
@@ -2686,19 +2692,7 @@ export const addSecondaryConfigurations = async (req, res) => {
   }
 };
 
-// // Helper function to modify field names in configuration objects
-// const modifyFieldNames = (config) => {
-//   // Modify the field names here as needed
-//   return {
-//     prefixDetails: config.prefix,
-//     suffixDetails: config.suffix,
-//     startingNumber: config.startingNumber,
-//     widthOfNumericalPart: config.numericalWidth,
-//     configurationNumber:config.configurationNumber
-//   };
-// };
 
-// finding godowns for primary users (in)
 
 export const findPrimaryUserGodowns = async (req, res) => {
   const cmp_id = req.params.cmp_id;

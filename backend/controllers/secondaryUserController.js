@@ -394,7 +394,7 @@ export const fetchBanks = async (req, res) => {
       {
         $project: {
           bank_name: 1,
-          bank_ledname:1
+          bank_ledname: 1,
         },
       },
     ]);
@@ -639,6 +639,7 @@ export const getProducts = async (req, res) => {
   const Secondary_user_id = req.sUserId;
   const cmp_id = req.params.cmp_id;
   const Primary_user_id = new mongoose.Types.ObjectId(req.owner);
+ 
 
   try {
     const secUser = await SecondaryUser.findById(Secondary_user_id);
@@ -656,8 +657,10 @@ export const getProducts = async (req, res) => {
     if (configuration) {
       const { selectedGodowns, vanSale } = configuration;
 
+      console.log("selectedGodowns",selectedGodowns);
 
       if (vanSale && selectedGodowns && selectedGodowns.length === 1) {
+        console.log("vansale");
         products = await productModel.aggregate([
           {
             $match: {
@@ -714,7 +717,9 @@ export const getProducts = async (req, res) => {
             },
           },
         ]);
-      } else {
+      } else if(vanSale==false && selectedGodowns.length!==0) {
+        console.log("no vansale but selected godowns");
+
         products = await productModel.aggregate([
           {
             $match: {
@@ -729,7 +734,7 @@ export const getProducts = async (req, res) => {
               cmp_id: 1,
               product_code: 1,
               balance_stock: 1,
-               
+
               Primary_user_id: 1,
               brand: 1,
               category: 1,
@@ -761,7 +766,16 @@ export const getProducts = async (req, res) => {
           },
         ]);
       }
+      else{
+        products = await productModel.find({
+          Primary_user_id: Primary_user_id,
+          cmp_id: cmp_id,
+        });
+
+      }
     } else {
+      console.log("no vansale no selected godowns");
+
       // If configuration is not present, fetch all products
       products = await productModel.find({
         Primary_user_id: Primary_user_id,
@@ -769,7 +783,7 @@ export const getProducts = async (req, res) => {
       });
     }
 
-    if (products.length > 0) {
+    if (products && products.length > 0) {
       return res.status(200).json({
         productData: products,
         message: "Products fetched",
@@ -778,6 +792,7 @@ export const getProducts = async (req, res) => {
       return res.status(404).json({ message: "No products were found " });
     }
   } catch (error) {
+  console.log(error);
     return res
       .status(500)
       .json({ success: false, message: "Internal server error, try again!" });
@@ -858,7 +873,6 @@ export const createInvoice = async (req, res) => {
       };
     });
 
-
     let updateAdditionalCharge;
     if (additionalChargesFromRedux.length > 0) {
       updateAdditionalCharge = additionalChargesFromRedux.map((charge) => {
@@ -880,7 +894,7 @@ export const createInvoice = async (req, res) => {
       partyAccount: party?.partyName,
 
       party,
-      items: updatedItems, 
+      items: updatedItems,
       priceLevel: priceLevelFromRedux, // Corrected typo and used correct assignment operator
       additionalCharges: updateAdditionalCharge, // Corrected typo and used correct assignment operator
       finalAmount: lastAmount, // Corrected typo and used correct assignment operator
@@ -1875,23 +1889,20 @@ export const createSale = async (req, res) => {
       };
     });
 
-    let updateAdditionalCharge
+    let updateAdditionalCharge;
 
+    if (additionalChargesFromRedux.length > 0) {
+      updateAdditionalCharge = additionalChargesFromRedux.map((charge) => {
+        const { value, taxPercentage } = charge;
 
-    if (additionalChargesFromRedux.length>0){
-
-      updateAdditionalCharge=additionalChargesFromRedux.map((charge)=>{
-        const {value,taxPercentage}=charge;
-        
-        const taxAmt=(parseFloat(value)*parseFloat(taxPercentage)/100)
+        const taxAmt = (parseFloat(value) * parseFloat(taxPercentage)) / 100;
         console.log(taxAmt);
-  
-        return{
+
+        return {
           ...charge,
-          taxAmt:taxAmt
-        }
-  
-      })
+          taxAmt: taxAmt,
+        };
+      });
     }
 
     // Continue with the rest of your function...
@@ -2055,13 +2066,17 @@ export const fetchAdditionalDetails = async (req, res) => {
   try {
     const secUser = await SecondaryUser.findById(secondary_user_id);
 
+    let selectedPriceLevels;
+
     const configuration = secUser.configurations.find(
       (item) => item.organization.toString() === cmp_id
     );
-
-    const { selectedPriceLevels } = configuration;
+    if (configuration) {
+      selectedPriceLevels = configuration.selectedPriceLevels;
+    }
 
     let priceLevelsResult = [];
+
     if (selectedPriceLevels && selectedPriceLevels.length == 0) {
       priceLevelsResult = await productModel.aggregate([
         {
@@ -2086,6 +2101,8 @@ export const fetchAdditionalDetails = async (req, res) => {
         { $project: { _id: 0, pricelevels: 1 } },
       ]);
     }
+
+    
 
     const brandResults = await productModel.aggregate([
       {
