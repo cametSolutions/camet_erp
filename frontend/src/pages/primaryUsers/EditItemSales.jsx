@@ -233,6 +233,8 @@ function EditItemSales() {
     setOpenModal(false);
   };
 
+  console.log(item);
+
   return (
     <div className="flex ">
       <div>

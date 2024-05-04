@@ -17,6 +17,7 @@ import {
   setBrandInRedux,
   setCategoryInRedux,
   setSubCategoryInRedux,
+  changeGodownCount,
   removeAllSales,
 } from "../../../slices/sales";
 import { HashLoader } from "react-spinners";
@@ -25,7 +26,6 @@ import { Button, Modal } from "flowbite-react";
 import { toast } from "react-toastify";
 import SelectDefaultModal from "../../../constants/components/SelectDefaultModal";
 import { IoIosCloseCircleOutline } from "react-icons/io";
-
 
 function AddItemSales() {
   const [item, setItem] = useState([]);
@@ -269,8 +269,8 @@ function AddItemSales() {
   ///////////////////////////handleAddClick///////////////////////////////////
 
   const handleAddClick = (_id) => {
-    const updatedItems = [...item]; 
-    const index = updatedItems.findIndex(item => item._id === _id);
+    const updatedItems = [...item];
+    const index = updatedItems.findIndex((item) => item._id === _id);
     // Create a shallow copy of the items
     const itemToUpdate = updatedItems[index];
 
@@ -350,7 +350,7 @@ function AddItemSales() {
 
   const handleIncrement = (_id) => {
     const updatedItems = [...item];
-    const index = updatedItems.findIndex(item => item._id === _id);
+    const index = updatedItems.findIndex((item) => item._id === _id);
 
     const currentItem = { ...updatedItems[index] };
 
@@ -399,8 +399,8 @@ function AddItemSales() {
 
   ///////////////////////////handleDecrement///////////////////////////////////
   const handleDecrement = (_id) => {
-    const updatedItems = [...item]; 
-    const index = updatedItems.findIndex(item => item._id === _id);
+    const updatedItems = [...item];
+    const index = updatedItems.findIndex((item) => item._id === _id);
     // Make a copy of the array
     const currentItem = { ...updatedItems[index] };
 
@@ -474,6 +474,7 @@ function AddItemSales() {
     };
 
     console.log(updatedItem.total);
+    console.log(updatedItem.GodownList);
 
     // Update the item in the copied array
 
@@ -499,6 +500,7 @@ function AddItemSales() {
 
     dispatch(changeCount(updatedItem)); // Update the count in the Redux store
     dispatch(changeTotal(updatedItem)); // Update the total in the Redux store
+    dispatch(changeGodownCount(updatedItem)); // Update the total in the Redux store
   };
 
   ///////////////////////////handlePriceLevelChange///////////////////////////////////
@@ -726,21 +728,25 @@ function AddItemSales() {
     setOpenModal(false);
   }
 
+  console.log(godown);
+
   // Function to handle incrementing the count
   const incrementCount = (index) => {
     const newGodownItems = godown.map((item) => ({ ...item })); // Deep copy each item object
     console.log(newGodownItems);
-
-    // if (newGodownItems[index].balance_stock >= 1) {
-      newGodownItems[index].count += 1;
-      newGodownItems[index].balance_stock -= 1;
-      setGodown(newGodownItems);
-      setTotalCount(totalCount + 1);
-      console.log(godown);
-    // } else {
-    //   toast("Insufficient stock to increment count.");
-    // }
+    console.log(newGodownItems[index].count);
+    newGodownItems[index].count += 1;
+    console.log(newGodownItems[index].count);
+    
+    newGodownItems[index].balance_stock -= 1;
+    console.log(newGodownItems);
+    setGodown(newGodownItems);
+    setTotalCount(totalCount + 1);
+    console.log(godown);
+ 
   };
+  console.log(godown);
+
 
   // Function to handle decrementing the count
   const decrementCount = (index) => {
@@ -840,9 +846,13 @@ function AddItemSales() {
                     <IoIosSearch />
                   </button>
                   <button
-                  onClick={()=>{setSearch("")}}
+                    onClick={() => {
+                      setSearch("");
+                    }}
                     type="submit"
-                    class={`${search.length>0 ? "block":"hidden"}  absolute end-[40px] top-1/2 transform -translate-y-1/2 text-gray-500  text-md px-2 py-1`}
+                    class={`${
+                      search.length > 0 ? "block" : "hidden"
+                    }  absolute end-[40px] top-1/2 transform -translate-y-1/2 text-gray-500  text-md px-2 py-1`}
                   >
                     <IoIosCloseCircleOutline />
                   </button>
@@ -1019,7 +1029,13 @@ function AddItemSales() {
                             </div>
                             <div className="text-sm text-gray-900 mt-1  ">
                               Stock :{" "}
-                              <span className={`${item.balance_stock <=0 ? "text-red-500  font-bold" : ""} text-green-500 font-bold"`}>
+                              <span
+                                className={`${
+                                  item.balance_stock <= 0
+                                    ? "text-red-500  font-bold"
+                                    : ""
+                                } text-green-500 font-bold"`}
+                              >
                                 {item.balance_stock}
                               </span>
                             </div>
@@ -1043,7 +1059,6 @@ function AddItemSales() {
                                 -
                               </button>
                               {item.count}
-                              
 
                               <button
                                 onClick={() => incrementCount(index)}
