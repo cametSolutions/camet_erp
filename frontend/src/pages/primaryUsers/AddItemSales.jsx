@@ -26,6 +26,7 @@ import { Button, Modal } from "flowbite-react";
 import { toast } from "react-toastify";
 import SelectDefaultModal from "../../../constants/components/SelectDefaultModal";
 import { IoIosCloseCircleOutline } from "react-icons/io";
+import {Decimal} from "decimal.js"
 
 function AddItemSales() {
   const [item, setItem] = useState([]);
@@ -316,7 +317,7 @@ function AddItemSales() {
     console.log(`Found priceRate: ${priceRate}`);
     console.log(item);
 
-    let subtotal = priceRate * parseInt(item?.count);
+    let subtotal = priceRate * Number(item?.count);
     let discountedSubtotal = subtotal;
 
     console.log(`subtotal before discount: ${subtotal}`);
@@ -365,7 +366,7 @@ function AddItemSales() {
         currentItem.count = 1;
       } else {
         console.log( currentItem.count);
-        currentItem.count = Number(currentItem.count)+1
+        currentItem.count = new Decimal(currentItem.count).add(1).toNumber()
       }
 
       currentItem.total = calculateTotal(
@@ -412,7 +413,8 @@ function AddItemSales() {
       setGodown(currentItem?.GodownList);
     } else {
       if (currentItem.count > 0) {
-        currentItem.count -= 1;
+        currentItem.count = new Decimal(currentItem.count).sub(1).toNumber()
+
         if (currentItem.count == 0) {
           dispatch(removeItem(currentItem));
           updatedItems[index].added = false;
@@ -457,10 +459,10 @@ function AddItemSales() {
     console.log(itemToUpdate);
 
     // Calculate the total count across all godowns for itemToUpdate
-    const totalCount = godown.reduce(
+    const totalCount =truncateToNDecimals( godown.reduce(
       (acc, godownItem) => acc + godownItem.count,
       0
-    );
+    ))
     const itemWithUpdatedCount = {
       ...itemToUpdate,
       count: totalCount,
@@ -748,11 +750,12 @@ function AddItemSales() {
     const newGodownItems = godown.map((item) => ({ ...item })); // Deep copy each item object
     console.log(newGodownItems);
     console.log(newGodownItems[index].count);
-    newGodownItems[index].count += 1;
+    // newGodownItems[index].count += 1;
+    newGodownItems[index].count = new Decimal(newGodownItems[index].count).add(1).toNumber();
     console.log(newGodownItems[index].count);
     
     
-    newGodownItems[index].balance_stock -= 1;
+    newGodownItems[index].balance_stock =new Decimal(newGodownItems[index].balance_stock).sub(1).toNumber();
     console.log(newGodownItems);
     setGodown(newGodownItems);
     setTotalCount(totalCount + 1);
@@ -768,8 +771,8 @@ function AddItemSales() {
     console.log(newGodownItems);
 
     if (newGodownItems[index].count > 0) {
-      newGodownItems[index].count -= 1;
-      newGodownItems[index].balance_stock += 1; // Increase balance_stock by 1
+      newGodownItems[index].count =  new Decimal(newGodownItems[index].count).sub(1).toNumber();
+      newGodownItems[index].balance_stock =new Decimal(newGodownItems[index].balance_stock).add(1).toNumber(); // Increase balance_stock by 1
       setGodown(newGodownItems); // Corrected function name to setGodown
       setTotalCount(totalCount - 1);
       console.log(godown);

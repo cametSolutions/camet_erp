@@ -18,6 +18,7 @@ import invoiceModel from "../models/invoiceModel.js";
 import bankModel from "../models/bankModel.js";
 import salesModel from "../models/salesModel.js";
 import AdditionalChargesModel from "../models/additionalChargesModel.js";
+import { truncateToNDecimals } from "./helpers/helper.js";
 
 // @desc Register Primary user
 // route POST/api/pUsers/register
@@ -2305,7 +2306,10 @@ export const createSale = async (req, res) => {
       }
 
       // Calculate the new balance stock
-      const newBalanceStock = parseInt(product.balance_stock) - item.count;
+      const productBalanceStock = truncateToNDecimals(product.balance_stock, 3);
+      const itemCount = truncateToNDecimals(item.count, 3);
+      const newBalanceStock = productBalanceStock - itemCount;
+      // console.log("newBalanceStock",newBalanceStock);
 
       // Prepare product update operation
       productUpdates.push({
@@ -2323,16 +2327,17 @@ export const createSale = async (req, res) => {
         );
         if (godownIndex !== -1) {
           // Calculate the new godown stock
-          const newGodownStock =
-            parseInt(product.GodownList[godownIndex].balance_stock) -
-            godown.count;
+          const newGodownStock = truncateToNDecimals(
+            (product.GodownList[godownIndex].balance_stock) - godown.count,
+            2
+          );
 
           // Prepare godown update operation
           godownUpdates.push({
             updateOne: {
               filter: { _id: product._id, "GodownList.godown": godown.godown },
               update: {
-                $set: { "GodownList.$.balance_stock": newGodownStock },
+                $set: { "GodownList.$.balance_stock": godown.balance_stock },
               },
             },
           });

@@ -190,6 +190,20 @@ function EditItemSales() {
       }
     }
   };
+  const handleDirectQuantityChange=(value)=>{
+
+    if (value.includes(".")) {
+      // Split the value into parts before and after the decimal point
+      const parts = value.split(".");
+      // Check the length of the part after the decimal point
+      if (parts[1].length > 3) {
+        return;
+      }
+    }
+
+    setQuantity(value)
+    
+  }
 
   function truncateToNDecimals(num, n) {
     const parts = num.toString().split(".");
@@ -201,10 +215,10 @@ function EditItemSales() {
   // Function to handle incrementing the count
   const incrementCount = (index) => {
     const newGodownItems = godown.map((item) => ({ ...item })); // Deep copy each item object
-    newGodownItems[index].count = new Decimal(newGodownItems[index].count).add(
-      1
-    );
-    newGodownItems[index].count = newGodownItems[index].count.toNumber();
+    newGodownItems[index].count = new Decimal(newGodownItems[index].count)
+      .add(1)
+      .toNumber();
+    // newGodownItems[index].count = newGodownItems[index].count.toNumber();
 
     console.log(
       typeof newGodownItems[index].count,
@@ -224,10 +238,10 @@ function EditItemSales() {
     console.log(newGodownItems);
 
     if (newGodownItems[index].count > 0) {
-      newGodownItems[index].count = new Decimal(
-        newGodownItems[index].count
-      ).sub(1);
-      newGodownItems[index].count = newGodownItems[index].count.toNumber();
+      newGodownItems[index].count = new Decimal(newGodownItems[index].count)
+        .sub(1)
+        .toNumber();
+      // newGodownItems[index].count = newGodownItems[index].count.toNumber();
       newGodownItems[index].balance_stock += 1; // Increase balance_stock by 1
       newGodownItems[index].balance_stock = truncateToNDecimals(
         newGodownItems[index].balance_stock,
@@ -243,19 +257,17 @@ function EditItemSales() {
 
   const changeModalCount = (index, value) => {
     console.log(value);
-     
+
     // Check if the value includes a decimal point
     if (value.includes(".")) {
       // Split the value into parts before and after the decimal point
-      const parts = value.split('.');
+      const parts = value.split(".");
       // Check the length of the part after the decimal point
       if (parts[1].length > 3) {
-   
-        return; 
+        return;
       }
-
     }
-
+    
     const newGodownItems = godown.map((item) => ({ ...item }));
     const currentGodown = newGodownItems[index];
     currentGodown.orginalStock =
@@ -273,6 +285,12 @@ function EditItemSales() {
     setGodown(newGodownItems);
   };
 
+  ///////////////////////////changeQnatity///////////////////////////////////
+
+  // const changeQnatity=()=>{
+
+  // }
+
   ///////////////////////////modalSubmit///////////////////////////////////
   console.log(godown);
 
@@ -287,8 +305,6 @@ function EditItemSales() {
 
     setOpenModal(false);
   };
-
-
 
   return (
     <div className="flex ">
@@ -340,10 +356,14 @@ function EditItemSales() {
                         <div className="relative focus-within:text-gray-600 text-gray-400">
                           <input
                             onClick={openModalHandler}
+                            onChange={(e)=>{handleDirectQuantityChange(e.target.value)}}
                             // onChange={(e) => setQuantity(e.target.value)}
-                            onChange={(e) => {
-                              changeQuantity(e.target.value);
-                            }}
+                            // onChange={(e) => {
+                            //   changeQuantity(e.target.value);
+                            // }}
+                            // onChange={(e) => {
+                            //   changeQnatity(e.target.value);
+                            // }} // Display the count from the state
                             value={quantity}
                             type="text"
                             className="pr-4 pl-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm border-gray-300 rounded-md focus:outline-none text-gray-600"
