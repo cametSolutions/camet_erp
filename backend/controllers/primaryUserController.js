@@ -18,6 +18,7 @@ import invoiceModel from "../models/invoiceModel.js";
 import bankModel from "../models/bankModel.js";
 import salesModel from "../models/salesModel.js";
 import AdditionalChargesModel from "../models/additionalChargesModel.js";
+import { truncateToNDecimals } from "./helpers/helper.js";
 
 // @desc Register Primary user
 // route POST/api/pUsers/register
@@ -2007,19 +2008,68 @@ export const editInvoice = async (req, res) => {
 
     console.log(req.body);
 
+    // Calculate updated items
+    const updatedItems = items.map((item) => {
+      const selectedPriceLevel = item.Priceleveles.find(
+        (priceLevel) => priceLevel.pricelevel === priceLevelFromRedux
+      );
+      const selectedPrice = selectedPriceLevel
+        ? selectedPriceLevel.pricerate
+        : null;
+
+      let totalPrice = selectedPrice * (item.count || 1) || 0;
+      if (item.discount) {
+        totalPrice -= item.discount;
+      } else if (item.discountPercentage) {
+        const discountAmount = (totalPrice * item.discountPercentage) / 100;
+        totalPrice -= discountAmount;
+      }
+
+      // Calculate tax amounts
+      const { cgst, sgst, igst } = item;
+      const cgstAmt = (totalPrice * cgst) / 100;
+      const sgstAmt = (totalPrice * sgst) / 100;
+      const igstAmt = (totalPrice * igst) / 100;
+
+      return {
+        ...item,
+        selectedPrice: selectedPrice,
+        cgstAmt: parseFloat(cgstAmt.toFixed(2)),
+        sgstAmt: parseFloat(sgstAmt.toFixed(2)),
+        igstAmt: parseFloat(igstAmt.toFixed(2)),
+        subTotal: totalPrice,
+      };
+    });
+
+    let updateAdditionalCharge;
+    if (additionalChargesFromRedux.length > 0) {
+      updateAdditionalCharge = additionalChargesFromRedux.map((charge) => {
+        const { value, taxPercentage } = charge;
+
+        const taxAmt = (parseFloat(value) * parseFloat(taxPercentage)) / 100;
+        console.log(taxAmt);
+
+        return {
+          ...charge,
+          taxAmt: taxAmt,
+        };
+      });
+    }
+
+    // Update the invoice document
     const result = await invoiceModel.findByIdAndUpdate(
-      invoiceId, // Use the invoiceId to find the document
+      invoiceId,
       {
         cmp_id: orgId,
         party,
-        items,
+        items: updatedItems,
         priceLevel: priceLevelFromRedux,
-        additionalCharges: additionalChargesFromRedux,
+        additionalCharges: updateAdditionalCharge,
         finalAmount: lastAmount,
         Primary_user_id,
         orderNumber,
       },
-      { new: true } // This option returns the updated document
+      { new: true }
     );
 
     return res.status(200).json({
@@ -2032,10 +2082,11 @@ export const editInvoice = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Internal server error, try again!",
-      error: error.message, // Include error message for debugging
+      error: error.message,
     });
   }
 };
+
 
 // @desc adding additional charges in orgData
 // route POST /api/pUsers/addAdditionalCharge
@@ -2255,7 +2306,10 @@ export const createSale = async (req, res) => {
       }
 
       // Calculate the new balance stock
-      const newBalanceStock = parseInt(product.balance_stock) - item.count;
+      const productBalanceStock = truncateToNDecimals(product.balance_stock, 3);
+      const itemCount = truncateToNDecimals(item.count, 3);
+      const newBalanceStock = productBalanceStock - itemCount;
+      // console.log("newBalanceStock",newBalanceStock);
 
       // Prepare product update operation
       productUpdates.push({
@@ -2273,16 +2327,17 @@ export const createSale = async (req, res) => {
         );
         if (godownIndex !== -1) {
           // Calculate the new godown stock
-          const newGodownStock =
-            parseInt(product.GodownList[godownIndex].balance_stock) -
-            godown.count;
+          const newGodownStock = truncateToNDecimals(
+            (product.GodownList[godownIndex].balance_stock) - godown.count,
+            2
+          );
 
           // Prepare godown update operation
           godownUpdates.push({
             updateOne: {
               filter: { _id: product._id, "GodownList.godown": godown.godown },
               update: {
-                $set: { "GodownList.$.balance_stock": newGodownStock },
+                $set: { "GodownList.$.balance_stock": godown.balance_stock },
               },
             },
           });
@@ -2414,12 +2469,12 @@ export const createSale = async (req, res) => {
 
     console.log("changedGodowns", changedGodowns);
 
-    // return res.status(200).json({
-    //   success: true,
-    //   message: "Sale created successfully",
-    //   data: result,
-    //   // billData: addedInBillData,
-    // });
+    return res.status(200).json({
+      success: true,
+      message: "Sale created successfully",
+      data: result,
+      // billData: addedInBillData,
+    });
   } catch (error) {
     console.error(error);
     return res.status(500).json({

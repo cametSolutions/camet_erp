@@ -10,6 +10,8 @@ import api from "../../api/api";
 import { useDispatch } from "react-redux";
 import { addParty } from "../../../slices/sales";
 import { useLocation } from "react-router-dom";
+import { IoIosCloseCircleOutline } from "react-icons/io";
+
 
 // import { MdCancel } from "react-icons/md";
 
@@ -139,6 +141,13 @@ function SearchPartySales() {
                     class="text-white absolute end-[10px] top-1/2 transform -translate-y-1/2 bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-md px-2 py-1"
                   >
                     <IoIosSearch />
+                  </button>
+                  <button
+                  onClick={()=>{setSearch("")}}
+                    type="submit"
+                    class={`${search.length>0 ? "block":"hidden"}  absolute end-[40px] top-1/2 transform -translate-y-1/2 text-gray-500  text-md px-2 py-1`}
+                  >
+                    <IoIosCloseCircleOutline />
                   </button>
                 </div>
               </div>

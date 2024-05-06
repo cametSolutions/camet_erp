@@ -21,12 +21,11 @@ import { useNavigate } from "react-router-dom";
 import api from "../../api/api";
 import { IoIosAddCircle } from "react-icons/io";
 import { MdPlaylistAdd } from "react-icons/md";
-import { removeAll, removeAdditionalCharge } from "../../../slices/invoice";
+import { removeAll, removeAdditionalCharge ,removeItem} from "../../../slices/invoice";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import { Button, Label, Modal, TextInput } from "flowbite-react";
 
 function Invoice() {
-  
   const [showSidebar, setShowSidebar] = useState(false);
   const [openModal, setOpenModal] = useState(false);
   const [modalInputs, setModalInputs] = useState({
@@ -51,25 +50,23 @@ function Invoice() {
     (state) => state.setSelectedOrganization.selectedOrg.type
   );
 
-  useEffect(()=>{
-   
+  useEffect(() => {
     const getAdditionalChargesIntegrated = async () => {
       try {
         const res = await api.get(`/api/pUsers/additionalcharges/${orgId}`, {
           withCredentials: true,
         });
-        console.log(res.data)
+        console.log(res.data);
         setAdditionalChragesFromCompany(res.data);
       } catch (error) {
         console.log(error);
         toast.error(error.response.data.message);
       }
     };
-  if(type != "self" ){
-    getAdditionalChargesIntegrated()
-  }
-  },[])
-
+    if (type != "self") {
+      getAdditionalChargesIntegrated();
+    }
+  }, []);
 
   useEffect(() => {
     const fetchSingleOrganization = async () => {
@@ -83,7 +80,7 @@ function Invoice() {
 
         console.log(res.data.organizationData);
         // setCompany(res.data.organizationData);
-        if(type == "self"){
+        if (type == "self") {
           setAdditionalChragesFromCompany(
             res.data.organizationData.additionalCharges
           );
@@ -125,34 +122,32 @@ function Invoice() {
         console.log(error);
       }
     };
- 
+
     fetchSingleOrganization();
-    
   }, [refreshCmp, orgId]);
 
   const [rows, setRows] = useState(
     additionalChargesFromRedux.length > 0
-       ? additionalChargesFromRedux
-       : additionalChragesFromCompany.length > 0
-       ? [
-           {
-             option: additionalChragesFromCompany[0].name,
-             value: "",
-             action: "add",
-             taxPercentage: additionalChragesFromCompany[0].taxPercentage,
-             hsn: additionalChragesFromCompany[0].hsn,
-             _id: additionalChragesFromCompany[0]._id,
-             finalValue:""
-           },
-         ]
-       : [] // Fallback to an empty array if additionalChragesFromCompany is also empty
-   );
-   
+      ? additionalChargesFromRedux
+      : additionalChragesFromCompany.length > 0
+      ? [
+          {
+            option: additionalChragesFromCompany[0].name,
+            value: "",
+            action: "add",
+            taxPercentage: additionalChragesFromCompany[0].taxPercentage,
+            hsn: additionalChragesFromCompany[0].hsn,
+            _id: additionalChragesFromCompany[0]._id,
+            finalValue: "",
+          },
+        ]
+      : [] // Fallback to an empty array if additionalChragesFromCompany is also empty
+  );
+
   console.log(rows);
 
-
   useEffect(() => {
-    if (additionalChargesFromRedux.length>0) {
+    if (additionalChargesFromRedux.length > 0) {
       setAdditional(true);
     }
   }, []);
@@ -179,10 +174,8 @@ function Invoice() {
         action: "add",
         taxPercentage: additionalChragesFromCompany[0]?.taxPercentage,
         hsn: additionalChragesFromCompany[0]?.hsn,
-        _id:additionalChragesFromCompany[0]?._id,
-        finalValue:""
-
-
+        _id: additionalChragesFromCompany[0]?._id,
+        finalValue: "",
       },
     ]);
   };
@@ -200,8 +193,7 @@ function Invoice() {
       taxPercentage: selectedOption?.taxPercentage,
       hsn: selectedOption?.hsn,
       _id: selectedOption?._id,
-      finalValue:""
-
+      finalValue: "",
     };
     console.log(newRows);
     setRows(newRows);
@@ -214,18 +206,18 @@ function Invoice() {
   const handleRateChange = (index, value) => {
     const newRows = [...rows];
     let updatedRow = { ...newRows[index], value: value }; // Create a new object with the updated value
-   
+
     if (updatedRow.taxPercentage && updatedRow.taxPercentage !== "") {
-       const taxAmount = (parseFloat(value) * parseFloat(updatedRow.taxPercentage)) / 100;
-       updatedRow.finalValue = parseFloat(value) + taxAmount;
+      const taxAmount =
+        (parseFloat(value) * parseFloat(updatedRow.taxPercentage)) / 100;
+      updatedRow.finalValue = parseFloat(value) + taxAmount;
     } else {
-       updatedRow.finalValue = parseFloat(value);
+      updatedRow.finalValue = parseFloat(value);
     }
-    newRows[index] = updatedRow; 
+    newRows[index] = updatedRow;
     setRows(newRows);
     dispatch(addAdditionalCharges({ index, row: updatedRow }));
-   };
-   
+  };
 
   const actionChange = (index, value) => {
     const newRows = [...rows];
@@ -255,25 +247,22 @@ function Invoice() {
 
   const additionalChargesTotal = useMemo(() => {
     return rows.reduce((acc, curr) => {
-       let value = curr.finalValue === "" ? 0 : parseFloat(curr.finalValue);
-       if (curr.action === "add") {
-         return acc + value;
-       } else if (curr.action === "sub") {
-         return acc - value;
-       }
-       return acc;
+      let value = curr.finalValue === "" ? 0 : parseFloat(curr.finalValue);
+      if (curr.action === "add") {
+        return acc + value;
+      } else if (curr.action === "sub") {
+        return acc - value;
+      }
+      return acc;
     }, 0);
-   }, [rows]);
-   
+  }, [rows]);
 
   console.log(additionalChargesTotal);
-  const totalAmount =
+  const totalAmountNotRounded =
     parseFloat(subTotal) + additionalChargesTotal || parseFloat(subTotal);
+  const totalAmount = Math.round(totalAmountNotRounded); // Round the total amount
 
   const navigate = useNavigate();
-
-
-
 
   const handleAddItem = () => {
     console.log(Object.keys(party).length);
@@ -552,60 +541,63 @@ function Invoice() {
 
               {items.map((el, index) => (
                 <>
-                  <div key={index} className="py-3 mt-0 px-6 bg-white ">
-                    <div className="flex justify-between font-bold text-xs">
-                      <p>{el.product_name}</p>
-                      <p> ₹ {el.total ?? 0}</p>
-                    </div>
-                    <div className="flex justify-between items-center mt-2 ">
-                      <div className="w-3/5 md:w-2/5 font-semibold text-gray-500 text-xs  flex flex-col gap-2 ">
-                        <div className="flex justify-between">
-                          <p className="text-nowrap">
-                            Qty <span className="text-xs">x</span> Rate
-                          </p>
-                          <p className="text-nowrap">
-                            {el.count} {el.unit} X{" "}
-                            {el.Priceleveles.find(
-                              (item) => item.pricelevel == priceLevelFromRedux
-                            )?.pricerate || 0}
-                          </p>
-                        </div>
-                        <div className="flex justify-between">
-                          <p className="text-nowrap"> Tax </p>
-                          <p className="text-nowrap">({el.igst} %)</p>
-                        </div>
-                        {(el.discount > 0 || el.discountPercentage > 0) && (
-                          <div className="flex justify-between">
-                            <p className="text-nowrap"> Discount </p>
-                            <div className="flex items-center">
-                              <p className="text-nowrap ">
-                                {el.discount > 0
-                                  ? `₹ ${el.discount}`
-                                  : `${el.discountPercentage}%`}
-                              </p>
-                            </div>
-                          </div>
-                        )}
+                  <div key={index} className="py-3 mt-0 px-3 md:px-6 bg-white flex items-center gap-1.5 md:gap-4">
+                    <div onClick={()=>{dispatch(removeItem(el))}} className=" text-gray-500 text-sm cursor-pointer "><MdCancel/></div>
+                    <div className=" flex-1">
+                      <div className="flex justify-between font-bold text-xs gap-10">
+                        <p>{el.product_name}</p>
+                        <p className="text-nowrap"> ₹ {el.total ?? 0}</p>
                       </div>
-                      {/* <Link
+                      <div className="flex justify-between items-center mt-2 ">
+                        <div className="w-3/5 md:w-2/5 font-semibold text-gray-500 text-xs  flex flex-col gap-2 ">
+                          <div className="flex justify-between">
+                            <p className="text-nowrap">
+                              Qty <span className="text-xs">x</span> Rate
+                            </p>
+                            <p className="text-nowrap">
+                              {el.count} {el.unit} X{" "}
+                              {el.Priceleveles.find(
+                                (item) => item.pricelevel == priceLevelFromRedux
+                              )?.pricerate || 0}
+                            </p>
+                          </div>
+                          <div className="flex justify-between">
+                            <p className="text-nowrap"> Tax </p>
+                            <p className="text-nowrap">({el.igst} %)</p>
+                          </div>
+                          {(el.discount > 0 || el.discountPercentage > 0) && (
+                            <div className="flex justify-between">
+                              <p className="text-nowrap"> Discount </p>
+                              <div className="flex items-center">
+                                <p className="text-nowrap ">
+                                  {el.discount > 0
+                                    ? `₹ ${el.discount}`
+                                    : `${el.discountPercentage}%`}
+                                </p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        {/* <Link
                         to={{
                           pathname: `/pUsers/editItem/${el._id}`,
                           state: { from: "invoice" }, // Set the state to indicate where the user is coming from
                         }}
                       > */}
-                      <div className="">
-                        <p
-                          onClick={() => {
-                            navigate(`/pUsers/editItem/${el._id}`, {
-                              state: { from: "invoice" },
-                            });
-                          }}
-                          className="text-violet-500 text-xs md:text-base font-bold  p-1  px-4   border border-1 border-gray-300 rounded-2xl cursor-pointer"
-                        >
-                          Edit
-                        </p>
+                        <div className="">
+                          <p
+                            onClick={() => {
+                              navigate(`/pUsers/editItem/${el._id}`, {
+                                state: { from: "invoice" },
+                              });
+                            }}
+                            className="text-violet-500 text-xs md:text-base font-bold  p-1  px-4   border border-1 border-gray-300 rounded-2xl cursor-pointer"
+                          >
+                            Edit
+                          </p>
+                        </div>
+                        {/* </Link> */}
                       </div>
-                      {/* </Link> */}
                     </div>
                   </div>
                   <hr />
@@ -619,289 +611,294 @@ function Invoice() {
               )}`}</p>
             </div>
             {type == "self" && (
-          <>
-            {additional ? (
-              <div className="container mx-auto mt-2 bg-white p-4 text-xs">
-                <div className="flex  items-center justify-between  font-bold  text-[13px]">
-                  <div className="flex  items-center gap-3">
-                    <IoIosArrowDown className="font-bold text-[15px]" />
-                    <p className="text-blue-800">Additional Charges</p>
+              <>
+                {additional ? (
+                  <div className="container mx-auto mt-2 bg-white p-4 text-xs">
+                    <div className="flex  items-center justify-between  font-bold  text-[13px]">
+                      <div className="flex  items-center gap-3">
+                        <IoIosArrowDown className="font-bold text-[15px]" />
+                        <p className="text-blue-800">Additional Charges</p>
+                      </div>
+                      <button
+                        onClick={cancelHandler}
+                        // onClick={() => {setAdditional(false);dispatch(removeAdditionalCharge());setRefresh(!refresh);setRows()}}
+                        className="text-violet-500 p-1 px-3  text-xs border border-1 border-gray-300 rounded-2xl cursor-pointer"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                    <div className="container mx-auto  mt-2  md:px-8 ">
+                      <table className="table-fixed w-full bg-white ">
+                        <tbody>
+                          {rows.map((row, index) => (
+                            <tr key={index} className="">
+                              <td className=" w-2  ">
+                                <MdCancel
+                                  onClick={() => {
+                                    handleDeleteRow(index);
+                                  }}
+                                  className="text-sm cursor-pointer text-gray-500 hover:text-black"
+                                />
+                              </td>
+                              <td className=" flex flex-col justify-center ml-2 mt-3.5 ">
+                                <select
+                                  value={row._id}
+                                  onChange={(e) =>
+                                    handleLevelChange(index, e.target.value)
+                                  }
+                                  className="block w-full   bg-white text-sm focus:outline-none border-none border-b-gray-500 "
+                                >
+                                  {additionalChragesFromCompany.length > 0 ? (
+                                    additionalChragesFromCompany.map(
+                                      (el, index) => (
+                                        <option key={index} value={el._id}>
+                                          {" "}
+                                          {el.name}{" "}
+                                        </option>
+                                      )
+                                    )
+                                  ) : (
+                                    <option>No charges available</option>
+                                  )}
+                                </select>
+
+                                {row?.taxPercentage !== "" && (
+                                  <div className="ml-3 text-[9px] text-gray-400">
+                                    GST @ {row?.taxPercentage} %
+                                  </div>
+                                )}
+                              </td>
+                              <td className="">
+                                <div className="flex gap-3 px-5 ">
+                                  <div
+                                    onClick={() => {
+                                      actionChange(index, "add");
+                                    }}
+                                    className={` ${
+                                      row.action === "add"
+                                        ? "border-violet-500 "
+                                        : ""
+                                    }  cursor-pointer p-1 px-1.5 rounded-md  border  bg-gray-100 `}
+                                  >
+                                    <IoMdAdd />
+                                  </div>
+                                  <div
+                                    onClick={() => {
+                                      actionChange(index, "sub");
+                                    }}
+                                    className={` ${
+                                      row.action === "sub"
+                                        ? "border-violet-500 "
+                                        : ""
+                                    }  cursor-pointer p-1 px-1.5 rounded-md  border  bg-gray-100 `}
+                                  >
+                                    <FiMinus />
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-4 py-2">
+                                <div className="flex items-center">
+                                  <span className="mr-0 ">₹</span>
+                                  <input
+                                    type="number"
+                                    value={row.value}
+                                    onChange={(e) =>
+                                      handleRateChange(index, e.target.value)
+                                    }
+                                    className={` ${
+                                      additionalChragesFromCompany.length === 0
+                                        ? "pointer-events-none opacity-20 "
+                                        : ""
+                                    }   block w-full py-2 px-4 bg-white text-sm focus:outline-none border-b-2 border-t-0 border-l-0 border-r-0 `}
+                                  />
+                                </div>
+
+                                {row?.taxPercentage !== "" &&
+                                  row.value !== "" && (
+                                    <div className="ml-3 text-[9.5px] text-gray-400 mt-2">
+                                      With tax : ₹{" "}
+                                      {(parseFloat(row?.value) *
+                                        (100 + parseFloat(row.taxPercentage))) /
+                                        100}{" "}
+                                    </div>
+                                  )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                      <button
+                        onClick={handleAddRow}
+                        className="mt-4 px-4 py-1 bg-pink-500 text-white rounded"
+                      >
+                        <MdPlaylistAdd />
+                      </button>
+                    </div>
                   </div>
-                  <button
-                    onClick={cancelHandler}
-                    // onClick={() => {setAdditional(false);dispatch(removeAdditionalCharge());setRefresh(!refresh);setRows()}}
-                    className="text-violet-500 p-1 px-3  text-xs border border-1 border-gray-300 rounded-2xl cursor-pointer"
-                  >
-                    Cancel
-                  </button>
-                </div>
-                <div className="container mx-auto  mt-2  md:px-8 ">
-                  <table className="table-fixed w-full bg-white ">
-                    <tbody>
-                      {rows.map((row, index) => (
-                        <tr key={index} className="">
-                          <td className=" w-2  ">
-                            <MdCancel
-                              onClick={() => {
-                                handleDeleteRow(index);
-                              }}
-                              className="text-sm cursor-pointer text-gray-500 hover:text-black"
-                            />
-                          </td>
-                          <td className=" flex flex-col justify-center ml-2 mt-3.5 ">
-                            <select
-                              value={row._id}
-                              onChange={(e) =>
-                                handleLevelChange(index, e.target.value)
-                              }
-                              className="block w-full   bg-white text-sm focus:outline-none border-none border-b-gray-500 "
-                            >
-                              {additionalChragesFromCompany.length > 0 ? (
-                                additionalChragesFromCompany.map(
-                                  (el, index) => (
-                                    <option key={index} value={el._id}>
-                                      {" "}
-                                      {el.name}{" "}
-                                    </option>
-                                  )
-                                )
-                              ) : (
-                                <option>No charges available</option>
-                              )}
-                            </select>
-
-                            {row?.taxPercentage !== "" && (
-                              <div className="ml-3 text-[9px] text-gray-400">
-                                GST @ {row?.taxPercentage} %
-                              </div>
-                            )}
-                          </td>
-                          <td className="">
-                            <div className="flex gap-3 px-5 ">
-                              <div
-                                onClick={() => {
-                                  actionChange(index, "add");
-                                }}
-                                className={` ${
-                                  row.action === "add"
-                                    ? "border-violet-500 "
-                                    : ""
-                                }  cursor-pointer p-1 px-1.5 rounded-md  border  bg-gray-100 `}
-                              >
-                                <IoMdAdd />
-                              </div>
-                              <div
-                                onClick={() => {
-                                  actionChange(index, "sub");
-                                }}
-                                className={` ${
-                                  row.action === "sub"
-                                    ? "border-violet-500 "
-                                    : ""
-                                }  cursor-pointer p-1 px-1.5 rounded-md  border  bg-gray-100 `}
-                              >
-                                <FiMinus />
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-4 py-2">
-                            <div className="flex items-center">
-                              <span className="mr-0 ">₹</span>
-                              <input
-                                type="number"
-                                value={row.value}
-                                onChange={(e) =>
-                                  handleRateChange(index, e.target.value)
-                                }
-                                className={` ${
-                                  additionalChragesFromCompany.length === 0
-                                    ? "pointer-events-none opacity-20 "
-                                    : ""
-                                }   block w-full py-2 px-4 bg-white text-sm focus:outline-none border-b-2 border-t-0 border-l-0 border-r-0 `}
-                              />
-                            </div>
-
-                            {row?.taxPercentage !== "" && row.value !== "" && (
-                              <div className="ml-3 text-[9.5px] text-gray-400 mt-2">
-                                With tax : ₹{" "}
-                                {(parseFloat(row?.value) *
-                                  (100 + parseFloat(row.taxPercentage))) /
-                                  100}{" "}
-                              </div>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                  <button
-                    onClick={handleAddRow}
-                    className="mt-4 px-4 py-1 bg-pink-500 text-white rounded"
-                  >
-                    <MdPlaylistAdd />
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className=" flex justify-end items-center mt-4 font-semibold gap-1 text-violet-500 cursor-pointer pr-4">
-                <div
-                  onClick={() => {
-                    setAdditional(true);
-                  }}
-                  className="flex items-center"
-                >
-                  <IoMdAdd className="text-2xl" />
-                  <p>Additional Charges </p>
-                </div>
-              </div>
-            )}
-            </>
-        )}
-        {type != "self" && (
-          <>
-           {additional ? (
-              <div className="container mx-auto mt-2 bg-white p-4 text-xs">
-                <div className="flex  items-center justify-between  font-bold  text-[13px]">
-                  <div className="flex  items-center gap-3">
-                    <IoIosArrowDown className="font-bold text-[15px]" />
-                    <p className="text-blue-800">Additional Charges</p>
+                ) : (
+                  <div className=" flex justify-end items-center mt-4 font-semibold gap-1 text-violet-500 cursor-pointer pr-4">
+                    <div
+                      onClick={() => {
+                        setAdditional(true);
+                      }}
+                      className="flex items-center"
+                    >
+                      <IoMdAdd className="text-2xl" />
+                      <p>Additional Charges </p>
+                    </div>
                   </div>
-                  <button
-                    onClick={cancelHandler}
-                    // onClick={() => {setAdditional(false);dispatch(removeAdditionalCharge());setRefresh(!refresh);setRows()}}
-                    className="text-violet-500 p-1 px-3  text-xs border border-1 border-gray-300 rounded-2xl cursor-pointer"
-                  >
-                    Cancel
-                  </button>
-                </div>
-                <div className="container mx-auto  mt-2  md:px-8 ">
-                  <table className="table-fixed w-full bg-white ">
-                    <tbody>
-                      {rows.map((row, index) => (
-                        <tr key={index} className="">
-                          <td className=" w-2  ">
-                            <MdCancel
-                              onClick={() => {
-                                handleDeleteRow(index);
-                              }}
-                              className="text-sm cursor-pointer text-gray-500 hover:text-black"
-                            />
-                          </td>
-                          <td className=" flex flex-col justify-center ml-2 mt-3.5 ">
-                            <select
-                              value={row._id}
-                              onChange={(e) =>
-                                handleLevelChange(index, e.target.value)
-                              }
-                              className="block w-full   bg-white text-sm focus:outline-none border-none border-b-gray-500 "
-                            >
-                              {additionalChragesFromCompany.length > 0 ? (
-                                additionalChragesFromCompany.map(
-                                  (el, index) => (
-                                    <option key={index} value={el._id}>
-                                      {" "}
-                                      {el.name}{" "}
-                                    </option>
-                                  )
-                                )
-                              ) : (
-                                <option>No charges available</option>
-                              )}
-                            </select>
-
-                            {row?.taxPercentage !== "" && (
-                              <div className="ml-3 text-[9px] text-gray-400">
-                                GST @ {row?.taxPercentage} %
-                              </div>
-                            )}
-                          </td>
-                          <td className="">
-                            <div className="flex gap-3 px-5 ">
-                              <div
-                                onClick={() => {
-                                  actionChange(index, "add");
-                                }}
-                                className={` ${
-                                  row.action === "add"
-                                    ? "border-violet-500 "
-                                    : ""
-                                }  cursor-pointer p-1 px-1.5 rounded-md  border  bg-gray-100 `}
-                              >
-                                <IoMdAdd />
-                              </div>
-                              <div
-                                onClick={() => {
-                                  actionChange(index, "sub");
-                                }}
-                                className={` ${
-                                  row.action === "sub"
-                                    ? "border-violet-500 "
-                                    : ""
-                                }  cursor-pointer p-1 px-1.5 rounded-md  border  bg-gray-100 `}
-                              >
-                                <FiMinus />
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-4 py-2">
-                            <div className="flex items-center">
-                              <span className="mr-0 ">₹</span>
-                              <input
-                                type="number"
-                                value={row.value}
-                                onChange={(e) =>
-                                  handleRateChange(index, e.target.value)
-                                }
-                                className={` ${
-                                  additionalChragesFromCompany.length === 0
-                                    ? "pointer-events-none opacity-20 "
-                                    : ""
-                                }   block w-full py-2 px-4 bg-white text-sm focus:outline-none border-b-2 border-t-0 border-l-0 border-r-0 `}
-                              />
-                            </div>
-
-                            {row?.taxPercentage !== "" && row.value !== "" && (
-                              <div className="ml-3 text-[9.5px] text-gray-400 mt-2">
-                                With tax : ₹{" "}
-                                {(parseFloat(row?.value) *
-                                  (100 + parseFloat(row.taxPercentage))) /
-                                  100}{" "}
-                              </div>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                  <button
-                    onClick={handleAddRow}
-                    className="mt-4 px-4 py-1 bg-pink-500 text-white rounded"
-                  >
-                    <MdPlaylistAdd />
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className=" flex justify-end items-center mt-4 font-semibold gap-1 text-violet-500 cursor-pointer pr-4">
-                <div
-                  onClick={() => {
-                    setAdditional(true);
-                  }}
-                  className="flex items-center"
-                >
-                  <IoMdAdd className="text-2xl" />
-                  <p>Additional Charges </p>
-                </div>
-              </div>
+                )}
+              </>
             )}
-            </>
-        )}
+            {type != "self" && (
+              <>
+                {additional ? (
+                  <div className="container mx-auto mt-2 bg-white p-4 text-xs">
+                    <div className="flex  items-center justify-between  font-bold  text-[13px]">
+                      <div className="flex  items-center gap-3">
+                        <IoIosArrowDown className="font-bold text-[15px]" />
+                        <p className="text-blue-800">Additional Charges</p>
+                      </div>
+                      <button
+                        onClick={cancelHandler}
+                        // onClick={() => {setAdditional(false);dispatch(removeAdditionalCharge());setRefresh(!refresh);setRows()}}
+                        className="text-violet-500 p-1 px-3  text-xs border border-1 border-gray-300 rounded-2xl cursor-pointer"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                    <div className="container mx-auto  mt-2  md:px-8 ">
+                      <table className="table-fixed w-full bg-white ">
+                        <tbody>
+                          {rows.map((row, index) => (
+                            <tr key={index} className="">
+                              <td className=" w-2  ">
+                                <MdCancel
+                                  onClick={() => {
+                                    handleDeleteRow(index);
+                                  }}
+                                  className="text-sm cursor-pointer text-gray-500 hover:text-black"
+                                />
+                              </td>
+                              <td className=" flex flex-col justify-center ml-2 mt-3.5 ">
+                                <select
+                                  value={row._id}
+                                  onChange={(e) =>
+                                    handleLevelChange(index, e.target.value)
+                                  }
+                                  className="block w-full   bg-white text-sm focus:outline-none border-none border-b-gray-500 "
+                                >
+                                  {additionalChragesFromCompany.length > 0 ? (
+                                    additionalChragesFromCompany.map(
+                                      (el, index) => (
+                                        <option key={index} value={el._id}>
+                                          {" "}
+                                          {el.name}{" "}
+                                        </option>
+                                      )
+                                    )
+                                  ) : (
+                                    <option>No charges available</option>
+                                  )}
+                                </select>
+
+                                {row?.taxPercentage !== "" && (
+                                  <div className="ml-3 text-[9px] text-gray-400">
+                                    GST @ {row?.taxPercentage} %
+                                  </div>
+                                )}
+                              </td>
+                              <td className="">
+                                <div className="flex gap-3 px-5 ">
+                                  <div
+                                    onClick={() => {
+                                      actionChange(index, "add");
+                                    }}
+                                    className={` ${
+                                      row.action === "add"
+                                        ? "border-violet-500 "
+                                        : ""
+                                    }  cursor-pointer p-1 px-1.5 rounded-md  border  bg-gray-100 `}
+                                  >
+                                    <IoMdAdd />
+                                  </div>
+                                  <div
+                                    onClick={() => {
+                                      actionChange(index, "sub");
+                                    }}
+                                    className={` ${
+                                      row.action === "sub"
+                                        ? "border-violet-500 "
+                                        : ""
+                                    }  cursor-pointer p-1 px-1.5 rounded-md  border  bg-gray-100 `}
+                                  >
+                                    <FiMinus />
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-4 py-2">
+                                <div className="flex items-center">
+                                  <span className="mr-0 ">₹</span>
+                                  <input
+                                    type="number"
+                                    value={row.value}
+                                    onChange={(e) =>
+                                      handleRateChange(index, e.target.value)
+                                    }
+                                    className={` ${
+                                      additionalChragesFromCompany.length === 0
+                                        ? "pointer-events-none opacity-20 "
+                                        : ""
+                                    }   block w-full py-2 px-4 bg-white text-sm focus:outline-none border-b-2 border-t-0 border-l-0 border-r-0 `}
+                                  />
+                                </div>
+
+                                {row?.taxPercentage !== "" &&
+                                  row.value !== "" && (
+                                    <div className="ml-3 text-[9.5px] text-gray-400 mt-2">
+                                      With tax : ₹{" "}
+                                      {(parseFloat(row?.value) *
+                                        (100 + parseFloat(row.taxPercentage))) /
+                                        100}{" "}
+                                    </div>
+                                  )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                      <button
+                        onClick={handleAddRow}
+                        className="mt-4 px-4 py-1 bg-pink-500 text-white rounded"
+                      >
+                        <MdPlaylistAdd />
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className=" flex justify-end items-center mt-4 font-semibold gap-1 text-violet-500 cursor-pointer pr-4">
+                    <div
+                      onClick={() => {
+                        setAdditional(true);
+                      }}
+                      className="flex items-center"
+                    >
+                      <IoMdAdd className="text-2xl" />
+                      <p>Additional Charges </p>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
           </>
         )}
 
         <div className="flex justify-between bg-white mt-2 p-3">
           <p className="font-bold text-lg">Total Amount</p>
-          <p className="font-bold text-lg">₹ {totalAmount.toFixed(2) ?? 0}</p>
+          <div className="flex flex-col items-center">
+            <p className="font-bold text-lg">₹ {totalAmount.toFixed(2) ?? 0}</p>
+            <p className="text-[9px] text-gray-400">(rounded)</p>
+          </div>
         </div>
 
         <div className=" md:hidden ">

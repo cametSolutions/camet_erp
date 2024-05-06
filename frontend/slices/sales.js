@@ -48,6 +48,13 @@ export const salesSlice = createSlice({
         state.items[indexToUpdate].total = newTotal;
       }
     },
+    changeGodownCount: (state, action) => {
+      const id = action.payload._id;
+      const indexToUpdate = state.items.findIndex((el) => el._id == id);
+      if (indexToUpdate !== -1) {
+        state.items[indexToUpdate].GodownList = action.payload.GodownList;
+      }
+    },
     changeIgstAndDiscount: (state, action) => {
       const id = action.payload._id;
       const igst = action.payload?.igst || 0;
@@ -148,7 +155,8 @@ export const {
   setSelectedPriceLevel,
   setFinalAmount,
   setAdditionalCharges,
-  saveId
+  saveId,
+  changeGodownCount
 } = salesSlice.actions;
 
 export default salesSlice.reducer;

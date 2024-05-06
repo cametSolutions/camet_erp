@@ -23,6 +23,7 @@ import { MdPlaylistAdd } from "react-icons/md";
 import {
   removeAll,
   removeAdditionalCharge,
+  removeItem
 } from "../../../slices/salesSecondary";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import { Button, Label, Modal, TextInput } from "flowbite-react";
@@ -325,8 +326,11 @@ function SalesSecondary() {
   }, [rows]);
 
   console.log(additionalChargesTotal);
-  const totalAmount =
+  const totalAmountNotRounded =
     parseFloat(subTotal) + additionalChargesTotal || parseFloat(subTotal);
+  const totalAmount = Math.round(totalAmountNotRounded);
+
+  console.log(totalAmount);
 
   const navigate = useNavigate();
 
@@ -605,55 +609,63 @@ function SalesSecondary() {
 
               {items.map((el, index) => (
                 <>
-                  <div key={index} className="py-3 mt-0 px-6 bg-white ">
-                    <div className="flex justify-between font-bold text-xs">
-                      <p>{el.product_name}</p>
-                      <p> ₹ {el.total ?? 0}</p>
-                    </div>
-                    <div className="flex justify-between items-center mt-2 ">
-                      <div className="w-3/5 md:w-2/5 font-semibold text-gray-500 text-xs  flex flex-col gap-2 ">
-                        <div className="flex justify-between">
-                          <p className="text-nowrap">
-                            Qty <span className="text-xs">x</span> Rate
-                          </p>
-                          <p className="text-nowrap">
-                            {el.count} {el.unit} X{" "}
-                            {el.Priceleveles.find(
-                              (item) => item.pricelevel == priceLevelFromRedux
-                            )?.pricerate || 0}
-                          </p>
-                        </div>
-                        <div className="flex justify-between">
-                          <p className="text-nowrap"> Tax </p>
-                          <p className="text-nowrap">({el.igst} %)</p>
-                        </div>
-                        {(el.discount > 0 || el.discountPercentage > 0) && (
+                  <div key={index} className="py-3 mt-0 px-3 md:px-6 bg-white flex items-center gap-1.5 md:gap-4">
+                    <div onClick={()=>{dispatch(removeItem(el))}} className=" text-gray-500 text-sm cursor-pointer "><MdCancel/></div>
+                    <div className=" flex-1">
+                      <div className="flex justify-between font-bold text-xs gap-10">
+                        <p>{el.product_name}</p>
+                        <p className="text-nowrap"> ₹ {el.total ?? 0}</p>
+                      </div>
+                      <div className="flex justify-between items-center mt-2 ">
+                        <div className="w-3/5 md:w-2/5 font-semibold text-gray-500 text-xs  flex flex-col gap-2 ">
                           <div className="flex justify-between">
-                            <p className="text-nowrap"> Discount </p>
-                            <div className="flex items-center">
-                              <p className="text-nowrap ">
-                                {el.discount > 0
-                                  ? `₹ ${el.discount}`
-                                  : `${el.discountPercentage}%`}
-                              </p>
-                            </div>
+                            <p className="text-nowrap">
+                              Qty <span className="text-xs">x</span> Rate
+                            </p>
+                            <p className="text-nowrap">
+                              {el.count} {el.unit} X{" "}
+                              {el.Priceleveles.find(
+                                (item) => item.pricelevel == priceLevelFromRedux
+                              )?.pricerate || 0}
+                            </p>
                           </div>
-                        )}
+                          <div className="flex justify-between">
+                            <p className="text-nowrap"> Tax </p>
+                            <p className="text-nowrap">({el.igst} %)</p>
+                          </div>
+                          {(el.discount > 0 || el.discountPercentage > 0) && (
+                            <div className="flex justify-between">
+                              <p className="text-nowrap"> Discount </p>
+                              <div className="flex items-center">
+                                <p className="text-nowrap ">
+                                  {el.discount > 0
+                                    ? `₹ ${el.discount}`
+                                    : `${el.discountPercentage}%`}
+                                </p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        {/* <Link
+                        to={{
+                          pathname: `/pUsers/editItem/${el._id}`,
+                          state: { from: "invoice" }, // Set the state to indicate where the user is coming from
+                        }}
+                      > */}
+                        <div className="">
+                          <p
+                            onClick={() => {
+                              navigate(`/pUsers/editItem/${el._id}`, {
+                                state: { from: "invoice" },
+                              });
+                            }}
+                            className="text-violet-500 text-xs md:text-base font-bold  p-1  px-4   border border-1 border-gray-300 rounded-2xl cursor-pointer"
+                          >
+                            Edit
+                          </p>
+                        </div>
+                        {/* </Link> */}
                       </div>
-
-                      <div className="">
-                        <p
-                          onClick={() => {
-                            navigate(`/sUsers/editItemSales/${el._id}`, {
-                              state: { from: "sales" },
-                            });
-                          }}
-                          className="text-violet-500 text-xs md:text-base font-bold  p-1  px-4   border border-1 border-gray-300 rounded-2xl cursor-pointer"
-                        >
-                          Edit
-                        </p>
-                      </div>
-                      {/* </Link> */}
                     </div>
                   </div>
                   <hr />

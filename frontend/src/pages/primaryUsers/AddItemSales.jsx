@@ -17,6 +17,7 @@ import {
   setBrandInRedux,
   setCategoryInRedux,
   setSubCategoryInRedux,
+  changeGodownCount,
   removeAllSales,
 } from "../../../slices/sales";
 import { HashLoader } from "react-spinners";
@@ -24,6 +25,8 @@ import { FixedSizeList as List } from "react-window";
 import { Button, Modal } from "flowbite-react";
 import { toast } from "react-toastify";
 import SelectDefaultModal from "../../../constants/components/SelectDefaultModal";
+import { IoIosCloseCircleOutline } from "react-icons/io";
+import {Decimal} from "decimal.js"
 
 function AddItemSales() {
   const [item, setItem] = useState([]);
@@ -267,8 +270,8 @@ function AddItemSales() {
   ///////////////////////////handleAddClick///////////////////////////////////
 
   const handleAddClick = (_id) => {
-    const updatedItems = [...item]; 
-    const index = updatedItems.findIndex(item => item._id === _id);
+    const updatedItems = [...item];
+    const index = updatedItems.findIndex((item) => item._id === _id);
     // Create a shallow copy of the items
     const itemToUpdate = updatedItems[index];
 
@@ -314,7 +317,7 @@ function AddItemSales() {
     console.log(`Found priceRate: ${priceRate}`);
     console.log(item);
 
-    let subtotal = priceRate * parseInt(item?.count);
+    let subtotal = priceRate * Number(item?.count);
     let discountedSubtotal = subtotal;
 
     console.log(`subtotal before discount: ${subtotal}`);
@@ -347,10 +350,12 @@ function AddItemSales() {
   ///////////////////////////handleIncrement///////////////////////////////////
 
   const handleIncrement = (_id) => {
+
     const updatedItems = [...item];
-    const index = updatedItems.findIndex(item => item._id === _id);
+    const index = updatedItems.findIndex((item) => item._id === _id);
 
     const currentItem = { ...updatedItems[index] };
+    console.log(currentItem);
 
     if (currentItem?.GodownList?.length > 0) {
       setOpenModal(true);
@@ -360,7 +365,8 @@ function AddItemSales() {
       if (!currentItem.count) {
         currentItem.count = 1;
       } else {
-        currentItem.count += 1;
+        console.log( currentItem.count);
+        currentItem.count = new Decimal(currentItem.count).add(1).toNumber()
       }
 
       currentItem.total = calculateTotal(
@@ -397,8 +403,8 @@ function AddItemSales() {
 
   ///////////////////////////handleDecrement///////////////////////////////////
   const handleDecrement = (_id) => {
-    const updatedItems = [...item]; 
-    const index = updatedItems.findIndex(item => item._id === _id);
+    const updatedItems = [...item];
+    const index = updatedItems.findIndex((item) => item._id === _id);
     // Make a copy of the array
     const currentItem = { ...updatedItems[index] };
 
@@ -407,7 +413,8 @@ function AddItemSales() {
       setGodown(currentItem?.GodownList);
     } else {
       if (currentItem.count > 0) {
-        currentItem.count -= 1;
+        currentItem.count = new Decimal(currentItem.count).sub(1).toNumber()
+
         if (currentItem.count == 0) {
           dispatch(removeItem(currentItem));
           updatedItems[index].added = false;
@@ -452,10 +459,10 @@ function AddItemSales() {
     console.log(itemToUpdate);
 
     // Calculate the total count across all godowns for itemToUpdate
-    const totalCount = godown.reduce(
+    const totalCount =truncateToNDecimals( godown.reduce(
       (acc, godownItem) => acc + godownItem.count,
       0
-    );
+    ))
     const itemWithUpdatedCount = {
       ...itemToUpdate,
       count: totalCount,
@@ -472,6 +479,7 @@ function AddItemSales() {
     };
 
     console.log(updatedItem.total);
+    console.log(updatedItem.GodownList);
 
     // Update the item in the copied array
 
@@ -497,6 +505,7 @@ function AddItemSales() {
 
     dispatch(changeCount(updatedItem)); // Update the count in the Redux store
     dispatch(changeTotal(updatedItem)); // Update the total in the Redux store
+    dispatch(changeGodownCount(updatedItem)); // Update the total in the Redux store
   };
 
   ///////////////////////////handlePriceLevelChange///////////////////////////////////
@@ -509,6 +518,16 @@ function AddItemSales() {
   };
 
   ///////////////////////////react window ///////////////////////////////////
+
+
+  function truncateToNDecimals(num, n) {
+    const parts = num.toString().split(".");
+    if (parts.length === 1) return num; // No decimal part
+    parts[1] = parts[1].substring(0, n); // Truncate the decimal part
+    return parseFloat(parts.join("."));
+  }
+
+
 
   const Row = ({ index, style }) => {
     const el = filteredItems[index];
@@ -601,7 +620,7 @@ function AddItemSales() {
                   </svg>
                 </button>
                 <input
-                  className="p-0 w-6 bg-transparent border-0 text-gray-800 text-center focus:ring-0 "
+                  className="p-0 w-12 bg-transparent border-0 text-gray-800 text-center focus:ring-0 "
                   type="text"
                   disabled
                   value={el.count ? el.count : 0} // Display the count from the state
@@ -724,21 +743,27 @@ function AddItemSales() {
     setOpenModal(false);
   }
 
+  console.log(godown);
+
   // Function to handle incrementing the count
   const incrementCount = (index) => {
     const newGodownItems = godown.map((item) => ({ ...item })); // Deep copy each item object
     console.log(newGodownItems);
-
-    // if (newGodownItems[index].balance_stock >= 1) {
-      newGodownItems[index].count += 1;
-      newGodownItems[index].balance_stock -= 1;
-      setGodown(newGodownItems);
-      setTotalCount(totalCount + 1);
-      console.log(godown);
-    // } else {
-    //   toast("Insufficient stock to increment count.");
-    // }
+    console.log(newGodownItems[index].count);
+    // newGodownItems[index].count += 1;
+    newGodownItems[index].count = new Decimal(newGodownItems[index].count).add(1).toNumber();
+    console.log(newGodownItems[index].count);
+    
+    
+    newGodownItems[index].balance_stock =new Decimal(newGodownItems[index].balance_stock).sub(1).toNumber();
+    console.log(newGodownItems);
+    setGodown(newGodownItems);
+    setTotalCount(totalCount + 1);
+    console.log(godown);
+ 
   };
+  console.log(godown);
+
 
   // Function to handle decrementing the count
   const decrementCount = (index) => {
@@ -746,8 +771,8 @@ function AddItemSales() {
     console.log(newGodownItems);
 
     if (newGodownItems[index].count > 0) {
-      newGodownItems[index].count -= 1;
-      newGodownItems[index].balance_stock += 1; // Increase balance_stock by 1
+      newGodownItems[index].count =  new Decimal(newGodownItems[index].count).sub(1).toNumber();
+      newGodownItems[index].balance_stock =new Decimal(newGodownItems[index].balance_stock).add(1).toNumber(); // Increase balance_stock by 1
       setGodown(newGodownItems); // Corrected function name to setGodown
       setTotalCount(totalCount - 1);
       console.log(godown);
@@ -824,6 +849,7 @@ function AddItemSales() {
                     onChange={(e) => {
                       setSearch(e.target.value);
                     }}
+                    value={search}
                     type="search"
                     id="default-search"
                     className="block w-full p-2 text-sm text-gray-900 border  rounded-lg border-gray-300  bg-gray-50 focus:ring-blue-500 focus:border-blue-500"
@@ -835,6 +861,17 @@ function AddItemSales() {
                     class="text-white absolute end-[10px] top-1/2 transform -translate-y-1/2 bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-md px-2 py-1"
                   >
                     <IoIosSearch />
+                  </button>
+                  <button
+                    onClick={() => {
+                      setSearch("");
+                    }}
+                    type="submit"
+                    class={`${
+                      search.length > 0 ? "block" : "hidden"
+                    }  absolute end-[40px] top-1/2 transform -translate-y-1/2 text-gray-500  text-md px-2 py-1`}
+                  >
+                    <IoIosCloseCircleOutline />
                   </button>
                 </div>
               </div>
@@ -966,11 +1003,15 @@ function AddItemSales() {
 
                   <h3 className="font-medium  text-right  text-white ">
                     Total Count:{" "}
-                    <span className="text-white  font-bold">
-                      {godown.reduce((acc, curr) => {
-                        return (acc = acc + curr.count);
-                      }, 0)}
-                    </span>
+                    <span className="text-white font-bold">
+                      {truncateToNDecimals(
+                        godown.reduce(
+                          (acc, curr) => acc + parseFloat(curr.count),
+                          0
+                        ),
+                        3 // Specify the number of decimal places you want
+                      )}
+                      </span>
                   </h3>
                 </div>
                 <div className="table-container overflow-y-auto max-h-[250px]">
@@ -1009,7 +1050,13 @@ function AddItemSales() {
                             </div>
                             <div className="text-sm text-gray-900 mt-1  ">
                               Stock :{" "}
-                              <span className={`${item.balance_stock <=0 ? "text-red-500  font-bold" : ""} text-green-500 font-bold"`}>
+                              <span
+                                className={`${
+                                  item.balance_stock <= 0
+                                    ? "text-red-500  font-bold"
+                                    : ""
+                                } text-green-500 font-bold"`}
+                              >
                                 {item.balance_stock}
                               </span>
                             </div>
@@ -1033,7 +1080,6 @@ function AddItemSales() {
                                 -
                               </button>
                               {item.count}
-                              
 
                               <button
                                 onClick={() => incrementCount(index)}

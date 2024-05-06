@@ -21,6 +21,8 @@ import { HashLoader } from "react-spinners";
 import { FixedSizeList as List } from "react-window";
 import SidebarSec from "../../components/secUsers/SidebarSec";
 import { toast } from "react-toastify";
+import { IoIosCloseCircleOutline } from "react-icons/io";
+
 
 function AddItemSecondary() {
   const [item, setItem] = useState([]);
@@ -618,6 +620,7 @@ function AddItemSecondary() {
                     onChange={(e) => {
                       setSearch(e.target.value);
                     }}
+                    value={search}
                     type="search"
                     id="default-search"
                     className="block w-full p-2 text-sm text-gray-900 border  rounded-lg border-gray-300  bg-gray-50 focus:ring-blue-500 focus:border-blue-500"
@@ -629,6 +632,13 @@ function AddItemSecondary() {
                     class="text-white absolute end-[10px] top-1/2 transform -translate-y-1/2 bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-md px-2 py-1"
                   >
                     <IoIosSearch />
+                  </button>
+                  <button
+                  onClick={()=>{setSearch("")}}
+                    type="submit"
+                    class={`${search.length>0 ? "block":"hidden"}  absolute end-[40px] top-1/2 transform -translate-y-1/2 text-gray-500  text-md px-2 py-1`}
+                  >
+                    <IoIosCloseCircleOutline />
                   </button>
                 </div>
               </div>

@@ -22,6 +22,9 @@ import {
 import { HashLoader } from "react-spinners";
 import { FixedSizeList as List } from "react-window";
 import { toast } from "react-toastify";
+import { IoIosCloseCircleOutline } from "react-icons/io";
+import {Decimal} from 'decimal.js'
+
 
 function AddItem() {
   const [item, setItem] = useState([]);
@@ -40,9 +43,6 @@ function AddItem() {
   const [listHeight, setListHeight] = useState(0);
   const [scrollPosition, setScrollPosition] = useState(0);
 
-
-
-  console.log(search);
   ///////////////////////////cpm_id///////////////////////////////////
 
   const cpm_id = useSelector(
@@ -57,7 +57,6 @@ function AddItem() {
 
   const priceLevelFromRedux =
     useSelector((state) => state.invoice.selectedPriceLevel) || "";
-
 
   ///////////////////////////filters FromRedux///////////////////////////////////
 
@@ -84,7 +83,6 @@ function AddItem() {
           withCredentials: true,
         });
 
-        console.log(itemsFromRedux);
 
         if (itemsFromRedux.length > 0) {
           const reduxItemIds = itemsFromRedux.map((el) => el._id);
@@ -131,7 +129,6 @@ function AddItem() {
     }
   }, [cpm_id, productRefresh]);
 
-
   ///////////////////////////setSelectedPriceLevel fom redux///////////////////////////////////
 
   useEffect(() => {
@@ -139,8 +136,6 @@ function AddItem() {
   }, []);
 
   ///////////////////////////sdo persisting of products///////////////////////////////////
-
-
 
   //////////////////////////////orgId////////////////////////////////
 
@@ -153,7 +148,6 @@ function AddItem() {
 
   //////////////////////////////fetchFilters////////////////////////////////
 
-  console.log(type);
 
   ///////////////////////////filter items///////////////////////////////////
 
@@ -210,36 +204,30 @@ function AddItem() {
     fetchData();
   }, [orgId, type]);
 
-
   const filterItems = (items, brand, category, subCategory, searchTerm) => {
     return items.filter((item) => {
       // Check if the item matches the brand filter
       const brandMatch = !brand || item.brand === brand;
-  
+
       // Check if the item matches the category filter
       const categoryMatch = !category || item.category === category;
-  
+
       // Check if the item matches the subcategory filter
       const subCategoryMatch =
         !subCategory || item.sub_category === subCategory;
-  
+
       // Check if the item matches the search term
       const searchMatch =
         !searchTerm ||
         item.product_name.toLowerCase().includes(searchTerm.toLowerCase());
-  
+
       // Return true if all conditions are met
       return brandMatch && categoryMatch && subCategoryMatch && searchMatch;
     });
   };
-  
-
-
-
 
   ///////////////////////////filter items call ///////////////////////////////////
 
-  console.log(item);
 
   const filteredItems = useMemo(() => {
     return filterItems(
@@ -251,16 +239,12 @@ function AddItem() {
     );
   }, [item, selectedBrand, selectedCategory, selectedSubCategory, search]);
 
-  console.log(filteredItems.length);
-
 
   ///////////////////////////handleAddClick///////////////////////////////////
 
-
-
   // const handleAddClick = (index,_id) => {
   //   console.log(_id);
-  //   const updatedItems = [...filteredItems]; 
+  //   const updatedItems = [...filteredItems];
   //   const itemToUpdate = updatedItems[index];
   //   if (itemToUpdate) {
   //     // Toggle the 'added' state of the item
@@ -269,17 +253,16 @@ function AddItem() {
   //     const total = calculateTotal(itemToUpdate, selectedPriceLevel).toFixed(2);
   //     itemToUpdate.total = total;
 
-  //     dispatch(changeTotal(itemToUpdate));  
+  //     dispatch(changeTotal(itemToUpdate));
   //   }
   //   setItem(updatedItems);
   //   setRefresh(!refresh);
   //   dispatch(addItem(updatedItems[index]));
   // };
 
-
   const handleAddClick = (_id) => {
-    const updatedItems = [...item]; 
-    const index = updatedItems.findIndex(item => item._id === _id);
+    const updatedItems = [...item];
+    const index = updatedItems.findIndex((item) => item._id === _id);
     const itemToUpdate = updatedItems[index];
     if (itemToUpdate) {
       // Toggle the 'added' state of the item
@@ -288,7 +271,7 @@ function AddItem() {
       const total = calculateTotal(itemToUpdate, selectedPriceLevel).toFixed(2);
       itemToUpdate.total = total;
 
-      dispatch(changeTotal(itemToUpdate));  
+      dispatch(changeTotal(itemToUpdate));
     }
     setItem(updatedItems);
     setRefresh(!refresh);
@@ -302,7 +285,7 @@ function AddItem() {
       item.Priceleveles.find((level) => level.pricelevel === selectedPriceLevel)
         ?.pricerate || 0;
 
-    let subtotal = priceRate * parseInt(item?.count);
+    let subtotal = priceRate *item?.count;
     let discountedSubtotal = subtotal;
 
     if (item.discount !== 0 && item.discount !== undefined) {
@@ -328,14 +311,19 @@ function AddItem() {
 
   const handleIncrement = (_id) => {
     const updatedItems = [...item];
-    const index = updatedItems.findIndex(item => item._id === _id);
+    const index = updatedItems.findIndex((item) => item._id === _id);
 
     const currentItem = { ...updatedItems[index] };
+
+    console.log(currentItem.count);
 
     if (!currentItem.count) {
       currentItem.count = 1;
     } else {
-      currentItem.count += 1;
+      // currentItem.count += 1;
+      currentItem.count=new Decimal( currentItem.count)
+      currentItem.count = currentItem.count.add(new Decimal(1));
+      currentItem.count = parseFloat(currentItem.count.toString());
     }
 
     currentItem.total = calculateTotal(currentItem, selectedPriceLevel).toFixed(
@@ -371,14 +359,17 @@ function AddItem() {
   ///////////////////////////handleDecrement///////////////////////////////////
   const handleDecrement = (_id) => {
     const updatedItems = [...item];
-    const index = updatedItems.findIndex(item => item._id === _id);
+    const index = updatedItems.findIndex((item) => item._id === _id);
     // Make a copy of the array
     const currentItem = { ...updatedItems[index] };
-  
+    
+
     // Decrement the count if it's greater than 0
     if (currentItem.count > 0) {
-      currentItem.count -= 1;
-      if (currentItem.count === 0) {
+      currentItem.count=new Decimal( currentItem.count)
+      currentItem.count = (currentItem.count).sub(new Decimal(1));
+      currentItem.count = parseFloat(currentItem.count.toString());
+      if (currentItem.count <= 0) {
         dispatch(removeItem(currentItem));
         updatedItems[index] = { ...currentItem, added: false }; // Make a copy and update the 'added' property
       } else {
@@ -389,15 +380,14 @@ function AddItem() {
         ).toFixed(2);
         updatedItems[index] = currentItem; // Update the item in the copied array
       }
-  
+
       setItem(updatedItems);
       setRefresh(!refresh);
     }
-  
+
     dispatch(changeCount(currentItem));
     dispatch(changeTotal(currentItem));
   };
-  
 
   ///////////////////////////handlePriceLevelChange///////////////////////////////////
 
@@ -479,7 +469,7 @@ function AddItem() {
               className="py-2 px-3 inline-block bg-white  "
               data-hs-input-number
             >
-              <div className="flex items-center gap-x-1.5">
+              <div className="flex items-center gap-1.5">
                 <button
                   onClick={() => handleDecrement(el._id)}
                   type="button"
@@ -502,7 +492,7 @@ function AddItem() {
                   </svg>
                 </button>
                 <input
-                  className="p-0 w-6 bg-transparent border-0 text-gray-800 text-center focus:ring-0 "
+                  className="p-0  w-12   bg-transparent border-0 text-gray-800 text-center focus:ring-0 "
                   type="text"
                   disabled
                   value={el.count ? el.count : 0} // Display the count from the state
@@ -663,7 +653,6 @@ function AddItem() {
               <MdOutlineQrCodeScanner className="text-white text-lg  cursor-pointer md:text-xl" />
             </div>
           </div>
-
           <div className=" px-3 py-2 bg-white drop-shadow-lg  ">
             <div className="flex justify-between  items-center"></div>
             <div className="mt-2  md:w-1/2 ">
@@ -684,8 +673,6 @@ function AddItem() {
                       d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"
                     />
                   </svg>
-
-                  
                 </div>
                 <div class="relative">
                   <input
@@ -704,14 +691,18 @@ function AddItem() {
                     class="text-white absolute end-[10px] top-1/2 transform -translate-y-1/2 bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-md px-2 py-1"
                   >
                     <IoIosSearch />
-                  
                   </button>
-                  
+                  <button
+                  onClick={()=>{setSearch("")}}
+                    type="submit"
+                    class={`${search.length>0 ? "block":"hidden"}  absolute end-[40px] top-1/2 transform -translate-y-1/2 text-gray-500  text-md px-2 py-1`}
+                  >
+                    <IoIosCloseCircleOutline />
+                  </button>
                 </div>
               </div>
             </div>
           </div>
-
           <div
             className="bg-white text-sm font-semibold py-0 px-2 flex items-center justify-evenly z-20 w-full gap-2  "
             style={{ position: "relative", zIndex: "20" }}

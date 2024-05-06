@@ -36,7 +36,6 @@ function Sidebar({ TAB, showBar }) {
     (state) => state.setSelectedOrganization.selectedOrg
   );
 
-  console.log(selectedOrgFromRedux);
 
   const [expandedSections, setExpandedSections] = useState({
     orgList: false,
@@ -81,10 +80,8 @@ function Sidebar({ TAB, showBar }) {
           withCredentials: true,
         });
 
-        console.log(res.data);
 
         setOrganizations(res.data.organizationData);
-        console.log(res.data.organizationData[0]);
 
         if (selectedOrgFromRedux) {
           setSelectedOrg(selectedOrgFromRedux);
@@ -160,7 +157,6 @@ function Sidebar({ TAB, showBar }) {
     }
   };
 
-  console.log(selectedOrg);
 
   return (
     <div className="relative">
