@@ -751,6 +751,7 @@ function AddItemSales() {
     newGodownItems[index].count += 1;
     console.log(newGodownItems[index].count);
     
+    
     newGodownItems[index].balance_stock -= 1;
     console.log(newGodownItems);
     setGodown(newGodownItems);
