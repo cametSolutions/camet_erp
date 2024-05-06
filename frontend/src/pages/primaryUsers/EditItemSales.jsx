@@ -257,6 +257,9 @@ function EditItemSales() {
 
   const changeModalCount = (index, value) => {
     console.log(value);
+    if (!value) {
+      value = "0";
+    }
 
     // Check if the value includes a decimal point
     if (value.includes(".")) {
@@ -357,13 +360,7 @@ function EditItemSales() {
                           <input
                             onClick={openModalHandler}
                             onChange={(e)=>{handleDirectQuantityChange(e.target.value)}}
-                            // onChange={(e) => setQuantity(e.target.value)}
-                            // onChange={(e) => {
-                            //   changeQuantity(e.target.value);
-                            // }}
-                            // onChange={(e) => {
-                            //   changeQnatity(e.target.value);
-                            // }} // Display the count from the state
+                          
                             value={quantity}
                             type="text"
                             className="pr-4 pl-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm border-gray-300 rounded-md focus:outline-none text-gray-600"
