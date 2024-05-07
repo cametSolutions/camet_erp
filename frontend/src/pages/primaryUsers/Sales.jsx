@@ -599,8 +599,8 @@ function Sales() {
                         <div className="">
                           <p
                             onClick={() => {
-                              navigate(`/pUsers/editItem/${el._id}`, {
-                                state: { from: "invoice" },
+                              navigate(`/pUsers/editItemSales/${el._id}`, {
+                                state: { from: "sales" },
                               });
                             }}
                             className="text-violet-500 text-xs md:text-base font-bold  p-1  px-4   border border-1 border-gray-300 rounded-2xl cursor-pointer"
@@ -905,7 +905,11 @@ function Sales() {
 
         <div className="flex justify-between bg-white mt-2 p-3">
           <p className="font-bold text-lg">Total Amount</p>
-          <p className="font-bold text-lg">₹ {totalAmount.toFixed(2) ?? 0}</p>
+          <div className="flex flex-col items-center">
+            <p className="font-bold text-lg">₹ {totalAmount.toFixed(2) ?? 0}</p>
+            <p className="text-[9px] text-gray-400">(rounded)</p>
+          </div>
+
         </div>
 
         <div className=" md:hidden ">
