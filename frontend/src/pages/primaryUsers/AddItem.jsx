@@ -18,6 +18,7 @@ import {
   setCategoryInRedux,
   setSubCategoryInRedux,
   removeAll,
+  addAllProducts
 } from "../../../slices/invoice";
 import { HashLoader } from "react-spinners";
 import { FixedSizeList as List } from "react-window";
@@ -52,6 +53,7 @@ function AddItem() {
   ///////////////////////////itemsFromRedux///////////////////////////////////
 
   const itemsFromRedux = useSelector((state) => state.invoice.items);
+  // const productsFromRedux = useSelector((state) => state.invoice.items);
 
   ///////////////////////////priceLevelFromRedux///////////////////////////////////
 

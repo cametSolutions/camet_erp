@@ -1276,6 +1276,14 @@ export const getProducts = async (req, res) => {
       Primary_user_id: Primary_user_id,
       cmp_id: cmp_id,
     });
+    // const products = await productModel.aggregate([
+    //   { $match: {  Primary_user_id: Primary_user_id,  cmp_id: cmp_id, } },
+    //   // Add more stages as needed for your aggregation pipeline
+    // ]);
+
+    // console.log(products);
+
+    console.log("products",products);
     if (products) {
       return res.status(200).json({
         productData: products,
@@ -2307,8 +2315,9 @@ export const createSale = async (req, res) => {
 
       // Calculate the new balance stock
       const productBalanceStock = truncateToNDecimals(product.balance_stock, 3);
+      console.log("productBalanceStock",productBalanceStock);
       const itemCount = truncateToNDecimals(item.count, 3);
-      const newBalanceStock = productBalanceStock - itemCount;
+      const newBalanceStock =truncateToNDecimals(( productBalanceStock - itemCount),3);
       // console.log("newBalanceStock",newBalanceStock);
 
       // Prepare product update operation
