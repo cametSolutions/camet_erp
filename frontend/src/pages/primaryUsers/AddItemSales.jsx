@@ -460,9 +460,11 @@ function AddItemSales() {
 
     // Calculate the total count across all godowns for itemToUpdate
     const totalCount =truncateToNDecimals( godown.reduce(
-      (acc, godownItem) => acc + godownItem.count,
+      (acc, godownItem) => acc +Number( godownItem.count),
       0
     ))
+
+    console.log(totalCount);
     const itemWithUpdatedCount = {
       ...itemToUpdate,
       count: totalCount,
