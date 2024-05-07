@@ -1,6 +1,7 @@
 import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
+  // products: [],
   party: {},
   items: [],
   selectedPriceLevel: "",
@@ -10,7 +11,7 @@ const initialState = {
   brand: "",
   category: "",
   subcategory: "",
-  id:""
+  id: "",
 };
 
 export const invoiceSlice = createSlice({
@@ -26,6 +27,24 @@ export const invoiceSlice = createSlice({
     addItem: (state, action) => {
       state.items.push(action.payload);
     },
+    // Action to add or update products in Redux
+    // addAllProducts: (state, action) => {
+    //   const productExists = state.products.some(
+    //     (product) => product._id === action.payload._id
+    //   );
+
+    //   if (productExists) {
+    //     // Update existing product
+    //     const index = state.products.findIndex(
+    //       (product) => product._id === action.payload._id
+    //     );
+    //     state.products[index] = action.payload;
+    //   } else {
+    //     // Add new product
+    //     state.products.push(action.payload);
+    //   }
+    // },
+
     removeItem: (state, action) => {
       const id = action.payload._id;
       console.log(id);
@@ -102,29 +121,28 @@ export const invoiceSlice = createSlice({
     setSubCategoryInRedux: (state, action) => {
       state.subcategory = action.payload;
     },
-    setParty:(state,action)=>{
-      state.party=action.payload
+    setParty: (state, action) => {
+      state.party = action.payload;
     },
-    setItem:(state,action)=>{
-      state.items=action.payload
+    setItem: (state, action) => {
+      state.items = action.payload;
     },
-    setSelectedPriceLevel:(state,action)=>{
-      state.selectedPriceLevel=action.payload
+    setSelectedPriceLevel: (state, action) => {
+      state.selectedPriceLevel = action.payload;
     },
-    setAdditionalCharges:(state,action)=>{
-      state.additionalCharges=action.payload
+    setAdditionalCharges: (state, action) => {
+      state.additionalCharges = action.payload;
     },
-    setFinalAmount:(state,action)=>{
-      state.finalAmount=action.payload
+    setFinalAmount: (state, action) => {
+      state.finalAmount = action.payload;
     },
-    
-    saveId:(state,action)=>{
-      state.id=action.payload
+
+    saveId: (state, action) => {
+      state.id = action.payload;
     },
-    removeAllItem: (state)=>{
-      state.items=[]
-    }
-    
+    removeAllItem: (state) => {
+      state.items = [];
+    },
   },
 });
 
@@ -153,7 +171,8 @@ export const {
   setFinalAmount,
   setAdditionalCharges,
   saveId,
-  removeAllItem
+  removeAllItem,
+  addAllProducts,
 } = invoiceSlice.actions;
 
 export default invoiceSlice.reducer;
