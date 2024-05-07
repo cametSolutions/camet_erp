@@ -1,5 +1,6 @@
 /* eslint-disable react/prop-types */
 /* eslint-disable react/no-unknown-property */
+import React from 'react';
 import { useState, useEffect, useMemo, useRef } from "react";
 import Sidebar from "../../components/homePage/Sidebar";
 import { IoIosArrowRoundBack } from "react-icons/io";
@@ -460,9 +461,11 @@ function AddItemSales() {
 
     // Calculate the total count across all godowns for itemToUpdate
     const totalCount =truncateToNDecimals( godown.reduce(
-      (acc, godownItem) => acc + godownItem.count,
+      (acc, godownItem) => acc +Number( godownItem.count),
       0
     ))
+
+    console.log(totalCount);
     const itemWithUpdatedCount = {
       ...itemToUpdate,
       count: totalCount,
@@ -529,7 +532,8 @@ function AddItemSales() {
 
 
 
-  const Row = ({ index, style }) => {
+  // eslint-disable-next-line react/display-name
+  const Row = React.memo(({ index, style }) => {
     const el = filteredItems[index];
     console.log(filteredItems[index]);
     const adjustedStyle = {
@@ -665,7 +669,7 @@ function AddItemSales() {
         )}
       </div>
     );
-  };
+  });
 
   /////////////////////////// calculateHeight ///////////////////////////////////
 

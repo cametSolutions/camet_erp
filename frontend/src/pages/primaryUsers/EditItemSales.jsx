@@ -190,8 +190,7 @@ function EditItemSales() {
       }
     }
   };
-  const handleDirectQuantityChange=(value)=>{
-
+  const handleDirectQuantityChange = (value) => {
     if (value.includes(".")) {
       // Split the value into parts before and after the decimal point
       const parts = value.split(".");
@@ -201,9 +200,8 @@ function EditItemSales() {
       }
     }
 
-    setQuantity(value)
-    
-  }
+    setQuantity(value);
+  };
 
   function truncateToNDecimals(num, n) {
     const parts = num.toString().split(".");
@@ -212,18 +210,25 @@ function EditItemSales() {
     return parseFloat(parts.join("."));
   }
 
+  function isNumberKey(evt) {
+    var charCode = evt.which ? evt.which : event.keyCode;
+    if (charCode > 31 && (charCode < 48 || charCode > 57)) {
+      return false;
+    }
+    return true;
+  }
+
   // Function to handle incrementing the count
   const incrementCount = (index) => {
-    const newGodownItems = godown.map((item) => ({ ...item })); // Deep copy each item object
-    newGodownItems[index].count = new Decimal(newGodownItems[index].count)
-      .add(1)
-      .toNumber();
-    // newGodownItems[index].count = newGodownItems[index].count.toNumber();
+    const newGodownItems = godown.map((item) => ({ ...item }));
+    let countValue = newGodownItems[index].count
+      ? parseFloat(newGodownItems[index].count)
+      : 0;
 
-    console.log(
-      typeof newGodownItems[index].count,
-      newGodownItems[index].count.toString()
-    );
+    // Increment the count using Decimal library
+    countValue = new Decimal(countValue).add(1).toNumber();
+
+    newGodownItems[index].count = countValue;
     newGodownItems[index].balance_stock -= 1;
     newGodownItems[index].balance_stock = truncateToNDecimals(
       newGodownItems[index].balance_stock,
@@ -255,9 +260,9 @@ function EditItemSales() {
 
   ///////////////////////////changeModalCount///////////////////////////////////
 
-  const changeModalCount = (index, value) => {
+  const changeModalCount = (event,index, value) => {
     console.log(value);
-
+   
     // Check if the value includes a decimal point
     if (value.includes(".")) {
       // Split the value into parts before and after the decimal point
@@ -267,7 +272,7 @@ function EditItemSales() {
         return;
       }
     }
-    
+
     const newGodownItems = godown.map((item) => ({ ...item }));
     const currentGodown = newGodownItems[index];
     currentGodown.orginalStock =
@@ -295,13 +300,15 @@ function EditItemSales() {
   console.log(godown);
 
   const modalSubmit = () => {
-    const totalCount = godown.reduce(
-      (acc, curr) => acc + parseFloat(curr.count),
-      0
+    const total = truncateToNDecimals(
+      godown.reduce((acc, curr) => {
+        const value = curr.count ? parseFloat(curr.count) : 0;
+        return acc + value;
+      }, 0),
+      3 // Specify the number of decimal places you want
     );
-    console.log(totalCount);
-    const fixedTotal = truncateToNDecimals(totalCount, 3); // Increase balance_stock by 1
-    setQuantity(fixedTotal);
+
+    setQuantity(total);
 
     setOpenModal(false);
   };
@@ -355,18 +362,14 @@ function EditItemSales() {
                         <label className="leading-loose">Quantity</label>
                         <div className="relative focus-within:text-gray-600 text-gray-400">
                           <input
+                            readOnly={selectedItem[0]?.GodownList?.length > 0}
                             onClick={openModalHandler}
-                            onChange={(e)=>{handleDirectQuantityChange(e.target.value)}}
-                            // onChange={(e) => setQuantity(e.target.value)}
-                            // onChange={(e) => {
-                            //   changeQuantity(e.target.value);
-                            // }}
-                            // onChange={(e) => {
-                            //   changeQnatity(e.target.value);
-                            // }} // Display the count from the state
+                            onChange={(e) => {
+                              handleDirectQuantityChange(e.target.value);
+                            }}
                             value={quantity}
-                            type="text"
-                            className="pr-4 pl-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm border-gray-300 rounded-md focus:outline-none text-gray-600"
+                            type="number"
+                            className=" input-number pr-4 pl-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm border-gray-300 rounded-md focus:outline-none text-gray-600"
                             placeholder=""
                           />
                           <div className="absolute left-3 top-2"></div>
@@ -553,10 +556,10 @@ function EditItemSales() {
                     Total Count:{" "}
                     <span className="text-white font-bold">
                       {truncateToNDecimals(
-                        godown.reduce(
-                          (acc, curr) => acc + parseFloat(curr.count),
-                          0
-                        ),
+                        godown.reduce((acc, curr) => {
+                          const value = curr.count ? parseFloat(curr.count) : 0;
+                          return acc + value;
+                        }, 0),
                         3 // Specify the number of decimal places you want
                       )}
                     </span>
@@ -623,13 +626,16 @@ function EditItemSales() {
                               </button>
                               {/* {item.count} */}
                               <input
-                                className="p-0  w-12   bg-transparent border-0 text-gray-800 text-center focus:ring-0 "
-                                type="text"
+                                className=" input-number p-0 w-12 bg-transparent border-0 text-gray-800 text-center focus:ring-0"
+                                type="number"
+                                placeholder="0"
                                 value={item.count}
                                 onChange={(e) => {
-                                  changeModalCount(index, e.target.value);
-                                }} // Display the count from the state
+                                  changeModalCount(e,index, e.target.value);
+                                }}
+                                // onKeyDown={isNumberKey}
                               />
+
                               <div></div>
 
                               <button
