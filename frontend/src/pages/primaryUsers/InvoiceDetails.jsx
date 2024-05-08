@@ -10,6 +10,7 @@ import { toast } from "react-toastify";
 import dayjs from "dayjs";
 import { FaEdit } from "react-icons/fa";
 import { useLocation, useNavigate } from "react-router-dom";
+import Swal from "sweetalert2";
 
 function InvoiceDetails() {
   const [data, setData] = useState("");
@@ -44,6 +45,28 @@ function InvoiceDetails() {
     }
   };
 
+  const chooseFormat = () => {
+    Swal.fire({
+      title: "Which format would you like?",
+      html: "<p>Choose between:</p>",
+      showDenyButton: true,
+      showCancelButton: true,
+      confirmButtonText: "Tax Invoice",
+      denyButtonText: `POS format`,
+      customClass: {
+        container: "swal2-container-custom",
+      },
+    }).then((result) => {
+      if (result.isConfirmed) {
+        // Swal.fire("Tax Invoice selected", "", "success");
+        navigate(`/pUsers/shareInvoice/${data._id}`)
+      } else if (result.isDenied) {
+        navigate(`/pUsers/shareInvoiceThreeInch/${data._id}`)
+
+      }
+    });
+    
+  };
   return (
     <div className="flex relative">
       <div>
@@ -99,12 +122,15 @@ function InvoiceDetails() {
                 <FaEdit className="text-blue-500" />
                 <p className="text-black font-bold text-sm">Edit</p>
               </div>
-              <Link to={`/pUsers/shareInvoice/${data._id}`}>
-                <div className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer">
-                  <IoMdShareAlt />
-                  <p className="text-black font-bold text-sm">Share</p>
-                </div>
-              </Link>
+              {/* <Link to={`/pUsers/shareInvoice/${data._id}`}> */}
+              <div
+                onClick={chooseFormat}
+                className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer"
+              >
+                <IoMdShareAlt />
+                <p className="text-black font-bold text-sm">Share</p>
+              </div>
+              {/* </Link> */}
               <div className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer">
                 <MdTextsms className="text-green-500" />
                 <p className="text-black font-bold text-sm">Sms</p>
@@ -174,13 +200,23 @@ function InvoiceDetails() {
                 : " (0 discount)"}
             </div>
           ))}
-           <h3 className="font-bold text-md px-4 py-2 bg-white mt-2">Additional Charges</h3>
-            {data.additionalCharges && data.additionalCharges.length > 0 && (
+        <h3 className="font-bold text-md px-4 py-2 bg-white mt-2">
+          Additional Charges
+        </h3>
+        {data.additionalCharges && data.additionalCharges.length > 0 && (
           <div className="p-4 bg-white text-gray-500 text-xs md:text-base">
             {data.additionalCharges.map((values, index) => (
               <div key={index}>
                 <p className="font-semibold text-black">{values.option}</p>
-                <p> ₹{values?.value} + {values.taxPercentage ? `(${values.taxPercentage}%)` : ('0%')} = ₹{parseInt(values.value) + (parseInt(values.value) * ((parseInt(values.taxPercentage) || 0) / 100))}</p>
+                <p>
+                  {" "}
+                  ₹{values?.value} +{" "}
+                  {values.taxPercentage ? `(${values.taxPercentage}%)` : "0%"} =
+                  ₹
+                  {parseInt(values.value) +
+                    parseInt(values.value) *
+                      ((parseInt(values.taxPercentage) || 0) / 100)}
+                </p>
               </div>
             ))}
           </div>
@@ -209,12 +245,14 @@ function InvoiceDetails() {
               <FaEdit className="text-blue-500" />
               <p className="text-black font-bold text-sm">Edit</p>
             </div>
-            <Link to={`/pUsers/shareInvoice/${data._id}`}>
-              <div className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer">
+            {/* <Link to={`/pUsers/shareInvoice/${data._id}`}> */}
+              <div 
+                 onClick={chooseFormat}
+              className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer">
                 <IoMdShareAlt />
                 <p className="text-black font-bold text-sm">Share</p>
               </div>
-            </Link>
+            {/* </Link> */}
             <div className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer">
               <MdTextsms className="text-green-500" />
               <p className="text-black font-bold text-sm">Sms</p>
