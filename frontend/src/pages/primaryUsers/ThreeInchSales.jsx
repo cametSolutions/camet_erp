@@ -11,7 +11,7 @@ import numberToWords from "number-to-words";
 import { Link } from "react-router-dom";
 import QRCode from "react-qr-code";
 
-function ShareInvoice() {
+function ThreeInchSales() {
   const [data, setData] = useState([]);
   const [org, setOrg] = useState([]);
   const [subTotal, setSubTotal] = useState("");
@@ -28,7 +28,7 @@ function ShareInvoice() {
     const getTransactionDetails = async () => {
       try {
         // Fetch invoice details
-        const res = await api.get(`/api/pUsers/getInvoiceDetails/${id}`, {
+        const res = await api.get(`/api/pUsers/getSalesDetails/${id}`, {
           withCredentials: true,
         });
 
@@ -107,10 +107,43 @@ function ShareInvoice() {
     }
   }, [data]);
 
-  // if (totalAmount) {
+  const calculateTotalTax = () => {
+    const individualTax = data?.items?.map(
+      (el) => el?.total - (el?.total * 100) / (parseFloat(el.igst) + 100)
+    );
+    const totalTax = individualTax
+      ?.reduce((acc, curr) => (acc += curr), 0)
+      .toFixed(2);
 
-  //   // setInWords(mergedWord)
-  // }
+    console.log(individualTax);
+    console.log(totalTax);
+    return totalTax;
+  };
+
+  const calculateAddCess = () => {
+    return data?.items?.reduce((acc, curr) => {
+      // Ensure curr.cess is a number, defaulting to 0 if not
+      curr.addl_cess = Number(curr?.addl_cess) || 0;
+      // Add curr.cess to the accumulator
+      return acc + curr?.addl_cess;
+    }, 0); // Initialize the accumulator with 0
+  };
+  const calculateStateTax = () => {
+    return data?.items?.reduce((acc, curr) => {
+      // Ensure curr.cess is a number, defaulting to 0 if not
+      curr.state_cess = Number(curr?.state_cess) || 0;
+      // Add curr.cess to the accumulator?
+      return acc + curr?.state_cess;
+    }, 0); // Initialize the accumulator with 0
+  };
+  const calculateCess = () => {
+    return data?.items?.reduce((acc, curr) => {
+      // Ensure curr.cess is a number, defaulting to 0 if not
+      curr.cess = Number(curr?.cess) || 0;
+      // Add curr.cess to the accumulator
+      return acc + curr?.cess;
+    }, 0); // Initialize the accumulator with 0
+  };
 
   const handlePrint = useReactToPrint({
     documentTitle: `Sale Order ${data.orderNumber}`,
@@ -127,7 +160,7 @@ function ShareInvoice() {
       <div className="flex-1 h-screen overflow-y-scroll">
         <div className="bg-[#012a4a]   sticky top-0 p-3 px-5 text-white text-lg font-bold flex items-center gap-3  shadow-lg justify-between">
           <div className="flex gap-2 ">
-            <Link to={`/pUsers/InvoiceDetails/${id}`}>
+            <Link to={`/pUsers/salesDetails/${id}`}>
               <IoIosArrowRoundBack className="text-3xl" />
             </Link>
             <p>Share Your Order</p>
@@ -144,27 +177,23 @@ function ShareInvoice() {
 
         <div
           ref={contentToPrint}
-          className="rounded-lg  px-3 max-w-3xl mx-auto  md:block"
+          className="rounded-lg  px-3 max-w-3xl mx-auto  md:block w-[18rem]"
         >
-          <div className="flex ">
-            <div className="font-bold text-sm md:text-xl mb-2 mt-6">
-              QUOTATION
-            </div>
+          <div className="flex justify-center ">
+            <div className="font-bold text-md  mb-2 mt-6">INVOICE</div>
           </div>
           <div>
             <div className="bg-gray-500 h-2 w-full mt-1"></div>
             <div className="flex items-center justify-between  bg-gray-300 px-3 py-1 ">
-              <div className="text-xs md:text-sm">
-                Invoice #:{data?.orderNumber}{" "}
-              </div>
-              <div className="text-xs md:text-sm">
+              <div className="text-[7px] ">Invoice #:{data?.orderNumber} </div>
+              <div className="text-[7px]">
                 Date:{new Date().toDateString()}{" "}
               </div>
             </div>
           </div>
 
-          <div className="flex mt-2 border-t-2 py-3">
-            <div className="w-0.5/5">
+          {/* <div className="flex mt-2 border-t-2 py-3"> */}
+          {/* <div className="w-0.5/5">
               {org.logo && (
                 <img
                   className="h-16 w-16 mr-2 mt-1 "
@@ -172,15 +201,16 @@ function ShareInvoice() {
                   alt="Logo"
                 />
               )}
-            </div>
+            </div> */}
+          <div className="flex justify-center">
             <div className="w-4/5 flex flex-col mt-1 ml-2">
-              <div className="">
-                <p className="text-gray-700 font-semibold text-base pb-1">
+              <div className=" flex justify-center">
+                <p className="text-gray-700 font-semibold text-[12px] pb-1">
                   {org?.name}
                 </p>
               </div>
-              <div className="">
-                <div className="text-gray-500 md:text-xs text-[10px] mt-1">
+              <div className=" flex flex-col items-center ">
+                <div className="text-gray-500  text-[7px] text-center">
                   {[
                     org?.flat,
                     org?.landmark,
@@ -192,61 +222,27 @@ function ShareInvoice() {
                     .filter(Boolean) // Remove any falsy values (e.g., undefined or null)
                     .join(", ")}
                 </div>
+                <div className="text-gray-500   text-[7px] ">{org?.email}</div>
+                <div className="text-gray-500  text-[7px] ">{org?.website}</div>
+                <div className="text-gray-500  text-[7px]">
+                  Gst No: {org?.gstNum}
+                </div>
+                <div className="text-gray-500   text-[7px]">
+                  Pan No: {org?.pan}
+                </div>
               </div>
             </div>
           </div>
-          <div className="flex justify-between px-5 gap-6 mt-2  bg-slate-100 py-2">
-            <div className="">
-              <div className="text-gray-500  mb-0.5 md:text-xs text-[9px]">
-                Pan No: {org?.pan}
-              </div>
-              <div className="text-gray-500 mb-0.5 md:text-xs text-[9px]">
-                Gst No: {org?.gstNum}
-              </div>
-            </div>
-            <div className="flex  flex-col ">
-              <div className="text-gray-500  mb-0.5 md:text-xs text-[9px] text-right">
-                {org?.email}
-              </div>
-              <div className="text-gray-500 mb-0.5 md:text-xs text-[9px] text-right">
-                {org?.website}
-              </div>
-            </div>
-          </div>
+          {/* </div> */}
 
-          <div className="flex md:gap-[130px] justify-between  text-[9px] md:text-xs mt-4 px-5 border-t-2 pt-4">
-            <div className=" border-gray-300 pb-4 mb-2">
-              <h2 className=" text-xs font-bold mb-1">Bill To:</h2>
-              <div className="text-gray-700 ">{data?.party?.partyName}</div>
-              {data?.party?.billingAddress
-                ?.split(/[\n,]+/)
-                .map((line, index) => (
-                  <div key={index} className="text-gray-700 ">
-                    {line.trim()}
-                  </div>
-                ))}{" "}
-              {/* <div className="text-gray-700 mb-0.5">Anytown, USA 12345</div> */}
-              <div className="text-gray-700   ">{data?.party?.emailID}</div>
-              <div className="text-gray-700">{data?.party?.mobileNumber}</div>
-            </div>
-            <div className=" border-gray-300 pb-4 mb-0.5">
-              <h2 className="text-xs font-bold mb-1">Ship To:</h2>
-              <div className="text-gray-700 ">{data?.party?.partyName}</div>
-              {data?.party?.shippingAddress
-                ?.split(/[\n,]+/)
-                .map((line, index) => (
-                  <div key={index} className="text-gray-700 ">
-                    {line.trim()}
-                  </div>
-                ))}{" "}
-              {/* <div className="text-gray-700 mb-0.5">Anytown, USA 12345</div> */}
-              <div className="text-gray-700 ">{data?.party?.emailID}</div>
-              <div className="text-gray-700">{data?.party?.mobileNumber}</div>
-            </div>
+          <div className="">
+            <p className="text-gray-500  mt-3 text-[7.5px]">
+              Name: {data?.party?.partyName}
+            </p>
           </div>
 
           {/* <hr className="border-t-2 border-black mb-0.5" /> */}
-          <table className="w-full text-left  bg-slate-200">
+          <table className="w-full text-left  bg-slate-200  mt-1 ">
             <thead className="border-b-2 border-t-2 border-black text-[10px] text-right">
               <tr>
                 <th className="text-gray-700 font-bold uppercase py-2 px-1 text-left">
@@ -254,8 +250,8 @@ function ShareInvoice() {
                 </th>
                 <th className="text-gray-700 font-bold uppercase p-2">Qty</th>
                 <th className="text-gray-700 font-bold uppercase p-2">Rate</th>
-                <th className="text-gray-700 font-bold uppercase p-2">Disc</th>
-                <th className="text-gray-700 font-bold uppercase p-2">Tax</th>
+                {/* <th className="text-gray-700 font-bold uppercase p-2">Disc</th> */}
+                {/* <th className="text-gray-700 font-bold uppercase p-2">Tax</th> */}
                 <th className="text-gray-700 font-bold uppercase p-2 pr-0">
                   Amount
                 </th>
@@ -278,16 +274,16 @@ function ShareInvoice() {
                       key={index}
                       className="border-b-2 border-t-1 text-[9px] bg-white"
                     >
-                      <td className="py-4 text-black pr-2">
+                      <td className="py-2 text-black pr-2">
                         {el.product_name} <br />
                         <p className="text-gray-400 mt-1">
                           HSN: {el?.hsn_code} ({el.igst}%)
                         </p>
                       </td>
-                      <td className="py-4 text-black text-right pr-2">
+                      <td className="py-2 text-black text-right pr-2">
                         {el?.count} {el?.unit}
                       </td>
-                      <td className="py-4 text-black text-right pr-2 text-nowrap">
+                      <td className="py-2 text-black text-right pr-2 text-nowrap">
                         ₹{" "}
                         {
                           el.Priceleveles.find(
@@ -295,44 +291,33 @@ function ShareInvoice() {
                           )?.pricerate
                         }
                       </td>
-                      <td className="py-4 text-black text-right pr-2 ">
-                        {discountAmount > 0
-                          ? ` ₹${discountAmount?.toFixed(2)} `
-                          : "₹ 0"}
-                        {/* <br />
-                        {el?.discountPercentage > 0 &&
-                          `(${el?.discountPercentage}%)`} */}
-                      </td>
-                      <td className="py-4 text-black text-right pr-2">
-                        {(
-                          el?.total -
-                          (el?.total * 100) / (parseFloat(el.igst) + 100)
-                        )?.toFixed(2)}
-                        
-                        {/* <br /> ({el?.igst}%) */}
-                      </td>
+
                       <td className="py-4 text-black text-right">
                         ₹ {el?.total}
                       </td>
                     </tr>
                   );
                 })}
+              <tr className=" border-y-4 border-t-4 border-gray-500  text-[9px] bg-white">
+                <td className="py-1 text-black ">Total</td>
+                <td className=" col-span-2 py-1 text-black text-center">
+                  {" "}
+                  {data?.items?.reduce(
+                    (acc, curr) => (acc += Number(curr?.count)),
+                    0
+                  )}
+                </td>
+                <td className="py-1 text-black "></td>
+                <td className="py-1 text-black text-right "> ₹ {subTotal}</td>
+              </tr>
             </tbody>
           </table>
 
-          <div className="flex justify-between  border-y-2 border-black py-2">
-            <div className="text-gray-700 text-[10px] font-bold mr-2 uppercase">
-              Subtotal:
-            </div>
-            <div className="text-black font-bold text-[10px]  ">
-              ₹ {subTotal}
-            </div>
-          </div>
-          <div className="flex justify-between">
+          <div className="flex justify-end">
             <div className="mt-3 w-1/2 ">
               {bank && Object.keys(bank).length > 0 ? (
                 <>
-                  <div className="text-gray-500 font-semibold text-[10px] leading-5">
+                  {/* <div className="text-gray-500 font-semibold text-[10px] leading-5">
                     Bank Name: {bank?.bank_name}
                   </div>
                   <div className="text-gray-500 font-semibold text-[10px] leading-5">
@@ -343,18 +328,18 @@ function ShareInvoice() {
                   </div>
                   <div className="text-gray-500 font-semibold text-[10px] leading-5">
                     Branch: {bank?.branch}
-                  </div>
+                  </div> */}
                   <div
                     style={{
                       height: "auto",
                       margin: "0 ",
                       marginTop: "10px",
-                      maxWidth: 64,
+                      maxWidth: 90,
                       width: "100%",
                     }}
                   >
                     <QRCode
-                      size={250}
+                      size={300}
                       style={{
                         height: "auto",
                         maxWidth: "100%",
@@ -371,20 +356,43 @@ function ShareInvoice() {
             </div>
 
             <div className="w-1/2">
-              <div className=" py-3   ">
-                <div className="  flex justify-end ">
-                  <div className="text-gray-700 mr-2 font-bold text-[10px] mb-1">
-                    Add on charges:
+              <div className=" mt-3  ">
+                <div className="  flex flex-col items-end ">
+                  <div className="flex flex-col items-end text-[7px] text-gray-700 font-bold gap-1">
+                    <p className={calculateTotalTax() > 0 ? "" : "hidden"}>
+                      CGST : {(calculateTotalTax() / 2).toFixed(2)}
+                    </p>
+                    <p className={calculateTotalTax() > 0 ? "" : "hidden"}>
+                      SGST : {(calculateTotalTax() / 2).toFixed(2)}
+                    </p>
+                    {/* <p className={calculateTotalTax() > 0 ? "" : "hidden"}>
+                      IGST : {calculateTotalTax()}
+                    </p> */}
+                    <p className={calculateCess() > 0 ? "" : "hidden"}>
+                      CESS : {calculateCess()}
+                    </p>
+                    <p className={calculateAddCess() > 0 ? "" : "hidden"}>
+                      ADD.CESS : {calculateAddCess()}
+                    </p>
+                    <p className={calculateStateTax() > 0 ? "" : "hidden"}>
+                      STATE TAX : {calculateStateTax()}
+                    </p>
                   </div>
-                  <div className="text-gray-700 font-bold text-[10px]">
-                    ₹ {additinalCharge}
+
+                  <div className="flex items-center mt-2 mb-1">
+                    <div className="text-gray-700 mr-2 font-semibold text-[9px]">
+                      Add on charges:
+                    </div>
+                    <div className="text-gray-700 font-semibold text-[9px]">
+                      ₹ {additinalCharge}
+                    </div>
                   </div>
                 </div>
                 {data?.additionalCharges?.map((el, index) => (
                   <>
                     <div
                       key={index}
-                      className="text-gray-700  text-right font-semibold text-[10px]    "
+                      className="text-gray-700  text-right font-semibold text-[7px] "
                     >
                       <span>({el?.action === "add" ? "+" : "-"})</span>{" "}
                       {el?.option}: ₹ {el?.finalValue}
@@ -398,30 +406,55 @@ function ShareInvoice() {
                 ))}
               </div>
 
-              <div className="flex justify-end  border-black py-3 ">
+              <div className="flex justify-end  border-black  ">
                 <div className="w-3/4"></div>
 
-                <div className=" w-2/4 text-gray-700  font-bold text-[10px] flex justify-end   ">
-                  <p className="text-nowrap border-y-2 py-2">TOTAL AMOUNT:</p>
-                  <div className="text-gray-700  font-bold text-[10px] text-nowrap  border-y-2 py-2   ">
+                <div className=" w-2/4 text-gray-700  font-extrabold text-[11px] flex justify-end   ">
+                  <p className="text-nowrap border-y-2 py-2">NET AMOUNT : </p>
+                  <div className="text-gray-700  font-bold text-[11px] text-nowrap  border-y-2 py-2    ">
                     ₹ {data?.finalAmount}
                   </div>
                 </div>
               </div>
-              <div className="flex justify-end border-black pb-3 w-full ">
+              <div className="flex  justify-end border-black pb-3 w-full ">
                 <div className="w-2/4"></div>
 
-                <div className="  text-gray-700  font-bold text-[10px] flex flex-col justify-end text-right   ">
+                <div className="  text-gray-700  font-bold text-[10px] flex flex-col justify-end text-right mt-3  ">
                   <p className="text-nowrap ">Total Amount(in words)</p>
                   <div className="text-gray-700  font-bold text-[7.5px] text-nowrap uppercase mt-1 ">
                     ₹ {inWords}
                   </div>
                 </div>
               </div>
+              {/* <div className="flex flex-col items-end mb-4">
+                <p className="text-gray-700 text-[7.5px] ">
+                  Scan here for payment
+                </p>
+                <div
+                  style={{
+                    height: "auto",
+                    margin: "0 ",
+                    marginTop: "2px",
+                    maxWidth: 64,
+                    width: "100%",
+                  }}
+                >
+                  <QRCode
+                    size={250}
+                    style={{
+                      height: "auto",
+                      maxWidth: "100%",
+                      width: "100%",
+                    }}
+                    value={`upi://pay?pa=${bank?.upi_id}&am=${data?.finalAmount}`}
+                    viewBox={`0 0 256 256`}
+                  />
+                </div>
+              </div> */}
             </div>
           </div>
 
-          {org && org.configurations?.length > 0 && (
+          {/* {org && org.configurations?.length > 0 && (
             <div className="border-gray-300 mb-5 mt-4">
               <div className="text-gray-700 mb-2 font-bold text-[10px]">
                 Terms and Conditions
@@ -435,11 +468,11 @@ function ShareInvoice() {
                 ))}
               </div>
             </div>
-          )}
+          )} */}
         </div>
       </div>
     </div>
   );
 }
 
-export default ShareInvoice;
+export default ThreeInchSales;

@@ -101,6 +101,8 @@ import ConfigureSecondaryUser from '../pages/primaryUsers/ConfigureSecondaryUser
 import ErrorPage from '../pages/errorPages/Notfound'
 import Notfound from '../pages/errorPages/Notfound'
 import ServerError from '../pages/errorPages/ServerError'
+import ThreeInchInvoice from '../pages/primaryUsers/ThreeInchInvoice'
+import ThreeInchSales from '../pages/primaryUsers/ThreeInchSales'
 const Routers = () => {
   return (
     <Routes>
@@ -148,6 +150,7 @@ const Routers = () => {
         <Route path='/pUsers/InvoiceDetails/:id' element={<ProtectedPriRoute><InvoiceDetails/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/editInvoice/:id' element={<ProtectedPriRoute><EditInvoice/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/shareInvoice/:id' element={<ProtectedPriRoute><ShareInvoice/></ProtectedPriRoute>}></Route>
+        <Route path='/pUsers/shareInvoiceThreeInch/:id' element={<ProtectedPriRoute><ThreeInchInvoice/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/additionalCharges' element={<ProtectedPriRoute><AdditionalCharges/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/additionalChargesList' element={<ProtectedPriRoute><AddChargesList/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/editAdditionalCharge/:id' element={<ProtectedPriRoute><EditAdditionalCharges/></ProtectedPriRoute>}></Route>
@@ -158,6 +161,8 @@ const Routers = () => {
         <Route path='/pUsers/editItemSales/:id' element={<ProtectedPriRoute><EditItemSales/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/modal' element={<ProtectedPriRoute><SelectDefaultModal/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/salesDetails/:id' element={<ProtectedPriRoute><SalesDetails/></ProtectedPriRoute>}></Route>
+        <Route path='/pUsers/shareSalesThreeInch/:id' element={<ProtectedPriRoute><ThreeInchSales/></ProtectedPriRoute>}></Route>
+
         <Route path='/pUsers/shareSales/:id' element={<ProtectedPriRoute><ShareSales/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/configureSecondaryUser/:id/:userId/:cmp_name' element={<ProtectedPriRoute><ConfigureSecondaryUser/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/Inventory' element={<ProtectedPriRoute><InventoryPrimaryUser/></ProtectedPriRoute>}></Route>
