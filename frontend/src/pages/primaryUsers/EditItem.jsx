@@ -124,18 +124,8 @@ function EditItem() {
     const newItem = { ...item };
 
     newItem.total = totalAmount;
-    if (typeof newItem.count === 'number' && newItem.count % 1!== 0) {
-      console.log("haii");
-      console.log(parseFloat(newItem.count.toFixed(2)));
-
   
-    } else {
-      console.log("haii");
-
-      // If it's an integer, keep it as is
-      // newItem.count = newItem.count;
-    }
-    newItem.count = quantity;
+    newItem.count = Number(quantity) ||0;
     newItem.newGst = igst;
     if (type === "amount") {
       newItem.discount = discountAmount;
@@ -155,28 +145,30 @@ function EditItem() {
   const handleBackClick = () => {
     console.log(location.state);
 
-    if (location.state.id && location.state.from =="addItem") {
-      console.log("haii");
-      navigate("/pUsers/addItem", {
-        state: { from: "editInvoice", id: location.state.id },
-      });
-    } else if (location.state.from === "invoice") {
-      console.log("haii");
+    // if (location.state.id && location.state.from =="addItem") {
+    //   console.log("haii");
+    //   navigate("/pUsers/addItem", {
+    //     state: { from: "editInvoice", id: location.state.id },
+    //   });
+    // } else if (location.state.from === "invoice") {
+    //   console.log("haii");
 
-      navigate("/pUsers/invoice");
-    } else if (location?.state?.from === "addItem") {
-      console.log("haii");
+    //   navigate("/pUsers/invoice");
+    // } else if (location?.state?.from === "addItem") {
+    //   console.log("haii");
 
-      navigate("/pUsers/addItem");
-    } else if (location?.state?.from === "editInvoice") {
-      console.log("haii");
+    //   navigate("/pUsers/addItem");
+    // } else if (location?.state?.from === "editInvoice") {
+    //   console.log("haii");
 
-      navigate(`/pUsers/editInvoice/${location.state.id}`);
-    } else {
-      console.log("haii");
+    //   navigate(`/pUsers/editInvoice/${location.state.id}`);
+    // } else {
+    //   console.log("haii");
 
-      navigate("/pUsers/addItem");
-    }
+    //   navigate("/pUsers/addItem");
+    // }
+
+    navigate(-1)
   };
 
 
@@ -186,7 +178,7 @@ function EditItem() {
       // Split the quantity into parts before and after the decimal point
       const parts = quantity.split('.');
       // Check the length of the part after the decimal point
-      if (parts[1].length > 2) {
+      if (parts[1].length > 3) {
         // Display a toast notification if the length exceeds two characters
         // toast('You cannot enter more than two decimal places.');
         return; // Prevent further execution
@@ -253,10 +245,10 @@ function EditItem() {
                             // onChange={(e) => setQuantity(e.target.value)}
                             onChange={(e)=>{changeQuantity(e.target.value)}}
                             value={quantity}
-                            type="text"
+                            type="number"
                             step="0.01"
-                            className="pr-4 pl-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm border-gray-300 rounded-md focus:outline-none text-gray-600"
-                            placeholder=""
+                            className="input-number pr-4 pl-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm border-gray-300 rounded-md focus:outline-none text-gray-600"
+                            placeholder="0"
                           />
                           <div className="absolute left-3 top-2"></div>
                         </div>
@@ -370,11 +362,11 @@ function EditItem() {
                         <p className="text-xs">Tax Rate</p>
                         <div className="flex items-center gap-2">
                           <p className="text-xs">{`( ${igst} % )`}</p>
-                          <p className="text-xs">{`₹ ${(
-                            ((taxExclusivePrice - discountAmount) *
+                          <p className="text-xs">{`₹ ${
+                            (((taxExclusivePrice - discountAmount) *
                               parseFloat(igst)) /
-                            100
-                          ).toFixed(2)}`}</p>
+                            (100)).toFixed(2)
+                          } `}</p>
                         </div>
                       </div>
                       <div className="flex justify-between font-bold text-black">

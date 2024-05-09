@@ -10,6 +10,8 @@ import dayjs from "dayjs";
 import { FaEdit } from "react-icons/fa";
 import { useLocation, useNavigate } from "react-router-dom";
 import SidebarSec from "../../components/secUsers/SidebarSec";
+import Swal from "sweetalert2";
+
 
 function SalesDetailsSecondary() {
   const [data, setData] = useState("");
@@ -42,6 +44,29 @@ function SalesDetailsSecondary() {
     } else {
       navigate("/sUsers/transaction");
     }
+  };
+
+  const chooseFormat = () => {
+    Swal.fire({
+      title: "Which format would you like?",
+      html: "<p>Choose between:</p>",
+      showDenyButton: true,
+      showCancelButton: true,
+      confirmButtonText: "Tax Invoice",
+      denyButtonText: `POS format`,
+      customClass: {
+        container: "swal2-container-custom",
+      },
+    }).then((result) => {
+      if (result.isConfirmed) {
+        // Swal.fire("Tax Invoice selected", "", "success");
+        navigate(`/sUsers/shareSales/${data._id}`)
+      } else if (result.isDenied) {
+        navigate(`/sUsers/shareSalesThreeInch/${data._id}`)
+
+      }
+    });
+    
   };
 
   return (
@@ -99,12 +124,15 @@ function SalesDetailsSecondary() {
                 <FaEdit className="text-blue-500" />
                 <p className="text-black font-bold text-sm">Edit</p>
               </div> */}
-              <Link to={`/sUsers/shareSales/${data._id}`}>
-                <div className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer">
+              {/* <Link to={`/sUsers/shareSales/${data._id}`}> */}
+                <div
+                 onClick={chooseFormat}
+
+                 className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer">
                   <IoMdShareAlt />
                   <p className="text-black font-bold text-sm">Share</p>
                 </div>
-              </Link>
+              {/* </Link> */}
               <div className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer">
                 <MdTextsms className="text-green-500" />
                 <p className="text-black font-bold text-sm">Sms</p>

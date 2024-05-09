@@ -10,6 +10,8 @@ import { useSelector, useDispatch } from "react-redux";
 import { changeIgstAndDiscount } from "../../../slices/salesSecondary";
 import { toast } from "react-toastify";
 import { Button, Modal } from "flowbite-react";
+import { Decimal } from "decimal.js";
+
 
 function EditItemSalesSecondary() {
   const [item, setItem] = useState([]);
@@ -90,7 +92,7 @@ function EditItemSalesSecondary() {
   }, []);
 
   useEffect(() => {
-    const taxExclusivePrice = parseFloat(newPrice) * parseInt(quantity) || 0;
+    const taxExclusivePrice = parseFloat(newPrice) * Number(quantity) || 0;
     setTaxExclusivePrice(taxExclusivePrice);
     // Calculate the discount amount and percentage
     let calculatedDiscountAmount = 0;
@@ -130,7 +132,7 @@ function EditItemSalesSecondary() {
     const newItem = { ...item };
 
     newItem.total = totalAmount;
-    newItem.count = parseInt(quantity);
+    newItem.count = quantity || 0;
     newItem.newGst = igst;
     newItem.godownList = godown;
     if (type === "amount") {
@@ -181,6 +183,16 @@ function EditItemSalesSecondary() {
     setOpenModal(false);
   }
 
+
+  function truncateToNDecimals(num, n) {
+    const parts = num.toString().split(".");
+    if (parts.length === 1) return num; // No decimal part
+    parts[1] = parts[1].substring(0, n); // Truncate the decimal part
+    return parseFloat(parts.join("."));
+  }
+
+
+
   const openModalHandler = () => {
     console.log(selectedItem);
     if (selectedItem[0]?.GodownList?.length > 0) {
@@ -192,19 +204,23 @@ function EditItemSalesSecondary() {
   };
 
   // Function to handle incrementing the count
+  // Function to handle incrementing the count
   const incrementCount = (index) => {
-    const newGodownItems = godown.map((item) => ({ ...item })); // Deep copy each item object
-    console.log(newGodownItems);
+    const newGodownItems = godown.map((item) => ({ ...item }));
+    let countValue = newGodownItems[index].count
+      ? parseFloat(newGodownItems[index].count)
+      : 0;
 
-    if (newGodownItems[index].balance_stock >= 1) {
-      newGodownItems[index].count += 1;
-      newGodownItems[index].balance_stock -= 1;
-      setGodown(newGodownItems);
-      setTotalCount(totalCount + 1);
-      console.log(godown);
-    } else {
-      toast("Insufficient stock to increment count.");
-    }
+    // Increment the count using Decimal library
+    countValue = new Decimal(countValue).add(1).toNumber();
+
+    newGodownItems[index].count = countValue;
+    newGodownItems[index].balance_stock -= 1;
+    newGodownItems[index].balance_stock = truncateToNDecimals(
+      newGodownItems[index].balance_stock,
+      3
+    );
+    setGodown(newGodownItems);
   };
 
   // Function to handle decrementing the count
@@ -213,25 +229,86 @@ function EditItemSalesSecondary() {
     console.log(newGodownItems);
 
     if (newGodownItems[index].count > 0) {
-      newGodownItems[index].count -= 1;
+      newGodownItems[index].count = new Decimal(newGodownItems[index].count)
+        .sub(1)
+        .toNumber();
+      // newGodownItems[index].count = newGodownItems[index].count.toNumber();
       newGodownItems[index].balance_stock += 1; // Increase balance_stock by 1
-      setGodown(newGodownItems); // Corrected function name to setGodown
-      setTotalCount(totalCount - 1);
-      console.log(godown);
+      newGodownItems[index].balance_stock = truncateToNDecimals(
+        newGodownItems[index].balance_stock,
+        3
+      );
+      setGodown(newGodownItems);
     } else {
       toast("Cannot decrement count as it is already at 0.");
     }
+  };
+
+
+  ///////////////////////////changeModalCount///////////////////////////////////
+
+  const changeModalCount = (event,index, value) => {
+    console.log(value);
+   
+    // Check if the value includes a decimal point
+    if (value.includes(".")) {
+      // Split the value into parts before and after the decimal point
+      const parts = value.split(".");
+      // Check the length of the part after the decimal point
+      if (parts[1].length > 3) {
+        return;
+      }
+    }
+
+    const newGodownItems = godown.map((item) => ({ ...item }));
+    const currentGodown = newGodownItems[index];
+    currentGodown.orginalStock =
+      currentGodown.orginalStock ??
+      Number(currentGodown?.balance_stock) + Number(currentGodown?.count);
+
+    currentGodown.count = value;
+    console.log(value);
+    console.log(newGodownItems);
+    currentGodown.balance_stock = currentGodown.orginalStock - value;
+    currentGodown.balance_stock = truncateToNDecimals(
+      currentGodown.balance_stock,
+      3
+    ); // Increase balance_stock by 1
+    setGodown(newGodownItems);
   };
 
   ///////////////////////////modalSubmit///////////////////////////////////
   console.log(godown);
 
   const modalSubmit = () => {
-    const totalCount = godown.reduce((acc, curr) => acc + curr.count, 0);
-    console.log(totalCount);
-    setQuantity(totalCount);
+    const total = truncateToNDecimals(
+      godown.reduce((acc, curr) => {
+        const value = curr.count ? parseFloat(curr.count) : 0;
+        return acc + value;
+      }, 0),
+      3 // Specify the number of decimal places you want
+    );
+
+    setQuantity(total);
+
     setOpenModal(false);
   };
+
+
+
+  const handleDirectQuantityChange = (value) => {
+    if (value.includes(".")) {
+      // Split the value into parts before and after the decimal point
+      const parts = value.split(".");
+      // Check the length of the part after the decimal point
+      if (parts[1].length > 3) {
+        return;
+      }
+    }
+
+    setQuantity(value);
+  };
+
 
   return (
     <div className="flex ">
@@ -281,13 +358,16 @@ function EditItemSalesSecondary() {
                       <div className="flex flex-col">
                         <label className="leading-loose">Quantity</label>
                         <div className="relative focus-within:text-gray-600 text-gray-400">
-                          <input
+                        <input
+                            readOnly={selectedItem[0]?.GodownList?.length > 0}
                             onClick={openModalHandler}
-                            onChange={(e) => setQuantity(e.target.value)}
+                            onChange={(e) => {
+                              handleDirectQuantityChange(e.target.value);
+                            }}
                             value={quantity}
-                            type="text"
-                            className="pr-4 pl-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm border-gray-300 rounded-md focus:outline-none text-gray-600"
-                            placeholder=""
+                            type="number"
+                            className=" input-number pr-4 pl-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm border-gray-300 rounded-md focus:outline-none text-gray-600"
+                            placeholder="0"
                           />
                           <div className="absolute left-3 top-2"></div>
                         </div>
@@ -471,10 +551,14 @@ function EditItemSalesSecondary() {
 
                   <h3 className="font-medium  text-right  text-white ">
                     Total Count:{" "}
-                    <span className="text-white  font-bold">
-                      {godown.reduce((acc, curr) => {
-                        return (acc = acc + curr.count);
-                      }, 0)}
+                    <span className="text-white font-bold">
+                      {truncateToNDecimals(
+                        godown.reduce((acc, curr) => {
+                          const value = curr.count ? parseFloat(curr.count) : 0;
+                          return acc + value;
+                        }, 0),
+                        3 // Specify the number of decimal places you want
+                      )}
                     </span>
                   </h3>
                 </div>
@@ -538,7 +622,17 @@ function EditItemSalesSecondary() {
                                 -
                               </button>
 
-                              {item.count}
+                              {/* {item.count} */}
+                              <input
+                                className=" input-number p-0 w-12 bg-transparent border-0 text-gray-800 text-center focus:ring-0"
+                                type="number"
+                                placeholder="0"
+                                value={item.count}
+                                onChange={(e) => {
+                                  changeModalCount(e,index, e.target.value);
+                                }}
+                                // onKeyDown={isNumberKey}
+                              />
                               <div></div>
 
                               <button

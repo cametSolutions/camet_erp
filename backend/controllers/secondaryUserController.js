@@ -12,6 +12,8 @@ import HsnModel from "../models/hsnModel.js";
 import OragnizationModel from "../models/OragnizationModel.js";
 import Organization from "../models/OragnizationModel.js";
 import AdditionalChargesModel from "../models/additionalChargesModel.js";
+import { truncateToNDecimals } from "./helpers/helper.js";
+
 
 import bcrypt from "bcryptjs";
 import mongoose from "mongoose";
@@ -639,7 +641,6 @@ export const getProducts = async (req, res) => {
   const Secondary_user_id = req.sUserId;
   const cmp_id = req.params.cmp_id;
   const Primary_user_id = new mongoose.Types.ObjectId(req.owner);
- 
 
   try {
     const secUser = await SecondaryUser.findById(Secondary_user_id);
@@ -657,7 +658,7 @@ export const getProducts = async (req, res) => {
     if (configuration) {
       const { selectedGodowns, vanSale } = configuration;
 
-      console.log("selectedGodowns",selectedGodowns);
+      console.log("selectedGodowns", selectedGodowns);
 
       if (vanSale && selectedGodowns && selectedGodowns.length === 1) {
         console.log("vansale");
@@ -717,7 +718,7 @@ export const getProducts = async (req, res) => {
             },
           },
         ]);
-      } else if(vanSale==false && selectedGodowns.length!==0) {
+      } else if (vanSale == false && selectedGodowns.length !== 0) {
         console.log("no vansale but selected godowns");
 
         products = await productModel.aggregate([
@@ -765,13 +766,11 @@ export const getProducts = async (req, res) => {
             },
           },
         ]);
-      }
-      else{
+      } else {
         products = await productModel.find({
           Primary_user_id: Primary_user_id,
           cmp_id: cmp_id,
         });
-
       }
     } else {
       console.log("no vansale no selected godowns");
@@ -792,7 +791,7 @@ export const getProducts = async (req, res) => {
       return res.status(404).json({ message: "No products were found " });
     }
   } catch (error) {
-  console.log(error);
+    console.log(error);
     return res
       .status(500)
       .json({ success: false, message: "Internal server error, try again!" });
@@ -846,7 +845,7 @@ export const createInvoice = async (req, res) => {
 
       // Calculate total price after applying discount
       let totalPrice = selectedPrice * (item.count || 1) || 0; // Default count to 1 if not provided
-      if (item.discount!=="0") {
+      if (item.discount !== "0") {
         // If discount is present (amount), subtract it from the total price
         totalPrice -= item.discount;
       } else if (item.discountPercentage) {
@@ -1744,7 +1743,14 @@ export const createSale = async (req, res) => {
       }
 
       // Calculate the new balance stock
-      const newBalanceStock = parseInt(product.balance_stock) - item.count;
+      // Calculate the new balance stock
+      const productBalanceStock = truncateToNDecimals(product.balance_stock, 3);
+      console.log("productBalanceStock", productBalanceStock);
+      const itemCount = truncateToNDecimals(item.count, 3);
+      const newBalanceStock = truncateToNDecimals(
+        productBalanceStock - itemCount,
+        3
+      );
 
       // Prepare product update operation
       productUpdates.push({
@@ -1762,9 +1768,10 @@ export const createSale = async (req, res) => {
           );
           if (godownIndex !== -1) {
             // Calculate the new godown stock
-            const newGodownStock =
-              parseInt(product.GodownList[godownIndex].balance_stock) -
-              item.count;
+           const newGodownStock = truncateToNDecimals(
+            (product.GodownList[godownIndex].balance_stock) - godown.count,
+            
+          );
 
             // Prepare godown update operation
             godownUpdates.push({
@@ -1774,7 +1781,7 @@ export const createSale = async (req, res) => {
                   "GodownList.godown": godown.godown,
                 },
                 update: {
-                  $set: { "GodownList.$.balance_stock": newGodownStock },
+                  $set: { "GodownList.$.balance_stock": godown.balance_stock },
                 },
               },
             });
@@ -1783,7 +1790,10 @@ export const createSale = async (req, res) => {
             if (
               godownIndex !== -1 &&
               newGodownStock !==
-                parseInt(product.GodownList[godownIndex].balance_stock)
+              truncateToNDecimals(
+                (product.GodownList[godownIndex].balance_stock) - godown.count,
+                3
+              )
             ) {
               changedGodowns.push({
                 godown_id: godown.godown_id,
@@ -1801,9 +1811,10 @@ export const createSale = async (req, res) => {
           );
           if (godownIndex !== -1) {
             // Calculate the new godown stock
-            const newGodownStock =
-              parseInt(product.GodownList[godownIndex].balance_stock) -
-              godown.count;
+            const newGodownStock = truncateToNDecimals(
+              (product.GodownList[godownIndex].balance_stock) - godown.count,
+              3
+            );
 
             // Prepare godown update operation
             godownUpdates.push({
@@ -1822,7 +1833,10 @@ export const createSale = async (req, res) => {
             if (
               godownIndex !== -1 &&
               newGodownStock !==
-                parseInt(product.GodownList[godownIndex].balance_stock)
+              truncateToNDecimals(
+                (product.GodownList[godownIndex].balance_stock) - godown.count,
+                3
+              )
             ) {
               changedGodowns.push({
                 godown_id: godown.godown_id,
@@ -2101,8 +2115,6 @@ export const fetchAdditionalDetails = async (req, res) => {
         { $project: { _id: 0, pricelevels: 1 } },
       ]);
     }
-
-    
 
     const brandResults = await productModel.aggregate([
       {

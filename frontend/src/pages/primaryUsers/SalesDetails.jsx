@@ -228,13 +228,13 @@ function SalesDetails() {
                 {data?.isCancelled ? "Cancelled" : "Cancel"}
               </p>
             </div> */}
-            <div
+            {/* <div
               onClick={() => navigate(`/pUsers/editInvoice/${data._id}`)}
               className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer"
             >
               <FaEdit className="text-blue-500" />
               <p className="text-black font-bold text-sm">Edit</p>
-            </div>
+            </div> */}
             {/* <Link to={`/pUsers/shareSales/${data._id}`}> */}
               <div
                  onClick={chooseFormat} 
