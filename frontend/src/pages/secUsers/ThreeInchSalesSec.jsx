@@ -38,7 +38,7 @@ function ThreeInchSalesSec() {
 
         // Fetch company details using the cmp_id
         const companyDetails = await api.get(
-          `/api/pUsers/getSingleOrganization/${cmpId}`,
+          `/api/sUsers/getSingleOrganization/${cmpId}`,
           {
             withCredentials: true,
           }
