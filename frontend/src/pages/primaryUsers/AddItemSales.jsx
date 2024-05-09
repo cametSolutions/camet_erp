@@ -463,7 +463,7 @@ function AddItemSales() {
     const totalCount =truncateToNDecimals( godown.reduce(
       (acc, godownItem) => acc +Number( godownItem.count),
       0
-    ))
+    ),3)
 
     console.log(totalCount);
     const itemWithUpdatedCount = {

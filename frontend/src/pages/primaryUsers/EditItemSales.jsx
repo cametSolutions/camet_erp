@@ -130,7 +130,7 @@ function EditItemSales() {
     const newItem = { ...item };
 
     newItem.total = totalAmount;
-    newItem.count = quantity;
+    newItem.count = quantity || 0;
     newItem.newGst = igst;
     newItem.godownList = godown;
     if (type === "amount") {
@@ -210,13 +210,6 @@ function EditItemSales() {
     return parseFloat(parts.join("."));
   }
 
-  function isNumberKey(evt) {
-    var charCode = evt.which ? evt.which : event.keyCode;
-    if (charCode > 31 && (charCode < 48 || charCode > 57)) {
-      return false;
-    }
-    return true;
-  }
 
   // Function to handle incrementing the count
   const incrementCount = (index) => {
@@ -370,7 +363,7 @@ function EditItemSales() {
                             value={quantity}
                             type="number"
                             className=" input-number pr-4 pl-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm border-gray-300 rounded-md focus:outline-none text-gray-600"
-                            placeholder=""
+                            placeholder="0"
                           />
                           <div className="absolute left-3 top-2"></div>
                         </div>

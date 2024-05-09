@@ -22,6 +22,8 @@ import { FixedSizeList as List } from "react-window";
 import SidebarSec from "../../components/secUsers/SidebarSec";
 import { toast } from "react-toastify";
 import { IoIosCloseCircleOutline } from "react-icons/io";
+import {Decimal} from 'decimal.js'
+
 
 
 function AddItemSecondary() {
@@ -279,7 +281,7 @@ function AddItemSecondary() {
       item.Priceleveles.find((level) => level.pricelevel === selectedPriceLevel)
         ?.pricerate || 0;
 
-    let subtotal = priceRate * parseInt(item?.count);
+    let subtotal = priceRate * item?.count
     let discountedSubtotal = subtotal;
 
     if (item.discount !== 0 && item.discount !== undefined) {
@@ -323,10 +325,15 @@ function AddItemSecondary() {
 
     const currentItem = { ...updatedItems[index] };
 
+    console.log(currentItem.count);
+
     if (!currentItem.count) {
       currentItem.count = 1;
     } else {
-      currentItem.count += 1;
+      // currentItem.count += 1;
+      currentItem.count=new Decimal( currentItem.count)
+      currentItem.count = currentItem.count.add(new Decimal(1));
+      currentItem.count = parseFloat(currentItem.count.toString());
     }
 
     currentItem.total = calculateTotal(currentItem, selectedPriceLevel).toFixed(
@@ -342,15 +349,18 @@ function AddItemSecondary() {
 
   ///////////////////////////handleDecrement///////////////////////////////////
   const handleDecrement = (_id) => {
-    const updatedItems = [...item]; 
-    const index = updatedItems.findIndex(item => item._id === _id);
+    const updatedItems = [...item];
+    const index = updatedItems.findIndex((item) => item._id === _id);
     // Make a copy of the array
     const currentItem = { ...updatedItems[index] };
+    
 
     // Decrement the count if it's greater than 0
     if (currentItem.count > 0) {
-      currentItem.count -= 1;
-      if (currentItem.count === 0) {
+      currentItem.count=new Decimal( currentItem.count)
+      currentItem.count = (currentItem.count).sub(new Decimal(1));
+      currentItem.count = parseFloat(currentItem.count.toString());
+      if (currentItem.count <= 0) {
         dispatch(removeItem(currentItem));
         updatedItems[index] = { ...currentItem, added: false }; // Make a copy and update the 'added' property
       } else {
@@ -369,6 +379,7 @@ function AddItemSecondary() {
     dispatch(changeCount(currentItem));
     dispatch(changeTotal(currentItem));
   };
+
 
   ///////////////////////////handlePriceLevelChange///////////////////////////////////
 
@@ -462,7 +473,7 @@ function AddItemSecondary() {
                   </svg>
                 </button>
                 <input
-                  className="p-0 w-6 bg-transparent border-0 text-gray-800 text-center focus:ring-0 "
+                  className="p-0 w-12 bg-transparent border-0 text-gray-800 text-center focus:ring-0 "
                   type="text"
                   disabled
                   value={el.count ? el.count : 0} // Display the count from the state

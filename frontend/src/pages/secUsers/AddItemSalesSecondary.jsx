@@ -25,6 +25,8 @@ import { Button, Modal } from "flowbite-react";
 import { toast } from "react-toastify";
 import SidebarSec from "../../components/secUsers/SidebarSec";
 import { IoIosCloseCircleOutline } from "react-icons/io";
+import {Decimal} from "decimal.js"
+
 
 // import SelectDefaultModal from "../../../constants/components/SelectDefaultModal";
 
@@ -373,12 +375,14 @@ function AddItemSalesSecondary() {
   ///////////////////////////handleIncrement///////////////////////////////////
 
   const handleIncrement = (_id) => {
+
     const updatedItems = [...item];
-    const index = updatedItems.findIndex(item => item._id === _id);
+    const index = updatedItems.findIndex((item) => item._id === _id);
 
     const currentItem = { ...updatedItems[index] };
+    console.log(currentItem);
 
-    if (currentItem?.GodownList?.length > 0 &&  !godownname) {
+    if (currentItem?.GodownList?.length > 0) {
       setOpenModal(true);
 
       setGodown(currentItem?.GodownList);
@@ -386,13 +390,15 @@ function AddItemSalesSecondary() {
       if (!currentItem.count) {
         currentItem.count = 1;
       } else {
-        currentItem.count += 1;
+        console.log( currentItem.count);
+        currentItem.count = new Decimal(currentItem.count).add(1).toNumber()
       }
 
       currentItem.total = calculateTotal(
         currentItem,
         selectedPriceLevel
       ).toFixed(2);
+      console.log( currentItem.total);
       updatedItems[index] = currentItem;
       setItem(updatedItems);
       // setRefresh(!refresh);
@@ -401,7 +407,6 @@ function AddItemSalesSecondary() {
       dispatch(changeTotal(currentItem));
     }
   };
-
   ///////////////////////////handleTotalChangeWithPriceLevel///////////////////////////////////
 
   const handleTotalChangeWithPriceLevel = (pricelevel) => {
@@ -423,17 +428,18 @@ function AddItemSalesSecondary() {
 
   ///////////////////////////handleDecrement///////////////////////////////////
   const handleDecrement = (_id) => {
-    const updatedItems = [...item]; 
-    const index = updatedItems.findIndex(item => item._id === _id);
+    const updatedItems = [...item];
+    const index = updatedItems.findIndex((item) => item._id === _id);
     // Make a copy of the array
     const currentItem = { ...updatedItems[index] };
 
-    if (currentItem?.GodownList?.length > 0 &&  !godownname) {
+    if (currentItem?.GodownList?.length > 0) {
       setOpenModal(true);
       setGodown(currentItem?.GodownList);
     } else {
       if (currentItem.count > 0) {
-        currentItem.count -= 1;
+        currentItem.count = new Decimal(currentItem.count).sub(1).toNumber()
+
         if (currentItem.count == 0) {
           dispatch(removeItem(currentItem));
           updatedItems[index].added = false;
@@ -478,10 +484,12 @@ function AddItemSalesSecondary() {
     console.log(itemToUpdate);
 
     // Calculate the total count across all godowns for itemToUpdate
-    const totalCount = godown.reduce(
-      (acc, godownItem) => acc + godownItem.count,
+    const totalCount =truncateToNDecimals( godown.reduce(
+      (acc, godownItem) => acc +Number( godownItem.count),
       0
-    );
+    ),3)
+
+    console.log(totalCount);
     const itemWithUpdatedCount = {
       ...itemToUpdate,
       count: totalCount,
@@ -498,6 +506,7 @@ function AddItemSalesSecondary() {
     };
 
     console.log(updatedItem.total);
+    console.log(updatedItem.GodownList);
 
     // Update the item in the copied array
 
@@ -534,6 +543,16 @@ function AddItemSalesSecondary() {
     dispatch(setPriceLevel(selectedValue));
     handleTotalChangeWithPriceLevel(selectedValue);
   };
+
+
+
+  function truncateToNDecimals(num, n) {
+    const parts = num.toString().split(".");
+    if (parts.length === 1) return num; // No decimal part
+    parts[1] = parts[1].substring(0, n); // Truncate the decimal part
+    return parseFloat(parts.join("."));
+  }
+
 
   ///////////////////////////react window ///////////////////////////////////
 
@@ -610,15 +629,24 @@ function AddItemSalesSecondary() {
 
   // Function to handle incrementing the count
   const incrementCount = (index) => {
-
-    const newGodownItems = godown.map((item) => ({ ...item }));
-
-      newGodownItems[index].count += 1;
-      newGodownItems[index].balance_stock -= 1;
-      setGodown(newGodownItems);
-      setTotalCount(totalCount + 1);
-
+    const newGodownItems = godown.map((item) => ({ ...item })); // Deep copy each item object
+    console.log(newGodownItems);
+    console.log(newGodownItems[index].count);
+    // newGodownItems[index].count += 1;
+    newGodownItems[index].count = new Decimal(newGodownItems[index].count).add(1).toNumber();
+    console.log(newGodownItems[index].count);
+    
+    
+    newGodownItems[index].balance_stock =new Decimal(newGodownItems[index].balance_stock).sub(1).toNumber();
+    console.log(newGodownItems);
+    setGodown(newGodownItems);
+    setTotalCount(totalCount + 1);
+    console.log(totalCount);
+    console.log(godown);
+ 
   };
+  console.log(godown);
+
 
   // Function to handle decrementing the count
   const decrementCount = (index) => {
@@ -626,8 +654,8 @@ function AddItemSalesSecondary() {
     console.log(newGodownItems);
 
     if (newGodownItems[index].count > 0) {
-      newGodownItems[index].count -= 1;
-      newGodownItems[index].balance_stock += 1; // Increase balance_stock by 1
+      newGodownItems[index].count =  new Decimal(newGodownItems[index].count).sub(1).toNumber();
+      newGodownItems[index].balance_stock =new Decimal(newGodownItems[index].balance_stock).add(1).toNumber(); // Increase balance_stock by 1
       setGodown(newGodownItems); // Corrected function name to setGodown
       setTotalCount(totalCount - 1);
       console.log(godown);
@@ -635,7 +663,6 @@ function AddItemSalesSecondary() {
       toast("Cannot decrement count as it is already at 0.");
     }
   };
-
   const Row = ({ index, style }) => {
     const el = filteredItems[index];
     console.log(filteredItems[index]);
@@ -727,7 +754,7 @@ function AddItemSalesSecondary() {
                   </svg>
                 </button>
                 <input
-                  className="p-0 w-6 bg-transparent border-0 text-gray-800 text-center focus:ring-0 "
+                  className="p-0 w-12 bg-transparent border-0 text-gray-800 text-center focus:ring-0 "
                   type="text"
                   disabled
                   value={el.count ? el.count : 0} // Display the count from the state
@@ -1006,9 +1033,13 @@ function AddItemSalesSecondary() {
                   <h3 className="font-medium  text-right  text-white ">
                     Total Count:{" "}
                     <span className="text-white  font-bold">
-                      {godown.reduce((acc, curr) => {
-                        return (acc = acc + curr.count);
-                      }, 0)}
+                    {truncateToNDecimals(
+                        godown.reduce(
+                          (acc, curr) => acc + parseFloat(curr.count),
+                          0
+                        ),
+                        3 // Specify the number of decimal places you want
+                      )}
                     </span>
                   </h3>
                 </div>

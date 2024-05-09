@@ -2338,7 +2338,7 @@ export const createSale = async (req, res) => {
           // Calculate the new godown stock
           const newGodownStock = truncateToNDecimals(
             (product.GodownList[godownIndex].balance_stock) - godown.count,
-            2
+            3
           );
 
           // Prepare godown update operation

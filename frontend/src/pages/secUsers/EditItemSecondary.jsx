@@ -86,8 +86,7 @@ function EditItemSecondary() {
 
   useEffect(() => {
     console.log(parseFloat(newPrice));
-    console.log(parseInt(quantity));
-    const taxExclusivePrice = parseFloat(newPrice) * parseInt(quantity) || 0;
+    const taxExclusivePrice = parseFloat(newPrice) *quantity || 0;
     console.log(taxExclusivePrice);
     setTaxExclusivePrice(taxExclusivePrice);
     // Calculate the discount amount and percentage
@@ -128,7 +127,7 @@ function EditItemSecondary() {
     const newItem = { ...item };
 
     newItem.total = totalAmount;
-    newItem.count = parseInt(quantity);
+    newItem.count = Number(quantity) ||0;
 
     newItem.newGst = igst;
     if (type === "amount") {
@@ -172,6 +171,30 @@ function EditItemSecondary() {
       navigate("/sUsers/addItem");
     }
   };
+
+
+  const changeQuantity = (quantity) => {
+    // Check if the quantity includes a dot (decimal point)
+    if (quantity.includes(".")) {
+      // Split the quantity into parts before and after the decimal point
+      const parts = quantity.split('.');
+      // Check the length of the part after the decimal point
+      if (parts[1].length > 3) {
+        // Display a toast notification if the length exceeds two characters
+        // toast('You cannot enter more than two decimal places.');
+        return; // Prevent further execution
+      }
+      // If the length is valid, update the state with the formatted value
+      setQuantity(quantity);
+    } else {
+      // If there's no decimal point, just update the state with the current value
+      setQuantity(quantity);
+    }
+  };
+
+
+
+  
 
   return (
     <div className="flex ">
@@ -220,14 +243,15 @@ function EditItemSecondary() {
                     <div className="flex items-center space-x-4">
                       <div className="flex flex-col">
                         <label className="leading-loose">Quantity</label>
-                        <div className="relative focus-within:text-gray-600 text-gray-400">
+                        <div className=" relative focus-within:text-gray-600 text-gray-400">
                           <input
-                            onChange={(e) => setQuantity(e.target.value)}
+                            // onChange={(e) => setQuantity(e.target.value)}
+                            onChange={(e)=>{changeQuantity(e.target.value)}}
 
-                            value={quantity}
-                            type="text"
-                            className="pr-4 pl-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm border-gray-300 rounded-md focus:outline-none text-gray-600"
-                            placeholder=""
+                            value={quantity }
+                            type="number"
+                            className="input-number  pr-4 pl-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm border-gray-300 rounded-md focus:outline-none text-gray-600"
+                            placeholder="0"
                           />
                           <div className="absolute left-3 top-2"></div>
                         </div>
@@ -342,9 +366,9 @@ function EditItemSecondary() {
                         <div className="flex items-center gap-2">
                           <p className="text-xs">{`( ${igst} % )`}</p>
                           <p className="text-xs">{`₹ ${
-                            ((taxExclusivePrice - discountAmount) *
+                            (((taxExclusivePrice - discountAmount) *
                               parseFloat(igst)) /
-                            (100).toFixed(2)
+                            (100)).toFixed(2)
                           } `}</p>
                         </div>
                       </div>
