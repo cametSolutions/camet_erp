@@ -412,10 +412,10 @@ function ShareSalesSecondary() {
               <div className="flex justify-end border-black pb-3 w-full ">
                 <div className="w-2/4"></div>
 
-                <div className="  text-gray-700  font-bold text-[10px] flex flex-col justify-end text-right   ">
-                  <p className="text-nowrap ">Total Amount(in words)</p>
-                  <div className="text-gray-700  font-bold text-[7.5px] text-nowrap uppercase mt-1 ">
-                    ₹ {inWords}
+                <div className="text-gray-700 font-bold text-[10px] flex flex-col justify-end text-right mt-1">
+                  <p className="text-nowrap">Total Amount(in words)</p>
+                  <div className="text-gray-700 full font-bold text-[7.5px] text-nowrap uppercase mt-1   ">
+                   <p className="whitespace-normal">₹ {inWords}</p> 
                   </div>
                 </div>
               </div>

@@ -103,6 +103,8 @@ import Notfound from '../pages/errorPages/Notfound'
 import ServerError from '../pages/errorPages/ServerError'
 import ThreeInchInvoice from '../pages/primaryUsers/ThreeInchInvoice'
 import ThreeInchSales from '../pages/primaryUsers/ThreeInchSales'
+import ThreeInchSalesSec from '../pages/secUsers/ThreeInchSalesSec'
+import ThreeInchInvoiceSec from '../pages/secUsers/ThreeInchInvoiceSec'
 const Routers = () => {
   return (
     <Routes>
@@ -212,6 +214,8 @@ const Routers = () => {
         <Route path='/sUsers/editItemSales/:id' element={<ProtectedSecRoute><EditItemSalesSecondary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/salesDetails/:id' element={<ProtectedSecRoute><SalesDetailsSecondary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/shareSales/:id' element={<ProtectedSecRoute><ShareSalesSecondary/></ProtectedSecRoute>}></Route> 
+        <Route path='/sUsers/shareSalesThreeInch/:id' element={<ProtectedSecRoute><ThreeInchSalesSec/></ProtectedSecRoute>}></Route> 
+        <Route path='/sUsers/shareInvoiceThreeInch/:id' element={<ProtectedSecRoute><ThreeInchInvoiceSec /></ProtectedSecRoute>}></Route>
 
         {/* errorPage */}
         <Route path='/errorPage' element={<ErrorPage />} />
