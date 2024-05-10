@@ -70,6 +70,8 @@ function AddProductSecondary() {
     locationIndex: null,
   });
   const [refresh, setRefresh] = useState(false);
+  
+  const navigate=useNavigate()
 
   ///////////// levelname table ///////////////////
 
@@ -467,6 +469,24 @@ function AddProductSecondary() {
       }
     }
 
+
+    let locations;
+
+    const godownListFirstItem = locationData[0];
+
+    
+    if (
+      Object.keys(godownListFirstItem).every(
+        (key) => godownListFirstItem[key] === ""
+      )
+    ) {
+      console.log("empty");
+      locations=[]
+    } else {
+
+      locations=locationData
+    }
+
     // Create form data
     const formData = {
       cmp_id,
@@ -484,46 +504,28 @@ function AddProductSecondary() {
       purchase_price,
       purchase_cost: purchase_stock,
       Priceleveles: levelNameData,
-      GodownList: locationData,
+      GodownList: locations,
     };
 
     console.log(formData);
-    try {
-      const res = await api.post("/api/sUsers/addProduct", formData, {
-        headers: {
-          "Content-Type": "application/json",
-        },
-        withCredentials: true,
-      });
+    // try {
+    //   const res = await api.post("/api/sUsers/addProduct", formData, {
+    //     headers: {
+    //       "Content-Type": "application/json",
+    //     },
+    //     withCredentials: true,
+    //   });
 
-      console.log(res.data);
-      toast.success(res.data.message);
-      setProduct_name("");
-      setProduct_code("");
-      setBalance_stock("");
-      setSelectedBrand("");
-      setSelectedCategory(""),
-        setSelectedSubCategory(""),
-        setUnit(""),
-        setAltUnit(""),
-        setUnit_conversion(""),
-        setAlt_unit_conversion(""),
-        setHsn_code(""),
-        setPurchase_price(""),
-        set_Purchase_stock(""),
-        setLevelNameData(""),
-        setLocationData("");
-      setRows([{ id: Math.random(), pricelevel: "", pricerate: "" }]);
-      setLocationRows([
-        { id: Math.random(), godown_name: "", godown_stock: "" },
-      ]);
-    } catch (error) {
-      toast.error(error.response.data.message);
-      console.log(error);
-    }
+    //   console.log(res.data);
+    //   toast.success(res.data.message);
+    //   navigate('/sUsers/productList')
+    
+    // } catch (error) {
+    //   toast.error(error.response.data.message);
+    //   console.log(error);
+    // }
   };
 
-  const navigate=useNavigate()
 
   return (
     <div className="flex ">

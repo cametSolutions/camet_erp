@@ -467,9 +467,7 @@ function AddProduct() {
 
     let locations;
 
-    const godownListFirstItem = locationData[0];
-
-    
+    const godownListFirstItem = locationData[0];   
     if (
       Object.keys(godownListFirstItem).every(
         (key) => godownListFirstItem[key] === ""
@@ -481,6 +479,23 @@ function AddProduct() {
 
       locations=locationData
     }
+
+
+    let levelNames;
+
+
+    const levelNameListFirstItem = levelNameData[0];   
+    if (
+      Object.keys(levelNameListFirstItem).every(
+        (key) => levelNameListFirstItem[key] === ""
+      )
+    ) {
+      console.log("empty");
+      levelNames=[]
+    } else {
+      levelNames=levelNameData
+    }
+
 
     console.log(locationData);
 
@@ -500,7 +515,7 @@ function AddProduct() {
       hsn_code,
       purchase_price,
       purchase_cost: purchase_stock,
-      Priceleveles: levelNameData,
+      Priceleveles: levelNames,
       GodownList: locations,
     };
 
