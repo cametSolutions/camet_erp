@@ -487,6 +487,20 @@ function AddProductSecondary() {
       locations=locationData
     }
 
+    let levelNames;
+
+    const levelNameListFirstItem = levelNameData[0];
+    if (
+      Object.keys(levelNameListFirstItem).every(
+        (key) => levelNameListFirstItem[key] === ""
+      )
+    ) {
+      console.log("empty");
+      levelNames = [];
+    } else {
+      levelNames = levelNameData;
+    }
+
     // Create form data
     const formData = {
       cmp_id,
@@ -503,27 +517,27 @@ function AddProductSecondary() {
       hsn_code,
       purchase_price,
       purchase_cost: purchase_stock,
-      Priceleveles: levelNameData,
+      Priceleveles: levelNames,
       GodownList: locations,
     };
 
     console.log(formData);
-    // try {
-    //   const res = await api.post("/api/sUsers/addProduct", formData, {
-    //     headers: {
-    //       "Content-Type": "application/json",
-    //     },
-    //     withCredentials: true,
-    //   });
+    try {
+      const res = await api.post("/api/sUsers/addProduct", formData, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        withCredentials: true,
+      });
 
-    //   console.log(res.data);
-    //   toast.success(res.data.message);
-    //   navigate('/sUsers/productList')
+      console.log(res.data);
+      toast.success(res.data.message);
+      navigate('/sUsers/productList')
     
-    // } catch (error) {
-    //   toast.error(error.response.data.message);
-    //   console.log(error);
-    // }
+    } catch (error) {
+      toast.error(error.response.data.message);
+      console.log(error);
+    }
   };
 
 

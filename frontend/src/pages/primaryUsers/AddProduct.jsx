@@ -70,7 +70,7 @@ function AddProduct() {
   });
   const [refresh, setRefresh] = useState(false);
 
-  const navigate=useNavigate()
+  const navigate = useNavigate();
 
   ///////////// levelname table ///////////////////
 
@@ -166,7 +166,7 @@ function AddProduct() {
     setLocationRows(newRows);
   };
 
-  ////////////////////////treble enddddd///////////////////////////////////////////////////////////
+  ////////////////////////treble end///////////////////////////////////////////////////////////
 
   const orgId = useSelector(
     (state) => state.setSelectedOrganization.selectedOrg._id
@@ -467,35 +467,31 @@ function AddProduct() {
 
     let locations;
 
-    const godownListFirstItem = locationData[0];   
+    const godownListFirstItem = locationData[0];
     if (
       Object.keys(godownListFirstItem).every(
         (key) => godownListFirstItem[key] === ""
       )
     ) {
       console.log("empty");
-      locations=[]
+      locations = [];
     } else {
-
-      locations=locationData
+      locations = locationData;
     }
-
 
     let levelNames;
 
-
-    const levelNameListFirstItem = levelNameData[0];   
+    const levelNameListFirstItem = levelNameData[0];
     if (
       Object.keys(levelNameListFirstItem).every(
         (key) => levelNameListFirstItem[key] === ""
       )
     ) {
       console.log("empty");
-      levelNames=[]
+      levelNames = [];
     } else {
-      levelNames=levelNameData
+      levelNames = levelNameData;
     }
-
 
     console.log(locationData);
 
@@ -532,7 +528,6 @@ function AddProduct() {
       console.log(res.data);
       toast.success(res.data.message);
       navigate("/pUsers/productList");
-     
     } catch (error) {
       toast.error(error.response.data.message);
       console.log(error);

@@ -557,6 +557,20 @@ function EditProduct() {
       locations = locationData;
     }
 
+    let levelNames;
+
+    const levelNameListFirstItem = levelNameData[0];
+    if (
+      Object.keys(levelNameListFirstItem).every(
+        (key) => levelNameListFirstItem[key] === ""
+      )
+    ) {
+      console.log("empty");
+      levelNames = [];
+    } else {
+      levelNames = levelNameData;
+    }
+
     // Create form data
     const formData = {
       product_name,
@@ -572,7 +586,7 @@ function EditProduct() {
       hsn_code,
       purchase_price,
       purchase_cost: purchase_stock,
-      Priceleveles: levelNameData,
+      Priceleveles: levelNames,
       GodownList: locations,
     };
 
