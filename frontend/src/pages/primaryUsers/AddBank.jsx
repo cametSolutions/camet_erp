@@ -39,17 +39,17 @@ const AddBank = () => {
       return;
     }
 
-    const isAccountNumberValid = /^\d{11}$/.test(acNo);
-    if (!isAccountNumberValid) {
-      toast.error("Please enter a valid 11-digit account number");
-      return;
-    }
+    // const isAccountNumberValid = /^\d{11}$/.test(acNo);
+    // if (!isAccountNumberValid) {
+    //   toast.error("Please enter a valid 11-digit account number");
+    //   return;
+    // }
 
-    const isIfscValid = /^[A-Z]{4}0[A-Z0-9]{6}$/.test(ifsc);
-    if (!isIfscValid) {
-      toast.error("Please enter a valid IFSC code");
-      return;
-    }
+    // const isIfscValid = /^[A-Z]{4}0[A-Z0-9]{6}$/.test(ifsc);
+    // if (!isIfscValid) {
+    //   toast.error("Please enter a valid IFSC code");
+    //   return;
+    // }
 
     const bankData = {
       acholder_name: acholderName,
