@@ -1730,6 +1730,8 @@ export const createSale = async (req, res) => {
 
     const vanSaleConfig = configuration?.vanSale;
 
+    console.log("vanSaleConfig",vanSaleConfig);
+
     // Prepare bulk operations for product and godown updates
     const productUpdates = [];
     const godownUpdates = [];
@@ -1752,6 +1754,9 @@ export const createSale = async (req, res) => {
         3
       );
 
+      console.log("productBalanceStock",productBalanceStock);
+      console.log("newBalanceStock",newBalanceStock);
+
       // Prepare product update operation
       productUpdates.push({
         updateOne: {
@@ -1769,37 +1774,34 @@ export const createSale = async (req, res) => {
           if (godownIndex !== -1) {
             // Calculate the new godown stock
            const newGodownStock = truncateToNDecimals(
-            (product.GodownList[godownIndex].balance_stock) - godown.count,
+            (product.GodownList[godownIndex].balance_stock) - item.count,
             
           );
+          console.log("newGodownStock",newGodownStock);
 
             // Prepare godown update operation
             godownUpdates.push({
               updateOne: {
                 filter: {
                   _id: product._id,
-                  "GodownList.godown": godown.godown,
+                  "GodownList.godown_id": godown.godown_id,
                 },
                 update: {
-                  $set: { "GodownList.$.balance_stock": godown.balance_stock },
+                  $set: { "GodownList.$.balance_stock":newGodownStock },
                 },
               },
             });
 
             // If a godown was updated and the stock has actually changed, add it to the changedGodowns array
-            if (
-              godownIndex !== -1 &&
-              newGodownStock !==
-              truncateToNDecimals(
-                (product.GodownList[godownIndex].balance_stock) - godown.count,
-                3
-              )
-            ) {
-              changedGodowns.push({
-                godown_id: godown.godown_id,
-                newBalanceStock: newGodownStock,
-              });
-            }
+            // if (
+            //   godownIndex !== -1 
+           
+            // ) {
+            //   changedGodowns.push({
+            //     godown_id: godown.godown_id,
+            //     newBalanceStock: newGodownStock,
+            //   });
+            // }
           }
         }
       } else {
@@ -1829,20 +1831,20 @@ export const createSale = async (req, res) => {
               },
             });
 
-            // If a godown was updated and the stock has actually changed, add it to the changedGodowns array
-            if (
-              godownIndex !== -1 &&
-              newGodownStock !==
-              truncateToNDecimals(
-                (product.GodownList[godownIndex].balance_stock) - godown.count,
-                3
-              )
-            ) {
-              changedGodowns.push({
-                godown_id: godown.godown_id,
-                newBalanceStock: newGodownStock,
-              });
-            }
+            // // If a godown was updated and the stock has actually changed, add it to the changedGodowns array
+            // if (
+            //   godownIndex !== -1 &&
+            //   newGodownStock !==
+            //   truncateToNDecimals(
+            //     (product.GodownList[godownIndex].balance_stock) - godown.count,
+            //     3
+            //   )
+            // ) {
+            //   changedGodowns.push({
+            //     godown_id: godown.godown_id,
+            //     newBalanceStock: newGodownStock,
+            //   });
+            // }
           }
         }
       }
