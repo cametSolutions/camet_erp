@@ -419,8 +419,8 @@ function SalesSecondary() {
       console.log(res.data);
       toast.success(res.data.message);
 
-      // navigate(`/sUsers/salesDetails/${res.data.data._id}`);
-      // dispatch(removeAll());
+      navigate(`/sUsers/salesDetails/${res.data.data._id}`);
+      dispatch(removeAll());
     } catch (error) {
       toast.error(error.response.data.message);
       console.log(error);

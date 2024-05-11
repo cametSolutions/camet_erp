@@ -30,7 +30,7 @@ function EditItemSalesSecondary() {
   const [openModal, setOpenModal] = useState(false);
   const [totalCount, setTotalCount] = useState(0);
   const [godown, setGodown] = useState([]);
-  const { id } = useParams();
+  const { id ,godownName} = useParams();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -44,6 +44,10 @@ function EditItemSalesSecondary() {
   const orgId = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
+
+
+  console.log(godownName);
+
 
   useEffect(() => {
     const fetchHsn = async () => {
@@ -194,8 +198,9 @@ function EditItemSalesSecondary() {
 
 
   const openModalHandler = () => {
+    console.log(godownName);
     console.log(selectedItem);
-    if (selectedItem[0]?.GodownList?.length > 0) {
+    if (selectedItem[0]?.GodownList?.length > 0 && godownName==="" ) {
       setOpenModal(true);
       if (godown.length === 0) {
         setGodown(selectedItem[0]?.GodownList);
@@ -262,9 +267,12 @@ function EditItemSalesSecondary() {
 
     const newGodownItems = godown.map((item) => ({ ...item }));
     const currentGodown = newGodownItems[index];
+    console.log(currentGodown);
     currentGodown.orginalStock =
       currentGodown.orginalStock ??
       Number(currentGodown?.balance_stock) + Number(currentGodown?.count);
+
+      console.log(currentGodown.orginalStock);
 
     currentGodown.count = value;
     console.log(value);
@@ -359,7 +367,7 @@ function EditItemSalesSecondary() {
                         <label className="leading-loose">Quantity</label>
                         <div className="relative focus-within:text-gray-600 text-gray-400">
                         <input
-                            readOnly={selectedItem[0]?.GodownList?.length > 0}
+                            readOnly={selectedItem[0]?.GodownList?.length > 0 && godownName==""}
                             onClick={openModalHandler}
                             onChange={(e) => {
                               handleDirectQuantityChange(e.target.value);

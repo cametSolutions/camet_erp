@@ -342,9 +342,9 @@ function AddItemSalesSecondary() {
         ?.pricerate || 0;
 
     console.log(`Found priceRate: ${priceRate}`);
-    console.log(item);
+    console.log(item?.count);
 
-    let subtotal = priceRate * parseInt(item?.count);
+    let subtotal = priceRate * Number(item?.count);
     let discountedSubtotal = subtotal;
 
     console.log(`subtotal before discount: ${subtotal}`);
@@ -718,7 +718,7 @@ function AddItemSalesSecondary() {
             > */}
             <button
               onClick={() => {
-                navigate(`/sUsers/editItemSales/${el._id}`, {
+                navigate(`/sUsers/editItemSales/${el._id}/${godownname}`, {
                   state: { from: "editItemSales", id: location?.state?.id },
                 });
                 // saveScrollPosition();
