@@ -718,7 +718,7 @@ function AddItemSalesSecondary() {
             > */}
             <button
               onClick={() => {
-                navigate(`/sUsers/editItemSales/${el._id}/${godownname}`, {
+                navigate(`/sUsers/editItemSales/${el._id}/${godownname|| "nil"}`, {
                   state: { from: "editItemSales", id: location?.state?.id },
                 });
                 // saveScrollPosition();

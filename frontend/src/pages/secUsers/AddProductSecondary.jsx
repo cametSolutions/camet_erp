@@ -236,6 +236,11 @@ function AddProductSecondary() {
       body["locations"] = value;
     }
 
+    if (Object.keys(body).every (key => body[key]=="")) {
+      toast.error("Please fill the field");
+      return; // Exit the function if body is empty
+    }
+
     try {
       const res = await api.post(`/api/sUsers/addDataToOrg/${orgId}`, body, {
         withCredentials: true,

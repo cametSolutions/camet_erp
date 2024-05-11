@@ -14,7 +14,6 @@ import Organization from "../models/OragnizationModel.js";
 import AdditionalChargesModel from "../models/additionalChargesModel.js";
 import { truncateToNDecimals } from "./helpers/helper.js";
 
-
 import bcrypt from "bcryptjs";
 import mongoose from "mongoose";
 import salesModel from "../models/salesModel.js";
@@ -1719,6 +1718,9 @@ export const createSale = async (req, res) => {
     } = req.body;
 
     const secondaryUser = await SecondaryUser.findById(Secondary_user_id);
+    const secondaryMobile = secondaryUser.mobile;
+
+    console.log("secondaryMobile", secondaryMobile);
     if (!secondaryUser) {
       return res
         .status(404)
@@ -1730,7 +1732,7 @@ export const createSale = async (req, res) => {
 
     const vanSaleConfig = configuration?.vanSale;
 
-    console.log("vanSaleConfig",vanSaleConfig);
+    console.log("vanSaleConfig", vanSaleConfig);
 
     // Prepare bulk operations for product and godown updates
     const productUpdates = [];
@@ -1754,8 +1756,8 @@ export const createSale = async (req, res) => {
         3
       );
 
-      console.log("productBalanceStock",productBalanceStock);
-      console.log("newBalanceStock",newBalanceStock);
+      console.log("productBalanceStock", productBalanceStock);
+      console.log("newBalanceStock", newBalanceStock);
 
       // Prepare product update operation
       productUpdates.push({
@@ -1773,11 +1775,10 @@ export const createSale = async (req, res) => {
           );
           if (godownIndex !== -1) {
             // Calculate the new godown stock
-           const newGodownStock = truncateToNDecimals(
-            (product.GodownList[godownIndex].balance_stock) - item.count,
-            
-          );
-          console.log("newGodownStock",newGodownStock);
+            const newGodownStock = truncateToNDecimals(
+              product.GodownList[godownIndex].balance_stock - item.count
+            );
+            console.log("newGodownStock", newGodownStock);
 
             // Prepare godown update operation
             godownUpdates.push({
@@ -1787,15 +1788,15 @@ export const createSale = async (req, res) => {
                   "GodownList.godown_id": godown.godown_id,
                 },
                 update: {
-                  $set: { "GodownList.$.balance_stock":newGodownStock },
+                  $set: { "GodownList.$.balance_stock": newGodownStock },
                 },
               },
             });
 
             // If a godown was updated and the stock has actually changed, add it to the changedGodowns array
             // if (
-            //   godownIndex !== -1 
-           
+            //   godownIndex !== -1
+
             // ) {
             //   changedGodowns.push({
             //     godown_id: godown.godown_id,
@@ -1814,7 +1815,7 @@ export const createSale = async (req, res) => {
           if (godownIndex !== -1) {
             // Calculate the new godown stock
             const newGodownStock = truncateToNDecimals(
-              (product.GodownList[godownIndex].balance_stock) - godown.count,
+              product.GodownList[godownIndex].balance_stock - godown.count,
               3
             );
 
@@ -1997,7 +1998,7 @@ export const createSale = async (req, res) => {
       email: party?.emailID,
       mobile_no: party?.mobileNumber,
       party_name: party?.partyName,
-      user_id: party?.mobileNumber || "null",
+      user_id: secondaryMobile || "null",
     };
 
     const updatedDocument = await TallyData.findOneAndUpdate(

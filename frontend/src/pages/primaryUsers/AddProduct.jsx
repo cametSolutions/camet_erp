@@ -236,32 +236,39 @@ function AddProduct() {
       body["locations"] = value;
     }
 
-    try {
-      const res = await api.post(`/api/pUsers/addDataToOrg/${orgId}`, body, {
-        withCredentials: true,
-      });
 
-      toast.success(res.data.message);
-      setRefresh(!refresh);
-      if (params == "brands") {
-        setAddedBrand("");
-      }
-      if (params == "categories") {
-        setAddedCategory("");
-      }
-      if (params == "subcategories") {
-        setAddedSubCategory("");
-      }
-      if (params == "levelNames") {
-        setAddedLevelName("");
-      }
-      if (params == "locations") {
-        setAddedLocation("");
-      }
-    } catch (error) {
-      console.log(error);
-      toast.error(error.response.data.message);
+    console.log(body);
+    if (Object.keys(body).every (key => body[key]=="")) {
+      toast.error("Please fill the field");
+      return; // Exit the function if body is empty
     }
+
+    // try {
+    //   const res = await api.post(`/api/pUsers/addDataToOrg/${orgId}`, body, {
+    //     withCredentials: true,
+    //   });
+
+    //   toast.success(res.data.message);
+    //   setRefresh(!refresh);
+    //   if (params == "brands") {
+    //     setAddedBrand("");
+    //   }
+    //   if (params == "categories") {
+    //     setAddedCategory("");
+    //   }
+    //   if (params == "subcategories") {
+    //     setAddedSubCategory("");
+    //   }
+    //   if (params == "levelNames") {
+    //     setAddedLevelName("");
+    //   }
+    //   if (params == "locations") {
+    //     setAddedLocation("");
+    //   }
+    // } catch (error) {
+    //   console.log(error);
+    //   toast.error(error.response.data.message);
+    // }
   };
 
   const editDataInOrg = async (params, value) => {

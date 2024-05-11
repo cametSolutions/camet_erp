@@ -200,7 +200,7 @@ function EditItemSalesSecondary() {
   const openModalHandler = () => {
     console.log(godownName);
     console.log(selectedItem);
-    if (selectedItem[0]?.GodownList?.length > 0 && godownName==="" ) {
+    if (selectedItem[0]?.GodownList?.length > 0 && godownName==="nil" ) {
       setOpenModal(true);
       if (godown.length === 0) {
         setGodown(selectedItem[0]?.GodownList);
@@ -367,7 +367,7 @@ function EditItemSalesSecondary() {
                         <label className="leading-loose">Quantity</label>
                         <div className="relative focus-within:text-gray-600 text-gray-400">
                         <input
-                            readOnly={selectedItem[0]?.GodownList?.length > 0 && godownName==""}
+                            readOnly={selectedItem[0]?.GodownList?.length > 0 && godownName=="nil"}
                             onClick={openModalHandler}
                             onChange={(e) => {
                               handleDirectQuantityChange(e.target.value);
