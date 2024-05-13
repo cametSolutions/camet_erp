@@ -185,7 +185,7 @@ function ThreeInchSalesSec() {
           <div>
             <div className="bg-gray-500 h-2 w-full mt-1"></div>
             <div className="flex items-center justify-between  bg-gray-300 px-3 py-1 ">
-              <div className="text-[7px] ">Invoice #:{data?.orderNumber} </div>
+              <div className="text-[7px] ">Invoice #:{data?.salesNumber} </div>
               <div className="text-[7px]">
                 Date:{new Date().toDateString()}{" "}
               </div>

@@ -7,7 +7,7 @@ import { MdModeEditOutline } from "react-icons/md";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
-import { changeIgstAndDiscount } from "../../../slices/salesSecondary";
+import { changeIgstAndDiscount ,changeGodownCount} from "../../../slices/salesSecondary";
 import { toast } from "react-toastify";
 import { Button, Modal } from "flowbite-react";
 import { Decimal } from "decimal.js";
@@ -131,6 +131,8 @@ function EditItemSalesSecondary() {
 
   const dispatch = useDispatch();
 
+  console.log(godown);
+
   const submitHandler = () => {
     console.log(item);
     const newItem = { ...item };
@@ -138,7 +140,7 @@ function EditItemSalesSecondary() {
     newItem.total = totalAmount;
     newItem.count = quantity || 0;
     newItem.newGst = igst;
-    newItem.godownList = godown;
+    newItem.GodownList = godown;
     if (type === "amount") {
       newItem.discount = discountAmount;
       newItem.discountPercentage = "";
@@ -150,6 +152,7 @@ function EditItemSalesSecondary() {
 
     console.log(newItem);
     dispatch(changeIgstAndDiscount(newItem));
+    dispatch(changeGodownCount(newItem));
     // navigate("/sUsers/addItem");
     handleBackClick();
   };
