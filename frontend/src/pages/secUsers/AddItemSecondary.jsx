@@ -7,7 +7,11 @@ import { IoIosSearch } from "react-icons/io";
 import api from "../../api/api";
 import { MdOutlineQrCodeScanner } from "react-icons/md";
 import { useSelector } from "react-redux";
-import { addItem, removeItem } from "../../../slices/invoiceSecondary";
+import {
+  addAllProducts,
+  addItem,
+  removeItem,
+} from "../../../slices/invoiceSecondary";
 import { useDispatch } from "react-redux";
 import { changeCount } from "../../../slices/invoiceSecondary";
 import { setPriceLevel } from "../../../slices/invoiceSecondary";
@@ -22,9 +26,7 @@ import { FixedSizeList as List } from "react-window";
 import SidebarSec from "../../components/secUsers/SidebarSec";
 import { toast } from "react-toastify";
 import { IoIosCloseCircleOutline } from "react-icons/io";
-import {Decimal} from 'decimal.js'
-
-
+import { Decimal } from "decimal.js";
 
 function AddItemSecondary() {
   const [item, setItem] = useState([]);
@@ -64,6 +66,8 @@ function AddItemSecondary() {
     useSelector((state) => state.invoiceSecondary.category) || "";
   const subCategoryFromRedux =
     useSelector((state) => state.invoiceSecondary.subcategory) || "";
+  const allProductsFromRedux =
+    useSelector((state) => state.invoiceSecondary.products) || "";
 
   ///////////////////////////navigate dispatch///////////////////////////////////
 
@@ -77,14 +81,25 @@ function AddItemSecondary() {
   useEffect(() => {
     const fetchProducts = async () => {
       setLoader(true);
+
+      let productData;
+
       try {
-        const res = await api.get(`/api/sUsers/getProducts/${cpm_id}`, {
-          withCredentials: true,
-        });
+        if (allProductsFromRedux.length === 0) {
+          const res = await api.get(`/api/sUsers/getProducts/${cpm_id}`, {
+            withCredentials: true,
+          });
+
+          productData = res.data.productData;
+          console.log(res.data.productData);
+          dispatch(addAllProducts( res.data.productData));
+        } else {
+          productData = allProductsFromRedux;
+        }
 
         if (itemsFromRedux.length > 0) {
           const reduxItemIds = itemsFromRedux.map((el) => el._id);
-          const updatedItems = res.data.productData.map((product) => {
+          const updatedItems = productData.map((product) => {
             if (reduxItemIds.includes(product._id)) {
               // If the product ID exists in Redux, replace it with the corresponding Redux item
               const reduxItem = itemsFromRedux.find(
@@ -97,7 +112,7 @@ function AddItemSecondary() {
           });
           setItem(updatedItems);
         } else {
-          setItem(res.data.productData);
+          setItem(productData);
         }
         if (brandFromRedux) {
           setSelectedBrand(brandFromRedux);
@@ -281,7 +296,7 @@ function AddItemSecondary() {
       item.Priceleveles.find((level) => level.pricelevel === selectedPriceLevel)
         ?.pricerate || 0;
 
-    let subtotal = priceRate * item?.count
+    let subtotal = priceRate * item?.count;
     let discountedSubtotal = subtotal;
 
     if (item.discount !== 0 && item.discount !== undefined) {
@@ -331,7 +346,7 @@ function AddItemSecondary() {
       currentItem.count = 1;
     } else {
       // currentItem.count += 1;
-      currentItem.count=new Decimal( currentItem.count)
+      currentItem.count = new Decimal(currentItem.count);
       currentItem.count = currentItem.count.add(new Decimal(1));
       currentItem.count = parseFloat(currentItem.count.toString());
     }
@@ -353,12 +368,11 @@ function AddItemSecondary() {
     const index = updatedItems.findIndex((item) => item._id === _id);
     // Make a copy of the array
     const currentItem = { ...updatedItems[index] };
-    
 
     // Decrement the count if it's greater than 0
     if (currentItem.count > 0) {
-      currentItem.count=new Decimal( currentItem.count)
-      currentItem.count = (currentItem.count).sub(new Decimal(1));
+      currentItem.count = new Decimal(currentItem.count);
+      currentItem.count = currentItem.count.sub(new Decimal(1));
       currentItem.count = parseFloat(currentItem.count.toString());
       if (currentItem.count <= 0) {
         dispatch(removeItem(currentItem));
@@ -379,7 +393,6 @@ function AddItemSecondary() {
     dispatch(changeCount(currentItem));
     dispatch(changeTotal(currentItem));
   };
-
 
   ///////////////////////////handlePriceLevelChange///////////////////////////////////
 
@@ -407,7 +420,7 @@ function AddItemSecondary() {
       >
         <div className="flex items-start gap-3 md:gap-4  ">
           <div className="w-10 mt-1  uppercase h-10 rounded-lg bg-violet-200 flex items-center justify-center font-semibold text-gray-400">
-            {el.product_name.slice(0, 1)}
+            {el?.product_name?.slice(0, 1)}
           </div>
           <div className="flex flex-col font-bold text-sm md:text-sm  gap-1 leading-normal">
             <p>{el.product_name}</p>
@@ -645,9 +658,13 @@ function AddItemSecondary() {
                     <IoIosSearch />
                   </button>
                   <button
-                  onClick={()=>{setSearch("")}}
+                    onClick={() => {
+                      setSearch("");
+                    }}
                     type="submit"
-                    class={`${search.length>0 ? "block":"hidden"}  absolute end-[40px] top-1/2 transform -translate-y-1/2 text-gray-500  text-md px-2 py-1`}
+                    class={`${
+                      search.length > 0 ? "block" : "hidden"
+                    }  absolute end-[40px] top-1/2 transform -translate-y-1/2 text-gray-500  text-md px-2 py-1`}
                   >
                     <IoIosCloseCircleOutline />
                   </button>
