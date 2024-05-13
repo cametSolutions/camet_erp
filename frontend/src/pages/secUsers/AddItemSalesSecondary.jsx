@@ -17,7 +17,9 @@ import {
   setCategoryInRedux,
   setSubCategoryInRedux,
   removeAll,
-  changeGodownCount
+  changeGodownCount,
+  addAllProducts,
+
 } from "../../../slices/salesSecondary";
 import { HashLoader } from "react-spinners";
 import { FixedSizeList as List } from "react-window";
@@ -70,6 +72,13 @@ function AddItemSalesSecondary() {
 
   console.log(priceLevelFromRedux);
 
+  const allProductsFromRedux =
+  useSelector((state) => state.salesSecondary.products) || [];
+
+  console.log(allProductsFromRedux);
+
+
+
   ///////////////////////////filters FromRedux///////////////////////////////////
 
   const brandFromRedux =
@@ -110,14 +119,30 @@ function AddItemSalesSecondary() {
   useEffect(() => {
     const fetchProducts = async () => {
       setLoader(true);
+      let productData;
+
+    
       try {
-        const res = await api.get(`/api/sUsers/getProducts/${cpm_id}`, {
-          withCredentials: true,
-        });
+
+        if (allProductsFromRedux.length === 0) {
+        
+          const res = await api.get(`/api/sUsers/getProducts/${cpm_id}`, {
+            withCredentials: true,
+          });
+          productData = res.data.productData;
+          console.log(res.data.productData);
+          dispatch(addAllProducts(res.data.productData));
+        }
+        else {
+          console.log("haii");
+          productData = allProductsFromRedux;
+        }
+
+  
 
         if (itemsFromRedux.length > 0) {
           const reduxItemIds = itemsFromRedux.map((el) => el._id);
-          const updatedItems = res.data.productData.map((product) => {
+          const updatedItems = productData.map((product) => {
             if (reduxItemIds.includes(product._id)) {
               // If the product ID exists in Redux, replace it with the corresponding Redux item
               const reduxItem = itemsFromRedux.find(
@@ -130,7 +155,7 @@ function AddItemSalesSecondary() {
           });
           setItem(updatedItems);
         } else {
-          setItem(res.data.productData);
+          setItem(productData);
         }
 
         if (brandFromRedux) {
@@ -167,30 +192,30 @@ function AddItemSalesSecondary() {
 
   ///////////////////////////sdo persisting of products///////////////////////////////////
 
-  useEffect(() => {
-    if (itemsFromRedux.length > 0) {
-      const updatedItems = item.map((currentItem) => {
-        // Find the corresponding item in itemsFromRedux
-        const matchingItem = itemsFromRedux.find(
-          (el) => el._id === currentItem._id
-        );
-        if (matchingItem) {
-          // If matching item found, return it with updated count and total
-          return {
-            ...currentItem,
-            count: matchingItem.count,
-            total: matchingItem.total,
-          };
-        } else {
-          // If no matching item found, return the current item
-          return currentItem;
-        }
-      });
+  // useEffect(() => {
+  //   if (itemsFromRedux.length > 0) {
+  //     const updatedItems = item.map((currentItem) => {
+  //       // Find the corresponding item in itemsFromRedux
+  //       const matchingItem = itemsFromRedux.find(
+  //         (el) => el._id === currentItem._id
+  //       );
+  //       if (matchingItem) {
+  //         // If matching item found, return it with updated count and total
+  //         return {
+  //           ...currentItem,
+  //           count: matchingItem.count,
+  //           total: matchingItem.total,
+  //         };
+  //       } else {
+  //         // If no matching item found, return the current item
+  //         return currentItem;
+  //       }
+  //     });
 
-      // Update the state with the modified items
-      setItem(updatedItems);
-    }
-  }, [itemsFromRedux, refresh]);
+  //     // Update the state with the modified items
+  //     setItem(updatedItems);
+  //   }
+  // }, [itemsFromRedux, refresh]);
 
   //////////////////////////////orgId////////////////////////////////
 
@@ -300,7 +325,7 @@ function AddItemSalesSecondary() {
     const updatedItems = [...item]; 
     const index = updatedItems.findIndex(item => item._id === _id);
     // Create a shallow copy of the items
-    const itemToUpdate = updatedItems[index];
+    const itemToUpdate = {...updatedItems[index]};
 
     console.log(itemToUpdate);
 
@@ -321,6 +346,7 @@ function AddItemSalesSecondary() {
           2
         );
         itemToUpdate.total = total;
+        updatedItems[index] = itemToUpdate;
         dispatch(changeTotal(itemToUpdate));
         setItem(updatedItems);
         setRefresh(!refresh);
@@ -883,7 +909,7 @@ function AddItemSalesSecondary() {
                     type="search"
                     id="default-search"
                     className="block w-full p-2 text-sm text-gray-900 border  rounded-lg border-gray-300  bg-gray-50 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Search party by Item name..."
+                    placeholder="Search party by Item namewww..."
                     required
                   />
                   <button
