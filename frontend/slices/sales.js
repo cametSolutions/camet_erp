@@ -62,7 +62,7 @@ export const salesSlice = createSlice({
       const discount = action.payload?.discount || 0;
       const discountPercentage = action.payload?.discountPercentage || 0;
       const newTotal = action.payload?.total.toFixed(2) || 0;
-      const godownList =action.payload?.godownList;
+      const godownList =action.payload?.GodownList;
 
       const indexToUpdate = state.items.findIndex((el) => el._id === id);
       if (indexToUpdate !== -1) {godownList

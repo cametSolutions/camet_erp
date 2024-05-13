@@ -1767,12 +1767,18 @@ export const createSale = async (req, res) => {
         },
       });
 
-      if (vanSaleConfig) {
+      console.log("godown",  item.GodownList);
+      if (vanSaleConfig===true) {
+
+        console.log("haiiii");
         for (const godown of item.GodownList) {
+
           // Find the corresponding godown in the product's GodownList
           const godownIndex = product.GodownList.findIndex(
             (g) => g.godown_id === godown.godown_id
           );
+
+          console.log( "godownIndex", godownIndex);
           if (godownIndex !== -1) {
             // Calculate the new godown stock
             const newGodownStock = truncateToNDecimals(
