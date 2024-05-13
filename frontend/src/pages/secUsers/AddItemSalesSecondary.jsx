@@ -17,7 +17,8 @@ import {
   setCategoryInRedux,
   setSubCategoryInRedux,
   removeAll,
-  changeGodownCount
+  changeGodownCount,
+  addAllProducts,
 } from "../../../slices/salesSecondary";
 import { HashLoader } from "react-spinners";
 import { FixedSizeList as List } from "react-window";
@@ -25,8 +26,7 @@ import { Button, Modal } from "flowbite-react";
 import { toast } from "react-toastify";
 import SidebarSec from "../../components/secUsers/SidebarSec";
 import { IoIosCloseCircleOutline } from "react-icons/io";
-import {Decimal} from "decimal.js"
-
+import { Decimal } from "decimal.js";
 
 // import SelectDefaultModal from "../../../constants/components/SelectDefaultModal";
 
@@ -48,7 +48,7 @@ function AddItemSalesSecondary() {
   const [openModal, setOpenModal] = useState(false);
   const [totalCount, setTotalCount] = useState(0);
   const [godown, setGodown] = useState([]);
-  const [godownname,setGodownname]=useState("")
+  const [godownname, setGodownname] = useState("");
   console.log(godown);
 
   console.log(scrollPosition);
@@ -70,6 +70,11 @@ function AddItemSalesSecondary() {
 
   console.log(priceLevelFromRedux);
 
+  const allProductsFromRedux =
+    useSelector((state) => state.salesSecondary.products) || [];
+
+  console.log(allProductsFromRedux);
+
   ///////////////////////////filters FromRedux///////////////////////////////////
 
   const brandFromRedux =
@@ -87,37 +92,47 @@ function AddItemSalesSecondary() {
   const location = useLocation();
   console.log(location);
 
-   ///////////////////////////Godown name///////////////////////////////////
-   useEffect(()=>{
+  ///////////////////////////Godown name///////////////////////////////////
+  useEffect(() => {
     const fetchGodownname = async () => {
       try {
         const godown = await api.get(`/api/sUsers/godownsName/${cpm_id}`, {
           withCredentials: true,
         });
-        console.log(godown)
-       setGodownname(godown.data || "")
+        console.log(godown);
+        setGodownname(godown.data || "");
       } catch (error) {
-        console.log(error)
+        console.log(error);
         toast.error(error.message);
       }
     };
-    fetchGodownname()
-   },[])
+    fetchGodownname();
+  }, []);
 
-   console.log(godownname);
+  console.log(godownname);
   ///////////////////////////fetchProducts///////////////////////////////////
 
   useEffect(() => {
     const fetchProducts = async () => {
       setLoader(true);
+      let productData;
+
       try {
-        const res = await api.get(`/api/sUsers/getProducts/${cpm_id}`, {
-          withCredentials: true,
-        });
+        if (allProductsFromRedux.length === 0) {
+          const res = await api.get(`/api/sUsers/getProducts/${cpm_id}`, {
+            withCredentials: true,
+          });
+          productData = res.data.productData;
+          console.log(res.data.productData);
+          dispatch(addAllProducts(res.data.productData));
+        } else {
+          console.log("haii");
+          productData = allProductsFromRedux;
+        }
 
         if (itemsFromRedux.length > 0) {
           const reduxItemIds = itemsFromRedux.map((el) => el._id);
-          const updatedItems = res.data.productData.map((product) => {
+          const updatedItems = productData.map((product) => {
             if (reduxItemIds.includes(product._id)) {
               // If the product ID exists in Redux, replace it with the corresponding Redux item
               const reduxItem = itemsFromRedux.find(
@@ -130,7 +145,7 @@ function AddItemSalesSecondary() {
           });
           setItem(updatedItems);
         } else {
-          setItem(res.data.productData);
+          setItem(productData);
         }
 
         if (brandFromRedux) {
@@ -167,30 +182,30 @@ function AddItemSalesSecondary() {
 
   ///////////////////////////sdo persisting of products///////////////////////////////////
 
-  useEffect(() => {
-    if (itemsFromRedux.length > 0) {
-      const updatedItems = item.map((currentItem) => {
-        // Find the corresponding item in itemsFromRedux
-        const matchingItem = itemsFromRedux.find(
-          (el) => el._id === currentItem._id
-        );
-        if (matchingItem) {
-          // If matching item found, return it with updated count and total
-          return {
-            ...currentItem,
-            count: matchingItem.count,
-            total: matchingItem.total,
-          };
-        } else {
-          // If no matching item found, return the current item
-          return currentItem;
-        }
-      });
+  // useEffect(() => {
+  //   if (itemsFromRedux.length > 0) {
+  //     const updatedItems = item.map((currentItem) => {
+  //       // Find the corresponding item in itemsFromRedux
+  //       const matchingItem = itemsFromRedux.find(
+  //         (el) => el._id === currentItem._id
+  //       );
+  //       if (matchingItem) {
+  //         // If matching item found, return it with updated count and total
+  //         return {
+  //           ...currentItem,
+  //           count: matchingItem.count,
+  //           total: matchingItem.total,
+  //         };
+  //       } else {
+  //         // If no matching item found, return the current item
+  //         return currentItem;
+  //       }
+  //     });
 
-      // Update the state with the modified items
-      setItem(updatedItems);
-    }
-  }, [itemsFromRedux, refresh]);
+  //     // Update the state with the modified items
+  //     setItem(updatedItems);
+  //   }
+  // }, [itemsFromRedux, refresh]);
 
   //////////////////////////////orgId////////////////////////////////
 
@@ -297,10 +312,10 @@ function AddItemSalesSecondary() {
   ///////////////////////////handleAddClick///////////////////////////////////
 
   const handleAddClick = (_id) => {
-    const updatedItems = [...item]; 
-    const index = updatedItems.findIndex(item => item._id === _id);
+    const updatedItems = [...item];
+    const index = updatedItems.findIndex((item) => item._id === _id);
     // Create a shallow copy of the items
-    const itemToUpdate = updatedItems[index];
+    const itemToUpdate = { ...updatedItems[index] };
 
     console.log(itemToUpdate);
 
@@ -321,6 +336,7 @@ function AddItemSalesSecondary() {
           2
         );
         itemToUpdate.total = total;
+        updatedItems[index] = itemToUpdate;
         dispatch(changeTotal(itemToUpdate));
         setItem(updatedItems);
         setRefresh(!refresh);
@@ -377,14 +393,13 @@ function AddItemSalesSecondary() {
   ///////////////////////////handleIncrement///////////////////////////////////
 
   const handleIncrement = (_id) => {
-
     const updatedItems = [...item];
     const index = updatedItems.findIndex((item) => item._id === _id);
 
     const currentItem = { ...updatedItems[index] };
     console.log(currentItem);
 
-    if (currentItem?.GodownList?.length > 0   && !godownname) {
+    if (currentItem?.GodownList?.length > 0 && !godownname) {
       setOpenModal(true);
 
       setGodown(currentItem?.GodownList);
@@ -392,21 +407,22 @@ function AddItemSalesSecondary() {
       if (!currentItem.count) {
         currentItem.count = 1;
       } else {
-        console.log( currentItem.count);
-        currentItem.count = new Decimal(currentItem.count).add(1).toNumber()
+        console.log(currentItem.count);
+        currentItem.count = new Decimal(currentItem.count).add(1).toNumber();
       }
 
       currentItem.total = calculateTotal(
         currentItem,
         selectedPriceLevel
       ).toFixed(2);
-      console.log( currentItem.total);
+      console.log(currentItem.total);
       updatedItems[index] = currentItem;
       setItem(updatedItems);
       // setRefresh(!refresh);
 
       dispatch(changeCount(currentItem));
       dispatch(changeTotal(currentItem));
+      dispatch(changeGodownCount(currentItem))
     }
   };
   ///////////////////////////handleTotalChangeWithPriceLevel///////////////////////////////////
@@ -435,17 +451,18 @@ function AddItemSalesSecondary() {
     // Make a copy of the array
     const currentItem = { ...updatedItems[index] };
 
-    if (currentItem?.GodownList?.length > 0   && !godownname) {
+    if (currentItem?.GodownList?.length > 0 && !godownname) {
       setOpenModal(true);
       setGodown(currentItem?.GodownList);
     } else {
       if (currentItem.count > 0) {
-        currentItem.count = new Decimal(currentItem.count).sub(1).toNumber()
+        currentItem.count = new Decimal(currentItem.count).sub(1).toNumber();
 
-        if (currentItem.count == 0) {
+        if (currentItem.count <= 0) {
+          console.log("haii");
           dispatch(removeItem(currentItem));
-          updatedItems[index].added = false;
-          return;
+          updatedItems[index] = { ...currentItem, added: false };
+          setItem(updatedItems);
         }
 
         // Use the calculateTotal function to calculate the total for the current item
@@ -486,10 +503,10 @@ function AddItemSalesSecondary() {
     console.log(itemToUpdate);
 
     // Calculate the total count across all godowns for itemToUpdate
-    const totalCount =truncateToNDecimals( godown.reduce(
-      (acc, godownItem) => acc +Number( godownItem.count),
-      0
-    ),3)
+    const totalCount = truncateToNDecimals(
+      godown.reduce((acc, godownItem) => acc + Number(godownItem.count), 0),
+      3
+    );
 
     console.log(totalCount);
     const itemWithUpdatedCount = {
@@ -546,15 +563,12 @@ function AddItemSalesSecondary() {
     handleTotalChangeWithPriceLevel(selectedValue);
   };
 
-
-
   function truncateToNDecimals(num, n) {
     const parts = num.toString().split(".");
     if (parts.length === 1) return num; // No decimal part
     parts[1] = parts[1].substring(0, n); // Truncate the decimal part
     return parseFloat(parts.join("."));
   }
-
 
   ///////////////////////////react window ///////////////////////////////////
 
@@ -635,20 +649,23 @@ function AddItemSalesSecondary() {
     console.log(newGodownItems);
     console.log(newGodownItems[index].count);
     // newGodownItems[index].count += 1;
-    newGodownItems[index].count = new Decimal(newGodownItems[index].count).add(1).toNumber();
+    newGodownItems[index].count = new Decimal(newGodownItems[index].count)
+      .add(1)
+      .toNumber();
     console.log(newGodownItems[index].count);
-    
-    
-    newGodownItems[index].balance_stock =new Decimal(newGodownItems[index].balance_stock).sub(1).toNumber();
+
+    newGodownItems[index].balance_stock = new Decimal(
+      newGodownItems[index].balance_stock
+    )
+      .sub(1)
+      .toNumber();
     console.log(newGodownItems);
     setGodown(newGodownItems);
     setTotalCount(totalCount + 1);
     console.log(totalCount);
     console.log(godown);
- 
   };
   console.log(godown);
-
 
   // Function to handle decrementing the count
   const decrementCount = (index) => {
@@ -656,8 +673,14 @@ function AddItemSalesSecondary() {
     console.log(newGodownItems);
 
     if (newGodownItems[index].count > 0) {
-      newGodownItems[index].count =  new Decimal(newGodownItems[index].count).sub(1).toNumber();
-      newGodownItems[index].balance_stock =new Decimal(newGodownItems[index].balance_stock).add(1).toNumber(); // Increase balance_stock by 1
+      newGodownItems[index].count = new Decimal(newGodownItems[index].count)
+        .sub(1)
+        .toNumber();
+      newGodownItems[index].balance_stock = new Decimal(
+        newGodownItems[index].balance_stock
+      )
+        .add(1)
+        .toNumber(); // Increase balance_stock by 1
       setGodown(newGodownItems); // Corrected function name to setGodown
       setTotalCount(totalCount - 1);
       console.log(godown);
@@ -718,9 +741,12 @@ function AddItemSalesSecondary() {
             > */}
             <button
               onClick={() => {
-                navigate(`/sUsers/editItemSales/${el._id}/${godownname|| "nil"}`, {
-                  state: { from: "editItemSales", id: location?.state?.id },
-                });
+                navigate(
+                  `/sUsers/editItemSales/${el._id}/${godownname || "nil"}`,
+                  {
+                    state: { from: "editItemSales", id: location?.state?.id },
+                  }
+                );
                 // saveScrollPosition();
               }}
               type="button"
@@ -803,11 +829,6 @@ function AddItemSalesSecondary() {
     );
   };
 
-
-
-
-
-
   return (
     <div className="flex relative">
       <div>
@@ -883,7 +904,7 @@ function AddItemSalesSecondary() {
                     type="search"
                     id="default-search"
                     className="block w-full p-2 text-sm text-gray-900 border  rounded-lg border-gray-300  bg-gray-50 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Search party by Item name..."
+                    placeholder="Search party by Item namewww..."
                     required
                   />
                   <button
@@ -893,9 +914,13 @@ function AddItemSalesSecondary() {
                     <IoIosSearch />
                   </button>
                   <button
-                  onClick={()=>{setSearch("")}}
+                    onClick={() => {
+                      setSearch("");
+                    }}
                     type="submit"
-                    class={`${search.length>0 ? "block":"hidden"}  absolute end-[40px] top-1/2 transform -translate-y-1/2 text-gray-500  text-md px-2 py-1`}
+                    class={`${
+                      search.length > 0 ? "block" : "hidden"
+                    }  absolute end-[40px] top-1/2 transform -translate-y-1/2 text-gray-500  text-md px-2 py-1`}
                   >
                     <IoIosCloseCircleOutline />
                   </button>
@@ -962,13 +987,13 @@ function AddItemSalesSecondary() {
                 ))}
               </select>
             </div>
-            
           </div>
           <div type="button" className="flex  px-4 bg-white ">
-              <p className="text-xs  p-0.5 px-1 text-black font-bold opacity-60 mb-2  ">{godownname}</p>
-              </div>
+            <p className="text-xs  p-0.5 px-1 text-black font-bold opacity-60 mb-2  ">
+              {godownname}
+            </p>
+          </div>
         </div>
-
 
         {loader ? (
           <div className="flex justify-center items-center h-screen">
@@ -1035,7 +1060,7 @@ function AddItemSalesSecondary() {
                   <h3 className="font-medium  text-right  text-white ">
                     Total Count:{" "}
                     <span className="text-white  font-bold">
-                    {truncateToNDecimals(
+                      {truncateToNDecimals(
                         godown.reduce(
                           (acc, curr) => acc + parseFloat(curr.count),
                           0
@@ -1081,8 +1106,13 @@ function AddItemSalesSecondary() {
                             </div>
                             <div className="text-sm text-gray-900 mt-1">
                               Stock :{" "}
-                              <span className={`${item.balance_stock <=0 ? "text-red-500  font-bold" : ""} text-green-500 font-bold"`}>
-
+                              <span
+                                className={`${
+                                  item.balance_stock <= 0
+                                    ? "text-red-500  font-bold"
+                                    : ""
+                                } text-green-500 font-bold"`}
+                              >
                                 {item.balance_stock}
                               </span>
                             </div>

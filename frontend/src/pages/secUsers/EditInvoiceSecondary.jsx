@@ -662,7 +662,7 @@ console.log(InvoiceIdForEdit);
                         <div className="">
                           <p
                             onClick={() => {
-                              navigate(`/pUsers/editItem/${el._id}`, {
+                              navigate(`/sUsers/editItem/${el._id}`, {
                                 state: { from: "invoice" },
                               });
                             }}

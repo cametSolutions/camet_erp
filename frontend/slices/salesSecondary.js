@@ -1,6 +1,7 @@
 import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
+  products: [],
   party: {},
   items: [],
   selectedPriceLevel: "",
@@ -25,6 +26,9 @@ export const salesSecondarySlice = createSlice({
     },
     addItem: (state, action) => {
       state.items.push(action.payload);
+    },
+    addAllProducts: (state, action) => {
+      state.products=action.payload
     },
     removeItem: (state, action) => {
       const id = action.payload._id;
@@ -162,6 +166,8 @@ export const {
   saveId,
   removeAllSales,
   changeGodownCount,
+  addAllProducts
+  
 } = salesSecondarySlice.actions;
 
 export default salesSecondarySlice.reducer;

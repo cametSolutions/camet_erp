@@ -11,6 +11,7 @@ import {
   addAdditionalCharges,
   AddFinalAmount,
   deleteRow,
+  addAllProducts
 } from "../../../slices/invoiceSecondary";
 import { useDispatch } from "react-redux";
 import { IoIosArrowDown } from "react-icons/io";
@@ -898,9 +899,12 @@ function InvoiceSecondary() {
           </>
         )}
 
-        <div className="flex justify-between bg-white mt-2 mb-14 p-3">
+<div className="flex justify-between bg-white mt-2 p-3">
           <p className="font-bold text-lg">Total Amount</p>
-          <p className="font-bold text-lg">₹ {totalAmount.toFixed(2) ?? 0}</p>
+          <div className="flex flex-col items-center">
+            <p className="font-bold text-lg">₹ {totalAmount.toFixed(2) ?? 0}</p>
+            <p className="text-[9px] text-gray-400">(rounded)</p>
+          </div>
         </div>
 
         <div className=" md:hidden ">

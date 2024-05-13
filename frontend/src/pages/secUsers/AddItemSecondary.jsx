@@ -7,7 +7,11 @@ import { IoIosSearch } from "react-icons/io";
 import api from "../../api/api";
 import { MdOutlineQrCodeScanner } from "react-icons/md";
 import { useSelector } from "react-redux";
-import { addItem, removeItem } from "../../../slices/invoiceSecondary";
+import {
+  addAllProducts,
+  addItem,
+  removeItem,
+} from "../../../slices/invoiceSecondary";
 import { useDispatch } from "react-redux";
 import { changeCount } from "../../../slices/invoiceSecondary";
 import { setPriceLevel } from "../../../slices/invoiceSecondary";
@@ -22,9 +26,7 @@ import { FixedSizeList as List } from "react-window";
 import SidebarSec from "../../components/secUsers/SidebarSec";
 import { toast } from "react-toastify";
 import { IoIosCloseCircleOutline } from "react-icons/io";
-import {Decimal} from 'decimal.js'
-
-
+import { Decimal } from "decimal.js";
 
 function AddItemSecondary() {
   const [item, setItem] = useState([]);
@@ -64,6 +66,8 @@ function AddItemSecondary() {
     useSelector((state) => state.invoiceSecondary.category) || "";
   const subCategoryFromRedux =
     useSelector((state) => state.invoiceSecondary.subcategory) || "";
+  const allProductsFromRedux =
+    useSelector((state) => state.invoiceSecondary.products) || "";
 
   ///////////////////////////navigate dispatch///////////////////////////////////
 
@@ -73,18 +77,35 @@ function AddItemSecondary() {
   const location = useLocation();
 
   ///////////////////////////fetchProducts///////////////////////////////////
-
+console.log(allProductsFromRedux);
   useEffect(() => {
     const fetchProducts = async () => {
       setLoader(true);
+
+      let productData;
+
       try {
-        const res = await api.get(`/api/sUsers/getProducts/${cpm_id}`, {
-          withCredentials: true,
-        });
+        if (allProductsFromRedux.length === 0) {
+          console.log("haii");
+          const res = await api.get(`/api/sUsers/getProducts/${cpm_id}`, {
+            withCredentials: true,
+          });
+
+          productData = res.data.productData;
+          console.log(res.data.productData);
+          dispatch(addAllProducts(res.data.productData));
+        } else {
+          console.log("haii");
+          productData = allProductsFromRedux;
+        }
+
+        console.log(productData);
 
         if (itemsFromRedux.length > 0) {
+          console.log("haii");
+
           const reduxItemIds = itemsFromRedux.map((el) => el._id);
-          const updatedItems = res.data.productData.map((product) => {
+          const updatedItems = productData.map((product) => {
             if (reduxItemIds.includes(product._id)) {
               // If the product ID exists in Redux, replace it with the corresponding Redux item
               const reduxItem = itemsFromRedux.find(
@@ -95,9 +116,13 @@ function AddItemSecondary() {
               return product;
             }
           });
+
+          console.log(updatedItems);
           setItem(updatedItems);
         } else {
-          setItem(res.data.productData);
+          console.log("haii");
+
+          setItem(productData);
         }
         if (brandFromRedux) {
           setSelectedBrand(brandFromRedux);
@@ -117,6 +142,8 @@ function AddItemSecondary() {
     fetchProducts();
   }, [cpm_id]);
 
+  console.log(item);
+
   ///////////////////////////setSelectedPriceLevel fom redux///////////////////////////////////
 
   useEffect(() => {
@@ -125,30 +152,30 @@ function AddItemSecondary() {
 
   ///////////////////////////sdo persisting of products///////////////////////////////////
 
-  useEffect(() => {
-    if (itemsFromRedux.length > 0) {
-      const updatedItems = item.map((currentItem) => {
-        // Find the corresponding item in itemsFromRedux
-        const matchingItem = itemsFromRedux.find(
-          (el) => el._id === currentItem._id
-        );
-        if (matchingItem) {
-          // If matching item found, return it with updated count and total
-          return {
-            ...currentItem,
-            count: matchingItem.count,
-            total: matchingItem.total,
-          };
-        } else {
-          // If no matching item found, return the current item
-          return currentItem;
-        }
-      });
+  // useEffect(() => {
+  //   if (itemsFromRedux.length > 0) {
+  //     const updatedItems = item.map((currentItem) => {
+  //       // Find the corresponding item in itemsFromRedux
+  //       const matchingItem = itemsFromRedux.find(
+  //         (el) => el._id === currentItem._id
+  //       );
+  //       if (matchingItem) {
+  //         // If matching item found, return it with updated count and total
+  //         return {
+  //           ...currentItem,
+  //           count: matchingItem.count,
+  //           total: matchingItem.total,
+  //         };
+  //       } else {
+  //         // If no matching item found, return the current item
+  //         return currentItem;
+  //       }
+  //     });
 
-      // Update the state with the modified items
-      setItem(updatedItems);
-    }
-  }, [itemsFromRedux, refresh]);
+  //     // Update the state with the modified items
+  //     setItem(updatedItems);
+  //   }
+  // }, [itemsFromRedux, refresh]);
 
   //////////////////////////////orgId////////////////////////////////
 
@@ -160,6 +187,7 @@ function AddItemSecondary() {
   );
 
   console.log(type);
+  console.log(item);
 
   //////////////////////////////fetchFilters////////////////////////////////
 
@@ -259,20 +287,23 @@ function AddItemSecondary() {
     const updatedItems = [...item];
     const index = updatedItems.findIndex((item) => item._id === _id);
     // Create a shallow copy of the items
-    const itemToUpdate = updatedItems[index];
+    const itemToUpdate = { ...updatedItems[index] };
+    console.log(itemToUpdate);
     if (itemToUpdate) {
       // Toggle the 'added' state of the item
       itemToUpdate.added = !itemToUpdate.added;
       itemToUpdate.count = 1;
       const total = calculateTotal(itemToUpdate, selectedPriceLevel).toFixed(2);
       itemToUpdate.total = total;
+      updatedItems[index] = itemToUpdate;
 
       dispatch(changeTotal(itemToUpdate));
+      setItem(updatedItems);
+      setRefresh(!refresh);
+      dispatch(addItem(itemToUpdate));
     }
-    setItem(updatedItems);
-    setRefresh(!refresh);
-    dispatch(addItem(updatedItems[index]));
   };
+  console.log(item);
 
   ///////////////////////////calculateTotal///////////////////////////////////
 
@@ -281,7 +312,7 @@ function AddItemSecondary() {
       item.Priceleveles.find((level) => level.pricelevel === selectedPriceLevel)
         ?.pricerate || 0;
 
-    let subtotal = priceRate * item?.count
+    let subtotal = priceRate * item?.count;
     let discountedSubtotal = subtotal;
 
     if (item.discount !== 0 && item.discount !== undefined) {
@@ -331,7 +362,7 @@ function AddItemSecondary() {
       currentItem.count = 1;
     } else {
       // currentItem.count += 1;
-      currentItem.count=new Decimal( currentItem.count)
+      currentItem.count = new Decimal(currentItem.count);
       currentItem.count = currentItem.count.add(new Decimal(1));
       currentItem.count = parseFloat(currentItem.count.toString());
     }
@@ -352,13 +383,12 @@ function AddItemSecondary() {
     const updatedItems = [...item];
     const index = updatedItems.findIndex((item) => item._id === _id);
     // Make a copy of the array
-    const currentItem = { ...updatedItems[index] };
-    
+    const currentItem = { ...updatedItems[index]};
 
     // Decrement the count if it's greater than 0
     if (currentItem.count > 0) {
-      currentItem.count=new Decimal( currentItem.count)
-      currentItem.count = (currentItem.count).sub(new Decimal(1));
+      currentItem.count = new Decimal(currentItem.count);
+      currentItem.count = currentItem.count.sub(new Decimal(1));
       currentItem.count = parseFloat(currentItem.count.toString());
       if (currentItem.count <= 0) {
         dispatch(removeItem(currentItem));
@@ -369,7 +399,8 @@ function AddItemSecondary() {
           currentItem,
           selectedPriceLevel
         ).toFixed(2);
-        updatedItems[index] = currentItem; // Update the item in the copied array
+        // Create a new object with updated 'added' property
+        updatedItems[index] = { ...currentItem, added: currentItem.added }; 
       }
 
       setItem(updatedItems);
@@ -378,7 +409,7 @@ function AddItemSecondary() {
 
     dispatch(changeCount(currentItem));
     dispatch(changeTotal(currentItem));
-  };
+};
 
 
   ///////////////////////////handlePriceLevelChange///////////////////////////////////
@@ -407,7 +438,7 @@ function AddItemSecondary() {
       >
         <div className="flex items-start gap-3 md:gap-4  ">
           <div className="w-10 mt-1  uppercase h-10 rounded-lg bg-violet-200 flex items-center justify-center font-semibold text-gray-400">
-            {el.product_name.slice(0, 1)}
+            {el?.product_name?.slice(0, 1)}
           </div>
           <div className="flex flex-col font-bold text-sm md:text-sm  gap-1 leading-normal">
             <p>{el.product_name}</p>
@@ -645,9 +676,13 @@ function AddItemSecondary() {
                     <IoIosSearch />
                   </button>
                   <button
-                  onClick={()=>{setSearch("")}}
+                    onClick={() => {
+                      setSearch("");
+                    }}
                     type="submit"
-                    class={`${search.length>0 ? "block":"hidden"}  absolute end-[40px] top-1/2 transform -translate-y-1/2 text-gray-500  text-md px-2 py-1`}
+                    class={`${
+                      search.length > 0 ? "block" : "hidden"
+                    }  absolute end-[40px] top-1/2 transform -translate-y-1/2 text-gray-500  text-md px-2 py-1`}
                   >
                     <IoIosCloseCircleOutline />
                   </button>

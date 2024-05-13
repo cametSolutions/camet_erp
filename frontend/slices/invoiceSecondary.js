@@ -1,12 +1,13 @@
 import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
+  products: [],
   party: {},
   items: [],
   selectedPriceLevel: "",
   additionalCharges: [],
   finalAmount: 0,
-  persistScrollId:""
+  persistScrollId: "",
 };
 
 export const invoiceSliceSecondary = createSlice({
@@ -21,6 +22,9 @@ export const invoiceSliceSecondary = createSlice({
     },
     addItem: (state, action) => {
       state.items.push(action.payload);
+    },
+    addAllProducts: (state, action) => {
+      state.products=action.payload
     },
     removeItem: (state, action) => {
       const id = action.payload._id;
@@ -96,24 +100,24 @@ export const invoiceSliceSecondary = createSlice({
     setSubCategoryInRedux: (state, action) => {
       state.subcategory = action.payload;
     },
-    setParty:(state,action)=>{
-      state.party=action.payload
+    setParty: (state, action) => {
+      state.party = action.payload;
     },
-    setItem:(state,action)=>{
-      state.items=action.payload
+    setItem: (state, action) => {
+      state.items = action.payload;
     },
-    setSelectedPriceLevel:(state,action)=>{
-      state.selectedPriceLevel=action.payload
+    setSelectedPriceLevel: (state, action) => {
+      state.selectedPriceLevel = action.payload;
     },
-    setAdditionalCharges:(state,action)=>{
-      state.additionalCharges=action.payload
+    setAdditionalCharges: (state, action) => {
+      state.additionalCharges = action.payload;
     },
-    setFinalAmount:(state,action)=>{
-      state.finalAmount=action.payload
+    setFinalAmount: (state, action) => {
+      state.finalAmount = action.payload;
     },
-    
-    saveId:(state,action)=>{
-      state.id=action.payload
+
+    saveId: (state, action) => {
+      state.id = action.payload;
     },
   },
 });
@@ -142,7 +146,8 @@ export const {
   setSelectedPriceLevel,
   setFinalAmount,
   setAdditionalCharges,
-  saveId
+  saveId,
+  addAllProducts
 } = invoiceSliceSecondary.actions;
 
 export default invoiceSliceSecondary.reducer;
