@@ -95,7 +95,7 @@ function AddItemSalesSecondary() {
           withCredentials: true,
         });
         console.log(godown)
-       setGodownname(godown.data)
+       setGodownname(godown.data || "")
       } catch (error) {
         console.log(error)
         toast.error(error.message);
@@ -103,6 +103,8 @@ function AddItemSalesSecondary() {
     };
     fetchGodownname()
    },[])
+
+   console.log(godownname);
   ///////////////////////////fetchProducts///////////////////////////////////
 
   useEffect(() => {
@@ -340,9 +342,9 @@ function AddItemSalesSecondary() {
         ?.pricerate || 0;
 
     console.log(`Found priceRate: ${priceRate}`);
-    console.log(item);
+    console.log(item?.count);
 
-    let subtotal = priceRate * parseInt(item?.count);
+    let subtotal = priceRate * Number(item?.count);
     let discountedSubtotal = subtotal;
 
     console.log(`subtotal before discount: ${subtotal}`);
@@ -382,7 +384,7 @@ function AddItemSalesSecondary() {
     const currentItem = { ...updatedItems[index] };
     console.log(currentItem);
 
-    if (currentItem?.GodownList?.length > 0) {
+    if (currentItem?.GodownList?.length > 0   && !godownname) {
       setOpenModal(true);
 
       setGodown(currentItem?.GodownList);
@@ -433,7 +435,7 @@ function AddItemSalesSecondary() {
     // Make a copy of the array
     const currentItem = { ...updatedItems[index] };
 
-    if (currentItem?.GodownList?.length > 0) {
+    if (currentItem?.GodownList?.length > 0   && !godownname) {
       setOpenModal(true);
       setGodown(currentItem?.GodownList);
     } else {
@@ -716,7 +718,7 @@ function AddItemSalesSecondary() {
             > */}
             <button
               onClick={() => {
-                navigate(`/sUsers/editItemSales/${el._id}`, {
+                navigate(`/sUsers/editItemSales/${el._id}/${godownname|| "nil"}`, {
                   state: { from: "editItemSales", id: location?.state?.id },
                 });
                 // saveScrollPosition();

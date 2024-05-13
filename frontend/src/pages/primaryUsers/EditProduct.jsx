@@ -119,7 +119,7 @@ function EditProduct() {
   ///////////// location table ///////////////////
 
   const [locationRows, setLocationRows] = useState([
-    { id: Math.random(), godown_name: "", godown_stock: "" },
+    { id: Math.random(), godown: "", balance_stock: "" },
   ]);
   const [locationData, setLocationData] = useState([]);
 
@@ -127,22 +127,22 @@ function EditProduct() {
     // Update levelNameData whenever rows change
     setLocationData(
       locationRows.map((row) => ({
-        godown_name: row.godown_name,
-        godown_stock: row.godown_stock,
+        godown: row.godown,
+        balance_stock: row.balance_stock,
       }))
     );
   }, [locationRows]);
 
   const handleAddLocationRow = () => {
     const lastRow = locationRows[locationRows.length - 1];
-    if (!lastRow.godown_name || !lastRow.godown_stock) {
+    if (!lastRow.godown || !lastRow.balance_stock) {
       toast.error("Add Location  and Stock");
       return;
     }
 
     setLocationRows([
       ...locationRows,
-      { id: Math.random(), godown_name: "", godown_stock: "" },
+      { id: Math.random(), godown: "", balance_stock: "" },
     ]);
   };
 
@@ -154,13 +154,13 @@ function EditProduct() {
 
   const handleLocationChange = (index, value) => {
     const newRows = [...locationRows];
-    newRows[index].godown_name = value;
+    newRows[index].godown = value;
     setLocationRows(newRows);
   };
 
   const handleLocationRateChange = (index, value) => {
     const newRows = [...locationRows];
-    newRows[index].godown_stock = value;
+    newRows[index].balance_stock = value;
     console.log(newRows);
     setLocationRows(newRows);
   };
@@ -227,11 +227,10 @@ function EditProduct() {
 
         console.log(res.data.data);
         const {
-       
           product_name,
           product_code,
           balance_stock,
-     
+
           brand,
           category,
           sub_category,
@@ -244,7 +243,6 @@ function EditProduct() {
           purchase_stock,
           Priceleveles,
           GodownList,
-     
         } = res.data.data;
 
         setProduct_name(product_name);
@@ -261,21 +259,33 @@ function EditProduct() {
         setSelectedCategory(category);
         setSelectedSubCategory(sub_category);
 
-     
-        const newRows = Priceleveles.map((item) => ({
-          id: Math.random(),
-          pricelevel: item.pricelevel,
-          pricerate: item.pricerate,
-        }));
-        setRows(newRows);
-
-        const newLocationRows=GodownList.map((item)=>({
+        if (Priceleveles.length > 0) {
+          const newRows = Priceleveles.map((item) => ({
             id: Math.random(),
-             godown_name: item.godown_name,
-              godown_stock: item.godown_stock,
+            pricelevel: item.pricelevel || "",
+            pricerate: item.pricerate || "",
+          }));
+          setRows(newRows);
+        }else{
+          setRows([
+            { id: Math.random(), pricelevel: "", pricerate: "" },
+          ]);
+        }
 
-        }))
-        setLocationRows(newLocationRows)
+        if (GodownList.length > 0) {
+          const newLocationRows = GodownList.map((item) => ({
+            id: Math.random(),
+            godown: item.godown || "",
+            balance_stock: item.balance_stock || "",
+          }));
+          setLocationRows(newLocationRows);
+        } else {
+          setLocationRows([
+            { id: Math.random(), godown: "", balance_stock: "" },
+          ]);
+        }
+
+        console.log(locationRows);
         const hsnDetails = hsn.filter((el) => el.hsn === hsn_code);
         const hsnId = hsnDetails[0]._id;
 
@@ -470,7 +480,6 @@ function EditProduct() {
   };
   const navigate = useNavigate();
 
-
   const submitHandler = async () => {
     console.log("haiii");
     // Check required fields
@@ -513,18 +522,15 @@ function EditProduct() {
 
     isError = false;
 
-    if (
-      locationData[0].godown_name !== "" ||
-      locationData[0].godown_stock !== ""
-    ) {
+    if (locationData[0].godown !== "" || locationData[0].balance_stock !== "") {
       locationData.map((el) => {
-        if (el.godown_stock === "") {
+        if (el.balance_stock === "") {
           toast.error("stock must be filled");
           isError = true;
 
           return;
         }
-        if (el.godown_name === "") {
+        if (el.godown === "") {
           toast.error("location name must be filled");
           isError = true;
 
@@ -534,6 +540,35 @@ function EditProduct() {
       if (isError) {
         return;
       }
+    }
+
+    let locations;
+
+    const godownListFirstItem = locationData[0];
+
+    if (
+      Object.keys(godownListFirstItem).every(
+        (key) => godownListFirstItem[key] === ""
+      )
+    ) {
+      console.log("empty");
+      locations = [];
+    } else {
+      locations = locationData;
+    }
+
+    let levelNames;
+
+    const levelNameListFirstItem = levelNameData[0];
+    if (
+      Object.keys(levelNameListFirstItem).every(
+        (key) => levelNameListFirstItem[key] === ""
+      )
+    ) {
+      console.log("empty");
+      levelNames = [];
+    } else {
+      levelNames = levelNameData;
     }
 
     // Create form data
@@ -551,8 +586,8 @@ function EditProduct() {
       hsn_code,
       purchase_price,
       purchase_cost: purchase_stock,
-      Priceleveles: levelNameData,
-      GodownList: locationData,
+      Priceleveles: levelNames,
+      GodownList: locations,
     };
 
     console.log(formData);
@@ -566,19 +601,17 @@ function EditProduct() {
 
       console.log(res.data);
       toast.success(res.data.message);
-      navigate("/pUsers/productList")
-     
+      navigate("/pUsers/productList");
     } catch (error) {
       toast.error(error.response.data.message);
       console.log(error);
     }
   };
 
-
   return (
     <div className="flex ">
       <div>
-      <Sidebar TAB={"product"} showBar={showSidebar} />
+        <Sidebar TAB={"product"} showBar={showSidebar} />
       </div>
       <div className="flex-1 h-screen overflow-y-scroll">
         <div className="bg-[#012A4A] sticky top-0 p-3 z-100 text-white text-lg font-bold flex items-center gap-3 z-20">
@@ -1765,7 +1798,7 @@ function EditProduct() {
                           <tr key={row.id} className="border-b bg-[#EFF6FF] ">
                             <td className="px-4 py-2">
                               <select
-                                value={row.godown_name}
+                                value={row.godown}
                                 onChange={(e) =>
                                   handleLocationChange(index, e.target.value)
                                 }
@@ -1784,7 +1817,7 @@ function EditProduct() {
                               <input
                                 type="number"
                                 min="0"
-                                value={row.godown_stock}
+                                value={row.balance_stock}
                                 onChange={(e) =>
                                   handleLocationRateChange(
                                     index,
@@ -1821,7 +1854,7 @@ function EditProduct() {
                   className="bg-pink-500 text-white active:bg-pink-600 font-bold uppercase text-xs px-4 py-2 rounded shadow hover:shadow-md outline-none focus:outline-none mr-1 ease-linear transition-all duration-150"
                   type="button"
                 >
-                  Update 
+                  Update
                 </button>
               </div>
             </div>

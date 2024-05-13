@@ -120,7 +120,7 @@ function EditProductSecondary() {
   ///////////// location table ///////////////////
 
   const [locationRows, setLocationRows] = useState([
-    { id: Math.random(), godown_name: "", godown_stock: "" },
+    { id: Math.random(), godown: "", balance_stock: "" },
   ]);
   const [locationData, setLocationData] = useState([]);
 
@@ -128,22 +128,22 @@ function EditProductSecondary() {
     // Update levelNameData whenever rows change
     setLocationData(
       locationRows.map((row) => ({
-        godown_name: row.godown_name,
-        godown_stock: row.godown_stock,
+        godown: row.godown,
+        balance_stock: row.balance_stock,
       }))
     );
   }, [locationRows]);
 
   const handleAddLocationRow = () => {
     const lastRow = locationRows[locationRows.length - 1];
-    if (!lastRow.godown_name || !lastRow.godown_stock) {
+    if (!lastRow.godown || !lastRow.balance_stock) {
       toast.error("Add Location  and Stock");
       return;
     }
 
     setLocationRows([
       ...locationRows,
-      { id: Math.random(), godown_name: "", godown_stock: "" },
+      { id: Math.random(), godown: "", balance_stock: "" },
     ]);
   };
 
@@ -155,13 +155,13 @@ function EditProductSecondary() {
 
   const handleLocationChange = (index, value) => {
     const newRows = [...locationRows];
-    newRows[index].godown_name = value;
+    newRows[index].godown = value;
     setLocationRows(newRows);
   };
 
   const handleLocationRateChange = (index, value) => {
     const newRows = [...locationRows];
-    newRows[index].godown_stock = value;
+    newRows[index].balance_stock = value;
     console.log(newRows);
     setLocationRows(newRows);
   };
@@ -271,20 +271,31 @@ function EditProductSecondary() {
 
 
         console.log(Priceleveles);
-        const newRows = Priceleveles.map((item) => ({
-          id: Math.random(),
-          pricelevel: item.pricelevel,
-          pricerate: item.pricerate,
-        }));
-        setRows(newRows);
-
-        const newLocationRows=GodownList.map((item)=>({
+        if (Priceleveles.length > 0) {
+          const newRows = Priceleveles.map((item) => ({
             id: Math.random(),
-             godown_name: item.godown_name,
-              godown_stock: item.godown_stock,
+            pricelevel: item.pricelevel || "",
+            pricerate: item.pricerate || "",
+          }));
+          setRows(newRows);
+        }else{
+          setRows([
+            { id: Math.random(), pricelevel: "", pricerate: "" },
+          ]);
+        }
 
-        }))
-        setLocationRows(newLocationRows)
+        if (GodownList.length > 0) {
+          const newLocationRows = GodownList.map((item) => ({
+            id: Math.random(),
+            godown: item.godown || "",
+            balance_stock: item.balance_stock || "",
+          }));
+          setLocationRows(newLocationRows);
+        } else {
+          setLocationRows([
+            { id: Math.random(), godown: "", balance_stock: "" },
+          ]);
+        }
       } catch (error) {
         console.log(error);
       }
@@ -519,17 +530,17 @@ function EditProductSecondary() {
     isError = false;
 
     if (
-      locationData[0].godown_name !== "" ||
-      locationData[0].godown_stock !== ""
+      locationData[0].godown !== "" ||
+      locationData[0].balance_stock !== ""
     ) {
       locationData.map((el) => {
-        if (el.godown_stock === "") {
+        if (el.balance_stock === "") {
           toast.error("stock must be filled");
           isError = true;
 
           return;
         }
-        if (el.godown_name === "") {
+        if (el.godown === "") {
           toast.error("location name must be filled");
           isError = true;
 
@@ -539,6 +550,37 @@ function EditProductSecondary() {
       if (isError) {
         return;
       }
+    }
+
+    let locations;
+
+    const godownListFirstItem = locationData[0];
+
+    console.log(godownListFirstItem);
+
+    if (
+      Object.keys(godownListFirstItem).every(
+        (key) => godownListFirstItem[key] === ""
+      )
+    ) {
+      console.log("empty");
+      locations = [];
+    } else {
+      locations = locationData;
+    }
+
+    let levelNames;
+
+    const levelNameListFirstItem = levelNameData[0];
+    if (
+      Object.keys(levelNameListFirstItem).every(
+        (key) => levelNameListFirstItem[key] === ""
+      )
+    ) {
+      console.log("empty");
+      levelNames = [];
+    } else {
+      levelNames = levelNameData;
     }
 
     // Create form data
@@ -556,8 +598,8 @@ function EditProductSecondary() {
       hsn_code,
       purchase_price,
       purchase_cost: purchase_stock,
-      Priceleveles: levelNameData,
-      GodownList: locationData,
+      Priceleveles: levelNames,
+      GodownList: locations,
     };
 
     console.log(formData);
@@ -1770,7 +1812,7 @@ function EditProductSecondary() {
                           <tr key={row.id} className="border-b bg-[#EFF6FF] ">
                             <td className="px-4 py-2">
                               <select
-                                value={row.godown_name}
+                                value={row.godown}
                                 onChange={(e) =>
                                   handleLocationChange(index, e.target.value)
                                 }
@@ -1789,7 +1831,7 @@ function EditProductSecondary() {
                               <input
                                 type="number"
                                 min="0"
-                                value={row.godown_stock}
+                                value={row.balance_stock}
                                 onChange={(e) =>
                                   handleLocationRateChange(
                                     index,

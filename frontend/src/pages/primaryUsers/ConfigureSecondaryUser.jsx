@@ -85,6 +85,8 @@ function ConfigureSecondaryUser() {
 
         setGodowns(res.data.data.godowns);
         setPriceLevels(res.data.data.priceLevels);
+        setGodownConfigOption(res.data.data.godowns[0]?.id);
+        setVanSaleGodownName(res.data.data.godowns[0]?.godown)
       } catch (error) {
         console.log(error);
         toast.error(error.response.data.message);

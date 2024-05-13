@@ -149,30 +149,31 @@ function EditItemSales() {
   };
 
   const handleBackClick = () => {
-    console.log(location.state);
+    // console.log(location.state);
 
-    if (location.state.id && location.state.from == "addItemSales") {
-      console.log("haii");
-      navigate("/pUsers/addItemSales", {
-        state: { from: "editSales", id: location.state.id },
-      });
-    } else if (location.state.from === "sales") {
-      console.log("haii");
+    // if (location.state.id && location.state.from == "addItemSales") {
+    //   console.log("haii");
+    //   navigate("/pUsers/addItemSales", {
+    //     state: { from: "editSales", id: location.state.id },
+    //   });
+    // } else if (location.state.from === "sales") {
+    //   console.log("haii");
 
-      navigate("/pUsers/sales");
-    } else if (location?.state?.from === "addItemSales") {
-      console.log("haii");
+    //   navigate("/pUsers/sales");
+    // } else if (location?.state?.from === "addItemSales") {
+    //   console.log("haii");
 
-      navigate("/pUsers/addItemSales");
-    } else if (location?.state?.from === "editSales") {
-      console.log("haii");
+    //   navigate("/pUsers/addItemSales");
+    // } else if (location?.state?.from === "editSales") {
+    //   console.log("haii");
 
-      navigate(`/pUsers/editSales/${location.state.id}`);
-    } else {
-      console.log("haii");
+    //   navigate(`/pUsers/editSales/${location.state.id}`);
+    // } else {
+    //   console.log("haii");
 
-      navigate("/pUsers/addItemSales");
-    }
+    //   navigate("/pUsers/addItemSales");
+    // }
+    navigate(-1)
   };
 
   /////////////////////////modal popup /////////////////////////////

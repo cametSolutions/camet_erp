@@ -12,7 +12,7 @@ import { Tooltip } from "react-tooltip";
 import { units } from "../../../constants/units";
 import { MdPlaylistAdd } from "react-icons/md";
 import { IoIosArrowRoundBack } from "react-icons/io";
-import { useNavigate,Link } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 
 function AddProduct() {
   const [showSidebar, setShowSidebar] = useState(false);
@@ -69,6 +69,8 @@ function AddProduct() {
     locationIndex: null,
   });
   const [refresh, setRefresh] = useState(false);
+
+  const navigate = useNavigate();
 
   ///////////// levelname table ///////////////////
 
@@ -130,6 +132,7 @@ function AddProduct() {
       }))
     );
   }, [locationRows]);
+  console.log(locationData);
 
   const handleAddLocationRow = () => {
     const lastRow = locationRows[locationRows.length - 1];
@@ -163,7 +166,7 @@ function AddProduct() {
     setLocationRows(newRows);
   };
 
-  ////////////////////////treble enddddd///////////////////////////////////////////////////////////
+  ////////////////////////treble end///////////////////////////////////////////////////////////
 
   const orgId = useSelector(
     (state) => state.setSelectedOrganization.selectedOrg._id
@@ -233,32 +236,39 @@ function AddProduct() {
       body["locations"] = value;
     }
 
-    try {
-      const res = await api.post(`/api/pUsers/addDataToOrg/${orgId}`, body, {
-        withCredentials: true,
-      });
 
-      toast.success(res.data.message);
-      setRefresh(!refresh);
-      if (params == "brands") {
-        setAddedBrand("");
-      }
-      if (params == "categories") {
-        setAddedCategory("");
-      }
-      if (params == "subcategories") {
-        setAddedSubCategory("");
-      }
-      if (params == "levelNames") {
-        setAddedLevelName("");
-      }
-      if (params == "locations") {
-        setAddedLocation("");
-      }
-    } catch (error) {
-      console.log(error);
-      toast.error(error.response.data.message);
+    console.log(body);
+    if (Object.keys(body).every (key => body[key]=="")) {
+      toast.error("Please fill the field");
+      return; // Exit the function if body is empty
     }
+
+    // try {
+    //   const res = await api.post(`/api/pUsers/addDataToOrg/${orgId}`, body, {
+    //     withCredentials: true,
+    //   });
+
+    //   toast.success(res.data.message);
+    //   setRefresh(!refresh);
+    //   if (params == "brands") {
+    //     setAddedBrand("");
+    //   }
+    //   if (params == "categories") {
+    //     setAddedCategory("");
+    //   }
+    //   if (params == "subcategories") {
+    //     setAddedSubCategory("");
+    //   }
+    //   if (params == "levelNames") {
+    //     setAddedLevelName("");
+    //   }
+    //   if (params == "locations") {
+    //     setAddedLocation("");
+    //   }
+    // } catch (error) {
+    //   console.log(error);
+    //   toast.error(error.response.data.message);
+    // }
   };
 
   const editDataInOrg = async (params, value) => {
@@ -397,8 +407,9 @@ function AddProduct() {
     }
   };
 
-
-  const cmp_id=useSelector((state)=>state.setSelectedOrganization.selectedOrg._id);
+  const cmp_id = useSelector(
+    (state) => state.setSelectedOrganization.selectedOrg._id
+  );
 
   const submitHandler = async () => {
     console.log("haiii");
@@ -409,7 +420,6 @@ function AddProduct() {
     }
 
     // Check unit conversion if altUnit is provided
-    console.log(altUnit);
     if (altUnit !== "") {
       if (!unit_conversion || !alt_unit_conversion) {
         toast.error("Unit and Alt unit conversion must be done");
@@ -442,10 +452,7 @@ function AddProduct() {
 
     isError = false;
 
-    if (
-      locationData[0].godown !== "" ||
-      locationData[0].balance_stock !== ""
-    ) {
+    if (locationData[0].godown !== "" || locationData[0].balance_stock !== "") {
       locationData.map((el) => {
         if (el.balance_stock === "") {
           toast.error("stock must be filled");
@@ -465,6 +472,36 @@ function AddProduct() {
       }
     }
 
+    let locations;
+
+    const godownListFirstItem = locationData[0];
+    if (
+      Object.keys(godownListFirstItem).every(
+        (key) => godownListFirstItem[key] === ""
+      )
+    ) {
+      console.log("empty");
+      locations = [];
+    } else {
+      locations = locationData;
+    }
+
+    let levelNames;
+
+    const levelNameListFirstItem = levelNameData[0];
+    if (
+      Object.keys(levelNameListFirstItem).every(
+        (key) => levelNameListFirstItem[key] === ""
+      )
+    ) {
+      console.log("empty");
+      levelNames = [];
+    } else {
+      levelNames = levelNameData;
+    }
+
+    console.log(locationData);
+
     // Create form data
     const formData = {
       cmp_id,
@@ -481,11 +518,12 @@ function AddProduct() {
       hsn_code,
       purchase_price,
       purchase_cost: purchase_stock,
-      Priceleveles: levelNameData,
-      GodownList: locationData,
+      Priceleveles: levelNames,
+      GodownList: locations,
     };
 
     console.log(formData);
+
     try {
       const res = await api.post("/api/pUsers/addProduct", formData, {
         headers: {
@@ -496,44 +534,24 @@ function AddProduct() {
 
       console.log(res.data);
       toast.success(res.data.message);
-      setProduct_name("");
-      setProduct_code("");
-      setBalance_stock("");
-      setSelectedBrand("");
-      setSelectedCategory(""),
-        setSelectedSubCategory(""),
-        setUnit(""),
-        setAltUnit(""),
-        setUnit_conversion(""),
-        setAlt_unit_conversion(""),
-        setHsn_code(""),
-        setPurchase_price(""),
-        set_Purchase_stock(""),
-        setLevelNameData(""),
-        setLocationData("");
-      setRows([{ id: Math.random(), pricelevel: "", pricerate: "" }]);
-      setLocationRows([
-        { id: Math.random(), godown: "", balance_stock: "" },
-      ]);
+      navigate("/pUsers/productList");
     } catch (error) {
       toast.error(error.response.data.message);
       console.log(error);
     }
   };
 
-  const navigate=useNavigate()
+  // const navigate=useNavigate()
 
   return (
     <div className="flex ">
       <div>
-      <Sidebar TAB={"product"} showBar={showSidebar} />
+        <Sidebar TAB={"product"} showBar={showSidebar} />
       </div>
       <div className="flex-1 h-screen overflow-y-scroll">
         <div className="bg-[#012A4A] sticky top-0 p-3 z-100 text-white text-lg font-bold flex items-center gap-3 z-20">
-           <Link to={"/pUsers/productList"}>
-          <IoIosArrowRoundBack
-            className="block md:hidden text-3xl"
-          />
+          <Link to={"/pUsers/productList"}>
+            <IoIosArrowRoundBack className="block md:hidden text-3xl" />
           </Link>
           <p>Add Product</p>
         </div>
@@ -1410,8 +1428,7 @@ function AddProduct() {
                                     >
                                       <span
                                         onClick={() => {
-                                       
-                                          setDropdown({addLocation:false})
+                                          setDropdown({ addLocation: false });
                                         }}
                                         className="text-pink-900  whitespace-nowrap "
                                       >
@@ -1557,7 +1574,7 @@ function AddProduct() {
                                     >
                                       <span
                                         onClick={() => {
-                                         setDropdown({addLocation:false})
+                                          setDropdown({ addLocation: false });
                                         }}
                                         className="text-pink-900  whitespace-nowrap "
                                       >

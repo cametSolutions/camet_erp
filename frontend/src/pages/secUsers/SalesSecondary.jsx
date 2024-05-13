@@ -655,8 +655,8 @@ function SalesSecondary() {
                         <div className="">
                           <p
                             onClick={() => {
-                              navigate(`/pUsers/editItem/${el._id}`, {
-                                state: { from: "invoice" },
+                              navigate(`/sUsers/editItemSales/${el._id}`, {
+                                state: { from: "sales" },
                               });
                             }}
                             className="text-violet-500 text-xs md:text-base font-bold  p-1  px-4   border border-1 border-gray-300 rounded-2xl cursor-pointer"

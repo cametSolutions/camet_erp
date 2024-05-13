@@ -318,6 +318,8 @@ function AddItemSales() {
     console.log(`Found priceRate: ${priceRate}`);
     console.log(item);
 
+    console.log(item?.count);
+
     let subtotal = priceRate * Number(item?.count);
     let discountedSubtotal = subtotal;
 

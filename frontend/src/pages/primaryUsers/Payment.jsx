@@ -32,6 +32,10 @@ function Payment() {
 
         console.log(res.data);
         setBanks(res.data.data);
+        setChequeDetails({
+          ...chequeDetails,
+          bank: res?.data?.data[0]?.bank_ledname
+        })
       } catch (error) {
         console.log(error);
       }
