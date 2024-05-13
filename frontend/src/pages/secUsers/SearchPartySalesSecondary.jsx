@@ -11,6 +11,8 @@ import { addParty } from "../../../slices/salesSecondary";
 import { useLocation } from "react-router-dom";
 import SidebarSec from "../../components/secUsers/SidebarSec";
 import { IoIosCloseCircleOutline } from "react-icons/io";
+import { HashLoader } from "react-spinners";
+
 
 
 
@@ -21,6 +23,8 @@ function SearchPartySalesSecondary() {
   const [parties, setParties] = useState([]);
   const [search, setSearch] = useState("");
   const [filteredParties, setFilteredParties] = useState([]);
+  const [loading, setLoading] = useState(true);
+
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const location = useLocation();
@@ -39,8 +43,12 @@ function SearchPartySalesSecondary() {
         });
 
         setParties(res.data.partyList);
+        setLoading(false);
+
       } catch (error) {
         console.log(error);
+        setLoading(false);
+
       }
     };
     fetchParties();
@@ -161,7 +169,15 @@ function SearchPartySalesSecondary() {
 
         {/* adding party */}
 
-        {filteredParties?.length > 0 ? (
+        {loading ? (
+          // Show loader while data is being fetched
+          <div className=" flex justify-center items-center h-screen">
+            <figure className="  w-[60px] h-[60px] rounded-full border-2 border-solid border-primaryColor flex items-center justify-center ">
+              <HashLoader color="#6056ec" size={30} speedMultiplier={1.6} />
+            </figure>
+          </div>
+        ) : filteredParties?.length > 0 ? (
+          // Show party list if parties are available
           filteredParties?.map((el, index) => (
             <div
               onClick={() => {
@@ -174,14 +190,15 @@ function SearchPartySalesSecondary() {
                 <p className="font-bold">{el?.partyName}</p>
                 <p className="font-medium text-gray-500 text-sm">Customer</p>
               </div>
-              <div className=" flex items-center gap-2">
+              <div className="flex items-center gap-2">
                 <p className="font-bold">₹ 12,000</p>
                 <IoArrowDown className="text-green-500" />
               </div>
             </div>
           ))
         ) : (
-          <div className=" font-bold flex justify-center items-center mt-12 text-gray-500">
+          // Show message if no parties are available
+          <div className="font-bold flex justify-center items-center mt-12 text-gray-500">
             No Parties !!!
           </div>
         )}

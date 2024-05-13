@@ -25,13 +25,12 @@ function InventorySecondaryUser() {
 
   const [showSidebar, setShowSidebar] = useState(false);
   const [refresh, setRefresh] = useState(false);
-  const [loader, setLoader] = useState(false);
+  const [loader, setLoader] = useState(true);
   const [search, setSearch] = useState("");
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [listHeight, setListHeight] = useState(0);
-  const [ingodowns, setIngodowns] = useState("")
-  const [selfgodowns, setSelfGodowms] = useState("")
-
+  const [ingodowns, setIngodowns] = useState("");
+  const [selfgodowns, setSelfGodowms] = useState("");
 
   const cmp_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
@@ -39,7 +38,7 @@ function InventorySecondaryUser() {
   const type = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg.type
   );
-  const dispatch = useDispatch()
+  const dispatch = useDispatch();
 
   console.log(type);
 
@@ -47,16 +46,19 @@ function InventorySecondaryUser() {
     setLoader(true);
     try {
       if (selectedValue == "") {
-        setRefresh(!refresh)
+        setRefresh(!refresh);
       } else {
-        const res = await api.get(`/api/sUsers/godownProductFilter/${cmp_id}/${selectedValue}`, {
-          withCredentials: true,
-        });
-        setLoader(true);
-        console.log(res.data)
+        const res = await api.get(
+          `/api/sUsers/godownProductFilter/${cmp_id}/${selectedValue}`,
+          {
+            withCredentials: true,
+          }
+        );
+
+        console.log(res.data);
 
         setProducts(res.data);
-
+        setLoader(false);
       }
     } catch (error) {
       console.log(error);
@@ -64,22 +66,23 @@ function InventorySecondaryUser() {
     } finally {
       setLoader(false);
     }
-
   };
   const handleFilterProductSelf = async (selectedValue) => {
     setLoader(true);
     try {
       if (selectedValue == "") {
-        setRefresh(!refresh)
+        setRefresh(!refresh);
       } else {
-        const res = await api.get(`/api/sUsers/godownProductFilterSelf/${cmp_id}/${selectedValue}`, {
-          withCredentials: true,
-        });
+        const res = await api.get(
+          `/api/sUsers/godownProductFilterSelf/${cmp_id}/${selectedValue}`,
+          {
+            withCredentials: true,
+          }
+        );
         setLoader(true);
-        console.log(res.data)
+        console.log(res.data);
 
         setProducts(res.data);
-
       }
     } catch (error) {
       console.log(error);
@@ -87,7 +90,6 @@ function InventorySecondaryUser() {
     } finally {
       setLoader(false);
     }
-
   };
   // getting godowns data
 
@@ -99,10 +101,8 @@ function InventorySecondaryUser() {
           withCredentials: true,
         });
         setLoader(true);
-        console.log(res)
+        console.log(res);
         setIngodowns(res.data.godowndata);
-
-
       } catch (error) {
         console.log(error);
         toast.error(error.response.data.message);
@@ -110,7 +110,7 @@ function InventorySecondaryUser() {
         setLoader(false);
       }
     };
-    fetchgetGodowms()
+    fetchgetGodowms();
     const fetchgetGodowmsSelf = async () => {
       setLoader(true);
       try {
@@ -118,10 +118,9 @@ function InventorySecondaryUser() {
           withCredentials: true,
         });
         setLoader(true);
-        console.log("welocme", res.data.godowndata)
+        console.log("welocme", res.data.godowndata);
 
         setSelfGodowms(res.data.godowndata);
-
       } catch (error) {
         console.log(error);
         toast.error(error.response.data.message);
@@ -129,9 +128,8 @@ function InventorySecondaryUser() {
         setLoader(false);
       }
     };
-    fetchgetGodowmsSelf()
-  }, [])
-
+    fetchgetGodowmsSelf();
+  }, []);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -141,8 +139,7 @@ function InventorySecondaryUser() {
           withCredentials: true,
         });
         setLoader(true);
-          setProducts(res.data.productData);
-     
+        setProducts(res.data.productData);
       } catch (error) {
         console.log(error);
         toast.error(error.response.data.message);
@@ -151,10 +148,8 @@ function InventorySecondaryUser() {
       }
     };
     fetchProducts();
-    dispatch(removeAll())
-
+    dispatch(removeAll());
   }, [refresh, cmp_id]);
-
 
   console.log(products);
 
@@ -185,18 +180,15 @@ function InventorySecondaryUser() {
     return () => window.removeEventListener("resize", calculateHeight);
   }, []);
 
-
   console.log(listHeight);
 
   const Row = ({ index, style }) => {
     const el = filteredProducts[index];
     const adjustedStyle = {
       ...style,
-      marginTop: '16px',
-      height: '150px',
-
+      marginTop: "16px",
+      height: "150px",
     };
-
 
     return (
       <>
@@ -208,14 +200,17 @@ function InventorySecondaryUser() {
           <div className="flex justify-between w-full gap-3 ">
             <div className="">
               <p className="font-bold text-sm">{el?.product_name}</p>
-
             </div>
             <div
-              className={` ${type !== "self" ? "pointer-events-none " : ""
-                }  flex gap-3 mt-2 px-4`}
+              className={` ${
+                type !== "self" ? "pointer-events-none " : ""
+              }  flex gap-3 mt-2 px-4`}
             >
               <p className="font-semibold text-black">Stock</p>
-              <h2 className="font-semibold text-green-500"> {el?.balance_stock}</h2>
+              <h2 className="font-semibold text-green-500">
+                {" "}
+                {el?.balance_stock}
+              </h2>
             </div>
           </div>
 
@@ -235,9 +230,6 @@ function InventorySecondaryUser() {
     );
   };
 
-
-
-
   return (
     <div className="flex relative h-screen ">
       <div>
@@ -249,7 +241,7 @@ function InventorySecondaryUser() {
           <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3  flex justify-between items-center  ">
             <div className="flex items-center justify-center gap-2">
               <Link to={"/sUsers/dashboard"}>
-                <IoIosArrowRoundBack className="text-3xl text-white cursor-pointer "  />
+                <IoIosArrowRoundBack className="text-3xl text-white cursor-pointer " />
               </Link>
               <p className="text-white text-lg   font-bold ">Inventory</p>
             </div>
@@ -259,12 +251,14 @@ function InventorySecondaryUser() {
                   <div className="relative">
                     <select
                       className="appearance-none flex items-center gap-2 text-white bg-[#40679E] px-2 py-1 rounded-md text-sm hover:scale-105 duration-100 ease-in-out"
-                      onChange={(e) => { handleFilterProduct(e.target.value) }}
+                      onChange={(e) => {
+                        handleFilterProduct(e.target.value);
+                      }}
                     >
-
                       <option value="">All</option>
-                      {
-                        ingodowns && ingodowns?.length > 0 && ingodowns?.map((godown, index) => (
+                      {ingodowns &&
+                        ingodowns?.length > 0 &&
+                        ingodowns?.map((godown, index) => (
                           <option key={index} value={godown?._id}>
                             <IoIosAddCircle className="text-xl" />
                             {godown?.godown[0]}
@@ -300,14 +294,14 @@ function InventorySecondaryUser() {
                       className="appearance-none flex items-center gap-2 text-white bg-[#40679E] px-2 py-1 rounded-md text-sm hover:scale-105 duration-100 ease-in-out"
                       onChange={(e) => handleFilterProductSelf(e.target.value)}
                     >
-
                       <option value="">All</option>
-                      {selfgodowns && selfgodowns.map((godown, index) => (
-                        <option key={index} value={godown}>
-                          <IoIosAddCircle className="text-xl" />
-                          {godown}
-                        </option>
-                      ))}
+                      {selfgodowns &&
+                        selfgodowns.map((godown, index) => (
+                          <option key={index} value={godown}>
+                            <IoIosAddCircle className="text-xl" />
+                            {godown}
+                          </option>
+                        ))}
                     </select>
                     <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
                       <svg
@@ -329,7 +323,6 @@ function InventorySecondaryUser() {
                 </Link>
               </div>
             )}
-
           </div>
 
           {/* invoiec date */}
@@ -391,11 +384,13 @@ function InventorySecondaryUser() {
 
         {/* adding party */}
 
-        {loader ? (
+        {loader && filteredProducts.length == 0 ? (
+          // Show loader while data is being fetched
           <div className="flex justify-center items-center h-screen">
             <HashLoader color="#363ad6" />
           </div>
-        ) : products.length > 0 ? (
+        ) : filteredProducts.length > 0 ? (
+          // Show product list if products are available
           <div
             style={{
               scrollbarWidth: "thin",
@@ -413,20 +408,14 @@ function InventorySecondaryUser() {
             </List>
           </div>
         ) : (
+          // Show message if no products are available
           <div className="font-bold flex justify-center items-center mt-12 text-gray-500">
             No Products !!!
           </div>
         )}
-
-        {/* <Link to={"/sUsers/addProduct"} className={`${type!=="self" ? "hidden " : ""}  flex justify-center`}>
-          <div className=" px-4 absolute bottom-12 text-white bg-violet-700 rounded-3xl p-2 flex items-center justify-center gap-2 hover_scale cursor-pointer ">
-            <IoIosAddCircle className="text-2xl" />
-            <p>Create New Product</p>
-          </div>
-        </Link> */}
       </div>
     </div>
   );
 }
 
-export default InventorySecondaryUser
+export default InventorySecondaryUser;
