@@ -239,12 +239,15 @@ function InvoiceDetailsSecondary() {
                 <FaEdit className="text-blue-500" />
                 <p className="text-black font-bold text-sm">Edit</p>
               </div>
-              <Link to={`/sUsers/shareInvoice/${data._id}`}>
-              <div className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer">
+              {/* <Link to={`/sUsers/shareInvoice/${data._id}`}> */}
+              <div 
+                onClick={chooseFormat}
+
+              className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer">
                 <IoMdShareAlt />
                 <p className="text-black font-bold text-sm">Share</p>
               </div>
-              </Link>
+              {/* </Link> */}
             <div className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer">
               <MdTextsms className="text-green-500" />
               <p className="text-black font-bold text-sm">Sms</p>
