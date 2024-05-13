@@ -4,8 +4,7 @@ import { IoIosArrowRoundBack } from "react-icons/io";
 import { useNavigate } from "react-router-dom";
 import { IoIosSearch } from "react-icons/io";
 import { IoArrowDown } from "react-icons/io5";
-import { IoIosAddCircle } from "react-icons/io";
-import { Link } from "react-router-dom";
+
 import { useSelector } from "react-redux";
 import api from "../../api/api";
 import { useDispatch } from "react-redux";

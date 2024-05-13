@@ -39,6 +39,8 @@ function SalesSecondary() {
     suffixDetails: "",
   });
   const [additional, setAdditional] = useState(false);
+  const [godownname, setGodownname] = useState("");
+
   const [refreshCmp, setrefreshCmp] = useState(false);
   const [salesNumber, setSalesNumber] = useState("");
   const [additionalChragesFromCompany, setAdditionalChragesFromCompany] =
@@ -57,6 +59,7 @@ function SalesSecondary() {
     (state) => state.secSelectedOrganization.secSelectedOrg.type
   );
   console.log(type)
+  console.log(godownname)
   useEffect(()=>{
    
     const getAdditionalChargesIntegrated = async () => {
@@ -94,39 +97,7 @@ function SalesSecondary() {
             res.data.organizationData.additionalCharges
           );
         }
-        // const { salesNumber, salesNumberDetails } = res.data.organizationData;
-
-        // console.log(salesNumber);
-
-        // if (salesNumberDetails) {
-        //   console.log("haii");
-        //   const { widthOfNumericalPart, prefixDetails, suffixDetails } =
-        //     salesNumberDetails;
-        //   const newOrderNumber = salesNumber.toString();
-        //   console.log(newOrderNumber);
-        //   console.log(widthOfNumericalPart);
-        //   console.log(prefixDetails);
-        //   console.log(suffixDetails);
-
-        //   const padedNumber = newOrderNumber.padStart(widthOfNumericalPart, 0);
-        //   console.log(padedNumber);
-        //   const finalOrderNumber = prefixDetails + padedNumber + suffixDetails;
-        //   console.log(finalOrderNumber);
-        //   setSalesNumber(finalOrderNumber);
-        //   setModalInputs({
-        //     widthOfNumericalPart: widthOfNumericalPart,
-        //     prefixDetails: prefixDetails,
-        //     suffixDetails: suffixDetails,
-        //   });
-        // } else {
-        //   setSalesNumber(salesNumber);
-        //   setModalInputs({
-        //     startingNumber: "1",
-        //     widthOfNumericalPart: "",
-        //     prefixDetails: "",
-        //     suffixDetails: "",
-        //   });
-        // }
+       
       } catch (error) {
         console.log(error);
       }
@@ -195,6 +166,25 @@ function SalesSecondary() {
 
     fetchConfigurationNumber();
   }, []);
+
+
+  useEffect(() => {
+    const fetchGodownname = async () => {
+      try {
+        const godown = await api.get(`/api/sUsers/godownsName/${cmp_id}`, {
+          withCredentials: true,
+        });
+        console.log(godown);
+        setGodownname(godown.data || "");
+      } catch (error) {
+        console.log(error);
+        toast.error(error.message);
+      }
+    };
+    fetchGodownname();
+  }, []);
+
+
 
   console.log(salesNumber);
 
@@ -457,7 +447,7 @@ function SalesSecondary() {
   };
 
   console.log(additionalChragesFromCompany);
-  console.log(rows);
+  console.log(godownname);
 
   return (
     <div className="flex relative ">
@@ -655,7 +645,7 @@ function SalesSecondary() {
                         <div className="">
                           <p
                             onClick={() => {
-                              navigate(`/sUsers/editItemSales/${el._id}`, {
+                              navigate(`/sUsers/editItemSales/${el._id}/${godownname===""?"nil":godownname}`, {
                                 state: { from: "sales" },
                               });
                             }}
