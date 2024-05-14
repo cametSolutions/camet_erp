@@ -58,11 +58,9 @@ function InventorySecondaryUser() {
         console.log(res.data);
 
         setProducts(res.data);
-        setLoader(false);
       }
     } catch (error) {
       console.log(error);
-      toast.error(error.response.data.message);
     } finally {
       setLoader(false);
     }
@@ -86,7 +84,7 @@ function InventorySecondaryUser() {
       }
     } catch (error) {
       console.log(error);
-      toast.error(error.response.data.message);
+      // toast.error(error.response.data.message);
     } finally {
       setLoader(false);
     }
@@ -94,41 +92,36 @@ function InventorySecondaryUser() {
   // getting godowns data
 
   useEffect(() => {
-    const fetchgetGodowms = async () => {
-      setLoader(true);
-      try {
-        const res = await api.get(`/api/sUsers/getGodowns/${cmp_id}`, {
-          withCredentials: true,
-        });
-        setLoader(true);
-        console.log(res);
-        setIngodowns(res.data.godowndata);
-      } catch (error) {
-        console.log(error);
-        toast.error(error.response.data.message);
-      } finally {
-        setLoader(false);
-      }
-    };
-    fetchgetGodowms();
-    const fetchgetGodowmsSelf = async () => {
-      setLoader(true);
-      try {
-        const res = await api.get(`/api/sUsers/getGodownsSelf/${cmp_id}`, {
-          withCredentials: true,
-        });
-        setLoader(true);
-        console.log("welocme", res.data.godowndata);
+    if (type == "self") {
+      const fetchgetGodowmsSelf = async () => {
+        try {
+          const res = await api.get(`/api/sUsers/getGodownsSelf/${cmp_id}`, {
+            withCredentials: true,
+          });
+          console.log("welocme", res.data.godowndata);
 
-        setSelfGodowms(res.data.godowndata);
-      } catch (error) {
-        console.log(error);
-        toast.error(error.response.data.message);
-      } finally {
-        setLoader(false);
-      }
-    };
-    fetchgetGodowmsSelf();
+          setSelfGodowms(res.data.godowndata);
+        } catch (error) {
+          console.log(error);
+          // toast.error(error.response.data.message);
+        }
+      };
+      fetchgetGodowmsSelf();
+    } else {
+      const fetchgetGodowms = async () => {
+        try {
+          const res = await api.get(`/api/sUsers/getGodowns/${cmp_id}`, {
+            withCredentials: true,
+          });
+          console.log(res);
+          setIngodowns(res.data.godowndata);
+        } catch (error) {
+          console.log(error);
+          // toast.error(error.response.data.message);
+        }
+      };
+      fetchgetGodowms();
+    }
   }, []);
 
   useEffect(() => {
@@ -142,7 +135,7 @@ function InventorySecondaryUser() {
         setProducts(res.data.productData);
       } catch (error) {
         console.log(error);
-        toast.error(error.response.data.message);
+        // toast.error(error.response.data.message);
       } finally {
         setLoader(false);
       }
@@ -384,7 +377,7 @@ function InventorySecondaryUser() {
 
         {/* adding party */}
 
-        {loader && filteredProducts.length == 0 ? (
+        {loader ? (
           // Show loader while data is being fetched
           <div className="flex justify-center items-center h-screen">
             <HashLoader color="#363ad6" />
