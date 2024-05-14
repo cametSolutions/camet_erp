@@ -180,6 +180,18 @@ function AddItemSalesSecondary() {
     setSelectedPriceLevel(priceLevelFromRedux);
   }, []);
 
+
+  
+  /////////////////////////scroll////////////////////////////
+
+  useEffect(() => {
+    const storedScrollPosition = localStorage.getItem('scrollPositionAddItemSales');
+    if (storedScrollPosition) {
+      setScrollPosition(parseInt(storedScrollPosition, 10));
+    }
+  }, []);
+
+
   ///////////////////////////sdo persisting of products///////////////////////////////////
 
   // useEffect(() => {
@@ -1009,14 +1021,17 @@ function AddItemSalesSecondary() {
             style={{
               scrollbarWidth: "thin",
               scrollbarColor: "transparent transparent",
-              zIndex: 0,
             }}
             className=""
             height={listHeight} // Specify the height of your list
             itemCount={filteredItems.length} // Specify the total number of items
             itemSize={170} // Specify the height of each item
             width="100%" // Specify the width of your list
-            onScroll={({ scrollOffset }) => setScrollPosition(scrollOffset)}
+            initialScrollOffset={scrollPosition}
+            onScroll={({ scrollOffset }) => {
+              setScrollPosition(scrollOffset);
+              localStorage.setItem('scrollPositionAddItemSales', scrollOffset.toString());
+            }}
           >
             {Row}
           </List>

@@ -165,7 +165,7 @@ function AddItemSecondary() {
   /////////////////////////scroll////////////////////////////
 
   useEffect(() => {
-    const storedScrollPosition = localStorage.getItem('scrollPosition');
+    const storedScrollPosition = localStorage.getItem('scrollPositionAddItem');
     if (storedScrollPosition) {
       setScrollPosition(parseInt(storedScrollPosition, 10));
     }
@@ -755,9 +755,8 @@ function AddItemSecondary() {
             initialScrollOffset={scrollPosition}
             onScroll={({ scrollOffset }) => {
               setScrollPosition(scrollOffset);
-              localStorage.setItem('scrollPosition', scrollOffset.toString());
+              localStorage.setItem('scrollPositionAddItem', scrollOffset.toString());
             }}
-            // onScroll={({ scrollOffset }) => setScrollPosition(scrollOffset)}
           >
             {Row}
           </List>
