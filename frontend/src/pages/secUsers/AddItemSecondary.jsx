@@ -42,6 +42,8 @@ function AddItemSecondary() {
   const [priceLevels, setPriceLevels] = useState([]);
   const [loader, setLoader] = useState(false);
   const [listHeight, setListHeight] = useState(0);
+  const [scrollPosition, setScrollPosition] = useState(0);
+
 
   ///////////////////////////cpm_id///////////////////////////////////
 
@@ -75,9 +77,9 @@ function AddItemSecondary() {
   const dispatch = useDispatch();
   const listRef = useRef(null);
   const location = useLocation();
+  const scrollRef = useRef(window.scrollY);
 
   ///////////////////////////fetchProducts///////////////////////////////////
-console.log(allProductsFromRedux);
   useEffect(() => {
     const fetchProducts = async () => {
       setLoader(true);
@@ -86,20 +88,16 @@ console.log(allProductsFromRedux);
 
       try {
         if (allProductsFromRedux.length === 0) {
-          console.log("haii");
           const res = await api.get(`/api/sUsers/getProducts/${cpm_id}`, {
             withCredentials: true,
           });
 
           productData = res.data.productData;
-          console.log(res.data.productData);
           dispatch(addAllProducts(res.data.productData));
         } else {
-          console.log("haii");
           productData = allProductsFromRedux;
         }
 
-        console.log(productData);
 
         if (itemsFromRedux.length > 0) {
           console.log("haii");
@@ -120,7 +118,6 @@ console.log(allProductsFromRedux);
           console.log(updatedItems);
           setItem(updatedItems);
         } else {
-          console.log("haii");
 
           setItem(productData);
         }
@@ -142,7 +139,6 @@ console.log(allProductsFromRedux);
     fetchProducts();
   }, [cpm_id]);
 
-  console.log(item);
 
   ///////////////////////////setSelectedPriceLevel fom redux///////////////////////////////////
 
@@ -152,30 +148,7 @@ console.log(allProductsFromRedux);
 
   ///////////////////////////sdo persisting of products///////////////////////////////////
 
-  // useEffect(() => {
-  //   if (itemsFromRedux.length > 0) {
-  //     const updatedItems = item.map((currentItem) => {
-  //       // Find the corresponding item in itemsFromRedux
-  //       const matchingItem = itemsFromRedux.find(
-  //         (el) => el._id === currentItem._id
-  //       );
-  //       if (matchingItem) {
-  //         // If matching item found, return it with updated count and total
-  //         return {
-  //           ...currentItem,
-  //           count: matchingItem.count,
-  //           total: matchingItem.total,
-  //         };
-  //       } else {
-  //         // If no matching item found, return the current item
-  //         return currentItem;
-  //       }
-  //     });
 
-  //     // Update the state with the modified items
-  //     setItem(updatedItems);
-  //   }
-  // }, [itemsFromRedux, refresh]);
 
   //////////////////////////////orgId////////////////////////////////
 
@@ -186,8 +159,17 @@ console.log(allProductsFromRedux);
     (state) => state.secSelectedOrganization.secSelectedOrg.type
   );
 
-  console.log(type);
-  console.log(item);
+
+
+
+  /////////////////////////scroll////////////////////////////
+
+  useEffect(() => {
+    const storedScrollPosition = localStorage.getItem('scrollPosition');
+    if (storedScrollPosition) {
+      setScrollPosition(parseInt(storedScrollPosition, 10));
+    }
+  }, []);
 
   //////////////////////////////fetchFilters////////////////////////////////
 
@@ -226,7 +208,6 @@ console.log(allProductsFromRedux);
           setBrands(brands);
           setCategories(categories);
           setSubCategories(subcategories);
-          console.log(priceLevels);
 
           setPriceLevels(priceLevels);
           if (priceLevelFromRedux == "") {
@@ -243,7 +224,6 @@ console.log(allProductsFromRedux);
     fetchFilters();
   }, [orgId, type]);
 
-  console.log(priceLevels);
 
   ///////////////////////////filter items///////////////////////////////////
 
@@ -303,7 +283,6 @@ console.log(allProductsFromRedux);
       dispatch(addItem(itemToUpdate));
     }
   };
-  console.log(item);
 
   ///////////////////////////calculateTotal///////////////////////////////////
 
@@ -569,6 +548,8 @@ console.log(allProductsFromRedux);
     return () => window.removeEventListener("resize", calculateHeight);
   }, []);
 
+
+
   const continueHandler = () => {
     if (selectedPriceLevel === "") {
       toast.error("Select a price level ");
@@ -589,7 +570,6 @@ console.log(allProductsFromRedux);
     }
   };
 
-  console.log(listHeight);
 
   return (
     <div className="flex relative">
@@ -772,6 +752,12 @@ console.log(allProductsFromRedux);
             itemCount={filteredItems.length} // Specify the total number of items
             itemSize={170} // Specify the height of each item
             width="100%" // Specify the width of your list
+            initialScrollOffset={scrollPosition}
+            onScroll={({ scrollOffset }) => {
+              setScrollPosition(scrollOffset);
+              localStorage.setItem('scrollPosition', scrollOffset.toString());
+            }}
+            // onScroll={({ scrollOffset }) => setScrollPosition(scrollOffset)}
           >
             {Row}
           </List>
