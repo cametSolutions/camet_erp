@@ -18,7 +18,7 @@ function ConfigureSecondaryUser() {
   const [godownPrefix, setGodownPrefix] = useState("");
   const [godownWidth, setGodownWidth] = useState("");
   const [godownSuffix, setGodownSuffix] = useState("");
-  const [godownStartingNumber, setGodownStartingNumber] = useState("");
+  const [godownStartingNumber, setGodownStartingNumber] = useState("1");
   const [selectedConfig, setSelectedConfig] = useState("sales");
   const [vanSale, setVanSale] = useState(false);
 
@@ -141,7 +141,7 @@ function ConfigureSecondaryUser() {
           setGodownPrefix(prefixDetails);
           setGodownConfigOption(godownConfigOption);
           setGodownSuffix(suffixDetails);
-          setGodownStartingNumber(startingNumber);
+          setGodownStartingNumber(1);
           setGodownWidth(widthOfNumericalPart);
           setVanSale(vanSale);
           setVanSaleGodownName(vanSaleGodownName)
@@ -210,19 +210,28 @@ function ConfigureSecondaryUser() {
     }
   };
 
-  function validateObject(obj) {
+  function validateObject(obj, excludedFields = []) {
     let isAllFilled = true;
     let isAllEmpty = true;
-
+  
     for (let key in obj) {
-      if (obj[key] !== "") {
+      // Skip the excluded fields
+      if (excludedFields.includes(key)) continue;
+  
+      if (obj[key]!== "") {
         isAllEmpty = false;
       } else {
-       
         isAllFilled = false;
       }
     }
-
+  
+    // Additional check for widthOfNumericalPart
+    if (obj.widthOfNumericalPart && Number(obj.widthOfNumericalPart) > 6) {
+      isAllFilled = false;
+      toast.error("Width of numerical part must be less than 6");
+      // return
+    }
+  
     return isAllFilled || isAllEmpty;
   }
 
@@ -277,11 +286,11 @@ function ConfigureSecondaryUser() {
 
     console.log(formData);
 
-    const salesValidation = validateObject(formData.salesConfiguration);
+    const salesValidation = validateObject(formData.salesConfiguration,['startingNumber']);
     const salesOrderValidation = validateObject(
-      formData.salesOrderConfiguration
+      formData.salesOrderConfiguration,['startingNumber']
     );
-    const receiptValidation = validateObject(formData.receiptConfiguration);
+    const receiptValidation = validateObject(formData.receiptConfiguration,['startingNumber']);
 
     if (salesOrderValidation === false) {
       toast.error("Fill all sales order details or leave all fields empty");
@@ -757,6 +766,7 @@ function ConfigureSecondaryUser() {
                             Starting Number
                           </label>
                           <input
+                          disabled
                             type="number"
                             className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                             onChange={(e) =>
