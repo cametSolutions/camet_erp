@@ -78,7 +78,7 @@ function Transaction() {
                 <IoIosArrowRoundBack className="text-3xl text-white cursor-pointer md:hidden" />
               </Link>
 
-              <p className="text-white text-lg   font-bold  ">Receipts</p>
+              <p className="text-white text-lg   font-bold  ">Transactions</p>
             </div>
             <div className=" mt-0 shadow-lg p-2 md:p-0">
               <form>
