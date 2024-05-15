@@ -566,25 +566,27 @@ function AddItem() {
   };
 
   // // Function to restore scroll position
-  // const restoreScrollPosition = (scrollPosition) => {
-  //   console.log(scrollPosition);
-  //   if (scrollPosition) {
-  //     listRef?.current?.scrollTo(parseInt(scrollPosition, 10));
-  //   }
-  // };
+  const restoreScrollPosition = (scrollPosition) => {
+    console.log(scrollPosition);
+    if (scrollPosition) {
+      listRef?.current?.scrollTo(parseInt(scrollPosition, 10));
+    }
+  };
 
-  // // Use effect to save scroll position when navigating away
-  // useEffect(() => {
-  //   return () => {
-  //     saveScrollPosition();
-  //   };
-  // }, []);
+  // Use effect to save scroll position when navigating away
+  useEffect(() => {
+    return () => {
+      saveScrollPosition();
+    };
+  }, []);
 
   // Use effect to restore scroll position when navigating back
-  // useEffect(() => {
-  //   restoreScrollPosition();
-  // }, []);
+  useEffect(() => {
+    restoreScrollPosition();
+  }, []);
 
+
+  console.log(scrollPosition);
   /////////////////////////// save scroll end ///////////////////////////////////
 
   const continueHandler = () => {

@@ -10,18 +10,25 @@ import { FcCancel } from "react-icons/fc";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import { Link } from "react-router-dom";
 import { FaRegCircleDot } from "react-icons/fa6";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import { AiFillCaretRight } from "react-icons/ai";
+import { useLocation } from "react-router-dom";
 
 function Transaction() {
   const [data, setData] = useState([]);
   const [search, setSearch] = useState("");
-  const [dateFilter, setDateFilter] = useState(
-    new Date().toISOString().split("T")[0]
-  );
+
+  const [startDate, setStartDate] = useState(new Date());
+  const [endDate, setEndDate] = useState(new Date());
   const [showSidebar, setShowSidebar] = useState(false);
+  const [total, setTotal] = useState(0)
 
   const navigate = useNavigate();
+  const location = useLocation();
+  const receiptTotal = location?.state?.receiptTotal;
+  console.log(location?.state?.receiptTotal);
   const org = useSelector((state) => state.setSelectedOrganization.selectedOrg);
-  console.log(org);
 
   useEffect(() => {
     const fetchTransactions = async () => {
@@ -42,22 +49,52 @@ function Transaction() {
     fetchTransactions();
   }, []);
 
-  console.log(data);
-
   const filterOutstanding = (data) => {
     return data?.filter((item) => {
       const searchFilter = item.party_name
         ?.toLowerCase()
         .includes(search.toLowerCase());
+      const createdAtDate = new Date(item.createdAt);
+      const adjustedStartDate = new Date(startDate).setHours(0, 0, 0, 0);
+      const adjustedEndDate = new Date(endDate).setHours(23, 59, 59, 999);
 
       const dateFilterCondition =
-        !dateFilter || item.createdAt?.startsWith(dateFilter);
+        (!startDate || createdAtDate >= adjustedStartDate) &&
+        (!endDate || createdAtDate <= adjustedEndDate) &&
+        (startDate && endDate
+          ? createdAtDate >= adjustedStartDate &&
+            createdAtDate <= adjustedEndDate
+          : true);
 
       return searchFilter && dateFilterCondition;
     });
   };
 
   const finalData = filterOutstanding(data);
+  const calulateTotal = () => {
+    if (finalData && finalData.length > 0) {
+      let total = 0;
+      try {
+        total = finalData.reduce((acc, curr) => {
+          const enteredAmount = curr?.enteredAmount;
+          if (typeof enteredAmount === "number" || typeof enteredAmount === "string") {
+            return (acc + parseFloat(enteredAmount));
+          }
+          return acc;
+        }, 0);
+      } catch (error) {
+        console.error("Error when calculating total:", error);
+      }
+      console.log(total);
+      setTotal(total);
+    }
+  };
+
+  useEffect(() => {
+    calulateTotal();
+  }, [finalData]); 
+ 
+
   console.log(finalData);
 
   return (
@@ -78,7 +115,7 @@ function Transaction() {
                 <IoIosArrowRoundBack className="text-3xl text-white cursor-pointer md:hidden" />
               </Link>
 
-              <p className="text-white text-lg   font-bold  ">Receipts</p>
+              <p className="text-white text-lg   font-bold  ">Transactions</p>
             </div>
             <div className=" mt-0 shadow-lg p-2 md:p-0">
               <form>
@@ -124,13 +161,42 @@ function Transaction() {
                     Search
                   </button>
                 </div>
-                <div className="">
+                {/* <div className="">
                   <input
                     type="date"
                     className=" bg-blue-300 p-0 px-3 m-4 rounded-md"
                     value={dateFilter}
                     onChange={(e) => setDateFilter(e.target.value)}
                   />
+                </div> */}
+                <div className="p-2 flex justify-between pr-4 items-center">
+                  <div
+                    className="flex gap-3 items-center
+                  "
+                  >
+                    <AiFillCaretRight />
+                    <DatePicker
+                      className="h-6 text-xs bg-blue-200 rounded-sm w-full"
+                      startDate={startDate}
+                      dateFormat="dd/MM/yyyy"
+                      endDate={endDate}
+                      selectsRange
+                      onChange={(dates) => {
+                        console.log(dates);
+                        if (dates) {
+                          setStartDate(dates[0]);
+                          setEndDate(dates[1]);
+                        }
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <p className="font-semibold text-green-500 text-sm">
+                      <span className="text-gray-500 ">Total : </span>₹{" "}
+                      {total.toFixed(2)}
+                    </p>
+                  </div>
                 </div>
               </form>
             </div>
@@ -142,18 +208,32 @@ function Transaction() {
                 key={index}
                 onClick={() => {
                   // navigate(`/pUsers/receiptDetails/${el._id}`);
-                  navigate(el.type==="Receipt"?`/pUsers/receiptDetails/${el._id}`: el.type==="Tax Invoice"?`/pUsers/salesDetails/${el._id}`:`/pUsers/InvoiceDetails/${el._id}`)
+                  navigate(
+                    el.type === "Receipt"
+                      ? `/pUsers/receiptDetails/${el._id}`
+                      : el.type === "Tax Invoice"
+                      ? `/pUsers/salesDetails/${el._id}`
+                      : `/pUsers/InvoiceDetails/${el._id}`
+                  );
                 }}
                 className={`${
                   el?.isCancelled ? "bg-gray-200 pointer-events-none " : ""
                 } bg-[#f8ffff] cursor-pointer rounded-md shadow-xl border border-gray-100 flex flex-col justify-between px-4 transition-all duration-150 transform hover:scale-105 ease-in-out`}
               >
                 <div className=" flex justify-start text-xs mt-2 ">
-                  <div className={` ${el.type==="Receipt" ? "bg-[#FB6D48]" : el.type==="Tax Invoice" ? "bg-violet-500":"bg-[#3ed57a]" }   flex items-center text-white px-2 rounded-sm `}>
+                  <div
+                    className={` ${
+                      el.type === "Receipt"
+                        ? "bg-[#FB6D48]"
+                        : el.type === "Tax Invoice"
+                        ? "bg-violet-500"
+                        : "bg-[#3ed57a]"
+                    }   flex items-center text-white px-2 rounded-sm `}
+                  >
                     <FaRegCircleDot />
                     <p className=" p-1  rounded-lg px-3 font-semibold">
                       {" "}
-                    {el.type}
+                      {el.type}
                     </p>
                   </div>
                 </div>

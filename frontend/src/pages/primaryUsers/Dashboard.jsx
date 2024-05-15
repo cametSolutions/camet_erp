@@ -97,7 +97,8 @@ function Dashboard() {
     }
 
     else {
-      navigate(to);
+      navigate(to, { state: { receiptTotal } });
+
     }
   };
 
@@ -255,6 +256,8 @@ function Dashboard() {
           <div className=" bg-white px-4 p-2 z-40 text-gray-500 text-lg font-bold flex items-center gap-3 z shadow-lg sm:sticky top-[115px]">
             <p> Today's Transactions</p>
 
+
+            <p className="text-sm">( {new Date().toDateString()} )</p>
             <CiCalendarDate className="text-xl font-bold text-violet-500" />
             <FaCaretDown />
           </div>

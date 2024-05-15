@@ -22,6 +22,8 @@ function SalesDetailsSecondary() {
   const location = useLocation();
   const navigate = useNavigate();
 
+
+
   useEffect(() => {
     const getTransactionDetails = async () => {
       try {

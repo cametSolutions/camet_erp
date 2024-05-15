@@ -81,6 +81,11 @@ function SalesSecondary() {
 
 
   useEffect(() => {
+    localStorage.removeItem("scrollPositionAddItemSales");
+  }, []);
+
+
+  useEffect(() => {
     const fetchSingleOrganization = async () => {
       try {
         const res = await api.get(

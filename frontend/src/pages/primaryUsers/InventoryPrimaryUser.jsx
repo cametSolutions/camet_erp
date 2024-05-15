@@ -60,7 +60,6 @@ function InventoryPrimaryUser() {
             withCredentials: true,
           }
         );
-        setLoader(true);
 
         console.log(res.data);
 
@@ -69,7 +68,6 @@ function InventoryPrimaryUser() {
       }
     } catch (error) {
       console.log(error);
-      toast.error(error.response.data.message);
     } finally {
       setLoader(false);
     }
@@ -132,43 +130,44 @@ function InventoryPrimaryUser() {
   // getting godowns data
 
   useEffect(() => {
-    const fetchgetGodowms = async () => {
-      setLoader(true);
-      try {
-        const res = await api.get(`/api/pUsers/getGodowns/${cmp_id}`, {
-          withCredentials: true,
-        });
-        setLoader(true);
 
-        setIngodowns(res.data.godowndata);
+    if (type=="self"){
+      const fetchgetGodowmsSelf = async () => {
+        try {
+          const res = await api.get(`/api/pUsers/getGodownsSelf/${cmp_id}`, {
+            withCredentials: true,
+          });
+          setLoader(true);
+  
+          console.log(res.data.godowndata.locations);
+          setSelfGodowms(res.data.godowndata.locations);
+  
+        } catch (error) {
+          console.log(error);
+          toast.error(error.response.data.message);
+        } 
+      };
+      fetchgetGodowmsSelf();
 
-      } catch (error) {
-        console.log(error);
-        toast.error(error.response.data.message);
-      } finally {
-        setLoader(false);
-      }
-    };
-    fetchgetGodowms();
-    const fetchgetGodowmsSelf = async () => {
-      setLoader(true);
-      try {
-        const res = await api.get(`/api/pUsers/getGodownsSelf/${cmp_id}`, {
-          withCredentials: true,
-        });
-        setLoader(true);
-
-        console.log(res.data.godowndata.locations);
-        setSelfGodowms(res.data.godowndata.locations);
-
-      } catch (error) {
-        console.log(error);
-        toast.error(error.response.data.message);
-      } finally {
-        setLoader(false);
-      }
-    };
-    fetchgetGodowmsSelf();
+    }else{
+      
+      const fetchgetGodowms = async () => {
+        try {
+          const res = await api.get(`/api/pUsers/getGodowns/${cmp_id}`, {
+            withCredentials: true,
+          });
+          setLoader(true);
+  
+          setIngodowns(res.data.godowndata);
+  
+        } catch (error) {
+          console.log(error);
+          toast.error(error.response.data.message);
+        } 
+      };
+      fetchgetGodowms();
+    }
+   
   }, []);
 
   useEffect(() => {
