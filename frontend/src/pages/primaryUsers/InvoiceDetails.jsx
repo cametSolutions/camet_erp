@@ -45,28 +45,7 @@ function InvoiceDetails() {
     }
   };
 
-  const chooseFormat = () => {
-    Swal.fire({
-      title: "Which format would you like?",
-      html: "<p>Choose between:</p>",
-      showDenyButton: true,
-      showCancelButton: true,
-      confirmButtonText: "Tax Invoice",
-      denyButtonText: `POS format`,
-      customClass: {
-        container: "swal2-container-custom",
-      },
-    }).then((result) => {
-      if (result.isConfirmed) {
-        // Swal.fire("Tax Invoice selected", "", "success");
-        navigate(`/pUsers/shareInvoice/${data._id}`)
-      } else if (result.isDenied) {
-        navigate(`/pUsers/shareInvoiceThreeInch/${data._id}`)
 
-      }
-    });
-    
-  };
   return (
     <div className="flex relative">
       <div>
@@ -122,15 +101,15 @@ function InvoiceDetails() {
                 <FaEdit className="text-blue-500" />
                 <p className="text-black font-bold text-sm">Edit</p>
               </div>
-              {/* <Link to={`/pUsers/shareInvoice/${data._id}`}> */}
+              <Link to={`/pUsers/shareInvoice/${data._id}`}>
               <div
-                onClick={chooseFormat}
+                // onClick={chooseFormat}
                 className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer"
               >
                 <IoMdShareAlt />
                 <p className="text-black font-bold text-sm">Share</p>
               </div>
-              {/* </Link> */}
+              </Link>
               <div className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer">
                 <MdTextsms className="text-green-500" />
                 <p className="text-black font-bold text-sm">Sms</p>
@@ -245,14 +224,14 @@ function InvoiceDetails() {
               <FaEdit className="text-blue-500" />
               <p className="text-black font-bold text-sm">Edit</p>
             </div>
-            {/* <Link to={`/pUsers/shareInvoice/${data._id}`}> */}
+            <Link to={`/pUsers/shareInvoice/${data._id}`}>
               <div 
-                 onClick={chooseFormat}
+                //  onClick={chooseFormat}
               className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer">
                 <IoMdShareAlt />
                 <p className="text-black font-bold text-sm">Share</p>
               </div>
-            {/* </Link> */}
+            </Link>
             <div className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer">
               <MdTextsms className="text-green-500" />
               <p className="text-black font-bold text-sm">Sms</p>
