@@ -101,10 +101,8 @@ import ConfigureSecondaryUser from '../pages/primaryUsers/ConfigureSecondaryUser
 import ErrorPage from '../pages/errorPages/Notfound'
 import Notfound from '../pages/errorPages/Notfound'
 import ServerError from '../pages/errorPages/ServerError'
-import ThreeInchInvoice from '../pages/primaryUsers/ThreeInchInvoice'
 import ThreeInchSales from '../pages/primaryUsers/ThreeInchSales'
 import ThreeInchSalesSec from '../pages/secUsers/ThreeInchSalesSec'
-import ThreeInchInvoiceSec from '../pages/secUsers/ThreeInchInvoiceSec'
 const Routers = () => {
   return (
     <Routes>
@@ -152,7 +150,6 @@ const Routers = () => {
         <Route path='/pUsers/InvoiceDetails/:id' element={<ProtectedPriRoute><InvoiceDetails/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/editInvoice/:id' element={<ProtectedPriRoute><EditInvoice/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/shareInvoice/:id' element={<ProtectedPriRoute><ShareInvoice/></ProtectedPriRoute>}></Route>
-        <Route path='/pUsers/shareInvoiceThreeInch/:id' element={<ProtectedPriRoute><ThreeInchInvoice/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/additionalCharges' element={<ProtectedPriRoute><AdditionalCharges/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/additionalChargesList' element={<ProtectedPriRoute><AddChargesList/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/editAdditionalCharge/:id' element={<ProtectedPriRoute><EditAdditionalCharges/></ProtectedPriRoute>}></Route>
@@ -215,7 +212,6 @@ const Routers = () => {
         <Route path='/sUsers/salesDetails/:id' element={<ProtectedSecRoute><SalesDetailsSecondary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/shareSales/:id' element={<ProtectedSecRoute><ShareSalesSecondary/></ProtectedSecRoute>}></Route> 
         <Route path='/sUsers/shareSalesThreeInch/:id' element={<ProtectedSecRoute><ThreeInchSalesSec/></ProtectedSecRoute>}></Route> 
-        <Route path='/sUsers/shareInvoiceThreeInch/:id' element={<ProtectedSecRoute><ThreeInchInvoiceSec /></ProtectedSecRoute>}></Route>
 
         {/* errorPage */}
         <Route path='/errorPage' element={<ErrorPage />} />
