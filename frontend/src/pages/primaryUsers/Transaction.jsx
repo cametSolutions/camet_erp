@@ -10,18 +10,21 @@ import { FcCancel } from "react-icons/fc";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import { Link } from "react-router-dom";
 import { FaRegCircleDot } from "react-icons/fa6";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import { AiFillCaretRight } from "react-icons/ai";
 
 function Transaction() {
   const [data, setData] = useState([]);
   const [search, setSearch] = useState("");
-  const [dateFilter, setDateFilter] = useState(
-    new Date().toISOString().split("T")[0]
-  );
+
+
+  const [startDate, setStartDate] = useState(new Date());
+  const [endDate, setEndDate] = useState(new Date());
   const [showSidebar, setShowSidebar] = useState(false);
 
   const navigate = useNavigate();
   const org = useSelector((state) => state.setSelectedOrganization.selectedOrg);
-  console.log(org);
 
   useEffect(() => {
     const fetchTransactions = async () => {
@@ -44,14 +47,19 @@ function Transaction() {
 
   console.log(data);
 
+  console.log(startDate);
+  console.log(endDate);
+
   const filterOutstanding = (data) => {
     return data?.filter((item) => {
       const searchFilter = item.party_name
         ?.toLowerCase()
         .includes(search.toLowerCase());
+        const createdAtDate = new Date(item.createdAt);
 
-      const dateFilterCondition =
-        !dateFilter || item.createdAt?.startsWith(dateFilter);
+        const dateFilterCondition =
+        (!startDate || createdAtDate >= startDate) &&
+        (!endDate || createdAtDate <= endDate);
 
       return searchFilter && dateFilterCondition;
     });
@@ -124,12 +132,29 @@ function Transaction() {
                     Search
                   </button>
                 </div>
-                <div className="">
+                {/* <div className="">
                   <input
                     type="date"
                     className=" bg-blue-300 p-0 px-3 m-4 rounded-md"
                     value={dateFilter}
                     onChange={(e) => setDateFilter(e.target.value)}
+                  />
+                </div> */}
+                <div className="p-2 flex gap-3 overflow-hidden ga items-center ">
+                  <AiFillCaretRight/>
+                  <DatePicker
+                    className="h-6 text-xs bg-blue-200 rounded-sm w-full"
+                    startDate={startDate}
+                    dateFormat="dd/MM/yyyy"
+                    endDate={endDate}
+                    selectsRange
+                    onChange={(dates) => {
+                      console.log(dates);
+                      if (dates) {
+                        setStartDate(dates[0]);
+                        setEndDate(dates[1]);
+                      }
+                    }}
                   />
                 </div>
               </form>
@@ -142,18 +167,32 @@ function Transaction() {
                 key={index}
                 onClick={() => {
                   // navigate(`/pUsers/receiptDetails/${el._id}`);
-                  navigate(el.type==="Receipt"?`/pUsers/receiptDetails/${el._id}`: el.type==="Tax Invoice"?`/pUsers/salesDetails/${el._id}`:`/pUsers/InvoiceDetails/${el._id}`)
+                  navigate(
+                    el.type === "Receipt"
+                      ? `/pUsers/receiptDetails/${el._id}`
+                      : el.type === "Tax Invoice"
+                      ? `/pUsers/salesDetails/${el._id}`
+                      : `/pUsers/InvoiceDetails/${el._id}`
+                  );
                 }}
                 className={`${
                   el?.isCancelled ? "bg-gray-200 pointer-events-none " : ""
                 } bg-[#f8ffff] cursor-pointer rounded-md shadow-xl border border-gray-100 flex flex-col justify-between px-4 transition-all duration-150 transform hover:scale-105 ease-in-out`}
               >
                 <div className=" flex justify-start text-xs mt-2 ">
-                  <div className={` ${el.type==="Receipt" ? "bg-[#FB6D48]" : el.type==="Tax Invoice" ? "bg-violet-500":"bg-[#3ed57a]" }   flex items-center text-white px-2 rounded-sm `}>
+                  <div
+                    className={` ${
+                      el.type === "Receipt"
+                        ? "bg-[#FB6D48]"
+                        : el.type === "Tax Invoice"
+                        ? "bg-violet-500"
+                        : "bg-[#3ed57a]"
+                    }   flex items-center text-white px-2 rounded-sm `}
+                  >
                     <FaRegCircleDot />
                     <p className=" p-1  rounded-lg px-3 font-semibold">
                       {" "}
-                    {el.type}
+                      {el.type}
                     </p>
                   </div>
                 </div>
