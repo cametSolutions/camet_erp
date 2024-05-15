@@ -430,7 +430,7 @@ function Sidebar({ TAB, showBar }) {
                       >
                         <IoMdSettings />
 
-                        <span className="mx-4 font-medium">Order Configurations</span>
+                        <span className="mx-4 font-medium">Settings</span>
                       </a>
                     </Link></>
                 )
