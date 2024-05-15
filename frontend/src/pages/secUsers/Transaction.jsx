@@ -21,6 +21,8 @@ function Transaction() {
   const [startDate, setStartDate] = useState(new Date());
   const [endDate, setEndDate] = useState(new Date());
   const [showSidebar, setShowSidebar] = useState(false);
+  const [total, setTotal] = useState(0)
+
 
   const org = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg
@@ -57,16 +59,45 @@ function Transaction() {
         .includes(search.toLowerCase());
 
       const createdAtDate = new Date(item.createdAt);
+      const adjustedStartDate = new Date(startDate).setHours(0, 0, 0, 0);
+      const adjustedEndDate = new Date(endDate).setHours(23, 59, 59, 999);
 
       const dateFilterCondition =
-        (!startDate || createdAtDate >= startDate) &&
-        (!endDate || createdAtDate <= endDate);
+        (!startDate || createdAtDate >= adjustedStartDate) &&
+        (!endDate || createdAtDate <= adjustedEndDate) &&
+        (startDate && endDate
+          ? createdAtDate >= adjustedStartDate &&
+            createdAtDate <= adjustedEndDate
+          : true);
 
       return searchFilter && dateFilterCondition;
     });
   };
 
   const finalData = filterOutstanding(data);
+
+  const calulateTotal = () => {
+    if (finalData && finalData.length > 0) {
+      let total = 0;
+      try {
+        total = finalData.reduce((acc, curr) => {
+          const enteredAmount = curr?.enteredAmount;
+          if (typeof enteredAmount === "number" || typeof enteredAmount === "string") {
+            return (acc + parseFloat(enteredAmount));
+          }
+          return acc;
+        }, 0);
+      } catch (error) {
+        console.error("Error when calculating total:", error);
+      }
+      console.log(total);
+      setTotal(total);
+    }
+  };
+
+  useEffect(() => {
+    calulateTotal();
+  }, [finalData]); 
 
   // const handleCancel = async (id) => {
   //   try {
@@ -151,22 +182,34 @@ function Transaction() {
                     Search
                   </button>
                 </div>
-                <div className="p-2 flex gap-3 overflow-hidden ga items-center ">
-                  <AiFillCaretRight />
-                  <DatePicker
-                    className="h-6 text-xs bg-blue-200 rounded-sm w-full"
-                    startDate={startDate}
-                    dateFormat="dd/MM/yyyy"
-                    endDate={endDate}
-                    selectsRange
-                    onChange={(dates) => {
-                      console.log(dates);
-                      if (dates) {
-                        setStartDate(dates[0]);
-                        setEndDate(dates[1]);
-                      }
-                    }}
-                  />
+                <div className="p-2 flex justify-between pr-4 items-center">
+                  <div
+                    className="flex gap-3 items-center
+                  "
+                  >
+                    <AiFillCaretRight />
+                    <DatePicker
+                      className="h-6 text-xs bg-blue-200 rounded-sm w-full"
+                      startDate={startDate}
+                      dateFormat="dd/MM/yyyy"
+                      endDate={endDate}
+                      selectsRange
+                      onChange={(dates) => {
+                        console.log(dates);
+                        if (dates) {
+                          setStartDate(dates[0]);
+                          setEndDate(dates[1]);
+                        }
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <p className="font-semibold text-green-500 text-sm">
+                      <span className="text-gray-500 ">Total : </span>₹{" "}
+                      {total.toFixed(2)}
+                    </p>
+                  </div>
                 </div>
               </form>
             </div>

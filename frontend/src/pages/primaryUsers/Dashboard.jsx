@@ -97,7 +97,8 @@ function Dashboard() {
     }
 
     else {
-      navigate(to);
+      navigate(to, { state: { receiptTotal } });
+
     }
   };
 

@@ -13,17 +13,21 @@ import { FaRegCircleDot } from "react-icons/fa6";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { AiFillCaretRight } from "react-icons/ai";
+import { useLocation } from "react-router-dom";
 
 function Transaction() {
   const [data, setData] = useState([]);
   const [search, setSearch] = useState("");
 
-
   const [startDate, setStartDate] = useState(new Date());
   const [endDate, setEndDate] = useState(new Date());
   const [showSidebar, setShowSidebar] = useState(false);
+  const [total, setTotal] = useState(0)
 
   const navigate = useNavigate();
+  const location = useLocation();
+  const receiptTotal = location?.state?.receiptTotal;
+  console.log(location?.state?.receiptTotal);
   const org = useSelector((state) => state.setSelectedOrganization.selectedOrg);
 
   useEffect(() => {
@@ -45,27 +49,52 @@ function Transaction() {
     fetchTransactions();
   }, []);
 
-  console.log(data);
-
-  console.log(startDate);
-  console.log(endDate);
-
   const filterOutstanding = (data) => {
     return data?.filter((item) => {
       const searchFilter = item.party_name
         ?.toLowerCase()
         .includes(search.toLowerCase());
-        const createdAtDate = new Date(item.createdAt);
+      const createdAtDate = new Date(item.createdAt);
+      const adjustedStartDate = new Date(startDate).setHours(0, 0, 0, 0);
+      const adjustedEndDate = new Date(endDate).setHours(23, 59, 59, 999);
 
-        const dateFilterCondition =
-        (!startDate || createdAtDate >= startDate) &&
-        (!endDate || createdAtDate <= endDate);
+      const dateFilterCondition =
+        (!startDate || createdAtDate >= adjustedStartDate) &&
+        (!endDate || createdAtDate <= adjustedEndDate) &&
+        (startDate && endDate
+          ? createdAtDate >= adjustedStartDate &&
+            createdAtDate <= adjustedEndDate
+          : true);
 
       return searchFilter && dateFilterCondition;
     });
   };
 
   const finalData = filterOutstanding(data);
+  const calulateTotal = () => {
+    if (finalData && finalData.length > 0) {
+      let total = 0;
+      try {
+        total = finalData.reduce((acc, curr) => {
+          const enteredAmount = curr?.enteredAmount;
+          if (typeof enteredAmount === "number" || typeof enteredAmount === "string") {
+            return (acc + parseFloat(enteredAmount));
+          }
+          return acc;
+        }, 0);
+      } catch (error) {
+        console.error("Error when calculating total:", error);
+      }
+      console.log(total);
+      setTotal(total);
+    }
+  };
+
+  useEffect(() => {
+    calulateTotal();
+  }, [finalData]); 
+ 
+
   console.log(finalData);
 
   return (
@@ -140,22 +169,34 @@ function Transaction() {
                     onChange={(e) => setDateFilter(e.target.value)}
                   />
                 </div> */}
-                <div className="p-2 flex gap-3 overflow-hidden ga items-center ">
-                  <AiFillCaretRight/>
-                  <DatePicker
-                    className="h-6 text-xs bg-blue-200 rounded-sm w-full"
-                    startDate={startDate}
-                    dateFormat="dd/MM/yyyy"
-                    endDate={endDate}
-                    selectsRange
-                    onChange={(dates) => {
-                      console.log(dates);
-                      if (dates) {
-                        setStartDate(dates[0]);
-                        setEndDate(dates[1]);
-                      }
-                    }}
-                  />
+                <div className="p-2 flex justify-between pr-4 items-center">
+                  <div
+                    className="flex gap-3 items-center
+                  "
+                  >
+                    <AiFillCaretRight />
+                    <DatePicker
+                      className="h-6 text-xs bg-blue-200 rounded-sm w-full"
+                      startDate={startDate}
+                      dateFormat="dd/MM/yyyy"
+                      endDate={endDate}
+                      selectsRange
+                      onChange={(dates) => {
+                        console.log(dates);
+                        if (dates) {
+                          setStartDate(dates[0]);
+                          setEndDate(dates[1]);
+                        }
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <p className="font-semibold text-green-500 text-sm">
+                      <span className="text-gray-500 ">Total : </span>₹{" "}
+                      {total.toFixed(2)}
+                    </p>
+                  </div>
                 </div>
               </form>
             </div>
