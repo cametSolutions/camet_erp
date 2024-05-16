@@ -42,10 +42,8 @@ import ProductList from '../pages/primaryUsers/ProductList'
 import EditProduct from '../pages/primaryUsers/EditProduct'
 import PartyList from '../pages/primaryUsers/PartyList'
 import EditParty from '../pages/primaryUsers/EditParty'
-import Invoice from '../pages/primaryUsers/Invoice'
-import SearchParty from '../pages/primaryUsers/SearchParty'
-import AddItem from '../pages/primaryUsers/AddItem'
-import EditItem from '../pages/primaryUsers/EditItem'
+
+
 import Demo from '../pages/primaryUsers/Demo'
 import RetailersList from '../pages/primaryUsers/RetailersList'
 import HsnList from '../pages/primaryUsers/HsnList'
@@ -64,7 +62,6 @@ import AddBank from '../pages/primaryUsers/AddBank'
 import EditBank from '../pages/primaryUsers/EditBank'
 import EditSecUsers from '../pages/primaryUsers/EditSecUsers'
 import InvoiceDetails from '../pages/primaryUsers/InvoiceDetails'
-import EditInvoice from '../pages/primaryUsers/EditInvoice'
 import ShareInvoice from '../pages/primaryUsers/ShareInvoice'
 import InvoiceDetailsSecondary from '../pages/secUsers/InvoiceDetailsSecondary'
 import EditInvoiceSecondary from '../pages/secUsers/EditInvoiceSecondary'
@@ -82,10 +79,6 @@ import OrderConfigurationsSecondary from '../pages/secUsers/OrderConfigurationsS
 // inventory 
 import InventoryPrimaryUser from '../pages/primaryUsers/InventoryPrimaryUser'
 import InventorySecondaryUser from '../pages/secUsers/InventorySecondaryUser'
-import Sales from '../pages/primaryUsers/Sales'
-import SearchPartySales from '../pages/primaryUsers/SearchPartySales'
-import AddItemSales from '../pages/primaryUsers/AddItemSales'
-import EditItemSales from '../pages/primaryUsers/EditItemSales'
 import SelectDefaultModal from '../../constants/components/SelectDefaultModal'
 import SalesDetails from '../pages/primaryUsers/SalesDetails'
 import ShareSales from '../pages/primaryUsers/ShareSales'
@@ -138,27 +131,20 @@ const Routers = () => {
         <Route path='/pUsers/editProduct/:id' element={<ProtectedPriRoute><EditProduct/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/partyList' element={<ProtectedPriRoute><PartyList/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/editParty/:id' element={<ProtectedPriRoute><EditParty/></ProtectedPriRoute>}></Route>
-        <Route path='/pUsers/invoice' element={<ProtectedPriRoute><Invoice/></ProtectedPriRoute>}></Route>
-        <Route path='/pUsers/searchParty' element={<ProtectedPriRoute><SearchParty/></ProtectedPriRoute>}></Route>
-        <Route path='/pUsers/searchParty' element={<ProtectedPriRoute><SearchParty/></ProtectedPriRoute>}></Route>
-        <Route path='/pUsers/addItem' element={<ProtectedPriRoute><AddItem/></ProtectedPriRoute>}></Route>
-        <Route path='/pUsers/editItem/:id' element={<ProtectedPriRoute><EditItem/></ProtectedPriRoute>}></Route>
+
+     
         <Route path='/pUsers/demo' element={<ProtectedPriRoute><Demo/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/hsnList' element={<ProtectedPriRoute><HsnList/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/editHsn/:id' element={<ProtectedPriRoute><EditHsn/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/editBank/:id' element={<ProtectedPriRoute><EditBank/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/editUser/:id' element={<ProtectedPriRoute><EditSecUsers/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/InvoiceDetails/:id' element={<ProtectedPriRoute><InvoiceDetails/></ProtectedPriRoute>}></Route>
-        <Route path='/pUsers/editInvoice/:id' element={<ProtectedPriRoute><EditInvoice/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/shareInvoice/:id' element={<ProtectedPriRoute><ShareInvoice/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/additionalCharges' element={<ProtectedPriRoute><AdditionalCharges/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/additionalChargesList' element={<ProtectedPriRoute><AddChargesList/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/editAdditionalCharge/:id' element={<ProtectedPriRoute><EditAdditionalCharges/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/OrderConfigurations' element={<ProtectedPriRoute><OrderConfigurations/></ProtectedPriRoute>}></Route>
-        <Route path='/pUsers/sales' element={<ProtectedPriRoute><Sales/></ProtectedPriRoute>}></Route>
-        <Route path='/pUsers/searchPartySales' element={<ProtectedPriRoute><SearchPartySales/></ProtectedPriRoute>}></Route>
-        <Route path='/pUsers/addItemSales' element={<ProtectedPriRoute><AddItemSales/></ProtectedPriRoute>}></Route>
-        <Route path='/pUsers/editItemSales/:id' element={<ProtectedPriRoute><EditItemSales/></ProtectedPriRoute>}></Route>
+
         <Route path='/pUsers/modal' element={<ProtectedPriRoute><SelectDefaultModal/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/salesDetails/:id' element={<ProtectedPriRoute><SalesDetails/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/shareSalesThreeInch/:id' element={<ProtectedPriRoute><ThreeInchSales/></ProtectedPriRoute>}></Route>
