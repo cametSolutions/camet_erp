@@ -570,6 +570,7 @@ export const transactions = async (req, res) => {
           // totalBillAmount: 1,
           cmp_id: 1,
           type: "Receipt",
+          Secondary_user_id: "$agentId",
 
           // billNo: "$billData.billNo",
           // settledAmount: "$billData.settledAmount",
@@ -593,6 +594,7 @@ export const transactions = async (req, res) => {
           enteredAmount: "$finalAmount",
           createdAt: 1,
           itemsLength: { $size: "$items" },
+          Secondary_user_id: "$Secondary_user_id",
         },
       },
     ]);
@@ -606,6 +608,8 @@ export const transactions = async (req, res) => {
           enteredAmount: "$finalAmount",
           createdAt: 1,
           itemsLength: { $size: "$items" },
+          Secondary_user_id: "$Secondary_user_id",
+
         },
       },
     ]);

@@ -204,6 +204,19 @@
   -moz-appearance: textfield;
 }
 
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none; /* Hides the scrollbar */
+}
+
+/* To set the scrollbar width and color in WebKit browsers */
+.no-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.5); /* Example: semi-transparent white */
+}
+
+.no-scrollbar::-webkit-scrollbar-track {
+  background-color: transparent; /* Makes the track transparent */
+}
 #popup-modal {
   /* Horizontally center content */
   background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
