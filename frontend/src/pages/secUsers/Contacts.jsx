@@ -123,11 +123,7 @@ function Contacts() {
 
   console.log(selectedParty);
   const backHandler = () => {
-    if (location?.state?.from === "editInvoice") {
-      navigate(`/sUsers/editinvoice/${location?.state?.id}`);
-    } else {
-      navigate("/sUsers/invoice");
-    }
+    navigate(-1)
   };
 
   console.log(parties);
