@@ -88,7 +88,7 @@ function SearchPartySecondary() {
               onClick={backHandler}
               className="text-3xl text-white cursor-pointer"
             />
-            <p className="text-white text-lg   font-bold ">Select Partye</p>
+            <p className="text-white text-lg   font-bold ">Select Party</p>
           </div>
 
           {/* invoiec date */}

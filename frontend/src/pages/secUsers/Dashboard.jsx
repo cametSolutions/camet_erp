@@ -22,6 +22,7 @@ import { removeAll } from "../../../slices/invoiceSecondary";
 import { removeAllSales } from "../../../slices/salesSecondary";
 import { toast } from "react-toastify";
 import { MdInventory } from "react-icons/md";
+import { RiContactsFill } from "react-icons/ri";
 
 function Dashboard() {
   const [showSidebar, setShowSidebar] = useState(false);
@@ -171,46 +172,10 @@ function Dashboard() {
             {/* </Link> */}
 
             {/* <Link to={"/sUsers/sales"}> */}
-            <div
-              onClick={() => handleLinkClick("/sUsers/sales")}
-              className="flex flex-wrap -mx-6  duration-150 hover:scale-105 ease-in-out cursor-pointer"
-            >
-              <div className="w-full px-6 ">
-                <div className="flex items-center px-2 py-3 md:px-5 md:py-2 shadow-sm rounded-md bg-slate-100 h-24">
-                  <div className="p-3 rounded-full bg-orange-500 bg-opacity-75 text-2xl  text-white">
-                    <FaCartArrowDown />
-                  </div>
-
-                  <div className="mx-5 ">
-                    {/* <h4 className=" sm:text-md md:text-2xl  font-semibold text-gray-700">
-                      ₹0
-                    </h4> */}
-                    <div className="text-gray-500 text-md">Sales </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+          
             {/* </Link> */}
             {/* <Link to={'/sUsers/invoice'} > */}
-            <div
-              onClick={() => handleLinkClick("/sUsers/invoice")}
-              className="flex flex-wrap -mx-6  duration-150 hover:scale-105 ease-in-out cursor-pointer"
-            >
-              <div className="w-full px-6 ">
-                <div className="flex items-center px-2 py-3 md:px-5 md:py-2 shadow-sm rounded-md bg-slate-100 h-24">
-                  <div className="p-3 rounded-full bg-blue-500 bg-opacity-75 text-2xl text-white">
-                    <HiDocumentText />
-                  </div>
-
-                  <div className="mx-5 py-2.5">
-                    {/* <h4 className=" sm:text-md md:text-2xl  font-semibold text-gray-700">
-                      ₹0
-                    </h4> */}
-                    <div className="text-gray-500 text-md">Sale Order </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+        
             <div
               onClick={() => handleLinkClick("/sUsers/Inventory")}
               className="flex flex-wrap -mx-6  duration-150 hover:scale-105 ease-in-out cursor-pointer"
@@ -226,6 +191,29 @@ function Dashboard() {
                       ₹0
                     </h4> */}
                     <div className="text-gray-500 text-md">Inventory </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+
+            {/* contact */}
+
+            <div
+              onClick={() => handleLinkClick("/sUsers/contacts")}
+              className="flex flex-wrap -mx-6  duration-150 hover:scale-105 ease-in-out cursor-pointer"
+            >
+              <div className="w-full px-6 ">
+                <div className="flex items-center px-2 py-3 md:px-5 md:py-2 shadow-sm rounded-md bg-slate-100 h-24">
+                  <div className="p-3 rounded-full bg-blue-500 bg-opacity-75 text-2xl text-white">
+                    <RiContactsFill />
+                  </div>
+
+                  <div className="mx-5 py-2.5">
+                    {/* <h4 className=" sm:text-md md:text-2xl  font-semibold text-gray-700">
+                      ₹0
+                    </h4> */}
+                    <div className="text-gray-500 text-md">Contacts</div>
                   </div>
                 </div>
               </div>

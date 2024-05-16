@@ -159,71 +159,15 @@ function Dashboard() {
             </div>
             {/* </Link> */}
             {/* <Link to={"/pUsers/outstanding"}> */}
-            <div
-
-              onClick={() => handleLinkClick("/pUsers/outstanding")}
-
-              className="flex flex-wrap -mx-6  duration-150 hover:scale-105 ease-in-out cursor-pointer">
-              <div className="w-full px-6 ">
-                <div className="flex items-center px-2 py-3 md:px-5 md:py-2 shadow-sm rounded-md bg-slate-100 h-24">
-                  <div className="p-3 rounded-full bg-red-500 bg-opacity-75 text-2xl text-white">
-                    <IoReceiptSharp />
-                  </div>
-
-                  <div className="mx-5 py-2.5">
-                    {/* <h4 className=" sm:text-md md:text-2xl  font-semibold text-gray-700">
-                        ₹0
-                      </h4> */}
-                    <div className="text-gray-500 text-md">Reciept</div>
-                  </div>
-                </div>
-              </div>
-            </div>
+          
             {/* </Link> */}
 
            
             {/* <Link to={"/pUsers/sales"}> */}
-            <div
-             onClick={() => handleLinkClick("/pUsers/sales")}
-
-             className="flex flex-wrap -mx-6  duration-150 hover:scale-105 ease-in-out cursor-pointer">
-
-              <div className="w-full px-6 ">
-                <div className="flex items-center px-2 py-3 md:px-5 md:py-2 shadow-sm rounded-md bg-slate-100 h-24">
-                  <div className="p-3 rounded-full bg-orange-500 bg-opacity-75 text-2xl  text-white">
-                    <FaCartArrowDown />
-                  </div>
-
-                  <div className="mx-5 ">
-                    {/* <h4 className=" sm:text-md md:text-2xl  font-semibold text-gray-700">
-                      ₹0
-                    </h4> */}
-                    <div className="text-gray-500 text-md">Sales </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+         
             {/* </Link> */}
             {/* <Link to={'/pUsers/invoice'} > */}
-            <div
-              onClick={() => handleLinkClick("/pUsers/invoice")}
-
-              className="flex flex-wrap -mx-6  duration-150 hover:scale-105 ease-in-out cursor-pointer">
-              <div className="w-full px-6 ">
-                <div className="flex items-center px-2 py-3 md:px-5 md:py-2 shadow-sm rounded-md bg-slate-100 h-24" >
-                  <div className="p-3 rounded-full bg-blue-500 bg-opacity-75 text-2xl text-white">
-                    <HiDocumentText />
-                  </div>
-
-                  <div className="mx-5 py-2.5">
-                    {/* <h4 className=" sm:text-md md:text-2xl  font-semibold text-gray-700">
-                      ₹0
-                    </h4> */}
-                    <div className="text-gray-500 text-md">Sale Order</div>
-                  </div>
-                </div>
-              </div>
-            </div>
+         
             {/* </Link> */}
             <div
               onClick={() => handleLinkClick("/pUsers/Inventory")}

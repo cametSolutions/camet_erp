@@ -13,22 +13,22 @@ import { FaRegCircleDot } from "react-icons/fa6";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { AiFillCaretRight } from "react-icons/ai";
-import { useLocation } from "react-router-dom";
 
 function Transaction() {
   const [data, setData] = useState([]);
   const [search, setSearch] = useState("");
+  const [users, setUsers] = useState([]);
+  const [selectedUser, setSelectedUser] = useState("");
 
   const [startDate, setStartDate] = useState(new Date());
   const [endDate, setEndDate] = useState(new Date());
   const [showSidebar, setShowSidebar] = useState(false);
-  const [total, setTotal] = useState(0)
+  const [total, setTotal] = useState(0);
 
   const navigate = useNavigate();
-  const location = useLocation();
-  const receiptTotal = location?.state?.receiptTotal;
-  console.log(location?.state?.receiptTotal);
+
   const org = useSelector((state) => state.setSelectedOrganization.selectedOrg);
+  console.log(org);
 
   useEffect(() => {
     const fetchTransactions = async () => {
@@ -47,7 +47,32 @@ function Transaction() {
       }
     };
     fetchTransactions();
+
+    const fetchSecondaryUsers = async () => {
+      try {
+        const res = await api.get("/api/pUsers/fetchSecondaryUsers", {
+          withCredentials: true,
+        });
+
+        setUsers(res.data.secondaryUsers);
+        const allSecUsers=res?.data?.secondaryUsers
+        const companyWiseSecUsers = allSecUsers?.filter((item) => {
+          // Correctly compare org._id to item._id
+          return item.organization.some(company => company._id === org._id);
+        });
+
+        console.log(companyWiseSecUsers.length);
+        setUsers(companyWiseSecUsers)
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    fetchSecondaryUsers();
   }, []);
+
+  console.log(users);
+  console.log(selectedUser);
+  console.log(data);
 
   const filterOutstanding = (data) => {
     return data?.filter((item) => {
@@ -66,7 +91,17 @@ function Transaction() {
             createdAtDate <= adjustedEndDate
           : true);
 
-      return searchFilter && dateFilterCondition;
+      let secondaryUserIdMatch;
+
+      if (!selectedUser) {
+        secondaryUserIdMatch = true;
+      } else {
+        secondaryUserIdMatch = item?.Secondary_user_id === selectedUser;
+      }
+
+      console.log(secondaryUserIdMatch);
+
+      return searchFilter && dateFilterCondition && secondaryUserIdMatch;
     });
   };
 
@@ -77,8 +112,11 @@ function Transaction() {
       try {
         total = finalData.reduce((acc, curr) => {
           const enteredAmount = curr?.enteredAmount;
-          if (typeof enteredAmount === "number" || typeof enteredAmount === "string") {
-            return (acc + parseFloat(enteredAmount));
+          if (
+            typeof enteredAmount === "number" ||
+            typeof enteredAmount === "string"
+          ) {
+            return acc + parseFloat(enteredAmount);
           }
           return acc;
         }, 0);
@@ -88,12 +126,14 @@ function Transaction() {
       console.log(total);
       setTotal(total);
     }
+    else{
+      setTotal(0);
+    }
   };
 
   useEffect(() => {
     calulateTotal();
-  }, [finalData]); 
- 
+  }, [finalData]);
 
   console.log(finalData);
 
@@ -169,14 +209,11 @@ function Transaction() {
                     onChange={(e) => setDateFilter(e.target.value)}
                   />
                 </div> */}
-                <div className="p-2 flex justify-between pr-4 items-center">
-                  <div
-                    className="flex gap-3 items-center
-                  "
-                  >
-                    <AiFillCaretRight />
+                <div className="p-2 mt-1 md:flex justify-between pr-4 items-center ">
+                  <div className="flex gap-3 items-center">
+                    <AiFillCaretRight className="text-[9px] md:text-sm" />
                     <DatePicker
-                      className="h-6 text-xs bg-blue-200 rounded-sm w-full"
+                      className="h-8 text-xs bg-blue-200 rounded-sm w-full"
                       startDate={startDate}
                       dateFormat="dd/MM/yyyy"
                       endDate={endDate}
@@ -189,15 +226,47 @@ function Transaction() {
                         }
                       }}
                     />
+
+                    <select
+                      onChange={(e) => {
+                        setSelectedUser(e.target.value);
+                      }}
+                      className="h-8 text-xs bg-green-100 rounded-sm "
+                      name="users"
+                      id="users"
+                    >
+                      <option className="text-xs " value="">
+                        All
+                      </option>
+                      {users.map((user, index) => (
+                        <option
+                          className="text-xs "
+                          key={index}
+                          value={user._id}
+                        >
+                          {user?.name}
+                        </option>
+                      ))}
+                    </select>
                   </div>
 
-                  <div>
+                  <div className="mt-2 flex items-center gap-2 text-[9px] md:text-sm">
+                  <AiFillCaretRight className="md:hidden" />
                     <p className="font-semibold text-green-500 text-sm">
                       <span className="text-gray-500 ">Total : </span>₹{" "}
                       {total.toFixed(2)}
                     </p>
                   </div>
                 </div>
+
+                {/* <div className="p-2 bg-white">
+                  <select className="h-6 bg-green-200">
+                    <option value="">Select an option</option>
+                    <option value="option1">Option 1</option>
+                    <option value="option2">Option 2</option>
+                    <option value="option3">Option 3</option>
+                  </select>
+                </div> */}
               </form>
             </div>
           </div>
