@@ -550,16 +550,33 @@ export const getTransactionDetails = async (req, res) => {
 export const PartyList = async (req, res) => {
   const cmp_id = req.params.cmp_id;
   const Primary_user_id = req.owner;
+  const secUserId=req.sUserId
   try {
     const partyList = await PartyModel.find({
       cmp_id: cmp_id,
       Primary_user_id: Primary_user_id,
     });
 
+
+    const secUser = await SecondaryUser.findById(secUserId);
+    if (!secUser) {
+      return res.status(404).json({ message: "Secondary user not found" });
+    }
+
+    const configuration = secUser.configurations.find(
+      (item) => item.organization == cmp_id
+    );
+
+    let vanSaleConfig=false;
+    if (configuration) {
+      const { vanSale } = configuration;
+      vanSaleConfig = vanSale;
+    }
+
     if (partyList) {
       res
         .status(200)
-        .json({ message: "parties fetched", partyList: partyList });
+        .json({ message: "parties fetched", partyList: partyList,vanSale:vanSaleConfig });
     } else {
       res.status(404).json({ message: "No parties found" });
     }
