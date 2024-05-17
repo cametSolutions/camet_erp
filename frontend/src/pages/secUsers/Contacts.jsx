@@ -60,12 +60,10 @@ function Contacts() {
 
   function onCloseModal() {
     setOpenModal(false);
-    setEmail("");
   }
 
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const location = useLocation();
 
   console.log(parties);
 
