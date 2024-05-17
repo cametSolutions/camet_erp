@@ -9,7 +9,6 @@ import AdminHome from '../pages/admin/AdminHome'
 import SecLogin from '../pages/secUsers/SecLogin'
 import SecHome from '../pages/secUsers/SecHome'
 import Outstanding from '../pages/secUsers/Outstanding'
-import PrimaryOutstanding from '../pages/primaryUsers/Outstanding'
 import OutstandingDetails from '../pages/secUsers/OutstandingDetails'
 import PrOutstandingDetails from '../pages/primaryUsers/PrOutstandingDetails ' 
 import PaymentSec from '../pages/secUsers/Payment'
@@ -97,6 +96,10 @@ import ServerError from '../pages/errorPages/ServerError'
 import ThreeInchSales from '../pages/primaryUsers/ThreeInchSales'
 import ThreeInchSalesSec from '../pages/secUsers/ThreeInchSalesSec'
 import Contacts from '../pages/secUsers/Contacts'
+import Purchase from '../pages/secUsers/Purchase'
+import SearchPartyPurchase from '../pages/secUsers/SearchPartyPurchase'
+import AddItemSalesPurchase from '../pages/secUsers/AddItemSalesPurchase'
+import EditItemPurchase from '../pages/secUsers/EditItemPurchase'
 const Routers = () => {
   return (
     <Routes>
@@ -117,7 +120,6 @@ const Routers = () => {
         <Route path='/pUsers/retailers' element={<ProtectedPriRoute><RetailersList/></ProtectedPriRoute>}></Route>
 
         <Route path='/pUsers/payment' element={<ProtectedPriRoute><PaymentPri/></ProtectedPriRoute>}></Route>
-        <Route path='/pUsers/outstanding' element={<ProtectedPriRoute>< PrimaryOutstanding/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/outstandingDetails/:party_id/:cmp_id/:total' element={<ProtectedPriRoute>< PrOutstandingDetails/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/transaction' element={<ProtectedPriRoute><PriTransaction /></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/receiptDetails/:id' element={<ProtectedPriRoute><ReceiptDetails/></ProtectedPriRoute>}></Route>
@@ -200,6 +202,10 @@ const Routers = () => {
         <Route path='/sUsers/shareSales/:id' element={<ProtectedSecRoute><ShareSalesSecondary/></ProtectedSecRoute>}></Route> 
         <Route path='/sUsers/shareSalesThreeInch/:id' element={<ProtectedSecRoute><ThreeInchSalesSec/></ProtectedSecRoute>}></Route> 
         <Route path='/sUsers/contacts' element={<ProtectedSecRoute><Contacts/></ProtectedSecRoute>}></Route> 
+        <Route path='/sUsers/purchase' element={<ProtectedSecRoute><Purchase/></ProtectedSecRoute>}></Route> 
+        <Route path='/sUsers/searchPartyPurchase' element={<ProtectedSecRoute><SearchPartyPurchase/></ProtectedSecRoute>}></Route> 
+        <Route path='/sUsers/addItemPurchase' element={<ProtectedSecRoute><AddItemSalesPurchase/></ProtectedSecRoute>}></Route> 
+        <Route path='/sUsers/editItemPurchase/:id/:godownName' element={<ProtectedSecRoute><EditItemPurchase/></ProtectedSecRoute>}></Route> 
 
         {/* errorPage */}
         <Route path='/errorPage' element={<ErrorPage />} />
