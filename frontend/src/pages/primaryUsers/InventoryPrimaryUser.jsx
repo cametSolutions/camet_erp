@@ -15,7 +15,7 @@ import { FixedSizeList as List } from "react-window";
 import { useSelector } from "react-redux";
 import { removeAll } from "../../../slices/invoice";
 import { IoIosArrowRoundBack } from "react-icons/io";
-import { Button, Modal } from "flowbite-react";
+import {  Modal } from "flowbite-react";
 
 import { useDispatch } from "react-redux";
 
@@ -120,11 +120,7 @@ function InventoryPrimaryUser() {
     dispatch(removeAll());
   }, [refresh, cmp_id]);
 
-  const handleToggleSidebar = () => {
-    if (window.innerWidth < 768) {
-      setShowSidebar(!showSidebar);
-    }
-  };
+
   // getting godowns data
 
   useEffect(() => {
