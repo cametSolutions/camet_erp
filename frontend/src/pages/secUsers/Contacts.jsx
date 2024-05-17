@@ -33,7 +33,7 @@ function Contacts() {
   const [loading, setLoading] = useState(true);
   const [openModal, setOpenModal] = useState(false);
   const [selectedParty, setSelectedParty] = useState("");
-  const [vanSale, setVanSale] = useState(false)
+  const [vanSale, setVanSale] = useState(false);
   const tiles = [
     { title: "Sales", icon: sale, to: "/sUsers/sales", active: !vanSale },
     {
@@ -55,7 +55,12 @@ function Contacts() {
       active: false,
     },
     { title: "New Order", icon: order, to: "/sUsers/invoice", active: true },
-    { title: "VanSale", icon: vanSaleImg, to: "/sUsers/sales", active: vanSale },
+    {
+      title: "VanSale",
+      icon: vanSaleImg,
+      to: "/sUsers/sales",
+      active: vanSale,
+    },
   ];
 
   function onCloseModal() {
@@ -79,7 +84,7 @@ function Contacts() {
         setLoading(false);
 
         setParties(res?.data?.partyList);
-        setVanSale(res?.data?.vanSale)
+        setVanSale(res?.data?.vanSale);
       } catch (error) {
         setLoading(false);
         console.log(error);
@@ -124,7 +129,7 @@ function Contacts() {
 
   console.log(selectedParty);
   const backHandler = () => {
-    navigate(-1)
+    navigate(-1);
   };
 
   console.log(parties);
@@ -271,10 +276,10 @@ function Contacts() {
         onClose={onCloseModal}
         popup
       >
-        <Modal.Header />
+       <Modal.Header className="bg-[#579BB1] pl-5">Menu </Modal.Header>
         <Modal.Body>
           <div className="">
-            <div className="  grid grid-cols-2 gap-4">
+            <div className="  grid grid-cols-2 gap-4 overflow-scroll">
               {tiles.map((tile, index) => (
                 <div
                   onClick={() => {
