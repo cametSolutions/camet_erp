@@ -249,6 +249,7 @@ function Dashboard() {
                       ? `/sUsers/receiptDetails/${el._id}`
                       : el.type === "Tax Invoice"
                       ? `/sUsers/salesDetails/${el._id}`
+                      : el.type === "Purchase"? `/sUsers/purchaseDetails/${el._id}`
                       : `/sUsers/InvoiceDetails/${el._id}`;
                   navigate(navigationPath, { state: { from: "dashboard" } });
                 }}
@@ -263,6 +264,8 @@ function Dashboard() {
                         ? "bg-[#FB6D48]"
                         : el.type === "Tax Invoice"
                         ? "bg-violet-500"
+                        : el.type === "Purchase"
+                        ? "bg-pink-500"
                         : "bg-[#3ed57a]"
                     }   flex items-center text-white px-2 rounded-sm `}
                   >

@@ -323,8 +323,21 @@ export const transactions = async (req, res) => {
         },
       },
     ]);
+    const purchases = await purchaseModel.aggregate([
+      { $match: { Secondary_user_id: userId, cmp_id: cmp_id } },
+      {
+        $project: {
+          party_name: "$party.partyName",
+          // mobileNumber:"$party.mobileNumber",
+          type: "Purchase",
+          enteredAmount: "$finalAmount",
+          createdAt: 1,
+          itemsLength: { $size: "$items" },
+        },
+      },
+    ]);
 
-    const combined = [...transactions, ...invoices, ...sales];
+    const combined = [...transactions, ...invoices, ...sales,...purchases];
     combined.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
     if (combined.length > 0) {
@@ -336,6 +349,7 @@ export const transactions = async (req, res) => {
       return res.status(404).json({ message: "Transactions not found" });
     }
   } catch (error) {
+    console.log(error);
     return res.status(500).json({
       status: false,
       message: "Internal server error",
@@ -551,13 +565,12 @@ export const getTransactionDetails = async (req, res) => {
 export const PartyList = async (req, res) => {
   const cmp_id = req.params.cmp_id;
   const Primary_user_id = req.owner;
-  const secUserId=req.sUserId
+  const secUserId = req.sUserId;
   try {
     const partyList = await PartyModel.find({
       cmp_id: cmp_id,
       Primary_user_id: Primary_user_id,
     });
-
 
     const secUser = await SecondaryUser.findById(secUserId);
     if (!secUser) {
@@ -568,16 +581,18 @@ export const PartyList = async (req, res) => {
       (item) => item.organization == cmp_id
     );
 
-    let vanSaleConfig=false;
+    let vanSaleConfig = false;
     if (configuration) {
       const { vanSale } = configuration;
       vanSaleConfig = vanSale;
     }
 
     if (partyList) {
-      res
-        .status(200)
-        .json({ message: "parties fetched", partyList: partyList,vanSale:vanSaleConfig });
+      res.status(200).json({
+        message: "parties fetched",
+        partyList: partyList,
+        vanSale: vanSaleConfig,
+      });
     } else {
       res.status(404).json({ message: "No parties found" });
     }
@@ -934,18 +949,21 @@ export const createInvoice = async (req, res) => {
     const configuration = secondaryUser.configurations.find(
       (config) => config.organization.toString() === orgId
     );
+
+    console.log("configuration", configuration);
     if (configuration) {
       if (
         configuration.salesOrderConfiguration &&
-        Object.values(configuration.salesOrderConfiguration).every(
-          (value) => value !== ""
-        )
+        Object.entries(configuration.salesOrderConfiguration)
+          .filter(([key]) => key !== "startingNumber")
+          .every(([_, value]) => value !== "")
       ) {
         orderConfig = true;
       }
     }
+    console.log(orderConfig);
 
-    if (orderConfig) {
+    if (orderConfig === true) {
       const increaseSalesNumber = await SecondaryUser.findByIdAndUpdate(
         Secondary_user_id,
         { $inc: { orderNumber: 1 } },
@@ -1785,18 +1803,16 @@ export const createSale = async (req, res) => {
         },
       });
 
-      console.log("godown",  item.GodownList);
-      if (vanSaleConfig===true) {
-
+      console.log("godown", item.GodownList);
+      if (vanSaleConfig === true) {
         console.log("haiiii");
         for (const godown of item.GodownList) {
-
           // Find the corresponding godown in the product's GodownList
           const godownIndex = product.GodownList.findIndex(
             (g) => g.godown_id === godown.godown_id
           );
 
-          console.log( "godownIndex", godownIndex);
+          console.log("godownIndex", godownIndex);
           if (godownIndex !== -1) {
             // Calculate the new godown stock
             const newGodownStock = truncateToNDecimals(
@@ -2218,49 +2234,34 @@ export const fetchConfigurationNumber = async (req, res) => {
       (item) => item.organization.toString() === cmp_id
     );
 
-    if (!configuration) {
-      switch (title) {
-        case "sales":
-          configDetails = company?.salesNumberDetails;
-          configurationNumber = company?.salesNumber;
-          break;
-        case "salesOrder":
-          configDetails = company?.OrderNumberDetails;
-          configurationNumber = company?.orderNumber;
-          break;
-        case "receipt":
-          configDetails = company?.receiptNumberDetails;
-          break;
-        default:
-          configDetails = null;
-          break;
-      }
-    } else {
+    if (configuration) {
       switch (title) {
         case "sales":
           if (
             configuration.vanSale &&
             Object.values(configuration.salesConfiguration).every(
-              (value) => value === ""
+              (value) => value !== ""
             )
           ) {
             configDetails = configuration.vanSaleConfiguration;
             configurationNumber = secUser?.vanSalesNumber;
           } else {
-            configDetails =
-              configuration.salesConfiguration || company?.salesNumberDetails;
+            configDetails = configuration.salesConfiguration || "";
             configurationNumber = secUser?.salesNumber;
           }
           break;
         case "salesOrder":
-          configDetails =
-            configuration.salesOrderConfiguration ||
-            company?.OrderNumberDetails;
+          configDetails = configuration.salesOrderConfiguration || "";
+
           configurationNumber = secUser?.orderNumber;
           break;
+        case "purchase":
+          configDetails = configuration.purchaseConfiguration || "";
+
+          configurationNumber = secUser?.purchaseNumber;
+          break;
         case "receipt":
-          configDetails =
-            configuration.receiptConfiguration || company?.receiptNumberDetails;
+          configDetails = configuration.receiptConfiguration || "";
           break;
         default:
           configDetails = null;
@@ -2270,19 +2271,28 @@ export const fetchConfigurationNumber = async (req, res) => {
 
     if (
       !configDetails ||
-      Object.values(configDetails).every((value) => value === "")
+      Object.entries(configDetails)
+        .filter(([key]) => key !== "startingNumber")
+        .every(([_, value]) => value === "")
     ) {
       switch (title) {
         case "sales":
-          configDetails = company?.salesNumberDetails;
+          configDetails = "";
           configurationNumber = company?.salesNumber;
           break;
         case "salesOrder":
-          configDetails = company?.OrderNumberDetails;
+          configDetails = "";
           configurationNumber = company?.orderNumber;
           break;
         case "receipt":
+          configDetails = "";
+
           configDetails = company?.receiptNumberDetails;
+          break;
+        case "purchase":
+          configDetails = "";
+
+          configurationNumber = company?.purchaseNumber;
           break;
         default:
           configDetails = null;
@@ -2290,19 +2300,20 @@ export const fetchConfigurationNumber = async (req, res) => {
       }
     }
 
-    if (configDetails == undefined && configuration == undefined) {
+    if (!configuration) {
       switch (title) {
         case "sales":
-          // configDetails = company?.salesNumberDetails;
           configurationNumber = company?.salesNumber;
           break;
         case "salesOrder":
-          // configDetails = company?.OrderNumberDetails;
           configurationNumber = company?.orderNumber;
           break;
-        // case "receipt":
-        //   configDetails = company?.receiptNumberDetails;
-        //   break;
+        case "receipt":
+          configurationNumber = company?.receiptNumberDetails;
+          break;
+        case "purchase":
+          configurationNumber = company?.purchaseNumber;
+          break;
         default:
           configurationNumber = null;
           break;
@@ -2547,7 +2558,6 @@ export const findGodownsNames = async (req, res) => {
   }
 };
 
-
 // route POST /api/pUsers/createSale
 
 export const createPurchase = async (req, res) => {
@@ -2562,7 +2572,7 @@ export const createPurchase = async (req, res) => {
       priceLevelFromRedux,
       additionalChargesFromRedux,
       lastAmount,
-      salesNumber,
+      purchaseNumber,
     } = req.body;
 
     const secondaryUser = await SecondaryUser.findById(Secondary_user_id);
@@ -2577,8 +2587,6 @@ export const createPurchase = async (req, res) => {
     const configuration = secondaryUser.configurations.find(
       (config) => config.organization.toString() === orgId
     );
-
-
 
     // Prepare bulk operations for product and godown updates
     const productUpdates = [];
@@ -2598,7 +2606,7 @@ export const createPurchase = async (req, res) => {
       console.log("productBalanceStock", productBalanceStock);
       const itemCount = truncateToNDecimals(item.count, 3);
       const newBalanceStock = truncateToNDecimals(
-        productBalanceStock - itemCount,
+        productBalanceStock + itemCount,
         3
       );
 
@@ -2613,38 +2621,35 @@ export const createPurchase = async (req, res) => {
         },
       });
 
-      console.log("godown",  item.GodownList);
-    
-     // Update the godown stock for each specified godown
-        for (const godown of item.GodownList) {
-          // Find the corresponding godown in the product's GodownList
-          const godownIndex = product.GodownList.findIndex(
-            (g) => g.godown_id === godown.godown_id
+      console.log("godown", item.GodownList);
+
+      // Update the godown stock for each specified godown
+      for (const godown of item.GodownList) {
+        // Find the corresponding godown in the product's GodownList
+        const godownIndex = product.GodownList.findIndex(
+          (g) => g.godown_id === godown.godown_id
+        );
+        if (godownIndex !== -1) {
+          // Calculate the new godown stock
+          const newGodownStock = truncateToNDecimals(
+            product.GodownList[godownIndex].balance_stock + godown.count,
+            3
           );
-          if (godownIndex !== -1) {
-            // Calculate the new godown stock
-            const newGodownStock = truncateToNDecimals(
-              product.GodownList[godownIndex].balance_stock - godown.count,
-              3
-            );
 
-            // Prepare godown update operation
-            godownUpdates.push({
-              updateOne: {
-                filter: {
-                  _id: product._id,
-                  "GodownList.godown": godown.godown,
-                },
-                update: {
-                  $set: { "GodownList.$.balance_stock": newGodownStock },
-                },
+          // Prepare godown update operation
+          godownUpdates.push({
+            updateOne: {
+              filter: {
+                _id: product._id,
+                "GodownList.godown": godown.godown,
               },
-            });
-
-    
-          }
+              update: {
+                $set: { "GodownList.$.balance_stock": newGodownStock },
+              },
+            },
+          });
         }
-      
+      }
     }
 
     // Execute bulk operations
@@ -2732,25 +2737,23 @@ export const createPurchase = async (req, res) => {
       finalAmount: lastAmount,
       Primary_user_id,
       Secondary_user_id,
-      salesNumber,
+      purchaseNumber,
     });
 
     const result = await purchase.save();
 
+    let purchaseConfig = false;
 
-    let salesConfig = false;
-
-  
-    // if (configuration) {
-    //   if (
-    //     configuration.salesConfiguration &&
-    //     Object.values(configuration.salesConfiguration).every(
-    //       (value) => value !== ""
-    //     )
-    //   ) {
-    //     salesConfig = true;
-    //   }
-    // }
+    if (configuration) {
+      if (
+        configuration?.purchaseConfiguration &&
+       Object.entries(configuration?.purchaseConfiguration)
+       .filter(([key]) => key !== "startingNumber")
+       .every(([, value]) => value !== "")
+      ) {
+        purchaseConfig = true;
+      }
+    }
 
     // // const vanSaleConfig = configuration?.vanSale;
 
@@ -2760,23 +2763,23 @@ export const createPurchase = async (req, res) => {
     //     { $inc: { vanSalesNumber: 1 } },
     //     { new: true }
     //   );
-    // } else if (salesConfig) {
-    //   const increaseSalesNumber = await SecondaryUser.findByIdAndUpdate(
-    //     Secondary_user_id,
-    //     { $inc: { salesNumber: 1 } },
-    //     { new: true }
-    //   );
-    // } else {
-    //   const increaseSalesNumber = await OragnizationModel.findByIdAndUpdate(
-    //     orgId,
-    //     { $inc: { salesNumber: 1 } },
-    //     { new: true }
-    //   );
-    // }
+     if (purchaseConfig) {
+      const increasPurchaseNumber = await SecondaryUser.findByIdAndUpdate(
+        Secondary_user_id,
+        { $inc: { purchaseNumber: 1 } },
+        { new: true }
+      );
+    } else {
+      const increasPurchaseNumber = await OragnizationModel.findByIdAndUpdate(
+        orgId,
+        { $inc: { purchaseNumber: 1 } },
+        { new: true }
+      );
+    }
 
     const billData = {
       Primary_user_id,
-      bill_no: salesNumber,
+      bill_no: purchaseNumber,
       cmp_id: orgId,
       party_id: party?.party_master_id,
       bill_amount: lastAmount,
@@ -2791,7 +2794,7 @@ export const createPurchase = async (req, res) => {
     const updatedDocument = await TallyData.findOneAndUpdate(
       {
         cmp_id: orgId,
-        bill_no: salesNumber,
+        bill_no: purchaseNumber,
         Primary_user_id: Primary_user_id,
         party_id: party?.party_master_id,
       },
@@ -2811,5 +2814,29 @@ export const createPurchase = async (req, res) => {
       message: "Internal server error, try again!",
       error: error.message,
     });
+  }
+};
+
+
+
+// @desc toget the details of transaction or purchase
+// route get/api/sUsers/getPurchaseDetails
+
+export const getPurchaseDetails = async (req, res) => {
+  const purchaseId = req.params.id;
+
+  try {
+    const purchaseDetails = await purchaseModel.findById(purchaseId);
+
+    if (purchaseDetails) {
+      res
+        .status(200)
+        .json({ message: "purchaseDetails  fetched", data: purchaseDetails });
+    } else {
+      res.status(404).json({ error: "Purchase not found" });
+    }
+  } catch (error) {
+    console.error("Error fetching purchase details:", error);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 };

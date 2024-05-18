@@ -11,6 +11,7 @@ import api from "../../api/api";
 import { useDispatch } from "react-redux";
 import { addParty as invoiceAddParty } from "../../../slices/invoiceSecondary";
 import { addParty as salesAddParty } from "../../../slices/salesSecondary";
+import { addParty as purchaseAddParty } from "../../../slices/purchase";
 import SidebarSec from "../../components/secUsers/SidebarSec";
 import { IoIosCloseCircleOutline } from "react-icons/io";
 import { Modal } from "flowbite-react";
@@ -105,6 +106,8 @@ function Contacts() {
         navigate(to);
         break;
       case "Purchase":
+        dispatch(purchaseAddParty(selectedParty));
+
         navigate(to);
         break;
       case "Debit Note":

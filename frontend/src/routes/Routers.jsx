@@ -98,8 +98,11 @@ import ThreeInchSalesSec from '../pages/secUsers/ThreeInchSalesSec'
 import Contacts from '../pages/secUsers/Contacts'
 import Purchase from '../pages/secUsers/Purchase'
 import SearchPartyPurchase from '../pages/secUsers/SearchPartyPurchase'
-import AddItemSalesPurchase from '../pages/secUsers/AddItemSalesPurchase'
+import AddItemPurchase from '../pages/secUsers/AddItemPurchase'
 import EditItemPurchase from '../pages/secUsers/EditItemPurchase'
+import PurchaseDetailsSecondary from '../pages/secUsers/PurchaseDetailsSecondary'
+import SharePurchaseSecondary from '../pages/secUsers/SharePurchaseSecondary'
+import ThreeInchPurchaseSec from '../pages/secUsers/ThreeInchPurchaseSec'
 const Routers = () => {
   return (
     <Routes>
@@ -204,8 +207,12 @@ const Routers = () => {
         <Route path='/sUsers/contacts' element={<ProtectedSecRoute><Contacts/></ProtectedSecRoute>}></Route> 
         <Route path='/sUsers/purchase' element={<ProtectedSecRoute><Purchase/></ProtectedSecRoute>}></Route> 
         <Route path='/sUsers/searchPartyPurchase' element={<ProtectedSecRoute><SearchPartyPurchase/></ProtectedSecRoute>}></Route> 
-        <Route path='/sUsers/addItemPurchase' element={<ProtectedSecRoute><AddItemSalesPurchase/></ProtectedSecRoute>}></Route> 
-        <Route path='/sUsers/editItemPurchase/:id/:godownName' element={<ProtectedSecRoute><EditItemPurchase/></ProtectedSecRoute>}></Route> 
+        <Route path='/sUsers/addItemPurchase' element={<ProtectedSecRoute><AddItemPurchase/></ProtectedSecRoute>}></Route> 
+        <Route path='/sUsers/editItemPurchase/:id' element={<ProtectedSecRoute><EditItemPurchase/></ProtectedSecRoute>}></Route> 
+        <Route path='/sUsers/purchaseDetails/:id' element={<ProtectedSecRoute><PurchaseDetailsSecondary/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/sharePurchase/:id' element={<ProtectedSecRoute><SharePurchaseSecondary/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/sharePurchaseThreeInch/:id' element={<ProtectedSecRoute><ThreeInchPurchaseSec/></ProtectedSecRoute>}></Route>
+
 
         {/* errorPage */}
         <Route path='/errorPage' element={<ErrorPage />} />

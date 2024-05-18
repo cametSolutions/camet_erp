@@ -61,11 +61,16 @@ function ConfigureSecondaryUser() {
       widthOfNumericalPart: "",
     },
   ]);
+  const [purchase, setPurchase] = useState([
+    {
+      prefixDetails: "",
+      suffixDetails: "",
+      startingNumber: "",
+      widthOfNumericalPart: "",
+    },
+  ]);
 
-  // console.log(receipt);
-  // console.log(salesOrder);
-  // console.log(sales);
-  // console.log(godowns);
+
 
   const { id, userId, cmp_name } = useParams();
   // const org = useSelector((state) => state.setSelectedOrganization.selectedOrg);
@@ -119,6 +124,7 @@ function ConfigureSecondaryUser() {
             salesConfiguration,
             receiptConfiguration,
             vanSaleConfiguration,
+            purchaseConfiguration,
             vanSale,
           } = configurations[0];
 
@@ -145,6 +151,7 @@ function ConfigureSecondaryUser() {
           setGodownWidth(widthOfNumericalPart);
           setVanSale(vanSale);
           setVanSaleGodownName(vanSaleGodownName)
+          setPurchase([purchaseConfiguration]);
         }
       } catch (error) {
         console.log(error);
@@ -172,6 +179,9 @@ function ConfigureSecondaryUser() {
       case "receipt":
         setReceipt([{ ...receipt[0], [field]: value }]);
         break;
+      case "purchase":
+        setPurchase([{ ...purchase[0], [field]: value }]);
+        break;
       default:
         console.error("Invalid section");
     }
@@ -187,6 +197,8 @@ function ConfigureSecondaryUser() {
         return salesOrder[0][field];
       case "receipt":
         return receipt[0][field];
+      case "purchase":
+        return purchase[0][field];
       default:
         return "";
     }
@@ -213,6 +225,8 @@ function ConfigureSecondaryUser() {
   function validateObject(obj, excludedFields = []) {
     let isAllFilled = true;
     let isAllEmpty = true;
+
+    console.log(obj);
   
     for (let key in obj) {
       // Skip the excluded fields
@@ -226,7 +240,7 @@ function ConfigureSecondaryUser() {
     }
   
     // Additional check for widthOfNumericalPart
-    if (obj.widthOfNumericalPart && Number(obj.widthOfNumericalPart) > 6) {
+    if (obj?.widthOfNumericalPart && Number(obj?.widthOfNumericalPart) > 6) {
       isAllFilled = false;
       toast.error("Width of numerical part must be less than 6");
       // return
@@ -235,6 +249,9 @@ function ConfigureSecondaryUser() {
     return isAllFilled || isAllEmpty;
   }
 
+  console.log(selectedConfig);
+
+  console.log(purchase[0]);
 
   const submitHandler = async () => {
     // Existing validation and submission logic...
@@ -243,6 +260,8 @@ function ConfigureSecondaryUser() {
     const newSales = sales[0];
     const newSalesOrder = salesOrder[0];
     const newReceipt = receipt[0];
+
+    const newPurchase = purchase[0];
 
     const Initial = {
       prefixDetails: "",
@@ -269,6 +288,7 @@ function ConfigureSecondaryUser() {
         salesConfiguration: Initial,
         salesOrderConfiguration: newSalesOrder,
         receiptConfiguration: newReceipt,
+        purchaseConfiguration: newPurchase,
         vanSaleConfiguration,
         vanSale: vanSale,
       };
@@ -279,6 +299,7 @@ function ConfigureSecondaryUser() {
         salesConfiguration: newSales,
         salesOrderConfiguration: newSalesOrder,
         receiptConfiguration: newReceipt,
+        purchaseConfiguration: newPurchase,
         vanSaleConfiguration: Initial,
         vanSale: vanSale,
       };
@@ -291,12 +312,17 @@ function ConfigureSecondaryUser() {
       formData.salesOrderConfiguration,['startingNumber']
     );
     const receiptValidation = validateObject(formData.receiptConfiguration,['startingNumber']);
+    const purchaseValidation = validateObject(formData.purchaseConfiguration,['startingNumber']);
 
     if (salesOrderValidation === false) {
       toast.error("Fill all sales order details or leave all fields empty");
       return;
     } else if (receiptValidation === false) {
       toast.error("Fill all receipt details or leave all fields empty");
+      return;
+    }
+    else if(purchaseValidation === false){
+      toast.error("Fill all purchase details or leave all fields empty");
       return;
     }
     if (vanSale) {
@@ -388,6 +414,7 @@ function ConfigureSecondaryUser() {
                       <option value="sales">Sales</option>
                       <option value="salesOrder">Sales Order</option>
                       <option value="receipt">Receipt</option>
+                      <option value="purchase">Purchase</option>
                     </select>
                   </div>
                 </div>
