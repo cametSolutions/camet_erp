@@ -4,12 +4,9 @@ import { useState, useEffect } from "react";
 import { IoReorderThreeSharp } from "react-icons/io5";
 import { useSelector } from "react-redux";
 import { IoReceiptSharp } from "react-icons/io5";
-import { BsGraphUp } from "react-icons/bs";
-import { HiDocumentText } from "react-icons/hi2";
-import { FaCartArrowDown } from "react-icons/fa6";
+
 import { CiCalendarDate } from "react-icons/ci";
 import api from "../../api/api";
-import { Link } from "react-router-dom";
 import dayjs from "dayjs";
 import { IoArrowRedoOutline } from "react-icons/io5";
 import { FaCaretDown } from "react-icons/fa";

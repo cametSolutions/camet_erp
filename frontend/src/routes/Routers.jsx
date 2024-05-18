@@ -103,6 +103,9 @@ import EditItemPurchase from '../pages/secUsers/EditItemPurchase'
 import PurchaseDetailsSecondary from '../pages/secUsers/PurchaseDetailsSecondary'
 import SharePurchaseSecondary from '../pages/secUsers/SharePurchaseSecondary'
 import ThreeInchPurchaseSec from '../pages/secUsers/ThreeInchPurchaseSec'
+import PurchaseDetailsPrimary from '../pages/primaryUsers/PurchaseDetailsPrimary'
+import SharePurchasePrimary from '../pages/primaryUsers/SharePurchasePrimary'
+import ThreeInchPurchasePrimary from '../pages/primaryUsers/ThreeInchPurchasePrimary'
 const Routers = () => {
   return (
     <Routes>
@@ -157,6 +160,10 @@ const Routers = () => {
         <Route path='/pUsers/shareSales/:id' element={<ProtectedPriRoute><ShareSales/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/configureSecondaryUser/:id/:userId/:cmp_name' element={<ProtectedPriRoute><ConfigureSecondaryUser/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/Inventory' element={<ProtectedPriRoute><InventoryPrimaryUser/></ProtectedPriRoute>}></Route>
+        <Route path='/pUsers/purchaseDetails/:id' element={<ProtectedPriRoute><PurchaseDetailsPrimary/></ProtectedPriRoute>}></Route>
+        <Route path='/pUsers/sharePurchase/:id' element={<ProtectedPriRoute><SharePurchasePrimary/></ProtectedPriRoute>}></Route>
+        <Route path='/pUsers/sharePurchaseThreeInch/:id' element={<ProtectedPriRoute><ThreeInchPurchasePrimary/></ProtectedPriRoute>}></Route>
+
 
         {/* admin */}
         <Route path='/admin/login' element={<AdminLogin/>}></Route>

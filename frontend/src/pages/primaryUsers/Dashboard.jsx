@@ -4,14 +4,9 @@ import { useState, useEffect } from "react";
 import Sidebar from "../../components/homePage/Sidebar";
 import { IoReorderThreeSharp } from "react-icons/io5";
 import { useSelector } from "react-redux";
-import { IoReceiptSharp } from "react-icons/io5";
 import { MdInventory } from "react-icons/md";
-import { BsGraphUp } from "react-icons/bs";
-import { HiDocumentText } from "react-icons/hi2";
-import { FaCartArrowDown } from "react-icons/fa6";
 import { CiCalendarDate } from "react-icons/ci";
 import api from "../../api/api";
-import { Link } from "react-router-dom";
 import dayjs from "dayjs";
 import { IoArrowRedoOutline } from "react-icons/io5";
 import { FaCaretDown } from "react-icons/fa";
@@ -30,7 +25,7 @@ function Dashboard() {
 
   const org = useSelector((state) => state.setSelectedOrganization.selectedOrg);
   console.log(org);
-  const dispatch = useDispatch()
+  const dispatch = useDispatch();
 
   const handleToggleSidebar = () => {
     if (window.innerWidth < 768) {
@@ -39,26 +34,23 @@ function Dashboard() {
   };
 
   useEffect(() => {
-
-    if(org){
-
+    if (org) {
       const fetchTransactions = async () => {
         try {
           const res = await api.get(`/api/pUsers/transactions/${org._id}`, {
             withCredentials: true,
           });
-  
-  
+
           setData(res.data.data.combined);
-  
+
           // dispatch(addData(res.data.outstandingData));
         } catch (error) {
           console.log(error);
         }
       };
       fetchTransactions();
-      dispatch(removeAll())
-      dispatch(removeAllSales())
+      dispatch(removeAll());
+      dispatch(removeAllSales());
     }
   }, [org]);
 
@@ -69,9 +61,7 @@ function Dashboard() {
   // Filter data based on today's date
   const filteredData = data.filter((item) => {
     const createdAtDate = new Date(item.createdAt);
-    return (
-      createdAtDate.toDateString() === today.toDateString()
-    );
+    return createdAtDate.toDateString() === today.toDateString();
   });
   console.log(filteredData);
 
@@ -83,30 +73,20 @@ function Dashboard() {
     }
   }, 0);
 
-
   // Handle click event of link
   const handleLinkClick = (to) => {
     if (org == undefined) {
       toast.error("No company available");
-    }
-    else if (
-      org.isApproved === false
-    ) {
+    } else if (org.isApproved === false) {
       toast.error("Company approval pending ");
-
-    }
-
-    else {
+    } else {
       navigate(to, { state: { receiptTotal } });
-
     }
   };
 
   console.log(receiptTotal);
 
   console.log(filteredData);
-
-
 
   return (
     <div className="flex bg-[#f9fdff]  ">
@@ -133,7 +113,9 @@ function Dashboard() {
                   <p>{org?.name?.slice(0, 1)}</p>
                 </div>
               </div>
-              <p className="font-bold text-md md:text-lg">{org?.name || "Company Name"}</p>
+              <p className="font-bold text-md md:text-lg">
+                {org?.name || "Company Name"}
+              </p>
               <FaCaretDown />
             </div>
           </div>
@@ -141,7 +123,8 @@ function Dashboard() {
             {/* <Link to={"/pUsers/transaction"}> */}
             <div
               onClick={() => handleLinkClick("/pUsers/transaction")}
-              className="flex flex-wrap -mx-6   duration-150 hover:scale-105 ease-in-out cursor-pointer  ">
+              className="flex flex-wrap -mx-6   duration-150 hover:scale-105 ease-in-out cursor-pointer  "
+            >
               <div className="w-full px-6 ">
                 <div className="flex items-center px-2 py-3 md:px-5 md:py-2 shadow-sm rounded-md bg-slate-100 h-24">
                   <div className="p-3 rounded-full bg-green-500 bg-opacity-75 text-2xl text-white">
@@ -152,31 +135,32 @@ function Dashboard() {
                     <h4 className=" sm:text-md md:text-lg  font-semibold text-gray-700">
                       ₹{receiptTotal.toFixed(2)}
                     </h4>
-                    <div className="text-gray-500  text-[15px] ">Transactions</div>
+                    <div className="text-gray-500  text-[15px] ">
+                      Transactions
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
             {/* </Link> */}
             {/* <Link to={"/pUsers/outstanding"}> */}
-          
+
             {/* </Link> */}
 
-           
             {/* <Link to={"/pUsers/sales"}> */}
-         
+
             {/* </Link> */}
             {/* <Link to={'/pUsers/invoice'} > */}
-         
+
             {/* </Link> */}
             <div
               onClick={() => handleLinkClick("/pUsers/Inventory")}
-
-              className="flex flex-wrap -mx-6  duration-150 hover:scale-105 ease-in-out cursor-pointer">
+              className="flex flex-wrap -mx-6  duration-150 hover:scale-105 ease-in-out cursor-pointer"
+            >
               <div className="w-full px-6 ">
-                <div className="flex items-center px-2 py-3 md:px-5 md:py-2 shadow-sm rounded-md bg-slate-100 h-24" >
+                <div className="flex items-center px-2 py-3 md:px-5 md:py-2 shadow-sm rounded-md bg-slate-100 h-24">
                   <div className="p-3 rounded-full bg-blue-500 bg-opacity-75 text-2xl text-white">
-                  <MdInventory />
+                    <MdInventory />
                   </div>
 
                   <div className="mx-5 py-2.5">
@@ -188,7 +172,6 @@ function Dashboard() {
                 </div>
               </div>
             </div>
-        
           </div>
 
           {/* tiles */}
@@ -199,7 +182,6 @@ function Dashboard() {
 
           <div className=" bg-white px-4 p-2 z-40 text-gray-500 text-lg font-bold flex items-center gap-3 z shadow-lg sm:sticky top-[115px]">
             <p> Today's Transactions</p>
-
 
             <p className="text-sm">( {new Date().toDateString()} )</p>
             <CiCalendarDate className="text-xl font-bold text-violet-500" />
@@ -214,16 +196,32 @@ function Dashboard() {
               <div
                 key={index}
                 onClick={() => {
-
-                  const navigationPath = el.type === "Receipt" ? `/pUsers/receiptDetails/${el._id}` :el.type==="Tax Invoice"?`/pUsers/salesDetails/${el._id}`: `/pUsers/InvoiceDetails/${el._id}`;
+                  const navigationPath =
+                    el.type === "Receipt"
+                      ? `/pUsers/receiptDetails/${el._id}`
+                      : el.type === "Tax Invoice"
+                      ? `/pUsers/salesDetails/${el._id}`
+                      : el.type === "Purchase"
+                      ? `/pUsers/purchaseDetails/${el._id}`
+                      : `/pUsers/InvoiceDetails/${el._id}`;
                   navigate(navigationPath, { state: { from: "dashboard" } });
                 }}
-                className={`${el?.isCancelled ? "bg-gray-200 pointer-events-none " : ""
-                  } bg-[#f8ffff] cursor-pointer rounded-md shadow-xl border border-gray-100 flex flex-col justify-between px-4 transition-all duration-150 transform hover:scale-105 ease-in-out`}
+                className={`${
+                  el?.isCancelled ? "bg-gray-200 pointer-events-none " : ""
+                } bg-[#f8ffff] cursor-pointer rounded-md shadow-xl border border-gray-100 flex flex-col justify-between px-4 transition-all duration-150 transform hover:scale-105 ease-in-out`}
               >
                 <div className=" flex justify-start text-xs mt-2 ">
-                <div className={` ${el.type==="Receipt" ? "bg-[#FB6D48]" :el.type==="Tax Invoice"? "bg-violet-500": "bg-[#3ed57a]" }   flex items-center text-white px-2 rounded-sm `}>
-
+                  <div
+                    className={` ${
+                      el.type === "Receipt"
+                      ? "bg-[#FB6D48]"
+                      : el.type === "Tax Invoice"
+                      ? "bg-violet-500"
+                      : el.type === "Purchase"
+                      ? "bg-pink-500"
+                      : "bg-[#3ed57a]"
+                    }   flex items-center text-white px-2 rounded-sm `}
+                  >
                     {/* <FaRegCircleDot /> */}
                     <p className=" p-1  rounded-lg px-3 font-semibold">
                       {" "}
