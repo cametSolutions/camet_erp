@@ -11,8 +11,8 @@ import api from "../../api/api";
 import { useDispatch } from "react-redux";
 import { addParty as invoiceAddParty } from "../../../slices/invoiceSecondary";
 import { addParty as salesAddParty } from "../../../slices/salesSecondary";
+import { addParty as purchaseAddParty } from "../../../slices/purchase";
 import SidebarSec from "../../components/secUsers/SidebarSec";
-import { useLocation } from "react-router-dom";
 import { IoIosCloseCircleOutline } from "react-icons/io";
 import { Modal } from "flowbite-react";
 import sale from "../../assets/images/sale.png";
@@ -20,7 +20,7 @@ import credit from "../../assets/images/credit.png";
 import purchase from "../../assets/images/purchase.png";
 import debit from "../../assets/images/debit.png";
 import order from "../../assets/images/order.png";
-import vanSale from "../../assets/images/vanSale.png";
+import vanSaleImg from "../../assets/images/vanSale.png";
 
 // import { FaShoppingCart, FaCreditCard, FaTruck, FaRegMoneyBillAlt, FaRegClipboardList, FaRegCalendarAlt } from 'react-icons/fa';
 
@@ -34,8 +34,9 @@ function Contacts() {
   const [loading, setLoading] = useState(true);
   const [openModal, setOpenModal] = useState(false);
   const [selectedParty, setSelectedParty] = useState("");
+  const [vanSale, setVanSale] = useState(false);
   const tiles = [
-    { title: "Sales", icon: sale, to: "/sUsers/sales", active: true },
+    { title: "Sales", icon: sale, to: "/sUsers/sales", active: !vanSale },
     {
       title: "Credit Note",
       icon: credit,
@@ -46,7 +47,7 @@ function Contacts() {
       title: "Purchase",
       icon: purchase,
       to: "/sUsers/purchase",
-      active: false,
+      active: true,
     },
     {
       title: "Debit Note",
@@ -55,17 +56,20 @@ function Contacts() {
       active: false,
     },
     { title: "New Order", icon: order, to: "/sUsers/invoice", active: true },
-    { title: "VanSale", icon: vanSale, to: "/sUsers/vansale", active: false },
+    {
+      title: "VanSale",
+      icon: vanSaleImg,
+      to: "/sUsers/sales",
+      active: vanSale,
+    },
   ];
 
   function onCloseModal() {
     setOpenModal(false);
-    setEmail("");
   }
 
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const location = useLocation();
 
   console.log(parties);
 
@@ -80,7 +84,8 @@ function Contacts() {
         });
         setLoading(false);
 
-        setParties(res.data.partyList);
+        setParties(res?.data?.partyList);
+        setVanSale(res?.data?.vanSale);
       } catch (error) {
         setLoading(false);
         console.log(error);
@@ -88,6 +93,8 @@ function Contacts() {
     };
     fetchParties();
   }, [cpm_id]);
+
+  console.log(vanSale);
 
   const handleNavigate = (title, to) => {
     switch (title) {
@@ -99,6 +106,8 @@ function Contacts() {
         navigate(to);
         break;
       case "Purchase":
+        dispatch(purchaseAddParty(selectedParty));
+
         navigate(to);
         break;
       case "Debit Note":
@@ -123,7 +132,7 @@ function Contacts() {
 
   console.log(selectedParty);
   const backHandler = () => {
-    navigate(-1)
+    navigate(-1);
   };
 
   console.log(parties);
@@ -270,10 +279,10 @@ function Contacts() {
         onClose={onCloseModal}
         popup
       >
-        <Modal.Header />
+       <Modal.Header className="bg-[#579BB1] pl-5">Menu </Modal.Header>
         <Modal.Body>
           <div className="">
-            <div className="  grid grid-cols-2 gap-4">
+            <div className="  grid grid-cols-2 gap-4 overflow-scroll">
               {tiles.map((tile, index) => (
                 <div
                   onClick={() => {

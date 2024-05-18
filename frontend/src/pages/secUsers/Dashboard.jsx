@@ -4,12 +4,9 @@ import { useState, useEffect } from "react";
 import { IoReorderThreeSharp } from "react-icons/io5";
 import { useSelector } from "react-redux";
 import { IoReceiptSharp } from "react-icons/io5";
-import { BsGraphUp } from "react-icons/bs";
-import { HiDocumentText } from "react-icons/hi2";
-import { FaCartArrowDown } from "react-icons/fa6";
+
 import { CiCalendarDate } from "react-icons/ci";
 import api from "../../api/api";
-import { Link } from "react-router-dom";
 import dayjs from "dayjs";
 import { IoArrowRedoOutline } from "react-icons/io5";
 import { FaCaretDown } from "react-icons/fa";
@@ -249,6 +246,7 @@ function Dashboard() {
                       ? `/sUsers/receiptDetails/${el._id}`
                       : el.type === "Tax Invoice"
                       ? `/sUsers/salesDetails/${el._id}`
+                      : el.type === "Purchase"? `/sUsers/purchaseDetails/${el._id}`
                       : `/sUsers/InvoiceDetails/${el._id}`;
                   navigate(navigationPath, { state: { from: "dashboard" } });
                 }}
@@ -263,6 +261,8 @@ function Dashboard() {
                         ? "bg-[#FB6D48]"
                         : el.type === "Tax Invoice"
                         ? "bg-violet-500"
+                        : el.type === "Purchase"
+                        ? "bg-pink-500"
                         : "bg-[#3ed57a]"
                     }   flex items-center text-white px-2 rounded-sm `}
                   >

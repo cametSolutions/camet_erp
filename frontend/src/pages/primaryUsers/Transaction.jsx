@@ -282,7 +282,9 @@ function Transaction() {
                       ? `/pUsers/receiptDetails/${el._id}`
                       : el.type === "Tax Invoice"
                       ? `/pUsers/salesDetails/${el._id}`
-                      : `/pUsers/InvoiceDetails/${el._id}`
+                      : el.type === "Purchase"
+                      ? `/pUsers/purchaseDetails/${el._id}`
+                       : `/pUsers/InvoiceDetails/${el._id}`
                   );
                 }}
                 className={`${
@@ -293,10 +295,12 @@ function Transaction() {
                   <div
                     className={` ${
                       el.type === "Receipt"
-                        ? "bg-[#FB6D48]"
-                        : el.type === "Tax Invoice"
-                        ? "bg-violet-500"
-                        : "bg-[#3ed57a]"
+                      ? "bg-[#FB6D48]"
+                      : el.type === "Tax Invoice"
+                      ? "bg-violet-500"
+                      : el.type === "Purchase"
+                      ? "bg-pink-500"
+                      : "bg-[#3ed57a]"
                     }   flex items-center text-white px-2 rounded-sm `}
                   >
                     <FaRegCircleDot />

@@ -16,7 +16,7 @@ import { registerPrimaryUser,login,addOrganizations,
   deleteAdditionalCharge,EditAditionalCharge,addconfigurations,
   createSale,saveSalesNumber,getSalesDetails,fetchGodownsAndPriceLevels,fetchAdditionalDetails,
   addSecondaryConfigurations,findPrimaryUserGodowns,findPrimaryUserGodownsSelf,
-  godownwiseProducts,godownwiseProductsSelf,fetchAdditionalCharges} from '../controllers/primaryUserController.js';
+  godownwiseProducts,godownwiseProductsSelf,fetchAdditionalCharges,getPurchaseDetails} from '../controllers/primaryUserController.js';
 import { singleUpload } from '../multer/multer.js';
 import { primaryIsBlocked } from '../middlewares/isBlocked.js';
 import { companyAuthentication } from '../middlewares/authCompany.js';
@@ -87,6 +87,7 @@ router.get("/getGodownsSelf/:cmp_id",authPrimary,primaryIsBlocked,companyAuthent
 router.get("/godownProductFilter/:cmp_id/:godown_id",authPrimary,primaryIsBlocked,companyAuthentication,godownwiseProducts)
 router.get("/godownProductFilterSelf/:cmp_id/:godown_name",authPrimary,primaryIsBlocked,companyAuthentication,godownwiseProductsSelf)
 router.get("/additionalcharges/:cmp_id",authPrimary,primaryIsBlocked,companyAuthentication,fetchAdditionalCharges)
+router.get("/getPurchaseDetails/:id",authPrimary,primaryIsBlocked,getPurchaseDetails)
 
 
 

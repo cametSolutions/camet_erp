@@ -19,6 +19,8 @@ import bankModel from "../models/bankModel.js";
 import salesModel from "../models/salesModel.js";
 import AdditionalChargesModel from "../models/additionalChargesModel.js";
 import { truncateToNDecimals } from "./helpers/helper.js";
+import purchaseModel from "../models/purchaseModel.js";
+
 
 // @desc Register Primary user
 // route POST/api/pUsers/register
@@ -614,9 +616,23 @@ export const transactions = async (req, res) => {
       },
     ]);
 
+    const purchases = await purchaseModel.aggregate([
+      { $match: { cmp_id: cmp_id } },
+      {
+        $project: {
+          party_name: "$party.partyName",
+          // mobileNumber:"$party.mobileNumber",
+          type: "Purchase",
+          enteredAmount: "$finalAmount",
+          createdAt: 1,
+          itemsLength: { $size: "$items" },
+        },
+      },
+    ]);
+
     console.log(sales);
 
-    const combined = [...transactions, ...invoices, ...sales];
+    const combined = [...transactions, ...invoices, ...sales,...purchases];
     combined.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
     if (combined.length > 0) {
@@ -2695,6 +2711,7 @@ export const addSecondaryConfigurations = async (req, res) => {
       salesOrderConfiguration,
       receiptConfiguration,
       vanSaleConfiguration ,
+      purchaseConfiguration,
       vanSale,
     } = req.body;
     let {selectedGodowns}= req.body;
@@ -2714,6 +2731,7 @@ export const addSecondaryConfigurations = async (req, res) => {
       salesConfiguration,
       salesOrderConfiguration,
       receiptConfiguration,
+      purchaseConfiguration,
       vanSaleConfiguration,
       vanSale,
     };
@@ -2918,6 +2936,32 @@ export const fetchAdditionalCharges = async (req, res) => {
     res.json(aditionalDetails);
   } catch (error) {
     console.error("Error fetching godownwise products:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+
+
+// @desc toget the details of transaction or purchase
+// route get/api/sUsers/getPurchaseDetails
+
+export const getPurchaseDetails = async (req, res) => {
+  const purchaseId = req.params.id;
+
+  console.log("purchaseId", purchaseId);
+
+  try {
+    const purchaseDetails = await purchaseModel.findById(purchaseId);
+
+    if (purchaseDetails) {
+      res
+        .status(200)
+        .json({ message: "purchaseDetails  fetched", data: purchaseDetails });
+    } else {
+      res.status(404).json({ error: "Purchase not found" });
+    }
+  } catch (error) {
+    console.error("Error fetching purchase details:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };

@@ -12,7 +12,7 @@ import {login,getSecUserData,fetchOutstandingTotal,
     addAditionalCharge,EditAditionalCharge,addconfigurations,createSale,
     getSalesDetails,saveSalesNumber,fetchAdditionalDetails,
     fetchConfigurationNumber,findSecondaryUserGodowns,findPrimaryUserGodownsSelf,
-    godownwiseProducts,godownwiseProductsSelf,fetchAdditionalCharges,findGodownsNames} from "../controllers/secondaryUserController.js"
+    godownwiseProducts,godownwiseProductsSelf,fetchAdditionalCharges,findGodownsNames,createPurchase,getPurchaseDetails} from "../controllers/secondaryUserController.js"
 import { authSecondary } from '../middlewares/authSecUsers.js';
 import { secondaryIsBlocked } from '../middlewares/isBlocked.js';
 import { companyAuthentication } from '../middlewares/authCompany.js';
@@ -59,6 +59,7 @@ router.delete('/deleteAdditionalCharge/:id/:cmp_id',authSecondary,secondaryIsBlo
 router.post('/EditAditionalCharge/:cmp_id/:id',authSecondary,secondaryIsBlocked,companyAuthentication,EditAditionalCharge)
 router.post('/addconfigurations/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,addconfigurations)
 router.post('/createSale',authSecondary,secondaryIsBlocked,createSale)
+router.post('/createPurchase',authSecondary,secondaryIsBlocked,createPurchase)
 router.get('/getSalesDetails/:id',authSecondary,secondaryIsBlocked,getSalesDetails)
 router.post('/saveSalesNumber/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,saveSalesNumber)
 router.get('/fetchAdditionalDetails/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,fetchAdditionalDetails)
@@ -69,6 +70,8 @@ router.get("/godownProductFilter/:cmp_id/:godown_id",authSecondary,companyAuthen
 router.get("/godownProductFilterSelf/:cmp_id/:godown_name",authSecondary,secondaryIsBlocked,companyAuthentication,godownwiseProductsSelf)
 router.get("/additionalcharges/:cmp_id",authSecondary,secondaryIsBlocked,companyAuthentication,fetchAdditionalCharges)
 router.get("/godownsName/:cmp_id",authSecondary,secondaryIsBlocked,companyAuthentication,findGodownsNames)
+router.get('/getPurchaseDetails/:id',authSecondary,secondaryIsBlocked,getPurchaseDetails)
+
 
 
 

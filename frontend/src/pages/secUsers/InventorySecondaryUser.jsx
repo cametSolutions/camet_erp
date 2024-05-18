@@ -2,12 +2,8 @@
 /* eslint-disable react/no-unknown-property */
 import { useEffect, useState } from "react";
 import api from "../../api/api";
-import { toast } from "react-toastify";
-import { IoReorderThreeSharp } from "react-icons/io5";
-// import { FaEdit } from "react-icons/fa";
 import { Link } from "react-router-dom";
-// import { MdDelete } from "react-icons/md";
-// import Swal from "sweetalert2";
+
 import { HashLoader } from "react-spinners";
 
 import { IoIosSearch } from "react-icons/io";
@@ -19,6 +15,8 @@ import { IoIosArrowRoundBack } from "react-icons/io";
 
 import { useDispatch } from "react-redux";
 import { removeAll } from "../../../slices/invoiceSecondary";
+import {  Modal } from "flowbite-react";
+
 
 function InventorySecondaryUser() {
   const [products, setProducts] = useState([]);
@@ -31,6 +29,10 @@ function InventorySecondaryUser() {
   const [listHeight, setListHeight] = useState(0);
   const [ingodowns, setIngodowns] = useState("");
   const [selfgodowns, setSelfGodowms] = useState("");
+  const [godown, setGodown] = useState([]);
+  const [openModal, setOpenModal] = useState(false);
+
+
 
   const cmp_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
@@ -89,6 +91,10 @@ function InventorySecondaryUser() {
       setLoader(false);
     }
   };
+
+  function onCloseModal() {
+    setOpenModal(false);
+  }
   // getting godowns data
 
   useEffect(() => {
@@ -187,6 +193,10 @@ function InventorySecondaryUser() {
       <>
         <div
           key={index}
+          onClick={() => {
+            setGodown(el?.GodownList);
+            setOpenModal(true);
+          }}
           style={adjustedStyle}
           className="bg-white p-4 pb-6 drop-shadow-lg mt-4 flex flex-col mx-2 rounded-sm cursor-pointer hover:bg-slate-100  pr-7 "
         >
@@ -406,6 +416,84 @@ function InventorySecondaryUser() {
             No Products !!!
           </div>
         )}
+      </div>
+
+      <div className="h-screen flex justify-center items-center ">
+        <Modal
+          style={{
+            scrollbarWidth: "thin",
+            scrollbarColor: "transparent transparent",
+          }}
+          show={openModal}
+          size="md"
+          onClose={onCloseModal}
+          popup
+          className="modal-dialog"
+        >
+          <Modal.Header />
+          <Modal.Body>
+            <div className="space-y-6">
+              {/* Existing sign-in form */}
+              <div>
+                <div className="flex justify-between  bg-[#579BB1] p-2 rounded-sm items-center">
+                  <h3 className=" text-base md:text-xl  font-medium text-gray-900 dark:text-white ">
+                    Godown List
+                  </h3>
+                </div>
+                <div className="table-container overflow-y-auto max-h-[250px]">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th
+                          scope="col"
+                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        >
+                          Godown Name
+                        </th>
+                        <th
+                          scope="col"
+                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        >
+                          Stock
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {godown?.length > 0 ? (
+                        godown.map((item, index) => (
+                          <tr key={index}>
+                            <td className="px-6 py-4 ">
+                              <div className="text-sm text-gray-900">
+                                {item.godown}
+                              </div>
+                            </td>
+
+                            <td className=" px-6 py-4 whitespace-nowrap text-sm font-medium flex justify-center  ">
+                              <div className="flex gap-3 items-center justify-center">
+                                {item.balance_stock}
+                                <div></div>
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr className=" flex justify-center items-center">
+                          <td
+                            colSpan={2}
+                            className="font-bold  mt-12 text-gray-500 w-full  text-center"
+                          >
+                            No Godowns!!!
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <div className="w-full"></div>
+            </div>
+          </Modal.Body>
+        </Modal>
       </div>
     </div>
   );

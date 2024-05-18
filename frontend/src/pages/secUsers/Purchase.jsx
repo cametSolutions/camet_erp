@@ -1,6 +1,5 @@
 /* eslint-disable react/no-unescaped-entities */
 import { useEffect, useState, useMemo } from "react";
-
 import { IoMdAdd } from "react-icons/io";
 import { Link } from "react-router-dom";
 import { IoPerson } from "react-icons/io5";
@@ -11,8 +10,7 @@ import {
   addAdditionalCharges,
   AddFinalAmount,
   deleteRow,
-  addAllProducts,
-} from "../../../slices/invoiceSecondary";
+} from "../../../slices/purchase";
 import { useDispatch } from "react-redux";
 import { IoIosArrowDown } from "react-icons/io";
 import { MdCancel } from "react-icons/md";
@@ -25,19 +23,13 @@ import { MdPlaylistAdd } from "react-icons/md";
 import {
   removeAll,
   removeAdditionalCharge,
-  removeItem,
-} from "../../../slices/invoiceSecondary";
+  removeItem
+} from "../../../slices/purchase";
 import { IoIosArrowRoundBack } from "react-icons/io";
-import SidebarSec from "../../components/secUsers/SidebarSec";
 import { Button, Label, Modal, TextInput } from "flowbite-react";
+import SidebarSec from "../../components/secUsers/SidebarSec";
 
-function InvoiceSecondary() {
-  const cmp_id = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg._id
-  );
-  const type = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg.type
-  );
+function Purchase() {
   const [showSidebar, setShowSidebar] = useState(false);
   const [openModal, setOpenModal] = useState(false);
   const [modalInputs, setModalInputs] = useState({
@@ -46,43 +38,52 @@ function InvoiceSecondary() {
     prefixDetails: "",
     suffixDetails: "",
   });
-  const [subTotal, setSubTotal] = useState(0);
   const [additional, setAdditional] = useState(false);
-  const [refresh, setRefresh] = useState(false);
-  const [orderNumber, setOrderNumber] = useState("");
+  const [godownname, setGodownname] = useState("");
+
   const [refreshCmp, setrefreshCmp] = useState(false);
+  const [purchaseNumber, setPurchaseNumber] = useState("");
   const [additionalChragesFromCompany, setAdditionalChragesFromCompany] =
     useState([]);
-
+  console.log(modalInputs);
   const additionalChargesFromRedux = useSelector(
-    (state) => state.invoiceSecondary.additionalCharges
+    (state) => state.purchase?.additionalCharges
   );
-
   const orgId = useSelector(
-    (state) => state?.secSelectedOrganization?.secSelectedOrg?._id
+    (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
-
-  useEffect(() => {
-    localStorage.removeItem("scrollPositionAddItem");
-  }, []);
-  
-  useEffect(() => {
+  const cmp_id = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg._id
+  );
+  const type = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg.type
+  );
+  console.log(type)
+  console.log(godownname)
+  useEffect(()=>{
+   
     const getAdditionalChargesIntegrated = async () => {
       try {
         const res = await api.get(`/api/sUsers/additionalcharges/${cmp_id}`, {
           withCredentials: true,
         });
-        console.log(res.data);
+        console.log(res.data)
         setAdditionalChragesFromCompany(res.data);
       } catch (error) {
         console.log(error);
         toast.error(error.response.data.message);
       }
     };
-    if (type != "self") {
-      getAdditionalChargesIntegrated();
-    }
+  if(type != "self" ){
+    getAdditionalChargesIntegrated()
+  }
+  },[])
+
+
+  useEffect(() => {
+    localStorage.removeItem("scrollPositionAddItemSales");
   }, []);
+
 
   useEffect(() => {
     const fetchSingleOrganization = async () => {
@@ -95,24 +96,27 @@ function InvoiceSecondary() {
         );
 
         console.log(res.data.organizationData);
-        if (type == "self") {
+        // setCompany(res.data.organizationData);
+        if(type == "self"){
           setAdditionalChragesFromCompany(
             res.data.organizationData.additionalCharges
           );
         }
+       
       } catch (error) {
         console.log(error);
       }
     };
 
     fetchSingleOrganization();
+    
   }, [refreshCmp, orgId]);
 
   useEffect(() => {
     const fetchConfigurationNumber = async () => {
       try {
         const res = await api.get(
-          `/api/sUsers/fetchConfigurationNumber/${orgId}/salesOrder`,
+          `/api/sUsers/fetchConfigurationNumber/${orgId}/purchase`,
 
           {
             withCredentials: true,
@@ -121,9 +125,11 @@ function InvoiceSecondary() {
 
         console.log(res.data);
         if (res.data.message === "default") {
+
+
           const { configurationNumber } = res.data;
-          setOrderNumber(configurationNumber);
-          return;
+          setPurchaseNumber(configurationNumber)
+          return
         }
 
         const { configDetails, configurationNumber } = res.data;
@@ -143,14 +149,14 @@ function InvoiceSecondary() {
           console.log(padedNumber);
           const finalOrderNumber = prefixDetails + padedNumber + suffixDetails;
           console.log(finalOrderNumber);
-          setOrderNumber(finalOrderNumber);
+          setPurchaseNumber(finalOrderNumber);
           setModalInputs({
             widthOfNumericalPart: widthOfNumericalPart,
             prefixDetails: prefixDetails,
             suffixDetails: suffixDetails,
           });
         } else {
-          setOrderNumber(orderNumber);
+          setPurchaseNumber(purchaseNumber);
           setModalInputs({
             startingNumber: "1",
             widthOfNumericalPart: "",
@@ -166,11 +172,32 @@ function InvoiceSecondary() {
     fetchConfigurationNumber();
   }, []);
 
+
+  useEffect(() => {
+    const fetchGodownname = async () => {
+      try {
+        const godown = await api.get(`/api/sUsers/godownsName/${cmp_id}`, {
+          withCredentials: true,
+        });
+        console.log(godown);
+        setGodownname(godown.data || "");
+      } catch (error) {
+        console.log(error);
+        toast.error(error.message);
+      }
+    };
+    fetchGodownname();
+  }, []);
+
+
+
+  console.log(purchaseNumber);
+
   const [rows, setRows] = useState(
-    additionalChargesFromRedux.length > 0
+    additionalChargesFromRedux?.length > 0
       ? additionalChargesFromRedux
       : additionalChragesFromCompany.length > 0
-      ? [
+        ? [
           {
             option: additionalChragesFromCompany[0].name,
             value: "",
@@ -181,14 +208,17 @@ function InvoiceSecondary() {
             finalValue: "",
           },
         ]
-      : [] // Fallback to an empty array if additionalChragesFromCompany is also empty
+        : [] // Fallback to an empty array if additionalChragesFromCompany is also empty
   );
+
+  console.log(rows);
 
   useEffect(() => {
     if (additionalChargesFromRedux.length > 0) {
       setAdditional(true);
     }
   }, []);
+  const [subTotal, setSubTotal] = useState(0);
   const dispatch = useDispatch();
 
   const handleAddRow = () => {
@@ -234,6 +264,8 @@ function InvoiceSecondary() {
     dispatch(addAdditionalCharges({ index, row: newRows[index] }));
   };
 
+  console.log(rows);
+
   const handleRateChange = (index, value) => {
     const newRows = [...rows];
     let updatedRow = { ...newRows[index], value: value }; // Create a new object with the updated value
@@ -263,10 +295,10 @@ function InvoiceSecondary() {
     setRows(newRows);
     dispatch(deleteRow(index)); // You need to create an action to handle row deletion in Redux
   };
-  const party = useSelector((state) => state.invoiceSecondary.party);
-  const items = useSelector((state) => state.invoiceSecondary.items);
+  const party = useSelector((state) => state.purchase?.party);
+  const items = useSelector((state) => state.purchase?.items);
   const priceLevelFromRedux =
-    useSelector((state) => state.invoiceSecondary.selectedPriceLevel) || "";
+    useSelector((state) => state.purchase.selectedPriceLevel) || "";
 
   useEffect(() => {
     const subTotal = items.reduce((acc, curr) => {
@@ -288,9 +320,12 @@ function InvoiceSecondary() {
     }, 0);
   }, [rows]);
 
+  console.log(additionalChargesTotal);
   const totalAmountNotRounded =
     parseFloat(subTotal) + additionalChargesTotal || parseFloat(subTotal);
   const totalAmount = Math.round(totalAmountNotRounded);
+
+  console.log(totalAmount);
 
   const navigate = useNavigate();
 
@@ -300,13 +335,21 @@ function InvoiceSecondary() {
       toast.error("Select a party first");
       return;
     }
-    navigate("/sUsers/addItem");
+    navigate("/sUsers/addItemPurchase");
   };
 
   const cancelHandler = () => {
     setAdditional(false);
     dispatch(removeAdditionalCharge());
-    setRows([{ option: "Option 1", value: "", action: "add" }]);
+    setRows([
+      {
+        option: additionalChragesFromCompany[0].name,
+        value: "",
+        action: "add",
+        taxPercentage: additionalChragesFromCompany[0].taxPercentage,
+        hsn: additionalChragesFromCompany[0].hsn,
+      },
+    ]);
   };
 
   const submitHandler = async () => {
@@ -355,13 +398,13 @@ function InvoiceSecondary() {
       additionalChargesFromRedux,
       lastAmount,
       orgId,
-      orderNumber,
+      purchaseNumber,
     };
 
     console.log(formData);
 
     try {
-      const res = await api.post("/api/sUsers/createInvoice", formData, {
+      const res = await api.post("/api/sUsers/createPurchase", formData, {
         headers: {
           "Content-Type": "application/json",
         },
@@ -371,9 +414,8 @@ function InvoiceSecondary() {
       console.log(res.data);
       toast.success(res.data.message);
 
-      // navigate(`/sUsers/InvoiceDetails/${res.data.data._id}`);
-
-      // dispatch(removeAll());
+      navigate(`/sUsers/purchaseDetails/${res.data.data._id}`);
+      dispatch(removeAll());
     } catch (error) {
       toast.error(error.response.data.message);
       console.log(error);
@@ -385,10 +427,10 @@ function InvoiceSecondary() {
     // setEmail('');
   }
 
-  const saveOrderNumber = async () => {
+  const saveSalesNumber = async () => {
     try {
       const res = await api.post(
-        `/api/sUsers/saveOrderNumber/${orgId}`,
+        `/api/sUsers/saveSalesNumber/${orgId}`,
         modalInputs,
         {
           headers: {
@@ -409,10 +451,13 @@ function InvoiceSecondary() {
     }
   };
 
+  console.log(additionalChragesFromCompany);
+  console.log(godownname);
+
   return (
     <div className="flex relative ">
       <div>
-        <SidebarSec TAB={"invoice"} showBar={showSidebar} />
+        <SidebarSec TAB={"Sales"} showBar={showSidebar} refresh={refreshCmp} />
       </div>
 
       <div className="flex-1 bg-slate-100  h-screen overflow-y-scroll  ">
@@ -424,9 +469,7 @@ function InvoiceSecondary() {
           <Link to={"/sUsers/dashboard"}>
             <IoIosArrowRoundBack className="text-3xl text-white cursor-pointer md:hidden" />
           </Link>
-          <p className="text-white text-lg   font-bold ">
-            Create Bill / Sales Order
-          </p>
+          <p className="text-white text-lg   font-bold ">Purchase</p>
         </div>
 
         {/* invoiec date */}
@@ -434,41 +477,48 @@ function InvoiceSecondary() {
         <div className="flex justify-between  p-4 bg-white drop-shadow-lg items-center text-xs md:text-base ">
           <div className=" flex flex-col gap-1 justify-center">
             <p className="text-md font-semibold text-violet-400">
-              {" "}
-              Order #{orderNumber}
+              Purchase #{purchaseNumber}
             </p>
             <p className="font-semibold   text-gray-500 text-xs md:text-base">
               {new Date().toDateString()}
             </p>
           </div>
-          <div className="flex items-center gap-3">
-            <div className=" hidden md:block ">
-              <div className="  flex gap-5 items-center ">
+          <div className="  ">
+            <div className="  flex gap-5 items-center ">
+              <div className="hidden md:block">
                 <button
                   onClick={submitHandler}
                   className=" bottom-0 text-white bg-violet-700  w-full rounded-md  p-2 flex items-center justify-center gap-2 hover_scale cursor-pointer "
                 >
                   <IoIosAddCircle className="text-2xl" />
-                  <p>Generate Order</p>
+                  <p>Generate Purchase</p>
                 </button>
               </div>
-            </div>
-            <div>
-              <button
-                onClick={() => {
-                  dispatch(removeAll());
-                }}
-                className="  text-red-500 text-xs  p-1 px-3  border border-1 border-gray-300 rounded-2xl cursor-pointer"
-              >
-                Cancel
-              </button>
+              <div>
+                {/* <button
+                  onClick={() => setOpenModal(true)}
+                  className="  text-violet-500 text-xs  p-1 px-3  border border-1 border-gray-300 rounded-2xl cursor-pointer"
+                >
+                  Edit
+                </button> */}
+              </div>
+              <div>
+                <button
+                  onClick={() => {
+                    dispatch(removeAll());
+                  }}
+                  className="  text-red-500 text-xs  p-1 px-3  border border-1 border-gray-300 rounded-2xl cursor-pointer"
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           </div>
         </div>
 
         {/* adding party */}
 
-        <div className="bg-white  py-3 px-4 pb-3 drop-shadow-lg mt-2 md:mt-3 text-xs md:text-base">
+        <div className="bg-white  py-3 px-4 pb-3 drop-shadow-lg mt-2 md:mt-3 text-xs md:text-base ">
           <div className="flex justify-between">
             <div className="flex gap-2 ">
               <p className="font-bold uppercase text-xs">Party name</p>
@@ -476,7 +526,7 @@ function InvoiceSecondary() {
             </div>
             {Object.keys(party).length !== 0 && (
               <div>
-                <Link to={"/sUsers/searchParty"}>
+                <Link to={"/sUsers/searchPartyPurchase"}>
                   <p className="text-violet-500 p-1 px-3  text-xs border border-1 border-gray-300 rounded-2xl cursor-pointer">
                     Change
                   </p>
@@ -487,7 +537,7 @@ function InvoiceSecondary() {
 
           {Object.keys(party).length === 0 ? (
             <div className="mt-3 p-6 border border-gray-300 h-10 rounded-md flex  cursor-pointer justify-center   items-center font-medium text-violet-500">
-              <Link to={"/sUsers/searchParty"}>
+              <Link to={"/sUsers/searchPartyPurchase"}>
                 <div className="flex justify-center gap-2 hover_scale text-base ">
                   <IoMdAdd className="text-2xl" />
                   <p>Add Party Name</p>
@@ -522,6 +572,7 @@ function InvoiceSecondary() {
             </div>
 
             <div className="mt-3 p-6 border border-gray-300 h-10 rounded-md flex  cursor-pointer justify-center   items-center font-medium text-violet-500 ">
+              {/* <Link to={"/sUsers/addItem"}>  */}
               <div
                 onClick={handleAddItem}
                 className="flex justify-center gap-2 hover_scale items-center "
@@ -529,9 +580,11 @@ function InvoiceSecondary() {
                 <IoMdAdd className="text-2xl" />
                 <p className="text-sm">Add Item</p>
               </div>
+              {/* </Link> */}
             </div>
           </div>
         )}
+
         {items.length > 0 && (
           <>
             <div>
@@ -541,9 +594,9 @@ function InvoiceSecondary() {
                   <p>Items ({items.length})</p>
                 </div>
 
-                <Link to={"/sUsers/addItem"}>
+                <Link to={"/sUsers/addItemPurchase"}>
                   <div className=" flex items-center gap-2 font-bold text-violet-500">
-                    <IoMdAdd className="text-xl" />
+                    <IoMdAdd className="text-2xl" />
                     <p>Add Item</p>
                   </div>
                 </Link>
@@ -551,18 +604,8 @@ function InvoiceSecondary() {
 
               {items.map((el, index) => (
                 <>
-                  <div
-                    key={index}
-                    className="py-3 mt-0 px-3 md:px-6 bg-white flex items-center gap-1.5 md:gap-4"
-                  >
-                    <div
-                      onClick={() => {
-                        dispatch(removeItem(el));
-                      }}
-                      className=" text-gray-500 text-sm cursor-pointer "
-                    >
-                      <MdCancel />
-                    </div>
+                  <div key={index} className="py-3 mt-0 px-3 md:px-6 bg-white flex items-center gap-1.5 md:gap-4">
+                    <div onClick={()=>{dispatch(removeItem(el))}} className=" text-gray-500 text-sm cursor-pointer "><MdCancel/></div>
                     <div className=" flex-1">
                       <div className="flex justify-between font-bold text-xs gap-10">
                         <p>{el.product_name}</p>
@@ -607,8 +650,8 @@ function InvoiceSecondary() {
                         <div className="">
                           <p
                             onClick={() => {
-                              navigate(`/sUsers/editItem/${el._id}`, {
-                                state: { from: "invoice" },
+                              navigate(`/sUsers/editItemPurchase/${el._id}/${godownname===""?"nil":godownname}`, {
+                                state: { from: "sales" },
                               });
                             }}
                             className="text-violet-500 text-xs md:text-base font-bold  p-1  px-4   border border-1 border-gray-300 rounded-2xl cursor-pointer"
@@ -694,11 +737,10 @@ function InvoiceSecondary() {
                                     onClick={() => {
                                       actionChange(index, "add");
                                     }}
-                                    className={` ${
-                                      row.action === "add"
+                                    className={` ${row.action === "add"
                                         ? "border-violet-500 "
                                         : ""
-                                    }  cursor-pointer p-1 px-1.5 rounded-md  border  bg-gray-100 `}
+                                      }  cursor-pointer p-1 px-1.5 rounded-md  border  bg-gray-100 `}
                                   >
                                     <IoMdAdd />
                                   </div>
@@ -706,11 +748,10 @@ function InvoiceSecondary() {
                                     onClick={() => {
                                       actionChange(index, "sub");
                                     }}
-                                    className={` ${
-                                      row.action === "sub"
+                                    className={` ${row.action === "sub"
                                         ? "border-violet-500 "
                                         : ""
-                                    }  cursor-pointer p-1 px-1.5 rounded-md  border  bg-gray-100 `}
+                                      }  cursor-pointer p-1 px-1.5 rounded-md  border  bg-gray-100 `}
                                   >
                                     <FiMinus />
                                   </div>
@@ -725,164 +766,22 @@ function InvoiceSecondary() {
                                     onChange={(e) =>
                                       handleRateChange(index, e.target.value)
                                     }
-                                    className={` ${
-                                      additionalChragesFromCompany.length === 0
+                                    className={` ${additionalChragesFromCompany.length === 0
                                         ? "pointer-events-none opacity-20 "
                                         : ""
-                                    }   block w-full py-2 px-4 bg-white text-sm focus:outline-none border-b-2 border-t-0 border-l-0 border-r-0 `}
+                                      }   block w-full py-2 px-4 bg-white text-sm focus:outline-none border-b-2 border-t-0 border-l-0 border-r-0 `}
                                   />
                                 </div>
 
-                                {row?.taxPercentage !== "" &&
-                                  row.value !== "" && (
-                                    <div className="ml-3 text-[9.5px] text-gray-400 mt-2">
-                                      With tax : ₹{" "}
-                                      {(parseFloat(row?.value) *
-                                        (100 + parseFloat(row.taxPercentage))) /
-                                        100}{" "}
-                                    </div>
-                                  )}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                      <button
-                        onClick={handleAddRow}
-                        className="mt-4 px-4 py-1 bg-pink-500 text-white rounded"
-                      >
-                        <MdPlaylistAdd />
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className=" flex justify-end items-center mt-4 font-semibold gap-1 text-violet-500 cursor-pointer pr-4">
-                    <div
-                      onClick={() => {
-                        setAdditional(true);
-                      }}
-                      className="flex items-center"
-                    >
-                      <IoMdAdd className="text-2xl" />
-                      <p>Additional Charges </p>
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
-            {type != "self" && (
-              <>
-                {additional ? (
-                  <div className="container mx-auto mt-2 bg-white p-4 text-xs">
-                    <div className="flex  items-center justify-between  font-bold  text-[13px]">
-                      <div className="flex  items-center gap-3">
-                        <IoIosArrowDown className="font-bold text-[15px]" />
-                        <p className="text-blue-800">Additional Charges</p>
-                      </div>
-                      <button
-                        onClick={cancelHandler}
-                        // onClick={() => {setAdditional(false);dispatch(removeAdditionalCharge());setRefresh(!refresh);setRows()}}
-                        className="text-violet-500 p-1 px-3  text-xs border border-1 border-gray-300 rounded-2xl cursor-pointer"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                    <div className="container mx-auto  mt-2  md:px-8 ">
-                      <table className="table-fixed w-full bg-white ">
-                        <tbody>
-                          {rows.map((row, index) => (
-                            <tr key={index} className="">
-                              <td className=" w-2  ">
-                                <MdCancel
-                                  onClick={() => {
-                                    handleDeleteRow(index);
-                                  }}
-                                  className="text-sm cursor-pointer text-gray-500 hover:text-black"
-                                />
-                              </td>
-                              <td className=" flex flex-col justify-center ml-2 mt-3.5 ">
-                                <select
-                                  value={row._id}
-                                  onChange={(e) =>
-                                    handleLevelChange(index, e.target.value)
-                                  }
-                                  className="block w-full   bg-white text-sm focus:outline-none border-none border-b-gray-500 "
-                                >
-                                  {additionalChragesFromCompany.length > 0 ? (
-                                    additionalChragesFromCompany.map(
-                                      (el, index) => (
-                                        <option key={index} value={el._id}>
-                                          {" "}
-                                          {el.name}{" "}
-                                        </option>
-                                      )
-                                    )
-                                  ) : (
-                                    <option>No charges available</option>
-                                  )}
-                                </select>
-
-                                {row?.taxPercentage !== "" && (
-                                  <div className="ml-3 text-[9px] text-gray-400">
-                                    GST @ {row?.taxPercentage} %
+                                {row?.taxPercentage !== "" && row.value !== "" && (
+                                  <div className="ml-3 text-[9.5px] text-gray-400 mt-2">
+                                    With tax : ₹{" "}
+                                    {(parseFloat(row?.value) *
+                                      (100 + parseFloat(row.taxPercentage))) /
+                                      100}{" "}
                                   </div>
                                 )}
                               </td>
-                              <td className="">
-                                <div className="flex gap-3 px-5 ">
-                                  <div
-                                    onClick={() => {
-                                      actionChange(index, "add");
-                                    }}
-                                    className={` ${
-                                      row.action === "add"
-                                        ? "border-violet-500 "
-                                        : ""
-                                    }  cursor-pointer p-1 px-1.5 rounded-md  border  bg-gray-100 `}
-                                  >
-                                    <IoMdAdd />
-                                  </div>
-                                  <div
-                                    onClick={() => {
-                                      actionChange(index, "sub");
-                                    }}
-                                    className={` ${
-                                      row.action === "sub"
-                                        ? "border-violet-500 "
-                                        : ""
-                                    }  cursor-pointer p-1 px-1.5 rounded-md  border  bg-gray-100 `}
-                                  >
-                                    <FiMinus />
-                                  </div>
-                                </div>
-                              </td>
-                              <td className="px-4 py-2">
-                                <div className="flex items-center">
-                                  <span className="mr-0 ">₹</span>
-                                  <input
-                                    type="number"
-                                    value={row.value}
-                                    onChange={(e) =>
-                                      handleRateChange(index, e.target.value)
-                                    }
-                                    className={` ${
-                                      additionalChragesFromCompany.length === 0
-                                        ? "pointer-events-none opacity-20 "
-                                        : ""
-                                    }   block w-full py-2 px-4 bg-white text-sm focus:outline-none border-b-2 border-t-0 border-l-0 border-r-0 `}
-                                  />
-                                </div>
-
-                                {row?.taxPercentage !== "" &&
-                                  row.value !== "" && (
-                                    <div className="ml-3 text-[9.5px] text-gray-400 mt-2">
-                                      With tax : ₹{" "}
-                                      {(parseFloat(row?.value) *
-                                        (100 + parseFloat(row.taxPercentage))) /
-                                        100}{" "}
-                                    </div>
-                                  )}
-                              </td>
                             </tr>
                           ))}
                         </tbody>
@@ -910,10 +809,149 @@ function InvoiceSecondary() {
                 )}
               </>
             )}
+        {type != "self" && (
+          <>
+           {additional ? (
+              <div className="container mx-auto mt-2 bg-white p-4 text-xs">
+                <div className="flex  items-center justify-between  font-bold  text-[13px]">
+                  <div className="flex  items-center gap-3">
+                    <IoIosArrowDown className="font-bold text-[15px]" />
+                    <p className="text-blue-800">Additional Charges</p>
+                  </div>
+                  <button
+                    onClick={cancelHandler}
+                    // onClick={() => {setAdditional(false);dispatch(removeAdditionalCharge());setRefresh(!refresh);setRows()}}
+                    className="text-violet-500 p-1 px-3  text-xs border border-1 border-gray-300 rounded-2xl cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                </div>
+                <div className="container mx-auto  mt-2  md:px-8 ">
+                  <table className="table-fixed w-full bg-white ">
+                    <tbody>
+                      {rows.map((row, index) => (
+                        <tr key={index} className="">
+                          <td className=" w-2  ">
+                            <MdCancel
+                              onClick={() => {
+                                handleDeleteRow(index);
+                              }}
+                              className="text-sm cursor-pointer text-gray-500 hover:text-black"
+                            />
+                          </td>
+                          <td className=" flex flex-col justify-center ml-2 mt-3.5 ">
+                            <select
+                              value={row._id}
+                              onChange={(e) =>
+                                handleLevelChange(index, e.target.value)
+                              }
+                              className="block w-full   bg-white text-sm focus:outline-none border-none border-b-gray-500 "
+                            >
+                              {additionalChragesFromCompany.length > 0 ? (
+                                additionalChragesFromCompany.map(
+                                  (el, index) => (
+                                    <option key={index} value={el._id}>
+                                      {" "}
+                                      {el.name}{" "}
+                                    </option>
+                                  )
+                                )
+                              ) : (
+                                <option>No charges available</option>
+                              )}
+                            </select>
+
+                            {row?.taxPercentage !== "" && (
+                              <div className="ml-3 text-[9px] text-gray-400">
+                                GST @ {row?.taxPercentage} %
+                              </div>
+                            )}
+                          </td>
+                          <td className="">
+                            <div className="flex gap-3 px-5 ">
+                              <div
+                                onClick={() => {
+                                  actionChange(index, "add");
+                                }}
+                                className={` ${
+                                  row.action === "add"
+                                    ? "border-violet-500 "
+                                    : ""
+                                }  cursor-pointer p-1 px-1.5 rounded-md  border  bg-gray-100 `}
+                              >
+                                <IoMdAdd />
+                              </div>
+                              <div
+                                onClick={() => {
+                                  actionChange(index, "sub");
+                                }}
+                                className={` ${
+                                  row.action === "sub"
+                                    ? "border-violet-500 "
+                                    : ""
+                                }  cursor-pointer p-1 px-1.5 rounded-md  border  bg-gray-100 `}
+                              >
+                                <FiMinus />
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-4 py-2">
+                            <div className="flex items-center">
+                              <span className="mr-0 ">₹</span>
+                              <input
+                                type="number"
+                                value={row.value}
+                                onChange={(e) =>
+                                  handleRateChange(index, e.target.value)
+                                }
+                                className={` ${
+                                  additionalChragesFromCompany.length === 0
+                                    ? "pointer-events-none opacity-20 "
+                                    : ""
+                                }   block w-full py-2 px-4 bg-white text-sm focus:outline-none border-b-2 border-t-0 border-l-0 border-r-0 `}
+                              />
+                            </div>
+
+                            {row?.taxPercentage !== "" && row.value !== "" && (
+                              <div className="ml-3 text-[9.5px] text-gray-400 mt-2">
+                                With tax : ₹{" "}
+                                {(parseFloat(row?.value) *
+                                  (100 + parseFloat(row.taxPercentage))) /
+                                  100}{" "}
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  <button
+                    onClick={handleAddRow}
+                    className="mt-4 px-4 py-1 bg-pink-500 text-white rounded"
+                  >
+                    <MdPlaylistAdd />
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className=" flex justify-end items-center mt-4 font-semibold gap-1 text-violet-500 cursor-pointer pr-4">
+                <div
+                  onClick={() => {
+                    setAdditional(true);
+                  }}
+                  className="flex items-center"
+                >
+                  <IoMdAdd className="text-2xl" />
+                  <p>Additional Charges </p>
+                </div>
+              </div>
+            )}
+            </>
+        )}
           </>
         )}
 
-        <div className="flex justify-between bg-white mt-2 p-3">
+<div className="flex justify-between bg-white mt-2 p-3">
           <p className="font-bold text-lg">Total Amount</p>
           <div className="flex flex-col items-center">
             <p className="font-bold text-lg">₹ {totalAmount.toFixed(2) ?? 0}</p>
@@ -925,10 +963,10 @@ function InvoiceSecondary() {
           <div className="flex justify-center overflow-hidden w-full">
             <button
               onClick={submitHandler}
-              className="fixed bottom-0 text-white bg-violet-700  w-full  p-2 py-2.5 flex items-center justify-center gap-2 hover_scale cursor-pointer "
+              className="fixed bottom-0 text-white bg-violet-700  w-full  p-2 py-4 flex items-center justify-center gap-2 hover_scale cursor-pointer "
             >
               <IoIosAddCircle className="text-2xl" />
-              <p>Generate Order</p>
+              <p>Generate Purchase</p>
             </button>
           </div>
         </div>
@@ -1098,7 +1136,7 @@ function InvoiceSecondary() {
               />
             </div>
             <div className="w-full">
-              <Button onClick={saveOrderNumber}>Submit</Button>
+              <Button onClick={saveSalesNumber}>Submit</Button>
             </div>
           </div>
         </Modal.Body>
@@ -1107,4 +1145,4 @@ function InvoiceSecondary() {
   );
 }
 
-export default InvoiceSecondary;
+export default Purchase;
