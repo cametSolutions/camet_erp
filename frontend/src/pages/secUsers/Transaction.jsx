@@ -21,8 +21,7 @@ function Transaction() {
   const [startDate, setStartDate] = useState(new Date());
   const [endDate, setEndDate] = useState(new Date());
   const [showSidebar, setShowSidebar] = useState(false);
-  const [total, setTotal] = useState(0)
-
+  const [total, setTotal] = useState(0);
 
   const org = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg
@@ -82,8 +81,11 @@ function Transaction() {
       try {
         total = finalData.reduce((acc, curr) => {
           const enteredAmount = curr?.enteredAmount;
-          if (typeof enteredAmount === "number" || typeof enteredAmount === "string") {
-            return (acc + parseFloat(enteredAmount));
+          if (
+            typeof enteredAmount === "number" ||
+            typeof enteredAmount === "string"
+          ) {
+            return acc + parseFloat(enteredAmount);
           }
           return acc;
         }, 0);
@@ -97,7 +99,7 @@ function Transaction() {
 
   useEffect(() => {
     calulateTotal();
-  }, [finalData]); 
+  }, [finalData]);
 
   // const handleCancel = async (id) => {
   //   try {
@@ -226,6 +228,8 @@ function Transaction() {
                       ? `/sUsers/receiptDetails/${el._id}`
                       : el.type === "Tax Invoice"
                       ? `/sUsers/salesDetails/${el._id}`
+                      : el.type === "Purchase"
+                      ? `/sUsers/purchaseDetails/${el._id}`
                       : `/sUsers/InvoiceDetails/${el._id}`
                   );
                 }}
@@ -240,6 +244,8 @@ function Transaction() {
                         ? "bg-[#FB6D48]"
                         : el.type === "Tax Invoice"
                         ? "bg-violet-500"
+                        : el.type === "Purchase"
+                        ? "bg-pink-500"
                         : "bg-[#3ed57a]"
                     }   flex items-center text-white px-2 rounded-sm `}
                   >

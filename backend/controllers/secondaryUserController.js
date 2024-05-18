@@ -17,6 +17,7 @@ import { truncateToNDecimals } from "./helpers/helper.js";
 import bcrypt from "bcryptjs";
 import mongoose from "mongoose";
 import salesModel from "../models/salesModel.js";
+import purchaseModel from "../models/purchaseModel.js";
 
 // @desc Login secondary user
 // route POST/api/sUsers/login
@@ -322,8 +323,21 @@ export const transactions = async (req, res) => {
         },
       },
     ]);
+    const purchases = await purchaseModel.aggregate([
+      { $match: { Secondary_user_id: userId, cmp_id: cmp_id } },
+      {
+        $project: {
+          party_name: "$party.partyName",
+          // mobileNumber:"$party.mobileNumber",
+          type: "Purchase",
+          enteredAmount: "$finalAmount",
+          createdAt: 1,
+          itemsLength: { $size: "$items" },
+        },
+      },
+    ]);
 
-    const combined = [...transactions, ...invoices, ...sales];
+    const combined = [...transactions, ...invoices, ...sales,...purchases];
     combined.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
     if (combined.length > 0) {
@@ -335,6 +349,7 @@ export const transactions = async (req, res) => {
       return res.status(404).json({ message: "Transactions not found" });
     }
   } catch (error) {
+    console.log(error);
     return res.status(500).json({
       status: false,
       message: "Internal server error",
@@ -550,16 +565,34 @@ export const getTransactionDetails = async (req, res) => {
 export const PartyList = async (req, res) => {
   const cmp_id = req.params.cmp_id;
   const Primary_user_id = req.owner;
+  const secUserId = req.sUserId;
   try {
     const partyList = await PartyModel.find({
       cmp_id: cmp_id,
       Primary_user_id: Primary_user_id,
     });
 
+    const secUser = await SecondaryUser.findById(secUserId);
+    if (!secUser) {
+      return res.status(404).json({ message: "Secondary user not found" });
+    }
+
+    const configuration = secUser.configurations.find(
+      (item) => item.organization == cmp_id
+    );
+
+    let vanSaleConfig = false;
+    if (configuration) {
+      const { vanSale } = configuration;
+      vanSaleConfig = vanSale;
+    }
+
     if (partyList) {
-      res
-        .status(200)
-        .json({ message: "parties fetched", partyList: partyList });
+      res.status(200).json({
+        message: "parties fetched",
+        partyList: partyList,
+        vanSale: vanSaleConfig,
+      });
     } else {
       res.status(404).json({ message: "No parties found" });
     }
@@ -916,18 +949,21 @@ export const createInvoice = async (req, res) => {
     const configuration = secondaryUser.configurations.find(
       (config) => config.organization.toString() === orgId
     );
+
+    console.log("configuration", configuration);
     if (configuration) {
       if (
         configuration.salesOrderConfiguration &&
-        Object.values(configuration.salesOrderConfiguration).every(
-          (value) => value !== ""
-        )
+        Object.entries(configuration.salesOrderConfiguration)
+          .filter(([key]) => key !== "startingNumber")
+          .every(([_, value]) => value !== "")
       ) {
         orderConfig = true;
       }
     }
+    console.log(orderConfig);
 
-    if (orderConfig) {
+    if (orderConfig === true) {
       const increaseSalesNumber = await SecondaryUser.findByIdAndUpdate(
         Secondary_user_id,
         { $inc: { orderNumber: 1 } },
@@ -1767,18 +1803,16 @@ export const createSale = async (req, res) => {
         },
       });
 
-      console.log("godown",  item.GodownList);
-      if (vanSaleConfig===true) {
-
+      console.log("godown", item.GodownList);
+      if (vanSaleConfig === true) {
         console.log("haiiii");
         for (const godown of item.GodownList) {
-
           // Find the corresponding godown in the product's GodownList
           const godownIndex = product.GodownList.findIndex(
             (g) => g.godown_id === godown.godown_id
           );
 
-          console.log( "godownIndex", godownIndex);
+          console.log("godownIndex", godownIndex);
           if (godownIndex !== -1) {
             // Calculate the new godown stock
             const newGodownStock = truncateToNDecimals(
@@ -2200,49 +2234,34 @@ export const fetchConfigurationNumber = async (req, res) => {
       (item) => item.organization.toString() === cmp_id
     );
 
-    if (!configuration) {
-      switch (title) {
-        case "sales":
-          configDetails = company?.salesNumberDetails;
-          configurationNumber = company?.salesNumber;
-          break;
-        case "salesOrder":
-          configDetails = company?.OrderNumberDetails;
-          configurationNumber = company?.orderNumber;
-          break;
-        case "receipt":
-          configDetails = company?.receiptNumberDetails;
-          break;
-        default:
-          configDetails = null;
-          break;
-      }
-    } else {
+    if (configuration) {
       switch (title) {
         case "sales":
           if (
             configuration.vanSale &&
             Object.values(configuration.salesConfiguration).every(
-              (value) => value === ""
+              (value) => value !== ""
             )
           ) {
             configDetails = configuration.vanSaleConfiguration;
             configurationNumber = secUser?.vanSalesNumber;
           } else {
-            configDetails =
-              configuration.salesConfiguration || company?.salesNumberDetails;
+            configDetails = configuration.salesConfiguration || "";
             configurationNumber = secUser?.salesNumber;
           }
           break;
         case "salesOrder":
-          configDetails =
-            configuration.salesOrderConfiguration ||
-            company?.OrderNumberDetails;
+          configDetails = configuration.salesOrderConfiguration || "";
+
           configurationNumber = secUser?.orderNumber;
           break;
+        case "purchase":
+          configDetails = configuration.purchaseConfiguration || "";
+
+          configurationNumber = secUser?.purchaseNumber;
+          break;
         case "receipt":
-          configDetails =
-            configuration.receiptConfiguration || company?.receiptNumberDetails;
+          configDetails = configuration.receiptConfiguration || "";
           break;
         default:
           configDetails = null;
@@ -2252,19 +2271,28 @@ export const fetchConfigurationNumber = async (req, res) => {
 
     if (
       !configDetails ||
-      Object.values(configDetails).every((value) => value === "")
+      Object.entries(configDetails)
+        .filter(([key]) => key !== "startingNumber")
+        .every(([_, value]) => value === "")
     ) {
       switch (title) {
         case "sales":
-          configDetails = company?.salesNumberDetails;
+          configDetails = "";
           configurationNumber = company?.salesNumber;
           break;
         case "salesOrder":
-          configDetails = company?.OrderNumberDetails;
+          configDetails = "";
           configurationNumber = company?.orderNumber;
           break;
         case "receipt":
+          configDetails = "";
+
           configDetails = company?.receiptNumberDetails;
+          break;
+        case "purchase":
+          configDetails = "";
+
+          configurationNumber = company?.purchaseNumber;
           break;
         default:
           configDetails = null;
@@ -2272,19 +2300,20 @@ export const fetchConfigurationNumber = async (req, res) => {
       }
     }
 
-    if (configDetails == undefined && configuration == undefined) {
+    if (!configuration) {
       switch (title) {
         case "sales":
-          // configDetails = company?.salesNumberDetails;
           configurationNumber = company?.salesNumber;
           break;
         case "salesOrder":
-          // configDetails = company?.OrderNumberDetails;
           configurationNumber = company?.orderNumber;
           break;
-        // case "receipt":
-        //   configDetails = company?.receiptNumberDetails;
-        //   break;
+        case "receipt":
+          configurationNumber = company?.receiptNumberDetails;
+          break;
+        case "purchase":
+          configurationNumber = company?.purchaseNumber;
+          break;
         default:
           configurationNumber = null;
           break;
@@ -2526,5 +2555,288 @@ export const findGodownsNames = async (req, res) => {
     }
   } catch (error) {
     res.status(500).json({ message: "internal server error" });
+  }
+};
+
+// route POST /api/pUsers/createSale
+
+export const createPurchase = async (req, res) => {
+  const Primary_user_id = req.owner;
+  const Secondary_user_id = req.sUserId;
+
+  try {
+    const {
+      orgId,
+      party,
+      items,
+      priceLevelFromRedux,
+      additionalChargesFromRedux,
+      lastAmount,
+      purchaseNumber,
+    } = req.body;
+
+    const secondaryUser = await SecondaryUser.findById(Secondary_user_id);
+    const secondaryMobile = secondaryUser.mobile;
+
+    console.log("secondaryMobile", secondaryMobile);
+    if (!secondaryUser) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Secondary user not found" });
+    }
+    const configuration = secondaryUser.configurations.find(
+      (config) => config.organization.toString() === orgId
+    );
+
+    // Prepare bulk operations for product and godown updates
+    const productUpdates = [];
+    const godownUpdates = [];
+
+    // Process each item to update product stock and godown stock
+    for (const item of items) {
+      // Find the product in the product model
+      const product = await productModel.findOne({ _id: item._id });
+      if (!product) {
+        throw new Error(`Product not found for item ID: ${item._id}`);
+      }
+
+      // Calculate the new balance stock
+      // Calculate the new balance stock
+      const productBalanceStock = truncateToNDecimals(product.balance_stock, 3);
+      console.log("productBalanceStock", productBalanceStock);
+      const itemCount = truncateToNDecimals(item.count, 3);
+      const newBalanceStock = truncateToNDecimals(
+        productBalanceStock + itemCount,
+        3
+      );
+
+      console.log("productBalanceStock", productBalanceStock);
+      console.log("newBalanceStock", newBalanceStock);
+
+      // Prepare product update operation
+      productUpdates.push({
+        updateOne: {
+          filter: { _id: product._id },
+          update: { $set: { balance_stock: newBalanceStock } },
+        },
+      });
+
+      console.log("godown", item.GodownList);
+
+      // Update the godown stock for each specified godown
+      for (const godown of item.GodownList) {
+        // Find the corresponding godown in the product's GodownList
+        const godownIndex = product.GodownList.findIndex(
+          (g) => g.godown_id === godown.godown_id
+        );
+        if (godownIndex !== -1) {
+          // Calculate the new godown stock
+          const newGodownStock = truncateToNDecimals(
+            product.GodownList[godownIndex].balance_stock + godown.count,
+            3
+          );
+
+          // Prepare godown update operation
+          godownUpdates.push({
+            updateOne: {
+              filter: {
+                _id: product._id,
+                "GodownList.godown": godown.godown,
+              },
+              update: {
+                $set: { "GodownList.$.balance_stock": newGodownStock },
+              },
+            },
+          });
+        }
+      }
+    }
+
+    // Execute bulk operations
+    await productModel.bulkWrite(productUpdates);
+    await productModel.bulkWrite(godownUpdates);
+
+    const lastPurchse = await purchaseModel.findOne(
+      {},
+      {},
+      { sort: { serialNumber: -1 } }
+    );
+    let newSerialNumber = 1;
+
+    // Check if there's a last invoice and calculate the new serial number
+    if (lastPurchse && !isNaN(lastPurchse.serialNumber)) {
+      newSerialNumber = lastPurchse.serialNumber + 1;
+    }
+
+    const updatedItems = items.map((item) => {
+      // Find the corresponding price rate for the selected price level
+      const selectedPriceLevel = item.Priceleveles.find(
+        (priceLevel) => priceLevel.pricelevel === priceLevelFromRedux
+      );
+      // If a corresponding price rate is found, assign it to selectedPrice, otherwise assign null
+      const selectedPrice = selectedPriceLevel
+        ? selectedPriceLevel.pricerate
+        : null;
+
+      // Calculate total price after applying discount
+      let totalPrice = selectedPrice * (item.count || 1) || 0; // Default count to 1 if not provided
+      if (item.discount) {
+        // If discount is present (amount), subtract it from the total price
+        totalPrice -= item.discount;
+      } else if (item.discountPercentage) {
+        // If discount is present (percentage), calculate the discount amount and subtract it from the total price
+        const discountAmount = (totalPrice * item.discountPercentage) / 100;
+        totalPrice -= discountAmount;
+      }
+
+      // Calculate tax amounts
+      const { cgst, sgst, igst } = item;
+      const cgstAmt = (totalPrice * cgst) / 100;
+      const sgstAmt = (totalPrice * sgst) / 100;
+      const igstAmt = (totalPrice * igst) / 100;
+
+      // console.log("haii",typeof(parseFloat(sgstAmt.toFixed(2))),);
+
+      return {
+        ...item,
+        selectedPrice: selectedPrice,
+        cgstAmt: parseFloat(cgstAmt.toFixed(2)),
+        sgstAmt: parseFloat(sgstAmt.toFixed(2)),
+        igstAmt: parseFloat(igstAmt.toFixed(2)),
+        subTotal: totalPrice, // Optional: Include total price in the item object
+      };
+    });
+
+    let updateAdditionalCharge;
+
+    if (additionalChargesFromRedux.length > 0) {
+      updateAdditionalCharge = additionalChargesFromRedux.map((charge) => {
+        const { value, taxPercentage } = charge;
+
+        const taxAmt = (parseFloat(value) * parseFloat(taxPercentage)) / 100;
+        console.log(taxAmt);
+
+        return {
+          ...charge,
+          taxAmt: taxAmt,
+        };
+      });
+    }
+
+    // Continue with the rest of your function...
+    const purchase = new purchaseModel({
+      serialNumber: newSerialNumber,
+
+      cmp_id: orgId,
+      partyAccount: party?.partyName,
+
+      party,
+      items: updatedItems,
+      priceLevel: priceLevelFromRedux,
+      additionalCharges: updateAdditionalCharge,
+      finalAmount: lastAmount,
+      Primary_user_id,
+      Secondary_user_id,
+      purchaseNumber,
+    });
+
+    const result = await purchase.save();
+
+    let purchaseConfig = false;
+
+    if (configuration) {
+      if (
+        configuration?.purchaseConfiguration &&
+       Object.entries(configuration?.purchaseConfiguration)
+       .filter(([key]) => key !== "startingNumber")
+       .every(([, value]) => value !== "")
+      ) {
+        purchaseConfig = true;
+      }
+    }
+
+    // // const vanSaleConfig = configuration?.vanSale;
+
+    // if (vanSaleConfig) {
+    //   const increaseSalesNumber = await SecondaryUser.findByIdAndUpdate(
+    //     Secondary_user_id,
+    //     { $inc: { vanSalesNumber: 1 } },
+    //     { new: true }
+    //   );
+     if (purchaseConfig) {
+      const increasPurchaseNumber = await SecondaryUser.findByIdAndUpdate(
+        Secondary_user_id,
+        { $inc: { purchaseNumber: 1 } },
+        { new: true }
+      );
+    } else {
+      const increasPurchaseNumber = await OragnizationModel.findByIdAndUpdate(
+        orgId,
+        { $inc: { purchaseNumber: 1 } },
+        { new: true }
+      );
+    }
+
+    const billData = {
+      Primary_user_id,
+      bill_no: purchaseNumber,
+      cmp_id: orgId,
+      party_id: party?.party_master_id,
+      bill_amount: lastAmount,
+      bill_date: new Date(),
+      bill_pending_amt: lastAmount,
+      email: party?.emailID,
+      mobile_no: party?.mobileNumber,
+      party_name: party?.partyName,
+      user_id: secondaryMobile || "null",
+    };
+
+    const updatedDocument = await TallyData.findOneAndUpdate(
+      {
+        cmp_id: orgId,
+        bill_no: purchaseNumber,
+        Primary_user_id: Primary_user_id,
+        party_id: party?.party_master_id,
+      },
+      billData,
+      { upsert: true, new: true }
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Purchase created successfully",
+      data: result,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error, try again!",
+      error: error.message,
+    });
+  }
+};
+
+
+
+// @desc toget the details of transaction or purchase
+// route get/api/sUsers/getPurchaseDetails
+
+export const getPurchaseDetails = async (req, res) => {
+  const purchaseId = req.params.id;
+
+  try {
+    const purchaseDetails = await purchaseModel.findById(purchaseId);
+
+    if (purchaseDetails) {
+      res
+        .status(200)
+        .json({ message: "purchaseDetails  fetched", data: purchaseDetails });
+    } else {
+      res.status(404).json({ error: "Purchase not found" });
+    }
+  } catch (error) {
+    console.error("Error fetching purchase details:", error);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 };
