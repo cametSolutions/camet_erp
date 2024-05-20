@@ -979,7 +979,7 @@ export const createInvoice = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: "Invoice created successfully",
+      message: "Sale order created successfully",
       data: result,
     });
   } catch (error) {
@@ -1538,7 +1538,7 @@ export const editInvoice = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: "Invoice Updated successfully",
+      message: "Sale order Updated successfully",
       data: result,
     });
   } catch (error) {
