@@ -8,8 +8,9 @@ import { useSelector, useDispatch } from "react-redux";
 import { Link } from "react-router-dom";
 import { removeSettlementData } from "../../../slices/settlementDataSlice";
 import { FaWhatsapp } from "react-icons/fa";
-import { IoReorderThreeSharp } from "react-icons/io5";
+import { IoIosArrowRoundBack } from "react-icons/io";
 import SearchBar from "../../components/common/SearchBar";
+import { useNavigate } from "react-router-dom";
 
 
 
@@ -21,6 +22,7 @@ function Outstanding() {
   const [search, setSearch] = useState("");
 
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const currOrg=useSelector((state)=>state.secSelectedOrganization.secSelectedOrg)
   const secUser=JSON.parse(localStorage.getItem('sUserData'))
   console.log(secUser);
@@ -92,8 +94,8 @@ function Outstanding() {
         <div className="sticky top-0 flex flex-col z-30 bg-white">
           <div className="bg-white"></div>
           <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex  items-center gap-2  ">
-          <IoReorderThreeSharp
-              onClick={handleToggleSidebar}
+          <IoIosArrowRoundBack
+              onClick={()=>{navigate(-1)}}
               className="block md:hidden text-white text-3xl"
             />
             <p className="text-white text-lg   font-bold ">Outstandings</p>
