@@ -22,7 +22,7 @@ function Login() {
     const userData = JSON.parse(localStorage.getItem("pUserData"));
     console.log(userData);
     if (userData) {
-      navigate("/pUsers/outstanding");
+      navigate("/pUsers/dashboard");
     }
   }, []);
 
