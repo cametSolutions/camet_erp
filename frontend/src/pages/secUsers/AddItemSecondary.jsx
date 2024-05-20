@@ -25,8 +25,8 @@ import { HashLoader } from "react-spinners";
 import { FixedSizeList as List } from "react-window";
 import SidebarSec from "../../components/secUsers/SidebarSec";
 import { toast } from "react-toastify";
-import { IoIosCloseCircleOutline } from "react-icons/io";
 import { Decimal } from "decimal.js";
+import SearchBar from "../../components/common/SearchBar";
 
 function AddItemSecondary() {
   const [item, setItem] = useState([]);
@@ -43,7 +43,6 @@ function AddItemSecondary() {
   const [loader, setLoader] = useState(false);
   const [listHeight, setListHeight] = useState(0);
   const [scrollPosition, setScrollPosition] = useState(0);
-
 
   ///////////////////////////cpm_id///////////////////////////////////
 
@@ -98,7 +97,6 @@ function AddItemSecondary() {
           productData = allProductsFromRedux;
         }
 
-
         if (itemsFromRedux.length > 0) {
           console.log("haii");
 
@@ -118,7 +116,6 @@ function AddItemSecondary() {
           console.log(updatedItems);
           setItem(updatedItems);
         } else {
-
           setItem(productData);
         }
         if (brandFromRedux) {
@@ -139,7 +136,6 @@ function AddItemSecondary() {
     fetchProducts();
   }, [cpm_id]);
 
-
   ///////////////////////////setSelectedPriceLevel fom redux///////////////////////////////////
 
   useEffect(() => {
@@ -147,8 +143,6 @@ function AddItemSecondary() {
   }, []);
 
   ///////////////////////////sdo persisting of products///////////////////////////////////
-
-
 
   //////////////////////////////orgId////////////////////////////////
 
@@ -159,13 +153,10 @@ function AddItemSecondary() {
     (state) => state.secSelectedOrganization.secSelectedOrg.type
   );
 
-
-
-
   /////////////////////////scroll////////////////////////////
 
   useEffect(() => {
-    const storedScrollPosition = localStorage.getItem('scrollPositionAddItem');
+    const storedScrollPosition = localStorage.getItem("scrollPositionAddItem");
     if (storedScrollPosition) {
       setScrollPosition(parseInt(storedScrollPosition, 10));
     }
@@ -224,6 +215,9 @@ function AddItemSecondary() {
     fetchFilters();
   }, [orgId, type]);
 
+  const searchData = (data) => {
+    setSearch(data);
+  };
 
   ///////////////////////////filter items///////////////////////////////////
 
@@ -362,7 +356,7 @@ function AddItemSecondary() {
     const updatedItems = [...item];
     const index = updatedItems.findIndex((item) => item._id === _id);
     // Make a copy of the array
-    const currentItem = { ...updatedItems[index]};
+    const currentItem = { ...updatedItems[index] };
 
     // Decrement the count if it's greater than 0
     if (currentItem.count > 0) {
@@ -379,7 +373,7 @@ function AddItemSecondary() {
           selectedPriceLevel
         ).toFixed(2);
         // Create a new object with updated 'added' property
-        updatedItems[index] = { ...currentItem, added: currentItem.added }; 
+        updatedItems[index] = { ...currentItem, added: currentItem.added };
       }
 
       setItem(updatedItems);
@@ -388,8 +382,7 @@ function AddItemSecondary() {
 
     dispatch(changeCount(currentItem));
     dispatch(changeTotal(currentItem));
-};
-
+  };
 
   ///////////////////////////handlePriceLevelChange///////////////////////////////////
 
@@ -548,8 +541,6 @@ function AddItemSecondary() {
     return () => window.removeEventListener("resize", calculateHeight);
   }, []);
 
-
-
   const continueHandler = () => {
     if (selectedPriceLevel === "") {
       toast.error("Select a price level ");
@@ -569,7 +560,6 @@ function AddItemSecondary() {
       navigate("/sUsers/invoice");
     }
   };
-
 
   return (
     <div className="flex relative">
@@ -637,7 +627,7 @@ function AddItemSecondary() {
                     />
                   </svg>
                 </div>
-                <div class="relative">
+                {/* <div className="relative">
                   <input
                     onChange={(e) => {
                       setSearch(e.target.value);
@@ -651,7 +641,7 @@ function AddItemSecondary() {
                   />
                   <button
                     type="submit"
-                    class="text-white absolute end-[10px] top-1/2 transform -translate-y-1/2 bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-md px-2 py-1"
+                    className="text-white absolute end-[10px] top-1/2 transform -translate-y-1/2 bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-md px-2 py-1"
                   >
                     <IoIosSearch />
                   </button>
@@ -660,13 +650,15 @@ function AddItemSecondary() {
                       setSearch("");
                     }}
                     type="submit"
-                    class={`${
+                    className={`${
                       search.length > 0 ? "block" : "hidden"
                     }  absolute end-[40px] top-1/2 transform -translate-y-1/2 text-gray-500  text-md px-2 py-1`}
                   >
                     <IoIosCloseCircleOutline />
                   </button>
-                </div>
+                </div> */}
+
+                <SearchBar onType={searchData} />
               </div>
             </div>
           </div>
@@ -755,7 +747,10 @@ function AddItemSecondary() {
             initialScrollOffset={scrollPosition}
             onScroll={({ scrollOffset }) => {
               setScrollPosition(scrollOffset);
-              localStorage.setItem('scrollPositionAddItem', scrollOffset.toString());
+              localStorage.setItem(
+                "scrollPositionAddItem",
+                scrollOffset.toString()
+              );
             }}
           >
             {Row}

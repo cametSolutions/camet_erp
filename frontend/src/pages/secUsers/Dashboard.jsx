@@ -157,11 +157,11 @@ function Dashboard() {
                     <IoReceiptSharp />
                   </div>
 
-                  <div className="mx-5 py-2.5">
+                  <div className="mx-1 md:mx-4 py-2.5">
                     {/* <h4 className=" sm:text-md md:text-2xl  font-semibold text-gray-700">
                         ₹0
                       </h4> */}
-                    <div className="text-gray-500 text-md">Reciept</div>
+                    <div className="text-gray-500 text-md">Outstanding</div>
                   </div>
                 </div>
               </div>
@@ -224,11 +224,11 @@ function Dashboard() {
           <hr />
           <hr />
 
-          <div className=" bg-white px-4 p-2 z-40 text-gray-500 text-lg font-bold flex items-center gap-3 z shadow-lg sm:sticky top-[115px]">
+          <div className=" bg-white px-4 p-2 z-40 text-gray-500 text-sm md:text-lg font-bold flex items-center gap-3 z shadow-lg sm:sticky top-[115px]">
             <p> Today's Transactions</p>
 
 
-            <p className="text-sm">( {new Date().toDateString()} )</p>
+            <p className="text-[9px] md:text-sm">( {new Date().toDateString()} )</p>
             <CiCalendarDate className="text-xl font-bold text-violet-500" />
             <FaCaretDown />
           </div>

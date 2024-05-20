@@ -2254,14 +2254,22 @@ export const addconfigurations = async (req, res) => {
   try {
     const org = await OragnizationModel.findById(cmp_id);
     if (!org) {
-      res.status(404).json({ message: "Organization not found" });
+      return res.status(404).json({ message: "Organization not found" });
     }
 
-    // org.termsAndConditions.push(req.body);
-
     const { selectedBank, termsList } = req.body;
+
+    // Check if selectedBank is provided
+    let bankId = null; // Default to null if not provided
+    if (selectedBank) {
+      // Validate selectedBank as an ObjectId if needed
+      if (mongoose.Types.ObjectId.isValid(selectedBank)) {
+        bankId = selectedBank;
+      } 
+    }
+
     const newConfigurations = {
-      bank: selectedBank,
+      bank: bankId, // Use the validated bankId or null
       terms: termsList,
     };
     org.configurations = [newConfigurations];
@@ -2281,6 +2289,7 @@ export const addconfigurations = async (req, res) => {
     });
   }
 };
+
 
 // @desc   saveSalesNumber
 // route post/api/pUsers/saveSalesNumber/cmp_id
