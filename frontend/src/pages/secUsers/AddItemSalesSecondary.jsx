@@ -27,6 +27,8 @@ import { toast } from "react-toastify";
 import SidebarSec from "../../components/secUsers/SidebarSec";
 import { IoIosCloseCircleOutline } from "react-icons/io";
 import { Decimal } from "decimal.js";
+import SearchBar from "../../components/common/SearchBar";
+
 
 // import SelectDefaultModal from "../../../constants/components/SelectDefaultModal";
 
@@ -110,6 +112,11 @@ function AddItemSalesSecondary() {
   }, []);
 
   console.log(godownname);
+
+  const searchData = (data) => {
+    setSearch(data);
+  };
+
   ///////////////////////////fetchProducts///////////////////////////////////
 
   useEffect(() => {
@@ -907,36 +914,8 @@ function AddItemSalesSecondary() {
                     />
                   </svg>
                 </div>
-                <div class="relative">
-                  <input
-                    onChange={(e) => {
-                      setSearch(e.target.value);
-                    }}
-                    value={search}
-                    type="search"
-                    id="default-search"
-                    className="block w-full p-2 text-sm text-gray-900 border  rounded-lg border-gray-300  bg-gray-50 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Search party by Item namewww..."
-                    required
-                  />
-                  <button
-                    type="submit"
-                    class="text-white absolute end-[10px] top-1/2 transform -translate-y-1/2 bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-md px-2 py-1"
-                  >
-                    <IoIosSearch />
-                  </button>
-                  <button
-                    onClick={() => {
-                      setSearch("");
-                    }}
-                    type="submit"
-                    class={`${
-                      search.length > 0 ? "block" : "hidden"
-                    }  absolute end-[40px] top-1/2 transform -translate-y-1/2 text-gray-500  text-md px-2 py-1`}
-                  >
-                    <IoIosCloseCircleOutline />
-                  </button>
-                </div>
+                <SearchBar onType={searchData} />
+             
               </div>
             </div>
           </div>

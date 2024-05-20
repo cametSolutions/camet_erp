@@ -100,14 +100,11 @@ function OrderConfigurations() {
   console.log(selectedBank);
 
   const submitHandler = async () => {
-    if (!selectedBank) {
-      toast.error("Select Bank");
+    if (!selectedBank && termsList.length == 0 ) {
+      toast.error("At least configure one field");
       return;
     }
-    if (termsList.length == 0) {
-      toast.error("Add terms");
-      return;
-    }
+ 
 
     const formData = {
       selectedBank,
