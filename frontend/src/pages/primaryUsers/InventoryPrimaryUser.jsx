@@ -233,14 +233,14 @@ function InventoryPrimaryUser() {
             </div>
           </div>
 
-          <div className=" flex flex-col justify-center gap-2 text-sm">
+          <div className=" flex   gap-2 text-sm mt-4">
             <div className="flex gap-2 text-nowrap">
-              <p className="font-bold">Hsn :</p>
-              <p className="font-semibold text-gray-500"> {el?.hsn_code}</p>
+              <p className="font-bold text-gray-400 uppercase ">Hsn :</p>
+              <p className="font-semibold text-gray-400"> {el?.hsn_code}</p>
             </div>
             <div className="flex gap-2 ">
-              <p className="font-bold">Igst :</p>
-              <p className="font-bold text-green-500"> {`${el?.igst} %`}</p>
+              <p className="font-bold text-gray-400">Tax :</p>
+              <p className=" text-gray-400"> {`${el?.igst} %`}</p>
             </div>
           </div>
           <hr className="mt-6" style={{ borderWidth: "1px" }} />
