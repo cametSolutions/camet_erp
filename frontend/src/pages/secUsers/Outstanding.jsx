@@ -100,7 +100,7 @@ function Outstanding() {
             />
             <p className="text-white text-lg   font-bold ">Outstandings</p>
           </div>
-          <div className=" mt-0 shadow-lg p-2 md:p-0">
+          <div className=" mt-0 shadow-lg p-3 md:p-4">
             <form>
               <label
                 for="default-search"

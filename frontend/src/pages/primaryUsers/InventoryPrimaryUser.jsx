@@ -402,7 +402,7 @@ function InventoryPrimaryUser() {
     </Link> */}
         </div>
       </div>
-      <div className="h-screen flex justify-center items-center ">
+      <div className="  h-screen flex justify-center items-center ">
         <Modal
           style={{
             scrollbarWidth: "thin",
@@ -412,7 +412,7 @@ function InventoryPrimaryUser() {
           size="md"
           onClose={onCloseModal}
           popup
-          className="modal-dialog"
+          className="  modal-dialog"
         >
           <Modal.Header />
           <Modal.Body>
