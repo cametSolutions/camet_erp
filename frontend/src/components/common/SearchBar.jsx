@@ -5,7 +5,6 @@ import { IoIosCloseCircleOutline } from "react-icons/io";
 
 function SearchBar({ onType }) {
   const [search, setSearch] = useState("");
-  console.log(search);
 
   return (
     <div className="relative">

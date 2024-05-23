@@ -860,10 +860,10 @@ export const createInvoice = async (req, res) => {
       newSerialNumber = lastInvoice.serialNumber + 1;
     }
 
-    // Check if there's a last invoice and calculate the new serial number
-    if (lastInvoice && !isNaN(lastInvoice.serialNumber)) {
-      newSerialNumber = lastInvoice.serialNumber + 1;
-    }
+    // // Check if there's a last invoice and calculate the new serial number
+    // if (lastInvoice && !isNaN(lastInvoice.serialNumber)) {
+    //   newSerialNumber = lastInvoice.serialNumber + 1;
+    // }
 
     const updatedItems = items.map((item) => {
       // Find the corresponding price rate for the selected price level
