@@ -1,9 +1,8 @@
 /* eslint-disable react/prop-types */
 /* eslint-disable react/no-unknown-property */
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import { useNavigate, useLocation } from "react-router-dom";
-import { IoIosSearch } from "react-icons/io";
 import api from "../../api/api";
 import { MdOutlineQrCodeScanner } from "react-icons/md";
 import { useSelector } from "react-redux";
@@ -21,14 +20,16 @@ import {
   addAllProducts,
 } from "../../../slices/salesSecondary";
 import { HashLoader } from "react-spinners";
-import { FixedSizeList as List } from "react-window";
+import { VariableSizeList as List } from "react-window";
 import { Button, Modal } from "flowbite-react";
 import { toast } from "react-toastify";
 import SidebarSec from "../../components/secUsers/SidebarSec";
-import { IoIosCloseCircleOutline } from "react-icons/io";
 import { Decimal } from "decimal.js";
 import SearchBar from "../../components/common/SearchBar";
-
+import { IoIosArrowDropdownCircle } from "react-icons/io";
+import ProductDetails from "../../components/common/ProductDetails";
+import { IoIosArrowDown } from "react-icons/io";
+import { IoIosArrowUp } from "react-icons/io";
 
 // import SelectDefaultModal from "../../../constants/components/SelectDefaultModal";
 
@@ -51,10 +52,8 @@ function AddItemSalesSecondary() {
   const [totalCount, setTotalCount] = useState(0);
   const [godown, setGodown] = useState([]);
   const [godownname, setGodownname] = useState("");
-  console.log(godown);
-
-  console.log(scrollPosition);
-
+  const [heights, setHeights] = useState({});
+  const [selectedProducts, setSelectedProducts] = useState({});
   ///////////////////////////cpm_id///////////////////////////////////
 
   const cpm_id = useSelector(
@@ -187,17 +186,16 @@ function AddItemSalesSecondary() {
     setSelectedPriceLevel(priceLevelFromRedux);
   }, []);
 
-
-  
   /////////////////////////scroll////////////////////////////
 
   useEffect(() => {
-    const storedScrollPosition = localStorage.getItem('scrollPositionAddItemSales');
+    const storedScrollPosition = localStorage.getItem(
+      "scrollPositionAddItemSales"
+    );
     if (storedScrollPosition) {
       setScrollPosition(parseInt(storedScrollPosition, 10));
     }
   }, []);
-
 
   ///////////////////////////sdo persisting of products///////////////////////////////////
 
@@ -441,7 +439,7 @@ function AddItemSalesSecondary() {
 
       dispatch(changeCount(currentItem));
       dispatch(changeTotal(currentItem));
-      dispatch(changeGodownCount(currentItem))
+      dispatch(changeGodownCount(currentItem));
     }
   };
   ///////////////////////////handleTotalChangeWithPriceLevel///////////////////////////////////
@@ -610,34 +608,6 @@ function AddItemSalesSecondary() {
   }, []);
   console.log(location);
 
-  /////////////////////////// save scroll ///////////////////////////////////
-  // Function to save scroll position
-  // const saveScrollPosition = () => {
-  //   localStorage.setItem("scrollPosition", scrollPosition);
-  // };
-
-  // // Function to restore scroll position
-  // const restoreScrollPosition = (scrollPosition) => {
-  //   console.log(scrollPosition);
-  //   if (scrollPosition) {
-  //     listRef?.current?.scrollTo(parseInt(scrollPosition, 10));
-  //   }
-  // };
-
-  // // Use effect to save scroll position when navigating away
-  // useEffect(() => {
-  //   return () => {
-  //     saveScrollPosition();
-  //   };
-  // }, []);
-
-  // Use effect to restore scroll position when navigating back
-  // useEffect(() => {
-  //   restoreScrollPosition();
-  // }, []);
-
-  /////////////////////////// save scroll end ///////////////////////////////////
-
   const continueHandler = () => {
     console.log(location.state);
     if (location?.state?.from === "editSales") {
@@ -707,141 +677,231 @@ function AddItemSalesSecondary() {
       toast("Cannot decrement count as it is already at 0.");
     }
   };
+
+  /////////////////////expansion panel////////////////////
+
+  console.log(selectedProducts);
+
+  const handleExpansion = (id) => {
+    const updatedItems = [...item];
+    const index = updatedItems.findIndex((item) => item._id === id);
+
+    const itemToUpdate = { ...updatedItems[index] };
+    setSelectedProducts((prevSelectedProducts) => ({
+      ...prevSelectedProducts,
+      [id]: itemToUpdate?.GodownList,
+    }));
+    if (itemToUpdate) {
+      itemToUpdate.isExpanded = !itemToUpdate.isExpanded;
+      console.log(itemToUpdate.isExpanded);
+
+      updatedItems[index] = itemToUpdate;
+    }
+    setItem(updatedItems);
+    // setTimeout(() => listRef.current.resetAfterIndex(index), 0);
+  };
+
+  const getItemSize = (index) => {
+    const product = item[index];
+    console.log(product);
+    const isExpanded = product?.isExpanded || false;
+    console.log(isExpanded);
+    const baseHeight = isExpanded ? heights[index] || 200 : 170; // Base height for unexpanded and expanded items
+    const extraHeight = isExpanded ? 180 : 0; // Extra height for expanded items
+
+    return baseHeight + extraHeight;
+    // return
+  };
+
+  // console.log(getItemSize(0));
+
+  const setHeight = useCallback((index, height) => {
+    setHeights((prevHeights) => {
+      if (prevHeights[index] !== height) {
+        return {
+          ...prevHeights,
+          [index]: height,
+        };
+      }
+      return prevHeights;
+    });
+  }, []);
+
+  console.log(heights);
+
   const Row = ({ index, style }) => {
     const el = filteredItems[index];
+    // const isExpanded = expandedProductId === el._id;
     console.log(filteredItems[index]);
     const adjustedStyle = {
       ...style,
-      marginTop: "36px",
+      marginTop: "6px",
       height: "160px",
     };
     return (
       <div
         style={adjustedStyle}
         key={index}
-        className="bg-white p-4 py-2 pb-6  mt-0 flex justify-between items-center  rounded-sm cursor-pointer border-b-2 z-0 shadow-lg"
+        className="bg-white  py-2 pb-6  mt-0  rounded-sm cursor-pointer  z-0 shadow-lg  "
       >
-        <div className="flex items-start gap-3 md:gap-4  ">
-          <div className="w-10 mt-1  uppercase h-10 rounded-lg bg-violet-200 flex items-center justify-center font-semibold text-gray-400">
-            {el.product_name.slice(0, 1)}
+        <div className=" flex justify-between items-center p-4">
+          <div className="flex items-start gap-3 md:gap-4  ">
+            <div className="w-10 mt-1  uppercase h-10 rounded-lg bg-violet-200 flex items-center justify-center font-semibold text-gray-400">
+              {el.product_name.slice(0, 1)}
+            </div>
+            <div
+              className={` flex flex-col font-bold text-sm md:text-sm  gap-1 leading-normal`}
+            >
+              <p className={`${el.hasGodownOrBatch ? "mt-2.5" : ""}`}>
+                {el.product_name}
+              </p>
+
+              {!el?.hasGodownOrBatch && (
+                <>
+                  <div className="flex gap-1 items-center">
+                    <p>
+                      ₹{" "}
+                      {
+                        el?.Priceleveles.find(
+                          (item) => item.pricelevel === selectedPriceLevel
+                        )?.pricerate
+                      }{" "}
+                      /
+                    </p>{" "}
+                    <span className="text-[10px] mt-1">{el.unit}</span>
+                  </div>
+                  <div className="flex">
+                    <p className="text-red-500">STOCK : </p>
+                    <span>{el.balance_stock}</span>
+                  </div>
+                  <div>
+                    <span>Total : ₹ </span>
+                    <span>{el.total || 0}</span>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
-          <div className="flex flex-col font-bold text-sm md:text-sm  gap-1 leading-normal">
-            <p>{el.product_name}</p>
-            <div className="flex gap-1 items-center">
-              <p>
-                ₹{" "}
-                {
-                  el?.Priceleveles.find(
-                    (item) => item.pricelevel === selectedPriceLevel
-                  )?.pricerate
-                }{" "}
-                /
-              </p>{" "}
-              <span className="text-[10px] mt-1">{el.unit}</span>
-            </div>
-            <div className="flex">
-              <p className="text-red-500">STOCK : </p>
-              <span>{el.balance_stock}</span>
-            </div>
-            <div>
-              <span>Total : ₹ </span>
-              <span>{el.total || 0}</span>
-            </div>
-          </div>
-        </div>
-        {el.added && el?.count > 0 ? (
-          <div className="flex items-center flex-col gap-2">
-            {/* <Link
+          {el.added && el?.count > 0 ? (
+            <div className="flex items-center flex-col gap-2">
+              {/* <Link
               // to={`/sUsers/editItem/${el._id}`}
               to={{
                 pathname: `/sUsers/editItem/${el._id}`,
                 state: { from: "addItem" },
               }}
             > */}
-            <button
-              onClick={() => {
-                navigate(
-                  `/sUsers/editItemSales/${el._id}/${godownname || "nil"}`,
-                  {
-                    state: { from: "editItemSales", id: location?.state?.id },
-                  }
-                );
-                // saveScrollPosition();
-              }}
-              type="button"
-              className="  mt-3  px-2 py-1  rounded-md border-violet-500 font-bold border  text-violet-500 text-xs"
-            >
-              Edit
-            </button>
-            {/* </Link> */}
-            <div
-              className="py-2 px-3 inline-block bg-white  "
-              data-hs-input-number
-            >
-              <div className="flex items-center gap-x-1.5">
-                <button
-                  onClick={() => handleDecrement(el._id)}
-                  type="button"
-                  className="size-6 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-md border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none"
-                  data-hs-input-number-decrement
-                >
-                  <svg
-                    className="flex-shrink-0 size-3.5"
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
+              <button
+                onClick={() => {
+                  navigate(
+                    `/sUsers/editItemSales/${el._id}/${godownname || "nil"}`,
+                    {
+                      state: { from: "editItemSales", id: location?.state?.id },
+                    }
+                  );
+                  // saveScrollPosition();
+                }}
+                type="button"
+                className="  mt-3  px-2 py-1  rounded-md border-violet-500 font-bold border  text-violet-500 text-xs"
+              >
+                Edit
+              </button>
+              {/* </Link> */}
+              <div
+                className="py-2 px-3 inline-block bg-white  "
+                data-hs-input-number
+              >
+                <div className="flex items-center gap-x-1.5">
+                  <button
+                    onClick={() => handleDecrement(el._id)}
+                    type="button"
+                    className="size-6 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-md border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none"
+                    data-hs-input-number-decrement
                   >
-                    <path d="M5 12h14" />
-                  </svg>
-                </button>
-                <input
-                  className="p-0 w-12 bg-transparent border-0 text-gray-800 text-center focus:ring-0 "
-                  type="text"
-                  disabled
-                  value={el.count ? el.count : 0} // Display the count from the state
-                  data-hs-input-number-input
-                />
-                <button
-                  onClick={() => {
-                    handleIncrement(el._id);
-                  }}
-                  type="button"
-                  className="size-6 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-md border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none "
-                  data-hs-input-number-increment
-                >
-                  <svg
-                    className="flex-shrink-0 size-3.5"
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
+                    <svg
+                      className="flex-shrink-0 size-3.5"
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M5 12h14" />
+                    </svg>
+                  </button>
+                  <input
+                    className="p-0 w-12 bg-transparent border-0 text-gray-800 text-center focus:ring-0 "
+                    type="text"
+                    disabled
+                    value={el.count ? el.count : 0} // Display the count from the state
+                    data-hs-input-number-input
+                  />
+                  <button
+                    onClick={() => {
+                      handleIncrement(el._id);
+                    }}
+                    type="button"
+                    className="size-6 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-md border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none "
+                    data-hs-input-number-increment
                   >
-                    <path d="M5 12h14" />
-                    <path d="M12 5v14" />
-                  </svg>
-                </button>
+                    <svg
+                      className="flex-shrink-0 size-3.5"
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M5 12h14" />
+                      <path d="M12 5v14" />
+                    </svg>
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        ) : (
-          <div>
+          ) : (
+            !el?.hasGodownOrBatch && (
+              <div
+                onClick={() => {
+                  handleAddClick(el._id);
+                }}
+                className="px-4 py-2 rounded-md border-violet-500 font-bold border-2 text-violet-500 text-xs"
+              >
+                Add
+              </div>
+            )
+          )}
+        </div>
+        {el.hasGodownOrBatch && (
+          <div className="px-6">
             <div
-              className="px-4 py-2 rounded-md border-violet-500 font-bold border-2 text-violet-500 text-xs"
-              onClick={() => handleAddClick(el._id)}
+              onClick={() => {
+                handleExpansion(el._id);
+                setTimeout(() => listRef.current.resetAfterIndex(index), 0);
+              }}
+              className="p-2 border-gray-300 border rounded-md w-full text-violet-500 mt-4 font-semibold flex items-center justify-center gap-3"
             >
-              Add
+              {el?.isExpanded ? "Hide Details" : "Show Details"}
+
+              {el?.isExpanded ? <IoIosArrowUp /> : <IoIosArrowDown />}
             </div>
+          </div>
+        )}
+
+        {el?.isExpanded && (
+          <div className=" bg-white">
+            <ProductDetails
+             details={selectedProducts[el?._id] || el?.GodownList}
+              setHeight={(height) => setHeight(index, height)}
+            />
           </div>
         )}
       </div>
@@ -915,7 +975,6 @@ function AddItemSalesSecondary() {
                   </svg>
                 </div>
                 <SearchBar onType={searchData} />
-             
               </div>
             </div>
           </div>
@@ -1004,12 +1063,16 @@ function AddItemSalesSecondary() {
             className=""
             height={listHeight} // Specify the height of your list
             itemCount={filteredItems.length} // Specify the total number of items
-            itemSize={170} // Specify the height of each item
+            // itemSize={170} // Specify the height of each item
+            itemSize={getItemSize}
             width="100%" // Specify the width of your list
             initialScrollOffset={scrollPosition}
             onScroll={({ scrollOffset }) => {
               setScrollPosition(scrollOffset);
-              localStorage.setItem('scrollPositionAddItemSales', scrollOffset.toString());
+              localStorage.setItem(
+                "scrollPositionAddItemSales",
+                scrollOffset.toString()
+              );
             }}
           >
             {Row}

@@ -815,12 +815,25 @@ export const getProducts = async (req, res) => {
     }
 
     if (products && products.length > 0) {
+      // Add the check for GodownList
+      const filteredProducts = [];
+      for (let i = 0; i < products.length; i++) {
+        const product = products[i];
+        const hasGodownOrBatch = product.GodownList.some(
+          item => item.godown || item.batch
+        );
+        filteredProducts.push({
+          ...product._doc,  // Use _doc to get the plain JS object from the Mongoose document
+          hasGodownOrBatch
+        });
+      }
+
       return res.status(200).json({
-        productData: products,
+        productData: filteredProducts,
         message: "Products fetched",
       });
     } else {
-      return res.status(404).json({ message: "No products were found " });
+      return res.status(404).json({ message: "No products were found" });
     }
   } catch (error) {
     console.log(error);

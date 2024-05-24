@@ -1,7 +1,7 @@
 {
   "data": [
     {
-      "product_name": "B 1",
+      "product_name": "Bathch only 1", 
       "balance_stock": 100,
       "category": "\u0004 Not Applicable",
       "sub_category": "null",
@@ -40,7 +40,7 @@
       ]
     },
     {
-      "product_name": "B 2",
+      "product_name": "Bathch only 2",
       "balance_stock": 25,
       "category": "\u0004 Not Applicable",
       "sub_category": "null",
@@ -74,7 +74,7 @@
       ]
     },
     {
-      "product_name": "B 3",
+      "product_name": "Bathch only 3",
       "balance_stock": 14,
       "category": "\u0004 Not Applicable",
       "sub_category": "null",
@@ -272,7 +272,7 @@
       ]
     },
     {
-      "product_name": "GD 1",
+      "product_name": "Godown only 1",
       "balance_stock": 100,
       "godownCount": 1,
       "category": "\u0004 Not Applicable",
@@ -305,7 +305,7 @@
       ]
     },
     {
-      "product_name": "GD 2",
+      "product_name": "Godown only 2",
       "balance_stock": 50,
       "godownCount": 1,
       "category": "\u0004 Not Applicable",
@@ -338,7 +338,7 @@
       ]
     },
     {
-      "product_name": "N 1",
+      "product_name": "Nothing 1",
       "balance_stock": 100,
       "category": "\u0004 Not Applicable",
       "sub_category": "null",
@@ -369,7 +369,7 @@
       ]
     },
     {
-      "product_name": "N 2",
+      "product_name": "Nothing 2",
       "balance_stock": 50,
       "category": "\u0004 Not Applicable",
       "sub_category": "null",
