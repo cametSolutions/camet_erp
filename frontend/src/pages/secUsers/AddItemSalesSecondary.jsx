@@ -69,12 +69,8 @@ function AddItemSalesSecondary() {
   const priceLevelFromRedux =
     useSelector((state) => state.salesSecondary.selectedPriceLevel) || "";
 
-  console.log(priceLevelFromRedux);
-
   const allProductsFromRedux =
     useSelector((state) => state.salesSecondary.products) || [];
-
-  console.log(allProductsFromRedux);
 
   ///////////////////////////filters FromRedux///////////////////////////////////
 
@@ -91,7 +87,6 @@ function AddItemSalesSecondary() {
   const dispatch = useDispatch();
   const listRef = useRef(null);
   const location = useLocation();
-  console.log(location);
 
   ///////////////////////////Godown name///////////////////////////////////
   useEffect(() => {
@@ -100,7 +95,6 @@ function AddItemSalesSecondary() {
         const godown = await api.get(`/api/sUsers/godownsName/${cpm_id}`, {
           withCredentials: true,
         });
-        console.log(godown);
         setGodownname(godown.data || "");
       } catch (error) {
         console.log(error);
@@ -109,8 +103,6 @@ function AddItemSalesSecondary() {
     };
     fetchGodownname();
   }, []);
-
-  console.log(godownname);
 
   const searchData = (data) => {
     setSearch(data);
@@ -132,7 +124,6 @@ function AddItemSalesSecondary() {
           console.log(res.data.productData);
           dispatch(addAllProducts(res.data.productData));
         } else {
-          console.log("haii");
           productData = allProductsFromRedux;
         }
 
@@ -171,7 +162,6 @@ function AddItemSalesSecondary() {
     };
     fetchProducts();
     const scrollPosition = parseInt(localStorage.getItem("scrollPosition"));
-    console.log(scrollPosition);
     // restoreScrollPosition(scrollPosition);
 
     if (scrollPosition) {
@@ -260,7 +250,6 @@ function AddItemSalesSecondary() {
           setSubCategories(subcategories);
           setPriceLevels(priceLevels);
           if (priceLevelFromRedux == "") {
-            console.log("haii");
             const defaultPriceLevel = priceLevels[0];
             setSelectedPriceLevel(defaultPriceLevel);
             dispatch(setPriceLevel(defaultPriceLevel));
@@ -271,11 +260,9 @@ function AddItemSalesSecondary() {
           setBrands(brands);
           setCategories(categories);
           setSubCategories(subcategories);
-          console.log(priceLevels);
 
           setPriceLevels(priceLevels);
           if (priceLevelFromRedux == "") {
-            console.log("haii");
             const defaultPriceLevel = priceLevels[0];
             setSelectedPriceLevel(defaultPriceLevel);
             dispatch(setPriceLevel(defaultPriceLevel));
@@ -287,8 +274,6 @@ function AddItemSalesSecondary() {
     };
     fetchFilters();
   }, [orgId, type]);
-
-  console.log(priceLevels);
 
   ///////////////////////////filter items///////////////////////////////////
 
@@ -328,81 +313,55 @@ function AddItemSalesSecondary() {
 
   ///////////////////////////handleAddClick///////////////////////////////////
 
-  const handleAddClick = (_id) => {
-    const updatedItems = [...item];
-    const index = updatedItems.findIndex((item) => item._id === _id);
-    // Create a shallow copy of the items
-    const itemToUpdate = { ...updatedItems[index] };
+  const handleAddClick = (_id, idx) => {
+    console.log("haii", _id);
+    const updatedItems = item.map(item => {
+      if (item._id === _id) {
+        const itemToUpdate = { ...item, GodownList: [...item.GodownList] };
 
-    console.log(itemToUpdate);
+        if (itemToUpdate.GodownList[idx]) {
+          const currentBatchOrGodown = { ...itemToUpdate.GodownList[idx] };
+          console.log(currentBatchOrGodown);
 
-    if (itemToUpdate) {
-      if (itemToUpdate?.GodownList.length > 0 && !godownname) {
-        setOpenModal(true);
-        const updatedGodownList = itemToUpdate.GodownList.map((el) => ({
-          ...el,
-          count: 0,
-          _id: itemToUpdate._id,
-        }));
-        setGodown(updatedGodownList);
-        // itemToUpdate.added = !itemToUpdate.added;
-      } else {
-        itemToUpdate.added = !itemToUpdate.added;
-        itemToUpdate.count = 1;
-        const total = calculateTotal(itemToUpdate, selectedPriceLevel).toFixed(
-          2
-        );
-        itemToUpdate.total = total;
-        updatedItems[index] = itemToUpdate;
-        dispatch(changeTotal(itemToUpdate));
-        setItem(updatedItems);
-        setRefresh(!refresh);
-        dispatch(addItem(updatedItems[index]));
+          currentBatchOrGodown.added = currentBatchOrGodown.added ? !currentBatchOrGodown.added : true;
+          currentBatchOrGodown.count = 1;
+
+          itemToUpdate.GodownList[idx] = currentBatchOrGodown;
+          console.log(currentBatchOrGodown);
+        }
+
+        return { ...itemToUpdate, added:itemToUpdate.added ? !itemToUpdate.added : true };
       }
-      // Toggle the 'added' state of the item
-    }
-  };
+      return item;
+    });
 
-  console.log(godown);
+    setItem(updatedItems);
+  };
+  console.log("item", item);
 
   ///////////////////////////calculateTotal///////////////////////////////////
 
   const calculateTotal = (item, selectedPriceLevel) => {
-    console.log("calculateTotal started");
-
     const priceRate =
       item.Priceleveles.find((level) => level.pricelevel === selectedPriceLevel)
         ?.pricerate || 0;
 
-    console.log(`Found priceRate: ${priceRate}`);
-    console.log(item?.count);
-
     let subtotal = priceRate * Number(item?.count);
     let discountedSubtotal = subtotal;
 
-    console.log(`subtotal before discount: ${subtotal}`);
-
     if (item.discount !== 0 && item.discount !== undefined) {
       discountedSubtotal -= item.discount;
-      console.log(
-        `Applied absolute discount: New subtotal = ${discountedSubtotal}`
-      );
     } else if (
       item.discountPercentage !== 0 &&
       item.discountPercentage !== undefined
     ) {
       discountedSubtotal -= (subtotal * item.discountPercentage) / 100;
-      console.log(
-        `Applied percentage discount: New subtotal = ${discountedSubtotal}`
-      );
     }
 
     const gstAmount =
       (discountedSubtotal * (item.newGst || item.igst || 0)) / 100;
-    console.log(`GST amount added: ${gstAmount}`);
 
     const total = discountedSubtotal + gstAmount;
-    console.log(`Final total: ${total}`);
 
     return total;
   };
@@ -414,7 +373,6 @@ function AddItemSalesSecondary() {
     const index = updatedItems.findIndex((item) => item._id === _id);
 
     const currentItem = { ...updatedItems[index] };
-    console.log(currentItem);
 
     if (currentItem?.GodownList?.length > 0 && !godownname) {
       setOpenModal(true);
@@ -424,7 +382,6 @@ function AddItemSalesSecondary() {
       if (!currentItem.count) {
         currentItem.count = 1;
       } else {
-        console.log(currentItem.count);
         currentItem.count = new Decimal(currentItem.count).add(1).toNumber();
       }
 
@@ -432,7 +389,6 @@ function AddItemSalesSecondary() {
         currentItem,
         selectedPriceLevel
       ).toFixed(2);
-      console.log(currentItem.total);
       updatedItems[index] = currentItem;
       setItem(updatedItems);
       // setRefresh(!refresh);
@@ -476,7 +432,6 @@ function AddItemSalesSecondary() {
         currentItem.count = new Decimal(currentItem.count).sub(1).toNumber();
 
         if (currentItem.count <= 0) {
-          console.log("haii");
           dispatch(removeItem(currentItem));
           updatedItems[index] = { ...currentItem, added: false };
           setItem(updatedItems);
@@ -487,7 +442,6 @@ function AddItemSalesSecondary() {
           currentItem,
           selectedPriceLevel
         ).toFixed(2);
-        console.log(currentItem.total);
 
         updatedItems[index] = currentItem; // Update the item in the copied array
         setItem(updatedItems);
@@ -505,19 +459,16 @@ function AddItemSalesSecondary() {
   ///////////////////////////modalSubmit///////////////////////////////////
   const modalSubmit = (id) => {
     setOpenModal(false);
-    console.log(id);
     const updatedItems = [...item];
 
     // Find the itemToUpdate by id
     const itemToUpdateIndex = updatedItems.findIndex((item) => item._id === id);
-    console.log(itemToUpdateIndex);
     if (itemToUpdateIndex === -1) {
       console.error("Item not found");
       return;
     }
 
     const itemToUpdate = updatedItems[itemToUpdateIndex];
-    console.log(itemToUpdate);
 
     // Calculate the total count across all godowns for itemToUpdate
     const totalCount = truncateToNDecimals(
@@ -525,7 +476,6 @@ function AddItemSalesSecondary() {
       3
     );
 
-    console.log(totalCount);
     const itemWithUpdatedCount = {
       ...itemToUpdate,
       count: totalCount,
@@ -541,9 +491,6 @@ function AddItemSalesSecondary() {
       GodownList: godown,
     };
 
-    console.log(updatedItem.total);
-    console.log(updatedItem.GodownList);
-
     // Update the item in the copied array
 
     if (updatedItem.count === 0) {
@@ -551,8 +498,6 @@ function AddItemSalesSecondary() {
       updatedItem.added = false;
     }
     updatedItems[itemToUpdateIndex] = updatedItem;
-
-    console.log(updatedItems[itemToUpdateIndex]);
 
     setItem(updatedItems);
     // updatedItems[itemToUpdateIndex]; // Update the local state
@@ -597,8 +542,6 @@ function AddItemSalesSecondary() {
       setListHeight(newHeight);
     };
 
-    console.log(window.innerHeight);
-
     // Calculate the height on component mount and whenever the window is resized
     calculateHeight();
     window.addEventListener("resize", calculateHeight);
@@ -606,10 +549,8 @@ function AddItemSalesSecondary() {
     // Cleanup the event listener on component unmount
     return () => window.removeEventListener("resize", calculateHeight);
   }, []);
-  console.log(location);
 
   const continueHandler = () => {
-    console.log(location.state);
     if (location?.state?.from === "editSales") {
       navigate(`/sUsers/editSales/${location.state.id}`);
     } else {
@@ -635,31 +576,24 @@ function AddItemSalesSecondary() {
   // Function to handle incrementing the count
   const incrementCount = (index) => {
     const newGodownItems = godown.map((item) => ({ ...item })); // Deep copy each item object
-    console.log(newGodownItems);
-    console.log(newGodownItems[index].count);
+
     // newGodownItems[index].count += 1;
     newGodownItems[index].count = new Decimal(newGodownItems[index].count)
       .add(1)
       .toNumber();
-    console.log(newGodownItems[index].count);
 
     newGodownItems[index].balance_stock = new Decimal(
       newGodownItems[index].balance_stock
     )
       .sub(1)
       .toNumber();
-    console.log(newGodownItems);
     setGodown(newGodownItems);
     setTotalCount(totalCount + 1);
-    console.log(totalCount);
-    console.log(godown);
   };
-  console.log(godown);
 
   // Function to handle decrementing the count
   const decrementCount = (index) => {
     const newGodownItems = godown.map((item) => ({ ...item })); // Assuming godown is the correct state variable name
-    console.log(newGodownItems);
 
     if (newGodownItems[index].count > 0) {
       newGodownItems[index].count = new Decimal(newGodownItems[index].count)
@@ -672,15 +606,12 @@ function AddItemSalesSecondary() {
         .toNumber(); // Increase balance_stock by 1
       setGodown(newGodownItems); // Corrected function name to setGodown
       setTotalCount(totalCount - 1);
-      console.log(godown);
     } else {
       toast("Cannot decrement count as it is already at 0.");
     }
   };
 
   /////////////////////expansion panel////////////////////
-
-  console.log(selectedProducts);
 
   const handleExpansion = (id) => {
     const updatedItems = [...item];
@@ -693,7 +624,6 @@ function AddItemSalesSecondary() {
     }));
     if (itemToUpdate) {
       itemToUpdate.isExpanded = !itemToUpdate.isExpanded;
-      console.log(itemToUpdate.isExpanded);
 
       updatedItems[index] = itemToUpdate;
     }
@@ -703,9 +633,7 @@ function AddItemSalesSecondary() {
 
   const getItemSize = (index) => {
     const product = item[index];
-    console.log(product);
     const isExpanded = product?.isExpanded || false;
-    console.log(isExpanded);
     const baseHeight = isExpanded ? heights[index] || 200 : 170; // Base height for unexpanded and expanded items
     const extraHeight = isExpanded ? 180 : 0; // Extra height for expanded items
 
@@ -732,7 +660,6 @@ function AddItemSalesSecondary() {
   const Row = ({ index, style }) => {
     const el = filteredItems[index];
     // const isExpanded = expandedProductId === el._id;
-    console.log(filteredItems[index]);
     const adjustedStyle = {
       ...style,
       marginTop: "6px",
@@ -899,7 +826,8 @@ function AddItemSalesSecondary() {
         {el?.isExpanded && (
           <div className=" bg-white">
             <ProductDetails
-             details={selectedProducts[el?._id] || el?.GodownList}
+              handleAddClick={handleAddClick}
+              details={el}
               setHeight={(height) => setHeight(index, height)}
             />
           </div>
