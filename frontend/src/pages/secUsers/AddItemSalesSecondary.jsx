@@ -18,6 +18,7 @@ import {
   removeAll,
   changeGodownCount,
   addAllProducts,
+  updateItem,
 } from "../../../slices/salesSecondary";
 import { HashLoader } from "react-spinners";
 import { VariableSizeList as List } from "react-window";
@@ -26,7 +27,6 @@ import { toast } from "react-toastify";
 import SidebarSec from "../../components/secUsers/SidebarSec";
 import { Decimal } from "decimal.js";
 import SearchBar from "../../components/common/SearchBar";
-import { IoIosArrowDropdownCircle } from "react-icons/io";
 import ProductDetails from "../../components/common/ProductDetails";
 import { IoIosArrowDown } from "react-icons/io";
 import { IoIosArrowUp } from "react-icons/io";
@@ -59,6 +59,10 @@ function AddItemSalesSecondary() {
   const cpm_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
+  ///////////////////////////get height from redux///////////////////////////////////
+  const heightsFromRedux = useSelector((state) => state.salesSecondary.heights);
+
+  console.log(heightsFromRedux);
 
   ///////////////////////////itemsFromRedux///////////////////////////////////
 
@@ -128,7 +132,7 @@ function AddItemSalesSecondary() {
         }
 
         if (itemsFromRedux.length > 0) {
-          const reduxItemIds = itemsFromRedux.map((el) => el._id);
+          const reduxItemIds = itemsFromRedux.map((el) => el?._id);
           const updatedItems = productData.map((product) => {
             if (reduxItemIds.includes(product._id)) {
               // If the product ID exists in Redux, replace it with the corresponding Redux item
@@ -188,31 +192,6 @@ function AddItemSalesSecondary() {
   }, []);
 
   ///////////////////////////sdo persisting of products///////////////////////////////////
-
-  // useEffect(() => {
-  //   if (itemsFromRedux.length > 0) {
-  //     const updatedItems = item.map((currentItem) => {
-  //       // Find the corresponding item in itemsFromRedux
-  //       const matchingItem = itemsFromRedux.find(
-  //         (el) => el._id === currentItem._id
-  //       );
-  //       if (matchingItem) {
-  //         // If matching item found, return it with updated count and total
-  //         return {
-  //           ...currentItem,
-  //           count: matchingItem.count,
-  //           total: matchingItem.total,
-  //         };
-  //       } else {
-  //         // If no matching item found, return the current item
-  //         return currentItem;
-  //       }
-  //     });
-
-  //     // Update the state with the modified items
-  //     setItem(updatedItems);
-  //   }
-  // }, [itemsFromRedux, refresh]);
 
   //////////////////////////////orgId////////////////////////////////
 
@@ -278,7 +257,7 @@ function AddItemSalesSecondary() {
   ///////////////////////////filter items///////////////////////////////////
 
   const filterItems = (items, brand, category, subCategory, searchTerm) => {
-    return items.filter((item) => {
+    return items?.filter((item) => {
       // Check if the item matches the brand filter
       const brandMatch = !brand || item.brand === brand;
 
@@ -311,93 +290,274 @@ function AddItemSalesSecondary() {
     );
   }, [item, selectedBrand, selectedCategory, selectedSubCategory, search]);
 
+  ///////////////////////////calculateTotal///////////////////////////////////
+
+  const calculateTotal = (item, selectedPriceLevel) => {
+    const priceRate =
+      item?.Priceleveles?.find(
+        (level) => level.pricelevel === selectedPriceLevel
+      )?.pricerate || 0;
+
+    let subtotal = 0;
+    let individualTotals = [];
+
+    if (item.hasGodownOrBatch) {
+      console.log("haii");
+      item.GodownList.forEach((godownOrBatch, index) => {
+        console.log(godownOrBatch.count);
+        let individualSubtotal = priceRate * Number(godownOrBatch.count) || 0;
+
+        if (
+          godownOrBatch.discount !== 0 &&
+          godownOrBatch.discount !== undefined
+        ) {
+          individualSubtotal -= godownOrBatch.discount;
+        } else if (
+          godownOrBatch.discountPercentage !== 0 &&
+          godownOrBatch.discountPercentage !== undefined
+        ) {
+          individualSubtotal -=
+            (individualSubtotal * godownOrBatch.discountPercentage) / 100;
+        }
+
+        const gstAmount = (individualSubtotal * (item.igst || 0)) / 100;
+
+        subtotal += individualSubtotal + gstAmount;
+
+        // Calculate individual total without modifying the original object
+        const individualTotal = (individualSubtotal + gstAmount).toFixed(2);
+
+        // Add to individual totals list with index
+        individualTotals.push({
+          index,
+          batch: godownOrBatch.batch,
+          individualTotal,
+        });
+      });
+    } else {
+      console.log("haii");
+      let individualSubtotal = priceRate * Number(item.count);
+
+      if (item.discount !== 0 && item.discount !== undefined) {
+        individualSubtotal -= item.discount;
+      } else if (
+        item.discountPercentage !== 0 &&
+        item.discountPercentage !== undefined
+      ) {
+        individualSubtotal -=
+          (individualSubtotal * item.discountPercentage) / 100;
+      }
+
+      const gstAmount =
+        (individualSubtotal * (item.newGst || item.igst || 0)) / 100;
+
+      subtotal += individualSubtotal + gstAmount;
+
+      // Calculate individual total without modifying the original object
+      const individualTotal = individualSubtotal + gstAmount;
+
+      // Add to individual totals list with index
+      individualTotals.push({
+        index: 0,
+        batch: item.batch || "No batch",
+        individualTotal,
+      });
+    }
+
+    subtotal = Number(subtotal.toFixed(2));
+
+    console.log(subtotal);
+
+    return {
+      individualTotals,
+      total: subtotal,
+    };
+  };
+
   ///////////////////////////handleAddClick///////////////////////////////////
 
   const handleAddClick = (_id, idx) => {
-    console.log("haii", _id);
-    const updatedItems = item.map(item => {
+    const updatedItems = item.map((item) => {
       if (item._id === _id) {
         const itemToUpdate = { ...item, GodownList: [...item.GodownList] };
 
         if (itemToUpdate.GodownList[idx]) {
           const currentBatchOrGodown = { ...itemToUpdate.GodownList[idx] };
-          console.log(currentBatchOrGodown);
 
-          currentBatchOrGodown.added = currentBatchOrGodown.added ? !currentBatchOrGodown.added : true;
+          currentBatchOrGodown.added = currentBatchOrGodown.added
+            ? !currentBatchOrGodown.added
+            : true;
           currentBatchOrGodown.count = 1;
+          // currentBatchOrGodown.IndividualTotal = totalData?.individualSubtotal;
 
           itemToUpdate.GodownList[idx] = currentBatchOrGodown;
-          console.log(currentBatchOrGodown);
         }
+        itemToUpdate.count =
+          new Decimal(itemToUpdate.count || 0).add(1).toNumber() || 1;
 
-        return { ...itemToUpdate, added:itemToUpdate.added ? !itemToUpdate.added : true };
+        const totalData = calculateTotal(itemToUpdate, selectedPriceLevel);
+        const updatedGodownListWithTotals = itemToUpdate.GodownList.map(
+          (godown, index) => ({
+            ...godown,
+            individualTotal:
+              totalData.individualTotals.find(({ index: i }) => i === index)
+                ?.individualTotal || 0,
+          })
+        );
+        itemToUpdate.GodownList = updatedGodownListWithTotals;
+
+        itemToUpdate.total = totalData?.total || 0;
+        itemToUpdate.added = itemToUpdate.added ? !itemToUpdate.added : true;
+
+        console.log(itemToUpdate);
+        dispatch(addItem(itemToUpdate));
+
+        return itemToUpdate;
+
+        // return {
+        //   ...itemToUpdate,
+        //   added: itemToUpdate.added ? !itemToUpdate.added : true,
+        // };
       }
       return item;
     });
 
     setItem(updatedItems);
   };
-  console.log("item", item);
 
-  ///////////////////////////calculateTotal///////////////////////////////////
-
-  const calculateTotal = (item, selectedPriceLevel) => {
-    const priceRate =
-      item.Priceleveles.find((level) => level.pricelevel === selectedPriceLevel)
-        ?.pricerate || 0;
-
-    let subtotal = priceRate * Number(item?.count);
-    let discountedSubtotal = subtotal;
-
-    if (item.discount !== 0 && item.discount !== undefined) {
-      discountedSubtotal -= item.discount;
-    } else if (
-      item.discountPercentage !== 0 &&
-      item.discountPercentage !== undefined
-    ) {
-      discountedSubtotal -= (subtotal * item.discountPercentage) / 100;
-    }
-
-    const gstAmount =
-      (discountedSubtotal * (item.newGst || item.igst || 0)) / 100;
-
-    const total = discountedSubtotal + gstAmount;
-
-    return total;
-  };
+  console.log(item);
 
   ///////////////////////////handleIncrement///////////////////////////////////
 
-  const handleIncrement = (_id) => {
-    const updatedItems = [...item];
-    const index = updatedItems.findIndex((item) => item._id === _id);
+  const handleIncrement = (_id, godownIndex = null) => {
+    const updatedItems = item.map((item) => {
+      if (item._id !== _id) return item; // Keep items unchanged if _id doesn't match
+      const currentItem = { ...item };
 
-    const currentItem = { ...updatedItems[index] };
+      if (
+        currentItem?.hasGodownOrBatch &&
+        godownIndex !== null &&
+        !godownname
+      ) {
+        const godownOrBatch = { ...currentItem.GodownList[godownIndex] };
 
-    if (currentItem?.GodownList?.length > 0 && !godownname) {
-      setOpenModal(true);
+        // If godownOrBatch.count is undefined, set it to 1, otherwise increment by 1
+        godownOrBatch.count = new Decimal (godownOrBatch.count).add(1).toNumber();
 
-      setGodown(currentItem?.GodownList);
-    } else {
-      if (!currentItem.count) {
-        currentItem.count = 1;
+        // Update the specific godown/batch in the GodownList array
+        const updatedGodownList = currentItem.GodownList.map((godown, index) =>
+          index === godownIndex ? godownOrBatch : godown
+        );
+        currentItem.GodownList = updatedGodownList;
+
+        // Calculate the sum of counts in the GodownList array
+        const sumOfCounts = updatedGodownList.reduce(
+          (sum, godown) => sum + (godown.count || 0),
+          0
+        );
+        currentItem.count = sumOfCounts; // Update currentItem.count with the sum
+
+        // Calculate totals and update individual batch totals
+        const totalData = calculateTotal(currentItem, selectedPriceLevel);
+        const updatedGodownListWithTotals = updatedGodownList.map(
+          (godown, index) => ({
+            ...godown,
+            individualTotal:
+              totalData.individualTotals.find(({ index: i }) => i === index)
+                ?.individualTotal || 0,
+          })
+        );
+        currentItem.GodownList = updatedGodownListWithTotals;
+        currentItem.total = totalData.total; // Update the overall total
       } else {
+        // Increment the count of the currentItem by 1
         currentItem.count = new Decimal(currentItem.count).add(1).toNumber();
+
+        // Calculate totals and update individual total
+        const totalData = calculateTotal(currentItem, selectedPriceLevel);
+        currentItem.total = totalData.total; // Update the overall total
       }
 
-      currentItem.total = calculateTotal(
-        currentItem,
-        selectedPriceLevel
-      ).toFixed(2);
-      updatedItems[index] = currentItem;
-      setItem(updatedItems);
-      // setRefresh(!refresh);
+      console.log(currentItem);
+      dispatch(updateItem(currentItem)); // Log the updated currentItem
+      return currentItem; // Return the updated currentItem
+    });
 
-      dispatch(changeCount(currentItem));
-      dispatch(changeTotal(currentItem));
-      dispatch(changeGodownCount(currentItem));
-    }
+    setItem(updatedItems); // Update the state with the updated items
   };
+
+  console.log(item);
+
+  ///////////////////////////handleDecrement///////////////////////////////////
+  const handleDecrement = (_id, godownIndex = null) => {
+    console.log("haii");
+    const updatedItems = item.map((item) => {
+      if (item._id !== _id) return item; // Keep items unchanged if _id doesn't match
+      const currentItem = { ...item };
+
+      if (
+        godownIndex !== null &&
+        currentItem.GodownList?.length > 0 &&
+        !godownname
+      ) {
+        const godownOrBatch = { ...currentItem.GodownList[godownIndex] };
+        godownOrBatch.count = new Decimal(godownOrBatch.count)
+          .sub(1)
+          .toNumber();
+        console.log(godownOrBatch.count);
+
+        // Ensure count does not go below 0
+        if (godownOrBatch.count <= 0) godownOrBatch.added = false;
+
+        const updatedGodownList = currentItem.GodownList.map((godown, index) =>
+          index === godownIndex ? godownOrBatch : godown
+        );
+        console.log(updatedGodownList);
+
+        // Calculate the sum of counts in GodownList
+        const sumOfCounts = updatedGodownList.reduce(
+          (sum, godown) => sum + (godown.count || 0),
+          0
+        );
+        currentItem.count = sumOfCounts;
+        currentItem.GodownList = updatedGodownList;
+        console.log(currentItem); // Update the count in the currentItem
+
+        // Calculate totals and update individual batch totals
+        const totalData = calculateTotal(currentItem, selectedPriceLevel);
+        console.log(totalData);
+        const updatedGodownListWithTotals = updatedGodownList.map(
+          (godown, index) => ({
+            ...godown,
+            individualTotal:
+              totalData.individualTotals.find(({ index: i }) => i === index)
+                ?.individualTotal || 0,
+          })
+        );
+        currentItem.GodownList = updatedGodownListWithTotals;
+        currentItem.total = totalData.total; // Update the overall total
+      } else {
+        currentItem.count = new Decimal(currentItem.count).sub(1).toNumber();
+
+        // Ensure count does not go below 0
+        if (currentItem.count <= 0) currentItem.added = false;
+
+        // Calculate totals and update individual total
+        const totalData = calculateTotal(currentItem, selectedPriceLevel);
+        // console.log(totalData);
+        currentItem.individualTotal = totalData.total;
+        currentItem.total = totalData.total; // Update the overall total
+      }
+
+      console.log(currentItem);
+      dispatch(updateItem(currentItem)); // Log the updated currentItem
+      // Log the updated currentItem
+      return currentItem; // Return the updated currentItem
+    });
+
+    setItem(updatedItems); // Update the state with the updated items
+  };
+
   ///////////////////////////handleTotalChangeWithPriceLevel///////////////////////////////////
 
   const handleTotalChangeWithPriceLevel = (pricelevel) => {
@@ -417,44 +577,7 @@ function AddItemSalesSecondary() {
     setItem(updatedItems);
   };
 
-  ///////////////////////////handleDecrement///////////////////////////////////
-  const handleDecrement = (_id) => {
-    const updatedItems = [...item];
-    const index = updatedItems.findIndex((item) => item._id === _id);
-    // Make a copy of the array
-    const currentItem = { ...updatedItems[index] };
-
-    if (currentItem?.GodownList?.length > 0 && !godownname) {
-      setOpenModal(true);
-      setGodown(currentItem?.GodownList);
-    } else {
-      if (currentItem.count > 0) {
-        currentItem.count = new Decimal(currentItem.count).sub(1).toNumber();
-
-        if (currentItem.count <= 0) {
-          dispatch(removeItem(currentItem));
-          updatedItems[index] = { ...currentItem, added: false };
-          setItem(updatedItems);
-        }
-
-        // Use the calculateTotal function to calculate the total for the current item
-        currentItem.total = calculateTotal(
-          currentItem,
-          selectedPriceLevel
-        ).toFixed(2);
-
-        updatedItems[index] = currentItem; // Update the item in the copied array
-        setItem(updatedItems);
-        setRefresh(!refresh);
-      }
-
-      dispatch(changeCount(currentItem));
-
-      dispatch(changeTotal(currentItem));
-    }
-
-    // Decrement the count if it's greater than 0
-  };
+  console.log(item);
 
   ///////////////////////////modalSubmit///////////////////////////////////
   const modalSubmit = (id) => {
@@ -631,6 +754,12 @@ function AddItemSalesSecondary() {
     // setTimeout(() => listRef.current.resetAfterIndex(index), 0);
   };
 
+  useEffect(() => {
+    if (Object.keys(heightsFromRedux).length > 0) {
+      setHeights(heightsFromRedux);
+    }
+  }, []);
+
   const getItemSize = (index) => {
     const product = item[index];
     const isExpanded = product?.isExpanded || false;
@@ -659,7 +788,7 @@ function AddItemSalesSecondary() {
 
   const Row = ({ index, style }) => {
     const el = filteredItems[index];
-    // const isExpanded = expandedProductId === el._id;
+    // const isExpanded = expandedProductId === el?._id;
     const adjustedStyle = {
       ...style,
       marginTop: "6px",
@@ -674,14 +803,20 @@ function AddItemSalesSecondary() {
         <div className=" flex justify-between items-center p-4">
           <div className="flex items-start gap-3 md:gap-4  ">
             <div className="w-10 mt-1  uppercase h-10 rounded-lg bg-violet-200 flex items-center justify-center font-semibold text-gray-400">
-              {el.product_name.slice(0, 1)}
+              {el?.product_name?.slice(0, 1)}
             </div>
             <div
               className={` flex flex-col font-bold text-sm md:text-sm  gap-1 leading-normal`}
             >
-              <p className={`${el.hasGodownOrBatch ? "mt-2.5" : ""}`}>
-                {el.product_name}
+              <p className={`${el?.hasGodownOrBatch ? "mt-2.5" : ""}`}>
+                {el?.product_name}
               </p>
+              {el?.hasGodownOrBatch && (
+                <div>
+                  <span>Total : ₹ </span>
+                  <span>{el?.total || 0}</span>
+                </div>
+              )}
 
               {!el?.hasGodownOrBatch && (
                 <>
@@ -689,116 +824,125 @@ function AddItemSalesSecondary() {
                     <p>
                       ₹{" "}
                       {
-                        el?.Priceleveles.find(
+                        el?.Priceleveles?.find(
                           (item) => item.pricelevel === selectedPriceLevel
                         )?.pricerate
                       }{" "}
                       /
                     </p>{" "}
-                    <span className="text-[10px] mt-1">{el.unit}</span>
+                    <span className="text-[10px] mt-1">{el?.unit}</span>
                   </div>
                   <div className="flex">
                     <p className="text-red-500">STOCK : </p>
-                    <span>{el.balance_stock}</span>
+                    <span>{el?.balance_stock}</span>
                   </div>
                   <div>
                     <span>Total : ₹ </span>
-                    <span>{el.total || 0}</span>
+                    <span>{el?.total || 0}</span>
                   </div>
                 </>
               )}
             </div>
           </div>
-          {el.added && el?.count > 0 ? (
+          {el?.added && el?.count > 0 ? (
             <div className="flex items-center flex-col gap-2">
               {/* <Link
-              // to={`/sUsers/editItem/${el._id}`}
+              // to={`/sUsers/editItem/${el?._id}`}
               to={{
-                pathname: `/sUsers/editItem/${el._id}`,
+                pathname: `/sUsers/editItem/${el?._id}`,
                 state: { from: "addItem" },
               }}
             > */}
-              <button
-                onClick={() => {
-                  navigate(
-                    `/sUsers/editItemSales/${el._id}/${godownname || "nil"}`,
-                    {
-                      state: { from: "editItemSales", id: location?.state?.id },
-                    }
-                  );
-                  // saveScrollPosition();
-                }}
-                type="button"
-                className="  mt-3  px-2 py-1  rounded-md border-violet-500 font-bold border  text-violet-500 text-xs"
-              >
-                Edit
-              </button>
-              {/* </Link> */}
-              <div
-                className="py-2 px-3 inline-block bg-white  "
-                data-hs-input-number
-              >
-                <div className="flex items-center gap-x-1.5">
-                  <button
-                    onClick={() => handleDecrement(el._id)}
-                    type="button"
-                    className="size-6 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-md border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none"
-                    data-hs-input-number-decrement
-                  >
-                    <svg
-                      className="flex-shrink-0 size-3.5"
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M5 12h14" />
-                    </svg>
-                  </button>
-                  <input
-                    className="p-0 w-12 bg-transparent border-0 text-gray-800 text-center focus:ring-0 "
-                    type="text"
-                    disabled
-                    value={el.count ? el.count : 0} // Display the count from the state
-                    data-hs-input-number-input
-                  />
+
+              {!el?.hasGodownOrBatch && (
+                <>
                   <button
                     onClick={() => {
-                      handleIncrement(el._id);
+                      navigate(
+                        `/sUsers/editItemSales/${el?._id}/${
+                          godownname || "nil"
+                        }/null`,
+                        {
+                          state: {
+                            from: "editItemSales",
+                            id: location?.state?.id,
+                          },
+                        }
+                      );
+                      // saveScrollPosition();
                     }}
                     type="button"
-                    className="size-6 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-md border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none "
-                    data-hs-input-number-increment
+                    className="  mt-3  px-2 py-1  rounded-md border-violet-500 font-bold border  text-violet-500 text-xs"
                   >
-                    <svg
-                      className="flex-shrink-0 size-3.5"
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M5 12h14" />
-                      <path d="M12 5v14" />
-                    </svg>
+                    Edit
                   </button>
-                </div>
-              </div>
+                  <div
+                    className="py-2 px-3 inline-block bg-white  "
+                    data-hs-input-number
+                  >
+                    <div className="flex items-center gap-x-1.5">
+                      <button
+                        onClick={() => handleDecrement(el?._id)}
+                        type="button"
+                        className="size-6 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-md border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none"
+                        data-hs-input-number-decrement
+                      >
+                        <svg
+                          className="flex-shrink-0 size-3.5"
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="24"
+                          height="24"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M5 12h14" />
+                        </svg>
+                      </button>
+                      <input
+                        className="p-0 w-12 bg-transparent border-0 text-gray-800 text-center focus:ring-0 "
+                        type="text"
+                        disabled
+                        value={el?.count ? el?.count : 0} // Display the count from the state
+                        data-hs-input-number-input
+                      />
+                      <button
+                        onClick={() => {
+                          handleIncrement(el?._id);
+                        }}
+                        type="button"
+                        className="size-6 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-md border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none "
+                        data-hs-input-number-increment
+                      >
+                        <svg
+                          className="flex-shrink-0 size-3.5"
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="24"
+                          height="24"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M5 12h14" />
+                          <path d="M12 5v14" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           ) : (
             !el?.hasGodownOrBatch && (
               <div
                 onClick={() => {
-                  handleAddClick(el._id);
+                  handleAddClick(el?._id);
                 }}
                 className="px-4 py-2 rounded-md border-violet-500 font-bold border-2 text-violet-500 text-xs"
               >
@@ -807,11 +951,11 @@ function AddItemSalesSecondary() {
             )
           )}
         </div>
-        {el.hasGodownOrBatch && (
+        {el?.hasGodownOrBatch && (
           <div className="px-6">
             <div
               onClick={() => {
-                handleExpansion(el._id);
+                handleExpansion(el?._id);
                 setTimeout(() => listRef.current.resetAfterIndex(index), 0);
               }}
               className="p-2 border-gray-300 border rounded-md w-full text-violet-500 mt-4 font-semibold flex items-center justify-center gap-3"
@@ -826,7 +970,12 @@ function AddItemSalesSecondary() {
         {el?.isExpanded && (
           <div className=" bg-white">
             <ProductDetails
+              heights={heights}
+              handleIncrement={handleIncrement}
+              handleDecrement={handleDecrement}
+              selectedPriceLevel={selectedPriceLevel}
               handleAddClick={handleAddClick}
+              godownName={godownname}
               details={el}
               setHeight={(height) => setHeight(index, height)}
             />

@@ -394,7 +394,9 @@
       ],
       "Priceleveles": [
         {
-          "alt_unit": "null"
+          "alt_unit": "null",
+          "pricelevel": "P1",
+          "pricerate": 42
         }
       ]
     }

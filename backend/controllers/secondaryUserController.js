@@ -692,6 +692,8 @@ export const getProducts = async (req, res) => {
 
       console.log("selectedGodowns", selectedGodowns);
 
+     
+
       if (vanSale && selectedGodowns && selectedGodowns.length === 1) {
         console.log("vansale");
         products = await productModel.aggregate([
@@ -799,6 +801,8 @@ export const getProducts = async (req, res) => {
           },
         ]);
       } else {
+
+        console.log("no vansale and no selected godowns");
         products = await productModel.find({
           Primary_user_id: Primary_user_id,
           cmp_id: cmp_id,
@@ -814,6 +818,10 @@ export const getProducts = async (req, res) => {
       });
     }
 
+    console.log("products", products);
+
+  
+
     if (products && products.length > 0) {
       // Add the check for GodownList
       const filteredProducts = [];
@@ -823,11 +831,11 @@ export const getProducts = async (req, res) => {
           item => item.godown || item.batch
         );
         filteredProducts.push({
-          ...product._doc,  // Use _doc to get the plain JS object from the Mongoose document
+          ...product?. _doc,  // Use _doc to get the plain JS object from the Mongoose document
           hasGodownOrBatch
         });
       }
-
+console.log("filteredProducts", filteredProducts);
       return res.status(200).json({
         productData: filteredProducts,
         message: "Products fetched",
@@ -2149,11 +2157,15 @@ export const fetchAdditionalDetails = async (req, res) => {
     const configuration = secUser.configurations.find(
       (item) => item.organization.toString() === cmp_id
     );
+
+    console.log("configuration", configuration);
+
     if (configuration) {
       selectedPriceLevels = configuration.selectedPriceLevels;
     }
 
     let priceLevelsResult = [];
+    console.log("selectedPriceLevels", priceLevelsResult);
 
     if (selectedPriceLevels && selectedPriceLevels.length == 0) {
       priceLevelsResult = await productModel.aggregate([

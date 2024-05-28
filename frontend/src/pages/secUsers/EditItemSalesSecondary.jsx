@@ -7,11 +7,14 @@ import { MdModeEditOutline } from "react-icons/md";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
-import { changeIgstAndDiscount ,changeGodownCount} from "../../../slices/salesSecondary";
+import {
+  changeIgstAndDiscount,
+  changeGodownCount,
+  updateItem,
+} from "../../../slices/salesSecondary";
 import { toast } from "react-toastify";
 import { Button, Modal } from "flowbite-react";
 import { Decimal } from "decimal.js";
-
 
 function EditItemSalesSecondary() {
   const [item, setItem] = useState([]);
@@ -26,18 +29,18 @@ function EditItemSalesSecondary() {
   const [totalAmount, setTotalAmount] = useState(0);
   const [discountAmount, setDiscountAmount] = useState(0); // State for discount amount
   const [discountPercentage, setDiscountPercentage] = useState(0);
+  const [data, setSata] = useState([]);
 
   const [openModal, setOpenModal] = useState(false);
   const [totalCount, setTotalCount] = useState(0);
   const [godown, setGodown] = useState([]);
-  const { id ,godownName} = useParams();
+  const { id, godownName, index } = useParams();
+  console.log(index);
   const navigate = useNavigate();
   const location = useLocation();
 
   const ItemsFromRedux = useSelector((state) => state.salesSecondary.items);
   const selectedItem = ItemsFromRedux.filter((el) => el._id === id);
-  console.log(selectedItem);
-  console.log(godown);
   const selectedPriceLevel = useSelector(
     (state) => state.salesSecondary.selectedPriceLevel
   );
@@ -45,9 +48,7 @@ function EditItemSalesSecondary() {
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
 
-
-  console.log(godownName);
-
+  const selectedGodown = selectedItem[0]?.GodownList[index];
 
   useEffect(() => {
     const fetchHsn = async () => {
@@ -76,22 +77,45 @@ function EditItemSalesSecondary() {
       )?.pricerate;
 
       setNewPrice(price);
-      setQuantity(selectedItem[0]?.count || 1);
+
+      if (selectedItem[0]?.hasGodownOrBatch) {
+        console.log("haii");
+        setQuantity(selectedGodown?.count || 1);
+        if (selectedGodown?.discountPercentage > 0) {
+          setDiscount(selectedGodown?.discountPercentage);
+          setType("percentage");
+        } else if (selectedGodown?.discount > 0) {
+          setDiscount(selectedGodown?.discount);
+          setType("amount");
+        } else if (
+          selectedGodown?.discountPercentage == 0 &&
+          selectedGodown?.discount == 0
+        ) {
+          setDiscount("");
+        }
+
+
+      } else {
+        setQuantity(selectedItem[0]?.count || 1);
+        if (selectedItem[0].discountPercentage > 0) {
+          setDiscount(selectedItem[0].discountPercentage);
+          setType("percentage");
+        } else if (selectedItem[0].discount > 0) {
+          setDiscount(selectedItem[0].discount);
+          setType("amount");
+        } else if (
+          selectedItem[0].discountPercentage == 0 &&
+          selectedItem[0].discount == 0
+        ) {
+          setDiscount("");
+        }
+      }
       setUnit(selectedItem[0]?.unit);
       setIgst(selectedItem[0]?.igst);
 
-      if (selectedItem[0].discountPercentage > 0) {
-        setDiscount(selectedItem[0].discountPercentage);
-        setType("percentage");
-      } else if (selectedItem[0].discount > 0) {
-        setDiscount(selectedItem[0].discount);
-        setType("amount");
-      } else if (
-        selectedItem[0].discountPercentage == 0 &&
-        selectedItem[0].discount == 0
-      ) {
-        setDiscount("");
-      }
+
+
+     
     }
   }, []);
 
@@ -137,51 +161,85 @@ function EditItemSalesSecondary() {
     console.log(item);
     const newItem = { ...item };
 
-    newItem.total = totalAmount;
-    newItem.count = quantity || 0;
-    newItem.newGst = igst;
-    newItem.GodownList = godown;
-    if (type === "amount") {
-      newItem.discount = discountAmount;
-      newItem.discountPercentage = "";
-    } else {
-      newItem.discount = "";
+    if (selectedItem[0]?.hasGodownOrBatch) {
+      // Create a deep copy of the GodownList to avoid mutation
+      const newGodownList = newItem.GodownList.map((godown, idx) => {
+        if (idx == index) {
+          console.log(godown);
+          return {
+            ...godown,
+            count: Number(quantity) || 0,
+            discount: type === "amount" ? discountAmount : "",
+            discountPercentage:
+              type === "amount" ? "" : parseFloat(discountPercentage),
+            individualTotal: totalAmount,
+          };
+        }
 
-      newItem.discountPercentage = parseFloat(discountPercentage);
+        return godown;
+      });
+
+      newItem.GodownList = newGodownList;
+      newItem.count = Number(
+        newGodownList
+          ?.reduce((acc, curr) => (acc += curr?.count || 0), 0)
+          .toFixed(2)
+      );
+      newItem.total = Number(
+      Number(  newGodownList
+          .reduce((acc, curr) => acc + (curr?.individualTotal || 0), 0))
+          .toFixed(2)
+      );
+      console.log(newItem.total);
+      console.log(newItem);
+    } else {
+      newItem.total = totalAmount;
+      newItem.count = quantity || 0;
+      newItem.newGst = igst;
+      // newItem.GodownList = godown;
+      if (type === "amount") {
+        newItem.discount = discountAmount;
+        newItem.discountPercentage = "";
+      } else {
+        newItem.discount = "";
+        newItem.discountPercentage = parseFloat(discountPercentage);
+      }
     }
 
     console.log(newItem);
-    dispatch(changeIgstAndDiscount(newItem));
-    dispatch(changeGodownCount(newItem));
-    // navigate("/sUsers/addItem");
-    handleBackClick();
+    // dispatch(changeIgstAndDiscount(newItem));
+    // dispatch(changeGodownCount(newItem));
+    dispatch(updateItem(newItem));
+    navigate(-1);
+    // handleBackClick();
   };
 
   const handleBackClick = () => {
     console.log(location.state);
 
-    if (location.state.id && location.state.from == "addItemSales") {
-      console.log("haii");
-      navigate("/sUsers/addItemSales", {
-        state: { from: "editSales", id: location.state.id },
-      });
-    } else if (location.state.from === "sales") {
-      console.log("haii");
+    // if (location.state.id && location.state.from == "addItemSales") {
+    //   console.log("haii");
+    //   navigate("/sUsers/addItemSales", {
+    //     state: { from: "editSales", id: location.state.id },
+    //   });
+    // } else if (location.state.from === "sales") {
+    //   console.log("haii");
 
-      navigate("/sUsers/sales");
-    } else if (location?.state?.from === "addItemSales") {
-      console.log("haii");
+    //   navigate("/sUsers/sales");
+    // } else if (location?.state?.from === "addItemSales") {
+    //   console.log("haii");
 
-      navigate("/sUsers/addItemSales");
-    } else if (location?.state?.from === "editSales") {
-      console.log("haii");
+    //   navigate("/sUsers/addItemSales");
+    // } else if (location?.state?.from === "editSales") {
+    //   console.log("haii");
 
-      navigate(`/sUsers/editSales/${location.state.id}`);
-    } else {
-      console.log("haii");
+    //   navigate(`/sUsers/editSales/${location.state.id}`);
+    // } else {
+    //   console.log("haii");
 
-      navigate("/sUsers/addItemSales");
-    }
+    //   navigate("/sUsers/addItemSales");
+    // }
+    navigate(-1)
   };
 
   /////////////////////////modal popup /////////////////////////////
@@ -190,7 +248,6 @@ function EditItemSalesSecondary() {
     setOpenModal(false);
   }
 
-
   function truncateToNDecimals(num, n) {
     const parts = num.toString().split(".");
     if (parts.length === 1) return num; // No decimal part
@@ -198,12 +255,10 @@ function EditItemSalesSecondary() {
     return parseFloat(parts.join("."));
   }
 
-
-
   const openModalHandler = () => {
     console.log(godownName);
     console.log(selectedItem);
-    if (selectedItem[0]?.GodownList?.length > 0 && godownName==="nil" ) {
+    if (selectedItem[0]?.GodownList?.length > 0 && godownName === "nil") {
       setOpenModal(true);
       if (godown.length === 0) {
         setGodown(selectedItem[0]?.GodownList);
@@ -252,12 +307,11 @@ function EditItemSalesSecondary() {
     }
   };
 
-
   ///////////////////////////changeModalCount///////////////////////////////////
 
-  const changeModalCount = (event,index, value) => {
+  const changeModalCount = (event, index, value) => {
     console.log(value);
-   
+
     // Check if the value includes a decimal point
     if (value.includes(".")) {
       // Split the value into parts before and after the decimal point
@@ -275,7 +329,7 @@ function EditItemSalesSecondary() {
       currentGodown.orginalStock ??
       Number(currentGodown?.balance_stock) + Number(currentGodown?.count);
 
-      console.log(currentGodown.orginalStock);
+    console.log(currentGodown.orginalStock);
 
     currentGodown.count = value;
     console.log(value);
@@ -305,8 +359,6 @@ function EditItemSalesSecondary() {
     setOpenModal(false);
   };
 
-
-
   const handleDirectQuantityChange = (value) => {
     if (value.includes(".")) {
       // Split the value into parts before and after the decimal point
@@ -319,7 +371,6 @@ function EditItemSalesSecondary() {
 
     setQuantity(value);
   };
-
 
   return (
     <div className="flex ">
@@ -369,9 +420,9 @@ function EditItemSalesSecondary() {
                       <div className="flex flex-col">
                         <label className="leading-loose">Quantity</label>
                         <div className="relative focus-within:text-gray-600 text-gray-400">
-                        <input
-                            readOnly={selectedItem[0]?.GodownList?.length > 0 && godownName=="nil"}
-                            onClick={openModalHandler}
+                          <input
+                            // readOnly={selectedItem[0]?.GodownList?.length > 0 && godownName=="nil"}
+                            // onClick={openModalHandler}
                             onChange={(e) => {
                               handleDirectQuantityChange(e.target.value);
                             }}
@@ -640,7 +691,7 @@ function EditItemSalesSecondary() {
                                 placeholder="0"
                                 value={item.count}
                                 onChange={(e) => {
-                                  changeModalCount(e,index, e.target.value);
+                                  changeModalCount(e, index, e.target.value);
                                 }}
                                 // onKeyDown={isNumberKey}
                               />
