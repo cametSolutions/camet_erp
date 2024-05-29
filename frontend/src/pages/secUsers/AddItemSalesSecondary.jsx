@@ -19,6 +19,7 @@ import {
   changeGodownCount,
   addAllProducts,
   updateItem,
+  setBatchHeight
 } from "../../../slices/salesSecondary";
 import { HashLoader } from "react-spinners";
 import { VariableSizeList as List } from "react-window";
@@ -525,8 +526,10 @@ function AddItemSalesSecondary() {
 
         // Ensure count does not go below 0
         if (godownOrBatch.count <= 0) godownOrBatch.added = false;
-        currentItem.added = false;
-
+      //   if(currentItem.GodownList.some((godown) => godown.added === true)) {
+      //     currentItem.added = true;
+      // }
+      
         const updatedGodownList = currentItem.GodownList.map((godown, index) =>
           index === godownIndex ? godownOrBatch : godown
         );
@@ -692,6 +695,8 @@ function AddItemSalesSecondary() {
   }, []);
 
   const continueHandler = () => {
+
+    dispatch(setBatchHeight(heights))
     if (location?.state?.from === "editSales") {
       navigate(`/sUsers/editSales/${location.state.id}`);
     } else {

@@ -193,7 +193,7 @@ function EditItemSalesSecondary() {
       console.log(newItem.total);
       console.log(newItem);
     } else {
-      newItem.total = totalAmount;
+      newItem.total = Number((totalAmount).toFixed(2));
       newItem.count = quantity || 0;
       newItem.newGst = igst;
       // newItem.GodownList = godown;
