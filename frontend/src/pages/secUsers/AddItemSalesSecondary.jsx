@@ -19,7 +19,7 @@ import {
   changeGodownCount,
   addAllProducts,
   updateItem,
-  setBatchHeight
+  setBatchHeight,
 } from "../../../slices/salesSecondary";
 import { HashLoader } from "react-spinners";
 import { VariableSizeList as List } from "react-window";
@@ -299,23 +299,26 @@ function AddItemSalesSecondary() {
       item?.Priceleveles?.find(
         (level) => level.pricelevel === selectedPriceLevel
       )?.pricerate || 0;
-  
+
     let subtotal = 0;
     let individualTotals = [];
-  
+
     if (item.hasGodownOrBatch) {
       item.GodownList.forEach((godownOrBatch, index) => {
         let individualSubtotal = priceRate * Number(godownOrBatch.count) || 0;
         let discountedSubtotal = individualSubtotal;
-  
+
         console.log(discountedSubtotal);
         console.log(godownOrBatch);
 
-  
-        if (godownOrBatch.discount !== 0 && godownOrBatch.discount !== undefined && godownOrBatch.discount!=="") {
+        if (
+          godownOrBatch.discount !== 0 &&
+          godownOrBatch.discount !== undefined &&
+          godownOrBatch.discount !== ""
+        ) {
           console.log("haii");
           console.log(godownOrBatch.batch);
-          discountedSubtotal =discountedSubtotal- godownOrBatch.discount;
+          discountedSubtotal = discountedSubtotal - godownOrBatch.discount;
           console.log(discountedSubtotal);
         } else if (
           godownOrBatch.discountPercentage !== 0 &&
@@ -330,19 +333,18 @@ function AddItemSalesSecondary() {
 
         console.log(discountedSubtotal);
 
-  
         const gstAmount = (discountedSubtotal * (item.igst || 0)) / 100;
 
         console.log(gstAmount);
-  
+
         subtotal += discountedSubtotal + gstAmount;
-  
+
         const individualTotal = parseFloat(
           (discountedSubtotal + gstAmount).toFixed(2)
         );
 
         console.log(individualTotal);
-  
+
         individualTotals.push({
           index,
           batch: godownOrBatch.batch,
@@ -354,7 +356,7 @@ function AddItemSalesSecondary() {
     } else {
       let individualSubtotal = priceRate * Number(item.count);
       let discountedSubtotal = individualSubtotal;
-  
+
       if (item.discount !== 0 && item.discount !== undefined) {
         discountedSubtotal -= item.discount;
       } else if (
@@ -364,33 +366,32 @@ function AddItemSalesSecondary() {
         discountedSubtotal -=
           (individualSubtotal * item.discountPercentage) / 100;
       }
-  
+
       const gstAmount =
         (discountedSubtotal * (item.newGst || item.igst || 0)) / 100;
-  
+
       subtotal += discountedSubtotal + gstAmount;
-  
+
       const individualTotal = parseFloat(
         (discountedSubtotal + gstAmount).toFixed(2)
       );
-  
+
       individualTotals.push({
         index: 0,
         batch: item.batch || "No batch",
         individualTotal,
       });
     }
-  
+
     subtotal = parseFloat(subtotal.toFixed(2));
-  
+
     console.log(subtotal);
-  
+
     return {
       individualTotals,
       total: subtotal,
     };
   };
-  
 
   ///////////////////////////handleAddClick///////////////////////////////////
 
@@ -425,17 +426,12 @@ function AddItemSalesSecondary() {
         itemToUpdate.GodownList = updatedGodownListWithTotals;
 
         itemToUpdate.total = totalData?.total || 0;
-        itemToUpdate.added = itemToUpdate.added ? !itemToUpdate.added : true;
+        itemToUpdate.added = true;
 
         console.log(itemToUpdate);
         dispatch(addItem(itemToUpdate));
 
         return itemToUpdate;
-
-        // return {
-        //   ...itemToUpdate,
-        //   added: itemToUpdate.added ? !itemToUpdate.added : true,
-        // };
       }
       return item;
     });
@@ -460,7 +456,9 @@ function AddItemSalesSecondary() {
         const godownOrBatch = { ...currentItem.GodownList[godownIndex] };
 
         // If godownOrBatch.count is undefined, set it to 1, otherwise increment by 1
-        godownOrBatch.count = new Decimal (godownOrBatch.count).add(1).toNumber();
+        godownOrBatch.count = new Decimal(godownOrBatch.count)
+          .add(1)
+          .toNumber();
 
         // Update the specific godown/batch in the GodownList array
         const updatedGodownList = currentItem.GodownList.map((godown, index) =>
@@ -513,11 +511,7 @@ function AddItemSalesSecondary() {
       if (item._id !== _id) return item; // Keep items unchanged if _id doesn't match
       const currentItem = { ...item };
 
-      if (
-        godownIndex !== null &&
-        currentItem.hasGodownOrBatch &&
-        !godownname
-      ) {
+      if (godownIndex !== null && currentItem.hasGodownOrBatch && !godownname) {
         const godownOrBatch = { ...currentItem.GodownList[godownIndex] };
         godownOrBatch.count = new Decimal(godownOrBatch.count)
           .sub(1)
@@ -526,14 +520,10 @@ function AddItemSalesSecondary() {
 
         // Ensure count does not go below 0
         if (godownOrBatch.count <= 0) godownOrBatch.added = false;
-      //   if(currentItem.GodownList.some((godown) => godown.added === true)) {
-      //     currentItem.added = true;
-      // }
       
         const updatedGodownList = currentItem.GodownList.map((godown, index) =>
           index === godownIndex ? godownOrBatch : godown
         );
-        console.log(updatedGodownList);
 
         // Calculate the sum of counts in GodownList
         const sumOfCounts = updatedGodownList.reduce(
@@ -542,11 +532,16 @@ function AddItemSalesSecondary() {
         );
         currentItem.count = sumOfCounts;
         currentItem.GodownList = updatedGodownList;
-        console.log(currentItem); // Update the count in the currentItem
+        const allAddedFalse = currentItem.GodownList.every(
+          (item) => item.added === false || item.added == undefined
+        );
+        if (allAddedFalse) {
+          dispatch(removeItem(currentItem._id));
+        }
+
 
         // Calculate totals and update individual batch totals
         const totalData = calculateTotal(currentItem, selectedPriceLevel);
-        console.log(totalData);
         const updatedGodownListWithTotals = updatedGodownList.map(
           (godown, index) => ({
             ...godown,
@@ -695,8 +690,7 @@ function AddItemSalesSecondary() {
   }, []);
 
   const continueHandler = () => {
-
-    dispatch(setBatchHeight(heights))
+    dispatch(setBatchHeight(heights));
     if (location?.state?.from === "editSales") {
       navigate(`/sUsers/editSales/${location.state.id}`);
     } else {

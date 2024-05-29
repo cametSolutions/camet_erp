@@ -12,7 +12,7 @@ const initialState = {
   category: "",
   subcategory: "",
   id: "",
-  heights:{}
+  heights: {},
 };
 
 export const salesSecondarySlice = createSlice({
@@ -25,7 +25,7 @@ export const salesSecondarySlice = createSlice({
     removeParty: (state) => {
       state.party = {};
     },
-  
+
     addAllProducts: (state, action) => {
       state.products = action.payload;
     },
@@ -151,14 +151,33 @@ export const salesSecondarySlice = createSlice({
         (el) => el._id === actions.payload._id
       );
       if (index !== -1) {
-       
         state.items[index] = actions.payload;
       }
     },
 
-    setBatchHeight:(state,action)=>{
-      state.heights=action.payload
-    }
+    setBatchHeight: (state, action) => {
+      state.heights = action.payload;
+    },
+
+    removeGodownOrBatch: (state, action) => {
+      const id = action.payload.id;
+      const idx = action.payload.idx;
+
+      const index = state.items.findIndex((el) => el._id === id);
+      if (index !== -1) {
+        const currentItem = state.items[index];
+        currentItem.GodownList[idx].added = false;
+
+        const allAddedFalse = currentItem.GodownList.every(
+          (item) => item.added === false || item.added == undefined
+        );
+
+        // If allAddedFalse is true, set currentItem.added to false
+        if (allAddedFalse) {
+          state.items.splice(index, 1);
+        }
+      }
+    },
   },
 });
 
@@ -191,7 +210,8 @@ export const {
   changeGodownCount,
   addAllProducts,
   updateItem,
-  setBatchHeight
+  setBatchHeight,
+  removeGodownOrBatch,
 } = salesSecondarySlice.actions;
 
 export default salesSecondarySlice.reducer;

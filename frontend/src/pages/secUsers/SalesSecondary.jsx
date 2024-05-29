@@ -24,6 +24,7 @@ import {
   removeAll,
   removeAdditionalCharge,
   removeItem,
+  removeGodownOrBatch
 } from "../../../slices/salesSecondary";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import { Button, Label, Modal, TextInput } from "flowbite-react";
@@ -597,14 +598,16 @@ function SalesSecondary() {
                     key={index}
                     className="py-3 mt-0 px-3 md:px-6 bg-white flex items-center gap-1.5 md:gap-4"
                   >
-                    <div
-                      onClick={() => {
-                        dispatch(removeItem(el));
-                      }}
-                      className="text-gray-500 text-sm cursor-pointer"
-                    >
-                      <MdCancel />
-                    </div>
+                    {!el?.hasGodownOrBatch && (
+                      <div
+                        onClick={() => {
+                          dispatch(removeItem(el));
+                        }}
+                        className="text-gray-500 text-sm cursor-pointer"
+                      >
+                        <MdCancel />
+                      </div>
+                    )}
                     <div className="flex-1">
                       <div className="flex justify-between font-bold text-xs gap-10">
                         <p>{el.product_name}</p>
@@ -617,81 +620,101 @@ function SalesSecondary() {
                       {el.hasGodownOrBatch ? (
                         el.GodownList.map((godownOrBatch, idx) =>
                           godownOrBatch.added ? (
-                            <div
-                              key={idx}
-                              className="flex justify-between items-center mt-5"
-                            >
-                              <div className="w-3/5 md:w-2/5 font-semibold text-gray-500 text-xs flex flex-col gap-2">
-                                {godownOrBatch.batch ? (
-                                  <div className="flex justify-between">
-                                    <p className="text-nowrap text-violet-500 text-bold">
-                                      Batch: {godownOrBatch.batch}
-                                    </p>
-                                    <p className="text-nowrap ">
-                                      {godownOrBatch.count} {el.unit} X{" "}
-                                      {el.Priceleveles.find(
-                                        (item) =>
-                                          item.pricelevel ===
-                                          priceLevelFromRedux
-                                      )?.pricerate || 0}
-                                    </p>
-                                  </div>
-                                ) : (
-                                  godownOrBatch.godown && (
-                                    <div className="flex justify-between ">
-                                      <p className="text-nowrap text-violet-500 text-bold">
-                                        Godown: {godownOrBatch.godown}
-                                      </p>
-                                      <p className="text-nowrap">
-                                        {godownOrBatch.count} {el.unit} X{" "}
-                                        {el.Priceleveles.find(
-                                          (item) =>
-                                            item.pricelevel ===
-                                            priceLevelFromRedux
-                                        )?.pricerate || 0}
-                                      </p>
-                                    </div>
-                                  )
-                                )}
+                            <>
+                              <div className="flex items-center gap-2">
+                                <MdCancel
+                                onClick={() => {
+                                  dispatch(removeGodownOrBatch({id:el?._id,idx:idx}));
+                                }}
+                                 className="text-gray-500 text-sm cursor-pointer" />
+                                <div
+                                  key={idx}
+                                  className="flex justify-between items-center mt-5 flex-1 "
+                                >
+                                  <div className="w-3/5 md:w-2/5 font-semibold text-gray-500 text-xs flex flex-col gap-2">
+                                    {godownOrBatch.batch ? (
+                                      <div className="flex justify-between">
+                                        <p className="text-nowrap text-violet-500 text-bold">
+                                          Batch: {godownOrBatch.batch}
+                                        </p>
+                                        <p className="text-nowrap ">
+                                          {godownOrBatch.count} {el.unit} X{" "}
+                                          {el.Priceleveles.find(
+                                            (item) =>
+                                              item.pricelevel ===
+                                              priceLevelFromRedux
+                                          )?.pricerate || 0}
+                                        </p>
+                                      </div>
+                                    ) : (
+                                      godownOrBatch.godown && (
+                                        <div className="flex justify-between ">
+                                          <p className="text-nowrap text-violet-500 text-bold">
+                                            Godown: {godownOrBatch.godown}
+                                          </p>
+                                          <p className="text-nowrap">
+                                            {godownOrBatch.count} {el.unit} X{" "}
+                                            {el.Priceleveles.find(
+                                              (item) =>
+                                                item.pricelevel ===
+                                                priceLevelFromRedux
+                                            )?.pricerate || 0}
+                                          </p>
+                                        </div>
+                                      )
+                                    )}
 
-                                {(godownOrBatch.discount > 0 ||
-                                  godownOrBatch.discountPercentage > 0) && (
-                                  <div className="flex justify-between">
-                                    <p className="text-nowrap">Discount</p>
-                                    <div className="flex items-center">
+                                    {(godownOrBatch.discount > 0 ||
+                                      godownOrBatch.discountPercentage > 0) && (
+                                      <div className="flex justify-between">
+                                        <p className="text-nowrap">Discount</p>
+                                        <div className="flex items-center">
+                                          <p className="text-nowrap">
+                                            {godownOrBatch.discount > 0
+                                              ? `₹ ${godownOrBatch.discount}`
+                                              : `${godownOrBatch.discountPercentage}%`}
+                                          </p>
+                                        </div>
+                                      </div>
+                                    )}
+                                    <div className="flex justify-between">
+                                      <p className="text-nowrap">Total</p>
                                       <p className="text-nowrap">
-                                        {godownOrBatch.discount > 0
-                                          ? `₹ ${godownOrBatch.discount}`
-                                          : `${godownOrBatch.discountPercentage}%`}
+                                        ₹ {godownOrBatch.individualTotal ?? 0}
                                       </p>
                                     </div>
                                   </div>
-                                )}
-                                <div className="flex justify-between">
-                                  <p className="text-nowrap">Total</p>
-                                  <p className="text-nowrap">
-                                    ₹ {godownOrBatch.individualTotal ?? 0}
-                                  </p>
+                                  <div className="flex items-center gap-2">
+                                    <p
+                                      onClick={() => {
+                                        navigate(
+                                          `/sUsers/editItemSales/${el._id}/${
+                                            godownname === ""
+                                              ? "nil"
+                                              : godownname
+                                          }/${idx}`,
+                                          {
+                                            state: { from: "sales" },
+                                          }
+                                        );
+                                      }}
+                                      className="text-violet-500 text-xs md:text-base font-bold p-1 px-4 border border-1 border-gray-300 rounded-2xl cursor-pointer"
+                                    >
+                                      Edit
+                                    </p>
+                                    {/* <MdCancel
+      onClick={() => {
+        // Handle the removal of this specific godownOrBatch item here
+        console.log(
+          `Remove godownOrBatch at index ${idx}`
+        );
+      }}
+      className="text-gray-500 text-sm cursor-pointer"
+    /> */}
+                                  </div>
                                 </div>
                               </div>
-                              <div className="">
-                                <p
-                                  onClick={() => {
-                                    navigate(
-                                      `/sUsers/editItemSales/${el._id}/${
-                                        godownname === "" ? "nil" : godownname
-                                      }/${idx}`,
-                                      {
-                                        state: { from: "sales" },
-                                      }
-                                    );
-                                  }}
-                                  className="text-violet-500 text-xs md:text-base font-bold p-1 px-4 border border-1 border-gray-300 rounded-2xl cursor-pointer"
-                                >
-                                  Edit
-                                </p>
-                              </div>
-                            </div>
+                            </>
                           ) : null
                         )
                       ) : (
@@ -705,11 +728,11 @@ function SalesSecondary() {
                                 {el.count} {el.unit} X{" "}
                                 {el.Priceleveles.find(
                                   (item) =>
-                                    item.pricelevel == priceLevelFromRedux
+                                    item.pricelevel === priceLevelFromRedux
                                 )?.pricerate || 0}
                               </p>
                             </div>
-                        
+
                             {(el.discount > 0 || el.discountPercentage > 0) && (
                               <div className="flex justify-between">
                                 <p className="text-nowrap">Discount</p>
@@ -724,22 +747,29 @@ function SalesSecondary() {
                             )}
                           </div>
 
-                          <div className="">
-                          <p
-                                  onClick={() => {
-                                    navigate(
-                                      `/sUsers/editItemSales/${el._id}/${
-                                        godownname === "" ? "nil" : godownname
-                                      }/null`,
-                                      {
-                                        state: { from: "sales" },
-                                      }
-                                    );
-                                  }}
-                                  className="text-violet-500 text-xs md:text-base font-bold p-1 px-4 border border-1 border-gray-300 rounded-2xl cursor-pointer"
-                                >
-                                  Edit
-                                </p>
+                          <div className="flex items-center gap-2">
+                            <p
+                              onClick={() => {
+                                navigate(
+                                  `/sUsers/editItemSales/${el._id}/${
+                                    godownname === "" ? "nil" : godownname
+                                  }/null`,
+                                  {
+                                    state: { from: "sales" },
+                                  }
+                                );
+                              }}
+                              className="text-violet-500 text-xs md:text-base font-bold p-1 px-4 border border-1 border-gray-300 rounded-2xl cursor-pointer"
+                            >
+                              Edit
+                            </p>
+                            {/* <MdCancel
+                              onClick={() => {
+                                // Handle the removal of this specific item here
+                                console.log(`Remove item at index ${index}`);
+                              }}
+                              className="text-gray-500 text-sm cursor-pointer"
+                            /> */}
                           </div>
                         </div>
                       )}
