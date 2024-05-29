@@ -293,86 +293,103 @@ function AddItemSalesSecondary() {
   ///////////////////////////calculateTotal///////////////////////////////////
 
   const calculateTotal = (item, selectedPriceLevel) => {
+    console.log(item);
     const priceRate =
       item?.Priceleveles?.find(
         (level) => level.pricelevel === selectedPriceLevel
       )?.pricerate || 0;
-
+  
     let subtotal = 0;
     let individualTotals = [];
-
+  
     if (item.hasGodownOrBatch) {
-      console.log("haii");
       item.GodownList.forEach((godownOrBatch, index) => {
-        console.log(godownOrBatch.count);
         let individualSubtotal = priceRate * Number(godownOrBatch.count) || 0;
+        let discountedSubtotal = individualSubtotal;
+  
+        console.log(discountedSubtotal);
+        console.log(godownOrBatch);
 
-        if (
-          godownOrBatch.discount !== 0 &&
-          godownOrBatch.discount !== undefined
-        ) {
-          individualSubtotal -= godownOrBatch.discount;
+  
+        if (godownOrBatch.discount !== 0 && godownOrBatch.discount !== undefined && godownOrBatch.discount!=="") {
+          console.log("haii");
+          console.log(godownOrBatch.batch);
+          discountedSubtotal =discountedSubtotal- godownOrBatch.discount;
+          console.log(discountedSubtotal);
         } else if (
           godownOrBatch.discountPercentage !== 0 &&
-          godownOrBatch.discountPercentage !== undefined
+          godownOrBatch.discountPercentage !== undefined &&
+          godownOrBatch.discountPercentage !== ""
         ) {
-          individualSubtotal -=
+          console.log("haii");
+
+          discountedSubtotal -=
             (individualSubtotal * godownOrBatch.discountPercentage) / 100;
         }
 
-        const gstAmount = (individualSubtotal * (item.igst || 0)) / 100;
+        console.log(discountedSubtotal);
 
-        subtotal += individualSubtotal + gstAmount;
+  
+        const gstAmount = (discountedSubtotal * (item.igst || 0)) / 100;
 
-        // Calculate individual total without modifying the original object
-        const individualTotal = (individualSubtotal + gstAmount).toFixed(2);
+        console.log(gstAmount);
+  
+        subtotal += discountedSubtotal + gstAmount;
+  
+        const individualTotal = parseFloat(
+          (discountedSubtotal + gstAmount).toFixed(2)
+        );
 
-        // Add to individual totals list with index
+        console.log(individualTotal);
+  
         individualTotals.push({
           index,
           batch: godownOrBatch.batch,
           individualTotal,
         });
+
+        console.log(individualTotals);
       });
     } else {
-      console.log("haii");
       let individualSubtotal = priceRate * Number(item.count);
-
+      let discountedSubtotal = individualSubtotal;
+  
       if (item.discount !== 0 && item.discount !== undefined) {
-        individualSubtotal -= item.discount;
+        discountedSubtotal -= item.discount;
       } else if (
         item.discountPercentage !== 0 &&
         item.discountPercentage !== undefined
       ) {
-        individualSubtotal -=
+        discountedSubtotal -=
           (individualSubtotal * item.discountPercentage) / 100;
       }
-
+  
       const gstAmount =
-        (individualSubtotal * (item.newGst || item.igst || 0)) / 100;
-
-      subtotal += individualSubtotal + gstAmount;
-
-      // Calculate individual total without modifying the original object
-      const individualTotal = individualSubtotal + gstAmount;
-
-      // Add to individual totals list with index
+        (discountedSubtotal * (item.newGst || item.igst || 0)) / 100;
+  
+      subtotal += discountedSubtotal + gstAmount;
+  
+      const individualTotal = parseFloat(
+        (discountedSubtotal + gstAmount).toFixed(2)
+      );
+  
       individualTotals.push({
         index: 0,
         batch: item.batch || "No batch",
         individualTotal,
       });
     }
-
-    subtotal = Number(subtotal.toFixed(2));
-
+  
+    subtotal = parseFloat(subtotal.toFixed(2));
+  
     console.log(subtotal);
-
+  
     return {
       individualTotals,
       total: subtotal,
     };
   };
+  
 
   ///////////////////////////handleAddClick///////////////////////////////////
 
@@ -497,7 +514,7 @@ function AddItemSalesSecondary() {
 
       if (
         godownIndex !== null &&
-        currentItem.GodownList?.length > 0 &&
+        currentItem.hasGodownOrBatch &&
         !godownname
       ) {
         const godownOrBatch = { ...currentItem.GodownList[godownIndex] };
@@ -508,6 +525,7 @@ function AddItemSalesSecondary() {
 
         // Ensure count does not go below 0
         if (godownOrBatch.count <= 0) godownOrBatch.added = false;
+        currentItem.added = false;
 
         const updatedGodownList = currentItem.GodownList.map((godown, index) =>
           index === godownIndex ? godownOrBatch : godown

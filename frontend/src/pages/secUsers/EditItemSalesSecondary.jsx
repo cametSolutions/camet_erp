@@ -172,7 +172,7 @@ function EditItemSalesSecondary() {
             discount: type === "amount" ? discountAmount : "",
             discountPercentage:
               type === "amount" ? "" : parseFloat(discountPercentage),
-            individualTotal: totalAmount,
+            individualTotal:Number( (totalAmount).toFixed(2)),
           };
         }
 

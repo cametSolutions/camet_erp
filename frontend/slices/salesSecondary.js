@@ -12,7 +12,7 @@ const initialState = {
   category: "",
   subcategory: "",
   id: "",
-  heights:{}
+  heights: {},
 };
 
 export const salesSecondarySlice = createSlice({
@@ -25,7 +25,7 @@ export const salesSecondarySlice = createSlice({
     removeParty: (state) => {
       state.party = {};
     },
-  
+
     addAllProducts: (state, action) => {
       state.products = action.payload;
     },
@@ -151,13 +151,17 @@ export const salesSecondarySlice = createSlice({
         (el) => el._id === actions.payload._id
       );
       if (index !== -1) {
-        state.items[index] = actions.payload;
+        if (actions.payload.added === false) {
+          state.items.splice(index, 1);
+        } else {
+          state.items[index] = actions.payload;
+        }
       }
     },
 
-    setBatchHeight:(state,action)=>{
-      state.heights=action.payload
-    }
+    setBatchHeight: (state, action) => {
+      state.heights = action.payload;
+    },
   },
 });
 
@@ -190,7 +194,7 @@ export const {
   changeGodownCount,
   addAllProducts,
   updateItem,
-  setBatchHeight
+  setBatchHeight,
 } = salesSecondarySlice.actions;
 
 export default salesSecondarySlice.reducer;
