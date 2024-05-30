@@ -325,7 +325,7 @@ function InventorySecondaryUser() {
               </Link>
               <p className="text-white text-lg   font-bold ">Inventory</p>
             </div>
-            {type !== "self" && (
+            {/* {type !== "self" && (
               <div>
                 <Link>
                   <div className="relative">
@@ -402,7 +402,7 @@ function InventorySecondaryUser() {
                   </div>
                 </Link>
               </div>
-            )}
+            )} */}
           </div>
 
           {/* invoiec date */}
