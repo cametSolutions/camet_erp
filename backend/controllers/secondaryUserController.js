@@ -1809,16 +1809,16 @@ export const createSale = async (req, res) => {
       }
 
       const itemCount = parseFloat(item.count);
-      const productBalanceStock = parseFloat(product.balance_stock);
-      const newBalanceStock = truncateToNDecimals(productBalanceStock - itemCount, 3);
+      // const productBalanceStock = parseFloat(product.balance_stock);
+      // const newBalanceStock = truncateToNDecimals(productBalanceStock - itemCount, 3);
 
       // Prepare product update operation
-      productUpdates.push({
-        updateOne: {
-          filter: { _id: product._id },
-          update: { $set: { balance_stock: newBalanceStock } },
-        },
-      });
+      // productUpdates.push({
+      //   updateOne: {
+      //     filter: { _id: product._id },
+      //     update: { $set: { balance_stock: newBalanceStock } },
+      //   },
+      // });
 
       // Process godown and batch updates
       if (item.hasGodownOrBatch) {
@@ -1903,7 +1903,7 @@ export const createSale = async (req, res) => {
     }
 
     // Execute bulk operations
-    await productModel.bulkWrite(productUpdates);
+    // await productModel.bulkWrite(productUpdates);
     await productModel.bulkWrite(godownUpdates);
 
     const lastSale = await salesModel.findOne(
