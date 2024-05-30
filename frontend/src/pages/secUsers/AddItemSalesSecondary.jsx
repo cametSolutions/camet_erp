@@ -851,7 +851,7 @@ function AddItemSalesSecondary() {
                   </div>
                   <div className="flex">
                     <p className="text-red-500">STOCK : </p>
-                    <span>{el?.balance_stock}</span>
+                    <span>{el?.GodownList[0]?.balance_stock}</span>
                   </div>
                   <div>
                     <span>Total : ₹ </span>

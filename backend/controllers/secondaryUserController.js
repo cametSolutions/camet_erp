@@ -1766,10 +1766,10 @@ export const addconfigurations = async (req, res) => {
 
 // route POST /api/pUsers/createSale
 
+
 export const createSale = async (req, res) => {
   const Primary_user_id = req.owner;
   const Secondary_user_id = req.sUserId;
-  const changedGodowns = [];
 
   try {
     const {
@@ -1831,8 +1831,9 @@ export const createSale = async (req, res) => {
 
             if (godownIndex !== -1) {
               if (godown.count && godown.count > 0) {
+                const currentGodownStock = product.GodownList[godownIndex].balance_stock || 0;
                 const newGodownStock = truncateToNDecimals(
-                  product.GodownList[godownIndex].balance_stock - godown.count,
+                  currentGodownStock - godown.count,
                   3
                 );
 
@@ -1858,8 +1859,9 @@ export const createSale = async (req, res) => {
 
             if (godownIndex !== -1) {
               if (godown.count && godown.count > 0) {
+                const currentGodownStock = product.GodownList[godownIndex].balance_stock || 0;
                 const newGodownStock = truncateToNDecimals(
-                  product.GodownList[godownIndex].balance_stock - godown.count,
+                  currentGodownStock - godown.count,
                   3
                 );
 
@@ -1881,14 +1883,20 @@ export const createSale = async (req, res) => {
         }
       } else {
         // Case: No Godown
-        const productBalanceStock = parseFloat(product.balance_stock);
-        const newBalanceStock = truncateToNDecimals(productBalanceStock - item.count, 3);
+        product.GodownList = product.GodownList.map((godown) => {
+          const currentGodownStock = godown.balance_stock || 0;
+          const newGodownStock = truncateToNDecimals(currentGodownStock - item.count, 3);
+          return {
+            ...godown,
+            balance_stock: newGodownStock
+          };
+        });
 
-        // Prepare product update operation
-        productUpdates.push({
+        // Prepare godown update operation
+        godownUpdates.push({
           updateOne: {
             filter: { _id: product._id },
-            update: { $set: { balance_stock: newBalanceStock } },
+            update: { $set: { GodownList: product.GodownList } },
           },
         });
       }
@@ -2039,18 +2047,17 @@ export const createSale = async (req, res) => {
       { upsert: true, new: true }
     );
 
-    return res.status(200).json({
-      success: true,
-      message: "Sales entry created successfully",
-      result,
-    });
+    res.status(201).json({ success: true, data: result });
   } catch (error) {
-    return res.status(500).json({
+    console.error(error);
+    res.status(500).json({
       success: false,
-      message: error.message,
+      message: "An error occurred while creating the sale.",
+      error: error.message,
     });
   }
 };
+
 
 
 
