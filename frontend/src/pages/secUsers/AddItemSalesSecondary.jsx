@@ -93,7 +93,8 @@ function AddItemSalesSecondary() {
         const godown = await api.get(`/api/sUsers/godownsName/${cpm_id}`, {
           withCredentials: true,
         });
-        setGodownname(godown.data || "");
+        // setGodownname(godown.data || "");
+        setGodownname("")
       } catch (error) {
         console.log(error);
         toast.error(error.message);
