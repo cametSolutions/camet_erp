@@ -692,6 +692,8 @@ export const getProducts = async (req, res) => {
 
       console.log("selectedGodowns", selectedGodowns);
 
+     
+
       if (vanSale && selectedGodowns && selectedGodowns.length === 1) {
         console.log("vansale");
         products = await productModel.aggregate([
@@ -799,6 +801,8 @@ export const getProducts = async (req, res) => {
           },
         ]);
       } else {
+
+        console.log("no vansale and no selected godowns");
         products = await productModel.find({
           Primary_user_id: Primary_user_id,
           cmp_id: cmp_id,
@@ -814,13 +818,30 @@ export const getProducts = async (req, res) => {
       });
     }
 
+    console.log("products", products);
+
+  
+
     if (products && products.length > 0) {
+      // Add the check for GodownList
+      const filteredProducts = [];
+      for (let i = 0; i < products.length; i++) {
+        const product = products[i];
+        const hasGodownOrBatch = product.GodownList.some(
+          item => item.godown || item.batch
+        );
+        filteredProducts.push({
+          ...product?. _doc,  // Use _doc to get the plain JS object from the Mongoose document
+          hasGodownOrBatch
+        });
+      }
+console.log("filteredProducts", filteredProducts);
       return res.status(200).json({
-        productData: products,
+        productData: filteredProducts,
         message: "Products fetched",
       });
     } else {
-      return res.status(404).json({ message: "No products were found " });
+      return res.status(404).json({ message: "No products were found" });
     }
   } catch (error) {
     console.log(error);
@@ -860,10 +881,10 @@ export const createInvoice = async (req, res) => {
       newSerialNumber = lastInvoice.serialNumber + 1;
     }
 
-    // Check if there's a last invoice and calculate the new serial number
-    if (lastInvoice && !isNaN(lastInvoice.serialNumber)) {
-      newSerialNumber = lastInvoice.serialNumber + 1;
-    }
+    // // Check if there's a last invoice and calculate the new serial number
+    // if (lastInvoice && !isNaN(lastInvoice.serialNumber)) {
+    //   newSerialNumber = lastInvoice.serialNumber + 1;
+    // }
 
     const updatedItems = items.map((item) => {
       // Find the corresponding price rate for the selected price level
@@ -1745,10 +1766,10 @@ export const addconfigurations = async (req, res) => {
 
 // route POST /api/pUsers/createSale
 
+
 export const createSale = async (req, res) => {
   const Primary_user_id = req.owner;
   const Secondary_user_id = req.sUserId;
-  const changedGodowns = [];
 
   try {
     const {
@@ -1762,9 +1783,8 @@ export const createSale = async (req, res) => {
     } = req.body;
 
     const secondaryUser = await SecondaryUser.findById(Secondary_user_id);
-    const secondaryMobile = secondaryUser.mobile;
+    const secondaryMobile = secondaryUser?.mobile;
 
-    console.log("secondaryMobile", secondaryMobile);
     if (!secondaryUser) {
       return res
         .status(404)
@@ -1775,8 +1795,6 @@ export const createSale = async (req, res) => {
     );
 
     const vanSaleConfig = configuration?.vanSale;
-
-    console.log("vanSaleConfig", vanSaleConfig);
 
     // Prepare bulk operations for product and godown updates
     const productUpdates = [];
@@ -1790,117 +1808,102 @@ export const createSale = async (req, res) => {
         throw new Error(`Product not found for item ID: ${item._id}`);
       }
 
-      // Calculate the new balance stock
-      // Calculate the new balance stock
-      const productBalanceStock = truncateToNDecimals(product.balance_stock, 3);
-      console.log("productBalanceStock", productBalanceStock);
-      const itemCount = truncateToNDecimals(item.count, 3);
-      const newBalanceStock = truncateToNDecimals(
-        productBalanceStock - itemCount,
-        3
-      );
-
-      console.log("productBalanceStock", productBalanceStock);
-      console.log("newBalanceStock", newBalanceStock);
+      const itemCount = parseFloat(item.count);
+      // const productBalanceStock = parseFloat(product.balance_stock);
+      // const newBalanceStock = truncateToNDecimals(productBalanceStock - itemCount, 3);
 
       // Prepare product update operation
-      productUpdates.push({
-        updateOne: {
-          filter: { _id: product._id },
-          update: { $set: { balance_stock: newBalanceStock } },
-        },
-      });
+      // productUpdates.push({
+      //   updateOne: {
+      //     filter: { _id: product._id },
+      //     update: { $set: { balance_stock: newBalanceStock } },
+      //   },
+      // });
 
-      console.log("godown", item.GodownList);
-      if (vanSaleConfig === true) {
-        console.log("haiiii");
+      // Process godown and batch updates
+      if (item.hasGodownOrBatch) {
         for (const godown of item.GodownList) {
-          // Find the corresponding godown in the product's GodownList
-          const godownIndex = product.GodownList.findIndex(
-            (g) => g.godown_id === godown.godown_id
-          );
-
-          console.log("godownIndex", godownIndex);
-          if (godownIndex !== -1) {
-            // Calculate the new godown stock
-            const newGodownStock = truncateToNDecimals(
-              product.GodownList[godownIndex].balance_stock - item.count
+          if (godown.batch) {
+            // Case: Batch only or Godown with Batch
+            const godownIndex = product.GodownList.findIndex(
+              (g) => g.batch === godown.batch
             );
-            console.log("newGodownStock", newGodownStock);
 
-            // Prepare godown update operation
-            godownUpdates.push({
-              updateOne: {
-                filter: {
-                  _id: product._id,
-                  "GodownList.godown_id": godown.godown_id,
-                },
-                update: {
-                  $set: { "GodownList.$.balance_stock": newGodownStock },
-                },
-              },
-            });
+            if (godownIndex !== -1) {
+              if (godown.count && godown.count > 0) {
+                const currentGodownStock = product.GodownList[godownIndex].balance_stock || 0;
+                const newGodownStock = truncateToNDecimals(
+                  currentGodownStock - godown.count,
+                  3
+                );
 
-            // If a godown was updated and the stock has actually changed, add it to the changedGodowns array
-            // if (
-            //   godownIndex !== -1
+                // Prepare godown update operation
+                godownUpdates.push({
+                  updateOne: {
+                    filter: {
+                      _id: product._id,
+                      "GodownList.batch": godown.batch,
+                    },
+                    update: {
+                      $set: { "GodownList.$.balance_stock": newGodownStock },
+                    },
+                  },
+                });
+              }
+            }
+          } else if (godown.godown_id) {
+            // Case: Godown only
+            const godownIndex = product.GodownList.findIndex(
+              (g) => g.godown_id === godown.godown_id
+            );
 
-            // ) {
-            //   changedGodowns.push({
-            //     godown_id: godown.godown_id,
-            //     newBalanceStock: newGodownStock,
-            //   });
-            // }
+            if (godownIndex !== -1) {
+              if (godown.count && godown.count > 0) {
+                const currentGodownStock = product.GodownList[godownIndex].balance_stock || 0;
+                const newGodownStock = truncateToNDecimals(
+                  currentGodownStock - godown.count,
+                  3
+                );
+
+                // Prepare godown update operation
+                godownUpdates.push({
+                  updateOne: {
+                    filter: {
+                      _id: product._id,
+                      "GodownList.godown_id": godown.godown_id,
+                    },
+                    update: {
+                      $set: { "GodownList.$.balance_stock": newGodownStock },
+                    },
+                  },
+                });
+              }
+            }
           }
         }
       } else {
-        // Update the godown stock for each specified godown
-        for (const godown of item.GodownList) {
-          // Find the corresponding godown in the product's GodownList
-          const godownIndex = product.GodownList.findIndex(
-            (g) => g.godown_id === godown.godown_id
-          );
-          if (godownIndex !== -1) {
-            // Calculate the new godown stock
-            const newGodownStock = truncateToNDecimals(
-              product.GodownList[godownIndex].balance_stock - godown.count,
-              3
-            );
+        // Case: No Godown
+        product.GodownList = product.GodownList.map((godown) => {
+          const currentGodownStock = godown.balance_stock || 0;
+          const newGodownStock = truncateToNDecimals(currentGodownStock - item.count, 3);
+          return {
+            ...godown,
+            balance_stock: newGodownStock
+          };
+        });
 
-            // Prepare godown update operation
-            godownUpdates.push({
-              updateOne: {
-                filter: {
-                  _id: product._id,
-                  "GodownList.godown": godown.godown,
-                },
-                update: {
-                  $set: { "GodownList.$.balance_stock": newGodownStock },
-                },
-              },
-            });
-
-            // // If a godown was updated and the stock has actually changed, add it to the changedGodowns array
-            // if (
-            //   godownIndex !== -1 &&
-            //   newGodownStock !==
-            //   truncateToNDecimals(
-            //     (product.GodownList[godownIndex].balance_stock) - godown.count,
-            //     3
-            //   )
-            // ) {
-            //   changedGodowns.push({
-            //     godown_id: godown.godown_id,
-            //     newBalanceStock: newGodownStock,
-            //   });
-            // }
-          }
-        }
+        // Prepare godown update operation
+        godownUpdates.push({
+          updateOne: {
+            filter: { _id: product._id },
+            update: { $set: { GodownList: product.GodownList } },
+          },
+        });
       }
     }
 
     // Execute bulk operations
-    await productModel.bulkWrite(productUpdates);
+    // await productModel.bulkWrite(productUpdates);
     await productModel.bulkWrite(godownUpdates);
 
     const lastSale = await salesModel.findOne(
@@ -1938,18 +1941,16 @@ export const createSale = async (req, res) => {
 
       // Calculate tax amounts
       const { cgst, sgst, igst } = item;
-      const cgstAmt = (totalPrice * cgst) / 100;
-      const sgstAmt = (totalPrice * sgst) / 100;
-      const igstAmt = (totalPrice * igst) / 100;
-
-      // console.log("haii",typeof(parseFloat(sgstAmt.toFixed(2))),);
+      const cgstAmt = parseFloat(((totalPrice * cgst) / 100).toFixed(2));
+      const sgstAmt = parseFloat(((totalPrice * sgst) / 100).toFixed(2));
+      const igstAmt = parseFloat(((totalPrice * igst) / 100).toFixed(2));
 
       return {
         ...item,
         selectedPrice: selectedPrice,
-        cgstAmt: parseFloat(cgstAmt.toFixed(2)),
-        sgstAmt: parseFloat(sgstAmt.toFixed(2)),
-        igstAmt: parseFloat(igstAmt.toFixed(2)),
+        cgstAmt: cgstAmt,
+        sgstAmt: sgstAmt,
+        igstAmt: igstAmt,
         subTotal: totalPrice, // Optional: Include total price in the item object
       };
     });
@@ -1960,8 +1961,9 @@ export const createSale = async (req, res) => {
       updateAdditionalCharge = additionalChargesFromRedux.map((charge) => {
         const { value, taxPercentage } = charge;
 
-        const taxAmt = (parseFloat(value) * parseFloat(taxPercentage)) / 100;
-        console.log(taxAmt);
+        const taxAmt = parseFloat(
+          ((parseFloat(value) * parseFloat(taxPercentage)) / 100).toFixed(2)
+        );
 
         return {
           ...charge,
@@ -1973,10 +1975,8 @@ export const createSale = async (req, res) => {
     // Continue with the rest of your function...
     const sales = new salesModel({
       serialNumber: newSerialNumber,
-
       cmp_id: orgId,
       partyAccount: party?.partyName,
-
       party,
       items: updatedItems,
       priceLevel: priceLevelFromRedux,
@@ -1989,19 +1989,8 @@ export const createSale = async (req, res) => {
 
     const result = await sales.save();
 
-    // const secondaryUser = await SecondaryUser.findById(Secondary_user_id);
-
-    // if (!secondaryUser) {
-    //   return res
-    //     .status(404)
-    //     .json({ success: false, message: "Secondary user not found" });
-    // }
-
     let salesConfig = false;
 
-    // const configuration = secondaryUser.configurations.find(
-    //   (config) => config.organization.toString() === orgId
-    // );
     if (configuration) {
       if (
         configuration.salesConfiguration &&
@@ -2013,22 +2002,20 @@ export const createSale = async (req, res) => {
       }
     }
 
-    // const vanSaleConfig = configuration?.vanSale;
-
     if (vanSaleConfig) {
-      const increaseSalesNumber = await SecondaryUser.findByIdAndUpdate(
+      await SecondaryUser.findByIdAndUpdate(
         Secondary_user_id,
         { $inc: { vanSalesNumber: 1 } },
         { new: true }
       );
     } else if (salesConfig) {
-      const increaseSalesNumber = await SecondaryUser.findByIdAndUpdate(
+      await SecondaryUser.findByIdAndUpdate(
         Secondary_user_id,
         { $inc: { salesNumber: 1 } },
         { new: true }
       );
     } else {
-      const increaseSalesNumber = await OragnizationModel.findByIdAndUpdate(
+      await OragnizationModel.findByIdAndUpdate(
         orgId,
         { $inc: { salesNumber: 1 } },
         { new: true }
@@ -2049,7 +2036,7 @@ export const createSale = async (req, res) => {
       user_id: secondaryMobile || "null",
     };
 
-    const updatedDocument = await TallyData.findOneAndUpdate(
+    await TallyData.findOneAndUpdate(
       {
         cmp_id: orgId,
         bill_no: salesNumber,
@@ -2060,20 +2047,19 @@ export const createSale = async (req, res) => {
       { upsert: true, new: true }
     );
 
-    return res.status(200).json({
-      success: true,
-      message: "Sale created successfully",
-      data: result,
-    });
+    res.status(201).json({ success: true, data: result });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({
+    res.status(500).json({
       success: false,
-      message: "Internal server error, try again!",
+      message: "An error occurred while creating the sale.",
       error: error.message,
     });
   }
 };
+
+
+
 
 // @desc toget the details of transaction or sale
 // route get/api/sUsers/getSalesDetails
@@ -2136,11 +2122,15 @@ export const fetchAdditionalDetails = async (req, res) => {
     const configuration = secUser.configurations.find(
       (item) => item.organization.toString() === cmp_id
     );
+
+    console.log("configuration", configuration);
+
     if (configuration) {
       selectedPriceLevels = configuration.selectedPriceLevels;
     }
 
     let priceLevelsResult = [];
+    console.log("selectedPriceLevels", priceLevelsResult);
 
     if (selectedPriceLevels && selectedPriceLevels.length == 0) {
       priceLevelsResult = await productModel.aggregate([

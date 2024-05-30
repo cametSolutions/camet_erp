@@ -1,0 +1,404 @@
+{
+  "data": [
+    {
+      "product_name": "Bathch only 1", 
+      "balance_stock": 100,
+      "category": "\u0004 Not Applicable",
+      "sub_category": "null",
+      "unit": "Nos",
+      "alt_unit": "null",
+      "unit_conversion": 0,
+      "alt_unit_conversion": 1,
+      "hsn_code": "\u0004 Not Found",
+      "cgst": 0,
+      "sgst": 0,
+      "igst": 0,
+      "cess": 0,
+      "addl_cess": 0,
+      "state_cess": 0,
+      "product_master_id": 166,
+      "cmp_id": "65bccc186b50fc180e8e806f",
+      "Primary_user_id": "65bcc9346b50fc180e8e804d",
+      "GodownList": [
+        {
+          "balance_stock": 50,
+          "batch": "B1 A",
+          "mfgdt": "31-Mar-24"
+        },
+        {
+          "balance_stock": 50,
+          "batch": "B1 B",
+          "mfgdt": "31-Mar-24"
+        }
+      ],
+      "Priceleveles": [
+        {
+          "alt_unit": "null",
+          "pricelevel": "P1",
+          "pricerate": 234
+        }
+      ]
+    },
+    {
+      "product_name": "Bathch only 2",
+      "balance_stock": 25,
+      "category": "\u0004 Not Applicable",
+      "sub_category": "null",
+      "unit": "Nos",
+      "alt_unit": "null",
+      "unit_conversion": 0,
+      "alt_unit_conversion": 1,
+      "hsn_code": "\u0004 Not Found",
+      "cgst": 0,
+      "sgst": 0,
+      "igst": 0,
+      "cess": 0,
+      "addl_cess": 0,
+      "state_cess": 0,
+      "product_master_id": 167,
+      "cmp_id": "65bccc186b50fc180e8e806f",
+      "Primary_user_id": "65bcc9346b50fc180e8e804d",
+      "GodownList": [
+        {
+          "balance_stock": 25,
+          "batch": "B2",
+          "mfgdt": "1-Apr-23"
+        }
+      ],
+      "Priceleveles": [
+        {
+          "alt_unit": "null",
+          "pricelevel": "P1",
+          "pricerate": 310
+        }
+      ]
+    },
+    {
+      "product_name": "Bathch only 3",
+      "balance_stock": 14,
+      "category": "\u0004 Not Applicable",
+      "sub_category": "null",
+      "unit": "Nos",
+      "alt_unit": "null",
+      "unit_conversion": 0,
+      "alt_unit_conversion": 1,
+      "hsn_code": "\u0004 Not Found",
+      "cgst": 0,
+      "sgst": 0,
+      "igst": 0,
+      "cess": 0,
+      "addl_cess": 0,
+      "state_cess": 0,
+      "product_master_id": 168,
+      "cmp_id": "65bccc186b50fc180e8e806f",
+      "Primary_user_id": "65bcc9346b50fc180e8e804d",
+      "GodownList": [
+        {
+          "balance_stock": 14,
+          "batch": "B3",
+          "mfgdt": "1-Apr-23",
+          "expdt": "31-Dec-24"
+        }
+      ],
+      "Priceleveles": [
+        {
+          "alt_unit": "null",
+          "pricelevel": "P1",
+          "pricerate": 234
+        }
+      ]
+    },
+    {
+      "product_name": "Chatni Powder",
+      "product_code": "1",
+      "balance_stock": 73,
+      "godownCount": 5,
+      "category": "\u0004 Not Applicable",
+      "sub_category": "null",
+      "unit": "Nos",
+      "alt_unit": "null",
+      "unit_conversion": 0,
+      "alt_unit_conversion": 1,
+      "hsn_code": "091050",
+      "cgst": 2.5,
+      "sgst": 2.5,
+      "igst": 5,
+      "cess": 0,
+      "addl_cess": 0,
+      "state_cess": 0,
+      "product_master_id": 162,
+      "cmp_id": "65bccc186b50fc180e8e806f",
+      "Primary_user_id": "65bcc9346b50fc180e8e804d",
+      "GodownList": [
+        {
+          "balance_stock": -12,
+          "godown": "Main Location",
+          "godown_id": "ID:62",
+          "batch": "110",
+          "mfgdt": "1-Apr-18",
+          "expdt": "2 Days"
+        },
+        {
+          "balance_stock": 25,
+          "godown": "Main Location",
+          "godown_id": "ID:62",
+          "batch": "A-1",
+          "mfgdt": "1-Apr-18",
+          "expdt": "3 Months"
+        },
+        {
+          "balance_stock": 25,
+          "godown": "Main Location",
+          "godown_id": "ID:62",
+          "batch": "A-2",
+          "mfgdt": "1-Apr-18",
+          "expdt": "3 Months"
+        },
+        {
+          "balance_stock": 20,
+          "godown": "Main Location",
+          "godown_id": "ID:62",
+          "batch": "CH - 01",
+          "mfgdt": "3-Apr-17",
+          "expdt": "1 Years"
+        },
+        {
+          "balance_stock": 15,
+          "godown": "Main Location",
+          "godown_id": "ID:62",
+          "batch": "Ch-04",
+          "mfgdt": "3-Apr-17",
+          "expdt": "6 Months"
+        }
+      ],
+      "Priceleveles": [
+        {
+          "alt_unit": "null",
+          "pricelevel": "P1",
+          "pricerate": 35
+        }
+      ]
+    },
+    {
+      "product_name": "Cut Mango Pickle",
+      "product_code": "CMP1",
+      "balance_stock": 54,
+      "godownCount": 3,
+      "category": "\u0004 Not Applicable",
+      "sub_category": "null",
+      "unit": "Nos",
+      "alt_unit": "null",
+      "unit_conversion": 0,
+      "alt_unit_conversion": 1,
+      "hsn_code": "210690",
+      "cgst": 6,
+      "sgst": 6,
+      "igst": 12,
+      "cess": 0,
+      "addl_cess": 0,
+      "state_cess": 0,
+      "product_master_id": 163,
+      "cmp_id": "65bccc186b50fc180e8e806f",
+      "Primary_user_id": "65bcc9346b50fc180e8e804d",
+      "GodownList": [
+        {
+          "balance_stock": 54,
+          "godown": "Main Location",
+          "godown_id": "ID:62",
+          "batch": "55/107",
+          "mfgdt": "1-Apr-17",
+          "expdt": "1 Months"
+        },
+        {
+          "balance_stock": 0,
+          "godown": "Main Location",
+          "godown_id": "ID:62",
+          "batch": "CMP-1",
+          "mfgdt": "1-Apr-18",
+          "expdt": "3 Months"
+        },
+        {
+          "balance_stock": 0,
+          "godown": "Main Location",
+          "godown_id": "ID:62",
+          "batch": "CMP-2",
+          "mfgdt": "1-Apr-18",
+          "expdt": "3 Months"
+        }
+      ],
+      "Priceleveles": [
+        {
+          "alt_unit": "null",
+          "pricelevel": "P1",
+          "pricerate": 39
+        }
+      ]
+    },
+    {
+      "product_name": "Dried Mango Pickle",
+      "balance_stock": -20,
+      "godownCount": 1,
+      "category": "\u0004 Not Applicable",
+      "sub_category": "null",
+      "unit": "Nos",
+      "alt_unit": "null",
+      "unit_conversion": 0,
+      "alt_unit_conversion": 1,
+      "hsn_code": "210690",
+      "cgst": 6,
+      "sgst": 6,
+      "igst": 12,
+      "cess": 0,
+      "addl_cess": 0,
+      "state_cess": 0,
+      "product_master_id": 164,
+      "cmp_id": "65bccc186b50fc180e8e806f",
+      "Primary_user_id": "65bcc9346b50fc180e8e804d",
+      "GodownList": [
+        {
+          "balance_stock": -20,
+          "godown": "Main Location",
+          "godown_id": "ID:62",
+          "batch": "34435",
+          "mfgdt": "1-Apr-18"
+        }
+      ],
+      "Priceleveles": [
+        {
+          "alt_unit": "null",
+          "pricelevel": "P1",
+          "pricerate": 42
+        }
+      ]
+    },
+    {
+      "product_name": "Godown only 1",
+      "balance_stock": 100,
+      "godownCount": 1,
+      "category": "\u0004 Not Applicable",
+      "sub_category": "null",
+      "unit": "Nos",
+      "alt_unit": "null",
+      "unit_conversion": 0,
+      "alt_unit_conversion": 1,
+      "hsn_code": "12121",
+      "cgst": 9,
+      "sgst": 9,
+      "igst": 18,
+      "cess": 0,
+      "addl_cess": 0,
+      "state_cess": 0,
+      "product_master_id": 166,
+      "cmp_id": "65bccc186b50fc180e8e806f",
+      "Primary_user_id": "65bcc9346b50fc180e8e804d",
+      "GodownList": [
+        {
+          "balance_stock": 100,
+          "godown": "GD 1",
+          "godown_id": "ID:168"
+        }
+      ],
+      "Priceleveles": [
+        {
+          "alt_unit": "null"
+        }
+      ]
+    },
+    {
+      "product_name": "Godown only 2",
+      "balance_stock": 50,
+      "godownCount": 1,
+      "category": "\u0004 Not Applicable",
+      "sub_category": "null",
+      "unit": "Nos",
+      "alt_unit": "null",
+      "unit_conversion": 0,
+      "alt_unit_conversion": 1,
+      "hsn_code": "90922",
+      "cgst": 6,
+      "sgst": 6,
+      "igst": 12,
+      "cess": 0,
+      "addl_cess": 0,
+      "state_cess": 0,
+      "product_master_id": 167,
+      "cmp_id": "65bccc186b50fc180e8e806f",
+      "Primary_user_id": "65bcc9346b50fc180e8e804d",
+      "GodownList": [
+        {
+          "balance_stock": 50,
+          "godown": "GD 2",
+          "godown_id": "ID:169"
+        }
+      ],
+      "Priceleveles": [
+        {
+          "alt_unit": "null"
+        }
+      ]
+    },
+    {
+      "product_name": "Nothing 1",
+      "balance_stock": 100,
+      "category": "\u0004 Not Applicable",
+      "sub_category": "null",
+      "unit": "Nos",
+      "alt_unit": "null",
+      "alt_unit": "null",
+      "unit_conversion": 0,
+      "alt_unit_conversion": 1,
+      "hsn_code": "12121",
+      "cgst": 9,
+      "sgst": 9,
+      "igst": 18,
+      "cess": 0,
+      "addl_cess": 0,
+      "state_cess": 0,
+      "product_master_id": 166,
+      "cmp_id": "65bccc186b50fc180e8e806f",
+      "Primary_user_id": "65bcc9346b50fc180e8e804d",
+      "GodownList": [
+        {
+          "balance_stock": 100
+        }
+      ],
+      "Priceleveles": [
+        {
+          "alt_unit": "null"
+        }
+      ]
+    },
+    {
+      "product_name": "Nothing 2",
+      "balance_stock": 50,
+      "category": "\u0004 Not Applicable",
+      "sub_category": "null",
+      "unit": "Nos",
+      "alt_unit": "null",
+      "unit_conversion": 0,
+      "alt_unit_conversion": 1,
+      "hsn_code": "90922",
+      "cgst": 6,
+      "sgst": 6,
+      "igst": 12,
+      "cess": 0,
+      "addl_cess": 0,
+      "state_cess": 0,
+      "product_master_id": 167,
+      "cmp_id": "65bccc186b50fc180e8e806f",
+      "Primary_user_id": "65bcc9346b50fc180e8e804d",
+      "GodownList": [
+        {
+          "balance_stock": 60
+        }
+      ],
+      "Priceleveles": [
+        {
+          "alt_unit": "null",
+          "pricelevel": "P1",
+          "pricerate": 42
+        }
+      ]
+    }
+  ]
+}

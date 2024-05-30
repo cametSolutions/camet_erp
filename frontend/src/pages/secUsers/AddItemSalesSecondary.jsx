@@ -1,15 +1,13 @@
 /* eslint-disable react/prop-types */
 /* eslint-disable react/no-unknown-property */
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import { useNavigate, useLocation } from "react-router-dom";
-import { IoIosSearch } from "react-icons/io";
 import api from "../../api/api";
 import { MdOutlineQrCodeScanner } from "react-icons/md";
 import { useSelector } from "react-redux";
 import { addItem, removeItem } from "../../../slices/salesSecondary";
 import { useDispatch } from "react-redux";
-import { changeCount } from "../../../slices/salesSecondary";
 import { setPriceLevel } from "../../../slices/salesSecondary";
 import {
   changeTotal,
@@ -17,25 +15,25 @@ import {
   setCategoryInRedux,
   setSubCategoryInRedux,
   removeAll,
-  changeGodownCount,
   addAllProducts,
+  updateItem,
+  setBatchHeight,
 } from "../../../slices/salesSecondary";
 import { HashLoader } from "react-spinners";
-import { FixedSizeList as List } from "react-window";
-import { Button, Modal } from "flowbite-react";
+import { VariableSizeList as List } from "react-window";
 import { toast } from "react-toastify";
 import SidebarSec from "../../components/secUsers/SidebarSec";
-import { IoIosCloseCircleOutline } from "react-icons/io";
 import { Decimal } from "decimal.js";
 import SearchBar from "../../components/common/SearchBar";
-
+import ProductDetails from "../../components/common/ProductDetails";
+import { IoIosArrowDown } from "react-icons/io";
+import { IoIosArrowUp } from "react-icons/io";
 
 // import SelectDefaultModal from "../../../constants/components/SelectDefaultModal";
 
 function AddItemSalesSecondary() {
   const [item, setItem] = useState([]);
   const [selectedPriceLevel, setSelectedPriceLevel] = useState("");
-  const [refresh, setRefresh] = useState(false);
   const [brands, setBrands] = useState([]);
   const [categories, setCategories] = useState([]);
   const [subCategories, setSubCategories] = useState([]);
@@ -47,19 +45,18 @@ function AddItemSalesSecondary() {
   const [loader, setLoader] = useState(false);
   const [listHeight, setListHeight] = useState(0);
   const [scrollPosition, setScrollPosition] = useState(0);
-  const [openModal, setOpenModal] = useState(false);
-  const [totalCount, setTotalCount] = useState(0);
-  const [godown, setGodown] = useState([]);
+
   const [godownname, setGodownname] = useState("");
-  console.log(godown);
-
-  console.log(scrollPosition);
-
+  const [heights, setHeights] = useState({});
   ///////////////////////////cpm_id///////////////////////////////////
 
   const cpm_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
+  ///////////////////////////get height from redux///////////////////////////////////
+  const heightsFromRedux = useSelector((state) => state.salesSecondary.heights);
+
+  console.log(heightsFromRedux);
 
   ///////////////////////////itemsFromRedux///////////////////////////////////
 
@@ -70,12 +67,8 @@ function AddItemSalesSecondary() {
   const priceLevelFromRedux =
     useSelector((state) => state.salesSecondary.selectedPriceLevel) || "";
 
-  console.log(priceLevelFromRedux);
-
   const allProductsFromRedux =
     useSelector((state) => state.salesSecondary.products) || [];
-
-  console.log(allProductsFromRedux);
 
   ///////////////////////////filters FromRedux///////////////////////////////////
 
@@ -92,7 +85,6 @@ function AddItemSalesSecondary() {
   const dispatch = useDispatch();
   const listRef = useRef(null);
   const location = useLocation();
-  console.log(location);
 
   ///////////////////////////Godown name///////////////////////////////////
   useEffect(() => {
@@ -101,8 +93,8 @@ function AddItemSalesSecondary() {
         const godown = await api.get(`/api/sUsers/godownsName/${cpm_id}`, {
           withCredentials: true,
         });
-        console.log(godown);
-        setGodownname(godown.data || "");
+        // setGodownname(godown.data || "");
+        setGodownname("")
       } catch (error) {
         console.log(error);
         toast.error(error.message);
@@ -110,8 +102,6 @@ function AddItemSalesSecondary() {
     };
     fetchGodownname();
   }, []);
-
-  console.log(godownname);
 
   const searchData = (data) => {
     setSearch(data);
@@ -133,12 +123,11 @@ function AddItemSalesSecondary() {
           console.log(res.data.productData);
           dispatch(addAllProducts(res.data.productData));
         } else {
-          console.log("haii");
           productData = allProductsFromRedux;
         }
 
         if (itemsFromRedux.length > 0) {
-          const reduxItemIds = itemsFromRedux.map((el) => el._id);
+          const reduxItemIds = itemsFromRedux.map((el) => el?._id);
           const updatedItems = productData.map((product) => {
             if (reduxItemIds.includes(product._id)) {
               // If the product ID exists in Redux, replace it with the corresponding Redux item
@@ -172,7 +161,6 @@ function AddItemSalesSecondary() {
     };
     fetchProducts();
     const scrollPosition = parseInt(localStorage.getItem("scrollPosition"));
-    console.log(scrollPosition);
     // restoreScrollPosition(scrollPosition);
 
     if (scrollPosition) {
@@ -187,44 +175,18 @@ function AddItemSalesSecondary() {
     setSelectedPriceLevel(priceLevelFromRedux);
   }, []);
 
-
-  
   /////////////////////////scroll////////////////////////////
 
   useEffect(() => {
-    const storedScrollPosition = localStorage.getItem('scrollPositionAddItemSales');
+    const storedScrollPosition = localStorage.getItem(
+      "scrollPositionAddItemSales"
+    );
     if (storedScrollPosition) {
       setScrollPosition(parseInt(storedScrollPosition, 10));
     }
   }, []);
 
-
   ///////////////////////////sdo persisting of products///////////////////////////////////
-
-  // useEffect(() => {
-  //   if (itemsFromRedux.length > 0) {
-  //     const updatedItems = item.map((currentItem) => {
-  //       // Find the corresponding item in itemsFromRedux
-  //       const matchingItem = itemsFromRedux.find(
-  //         (el) => el._id === currentItem._id
-  //       );
-  //       if (matchingItem) {
-  //         // If matching item found, return it with updated count and total
-  //         return {
-  //           ...currentItem,
-  //           count: matchingItem.count,
-  //           total: matchingItem.total,
-  //         };
-  //       } else {
-  //         // If no matching item found, return the current item
-  //         return currentItem;
-  //       }
-  //     });
-
-  //     // Update the state with the modified items
-  //     setItem(updatedItems);
-  //   }
-  // }, [itemsFromRedux, refresh]);
 
   //////////////////////////////orgId////////////////////////////////
 
@@ -262,7 +224,6 @@ function AddItemSalesSecondary() {
           setSubCategories(subcategories);
           setPriceLevels(priceLevels);
           if (priceLevelFromRedux == "") {
-            console.log("haii");
             const defaultPriceLevel = priceLevels[0];
             setSelectedPriceLevel(defaultPriceLevel);
             dispatch(setPriceLevel(defaultPriceLevel));
@@ -273,11 +234,9 @@ function AddItemSalesSecondary() {
           setBrands(brands);
           setCategories(categories);
           setSubCategories(subcategories);
-          console.log(priceLevels);
 
           setPriceLevels(priceLevels);
           if (priceLevelFromRedux == "") {
-            console.log("haii");
             const defaultPriceLevel = priceLevels[0];
             setSelectedPriceLevel(defaultPriceLevel);
             dispatch(setPriceLevel(defaultPriceLevel));
@@ -290,12 +249,10 @@ function AddItemSalesSecondary() {
     fetchFilters();
   }, [orgId, type]);
 
-  console.log(priceLevels);
-
   ///////////////////////////filter items///////////////////////////////////
 
   const filterItems = (items, brand, category, subCategory, searchTerm) => {
-    return items.filter((item) => {
+    return items?.filter((item) => {
       // Check if the item matches the brand filter
       const brandMatch = !brand || item.brand === brand;
 
@@ -328,122 +285,289 @@ function AddItemSalesSecondary() {
     );
   }, [item, selectedBrand, selectedCategory, selectedSubCategory, search]);
 
-  ///////////////////////////handleAddClick///////////////////////////////////
-
-  const handleAddClick = (_id) => {
-    const updatedItems = [...item];
-    const index = updatedItems.findIndex((item) => item._id === _id);
-    // Create a shallow copy of the items
-    const itemToUpdate = { ...updatedItems[index] };
-
-    console.log(itemToUpdate);
-
-    if (itemToUpdate) {
-      if (itemToUpdate?.GodownList.length > 0 && !godownname) {
-        setOpenModal(true);
-        const updatedGodownList = itemToUpdate.GodownList.map((el) => ({
-          ...el,
-          count: 0,
-          _id: itemToUpdate._id,
-        }));
-        setGodown(updatedGodownList);
-        // itemToUpdate.added = !itemToUpdate.added;
-      } else {
-        itemToUpdate.added = !itemToUpdate.added;
-        itemToUpdate.count = 1;
-        const total = calculateTotal(itemToUpdate, selectedPriceLevel).toFixed(
-          2
-        );
-        itemToUpdate.total = total;
-        updatedItems[index] = itemToUpdate;
-        dispatch(changeTotal(itemToUpdate));
-        setItem(updatedItems);
-        setRefresh(!refresh);
-        dispatch(addItem(updatedItems[index]));
-      }
-      // Toggle the 'added' state of the item
-    }
-  };
-
-  console.log(godown);
-
   ///////////////////////////calculateTotal///////////////////////////////////
 
   const calculateTotal = (item, selectedPriceLevel) => {
-    console.log("calculateTotal started");
-
+    console.log(item);
     const priceRate =
-      item.Priceleveles.find((level) => level.pricelevel === selectedPriceLevel)
-        ?.pricerate || 0;
+      item?.Priceleveles?.find(
+        (level) => level.pricelevel === selectedPriceLevel
+      )?.pricerate || 0;
 
-    console.log(`Found priceRate: ${priceRate}`);
-    console.log(item?.count);
+    let subtotal = 0;
+    let individualTotals = [];
 
-    let subtotal = priceRate * Number(item?.count);
-    let discountedSubtotal = subtotal;
+    if (item.hasGodownOrBatch) {
+      item.GodownList.forEach((godownOrBatch, index) => {
+        let individualSubtotal = priceRate * Number(godownOrBatch.count) || 0;
+        let discountedSubtotal = individualSubtotal;
 
-    console.log(`subtotal before discount: ${subtotal}`);
+        console.log(discountedSubtotal);
+        console.log(godownOrBatch);
 
-    if (item.discount !== 0 && item.discount !== undefined) {
-      discountedSubtotal -= item.discount;
-      console.log(
-        `Applied absolute discount: New subtotal = ${discountedSubtotal}`
+        if (
+          godownOrBatch.discount !== 0 &&
+          godownOrBatch.discount !== undefined &&
+          godownOrBatch.discount !== ""
+        ) {
+          console.log("haii");
+          console.log(godownOrBatch.batch);
+          discountedSubtotal = discountedSubtotal - godownOrBatch.discount;
+          console.log(discountedSubtotal);
+        } else if (
+          godownOrBatch.discountPercentage !== 0 &&
+          godownOrBatch.discountPercentage !== undefined &&
+          godownOrBatch.discountPercentage !== ""
+        ) {
+          console.log("haii");
+
+          discountedSubtotal -=
+            (individualSubtotal * godownOrBatch.discountPercentage) / 100;
+        }
+
+        console.log(discountedSubtotal);
+
+        const gstAmount = (discountedSubtotal * (item.igst || 0)) / 100;
+
+        console.log(gstAmount);
+
+        subtotal += discountedSubtotal + gstAmount;
+
+        const individualTotal = parseFloat(
+          (discountedSubtotal + gstAmount).toFixed(2)
+        );
+
+        console.log(individualTotal);
+
+        individualTotals.push({
+          index,
+          batch: godownOrBatch.batch,
+          individualTotal,
+        });
+
+        console.log(individualTotals);
+      });
+    } else {
+      let individualSubtotal = priceRate * Number(item.count);
+      let discountedSubtotal = individualSubtotal;
+
+      if (item.discount !== 0 && item.discount !== undefined) {
+        discountedSubtotal -= item.discount;
+      } else if (
+        item.discountPercentage !== 0 &&
+        item.discountPercentage !== undefined
+      ) {
+        discountedSubtotal -=
+          (individualSubtotal * item.discountPercentage) / 100;
+      }
+
+      const gstAmount =
+        (discountedSubtotal * (item.newGst || item.igst || 0)) / 100;
+
+      subtotal += discountedSubtotal + gstAmount;
+
+      const individualTotal = parseFloat(
+        (discountedSubtotal + gstAmount).toFixed(2)
       );
-    } else if (
-      item.discountPercentage !== 0 &&
-      item.discountPercentage !== undefined
-    ) {
-      discountedSubtotal -= (subtotal * item.discountPercentage) / 100;
-      console.log(
-        `Applied percentage discount: New subtotal = ${discountedSubtotal}`
-      );
+
+      individualTotals.push({
+        index: 0,
+        batch: item.batch || "No batch",
+        individualTotal,
+      });
     }
 
-    const gstAmount =
-      (discountedSubtotal * (item.newGst || item.igst || 0)) / 100;
-    console.log(`GST amount added: ${gstAmount}`);
+    subtotal = parseFloat(subtotal.toFixed(2));
 
-    const total = discountedSubtotal + gstAmount;
-    console.log(`Final total: ${total}`);
+    console.log(subtotal);
 
-    return total;
+    return {
+      individualTotals,
+      total: subtotal,
+    };
   };
+
+  ///////////////////////////handleAddClick///////////////////////////////////
+
+  const handleAddClick = (_id, idx) => {
+    const updatedItems = item.map((item) => {
+      if (item._id === _id) {
+        const itemToUpdate = { ...item, GodownList: [...item.GodownList] };
+
+        if (itemToUpdate.GodownList[idx]) {
+          const currentBatchOrGodown = { ...itemToUpdate.GodownList[idx] };
+
+          currentBatchOrGodown.added = currentBatchOrGodown.added
+            ? !currentBatchOrGodown.added
+            : true;
+          currentBatchOrGodown.count = 1;
+          // currentBatchOrGodown.IndividualTotal = totalData?.individualSubtotal;
+
+          itemToUpdate.GodownList[idx] = currentBatchOrGodown;
+        }
+        itemToUpdate.count =
+          new Decimal(itemToUpdate.count || 0).add(1).toNumber() || 1;
+
+        const totalData = calculateTotal(itemToUpdate, selectedPriceLevel);
+        const updatedGodownListWithTotals = itemToUpdate.GodownList.map(
+          (godown, index) => ({
+            ...godown,
+            individualTotal:
+              totalData.individualTotals.find(({ index: i }) => i === index)
+                ?.individualTotal || 0,
+          })
+        );
+        itemToUpdate.GodownList = updatedGodownListWithTotals;
+
+        itemToUpdate.total = totalData?.total || 0;
+        itemToUpdate.added = true;
+
+        console.log(itemToUpdate);
+        dispatch(addItem(itemToUpdate));
+
+        return itemToUpdate;
+      }
+      return item;
+    });
+
+    setItem(updatedItems);
+  };
+
+  console.log(item);
 
   ///////////////////////////handleIncrement///////////////////////////////////
 
-  const handleIncrement = (_id) => {
-    const updatedItems = [...item];
-    const index = updatedItems.findIndex((item) => item._id === _id);
+  const handleIncrement = (_id, godownIndex = null) => {
+    const updatedItems = item.map((item) => {
+      if (item._id !== _id) return item; // Keep items unchanged if _id doesn't match
+      const currentItem = { ...item };
 
-    const currentItem = { ...updatedItems[index] };
-    console.log(currentItem);
+      if (
+        currentItem?.hasGodownOrBatch &&
+        godownIndex !== null &&
+        !godownname
+      ) {
+        const godownOrBatch = { ...currentItem.GodownList[godownIndex] };
 
-    if (currentItem?.GodownList?.length > 0 && !godownname) {
-      setOpenModal(true);
+        // If godownOrBatch.count is undefined, set it to 1, otherwise increment by 1
+        godownOrBatch.count = new Decimal(godownOrBatch.count)
+          .add(1)
+          .toNumber();
 
-      setGodown(currentItem?.GodownList);
-    } else {
-      if (!currentItem.count) {
-        currentItem.count = 1;
+        // Update the specific godown/batch in the GodownList array
+        const updatedGodownList = currentItem.GodownList.map((godown, index) =>
+          index === godownIndex ? godownOrBatch : godown
+        );
+        currentItem.GodownList = updatedGodownList;
+
+        // Calculate the sum of counts in the GodownList array
+        const sumOfCounts = updatedGodownList.reduce(
+          (sum, godown) => sum + (godown.count || 0),
+          0
+        );
+        currentItem.count = sumOfCounts; // Update currentItem.count with the sum
+
+        // Calculate totals and update individual batch totals
+        const totalData = calculateTotal(currentItem, selectedPriceLevel);
+        const updatedGodownListWithTotals = updatedGodownList.map(
+          (godown, index) => ({
+            ...godown,
+            individualTotal:
+              totalData.individualTotals.find(({ index: i }) => i === index)
+                ?.individualTotal || 0,
+          })
+        );
+        currentItem.GodownList = updatedGodownListWithTotals;
+        currentItem.total = totalData.total; // Update the overall total
       } else {
-        console.log(currentItem.count);
+        // Increment the count of the currentItem by 1
         currentItem.count = new Decimal(currentItem.count).add(1).toNumber();
+
+        // Calculate totals and update individual total
+        const totalData = calculateTotal(currentItem, selectedPriceLevel);
+        currentItem.total = totalData.total; // Update the overall total
       }
 
-      currentItem.total = calculateTotal(
-        currentItem,
-        selectedPriceLevel
-      ).toFixed(2);
-      console.log(currentItem.total);
-      updatedItems[index] = currentItem;
-      setItem(updatedItems);
-      // setRefresh(!refresh);
+      console.log(currentItem);
+      dispatch(updateItem(currentItem)); // Log the updated currentItem
+      return currentItem; // Return the updated currentItem
+    });
 
-      dispatch(changeCount(currentItem));
-      dispatch(changeTotal(currentItem));
-      dispatch(changeGodownCount(currentItem))
-    }
+    setItem(updatedItems); // Update the state with the updated items
   };
+
+  console.log(item);
+
+  ///////////////////////////handleDecrement///////////////////////////////////
+  const handleDecrement = (_id, godownIndex = null) => {
+    console.log("haii");
+    const updatedItems = item.map((item) => {
+      if (item._id !== _id) return item; // Keep items unchanged if _id doesn't match
+      const currentItem = { ...item };
+
+      if (godownIndex !== null && currentItem.hasGodownOrBatch && !godownname) {
+        const godownOrBatch = { ...currentItem.GodownList[godownIndex] };
+        godownOrBatch.count = new Decimal(godownOrBatch.count)
+          .sub(1)
+          .toNumber();
+        console.log(godownOrBatch.count);
+
+        // Ensure count does not go below 0
+        if (godownOrBatch.count <= 0) godownOrBatch.added = false;
+      
+        const updatedGodownList = currentItem.GodownList.map((godown, index) =>
+          index === godownIndex ? godownOrBatch : godown
+        );
+
+        // Calculate the sum of counts in GodownList
+        const sumOfCounts = updatedGodownList.reduce(
+          (sum, godown) => sum + (godown.count || 0),
+          0
+        );
+        currentItem.count = sumOfCounts;
+        currentItem.GodownList = updatedGodownList;
+        const allAddedFalse = currentItem.GodownList.every(
+          (item) => item.added === false || item.added == undefined
+        );
+        if (allAddedFalse) {
+          dispatch(removeItem(currentItem._id));
+        }
+
+
+        // Calculate totals and update individual batch totals
+        const totalData = calculateTotal(currentItem, selectedPriceLevel);
+        const updatedGodownListWithTotals = updatedGodownList.map(
+          (godown, index) => ({
+            ...godown,
+            individualTotal:
+              totalData.individualTotals.find(({ index: i }) => i === index)
+                ?.individualTotal || 0,
+          })
+        );
+        currentItem.GodownList = updatedGodownListWithTotals;
+        currentItem.total = totalData.total; // Update the overall total
+      } else {
+        currentItem.count = new Decimal(currentItem.count).sub(1).toNumber();
+
+        // Ensure count does not go below 0
+        if (currentItem.count <= 0) currentItem.added = false;
+
+        // Calculate totals and update individual total
+        const totalData = calculateTotal(currentItem, selectedPriceLevel);
+        // console.log(totalData);
+        currentItem.individualTotal = totalData.total;
+        currentItem.total = totalData.total; // Update the overall total
+      }
+
+      console.log(currentItem);
+      dispatch(updateItem(currentItem)); // Log the updated currentItem
+      // Log the updated currentItem
+      return currentItem; // Return the updated currentItem
+    });
+
+    setItem(updatedItems); // Update the state with the updated items
+  };
+
   ///////////////////////////handleTotalChangeWithPriceLevel///////////////////////////////////
 
   const handleTotalChangeWithPriceLevel = (pricelevel) => {
@@ -463,115 +587,9 @@ function AddItemSalesSecondary() {
     setItem(updatedItems);
   };
 
-  ///////////////////////////handleDecrement///////////////////////////////////
-  const handleDecrement = (_id) => {
-    const updatedItems = [...item];
-    const index = updatedItems.findIndex((item) => item._id === _id);
-    // Make a copy of the array
-    const currentItem = { ...updatedItems[index] };
+  console.log(item);
 
-    if (currentItem?.GodownList?.length > 0 && !godownname) {
-      setOpenModal(true);
-      setGodown(currentItem?.GodownList);
-    } else {
-      if (currentItem.count > 0) {
-        currentItem.count = new Decimal(currentItem.count).sub(1).toNumber();
 
-        if (currentItem.count <= 0) {
-          console.log("haii");
-          dispatch(removeItem(currentItem));
-          updatedItems[index] = { ...currentItem, added: false };
-          setItem(updatedItems);
-        }
-
-        // Use the calculateTotal function to calculate the total for the current item
-        currentItem.total = calculateTotal(
-          currentItem,
-          selectedPriceLevel
-        ).toFixed(2);
-        console.log(currentItem.total);
-
-        updatedItems[index] = currentItem; // Update the item in the copied array
-        setItem(updatedItems);
-        setRefresh(!refresh);
-      }
-
-      dispatch(changeCount(currentItem));
-
-      dispatch(changeTotal(currentItem));
-    }
-
-    // Decrement the count if it's greater than 0
-  };
-
-  ///////////////////////////modalSubmit///////////////////////////////////
-  const modalSubmit = (id) => {
-    setOpenModal(false);
-    console.log(id);
-    const updatedItems = [...item];
-
-    // Find the itemToUpdate by id
-    const itemToUpdateIndex = updatedItems.findIndex((item) => item._id === id);
-    console.log(itemToUpdateIndex);
-    if (itemToUpdateIndex === -1) {
-      console.error("Item not found");
-      return;
-    }
-
-    const itemToUpdate = updatedItems[itemToUpdateIndex];
-    console.log(itemToUpdate);
-
-    // Calculate the total count across all godowns for itemToUpdate
-    const totalCount = truncateToNDecimals(
-      godown.reduce((acc, godownItem) => acc + Number(godownItem.count), 0),
-      3
-    );
-
-    console.log(totalCount);
-    const itemWithUpdatedCount = {
-      ...itemToUpdate,
-      count: totalCount,
-    };
-
-    // Update itemToUpdate.count with the total count
-    const updatedItem = {
-      ...itemToUpdate,
-      count: totalCount,
-      total: calculateTotal(itemWithUpdatedCount, selectedPriceLevel).toFixed(
-        2
-      ),
-      GodownList: godown,
-    };
-
-    console.log(updatedItem.total);
-    console.log(updatedItem.GodownList);
-
-    // Update the item in the copied array
-
-    if (updatedItem.count === 0) {
-      dispatch(removeItem(itemToUpdate));
-      updatedItem.added = false;
-    }
-    updatedItems[itemToUpdateIndex] = updatedItem;
-
-    console.log(updatedItems[itemToUpdateIndex]);
-
-    setItem(updatedItems);
-    // updatedItems[itemToUpdateIndex]; // Update the local state
-    if (!updatedItem.added) {
-      updatedItem.added = !itemToUpdate.added;
-      dispatch(addItem(updatedItem)); // Add or update the item in the Redux store
-    }
-
-    if (updatedItem.count === 0) {
-      dispatch(removeItem(updatedItem)); // Dispatch an action to remove the item
-      updatedItem.added = false; // Update the 'added' property of the item
-    }
-
-    dispatch(changeCount(updatedItem)); // Update the count in the Redux store
-    dispatch(changeTotal(updatedItem)); // Update the total in the Redux store
-    dispatch(changeGodownCount(updatedItem)); // Update the total in the Redux store
-  };
 
   ///////////////////////////handlePriceLevelChange///////////////////////////////////
 
@@ -582,12 +600,12 @@ function AddItemSalesSecondary() {
     handleTotalChangeWithPriceLevel(selectedValue);
   };
 
-  function truncateToNDecimals(num, n) {
-    const parts = num.toString().split(".");
-    if (parts.length === 1) return num; // No decimal part
-    parts[1] = parts[1].substring(0, n); // Truncate the decimal part
-    return parseFloat(parts.join("."));
-  }
+  // function truncateToNDecimals(num, n) {
+  //   const parts = num.toString().split(".");
+  //   if (parts.length === 1) return num; // No decimal part
+  //   parts[1] = parts[1].substring(0, n); // Truncate the decimal part
+  //   return parseFloat(parts.join("."));
+  // }
 
   ///////////////////////////react window ///////////////////////////////////
 
@@ -599,8 +617,6 @@ function AddItemSalesSecondary() {
       setListHeight(newHeight);
     };
 
-    console.log(window.innerHeight);
-
     // Calculate the height on component mount and whenever the window is resized
     calculateHeight();
     window.addEventListener("resize", calculateHeight);
@@ -608,38 +624,9 @@ function AddItemSalesSecondary() {
     // Cleanup the event listener on component unmount
     return () => window.removeEventListener("resize", calculateHeight);
   }, []);
-  console.log(location);
-
-  /////////////////////////// save scroll ///////////////////////////////////
-  // Function to save scroll position
-  // const saveScrollPosition = () => {
-  //   localStorage.setItem("scrollPosition", scrollPosition);
-  // };
-
-  // // Function to restore scroll position
-  // const restoreScrollPosition = (scrollPosition) => {
-  //   console.log(scrollPosition);
-  //   if (scrollPosition) {
-  //     listRef?.current?.scrollTo(parseInt(scrollPosition, 10));
-  //   }
-  // };
-
-  // // Use effect to save scroll position when navigating away
-  // useEffect(() => {
-  //   return () => {
-  //     saveScrollPosition();
-  //   };
-  // }, []);
-
-  // Use effect to restore scroll position when navigating back
-  // useEffect(() => {
-  //   restoreScrollPosition();
-  // }, []);
-
-  /////////////////////////// save scroll end ///////////////////////////////////
 
   const continueHandler = () => {
-    console.log(location.state);
+    dispatch(setBatchHeight(heights));
     if (location?.state?.from === "editSales") {
       navigate(`/sUsers/editSales/${location.state.id}`);
     } else {
@@ -656,192 +643,250 @@ function AddItemSalesSecondary() {
     }
   };
 
-  /////////////////////////// modal ///////////////////////////////////
 
-  function onCloseModal() {
-    setOpenModal(false);
-  }
 
-  // Function to handle incrementing the count
-  const incrementCount = (index) => {
-    const newGodownItems = godown.map((item) => ({ ...item })); // Deep copy each item object
-    console.log(newGodownItems);
-    console.log(newGodownItems[index].count);
-    // newGodownItems[index].count += 1;
-    newGodownItems[index].count = new Decimal(newGodownItems[index].count)
-      .add(1)
-      .toNumber();
-    console.log(newGodownItems[index].count);
+  /////////////////////expansion panel////////////////////
 
-    newGodownItems[index].balance_stock = new Decimal(
-      newGodownItems[index].balance_stock
-    )
-      .sub(1)
-      .toNumber();
-    console.log(newGodownItems);
-    setGodown(newGodownItems);
-    setTotalCount(totalCount + 1);
-    console.log(totalCount);
-    console.log(godown);
-  };
-  console.log(godown);
+  const handleExpansion = (id) => {
+    const updatedItems = [...item];
+    const index = updatedItems.findIndex((item) => item._id === id);
 
-  // Function to handle decrementing the count
-  const decrementCount = (index) => {
-    const newGodownItems = godown.map((item) => ({ ...item })); // Assuming godown is the correct state variable name
-    console.log(newGodownItems);
+    const itemToUpdate = { ...updatedItems[index] };
 
-    if (newGodownItems[index].count > 0) {
-      newGodownItems[index].count = new Decimal(newGodownItems[index].count)
-        .sub(1)
-        .toNumber();
-      newGodownItems[index].balance_stock = new Decimal(
-        newGodownItems[index].balance_stock
-      )
-        .add(1)
-        .toNumber(); // Increase balance_stock by 1
-      setGodown(newGodownItems); // Corrected function name to setGodown
-      setTotalCount(totalCount - 1);
-      console.log(godown);
-    } else {
-      toast("Cannot decrement count as it is already at 0.");
+    if (itemToUpdate) {
+      itemToUpdate.isExpanded = !itemToUpdate.isExpanded;
+
+      updatedItems[index] = itemToUpdate;
     }
+    setItem(updatedItems);
+    // setTimeout(() => listRef.current.resetAfterIndex(index), 0);
   };
+
+  useEffect(() => {
+    if (Object.keys(heightsFromRedux).length > 0) {
+      setHeights(heightsFromRedux);
+    }
+  }, []);
+
+  const getItemSize = (index) => {
+    const product = item[index];
+    const isExpanded = product?.isExpanded || false;
+    const baseHeight = isExpanded ? heights[index] || 200 : 170; // Base height for unexpanded and expanded items
+    const extraHeight = isExpanded ? 210 : 0; // Extra height for expanded items
+
+    return baseHeight + extraHeight;
+    // return
+  };
+
+  // console.log(getItemSize(0));
+
+  const setHeight = useCallback((index, height) => {
+    setHeights((prevHeights) => {
+      if (prevHeights[index] !== height) {
+        return {
+          ...prevHeights,
+          [index]: height,
+        };
+      }
+      return prevHeights;
+    });
+  }, []);
+
+  console.log(heights);
+
   const Row = ({ index, style }) => {
     const el = filteredItems[index];
-    console.log(filteredItems[index]);
+    // const isExpanded = expandedProductId === el?._id;
     const adjustedStyle = {
       ...style,
-      marginTop: "36px",
+      marginTop: "6px",
       height: "160px",
     };
     return (
       <div
         style={adjustedStyle}
         key={index}
-        className="bg-white p-4 py-2 pb-6  mt-0 flex justify-between items-center  rounded-sm cursor-pointer border-b-2 z-0 shadow-lg"
+        className="bg-white  py-2 pb-6  mt-0  rounded-sm cursor-pointer  z-0 shadow-lg  "
       >
-        <div className="flex items-start gap-3 md:gap-4  ">
-          <div className="w-10 mt-1  uppercase h-10 rounded-lg bg-violet-200 flex items-center justify-center font-semibold text-gray-400">
-            {el.product_name.slice(0, 1)}
+        <div className=" flex justify-between items-center p-4">
+          <div className="flex items-start gap-3 md:gap-4  ">
+            <div className="w-10 mt-1  uppercase h-10 rounded-lg bg-violet-200 flex items-center justify-center font-semibold text-gray-400">
+              {el?.product_name?.slice(0, 1)}
+            </div>
+            <div
+              className={` flex flex-col font-bold text-sm md:text-sm  gap-1 leading-normal`}
+            >
+              <p className={`${el?.hasGodownOrBatch ? "mt-2.5" : ""}`}>
+                {el?.product_name}
+              </p>
+              {el?.hasGodownOrBatch && (
+                <div>
+                  <span>Total : ₹ </span>
+                  <span>{el?.total || 0}</span>
+                </div>
+              )}
+
+              {!el?.hasGodownOrBatch && (
+                <>
+                  <div className="flex gap-1 items-center">
+                    <p>
+                      ₹{" "}
+                      {
+                        el?.Priceleveles?.find(
+                          (item) => item.pricelevel === selectedPriceLevel
+                        )?.pricerate
+                      }{" "}
+                      /
+                    </p>{" "}
+                    <span className="text-[10px] mt-1">{el?.unit}</span>
+                  </div>
+                  <div className="flex">
+                    <p className="text-red-500">STOCK : </p>
+                    <span>{el?.GodownList[0]?.balance_stock}</span>
+                  </div>
+                  <div>
+                    <span>Total : ₹ </span>
+                    <span>{el?.total || 0}</span>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
-          <div className="flex flex-col font-bold text-sm md:text-sm  gap-1 leading-normal">
-            <p>{el.product_name}</p>
-            <div className="flex gap-1 items-center">
-              <p>
-                ₹{" "}
-                {
-                  el?.Priceleveles.find(
-                    (item) => item.pricelevel === selectedPriceLevel
-                  )?.pricerate
-                }{" "}
-                /
-              </p>{" "}
-              <span className="text-[10px] mt-1">{el.unit}</span>
-            </div>
-            <div className="flex">
-              <p className="text-red-500">STOCK : </p>
-              <span>{el.balance_stock}</span>
-            </div>
-            <div>
-              <span>Total : ₹ </span>
-              <span>{el.total || 0}</span>
-            </div>
-          </div>
-        </div>
-        {el.added && el?.count > 0 ? (
-          <div className="flex items-center flex-col gap-2">
-            {/* <Link
-              // to={`/sUsers/editItem/${el._id}`}
+          {el?.added && el?.count > 0 ? (
+            <div className="flex items-center flex-col gap-2">
+              {/* <Link
+              // to={`/sUsers/editItem/${el?._id}`}
               to={{
-                pathname: `/sUsers/editItem/${el._id}`,
+                pathname: `/sUsers/editItem/${el?._id}`,
                 state: { from: "addItem" },
               }}
             > */}
-            <button
-              onClick={() => {
-                navigate(
-                  `/sUsers/editItemSales/${el._id}/${godownname || "nil"}`,
-                  {
-                    state: { from: "editItemSales", id: location?.state?.id },
-                  }
-                );
-                // saveScrollPosition();
-              }}
-              type="button"
-              className="  mt-3  px-2 py-1  rounded-md border-violet-500 font-bold border  text-violet-500 text-xs"
-            >
-              Edit
-            </button>
-            {/* </Link> */}
-            <div
-              className="py-2 px-3 inline-block bg-white  "
-              data-hs-input-number
-            >
-              <div className="flex items-center gap-x-1.5">
-                <button
-                  onClick={() => handleDecrement(el._id)}
-                  type="button"
-                  className="size-6 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-md border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none"
-                  data-hs-input-number-decrement
-                >
-                  <svg
-                    className="flex-shrink-0 size-3.5"
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
+
+              {!el?.hasGodownOrBatch && (
+                <>
+                  <button
+                    onClick={() => {
+                      navigate(
+                        `/sUsers/editItemSales/${el?._id}/${
+                          godownname || "nil"
+                        }/null`,
+                        {
+                          state: {
+                            from: "editItemSales",
+                            id: location?.state?.id,
+                          },
+                        }
+                      );
+                      // saveScrollPosition();
+                    }}
+                    type="button"
+                    className="  mt-3  px-2 py-1  rounded-md border-violet-500 font-bold border  text-violet-500 text-xs"
                   >
-                    <path d="M5 12h14" />
-                  </svg>
-                </button>
-                <input
-                  className="p-0 w-12 bg-transparent border-0 text-gray-800 text-center focus:ring-0 "
-                  type="text"
-                  disabled
-                  value={el.count ? el.count : 0} // Display the count from the state
-                  data-hs-input-number-input
-                />
-                <button
-                  onClick={() => {
-                    handleIncrement(el._id);
-                  }}
-                  type="button"
-                  className="size-6 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-md border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none "
-                  data-hs-input-number-increment
-                >
-                  <svg
-                    className="flex-shrink-0 size-3.5"
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
+                    Edit
+                  </button>
+                  <div
+                    className="py-2 px-3 inline-block bg-white  "
+                    data-hs-input-number
                   >
-                    <path d="M5 12h14" />
-                    <path d="M12 5v14" />
-                  </svg>
-                </button>
+                    <div className="flex items-center gap-x-1.5">
+                      <button
+                        onClick={() => handleDecrement(el?._id)}
+                        type="button"
+                        className="size-6 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-md border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none"
+                        data-hs-input-number-decrement
+                      >
+                        <svg
+                          className="flex-shrink-0 size-3.5"
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="24"
+                          height="24"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M5 12h14" />
+                        </svg>
+                      </button>
+                      <input
+                        className="p-0 w-12 bg-transparent border-0 text-gray-800 text-center focus:ring-0 "
+                        type="text"
+                        disabled
+                        value={el?.count ? el?.count : 0} // Display the count from the state
+                        data-hs-input-number-input
+                      />
+                      <button
+                        onClick={() => {
+                          handleIncrement(el?._id);
+                        }}
+                        type="button"
+                        className="size-6 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-md border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none "
+                        data-hs-input-number-increment
+                      >
+                        <svg
+                          className="flex-shrink-0 size-3.5"
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="24"
+                          height="24"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M5 12h14" />
+                          <path d="M12 5v14" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          ) : (
+            !el?.hasGodownOrBatch && (
+              <div
+                onClick={() => {
+                  handleAddClick(el?._id);
+                }}
+                className="px-4 py-2 rounded-md border-violet-500 font-bold border-2 text-violet-500 text-xs"
+              >
+                Add
               </div>
+            )
+          )}
+        </div>
+        {el?.hasGodownOrBatch && (
+          <div className="px-6">
+            <div
+              onClick={() => {
+                handleExpansion(el?._id);
+                setTimeout(() => listRef.current.resetAfterIndex(index), 0);
+              }}
+              className="p-2 border-gray-300 border rounded-md w-full text-violet-500 mt-4 font-semibold flex items-center justify-center gap-3"
+            >
+              {el?.isExpanded ? "Hide Details" : "Show Details"}
+
+              {el?.isExpanded ? <IoIosArrowUp /> : <IoIosArrowDown />}
             </div>
           </div>
-        ) : (
-          <div>
-            <div
-              className="px-4 py-2 rounded-md border-violet-500 font-bold border-2 text-violet-500 text-xs"
-              onClick={() => handleAddClick(el._id)}
-            >
-              Add
-            </div>
+        )}
+
+        {el?.isExpanded && (
+          <div className=" bg-white">
+            <ProductDetails
+              heights={heights}
+              handleIncrement={handleIncrement}
+              handleDecrement={handleDecrement}
+              selectedPriceLevel={selectedPriceLevel}
+              handleAddClick={handleAddClick}
+              godownName={godownname}
+              details={el}
+              setHeight={(height) => setHeight(index, height)}
+            />
           </div>
         )}
       </div>
@@ -915,7 +960,6 @@ function AddItemSalesSecondary() {
                   </svg>
                 </div>
                 <SearchBar onType={searchData} />
-             
               </div>
             </div>
           </div>
@@ -1004,12 +1048,16 @@ function AddItemSalesSecondary() {
             className=""
             height={listHeight} // Specify the height of your list
             itemCount={filteredItems.length} // Specify the total number of items
-            itemSize={170} // Specify the height of each item
+            // itemSize={170} // Specify the height of each item
+            itemSize={getItemSize}
             width="100%" // Specify the width of your list
             initialScrollOffset={scrollPosition}
             onScroll={({ scrollOffset }) => {
               setScrollPosition(scrollOffset);
-              localStorage.setItem('scrollPositionAddItemSales', scrollOffset.toString());
+              localStorage.setItem(
+                "scrollPositionAddItemSales",
+                scrollOffset.toString()
+              );
             }}
           >
             {Row}
@@ -1028,139 +1076,7 @@ function AddItemSalesSecondary() {
         )}
       </div>
 
-      {/* modal.......................................................... */}
-      <div className="h-screen flex justify-center items-center ">
-        <Modal
-          style={{
-            scrollbarWidth: "thin",
-            scrollbarColor: "transparent transparent",
-          }}
-          show={openModal}
-          size="md"
-          onClose={onCloseModal}
-          popup
-          className="modal-dialog"
-        >
-          <Modal.Header />
-          <Modal.Body>
-            <div className="space-y-6">
-              {/* Existing sign-in form */}
-              <div>
-                <div className="flex justify-between  bg-[#579BB1] p-2 rounded-sm items-center">
-                  <h3 className=" text-base md:text-xl  font-medium text-gray-900 dark:text-white ">
-                    Godown List
-                  </h3>
-
-                  <h3 className="font-medium  text-right  text-white ">
-                    Total Count:{" "}
-                    <span className="text-white  font-bold">
-                      {truncateToNDecimals(
-                        godown.reduce(
-                          (acc, curr) => acc + parseFloat(curr.count),
-                          0
-                        ),
-                        3 // Specify the number of decimal places you want
-                      )}
-                    </span>
-                  </h3>
-                </div>
-                <div className="table-container overflow-y-auto max-h-[250px]">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th
-                          scope="col"
-                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                        >
-                          Godown Name
-                        </th>
-                        {/* <th
-                          scope="col"
-                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                        >
-                          Balance Stock
-                        </th> */}
-                        <th
-                          scope="col"
-                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                        >
-                          Count
-                        </th>
-                        <th scope="col" className="relative px-6 py-3">
-                          <span className="sr-only">Edit</span>
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {godown.map((item, index) => (
-                        <tr key={index}>
-                          <td className="px-6 py-4 ">
-                            <div className="text-sm text-gray-900">
-                              {item.godown}
-                            </div>
-                            <div className="text-sm text-gray-900 mt-1">
-                              Stock :{" "}
-                              <span
-                                className={`${
-                                  item.balance_stock <= 0
-                                    ? "text-red-500  font-bold"
-                                    : ""
-                                } text-green-500 font-bold"`}
-                              >
-                                {item.balance_stock}
-                              </span>
-                            </div>
-                          </td>
-                          {/* <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-500">
-                              {item.balance_stock}
-                            </div>
-                          </td> */}
-                          {/* <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-500">
-                              {item.count}
-                            </div>
-                          </td> */}
-                          <td className=" px-6 py-4 whitespace-nowrap text-sm font-medium flex justify-center  ">
-                            <div className="flex gap-3 items-center justify-center">
-                              <button
-                                onClick={() => decrementCount(index)}
-                                className="text-indigo-600 hover:text-indigo-900  text-lg"
-                              >
-                                -
-                              </button>
-
-                              {item.count}
-                              <div></div>
-                              <button
-                                onClick={() => incrementCount(index)}
-                                className="text-indigo-600 hover:text-indigo-900 text-lg"
-                              >
-                                +
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-              <div className="w-full">
-                <Button
-                  onClick={() => {
-                    modalSubmit(godown[0]?._id);
-                  }}
-                >
-                  Submit
-                </Button>
-              </div>
-            </div>
-          </Modal.Body>
-        </Modal>
-      </div>
-
-      {/* modal.......................................................... */}
+    
     </div>
   );
 }

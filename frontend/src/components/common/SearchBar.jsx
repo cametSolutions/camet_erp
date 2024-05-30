@@ -5,7 +5,6 @@ import { IoIosCloseCircleOutline } from "react-icons/io";
 
 function SearchBar({ onType }) {
   const [search, setSearch] = useState("");
-  console.log(search);
 
   return (
     <div className="relative">
@@ -19,7 +18,7 @@ function SearchBar({ onType }) {
         id="default-search"
         className="block w-full p-2 text-sm text-gray-900 border  rounded-lg border-gray-300  bg-gray-50 focus:ring-blue-500 focus:border-blue-500"
         placeholder="Search..."
-        required
+          
       />
       <button
         type="submit"

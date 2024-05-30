@@ -1,6 +1,7 @@
 import axios from 'axios';
 import Swal from 'sweetalert2';
 
+
 const api = axios.create({
   // baseURL: 'http://localhost:7000',
   baseURL:"https://www.erp.camet.in/"
@@ -8,11 +9,9 @@ const api = axios.create({
 
 api.interceptors.response.use(
   function (response) {
-    console.log(response)
     return response;
   },
   function (error) {
-    console.log(error.response.status)
     if (error.response.config.url === '/api/sUsers/getSecUserData' || error.response.data.is_blocked ) {
         showSwalAlert("Your Account is Blocked", 'warning', '/sUsers/login', 'sUserData');
     }
@@ -20,13 +19,8 @@ api.interceptors.response.use(
         showSwalAlert("Your Account is Blocked", 'warning', '/pUsers/login', 'pUserData');
     } 
   
-    // else if(error.response.status == 500){
-    //   console.log("haii");
-    //   console.log(window.location);
-    //   window.location.href = "http://localhost:5173/serverError";
-    // }
+
     else if(error.response.status == 403 && error.response.data.companyRestricted){
-      console.log("welcome")
       showSwalAlert2("This company is restricted","warning")
 
     }
