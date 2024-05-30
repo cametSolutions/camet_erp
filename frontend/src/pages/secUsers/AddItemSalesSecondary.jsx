@@ -8,7 +8,6 @@ import { MdOutlineQrCodeScanner } from "react-icons/md";
 import { useSelector } from "react-redux";
 import { addItem, removeItem } from "../../../slices/salesSecondary";
 import { useDispatch } from "react-redux";
-import { changeCount } from "../../../slices/salesSecondary";
 import { setPriceLevel } from "../../../slices/salesSecondary";
 import {
   changeTotal,
@@ -16,14 +15,12 @@ import {
   setCategoryInRedux,
   setSubCategoryInRedux,
   removeAll,
-  changeGodownCount,
   addAllProducts,
   updateItem,
   setBatchHeight,
 } from "../../../slices/salesSecondary";
 import { HashLoader } from "react-spinners";
 import { VariableSizeList as List } from "react-window";
-import { Button, Modal } from "flowbite-react";
 import { toast } from "react-toastify";
 import SidebarSec from "../../components/secUsers/SidebarSec";
 import { Decimal } from "decimal.js";
@@ -37,7 +34,6 @@ import { IoIosArrowUp } from "react-icons/io";
 function AddItemSalesSecondary() {
   const [item, setItem] = useState([]);
   const [selectedPriceLevel, setSelectedPriceLevel] = useState("");
-  const [refresh, setRefresh] = useState(false);
   const [brands, setBrands] = useState([]);
   const [categories, setCategories] = useState([]);
   const [subCategories, setSubCategories] = useState([]);
@@ -49,12 +45,9 @@ function AddItemSalesSecondary() {
   const [loader, setLoader] = useState(false);
   const [listHeight, setListHeight] = useState(0);
   const [scrollPosition, setScrollPosition] = useState(0);
-  const [openModal, setOpenModal] = useState(false);
-  const [totalCount, setTotalCount] = useState(0);
-  const [godown, setGodown] = useState([]);
+
   const [godownname, setGodownname] = useState("");
   const [heights, setHeights] = useState({});
-  const [selectedProducts, setSelectedProducts] = useState({});
   ///////////////////////////cpm_id///////////////////////////////////
 
   const cpm_id = useSelector(
@@ -595,65 +588,7 @@ function AddItemSalesSecondary() {
 
   console.log(item);
 
-  ///////////////////////////modalSubmit///////////////////////////////////
-  const modalSubmit = (id) => {
-    setOpenModal(false);
-    const updatedItems = [...item];
 
-    // Find the itemToUpdate by id
-    const itemToUpdateIndex = updatedItems.findIndex((item) => item._id === id);
-    if (itemToUpdateIndex === -1) {
-      console.error("Item not found");
-      return;
-    }
-
-    const itemToUpdate = updatedItems[itemToUpdateIndex];
-
-    // Calculate the total count across all godowns for itemToUpdate
-    const totalCount = truncateToNDecimals(
-      godown.reduce((acc, godownItem) => acc + Number(godownItem.count), 0),
-      3
-    );
-
-    const itemWithUpdatedCount = {
-      ...itemToUpdate,
-      count: totalCount,
-    };
-
-    // Update itemToUpdate.count with the total count
-    const updatedItem = {
-      ...itemToUpdate,
-      count: totalCount,
-      total: calculateTotal(itemWithUpdatedCount, selectedPriceLevel).toFixed(
-        2
-      ),
-      GodownList: godown,
-    };
-
-    // Update the item in the copied array
-
-    if (updatedItem.count === 0) {
-      dispatch(removeItem(itemToUpdate));
-      updatedItem.added = false;
-    }
-    updatedItems[itemToUpdateIndex] = updatedItem;
-
-    setItem(updatedItems);
-    // updatedItems[itemToUpdateIndex]; // Update the local state
-    if (!updatedItem.added) {
-      updatedItem.added = !itemToUpdate.added;
-      dispatch(addItem(updatedItem)); // Add or update the item in the Redux store
-    }
-
-    if (updatedItem.count === 0) {
-      dispatch(removeItem(updatedItem)); // Dispatch an action to remove the item
-      updatedItem.added = false; // Update the 'added' property of the item
-    }
-
-    dispatch(changeCount(updatedItem)); // Update the count in the Redux store
-    dispatch(changeTotal(updatedItem)); // Update the total in the Redux store
-    dispatch(changeGodownCount(updatedItem)); // Update the total in the Redux store
-  };
 
   ///////////////////////////handlePriceLevelChange///////////////////////////////////
 
@@ -664,12 +599,12 @@ function AddItemSalesSecondary() {
     handleTotalChangeWithPriceLevel(selectedValue);
   };
 
-  function truncateToNDecimals(num, n) {
-    const parts = num.toString().split(".");
-    if (parts.length === 1) return num; // No decimal part
-    parts[1] = parts[1].substring(0, n); // Truncate the decimal part
-    return parseFloat(parts.join("."));
-  }
+  // function truncateToNDecimals(num, n) {
+  //   const parts = num.toString().split(".");
+  //   if (parts.length === 1) return num; // No decimal part
+  //   parts[1] = parts[1].substring(0, n); // Truncate the decimal part
+  //   return parseFloat(parts.join("."));
+  // }
 
   ///////////////////////////react window ///////////////////////////////////
 
@@ -707,49 +642,7 @@ function AddItemSalesSecondary() {
     }
   };
 
-  /////////////////////////// modal ///////////////////////////////////
 
-  function onCloseModal() {
-    setOpenModal(false);
-  }
-
-  // Function to handle incrementing the count
-  const incrementCount = (index) => {
-    const newGodownItems = godown.map((item) => ({ ...item })); // Deep copy each item object
-
-    // newGodownItems[index].count += 1;
-    newGodownItems[index].count = new Decimal(newGodownItems[index].count)
-      .add(1)
-      .toNumber();
-
-    newGodownItems[index].balance_stock = new Decimal(
-      newGodownItems[index].balance_stock
-    )
-      .sub(1)
-      .toNumber();
-    setGodown(newGodownItems);
-    setTotalCount(totalCount + 1);
-  };
-
-  // Function to handle decrementing the count
-  const decrementCount = (index) => {
-    const newGodownItems = godown.map((item) => ({ ...item })); // Assuming godown is the correct state variable name
-
-    if (newGodownItems[index].count > 0) {
-      newGodownItems[index].count = new Decimal(newGodownItems[index].count)
-        .sub(1)
-        .toNumber();
-      newGodownItems[index].balance_stock = new Decimal(
-        newGodownItems[index].balance_stock
-      )
-        .add(1)
-        .toNumber(); // Increase balance_stock by 1
-      setGodown(newGodownItems); // Corrected function name to setGodown
-      setTotalCount(totalCount - 1);
-    } else {
-      toast("Cannot decrement count as it is already at 0.");
-    }
-  };
 
   /////////////////////expansion panel////////////////////
 
@@ -758,10 +651,7 @@ function AddItemSalesSecondary() {
     const index = updatedItems.findIndex((item) => item._id === id);
 
     const itemToUpdate = { ...updatedItems[index] };
-    setSelectedProducts((prevSelectedProducts) => ({
-      ...prevSelectedProducts,
-      [id]: itemToUpdate?.GodownList,
-    }));
+
     if (itemToUpdate) {
       itemToUpdate.isExpanded = !itemToUpdate.isExpanded;
 
@@ -781,7 +671,7 @@ function AddItemSalesSecondary() {
     const product = item[index];
     const isExpanded = product?.isExpanded || false;
     const baseHeight = isExpanded ? heights[index] || 200 : 170; // Base height for unexpanded and expanded items
-    const extraHeight = isExpanded ? 180 : 0; // Extra height for expanded items
+    const extraHeight = isExpanded ? 210 : 0; // Extra height for expanded items
 
     return baseHeight + extraHeight;
     // return
@@ -1185,139 +1075,7 @@ function AddItemSalesSecondary() {
         )}
       </div>
 
-      {/* modal.......................................................... */}
-      <div className="h-screen flex justify-center items-center ">
-        <Modal
-          style={{
-            scrollbarWidth: "thin",
-            scrollbarColor: "transparent transparent",
-          }}
-          show={openModal}
-          size="md"
-          onClose={onCloseModal}
-          popup
-          className="modal-dialog"
-        >
-          <Modal.Header />
-          <Modal.Body>
-            <div className="space-y-6">
-              {/* Existing sign-in form */}
-              <div>
-                <div className="flex justify-between  bg-[#579BB1] p-2 rounded-sm items-center">
-                  <h3 className=" text-base md:text-xl  font-medium text-gray-900 dark:text-white ">
-                    Godown List
-                  </h3>
-
-                  <h3 className="font-medium  text-right  text-white ">
-                    Total Count:{" "}
-                    <span className="text-white  font-bold">
-                      {truncateToNDecimals(
-                        godown.reduce(
-                          (acc, curr) => acc + parseFloat(curr.count),
-                          0
-                        ),
-                        3 // Specify the number of decimal places you want
-                      )}
-                    </span>
-                  </h3>
-                </div>
-                <div className="table-container overflow-y-auto max-h-[250px]">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th
-                          scope="col"
-                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                        >
-                          Godown Name
-                        </th>
-                        {/* <th
-                          scope="col"
-                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                        >
-                          Balance Stock
-                        </th> */}
-                        <th
-                          scope="col"
-                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                        >
-                          Count
-                        </th>
-                        <th scope="col" className="relative px-6 py-3">
-                          <span className="sr-only">Edit</span>
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {godown.map((item, index) => (
-                        <tr key={index}>
-                          <td className="px-6 py-4 ">
-                            <div className="text-sm text-gray-900">
-                              {item.godown}
-                            </div>
-                            <div className="text-sm text-gray-900 mt-1">
-                              Stock :{" "}
-                              <span
-                                className={`${
-                                  item.balance_stock <= 0
-                                    ? "text-red-500  font-bold"
-                                    : ""
-                                } text-green-500 font-bold"`}
-                              >
-                                {item.balance_stock}
-                              </span>
-                            </div>
-                          </td>
-                          {/* <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-500">
-                              {item.balance_stock}
-                            </div>
-                          </td> */}
-                          {/* <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-500">
-                              {item.count}
-                            </div>
-                          </td> */}
-                          <td className=" px-6 py-4 whitespace-nowrap text-sm font-medium flex justify-center  ">
-                            <div className="flex gap-3 items-center justify-center">
-                              <button
-                                onClick={() => decrementCount(index)}
-                                className="text-indigo-600 hover:text-indigo-900  text-lg"
-                              >
-                                -
-                              </button>
-
-                              {item.count}
-                              <div></div>
-                              <button
-                                onClick={() => incrementCount(index)}
-                                className="text-indigo-600 hover:text-indigo-900 text-lg"
-                              >
-                                +
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-              <div className="w-full">
-                <Button
-                  onClick={() => {
-                    modalSubmit(godown[0]?._id);
-                  }}
-                >
-                  Submit
-                </Button>
-              </div>
-            </div>
-          </Modal.Body>
-        </Modal>
-      </div>
-
-      {/* modal.......................................................... */}
+    
     </div>
   );
 }

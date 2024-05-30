@@ -1,24 +1,23 @@
 /* eslint-disable react/prop-types */
 /* eslint-disable react/no-unknown-property */
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import api from "../../api/api";
 import { Link } from "react-router-dom";
 
 import { HashLoader } from "react-spinners";
 
-import { IoIosSearch } from "react-icons/io";
 import { IoIosAddCircle } from "react-icons/io";
-import { FixedSizeList as List } from "react-window";
+import { VariableSizeList as List } from "react-window";
 import { useSelector } from "react-redux";
 import SidebarSec from "../../components/secUsers/SidebarSec";
 import { IoIosArrowRoundBack } from "react-icons/io";
 
 import { useDispatch } from "react-redux";
 import { removeAll } from "../../../slices/invoiceSecondary";
-import {  Modal } from "flowbite-react";
 import SearchBar from "../../components/common/SearchBar";
-
-
+import { IoIosArrowDown } from "react-icons/io";
+import { IoIosArrowUp } from "react-icons/io";
+import ProductDetails from "../../components/common/ProductDetails";
 
 function InventorySecondaryUser() {
   const [products, setProducts] = useState([]);
@@ -31,10 +30,7 @@ function InventorySecondaryUser() {
   const [listHeight, setListHeight] = useState(0);
   const [ingodowns, setIngodowns] = useState("");
   const [selfgodowns, setSelfGodowms] = useState("");
-  const [godown, setGodown] = useState([]);
-  const [openModal, setOpenModal] = useState(false);
-
-
+  const [heights, setHeights] = useState({});
 
   const cmp_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
@@ -43,6 +39,8 @@ function InventorySecondaryUser() {
     (state) => state.secSelectedOrganization.secSelectedOrg.type
   );
   const dispatch = useDispatch();
+  const listRef = useRef(null);
+
   const searchData = (data) => {
     setSearch(data);
   };
@@ -97,9 +95,6 @@ function InventorySecondaryUser() {
     }
   };
 
-  function onCloseModal() {
-    setOpenModal(false);
-  }
   // getting godowns data
 
   useEffect(() => {
@@ -184,6 +179,44 @@ function InventorySecondaryUser() {
     return () => window.removeEventListener("resize", calculateHeight);
   }, []);
 
+  const handleExpansion = (id) => {
+    const updatedItems = [...filteredProducts];
+    const index = updatedItems.findIndex((item) => item._id === id);
+
+    const itemToUpdate = { ...updatedItems[index] };
+
+    if (itemToUpdate) {
+      itemToUpdate.isExpanded = !itemToUpdate.isExpanded;
+
+      updatedItems[index] = itemToUpdate;
+    }
+    setFilteredProducts(updatedItems);
+    setTimeout(() => listRef.current.resetAfterIndex(index), 0);
+  };
+
+  const setHeight = useCallback((index, height) => {
+    setHeights((prevHeights) => {
+      if (prevHeights[index] !== height) {
+        return {
+          ...prevHeights,
+          [index]: height,
+        };
+      }
+      return prevHeights;
+    });
+  }, []);
+  console.log(heights);
+
+  const getItemSize = (index) => {
+    const product = filteredProducts[index];
+    const isExpanded = product?.isExpanded || false;
+    const baseHeight = isExpanded ? heights[index] || 250 : 190; // Base height for unexpanded and expanded items
+    const extraHeight = isExpanded ? 200 : 0; // Extra height for expanded items
+
+    return baseHeight + extraHeight;
+    // return
+  };
+
   console.log(listHeight);
 
   const Row = ({ index, style }) => {
@@ -198,41 +231,80 @@ function InventorySecondaryUser() {
       <>
         <div
           key={index}
-          onClick={() => {
-            setGodown(el?.GodownList);
-            setOpenModal(true);
-          }}
           style={adjustedStyle}
-          className="bg-white p-4 pb-6 drop-shadow-lg mt-4 flex flex-col mx-2 rounded-sm cursor-pointer hover:bg-slate-100  pr-7 "
+          className={`bg-white  pb-6 mt-4 flex flex-col  rounded-sm cursor-pointer  py-4 border-t ${!el?.hasGodownOrBatch?"shadow-lg":""}  `}
         >
-          <div className="flex justify-between w-full gap-3 ">
+          <div className="flex justify-between w-full gap-3   px-5  ">
             <div className="">
               <p className="font-bold text-sm">{el?.product_name}</p>
             </div>
-            <div
-              className={` ${
-                type !== "self" ? "pointer-events-none " : ""
-              }  flex gap-3 mt-2 px-4`}
-            >
-              <p className="font-semibold text-black">Stock</p>
-              <h2 className="font-semibold text-green-500">
-                {" "}
-                {el?.balance_stock}
-              </h2>
+          </div>
+
+          <div className=" text-sm  px-5 flex justify-between mt-3  ">
+            <div className="flex-col">
+              <div className="flex gap-2 text-nowrap">
+                <p className="font-bold text-gray-400 uppercase ">Hsn :</p>
+                <p className="font-semibold text-gray-400"> {el?.hsn_code}</p>
+              </div>
+              <div className="flex gap-2    ">
+                <p className="font-bold text-gray-400">Tax :</p>
+                <p className=" text-gray-400"> {`${el?.igst} %`}</p>
+              </div>
+            </div>
+            <div>
+              <div className="flex flex-col gap-1 ">
+                <div className="flex items-center justify-end">
+                  <p className="  text-xs   md:text-sm font-semibold text-gray-500  ">
+                    Actual Stock :
+                  </p>
+                  <h2 className="font-semibold text-green-500 ml-1 ">
+                    {" "}
+                    {el?.GodownList?.reduce(
+                      (acc, curr) => acc + (curr?.balance_stock || 0),
+                      0
+                    ) || 0}
+                  </h2>
+                </div>
+                <div className="flex items-center">
+                  <p className=" text-xs md:text-sm font-semibold text-gray-500">
+                    Saleable Stock :
+                  </p>
+                  <h2 className="font-semibold text-green-500 ml-1">
+                    {" "}
+                    {el?.balance_stock || 0}
+                  </h2>
+                </div>
+              </div>
             </div>
           </div>
 
-          <div className=" flex   gap-2 text-sm mt-4">
-            <div className="flex gap-2 text-nowrap">
-              <p className="font-bold text-gray-400 uppercase ">Hsn :</p>
-              <p className="font-semibold text-gray-400"> {el?.hsn_code}</p>
+          {el?.hasGodownOrBatch && (
+            <div className="px-4 shadow-lg pb-3 ">
+              <div
+                onClick={() => {
+                  handleExpansion(el?._id);
+                  setTimeout(() => listRef.current.resetAfterIndex(index), 0);
+                }}
+                className="p-2  border-gray-300 border rounded-md w-full text-violet-500 mt-4 font-semibold flex items-center justify-center gap-3"
+              >
+                {el?.isExpanded ? "Hide Details" : "Show Details"}
+
+                {el?.isExpanded ? <IoIosArrowUp /> : <IoIosArrowDown />}
+              </div>
             </div>
-            <div className="flex gap-2 ">
-              <p className="font-bold text-gray-400">Tax :</p>
-              <p className=" text-gray-400"> {`${el?.igst} %`}</p>
-            </div>
-          </div>
-          <hr className="mt-6" style={{ borderWidth: "1px" }} />
+          )}
+
+          {el?.isExpanded && (
+            <ProductDetails
+              details={el}
+              tab={"inventory"}
+              setHeight={(height) => setHeight(index, height)}
+            />
+          )}
+
+          {!el?.hasGodownOrBatch && (
+            <hr className="mt-5  border-t-2 border-slate-300 mx-4" />
+          )}
         </div>
       </>
     );
@@ -244,7 +316,7 @@ function InventorySecondaryUser() {
         <SidebarSec TAB={"product"} showBar={showSidebar} />
       </div>
 
-      <div className="flex-1 bg-slate-50 overflow-y-scroll ">
+      <div className="flex-1  overflow-y-scroll ">
         <div className="sticky top-0 z-20 h-[117px]">
           <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3  flex justify-between items-center  ">
             <div className="flex items-center justify-center gap-2">
@@ -335,21 +407,10 @@ function InventorySecondaryUser() {
 
           {/* invoiec date */}
           <div className=" p-4  bg-white drop-shadow-lg">
-            <div className="flex justify-between  items-center">
-              {/* <div className=" flex flex-col gap-1 justify-center">
-            <p className="text-md font-semibold text-violet-400">
-              Search Parties
-            </p>
-          </div>
-          <div className="flex items-center hover_scale cursor-pointer">
-            <p className="text-pink-500 m-2 cursor-pointer  ">Cancel</p>
-            <MdCancel className="text-pink-500" />
-          </div> */}
-            </div>
+            <div className="flex justify-between  items-center"></div>
             <div className=" md:w-1/2 ">
               {/* search bar */}
               <SearchBar onType={searchData} />
-
 
               {/* search bar */}
             </div>
@@ -372,10 +433,11 @@ function InventorySecondaryUser() {
             }}
           >
             <List
+              ref={listRef}
               className=""
               height={listHeight} // Specify the height of your list
               itemCount={filteredProducts.length} // Specify the total number of items
-              itemSize={165} // Specify the height of each item
+              itemSize={getItemSize} // Specify the height of each item
               width="100%" // Specify the width of your list
             >
               {Row}
@@ -389,83 +451,7 @@ function InventorySecondaryUser() {
         )}
       </div>
 
-      <div className="h-screen flex justify-center items-center ">
-        <Modal
-          style={{
-            scrollbarWidth: "thin",
-            scrollbarColor: "transparent transparent",
-          }}
-          show={openModal}
-          size="md"
-          onClose={onCloseModal}
-          popup
-          className="modal-dialog"
-        >
-          <Modal.Header />
-          <Modal.Body>
-            <div className="space-y-6">
-              {/* Existing sign-in form */}
-              <div>
-                <div className="flex justify-between  bg-[#579BB1] p-2 rounded-sm items-center">
-                  <h3 className=" text-base md:text-xl  font-medium text-gray-900 dark:text-white ">
-                    Godown List
-                  </h3>
-                </div>
-                <div className="table-container overflow-y-auto max-h-[250px]">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th
-                          scope="col"
-                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                        >
-                          Godown Name
-                        </th>
-                        <th
-                          scope="col"
-                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                        >
-                          Stock
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {godown?.length > 0 ? (
-                        godown.map((item, index) => (
-                          <tr key={index}>
-                            <td className="px-6 py-4 ">
-                              <div className="text-sm text-gray-900">
-                                {item.godown}
-                              </div>
-                            </td>
-
-                            <td className=" px-6 py-4 whitespace-nowrap text-sm font-medium flex justify-center  ">
-                              <div className="flex gap-3 items-center justify-center">
-                                {item.balance_stock}
-                                <div></div>
-                              </div>
-                            </td>
-                          </tr>
-                        ))
-                      ) : (
-                        <tr className=" flex justify-center items-center">
-                          <td
-                            colSpan={2}
-                            className="font-bold  mt-12 text-gray-500 w-full  text-center"
-                          >
-                            No Godowns!!!
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-              <div className="w-full"></div>
-            </div>
-          </Modal.Body>
-        </Modal>
-      </div>
+      <div className="h-screen flex justify-center items-center "></div>
     </div>
   );
 }
