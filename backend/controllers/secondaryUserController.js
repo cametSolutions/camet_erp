@@ -337,7 +337,7 @@ export const transactions = async (req, res) => {
       },
     ]);
 
-    const combined = [...transactions, ...invoices, ...sales,...purchases];
+    const combined = [...transactions, ...invoices, ...sales, ...purchases];
     combined.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
     if (combined.length > 0) {
@@ -693,7 +693,11 @@ export const getProducts = async (req, res) => {
       },
     };
 
-    if (configuration && configuration.selectedGodowns && configuration.selectedGodowns.length > 0) {
+    if (
+      configuration &&
+      configuration.selectedGodowns &&
+      configuration.selectedGodowns.length > 0
+    ) {
       const { selectedGodowns } = configuration;
 
       console.log("selectedGodowns", selectedGodowns);
@@ -722,8 +726,8 @@ export const getProducts = async (req, res) => {
             $filter: {
               input: "$GodownList",
               as: "godown",
-              cond: { $in: ["$$godown.godown_id", selectedGodowns] }
-            }
+              cond: { $in: ["$$godown.godown_id", selectedGodowns] },
+            },
           },
           cgst: 1,
           sgst: 1,
@@ -779,7 +783,7 @@ export const getProducts = async (req, res) => {
           purchase_price: 1,
           purchase_cost: 1,
           Priceleveles: 1,
-          GodownList: 1,  // Keep the GodownList as it is
+          GodownList: 1, // Keep the GodownList as it is
           cgst: 1,
           sgst: 1,
           igst: 1,
@@ -825,12 +829,11 @@ export const getProducts = async (req, res) => {
     }
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ success: false, message: "Internal server error, try again!" });
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error, try again!" });
   }
 };
-
-
-
 
 // route POST /api/pUsers/createInvoice
 export const createInvoice = async (req, res) => {
@@ -862,12 +865,7 @@ export const createInvoice = async (req, res) => {
       newSerialNumber = lastInvoice.serialNumber + 1;
     }
 
-    // // Check if there's a last invoice and calculate the new serial number
-    // if (lastInvoice && !isNaN(lastInvoice.serialNumber)) {
-    //   newSerialNumber = lastInvoice.serialNumber + 1;
-    // }
-
-    const updatedItems = items.map((item) => {
+    const updatedItems = items.map(async (item) => {
       // Find the corresponding price rate for the selected price level
       const selectedPriceLevel = item.Priceleveles.find(
         (priceLevel) => priceLevel.pricelevel === priceLevelFromRedux
@@ -888,13 +886,24 @@ export const createInvoice = async (req, res) => {
         totalPrice -= discountAmount;
       }
 
+      const itemCount = parseFloat(item.count);
+      let product = await productModel.findById(item._id); // Assuming you have a productId in the item object
+      if (!product) {
+        throw new Error(`Product with ID ${item._id} not found`);
+      }
+      const productBalanceStock = parseFloat(product.balance_stock) || 0; // Consider balance_stock as zero if null
+      const newBalanceStock = truncateToNDecimals(productBalanceStock - itemCount, 3);
+
+      await productModel.updateOne(
+        { _id: product._id },
+        { $set: { balance_stock: newBalanceStock } }
+      );
+
       // Calculate tax amounts
       const { cgst, sgst, igst } = item;
       const cgstAmt = (totalPrice * cgst) / 100;
       const sgstAmt = (totalPrice * sgst) / 100;
       const igstAmt = (totalPrice * igst) / 100;
-
-      // console.log("haii",typeof(parseFloat(sgstAmt.toFixed(2))),);
 
       return {
         ...item,
@@ -906,13 +915,14 @@ export const createInvoice = async (req, res) => {
       };
     });
 
+    const updatedItemsResults = await Promise.all(updatedItems);
+
     let updateAdditionalCharge;
     if (additionalChargesFromRedux.length > 0) {
       updateAdditionalCharge = additionalChargesFromRedux.map((charge) => {
         const { value, taxPercentage } = charge;
 
         const taxAmt = (parseFloat(value) * parseFloat(taxPercentage)) / 100;
-        console.log(taxAmt);
 
         return {
           ...charge,
@@ -925,9 +935,8 @@ export const createInvoice = async (req, res) => {
       serialNumber: newSerialNumber,
       cmp_id: orgId, // Corrected typo and used correct assignment operator
       partyAccount: party?.partyName,
-
       party,
-      items: updatedItems,
+      items: updatedItemsResults,
       priceLevel: priceLevelFromRedux, // Corrected typo and used correct assignment operator
       additionalCharges: updateAdditionalCharge, // Corrected typo and used correct assignment operator
       finalAmount: lastAmount, // Corrected typo and used correct assignment operator
@@ -952,7 +961,6 @@ export const createInvoice = async (req, res) => {
       (config) => config.organization.toString() === orgId
     );
 
-    console.log("configuration", configuration);
     if (configuration) {
       if (
         configuration.salesOrderConfiguration &&
@@ -963,16 +971,15 @@ export const createInvoice = async (req, res) => {
         orderConfig = true;
       }
     }
-    console.log(orderConfig);
 
     if (orderConfig === true) {
-      const increaseSalesNumber = await SecondaryUser.findByIdAndUpdate(
+      await SecondaryUser.findByIdAndUpdate(
         Secondary_user_id,
         { $inc: { orderNumber: 1 } },
         { new: true }
       );
     } else {
-      const increaseOrderNumber = await OragnizationModel.findByIdAndUpdate(
+      await OragnizationModel.findByIdAndUpdate(
         orgId,
         { $inc: { orderNumber: 1 } },
         { new: true }
@@ -1720,7 +1727,7 @@ export const addconfigurations = async (req, res) => {
       // Validate selectedBank as an ObjectId if needed
       if (mongoose.Types.ObjectId.isValid(selectedBank)) {
         bankId = selectedBank;
-      } 
+      }
     }
 
     const newConfigurations = {
@@ -1746,7 +1753,6 @@ export const addconfigurations = async (req, res) => {
 };
 
 // route POST /api/pUsers/createSale
-
 
 export const createSale = async (req, res) => {
   const Primary_user_id = req.owner;
@@ -1790,16 +1796,18 @@ export const createSale = async (req, res) => {
       }
 
       const itemCount = parseFloat(item.count);
-      // const productBalanceStock = parseFloat(product.balance_stock);
-      // const newBalanceStock = truncateToNDecimals(productBalanceStock - itemCount, 3);
+      const productBalanceStock = parseFloat(product.balance_stock);
+      const newBalanceStock = truncateToNDecimals(productBalanceStock - itemCount, 3);
+
+      console.log("newBalanceStock",newBalanceStock);
 
       // Prepare product update operation
-      // productUpdates.push({
-      //   updateOne: {
-      //     filter: { _id: product._id },
-      //     update: { $set: { balance_stock: newBalanceStock } },
-      //   },
-      // });
+      productUpdates.push({
+        updateOne: {
+          filter: { _id: product._id },
+          update: { $set: { balance_stock: newBalanceStock } },
+        },
+      });
 
       // Process godown and batch updates
       if (item.hasGodownOrBatch) {
@@ -1812,7 +1820,8 @@ export const createSale = async (req, res) => {
 
             if (godownIndex !== -1) {
               if (godown.count && godown.count > 0) {
-                const currentGodownStock = product.GodownList[godownIndex].balance_stock || 0;
+                const currentGodownStock =
+                  product.GodownList[godownIndex].balance_stock || 0;
                 const newGodownStock = truncateToNDecimals(
                   currentGodownStock - godown.count,
                   3
@@ -1840,7 +1849,8 @@ export const createSale = async (req, res) => {
 
             if (godownIndex !== -1) {
               if (godown.count && godown.count > 0) {
-                const currentGodownStock = product.GodownList[godownIndex].balance_stock || 0;
+                const currentGodownStock =
+                  product.GodownList[godownIndex].balance_stock || 0;
                 const newGodownStock = truncateToNDecimals(
                   currentGodownStock - godown.count,
                   3
@@ -1866,10 +1876,13 @@ export const createSale = async (req, res) => {
         // Case: No Godown
         product.GodownList = product.GodownList.map((godown) => {
           const currentGodownStock = godown.balance_stock || 0;
-          const newGodownStock = truncateToNDecimals(currentGodownStock - item.count, 3);
+          const newGodownStock = truncateToNDecimals(
+            currentGodownStock - item.count,
+            3
+          );
           return {
             ...godown,
-            balance_stock: newGodownStock
+            balance_stock: newGodownStock,
           };
         });
 
@@ -1885,6 +1898,7 @@ export const createSale = async (req, res) => {
 
     // Execute bulk operations
     // await productModel.bulkWrite(productUpdates);
+    await productModel.bulkWrite(productUpdates);
     await productModel.bulkWrite(godownUpdates);
 
     const lastSale = await salesModel.findOne(
@@ -1975,9 +1989,9 @@ export const createSale = async (req, res) => {
     if (configuration) {
       if (
         configuration.salesConfiguration &&
-        Object.values(configuration.salesConfiguration).every(
-          (value) => value !== ""
-        )
+        Object.entries(configuration.salesConfiguration).filter(
+          ([key]) => key !== "startingNumber"
+        ).every(([_,value])=>value!=="")
       ) {
         salesConfig = true;
       }
@@ -2038,9 +2052,6 @@ export const createSale = async (req, res) => {
     });
   }
 };
-
-
-
 
 // @desc toget the details of transaction or sale
 // route get/api/sUsers/getSalesDetails
@@ -2218,9 +2229,9 @@ export const fetchConfigurationNumber = async (req, res) => {
         case "sales":
           if (
             configuration.vanSale &&
-            Object.values(configuration.salesConfiguration).every(
-              (value) => value !== ""
-            )
+            Object.entries(configuration.vanSaleConfiguration)
+              .filter(([key]) => key !== "startingNumber")
+              .every(([_, value]) => value !== "")
           ) {
             configDetails = configuration.vanSaleConfiguration;
             configurationNumber = secUser?.vanSalesNumber;
@@ -2726,9 +2737,9 @@ export const createPurchase = async (req, res) => {
     if (configuration) {
       if (
         configuration?.purchaseConfiguration &&
-       Object.entries(configuration?.purchaseConfiguration)
-       .filter(([key]) => key !== "startingNumber")
-       .every(([, value]) => value !== "")
+        Object.entries(configuration?.purchaseConfiguration)
+          .filter(([key]) => key !== "startingNumber")
+          .every(([, value]) => value !== "")
       ) {
         purchaseConfig = true;
       }
@@ -2742,7 +2753,7 @@ export const createPurchase = async (req, res) => {
     //     { $inc: { vanSalesNumber: 1 } },
     //     { new: true }
     //   );
-     if (purchaseConfig) {
+    if (purchaseConfig) {
       const increasPurchaseNumber = await SecondaryUser.findByIdAndUpdate(
         Secondary_user_id,
         { $inc: { purchaseNumber: 1 } },
@@ -2795,8 +2806,6 @@ export const createPurchase = async (req, res) => {
     });
   }
 };
-
-
 
 // @desc toget the details of transaction or purchase
 // route get/api/sUsers/getPurchaseDetails

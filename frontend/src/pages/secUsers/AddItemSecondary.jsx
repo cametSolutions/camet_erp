@@ -738,6 +738,8 @@ function AddItemSecondary() {
             style={{
               scrollbarWidth: "thin",
               scrollbarColor: "transparent transparent",
+              marginTop:"6px"
+
             }}
             className=""
             height={listHeight} // Specify the height of your list
