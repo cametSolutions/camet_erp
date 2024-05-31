@@ -216,7 +216,15 @@ function InventorySecondaryUser() {
     // return
   };
 
-  console.log(listHeight);
+
+  const  truncateToNDecimals=(num, n)=> {
+    const parts = num.toString().split(".");
+    if (parts.length === 1) return num; // No decimal part
+    parts[1] = parts[1].substring(0, n);
+    console.log(parseFloat(parts.join("."))); // Truncate the decimal part
+    return parseFloat(parts.join("."));
+  }
+
 
   const Row = ({ index, style }) => {
     const el = filteredProducts[index];
@@ -279,10 +287,10 @@ function InventorySecondaryUser() {
                   </p>
                   <h2 className="font-semibold text-green-500 ml-1">
                     {" "}
-                    {(el?.GodownList?.reduce(
+                    {truncateToNDecimals((el?.GodownList?.reduce(
                       (acc, curr) => acc + (curr?.balance_stock || 0),
                       0
-                    ) || 0)-(el?.balance_stock || 0)}
+                    ) || 0)-(el?.balance_stock || 0),3)}
                   </h2>
                 </div>
               </div>
