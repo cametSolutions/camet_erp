@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import { useNavigate } from "react-router-dom";
-import { IoIosSearch } from "react-icons/io";
 import { IoArrowDown } from "react-icons/io5";
 import { HashLoader } from "react-spinners";
 import { useSelector } from "react-redux";
@@ -13,7 +12,6 @@ import { addParty as invoiceAddParty } from "../../../slices/invoiceSecondary";
 import { addParty as salesAddParty } from "../../../slices/salesSecondary";
 import { addParty as purchaseAddParty } from "../../../slices/purchase";
 import SidebarSec from "../../components/secUsers/SidebarSec";
-import { IoIosCloseCircleOutline } from "react-icons/io";
 import { Modal } from "flowbite-react";
 import sale from "../../assets/images/sale.png";
 import credit from "../../assets/images/credit.png";
@@ -124,6 +122,8 @@ function Contacts() {
         navigate(to);
         break;
       case "VanSale":
+        dispatch(salesAddParty(selectedParty));
+
         navigate(to);
         break;
       default:

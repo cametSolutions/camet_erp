@@ -4,12 +4,12 @@ import Sidebar from "../../components/homePage/Sidebar";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import api from "../../api/api";
 import { useParams } from "react-router-dom";
-import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import { MdPrint } from "react-icons/md";
 import numberToWords from "number-to-words";
 import { Link } from "react-router-dom";
 import QRCode from "react-qr-code";
+
 
 function ShareInvoice() {
   const [data, setData] = useState([]);

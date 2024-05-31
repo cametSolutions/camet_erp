@@ -2575,14 +2575,14 @@ export const fetchGodownsAndPriceLevels = async (req, res) => {
       { $unwind: "$Priceleveles" },
       {
         $match: {
-          "Priceleveles.pricelevel": { $ne: null },
-          "Priceleveles.pricelevel": { $ne: "" },
+          "Priceleveles.pricelevel": { $exists: true, $ne: null, $ne: "" },
         },
       },
       {
         $group: {
           _id: "$Priceleveles.pricelevel", // Group by price level
-          //  priceRate: { $first: "$Priceleveles.pricerate" } // Take the first pricerate as an example
+          // Assuming you want to take the first pricerate as an example
+          priceRate: { $first: "$Priceleveles.pricerate" },
         },
       },
     ]);
@@ -2598,8 +2598,7 @@ export const fetchGodownsAndPriceLevels = async (req, res) => {
       { $unwind: "$GodownList" },
       {
         $match: {
-          "GodownList.godown_id": { $ne: null },
-          "GodownList.godown_id": { $ne: "" },
+          "GodownList.godown_id": { $exists: true, $ne: null, $ne: "" },
         },
       },
       {
@@ -2635,6 +2634,7 @@ export const fetchGodownsAndPriceLevels = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
 
 // @desc  fetchAdditionalDetails
 // route get/api/pUsers/fetchAdditionalDetails

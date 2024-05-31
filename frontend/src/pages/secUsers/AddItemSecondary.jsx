@@ -527,7 +527,7 @@ function AddItemSecondary() {
 
   useEffect(() => {
     const calculateHeight = () => {
-      const newHeight = window.innerHeight - 227;
+      const newHeight = window.innerHeight - 250;
       setListHeight(newHeight);
     };
 
@@ -738,6 +738,8 @@ function AddItemSecondary() {
             style={{
               scrollbarWidth: "thin",
               scrollbarColor: "transparent transparent",
+              marginTop:"6px"
+
             }}
             className=""
             height={listHeight} // Specify the height of your list

@@ -56,7 +56,6 @@ function AddItemSalesSecondary() {
   ///////////////////////////get height from redux///////////////////////////////////
   const heightsFromRedux = useSelector((state) => state.salesSecondary.heights);
 
-  console.log(heightsFromRedux);
 
   ///////////////////////////itemsFromRedux///////////////////////////////////
 
@@ -93,8 +92,8 @@ function AddItemSalesSecondary() {
         const godown = await api.get(`/api/sUsers/godownsName/${cpm_id}`, {
           withCredentials: true,
         });
-        // setGodownname(godown.data || "");
-        setGodownname("")
+        setGodownname(godown.data || "");
+        // setGodownname("")
       } catch (error) {
         console.log(error);
         toast.error(error.message);
@@ -120,7 +119,6 @@ function AddItemSalesSecondary() {
             withCredentials: true,
           });
           productData = res.data.productData;
-          console.log(res.data.productData);
           dispatch(addAllProducts(res.data.productData));
         } else {
           productData = allProductsFromRedux;
@@ -200,7 +198,6 @@ function AddItemSalesSecondary() {
 
   //////////////////////////////fetchFilters////////////////////////////////
 
-  console.log(type);
 
   useEffect(() => {
     const fetchFilters = async () => {
@@ -288,7 +285,6 @@ function AddItemSalesSecondary() {
   ///////////////////////////calculateTotal///////////////////////////////////
 
   const calculateTotal = (item, selectedPriceLevel) => {
-    console.log(item);
     const priceRate =
       item?.Priceleveles?.find(
         (level) => level.pricelevel === selectedPriceLevel
@@ -302,34 +298,27 @@ function AddItemSalesSecondary() {
         let individualSubtotal = priceRate * Number(godownOrBatch.count) || 0;
         let discountedSubtotal = individualSubtotal;
 
-        console.log(discountedSubtotal);
-        console.log(godownOrBatch);
 
         if (
           godownOrBatch.discount !== 0 &&
           godownOrBatch.discount !== undefined &&
           godownOrBatch.discount !== ""
         ) {
-          console.log("haii");
-          console.log(godownOrBatch.batch);
+          
           discountedSubtotal = discountedSubtotal - godownOrBatch.discount;
-          console.log(discountedSubtotal);
         } else if (
           godownOrBatch.discountPercentage !== 0 &&
           godownOrBatch.discountPercentage !== undefined &&
           godownOrBatch.discountPercentage !== ""
         ) {
-          console.log("haii");
 
           discountedSubtotal -=
             (individualSubtotal * godownOrBatch.discountPercentage) / 100;
         }
 
-        console.log(discountedSubtotal);
 
         const gstAmount = (discountedSubtotal * (item.igst || 0)) / 100;
 
-        console.log(gstAmount);
 
         subtotal += discountedSubtotal + gstAmount;
 
@@ -337,7 +326,6 @@ function AddItemSalesSecondary() {
           (discountedSubtotal + gstAmount).toFixed(2)
         );
 
-        console.log(individualTotal);
 
         individualTotals.push({
           index,
@@ -345,7 +333,6 @@ function AddItemSalesSecondary() {
           individualTotal,
         });
 
-        console.log(individualTotals);
       });
     } else {
       let individualSubtotal = priceRate * Number(item.count);
@@ -379,7 +366,6 @@ function AddItemSalesSecondary() {
 
     subtotal = parseFloat(subtotal.toFixed(2));
 
-    console.log(subtotal);
 
     return {
       individualTotals,
@@ -422,7 +408,6 @@ function AddItemSalesSecondary() {
         itemToUpdate.total = totalData?.total || 0;
         itemToUpdate.added = true;
 
-        console.log(itemToUpdate);
         dispatch(addItem(itemToUpdate));
 
         return itemToUpdate;
@@ -433,7 +418,6 @@ function AddItemSalesSecondary() {
     setItem(updatedItems);
   };
 
-  console.log(item);
 
   ///////////////////////////handleIncrement///////////////////////////////////
 
@@ -442,11 +426,7 @@ function AddItemSalesSecondary() {
       if (item._id !== _id) return item; // Keep items unchanged if _id doesn't match
       const currentItem = { ...item };
 
-      if (
-        currentItem?.hasGodownOrBatch &&
-        godownIndex !== null &&
-        !godownname
-      ) {
+      if (currentItem?.hasGodownOrBatch && godownIndex !== null) {
         const godownOrBatch = { ...currentItem.GodownList[godownIndex] };
 
         // If godownOrBatch.count is undefined, set it to 1, otherwise increment by 1
@@ -488,7 +468,6 @@ function AddItemSalesSecondary() {
         currentItem.total = totalData.total; // Update the overall total
       }
 
-      console.log(currentItem);
       dispatch(updateItem(currentItem)); // Log the updated currentItem
       return currentItem; // Return the updated currentItem
     });
@@ -496,25 +475,22 @@ function AddItemSalesSecondary() {
     setItem(updatedItems); // Update the state with the updated items
   };
 
-  console.log(item);
 
   ///////////////////////////handleDecrement///////////////////////////////////
   const handleDecrement = (_id, godownIndex = null) => {
-    console.log("haii");
     const updatedItems = item.map((item) => {
       if (item._id !== _id) return item; // Keep items unchanged if _id doesn't match
       const currentItem = { ...item };
 
-      if (godownIndex !== null && currentItem.hasGodownOrBatch && !godownname) {
+      if (godownIndex !== null && currentItem.hasGodownOrBatch) {
         const godownOrBatch = { ...currentItem.GodownList[godownIndex] };
         godownOrBatch.count = new Decimal(godownOrBatch.count)
           .sub(1)
           .toNumber();
-        console.log(godownOrBatch.count);
 
         // Ensure count does not go below 0
         if (godownOrBatch.count <= 0) godownOrBatch.added = false;
-      
+
         const updatedGodownList = currentItem.GodownList.map((godown, index) =>
           index === godownIndex ? godownOrBatch : godown
         );
@@ -532,7 +508,6 @@ function AddItemSalesSecondary() {
         if (allAddedFalse) {
           dispatch(removeItem(currentItem._id));
         }
-
 
         // Calculate totals and update individual batch totals
         const totalData = calculateTotal(currentItem, selectedPriceLevel);
@@ -554,12 +529,10 @@ function AddItemSalesSecondary() {
 
         // Calculate totals and update individual total
         const totalData = calculateTotal(currentItem, selectedPriceLevel);
-        // console.log(totalData);
         currentItem.individualTotal = totalData.total;
         currentItem.total = totalData.total; // Update the overall total
       }
 
-      console.log(currentItem);
       dispatch(updateItem(currentItem)); // Log the updated currentItem
       // Log the updated currentItem
       return currentItem; // Return the updated currentItem
@@ -587,9 +560,6 @@ function AddItemSalesSecondary() {
     setItem(updatedItems);
   };
 
-  console.log(item);
-
-
 
   ///////////////////////////handlePriceLevelChange///////////////////////////////////
 
@@ -613,7 +583,7 @@ function AddItemSalesSecondary() {
 
   useEffect(() => {
     const calculateHeight = () => {
-      const newHeight = window.innerHeight - 200;
+      const newHeight = window.innerHeight - 250;
       setListHeight(newHeight);
     };
 
@@ -642,8 +612,6 @@ function AddItemSalesSecondary() {
       navigate("/sUsers/sales");
     }
   };
-
-
 
   /////////////////////expansion panel////////////////////
 
@@ -678,7 +646,6 @@ function AddItemSalesSecondary() {
     // return
   };
 
-  // console.log(getItemSize(0));
 
   const setHeight = useCallback((index, height) => {
     setHeights((prevHeights) => {
@@ -692,7 +659,6 @@ function AddItemSalesSecondary() {
     });
   }, []);
 
-  console.log(heights);
 
   const Row = ({ index, style }) => {
     const el = filteredItems[index];
@@ -720,9 +686,11 @@ function AddItemSalesSecondary() {
                 {el?.product_name}
               </p>
               {el?.hasGodownOrBatch && (
-                <div>
-                  <span>Total : ₹ </span>
-                  <span>{el?.total || 0}</span>
+                <div className="flex">
+                  <div>
+                    <span>Net Amount : ₹ </span>
+                    <span>{el?.total || 0}</span>
+                  </div>
                 </div>
               )}
 
@@ -752,7 +720,15 @@ function AddItemSalesSecondary() {
               )}
             </div>
           </div>
-          {el?.added && el?.count > 0 ? (
+
+          {el?.hasGodownOrBatch && (
+            <div className="mt-1">
+              <span className="text-gray-500 text-xs md:text-sm  ">Stock : </span>
+              <span className="font-bold text-xs md:text-sm ">{el?.GodownList.reduce((acc,curr)=>acc+=curr.balance_stock,0) || 0}</span>
+            </div>
+          )}
+
+          {el?.added && el?.count  && !el?.hasGodownOrBatch> 0 ? (
             <div className="flex items-center flex-col gap-2">
               {/* <Link
               // to={`/sUsers/editItem/${el?._id}`}
@@ -1044,6 +1020,7 @@ function AddItemSalesSecondary() {
             style={{
               scrollbarWidth: "thin",
               scrollbarColor: "transparent transparent",
+              marginTop: "6px",
             }}
             className=""
             height={listHeight} // Specify the height of your list
@@ -1075,8 +1052,6 @@ function AddItemSalesSecondary() {
           </div>
         )}
       </div>
-
-    
     </div>
   );
 }
