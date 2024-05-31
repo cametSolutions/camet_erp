@@ -267,7 +267,7 @@ function InventoryPrimaryUser() {
               </div>
             </div>
             <div>
-              <div className="flex flex-col gap-1 ">
+            <div className="flex flex-col gap-1 ">
                 <div className="flex items-center justify-end">
                   <p className="  text-xs   md:text-sm font-semibold text-gray-500  ">
                     Actual Stock :
@@ -280,13 +280,25 @@ function InventoryPrimaryUser() {
                     ) || 0}
                   </h2>
                 </div>
-                <div className="flex items-center">
+                <div className="flex items-center justify-end">
                   <p className=" text-xs md:text-sm font-semibold text-gray-500">
                     Saleable Stock :
                   </p>
                   <h2 className="font-semibold text-green-500 ml-1">
                     {" "}
                     {el?.balance_stock || 0}
+                  </h2>
+                </div>
+                <div className="flex items-center justify-end">
+                  <p className=" text-xs md:text-sm font-semibold text-gray-500">
+                    Order Stock :
+                  </p>
+                  <h2 className="font-semibold text-green-500 ml-1">
+                    {" "}
+                    {(el?.GodownList?.reduce(
+                      (acc, curr) => acc + (curr?.balance_stock || 0),
+                      0
+                    ) || 0)-(el?.balance_stock || 0)}
                   </h2>
                 </div>
               </div>
