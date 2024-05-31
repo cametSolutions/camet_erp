@@ -139,6 +139,14 @@
           "expdt": "2 Days"
         },
         {
+          "balance_stock": 1002,
+          "godown": "Dummy Location",
+          "godown_id": "ID:007",
+          "batch": "110",
+          "mfgdt": "1-Apr-18",
+          "expdt": "2 Days"
+        },
+        {
           "balance_stock": 25,
           "godown": "Main Location",
           "godown_id": "ID:62",

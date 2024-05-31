@@ -686,22 +686,80 @@ export const getProducts = async (req, res) => {
     );
 
     let products;
+    const matchStage = {
+      $match: {
+        cmp_id: cmp_id,
+        Primary_user_id: Primary_user_id,
+      },
+    };
 
-    if (configuration) {
-      const { selectedGodowns, vanSale } = configuration;
+    if (configuration && configuration.selectedGodowns && configuration.selectedGodowns.length > 0) {
+      const { selectedGodowns } = configuration;
 
       console.log("selectedGodowns", selectedGodowns);
 
-      const matchStage = {
-        $match: {
-          cmp_id: cmp_id,
-          Primary_user_id: Primary_user_id,
+      matchStage.$match["GodownList.godown_id"] = { $in: selectedGodowns };
+
+      const projectStage = {
+        $project: {
+          product_name: 1,
+          cmp_id: 1,
+          product_code: 1,
+          balance_stock: 1,
+          Primary_user_id: 1,
+          brand: 1,
+          category: 1,
+          sub_category: 1,
+          unit: 1,
+          alt_unit: 1,
+          unit_conversion: 1,
+          alt_unit_conversion: 1,
+          hsn_code: 1,
+          purchase_price: 1,
+          purchase_cost: 1,
+          Priceleveles: 1,
+          GodownList: {
+            $filter: {
+              input: "$GodownList",
+              as: "godown",
+              cond: { $in: ["$$godown.godown_id", selectedGodowns] }
+            }
+          },
+          cgst: 1,
+          sgst: 1,
+          igst: 1,
+          cess: 1,
+          addl_cess: 1,
+          state_cess: 1,
+          product_master_id: 1,
+          __v: 1,
         },
       };
 
-      if (selectedGodowns && selectedGodowns.length > 0) {
-        matchStage.$match["GodownList.godown_id"] = { $in: selectedGodowns };
-      }
+      const addFieldsStage = {
+        $addFields: {
+          hasGodownOrBatch: {
+            $anyElementTrue: {
+              $map: {
+                input: "$GodownList",
+                as: "godown",
+                in: {
+                  $or: [
+                    { $ifNull: ["$$godown.godown", false] },
+                    { $ifNull: ["$$godown.batch", false] },
+                  ],
+                },
+              },
+            },
+          },
+        },
+      };
+
+      const aggregationPipeline = [matchStage, projectStage, addFieldsStage];
+
+      products = await productModel.aggregate(aggregationPipeline);
+    } else {
+      console.log("no configuration or no selected godowns");
 
       const projectStage = {
         $project: {
@@ -755,63 +813,6 @@ export const getProducts = async (req, res) => {
       const aggregationPipeline = [matchStage, projectStage, addFieldsStage];
 
       products = await productModel.aggregate(aggregationPipeline);
-    } else {
-      console.log("no configuration or no selected godowns");
-      products = await productModel.aggregate([
-        {
-          $match: {
-            Primary_user_id: Primary_user_id,
-            cmp_id: cmp_id,
-          },
-        },
-        {
-          $project: {
-            product_name: 1,
-            cmp_id: 1,
-            product_code: 1,
-            balance_stock: 1,
-            Primary_user_id: 1,
-            brand: 1,
-            category: 1,
-            sub_category: 1,
-            unit: 1,
-            alt_unit: 1,
-            unit_conversion: 1,
-            alt_unit_conversion: 1,
-            hsn_code: 1,
-            purchase_price: 1,
-            purchase_cost: 1,
-            Priceleveles: 1,
-            GodownList: 1,  // Keep the GodownList as it is
-            cgst: 1,
-            sgst: 1,
-            igst: 1,
-            cess: 1,
-            addl_cess: 1,
-            state_cess: 1,
-            product_master_id: 1,
-            __v: 1,
-          },
-        },
-        {
-          $addFields: {
-            hasGodownOrBatch: {
-              $anyElementTrue: {
-                $map: {
-                  input: "$GodownList",
-                  as: "godown",
-                  in: {
-                    $or: [
-                      { $ifNull: ["$$godown.godown", false] },
-                      { $ifNull: ["$$godown.batch", false] },
-                    ],
-                  },
-                },
-              },
-            },
-          },
-        },
-      ]);
     }
 
     if (products && products.length > 0) {
@@ -827,6 +828,7 @@ export const getProducts = async (req, res) => {
     return res.status(500).json({ success: false, message: "Internal server error, try again!" });
   }
 };
+
 
 
 
