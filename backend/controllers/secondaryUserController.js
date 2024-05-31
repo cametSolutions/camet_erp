@@ -692,152 +692,131 @@ export const getProducts = async (req, res) => {
 
       console.log("selectedGodowns", selectedGodowns);
 
-     
-
-      if (vanSale && selectedGodowns && selectedGodowns.length === 1) {
-        console.log("vansale");
-        products = await productModel.aggregate([
-          {
-            $match: {
-              cmp_id: cmp_id,
-              Primary_user_id: Primary_user_id,
-              "GodownList.godown_id": { $in: selectedGodowns },
-            },
-          },
-          {
-            $project: {
-              product_name: 1,
-              cmp_id: 1,
-              product_code: 1,
-              balance_stock: {
-                $map: {
-                  input: {
-                    $filter: {
-                      input: "$GodownList",
-                      as: "godown",
-                      cond: { $in: ["$$godown.godown_id", selectedGodowns] },
-                    },
-                  },
-                  as: "godown",
-                  in: "$$godown.balance_stock",
-                },
-              },
-              Primary_user_id: 1,
-              brand: 1,
-              category: 1,
-              sub_category: 1,
-              unit: 1,
-              alt_unit: 1,
-              unit_conversion: 1,
-              alt_unit_conversion: 1,
-              hsn_code: 1,
-              purchase_price: 1,
-              purchase_cost: 1,
-              Priceleveles: 1,
-              GodownList: {
-                $filter: {
-                  input: "$GodownList",
-                  as: "godown",
-                  cond: { $in: ["$$godown.godown_id", selectedGodowns] },
-                },
-              },
-              cgst: 1,
-              sgst: 1,
-              igst: 1,
-              cess: 1,
-              addl_cess: 1,
-              state_cess: 1,
-              product_master_id: 1,
-              __v: 1,
-            },
-          },
-        ]);
-      } else if (vanSale == false && selectedGodowns.length !== 0) {
-        console.log("no vansale but selected godowns");
-
-        products = await productModel.aggregate([
-          {
-            $match: {
-              cmp_id: cmp_id,
-              Primary_user_id: Primary_user_id,
-              "GodownList.godown_id": { $in: selectedGodowns },
-            },
-          },
-          {
-            $project: {
-              product_name: 1,
-              cmp_id: 1,
-              product_code: 1,
-              balance_stock: 1,
-
-              Primary_user_id: 1,
-              brand: 1,
-              category: 1,
-              sub_category: 1,
-              unit: 1,
-              alt_unit: 1,
-              unit_conversion: 1,
-              alt_unit_conversion: 1,
-              hsn_code: 1,
-              purchase_price: 1,
-              purchase_cost: 1,
-              Priceleveles: 1,
-              GodownList: {
-                $filter: {
-                  input: "$GodownList",
-                  as: "godown",
-                  cond: { $in: ["$$godown.godown_id", selectedGodowns] },
-                },
-              },
-              cgst: 1,
-              sgst: 1,
-              igst: 1,
-              cess: 1,
-              addl_cess: 1,
-              state_cess: 1,
-              product_master_id: 1,
-              __v: 1,
-            },
-          },
-        ]);
-      } else {
-
-        console.log("no vansale and no selected godowns");
-        products = await productModel.find({
-          Primary_user_id: Primary_user_id,
+      const matchStage = {
+        $match: {
           cmp_id: cmp_id,
-        });
-      }
-    } else {
-      console.log("no vansale no selected godowns");
+          Primary_user_id: Primary_user_id,
+        },
+      };
 
-      // If configuration is not present, fetch all products
-      products = await productModel.find({
-        Primary_user_id: Primary_user_id,
-        cmp_id: cmp_id,
-      });
+      if (selectedGodowns && selectedGodowns.length > 0) {
+        matchStage.$match["GodownList.godown_id"] = { $in: selectedGodowns };
+      }
+
+      const projectStage = {
+        $project: {
+          product_name: 1,
+          cmp_id: 1,
+          product_code: 1,
+          balance_stock: 1,
+          Primary_user_id: 1,
+          brand: 1,
+          category: 1,
+          sub_category: 1,
+          unit: 1,
+          alt_unit: 1,
+          unit_conversion: 1,
+          alt_unit_conversion: 1,
+          hsn_code: 1,
+          purchase_price: 1,
+          purchase_cost: 1,
+          Priceleveles: 1,
+          GodownList: 1,  // Keep the GodownList as it is
+          cgst: 1,
+          sgst: 1,
+          igst: 1,
+          cess: 1,
+          addl_cess: 1,
+          state_cess: 1,
+          product_master_id: 1,
+          __v: 1,
+        },
+      };
+
+      const addFieldsStage = {
+        $addFields: {
+          hasGodownOrBatch: {
+            $anyElementTrue: {
+              $map: {
+                input: "$GodownList",
+                as: "godown",
+                in: {
+                  $or: [
+                    { $ifNull: ["$$godown.godown", false] },
+                    { $ifNull: ["$$godown.batch", false] },
+                  ],
+                },
+              },
+            },
+          },
+        },
+      };
+
+      const aggregationPipeline = [matchStage, projectStage, addFieldsStage];
+
+      products = await productModel.aggregate(aggregationPipeline);
+    } else {
+      console.log("no configuration or no selected godowns");
+      products = await productModel.aggregate([
+        {
+          $match: {
+            Primary_user_id: Primary_user_id,
+            cmp_id: cmp_id,
+          },
+        },
+        {
+          $project: {
+            product_name: 1,
+            cmp_id: 1,
+            product_code: 1,
+            balance_stock: 1,
+            Primary_user_id: 1,
+            brand: 1,
+            category: 1,
+            sub_category: 1,
+            unit: 1,
+            alt_unit: 1,
+            unit_conversion: 1,
+            alt_unit_conversion: 1,
+            hsn_code: 1,
+            purchase_price: 1,
+            purchase_cost: 1,
+            Priceleveles: 1,
+            GodownList: 1,  // Keep the GodownList as it is
+            cgst: 1,
+            sgst: 1,
+            igst: 1,
+            cess: 1,
+            addl_cess: 1,
+            state_cess: 1,
+            product_master_id: 1,
+            __v: 1,
+          },
+        },
+        {
+          $addFields: {
+            hasGodownOrBatch: {
+              $anyElementTrue: {
+                $map: {
+                  input: "$GodownList",
+                  as: "godown",
+                  in: {
+                    $or: [
+                      { $ifNull: ["$$godown.godown", false] },
+                      { $ifNull: ["$$godown.batch", false] },
+                    ],
+                  },
+                },
+              },
+            },
+          },
+        },
+      ]);
     }
 
-    console.log("products", products);
-
-  
-
     if (products && products.length > 0) {
-      // Add the check for GodownList
-      const filteredProducts = [];
-      for (let i = 0; i < products.length; i++) {
-        const product = products[i];
-        const hasGodownOrBatch = product.GodownList.some(
-          item => item.godown || item.batch
-        );
-        filteredProducts.push({
-          ...product?. _doc,  // Use _doc to get the plain JS object from the Mongoose document
-          hasGodownOrBatch
-        });
-      }
-console.log("filteredProducts", filteredProducts);
       return res.status(200).json({
-        productData: filteredProducts,
+        productData: products,
         message: "Products fetched",
       });
     } else {
@@ -845,11 +824,11 @@ console.log("filteredProducts", filteredProducts);
     }
   } catch (error) {
     console.log(error);
-    return res
-      .status(500)
-      .json({ success: false, message: "Internal server error, try again!" });
+    return res.status(500).json({ success: false, message: "Internal server error, try again!" });
   }
 };
+
+
 
 // route POST /api/pUsers/createInvoice
 export const createInvoice = async (req, res) => {
