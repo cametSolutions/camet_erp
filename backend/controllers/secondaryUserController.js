@@ -818,24 +818,23 @@ export const getProducts = async (req, res) => {
       });
     }
 
-    console.log("products", products);
+    console.log("products", products[0]);
 
   
 
     if (products && products.length > 0) {
       // Add the check for GodownList
-      const filteredProducts = [];
-      for (let i = 0; i < products.length; i++) {
-        const product = products[i];
+      const filteredProducts = products.map(product => {
         const hasGodownOrBatch = product.GodownList.some(
           item => item.godown || item.batch
         );
-        filteredProducts.push({
-          ...product?. _doc,  // Use _doc to get the plain JS object from the Mongoose document
+        // Spread the original product properties and add hasGodownOrBatch
+        return {
+          ...product,
           hasGodownOrBatch
-        });
-      }
-console.log("filteredProducts", filteredProducts);
+        };
+      });
+      console.log("filteredProducts",filteredProducts);
       return res.status(200).json({
         productData: filteredProducts,
         message: "Products fetched",
