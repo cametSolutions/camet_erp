@@ -527,7 +527,7 @@ function AddItemSecondary() {
 
   useEffect(() => {
     const calculateHeight = () => {
-      const newHeight = window.innerHeight - 227;
+      const newHeight = window.innerHeight - 250;
       setListHeight(newHeight);
     };
 

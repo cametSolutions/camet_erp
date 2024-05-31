@@ -93,8 +93,8 @@ function AddItemSalesSecondary() {
         const godown = await api.get(`/api/sUsers/godownsName/${cpm_id}`, {
           withCredentials: true,
         });
-        // setGodownname(godown.data || "");
-        setGodownname("")
+        setGodownname(godown.data || "");
+        // setGodownname("")
       } catch (error) {
         console.log(error);
         toast.error(error.message);
@@ -444,8 +444,8 @@ function AddItemSalesSecondary() {
 
       if (
         currentItem?.hasGodownOrBatch &&
-        godownIndex !== null &&
-        !godownname
+        godownIndex !== null
+        
       ) {
         const godownOrBatch = { ...currentItem.GodownList[godownIndex] };
 
@@ -505,7 +505,7 @@ function AddItemSalesSecondary() {
       if (item._id !== _id) return item; // Keep items unchanged if _id doesn't match
       const currentItem = { ...item };
 
-      if (godownIndex !== null && currentItem.hasGodownOrBatch && !godownname) {
+      if (godownIndex !== null && currentItem.hasGodownOrBatch ) {
         const godownOrBatch = { ...currentItem.GodownList[godownIndex] };
         godownOrBatch.count = new Decimal(godownOrBatch.count)
           .sub(1)
@@ -613,7 +613,7 @@ function AddItemSalesSecondary() {
 
   useEffect(() => {
     const calculateHeight = () => {
-      const newHeight = window.innerHeight - 200;
+      const newHeight = window.innerHeight - 250;
       setListHeight(newHeight);
     };
 
@@ -1044,6 +1044,7 @@ function AddItemSalesSecondary() {
             style={{
               scrollbarWidth: "thin",
               scrollbarColor: "transparent transparent",
+              // marginTop:"0px"
             }}
             className=""
             height={listHeight} // Specify the height of your list

@@ -8,13 +8,10 @@ import { IoIosArrowRoundBack } from "react-icons/io";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import {
-  changeIgstAndDiscount,
-  changeGodownCount,
+
   updateItem,
 } from "../../../slices/salesSecondary";
-import { toast } from "react-toastify";
-import { Button, Modal } from "flowbite-react";
-import { Decimal } from "decimal.js";
+
 
 function EditItemSalesSecondary() {
   const [item, setItem] = useState([]);
@@ -29,11 +26,7 @@ function EditItemSalesSecondary() {
   const [totalAmount, setTotalAmount] = useState(0);
   const [discountAmount, setDiscountAmount] = useState(0); // State for discount amount
   const [discountPercentage, setDiscountPercentage] = useState(0);
-  const [data, setSata] = useState([]);
 
-  const [openModal, setOpenModal] = useState(false);
-  const [totalCount, setTotalCount] = useState(0);
-  const [godown, setGodown] = useState([]);
   const { id, godownName, index } = useParams();
   console.log(index);
   const navigate = useNavigate();
@@ -155,7 +148,6 @@ function EditItemSalesSecondary() {
 
   const dispatch = useDispatch();
 
-  console.log(godown);
 
   const submitHandler = () => {
     console.log(item);
@@ -242,11 +234,6 @@ function EditItemSalesSecondary() {
     navigate(-1)
   };
 
-  /////////////////////////modal popup /////////////////////////////
-
-  function onCloseModal() {
-    setOpenModal(false);
-  }
 
   function truncateToNDecimals(num, n) {
     const parts = num.toString().split(".");
@@ -254,110 +241,6 @@ function EditItemSalesSecondary() {
     parts[1] = parts[1].substring(0, n); // Truncate the decimal part
     return parseFloat(parts.join("."));
   }
-
-  const openModalHandler = () => {
-    console.log(godownName);
-    console.log(selectedItem);
-    if (selectedItem[0]?.GodownList?.length > 0 && godownName === "nil") {
-      setOpenModal(true);
-      if (godown.length === 0) {
-        setGodown(selectedItem[0]?.GodownList);
-      }
-    }
-  };
-
-  // Function to handle incrementing the count
-  // Function to handle incrementing the count
-  const incrementCount = (index) => {
-    const newGodownItems = godown.map((item) => ({ ...item }));
-    let countValue = newGodownItems[index].count
-      ? parseFloat(newGodownItems[index].count)
-      : 0;
-
-    // Increment the count using Decimal library
-    countValue = new Decimal(countValue).add(1).toNumber();
-
-    newGodownItems[index].count = countValue;
-    newGodownItems[index].balance_stock -= 1;
-    newGodownItems[index].balance_stock = truncateToNDecimals(
-      newGodownItems[index].balance_stock,
-      3
-    );
-    setGodown(newGodownItems);
-  };
-
-  // Function to handle decrementing the count
-  const decrementCount = (index) => {
-    const newGodownItems = godown.map((item) => ({ ...item })); // Assuming godown is the correct state variable name
-    console.log(newGodownItems);
-
-    if (newGodownItems[index].count > 0) {
-      newGodownItems[index].count = new Decimal(newGodownItems[index].count)
-        .sub(1)
-        .toNumber();
-      // newGodownItems[index].count = newGodownItems[index].count.toNumber();
-      newGodownItems[index].balance_stock += 1; // Increase balance_stock by 1
-      newGodownItems[index].balance_stock = truncateToNDecimals(
-        newGodownItems[index].balance_stock,
-        3
-      );
-      setGodown(newGodownItems);
-    } else {
-      toast("Cannot decrement count as it is already at 0.");
-    }
-  };
-
-  ///////////////////////////changeModalCount///////////////////////////////////
-
-  const changeModalCount = (event, index, value) => {
-    console.log(value);
-
-    // Check if the value includes a decimal point
-    if (value.includes(".")) {
-      // Split the value into parts before and after the decimal point
-      const parts = value.split(".");
-      // Check the length of the part after the decimal point
-      if (parts[1].length > 3) {
-        return;
-      }
-    }
-
-    const newGodownItems = godown.map((item) => ({ ...item }));
-    const currentGodown = newGodownItems[index];
-    console.log(currentGodown);
-    currentGodown.orginalStock =
-      currentGodown.orginalStock ??
-      Number(currentGodown?.balance_stock) + Number(currentGodown?.count);
-
-    console.log(currentGodown.orginalStock);
-
-    currentGodown.count = value;
-    console.log(value);
-    console.log(newGodownItems);
-    currentGodown.balance_stock = currentGodown.orginalStock - value;
-    currentGodown.balance_stock = truncateToNDecimals(
-      currentGodown.balance_stock,
-      3
-    ); // Increase balance_stock by 1
-    setGodown(newGodownItems);
-  };
-
-  ///////////////////////////modalSubmit///////////////////////////////////
-  console.log(godown);
-
-  const modalSubmit = () => {
-    const total = truncateToNDecimals(
-      godown.reduce((acc, curr) => {
-        const value = curr.count ? parseFloat(curr.count) : 0;
-        return acc + value;
-      }, 0),
-      3 // Specify the number of decimal places you want
-    );
-
-    setQuantity(total);
-
-    setOpenModal(false);
-  };
 
   const handleDirectQuantityChange = (value) => {
     if (value.includes(".")) {
@@ -590,139 +473,7 @@ function EditItemSalesSecondary() {
           </div>
         </div>
 
-        <Modal
-          style={{
-            scrollbarWidth: "thin",
-            scrollbarColor: "transparent transparent",
-          }}
-          show={openModal}
-          size="md"
-          onClose={onCloseModal}
-          popup
-          className="modal-dialog"
-        >
-          <Modal.Header />
-          <Modal.Body>
-            <div className="space-y-6">
-              {/* Existing sign-in form */}
-              <div>
-                <div className="flex justify-between  bg-[#579BB1] p-2 rounded-sm items-center">
-                  <h3 className=" text-base md:text-xl  font-medium text-gray-900 dark:text-white ">
-                    Godown List
-                  </h3>
-
-                  <h3 className="font-medium  text-right  text-white ">
-                    Total Count:{" "}
-                    <span className="text-white font-bold">
-                      {truncateToNDecimals(
-                        godown.reduce((acc, curr) => {
-                          const value = curr.count ? parseFloat(curr.count) : 0;
-                          return acc + value;
-                        }, 0),
-                        3 // Specify the number of decimal places you want
-                      )}
-                    </span>
-                  </h3>
-                </div>
-                <div className="table-container overflow-y-auto max-h-[250px]">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th
-                          scope="col"
-                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                        >
-                          Godown Name
-                        </th>
-                        {/* <th
-                          scope="col"
-                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                        >
-                          Balance Stock
-                        </th> */}
-                        <th
-                          scope="col"
-                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                        >
-                          Count
-                        </th>
-                        <th scope="col" className="relative px-6 py-3">
-                          <span className="sr-only">Edit</span>
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {godown.map((item, index) => (
-                        <tr key={index}>
-                          <td className="px-6 py-4 ">
-                            <div className="text-sm text-gray-900">
-                              {item.godown}
-                            </div>
-                            <div className="text-sm text-gray-900 mt-1">
-                              Stock :{" "}
-                              <span className="text-green-500 font-bold">
-                                {item.balance_stock}
-                              </span>
-                            </div>
-                          </td>
-                          {/* <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-500">
-                              {item.balance_stock}
-                            </div>
-                          </td> */}
-                          {/* <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-500">
-                              {item.count}
-                            </div>
-                          </td> */}
-                          <td className=" px-6 py-4 whitespace-nowrap text-sm font-medium flex justify-center  ">
-                            <div className="flex gap-3 items-center justify-center">
-                              <button
-                                onClick={() => decrementCount(index)}
-                                className="text-indigo-600 hover:text-indigo-900  text-lg"
-                              >
-                                -
-                              </button>
-
-                              {/* {item.count} */}
-                              <input
-                                className=" input-number p-0 w-12 bg-transparent border-0 text-gray-800 text-center focus:ring-0"
-                                type="number"
-                                placeholder="0"
-                                value={item.count}
-                                onChange={(e) => {
-                                  changeModalCount(e, index, e.target.value);
-                                }}
-                                // onKeyDown={isNumberKey}
-                              />
-                              <div></div>
-
-                              <button
-                                onClick={() => incrementCount(index)}
-                                className="text-indigo-600 hover:text-indigo-900 text-lg"
-                              >
-                                +
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-              <div className="w-full">
-                <Button
-                  onClick={() => {
-                    modalSubmit(godown[0]?._id);
-                  }}
-                >
-                  Submit
-                </Button>
-              </div>
-            </div>
-          </Modal.Body>
-        </Modal>
+       
       </div>
     </div>
   );
