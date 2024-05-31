@@ -6,7 +6,6 @@ import { Link } from "react-router-dom";
 
 import { HashLoader } from "react-spinners";
 
-import { IoIosAddCircle } from "react-icons/io";
 import { VariableSizeList as List } from "react-window";
 import { useSelector } from "react-redux";
 import SidebarSec from "../../components/secUsers/SidebarSec";
@@ -211,7 +210,7 @@ function InventorySecondaryUser() {
     const product = filteredProducts[index];
     const isExpanded = product?.isExpanded || false;
     const baseHeight = isExpanded ? heights[index] || 250 : 190; // Base height for unexpanded and expanded items
-    const extraHeight = isExpanded ? 200 : 0; // Extra height for expanded items
+    const extraHeight = isExpanded ? 230 : 0; // Extra height for expanded items
 
     return baseHeight + extraHeight;
     // return
@@ -240,7 +239,7 @@ function InventorySecondaryUser() {
             </div>
           </div>
 
-          <div className=" text-sm  px-5 flex justify-between mt-3  ">
+          <div className=" text-sm  px-5 flex justify-between items-center mt-3  ">
             <div className="flex-col">
               <div className="flex gap-2 text-nowrap">
                 <p className="font-bold text-gray-400 uppercase ">Hsn :</p>
@@ -265,13 +264,25 @@ function InventorySecondaryUser() {
                     ) || 0}
                   </h2>
                 </div>
-                <div className="flex items-center">
+                <div className="flex items-center justify-end">
                   <p className=" text-xs md:text-sm font-semibold text-gray-500">
                     Saleable Stock :
                   </p>
                   <h2 className="font-semibold text-green-500 ml-1">
                     {" "}
                     {el?.balance_stock || 0}
+                  </h2>
+                </div>
+                <div className="flex items-center justify-end">
+                  <p className=" text-xs md:text-sm font-semibold text-gray-500">
+                    Order Stock :
+                  </p>
+                  <h2 className="font-semibold text-green-500 ml-1">
+                    {" "}
+                    {(el?.GodownList?.reduce(
+                      (acc, curr) => acc + (curr?.balance_stock || 0),
+                      0
+                    ) || 0)-(el?.balance_stock || 0)}
                   </h2>
                 </div>
               </div>
@@ -323,7 +334,7 @@ function InventorySecondaryUser() {
               <Link to={"/sUsers/dashboard"}>
                 <IoIosArrowRoundBack className="text-3xl text-white cursor-pointer " />
               </Link>
-              <p className="text-white text-lg   font-bold ">Inventory</p>
+              <p className="text-white text-lg   font-bold ">Stock Register</p>
             </div>
             {/* {type !== "self" && (
               <div>
