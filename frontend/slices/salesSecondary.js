@@ -178,6 +178,7 @@ export const salesSecondarySlice = createSlice({
         }
       }
     },
+
   },
 });
 
@@ -212,6 +213,6 @@ export const {
   updateItem,
   setBatchHeight,
   removeGodownOrBatch,
-} = salesSecondarySlice.actions;
+  addAllFieldsFromEditSalesPage} = salesSecondarySlice.actions;
 
 export default salesSecondarySlice.reducer;

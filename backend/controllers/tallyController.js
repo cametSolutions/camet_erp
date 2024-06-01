@@ -176,54 +176,68 @@ export const addBankData = async (req, res) => {
 
 export const saveProductsFromTally = async (req, res) => {
   try {
-    // console.log("body", req.body);
     const productsToSave = req?.body?.data;
+    console.log("productsToSave", productsToSave);
 
-    // Extract primary user id and company id from the first product
-    const { Primary_user_id, cmp_id } = productsToSave[0];
+    if (!productsToSave || !productsToSave.length) {
+      return res.status(400).json({ message: "No products to save" });
+    }
 
-    // Delete existing documents with the same primary user id and company id
-    await productModel.deleteMany({ Primary_user_id, cmp_id });
-
-    // Loop through each product to save
     const savedProducts = await Promise.all(
       productsToSave.map(async (productItem) => {
-        // Check if the product already exists
-        const existingProduct = await productModel.findOne({
-          cmp_id: productItem.cmp_id,
-          product_name: productItem.product_name,
-          Primary_user_id: productItem.Primary_user_id,
-        });
+        const { Primary_user_id, cmp_id, product_master_id } = productItem;
+        let savedProduct;
 
-        console.log("existingProduct", existingProduct);
+        try {
+          // If the item has a product_master_id, update the existing document
+          if (product_master_id) {
+            const existingProduct = await productModel.findOne({
+              Primary_user_id,
+              cmp_id,
+              product_master_id,
+            });
 
-        // If the product doesn't exist, create a new one; otherwise, update it
-        if (!existingProduct) {
-          const newProduct = new productModel(productItem);
-          return await newProduct.save();
-        } else {
-          // Update the existing product
-          return await productModel.findOneAndUpdate(
-            {
-              cmp_id: productItem.cmp_id,
-              product_name: productItem.product_name,
-              Primary_user_id: productItem.Primary_user_id,
-            },
-            productItem,
-            { new: true }
-          );
+            console.log("existingProduct", existingProduct);
+
+            if (existingProduct) {
+              // Update the existing product
+              savedProduct = await productModel.findOneAndUpdate(
+                {
+                  Primary_user_id,
+                  cmp_id,
+                  product_master_id,
+                },
+                productItem,
+                { new: true }
+              );
+            }
+          }
+
+          // If no product_master_id is provided or product doesn't exist, create a new product
+          if (!savedProduct) {
+            const newProduct = new productModel(productItem);
+            savedProduct = await newProduct.save();
+          }
+
+          console.log("savedProduct", savedProduct);
+          return savedProduct;
+        } catch (error) {
+          console.error(`Error saving product with product_master_id ${product_master_id}:`, error);
+          return null; // Return null if there is an error to continue processing other products
         }
       })
     );
 
-    res
-      .status(201)
-      .json({ message: "Products saved successfully", savedProducts });
+    // Filter out any null values from the savedProducts array
+    const successfulSaves = savedProducts.filter((product) => product !== null);
+
+    res.status(201).json({ message: "Products saved successfully", savedProducts: successfulSaves });
   } catch (error) {
     console.error("Error:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };
+
 
 // @desc for saving parties/costumers from tally
 // route GET/api/tally/giveTransaction

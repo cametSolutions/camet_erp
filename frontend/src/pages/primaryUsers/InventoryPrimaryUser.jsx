@@ -225,8 +225,8 @@ function InventoryPrimaryUser() {
   const getItemSize = (index) => {
     const product = filteredProducts[index];
     const isExpanded = product?.isExpanded || false;
-    const baseHeight = isExpanded ? heights[index] || 250 : 190; // Base height for unexpanded and expanded items
-    const extraHeight = isExpanded ? 200 : 0; // Extra height for expanded items
+    const baseHeight = isExpanded ? heights[index] || 250 : 200; // Base height for unexpanded and expanded items
+    const extraHeight = isExpanded ? 230 : 0; // Extra height for expanded items
 
     return baseHeight + extraHeight;
     // return
