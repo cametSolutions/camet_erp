@@ -874,15 +874,19 @@ export const createInvoice = async (req, res) => {
       const selectedPrice = selectedPriceLevel
         ? selectedPriceLevel.pricerate
         : null;
-
-       console.log("itemmmmm", item);
+      
 
       // Calculate total price after applying discount
-      let totalPrice = selectedPrice * (item.count || 1) || 0; // Default count to 1 if not provided
-      if (item.discount !== "0") {
+      let totalPrice = selectedPrice * (item.count || 1) || 0;
+      if ( item.discount !== 0 &&
+        item.discount !== undefined &&
+        item.discount !== "") {
         // If discount is present (amount), subtract it from the total price
         totalPrice -= item.discount;
-      } else if (item.discountPercentage) {
+      } else if (  item.discountPercentage !== 0 &&
+        item.discountPercentage !== undefined &&
+        item.discountPercentage !== "") {
+
         // If discount is present (percentage), calculate the discount amount and subtract it from the total price
         const discountAmount = (totalPrice * item.discountPercentage) / 100;
         totalPrice -= discountAmount;
@@ -901,7 +905,6 @@ export const createInvoice = async (req, res) => {
         { $set: { balance_stock: newBalanceStock } }
       );
 
-      console.log("totalPriceeeeee",totalPrice);
 
       // Calculate tax amounts
       const { cgst, sgst, igst } = item;
