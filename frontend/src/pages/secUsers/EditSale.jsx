@@ -10,27 +10,36 @@ import {
   addAdditionalCharges,
   AddFinalAmount,
   deleteRow,
+  removeAll,
+  removeAdditionalCharge,
+  removeItem,
+  removeGodownOrBatch,
+  setParty,
+  setItem,
+  setSelectedPriceLevel,
+  setAdditionalCharges,
+//   setFinalAmount,
+//   setOrderNumber,
+  setBatchHeight
+  
+
 } from "../../../slices/salesSecondary";
 import { useDispatch } from "react-redux";
 import { IoIosArrowDown } from "react-icons/io";
 import { MdCancel } from "react-icons/md";
 import { FiMinus } from "react-icons/fi";
 import { toast } from "react-toastify";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import api from "../../api/api";
 import { IoIosAddCircle } from "react-icons/io";
 import { MdPlaylistAdd } from "react-icons/md";
-import {
-  removeAll,
-  removeAdditionalCharge,
-  removeItem,
-  removeGodownOrBatch
-} from "../../../slices/salesSecondary";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import { Button, Label, Modal, TextInput } from "flowbite-react";
 import SidebarSec from "../../components/secUsers/SidebarSec";
 
-function SalesSecondary() {
+function EditSale() {
+  ////////////////////////////////state//////////////////////////////////////////////////////
+
   const [showSidebar, setShowSidebar] = useState(false);
   const [openModal, setOpenModal] = useState(false);
   const [modalInputs, setModalInputs] = useState({
@@ -41,15 +50,36 @@ function SalesSecondary() {
   });
   const [additional, setAdditional] = useState(false);
   const [godownname, setGodownname] = useState("");
-
   const [refreshCmp, setrefreshCmp] = useState(false);
   const [salesNumber, setSalesNumber] = useState("");
+
   const [additionalChragesFromCompany, setAdditionalChragesFromCompany] =
     useState([]);
-  console.log(modalInputs);
+  const [subTotal, setSubTotal] = useState(0);
+
   const additionalChargesFromRedux = useSelector(
     (state) => state.salesSecondary.additionalCharges
   );
+  const [rows, setRows] = useState(
+    additionalChargesFromRedux.length > 0
+      ? additionalChargesFromRedux
+      : additionalChragesFromCompany.length > 0
+      ? [
+          {
+            option: additionalChragesFromCompany[0].name,
+            value: "",
+            action: "add",
+            taxPercentage: additionalChragesFromCompany[0].taxPercentage,
+            hsn: additionalChragesFromCompany[0].hsn,
+            _id: additionalChragesFromCompany[0]._id,
+            finalValue: "",
+          },
+        ]
+      : [] // Fallback to an empty array if additionalChragesFromCompany is also empty
+  );
+
+  ////////////////////////////////redux//////////////////////////////////////////////////////
+
   const orgId = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
@@ -59,8 +89,104 @@ function SalesSecondary() {
   const type = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg.type
   );
-  console.log(type);
-  console.log(godownname);
+  const salesDetailsFromRedux = useSelector((state) => state.salesSecondary);
+
+  console.log(salesDetailsFromRedux);
+  const {
+    products: productsFromRedux,
+    party: partyFromRedux,
+    items: itemsFromRedux,
+    selectedPriceLevel: selectedPriceLevelFromRedux,
+    additionalChargesitems: additionalChargesitemsFromRedux,
+    finalAmount: finalAmountFromRedux,
+    persistScrollId: persistScrollIdFromRedux,
+    brand: brandFromRedux,
+    category: categoryFromRedux,
+    subcategory: subcategoryFromRedux,
+    id: idFromRedux,
+    heights: heightsFromRedux,
+  } = salesDetailsFromRedux;
+
+
+  console.log(partyFromRedux);
+
+  ////////////////////////////////utils//////////////////////////////////////////////////////
+
+  const dispatch = useDispatch();
+  const { id } = useParams();
+
+  ////////////////////////////////getting invoice details//////////////////////////////////////////////////////
+
+  useEffect(() => {
+    const fetchSalesDetails = async () => {
+      try {
+        const res = await api.get(`/api/sUsers/getSalesDetails/${id}`, {
+          withCredentials: true,
+        });
+
+        console.log(res.data.data);
+        const {
+          party,
+          items,
+          priceLevel,
+          additionalCharges,
+          finalAmount,
+          orderNumber,
+        } = res.data.data;
+
+        console.log(partyFromRedux);
+
+        // // additionalCharges: [ { option: 'option 1', value: '95', action: 'add' } ],
+        if (Object.keys(partyFromRedux) == 0) {
+          console.log("haii");
+
+          dispatch(setParty(party));
+        }
+
+        if (itemsFromRedux.length == 0) {
+          dispatch(setItem(items));
+        }
+
+        if (priceLevelFromRedux == "") {
+          dispatch(setSelectedPriceLevel(priceLevel));
+        }
+        if (additionalChargesFromRedux.length == 0) {
+          dispatch(setAdditionalCharges(additionalCharges));
+        }
+
+        // dispatch(setFinalAmount(finalAmount));
+        // setOrderNumber(orderNumber);
+
+        if (additionalCharges && additionalCharges.length > 0 && additionalChargesFromRedux.length ==0) {
+          setAdditional(true);
+
+          const newRows = additionalCharges.map((el, index) => {
+            return {
+              option: el.option,
+              value: el.value,
+              action: el.action,
+              _id:el._id,
+              taxPercentage: el.taxPercentage,
+              hsn: el.hsn,
+              finalValue: el.finalValue,
+            };
+          });
+          setRows(newRows);
+
+        }
+        if(Object.keys(heightsFromRedux).length==0){
+            console.log("haii");
+        //   dispatch(setBatchHeight());
+        }
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    fetchSalesDetails();
+  }, []);
+
+  ////////////////////////////////getting additional charges//////////////////////////////////////////////////////
+
   useEffect(() => {
     const getAdditionalChargesIntegrated = async () => {
       try {
@@ -184,24 +310,6 @@ function SalesSecondary() {
 
   console.log(salesNumber);
 
-  const [rows, setRows] = useState(
-    additionalChargesFromRedux.length > 0
-      ? additionalChargesFromRedux
-      : additionalChragesFromCompany.length > 0
-      ? [
-          {
-            option: additionalChragesFromCompany[0].name,
-            value: "",
-            action: "add",
-            taxPercentage: additionalChragesFromCompany[0].taxPercentage,
-            hsn: additionalChragesFromCompany[0].hsn,
-            _id: additionalChragesFromCompany[0]._id,
-            finalValue: "",
-          },
-        ]
-      : [] // Fallback to an empty array if additionalChragesFromCompany is also empty
-  );
-
   console.log(rows);
 
   useEffect(() => {
@@ -209,8 +317,6 @@ function SalesSecondary() {
       setAdditional(true);
     }
   }, []);
-  const [subTotal, setSubTotal] = useState(0);
-  const dispatch = useDispatch();
 
   const handleAddRow = () => {
     const hasEmptyValue = rows.some((row) => row.value === "");
@@ -290,7 +396,6 @@ function SalesSecondary() {
   const items = useSelector((state) => state.salesSecondary.items);
   const priceLevelFromRedux =
     useSelector((state) => state.salesSecondary.selectedPriceLevel) || "";
-    const batchHeights=useSelector((state) => state.salesSecondary.heights);
 
   useEffect(() => {
     const subTotal = items.reduce((acc, curr) => {
@@ -391,8 +496,6 @@ function SalesSecondary() {
       lastAmount,
       orgId,
       salesNumber,
-      batchHeights
-      
     };
 
     console.log(formData);
@@ -626,10 +729,16 @@ function SalesSecondary() {
                             <>
                               <div className="flex items-center gap-2">
                                 <MdCancel
-                                onClick={() => {
-                                  dispatch(removeGodownOrBatch({id:el?._id,idx:idx}));
-                                }}
-                                 className="text-gray-500 text-sm cursor-pointer" />
+                                  onClick={() => {
+                                    dispatch(
+                                      removeGodownOrBatch({
+                                        id: el?._id,
+                                        idx: idx,
+                                      })
+                                    );
+                                  }}
+                                  className="text-gray-500 text-sm cursor-pointer"
+                                />
                                 <div
                                   key={idx}
                                   className="flex justify-between items-center mt-5 flex-1 "
@@ -1265,4 +1374,4 @@ function SalesSecondary() {
   );
 }
 
-export default SalesSecondary;
+export default EditSale;

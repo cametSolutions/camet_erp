@@ -53,7 +53,6 @@ function EditInvoiceSecondary() {
     suffixDetails: "",
   });
   const [additional, setAdditional] = useState(false);
-  const [refresh, setRefresh] = useState(false);
   const [refreshCmp, setrefreshCmp] = useState(false);
   const [orderNumber, setOrderNumber] = useState("");
   const [additionalChragesFromCompany, setAdditionalChragesFromCompany] =  useState([]);

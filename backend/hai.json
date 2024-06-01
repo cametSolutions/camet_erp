@@ -16,7 +16,7 @@
       "cess": 0,
       "addl_cess": 0,
       "state_cess": 0,
-      "product_master_id": 166,
+      "product_master_id": 100,
       "cmp_id": "65bccc186b50fc180e8e806f",
       "Primary_user_id": "65bcc9346b50fc180e8e804d",
       "GodownList": [
@@ -55,7 +55,7 @@
       "cess": 0,
       "addl_cess": 0,
       "state_cess": 0,
-      "product_master_id": 167,
+      "product_master_id": 101,
       "cmp_id": "65bccc186b50fc180e8e806f",
       "Primary_user_id": "65bcc9346b50fc180e8e804d",
       "GodownList": [
@@ -89,7 +89,7 @@
       "cess": 0,
       "addl_cess": 0,
       "state_cess": 0,
-      "product_master_id": 168,
+      "product_master_id": 102,
       "cmp_id": "65bccc186b50fc180e8e806f",
       "Primary_user_id": "65bcc9346b50fc180e8e804d",
       "GodownList": [
@@ -126,7 +126,7 @@
       "cess": 0,
       "addl_cess": 0,
       "state_cess": 0,
-      "product_master_id": 162,
+      "product_master_id": 103,
       "cmp_id": "65bccc186b50fc180e8e806f",
       "Primary_user_id": "65bcc9346b50fc180e8e804d",
       "GodownList": [
@@ -142,7 +142,7 @@
           "balance_stock": 1002,
           "godown": "Dummy Location",
           "godown_id": "ID:007",
-          "batch": "110",
+          "batch": "W67",
           "mfgdt": "1-Apr-18",
           "expdt": "2 Days"
         },
@@ -205,7 +205,7 @@
       "cess": 0,
       "addl_cess": 0,
       "state_cess": 0,
-      "product_master_id": 163,
+      "product_master_id": 104,
       "cmp_id": "65bccc186b50fc180e8e806f",
       "Primary_user_id": "65bcc9346b50fc180e8e804d",
       "GodownList": [
@@ -259,7 +259,7 @@
       "cess": 0,
       "addl_cess": 0,
       "state_cess": 0,
-      "product_master_id": 164,
+      "product_master_id": 105,
       "cmp_id": "65bccc186b50fc180e8e806f",
       "Primary_user_id": "65bcc9346b50fc180e8e804d",
       "GodownList": [
@@ -296,7 +296,7 @@
       "cess": 0,
       "addl_cess": 0,
       "state_cess": 0,
-      "product_master_id": 166,
+      "product_master_id": 106,
       "cmp_id": "65bccc186b50fc180e8e806f",
       "Primary_user_id": "65bcc9346b50fc180e8e804d",
       "GodownList": [
@@ -329,7 +329,7 @@
       "cess": 0,
       "addl_cess": 0,
       "state_cess": 0,
-      "product_master_id": 167,
+      "product_master_id": 107,
       "cmp_id": "65bccc186b50fc180e8e806f",
       "Primary_user_id": "65bcc9346b50fc180e8e804d",
       "GodownList": [
@@ -362,7 +362,7 @@
       "cess": 0,
       "addl_cess": 0,
       "state_cess": 0,
-      "product_master_id": 166,
+      "product_master_id": 108,
       "cmp_id": "65bccc186b50fc180e8e806f",
       "Primary_user_id": "65bcc9346b50fc180e8e804d",
       "GodownList": [
@@ -392,7 +392,7 @@
       "cess": 0,
       "addl_cess": 0,
       "state_cess": 0,
-      "product_master_id": 167,
+      "product_master_id": 109,
       "cmp_id": "65bccc186b50fc180e8e806f",
       "Primary_user_id": "65bcc9346b50fc180e8e804d",
       "GodownList": [

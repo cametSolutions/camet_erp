@@ -875,6 +875,8 @@ export const createInvoice = async (req, res) => {
         ? selectedPriceLevel.pricerate
         : null;
 
+       console.log("itemmmmm", item);
+
       // Calculate total price after applying discount
       let totalPrice = selectedPrice * (item.count || 1) || 0; // Default count to 1 if not provided
       if (item.discount !== "0") {
@@ -898,6 +900,8 @@ export const createInvoice = async (req, res) => {
         { _id: product._id },
         { $set: { balance_stock: newBalanceStock } }
       );
+
+      console.log("totalPriceeeeee",totalPrice);
 
       // Calculate tax amounts
       const { cgst, sgst, igst } = item;
@@ -1818,6 +1822,8 @@ export const createSale = async (req, res) => {
               (g) => g.batch === godown.batch
             );
 
+            console.log("gggg",product.GodownList[godownIndex]);
+
             if (godownIndex !== -1) {
               if (godown.count && godown.count > 0) {
                 const currentGodownStock =
@@ -1826,6 +1832,8 @@ export const createSale = async (req, res) => {
                   currentGodownStock - godown.count,
                   3
                 );
+
+                console.log("newGodownStock",newGodownStock);
 
                 // Prepare godown update operation
                 godownUpdates.push({
