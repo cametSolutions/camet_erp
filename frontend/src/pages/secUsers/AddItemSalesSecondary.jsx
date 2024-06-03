@@ -48,6 +48,8 @@ function AddItemSalesSecondary() {
 
   const [godownname, setGodownname] = useState("");
   const [heights, setHeights] = useState({});
+
+  console.log(heights);
   ///////////////////////////cpm_id///////////////////////////////////
 
   const cpm_id = useSelector(
@@ -597,20 +599,22 @@ function AddItemSalesSecondary() {
 
   const continueHandler = () => {
     dispatch(setBatchHeight(heights));
-    if (location?.state?.from === "editSales") {
-      navigate(`/sUsers/editSales/${location.state.id}`);
-    } else {
-      navigate("/sUsers/sales");
-    }
+    navigate(-1)
+    // if (location?.state?.from === "editSales") {
+    //   navigate(`/sUsers/editSales/${location.state.id}`);
+    // } else {
+    //   navigate("/sUsers/sales");
+    // }
   };
 
   const backHandler = () => {
-    dispatch(removeAll());
-    if (location?.state?.from === "editSales") {
-      navigate(`/sUsers/editSales/${location.state.id}`);
-    } else {
-      navigate("/sUsers/sales");
-    }
+    // dispatch(removeAll());
+    navigate(-1)
+    // if (location?.state?.from === "editSales") {
+    //   navigate(`/sUsers/editSales/${location.state.id}`);
+    // } else {
+    //   navigate("/sUsers/sales");
+    // }
   };
 
   /////////////////////expansion panel////////////////////
@@ -636,6 +640,14 @@ function AddItemSalesSecondary() {
     }
   }, []);
 
+  useEffect(() => {
+    if (listRef.current) {
+      listRef.current.resetAfterIndex(0);
+    }
+  }, [heights]);
+
+
+
   const getItemSize = (index) => {
     const product = item[index];
     const isExpanded = product?.isExpanded || false;
@@ -645,6 +657,8 @@ function AddItemSalesSecondary() {
     return baseHeight + extraHeight;
     // return
   };
+
+
 
 
   const setHeight = useCallback((index, height) => {

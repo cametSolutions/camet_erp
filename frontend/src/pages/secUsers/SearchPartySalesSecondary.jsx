@@ -2,7 +2,6 @@
 import { useState, useEffect } from "react";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import { useNavigate } from "react-router-dom";
-import { IoIosSearch } from "react-icons/io";
 import { IoArrowDown } from "react-icons/io5";
 import { useSelector } from "react-redux";
 import api from "../../api/api";
@@ -10,7 +9,6 @@ import { useDispatch } from "react-redux";
 import { addParty } from "../../../slices/salesSecondary";
 import { useLocation } from "react-router-dom";
 import SidebarSec from "../../components/secUsers/SidebarSec";
-import { IoIosCloseCircleOutline } from "react-icons/io";
 import { HashLoader } from "react-spinners";
 import SearchBar from "../../components/common/SearchBar";
 
@@ -62,19 +60,21 @@ function SearchPartySalesSecondary() {
 
   const selectHandler = (el) => {
     dispatch(addParty(el));
-    if (location?.state?.from === "editSales") {
-      navigate(`/sUsers/editSales/${location?.state?.id}`);
-    } else {
-      navigate("/sUsers/sales");
-    }
+    navigate(-1)
+    // if (location?.state?.from === "editSales") {
+    //   navigate(`/sUsers/editSales/${location?.state?.id}`);
+    // } else {
+    //   navigate("/sUsers/sales");
+    // }
   };
 
   const backHandler=()=>{
-    if (location?.state?.from === "editSales") {
-      navigate(`/sUsers/editSales/${location?.state?.id}`);
-    } else {
-      navigate("/sUsers/sales");
-    }
+    navigate(-1)
+    // if (location?.state?.from === "editSales") {
+    //   navigate(`/sUsers/editSales/${location?.state?.id}`);
+    // } else {
+    //   navigate("/sUsers/sales");
+    // }
 
   }
 

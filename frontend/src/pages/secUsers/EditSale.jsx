@@ -588,7 +588,7 @@ function EditSale() {
                   className=" bottom-0 text-white bg-violet-700  w-full rounded-md  p-2 flex items-center justify-center gap-2 hover_scale cursor-pointer "
                 >
                   <IoIosAddCircle className="text-2xl" />
-                  <p>Generate Sale</p>
+                  <p>Edit Sale</p>
                 </button>
               </div>
               <div>

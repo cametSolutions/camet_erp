@@ -1,6 +1,6 @@
 /* eslint-disable react/no-unknown-property */
 /* eslint-disable react/prop-types */
-import { useEffect, useRef } from "react";
+import { useEffect, useRef,useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { setBatchHeight } from "../../../slices/salesSecondary";
@@ -16,7 +16,6 @@ const ProductDetails = ({
   heights,
   tab = "",
 }) => {
-  console.log(tab);
   const detailsRef = useRef();
   const batchOrGodownList = details?.GodownList;
   const priceRate =
@@ -24,12 +23,12 @@ const ProductDetails = ({
       (level) => level.pricelevel === selectedPriceLevel
     )?.pricerate || 0;
 
-  useEffect(() => {
-    if (detailsRef.current) {
-      setHeight(detailsRef.current.clientHeight);
-      console.log(detailsRef.current.clientHeight);
-    }
-  }, [details, setHeight]);
+    useEffect(() => {
+      if (detailsRef.current) {
+        setHeight(detailsRef.current.offsetHeight);
+      }
+    }, [details, heights, setHeight]);
+
 
   const navigate = useNavigate();
   const dispatch = useDispatch();
