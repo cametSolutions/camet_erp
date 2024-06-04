@@ -874,19 +874,21 @@ export const createInvoice = async (req, res) => {
       const selectedPrice = selectedPriceLevel
         ? selectedPriceLevel.pricerate
         : null;
-      
 
       // Calculate total price after applying discount
       let totalPrice = selectedPrice * (item.count || 1) || 0;
-      if ( item.discount !== 0 &&
+      if (
+        item.discount !== 0 &&
         item.discount !== undefined &&
-        item.discount !== "") {
+        item.discount !== ""
+      ) {
         // If discount is present (amount), subtract it from the total price
         totalPrice -= item.discount;
-      } else if (  item.discountPercentage !== 0 &&
+      } else if (
+        item.discountPercentage !== 0 &&
         item.discountPercentage !== undefined &&
-        item.discountPercentage !== "") {
-
+        item.discountPercentage !== ""
+      ) {
         // If discount is present (percentage), calculate the discount amount and subtract it from the total price
         const discountAmount = (totalPrice * item.discountPercentage) / 100;
         totalPrice -= discountAmount;
@@ -898,13 +900,15 @@ export const createInvoice = async (req, res) => {
         throw new Error(`Product with ID ${item._id} not found`);
       }
       const productBalanceStock = parseFloat(product.balance_stock) || 0; // Consider balance_stock as zero if null
-      const newBalanceStock = truncateToNDecimals(productBalanceStock - itemCount, 3);
+      const newBalanceStock = truncateToNDecimals(
+        productBalanceStock - itemCount,
+        3
+      );
 
       await productModel.updateOne(
         { _id: product._id },
         { $set: { balance_stock: newBalanceStock } }
       );
-
 
       // Calculate tax amounts
       const { cgst, sgst, igst } = item;
@@ -1804,9 +1808,12 @@ export const createSale = async (req, res) => {
 
       const itemCount = parseFloat(item.count);
       const productBalanceStock = parseFloat(product.balance_stock);
-      const newBalanceStock = truncateToNDecimals(productBalanceStock - itemCount, 3);
+      const newBalanceStock = truncateToNDecimals(
+        productBalanceStock - itemCount,
+        3
+      );
 
-      console.log("newBalanceStock",newBalanceStock);
+      console.log("newBalanceStock", newBalanceStock);
 
       // Prepare product update operation
       productUpdates.push({
@@ -1825,7 +1832,7 @@ export const createSale = async (req, res) => {
               (g) => g.batch === godown.batch
             );
 
-            console.log("gggg",product.GodownList[godownIndex]);
+            console.log("gggg", product.GodownList[godownIndex]);
 
             if (godownIndex !== -1) {
               if (godown.count && godown.count > 0) {
@@ -1836,7 +1843,7 @@ export const createSale = async (req, res) => {
                   3
                 );
 
-                console.log("newGodownStock",newGodownStock);
+                console.log("newGodownStock", newGodownStock);
 
                 // Prepare godown update operation
                 godownUpdates.push({
@@ -2000,9 +2007,9 @@ export const createSale = async (req, res) => {
     if (configuration) {
       if (
         configuration.salesConfiguration &&
-        Object.entries(configuration.salesConfiguration).filter(
-          ([key]) => key !== "startingNumber"
-        ).every(([_,value])=>value!=="")
+        Object.entries(configuration.salesConfiguration)
+          .filter(([key]) => key !== "startingNumber")
+          .every(([_, value]) => value !== "")
       ) {
         salesConfig = true;
       }
@@ -2837,5 +2844,217 @@ export const getPurchaseDetails = async (req, res) => {
   } catch (error) {
     console.error("Error fetching purchase details:", error);
     res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+// @desc to edit sale
+// route get/api/sUsers/editSaleSale
+
+export const editSale = async (req, res) => {
+  const saleId = req.params.id;
+
+  try {
+    const {
+      orgId,
+      party,
+      items,
+      priceLevelFromRedux,
+      additionalChargesFromRedux,
+      lastAmount,
+      salesNumber,
+    } = req.body;
+
+    // Fetch the existing sale
+    const existingSale = await salesModel.findById(saleId);
+    if (!existingSale) {
+      console.log("editSale: existingSale not found");
+      return res
+        .status(404)
+        .json({ success: false, message: "Sale not found" });
+    }
+
+    // Process each item to update product stock and godown stock
+    for (const item of items) {
+      // Find the product in the product model
+      const product = await productModel.findOne({ _id: item._id });
+      if (!product) {
+        console.log("editSale: product not found");
+        throw new Error(`Product not found for item ID: ${item._id}`);
+      }
+
+      const existingItem = existingSale.items.find(
+        (sItem) => sItem._id === item._id
+      );
+
+      // const itemCountDiff = parseFloat(item.count) - (existingItem?.count || 0);
+
+      // // Update product balance stock based on count difference
+      // const newBalanceStock = parseFloat(product.balance_stock) - itemCountDiff;
+      // // console.log("editSale: newBalanceStock", newBalanceStock);
+      // await productModel.updateOne(
+      //   { _id: product._id },
+      //   { $set: { balance_stock: newBalanceStock } }
+      // );
+
+      // Process godown and batch updates
+      if (item.hasGodownOrBatch) {
+        for (const godown of item.GodownList) {
+          if (godown.batch) {
+            const existingGodown = existingItem?.GodownList.find(
+              (sGodown) => sGodown.batch === godown.batch
+            );
+
+            // const itemCountDiff =
+            //   parseFloat(godown.count) - (existingGodown?.count || 0) || 0;
+
+            console.log("godownCountDiff", godownCountDiff);
+
+            console.log("editSale: decreasing godown stock");
+            let productItem = productModel.findOne({
+              _id: product._id,
+            });
+
+            const balance_stock =
+              product.GodownList.find(
+                (sGodown) => sGodown.batch === godown.batch
+              ).balance_stock || 0;
+
+            console.log("balance_stock", balance_stock);
+            let updatedStock;
+
+            if (godownCountDiff > 0) {
+              const absoluteCount = Math.abs(godownCountDiff);
+              console.log("greater than 0");
+
+              updatedStock = balance_stock - absoluteCount;
+              console.log("updatedStock", updatedStock);
+            } else {
+              const absoluteCount = Math.abs(godownCountDiff);
+
+              console.log("less than 0");
+
+              updatedStock = balance_stock + absoluteCount;
+              console.log("updatedStock", updatedStock);
+            }
+
+            await productModel.updateOne(
+              {
+                _id: product._id,
+                "GodownList.batch": godown.batch || null,
+              },
+              { $set: { "GodownList.$.balance_stock": updatedStock } }
+            );
+          } else if (godown.godown_id) {
+            const existingGodown = existingItem?.GodownList.find(
+              (sGodown) => sGodown.godown_id === godown.godown_id
+            );
+
+            const godownCountDiff =
+              parseFloat(godown.count) - (existingGodown?.count || 0) || 0;
+
+            console.log("godownCountDiff", godownCountDiff);
+
+            console.log("editSale: decreasing godown stock");
+            let productItem = productModel.findOne({
+              _id: product._id,
+            });
+
+            const balance_stock =
+              product.GodownList.find(
+                (sGodown) => sGodown.godown_id === godown.godown_id
+              ).balance_stock || 0;
+
+            console.log("balance_stock", balance_stock);
+            let updatedStock;
+
+            if (godownCountDiff > 0) {
+              const absoluteCount = Math.abs(godownCountDiff);
+              console.log("greater than 0");
+
+              updatedStock = balance_stock - absoluteCount;
+              console.log("updatedStock", updatedStock);
+            } else {
+              const absoluteCount = Math.abs(godownCountDiff);
+
+              console.log("less than 0");
+
+              updatedStock = balance_stock + absoluteCount;
+              console.log("updatedStock", updatedStock);
+            }
+
+            await productModel.updateOne(
+              {
+                _id: product._id,
+                "GodownList.godown_id": godown.godown_id || null,
+              },
+              { $set: { "GodownList.$.balance_stock": updatedStock } }
+            );
+          }
+        }
+      }
+
+
+      console.log("nohasGodownOrBatch ");
+
+
+      const product_balance_stock = Number(product.balance_stock);
+      const product_godown_balance_stock = Number(product.GodownList[0].balance_stock)
+      console.log(" product_balance_stock", product_balance_stock);
+      console.log(" product_godown_balance_stock", product_godown_balance_stock);
+      const itemCountDiff =
+        parseFloat(item.count) - (existingItem?.count || 0) || 0;
+        let updatedStock;
+        let updatedGodownStock;
+
+        console.log("new count",item.count);
+        console.log("existing count",existingItem?.count);
+        console.log("itemCountDiff",itemCountDiff);
+
+      if (itemCountDiff > 0) {
+        const absoluteCount = Math.abs(itemCountDiff);
+        console.log("greater than 0");
+
+        updatedStock = product_balance_stock - absoluteCount;
+        updatedGodownStock = product_godown_balance_stock - absoluteCount;
+        console.log("updatedStock", updatedStock);
+      } else {
+        const absoluteCount = Math.abs(itemCountDiff);
+
+        console.log("less than 0");
+
+        updatedStock = product_balance_stock + absoluteCount;
+        updatedGodownStock = product_godown_balance_stock + absoluteCount;
+
+        console.log("updatedStock", updatedStock);
+      }
+
+      await productModel.updateOne(
+        { _id: product._id },
+        { $set: { balance_stock: updatedStock ,"GodownList.0.balance_stock": updatedGodownStock} }
+      );
+    }
+
+   
+
+    // Update the existing sale
+    // existingSale.partyAccount = party?.partyName;
+    // existingSale.party = party;
+    // existingSale.items = items;
+    // existingSale.priceLevel = priceLevelFromRedux;
+    // existingSale.additionalCharges = additionalChargesFromRedux;
+    // existingSale.finalAmount = lastAmount;
+    // existingSale.salesNumber = salesNumber;
+
+    // const result = await existingSale.save();
+
+    console.log("editSale: sale updated");
+    res.status(200).json({ success: true, message: "Success" });
+  } catch (error) {
+    console.error("editSale: error", error);
+    res.status(500).json({
+      success: false,
+      message: "An error occurred while editing the sale.",
+      error: error.message,
+    });
   }
 };
