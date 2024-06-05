@@ -2999,16 +2999,81 @@ export const editSale = async (req, res) => {
 
       // Process godown and batch updates
       if (item.hasGodownOrBatch) {
+        //////////for handle deletion of godown or batch
+
+        const updatedGodownIds = item.GodownList.map((godown) => {
+          if (godown.added) {
+            return godown.godown_id || godown.batch;
+          }
+        });
+
+        console.log("updatedGodownIds", updatedGodownIds);
+        const existingGodownList = existingItem?.GodownList || [];
+
+        console.log("existingGodownList", existingGodownList);
+
+        // Identify deleted batches or godowns
+
+        const deletedGodowns = existingGodownList.filter(
+          (existingGodown) =>
+            !updatedGodownIds.some((id) =>
+              Object.values(existingGodown).includes(id)
+            )
+        );
+
+        console.log("deletedGodowns", deletedGodowns);
+        // Process deleted godowns or batches
+        for (const deletedGodown of deletedGodowns) {
+          if (deletedGodown.batch) {
+            const balance_stock =
+              product.GodownList.find(
+                (sGodown) => sGodown.batch === deletedGodown.batch
+              ).balance_stock || 0;
+
+            console.log("balance_stock DELETION", balance_stock);
+
+            const updatedStock = balance_stock + deletedGodown.count;
+            console.log("updatedStock DELETION", updatedStock);
+            console.log("deletedGodown.batch", deletedGodown.batch);
+
+            const result = await productModel.updateOne(
+              {
+                _id: product._id,
+                "GodownList.batch": deletedGodown.batch || null,
+              },
+              { $set: { "GodownList.$.balance_stock": updatedStock } }
+            );
+
+            console.log("result", result);
+          } else if (deletedGodown.godown_id) {
+            const balance_stock =
+              product.GodownList.find(
+                (sGodown) => sGodown.godown_id === deletedGodown.godown_id
+              ).balance_stock || 0;
+
+            const updatedStock = balance_stock + deletedGodown.count;
+
+            await productModel.updateOne(
+              {
+                _id: product._id,
+                "GodownList.godown_id": deletedGodown.godown_id || null,
+              },
+              { $set: { "GodownList.$.balance_stock": updatedStock } }
+            );
+          }
+        }
+
+        ////updating balance stock of godowns
+
         for (const godown of item.GodownList) {
           if (godown.batch) {
             const existingGodown = existingItem?.GodownList.find(
               (sGodown) => sGodown.batch === godown.batch
             );
-
-            // const itemCountDiff =
-            //   parseFloat(godown.count) - (existingGodown?.count || 0) || 0;
             const godownCountDiff =
               parseFloat(godown.count) - (existingGodown?.count || 0) || 0;
+
+            console.log("godownCountDiff", godownCountDiff);
 
             let productItem = productModel.findOne({
               _id: product._id,
@@ -3018,6 +3083,7 @@ export const editSale = async (req, res) => {
               product.GodownList.find(
                 (sGodown) => sGodown.batch === godown.batch
               ).balance_stock || 0;
+            console.log("balance_stock", balance_stock);
 
             let updatedStock;
 
@@ -3032,13 +3098,17 @@ export const editSale = async (req, res) => {
               updatedStock = balance_stock + absoluteCount;
             }
 
-            await productModel.updateOne(
-              {
-                _id: product._id,
-                "GodownList.batch": godown.batch || null,
-              },
-              { $set: { "GodownList.$.balance_stock": updatedStock } }
-            );
+            console.log("updatedStock", updatedStock);
+
+            if (godownCountDiff !== 0) {
+              await productModel.updateOne(
+                {
+                  _id: product._id,
+                  "GodownList.batch": godown.batch || null,
+                },
+                { $set: { "GodownList.$.balance_stock": updatedStock } }
+              );
+            }
           } else if (godown.godown_id) {
             const existingGodown = existingItem?.GodownList.find(
               (sGodown) => sGodown.godown_id === godown.godown_id
@@ -3076,13 +3146,15 @@ export const editSale = async (req, res) => {
               // console.log("updatedStock", updatedStock);
             }
 
-            await productModel.updateOne(
-              {
-                _id: product._id,
-                "GodownList.godown_id": godown.godown_id || null,
-              },
-              { $set: { "GodownList.$.balance_stock": updatedStock } }
-            );
+            if (godownCountDiff !== 0) {
+              await productModel.updateOne(
+                {
+                  _id: product._id,
+                  "GodownList.godown_id": godown.godown_id || null,
+                },
+                { $set: { "GodownList.$.balance_stock": updatedStock } }
+              );
+            }
           }
         }
       } else {
@@ -3115,6 +3187,8 @@ export const editSale = async (req, res) => {
           console.log("updatedStock", updatedStock);
         }
 
+        if (itemCountDiff !== 0) {
+          
         await productModel.updateOne(
           { _id: product._id },
           {
@@ -3123,6 +3197,9 @@ export const editSale = async (req, res) => {
             },
           }
         );
+        }
+
+          
       }
     }
 
