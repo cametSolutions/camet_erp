@@ -2873,6 +2873,83 @@ export const editSale = async (req, res) => {
         .json({ success: false, message: "Sale not found" });
     }
 
+    // To handle the deletion and updating of products
+    const updatedItemIds = items.map((item) => item._id);
+    const deletedItems = existingSale.items.filter(
+      (item) => !updatedItemIds.includes(item._id)
+    );
+
+    // Process each deleted item to update product stock and godown stock
+    for (const deletedItem of deletedItems) {
+      const product = await productModel.findOne({ _id: deletedItem._id });
+      if (!product) {
+        console.log("editSale: product not found");
+        throw new Error(`Product not found for item ID: ${deletedItem._id}`);
+      }
+
+      // Update product balance stock
+      const itemBalanceStock = Number(product.balance_stock || 0);
+      const itemCount = deletedItem.count || 0;
+      const itemUpdatedStock = itemBalanceStock + itemCount;
+
+      await productModel.updateOne(
+        { _id: product._id },
+        { $set: { balance_stock: itemUpdatedStock } }
+      );
+
+      // Update godown and batch stock if applicable
+      if (deletedItem.hasGodownOrBatch) {
+        for (const godown of deletedItem.GodownList) {
+          if (godown.batch) {
+            const balance_stock =
+              product.GodownList.find(
+                (sGodown) => sGodown.batch === godown.batch
+              ).balance_stock || 0;
+
+            const updatedStock = balance_stock + godown.count;
+
+            await productModel.updateOne(
+              {
+                _id: product._id,
+                "GodownList.batch": godown.batch || null,
+              },
+              { $set: { "GodownList.$.balance_stock": updatedStock } }
+            );
+          } else if (godown.godown_id) {
+            const balance_stock =
+              product.GodownList.find(
+                (sGodown) => sGodown.godown_id === godown.godown_id
+              ).balance_stock || 0;
+
+            const updatedStock = balance_stock + godown.count;
+
+            await productModel.updateOne(
+              {
+                _id: product._id,
+                "GodownList.godown_id": godown.godown_id || null,
+              },
+              { $set: { "GodownList.$.balance_stock": updatedStock } }
+            );
+          }
+        }
+      } else {
+        const product_godown_balance_stock = Number(
+          product.GodownList[0].balance_stock
+        );
+
+        const updatedGodownStock = product_godown_balance_stock + itemCount;
+
+        await productModel.updateOne(
+          { _id: product._id },
+          {
+            $set: {
+              "GodownList.0.balance_stock": updatedGodownStock,
+            },
+          }
+        );
+      }
+    }
+
     // Process each item to update product stock and godown stock
     for (const item of items) {
       // Find the product in the product model
