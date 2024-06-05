@@ -2885,16 +2885,40 @@ export const editSale = async (req, res) => {
       const existingItem = existingSale.items.find(
         (sItem) => sItem._id === item._id
       );
-
-      // const itemCountDiff = parseFloat(item.count) - (existingItem?.count || 0);
+      ////// common for all condions to update saleable stock
+      const itemCount = item.count || 0;
+      const itemBalanceStock = Number(product.balance_stock || 0);
+      console.log("itemCount", itemCount);
+      console.log("itemBalanceStock", itemBalanceStock);
+      let itemUpdatedStock;
+      const itemCountDiff = parseFloat(itemCount) - (existingItem?.count || 0);
+      console.log("itemCountDiff", itemCountDiff);
 
       // // Update product balance stock based on count difference
-      // const newBalanceStock = parseFloat(product.balance_stock) - itemCountDiff;
+      if (itemCountDiff > 0) {
+        const absoluteCount = Math.abs(itemCountDiff);
+        console.log("greater than 0");
+
+        itemUpdatedStock = itemBalanceStock - absoluteCount;
+        console.log("itemUpdatedStock", itemUpdatedStock);
+      } else {
+        const absoluteCount = Math.abs(itemCountDiff);
+
+        console.log("less than 0");
+
+        itemUpdatedStock = itemBalanceStock + absoluteCount;
+
+        console.log("itemUpdatedStock", itemUpdatedStock);
+      }
       // // console.log("editSale: newBalanceStock", newBalanceStock);
-      // await productModel.updateOne(
-      //   { _id: product._id },
-      //   { $set: { balance_stock: newBalanceStock } }
-      // );
+      await productModel.updateOne(
+        { _id: product._id },
+        { $set: { balance_stock: itemUpdatedStock } }
+      );
+
+      ////// applying conditions to update godown stock
+
+      ////// for  godown or batch//////////
 
       // Process godown and batch updates
       if (item.hasGodownOrBatch) {
@@ -2906,10 +2930,9 @@ export const editSale = async (req, res) => {
 
             // const itemCountDiff =
             //   parseFloat(godown.count) - (existingGodown?.count || 0) || 0;
+            const godownCountDiff =
+              parseFloat(godown.count) - (existingGodown?.count || 0) || 0;
 
-            console.log("godownCountDiff", godownCountDiff);
-
-            console.log("editSale: decreasing godown stock");
             let productItem = productModel.findOne({
               _id: product._id,
             });
@@ -2919,7 +2942,6 @@ export const editSale = async (req, res) => {
                 (sGodown) => sGodown.batch === godown.batch
               ).balance_stock || 0;
 
-            console.log("balance_stock", balance_stock);
             let updatedStock;
 
             if (godownCountDiff > 0) {
@@ -2927,14 +2949,10 @@ export const editSale = async (req, res) => {
               console.log("greater than 0");
 
               updatedStock = balance_stock - absoluteCount;
-              console.log("updatedStock", updatedStock);
             } else {
               const absoluteCount = Math.abs(godownCountDiff);
 
-              console.log("less than 0");
-
               updatedStock = balance_stock + absoluteCount;
-              console.log("updatedStock", updatedStock);
             }
 
             await productModel.updateOne(
@@ -2952,9 +2970,8 @@ export const editSale = async (req, res) => {
             const godownCountDiff =
               parseFloat(godown.count) - (existingGodown?.count || 0) || 0;
 
-            console.log("godownCountDiff", godownCountDiff);
+            // console.log("godownCountDiff", godownCountDiff);
 
-            console.log("editSale: decreasing godown stock");
             let productItem = productModel.findOne({
               _id: product._id,
             });
@@ -2964,22 +2981,22 @@ export const editSale = async (req, res) => {
                 (sGodown) => sGodown.godown_id === godown.godown_id
               ).balance_stock || 0;
 
-            console.log("balance_stock", balance_stock);
+            // console.log("balance_stock", balance_stock);
             let updatedStock;
 
             if (godownCountDiff > 0) {
               const absoluteCount = Math.abs(godownCountDiff);
-              console.log("greater than 0");
+              // console.log("greater than 0");
 
               updatedStock = balance_stock - absoluteCount;
-              console.log("updatedStock", updatedStock);
+              // console.log("updatedStock", updatedStock);
             } else {
               const absoluteCount = Math.abs(godownCountDiff);
 
-              console.log("less than 0");
+              // console.log("less than 0");
 
               updatedStock = balance_stock + absoluteCount;
-              console.log("updatedStock", updatedStock);
+              // console.log("updatedStock", updatedStock);
             }
 
             await productModel.updateOne(
@@ -2991,50 +3008,46 @@ export const editSale = async (req, res) => {
             );
           }
         }
-      }
+      } else {
+        ////// no godown or batch//////////
 
+        console.log("nohasGodownOrBatch ");
 
-      console.log("nohasGodownOrBatch ");
+        const product_godown_balance_stock = Number(
+          product.GodownList[0].balance_stock
+        );
 
-
-      const product_balance_stock = Number(product.balance_stock);
-      const product_godown_balance_stock = Number(product.GodownList[0].balance_stock)
-      console.log(" product_balance_stock", product_balance_stock);
-      console.log(" product_godown_balance_stock", product_godown_balance_stock);
-      const itemCountDiff =
-        parseFloat(item.count) - (existingItem?.count || 0) || 0;
+        const itemCountDiff =
+          parseFloat(item.count) - (existingItem?.count || 0) || 0;
         let updatedStock;
         let updatedGodownStock;
 
-        console.log("new count",item.count);
-        console.log("existing count",existingItem?.count);
-        console.log("itemCountDiff",itemCountDiff);
+        if (itemCountDiff > 0) {
+          const absoluteCount = Math.abs(itemCountDiff);
+          console.log("greater than 0");
 
-      if (itemCountDiff > 0) {
-        const absoluteCount = Math.abs(itemCountDiff);
-        console.log("greater than 0");
+          updatedGodownStock = product_godown_balance_stock - absoluteCount;
+          console.log("updatedStock", updatedStock);
+        } else {
+          const absoluteCount = Math.abs(itemCountDiff);
 
-        updatedStock = product_balance_stock - absoluteCount;
-        updatedGodownStock = product_godown_balance_stock - absoluteCount;
-        console.log("updatedStock", updatedStock);
-      } else {
-        const absoluteCount = Math.abs(itemCountDiff);
+          console.log("less than 0");
 
-        console.log("less than 0");
+          updatedGodownStock = product_godown_balance_stock + absoluteCount;
 
-        updatedStock = product_balance_stock + absoluteCount;
-        updatedGodownStock = product_godown_balance_stock + absoluteCount;
+          console.log("updatedStock", updatedStock);
+        }
 
-        console.log("updatedStock", updatedStock);
+        await productModel.updateOne(
+          { _id: product._id },
+          {
+            $set: {
+              "GodownList.0.balance_stock": updatedGodownStock,
+            },
+          }
+        );
       }
-
-      await productModel.updateOne(
-        { _id: product._id },
-        { $set: { balance_stock: updatedStock ,"GodownList.0.balance_stock": updatedGodownStock} }
-      );
     }
-
-   
 
     // Update the existing sale
     // existingSale.partyAccount = party?.partyName;
