@@ -18,6 +18,12 @@ import bcrypt from "bcryptjs";
 import mongoose from "mongoose";
 import salesModel from "../models/salesModel.js";
 import purchaseModel from "../models/purchaseModel.js";
+import {
+  deleteItemsInSaleEdit,
+  deleteGodownsOrBatchesInSaleEdit,
+  updateSaleableStock,
+  addingAnItemInSale  
+} from "./helpers/secondaryHelper.js";
 
 // @desc Login secondary user
 // route POST/api/sUsers/login
@@ -2865,6 +2871,7 @@ export const editSale = async (req, res) => {
     } = req.body;
 
     // Fetch the existing sale
+
     const existingSale = await salesModel.findById(saleId);
     if (!existingSale) {
       console.log("editSale: existingSale not found");
@@ -2873,98 +2880,31 @@ export const editSale = async (req, res) => {
         .json({ success: false, message: "Sale not found" });
     }
 
-    // To handle the deletion and updating of products
+    //////////////////////////// To handle the deletion and updating of products   starts //////////////////////////////////////////
 
     const updatedItemIds = items.map((item) => item._id);
     const deletedItems = existingSale.items.filter(
       (item) => !updatedItemIds.includes(item._id)
     );
-
     // Process each deleted item to update product stock and godown stock
-    for (const deletedItem of deletedItems) {
-      const product = await productModel.findOne({ _id: deletedItem._id });
-      if (!product) {
-        console.log("editSale: product not found");
-        throw new Error(`Product not found for item ID: ${deletedItem._id}`);
-      }
-
-      // Update product balance stock
-      const itemBalanceStock = Number(product.balance_stock || 0);
-      const itemCount = deletedItem.count || 0;
-      const itemUpdatedStock = itemBalanceStock + itemCount;
-
-      await productModel.updateOne(
-        { _id: product._id },
-        { $set: { balance_stock: itemUpdatedStock } }
-      );
-
-      // Update godown and batch stock if applicable
-      if (deletedItem.hasGodownOrBatch) {
-        for (const godown of deletedItem.GodownList) {
-          if (godown.batch) {
-            const balance_stock =
-              product.GodownList.find(
-                (sGodown) => sGodown.batch === godown.batch
-              ).balance_stock || 0;
-
-            const updatedStock = balance_stock + godown.count;
-
-            await productModel.updateOne(
-              {
-                _id: product._id,
-                "GodownList.batch": godown.batch || null,
-              },
-              { $set: { "GodownList.$.balance_stock": updatedStock } }
-            );
-          } else if (godown.godown_id) {
-            const balance_stock =
-              product.GodownList.find(
-                (sGodown) => sGodown.godown_id === godown.godown_id
-              ).balance_stock || 0;
-
-            const updatedStock = balance_stock + godown.count;
-
-            await productModel.updateOne(
-              {
-                _id: product._id,
-                "GodownList.godown_id": godown.godown_id || null,
-              },
-              { $set: { "GodownList.$.balance_stock": updatedStock } }
-            );
-          } else {
-            const balance_stock = Number(product.GodownList[0].balance_stock);
-            const updatedStock = balance_stock + product.count;
-            await productModel.updateOne(
-              {
-                _id: product._id,
-              },
-              {
-                $set: {
-                  "GodownList.0.balance_stock": updatedStock,
-                },
-              }
-            );
-          }
-        }
-      } else {
-        const product_godown_balance_stock = Number(
-          product.GodownList[0].balance_stock
-        );
-
-        const updatedGodownStock = product_godown_balance_stock + itemCount;
-
-        await productModel.updateOne(
-          { _id: product._id },
-          {
-            $set: {
-              "GodownList.0.balance_stock": updatedGodownStock,
-            },
-          }
-        );
-      }
+    if (deletedItems.length > 0) {
+      await deleteItemsInSaleEdit(deletedItems);
     }
 
-    // Process each item to update product stock and godown stock
+    ////////////////////////////// To handle the deletion and updating of products ends //////////////////////////////////////////
+
+
+    //////////////////////////// To handle the addition of a new item in sale starts  //////////////////////////////////////////
+    const newItems = items.filter((item) => !existingSale?.items?.some(( sItem ) => sItem._id === item._id));
+    console.log("newItems",newItems);
+    if(newItems.length > 0) {
+      await addingAnItemInSale(newItems);
+    }
+
+    //////////////////////////// To handle the addition of a new item in sale ends  //////////////////////////////////////////
+
+
+    ////////////////////////////// Process each item to update product stock and godown stock /////////////////////////////////////////////////
     for (const item of items) {
       // Find the product in the product model
       const product = await productModel.findOne({ _id: item._id });
@@ -2976,44 +2916,20 @@ export const editSale = async (req, res) => {
       const existingItem = existingSale.items.find(
         (sItem) => sItem._id === item._id
       );
-      ////// common for all condions to update saleable stock
-      const itemCount = item.count || 0;
-      const itemBalanceStock = Number(product.balance_stock || 0);
-      console.log("itemCount", itemCount);
-      console.log("itemBalanceStock", itemBalanceStock);
-      let itemUpdatedStock;
-      const itemCountDiff = parseFloat(itemCount) - (existingItem?.count || 0);
-      console.log("itemCountDiff", itemCountDiff);
 
-      // // Update product balance stock based on count difference
-      if (itemCountDiff > 0) {
-        const absoluteCount = Math.abs(itemCountDiff);
-        console.log("greater than 0");
+      /////////////////////////////// for updating salable stock ///////////////////////////
 
-        itemUpdatedStock = itemBalanceStock - absoluteCount;
-        console.log("itemUpdatedStock", itemUpdatedStock);
-      } else {
-        const absoluteCount = Math.abs(itemCountDiff);
-
-        console.log("less than 0");
-
-        itemUpdatedStock = itemBalanceStock + absoluteCount;
-
-        console.log("itemUpdatedStock", itemUpdatedStock);
-      }
-      // // console.log("editSale: newBalanceStock", newBalanceStock);
-      await productModel.updateOne(
-        { _id: product._id },
-        { $set: { balance_stock: itemUpdatedStock } }
+      await updateSaleableStock(
+        product,
+        item.count || 0,
+        existingItem?.count || 0
       );
 
-      ////// applying conditions to update godown stock
+      /////////////////////////////// for updating salable stock  end  ///////////////////////////
 
-      ////// for  godown or batch//////////
-
-      // Process godown and batch updates
+      /////////////////////////////// Process godown and batch updates ///////////////////////////
       if (item.hasGodownOrBatch) {
-        //////////for handle deletion of godown or batch
+        //////////for handle deletion of godown or batch   start///////////
 
         const updatedGodowns = item.GodownList.filter(
           (godown) => godown.added == true
@@ -3021,7 +2937,7 @@ export const editSale = async (req, res) => {
         console.log("updatedGodowns", updatedGodowns);
         const existingGodownList = existingItem?.GodownList.filter((godown) => {
           return godown.added == true;
-        });
+        }) || [];
         console.log("existingGodownList", existingGodownList);
 
         let deletedGodowns = [];
@@ -3046,49 +2962,13 @@ export const editSale = async (req, res) => {
         }
 
         console.log("deletedGodowns", deletedGodowns);
-
         // Process deleted godowns or batches
-        for (const deletedGodown of deletedGodowns) {
-          if (deletedGodown.batch) {
-            const balance_stock =
-              product.GodownList.find(
-                (sGodown) => sGodown.batch === deletedGodown.batch
-              ).balance_stock || 0;
 
-            console.log("balance_stock DELETION", balance_stock);
-
-            const updatedStock = balance_stock + deletedGodown.count;
-            console.log("updatedStock DELETION", updatedStock);
-            console.log("deletedGodown.batch", deletedGodown.batch);
-
-            const result = await productModel.updateOne(
-              {
-                _id: product._id,
-                "GodownList.batch": deletedGodown.batch || null,
-              },
-              { $set: { "GodownList.$.balance_stock": updatedStock } }
-            );
-
-            console.log("result", result);
-          } else if (deletedGodown.godown_id) {
-            const balance_stock =
-              product.GodownList.find(
-                (sGodown) => sGodown.godown_id === deletedGodown.godown_id
-              ).balance_stock || 0;
-
-            const updatedStock = balance_stock + deletedGodown.count;
-
-            await productModel.updateOne(
-              {
-                _id: product._id,
-                "GodownList.godown_id": deletedGodown.godown_id || null,
-              },
-              { $set: { "GodownList.$.balance_stock": updatedStock } }
-            );
-          }
+        if (deletedGodowns.length > 0) {
+          await deleteGodownsOrBatchesInSaleEdit(deletedGodowns, product);
         }
 
-        ////updating balance stock of godowns
+       /////////////////////////////////////for  updating balance stock of godowns  ////////////////////////////////////
 
         for (const godown of item.GodownList) {
           if (godown.batch) {
