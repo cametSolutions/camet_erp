@@ -22,7 +22,10 @@ import {
   deleteItemsInSaleEdit,
   deleteGodownsOrBatchesInSaleEdit,
   updateSaleableStock,
-  addingAnItemInSale  
+  addingAnItemInSale,
+  addingNewBatchesOrGodownsInSale,
+  calculateUpdatedItemValues,
+  updateAdditionalChargeInSale,
 } from "./helpers/secondaryHelper.js";
 
 // @desc Login secondary user
@@ -2893,16 +2896,15 @@ export const editSale = async (req, res) => {
 
     ////////////////////////////// To handle the deletion and updating of products ends //////////////////////////////////////////
 
-
     //////////////////////////// To handle the addition of a new item in sale starts  //////////////////////////////////////////
-    const newItems = items.filter((item) => !existingSale?.items?.some(( sItem ) => sItem._id === item._id));
-    console.log("newItems",newItems);
-    if(newItems.length > 0) {
+    const newItems = items.filter(
+      (item) => !existingSale?.items?.some((sItem) => sItem._id === item._id)
+    );
+    console.log("newItems", newItems);
+    if (newItems.length > 0) {
       await addingAnItemInSale(newItems);
     }
-
     //////////////////////////// To handle the addition of a new item in sale ends  //////////////////////////////////////////
-
 
     ////////////////////////////// Process each item to update product stock and godown stock /////////////////////////////////////////////////
     for (const item of items) {
@@ -2929,15 +2931,16 @@ export const editSale = async (req, res) => {
 
       /////////////////////////////// Process godown and batch updates ///////////////////////////
       if (item.hasGodownOrBatch) {
-        //////////for handle deletion of godown or batch   start///////////
+        ///////////////////////////////for handle deletion of godown or batch start///////////////////////////////
 
         const updatedGodowns = item.GodownList.filter(
           (godown) => godown.added == true
         );
         console.log("updatedGodowns", updatedGodowns);
-        const existingGodownList = existingItem?.GodownList.filter((godown) => {
-          return godown.added == true;
-        }) || [];
+        const existingGodownList =
+          existingItem?.GodownList.filter((godown) => {
+            return godown.added == true;
+          }) || [];
         console.log("existingGodownList", existingGodownList);
 
         let deletedGodowns = [];
@@ -2962,13 +2965,42 @@ export const editSale = async (req, res) => {
         }
 
         console.log("deletedGodowns", deletedGodowns);
+
+        let newGodowns = [];
+
+        for (const updatedGodown of updatedGodowns) {
+          if (updatedGodown.batch) {
+            // Check if the object with the same batch exists in existingGodownList
+            const foundInExisting = existingGodownList.some(
+              (existing) => existing.batch === updatedGodown.batch
+            );
+            if (!foundInExisting) {
+              newGodowns.push(updatedGodown); // Add to newGodowns if not found
+            }
+          } else if (updatedGodown.godown_id && !updatedGodown.batch) {
+            // Check if the object with the same godown_id exists in existingGodownList
+            const foundInExisting = existingGodownList.some(
+              (existing) => existing.godown_id === updatedGodown.godown_id
+            );
+            if (!foundInExisting) {
+              newGodowns.push(updatedGodown); // Add to newGodowns if not found
+            }
+          }
+        }
+
+        console.log("newGodowns", newGodowns);
+        if (newGodowns.length > 0) {
+          await addingNewBatchesOrGodownsInSale(newGodowns, product);
+        }
+
         // Process deleted godowns or batches
 
         if (deletedGodowns.length > 0) {
           await deleteGodownsOrBatchesInSaleEdit(deletedGodowns, product);
         }
+        ///////////////////////////////for handle deletion of godown or batch start///////////////////////////////
 
-       /////////////////////////////////////for  updating balance stock of godowns  ////////////////////////////////////
+        /////////////////////////////////////for  updating balance stock of godowns  ////////////////////////////////////
 
         for (const godown of item.GodownList) {
           if (godown.batch) {
@@ -3105,19 +3137,36 @@ export const editSale = async (req, res) => {
       }
     }
 
-    // Update the existing sale
-    // existingSale.partyAccount = party?.partyName;
-    // existingSale.party = party;
-    // existingSale.items = items;
-    // existingSale.priceLevel = priceLevelFromRedux;
-    // existingSale.additionalCharges = additionalChargesFromRedux;
-    // existingSale.finalAmount = lastAmount;
-    // existingSale.salesNumber = salesNumber;
+    ///////////////////////////////////// for calculating values like igst amount and updated items  ////////////////////////////////////
+    let updatedItems = items;
+    if (items.length > 0) {
+      updatedItems = await calculateUpdatedItemValues(
+        items,
+        priceLevelFromRedux
+      );
+    }
+    let updateAdditionalCharge=additionalChargesFromRedux
+    if (additionalChargesFromRedux.length > 0) {
+      updateAdditionalCharge = await updateAdditionalChargeInSale(
+        additionalChargesFromRedux
+      );
+    }
 
-    // const result = await existingSale.save();
+    console.log("updatedItems", updatedItems);
+
+    // Update the existing sale
+    existingSale.partyAccount = party?.partyName;
+    existingSale.party = party;
+    existingSale.items = updatedItems;
+    existingSale.priceLevel = priceLevelFromRedux;
+    existingSale.additionalCharges = additionalChargesFromRedux;
+    existingSale.finalAmount = lastAmount;
+    existingSale.salesNumber = salesNumber;
+
+    const result = await existingSale.save();
 
     console.log("editSale: sale updated");
-    res.status(200).json({ success: true, message: "Success" });
+    res.status(200).json({ success: true, message: "Sale updated",data:result });
   } catch (error) {
     console.error("editSale: error", error);
     res.status(500).json({

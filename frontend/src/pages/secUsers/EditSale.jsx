@@ -515,9 +515,14 @@ function EditSale() {
       toast.success(res.data.message);
 
       navigate(`/sUsers/salesDetails/${res.data.data._id}`);
+      console.log("haii");
       dispatch(removeAll());
-    } catch (error) {
-      toast.error(error.response.data.message);
+    }  catch (error) {
+      if (error.response && error.response.data) {
+        toast.error(error.response.data.message);
+      } else {
+        toast.error("An unexpected error occurred.");
+      }
       console.log(error);
     }
   };
