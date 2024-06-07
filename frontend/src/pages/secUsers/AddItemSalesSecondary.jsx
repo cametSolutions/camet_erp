@@ -58,7 +58,6 @@ function AddItemSalesSecondary() {
   ///////////////////////////get height from redux///////////////////////////////////
   const heightsFromRedux = useSelector((state) => state.salesSecondary.heights);
 
-
   ///////////////////////////itemsFromRedux///////////////////////////////////
 
   const itemsFromRedux = useSelector((state) => state.salesSecondary.items);
@@ -200,7 +199,6 @@ function AddItemSalesSecondary() {
 
   //////////////////////////////fetchFilters////////////////////////////////
 
-
   useEffect(() => {
     const fetchFilters = async () => {
       try {
@@ -300,27 +298,22 @@ function AddItemSalesSecondary() {
         let individualSubtotal = priceRate * Number(godownOrBatch.count) || 0;
         let discountedSubtotal = individualSubtotal;
 
-
         if (
           godownOrBatch.discount !== 0 &&
           godownOrBatch.discount !== undefined &&
           godownOrBatch.discount !== ""
         ) {
-          
           discountedSubtotal = discountedSubtotal - godownOrBatch.discount;
         } else if (
           godownOrBatch.discountPercentage !== 0 &&
           godownOrBatch.discountPercentage !== undefined &&
           godownOrBatch.discountPercentage !== ""
         ) {
-
           discountedSubtotal -=
             (individualSubtotal * godownOrBatch.discountPercentage) / 100;
         }
 
-
         const gstAmount = (discountedSubtotal * (item.igst || 0)) / 100;
-
 
         subtotal += discountedSubtotal + gstAmount;
 
@@ -328,13 +321,11 @@ function AddItemSalesSecondary() {
           (discountedSubtotal + gstAmount).toFixed(2)
         );
 
-
         individualTotals.push({
           index,
           batch: godownOrBatch.batch,
           individualTotal,
         });
-
       });
     } else {
       let individualSubtotal = priceRate * Number(item.count);
@@ -367,7 +358,6 @@ function AddItemSalesSecondary() {
     }
 
     subtotal = parseFloat(subtotal.toFixed(2));
-
 
     return {
       individualTotals,
@@ -419,7 +409,6 @@ function AddItemSalesSecondary() {
 
     setItem(updatedItems);
   };
-
 
   ///////////////////////////handleIncrement///////////////////////////////////
 
@@ -476,7 +465,6 @@ function AddItemSalesSecondary() {
 
     setItem(updatedItems); // Update the state with the updated items
   };
-
 
   ///////////////////////////handleDecrement///////////////////////////////////
   const handleDecrement = (_id, godownIndex = null) => {
@@ -562,7 +550,6 @@ function AddItemSalesSecondary() {
     setItem(updatedItems);
   };
 
-
   ///////////////////////////handlePriceLevelChange///////////////////////////////////
 
   const handlePriceLevelChange = (e) => {
@@ -599,7 +586,7 @@ function AddItemSalesSecondary() {
 
   const continueHandler = () => {
     dispatch(setBatchHeight(heights));
-    navigate(-1)
+    navigate(-1);
     // if (location?.state?.from === "editSales") {
     //   navigate(`/sUsers/editSales/${location.state.id}`);
     // } else {
@@ -609,7 +596,7 @@ function AddItemSalesSecondary() {
 
   const backHandler = () => {
     // dispatch(removeAll());
-    navigate(-1)
+    navigate(-1);
     // if (location?.state?.from === "editSales") {
     //   navigate(`/sUsers/editSales/${location.state.id}`);
     // } else {
@@ -646,20 +633,15 @@ function AddItemSalesSecondary() {
     }
   }, [heights]);
 
-
-
   const getItemSize = (index) => {
     const product = item[index];
     const isExpanded = product?.isExpanded || false;
-    const baseHeight = isExpanded ? heights[index] || 200 : 170; // Base height for unexpanded and expanded items
-    const extraHeight = isExpanded ? 210 : 0; // Extra height for expanded items
+    const baseHeight = isExpanded ? heights[index] || 250 : 220; // Base height for unexpanded and expanded items
+    const extraHeight = isExpanded ? 230 : 0; // Extra height for expanded items
 
     return baseHeight + extraHeight;
     // return
   };
-
-
-
 
   const setHeight = useCallback((index, height) => {
     setHeights((prevHeights) => {
@@ -673,14 +655,14 @@ function AddItemSalesSecondary() {
     });
   }, []);
 
-
   const Row = ({ index, style }) => {
     const el = filteredItems[index];
     // const isExpanded = expandedProductId === el?._id;
     const adjustedStyle = {
       ...style,
       marginTop: "6px",
-      height: "160px",
+      height: "200px",
+      
     };
     return (
       <div
@@ -690,21 +672,42 @@ function AddItemSalesSecondary() {
       >
         <div className=" flex justify-between items-center p-4">
           <div className="flex items-start gap-3 md:gap-4  ">
-            <div className="w-10 mt-1  uppercase h-10 rounded-lg bg-violet-200 flex items-center justify-center font-semibold text-gray-400">
+            <div className={`w-10 ${el?.hasGodownOrBatch ? "mt-1" : "mt-4"}  uppercase h-10 rounded-lg bg-violet-200 flex items-center justify-center font-semibold text-gray-400`}>
               {el?.product_name?.slice(0, 1)}
             </div>
             <div
               className={` flex flex-col font-bold text-sm md:text-sm  gap-1 leading-normal`}
             >
-              <p className={`${el?.hasGodownOrBatch ? "mt-2.5" : ""}`}>
-                {el?.product_name}
+              <p className={`${el?.hasGodownOrBatch ? "mt-1" : "mt-4"} max-w-1/2`}>
+                {
+                  el.hasGodownOrBatch?(
+                el?.product_name.length<30 ? el?.product_name : el?.product_name.slice(0, 50) + "..."
+
+
+                  ):(
+
+                el?.product_name.length<30 ? el?.product_name : el?.product_name.slice(0, 30) + "..."
+
+                  )
+                }
+                {/* {el?.product_name} */}
               </p>
               {el?.hasGodownOrBatch && (
-                <div className="flex">
-                  <div>
+                <div className="flex flex-col">
+                  <div className="flex">
                     <span>Net Amount : ₹ </span>
                     <span>{el?.total || 0}</span>
                   </div>
+                  <span className="text-gray-500 text-xs md:text-sm  ">
+                    Stock :
+                    <span>
+                      {" "}
+                      {el?.GodownList.reduce(
+                        (acc, curr) => (acc += curr.balance_stock),
+                        0
+                      ) || 0}
+                    </span>
+                  </span>
                 </div>
               )}
 
@@ -735,14 +738,21 @@ function AddItemSalesSecondary() {
             </div>
           </div>
 
-          {el?.hasGodownOrBatch && (
+          {/* {el?.hasGodownOrBatch && (
             <div className="mt-1">
-              <span className="text-gray-500 text-xs md:text-sm  ">Stock : </span>
-              <span className="font-bold text-xs md:text-sm ">{el?.GodownList.reduce((acc,curr)=>acc+=curr.balance_stock,0) || 0}</span>
+              <span className="text-gray-500 text-xs md:text-sm  ">
+                Stock :{" "}
+              </span>
+              <span className="font-bold text-xs md:text-sm ">
+                {el?.GodownList.reduce(
+                  (acc, curr) => (acc += curr.balance_stock),
+                  0
+                ) || 0}
+              </span>
             </div>
-          )}
+          )} */}
 
-          {el?.added && el?.count  && !el?.hasGodownOrBatch> 0 ? (
+          {el?.added && el?.count && !el?.hasGodownOrBatch > 0 ? (
             <div className="flex items-center flex-col gap-2">
               {/* <Link
               // to={`/sUsers/editItem/${el?._id}`}
@@ -1033,7 +1043,7 @@ function AddItemSalesSecondary() {
             ref={listRef}
             style={{
               scrollbarWidth: "thin",
-              scrollbarColor: "transparent transparent",
+              // scrollbarColor: "transparent transparent",
               marginTop: "6px",
             }}
             className=""

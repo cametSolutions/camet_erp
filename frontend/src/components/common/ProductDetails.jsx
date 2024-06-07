@@ -38,7 +38,7 @@ const ProductDetails = ({
   return (
     <div
       ref={detailsRef}
-      className={`product-details mb-6 mt-6 w-full shadow-lg p-3  `}
+      className={`product-details mb-6 mt-12 w-full shadow-lg p-3  `}
     >
       {batchOrGodownList.map((item, index) => (
         <>
@@ -55,13 +55,13 @@ const ProductDetails = ({
 
               {/* <p className="font-bold text-xs md:text-sm">Batch {item?.batch}</p> */}
               {item?.godown && item?.batch && (
-                <p className="text-gray-500  text-[8px] md:text-xs">
+                <p className="text-gray-500  text-sm md:text-xs">
                   ( {item.godown} )
                 </p>
               )}
 
               {item?.godown && !item?.batch && (
-                <p className="text-black font-bold  text-[8px] md:text-sm">
+                <p className="text-black font-bold  text-sm md:text-sm">
                   {item.godown}
                 </p>
               )}
@@ -84,7 +84,7 @@ const ProductDetails = ({
                       ( ₹ {item?.individualTotal} )
                     </p>
                   </div>
-                  <p className="text-gray-500 font-semibold  text-[9px] md:text-sm ">
+                  <p className="text-gray-500 font-semibold  text-sm md:text-sm ">
                     {" "}
                     Stock: {item.balance_stock}
                   </p>
