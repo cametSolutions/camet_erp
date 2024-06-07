@@ -514,9 +514,8 @@ function EditSale() {
       console.log(res.data);
       toast.success(res.data.message);
 
-      navigate(`/sUsers/salesDetails/${res.data.data._id}`);
-      console.log("haii");
-      dispatch(removeAll());
+      // navigate(`/sUsers/salesDetails/${res.data.data._id}`);
+      // dispatch(removeAll());
     }  catch (error) {
       if (error.response && error.response.data) {
         toast.error(error.response.data.message);

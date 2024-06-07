@@ -2892,6 +2892,9 @@ export const editSale = async (req, res) => {
     // Process each deleted item to update product stock and godown stock
     if (deletedItems.length > 0) {
       await deleteItemsInSaleEdit(deletedItems);
+      existingSale.items = existingSale.items.filter(
+        (item) => !deletedItems.includes(item)
+      );
     }
 
     ////////////////////////////// To handle the deletion and updating of products ends //////////////////////////////////////////
@@ -2900,7 +2903,6 @@ export const editSale = async (req, res) => {
     const newItems = items.filter(
       (item) => !existingSale?.items?.some((sItem) => sItem._id === item._id)
     );
-    console.log("newItems", newItems);
     if (newItems.length > 0) {
       await addingAnItemInSale(newItems);
     }
@@ -2936,12 +2938,12 @@ export const editSale = async (req, res) => {
         const updatedGodowns = item.GodownList.filter(
           (godown) => godown.added == true
         );
-        console.log("updatedGodowns", updatedGodowns);
+        // console.log("updatedGodowns", updatedGodowns);
         const existingGodownList =
           existingItem?.GodownList.filter((godown) => {
             return godown.added == true;
           }) || [];
-        console.log("existingGodownList", existingGodownList);
+        // console.log("existingGodownList", existingGodownList);
 
         let deletedGodowns = [];
         for (const godown of existingGodownList) {
@@ -2964,7 +2966,7 @@ export const editSale = async (req, res) => {
           }
         }
 
-        console.log("deletedGodowns", deletedGodowns);
+        // console.log("deletedGodowns", deletedGodowns);
 
         let newGodowns = [];
 
@@ -2988,7 +2990,7 @@ export const editSale = async (req, res) => {
           }
         }
 
-        console.log("newGodowns", newGodowns);
+        // console.log("newGodowns", newGodowns);
         if (newGodowns.length > 0) {
           await addingNewBatchesOrGodownsInSale(newGodowns, product);
         }
@@ -3010,7 +3012,7 @@ export const editSale = async (req, res) => {
             const godownCountDiff =
               parseFloat(godown.count) - (existingGodown?.count || 0) || 0;
 
-            console.log("godownCountDiff", godownCountDiff);
+            // console.log("godownCountDiff", godownCountDiff);
 
             let productItem = productModel.findOne({
               _id: product._id,
@@ -3020,13 +3022,13 @@ export const editSale = async (req, res) => {
               product.GodownList.find(
                 (sGodown) => sGodown.batch === godown.batch
               ).balance_stock || 0;
-            console.log("balance_stock", balance_stock);
+            // console.log("balance_stock", balance_stock);
 
             let updatedStock;
 
             if (godownCountDiff > 0) {
               const absoluteCount = Math.abs(godownCountDiff);
-              console.log("greater than 0");
+              // console.log("greater than 0");
 
               updatedStock = balance_stock - absoluteCount;
             } else {
@@ -3035,7 +3037,7 @@ export const editSale = async (req, res) => {
               updatedStock = balance_stock + absoluteCount;
             }
 
-            console.log("updatedStock", updatedStock);
+            // console.log("updatedStock", updatedStock);
 
             if (godownCountDiff !== 0) {
               await productModel.updateOne(
@@ -3097,7 +3099,7 @@ export const editSale = async (req, res) => {
       } else {
         ////// no godown or batch//////////
 
-        console.log("nohasGodownOrBatch ");
+        // console.log("nohasGodownOrBatch ");
 
         const product_godown_balance_stock = Number(
           product.GodownList[0].balance_stock
@@ -3110,18 +3112,18 @@ export const editSale = async (req, res) => {
 
         if (itemCountDiff > 0) {
           const absoluteCount = Math.abs(itemCountDiff);
-          console.log("greater than 0");
+          // console.log("greater than 0");
 
           updatedGodownStock = product_godown_balance_stock - absoluteCount;
-          console.log("updatedStock", updatedStock);
+          // console.log("updatedStock", updatedStock);
         } else {
           const absoluteCount = Math.abs(itemCountDiff);
 
-          console.log("less than 0");
+          // console.log("less than 0");
 
           updatedGodownStock = product_godown_balance_stock + absoluteCount;
 
-          console.log("updatedStock", updatedStock);
+          // console.log("updatedStock", updatedStock);
         }
 
         if (itemCountDiff !== 0) {
@@ -3145,14 +3147,14 @@ export const editSale = async (req, res) => {
         priceLevelFromRedux
       );
     }
-    let updateAdditionalCharge=additionalChargesFromRedux
+    let updateAdditionalCharge = additionalChargesFromRedux;
     if (additionalChargesFromRedux.length > 0) {
       updateAdditionalCharge = await updateAdditionalChargeInSale(
         additionalChargesFromRedux
       );
     }
 
-    console.log("updatedItems", updatedItems);
+    // console.log("updatedItems", updatedItems);
 
     // Update the existing sale
     existingSale.partyAccount = party?.partyName;
@@ -3165,8 +3167,10 @@ export const editSale = async (req, res) => {
 
     const result = await existingSale.save();
 
-    console.log("editSale: sale updated");
-    res.status(200).json({ success: true, message: "Sale updated",data:result });
+    // console.log("editSale: sale updated");
+    res
+      .status(200)
+      .json({ success: true, message: "Sale updated", data: result });
   } catch (error) {
     console.error("editSale: error", error);
     res.status(500).json({
