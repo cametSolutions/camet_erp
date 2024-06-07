@@ -18,11 +18,11 @@ import {
   setItem,
   setSelectedPriceLevel,
   setAdditionalCharges,
-//   setFinalAmount,
-//   setOrderNumber,
-  setBatchHeight
-  
-
+  setSelectedPriceLevel as setSelectedPriceLevelInRedux,
+  //   setFinalAmount,
+  //   setOrderNumber,
+  setBatchHeight,
+  setFinalAmount,
 } from "../../../slices/salesSecondary";
 import { useDispatch } from "react-redux";
 import { IoIosArrowDown } from "react-icons/io";
@@ -93,20 +93,17 @@ function EditSale() {
 
   console.log(salesDetailsFromRedux);
   const {
-    products: productsFromRedux,
     party: partyFromRedux,
     items: itemsFromRedux,
     selectedPriceLevel: selectedPriceLevelFromRedux,
     additionalChargesitems: additionalChargesitemsFromRedux,
     finalAmount: finalAmountFromRedux,
-    persistScrollId: persistScrollIdFromRedux,
     brand: brandFromRedux,
     category: categoryFromRedux,
     subcategory: subcategoryFromRedux,
     id: idFromRedux,
     heights: heightsFromRedux,
   } = salesDetailsFromRedux;
-
 
   console.log(partyFromRedux);
 
@@ -146,6 +143,9 @@ function EditSale() {
         if (itemsFromRedux.length == 0) {
           dispatch(setItem(items));
         }
+        if (finalAmount) {
+          dispatch(setFinalAmount(finalAmountFromRedux));
+        }
 
         if (priceLevelFromRedux == "") {
           dispatch(setSelectedPriceLevel(priceLevel));
@@ -157,7 +157,11 @@ function EditSale() {
         // dispatch(setFinalAmount(finalAmount));
         // setOrderNumber(orderNumber);
 
-        if (additionalCharges && additionalCharges.length > 0 && additionalChargesFromRedux.length ==0) {
+        if (
+          additionalCharges &&
+          additionalCharges.length > 0 &&
+          additionalChargesFromRedux.length == 0
+        ) {
           setAdditional(true);
 
           const newRows = additionalCharges.map((el, index) => {
@@ -165,18 +169,17 @@ function EditSale() {
               option: el.option,
               value: el.value,
               action: el.action,
-              _id:el._id,
+              _id: el._id,
               taxPercentage: el.taxPercentage,
               hsn: el.hsn,
               finalValue: el.finalValue,
             };
           });
           setRows(newRows);
-
         }
-        if(Object.keys(heightsFromRedux).length==0){
-            console.log("haii");
-        //   dispatch(setBatchHeight());
+        if (Object.keys(heightsFromRedux).length == 0) {
+          console.log("haii");
+          //   dispatch(setBatchHeight());
         }
       } catch (error) {
         console.log(error);
@@ -501,7 +504,7 @@ function EditSale() {
     console.log(formData);
 
     try {
-      const res = await api.post("/api/sUsers/createSale", formData, {
+      const res = await api.post(`/api/sUsers/editSale/${id}`, formData, {
         headers: {
           "Content-Type": "application/json",
         },
@@ -513,8 +516,12 @@ function EditSale() {
 
       navigate(`/sUsers/salesDetails/${res.data.data._id}`);
       dispatch(removeAll());
-    } catch (error) {
-      toast.error(error.response.data.message);
+    }  catch (error) {
+      if (error.response && error.response.data) {
+        toast.error(error.response.data.message);
+      } else {
+        toast.error("An unexpected error occurred.");
+      }
       console.log(error);
     }
   };
@@ -588,7 +595,7 @@ function EditSale() {
                   className=" bottom-0 text-white bg-violet-700  w-full rounded-md  p-2 flex items-center justify-center gap-2 hover_scale cursor-pointer "
                 >
                   <IoIosAddCircle className="text-2xl" />
-                  <p>Generate Sale</p>
+                  <p>Edit Sale</p>
                 </button>
               </div>
               <div>
@@ -1195,7 +1202,7 @@ function EditSale() {
               className="fixed bottom-0 text-white bg-violet-700  w-full  p-2 py-4 flex items-center justify-center gap-2 hover_scale cursor-pointer "
             >
               <IoIosAddCircle className="text-2xl" />
-              <p>Generate Sale</p>
+              <p>Edit Sale</p>
             </button>
           </div>
         </div>

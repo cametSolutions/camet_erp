@@ -1,6 +1,6 @@
 /* eslint-disable react/no-unknown-property */
 /* eslint-disable react/prop-types */
-import { useEffect, useRef } from "react";
+import { useEffect, useRef,useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { setBatchHeight } from "../../../slices/salesSecondary";
@@ -16,7 +16,6 @@ const ProductDetails = ({
   heights,
   tab = "",
 }) => {
-  console.log(tab);
   const detailsRef = useRef();
   const batchOrGodownList = details?.GodownList;
   const priceRate =
@@ -24,12 +23,12 @@ const ProductDetails = ({
       (level) => level.pricelevel === selectedPriceLevel
     )?.pricerate || 0;
 
-  useEffect(() => {
-    if (detailsRef.current) {
-      setHeight(detailsRef.current.clientHeight);
-      console.log(detailsRef.current.clientHeight);
-    }
-  }, [details, setHeight]);
+    useEffect(() => {
+      if (detailsRef.current) {
+        setHeight(detailsRef.current.offsetHeight);
+      }
+    }, [details, heights, setHeight]);
+
 
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -39,7 +38,7 @@ const ProductDetails = ({
   return (
     <div
       ref={detailsRef}
-      className={`product-details mb-6 mt-6 w-full shadow-lg p-3  `}
+      className={`product-details mb-6 mt-12 w-full shadow-lg p-3  `}
     >
       {batchOrGodownList.map((item, index) => (
         <>
@@ -56,13 +55,13 @@ const ProductDetails = ({
 
               {/* <p className="font-bold text-xs md:text-sm">Batch {item?.batch}</p> */}
               {item?.godown && item?.batch && (
-                <p className="text-gray-500  text-[8px] md:text-xs">
+                <p className="text-gray-500  text-sm md:text-xs">
                   ( {item.godown} )
                 </p>
               )}
 
               {item?.godown && !item?.batch && (
-                <p className="text-black font-bold  text-[8px] md:text-sm">
+                <p className="text-black font-bold  text-sm md:text-sm">
                   {item.godown}
                 </p>
               )}
@@ -85,7 +84,7 @@ const ProductDetails = ({
                       ( ₹ {item?.individualTotal} )
                     </p>
                   </div>
-                  <p className="text-gray-500 font-semibold  text-[9px] md:text-sm ">
+                  <p className="text-gray-500 font-semibold  text-sm md:text-sm ">
                     {" "}
                     Stock: {item.balance_stock}
                   </p>
