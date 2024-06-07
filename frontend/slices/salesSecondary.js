@@ -168,6 +168,16 @@ export const salesSecondarySlice = createSlice({
         const currentItem = state.items[index];
         currentItem.GodownList[idx].added = false;
 
+        const newCount = currentItem.GodownList.reduce((acc, curr) => {
+          if (curr.added) {
+            return acc + curr.count;
+          } else {
+            return acc;
+          }
+        },0);
+
+        currentItem.count = newCount;
+
         const allAddedFalse = currentItem.GodownList.every(
           (item) => item.added === false || item.added == undefined
         );
@@ -178,7 +188,6 @@ export const salesSecondarySlice = createSlice({
         }
       }
     },
-
   },
 });
 
@@ -213,6 +222,7 @@ export const {
   updateItem,
   setBatchHeight,
   removeGodownOrBatch,
-  addAllFieldsFromEditSalesPage} = salesSecondarySlice.actions;
+  addAllFieldsFromEditSalesPage,
+} = salesSecondarySlice.actions;
 
 export default salesSecondarySlice.reducer;
