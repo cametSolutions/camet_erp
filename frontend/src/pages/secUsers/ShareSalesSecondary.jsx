@@ -9,7 +9,7 @@ import numberToWords from "number-to-words";
 import { Link } from "react-router-dom";
 import SidebarSec from "../../components/secUsers/SidebarSec";
 import QRCode from "react-qr-code";
-
+import React from "react";
 
 function ShareSalesSecondary() {
   const [data, setData] = useState([]);
@@ -148,7 +148,7 @@ function ShareSalesSecondary() {
         >
           <div className="flex ">
             <div className="font-bold text-sm md:text-xl mb-2 mt-6">
-             Tax Invoice
+              Tax Invoice
             </div>
           </div>
           <div>
@@ -157,7 +157,7 @@ function ShareSalesSecondary() {
               <div className="text-xs md:text-sm">
                 Invoice #:{data?.salesNumber}{" "}
               </div>
-             
+
               <div className="text-xs md:text-sm">
                 Date:{new Date().toDateString()}{" "}
               </div>
@@ -247,7 +247,7 @@ function ShareSalesSecondary() {
           </div>
 
           {/* <hr className="border-t-2 border-black mb-0.5" /> */}
-          <table className="w-full text-left  bg-slate-200">
+          <table className="w-full text-left bg-slate-200">
             <thead className="border-b-2 border-t-2 border-black text-[10px] text-right">
               <tr>
                 <th className="text-gray-700 font-bold uppercase py-2 px-1 text-left">
@@ -266,6 +266,7 @@ function ShareSalesSecondary() {
             <tbody>
               {data?.items?.length > 0 &&
                 data?.items.map((el, index) => {
+                 
                   const discountAmount =
                     el?.discountPercentage > 0
                       ? (el.Priceleveles.find(
@@ -274,47 +275,107 @@ function ShareSalesSecondary() {
                           el.discountPercentage) /
                         100
                       : el?.discount;
+
                   return (
-                    <tr
-                      key={index}
-                      className="border-b-2 border-t-1 text-[9px] bg-white"
-                    >
-                      <td className="py-4 text-black pr-2">
-                        {el.product_name} <br />
-                        <p className="text-gray-400 mt-1">
-                          HSN: {el?.hsn_code} ({el.igst}%)
-                        </p>
-                      </td>
-                      <td className="py-4 text-black text-right pr-2">
-                        {el?.count} {el?.unit}
-                      </td>
-                      <td className="py-4 text-black text-right pr-2 text-nowrap">
-                        ₹{" "}
-                        {
-                          el.Priceleveles.find(
-                            (item) => item?.pricelevel === data?.priceLevel
-                          )?.pricerate
-                        }
-                      </td>
-                      <td className="py-4 text-black text-right pr-2 ">
-                        {discountAmount > 0
-                          ? ` ₹${discountAmount?.toFixed(2)} `
-                          : "₹ 0"}
-                        {/* <br />
-                        {el?.discountPercentage > 0 &&
-                          `(${el?.discountPercentage}%)`} */}
-                      </td>
-                      <td className="py-4 text-black text-right pr-2">
-                        {(
-                          el?.total -
-                          (el?.total * 100) / (parseFloat(el.igst) + 100)
-                        )?.toFixed(2)}
-                        {/* <br /> ({el?.igst}%) */}
-                      </td>
-                      <td className="py-4 text-black text-right">
-                        ₹ {el?.total}
-                      </td>
-                    </tr>
+                    <React.Fragment key={index}>
+                      <tr className={` ${!el.hasGodownOrBatch?"border-b-4":""} text-[9px] bg-white   `}>
+                        <td className="py-4 text-black pr-2 font-bold  ">
+                          {el.product_name} <br />
+                          <p className="text-gray-400 mt-1">
+                            HSN: {el?.hsn_code} ({el.igst}%)
+                          </p>
+                        </td>
+                        <td className="py-4 text-black text-right pr-2">
+                          {el?.count} {el?.unit}
+                        </td>
+                        <td className="py-4 text-black text-right pr-2 text-nowrap">
+                          ₹{" "}
+                          {
+                            el.Priceleveles.find(
+                              (item) => item?.pricelevel === data?.priceLevel
+                            )?.pricerate
+                          }
+                        </td>
+                        <td className="py-4 text-black text-right pr-2">
+                          {discountAmount > 0
+                            ? ` ₹${discountAmount?.toFixed(2)} `
+                            : "₹ 0"}
+                        </td>
+                        <td className="py-4 text-black text-right pr-2">
+                          {(
+                            el?.total -
+                            (el?.total * 100) / (parseFloat(el.igst) + 100)
+                          )?.toFixed(2)}
+                        </td>
+                        <td className="py-4 text-black text-right">
+                          ₹ {el?.total}
+                        </td>
+                      </tr>
+
+                      {el.hasGodownOrBatch &&
+                        el.GodownList.map((godownOrBatch, idx) =>
+                          godownOrBatch.added ? (
+                            <tr
+                              key={idx}
+                              className={`bg-gray-100 text-[9px] ${
+                                idx ===
+                                el.GodownList.filter((godown) => godown.added)
+                                  .length -
+                                  1
+                                  ? "border-b-4"
+                                  : ""
+                              }`}
+                            >
+                              {" "}
+                              <td className="py-2 ">
+                                {godownOrBatch.batch ? (
+                                  <div className="flex justify-between">
+                                    <p className="ml-2">
+                                      Batch: {godownOrBatch.batch}
+                                    </p>
+                            
+                                  </div>
+                                ) : (
+                                  godownOrBatch.godown && (
+                                    <div className="flex justify-between">
+                                      <p className=" ml-2">
+                                        Godown: {godownOrBatch.godown}
+                                      </p>
+                                 
+                                    </div>
+                                  )
+                                )}
+                              </td>
+                              <td className="py-2 flex justify-end pr-2">
+                                {godownOrBatch.count} {el?.unit}
+                              </td>
+                              <td className="py-2 text-end pr-2">
+                                ₹{" "}
+                                {el.Priceleveles.find(
+                                  (item) =>
+                                    item?.pricelevel === data?.priceLevel
+                                )?.pricerate || 0}
+                              </td>
+                              <td className="py-2 pr-2    ">
+                                {(godownOrBatch.discount > 0 ||
+                                  godownOrBatch.discountPercentage > 0) && (
+                                  <div className="text-end">
+                                    <p>
+                                      {godownOrBatch.discount > 0
+                                        ? `₹ ${godownOrBatch.discount}`
+                                        : `${godownOrBatch.discountPercentage}%`}
+                                    </p>
+                                  </div>
+                                )}
+                              </td>
+                              <td className="py-2"></td>
+                              <td className="py-2 text-end ">
+                                <p>₹ {godownOrBatch.individualTotal ?? 0}</p>
+                              </td>
+                            </tr>
+                          ) : null
+                        )}
+                    </React.Fragment>
                   );
                 })}
             </tbody>
@@ -415,7 +476,7 @@ function ShareSalesSecondary() {
                 <div className="text-gray-700 font-bold text-[10px] flex flex-col justify-end text-right mt-1">
                   <p className="text-nowrap">Total Amount(in words)</p>
                   <div className="text-gray-700 full font-bold text-[7.5px] text-nowrap uppercase mt-1   ">
-                   <p className="whitespace-normal">₹ {inWords}</p> 
+                    <p className="whitespace-normal">₹ {inWords}</p>
                   </div>
                 </div>
               </div>

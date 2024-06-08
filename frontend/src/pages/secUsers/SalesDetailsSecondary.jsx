@@ -11,7 +11,7 @@ import { FaEdit } from "react-icons/fa";
 import { useLocation, useNavigate } from "react-router-dom";
 import SidebarSec from "../../components/secUsers/SidebarSec";
 import Swal from "sweetalert2";
-
+import SalesProductDetails from "../../components/common/SalesProductDetails";
 
 function SalesDetailsSecondary() {
   const [data, setData] = useState("");
@@ -21,8 +21,6 @@ function SalesDetailsSecondary() {
   console.log(id);
   const location = useLocation();
   const navigate = useNavigate();
-
-
 
   useEffect(() => {
     const getTransactionDetails = async () => {
@@ -62,14 +60,14 @@ function SalesDetailsSecondary() {
     }).then((result) => {
       if (result.isConfirmed) {
         // Swal.fire("Tax Invoice selected", "", "success");
-        navigate(`/sUsers/shareSales/${data._id}`)
+        navigate(`/sUsers/shareSales/${data._id}`);
       } else if (result.isDenied) {
-        navigate(`/sUsers/shareSalesThreeInch/${data._id}`)
-
+        navigate(`/sUsers/shareSalesThreeInch/${data._id}`);
       }
     });
-    
   };
+
+  console.log(data.items);
 
   return (
     <div className="flex relative">
@@ -79,7 +77,7 @@ function SalesDetailsSecondary() {
 
       <div className="bg-[rgb(244,246,254)] flex-1 h-screen overflow-y-scroll relative  pb-[70px] md:pb-0 ">
         {/* headinh section  */}
-        <div className="flex bg-[#012a4a] items-center justify-between">
+        <div className="flex bg-[#012a4a] items-center justify-between sticky top-0">
           <div className="flex items-center gap-3  text-white text-md p-4 ">
             <MdOutlineArrowBack
               onClick={backHandler}
@@ -127,13 +125,13 @@ function SalesDetailsSecondary() {
                 <p className="text-black font-bold text-sm">Edit</p>
               </div>
               {/* <Link to={`/sUsers/shareSales/${data._id}`}> */}
-                <div
-                 onClick={chooseFormat}
-
-                 className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer">
-                  <IoMdShareAlt />
-                  <p className="text-black font-bold text-sm">Share</p>
-                </div>
+              <div
+                onClick={chooseFormat}
+                className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer"
+              >
+                <IoMdShareAlt />
+                <p className="text-black font-bold text-sm">Share</p>
+              </div>
               {/* </Link> */}
               <div className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer">
                 <MdTextsms className="text-green-500" />
@@ -174,47 +172,41 @@ function SalesDetailsSecondary() {
         {/* party details */}
         {/* party Total Mount */}
 
-        <div className="flex justify-between p-4 bg-white mt-2">
-          <p className="font-bold">Total Amount</p>
-          <p className="font-bold">
-            ₹ {parseInt(data?.finalAmount).toFixed(2)}
-          </p>
+        <div className="p-4 bg-white mt-2 ">
+          <div className="flex items-center justify-between">
+            <p className="font-bold">Total Amount</p>
+            <p className="font-bold">
+              ₹ {parseInt(data?.finalAmount).toFixed(2)}
+            </p>
+          </div>
+          <div className="flex items-center justify-between mt-2 text-sm ">
+            <p className="font-semibold text-gray-500">Subtotal</p>
+            <p className="font-semibold">
+              ₹{" "}
+              {parseInt(
+                data?.items?.reduce((acc, curr) => acc + curr?.total, 0) || 0
+              ).toFixed(2)}
+            </p>
+          </div>
+          <div className="flex items-center justify-between mt-2 text-sm">
+            <p className="font-semibold text-gray-500">Additional Charge</p>
+            <p className="font-semibold">
+              ₹{" "}
+              {parseInt(
+                data?.additionalCharges?.reduce(
+                  (acc, curr) => acc + curr?.finalValue,
+                  0
+                )
+              ).toFixed(2)}
+            </p>
+          </div>
         </div>
 
-        <h3 className="font-bold text-md px-4 py-2 bg-white mt-2">Products</h3>
-        {Array.isArray(data?.items) &&
-          data.items.map((el, index) => (
-            <div
-              key={el?._id || index}
-              className="p-4 bg-white text-gray-500 text-xs md:text-base "
-            >
-              <div className="flex justify-between items-center ">
-                <div className="text-sm font-semibold">{el?.product_name}</div>
-                <p className="text-sm font-semibold">₹ {el?.total || "0"}</p>
-              </div>
-              ₹
-              {el.Priceleveles.find(
-                (item) => item?.pricelevel === data?.priceLevel
-              )?.pricerate || "N/A"}{" "}
-              * {el?.count} + ( {el?.igst}% ) -
-              {el?.discount > 0
-                ? ` ₹${el?.discount} (discount)`
-                : el?.discountPercentage > 0
-                ? ` ${el?.discountPercentage}% (discount)`
-                : " (0 discount)"}
-            </div>
-          ))}
-           <h3 className="font-bold text-md px-4 py-2 bg-white mt-2">Additional Charges</h3>
-            {data.additionalCharges && data.additionalCharges.length > 0 && (
-          <div className="p-4 bg-white text-gray-500 text-xs md:text-base">
-            {data.additionalCharges.map((values, index) => (
-              <div key={index}>
-                <p className="font-semibold text-black">{values.option}</p>
-                <p> ₹{values?.value} + {values.taxPercentage ? `(${values.taxPercentage}%)` : ('0%')} = ₹{parseInt(values.value) + (parseInt(values.value) * ((parseInt(values.taxPercentage) || 0) / 100))}</p>
-              </div>
-            ))}
-          </div>
-        )}
+        <SalesProductDetails
+          items={data?.items}
+          priceLevel={data?.priceLevel}
+          additionalCharges={data?.additionalCharges}
+        />
 
         {/* payment method */}
 
@@ -232,20 +224,21 @@ function SalesDetailsSecondary() {
                 {data?.isCancelled ? "Cancelled" : "Cancel"}
               </p>
             </div> */}
-            {/* <div
-              onClick={() => navigate(`/sUsers/editInvoice/${data._id}`)}
+            <div
+              onClick={() => navigate(`/sUsers/editSale/${data._id}`)}
               className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer"
             >
               <FaEdit className="text-blue-500" />
               <p className="text-black font-bold text-sm">Edit</p>
-            </div> */}
+            </div>
             {/* <Link to={`/sUsers/shareSales/${data._id}`}> */}
-              <div 
-               onClick={chooseFormat}
-              className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer">
-                <IoMdShareAlt />
-                <p className="text-black font-bold text-sm">Share</p>
-              </div>
+            <div
+              onClick={chooseFormat}
+              className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer"
+            >
+              <IoMdShareAlt />
+              <p className="text-black font-bold text-sm">Share</p>
+            </div>
             {/* </Link> */}
             <div className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer">
               <MdTextsms className="text-green-500" />
