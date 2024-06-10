@@ -261,22 +261,22 @@ export const addingAnItemInSale = async (items) => {
 
 
 
-      // const itemCount = parseFloat(item.count);
+      const itemCount = parseFloat(item.count);
       // console.log("itemCount", itemCount);
-      // const productBalanceStock = parseFloat(product.balance_stock);
-      // const newBalanceStock = truncateToNDecimals(
-      //   productBalanceStock - itemCount,
-      //   3
-      // );
+      const productBalanceStock = parseFloat(product.balance_stock);
+      const newBalanceStock = truncateToNDecimals(
+        productBalanceStock - itemCount,
+        3
+      );
       // console.log("productBalanceStock", productBalanceStock);
       // console.log("newBalanceStock", newBalanceStock);
 
-      // productUpdates.push({
-      //   updateOne: {
-      //     filter: { _id: product._id },
-      //     update: { $set: { balance_stock: newBalanceStock } },
-      //   },
-      // });
+      productUpdates.push({
+        updateOne: {
+          filter: { _id: product._id },
+          update: { $set: { balance_stock: newBalanceStock } },
+        },
+      });
 
       if (item.hasGodownOrBatch) {
         for (const godown of item.GodownList) {

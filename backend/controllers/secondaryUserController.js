@@ -2904,13 +2904,19 @@ export const editSale = async (req, res) => {
     const newItems = items.filter(
       (item) => !existingSale?.items?.some((sItem) => sItem._id === item._id)
     );
+
+    const oldItems = items.filter(
+      (item) => existingSale?.items?.some((sItem) => sItem._id === item._id)
+    );
+
+   
     if (newItems.length > 0) {
       await addingAnItemInSale(newItems);
     }
     //////////////////////////// To handle the addition of a new item in sale ends  //////////////////////////////////////////
 
     ////////////////////////////// Process each item to update product stock and godown stock /////////////////////////////////////////////////
-    for (const item of items) {
+    for (const item of oldItems) {
       // Find the product in the product model
       const product = await productModel.findOne({ _id: item._id });
       if (!product) {
