@@ -59,12 +59,12 @@ function SalesThreeInchPdf({ contentToPrint, data, org, subTotal, bank ,additina
         <div className="flex justify-center">
           <div className="w-4/5 flex flex-col mt-1 ml-2">
             <div className=" flex justify-center">
-              <p className="text-black font-semibold text-[12px] pb-1">
+              <p className="text-black font-bold text-[13px] pb-1">
                 {org?.name}
               </p>
             </div>
             <div className=" flex flex-col items-center ">
-              <div className="text-black  text-[9px] font-semibold text-center">
+              <div className="text-black  text-[11px] font-semibold text-center">
                 {[
                   org?.flat,
                   org?.landmark,
@@ -76,16 +76,16 @@ function SalesThreeInchPdf({ contentToPrint, data, org, subTotal, bank ,additina
                   .filter(Boolean) // Remove any falsy values (e.g., undefined or null)
                   .join(", ")}
               </div>
-              <div className="text-black font-semibold   text-[9px] ">
+              <div className="text-black font-semibold   text-[11px] ">
                 {org?.email}
               </div>
-              <div className="text-black font-semibold  text-[9px] ">
+              <div className="text-black font-semibold  text-[11px] ">
                 {org?.website}
               </div>
-              <div className="text-black font-semibold  text-[9px]">
+              <div className="text-black font-semibold  text-[11px]">
                 Gst No: {org?.gstNum}
               </div>
-              <div className="text-black font-semibold   text-[9px]">
+              <div className="text-black font-semibold   text-[11px]">
                 Pan No: {org?.pan}
               </div>
             </div>
