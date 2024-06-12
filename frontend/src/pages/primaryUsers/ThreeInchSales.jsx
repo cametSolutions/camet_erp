@@ -163,7 +163,7 @@ function ThreeInchSales() {
             <Link to={`/pUsers/salesDetails/${id}`}>
               <IoIosArrowRoundBack className="text-3xl" />
             </Link>
-            <p>Share Your Order</p>
+            <p>Share Your Sale</p>
           </div>
           <div>
             <MdPrint
@@ -210,7 +210,7 @@ function ThreeInchSales() {
                 </p>
               </div>
               <div className=" flex flex-col items-center ">
-                <div className="text-gray-500  text-[7px] text-center">
+                <div className="text-gray-500  text-[9px] text-center">
                   {[
                     org?.flat,
                     org?.landmark,
