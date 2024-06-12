@@ -44,12 +44,12 @@ function SalesThreeInchPdf({ contentToPrint, data, org, subTotal, bank ,additina
       ref={contentToPrint}
       className="rounded-lg  px-3   flex justify-center "
     >
-      <div className="w-[22rem] ">
+      <div className="  px-3 max-w-3xl mx-auto  md:block w-[18rem] ">
         <div className="flex justify-center ">
           <div className="font-bold text-md  mb-2 mt-6">INVOICE</div>
         </div>
         <div>
-          <div className="bg-black h-2 w-full mt-1"></div>
+          <div className="bg-gray-500 h-1 w-full mt-1"></div>
           <div className="flex items-center justify-between  bg-gray-300 px-3 py-1  font-bold">
             <div className="text-[9px] ">Invoice #:{data?.salesNumber} </div>
             <div className="text-[9px]">Date:{new Date().toDateString()} </div>
@@ -101,7 +101,7 @@ function SalesThreeInchPdf({ contentToPrint, data, org, subTotal, bank ,additina
 
         {/* <hr className="border-t-2 border-black mb-0.5" /> */}
         <table className="w-full text-left  bg-slate-200  mt-1 ">
-          <thead className="border-b-2 border-t-2 border-black text-[10px] text-right">
+          <thead className="border-b border-t-2 border-black text-[10px] text-right">
             <tr>
               <th className="text-black font-bold uppercase py-2 px-1 text-left">
                 Items
@@ -130,7 +130,7 @@ function SalesThreeInchPdf({ contentToPrint, data, org, subTotal, bank ,additina
                 return (
                   <tr
                     key={index}
-                    className="border-b-2 border-t-1 text-[9px] bg-white"
+                    className="border-b border-t-1 text-[9px] bg-white"
                   >
                     <td className="py-2 text-black  font-bold  pr-2">
                       {el.product_name} <br />
@@ -154,7 +154,7 @@ function SalesThreeInchPdf({ contentToPrint, data, org, subTotal, bank ,additina
                   </tr>
                 );
               })}
-            <tr className=" border-y-4 border-t-4 border-black  font-bold  text-[9px] bg-white">
+            <tr className=" border-y-2 border-t-2 border-gray-500  font-bold  text-[9px] bg-white">
               <td className="py-1 text-black ">Total</td>
               <td className=" col-span-2 py-1 text-black text-center">
                 {" "}
