@@ -26,7 +26,6 @@ import {
   addingNewBatchesOrGodownsInSale,
   calculateUpdatedItemValues,
   updateAdditionalChargeInSale,
-  
 } from "./helpers/secondaryHelper.js";
 
 // @desc Login secondary user
@@ -1869,7 +1868,44 @@ export const createSale = async (req, res) => {
                 });
               }
             }
-          } else if (godown.godown_id) {
+          }
+          //  else if (godown.godown_id && godown.batch) {
+
+          //   console.log("have batch and godown_id");
+          //   const godownIndex = product.GodownList.findIndex(
+          //     (g) => g.batch === godown.batch && g.godown_id === godown.godown_id
+          //   );
+
+          //   console.log("gggg", product.GodownList[godownIndex]);
+
+          //   if (godownIndex !== -1) {
+          //     if (godown.count && godown.count > 0) {
+          //       const currentGodownStock =
+          //         product.GodownList[godownIndex].balance_stock || 0;
+          //       const newGodownStock = truncateToNDecimals(
+          //         currentGodownStock - godown.count,
+          //         3
+          //       );
+
+          //       console.log("newGodownStock", newGodownStock);
+
+          //       // Prepare godown update operation
+          //       godownUpdates.push({
+          //         updateOne: {
+          //           filter: {
+          //             _id: product._id,
+          //             "GodownList.batch": godown.batch,
+          //             "GodownList.godown_id": godown.godown_id,
+          //           },
+          //           update: {
+          //             $set: { "GodownList.$.balance_stock": newGodownStock },
+          //           },
+          //         },
+          //       });
+          //     }
+          //   }
+          // }
+          else if (godown.godown_id) {
             // Case: Godown only
             const godownIndex = product.GodownList.findIndex(
               (g) => g.godown_id === godown.godown_id
@@ -2904,13 +2940,18 @@ export const editSale = async (req, res) => {
     const newItems = items.filter(
       (item) => !existingSale?.items?.some((sItem) => sItem._id === item._id)
     );
+
+    const oldItems = items.filter((item) =>
+      existingSale?.items?.some((sItem) => sItem._id === item._id)
+    );
+
     if (newItems.length > 0) {
       await addingAnItemInSale(newItems);
     }
     //////////////////////////// To handle the addition of a new item in sale ends  //////////////////////////////////////////
 
     ////////////////////////////// Process each item to update product stock and godown stock /////////////////////////////////////////////////
-    for (const item of items) {
+    for (const item of oldItems) {
       // Find the product in the product model
       const product = await productModel.findOne({ _id: item._id });
       if (!product) {

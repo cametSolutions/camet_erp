@@ -49,7 +49,6 @@ function AddItemSalesSecondary() {
   const [godownname, setGodownname] = useState("");
   const [heights, setHeights] = useState({});
 
-  console.log(heights);
   ///////////////////////////cpm_id///////////////////////////////////
 
   const cpm_id = useSelector(
@@ -133,7 +132,61 @@ function AddItemSalesSecondary() {
               const reduxItem = itemsFromRedux.find(
                 (item) => item._id === product._id
               );
-              return reduxItem;
+
+              if (reduxItem.hasGodownOrBatch) {
+                const updatedGodownList = reduxItem?.GodownList?.map(
+                  (godown) => {
+                    let matchedGodown;
+                    if (godown.batch && !godown.godown_id) {
+                      matchedGodown = product?.GodownList?.find(
+                        (god) => god?.batch === godown?.batch
+                      );
+                    } else if (godown.godown_id && !godown.batch) {
+                      matchedGodown = product?.GodownList?.find(
+                        (god) => god?.godown_id === godown?.godown_id
+                      );
+                    } else if (godown.godown_id && godown.batch) {
+                      matchedGodown = product?.GodownList?.find(
+                        (god) =>
+                          god?.godown_id === godown?.godown_id &&
+                          god?.batch === godown?.batch
+                      );
+                    }
+                    if (matchedGodown) {
+                      return {
+                        ...godown,
+                        balance_stock: matchedGodown.balance_stock,
+                      };
+                    } else {
+                      return godown;
+                    }
+                  }
+                );
+
+                const updaTedReduxItem = {
+                  ...reduxItem,
+                  GodownList: updatedGodownList,
+                };
+
+                // console.log(updaTedReduxItem);
+
+                return updaTedReduxItem;
+              } else {
+                const matchedGodown = product?.GodownList?.[0];
+                const newBalanceStock = matchedGodown?.balance_stock;
+
+                const updatedGodownList = reduxItem.GodownList.map((godown) => {
+                 return {
+                  ...godown,
+                  balance_stock: newBalanceStock,
+                 }
+                });
+                const updaTedReduxItem = {
+                  ...reduxItem,
+                  GodownList: updatedGodownList,
+                };
+                return updaTedReduxItem;
+              }
             } else {
               return product;
             }
@@ -662,7 +715,6 @@ function AddItemSalesSecondary() {
       ...style,
       marginTop: "6px",
       height: "200px",
-      
     };
     return (
       <div
@@ -672,24 +724,28 @@ function AddItemSalesSecondary() {
       >
         <div className=" flex justify-between items-center p-4">
           <div className="flex items-start gap-3 md:gap-4  ">
-            <div className={`w-10 ${el?.hasGodownOrBatch ? "mt-1" : "mt-4"}  uppercase h-10 rounded-lg bg-violet-200 flex items-center justify-center font-semibold text-gray-400`}>
+            <div
+              className={`w-10 ${
+                el?.hasGodownOrBatch ? "mt-1" : "mt-4"
+              }  uppercase h-10 rounded-lg bg-violet-200 flex items-center justify-center font-semibold text-gray-400`}
+            >
               {el?.product_name?.slice(0, 1)}
             </div>
             <div
               className={` flex flex-col font-bold text-sm md:text-sm  gap-1 leading-normal`}
             >
-              <p className={`${el?.hasGodownOrBatch ? "mt-1" : "mt-4"} max-w-1/2`}>
-                {
-                  el.hasGodownOrBatch?(
-                el?.product_name.length<30 ? el?.product_name : el?.product_name.slice(0, 50) + "..."
-
-
-                  ):(
-
-                el?.product_name.length<30 ? el?.product_name : el?.product_name.slice(0, 30) + "..."
-
-                  )
-                }
+              <p
+                className={`${
+                  el?.hasGodownOrBatch ? "mt-1" : "mt-4"
+                } max-w-1/2`}
+              >
+                {el.hasGodownOrBatch
+                  ? el?.product_name.length < 30
+                    ? el?.product_name
+                    : el?.product_name.slice(0, 50) + "..."
+                  : el?.product_name.length < 30
+                  ? el?.product_name
+                  : el?.product_name.slice(0, 30) + "..."}
                 {/* {el?.product_name} */}
               </p>
               {el?.hasGodownOrBatch && (
