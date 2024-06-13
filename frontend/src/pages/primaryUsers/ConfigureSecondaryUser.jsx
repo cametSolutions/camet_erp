@@ -67,7 +67,7 @@ function ConfigureSecondaryUser() {
 
   const { id, userId, cmp_name } = useParams();
   // const org = useSelector((state) => state.setSelectedOrganization.selectedOrg);
-  const naviagte = useNavigate();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchGodowns = async () => {
@@ -377,7 +377,7 @@ function ConfigureSecondaryUser() {
       );
 
       toast.success(res.data.message);
-      // naviagte(`/pUsers/editUser/${userId}`);
+      navigate(`/pUsers/editUser/${userId}`);
     } catch (error) {
       toast.error(error.response.data.message);
       console.log(error);
