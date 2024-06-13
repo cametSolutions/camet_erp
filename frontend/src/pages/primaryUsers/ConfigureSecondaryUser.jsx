@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+/* eslint-disable no-case-declarations */
+import { useEffect, useState, useRef } from "react";
 import Sidebar from "../../components/homePage/Sidebar";
 
 import api from "../../api/api";
@@ -13,27 +14,12 @@ function ConfigureSecondaryUser() {
   const [priceLevels, setPriceLevels] = useState([]);
   const [selectedPriceLevels, setSelectedPriceLevels] = useState([]);
   const [selectedGodowns, setSelectedGodowns] = useState([]);
-  const [godownConfigOption, setGodownConfigOption] = useState("");
-  const [vanSaleGodownName, setVanSaleGodownName] = useState('')
-  const [godownPrefix, setGodownPrefix] = useState("");
-  const [godownWidth, setGodownWidth] = useState("");
-  const [godownSuffix, setGodownSuffix] = useState("");
-  const [godownStartingNumber, setGodownStartingNumber] = useState("1");
+  const [vanSaleGodownName, setVanSaleGodownName] = useState("");
   const [selectedConfig, setSelectedConfig] = useState("sales");
   const [vanSale, setVanSale] = useState(false);
+  const [shouldCheckAllFields, setShouldCheckAllFields] = useState(false);
 
-  console.log(godowns);
-  console.log(godownConfigOption);
-  console.log(godownWidth);
-  console.log(godownSuffix);
-  console.log(godownStartingNumber);
-
-
-
-  const type = useSelector(
-    (state) => state.setSelectedOrganization.selectedOrg.type
-
-  );
+  const isFirstRender = useRef(true);
 
   console.log(godowns);
 
@@ -41,7 +27,7 @@ function ConfigureSecondaryUser() {
     {
       prefixDetails: "",
       suffixDetails: "",
-      startingNumber: "",
+      // startingNumber: "",
       widthOfNumericalPart: "",
     },
   ]);
@@ -49,7 +35,7 @@ function ConfigureSecondaryUser() {
     {
       prefixDetails: "",
       suffixDetails: "",
-      startingNumber: "",
+      // startingNumber: "",
       widthOfNumericalPart: "",
     },
   ]);
@@ -57,7 +43,7 @@ function ConfigureSecondaryUser() {
     {
       prefixDetails: "",
       suffixDetails: "",
-      startingNumber: "",
+      // startingNumber: "",
       widthOfNumericalPart: "",
     },
   ]);
@@ -65,12 +51,19 @@ function ConfigureSecondaryUser() {
     {
       prefixDetails: "",
       suffixDetails: "",
-      startingNumber: "",
+      // startingNumber: "",
       widthOfNumericalPart: "",
     },
   ]);
 
-
+  const [vanSaleConfig, setVanSaleConfig] = useState([
+    {
+      prefixDetails: "",
+      suffixDetails: "",
+      // startingNumber: "",
+      widthOfNumericalPart: "",
+    },
+  ]);
 
   const { id, userId, cmp_name } = useParams();
   // const org = useSelector((state) => state.setSelectedOrganization.selectedOrg);
@@ -87,11 +80,9 @@ function ConfigureSecondaryUser() {
         );
 
         console.log(res.data.data.godowns);
-
         setGodowns(res.data.data.godowns);
         setPriceLevels(res.data.data.priceLevels);
-        setGodownConfigOption(res.data.data.godowns[0]?.id);
-        setVanSaleGodownName(res.data.data.godowns[0]?.godown)
+        setVanSaleGodownName(res.data.data.godowns[0]?.godown);
       } catch (error) {
         console.log(error);
         toast.error(error.response.data.message);
@@ -100,6 +91,27 @@ function ConfigureSecondaryUser() {
 
     fetchGodowns();
   }, []);
+
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+
+    const allFieldsFilled = vanSaleConfig.every(
+      (field) =>
+        field.prefixDetails !== "" &&
+        field.suffixDetails !== "" &&
+        field.widthOfNumericalPart !== ""
+    );
+    if (allFieldsFilled) {
+      setSelectedGodowns([]);
+    }
+    setVanSale(allFieldsFilled);
+    setVanSaleGodownName(selectedGodowns[0]);
+  }, [shouldCheckAllFields]);
+
+  console.log(vanSaleGodownName);
 
   useEffect(() => {
     const fetchSingleUser = async () => {
@@ -129,29 +141,42 @@ function ConfigureSecondaryUser() {
           } = configurations[0];
 
           console.log(vanSaleConfiguration);
+          console.log(selectedGodowns);
 
-          const {
-            godownConfigOption,
-            prefixDetails,
-            suffixDetails,
-            startingNumber,
-            widthOfNumericalPart,
-            vanSaleGodownName
-          } = vanSaleConfiguration;
+          // const {
+          //   godownConfigOption,
+          //   prefixDetails,
+          //   suffixDetails,
+          //   startingNumber,
+          //   widthOfNumericalPart,
+          //   vanSaleGodownName,
+          // } = vanSaleConfiguration;
 
-          setSelectedGodowns(selectedGodowns);
-          setSelectedPriceLevels(selectedPriceLevels);
-          setSalesOrder([salesOrderConfiguration]);
-          setSales([salesConfiguration]);
-          setReceipt([receiptConfiguration]);
-          setGodownPrefix(prefixDetails);
-          setGodownConfigOption(godownConfigOption);
-          setGodownSuffix(suffixDetails);
-          setGodownStartingNumber(1);
-          setGodownWidth(widthOfNumericalPart);
+          if (selectedGodowns) {
+            console.log("haii");
+            setSelectedGodowns(selectedGodowns);
+          }
+
+          if (selectedPriceLevels) {
+            setSelectedPriceLevels(selectedPriceLevels);
+          }
+          if (salesOrderConfiguration) {
+            setSalesOrder([salesOrderConfiguration]);
+          }
+          if (salesConfiguration) {
+            setSales([salesConfiguration]);
+          }
+          if (receiptConfiguration) {
+            setReceipt([receiptConfiguration]);
+          }
           setVanSale(vanSale);
-          setVanSaleGodownName(vanSaleGodownName)
-          setPurchase([purchaseConfiguration]);
+
+          if (purchaseConfiguration) {
+            setPurchase([purchaseConfiguration]);
+          }
+          if (vanSaleConfiguration) {
+            setVanSaleConfig([vanSaleConfiguration]);
+          }
         }
       } catch (error) {
         console.log(error);
@@ -159,11 +184,6 @@ function ConfigureSecondaryUser() {
     };
     fetchSingleUser();
   }, []);
-
-  console.log(godownConfigOption);
-  console.log(godownPrefix);
-  console.log(godownPrefix);
-  console.log(godownPrefix);
 
   const handleConfigSelection = (e) => {
     setSelectedConfig(e.target.value);
@@ -182,14 +202,21 @@ function ConfigureSecondaryUser() {
       case "purchase":
         setPurchase([{ ...purchase[0], [field]: value }]);
         break;
+      case "vanSale":
+        setVanSaleConfig([{ ...vanSaleConfig[0], [field]: value }]);
+        setShouldCheckAllFields(!shouldCheckAllFields);
+
+        break;
       default:
         console.error("Invalid section");
     }
+
+    console.log(section);
   };
 
+  console.log(sales);
 
   const getConfigValue = (section, field) => {
-    console.log(field);
     switch (section) {
       case "sales":
         return sales[0][field];
@@ -199,6 +226,8 @@ function ConfigureSecondaryUser() {
         return receipt[0][field];
       case "purchase":
         return purchase[0][field];
+      case "vanSale":
+        return vanSaleConfig[0][field];
       default:
         return "";
     }
@@ -215,7 +244,11 @@ function ConfigureSecondaryUser() {
       }
     } else if (type === "godown") {
       if (checked) {
-        setSelectedGodowns([...selectedGodowns, value]);
+        if (vanSale) {
+          setSelectedGodowns([value]);
+        } else {
+          setSelectedGodowns([...selectedGodowns, value]);
+        }
       } else {
         setSelectedGodowns(selectedGodowns.filter((item) => item !== value));
       }
@@ -223,96 +256,79 @@ function ConfigureSecondaryUser() {
   };
 
   function validateObject(obj, excludedFields = []) {
+    console.log("haii");
+
     let isAllFilled = true;
     let isAllEmpty = true;
 
     console.log(obj);
-  
+
     for (let key in obj) {
       // Skip the excluded fields
       if (excludedFields.includes(key)) continue;
-  
-      if (obj[key]!== "") {
+
+      if (obj[key] !== "") {
         isAllEmpty = false;
       } else {
         isAllFilled = false;
       }
     }
-  
+
     // Additional check for widthOfNumericalPart
     if (obj?.widthOfNumericalPart && Number(obj?.widthOfNumericalPart) > 6) {
       isAllFilled = false;
       toast.error("Width of numerical part must be less than 6");
       // return
     }
-  
+
     return isAllFilled || isAllEmpty;
   }
 
-  console.log(selectedConfig);
-
-  console.log(purchase[0]);
-
+  console.log(vanSaleGodownName);
   const submitHandler = async () => {
-    // Existing validation and submission logic...
-
-    // Include the new configuration data in the formData object
-    const newSales = sales[0];
-    const newSalesOrder = salesOrder[0];
-    const newReceipt = receipt[0];
-
-    const newPurchase = purchase[0];
-
-    const Initial = {
+    const initial = {
       prefixDetails: "",
       suffixDetails: "",
-      startingNumber: "",
+      // startingNumber: "",
       widthOfNumericalPart: "",
     };
 
     let formData = {};
-    console.log(godownWidth);
 
-    if (vanSale) {
-      const vanSaleConfiguration = {
-        godownConfigOption,
-        prefixDetails: godownPrefix,
-        suffixDetails: godownSuffix,
-        startingNumber: godownStartingNumber,
-        widthOfNumericalPart: godownWidth,
-        vanSaleGodownName
-      };
-      formData = {
-        selectedPriceLevels,
-        selectedGodowns: [godownConfigOption],
-        salesConfiguration: Initial,
-        salesOrderConfiguration: newSalesOrder,
-        receiptConfiguration: newReceipt,
-        purchaseConfiguration: newPurchase,
-        vanSaleConfiguration,
-        vanSale: vanSale,
-      };
-    } else {
-      formData = {
-        selectedGodowns,
-        selectedPriceLevels,
-        salesConfiguration: newSales,
-        salesOrderConfiguration: newSalesOrder,
-        receiptConfiguration: newReceipt,
-        purchaseConfiguration: newPurchase,
-        vanSaleConfiguration: Initial,
-        vanSale: vanSale,
-      };
-    }
+    formData = {
+      selectedGodowns,
+      selectedPriceLevels,
+      salesConfiguration: vanSale ? initial : sales[0],
+      salesOrderConfiguration: salesOrder[0],
+      receiptConfiguration: receipt[0],
+      purchaseConfiguration: purchase[0],
+      vanSaleConfiguration: {
+        ...vanSaleConfig[0],
+        vanSaleGodownName: vanSale
+          ? godowns?.filter((el) => el?.id == selectedGodowns[0])[0]?.godown ||
+            ""
+          : "",
+      },
+      vanSale: vanSale,
+    };
 
     console.log(formData);
 
-    const salesValidation = validateObject(formData.salesConfiguration,['startingNumber']);
+    const salesValidation = validateObject(formData.salesConfiguration, [
+      "startingNumber",
+    ]);
+
+    console.log(salesValidation);
     const salesOrderValidation = validateObject(
-      formData.salesOrderConfiguration,['startingNumber']
+      formData.salesOrderConfiguration,
+      ["startingNumber"]
     );
-    const receiptValidation = validateObject(formData.receiptConfiguration,['startingNumber']);
-    const purchaseValidation = validateObject(formData.purchaseConfiguration,['startingNumber']);
+    const receiptValidation = validateObject(formData.receiptConfiguration, [
+      "startingNumber",
+    ]);
+    const purchaseValidation = validateObject(formData.purchaseConfiguration, [
+      "startingNumber",
+    ]);
 
     if (salesOrderValidation === false) {
       toast.error("Fill all sales order details or leave all fields empty");
@@ -320,33 +336,33 @@ function ConfigureSecondaryUser() {
     } else if (receiptValidation === false) {
       toast.error("Fill all receipt details or leave all fields empty");
       return;
-    }
-    else if(purchaseValidation === false){
+    } else if (purchaseValidation === false) {
       toast.error("Fill all purchase details or leave all fields empty");
       return;
     }
-    if (vanSale) {
-      const vanSaleConfiguration = formData.vanSaleConfiguration;
+    // if (vanSale) {
+    const vanSaleConfiguration = formData.vanSaleConfiguration;
+    console.log(vanSaleConfiguration);
 
-      let vanSaleValidation = true;
-      for (let key in vanSaleConfiguration) {
-        if (vanSaleConfiguration[key] === "") {
-          vanSaleValidation = false;
-        }
-      }
+    //   console.log(vanSaleConfiguration);
 
-      if (vanSaleValidation === false) {
-        toast.error("Fill all van sale details or leave all fields empty");
-        return;
-      }
+    let vanSaleValidation = true;
+
+    // Check if all properties of the object are empty
+    if (Object.values(vanSaleConfiguration).every((value) => value === "")) {
+      vanSaleValidation = true;
+    } else if (
+      Object.values(vanSaleConfiguration).every((value) => value !== "")
+    ) {
+      vanSaleValidation = true;
     } else {
-      if (salesValidation === false) {
-        toast.error("Fill all sales details or leave all fields empty");
-        return;
-      }
+      vanSaleValidation = false; // Correctly assign false for mixed cases
     }
 
-    console.log(salesValidation);
+    if (vanSaleValidation === false) {
+      toast.error("Fill all van sales  details or leave all fields empty");
+      return;
+    }
 
     try {
       const res = await api.post(
@@ -361,7 +377,7 @@ function ConfigureSecondaryUser() {
       );
 
       toast.success(res.data.message);
-      naviagte(`/pUsers/editUser/${userId}`);
+      // naviagte(`/pUsers/editUser/${userId}`);
     } catch (error) {
       toast.error(error.response.data.message);
       console.log(error);
@@ -415,6 +431,7 @@ function ConfigureSecondaryUser() {
                       <option value="salesOrder">Sales Order</option>
                       <option value="receipt">Receipt</option>
                       <option value="purchase">Purchase</option>
+                      <option value="vanSale">VanSale</option>
                     </select>
                   </div>
                 </div>
@@ -503,7 +520,7 @@ function ConfigureSecondaryUser() {
                       Starting Number
                     </label>
                     <input
-                    disabled
+                      disabled
                       type="number"
                       id="startingNumber"
                       className={`  ${
@@ -511,13 +528,13 @@ function ConfigureSecondaryUser() {
                           ? "pointer-events-none  opacity-45 "
                           : ""
                       }    border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150`}
-                      onChange={(e) =>
-                        updateConfig(
-                          selectedConfig,
-                          "startingNumber",
-                          e.target.value
-                        )
-                      }
+                      // onChange={(e) =>
+                      //   updateConfig(
+                      //     selectedConfig,
+                      //     "startingNumber",
+                      //     e.target.value
+                      //   )
+                      // }
                       value={1}
                       placeholder="Starting Number"
                     />
@@ -606,15 +623,15 @@ function ConfigureSecondaryUser() {
                       )}
                     </div>
                   </div>
-                  {type !== "self" && (
+                  {/* {type !== "self" && ( */}
                   <div className="lg:col-span-1">
                     <h6 className="text-blueGray-400 text-sm mb-4 font-bold uppercase">
                       Locations
                     </h6>
                     <div
-                      className={` ${
-                        vanSale ? "pointer-events-none opacity-45" : ""
-                      } space-y-2 `}
+                      className={` 
+                     
+                       space-y-2 `}
                     >
                       {godowns?.length > 0 ? (
                         godowns?.map((item, index) => (
@@ -646,80 +663,53 @@ function ConfigureSecondaryUser() {
                       )}
                     </div>
                   </div>
-                   )}
-                     {type == "self" && (
-                  <div className="lg:col-span-1">
-                    <h6 className="text-blueGray-400 text-sm mb-4 font-bold uppercase">
-                      Locations
-                    </h6>
-                    <div
-                      className={` ${
-                        vanSale ? "pointer-events-none opacity-45" : ""
-                      } space-y-2 `}
-                    >
-                      {godowns?.length > 0 ? (
-                        godowns?.map((item, index) => (
-                          <div key={index} className="flex items-center">
-                            <input
-                              type="checkbox"
-                              id={`godownCheckbox${index}`}
-                              value={item?.id}
-                              checked={selectedGodowns.includes(item?.id)}
-                              onChange={(e) =>
-                                handleCheckboxChange(
-                                  "godown",
-                                  e.target.value,
-                                  e.target.checked
-                                )
-                              }
-                              className="mr-2"
-                            />
-                            <label
-                              htmlFor={`godownCheckbox${index}`}
-                              className="text-blueGray-600"
-                            >
-                              {item?.godown}
-                            </label>
-                          </div>
-                        ))
-                      ) : (
-                        <p className="text-blueGray-600">No Godowns added</p>
-                      )}
+                  {/* )} */}
+                  {/* {type == "self" && (
+                    <div className="lg:col-span-1">
+                      <h6 className="text-blueGray-400 text-sm mb-4 font-bold uppercase">
+                        Locations
+                      </h6>
+                      <div
+                        className={` ${
+                          vanSale ? "pointer-events-none opacity-45" : ""
+                        } space-y-2 `}
+                      >
+                        {godowns?.length > 0 ? (
+                          godowns?.map((item, index) => (
+                            <div key={index} className="flex items-center">
+                              <input
+                                type="checkbox"
+                                id={`godownCheckbox${index}`}
+                                value={item?.id}
+                                checked={selectedGodowns.includes(item?.id)}
+                                onChange={(e) =>
+                                  handleCheckboxChange(
+                                    "godown",
+                                    e.target.value,
+                                    e.target.checked
+                                  )
+                                }
+                                className="mr-2"
+                              />
+                              <label
+                                htmlFor={`godownCheckbox${index}`}
+                                className="text-blueGray-600"
+                              >
+                                {item?.godown}
+                              </label>
+                            </div>
+                          ))
+                        ) : (
+                          <p className="text-blueGray-600">No Godowns added</p>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                   )}
+                  )} */}
                 </div>
 
                 <hr className="mt-5 border-b-1 border-blueGray-300" />
 
-                <div className=" flex items-center">
-                  <input
-                    type="checkbox"
-                    id="vanSaleCheckbox"
-                    checked={vanSale}
-                    onChange={() => {
-                      setVanSale(!vanSale);
-                      // setSelectedGodowns([]);
-                      // setSales([
-                      //   {
-                      //     prefixDetails: "",
-                      //     suffixDetails: "",
-                      //     startingNumber: "",
-                      //     widthOfNumericalPart: "",
-                      //   },
-                      // ]);
-                    }}
-                    className="form-checkbox h-5 w-5 text-green-600 rounded mt-8"
-                  />
-                  <label
-                    htmlFor="vanSaleCheckbox"
-                    className="ml-2 font-semibold uppercase mt-8"
-                  >
-                    Van Sale
-                  </label>
-                </div>
-
-                {vanSale && (
+                {/* {vanSale && (
                   <>
                     <div className="w-full lg:w-6/12 px-4 mt-10">
                       <div className="relative w-full mb-3">
@@ -733,8 +723,10 @@ function ConfigureSecondaryUser() {
                           className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                           onChange={(e) => {
                             setGodownConfigOption(e.target.value); // Save the id
-                            setVanSaleGodownName(e.target.options[e.target.selectedIndex].text); // Save the godown name
-                         }}
+                            setVanSaleGodownName(
+                              e.target.options[e.target.selectedIndex].text
+                            ); // Save the godown name
+                          }}
                           value={godownConfigOption}
                         >
                           {godowns?.length > 0 ? (
@@ -793,7 +785,7 @@ function ConfigureSecondaryUser() {
                             Starting Number
                           </label>
                           <input
-                          disabled
+                            disabled
                             type="number"
                             className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                             onChange={(e) =>
@@ -825,7 +817,7 @@ function ConfigureSecondaryUser() {
                       </div>
                     </div>
                   </>
-                )}
+                )} */}
               </section>
             </form>
             <button
