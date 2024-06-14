@@ -3,12 +3,10 @@ import { useReactToPrint } from "react-to-print";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import api from "../../api/api";
 import { useParams } from "react-router-dom";
-import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import { MdPrint } from "react-icons/md";
 import numberToWords from "number-to-words";
 import { Link } from "react-router-dom";
-import QRCode from "react-qr-code";
 import SidebarSec from "../../components/secUsers/SidebarSec";
 import SalesThreeInchPdf from "../../components/common/SalesThreeInchPdf";
 
@@ -108,43 +106,7 @@ function ThreeInchSalesSec() {
     }
   }, [data]);
 
-  const calculateTotalTax = () => {
-    const individualTax = data?.items?.map(
-      (el) => el?.total - (el?.total * 100) / (parseFloat(el.igst) + 100)
-    );
-    const totalTax = individualTax
-      ?.reduce((acc, curr) => (acc += curr), 0)
-      .toFixed(2);
 
-    console.log(individualTax);
-    console.log(totalTax);
-    return totalTax;
-  };
-
-  const calculateAddCess = () => {
-    return data?.items?.reduce((acc, curr) => {
-      // Ensure curr.cess is a number, defaulting to 0 if not
-      curr.addl_cess = Number(curr?.addl_cess) || 0;
-      // Add curr.cess to the accumulator
-      return acc + curr?.addl_cess;
-    }, 0); // Initialize the accumulator with 0
-  };
-  const calculateStateTax = () => {
-    return data?.items?.reduce((acc, curr) => {
-      // Ensure curr.cess is a number, defaulting to 0 if not
-      curr.state_cess = Number(curr?.state_cess) || 0;
-      // Add curr.cess to the accumulator?
-      return acc + curr?.state_cess;
-    }, 0); // Initialize the accumulator with 0
-  };
-  const calculateCess = () => {
-    return data?.items?.reduce((acc, curr) => {
-      // Ensure curr.cess is a number, defaulting to 0 if not
-      curr.cess = Number(curr?.cess) || 0;
-      // Add curr.cess to the accumulator
-      return acc + curr?.cess;
-    }, 0); // Initialize the accumulator with 0
-  };
 
   const handlePrint = useReactToPrint({
     documentTitle: `Sale Order ${data?.salesNumber}`,

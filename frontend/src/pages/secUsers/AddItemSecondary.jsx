@@ -3,7 +3,6 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import { useNavigate, useLocation } from "react-router-dom";
-import { IoIosSearch } from "react-icons/io";
 import api from "../../api/api";
 import { MdOutlineQrCodeScanner } from "react-icons/md";
 import { useSelector } from "react-redux";
@@ -554,11 +553,12 @@ function AddItemSecondary() {
   };
 
   const backHandler = () => {
-    if (location?.state?.from === "editInvoice") {
-      navigate(`/sUsers/editInvoice/${location.state.id}`);
-    } else {
-      navigate("/sUsers/invoice");
-    }
+    navigate(-1)
+    // if (location?.state?.from === "editInvoice") {
+    //   navigate(`/sUsers/editInvoice/${location.state.id}`);
+    // } else {
+    //   navigate("/sUsers/invoice");
+    // }
   };
 
   return (
