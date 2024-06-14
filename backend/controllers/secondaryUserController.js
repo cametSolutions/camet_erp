@@ -1549,6 +1549,15 @@ export const editInvoice = async (req, res) => {
       orderNumber,
     } = req.body;
 
+    // const existingInvoice = await invoiceModel.findById(invoiceId);
+    // if (!existingInvoice) {
+    //   console.log("editSaleOrder: existingInvoice not found");
+    //   return res
+    //     .status(404)
+    //     .json({ success: false, message: "Sale Order not found" });
+    // }
+
+
     const result = await invoiceModel.findByIdAndUpdate(
       invoiceId, // Use the invoiceId to find the document
       {
@@ -2898,6 +2907,9 @@ export const getPurchaseDetails = async (req, res) => {
 
 export const editSale = async (req, res) => {
   const saleId = req.params.id;
+  const productUpdates = [];
+  const godownUpdates = [];
+  // const itemUpdates = [];
 
   try {
     const {
