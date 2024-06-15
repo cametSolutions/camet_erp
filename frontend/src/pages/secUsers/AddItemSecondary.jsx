@@ -392,136 +392,6 @@ function AddItemSecondary() {
     handleTotalChangeWithPriceLevel(selectedValue);
   };
 
-  ///////////////////////////react window ///////////////////////////////////
-
-  const Row = ({ index, style }) => {
-    const el = filteredItems[index];
-    const adjustedStyle = {
-      ...style,
-      marginTop: "16px",
-      height: "160px",
-    };
-    return (
-      <div
-        style={adjustedStyle}
-        key={index}
-        className="bg-white p-4 py-2 pb-6  mt-4 flex justify-between items-center  rounded-sm cursor-pointer border-b-2 shadow-lg "
-      >
-        <div className="flex items-start gap-3 md:gap-4  ">
-          <div className="w-10 mt-1  uppercase h-10 rounded-lg bg-violet-200 flex items-center justify-center font-semibold text-gray-400">
-            {el?.product_name?.slice(0, 1)}
-          </div>
-          <div className="flex flex-col font-bold text-sm md:text-sm  gap-1 leading-normal">
-            <p>{el.product_name}</p>
-            <div className="flex gap-1 items-center">
-              <p>
-                ₹{" "}
-                {
-                  el?.Priceleveles.find(
-                    (item) => item.pricelevel === selectedPriceLevel
-                  )?.pricerate
-                }{" "}
-                /
-              </p>{" "}
-              <span className="text-[10px] mt-1">{el.unit}</span>
-            </div>
-            <div className="flex">
-              <p className="text-red-500">STOCK : </p>
-              <span>{el.balance_stock}</span>
-            </div>
-            <div>
-              <span>Total : ₹ </span>
-              <span>{el.total || 0}</span>
-            </div>
-          </div>
-        </div>
-        {el.added ? (
-          <div className="flex items-center flex-col gap-2">
-            <button
-              onClick={() => {
-                navigate(`/sUsers/editItem/${el._id}`, {
-                  state: { from: "editItem", id: location?.state?.id },
-                });
-              }}
-              type="button"
-              className="  mt-3  px-2 py-1  rounded-md border-violet-500 font-bold border  text-violet-500 text-xs"
-            >
-              Edit
-            </button>
-            <div
-              className="py-2 px-3 inline-block bg-white  "
-              data-hs-input-number
-            >
-              <div className="flex items-center gap-x-1.5">
-                <button
-                  onClick={() => handleDecrement(el._id)}
-                  type="button"
-                  className="size-6 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-md border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none"
-                  data-hs-input-number-decrement
-                >
-                  <svg
-                    className="flex-shrink-0 size-3.5"
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M5 12h14" />
-                  </svg>
-                </button>
-                <input
-                  className="p-0 w-12 bg-transparent border-0 text-gray-800 text-center focus:ring-0 "
-                  type="text"
-                  disabled
-                  value={el.count ? el.count : 0} // Display the count from the state
-                  data-hs-input-number-input
-                />
-                <button
-                  onClick={() => {
-                    handleIncrement(el._id);
-                  }}
-                  type="button"
-                  className="size-6 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-md border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none "
-                  data-hs-input-number-increment
-                >
-                  <svg
-                    className="flex-shrink-0 size-3.5"
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M5 12h14" />
-                    <path d="M12 5v14" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div>
-            <div
-              className="px-4 py-2 rounded-md border-violet-500 font-bold border-2 text-violet-500 text-xs"
-              onClick={() => handleAddClick(el._id)}
-            >
-              Add
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  };
-
   /////////////////////////// calculateHeight ///////////////////////////////////
 
   useEffect(() => {
@@ -553,12 +423,151 @@ function AddItemSecondary() {
   };
 
   const backHandler = () => {
-    navigate(-1)
+    navigate(-1);
     // if (location?.state?.from === "editInvoice") {
     //   navigate(`/sUsers/editInvoice/${location.state.id}`);
     // } else {
     //   navigate("/sUsers/invoice");
     // }
+  };
+
+  ///////////////////////////react window ///////////////////////////////////
+
+  const Row = ({ index, style }) => {
+    const el = filteredItems[index];
+    const adjustedStyle = {
+      ...style,
+      marginTop: "16px",
+      height: "190px",
+    };
+    return (
+      <div
+        style={adjustedStyle}
+        key={index}
+        className="flex flex-col bg-white shadow-lg  "
+      >
+        <div className=" p-4 py-2 pb-2  mt-4 flex justify-between items-center  rounded-sm cursor-pointer  ">
+          <div className="flex items-start gap-3 md:gap-4  ">
+            <div className="w-10 mt-1  uppercase h-10 rounded-lg bg-violet-200 flex items-center justify-center font-semibold text-gray-400">
+              {el?.product_name?.slice(0, 1)}
+            </div>
+            <div className="flex flex-col font-bold text-sm md:text-sm  gap-1 leading-normal">
+              <p>{el.product_name}</p>
+              <div className="flex gap-1 items-center">
+                <p>
+                  ₹{" "}
+                  {
+                    el?.Priceleveles.find(
+                      (item) => item.pricelevel === selectedPriceLevel
+                    )?.pricerate
+                  }{" "}
+                  /
+                </p>{" "}
+                <span className="text-[10px] mt-1">{el.unit}</span>
+              </div>
+              <div className="flex">
+                <p className="text-red-500">STOCK : </p>
+                <span>{el.balance_stock}</span>
+              </div>
+              <div>
+                <span>Total : ₹ </span>
+                <span>{el.total || 0}</span>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div
+              className="px-4 py-2 rounded-md border-violet-500 font-bold border-2 text-violet-500 text-xs"
+              onClick={() => {
+                el.added
+                  ? navigate(`/sUsers/editItem/${el._id}`)
+                  : handleAddClick(el._id);
+              }}
+            >
+              {el.added ? "Edit" : "Add"}
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between px-4">
+          {el.added ? (
+            <div className="flex items-center gap-x-1.5 pl-11">
+              <button
+                onClick={() => handleDecrement(el._id)}
+                type="button"
+                className="size-6 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-md border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none"
+                data-hs-input-number-decrement
+              >
+                <svg
+                  className="flex-shrink-0 size-3.5"
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M5 12h14" />
+                </svg>
+              </button>
+              <input
+                className="p-0 w-12 bg-transparent border-0 text-gray-800 text-center focus:ring-0 "
+                type="text"
+                disabled
+                value={el.count ? el.count : 0} // Display the count from the state
+                data-hs-input-number-input
+              />
+              <button
+                onClick={() => {
+                  handleIncrement(el._id);
+                }}
+                type="button"
+                className="size-6 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-md border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none "
+                data-hs-input-number-increment
+              >
+                <svg
+                  className="flex-shrink-0 size-3.5"
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M5 12h14" />
+                  <path d="M12 5v14" />
+                </svg>
+              </button>
+            </div>
+          ) : (
+            <div></div>
+          )}
+
+          <div className="relative text-sm text-gray-500 ">
+            <input
+              type="number"
+              // value={
+              //   el?.Priceleveles.find(
+              //     (item) => item.pricelevel === selectedPriceLevel
+              //   )?.pricerate
+              // }
+              placeholder="Rate"
+              className="border-none pl-6  input-number text-center shadow-lg w-[100px]  focus:ring-0   "
+            />
+            <span className= "  absolute left-3 top-1/2 transform -translate-y-1/2">
+              ₹
+            </span>{" "}
+          </div>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -738,13 +747,12 @@ function AddItemSecondary() {
             style={{
               scrollbarWidth: "thin",
               scrollbarColor: "transparent transparent",
-              marginTop:"6px"
-
+              marginTop: "6px",
             }}
             className=""
             height={listHeight} // Specify the height of your list
             itemCount={filteredItems.length} // Specify the total number of items
-            itemSize={170} // Specify the height of each item
+            itemSize={210} // Specify the height of each item
             width="100%" // Specify the width of your list
             initialScrollOffset={scrollPosition}
             onScroll={({ scrollOffset }) => {
