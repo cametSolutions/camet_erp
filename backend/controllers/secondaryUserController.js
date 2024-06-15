@@ -26,6 +26,8 @@ import {
   addingNewBatchesOrGodownsInSale,
   calculateUpdatedItemValues,
   updateAdditionalChargeInSale,
+  deleteItemsInSaleOrderEdit,
+  addingAnItemInSaleOrderEdit,
 } from "./helpers/secondaryHelper.js";
 
 // @desc Login secondary user
@@ -1549,12 +1551,82 @@ export const editInvoice = async (req, res) => {
       orderNumber,
     } = req.body;
 
+    let productUpdates = [];
+
+    const existingInvoice = await invoiceModel.findById(invoiceId);
+    if (!existingInvoice) {
+      console.log("editSaleOrder: existingInvoice not found");
+      return res
+        .status(404)
+        .json({ success: false, message: "Sale Order not found" });
+    }
+
+    //////////////////////////// To handle the deletion and updating of products   starts //////////////////////////////////////////
+    const updatedItemIds = items.map((item) => item._id);
+    const deletedItems = existingInvoice.items.filter(
+      (item) => !updatedItemIds.includes(item._id)
+    );
+
+    if (deletedItems.length > 0) {
+      productUpdates = await deleteItemsInSaleOrderEdit(
+        deletedItems,
+        productUpdates
+      );
+      existingInvoice.items = existingInvoice.items.filter(
+        (item) => !deletedItems.includes(item)
+      );
+    }
+
+    //////////////////////////// To handle the addition of a new item in sale order starts  //////////////////////////////////////////
+    const newItems = items.filter(
+      (item) => !existingInvoice?.items?.some((sItem) => sItem._id === item._id)
+    );
+
+    const oldItems = items.filter((item) =>
+      existingInvoice?.items?.some((sItem) => sItem._id === item._id)
+    );
+
+    if (newItems.length > 0) {
+      productUpdates = await addingAnItemInSaleOrderEdit(
+        newItems,
+        productUpdates
+      );
+    }
+    await productModel.bulkWrite(productUpdates);
+
+    for (const item of oldItems) {
+      console.log("editSaleOrder: item", item);
+      const product = await productModel.findOne({ _id: item._id });
+      if (!product) {
+        console.log("editSaleOrder: product not found");
+        throw new Error(`Product not found for item ID: ${item._id}`);
+      }
+
+      const existingItem = existingInvoice.items.find(
+        (sItem) => sItem._id === item._id
+      );
+
+      await updateSaleableStock(
+        product,
+        item.count || 0,
+        existingItem?.count || 0
+      );
+    }
+
+    let updatedItems = items;
+    if (items.length > 0) {
+      updatedItems = await calculateUpdatedItemValues(
+        items,
+        priceLevelFromRedux
+      );
+    }
+
     const result = await invoiceModel.findByIdAndUpdate(
       invoiceId, // Use the invoiceId to find the document
       {
         cmp_id: orgId,
         party,
-        items,
+        items: updatedItems,
         priceLevel: priceLevelFromRedux,
         additionalCharges: additionalChargesFromRedux,
         finalAmount: lastAmount,
@@ -2898,7 +2970,6 @@ export const getPurchaseDetails = async (req, res) => {
 
 export const editSale = async (req, res) => {
   const saleId = req.params.id;
-
   try {
     const {
       orgId,
@@ -2928,7 +2999,7 @@ export const editSale = async (req, res) => {
     );
     // Process each deleted item to update product stock and godown stock
     if (deletedItems.length > 0) {
-      await deleteItemsInSaleEdit(deletedItems);
+      await deleteItemsInSaleEdit(deletedItems, productUpdates);
       existingSale.items = existingSale.items.filter(
         (item) => !deletedItems.includes(item)
       );

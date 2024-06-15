@@ -1,13 +1,43 @@
 /* eslint-disable react/prop-types */
 import { IoIosArrowDown } from "react-icons/io";
 
-function SalesProductDetails({ items, priceLevel, additionalCharges }) {
+function SalesProductDetails({ data, items, priceLevel, additionalCharges }) {
   console.log(items);
 
   console.log(additionalCharges);
 
   return (
     <div>
+      <div className="p-4 bg-white mt-2 ">
+        <div className="flex items-center justify-between">
+          <p className="font-bold">Total Amount</p>
+          <p className="font-bold">
+            ₹ {parseInt(data?.finalAmount).toFixed(2)}
+          </p>
+        </div>
+        <div className="flex items-center justify-between mt-2 text-sm ">
+          <p className="font-semibold text-gray-500">Subtotal</p>
+          <p className="font-semibold">
+            ₹{" "}
+            {parseInt(
+              data?.items?.reduce((acc, curr) => acc + curr?.total, 0) || 0
+            ).toFixed(2)}
+          </p>
+        </div>
+        <div className="flex items-center justify-between mt-2 text-sm">
+          <p className="font-semibold text-gray-500">Additional Charge</p>
+          <p className="font-semibold">
+            ₹{" "}
+            {parseInt(
+              data?.additionalCharges?.reduce(
+                (acc, curr) => acc + curr?.finalValue,
+                0
+              )
+            ).toFixed(2)}
+          </p>
+        </div>
+      </div>
+
       {items?.length > 0 && (
         <>
           <div>

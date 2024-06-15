@@ -123,10 +123,8 @@ export const deleteGodownsOrBatchesInSaleEdit = async (
   productDetails
 ) => {
   try {
-
-
     for (const deletedGodown of deletedGodowns) {
-    const product = await productModel.findOne({ _id: productDetails._id });
+      const product = await productModel.findOne({ _id: productDetails._id });
 
       // console.log(
       //   "for deleting godown in edit sale",
@@ -146,8 +144,6 @@ export const deleteGodownsOrBatchesInSaleEdit = async (
       // );
 
       // console.log("itemUpdatedStock",itemUpdatedStock);
-
-
 
       if (deletedGodown.batch) {
         const godown = product.GodownList.find(
@@ -223,6 +219,9 @@ export const updateSaleableStock = async (
     const itemBalanceStock = Number(product.balance_stock || 0);
     const itemCountDiff = parseFloat(itemCount) - (existingItemCount || 0);
 
+    console.log("itemCountDiff", itemCountDiff);
+    console.log("itemBalanceStock", itemBalanceStock);
+
     let itemUpdatedStock;
 
     if (itemCountDiff > 0) {
@@ -257,9 +256,6 @@ export const addingAnItemInSale = async (items) => {
       if (!product) {
         throw new Error(`Product not found for item ID: ${item._id}`);
       }
-
-
-
 
       const itemCount = parseFloat(item.count);
       // console.log("itemCount", itemCount);
@@ -404,7 +400,10 @@ export const addingNewBatchesOrGodownsInSale = async (
 
 ///////////////////////////////////// for calculating values like igst amount and updated items  ////////////////////////////////////
 
-export const calculateUpdatedItemValues = (items, priceLevelFromRedux) => {
+export const calculateUpdatedItemValues = async (
+  items,
+  priceLevelFromRedux
+) => {
   try {
     return items.map((item) => {
       // Find the corresponding price rate for the selected price level
@@ -452,7 +451,9 @@ export const calculateUpdatedItemValues = (items, priceLevelFromRedux) => {
 };
 
 ///////////////////////////////////// for calculating values like igst amount and updated items  ////////////////////////////////////
-export const updateAdditionalChargeInSale = (additionalChargesFromRedux) => {
+export const updateAdditionalChargeInSale = async (
+  additionalChargesFromRedux
+) => {
   try {
     return additionalChargesFromRedux.map((charge) => {
       const { value, taxPercentage } = charge;
@@ -472,5 +473,78 @@ export const updateAdditionalChargeInSale = (additionalChargesFromRedux) => {
       error
     );
     throw error; // rethrowing the error for handling it in the calling function
+  }
+};
+
+export const deleteItemsInSaleOrderEdit = async (
+  deletedItems,
+  productUpdates
+) => {
+  try {
+    for (const deletedItem of deletedItems) {
+      console.log("for deleting item in edit saleOrder", deletedItem);
+
+      const product = await productModel.findOne({ _id: deletedItem._id });
+
+      if (!product) {
+        console.log("editSale: product not found");
+        throw new Error(`Product not found for item ID: ${deletedItem._id}`);
+      }
+
+      // Update product balance stock common
+      const itemBalanceStock = Number(product.balance_stock || 0);
+      const itemCount = deletedItem.count || 0;
+      const itemUpdatedStock =
+        Number(itemBalanceStock || 0) + Number(itemCount || 0);
+
+      const updateOperation = {
+        updateOne: {
+          filter: { _id: product._id },
+          update: { $set: { balance_stock: itemUpdatedStock } },
+        },
+      };
+      // Push the update operation to the productUpdates array
+      productUpdates.push(updateOperation);
+    }
+
+    return productUpdates;
+  } catch (error) {
+    console.error("Error in deleteItemsInSaleOrder Edit:", error);
+    throw error;
+  }
+};
+
+export const addingAnItemInSaleOrderEdit = async (items, productUpdates) => {
+  try {
+    for (const item of items) {
+      console.log("addingAnItemInSaleOrder", item?.product_name);
+
+      const product = await productModel.findOne({ _id: item._id });
+      if (!product) {
+        throw new Error(`Product not found for item ID: ${item._id}`);
+      }
+
+      const itemCount = parseFloat(item.count);
+      // console.log("itemCount", itemCount);
+      const productBalanceStock = parseFloat(product.balance_stock);
+      const newBalanceStock = truncateToNDecimals(
+        productBalanceStock - itemCount,
+        3
+      );
+      // console.log("productBalanceStock", productBalanceStock);
+      // console.log("newBalanceStock", newBalanceStock);
+
+      productUpdates.push({
+        updateOne: {
+          filter: { _id: product._id },
+          update: { $set: { balance_stock: newBalanceStock } },
+        },
+      });
+    }
+
+    return productUpdates;
+  } catch (error) {
+    console.error("Error in addingAnItemInSaleOrderEdit :", error);
+    // Handle error as needed
   }
 };

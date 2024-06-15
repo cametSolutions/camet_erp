@@ -141,35 +141,37 @@ function EditItemSecondary() {
 
     console.log(newItem);
     dispatch(changeIgstAndDiscount(newItem));
-    navigate("/sUsers/addItem");
+    // navigate("/sUsers/addItem");
     handleBackClick()
   };
 
   const handleBackClick = () => {
-    console.log(location.state);
 
-    if (location?.state?.id && location?.state?.from =="addItem") {
-      console.log("haii");
-      navigate("/sUsers/addItem", {
-        state: { from: "editInvoice", id: location.state.id },
-      });
-    } else if (location.state.from === "invoice") {
-      console.log("haii");
+    navigate(-1)
+    // console.log(location.state);
 
-      navigate("/sUsers/invoice");
-    } else if (location?.state?.from === "addItem") {
-      console.log("haii");
+    // if (location?.state?.id && location?.state?.from =="addItem") {
+    //   console.log("haii");
+    //   navigate("/sUsers/addItem", {
+    //     state: { from: "editInvoice", id: location.state.id },
+    //   });
+    // } else if (location.state.from === "invoice") {
+    //   console.log("haii");
 
-      navigate("/sUsers/addItem");
-    } else if (location?.state?.from === "editInvoice") {
-      console.log("haii");
+    //   navigate("/sUsers/invoice");
+    // } else if (location?.state?.from === "addItem") {
+    //   console.log("haii");
 
-      navigate(`/sUsers/editInvoice/${location.state.id}`);
-    } else {
-      console.log("haii");
+    //   navigate("/sUsers/addItem");
+    // } else if (location?.state?.from === "editInvoice") {
+    //   console.log("haii");
 
-      navigate("/sUsers/addItem");
-    }
+    //   navigate(`/sUsers/editInvoice/${location.state.id}`);
+    // } else {
+    //   console.log("haii");
+
+    //   navigate("/sUsers/addItem");
+    // }
   };
 
 

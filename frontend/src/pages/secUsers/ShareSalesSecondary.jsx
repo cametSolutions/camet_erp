@@ -131,7 +131,7 @@ function ShareSalesSecondary() {
 
 const handlePrint = useReactToPrint({
   content: () => contentToPrint.current,
-  documentTitle: `Sales ${data.salesNumber}`,
+  // documentTitle: `Sales ${data.salesNumber}`,
   pageStyle: `
     @page {
       size: A4;
