@@ -6,19 +6,18 @@ import { useNavigate, useLocation } from "react-router-dom";
 import api from "../../api/api";
 import { MdOutlineQrCodeScanner } from "react-icons/md";
 import { useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import {
   addAllProducts,
   addItem,
   removeItem,
-} from "../../../slices/invoiceSecondary";
-import { useDispatch } from "react-redux";
-import { changeCount } from "../../../slices/invoiceSecondary";
-import { setPriceLevel } from "../../../slices/invoiceSecondary";
-import {
   changeTotal,
   setBrandInRedux,
   setCategoryInRedux,
   setSubCategoryInRedux,
+  setPriceLevel,
+  changeCount,
+  addPriceRate,
 } from "../../../slices/invoiceSecondary";
 import { HashLoader } from "react-spinners";
 import { FixedSizeList as List } from "react-window";
@@ -75,7 +74,6 @@ function AddItemSecondary() {
   const dispatch = useDispatch();
   const listRef = useRef(null);
   const location = useLocation();
-  const scrollRef = useRef(window.scrollY);
 
   ///////////////////////////fetchProducts///////////////////////////////////
   useEffect(() => {
@@ -242,6 +240,11 @@ function AddItemSecondary() {
     });
   };
 
+  useEffect(() => {
+    console.log("haiii");
+    addSelectedRate(selectedPriceLevel);
+  }, [selectedPriceLevel]);
+
   ///////////////////////////filter items call ///////////////////////////////////
 
   const filteredItems = useMemo(() => {
@@ -301,13 +304,17 @@ function AddItemSecondary() {
     return discountedSubtotal + gstAmount;
   };
 
-  ///////////////////////////handleTotalChangeWithPriceLevel///////////////////////////////////
+  ///////////////////////////handleTotalChangeWithPriceLevel and add price rate ///////////////////////////////////
 
   const handleTotalChangeWithPriceLevel = (pricelevel) => {
     const updatedItems = filteredItems.map((item) => {
       if (item.added === true) {
         const newTotal = calculateTotal(item, pricelevel).toFixed(2);
         dispatch(changeTotal({ ...item, total: newTotal }));
+
+        item?.Priceleveles.find(
+          (item) => item.pricelevel === selectedPriceLevel
+        )?.pricerate;
 
         return {
           ...item,
@@ -318,6 +325,43 @@ function AddItemSecondary() {
     });
 
     setItem(updatedItems);
+  };
+
+  //////////////////////////////////////////addSelectedRate/////////////////////////////////////////////
+
+  const addSelectedRate = (pricelevel) => {
+    console.log(pricelevel);
+    console.log("haii");
+
+    const updatedItems = filteredItems.map((item) => {
+      const priceRate = item?.Priceleveles.find(
+        (item) => item.pricelevel === pricelevel
+      )?.pricerate;
+      console.log(priceRate);
+      dispatch(addPriceRate({ ...item, selectedPriceRate: priceRate }));
+
+      return {
+        ...item,
+        selectedPriceRate: priceRate,
+      };
+    });
+
+    setItem(updatedItems);
+  };
+
+  //////////////////////////////////////////handlepriceRateChange/////////////////////////////////////////////
+
+  const handlePriceRateChange = (e, _id) => {
+    const newRate = Number(e.target.value);
+
+    // Update the items with the new rate
+    const updatedItems = filteredItems.map((item) =>
+      item._id === _id ? { ...item, selectedPriceRate: newRate } : item
+    );
+
+    console.log(updatedItems);
+    setItem(updatedItems);
+    
   };
 
   ///////////////////////////handleIncrement///////////////////////////////////
@@ -390,6 +434,7 @@ function AddItemSecondary() {
     setSelectedPriceLevel(selectedValue);
     dispatch(setPriceLevel(selectedValue));
     handleTotalChangeWithPriceLevel(selectedValue);
+    // addSelectedRate(selectedValue);
   };
 
   /////////////////////////// calculateHeight ///////////////////////////////////
@@ -438,7 +483,7 @@ function AddItemSecondary() {
     const adjustedStyle = {
       ...style,
       marginTop: "16px",
-      height: "190px",
+      height: "170px",
     };
     return (
       <div
@@ -453,18 +498,7 @@ function AddItemSecondary() {
             </div>
             <div className="flex flex-col font-bold text-sm md:text-sm  gap-1 leading-normal">
               <p>{el.product_name}</p>
-              <div className="flex gap-1 items-center">
-                <p>
-                  ₹{" "}
-                  {
-                    el?.Priceleveles.find(
-                      (item) => item.pricelevel === selectedPriceLevel
-                    )?.pricerate
-                  }{" "}
-                  /
-                </p>{" "}
-                <span className="text-[10px] mt-1">{el.unit}</span>
-              </div>
+
               <div className="flex">
                 <p className="text-red-500">STOCK : </p>
                 <span>{el.balance_stock}</span>
@@ -552,16 +586,15 @@ function AddItemSecondary() {
 
           <div className="relative text-sm text-gray-500 ">
             <input
+              onChange={(e) => handlePriceRateChange(e, el._id)}
               type="number"
-              // value={
-              //   el?.Priceleveles.find(
-              //     (item) => item.pricelevel === selectedPriceLevel
-              //   )?.pricerate
-              // }
+              value={
+                el.selectedPriceRate !== undefined ? el.selectedPriceRate : ""
+              }
               placeholder="Rate"
               className="border-none pl-6  input-number text-center shadow-lg w-[100px]  focus:ring-0   "
             />
-            <span className= "  absolute left-3 top-1/2 transform -translate-y-1/2">
+            <span className="  absolute left-3 top-1/2 transform -translate-y-1/2">
               ₹
             </span>{" "}
           </div>
@@ -604,11 +637,6 @@ function AddItemSecondary() {
                       No price level added
                     </option>
                   )}
-                  {/* {priceLevels.map((el, index) => (
-                    <option key={index} value={el?.pricelevel}>
-                      {el?.pricelevel}
-                    </option>
-                  ))} */}
                 </select>
               </div>
               <MdOutlineQrCodeScanner className="text-white text-lg  cursor-pointer md:text-xl" />
@@ -636,36 +664,6 @@ function AddItemSecondary() {
                     />
                   </svg>
                 </div>
-                {/* <div className="relative">
-                  <input
-                    onChange={(e) => {
-                      setSearch(e.target.value);
-                    }}
-                    value={search}
-                    type="search"
-                    id="default-search"
-                    className="block w-full p-2 text-sm text-gray-900 border  rounded-lg border-gray-300  bg-gray-50 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Search party by Item name..."
-                    required
-                  />
-                  <button
-                    type="submit"
-                    className="text-white absolute end-[10px] top-1/2 transform -translate-y-1/2 bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-md px-2 py-1"
-                  >
-                    <IoIosSearch />
-                  </button>
-                  <button
-                    onClick={() => {
-                      setSearch("");
-                    }}
-                    type="submit"
-                    className={`${
-                      search.length > 0 ? "block" : "hidden"
-                    }  absolute end-[40px] top-1/2 transform -translate-y-1/2 text-gray-500  text-md px-2 py-1`}
-                  >
-                    <IoIosCloseCircleOutline />
-                  </button>
-                </div> */}
 
                 <SearchBar onType={searchData} />
               </div>
@@ -752,7 +750,7 @@ function AddItemSecondary() {
             className=""
             height={listHeight} // Specify the height of your list
             itemCount={filteredItems.length} // Specify the total number of items
-            itemSize={210} // Specify the height of each item
+            itemSize={190} // Specify the height of each item
             width="100%" // Specify the width of your list
             initialScrollOffset={scrollPosition}
             onScroll={({ scrollOffset }) => {
