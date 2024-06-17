@@ -1,12 +1,13 @@
 /* eslint-disable react/prop-types */
 /* eslint-disable react/no-unknown-property */
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import { useNavigate, useLocation } from "react-router-dom";
 import api from "../../api/api";
 import { MdOutlineQrCodeScanner } from "react-icons/md";
 import { useSelector } from "react-redux";
 import { useDispatch } from "react-redux";
+import debounce from "lodash.debounce";
 import {
   addAllProducts,
   addItem,
@@ -41,6 +42,7 @@ function AddItemSecondary() {
   const [loader, setLoader] = useState(false);
   const [listHeight, setListHeight] = useState(0);
   const [scrollPosition, setScrollPosition] = useState(0);
+  const [selectedPriceRates, setSelectedPriceRates] = useState({});
 
   ///////////////////////////cpm_id///////////////////////////////////
 
@@ -113,8 +115,10 @@ function AddItemSecondary() {
           console.log(updatedItems);
           setItem(updatedItems);
         } else {
+          console.log(productData);
           setItem(productData);
         }
+
         if (brandFromRedux) {
           setSelectedBrand(brandFromRedux);
         }
@@ -239,11 +243,24 @@ function AddItemSecondary() {
       return brandMatch && categoryMatch && subCategoryMatch && searchMatch;
     });
   };
-
   useEffect(() => {
-    console.log("haiii");
-    addSelectedRate(selectedPriceLevel);
-  }, [selectedPriceLevel]);
+    const updatedSelectedPriceRate = item.map((item) => ({
+      _id: item._id,
+      pricerate:
+        item.Priceleveles.find(
+          (level) => level.pricelevel === selectedPriceLevel
+        )?.pricerate || 0, // Default to 0 if pricerate is not found
+    }));
+
+    setSelectedPriceRates(updatedSelectedPriceRate);
+
+    console.log(updatedSelectedPriceRate);
+  }, [item, selectedPriceLevel]);
+
+  // useEffect(() => {
+  //   console.log("haiii");
+  //   addSelectedRate(selectedPriceLevel);
+  // }, [selectedPriceLevel]);
 
   ///////////////////////////filter items call ///////////////////////////////////
 
@@ -329,40 +346,49 @@ function AddItemSecondary() {
 
   //////////////////////////////////////////addSelectedRate/////////////////////////////////////////////
 
-  const addSelectedRate = (pricelevel) => {
-    console.log(pricelevel);
-    console.log("haii");
+  // const addSelectedRate = (pricelevel) => {
+  //   console.log(pricelevel);
+  //   console.log("haii");
 
-    const updatedItems = filteredItems.map((item) => {
-      const priceRate = item?.Priceleveles.find(
-        (item) => item.pricelevel === pricelevel
-      )?.pricerate;
-      console.log(priceRate);
-      dispatch(addPriceRate({ ...item, selectedPriceRate: priceRate }));
+  //   const updatedItems = filteredItems.map((item) => {
+  //     const priceRate = item?.Priceleveles.find(
+  //       (item) => item.pricelevel === pricelevel
+  //     )?.pricerate;
+  //     console.log(priceRate);
+  //     dispatch(addPriceRate({ ...item, selectedPriceRate: priceRate }));
 
-      return {
-        ...item,
-        selectedPriceRate: priceRate,
-      };
-    });
+  //     return {
+  //       ...item,
+  //       selectedPriceRate: priceRate,
+  //     };
+  //   });
 
-    setItem(updatedItems);
-  };
+  //   setItem(updatedItems);
+  // };
 
   //////////////////////////////////////////handlepriceRateChange/////////////////////////////////////////////
 
-  const handlePriceRateChange = (e, _id) => {
-    const newRate = Number(e.target.value);
+  // const handlePriceRateChangeDebounced = useCallback(
+  //   debounce((newRate, _id) => {
+  //     console.log(newRate);
+  //     setItem(prevItems =>
+  //       prevItems.map(item =>
+  //         item._id === _id ? { ...item, selectedPriceRate: newRate } : item
+  //       )
+  //     );
+  //   }, 1000), // Debounce delay in milliseconds
+  //   [] // No dependencies needed here
+  // );
 
-    // Update the items with the new rate
-    const updatedItems = filteredItems.map((item) =>
-      item._id === _id ? { ...item, selectedPriceRate: newRate } : item
-    );
+  // Normal handler without debounce
+  // const handlePriceRateChange = (e, _id) => {
+  //   const newRate = Number(e.target.value);
+  //   selectedPriceRates.map((rate) => {
+  //     if(rate._id === _id){
+  //       rate.p
+  //   })
 
-    console.log(updatedItems);
-    setItem(updatedItems);
-    
-  };
+  // };
 
   ///////////////////////////handleIncrement///////////////////////////////////
 
@@ -488,7 +514,7 @@ function AddItemSecondary() {
     return (
       <div
         style={adjustedStyle}
-        key={index}
+        key={el._id}
         className="flex flex-col bg-white shadow-lg  "
       >
         <div className=" p-4 py-2 pb-2  mt-4 flex justify-between items-center  rounded-sm cursor-pointer  ">
@@ -589,7 +615,8 @@ function AddItemSecondary() {
               onChange={(e) => handlePriceRateChange(e, el._id)}
               type="number"
               value={
-                el.selectedPriceRate !== undefined ? el.selectedPriceRate : ""
+                selectedPriceRates.find((pr) => pr._id === el._id)?.pricerate ||
+                0
               }
               placeholder="Rate"
               className="border-none pl-6  input-number text-center shadow-lg w-[100px]  focus:ring-0   "
