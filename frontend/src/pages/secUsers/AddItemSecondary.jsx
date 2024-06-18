@@ -43,6 +43,7 @@ function AddItemSecondary() {
   const [listHeight, setListHeight] = useState(0);
   const [scrollPosition, setScrollPosition] = useState(0);
   const [selectedPriceRates, setSelectedPriceRates] = useState({});
+  console.log("selectedPriceRates",selectedPriceRates);
 
   ///////////////////////////cpm_id///////////////////////////////////
 
@@ -243,6 +244,8 @@ function AddItemSecondary() {
       return brandMatch && categoryMatch && subCategoryMatch && searchMatch;
     });
   };
+
+
   useEffect(() => {
     const updatedSelectedPriceRate = item.map((item) => ({
       _id: item._id,
@@ -255,7 +258,7 @@ function AddItemSecondary() {
     setSelectedPriceRates(updatedSelectedPriceRate);
 
     console.log(updatedSelectedPriceRate);
-  }, [item, selectedPriceLevel]);
+  }, [ selectedPriceLevel]);
 
   // useEffect(() => {
   //   console.log("haiii");
@@ -367,29 +370,39 @@ function AddItemSecondary() {
   // };
 
   //////////////////////////////////////////handlepriceRateChange/////////////////////////////////////////////
+  const handlePriceRateChange = debounce((priceRate, itemId) => {
+    console.log("haii");
+    const updatedItems = item.map((item) =>
+      item._id === itemId ? { ...item, pricerate: Number(priceRate) } : item
+    );
+    setItem(updatedItems);
 
-  // const handlePriceRateChangeDebounced = useCallback(
-  //   debounce((newRate, _id) => {
-  //     console.log(newRate);
-  //     setItem(prevItems =>
-  //       prevItems.map(item =>
-  //         item._id === _id ? { ...item, selectedPriceRate: newRate } : item
-  //       )
-  //     );
-  //   }, 1000), // Debounce delay in milliseconds
-  //   [] // No dependencies needed here
-  // );
+    const updateRate=selectedPriceRates.map((rate)=>{
+      if(rate._id===itemId){
+        return {...rate, pricerate: Number(priceRate)};
+      }else{
+        return rate;
+      }
+    })
 
-  // Normal handler without debounce
-  // const handlePriceRateChange = (e, _id) => {
-  //   const newRate = Number(e.target.value);
-  //   selectedPriceRates.map((rate) => {
-  //     if(rate._id === _id){
-  //       rate.p
-  //   })
+    console.log(updateRate);
 
-  // };
+    setSelectedPriceRates(updateRate)
+  }, 300); 
 
+
+  console.log(selectedPriceRates);
+  
+  
+
+
+  // Ensure to clear debounce on component unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      handlePriceRateChange.cancel();
+    };
+  }, []);
+  
   ///////////////////////////handleIncrement///////////////////////////////////
 
   const handleIncrement = (_id) => {
@@ -612,12 +625,13 @@ function AddItemSecondary() {
 
           <div className="relative text-sm text-gray-500 ">
             <input
-              onChange={(e) => handlePriceRateChange(e, el._id)}
+              onChange={(e) => handlePriceRateChange(e.target.value, el._id)}
               type="number"
-              value={
-                selectedPriceRates.find((pr) => pr._id === el._id)?.pricerate ||
-                0
-              }
+              value={el?.pricerate}
+              // value={
+              //   selectedPriceRates.find((pr) => pr._id === el._id)?.pricerate ||
+              //   0
+              // }
               placeholder="Rate"
               className="border-none pl-6  input-number text-center shadow-lg w-[100px]  focus:ring-0   "
             />
