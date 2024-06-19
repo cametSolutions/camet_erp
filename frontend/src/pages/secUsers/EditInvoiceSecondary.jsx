@@ -630,9 +630,7 @@ console.log(InvoiceIdForEdit);
                             </p>
                             <p className="text-nowrap">
                               {el.count} {el.unit} X{" "}
-                              {el.Priceleveles.find(
-                                (item) => item.pricelevel == priceLevelFromRedux
-                              )?.pricerate || 0}
+                              {el?.selectedPriceRate|| 0}
                             </p>
                           </div>
                           <div className="flex justify-between">

@@ -28,7 +28,6 @@ import {
 } from "../../../slices/invoiceSecondary";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import SidebarSec from "../../components/secUsers/SidebarSec";
-import { Button, Label, Modal, TextInput } from "flowbite-react";
 
 function InvoiceSecondary() {
   const cmp_id = useSelector(
@@ -37,18 +36,10 @@ function InvoiceSecondary() {
   const type = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg.type
   );
-  const [showSidebar, setShowSidebar] = useState(false);
-  const [openModal, setOpenModal] = useState(false);
-  const [modalInputs, setModalInputs] = useState({
-    startingNumber: "1",
-    widthOfNumericalPart: "",
-    prefixDetails: "",
-    suffixDetails: "",
-  });
+
   const [subTotal, setSubTotal] = useState(0);
   const [additional, setAdditional] = useState(false);
   const [orderNumber, setOrderNumber] = useState("");
-  const [refreshCmp, setrefreshCmp] = useState(false);
   const [additionalChragesFromCompany, setAdditionalChragesFromCompany] =
     useState([]);
 
@@ -63,7 +54,7 @@ function InvoiceSecondary() {
   useEffect(() => {
     localStorage.removeItem("scrollPositionAddItem");
   }, []);
-  
+
   useEffect(() => {
     const getAdditionalChargesIntegrated = async () => {
       try {
@@ -104,7 +95,7 @@ function InvoiceSecondary() {
     };
 
     fetchSingleOrganization();
-  }, [refreshCmp, orgId]);
+  }, [orgId]);
 
   useEffect(() => {
     const fetchConfigurationNumber = async () => {
@@ -142,19 +133,6 @@ function InvoiceSecondary() {
           const finalOrderNumber = prefixDetails + padedNumber + suffixDetails;
           console.log(finalOrderNumber);
           setOrderNumber(finalOrderNumber);
-          setModalInputs({
-            widthOfNumericalPart: widthOfNumericalPart,
-            prefixDetails: prefixDetails,
-            suffixDetails: suffixDetails,
-          });
-        } else {
-          setOrderNumber(orderNumber);
-          setModalInputs({
-            startingNumber: "1",
-            widthOfNumericalPart: "",
-            prefixDetails: "",
-            suffixDetails: "",
-          });
         }
       } catch (error) {
         console.log(error);
@@ -378,39 +356,10 @@ function InvoiceSecondary() {
     }
   };
 
-  function onCloseModal() {
-    setOpenModal(false);
-    // setEmail('');
-  }
-
-  const saveOrderNumber = async () => {
-    try {
-      const res = await api.post(
-        `/api/sUsers/saveOrderNumber/${orgId}`,
-        modalInputs,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-          withCredentials: true,
-        }
-      );
-
-      toast(res.data.message);
-      setOpenModal(false);
-      setrefreshCmp(!refreshCmp);
-
-      console.log(res);
-    } catch (error) {
-      console.log(error);
-      toast.error(error.response.data.message);
-    }
-  };
-
   return (
     <div className="flex relative ">
       <div>
-        <SidebarSec TAB={"invoice"} showBar={showSidebar} />
+        <SidebarSec TAB={"invoice"} />
       </div>
 
       <div className="flex-1 bg-slate-100  h-screen overflow-y-scroll  ">
@@ -577,7 +526,6 @@ function InvoiceSecondary() {
                               {/* {el.Priceleveles.find(
                                 (item) => item.pricelevel == priceLevelFromRedux
                               )?.pricerate || 0} */}
-
                               {el?.selectedPriceRate || 0}
                             </p>
                           </div>
@@ -932,177 +880,7 @@ function InvoiceSecondary() {
             </button>
           </div>
         </div>
-
-        {openModal && (
-          <div
-            id="popup-modal"
-            className="  absolute top-0 right-0 bottom-0 left-0 z-50 flex justify-center items-center"
-          >
-            <div className="relative p-4 w-full max-w-md max-h-full">
-              <div className="relative  rounded-lg shadow bg-gray-700">
-                <button
-                  onClick={() => setOpenModal(false)}
-                  type="button"
-                  className="absolute top-3 end-2.5 text-gray-400 bg-transparent   rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center hover:bg-gray-600 hover:text-white"
-                  data-modal-hide="popup-modal"
-                >
-                  <svg
-                    className="w-3 h-3"
-                    aria-hidden="true"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 14 14"
-                  >
-                    <path
-                      stroke="currentColor"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"
-                    />
-                  </svg>
-                  <span className="sr-only">Close modal</span>
-                </button>
-                <div className="p-4 md:p-5 text-center">
-                  <svg
-                    className="mx-auto mb-4 text-gray-200 w-12 h-12 "
-                    aria-hidden="true"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      stroke="currentColor"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M10 11V6m0 8h.01M19 10a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                    />
-                  </svg>
-                  <h3 className="mb-5 text-lg font-normal text-gray-200 ">
-                    You haven't added any HSN yet!!
-                  </h3>
-
-                  <button
-                    type="button"
-                    className="text-white bg-blue-600 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-500  font-medium rounded-lg text-sm inline-flex items-center px-5 py-2.5 text-center mr-3"
-                    onClick={() => {
-                      navigate("/sUsers/hsn");
-                    }}
-                  >
-                    Add HSN
-                  </button>
-                  <button
-                    data-modal-hide="popup-modal"
-                    type="button"
-                    onClick={() => setOpenModal(false)}
-                    className=" bg-red-500 text-white hover:bg-red-700 focus:outline-none   rounded-lg font-medium text-sm inline-flex items-center px-5 py-2.5 text-center"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
-
-      <Modal
-        style={{
-          scrollbarWidth: "thin",
-          scrollbarColor: "transparent transparent",
-        }}
-        show={openModal}
-        size="md"
-        onClose={onCloseModal}
-        popup
-      >
-        <Modal.Header />
-        <Modal.Body>
-          <div className="space-y-6">
-            <h3 className="text-xl font-medium text-gray-900 dark:text-white ">
-              Enter Details
-            </h3>
-            <div>
-              <div className="mb-2 block">
-                <Label htmlFor="startingNumber" value="Starting Number" />
-              </div>
-              <TextInput
-                disabled
-                id="startingNumber"
-                placeholder="1"
-                type="number"
-                value={modalInputs.startingNumber}
-                onChange={(e) =>
-                  setModalInputs({
-                    ...modalInputs,
-                    startingNumber: e.target.value,
-                  })
-                }
-                required
-              />
-            </div>
-            <div>
-              <div className="mb-2 block">
-                <Label
-                  htmlFor="widthOfNumericalPart"
-                  value="Width of Numerical Part"
-                />
-              </div>
-              <TextInput
-                id="widthOfNumericalPart"
-                placeholder="4"
-                type="number"
-                value={modalInputs.widthOfNumericalPart}
-                onChange={(e) =>
-                  setModalInputs({
-                    ...modalInputs,
-                    widthOfNumericalPart: e.target.value,
-                  })
-                }
-                required
-              />
-            </div>
-            <div>
-              <div className="mb-2 block">
-                <Label htmlFor="prefixDetails" value="Prefix Details" />
-              </div>
-              <TextInput
-                id="prefixDetails"
-                placeholder="ABC"
-                value={modalInputs.prefixDetails}
-                onChange={(e) =>
-                  setModalInputs({
-                    ...modalInputs,
-                    prefixDetails: e.target.value,
-                  })
-                }
-                required
-              />
-            </div>
-            <div>
-              <div className="mb-2 block">
-                <Label htmlFor="suffixDetails" value="Suffix Details" />
-              </div>
-              <TextInput
-                id="suffixDetails"
-                placeholder="XYZ"
-                value={modalInputs.suffixDetails}
-                onChange={(e) =>
-                  setModalInputs({
-                    ...modalInputs,
-                    suffixDetails: e.target.value,
-                  })
-                }
-                required
-              />
-            </div>
-            <div className="w-full">
-              <Button onClick={saveOrderNumber}>Submit</Button>
-            </div>
-          </div>
-        </Modal.Body>
-      </Modal>
     </div>
   );
 }
