@@ -882,10 +882,7 @@ export const createInvoice = async (req, res) => {
         (priceLevel) => priceLevel.pricelevel === priceLevelFromRedux
       );
       // If a corresponding price rate is found, assign it to selectedPrice, otherwise assign null
-      const selectedPrice = selectedPriceLevel
-        ? selectedPriceLevel.pricerate
-        : 0;
-
+      const selectedPrice = item?.selectedPriceRate || 0;
       // Calculate total price after applying discount
       let totalPrice = selectedPrice * (item.count || 1) || 0;
       if (

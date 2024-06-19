@@ -43,7 +43,7 @@ function AddItemSecondary() {
   const [listHeight, setListHeight] = useState(0);
   const [scrollPosition, setScrollPosition] = useState(0);
   const [selectedPriceRates, setSelectedPriceRates] = useState({});
-  console.log("selectedPriceRates",selectedPriceRates);
+  console.log("selectedPriceRates", selectedPriceRates);
 
   ///////////////////////////cpm_id///////////////////////////////////
 
@@ -98,8 +98,6 @@ function AddItemSecondary() {
         }
 
         if (itemsFromRedux.length > 0) {
-          console.log("haii");
-
           const reduxItemIds = itemsFromRedux.map((el) => el._id);
           const updatedItems = productData.map((product) => {
             if (reduxItemIds.includes(product._id)) {
@@ -114,6 +112,7 @@ function AddItemSecondary() {
           });
 
           console.log(updatedItems);
+
           setItem(updatedItems);
         } else {
           console.log(productData);
@@ -193,7 +192,7 @@ function AddItemSecondary() {
             console.log("haii");
             const defaultPriceLevel = priceLevels[0];
             setSelectedPriceLevel(defaultPriceLevel);
-            dispatch(setPriceLevel(defaultPriceLevel));
+            // dispatch(setPriceLevel(defaultPriceLevel));
           }
         } else {
           const { priceLevels, brands, categories, subcategories } = res.data;
@@ -208,6 +207,7 @@ function AddItemSecondary() {
             const defaultPriceLevel = priceLevels[0];
             setSelectedPriceLevel(defaultPriceLevel);
             dispatch(setPriceLevel(defaultPriceLevel));
+            addSelectedRate(defaultPriceLevel);
           }
         }
       } catch (error) {
@@ -245,7 +245,6 @@ function AddItemSecondary() {
     });
   };
 
-
   useEffect(() => {
     const updatedSelectedPriceRate = item.map((item) => ({
       _id: item._id,
@@ -258,12 +257,7 @@ function AddItemSecondary() {
     setSelectedPriceRates(updatedSelectedPriceRate);
 
     console.log(updatedSelectedPriceRate);
-  }, [ selectedPriceLevel]);
-
-  // useEffect(() => {
-  //   console.log("haiii");
-  //   addSelectedRate(selectedPriceLevel);
-  // }, [selectedPriceLevel]);
+  }, [selectedPriceLevel]);
 
   ///////////////////////////filter items call ///////////////////////////////////
 
@@ -289,6 +283,7 @@ function AddItemSecondary() {
       // Toggle the 'added' state of the item
       itemToUpdate.added = !itemToUpdate.added;
       itemToUpdate.count = 1;
+      // item.update.selectedPriceRate=
       const total = calculateTotal(itemToUpdate, selectedPriceLevel).toFixed(2);
       itemToUpdate.total = total;
       updatedItems[index] = itemToUpdate;
@@ -303,11 +298,14 @@ function AddItemSecondary() {
   ///////////////////////////calculateTotal///////////////////////////////////
 
   const calculateTotal = (item, selectedPriceLevel) => {
-    const priceRate =
-      item.Priceleveles.find((level) => level.pricelevel === selectedPriceLevel)
-        ?.pricerate || 0;
+    // const priceRate =
+    //   item.Priceleveles.find((level) => level.pricelevel === selectedPriceLevel)
+    //     ?.pricerate || 0;
+    const priceRate = item.selectedPriceRate || 0;
+    console.log(priceRate);
 
     let subtotal = priceRate * item?.count;
+    console.log(item?.count);
     let discountedSubtotal = subtotal;
 
     if (item.discount !== 0 && item.discount !== undefined) {
@@ -332,9 +330,13 @@ function AddItemSecondary() {
         const newTotal = calculateTotal(item, pricelevel).toFixed(2);
         dispatch(changeTotal({ ...item, total: newTotal }));
 
-        item?.Priceleveles.find(
-          (item) => item.pricelevel === selectedPriceLevel
+        const newPriceRate = item?.Priceleveles.find(
+          (item) => item.pricelevel === pricelevel
         )?.pricerate;
+        console.log(newPriceRate);
+        dispatch(
+          addPriceRate({ _id: item._id, selectedPriceRate: newPriceRate })
+        );
 
         return {
           ...item,
@@ -347,62 +349,34 @@ function AddItemSecondary() {
     setItem(updatedItems);
   };
 
-  //////////////////////////////////////////addSelectedRate/////////////////////////////////////////////
+  //////////////////////////////////////////addSelectedRate initially not in redux/////////////////////////////////////////////
 
-  // const addSelectedRate = (pricelevel) => {
-  //   console.log(pricelevel);
-  //   console.log("haii");
+  const addSelectedRate = (pricelevel) => {
+    if (item?.length > 0) {
+      const updatedItems = filteredItems.map((item) => {
+        const priceRate =
+          item?.Priceleveles?.find((item) => item.pricelevel === pricelevel)
+            ?.pricerate || 0;
 
-  //   const updatedItems = filteredItems.map((item) => {
-  //     const priceRate = item?.Priceleveles.find(
-  //       (item) => item.pricelevel === pricelevel
-  //     )?.pricerate;
-  //     console.log(priceRate);
-  //     dispatch(addPriceRate({ ...item, selectedPriceRate: priceRate }));
+        const reduxItem = itemsFromRedux.find((p) => p._id === item._id);
+        const reduxRate = reduxItem?.selectedPriceRate || null;
 
-  //     return {
-  //       ...item,
-  //       selectedPriceRate: priceRate,
-  //     };
-  //   });
+        return {
+          ...item,
+          selectedPriceRate: reduxRate ?? priceRate,
+        };
+      });
 
-  //   setItem(updatedItems);
-  // };
+      setItem(updatedItems);
+    }
+  };
+
+  useEffect(() => {
+    addSelectedRate(selectedPriceLevel);
+  }, [selectedPriceLevel]);
 
   //////////////////////////////////////////handlepriceRateChange/////////////////////////////////////////////
-  const handlePriceRateChange = debounce((priceRate, itemId) => {
-    console.log("haii");
-    const updatedItems = item.map((item) =>
-      item._id === itemId ? { ...item, pricerate: Number(priceRate) } : item
-    );
-    setItem(updatedItems);
 
-    const updateRate=selectedPriceRates.map((rate)=>{
-      if(rate._id===itemId){
-        return {...rate, pricerate: Number(priceRate)};
-      }else{
-        return rate;
-      }
-    })
-
-    console.log(updateRate);
-
-    setSelectedPriceRates(updateRate)
-  }, 300); 
-
-
-  console.log(selectedPriceRates);
-  
-  
-
-
-  // Ensure to clear debounce on component unmount to prevent memory leaks
-  useEffect(() => {
-    return () => {
-      handlePriceRateChange.cancel();
-    };
-  }, []);
-  
   ///////////////////////////handleIncrement///////////////////////////////////
 
   const handleIncrement = (_id) => {
@@ -447,7 +421,7 @@ function AddItemSecondary() {
       currentItem.count = parseFloat(currentItem.count.toString());
       if (currentItem.count <= 0) {
         dispatch(removeItem(currentItem));
-        updatedItems[index] = { ...currentItem, added: false }; // Make a copy and update the 'added' property
+        updatedItems[index] = { ...currentItem, added: false ,total:0}; // Make a copy and update the 'added' property
       } else {
         // Use the calculateTotal function to calculate the total for the current item
         currentItem.total = calculateTotal(
@@ -522,7 +496,7 @@ function AddItemSecondary() {
     const adjustedStyle = {
       ...style,
       marginTop: "16px",
-      height: "170px",
+      height: "160px",
     };
     return (
       <div
@@ -530,18 +504,23 @@ function AddItemSecondary() {
         key={el._id}
         className="flex flex-col bg-white shadow-lg  "
       >
-        <div className=" p-4 py-2 pb-2  mt-4 flex justify-between items-center  rounded-sm cursor-pointer  ">
+        <div className=" p-4 py-2 pb-2 mt-7   flex justify-between items-center  rounded-sm cursor-pointer  ">
           <div className="flex items-start gap-3 md:gap-4  ">
             <div className="w-10 mt-1  uppercase h-10 rounded-lg bg-violet-200 flex items-center justify-center font-semibold text-gray-400">
               {el?.product_name?.slice(0, 1)}
             </div>
             <div className="flex flex-col font-bold text-sm md:text-sm  gap-1 leading-normal">
               <p>{el.product_name}</p>
+              <div className="flex gap-1 items-center">
+                <p>₹ {el.selectedPriceRate}</p>{" "}
+                <span className="text-[10px] mt-1">/ {el?.unit}</span>
+              </div>
 
               <div className="flex">
                 <p className="text-red-500">STOCK : </p>
                 <span>{el.balance_stock}</span>
               </div>
+
               <div>
                 <span>Total : ₹ </span>
                 <span>{el.total || 0}</span>
@@ -549,9 +528,11 @@ function AddItemSecondary() {
             </div>
           </div>
 
-          <div>
-            <div
-              className="px-4 py-2 rounded-md border-violet-500 font-bold border-2 text-violet-500 text-xs"
+          <div className="flex flex-col items-center justify-center gap-4">
+            <button
+              className={`${
+                el?.added ? "ml-11  py-1 px-2" : " px-4 py-2"
+              }  rounded-md border-violet-500 font-bold border-2 text-violet-500 text-xs  `}
               onClick={() => {
                 el.added
                   ? navigate(`/sUsers/editItem/${el._id}`)
@@ -559,85 +540,68 @@ function AddItemSecondary() {
               }}
             >
               {el.added ? "Edit" : "Add"}
-            </div>
-          </div>
-        </div>
+            </button>
 
-        <div className="flex items-center justify-between px-4">
-          {el.added ? (
-            <div className="flex items-center gap-x-1.5 pl-11">
-              <button
-                onClick={() => handleDecrement(el._id)}
-                type="button"
-                className="size-6 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-md border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none"
-                data-hs-input-number-decrement
-              >
-                <svg
-                  className="flex-shrink-0 size-3.5"
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M5 12h14" />
-                </svg>
-              </button>
-              <input
-                className="p-0 w-12 bg-transparent border-0 text-gray-800 text-center focus:ring-0 "
-                type="text"
-                disabled
-                value={el.count ? el.count : 0} // Display the count from the state
-                data-hs-input-number-input
-              />
-              <button
-                onClick={() => {
-                  handleIncrement(el._id);
-                }}
-                type="button"
-                className="size-6 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-md border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none "
-                data-hs-input-number-increment
-              >
-                <svg
-                  className="flex-shrink-0 size-3.5"
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M5 12h14" />
-                  <path d="M12 5v14" />
-                </svg>
-              </button>
+            <div className="flex items-center justify-end px-4  ">
+              {el.added ? (
+                <div className="flex items-center gap-x-1.5 pl-11">
+                  <button
+                    onClick={() => handleDecrement(el._id)}
+                    type="button"
+                    className="size-6 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-md border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none"
+                    data-hs-input-number-decrement
+                  >
+                    <svg
+                      className="flex-shrink-0 size-3.5"
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M5 12h14" />
+                    </svg>
+                  </button>
+                  <input
+                    className="p-0 w-12 bg-transparent border-0 text-gray-800 text-center focus:ring-0 "
+                    type="text"
+                    disabled
+                    value={el.count ? el.count : 0} // Display the count from the state
+                    data-hs-input-number-input
+                  />
+                  <button
+                    onClick={() => {
+                      handleIncrement(el._id);
+                    }}
+                    type="button"
+                    className="size-6 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-md border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none "
+                    data-hs-input-number-increment
+                  >
+                    <svg
+                      className="flex-shrink-0 size-3.5"
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M5 12h14" />
+                      <path d="M12 5v14" />
+                    </svg>
+                  </button>
+                </div>
+              ) : (
+                <div></div>
+              )}
             </div>
-          ) : (
-            <div></div>
-          )}
-
-          <div className="relative text-sm text-gray-500 ">
-            <input
-              onChange={(e) => handlePriceRateChange(e.target.value, el._id)}
-              type="number"
-              value={el?.pricerate}
-              // value={
-              //   selectedPriceRates.find((pr) => pr._id === el._id)?.pricerate ||
-              //   0
-              // }
-              placeholder="Rate"
-              className="border-none pl-6  input-number text-center shadow-lg w-[100px]  focus:ring-0   "
-            />
-            <span className="  absolute left-3 top-1/2 transform -translate-y-1/2">
-              ₹
-            </span>{" "}
           </div>
         </div>
       </div>
@@ -791,7 +755,7 @@ function AddItemSecondary() {
             className=""
             height={listHeight} // Specify the height of your list
             itemCount={filteredItems.length} // Specify the total number of items
-            itemSize={190} // Specify the height of each item
+            itemSize={175} // Specify the height of each item
             width="100%" // Specify the width of your list
             initialScrollOffset={scrollPosition}
             onScroll={({ scrollOffset }) => {

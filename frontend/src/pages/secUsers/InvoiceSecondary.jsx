@@ -11,7 +11,6 @@ import {
   addAdditionalCharges,
   AddFinalAmount,
   deleteRow,
-  addAllProducts,
 } from "../../../slices/invoiceSecondary";
 import { useDispatch } from "react-redux";
 import { IoIosArrowDown } from "react-icons/io";
@@ -48,7 +47,6 @@ function InvoiceSecondary() {
   });
   const [subTotal, setSubTotal] = useState(0);
   const [additional, setAdditional] = useState(false);
-  const [refresh, setRefresh] = useState(false);
   const [orderNumber, setOrderNumber] = useState("");
   const [refreshCmp, setrefreshCmp] = useState(false);
   const [additionalChragesFromCompany, setAdditionalChragesFromCompany] =
@@ -576,9 +574,11 @@ function InvoiceSecondary() {
                             </p>
                             <p className="text-nowrap">
                               {el.count} {el.unit} X{" "}
-                              {el.Priceleveles.find(
+                              {/* {el.Priceleveles.find(
                                 (item) => item.pricelevel == priceLevelFromRedux
-                              )?.pricerate || 0}
+                              )?.pricerate || 0} */}
+
+                              {el?.selectedPriceRate || 0}
                             </p>
                           </div>
                           <div className="flex justify-between">
