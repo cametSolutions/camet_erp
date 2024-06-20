@@ -61,13 +61,14 @@ function EditItemSalesSecondary() {
       navigate("/sUsers/addItemSales");
     } else {
       setItem(selectedItem[0]);
-      const price = selectedItem[0].Priceleveles.find(
-        (item) => item.pricelevel === selectedPriceLevel
-      )?.pricerate;
+      // const price = selectedItem[0].Priceleveles.find(
+      //   (item) => item.pricelevel === selectedPriceLevel
+      // )?.pricerate;
 
-      setNewPrice(price);
 
       if (selectedItem[0]?.hasGodownOrBatch) {
+      setNewPrice(selectedGodown?.selectedPriceRate ||0);
+
         console.log("haii");
         setQuantity(selectedGodown?.count || 1);
         if (selectedGodown?.discountPercentage > 0) {
@@ -83,6 +84,8 @@ function EditItemSalesSecondary() {
           setDiscount("");
         }
       } else {
+      setNewPrice(selectedItem[0]?.GodownList[0]?.selectedPriceRate || 0);
+
         setQuantity(selectedItem[0]?.count || 1);
         if (selectedItem[0].discountPercentage > 0) {
           setDiscount(selectedItem[0].discountPercentage);
@@ -140,27 +143,25 @@ function EditItemSalesSecondary() {
 
   const submitHandler = () => {
     console.log(item);
-    const newItem = { ...item };
-
+    const newItem = structuredClone(item);  // Deep copy to avoid mutation
+  
     if (selectedItem[0]?.hasGodownOrBatch) {
-      // Create a deep copy of the GodownList to avoid mutation
       const newGodownList = newItem.GodownList.map((godown, idx) => {
         if (idx == index) {
           console.log(godown);
           return {
             ...godown,
             count: Number(quantity) || 0,
-            selectedPriceRate: Number(newPrice)||0,
+            selectedPriceRate: Number(newPrice) || 0,
             discount: type === "amount" ? discountAmount : "",
             discountPercentage:
               type === "amount" ? "" : parseFloat(discountPercentage),
             individualTotal: Number(totalAmount.toFixed(2)),
           };
         }
-
         return godown;
       });
-
+  
       newItem.GodownList = newGodownList;
       newItem.count = Number(
         newGodownList
@@ -168,21 +169,22 @@ function EditItemSalesSecondary() {
           .toFixed(2)
       );
       newItem.total = Number(
-        Number(
-          newGodownList.reduce(
-            (acc, curr) => acc + (curr?.individualTotal || 0),
-            0
-          )
-        ).toFixed(2)
+        newGodownList
+          .reduce((acc, curr) => acc + (curr?.individualTotal || 0), 0)
+          .toFixed(2)
       );
       console.log(newItem.total);
       console.log(newItem);
     } else {
-      newItem.total = Number(totalAmount.toFixed(2));
+      // newItem.total = Number(totalAmount.toFixed(2));
+      newItem.GodownList[0].individualTotal = Number(totalAmount.toFixed(2));
       newItem.count = quantity || 0;
-      newItem.selectedPriceRate = Number(newPrice)||0;
+      const godownList = [...newItem.GodownList];
+      console.log(godownList);
+      godownList[0].selectedPriceRate = Number(newPrice) || 0;
+  
+      newItem.GodownList = godownList;
       newItem.newGst = igst;
-      // newItem.GodownList = godown;
       if (type === "amount") {
         newItem.discount = discountAmount;
         newItem.discountPercentage = "";
@@ -191,14 +193,13 @@ function EditItemSalesSecondary() {
         newItem.discountPercentage = parseFloat(discountPercentage);
       }
     }
-
+  
     console.log(newItem);
-    // dispatch(changeIgstAndDiscount(newItem));
-    // dispatch(changeGodownCount(newItem));
+  
     dispatch(updateItem(newItem));
     navigate(-1);
-    // handleBackClick();
   };
+  
 
   const handleBackClick = () => {
     console.log(location.state);

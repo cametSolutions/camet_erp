@@ -2048,16 +2048,23 @@ export const createSale = async (req, res) => {
 
     const updatedItems = items.map((item) => {
       // Find the corresponding price rate for the selected price level
-      const selectedPriceLevel = item.Priceleveles.find(
-        (priceLevel) => priceLevel.pricelevel === priceLevelFromRedux
-      );
+      // const selectedPriceLevel = item.Priceleveles.find(
+      //   (priceLevel) => priceLevel.pricelevel === priceLevelFromRedux
+      // );
       // If a corresponding price rate is found, assign it to selectedPrice, otherwise assign null
-      const selectedPrice = selectedPriceLevel
-        ? selectedPriceLevel.pricerate
-        : 0;
+      // const selectedPrice = selectedPriceLevel
+      //   ? selectedPriceLevel.pricerate
+      //   : 0;
 
       // Calculate total price after applying discount
-      let totalPrice = selectedPrice * (item.count || 1) || 0; // Default count to 1 if not provided
+      // let totalPrice = selectedPrice * (item.count || 1) || 0; // Default count to 1 if not provided
+      let totalPrice=item?.GodownList.reduce((acc,curr)=>{
+
+        console.log("curr?.individualTotal",curr?.individualTotal);
+
+        return acc =acc+Number(curr?.individualTotal)
+        
+      },0)
       if (item.discount) {
         // If discount is present (amount), subtract it from the total price
         totalPrice -= item.discount;
@@ -2067,6 +2074,8 @@ export const createSale = async (req, res) => {
         totalPrice -= discountAmount;
       }
 
+      console.log("totalPrice",totalPrice);
+
       // Calculate tax amounts
       const { cgst, sgst, igst } = item;
       const cgstAmt = parseFloat(((totalPrice * cgst) / 100).toFixed(2));
@@ -2075,7 +2084,7 @@ export const createSale = async (req, res) => {
 
       return {
         ...item,
-        selectedPrice: selectedPrice,
+        // selectedPrice: selectedPrice,
         cgstAmt: cgstAmt,
         sgstAmt: sgstAmt,
         igstAmt: igstAmt,
