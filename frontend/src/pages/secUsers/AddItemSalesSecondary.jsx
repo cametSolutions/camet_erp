@@ -176,10 +176,10 @@ function AddItemSalesSecondary() {
                 const newBalanceStock = matchedGodown?.balance_stock;
 
                 const updatedGodownList = reduxItem.GodownList.map((godown) => {
-                 return {
-                  ...godown,
-                  balance_stock: newBalanceStock,
-                 }
+                  return {
+                    ...godown,
+                    balance_stock: newBalanceStock,
+                  };
                 });
                 const updaTedReduxItem = {
                   ...reduxItem,
@@ -334,6 +334,55 @@ function AddItemSalesSecondary() {
       search
     );
   }, [item, selectedBrand, selectedCategory, selectedSubCategory, search]);
+
+  //////////////////////////////////////////addSelectedRate initially not in redux/////////////////////////////////////////////
+
+  const addSelectedRate = (pricelevel) => {
+    if (item?.length > 0) {
+      const updatedItems = filteredItems.map((item) => {
+        const priceRate =
+          item?.Priceleveles?.find((priceLevelItem) => priceLevelItem.pricelevel === pricelevel)
+            ?.pricerate || 0;
+  
+        console.log(itemsFromRedux);
+  
+        const reduxItem = itemsFromRedux.find((p) => p._id === item._id);
+        console.log(reduxItem);
+        const reduxRate = reduxItem?.selectedPriceRate || null;
+  
+        if (item?.hasGodownOrBatch) {
+          const updatedGodownList = item.GodownList.map((godownOrBatch, index) => {
+            const reduxRateOfGodown = reduxItem?.GodownList?.[index]?.selectedPriceRate || priceRate;
+            return {
+              ...godownOrBatch,
+              selectedPriceRate: reduxRateOfGodown,
+            };
+          });
+  
+          return {
+            ...item,
+            GodownList: updatedGodownList,
+          };
+        } else {
+          return {
+            ...item,
+            selectedPriceRate: reduxRate ?? priceRate,
+          };
+        }
+      });
+  
+      console.log(updatedItems);
+  
+      setItem(updatedItems);
+    }
+  };
+  
+
+  useEffect(() => {
+    addSelectedRate(selectedPriceLevel);
+  }, [selectedPriceLevel]);
+
+  console.log(item);
 
   ///////////////////////////calculateTotal///////////////////////////////////
 

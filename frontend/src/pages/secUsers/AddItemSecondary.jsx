@@ -1,13 +1,12 @@
 /* eslint-disable react/prop-types */
 /* eslint-disable react/no-unknown-property */
-import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import { useNavigate, useLocation } from "react-router-dom";
 import api from "../../api/api";
 import { MdOutlineQrCodeScanner } from "react-icons/md";
 import { useSelector } from "react-redux";
 import { useDispatch } from "react-redux";
-import debounce from "lodash.debounce";
 import {
   addAllProducts,
   addItem,
@@ -23,7 +22,6 @@ import {
 import { HashLoader } from "react-spinners";
 import { FixedSizeList as List } from "react-window";
 import SidebarSec from "../../components/secUsers/SidebarSec";
-import { toast } from "react-toastify";
 import { Decimal } from "decimal.js";
 import SearchBar from "../../components/common/SearchBar";
 
@@ -314,10 +312,8 @@ function AddItemSecondary() {
       priceRate = item.selectedPriceRate || 0;
     }
 
-    console.log(priceRate);
 
     let subtotal = priceRate * item?.count;
-    console.log(item?.count);
     let discountedSubtotal = subtotal;
 
     if (item.discount !== 0 && item.discount !== undefined) {
@@ -783,7 +779,7 @@ function AddItemSecondary() {
                 scrollOffset.toString()
               );
             }}
-          >
+          >6
             {Row}
           </List>
         )}
