@@ -371,11 +371,12 @@ function AddItemSalesSecondary() {
         }
       });
   
-      console.log(updatedItems);
   
       setItem(updatedItems);
     }
   };
+
+
   
 
   useEffect(() => {
@@ -822,9 +823,10 @@ function AddItemSalesSecondary() {
                     <p>
                       ₹{" "}
                       {
-                        el?.Priceleveles?.find(
-                          (item) => item.pricelevel === selectedPriceLevel
-                        )?.pricerate
+                        // el?.Priceleveles?.find(
+                        //   (item) => item.pricelevel === selectedPriceLevel
+                        // )?.pricerate
+                        el?.selectedPriceRate
                       }{" "}
                       /
                     </p>{" "}
