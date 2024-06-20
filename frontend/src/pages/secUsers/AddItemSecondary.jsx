@@ -191,6 +191,7 @@ function AddItemSecondary() {
           if (priceLevelFromRedux == "") {
             console.log("haii");
             const defaultPriceLevel = priceLevels[0];
+            // const defaultPriceLevel = ""
             setSelectedPriceLevel(defaultPriceLevel);
             // dispatch(setPriceLevel(defaultPriceLevel));
           }
@@ -205,6 +206,7 @@ function AddItemSecondary() {
           if (priceLevelFromRedux == "") {
             console.log("haii");
             const defaultPriceLevel = priceLevels[0];
+            // const defaultPriceLevel = ""
             setSelectedPriceLevel(defaultPriceLevel);
             dispatch(setPriceLevel(defaultPriceLevel));
             addSelectedRate(defaultPriceLevel);
@@ -292,16 +294,26 @@ function AddItemSecondary() {
       setItem(updatedItems);
       setRefresh(!refresh);
       dispatch(addItem(itemToUpdate));
+      if (selectedPriceLevel === "") {
+        navigate(`/sUsers/editItem/${_id}`);
+      }
     }
   };
 
   ///////////////////////////calculateTotal///////////////////////////////////
 
-  const calculateTotal = (item, selectedPriceLevel) => {
-    // const priceRate =
-    //   item.Priceleveles.find((level) => level.pricelevel === selectedPriceLevel)
-    //     ?.pricerate || 0;
-    const priceRate = item.selectedPriceRate || 0;
+  const calculateTotal = (item, selectedPriceLevel, situation = "normal") => {
+    //add default value for selectedPriceLevel
+    let priceRate;
+    if (situation === "priceLevelChange") {
+      priceRate =
+        item.Priceleveles.find(
+          (level) => level.pricelevel === selectedPriceLevel
+        )?.pricerate || 0;
+    } else {
+      priceRate = item.selectedPriceRate || 0;
+    }
+
     console.log(priceRate);
 
     let subtotal = priceRate * item?.count;
@@ -327,7 +339,11 @@ function AddItemSecondary() {
   const handleTotalChangeWithPriceLevel = (pricelevel) => {
     const updatedItems = filteredItems.map((item) => {
       if (item.added === true) {
-        const newTotal = calculateTotal(item, pricelevel).toFixed(2);
+        const newTotal = calculateTotal(
+          item,
+          pricelevel,
+          "priceLevelChange"
+        ).toFixed(2);
         dispatch(changeTotal({ ...item, total: newTotal }));
 
         const newPriceRate = item?.Priceleveles.find(
@@ -348,6 +364,8 @@ function AddItemSecondary() {
 
     setItem(updatedItems);
   };
+
+  console.log(item);
 
   //////////////////////////////////////////addSelectedRate initially not in redux/////////////////////////////////////////////
 
@@ -421,7 +439,7 @@ function AddItemSecondary() {
       currentItem.count = parseFloat(currentItem.count.toString());
       if (currentItem.count <= 0) {
         dispatch(removeItem(currentItem));
-        updatedItems[index] = { ...currentItem, added: false ,total:0}; // Make a copy and update the 'added' property
+        updatedItems[index] = { ...currentItem, added: false, total: 0 }; // Make a copy and update the 'added' property
       } else {
         // Use the calculateTotal function to calculate the total for the current item
         currentItem.total = calculateTotal(
@@ -469,10 +487,10 @@ function AddItemSecondary() {
   }, []);
 
   const continueHandler = () => {
-    if (selectedPriceLevel === "") {
-      toast.error("Select a price level ");
-    }
-    console.log(location.state);
+    // if (selectedPriceLevel === "") {
+    //   toast.error("Select a price level ");
+    // }
+    // console.log(location.state);
     if (location?.state?.from === "editInvoice") {
       navigate(`/sUsers/editInvoice/${location.state.id}`);
     } else {

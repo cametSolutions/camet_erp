@@ -411,10 +411,10 @@ export const calculateUpdatedItemValues = async (
         (priceLevel) => priceLevel.pricelevel === priceLevelFromRedux
       );
       // If a corresponding price rate is found, assign it to selectedPrice, otherwise assign null
-      const selectedPrice = selectedPriceLevel
-        ? selectedPriceLevel.pricerate
-        : 0;
-
+      // const selectedPrice = selectedPriceLevel
+      //   ? selectedPriceLevel.pricerate
+      //   : 0;
+      const selectedPrice = el?.selectedPriceRate;
       // Calculate total price after applying discount
       let totalPrice = selectedPrice * (item.count || 1) || 0; // Default count to 1 if not provided
       if (item.discount) {

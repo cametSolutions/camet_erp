@@ -35,9 +35,7 @@ function EditItemSecondary() {
   console.log(selectedPriceLevel);
 
   useEffect(() => {
-    if (selectedPriceLevel === "" || selectedPriceLevel === undefined) {
-      navigate("/sUsers/addItem");
-    } else {
+    
       setItem(selectedItem[0]);
       // const price = selectedItem[0].Priceleveles.find(
       //   (item) => item.pricelevel === selectedPriceLevel
@@ -62,7 +60,7 @@ function EditItemSecondary() {
       ) {
         setDiscount("");
       }
-    }
+    
   }, []);
 
   useEffect(() => {
