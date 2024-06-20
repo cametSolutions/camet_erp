@@ -7,11 +7,7 @@ import { MdModeEditOutline } from "react-icons/md";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
-import {
-
-  updateItem,
-} from "../../../slices/salesSecondary";
-
+import { updateItem } from "../../../slices/salesSecondary";
 
 function EditItemSalesSecondary() {
   const [item, setItem] = useState([]);
@@ -86,8 +82,6 @@ function EditItemSalesSecondary() {
         ) {
           setDiscount("");
         }
-
-
       } else {
         setQuantity(selectedItem[0]?.count || 1);
         if (selectedItem[0].discountPercentage > 0) {
@@ -105,10 +99,6 @@ function EditItemSalesSecondary() {
       }
       setUnit(selectedItem[0]?.unit);
       setIgst(selectedItem[0]?.igst);
-
-
-
-     
     }
   }, []);
 
@@ -148,7 +138,6 @@ function EditItemSalesSecondary() {
 
   const dispatch = useDispatch();
 
-
   const submitHandler = () => {
     console.log(item);
     const newItem = { ...item };
@@ -161,10 +150,11 @@ function EditItemSalesSecondary() {
           return {
             ...godown,
             count: Number(quantity) || 0,
+            selectedPriceRate: Number(newPrice)||0,
             discount: type === "amount" ? discountAmount : "",
             discountPercentage:
               type === "amount" ? "" : parseFloat(discountPercentage),
-            individualTotal:Number( (totalAmount).toFixed(2)),
+            individualTotal: Number(totalAmount.toFixed(2)),
           };
         }
 
@@ -178,15 +168,19 @@ function EditItemSalesSecondary() {
           .toFixed(2)
       );
       newItem.total = Number(
-      Number(  newGodownList
-          .reduce((acc, curr) => acc + (curr?.individualTotal || 0), 0))
-          .toFixed(2)
+        Number(
+          newGodownList.reduce(
+            (acc, curr) => acc + (curr?.individualTotal || 0),
+            0
+          )
+        ).toFixed(2)
       );
       console.log(newItem.total);
       console.log(newItem);
     } else {
-      newItem.total = Number((totalAmount).toFixed(2));
+      newItem.total = Number(totalAmount.toFixed(2));
       newItem.count = quantity || 0;
+      newItem.selectedPriceRate = Number(newPrice)||0;
       newItem.newGst = igst;
       // newItem.GodownList = godown;
       if (type === "amount") {
@@ -231,16 +225,15 @@ function EditItemSalesSecondary() {
 
     //   navigate("/sUsers/addItemSales");
     // }
-    navigate(-1)
+    navigate(-1);
   };
 
-
-  function truncateToNDecimals(num, n) {
-    const parts = num.toString().split(".");
-    if (parts.length === 1) return num; // No decimal part
-    parts[1] = parts[1].substring(0, n); // Truncate the decimal part
-    return parseFloat(parts.join("."));
-  }
+  // function truncateToNDecimals(num, n) {
+  //   const parts = num.toString().split(".");
+  //   if (parts.length === 1) return num; // No decimal part
+  //   parts[1] = parts[1].substring(0, n); // Truncate the decimal part
+  //   return parseFloat(parts.join("."));
+  // }
 
   const handleDirectQuantityChange = (value) => {
     if (value.includes(".")) {
@@ -291,11 +284,14 @@ function EditItemSalesSecondary() {
                     <div className="flex flex-col">
                       <label className="leading-loose">Price</label>
                       <input
-                        disabled
-                        value={newPrice || 0}
-                        type="text"
-                        className="px-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm border-gray-300 rounded-md focus:outline-none text-gray-600"
-                        placeholder="Price"
+                        onChange={(e) => {
+                          setNewPrice(e.target.value);
+                        }}
+                        // disabled
+                        value={newPrice}
+                        type="number"
+                        className=" input-number px-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm border-gray-300 rounded-md focus:outline-none text-gray-600"
+                        placeholder="0"
                       />
                     </div>
 
@@ -472,8 +468,6 @@ function EditItemSalesSecondary() {
             </div>
           </div>
         </div>
-
-       
       </div>
     </div>
   );

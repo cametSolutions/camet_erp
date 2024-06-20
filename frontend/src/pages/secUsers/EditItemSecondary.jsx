@@ -14,7 +14,6 @@ function EditItemSecondary() {
   const [newPrice, setNewPrice] = useState("");
   const [quantity, setQuantity] = useState("");
   const [unit, setUnit] = useState("");
-  const [hsn, setHsn] = useState([]);
   const [igst, setIgst] = useState("");
   const [discount, setDiscount] = useState("");
   const [type, setType] = useState("amount");
@@ -24,7 +23,6 @@ function EditItemSecondary() {
   const [discountPercentage, setDiscountPercentage] = useState(0);
   const { id } = useParams();
   const navigate = useNavigate();
-  const location = useLocation();
 
   const ItemsFromRedux = useSelector((state) => state.invoiceSecondary.items);
   const selectedItem = ItemsFromRedux.filter((el) => el._id === id);

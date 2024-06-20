@@ -338,46 +338,49 @@ function AddItemSalesSecondary() {
   //////////////////////////////////////////addSelectedRate initially not in redux/////////////////////////////////////////////
 
   const addSelectedRate = (pricelevel) => {
+    console.log(pricelevel);
     if (item?.length > 0) {
       const updatedItems = filteredItems.map((item) => {
         const priceRate =
-          item?.Priceleveles?.find((priceLevelItem) => priceLevelItem.pricelevel === pricelevel)
-            ?.pricerate || 0;
-  
-        console.log(itemsFromRedux);
-  
+          item?.Priceleveles?.find(
+            (priceLevelItem) => priceLevelItem.pricelevel === pricelevel
+          )?.pricerate || 0;
+
         const reduxItem = itemsFromRedux.find((p) => p._id === item._id);
         console.log(reduxItem);
         const reduxRate = reduxItem?.selectedPriceRate || null;
-  
-        if (item?.hasGodownOrBatch) {
-          const updatedGodownList = item.GodownList.map((godownOrBatch, index) => {
-            const reduxRateOfGodown = reduxItem?.GodownList?.[index]?.selectedPriceRate || priceRate;
+
+        // if (item?.hasGodownOrBatch) {
+        const updatedGodownList = item.GodownList.map(
+          (godownOrBatch, index) => {
+            const reduxRateOfGodown =
+              reduxItem?.GodownList?.[index]?.selectedPriceRate;
+            console.log(reduxRateOfGodown);
             return {
               ...godownOrBatch,
-              selectedPriceRate: reduxRateOfGodown,
+              selectedPriceRate: reduxRateOfGodown ?? priceRate,
             };
-          });
-  
-          return {
-            ...item,
-            GodownList: updatedGodownList,
-          };
-        } else {
-          return {
-            ...item,
-            selectedPriceRate: reduxRate ?? priceRate,
-          };
-        }
+          }
+        );
+
+        return {
+          ...item,
+          GodownList: updatedGodownList,
+        };
+        // }
+        // else {
+
+        //   updatedGodownList=item.GodownList?.[0].selectedPriceRate
+        //   return {
+        //     ...item,
+        //     selectedPriceRate: reduxRate ?? priceRate,
+        //   };
+        // }
       });
-  
-  
+
       setItem(updatedItems);
     }
   };
-
-
-  
 
   useEffect(() => {
     addSelectedRate(selectedPriceLevel);
@@ -387,17 +390,23 @@ function AddItemSalesSecondary() {
 
   ///////////////////////////calculateTotal///////////////////////////////////
 
-  const calculateTotal = (item, selectedPriceLevel) => {
-    const priceRate =
-      item?.Priceleveles?.find(
-        (level) => level.pricelevel === selectedPriceLevel
-      )?.pricerate || 0;
+  const calculateTotal = (item, selectedPriceLevel, situation = "normal") => {
+    let priceRate = 0;
+    if (situation === "priceLevelChange") {
+      priceRate =
+        item.Priceleveles.find(
+          (level) => level.pricelevel === selectedPriceLevel
+        )?.pricerate || 0;
+    }
 
     let subtotal = 0;
     let individualTotals = [];
 
     if (item.hasGodownOrBatch) {
       item.GodownList.forEach((godownOrBatch, index) => {
+        if (situation == "normal") {
+          priceRate = godownOrBatch.selectedPriceRate;
+        }
         let individualSubtotal = priceRate * Number(godownOrBatch.count) || 0;
         let discountedSubtotal = individualSubtotal;
 
@@ -431,6 +440,9 @@ function AddItemSalesSecondary() {
         });
       });
     } else {
+      if (situation == "normal") {
+        priceRate = item.GodownList[0].selectedPriceRate;
+      }
       let individualSubtotal = priceRate * Number(item.count);
       let discountedSubtotal = individualSubtotal;
 
@@ -639,16 +651,54 @@ function AddItemSalesSecondary() {
   const handleTotalChangeWithPriceLevel = (pricelevel) => {
     const updatedItems = filteredItems.map((item) => {
       if (item.added === true) {
-        const newTotal = calculateTotal(item, pricelevel).toFixed(2);
-        dispatch(changeTotal({ ...item, total: newTotal }));
+        const { individualTotals, total } = calculateTotal(
+          item,
+          pricelevel,
+          "priceLevelChange"
+        );
 
+        dispatch(changeTotal({ ...item, total: total }));
+        const newPriceRate =
+          item?.Priceleveles.find(
+            (priceLevelItem) => priceLevelItem.pricelevel === pricelevel
+          )?.pricerate || 0;
+        console.log(individualTotals);
+        console.log(total);
+        console.log(newPriceRate);
+        // if (item?.hasGodownOrBatch) {
+        const updatedGodownList = item?.GodownList.map((godown, idx) => {
+          return {
+            ...godown,
+            individualTotal:
+              individualTotals.find((el) => el.index === idx)
+                ?.individualTotal || 0,
+            selectedPriceRate: newPriceRate,
+          };
+        });
+
+        console.log(updatedGodownList);
+        dispatch(
+          updateItem({ ...item, GodownList: updatedGodownList, total: total })
+        );
         return {
           ...item,
-          total: newTotal,
+          GodownList: updatedGodownList,
+          total: total,
         };
+
+        // }
+        // else {
+        //   return {
+        //     ...item,
+        //     total: total,
+        //     pricerate: newPriceRate,
+        //   };
+        // }
       }
       return item;
     });
+
+    console.log(updatedItems);
 
     setItem(updatedItems);
   };
@@ -826,7 +876,7 @@ function AddItemSalesSecondary() {
                         // el?.Priceleveles?.find(
                         //   (item) => item.pricelevel === selectedPriceLevel
                         // )?.pricerate
-                        el?.selectedPriceRate
+                        el?.GodownList[0]?.selectedPriceRate
                       }{" "}
                       /
                     </p>{" "}

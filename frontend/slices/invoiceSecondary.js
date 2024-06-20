@@ -58,7 +58,7 @@ export const invoiceSliceSecondary = createSlice({
         state.items[indexToUpdate].selectedPriceRate = selectedPriceRate;
       }
     },
-
+   
     changeIgstAndDiscount: (state, action) => {
       const id = action.payload._id;
       const igst = action.payload?.igst || 0;
