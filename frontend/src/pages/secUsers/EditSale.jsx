@@ -21,7 +21,6 @@ import {
   setSelectedPriceLevel as setSelectedPriceLevelInRedux,
   //   setFinalAmount,
   //   setOrderNumber,
-  setBatchHeight,
   setFinalAmount,
 } from "../../../slices/salesSecondary";
 import { useDispatch } from "react-redux";
@@ -40,7 +39,6 @@ import SidebarSec from "../../components/secUsers/SidebarSec";
 function EditSale() {
   ////////////////////////////////state//////////////////////////////////////////////////////
 
-  const [showSidebar, setShowSidebar] = useState(false);
   const [openModal, setOpenModal] = useState(false);
   const [modalInputs, setModalInputs] = useState({
     startingNumber: "1",
@@ -95,13 +93,13 @@ function EditSale() {
   const {
     party: partyFromRedux,
     items: itemsFromRedux,
-    selectedPriceLevel: selectedPriceLevelFromRedux,
-    additionalChargesitems: additionalChargesitemsFromRedux,
+    // selectedPriceLevel: selectedPriceLevelFromRedux,
+    // additionalChargesitems: additionalChargesitemsFromRedux,
     finalAmount: finalAmountFromRedux,
-    brand: brandFromRedux,
-    category: categoryFromRedux,
-    subcategory: subcategoryFromRedux,
-    id: idFromRedux,
+    // brand: brandFromRedux,
+    // category: categoryFromRedux,
+    // subcategory: subcategoryFromRedux,
+    // id: idFromRedux,
     heights: heightsFromRedux,
   } = salesDetailsFromRedux;
 
@@ -516,7 +514,7 @@ function EditSale() {
 
       navigate(`/sUsers/salesDetails/${res.data.data._id}`);
       dispatch(removeAll());
-    }  catch (error) {
+    } catch (error) {
       if (error.response && error.response.data) {
         toast.error(error.response.data.message);
       } else {
@@ -561,7 +559,7 @@ function EditSale() {
   return (
     <div className="flex relative ">
       <div>
-        <SidebarSec TAB={"Sales"} showBar={showSidebar} refresh={refreshCmp} />
+        <SidebarSec TAB={"Sales"} refresh={refreshCmp} />
       </div>
 
       <div className="flex-1 bg-slate-100  h-screen overflow-y-scroll  ">
@@ -758,11 +756,8 @@ function EditSale() {
                                         </p>
                                         <p className="text-nowrap ">
                                           {godownOrBatch.count} {el.unit} X{" "}
-                                          {el.Priceleveles.find(
-                                            (item) =>
-                                              item.pricelevel ===
-                                              priceLevelFromRedux
-                                          )?.pricerate || 0}
+                                          {godownOrBatch?.selectedPriceRate|| 0}
+
                                         </p>
                                       </div>
                                     ) : (
@@ -773,11 +768,7 @@ function EditSale() {
                                           </p>
                                           <p className="text-nowrap">
                                             {godownOrBatch.count} {el.unit} X{" "}
-                                            {el.Priceleveles.find(
-                                              (item) =>
-                                                item.pricelevel ===
-                                                priceLevelFromRedux
-                                            )?.pricerate || 0}
+                                            {el?.selectedPriceRate|| 0}
                                           </p>
                                         </div>
                                       )
@@ -845,10 +836,7 @@ function EditSale() {
                               </p>
                               <p className="text-nowrap">
                                 {el.count} {el.unit} X{" "}
-                                {el.Priceleveles.find(
-                                  (item) =>
-                                    item.pricelevel === priceLevelFromRedux
-                                )?.pricerate || 0}
+                                {el?.GodownList[0]?.selectedPriceRate || 0}
                               </p>
                             </div>
 

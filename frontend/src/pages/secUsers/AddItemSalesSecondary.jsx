@@ -14,7 +14,6 @@ import {
   setBrandInRedux,
   setCategoryInRedux,
   setSubCategoryInRedux,
-  removeAll,
   addAllProducts,
   updateItem,
   setBatchHeight,
@@ -275,7 +274,6 @@ function AddItemSalesSecondary() {
           setPriceLevels(priceLevels);
           if (priceLevelFromRedux == "") {
             const defaultPriceLevel = priceLevels[0];
-            setSelectedPriceLevel(defaultPriceLevel);
             dispatch(setPriceLevel(defaultPriceLevel));
           }
         } else {
@@ -523,6 +521,9 @@ function AddItemSalesSecondary() {
     });
 
     setItem(updatedItems);
+    if (selectedPriceLevel === "") {
+      navigate(`/sUsers/editItemSales/${_id}/${godownname || "nil"}/${idx}`);
+    }
   };
 
   ///////////////////////////handleIncrement///////////////////////////////////
@@ -530,7 +531,7 @@ function AddItemSalesSecondary() {
   const handleIncrement = (_id, godownIndex = null) => {
     const updatedItems = item.map((item) => {
       if (item._id !== _id) return item; // Keep items unchanged if _id doesn't match
-      const currentItem = structuredClone(item); 
+      const currentItem = structuredClone(item);
 
       if (currentItem?.hasGodownOrBatch && godownIndex !== null) {
         const godownOrBatch = { ...currentItem.GodownList[godownIndex] };
@@ -572,7 +573,7 @@ function AddItemSalesSecondary() {
         // Calculate totals and update individual total
         const totalData = calculateTotal(currentItem, selectedPriceLevel);
         currentItem.total = totalData.total;
-        currentItem.GodownList[0].individualTotal =totalData?.total  // Update the overall total
+        currentItem.GodownList[0].individualTotal = totalData?.total; // Update the overall total
       }
 
       dispatch(updateItem(currentItem)); // Log the updated currentItem
@@ -586,7 +587,7 @@ function AddItemSalesSecondary() {
   const handleDecrement = (_id, godownIndex = null) => {
     const updatedItems = item.map((item) => {
       if (item._id !== _id) return item; // Keep items unchanged if _id doesn't match
-      const currentItem = structuredClone(item); 
+      const currentItem = structuredClone(item);
       if (godownIndex !== null && currentItem.hasGodownOrBatch) {
         const godownOrBatch = { ...currentItem.GodownList[godownIndex] };
         godownOrBatch.count = new Decimal(godownOrBatch.count)
@@ -635,7 +636,7 @@ function AddItemSalesSecondary() {
         // Calculate totals and update individual total
         const totalData = calculateTotal(currentItem, selectedPriceLevel);
         // currentItem.individualTotal = totalData.total;
-        currentItem.GodownList[0].individualTotal =totalData?.total
+        currentItem.GodownList[0].individualTotal = totalData?.total;
         currentItem.total = totalData.total; // Update the overall total
       }
 
@@ -889,7 +890,7 @@ function AddItemSalesSecondary() {
                   </div>
                   <div>
                     <span>Total : ₹ </span>
-                    <span>{el?.GodownList[0]?.individualTotal|| 0}</span>
+                    <span>{el?.GodownList[0]?.individualTotal || 0}</span>
                   </div>
                 </>
               )}

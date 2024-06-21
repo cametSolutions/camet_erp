@@ -57,52 +57,51 @@ function EditItemSalesSecondary() {
   }, [orgId]);
 
   useEffect(() => {
-    if (selectedPriceLevel === "" || selectedPriceLevel === undefined) {
-      navigate("/sUsers/addItemSales");
+    // if (selectedPriceLevel === "" || selectedPriceLevel === undefined) {
+    //   navigate("/sUsers/addItemSales");
+    // } else {
+    setItem(selectedItem[0]);
+    // const price = selectedItem[0].Priceleveles.find(
+    //   (item) => item.pricelevel === selectedPriceLevel
+    // )?.pricerate;
+
+    if (selectedItem[0]?.hasGodownOrBatch) {
+      setNewPrice(selectedGodown?.selectedPriceRate || 0);
+
+      console.log("haii");
+      setQuantity(selectedGodown?.count || 1);
+      if (selectedGodown?.discountPercentage > 0) {
+        setDiscount(selectedGodown?.discountPercentage);
+        setType("percentage");
+      } else if (selectedGodown?.discount > 0) {
+        setDiscount(selectedGodown?.discount);
+        setType("amount");
+      } else if (
+        selectedGodown?.discountPercentage == 0 &&
+        selectedGodown?.discount == 0
+      ) {
+        setDiscount("");
+      }
     } else {
-      setItem(selectedItem[0]);
-      // const price = selectedItem[0].Priceleveles.find(
-      //   (item) => item.pricelevel === selectedPriceLevel
-      // )?.pricerate;
-
-
-      if (selectedItem[0]?.hasGodownOrBatch) {
-      setNewPrice(selectedGodown?.selectedPriceRate ||0);
-
-        console.log("haii");
-        setQuantity(selectedGodown?.count || 1);
-        if (selectedGodown?.discountPercentage > 0) {
-          setDiscount(selectedGodown?.discountPercentage);
-          setType("percentage");
-        } else if (selectedGodown?.discount > 0) {
-          setDiscount(selectedGodown?.discount);
-          setType("amount");
-        } else if (
-          selectedGodown?.discountPercentage == 0 &&
-          selectedGodown?.discount == 0
-        ) {
-          setDiscount("");
-        }
-      } else {
       setNewPrice(selectedItem[0]?.GodownList[0]?.selectedPriceRate || 0);
 
-        setQuantity(selectedItem[0]?.count || 1);
-        if (selectedItem[0].discountPercentage > 0) {
-          setDiscount(selectedItem[0].discountPercentage);
-          setType("percentage");
-        } else if (selectedItem[0].discount > 0) {
-          setDiscount(selectedItem[0].discount);
-          setType("amount");
-        } else if (
-          selectedItem[0].discountPercentage == 0 &&
-          selectedItem[0].discount == 0
-        ) {
-          setDiscount("");
-        }
+      setQuantity(selectedItem[0]?.count || 1);
+      if (selectedItem[0].discountPercentage > 0) {
+        setDiscount(selectedItem[0].discountPercentage);
+        setType("percentage");
+      } else if (selectedItem[0].discount > 0) {
+        setDiscount(selectedItem[0].discount);
+        setType("amount");
+      } else if (
+        selectedItem[0].discountPercentage == 0 &&
+        selectedItem[0].discount == 0
+      ) {
+        setDiscount("");
       }
-      setUnit(selectedItem[0]?.unit);
-      setIgst(selectedItem[0]?.igst);
     }
+    setUnit(selectedItem[0]?.unit);
+    setIgst(selectedItem[0]?.igst);
+    // }
   }, []);
 
   useEffect(() => {
@@ -143,9 +142,12 @@ function EditItemSalesSecondary() {
 
   const submitHandler = () => {
     console.log(item);
-    const newItem = structuredClone(item);  // Deep copy to avoid mutation
-  
+    const newItem = structuredClone(item);
+
+    console.log(newPrice); // Deep copy to avoid mutation
+
     if (selectedItem[0]?.hasGodownOrBatch) {
+      console.log("haii");
       const newGodownList = newItem.GodownList.map((godown, idx) => {
         if (idx == index) {
           console.log(godown);
@@ -158,10 +160,13 @@ function EditItemSalesSecondary() {
               type === "amount" ? "" : parseFloat(discountPercentage),
             individualTotal: Number(totalAmount.toFixed(2)),
           };
+        } else {
+          return godown;
         }
-        return godown;
       });
-  
+
+      console.log(newGodownList);
+
       newItem.GodownList = newGodownList;
       newItem.count = Number(
         newGodownList
@@ -178,11 +183,12 @@ function EditItemSalesSecondary() {
     } else {
       // newItem.total = Number(totalAmount.toFixed(2));
       newItem.GodownList[0].individualTotal = Number(totalAmount.toFixed(2));
+      newItem.total = Number(totalAmount.toFixed(2));
       newItem.count = quantity || 0;
       const godownList = [...newItem.GodownList];
       console.log(godownList);
       godownList[0].selectedPriceRate = Number(newPrice) || 0;
-  
+
       newItem.GodownList = godownList;
       newItem.newGst = igst;
       if (type === "amount") {
@@ -193,13 +199,12 @@ function EditItemSalesSecondary() {
         newItem.discountPercentage = parseFloat(discountPercentage);
       }
     }
-  
+
     console.log(newItem);
-  
+
     dispatch(updateItem(newItem));
     navigate(-1);
   };
-  
 
   const handleBackClick = () => {
     console.log(location.state);

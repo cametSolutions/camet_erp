@@ -2088,7 +2088,7 @@ export const createSale = async (req, res) => {
         cgstAmt: cgstAmt,
         sgstAmt: sgstAmt,
         igstAmt: igstAmt,
-        subTotal: totalPrice, // Optional: Include total price in the item object
+        subTotal: totalPrice-(Number(igstAmt)||0), 
       };
     });
 

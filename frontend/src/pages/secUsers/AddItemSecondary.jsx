@@ -779,7 +779,7 @@ function AddItemSecondary() {
                 scrollOffset.toString()
               );
             }}
-          >6
+          >
             {Row}
           </List>
         )}

@@ -172,37 +172,10 @@ function SalesDetailsSecondary() {
         {/* party details */}
         {/* party Total Mount */}
 
-        <div className="p-4 bg-white mt-2 ">
-          <div className="flex items-center justify-between">
-            <p className="font-bold">Total Amount</p>
-            <p className="font-bold">
-              ₹ {parseInt(data?.finalAmount).toFixed(2)}
-            </p>
-          </div>
-          <div className="flex items-center justify-between mt-2 text-sm ">
-            <p className="font-semibold text-gray-500">Subtotal</p>
-            <p className="font-semibold">
-              ₹{" "}
-              {parseInt(
-                data?.items?.reduce((acc, curr) => acc + curr?.total, 0) || 0
-              ).toFixed(2)}
-            </p>
-          </div>
-          <div className="flex items-center justify-between mt-2 text-sm">
-            <p className="font-semibold text-gray-500">Additional Charge</p>
-            <p className="font-semibold">
-              ₹{" "}
-              {parseInt(
-                data?.additionalCharges?.reduce(
-                  (acc, curr) => acc + curr?.finalValue,
-                  0
-                )
-              ).toFixed(2)}
-            </p>
-          </div>
-        </div>
+      
 
         <SalesProductDetails
+        data={data}
           items={data?.items}
           priceLevel={data?.priceLevel}
           additionalCharges={data?.additionalCharges}
