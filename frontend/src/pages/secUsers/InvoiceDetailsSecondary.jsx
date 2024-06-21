@@ -11,6 +11,7 @@ import SidebarSec from "../../components/secUsers/SidebarSec";
 import { useLocation, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import SalesProductDetails from "../../components/common/SalesProductDetails";
+import SwallFireForPdf from "../../components/common/SwallFireForPdf";
 
 function InvoiceDetailsSecondary() {
   const [data, setData] = useState("");
@@ -43,7 +44,6 @@ function InvoiceDetailsSecondary() {
       navigate("/sUsers/transaction");
     }
   };
-
   return (
     <div className="flex relative">
       <div>
@@ -99,7 +99,7 @@ function InvoiceDetailsSecondary() {
                 <FaEdit className="text-blue-500" />
                 <p className="text-black font-bold text-sm">Edit</p>
               </div>
-              <Link to={`/sUsers/shareInvoice/${data._id}`}>
+              {/* <Link to={`/sUsers/shareInvoice/${data._id}`}>
                 <div
                   // onClick={chooseFormat}
 
@@ -108,7 +108,9 @@ function InvoiceDetailsSecondary() {
                   <IoMdShareAlt />
                   <p className="text-black font-bold text-sm">Share</p>
                 </div>
-              </Link>
+              </Link> */}
+              <SwallFireForPdf data={data} tab={"salesOrder"} />
+
               <div className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer">
                 <MdTextsms className="text-green-500" />
                 <p className="text-black font-bold text-sm">Sms</p>

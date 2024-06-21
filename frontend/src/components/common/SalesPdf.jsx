@@ -177,10 +177,7 @@ function SalesPdf({
                                   (godown) => godown.godown_id && !godown.batch
                                 ))) &&
                               ` ₹ ${
-                                el.Priceleveles.find(
-                                  (item) =>
-                                    item?.pricelevel === data?.priceLevel
-                                )?.pricerate || 0
+                                el.GodownList[0]?.selectedPriceRate || 0
                               }`}
                           </td>
 
@@ -216,10 +213,7 @@ function SalesPdf({
                                 </td>
                                 <td className="pt-2 text-end pr-2">
                                   ₹
-                                  {el.Priceleveles.find(
-                                    (item) =>
-                                      item?.pricelevel === data?.priceLevel
-                                  )?.pricerate || 0}
+                                  {godownOrBatch?.selectedPriceRate || 0}
                                 </td>
 
                                 <td className="pt-2 pr-2 text-end">
