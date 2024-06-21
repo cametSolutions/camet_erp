@@ -126,7 +126,7 @@ function EditSale() {
           priceLevel,
           additionalCharges,
           finalAmount,
-          orderNumber,
+          salesNumber,
         } = res.data.data;
 
         console.log(partyFromRedux);
@@ -153,7 +153,10 @@ function EditSale() {
         }
 
         // dispatch(setFinalAmount(finalAmount));
-        // setOrderNumber(orderNumber);
+
+        if (salesNumber) {
+          setSalesNumber(salesNumber);
+        }
 
         if (
           additionalCharges &&
@@ -235,63 +238,7 @@ function EditSale() {
     fetchSingleOrganization();
   }, [refreshCmp, orgId]);
 
-  useEffect(() => {
-    const fetchConfigurationNumber = async () => {
-      try {
-        const res = await api.get(
-          `/api/sUsers/fetchConfigurationNumber/${orgId}/sales`,
 
-          {
-            withCredentials: true,
-          }
-        );
-
-        console.log(res.data);
-        if (res.data.message === "default") {
-          const { configurationNumber } = res.data;
-          setSalesNumber(configurationNumber);
-          return;
-        }
-
-        const { configDetails, configurationNumber } = res.data;
-        console.log(configDetails);
-        console.log(configurationNumber);
-
-        if (configDetails) {
-          const { widthOfNumericalPart, prefixDetails, suffixDetails } =
-            configDetails;
-          const newOrderNumber = configurationNumber.toString();
-          console.log(newOrderNumber);
-          console.log(widthOfNumericalPart);
-          console.log(prefixDetails);
-          console.log(suffixDetails);
-
-          const padedNumber = newOrderNumber.padStart(widthOfNumericalPart, 0);
-          console.log(padedNumber);
-          const finalOrderNumber = prefixDetails + padedNumber + suffixDetails;
-          console.log(finalOrderNumber);
-          setSalesNumber(finalOrderNumber);
-          setModalInputs({
-            widthOfNumericalPart: widthOfNumericalPart,
-            prefixDetails: prefixDetails,
-            suffixDetails: suffixDetails,
-          });
-        } else {
-          setSalesNumber(salesNumber);
-          setModalInputs({
-            startingNumber: "1",
-            widthOfNumericalPart: "",
-            prefixDetails: "",
-            suffixDetails: "",
-          });
-        }
-      } catch (error) {
-        console.log(error);
-      }
-    };
-
-    fetchConfigurationNumber();
-  }, []);
 
   useEffect(() => {
     const fetchGodownname = async () => {
@@ -756,8 +703,8 @@ function EditSale() {
                                         </p>
                                         <p className="text-nowrap ">
                                           {godownOrBatch.count} {el.unit} X{" "}
-                                          {godownOrBatch?.selectedPriceRate|| 0}
-
+                                          {godownOrBatch?.selectedPriceRate ||
+                                            0}
                                         </p>
                                       </div>
                                     ) : (
@@ -768,7 +715,7 @@ function EditSale() {
                                           </p>
                                           <p className="text-nowrap">
                                             {godownOrBatch.count} {el.unit} X{" "}
-                                            {el?.selectedPriceRate|| 0}
+                                            {el?.selectedPriceRate || 0}
                                           </p>
                                         </div>
                                       )

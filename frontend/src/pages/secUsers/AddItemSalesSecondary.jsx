@@ -344,9 +344,11 @@ function AddItemSalesSecondary() {
             (priceLevelItem) => priceLevelItem.pricelevel === pricelevel
           )?.pricerate || 0;
 
+          console.log(priceRate);
+
         const reduxItem = itemsFromRedux.find((p) => p._id === item._id);
         console.log(reduxItem);
-        const reduxRate = reduxItem?.selectedPriceRate || null;
+        // const reduxRate = reduxItem?.selectedPriceRate || null;
 
         // if (item?.hasGodownOrBatch) {
         const updatedGodownList = item.GodownList.map(
@@ -356,10 +358,13 @@ function AddItemSalesSecondary() {
             console.log(reduxRateOfGodown);
             return {
               ...godownOrBatch,
-              selectedPriceRate: reduxRateOfGodown ?? priceRate,
+              selectedPriceRate: reduxRateOfGodown!==undefined ? reduxRateOfGodown :priceRate,
             };
           }
         );
+
+      console.log(updatedGodownList);
+
 
         return {
           ...item,
@@ -375,6 +380,9 @@ function AddItemSalesSecondary() {
         //   };
         // }
       });
+
+      console.log(updatedItems);
+
 
       setItem(updatedItems);
     }
@@ -708,6 +716,8 @@ function AddItemSalesSecondary() {
   ///////////////////////////handlePriceLevelChange///////////////////////////////////
 
   const handlePriceLevelChange = (e) => {
+
+    console.log("haii");
     const selectedValue = e.target.value;
     setSelectedPriceLevel(selectedValue);
     dispatch(setPriceLevel(selectedValue));
@@ -762,18 +772,23 @@ function AddItemSalesSecondary() {
   /////////////////////expansion panel////////////////////
 
   const handleExpansion = (id) => {
-    const updatedItems = [...item];
-    const index = updatedItems.findIndex((item) => item._id === id);
-
-    const itemToUpdate = { ...updatedItems[index] };
-
-    if (itemToUpdate) {
-      itemToUpdate.isExpanded = !itemToUpdate.isExpanded;
-
-      updatedItems[index] = itemToUpdate;
-    }
-    setItem(updatedItems);
-    // setTimeout(() => listRef.current.resetAfterIndex(index), 0);
+    setItem((prevItems) => {
+      const updatedItems = [...prevItems];
+      const index = updatedItems.findIndex((item) => item._id === id);
+      
+      if (index !== -1) {
+        const itemToUpdate = { ...updatedItems[index] };
+        itemToUpdate.isExpanded = !itemToUpdate.isExpanded;
+        updatedItems[index] = itemToUpdate;
+      }
+  
+      // Log the updated items
+      console.log(updatedItems);
+  
+      return updatedItems;
+    });
+  
+    // setTimeout(() => listRef.current.resetAfterIndex(index), 0); // Uncomment if needed
   };
 
   useEffect(() => {

@@ -2058,13 +2058,11 @@ export const createSale = async (req, res) => {
 
       // Calculate total price after applying discount
       // let totalPrice = selectedPrice * (item.count || 1) || 0; // Default count to 1 if not provided
-      let totalPrice=item?.GodownList.reduce((acc,curr)=>{
+      let totalPrice = item?.GodownList.reduce((acc, curr) => {
+        console.log("curr?.individualTotal", curr?.individualTotal);
 
-        console.log("curr?.individualTotal",curr?.individualTotal);
-
-        return acc =acc+Number(curr?.individualTotal)
-        
-      },0)
+        return (acc = acc + Number(curr?.individualTotal));
+      }, 0);
       if (item.discount) {
         // If discount is present (amount), subtract it from the total price
         totalPrice -= item.discount;
@@ -2074,7 +2072,7 @@ export const createSale = async (req, res) => {
         totalPrice -= discountAmount;
       }
 
-      console.log("totalPrice",totalPrice);
+      console.log("totalPrice", totalPrice);
 
       // Calculate tax amounts
       const { cgst, sgst, igst } = item;
@@ -2088,7 +2086,7 @@ export const createSale = async (req, res) => {
         cgstAmt: cgstAmt,
         sgstAmt: sgstAmt,
         igstAmt: igstAmt,
-        subTotal: totalPrice-(Number(igstAmt)||0), 
+        subTotal: totalPrice - (Number(igstAmt) || 0),
       };
     });
 
@@ -3259,6 +3257,7 @@ export const editSale = async (req, res) => {
     }
 
     ///////////////////////////////////// for calculating values like igst amount and updated items  ////////////////////////////////////
+
     let updatedItems = items;
     if (items.length > 0) {
       updatedItems = await calculateUpdatedItemValues(
@@ -3285,6 +3284,20 @@ export const editSale = async (req, res) => {
     existingSale.salesNumber = salesNumber;
 
     const result = await existingSale.save();
+
+    ///////////////////////////////////// for reflecting the rate change in outstanding  ////////////////////////////////////
+
+    const matchedOutStanding = await TallyData.updateOne(
+      {
+        party_id: party?._id,
+        cmp_id: orgId,
+        bill_no: salesNumber,
+      },
+
+      {
+        $set: { bill_amount: lastAmount },
+      }
+    );
 
     // console.log("editSale: sale updated");
     res
