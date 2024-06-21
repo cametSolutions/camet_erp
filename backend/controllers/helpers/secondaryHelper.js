@@ -406,7 +406,7 @@ export const calculateUpdatedItemValues = async (
 ) => {
   try {
     return items.map((item) => {
-      const  totalPrice=item?.GodownList.reduce((acc,curr)=>{
+      let totalPrice=item?.GodownList.reduce((acc,curr)=>{
 
         console.log("curr?.individualTotal",curr?.individualTotal);
 

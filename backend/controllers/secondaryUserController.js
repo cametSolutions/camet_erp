@@ -3287,15 +3287,17 @@ export const editSale = async (req, res) => {
 
     ///////////////////////////////////// for reflecting the rate change in outstanding  ////////////////////////////////////
 
+    const billValue=Number(lastAmount)
+
     const matchedOutStanding = await TallyData.updateOne(
       {
-        party_id: party?._id,
+        party_id:party?.party_master_id,
         cmp_id: orgId,
         bill_no: salesNumber,
       },
 
       {
-        $set: { bill_amount: lastAmount },
+        $set: { bill_amount:billValue,  bill_pending_amt: billValue, },
       }
     );
 

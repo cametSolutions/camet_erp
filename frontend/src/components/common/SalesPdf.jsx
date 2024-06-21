@@ -14,8 +14,6 @@ function SalesPdf({
   console.log(data);
   return (
     <div>
-    
-
       <div className="flex-1">
         <div
           ref={contentToPrint}
@@ -144,14 +142,18 @@ function SalesPdf({
               <tbody>
                 {data?.items?.length > 0 &&
                   data?.items.map((el, index) => {
-                    const discountAmount =
-                      el?.discountPercentage > 0
-                        ? (el.Priceleveles.find(
-                            (item) => item?.pricelevel === data?.priceLevel
-                          )?.pricerate *
-                            el.discountPercentage) /
-                          100
-                        : el?.discount;
+                    // const discountAmount =
+                    //   el?.discountPercentage > 0
+                    //     // ? (el.Priceleveles.find(
+                    //     //     (item) => item?.pricelevel === data?.priceLevel
+                    //     //   )?.pricerate *
+                    //     //     el.discountPercentage) /
+                    //     //   100
+
+                    //     if(el.hasGodownOrBatch) {
+                          
+                    //     }
+                    //     : el?.discount;
 
                     return (
                       <React.Fragment key={index}>
@@ -176,15 +178,13 @@ function SalesPdf({
                                 el.GodownList.every(
                                   (godown) => godown.godown_id && !godown.batch
                                 ))) &&
-                              ` ₹ ${
-                                el.GodownList[0]?.selectedPriceRate || 0
-                              }`}
+                              ` ₹ ${el.GodownList[0]?.selectedPriceRate || 0}`}
                           </td>
 
                           <td className="pt-2 text-black text-right pr-2">
-                            {discountAmount > 0
+                            {/* {discountAmount > 0
                               ? ` ₹${discountAmount?.toFixed(2)} `
-                              : "₹ 0"}
+                              : "₹ 0"} */}
                           </td>
                           <td className="pt-2 text-black text-right pr-2 font-bold">
                             {` ₹ ${(
@@ -212,8 +212,7 @@ function SalesPdf({
                                   {godownOrBatch?.count} {el?.unit}
                                 </td>
                                 <td className="pt-2 text-end pr-2">
-                                  ₹
-                                  {godownOrBatch?.selectedPriceRate || 0}
+                                  ₹{godownOrBatch?.selectedPriceRate || 0}
                                 </td>
 
                                 <td className="pt-2 pr-2 text-end">

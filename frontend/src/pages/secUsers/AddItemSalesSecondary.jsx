@@ -44,6 +44,7 @@ function AddItemSalesSecondary() {
   const [loader, setLoader] = useState(false);
   const [listHeight, setListHeight] = useState(0);
   const [scrollPosition, setScrollPosition] = useState(0);
+  const [refresh, setRefresh] = useState(false)
 
   const [godownname, setGodownname] = useState("");
   const [heights, setHeights] = useState({});
@@ -344,7 +345,7 @@ function AddItemSalesSecondary() {
             (priceLevelItem) => priceLevelItem.pricelevel === pricelevel
           )?.pricerate || 0;
 
-          console.log(priceRate);
+        console.log(priceRate);
 
         const reduxItem = itemsFromRedux.find((p) => p._id === item._id);
         console.log(reduxItem);
@@ -358,30 +359,19 @@ function AddItemSalesSecondary() {
             console.log(reduxRateOfGodown);
             return {
               ...godownOrBatch,
-              selectedPriceRate: reduxRateOfGodown!==undefined ? reduxRateOfGodown :priceRate,
+              selectedPriceRate:
+                reduxRateOfGodown !== undefined ? reduxRateOfGodown : priceRate,
             };
           }
         );
-
-      console.log(updatedGodownList);
 
 
         return {
           ...item,
           GodownList: updatedGodownList,
         };
-        // }
-        // else {
-
-        //   updatedGodownList=item.GodownList?.[0].selectedPriceRate
-        //   return {
-        //     ...item,
-        //     selectedPriceRate: reduxRate ?? priceRate,
-        //   };
-        // }
+  
       });
-
-      console.log(updatedItems);
 
 
       setItem(updatedItems);
@@ -390,9 +380,8 @@ function AddItemSalesSecondary() {
 
   useEffect(() => {
     addSelectedRate(selectedPriceLevel);
-  }, [selectedPriceLevel]);
+  }, [selectedPriceLevel,refresh]);
 
-  console.log(item);
 
   ///////////////////////////calculateTotal///////////////////////////////////
 
@@ -696,14 +685,7 @@ function AddItemSalesSecondary() {
           total: total,
         };
 
-        // }
-        // else {
-        //   return {
-        //     ...item,
-        //     total: total,
-        //     pricerate: newPriceRate,
-        //   };
-        // }
+
       }
       return item;
     });
@@ -716,7 +698,6 @@ function AddItemSalesSecondary() {
   ///////////////////////////handlePriceLevelChange///////////////////////////////////
 
   const handlePriceLevelChange = (e) => {
-
     console.log("haii");
     const selectedValue = e.target.value;
     setSelectedPriceLevel(selectedValue);
@@ -752,21 +733,10 @@ function AddItemSalesSecondary() {
   const continueHandler = () => {
     dispatch(setBatchHeight(heights));
     navigate(-1);
-    // if (location?.state?.from === "editSales") {
-    //   navigate(`/sUsers/editSales/${location.state.id}`);
-    // } else {
-    //   navigate("/sUsers/sales");
-    // }
   };
 
   const backHandler = () => {
-    // dispatch(removeAll());
     navigate(-1);
-    // if (location?.state?.from === "editSales") {
-    //   navigate(`/sUsers/editSales/${location.state.id}`);
-    // } else {
-    //   navigate("/sUsers/sales");
-    // }
   };
 
   /////////////////////expansion panel////////////////////
@@ -775,19 +745,21 @@ function AddItemSalesSecondary() {
     setItem((prevItems) => {
       const updatedItems = [...prevItems];
       const index = updatedItems.findIndex((item) => item._id === id);
-      
+
       if (index !== -1) {
         const itemToUpdate = { ...updatedItems[index] };
         itemToUpdate.isExpanded = !itemToUpdate.isExpanded;
         updatedItems[index] = itemToUpdate;
       }
-  
+
       // Log the updated items
       console.log(updatedItems);
-  
+
       return updatedItems;
     });
-  
+
+    setRefresh((prevRefresh) => !prevRefresh);
+
     // setTimeout(() => listRef.current.resetAfterIndex(index), 0); // Uncomment if needed
   };
 
