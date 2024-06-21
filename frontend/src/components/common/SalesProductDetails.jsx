@@ -2,9 +2,7 @@
 import { IoIosArrowDown } from "react-icons/io";
 
 function SalesProductDetails({ data, items, priceLevel, additionalCharges }) {
-  console.log(items);
-
-  console.log(additionalCharges);
+  
 
   return (
     <div>
@@ -79,10 +77,8 @@ function SalesProductDetails({ data, items, priceLevel, additionalCharges }) {
                                       </p>
                                       <p className="text-nowrap ">
                                         {godownOrBatch.count} {el.unit} X{" "}
-                                        {el.Priceleveles.find(
-                                          (item) =>
-                                            item.pricelevel === priceLevel
-                                        )?.pricerate || 0}
+                                        {godownOrBatch?.selectedPriceRate|| 0}
+
                                       </p>
                                     </div>
                                   ) : (
@@ -93,10 +89,7 @@ function SalesProductDetails({ data, items, priceLevel, additionalCharges }) {
                                         </p>
                                         <p className="text-nowrap">
                                           {godownOrBatch.count} {el.unit} X{" "}
-                                          {el.Priceleveles.find(
-                                            (item) =>
-                                              item.pricelevel === priceLevel
-                                          )?.pricerate || 0}
+                                          {godownOrBatch?.selectedPriceRate|| 0}
                                         </p>
                                       </div>
                                     )
@@ -133,9 +126,7 @@ function SalesProductDetails({ data, items, priceLevel, additionalCharges }) {
                           <div className="flex justify-between">
                             <p className="text-nowrap">
                               {el.count} {el.unit} X{" "}
-                              {el.Priceleveles.find(
-                                (item) => item.pricelevel === priceLevel
-                              )?.pricerate || 0}
+                              {el?.GodownList[0]?.selectedPriceRate|| 0}
                             </p>
                           </div>
 
