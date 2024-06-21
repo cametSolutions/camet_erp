@@ -151,6 +151,7 @@ function InvoiceDetailsSecondary() {
           items={data?.items}
           priceLevel={data?.priceLevel}
           additionalCharges={data?.additionalCharges}
+          tab={"salesOrder"}
         />
 
         {/* payment method */}
