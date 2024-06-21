@@ -406,17 +406,13 @@ export const calculateUpdatedItemValues = async (
 ) => {
   try {
     return items.map((item) => {
-      // Find the corresponding price rate for the selected price level
-      const selectedPriceLevel = item.Priceleveles.find(
-        (priceLevel) => priceLevel.pricelevel === priceLevelFromRedux
-      );
-      // If a corresponding price rate is found, assign it to selectedPrice, otherwise assign null
-      // const selectedPrice = selectedPriceLevel
-      //   ? selectedPriceLevel.pricerate
-      //   : 0;
-      const selectedPrice = el?.selectedPriceRate;
-      // Calculate total price after applying discount
-      let totalPrice = selectedPrice * (item.count || 1) || 0; // Default count to 1 if not provided
+      const  totalPrice=item?.GodownList.reduce((acc,curr)=>{
+
+        console.log("curr?.individualTotal",curr?.individualTotal);
+
+        return acc =acc+Number(curr?.individualTotal)
+        
+      },0)
       if (item.discount) {
         // If discount is present (amount), subtract it from the total price
         totalPrice -= item.discount;
@@ -434,11 +430,10 @@ export const calculateUpdatedItemValues = async (
 
       return {
         ...item,
-        selectedPrice: selectedPrice,
         cgstAmt: cgstAmt,
         sgstAmt: sgstAmt,
         igstAmt: igstAmt,
-        subTotal: totalPrice, // Optional: Include total price in the item object
+        subTotal: totalPrice-(Number(igstAmt)||0),  // Optional: Include total price in the item object
       };
     });
   } catch (error) {
