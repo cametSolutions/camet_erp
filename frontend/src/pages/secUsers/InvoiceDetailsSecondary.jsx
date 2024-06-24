@@ -125,15 +125,6 @@ function InvoiceDetailsSecondary() {
         <div className="bg-white mt-2 p-4  ">
           <div className="flex justify-between text-sm mb-2">
             <h2 className="font-semibold text-sm  text-gray-500">PARTY NAME</h2>
-            {/* <div className="flex items-center gap-2 text-green-500">
-              <p className="text-black">
-                Current Balance :{" "}
-                <span className="text-green-500 font-bold">
-                ₹{(data.totalBillAmount - data.enteredAmount).toFixed(2)}
-                </span>
-              </p>
-              <FaArrowDown />
-            </div> */}
           </div>
           <hr />
           <hr />
@@ -160,18 +151,7 @@ function InvoiceDetailsSecondary() {
 
         <div className=" block md:hidden ">
           <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 flex justify-center p-4 gap-12 text-lg text-violet-500  ">
-            {/* <div
-              onClick={() => handleCancel(data?._id)}
-              disabled={data?.isCancelled}
-              className={`flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110 cursor-pointer ${
-                data?.isCancelled ? "opacity-50 pointer-events-none" : ""
-              }`}
-            >
-              <FcCancel className="text-violet-500" />
-              <p className="text-black font-bold text-sm">
-                {data?.isCancelled ? "Cancelled" : "Cancel"}
-              </p>
-            </div> */}
+       
             <div
               onClick={() => navigate(`/sUsers/editInvoice/${data._id}`)}
               className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer"

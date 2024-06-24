@@ -107,6 +107,7 @@ import PurchaseDetailsPrimary from '../pages/primaryUsers/PurchaseDetailsPrimary
 import SharePurchasePrimary from '../pages/primaryUsers/SharePurchasePrimary'
 import ThreeInchPurchasePrimary from '../pages/primaryUsers/ThreeInchPurchasePrimary'
 import EditSale from '../pages/secUsers/EditSale'
+import TheeInchInvoiceSec from '../pages/secUsers/TheeInchInvoiceSec'
 const Routers = () => {
   return (
     <Routes>
@@ -199,6 +200,8 @@ const Routers = () => {
         <Route path='/sUsers/InvoiceDetails/:id' element={<ProtectedSecRoute><InvoiceDetailsSecondary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/editInvoice/:id' element={<ProtectedSecRoute><EditInvoiceSecondary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/shareInvoice/:id' element={<ProtectedSecRoute><ShareInvoiceSecondary/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/shareInvoiceThreeInch/:id' element={<ProtectedSecRoute><TheeInchInvoiceSec/></ProtectedSecRoute>}></Route> 
+
         <Route path='/sUsers/additionalChargesList' element={<ProtectedSecRoute><AddChargesListSecondary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/additionalCharges' element={<ProtectedSecRoute><AdditionalChargesSecondary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/editAdditionalCharge/:id' element={<ProtectedSecRoute><EditAdditionalChargesSecondary/></ProtectedSecRoute>}></Route>

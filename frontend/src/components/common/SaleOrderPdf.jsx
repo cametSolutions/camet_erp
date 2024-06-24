@@ -135,11 +135,11 @@ function SaleOrderPdf({
                     el?.total -
                     (el?.total * 100) / (parseFloat(el.igst) + 100)
                   )?.toFixed(2)
-                );
-                const count = el?.count;
-                const finalAmt = Number(el?.total);
+                ) || 0;
+                const count = el?.count || 0;
+                const finalAmt = Number(el?.total) || 0;
 
-                const discountAmount = rate * count + taxAmt - Number(finalAmt);
+                const discountAmount =( rate * count + taxAmt - Number(finalAmt)) || 0;
                 return (
                   <tr
                     key={index}

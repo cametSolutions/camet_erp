@@ -27,7 +27,7 @@ function SwallFireForPdf({ data, tab = "sales" }) {
         // Swal.fire("Tax Invoice selected", "", "success");
       } else if (result.isDenied) {
         if (tab === "salesOrder") {
-        //   navigate(`/sUsers/shareSalesThreeInch/${data._id}`);
+          navigate(`/sUsers/shareInvoiceThreeInch/${data._id}`);
         } else {
           navigate(`/sUsers/shareSalesThreeInch/${data._id}`);
         }

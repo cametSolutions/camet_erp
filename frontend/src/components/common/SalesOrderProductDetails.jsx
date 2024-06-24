@@ -7,6 +7,8 @@ function SalesOrderProductDetails({
   additionalCharges,
   // tab = "sales",
 }) {
+
+  console.log(data.items);
   return (
     <div>
       <div className="p-4 bg-white mt-2 ">
@@ -21,7 +23,7 @@ function SalesOrderProductDetails({
           <p className="font-semibold">
             ₹{" "}
             {parseInt(
-              data?.items?.reduce((acc, curr) => acc + curr?.total, 0) || 0
+              data?.items?.reduce((acc, curr) => acc + Number(curr?.total), 0) || 0
             ).toFixed(2)}
           </p>
         </div>
