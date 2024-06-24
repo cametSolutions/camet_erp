@@ -9,7 +9,6 @@ import dayjs from "dayjs";
 import { FaEdit } from "react-icons/fa";
 import SidebarSec from "../../components/secUsers/SidebarSec";
 import { useLocation, useNavigate } from "react-router-dom";
-import Swal from "sweetalert2";
 import SwallFireForPdf from "../../components/common/SwallFireForPdf";
 import SalesOrderProductDetails from "../../components/common/SalesOrderProductDetails";
 
@@ -99,17 +98,8 @@ function InvoiceDetailsSecondary() {
                 <FaEdit className="text-blue-500" />
                 <p className="text-black font-bold text-sm">Edit</p>
               </div>
-              {/* <Link to={`/sUsers/shareInvoice/${data._id}`}>
-                <div
-                  // onClick={chooseFormat}
-
-                  className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer"
-                >
-                  <IoMdShareAlt />
-                  <p className="text-black font-bold text-sm">Share</p>
-                </div>
-              </Link> */}
-              <SwallFireForPdf data={data} tab={"salesOrder"} />
+          
+              <SwallFireForPdf data={data} tab={"salesOrder"} user={"secondary"} />
 
               <div className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer">
                 <MdTextsms className="text-green-500" />

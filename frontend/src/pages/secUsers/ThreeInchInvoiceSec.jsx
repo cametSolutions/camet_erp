@@ -10,7 +10,7 @@ import { Link } from "react-router-dom";
 import SidebarSec from "../../components/secUsers/SidebarSec";
 import SalesThreeInchPdf from "../../components/common/SalesThreeInchPdf";
 
-function TheeInchInvoiceSec() {
+function ThreeInchInvoiceSec() {
   const [data, setData] = useState([]);
   const [org, setOrg] = useState([]);
   const [subTotal, setSubTotal] = useState("");
@@ -152,4 +152,4 @@ function TheeInchInvoiceSec() {
   );
 }
 
-export default TheeInchInvoiceSec;
+export default ThreeInchInvoiceSec;
