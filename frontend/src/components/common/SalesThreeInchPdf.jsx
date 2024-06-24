@@ -120,8 +120,10 @@ function SalesThreeInchPdf({ contentToPrint, data, org, subTotal, bank ,additina
               data?.items.map((el, index) => {
 
                 const total=el?.total ||0;
+                console.log("total",total)
                 const count=el?.count || 0;
-                const rate=total/count
+                console.log("count",count);
+                const rate=(total/count).toFixed(2) || 0;
                
                 return (
                   <tr
