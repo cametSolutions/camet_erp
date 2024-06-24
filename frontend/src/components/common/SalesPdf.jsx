@@ -11,7 +11,21 @@ function SalesPdf({
   subTotal,
   additinalCharge,
 }) {
-  console.log(data);
+
+  const calculateDiscountAmntOFNoBAtch = (el) => {
+    const selectedPriceRate = el?.GodownList[0]?.selectedPriceRate || 0;
+    const count = el?.count || 0;
+    const total = el?.total || 0;
+    const igst = parseFloat(el.igst) || 0;
+
+    const priceRateCount = selectedPriceRate * count;
+
+    const igstFactor = (total - (total * 100) / (igst + 100)).toFixed(2);
+
+    const finalValue = priceRateCount + Number(igstFactor) - total;
+
+    return finalValue;
+  };
   return (
     <div>
       <div className="flex-1">
@@ -151,7 +165,7 @@ function SalesPdf({
                     //     //   100
 
                     //     if(el.hasGodownOrBatch) {
-                          
+
                     //     }
                     //     : el?.discount;
 
@@ -182,9 +196,7 @@ function SalesPdf({
                           </td>
 
                           <td className="pt-2 text-black text-right pr-2">
-                            {/* {discountAmount > 0
-                              ? ` ₹${discountAmount?.toFixed(2)} `
-                              : "₹ 0"} */}
+                            {`₹ ${calculateDiscountAmntOFNoBAtch(el)}`}
                           </td>
                           <td className="pt-2 text-black text-right pr-2 font-bold">
                             {` ₹ ${(
@@ -197,8 +209,27 @@ function SalesPdf({
                           </td>
                         </tr>
                         {el.hasGodownOrBatch &&
-                          el.GodownList.map((godownOrBatch, idx) =>
-                            godownOrBatch.added && godownOrBatch.batch ? (
+                          el.GodownList.map((godownOrBatch, idx) => {
+                            const rate = godownOrBatch?.selectedPriceRate || 0;
+                            const taxAmt =
+                              Number(
+                                (
+                                  godownOrBatch?.individualTotal -
+                                  (godownOrBatch?.individualTotal * 100) /
+                                    (parseFloat(godownOrBatch.igst) + 100)
+                                )?.toFixed(2)
+                              ) || 0;
+                            const count = godownOrBatch?.count || 0;
+                            const finalAmt =
+                              Number(godownOrBatch?.individualTotal) || 0;
+
+                            const discountAmount =
+                              rate * count + taxAmt - Number(finalAmt) || 0;
+
+                            console.log(discountAmount);
+
+                            return godownOrBatch.added &&
+                              godownOrBatch.batch ? (
                               <tr key={idx} className={`bg-white text-[9px]`}>
                                 <td> </td>
                                 <td className="">
@@ -216,7 +247,7 @@ function SalesPdf({
                                 </td>
 
                                 <td className="pt-2 pr-2 text-end">
-                                  {((godownOrBatch?.discount > 0 ||
+                                  {/* {((godownOrBatch?.discount > 0 ||
                                     godownOrBatch?.discountPercentage > 0) && (
                                     <div className="text-end">
                                       <p>
@@ -235,7 +266,9 @@ function SalesPdf({
                                       </p>
                                     </div>
                                   )) ||
-                                    "  ₹ 0"}
+                                    "  ₹ 0"} */}
+
+                                  {` ₹ ${discountAmount}`}
                                 </td>
 
                                 <td className="pt-2 text-black text-right pr-2">
@@ -249,8 +282,8 @@ function SalesPdf({
                                   <p>₹ {godownOrBatch.individualTotal ?? 0}</p>
                                 </td>
                               </tr>
-                            ) : null
-                          )}
+                            ) : null;
+                          })}
                       </React.Fragment>
                     );
                   })}
