@@ -79,22 +79,18 @@ function SalesOrderProductDetails({
                       </div>
                     </div>
 
-                    <div className="flex justify-end items-center mt-3 ">
-                      <div className=" font-semibold text-gray-500 text-sm flex flex-col gap-2">
+                      <div className=" font-semibold text-gray-500 text-sm flex flex-col gap-2 mt-4">
                         {(el?.discount > 0 || el?.discountPercentage > 0) && (
-                          <div className="flex justify-between">
+                          <div className="flex justify-between w-full">
                             <p className="text-nowrap">Discount</p>
-                            <div className="flex items-center ml-2">
-                              <p className="text-nowrap">
+                              <p className="text-nowrap ml-2">
                                 {el.discount > 0
                                   ? `₹${el?.discount}`
                                   : `${el?.discountPercentage}%`}
                               </p>
-                            </div>
                           </div>
                         )}
                       </div>
-                    </div>
                   </div>
                 </div>
                 <hr className="" />
