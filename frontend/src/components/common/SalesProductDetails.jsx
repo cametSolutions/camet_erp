@@ -5,7 +5,7 @@ function SalesProductDetails({
   data,
   items,
   additionalCharges,
-  tab = "sales",
+  // tab = "sales",
 }) {
   return (
     <div>
@@ -58,32 +58,34 @@ function SalesProductDetails({
                     <div className="flex justify-between font-bold text-sm gap-10">
                       <div>
                         <p>{el.product_name}</p>
-                        {tab !== "sales" && (
+                        {/* {tab !== "sales" && (
                           <div className="flex gap-1 text-sm mt-1">
                             <p className="text-nowrap">Tax</p>
                             <p className="text-nowrap">({el.igst} %)</p>
                           </div>
-                        )}
+                        )} */}
                       </div>
 
                       <div>
-                        <p className="text-nowrap text-end">₹ {el.total ?? 0}</p>
-                        {tab !== "sales" && (
+                        <p className="text-nowrap text-end">
+                          ₹ {el.total ?? 0}
+                        </p>
+                        {/* {tab !== "sales" && (
                           <div className="flex">
                             <p className="text-nowrap font-semibold mt-2 text-gray-500 text-end">
                               {el.count} {el.unit} X{" "}
                               {el?.selectedPriceRate || 0}
                             </p>
                           </div>
-                        )}
+                        )} */}
                       </div>
                     </div>
-                    {tab === "sales" && (
+                  
                       <div className="flex gap-1 text-sm mt-1">
                         <p className="text-nowrap">Tax</p>
                         <p className="text-nowrap">({el.igst} %)</p>
                       </div>
-                    )}
+                  
 
                     {el.hasGodownOrBatch ? (
                       el.GodownList.map((godownOrBatch, idx) =>
@@ -148,12 +150,12 @@ function SalesProductDetails({
                     ) : (
                       <div className="flex justify-end items-center ">
                         <div className=" font-semibold text-gray-500 text-sm flex flex-col gap-2">
-                          <div className="flex justify-between">
+                          {/* <div className="flex justify-between">
                             <p className="text-nowrap">
                               {el.count} {el.unit} X{" "}
                               {el?.GodownList[0]?.selectedPriceRate || 0}
                             </p>
-                          </div>
+                          </div> */}
 
                           {(el.discount > 0 || el.discountPercentage > 0) && (
                             <div className="flex justify-between">

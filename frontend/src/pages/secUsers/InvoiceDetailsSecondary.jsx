@@ -10,8 +10,8 @@ import { FaEdit } from "react-icons/fa";
 import SidebarSec from "../../components/secUsers/SidebarSec";
 import { useLocation, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
-import SalesProductDetails from "../../components/common/SalesProductDetails";
 import SwallFireForPdf from "../../components/common/SwallFireForPdf";
+import SalesOrderProductDetails from "../../components/common/SalesOrderProductDetails";
 
 function InvoiceDetailsSecondary() {
   const [data, setData] = useState("");
@@ -148,7 +148,7 @@ function InvoiceDetailsSecondary() {
           </div>
         </div>
 
-        <SalesProductDetails
+        <SalesOrderProductDetails
           data={data}
           items={data?.items}
           priceLevel={data?.priceLevel}
