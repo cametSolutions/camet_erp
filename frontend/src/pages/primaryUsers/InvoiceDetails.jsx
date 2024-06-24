@@ -9,7 +9,7 @@ import api from "../../api/api";
 import { toast } from "react-toastify";
 import dayjs from "dayjs";
 import { useLocation, useNavigate } from "react-router-dom";
-import SalesProductDetails from "../../components/common/SalesProductDetails";
+import SalesOrderProductDetails from "../../components/common/SalesOrderProductDetails";
 
 function InvoiceDetails() {
   const [data, setData] = useState("");
@@ -119,7 +119,7 @@ function InvoiceDetails() {
         {/* party details */}
         {/* party Total Mount */}
 
-        <SalesProductDetails
+        <SalesOrderProductDetails
           data={data}
           items={data?.items}
           priceLevel={data?.priceLevel}
