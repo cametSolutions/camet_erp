@@ -28,6 +28,7 @@ const organizationSchema = new mongoose.Schema(
     levelNames: { type: Array },
     locations: { type: Array },
     type: { type: String, default: "self" },
+    batchEnabled: { type: Boolean, default: false },
     orderNumber: { type: Number, default: 1 },
     OrderNumberValue: { type: String },
     OrderNumberDetails: { type: Object },

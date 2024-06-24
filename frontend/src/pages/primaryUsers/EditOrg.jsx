@@ -31,6 +31,7 @@ const EditOrg = () => {
   const [pan, setPan] = useState("");
   const [financialYear, setFinancialYear] = useState("");
   const [type, setType] = useState("self");
+  const [batchEnabled, setBatchEnabled] = useState(false);
 
   const { id } = useParams();
   const navigate = useNavigate();
@@ -61,7 +62,7 @@ const EditOrg = () => {
           type,
           pan,
           financialYear,
-          
+          batchEnabled,
         } = res.data.organizationData;
 
         setName(name);
@@ -82,6 +83,7 @@ const EditOrg = () => {
         setPan(pan);
         setFinancialYear(financialYear);
         setType(type);
+        setBatchEnabled(batchEnabled);
 
         if (senderId.length > 0) {
           setShowInputs(true);
@@ -201,7 +203,8 @@ const EditOrg = () => {
       toast.error("Invalid PAN number");
       return;
     }
-    if ( website && 
+    if (
+      website &&
       !/^((https?|ftp):\/\/)?(www\.)?[\w-]+\.[a-zA-Z]{2,}(\/\S*)?$/.test(
         website
       )
@@ -228,7 +231,8 @@ const EditOrg = () => {
       website,
       pan,
       financialYear,
-      type
+      type,
+      batchEnabled
     };
 
     console.log(formData);
@@ -729,42 +733,62 @@ const EditOrg = () => {
                         </select>
                       </div>
                     </div>
-                      <div className="flex items-center mt-8 px-4 w-full">
-                        <div className="flex items-center mr-4">
-                          <input
-                            type="checkbox"
-                            id="valueCheckbox"
-                            className="form-checkbox h-5 w-5 text-indigo-600 transition duration-150 ease-in-out"
-                            checked={type === "self"}
-                            onChange={() => {
-                              setType("self");
-                            }}
-                          />
-                          <label
-                            htmlFor="valueCheckbox"
-                            className="ml-2 text-gray-700"
-                          >
-                            Self
-                          </label>
-                        </div>
-                        <div className="flex items-center">
-                          <input
-                            type="checkbox"
-                            id="itemRateCheckbox"
-                            className="form-checkbox h-5 w-5 text-indigo-600 transition duration-150 ease-in-out"
-                            checked={type === "integrated"}
-                            onChange={() => {
-                              setType("integrated");
-                            }}
-                          />
-                          <label
-                            htmlFor="itemRateCheckbox"
-                            className="ml-2 text-gray-700"
-                          >
-                            Integrated
-                          </label>
-                        </div>
+                    <div className="flex items-center mt-8 px-4 w-full">
+                      <div className="flex items-center mr-4">
+                        <input
+                          type="checkbox"
+                          id="valueCheckbox"
+                          className="form-checkbox h-5 w-5 text-indigo-600 transition duration-150 ease-in-out"
+                          checked={type === "self"}
+                          onChange={() => {
+                            setType("self");
+                          }}
+                        />
+                        <label
+                          htmlFor="valueCheckbox"
+                          className="ml-2 text-gray-700"
+                        >
+                          Self
+                        </label>
                       </div>
+                      <div className="flex items-center">
+                        <input
+                          type="checkbox"
+                          id="itemRateCheckbox"
+                          className="form-checkbox h-5 w-5 text-indigo-600 transition duration-150 ease-in-out"
+                          checked={type === "integrated"}
+                          onChange={() => {
+                            setType("integrated");
+                          }}
+                        />
+                        <label
+                          htmlFor="itemRateCheckbox"
+                          className="ml-2 text-gray-700"
+                        >
+                          Integrated
+                        </label>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center mt-8 px-4 w-full">
+                      <div className="flex items-center mr-4">
+                        <input
+                          type="checkbox"
+                          id="valueCheckbox"
+                          className="form-checkbox h-5 w-5 text-indigo-600 transition duration-150 ease-in-out"
+                          checked={batchEnabled === true}
+                          onChange={() => {
+                            setBatchEnabled(!batchEnabled);
+                          }}
+                        />
+                        <label
+                          htmlFor="valueCheckbox"
+                          className="ml-2 text-gray-700"
+                        >
+                          Batch Enabled
+                        </label>
+                      </div>
+                    </div>
 
                     <div className="flex items-center justify-center gap-0 mt-4 m-4 relative ">
                       {logo && !loader && (
