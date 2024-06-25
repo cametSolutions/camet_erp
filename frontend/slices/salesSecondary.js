@@ -188,7 +188,16 @@ export const salesSecondarySlice = createSlice({
           }
         },0);
 
+        const newTotal=currentItem.GodownList.reduce((acc, curr) => {
+          if (curr.added) {
+            return acc + curr.individualTotal;
+          } else {
+            return acc;
+          }
+        },0);
+
         currentItem.count = newCount;
+        currentItem.total = newTotal;
 
         const allAddedFalse = currentItem.GodownList.every(
           (item) => item.added === false || item.added == undefined

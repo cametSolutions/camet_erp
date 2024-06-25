@@ -1,5 +1,7 @@
 import productModel from "../../models/productModel.js";
 import { truncateToNDecimals } from "./helper.js";
+// import TallyData from "../models/TallyData.js";
+
 
 /////////////////////// for deleting whole items in edit sale ////////////////////////////////////
 
@@ -406,13 +408,11 @@ export const calculateUpdatedItemValues = async (
 ) => {
   try {
     return items.map((item) => {
-      let totalPrice=item?.GodownList.reduce((acc,curr)=>{
+      let totalPrice = item?.GodownList.reduce((acc, curr) => {
+        console.log("curr?.individualTotal", curr?.individualTotal);
 
-        console.log("curr?.individualTotal",curr?.individualTotal);
-
-        return acc =acc+Number(curr?.individualTotal)
-        
-      },0)
+        return (acc = acc + Number(curr?.individualTotal));
+      }, 0);
       if (item.discount) {
         // If discount is present (amount), subtract it from the total price
         totalPrice -= item.discount;
@@ -433,7 +433,7 @@ export const calculateUpdatedItemValues = async (
         cgstAmt: cgstAmt,
         sgstAmt: sgstAmt,
         igstAmt: igstAmt,
-        subTotal: totalPrice-(Number(igstAmt)||0),  // Optional: Include total price in the item object
+        subTotal: totalPrice - (Number(igstAmt) || 0), // Optional: Include total price in the item object
       };
     });
   } catch (error) {
@@ -543,3 +543,19 @@ export const addingAnItemInSaleOrderEdit = async (items, productUpdates) => {
     // Handle error as needed
   }
 };
+
+// export const updateOutstanding = async (bill_no, cmp_id, party_id,newBillAmount) => {
+
+//   const bill = await TallyData.findOne({ bill_no, cmp_id, party_id });
+//   if (!bill) {
+//     throw new Error(`Bill not found for bill number ${bill_no}`);
+//   }
+
+//   const existingBillAmount = bill?.bill_amount;
+//   const billAmountDifference = existingBillAmount - newBillAmount\;
+
+//   try {
+//   } catch (error) {
+//     console.log("Error in updateOutstanding", error);
+//   }
+// };

@@ -669,7 +669,21 @@ function EditSale() {
                     <div className="flex-1">
                       <div className="flex justify-between font-bold text-xs gap-10">
                         <p>{el.product_name}</p>
-                        <p className="text-nowrap">₹ {el.total ?? 0}</p>
+                       
+                        <p className="text-nowrap">
+                          ₹{" "}
+                          {el?.GodownList.reduce((acc, curr) => {
+                            if (el?.hasGodownOrBatch) {
+                              if (curr?.added) {
+                                return (acc = acc + curr?.individualTotal);
+                              } else {
+                                return acc;
+                              }
+                            } else {
+                              return (acc = acc + curr?.individualTotal);
+                            }
+                          }, 0)}
+                        </p>
                       </div>
                       <div className="flex gap-1 text-xs mt-1">
                         <p className="text-nowrap">Tax</p>

@@ -2719,8 +2719,8 @@ export const createPurchase = async (req, res) => {
     );
 
     // Prepare bulk operations for product and godown updates
-    const productUpdates = [];
-    const godownUpdates = [];
+    let productUpdates = [];
+    let godownUpdates = [];
 
     // Process each item to update product stock and godown stock
     for (const item of items) {
@@ -2985,6 +2985,8 @@ export const editSale = async (req, res) => {
       salesNumber,
     } = req.body;
 
+    let productUpdates=[]
+
     // Fetch the existing sale
 
     const existingSale = await salesModel.findById(saleId);
@@ -2994,6 +2996,9 @@ export const editSale = async (req, res) => {
         .status(404)
         .json({ success: false, message: "Sale not found" });
     }
+
+    const oldBillValue = existingSale.finalAmount;
+
 
     //////////////////////////// To handle the deletion and updating of products   starts //////////////////////////////////////////
 
@@ -3287,19 +3292,46 @@ export const editSale = async (req, res) => {
 
     ///////////////////////////////////// for reflecting the rate change in outstanding  ////////////////////////////////////
 
-    const billValue=Number(lastAmount)
 
-    const matchedOutStanding = await TallyData.updateOne(
-      {
-        party_id:party?.party_master_id,
-        cmp_id: orgId,
-        bill_no: salesNumber,
-      },
 
-      {
-        $set: { bill_amount:billValue,  bill_pending_amt: billValue, },
-      }
-    );
+    const newBillValue = Number(lastAmount);
+    // const oldBillValue = Number(existingSale.finalAmount);
+    const diffBillValue = newBillValue - oldBillValue;
+    console.log("editSale: newBillValue:", newBillValue);
+    console.log("editSale: oldBillValue:", oldBillValue);
+    console.log("editSale: diffBillValue:", diffBillValue);
+
+    const matchedOutStanding = await TallyData.findOne({
+      party_id: party?.party_master_id,
+      cmp_id: orgId,
+      bill_no: salesNumber,
+    });
+
+    if (matchedOutStanding) {
+      console.log("editSale: matched outstanding found");
+      const newOutstanding =
+        Number(matchedOutStanding?.bill_pending_amt) + diffBillValue;
+
+      console.log("editSale: new outstanding calculated", newOutstanding);
+      await TallyData.updateOne(
+        {
+          party_id: party?.party_master_id,
+          cmp_id: orgId,
+          bill_no: salesNumber,
+        },
+        { $set: { bill_pending_amt: newOutstanding } }
+      );
+
+      console.log("editSale: outstanding updated");
+    } else {
+      console.log("editSale: matched outstanding not found");
+    }
+    // await updateOutstanding(
+    //   salesNumber,
+    //   orgId,
+    //   party?.party_master_id,
+    //   billValue
+    // );
 
     // console.log("editSale: sale updated");
     res

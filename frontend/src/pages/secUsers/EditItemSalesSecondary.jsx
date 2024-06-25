@@ -14,7 +14,7 @@ function EditItemSalesSecondary() {
   const [newPrice, setNewPrice] = useState("");
   const [quantity, setQuantity] = useState("");
   const [unit, setUnit] = useState("");
-  const [hsn, setHsn] = useState([]);
+  // const [hsn, setHsn] = useState([]);
   const [igst, setIgst] = useState("");
   const [discount, setDiscount] = useState("");
   const [type, setType] = useState("amount");
@@ -23,38 +23,36 @@ function EditItemSalesSecondary() {
   const [discountAmount, setDiscountAmount] = useState(0); // State for discount amount
   const [discountPercentage, setDiscountPercentage] = useState(0);
 
-  const { id, godownName, index } = useParams();
+  const { id, index } = useParams();
   console.log(index);
   const navigate = useNavigate();
   const location = useLocation();
 
   const ItemsFromRedux = useSelector((state) => state.salesSecondary.items);
   const selectedItem = ItemsFromRedux.filter((el) => el._id === id);
-  const selectedPriceLevel = useSelector(
-    (state) => state.salesSecondary.selectedPriceLevel
-  );
+
   const orgId = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
 
   const selectedGodown = selectedItem[0]?.GodownList[index];
 
-  useEffect(() => {
-    const fetchHsn = async () => {
-      try {
-        const res = await api.get(`/api/sUsers/fetchHsn/${orgId}`, {
-          withCredentials: true,
-        });
+  // useEffect(() => {
+  //   const fetchHsn = async () => {
+  //     try {
+  //       const res = await api.get(`/api/sUsers/fetchHsn/${orgId}`, {
+  //         withCredentials: true,
+  //       });
 
-        setHsn(res.data.data);
+  //       setHsn(res.data.data);
 
-        // console.log(res.data.organizationData);
-      } catch (error) {
-        console.log(error);
-      }
-    };
-    fetchHsn();
-  }, [orgId]);
+  //       // console.log(res.data.organizationData);
+  //     } catch (error) {
+  //       console.log(error);
+  //     }
+  //   };
+  //   fetchHsn();
+  // }, [orgId]);
 
   useEffect(() => {
     // if (selectedPriceLevel === "" || selectedPriceLevel === undefined) {
@@ -173,9 +171,19 @@ function EditItemSalesSecondary() {
           ?.reduce((acc, curr) => (acc += curr?.count || 0), 0)
           .toFixed(2)
       );
+
+      newItem.count = Number(
+        newGodownList?.reduce((acc, curr) => {
+          if (curr.added === true) {
+            return acc + curr.count;
+          } else {
+            return acc;
+          }
+        },0)
+      );
       newItem.total = Number(
         newGodownList
-          .reduce((acc, curr) => acc + (curr?.individualTotal || 0), 0)
+          .reduce((acc, curr) => acc + (curr?.added?curr.individualTotal:0 || 0), 0)
           .toFixed(2)
       );
       console.log(newItem.total);
@@ -207,39 +215,8 @@ function EditItemSalesSecondary() {
   };
 
   const handleBackClick = () => {
-    console.log(location.state);
-
-    // if (location.state.id && location.state.from == "addItemSales") {
-    //   console.log("haii");
-    //   navigate("/sUsers/addItemSales", {
-    //     state: { from: "editSales", id: location.state.id },
-    //   });
-    // } else if (location.state.from === "sales") {
-    //   console.log("haii");
-
-    //   navigate("/sUsers/sales");
-    // } else if (location?.state?.from === "addItemSales") {
-    //   console.log("haii");
-
-    //   navigate("/sUsers/addItemSales");
-    // } else if (location?.state?.from === "editSales") {
-    //   console.log("haii");
-
-    //   navigate(`/sUsers/editSales/${location.state.id}`);
-    // } else {
-    //   console.log("haii");
-
-    //   navigate("/sUsers/addItemSales");
-    // }
     navigate(-1);
   };
-
-  // function truncateToNDecimals(num, n) {
-  //   const parts = num.toString().split(".");
-  //   if (parts.length === 1) return num; // No decimal part
-  //   parts[1] = parts[1].substring(0, n); // Truncate the decimal part
-  //   return parseFloat(parts.join("."));
-  // }
 
   const handleDirectQuantityChange = (value) => {
     if (value.includes(".")) {
