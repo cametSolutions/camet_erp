@@ -31,6 +31,8 @@ const AddOrganisation = () => {
   const [pan, setPan] = useState("");
   const [financialYear, setFinancialYear] = useState("");
   const [type, setType] = useState("self");
+  const [batchEnabled, setBatchEnabled] = useState(false);
+
 
   const handleCheckboxChange = () => {
     setShowInputs(!showInputs);
@@ -127,7 +129,8 @@ const AddOrganisation = () => {
       toast.error("Invalid PAN number");
       return;
     }
-    if ( website && 
+    if (
+      website &&
       !/^((https?|ftp):\/\/)?(www\.)?[\w-]+\.[a-zA-Z]{2,}(\/\S*)?$/.test(
         website
       )
@@ -157,6 +160,7 @@ const AddOrganisation = () => {
       pan,
       financialYear,
       type,
+      batchEnabled
     };
 
     console.log(formData);
@@ -744,7 +748,26 @@ const AddOrganisation = () => {
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center  gap-0 mt-4 m-4 relative ">
+                  <div className="flex items-center  mt-8 px-4">
+                    <div className="flex items-center mr-4">
+                      <input
+                        type="checkbox"
+                        id="valueCheckbox"
+                        className="form-checkbox h-5 w-5 text-indigo-600 transition duration-150 ease-in-out"
+                        checked={batchEnabled === true}
+                        onChange={() => {
+                          setBatchEnabled(!batchEnabled);
+                        }}
+                      />
+                      <label
+                        htmlFor="valueCheckbox"
+                        className="ml-2 text-gray-700"
+                      >
+                        Batch Enabled
+                      </label>
+                    </div>
+                  </div>
+                  <div className="flex items-center  gap-0 mt-12 m-4 relative ">
                     {logo && !loader && (
                       <label htmlFor="photoInput" className="cursor-pointer">
                         <figure className="absolute top-3 z-10  w-[80px] h-[80px] rounded-full border-2 border-solid border-primaryColor flex items-center justify-center">

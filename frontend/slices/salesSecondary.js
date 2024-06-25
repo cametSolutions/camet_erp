@@ -58,6 +58,18 @@ export const salesSecondarySlice = createSlice({
         state.items[indexToUpdate].total = newTotal;
       }
     },
+
+    addPriceRate: (state, action) => {
+      const id = action.payload._id;
+      const selectedPriceRate = action.payload?.selectedPriceRate || 0;
+      console.log(selectedPriceRate);
+      const indexToUpdate = state.items.findIndex((el) => el._id == id);
+      if (indexToUpdate !== -1) {
+        state.items[indexToUpdate].selectedPriceRate = selectedPriceRate;
+      }
+    },
+
+    
     changeIgstAndDiscount: (state, action) => {
       const id = action.payload._id;
       const igst = action.payload?.igst || 0;
@@ -176,7 +188,16 @@ export const salesSecondarySlice = createSlice({
           }
         },0);
 
+        const newTotal=currentItem.GodownList.reduce((acc, curr) => {
+          if (curr.added) {
+            return acc + curr.individualTotal;
+          } else {
+            return acc;
+          }
+        },0);
+
         currentItem.count = newCount;
+        currentItem.total = newTotal;
 
         const allAddedFalse = currentItem.GodownList.every(
           (item) => item.added === false || item.added == undefined
@@ -223,6 +244,7 @@ export const {
   setBatchHeight,
   removeGodownOrBatch,
   addAllFieldsFromEditSalesPage,
+  addPriceRate
 } = salesSecondarySlice.actions;
 
 export default salesSecondarySlice.reducer;

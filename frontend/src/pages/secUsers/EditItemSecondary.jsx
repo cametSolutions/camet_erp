@@ -6,7 +6,7 @@ import { MdModeEditOutline } from "react-icons/md";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
-import { changeIgstAndDiscount } from "../../../slices/invoiceSecondary";
+import { addPriceRate, changeIgstAndDiscount } from "../../../slices/invoiceSecondary";
 import SidebarSec from "../../components/secUsers/SidebarSec";
 
 function EditItemSecondary() {
@@ -14,7 +14,6 @@ function EditItemSecondary() {
   const [newPrice, setNewPrice] = useState("");
   const [quantity, setQuantity] = useState("");
   const [unit, setUnit] = useState("");
-  const [hsn, setHsn] = useState([]);
   const [igst, setIgst] = useState("");
   const [discount, setDiscount] = useState("");
   const [type, setType] = useState("amount");
@@ -24,8 +23,6 @@ function EditItemSecondary() {
   const [discountPercentage, setDiscountPercentage] = useState(0);
   const { id } = useParams();
   const navigate = useNavigate();
-  const location = useLocation();
-
 
   const ItemsFromRedux = useSelector((state) => state.invoiceSecondary.items);
   const selectedItem = ItemsFromRedux.filter((el) => el._id === id);
@@ -34,37 +31,17 @@ function EditItemSecondary() {
     (state) => state.invoiceSecondary.selectedPriceLevel
   );
   console.log(selectedPriceLevel);
-  const orgId = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg._id
-  );
-
-  // useEffect(() => {
-  //   const fetchHsn = async () => {
-  //     try {
-  //       const res = await api.get(`/api/sUsers/fetchHsn/${orgId}`, {
-  //         withCredentials: true,
-  //       });
-
-  //       setHsn(res.data.data);
-
-  //       // console.log(res.data.organizationData);
-  //     } catch (error) {
-  //       console.log(error);
-  //     }
-  //   };
-  //   fetchHsn();
-  // }, [orgId]);
 
   useEffect(() => {
-    if (selectedPriceLevel === "" || selectedPriceLevel === undefined) {
-      navigate("/sUsers/addItem");
-    } else {
+    
       setItem(selectedItem[0]);
-      const price = selectedItem[0].Priceleveles.find(
-        (item) => item.pricelevel === selectedPriceLevel
-      )?.pricerate;
+      // const price = selectedItem[0].Priceleveles.find(
+      //   (item) => item.pricelevel === selectedPriceLevel
+      // )?.pricerate;
 
-      setNewPrice(price);
+      console.log(selectedItem[0]);
+
+      setNewPrice(selectedItem[0]?.selectedPriceRate || 0);
       setQuantity(selectedItem[0]?.count || 1);
       setUnit(selectedItem[0]?.unit);
       setIgst(selectedItem[0]?.igst);
@@ -81,12 +58,12 @@ function EditItemSecondary() {
       ) {
         setDiscount("");
       }
-    }
+    
   }, []);
 
   useEffect(() => {
     console.log(parseFloat(newPrice));
-    const taxExclusivePrice = parseFloat(newPrice) *quantity || 0;
+    const taxExclusivePrice = parseFloat(newPrice) * quantity || 0;
     console.log(taxExclusivePrice);
     setTaxExclusivePrice(taxExclusivePrice);
     // Calculate the discount amount and percentage
@@ -123,11 +100,10 @@ function EditItemSecondary() {
   const dispatch = useDispatch();
 
   const submitHandler = () => {
-    console.log(item);
     const newItem = { ...item };
 
     newItem.total = totalAmount;
-    newItem.count = Number(quantity) ||0;
+    newItem.count = Number(quantity) || 0;
 
     newItem.newGst = igst;
     if (type === "amount") {
@@ -139,15 +115,16 @@ function EditItemSecondary() {
       newItem.discountPercentage = parseFloat(discountPercentage);
     }
 
-    console.log(newItem);
     dispatch(changeIgstAndDiscount(newItem));
+    console.log(newPrice);
+    dispatch(addPriceRate({selectedPriceRate:Number(newPrice),_id:id}))
+
     // navigate("/sUsers/addItem");
-    handleBackClick()
+    handleBackClick();
   };
 
   const handleBackClick = () => {
-
-    navigate(-1)
+    navigate(-1);
     // console.log(location.state);
 
     // if (location?.state?.id && location?.state?.from =="addItem") {
@@ -174,12 +151,11 @@ function EditItemSecondary() {
     // }
   };
 
-
   const changeQuantity = (quantity) => {
     // Check if the quantity includes a dot (decimal point)
     if (quantity.includes(".")) {
       // Split the quantity into parts before and after the decimal point
-      const parts = quantity.split('.');
+      const parts = quantity.split(".");
       // Check the length of the part after the decimal point
       if (parts[1].length > 3) {
         // Display a toast notification if the length exceeds two characters
@@ -194,9 +170,9 @@ function EditItemSecondary() {
     }
   };
 
-
-
-  
+  const changePrice = (price) => {
+    setNewPrice(price);
+  };
 
   return (
     <div className="flex ">
@@ -206,8 +182,7 @@ function EditItemSecondary() {
       <div className=" h-screen overflow-y-auto flex-1">
         <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex  items-center gap-2 sticky top-0 z-20 ">
           <IoIosArrowRoundBack
-             onClick={handleBackClick}
-
+            onClick={handleBackClick}
             className="text-3xl text-white cursor-pointer"
           />
           <p className="text-white text-lg   font-bold ">Edit Item</p>
@@ -234,11 +209,14 @@ function EditItemSecondary() {
                         New Price (With Tax)
                       </label>
                       <input
-                        disabled
-                        value={newPrice || 0}
-                        type="text"
-                        className="px-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm border-gray-300 rounded-md focus:outline-none text-gray-600"
-                        placeholder="Price"
+                        onChange={(e) => {
+                          changePrice(e.target.value,);
+                        }}
+                        // disabled
+                        value={newPrice}
+                        type="number"
+                        className=" input-number px-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm border-gray-300 rounded-md focus:outline-none text-gray-600"
+                        placeholder="0"
                       />
                     </div>
 
@@ -248,9 +226,10 @@ function EditItemSecondary() {
                         <div className=" relative focus-within:text-gray-600 text-gray-400">
                           <input
                             // onChange={(e) => setQuantity(e.target.value)}
-                            onChange={(e)=>{changeQuantity(e.target.value)}}
-
-                            value={quantity }
+                            onChange={(e) => {
+                              changeQuantity(e.target.value);
+                            }}
+                            value={quantity}
                             type="number"
                             className="input-number  pr-4 pl-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm border-gray-300 rounded-md focus:outline-none text-gray-600"
                             placeholder="0"
@@ -367,11 +346,11 @@ function EditItemSecondary() {
                         <p className="text-xs">Tax Rate</p>
                         <div className="flex items-center gap-2">
                           <p className="text-xs">{`( ${igst} % )`}</p>
-                          <p className="text-xs">{`₹ ${
-                            (((taxExclusivePrice - discountAmount) *
+                          <p className="text-xs">{`₹ ${(
+                            ((taxExclusivePrice - discountAmount) *
                               parseFloat(igst)) /
-                            (100)).toFixed(2)
-                          } `}</p>
+                            100
+                          ).toFixed(2)} `}</p>
                         </div>
                       </div>
                       <div className="flex justify-between font-bold text-black">
@@ -383,7 +362,6 @@ function EditItemSecondary() {
                   <div className="pt-4 flex items-center space-x-4">
                     <button
                       onClick={handleBackClick}
-
                       className="flex justify-center items-center w-full text-gray-900 px-4 py-3 rounded-md focus:outline-none"
                     >
                       <svg

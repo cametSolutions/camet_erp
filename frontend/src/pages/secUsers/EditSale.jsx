@@ -21,7 +21,6 @@ import {
   setSelectedPriceLevel as setSelectedPriceLevelInRedux,
   //   setFinalAmount,
   //   setOrderNumber,
-  setBatchHeight,
   setFinalAmount,
 } from "../../../slices/salesSecondary";
 import { useDispatch } from "react-redux";
@@ -40,7 +39,6 @@ import SidebarSec from "../../components/secUsers/SidebarSec";
 function EditSale() {
   ////////////////////////////////state//////////////////////////////////////////////////////
 
-  const [showSidebar, setShowSidebar] = useState(false);
   const [openModal, setOpenModal] = useState(false);
   const [modalInputs, setModalInputs] = useState({
     startingNumber: "1",
@@ -95,13 +93,13 @@ function EditSale() {
   const {
     party: partyFromRedux,
     items: itemsFromRedux,
-    selectedPriceLevel: selectedPriceLevelFromRedux,
-    additionalChargesitems: additionalChargesitemsFromRedux,
+    // selectedPriceLevel: selectedPriceLevelFromRedux,
+    // additionalChargesitems: additionalChargesitemsFromRedux,
     finalAmount: finalAmountFromRedux,
-    brand: brandFromRedux,
-    category: categoryFromRedux,
-    subcategory: subcategoryFromRedux,
-    id: idFromRedux,
+    // brand: brandFromRedux,
+    // category: categoryFromRedux,
+    // subcategory: subcategoryFromRedux,
+    // id: idFromRedux,
     heights: heightsFromRedux,
   } = salesDetailsFromRedux;
 
@@ -128,7 +126,7 @@ function EditSale() {
           priceLevel,
           additionalCharges,
           finalAmount,
-          orderNumber,
+          salesNumber,
         } = res.data.data;
 
         console.log(partyFromRedux);
@@ -155,7 +153,10 @@ function EditSale() {
         }
 
         // dispatch(setFinalAmount(finalAmount));
-        // setOrderNumber(orderNumber);
+
+        if (salesNumber) {
+          setSalesNumber(salesNumber);
+        }
 
         if (
           additionalCharges &&
@@ -237,63 +238,7 @@ function EditSale() {
     fetchSingleOrganization();
   }, [refreshCmp, orgId]);
 
-  useEffect(() => {
-    const fetchConfigurationNumber = async () => {
-      try {
-        const res = await api.get(
-          `/api/sUsers/fetchConfigurationNumber/${orgId}/sales`,
 
-          {
-            withCredentials: true,
-          }
-        );
-
-        console.log(res.data);
-        if (res.data.message === "default") {
-          const { configurationNumber } = res.data;
-          setSalesNumber(configurationNumber);
-          return;
-        }
-
-        const { configDetails, configurationNumber } = res.data;
-        console.log(configDetails);
-        console.log(configurationNumber);
-
-        if (configDetails) {
-          const { widthOfNumericalPart, prefixDetails, suffixDetails } =
-            configDetails;
-          const newOrderNumber = configurationNumber.toString();
-          console.log(newOrderNumber);
-          console.log(widthOfNumericalPart);
-          console.log(prefixDetails);
-          console.log(suffixDetails);
-
-          const padedNumber = newOrderNumber.padStart(widthOfNumericalPart, 0);
-          console.log(padedNumber);
-          const finalOrderNumber = prefixDetails + padedNumber + suffixDetails;
-          console.log(finalOrderNumber);
-          setSalesNumber(finalOrderNumber);
-          setModalInputs({
-            widthOfNumericalPart: widthOfNumericalPart,
-            prefixDetails: prefixDetails,
-            suffixDetails: suffixDetails,
-          });
-        } else {
-          setSalesNumber(salesNumber);
-          setModalInputs({
-            startingNumber: "1",
-            widthOfNumericalPart: "",
-            prefixDetails: "",
-            suffixDetails: "",
-          });
-        }
-      } catch (error) {
-        console.log(error);
-      }
-    };
-
-    fetchConfigurationNumber();
-  }, []);
 
   useEffect(() => {
     const fetchGodownname = async () => {
@@ -516,7 +461,7 @@ function EditSale() {
 
       navigate(`/sUsers/salesDetails/${res.data.data._id}`);
       dispatch(removeAll());
-    }  catch (error) {
+    } catch (error) {
       if (error.response && error.response.data) {
         toast.error(error.response.data.message);
       } else {
@@ -561,7 +506,7 @@ function EditSale() {
   return (
     <div className="flex relative ">
       <div>
-        <SidebarSec TAB={"Sales"} showBar={showSidebar} refresh={refreshCmp} />
+        <SidebarSec TAB={"Sales"} refresh={refreshCmp} />
       </div>
 
       <div className="flex-1 bg-slate-100  h-screen overflow-y-scroll  ">
@@ -724,7 +669,21 @@ function EditSale() {
                     <div className="flex-1">
                       <div className="flex justify-between font-bold text-xs gap-10">
                         <p>{el.product_name}</p>
-                        <p className="text-nowrap">₹ {el.total ?? 0}</p>
+                       
+                        <p className="text-nowrap">
+                          ₹{" "}
+                          {el?.GodownList.reduce((acc, curr) => {
+                            if (el?.hasGodownOrBatch) {
+                              if (curr?.added) {
+                                return (acc = acc + curr?.individualTotal);
+                              } else {
+                                return acc;
+                              }
+                            } else {
+                              return (acc = acc + curr?.individualTotal);
+                            }
+                          }, 0)}
+                        </p>
                       </div>
                       <div className="flex gap-1 text-xs mt-1">
                         <p className="text-nowrap">Tax</p>
@@ -758,11 +717,8 @@ function EditSale() {
                                         </p>
                                         <p className="text-nowrap ">
                                           {godownOrBatch.count} {el.unit} X{" "}
-                                          {el.Priceleveles.find(
-                                            (item) =>
-                                              item.pricelevel ===
-                                              priceLevelFromRedux
-                                          )?.pricerate || 0}
+                                          {godownOrBatch?.selectedPriceRate ||
+                                            0}
                                         </p>
                                       </div>
                                     ) : (
@@ -773,11 +729,7 @@ function EditSale() {
                                           </p>
                                           <p className="text-nowrap">
                                             {godownOrBatch.count} {el.unit} X{" "}
-                                            {el.Priceleveles.find(
-                                              (item) =>
-                                                item.pricelevel ===
-                                                priceLevelFromRedux
-                                            )?.pricerate || 0}
+                                            {el?.selectedPriceRate || 0}
                                           </p>
                                         </div>
                                       )
@@ -845,10 +797,7 @@ function EditSale() {
                               </p>
                               <p className="text-nowrap">
                                 {el.count} {el.unit} X{" "}
-                                {el.Priceleveles.find(
-                                  (item) =>
-                                    item.pricelevel === priceLevelFromRedux
-                                )?.pricerate || 0}
+                                {el?.GodownList[0]?.selectedPriceRate || 0}
                               </p>
                             </div>
 

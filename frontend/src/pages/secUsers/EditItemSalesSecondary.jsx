@@ -7,18 +7,14 @@ import { MdModeEditOutline } from "react-icons/md";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
-import {
-
-  updateItem,
-} from "../../../slices/salesSecondary";
-
+import { updateItem } from "../../../slices/salesSecondary";
 
 function EditItemSalesSecondary() {
   const [item, setItem] = useState([]);
   const [newPrice, setNewPrice] = useState("");
   const [quantity, setQuantity] = useState("");
   const [unit, setUnit] = useState("");
-  const [hsn, setHsn] = useState([]);
+  // const [hsn, setHsn] = useState([]);
   const [igst, setIgst] = useState("");
   const [discount, setDiscount] = useState("");
   const [type, setType] = useState("amount");
@@ -27,89 +23,83 @@ function EditItemSalesSecondary() {
   const [discountAmount, setDiscountAmount] = useState(0); // State for discount amount
   const [discountPercentage, setDiscountPercentage] = useState(0);
 
-  const { id, godownName, index } = useParams();
+  const { id, index } = useParams();
   console.log(index);
   const navigate = useNavigate();
   const location = useLocation();
 
   const ItemsFromRedux = useSelector((state) => state.salesSecondary.items);
   const selectedItem = ItemsFromRedux.filter((el) => el._id === id);
-  const selectedPriceLevel = useSelector(
-    (state) => state.salesSecondary.selectedPriceLevel
-  );
+
   const orgId = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
 
   const selectedGodown = selectedItem[0]?.GodownList[index];
 
+  // useEffect(() => {
+  //   const fetchHsn = async () => {
+  //     try {
+  //       const res = await api.get(`/api/sUsers/fetchHsn/${orgId}`, {
+  //         withCredentials: true,
+  //       });
+
+  //       setHsn(res.data.data);
+
+  //       // console.log(res.data.organizationData);
+  //     } catch (error) {
+  //       console.log(error);
+  //     }
+  //   };
+  //   fetchHsn();
+  // }, [orgId]);
+
   useEffect(() => {
-    const fetchHsn = async () => {
-      try {
-        const res = await api.get(`/api/sUsers/fetchHsn/${orgId}`, {
-          withCredentials: true,
-        });
+    // if (selectedPriceLevel === "" || selectedPriceLevel === undefined) {
+    //   navigate("/sUsers/addItemSales");
+    // } else {
+    setItem(selectedItem[0]);
+    // const price = selectedItem[0].Priceleveles.find(
+    //   (item) => item.pricelevel === selectedPriceLevel
+    // )?.pricerate;
 
-        setHsn(res.data.data);
+    if (selectedItem[0]?.hasGodownOrBatch) {
+      setNewPrice(selectedGodown?.selectedPriceRate || 0);
 
-        // console.log(res.data.organizationData);
-      } catch (error) {
-        console.log(error);
+      console.log("haii");
+      setQuantity(selectedGodown?.count || 1);
+      if (selectedGodown?.discountPercentage > 0) {
+        setDiscount(selectedGodown?.discountPercentage);
+        setType("percentage");
+      } else if (selectedGodown?.discount > 0) {
+        setDiscount(selectedGodown?.discount);
+        setType("amount");
+      } else if (
+        selectedGodown?.discountPercentage == 0 &&
+        selectedGodown?.discount == 0
+      ) {
+        setDiscount("");
       }
-    };
-    fetchHsn();
-  }, [orgId]);
-
-  useEffect(() => {
-    if (selectedPriceLevel === "" || selectedPriceLevel === undefined) {
-      navigate("/sUsers/addItemSales");
     } else {
-      setItem(selectedItem[0]);
-      const price = selectedItem[0].Priceleveles.find(
-        (item) => item.pricelevel === selectedPriceLevel
-      )?.pricerate;
+      setNewPrice(selectedItem[0]?.GodownList[0]?.selectedPriceRate || 0);
 
-      setNewPrice(price);
-
-      if (selectedItem[0]?.hasGodownOrBatch) {
-        console.log("haii");
-        setQuantity(selectedGodown?.count || 1);
-        if (selectedGodown?.discountPercentage > 0) {
-          setDiscount(selectedGodown?.discountPercentage);
-          setType("percentage");
-        } else if (selectedGodown?.discount > 0) {
-          setDiscount(selectedGodown?.discount);
-          setType("amount");
-        } else if (
-          selectedGodown?.discountPercentage == 0 &&
-          selectedGodown?.discount == 0
-        ) {
-          setDiscount("");
-        }
-
-
-      } else {
-        setQuantity(selectedItem[0]?.count || 1);
-        if (selectedItem[0].discountPercentage > 0) {
-          setDiscount(selectedItem[0].discountPercentage);
-          setType("percentage");
-        } else if (selectedItem[0].discount > 0) {
-          setDiscount(selectedItem[0].discount);
-          setType("amount");
-        } else if (
-          selectedItem[0].discountPercentage == 0 &&
-          selectedItem[0].discount == 0
-        ) {
-          setDiscount("");
-        }
+      setQuantity(selectedItem[0]?.count || 1);
+      if (selectedItem[0].discountPercentage > 0) {
+        setDiscount(selectedItem[0].discountPercentage);
+        setType("percentage");
+      } else if (selectedItem[0].discount > 0) {
+        setDiscount(selectedItem[0].discount);
+        setType("amount");
+      } else if (
+        selectedItem[0].discountPercentage == 0 &&
+        selectedItem[0].discount == 0
+      ) {
+        setDiscount("");
       }
-      setUnit(selectedItem[0]?.unit);
-      setIgst(selectedItem[0]?.igst);
-
-
-
-     
     }
+    setUnit(selectedItem[0]?.unit);
+    setIgst(selectedItem[0]?.igst);
+    // }
   }, []);
 
   useEffect(() => {
@@ -148,28 +138,32 @@ function EditItemSalesSecondary() {
 
   const dispatch = useDispatch();
 
-
   const submitHandler = () => {
     console.log(item);
-    const newItem = { ...item };
+    const newItem = structuredClone(item);
+
+    console.log(newPrice); // Deep copy to avoid mutation
 
     if (selectedItem[0]?.hasGodownOrBatch) {
-      // Create a deep copy of the GodownList to avoid mutation
+      console.log("haii");
       const newGodownList = newItem.GodownList.map((godown, idx) => {
         if (idx == index) {
           console.log(godown);
           return {
             ...godown,
             count: Number(quantity) || 0,
+            selectedPriceRate: Number(newPrice) || 0,
             discount: type === "amount" ? discountAmount : "",
             discountPercentage:
               type === "amount" ? "" : parseFloat(discountPercentage),
-            individualTotal:Number( (totalAmount).toFixed(2)),
+            individualTotal: Number(totalAmount.toFixed(2)),
           };
+        } else {
+          return godown;
         }
-
-        return godown;
       });
+
+      console.log(newGodownList);
 
       newItem.GodownList = newGodownList;
       newItem.count = Number(
@@ -177,18 +171,34 @@ function EditItemSalesSecondary() {
           ?.reduce((acc, curr) => (acc += curr?.count || 0), 0)
           .toFixed(2)
       );
+
+      newItem.count = Number(
+        newGodownList?.reduce((acc, curr) => {
+          if (curr.added === true) {
+            return acc + curr.count;
+          } else {
+            return acc;
+          }
+        },0)
+      );
       newItem.total = Number(
-      Number(  newGodownList
-          .reduce((acc, curr) => acc + (curr?.individualTotal || 0), 0))
+        newGodownList
+          .reduce((acc, curr) => acc + (curr?.added?curr.individualTotal:0 || 0), 0)
           .toFixed(2)
       );
       console.log(newItem.total);
       console.log(newItem);
     } else {
-      newItem.total = Number((totalAmount).toFixed(2));
+      // newItem.total = Number(totalAmount.toFixed(2));
+      newItem.GodownList[0].individualTotal = Number(totalAmount.toFixed(2));
+      newItem.total = Number(totalAmount.toFixed(2));
       newItem.count = quantity || 0;
+      const godownList = [...newItem.GodownList];
+      console.log(godownList);
+      godownList[0].selectedPriceRate = Number(newPrice) || 0;
+
+      newItem.GodownList = godownList;
       newItem.newGst = igst;
-      // newItem.GodownList = godown;
       if (type === "amount") {
         newItem.discount = discountAmount;
         newItem.discountPercentage = "";
@@ -199,48 +209,14 @@ function EditItemSalesSecondary() {
     }
 
     console.log(newItem);
-    // dispatch(changeIgstAndDiscount(newItem));
-    // dispatch(changeGodownCount(newItem));
+
     dispatch(updateItem(newItem));
     navigate(-1);
-    // handleBackClick();
   };
 
   const handleBackClick = () => {
-    console.log(location.state);
-
-    // if (location.state.id && location.state.from == "addItemSales") {
-    //   console.log("haii");
-    //   navigate("/sUsers/addItemSales", {
-    //     state: { from: "editSales", id: location.state.id },
-    //   });
-    // } else if (location.state.from === "sales") {
-    //   console.log("haii");
-
-    //   navigate("/sUsers/sales");
-    // } else if (location?.state?.from === "addItemSales") {
-    //   console.log("haii");
-
-    //   navigate("/sUsers/addItemSales");
-    // } else if (location?.state?.from === "editSales") {
-    //   console.log("haii");
-
-    //   navigate(`/sUsers/editSales/${location.state.id}`);
-    // } else {
-    //   console.log("haii");
-
-    //   navigate("/sUsers/addItemSales");
-    // }
-    navigate(-1)
+    navigate(-1);
   };
-
-
-  function truncateToNDecimals(num, n) {
-    const parts = num.toString().split(".");
-    if (parts.length === 1) return num; // No decimal part
-    parts[1] = parts[1].substring(0, n); // Truncate the decimal part
-    return parseFloat(parts.join("."));
-  }
 
   const handleDirectQuantityChange = (value) => {
     if (value.includes(".")) {
@@ -291,11 +267,14 @@ function EditItemSalesSecondary() {
                     <div className="flex flex-col">
                       <label className="leading-loose">Price</label>
                       <input
-                        disabled
-                        value={newPrice || 0}
-                        type="text"
-                        className="px-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm border-gray-300 rounded-md focus:outline-none text-gray-600"
-                        placeholder="Price"
+                        onChange={(e) => {
+                          setNewPrice(e.target.value);
+                        }}
+                        // disabled
+                        value={newPrice}
+                        type="number"
+                        className=" input-number px-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm border-gray-300 rounded-md focus:outline-none text-gray-600"
+                        placeholder="0"
                       />
                     </div>
 
@@ -472,8 +451,6 @@ function EditItemSalesSecondary() {
             </div>
           </div>
         </div>
-
-       
       </div>
     </div>
   );

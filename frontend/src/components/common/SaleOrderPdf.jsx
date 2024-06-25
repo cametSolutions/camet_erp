@@ -1,13 +1,15 @@
 /* eslint-disable react/prop-types */
 import QRCode from "react-qr-code";
 
-function SaleOrderPdf({   data,
-    org,
-    contentToPrint,
-    bank,
-    inWords,
-    subTotal,
-    additinalCharge, }) {
+function SaleOrderPdf({
+  data,
+  org,
+  contentToPrint,
+  bank,
+  inWords,
+  subTotal,
+  additinalCharge,
+}) {
   return (
     <div>
       <div
@@ -127,14 +129,17 @@ function SaleOrderPdf({   data,
           <tbody>
             {data?.items?.length > 0 &&
               data?.items.map((el, index) => {
-                const discountAmount =
-                  el?.discountPercentage > 0
-                    ? (el.Priceleveles.find(
-                        (item) => item?.pricelevel === data?.priceLevel
-                      )?.pricerate *
-                        el.discountPercentage) /
-                      100
-                    : el?.discount;
+                const rate = el?.selectedPriceRate || 0;
+                const taxAmt = Number(
+                  (
+                    el?.total -
+                    (el?.total * 100) / (parseFloat(el.igst) + 100)
+                  )?.toFixed(2)
+                ) || 0;
+                const count = el?.count || 0;
+                const finalAmt = Number(el?.total) || 0;
+
+                const discountAmount =( rate * count + taxAmt - Number(finalAmt)) || 0;
                 return (
                   <tr
                     key={index}
@@ -147,15 +152,10 @@ function SaleOrderPdf({   data,
                       </p>
                     </td>
                     <td className="py-4 text-black text-right pr-2">
-                      {el?.count} {el?.unit}
+                      {count} {el?.unit}
                     </td>
                     <td className="py-4 text-black text-right pr-2 text-nowrap">
-                      ₹{" "}
-                      {
-                        el.Priceleveles.find(
-                          (item) => item?.pricelevel === data?.priceLevel
-                        )?.pricerate
-                      }
+                      ₹ {rate}
                     </td>
                     <td className="py-4 text-black text-right pr-2 ">
                       {discountAmount > 0
@@ -166,15 +166,9 @@ function SaleOrderPdf({   data,
                           `(${el?.discountPercentage}%)`} */}
                     </td>
                     <td className="py-4 text-black text-right pr-2">
-                      {(
-                        el?.total -
-                        (el?.total * 100) / (parseFloat(el.igst) + 100)
-                      )?.toFixed(2)}
-                      {/* <br /> ({el?.igst}%) */}
+                      {taxAmt}
                     </td>
-                    <td className="py-4 text-black text-right">
-                      ₹ {el?.total}
-                    </td>
+                    <td className="py-4 text-black text-right">₹ {finalAmt}</td>
                   </tr>
                 );
               })}

@@ -107,6 +107,8 @@ import PurchaseDetailsPrimary from '../pages/primaryUsers/PurchaseDetailsPrimary
 import SharePurchasePrimary from '../pages/primaryUsers/SharePurchasePrimary'
 import ThreeInchPurchasePrimary from '../pages/primaryUsers/ThreeInchPurchasePrimary'
 import EditSale from '../pages/secUsers/EditSale'
+import ThreeInchInvoiceSec from '../pages/secUsers/ThreeInchInvoiceSec'
+import ThreeInchInvoice from '../pages/primaryUsers/ThreeInchInvoice'
 const Routers = () => {
   return (
     <Routes>
@@ -164,6 +166,8 @@ const Routers = () => {
         <Route path='/pUsers/purchaseDetails/:id' element={<ProtectedPriRoute><PurchaseDetailsPrimary/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/sharePurchase/:id' element={<ProtectedPriRoute><SharePurchasePrimary/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/sharePurchaseThreeInch/:id' element={<ProtectedPriRoute><ThreeInchPurchasePrimary/></ProtectedPriRoute>}></Route>
+        <Route path='/pUsers/shareInvoiceThreeInch/:id' element={<ProtectedSecRoute><ThreeInchInvoice/></ProtectedSecRoute>}></Route> 
+
 
 
         {/* admin */}
@@ -199,6 +203,8 @@ const Routers = () => {
         <Route path='/sUsers/InvoiceDetails/:id' element={<ProtectedSecRoute><InvoiceDetailsSecondary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/editInvoice/:id' element={<ProtectedSecRoute><EditInvoiceSecondary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/shareInvoice/:id' element={<ProtectedSecRoute><ShareInvoiceSecondary/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/shareInvoiceThreeInch/:id' element={<ProtectedSecRoute><ThreeInchInvoiceSec/></ProtectedSecRoute>}></Route> 
+
         <Route path='/sUsers/additionalChargesList' element={<ProtectedSecRoute><AddChargesListSecondary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/additionalCharges' element={<ProtectedSecRoute><AdditionalChargesSecondary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/editAdditionalCharge/:id' element={<ProtectedSecRoute><EditAdditionalChargesSecondary/></ProtectedSecRoute>}></Route>

@@ -76,7 +76,7 @@ const ProductDetails = ({
                 <>
                   <div className="flex items-center">
                     <p className="   text-xs md:text-sm">
-                      ₹ {priceRate || ""}/{" "}
+                      ₹ {item?.selectedPriceRate || ""}/{" "}
                       <span className="text-black">{details?.unit || ""}</span>
                     </p>
 

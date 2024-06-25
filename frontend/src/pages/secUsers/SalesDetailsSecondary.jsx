@@ -3,7 +3,7 @@ import { MdOutlineArrowBack } from "react-icons/md";
 import { IoMdShareAlt } from "react-icons/io";
 import { MdTextsms } from "react-icons/md";
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import api from "../../api/api";
 import { toast } from "react-toastify";
 import dayjs from "dayjs";
@@ -12,6 +12,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import SidebarSec from "../../components/secUsers/SidebarSec";
 import Swal from "sweetalert2";
 import SalesProductDetails from "../../components/common/SalesProductDetails";
+import SwallFireForPdf from "../../components/common/SwallFireForPdf";
 
 function SalesDetailsSecondary() {
   const [data, setData] = useState("");
@@ -125,13 +126,14 @@ function SalesDetailsSecondary() {
                 <p className="text-black font-bold text-sm">Edit</p>
               </div>
               {/* <Link to={`/sUsers/shareSales/${data._id}`}> */}
-              <div
+              {/* <div
                 onClick={chooseFormat}
                 className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer"
               >
                 <IoMdShareAlt />
                 <p className="text-black font-bold text-sm">Share</p>
-              </div>
+              </div> */}
+              <SwallFireForPdf data={data} />
               {/* </Link> */}
               <div className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer">
                 <MdTextsms className="text-green-500" />
@@ -172,37 +174,8 @@ function SalesDetailsSecondary() {
         {/* party details */}
         {/* party Total Mount */}
 
-        <div className="p-4 bg-white mt-2 ">
-          <div className="flex items-center justify-between">
-            <p className="font-bold">Total Amount</p>
-            <p className="font-bold">
-              ₹ {parseInt(data?.finalAmount).toFixed(2)}
-            </p>
-          </div>
-          <div className="flex items-center justify-between mt-2 text-sm ">
-            <p className="font-semibold text-gray-500">Subtotal</p>
-            <p className="font-semibold">
-              ₹{" "}
-              {parseInt(
-                data?.items?.reduce((acc, curr) => acc + curr?.total, 0) || 0
-              ).toFixed(2)}
-            </p>
-          </div>
-          <div className="flex items-center justify-between mt-2 text-sm">
-            <p className="font-semibold text-gray-500">Additional Charge</p>
-            <p className="font-semibold">
-              ₹{" "}
-              {parseInt(
-                data?.additionalCharges?.reduce(
-                  (acc, curr) => acc + curr?.finalValue,
-                  0
-                )
-              ).toFixed(2)}
-            </p>
-          </div>
-        </div>
-
         <SalesProductDetails
+          data={data}
           items={data?.items}
           priceLevel={data?.priceLevel}
           additionalCharges={data?.additionalCharges}

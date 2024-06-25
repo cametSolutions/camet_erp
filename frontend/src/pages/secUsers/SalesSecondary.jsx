@@ -24,7 +24,7 @@ import {
   removeAll,
   removeAdditionalCharge,
   removeItem,
-  removeGodownOrBatch
+  removeGodownOrBatch,
 } from "../../../slices/salesSecondary";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import { Button, Label, Modal, TextInput } from "flowbite-react";
@@ -290,7 +290,7 @@ function SalesSecondary() {
   const items = useSelector((state) => state.salesSecondary.items);
   const priceLevelFromRedux =
     useSelector((state) => state.salesSecondary.selectedPriceLevel) || "";
-    const batchHeights=useSelector((state) => state.salesSecondary.heights);
+  const batchHeights = useSelector((state) => state.salesSecondary.heights);
 
   useEffect(() => {
     const subTotal = items.reduce((acc, curr) => {
@@ -391,8 +391,7 @@ function SalesSecondary() {
       lastAmount,
       orgId,
       salesNumber,
-      batchHeights
-      
+      batchHeights,
     };
 
     console.log(formData);
@@ -445,8 +444,7 @@ function SalesSecondary() {
     }
   };
 
-  console.log(additionalChragesFromCompany);
-  console.log(godownname);
+  console.log(items);
 
   return (
     <div className="flex relative ">
@@ -614,7 +612,20 @@ function SalesSecondary() {
                     <div className="flex-1">
                       <div className="flex justify-between font-bold text-xs gap-10">
                         <p>{el.product_name}</p>
-                        <p className="text-nowrap">₹ {el.total ?? 0}</p>
+                        <p className="text-nowrap">
+                          ₹{" "}
+                          {el?.GodownList.reduce((acc, curr) => {
+                            if (el?.hasGodownOrBatch) {
+                              if (curr?.added) {
+                                return (acc = acc + curr?.individualTotal);
+                              } else {
+                                return acc;
+                              }
+                            } else {
+                              return (acc = acc + curr?.individualTotal);
+                            }
+                          }, 0)}
+                        </p>
                       </div>
                       <div className="flex gap-1 text-xs mt-1">
                         <p className="text-nowrap">Tax</p>
@@ -626,10 +637,16 @@ function SalesSecondary() {
                             <>
                               <div className="flex items-center gap-2">
                                 <MdCancel
-                                onClick={() => {
-                                  dispatch(removeGodownOrBatch({id:el?._id,idx:idx}));
-                                }}
-                                 className="text-gray-500 text-sm cursor-pointer" />
+                                  onClick={() => {
+                                    dispatch(
+                                      removeGodownOrBatch({
+                                        id: el?._id,
+                                        idx: idx,
+                                      })
+                                    );
+                                  }}
+                                  className="text-gray-500 text-sm cursor-pointer"
+                                />
                                 <div
                                   key={idx}
                                   className="flex justify-between items-center mt-5 flex-1 "
@@ -642,11 +659,13 @@ function SalesSecondary() {
                                         </p>
                                         <p className="text-nowrap ">
                                           {godownOrBatch.count} {el.unit} X{" "}
-                                          {el.Priceleveles.find(
+                                          {/* {el.Priceleveles.find(
                                             (item) =>
                                               item.pricelevel ===
                                               priceLevelFromRedux
-                                          )?.pricerate || 0}
+                                          )?.pricerate || 0} */}
+                                          {godownOrBatch?.selectedPriceRate ||
+                                            0}
                                         </p>
                                       </div>
                                     ) : (
@@ -657,11 +676,13 @@ function SalesSecondary() {
                                           </p>
                                           <p className="text-nowrap">
                                             {godownOrBatch.count} {el.unit} X{" "}
-                                            {el.Priceleveles.find(
+                                            {/* {el.Priceleveles.find(
                                               (item) =>
                                                 item.pricelevel ===
                                                 priceLevelFromRedux
-                                            )?.pricerate || 0}
+                                            )?.pricerate || 0} */}
+                                            {godownOrBatch?.selectedPriceRate ||
+                                              0}
                                           </p>
                                         </div>
                                       )
@@ -729,10 +750,11 @@ function SalesSecondary() {
                               </p>
                               <p className="text-nowrap">
                                 {el.count} {el.unit} X{" "}
-                                {el.Priceleveles.find(
+                                {/* {el.Priceleveles.find(
                                   (item) =>
                                     item.pricelevel === priceLevelFromRedux
-                                )?.pricerate || 0}
+                                )?.pricerate || 0} */}
+                                {el?.GodownList[0]?.selectedPriceRate || 0}
                               </p>
                             </div>
 

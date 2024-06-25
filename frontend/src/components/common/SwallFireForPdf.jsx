@@ -3,7 +3,8 @@ import Swal from "sweetalert2";
 import { IoMdShareAlt } from "react-icons/io";
 import { useNavigate } from "react-router-dom";
 
-function SwallFireForPdf({ data, tab = "sales" }) {
+function SwallFireForPdf({ data, tab = "sales" ,user}) {
+  let selectedUser=user=="primary"?"pUsers":"sUsers"
     console.log(data);
   const navigate = useNavigate();
   const chooseFormat = () => {
@@ -20,16 +21,16 @@ function SwallFireForPdf({ data, tab = "sales" }) {
     }).then((result) => {
       if (result.isConfirmed) {
         if (tab === "salesOrder") {
-          navigate(`/sUsers/shareInvoice/${data._id}`);
+          navigate(`/${selectedUser}/shareInvoice/${data._id}`);
         } else {
-          navigate(`/sUsers/shareSales/${data._id}`);
+          navigate(`/${selectedUser}/shareSales/${data._id}`);
         }
         // Swal.fire("Tax Invoice selected", "", "success");
       } else if (result.isDenied) {
         if (tab === "salesOrder") {
-        //   navigate(`/sUsers/shareSalesThreeInch/${data._id}`);
+          navigate(`/${selectedUser}/shareInvoiceThreeInch/${data._id}`);
         } else {
-          navigate(`/sUsers/shareSalesThreeInch/${data._id}`);
+          navigate(`/${selectedUser}/shareSalesThreeInch/${data._id}`);
         }
       }
     });

@@ -24,7 +24,7 @@ export const invoiceSliceSecondary = createSlice({
       state.items.push(action.payload);
     },
     addAllProducts: (state, action) => {
-      state.products=action.payload
+      state.products = action.payload;
     },
     removeItem: (state, action) => {
       const id = action.payload._id;
@@ -48,6 +48,17 @@ export const invoiceSliceSecondary = createSlice({
         state.items[indexToUpdate].total = newTotal;
       }
     },
+
+    addPriceRate: (state, action) => {
+      const id = action.payload._id;
+      const selectedPriceRate = action.payload?.selectedPriceRate || 0;
+      console.log(selectedPriceRate);
+      const indexToUpdate = state.items.findIndex((el) => el._id == id);
+      if (indexToUpdate !== -1) {
+        state.items[indexToUpdate].selectedPriceRate = selectedPriceRate;
+      }
+    },
+   
     changeIgstAndDiscount: (state, action) => {
       const id = action.payload._id;
       const igst = action.payload?.igst || 0;
@@ -147,7 +158,8 @@ export const {
   setFinalAmount,
   setAdditionalCharges,
   saveId,
-  addAllProducts
+  addAllProducts,
+  addPriceRate,
 } = invoiceSliceSecondary.actions;
 
 export default invoiceSliceSecondary.reducer;

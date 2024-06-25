@@ -31,11 +31,21 @@
           "mfgdt": "31-Mar-24"
         }
       ],
-      "Priceleveles": [
+     "Priceleveles": [
         {
           "alt_unit": "null",
           "pricelevel": "P1",
-          "pricerate": 234
+          "pricerate": 100
+        },
+        {
+          "alt_unit": "null",
+          "pricelevel": "P2",
+          "pricerate": 200
+        },
+        {
+          "alt_unit": "null",
+          "pricelevel": "P3",
+          "pricerate": 300
         }
       ]
     },
@@ -69,7 +79,17 @@
         {
           "alt_unit": "null",
           "pricelevel": "P1",
-          "pricerate": 310
+          "pricerate": 100
+        },
+        {
+          "alt_unit": "null",
+          "pricelevel": "P2",
+          "pricerate": 200
+        },
+        {
+          "alt_unit": "null",
+          "pricelevel": "P3",
+          "pricerate": 300
         }
       ]
     },
@@ -104,7 +124,17 @@
         {
           "alt_unit": "null",
           "pricelevel": "P1",
-          "pricerate": 234
+          "pricerate": 100
+        },
+        {
+          "alt_unit": "null",
+          "pricelevel": "P2",
+          "pricerate": 200
+        },
+        {
+          "alt_unit": "null",
+          "pricelevel": "P3",
+          "pricerate": 300
         }
       ]
     },
@@ -183,7 +213,17 @@
         {
           "alt_unit": "null",
           "pricelevel": "P1",
-          "pricerate": 35
+          "pricerate": 100
+        },
+        {
+          "alt_unit": "null",
+          "pricelevel": "P2",
+          "pricerate": 200
+        },
+        {
+          "alt_unit": "null",
+          "pricelevel": "P3",
+          "pricerate": 300
         }
       ]
     },
@@ -238,7 +278,17 @@
         {
           "alt_unit": "null",
           "pricelevel": "P1",
-          "pricerate": 39
+          "pricerate": 100
+        },
+        {
+          "alt_unit": "null",
+          "pricelevel": "P2",
+          "pricerate": 200
+        },
+        {
+          "alt_unit": "null",
+          "pricelevel": "P3",
+          "pricerate": 300
         }
       ]
     },
@@ -275,7 +325,17 @@
         {
           "alt_unit": "null",
           "pricelevel": "P1",
-          "pricerate": 42
+          "pricerate": 100
+        },
+        {
+          "alt_unit": "null",
+          "pricelevel": "P2",
+          "pricerate": 200
+        },
+        {
+          "alt_unit": "null",
+          "pricelevel": "P3",
+          "pricerate": 300
         }
       ]
     },
@@ -308,7 +368,19 @@
       ],
       "Priceleveles": [
         {
-          "alt_unit": "null"
+          "alt_unit": "null",
+          "pricelevel": "P1",
+          "pricerate": 100
+        },
+        {
+          "alt_unit": "null",
+          "pricelevel": "P2",
+          "pricerate": 200
+        },
+        {
+          "alt_unit": "null",
+          "pricelevel": "P3",
+          "pricerate": 300
         }
       ]
     },
@@ -341,7 +413,19 @@
       ],
       "Priceleveles": [
         {
-          "alt_unit": "null"
+          "alt_unit": "null",
+          "pricelevel": "P1",
+          "pricerate": 100
+        },
+        {
+          "alt_unit": "null",
+          "pricelevel": "P2",
+          "pricerate": 200
+        },
+        {
+          "alt_unit": "null",
+          "pricelevel": "P3",
+          "pricerate": 300
         }
       ]
     },

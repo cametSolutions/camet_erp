@@ -882,10 +882,7 @@ export const createInvoice = async (req, res) => {
         (priceLevel) => priceLevel.pricelevel === priceLevelFromRedux
       );
       // If a corresponding price rate is found, assign it to selectedPrice, otherwise assign null
-      const selectedPrice = selectedPriceLevel
-        ? selectedPriceLevel.pricerate
-        : 0;
-
+      const selectedPrice = item?.selectedPriceRate || 0;
       // Calculate total price after applying discount
       let totalPrice = selectedPrice * (item.count || 1) || 0;
       if (
@@ -2051,16 +2048,21 @@ export const createSale = async (req, res) => {
 
     const updatedItems = items.map((item) => {
       // Find the corresponding price rate for the selected price level
-      const selectedPriceLevel = item.Priceleveles.find(
-        (priceLevel) => priceLevel.pricelevel === priceLevelFromRedux
-      );
+      // const selectedPriceLevel = item.Priceleveles.find(
+      //   (priceLevel) => priceLevel.pricelevel === priceLevelFromRedux
+      // );
       // If a corresponding price rate is found, assign it to selectedPrice, otherwise assign null
-      const selectedPrice = selectedPriceLevel
-        ? selectedPriceLevel.pricerate
-        : 0;
+      // const selectedPrice = selectedPriceLevel
+      //   ? selectedPriceLevel.pricerate
+      //   : 0;
 
       // Calculate total price after applying discount
-      let totalPrice = selectedPrice * (item.count || 1) || 0; // Default count to 1 if not provided
+      // let totalPrice = selectedPrice * (item.count || 1) || 0; // Default count to 1 if not provided
+      let totalPrice = item?.GodownList.reduce((acc, curr) => {
+        console.log("curr?.individualTotal", curr?.individualTotal);
+
+        return (acc = acc + Number(curr?.individualTotal));
+      }, 0);
       if (item.discount) {
         // If discount is present (amount), subtract it from the total price
         totalPrice -= item.discount;
@@ -2070,6 +2072,8 @@ export const createSale = async (req, res) => {
         totalPrice -= discountAmount;
       }
 
+      console.log("totalPrice", totalPrice);
+
       // Calculate tax amounts
       const { cgst, sgst, igst } = item;
       const cgstAmt = parseFloat(((totalPrice * cgst) / 100).toFixed(2));
@@ -2078,11 +2082,11 @@ export const createSale = async (req, res) => {
 
       return {
         ...item,
-        selectedPrice: selectedPrice,
+        // selectedPrice: selectedPrice,
         cgstAmt: cgstAmt,
         sgstAmt: sgstAmt,
         igstAmt: igstAmt,
-        subTotal: totalPrice, // Optional: Include total price in the item object
+        subTotal: totalPrice - (Number(igstAmt) || 0),
       };
     });
 
@@ -2715,8 +2719,8 @@ export const createPurchase = async (req, res) => {
     );
 
     // Prepare bulk operations for product and godown updates
-    const productUpdates = [];
-    const godownUpdates = [];
+    let productUpdates = [];
+    let godownUpdates = [];
 
     // Process each item to update product stock and godown stock
     for (const item of items) {
@@ -2981,6 +2985,8 @@ export const editSale = async (req, res) => {
       salesNumber,
     } = req.body;
 
+    let productUpdates=[]
+
     // Fetch the existing sale
 
     const existingSale = await salesModel.findById(saleId);
@@ -2990,6 +2996,9 @@ export const editSale = async (req, res) => {
         .status(404)
         .json({ success: false, message: "Sale not found" });
     }
+
+    const oldBillValue = existingSale.finalAmount;
+
 
     //////////////////////////// To handle the deletion and updating of products   starts //////////////////////////////////////////
 
@@ -3253,6 +3262,7 @@ export const editSale = async (req, res) => {
     }
 
     ///////////////////////////////////// for calculating values like igst amount and updated items  ////////////////////////////////////
+
     let updatedItems = items;
     if (items.length > 0) {
       updatedItems = await calculateUpdatedItemValues(
@@ -3279,6 +3289,49 @@ export const editSale = async (req, res) => {
     existingSale.salesNumber = salesNumber;
 
     const result = await existingSale.save();
+
+    ///////////////////////////////////// for reflecting the rate change in outstanding  ////////////////////////////////////
+
+
+
+    const newBillValue = Number(lastAmount);
+    // const oldBillValue = Number(existingSale.finalAmount);
+    const diffBillValue = newBillValue - oldBillValue;
+    console.log("editSale: newBillValue:", newBillValue);
+    console.log("editSale: oldBillValue:", oldBillValue);
+    console.log("editSale: diffBillValue:", diffBillValue);
+
+    const matchedOutStanding = await TallyData.findOne({
+      party_id: party?.party_master_id,
+      cmp_id: orgId,
+      bill_no: salesNumber,
+    });
+
+    if (matchedOutStanding) {
+      console.log("editSale: matched outstanding found");
+      const newOutstanding =
+        Number(matchedOutStanding?.bill_pending_amt) + diffBillValue;
+
+      console.log("editSale: new outstanding calculated", newOutstanding);
+      await TallyData.updateOne(
+        {
+          party_id: party?.party_master_id,
+          cmp_id: orgId,
+          bill_no: salesNumber,
+        },
+        { $set: { bill_pending_amt: newOutstanding } }
+      );
+
+      console.log("editSale: outstanding updated");
+    } else {
+      console.log("editSale: matched outstanding not found");
+    }
+    // await updateOutstanding(
+    //   salesNumber,
+    //   orgId,
+    //   party?.party_master_id,
+    //   billValue
+    // );
 
     // console.log("editSale: sale updated");
     res

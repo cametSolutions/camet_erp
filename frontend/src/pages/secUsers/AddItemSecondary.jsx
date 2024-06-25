@@ -6,24 +6,22 @@ import { useNavigate, useLocation } from "react-router-dom";
 import api from "../../api/api";
 import { MdOutlineQrCodeScanner } from "react-icons/md";
 import { useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import {
   addAllProducts,
   addItem,
   removeItem,
-} from "../../../slices/invoiceSecondary";
-import { useDispatch } from "react-redux";
-import { changeCount } from "../../../slices/invoiceSecondary";
-import { setPriceLevel } from "../../../slices/invoiceSecondary";
-import {
   changeTotal,
   setBrandInRedux,
   setCategoryInRedux,
   setSubCategoryInRedux,
+  setPriceLevel,
+  changeCount,
+  addPriceRate,
 } from "../../../slices/invoiceSecondary";
 import { HashLoader } from "react-spinners";
 import { FixedSizeList as List } from "react-window";
 import SidebarSec from "../../components/secUsers/SidebarSec";
-import { toast } from "react-toastify";
 import { Decimal } from "decimal.js";
 import SearchBar from "../../components/common/SearchBar";
 
@@ -42,6 +40,8 @@ function AddItemSecondary() {
   const [loader, setLoader] = useState(false);
   const [listHeight, setListHeight] = useState(0);
   const [scrollPosition, setScrollPosition] = useState(0);
+  const [selectedPriceRates, setSelectedPriceRates] = useState({});
+  console.log("selectedPriceRates", selectedPriceRates);
 
   ///////////////////////////cpm_id///////////////////////////////////
 
@@ -75,7 +75,6 @@ function AddItemSecondary() {
   const dispatch = useDispatch();
   const listRef = useRef(null);
   const location = useLocation();
-  const scrollRef = useRef(window.scrollY);
 
   ///////////////////////////fetchProducts///////////////////////////////////
   useEffect(() => {
@@ -97,8 +96,6 @@ function AddItemSecondary() {
         }
 
         if (itemsFromRedux.length > 0) {
-          console.log("haii");
-
           const reduxItemIds = itemsFromRedux.map((el) => el._id);
           const updatedItems = productData.map((product) => {
             if (reduxItemIds.includes(product._id)) {
@@ -113,10 +110,13 @@ function AddItemSecondary() {
           });
 
           console.log(updatedItems);
+
           setItem(updatedItems);
         } else {
+          console.log(productData);
           setItem(productData);
         }
+
         if (brandFromRedux) {
           setSelectedBrand(brandFromRedux);
         }
@@ -189,8 +189,9 @@ function AddItemSecondary() {
           if (priceLevelFromRedux == "") {
             console.log("haii");
             const defaultPriceLevel = priceLevels[0];
+            // const defaultPriceLevel = ""
             setSelectedPriceLevel(defaultPriceLevel);
-            dispatch(setPriceLevel(defaultPriceLevel));
+            // dispatch(setPriceLevel(defaultPriceLevel));
           }
         } else {
           const { priceLevels, brands, categories, subcategories } = res.data;
@@ -203,8 +204,10 @@ function AddItemSecondary() {
           if (priceLevelFromRedux == "") {
             console.log("haii");
             const defaultPriceLevel = priceLevels[0];
+            // const defaultPriceLevel = ""
             setSelectedPriceLevel(defaultPriceLevel);
             dispatch(setPriceLevel(defaultPriceLevel));
+            addSelectedRate(defaultPriceLevel);
           }
         }
       } catch (error) {
@@ -242,6 +245,20 @@ function AddItemSecondary() {
     });
   };
 
+  useEffect(() => {
+    const updatedSelectedPriceRate = item.map((item) => ({
+      _id: item._id,
+      pricerate:
+        item.Priceleveles.find(
+          (level) => level.pricelevel === selectedPriceLevel
+        )?.pricerate || 0, // Default to 0 if pricerate is not found
+    }));
+
+    setSelectedPriceRates(updatedSelectedPriceRate);
+
+    console.log(updatedSelectedPriceRate);
+  }, [selectedPriceLevel]);
+
   ///////////////////////////filter items call ///////////////////////////////////
 
   const filteredItems = useMemo(() => {
@@ -266,6 +283,7 @@ function AddItemSecondary() {
       // Toggle the 'added' state of the item
       itemToUpdate.added = !itemToUpdate.added;
       itemToUpdate.count = 1;
+      // item.update.selectedPriceRate=
       const total = calculateTotal(itemToUpdate, selectedPriceLevel).toFixed(2);
       itemToUpdate.total = total;
       updatedItems[index] = itemToUpdate;
@@ -274,15 +292,26 @@ function AddItemSecondary() {
       setItem(updatedItems);
       setRefresh(!refresh);
       dispatch(addItem(itemToUpdate));
+      if (selectedPriceLevel === "") {
+        navigate(`/sUsers/editItem/${_id}`);
+      }
     }
   };
 
   ///////////////////////////calculateTotal///////////////////////////////////
 
-  const calculateTotal = (item, selectedPriceLevel) => {
-    const priceRate =
-      item.Priceleveles.find((level) => level.pricelevel === selectedPriceLevel)
-        ?.pricerate || 0;
+  const calculateTotal = (item, selectedPriceLevel, situation = "normal") => {
+    //add default value for selectedPriceLevel
+    let priceRate;
+    if (situation === "priceLevelChange") {
+      priceRate =
+        item.Priceleveles.find(
+          (level) => level.pricelevel === selectedPriceLevel
+        )?.pricerate || 0;
+    } else {
+      priceRate = item.selectedPriceRate || 0;
+    }
+
 
     let subtotal = priceRate * item?.count;
     let discountedSubtotal = subtotal;
@@ -301,13 +330,25 @@ function AddItemSecondary() {
     return discountedSubtotal + gstAmount;
   };
 
-  ///////////////////////////handleTotalChangeWithPriceLevel///////////////////////////////////
+  ///////////////////////////handleTotalChangeWithPriceLevel and add price rate ///////////////////////////////////
 
   const handleTotalChangeWithPriceLevel = (pricelevel) => {
     const updatedItems = filteredItems.map((item) => {
       if (item.added === true) {
-        const newTotal = calculateTotal(item, pricelevel).toFixed(2);
+        const newTotal = calculateTotal(
+          item,
+          pricelevel,
+          "priceLevelChange"
+        ).toFixed(2);
         dispatch(changeTotal({ ...item, total: newTotal }));
+
+        const newPriceRate = item?.Priceleveles.find(
+          (item) => item.pricelevel === pricelevel
+        )?.pricerate;
+        console.log(newPriceRate);
+        dispatch(
+          addPriceRate({ _id: item._id, selectedPriceRate: newPriceRate })
+        );
 
         return {
           ...item,
@@ -319,6 +360,36 @@ function AddItemSecondary() {
 
     setItem(updatedItems);
   };
+
+  console.log(item);
+
+  //////////////////////////////////////////addSelectedRate initially not in redux/////////////////////////////////////////////
+
+  const addSelectedRate = (pricelevel) => {
+    if (item?.length > 0) {
+      const updatedItems = filteredItems.map((item) => {
+        const priceRate =
+          item?.Priceleveles?.find((item) => item.pricelevel === pricelevel)
+            ?.pricerate || 0;
+
+        const reduxItem = itemsFromRedux.find((p) => p._id === item._id);
+        const reduxRate = reduxItem?.selectedPriceRate || null;
+
+        return {
+          ...item,
+          selectedPriceRate: reduxRate ?? priceRate,
+        };
+      });
+
+      setItem(updatedItems);
+    }
+  };
+
+  useEffect(() => {
+    addSelectedRate(selectedPriceLevel);
+  }, [selectedPriceLevel]);
+
+  //////////////////////////////////////////handlepriceRateChange/////////////////////////////////////////////
 
   ///////////////////////////handleIncrement///////////////////////////////////
 
@@ -364,7 +435,7 @@ function AddItemSecondary() {
       currentItem.count = parseFloat(currentItem.count.toString());
       if (currentItem.count <= 0) {
         dispatch(removeItem(currentItem));
-        updatedItems[index] = { ...currentItem, added: false }; // Make a copy and update the 'added' property
+        updatedItems[index] = { ...currentItem, added: false, total: 0 }; // Make a copy and update the 'added' property
       } else {
         // Use the calculateTotal function to calculate the total for the current item
         currentItem.total = calculateTotal(
@@ -390,6 +461,7 @@ function AddItemSecondary() {
     setSelectedPriceLevel(selectedValue);
     dispatch(setPriceLevel(selectedValue));
     handleTotalChangeWithPriceLevel(selectedValue);
+    // addSelectedRate(selectedValue);
   };
 
   /////////////////////////// calculateHeight ///////////////////////////////////
@@ -411,10 +483,10 @@ function AddItemSecondary() {
   }, []);
 
   const continueHandler = () => {
-    if (selectedPriceLevel === "") {
-      toast.error("Select a price level ");
-    }
-    console.log(location.state);
+    // if (selectedPriceLevel === "") {
+    //   toast.error("Select a price level ");
+    // }
+    // console.log(location.state);
     if (location?.state?.from === "editInvoice") {
       navigate(`/sUsers/editInvoice/${location.state.id}`);
     } else {
@@ -438,15 +510,15 @@ function AddItemSecondary() {
     const adjustedStyle = {
       ...style,
       marginTop: "16px",
-      height: "190px",
+      height: "160px",
     };
     return (
       <div
         style={adjustedStyle}
-        key={index}
+        key={el._id}
         className="flex flex-col bg-white shadow-lg  "
       >
-        <div className=" p-4 py-2 pb-2  mt-4 flex justify-between items-center  rounded-sm cursor-pointer  ">
+        <div className=" p-4 py-2 pb-2 mt-7   flex justify-between items-center  rounded-sm cursor-pointer  ">
           <div className="flex items-start gap-3 md:gap-4  ">
             <div className="w-10 mt-1  uppercase h-10 rounded-lg bg-violet-200 flex items-center justify-center font-semibold text-gray-400">
               {el?.product_name?.slice(0, 1)}
@@ -454,21 +526,15 @@ function AddItemSecondary() {
             <div className="flex flex-col font-bold text-sm md:text-sm  gap-1 leading-normal">
               <p>{el.product_name}</p>
               <div className="flex gap-1 items-center">
-                <p>
-                  ₹{" "}
-                  {
-                    el?.Priceleveles.find(
-                      (item) => item.pricelevel === selectedPriceLevel
-                    )?.pricerate
-                  }{" "}
-                  /
-                </p>{" "}
-                <span className="text-[10px] mt-1">{el.unit}</span>
+                <p>₹ {el.selectedPriceRate}</p>{" "}
+                <span className="text-[10px] mt-1">/ {el?.unit}</span>
               </div>
+
               <div className="flex">
                 <p className="text-red-500">STOCK : </p>
                 <span>{el.balance_stock}</span>
               </div>
+
               <div>
                 <span>Total : ₹ </span>
                 <span>{el.total || 0}</span>
@@ -476,9 +542,11 @@ function AddItemSecondary() {
             </div>
           </div>
 
-          <div>
-            <div
-              className="px-4 py-2 rounded-md border-violet-500 font-bold border-2 text-violet-500 text-xs"
+          <div className="flex flex-col items-center justify-center gap-4">
+            <button
+              className={`${
+                el?.added ? "ml-11  py-1 px-2" : " px-4 py-2"
+              }  rounded-md border-violet-500 font-bold border-2 text-violet-500 text-xs  `}
               onClick={() => {
                 el.added
                   ? navigate(`/sUsers/editItem/${el._id}`)
@@ -486,84 +554,68 @@ function AddItemSecondary() {
               }}
             >
               {el.added ? "Edit" : "Add"}
-            </div>
-          </div>
-        </div>
+            </button>
 
-        <div className="flex items-center justify-between px-4">
-          {el.added ? (
-            <div className="flex items-center gap-x-1.5 pl-11">
-              <button
-                onClick={() => handleDecrement(el._id)}
-                type="button"
-                className="size-6 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-md border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none"
-                data-hs-input-number-decrement
-              >
-                <svg
-                  className="flex-shrink-0 size-3.5"
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M5 12h14" />
-                </svg>
-              </button>
-              <input
-                className="p-0 w-12 bg-transparent border-0 text-gray-800 text-center focus:ring-0 "
-                type="text"
-                disabled
-                value={el.count ? el.count : 0} // Display the count from the state
-                data-hs-input-number-input
-              />
-              <button
-                onClick={() => {
-                  handleIncrement(el._id);
-                }}
-                type="button"
-                className="size-6 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-md border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none "
-                data-hs-input-number-increment
-              >
-                <svg
-                  className="flex-shrink-0 size-3.5"
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M5 12h14" />
-                  <path d="M12 5v14" />
-                </svg>
-              </button>
+            <div className="flex items-center justify-end px-4  ">
+              {el.added ? (
+                <div className="flex items-center gap-x-1.5 pl-11">
+                  <button
+                    onClick={() => handleDecrement(el._id)}
+                    type="button"
+                    className="size-6 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-md border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none"
+                    data-hs-input-number-decrement
+                  >
+                    <svg
+                      className="flex-shrink-0 size-3.5"
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M5 12h14" />
+                    </svg>
+                  </button>
+                  <input
+                    className="p-0 w-12 bg-transparent border-0 text-gray-800 text-center focus:ring-0 "
+                    type="text"
+                    disabled
+                    value={el.count ? el.count : 0} // Display the count from the state
+                    data-hs-input-number-input
+                  />
+                  <button
+                    onClick={() => {
+                      handleIncrement(el._id);
+                    }}
+                    type="button"
+                    className="size-6 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-md border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none "
+                    data-hs-input-number-increment
+                  >
+                    <svg
+                      className="flex-shrink-0 size-3.5"
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M5 12h14" />
+                      <path d="M12 5v14" />
+                    </svg>
+                  </button>
+                </div>
+              ) : (
+                <div></div>
+              )}
             </div>
-          ) : (
-            <div></div>
-          )}
-
-          <div className="relative text-sm text-gray-500 ">
-            <input
-              type="number"
-              // value={
-              //   el?.Priceleveles.find(
-              //     (item) => item.pricelevel === selectedPriceLevel
-              //   )?.pricerate
-              // }
-              placeholder="Rate"
-              className="border-none pl-6  input-number text-center shadow-lg w-[100px]  focus:ring-0   "
-            />
-            <span className= "  absolute left-3 top-1/2 transform -translate-y-1/2">
-              ₹
-            </span>{" "}
           </div>
         </div>
       </div>
@@ -604,11 +656,6 @@ function AddItemSecondary() {
                       No price level added
                     </option>
                   )}
-                  {/* {priceLevels.map((el, index) => (
-                    <option key={index} value={el?.pricelevel}>
-                      {el?.pricelevel}
-                    </option>
-                  ))} */}
                 </select>
               </div>
               <MdOutlineQrCodeScanner className="text-white text-lg  cursor-pointer md:text-xl" />
@@ -636,36 +683,6 @@ function AddItemSecondary() {
                     />
                   </svg>
                 </div>
-                {/* <div className="relative">
-                  <input
-                    onChange={(e) => {
-                      setSearch(e.target.value);
-                    }}
-                    value={search}
-                    type="search"
-                    id="default-search"
-                    className="block w-full p-2 text-sm text-gray-900 border  rounded-lg border-gray-300  bg-gray-50 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Search party by Item name..."
-                    required
-                  />
-                  <button
-                    type="submit"
-                    className="text-white absolute end-[10px] top-1/2 transform -translate-y-1/2 bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-md px-2 py-1"
-                  >
-                    <IoIosSearch />
-                  </button>
-                  <button
-                    onClick={() => {
-                      setSearch("");
-                    }}
-                    type="submit"
-                    className={`${
-                      search.length > 0 ? "block" : "hidden"
-                    }  absolute end-[40px] top-1/2 transform -translate-y-1/2 text-gray-500  text-md px-2 py-1`}
-                  >
-                    <IoIosCloseCircleOutline />
-                  </button>
-                </div> */}
 
                 <SearchBar onType={searchData} />
               </div>
@@ -752,7 +769,7 @@ function AddItemSecondary() {
             className=""
             height={listHeight} // Specify the height of your list
             itemCount={filteredItems.length} // Specify the total number of items
-            itemSize={210} // Specify the height of each item
+            itemSize={175} // Specify the height of each item
             width="100%" // Specify the width of your list
             initialScrollOffset={scrollPosition}
             onScroll={({ scrollOffset }) => {

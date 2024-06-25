@@ -9,7 +9,9 @@ import api from "../../api/api";
 import { toast } from "react-toastify";
 import dayjs from "dayjs";
 import { useLocation, useNavigate } from "react-router-dom";
-import SalesProductDetails from "../../components/common/SalesProductDetails";
+import SalesOrderProductDetails from "../../components/common/SalesOrderProductDetails";
+import SwallFireForPdf from "../../components/common/SwallFireForPdf";
+
 
 function InvoiceDetails() {
   const [data, setData] = useState("");
@@ -81,15 +83,8 @@ function InvoiceDetails() {
           <div className="hidden md:block z-10">
             <div className="  flex justify-center p-4 gap-12 text-lg text-violet-500 mr-4">
              
-              <Link to={`/pUsers/shareInvoice/${data._id}`}>
-              <div
-                // onClick={chooseFormat}
-                className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer"
-              >
-                <IoMdShareAlt />
-                <p className="text-black font-bold text-sm">Share</p>
-              </div>
-              </Link>
+            <SwallFireForPdf data={data} tab={"salesOrder"} user={"primary"} />
+
               <div className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer">
                 <MdTextsms className="text-green-500" />
                 <p className="text-black font-bold text-sm">Sms</p>
@@ -119,7 +114,7 @@ function InvoiceDetails() {
         {/* party details */}
         {/* party Total Mount */}
 
-        <SalesProductDetails
+        <SalesOrderProductDetails
           data={data}
           items={data?.items}
           priceLevel={data?.priceLevel}

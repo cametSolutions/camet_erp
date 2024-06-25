@@ -9,8 +9,8 @@ import dayjs from "dayjs";
 import { FaEdit } from "react-icons/fa";
 import SidebarSec from "../../components/secUsers/SidebarSec";
 import { useLocation, useNavigate } from "react-router-dom";
-import Swal from "sweetalert2";
-import SalesProductDetails from "../../components/common/SalesProductDetails";
+import SwallFireForPdf from "../../components/common/SwallFireForPdf";
+import SalesOrderProductDetails from "../../components/common/SalesOrderProductDetails";
 
 function InvoiceDetailsSecondary() {
   const [data, setData] = useState("");
@@ -43,7 +43,6 @@ function InvoiceDetailsSecondary() {
       navigate("/sUsers/transaction");
     }
   };
-
   return (
     <div className="flex relative">
       <div>
@@ -99,16 +98,9 @@ function InvoiceDetailsSecondary() {
                 <FaEdit className="text-blue-500" />
                 <p className="text-black font-bold text-sm">Edit</p>
               </div>
-              <Link to={`/sUsers/shareInvoice/${data._id}`}>
-                <div
-                  // onClick={chooseFormat}
+          
+              <SwallFireForPdf data={data} tab={"salesOrder"} user={"secondary"} />
 
-                  className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer"
-                >
-                  <IoMdShareAlt />
-                  <p className="text-black font-bold text-sm">Share</p>
-                </div>
-              </Link>
               <div className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer">
                 <MdTextsms className="text-green-500" />
                 <p className="text-black font-bold text-sm">Sms</p>
@@ -123,15 +115,6 @@ function InvoiceDetailsSecondary() {
         <div className="bg-white mt-2 p-4  ">
           <div className="flex justify-between text-sm mb-2">
             <h2 className="font-semibold text-sm  text-gray-500">PARTY NAME</h2>
-            {/* <div className="flex items-center gap-2 text-green-500">
-              <p className="text-black">
-                Current Balance :{" "}
-                <span className="text-green-500 font-bold">
-                ₹{(data.totalBillAmount - data.enteredAmount).toFixed(2)}
-                </span>
-              </p>
-              <FaArrowDown />
-            </div> */}
           </div>
           <hr />
           <hr />
@@ -146,29 +129,19 @@ function InvoiceDetailsSecondary() {
           </div>
         </div>
 
-        <SalesProductDetails
+        <SalesOrderProductDetails
           data={data}
           items={data?.items}
           priceLevel={data?.priceLevel}
           additionalCharges={data?.additionalCharges}
+          tab={"salesOrder"}
         />
 
         {/* payment method */}
 
         <div className=" block md:hidden ">
           <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 flex justify-center p-4 gap-12 text-lg text-violet-500  ">
-            {/* <div
-              onClick={() => handleCancel(data?._id)}
-              disabled={data?.isCancelled}
-              className={`flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110 cursor-pointer ${
-                data?.isCancelled ? "opacity-50 pointer-events-none" : ""
-              }`}
-            >
-              <FcCancel className="text-violet-500" />
-              <p className="text-black font-bold text-sm">
-                {data?.isCancelled ? "Cancelled" : "Cancel"}
-              </p>
-            </div> */}
+       
             <div
               onClick={() => navigate(`/sUsers/editInvoice/${data._id}`)}
               className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer"

@@ -10,8 +10,7 @@ function SalesThreeInchPdf({ contentToPrint, data, org, subTotal, bank ,additina
       ?.reduce((acc, curr) => (acc += curr), 0)
       .toFixed(2);
 
-    console.log(individualTax);
-    console.log(totalTax);
+
     return totalTax;
   };
   const calculateAddCess = () => {
@@ -119,14 +118,13 @@ function SalesThreeInchPdf({ contentToPrint, data, org, subTotal, bank ,additina
           <tbody>
             {data?.items?.length > 0 &&
               data?.items.map((el, index) => {
-                const discountAmount =
-                  el?.discountPercentage > 0
-                    ? (el.Priceleveles.find(
-                        (item) => item?.pricelevel === data?.priceLevel
-                      )?.pricerate *
-                        el.discountPercentage) /
-                      100
-                    : el?.discount;
+
+                const total=el?.total ||0;
+                console.log("total",total)
+                const count=el?.count || 0;
+                console.log("count",count);
+                const rate=(total/count).toFixed(2) || 0;
+               
                 return (
                   <tr
                     key={index}
@@ -143,9 +141,7 @@ function SalesThreeInchPdf({ contentToPrint, data, org, subTotal, bank ,additina
                     </td>
                     <td className="py-2 text-black font-bold  text-right pr-2 text-nowrap">
                       ₹{" "}
-                      {el.Priceleveles.find(
-                        (item) => item?.pricelevel === data?.priceLevel
-                      )?.pricerate || 0}
+                      {rate|| 0}
                     </td>
 
                     <td className="py-4 text-black  font-bold text-right">
