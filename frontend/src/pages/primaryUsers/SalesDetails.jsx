@@ -74,7 +74,7 @@ function SalesDetails() {
 
       <div className="bg-[rgb(244,246,254)] flex-1 h-screen overflow-y-scroll relative  pb-[70px] md:pb-0 ">
         {/* headinh section  */}
-        <div className="flex bg-[#012a4a] items-center justify-between  sticky top-0">
+        <div className="flex bg-[#012a4a] items-center justify-between  sticky top-0 z-10">
           <div className="flex items-center gap-3  text-white text-md p-4 ">
             <MdOutlineArrowBack
               onClick={backHandler}
@@ -100,28 +100,9 @@ function SalesDetails() {
             </p>
           </div>
 
-          <div className="hidden md:block">
+          <div className="hidden md:block z-0">
             <div className="  flex justify-center p-4 gap-12 text-lg text-violet-500 mr-4">
-              {/* <div
-                onClick={() => handleCancel(data._id)}
-                disabled={data?.isCancelled}
-                className={`flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110 cursor-pointer ${
-                  data.isCancelled ? "opacity-50 pointer-events-none" : ""
-                }`}
-              >
-                <FcCancel className="text-violet-500" />
-                <p className="text-black font-bold text-sm">
-                  {data?.isCancelled ? "Cancelled" : "Cancel"}
-                </p>
-              </div> */}
-              {/* <div
-                onClick={() => navigate(`/pUsers/editInvoice/${data._id}`)}
-                className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer"
-              >
-                <FaEdit className="text-blue-500" />
-                <p className="text-black font-bold text-sm">Edit</p>
-              </div> */}
-              {/* <Link to={`/pUsers/shareSales/${data._id}`}> */}
+       
               <div
                 onClick={chooseFormat}
                 className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer"

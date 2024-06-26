@@ -1937,12 +1937,11 @@ export const createSale = async (req, res) => {
                 });
               }
             }
-          }
-           else if (godown.godown_id && godown.batch) {
-
+          } else if (godown.godown_id && godown.batch) {
             console.log("have batch and godown_id");
             const godownIndex = product.GodownList.findIndex(
-              (g) => g.batch === godown.batch && g.godown_id === godown.godown_id
+              (g) =>
+                g.batch === godown.batch && g.godown_id === godown.godown_id
             );
 
             console.log("gggg", product.GodownList[godownIndex]);
@@ -1973,8 +1972,7 @@ export const createSale = async (req, res) => {
                 });
               }
             }
-          }
-          else if (godown.godown_id && !godown?.batch) {
+          } else if (godown.godown_id && !godown?.batch) {
             // Case: Godown only
             const godownIndex = product.GodownList.findIndex(
               (g) => g.godown_id === godown.godown_id
@@ -2985,7 +2983,7 @@ export const editSale = async (req, res) => {
       salesNumber,
     } = req.body;
 
-    let productUpdates=[]
+    let productUpdates = [];
 
     // Fetch the existing sale
 
@@ -2998,7 +2996,6 @@ export const editSale = async (req, res) => {
     }
 
     const oldBillValue = existingSale.finalAmount;
-
 
     //////////////////////////// To handle the deletion and updating of products   starts //////////////////////////////////////////
 
@@ -3069,7 +3066,7 @@ export const editSale = async (req, res) => {
 
         let deletedGodowns = [];
         for (const godown of existingGodownList) {
-          if (godown.batch) {
+          if (godown.batch && !godown.godown_id) {
             // Check if the object with the same batch exists in updatedGodownList
             const foundInUpdated = updatedGodowns.some(
               (updated) => updated.batch === godown.batch
@@ -3085,6 +3082,16 @@ export const editSale = async (req, res) => {
             if (!foundInUpdated) {
               deletedGodowns.push(godown); // Add to deletedGodown if not found
             }
+          } else if (godown.batch && godown.godown_id) {
+            // Check if the object with the same batch and godown_id exists in updatedGodowns
+            const foundInUpdated = updatedGodowns.some(
+              (updated) =>
+                updated.batch === godown.batch &&
+                updated.godown_id === godown.godown_id
+            );
+            if (!foundInUpdated) {
+              deletedGodowns.push(godown); // Add to deletedGodown if not found
+            }
           }
         }
 
@@ -3093,7 +3100,7 @@ export const editSale = async (req, res) => {
         let newGodowns = [];
 
         for (const updatedGodown of updatedGodowns) {
-          if (updatedGodown.batch) {
+          if (updatedGodown.batch && !updatedGodown.godown_id) {
             // Check if the object with the same batch exists in existingGodownList
             const foundInExisting = existingGodownList.some(
               (existing) => existing.batch === updatedGodown.batch
@@ -3109,112 +3116,168 @@ export const editSale = async (req, res) => {
             if (!foundInExisting) {
               newGodowns.push(updatedGodown); // Add to newGodowns if not found
             }
+          } else if (updatedGodown.batch && updatedGodown.godown_id) {
+            // Check if the object with the same batch and godown_id exists in existingGodownList
+            const foundInExisting = existingGodownList.some(
+              (existing) =>
+                existing.batch === updatedGodown.batch &&
+                existing.godown_id === updatedGodown.godown_id
+            );
+            if (!foundInExisting) {
+              newGodowns.push(updatedGodown); // Add to newGodowns if not found
+            }
           }
-        }
 
-        // console.log("newGodowns", newGodowns);
-        if (newGodowns.length > 0) {
-          await addingNewBatchesOrGodownsInSale(newGodowns, product);
-        }
+          // console.log("newGodowns", newGodowns);
+          if (newGodowns.length > 0) {
+            await addingNewBatchesOrGodownsInSale(newGodowns, product);
+          }
 
-        // Process deleted godowns or batches
+          // Process deleted godowns or batches
 
-        if (deletedGodowns.length > 0) {
-          await deleteGodownsOrBatchesInSaleEdit(deletedGodowns, product);
-        }
-        ///////////////////////////////for handle deletion of godown or batch start///////////////////////////////
+          if (deletedGodowns.length > 0) {
+            await deleteGodownsOrBatchesInSaleEdit(deletedGodowns, product);
+          }
+          ///////////////////////////////for handle deletion of godown or batch start///////////////////////////////
 
-        /////////////////////////////////////for  updating balance stock of godowns  ////////////////////////////////////
+          /////////////////////////////////////for  updating balance stock of godowns  ////////////////////////////////////
 
-        for (const godown of item.GodownList) {
-          if (godown.batch) {
-            const existingGodown = existingItem?.GodownList.find(
-              (sGodown) => sGodown.batch === godown.batch
-            );
-            const godownCountDiff =
-              parseFloat(godown.count) - (existingGodown?.count || 0) || 0;
-
-            // console.log("godownCountDiff", godownCountDiff);
-
-            let productItem = productModel.findOne({
-              _id: product._id,
-            });
-
-            const balance_stock =
-              product.GodownList.find(
+          for (const godown of item.GodownList) {
+            if (godown.batch && !godown.godown_id) {
+              const existingGodown = existingItem?.GodownList.find(
                 (sGodown) => sGodown.batch === godown.batch
-              ).balance_stock || 0;
-            // console.log("balance_stock", balance_stock);
-
-            let updatedStock;
-
-            if (godownCountDiff > 0) {
-              const absoluteCount = Math.abs(godownCountDiff);
-              // console.log("greater than 0");
-
-              updatedStock = balance_stock - absoluteCount;
-            } else {
-              const absoluteCount = Math.abs(godownCountDiff);
-
-              updatedStock = balance_stock + absoluteCount;
-            }
-
-            // console.log("updatedStock", updatedStock);
-
-            if (godownCountDiff !== 0) {
-              await productModel.updateOne(
-                {
-                  _id: product._id,
-                  "GodownList.batch": godown.batch || null,
-                },
-                { $set: { "GodownList.$.balance_stock": updatedStock } }
               );
-            }
-          } else if (godown.godown_id) {
-            const existingGodown = existingItem?.GodownList.find(
-              (sGodown) => sGodown.godown_id === godown.godown_id
-            );
+              const godownCountDiff =
+                parseFloat(godown.count) - (existingGodown?.count || 0) || 0;
 
-            const godownCountDiff =
-              parseFloat(godown.count) - (existingGodown?.count || 0) || 0;
+              // console.log("godownCountDiff", godownCountDiff);
 
-            // console.log("godownCountDiff", godownCountDiff);
+              let productItem = productModel.findOne({
+                _id: product._id,
+              });
 
-            let productItem = productModel.findOne({
-              _id: product._id,
-            });
+              const balance_stock =
+                product.GodownList.find(
+                  (sGodown) => sGodown.batch === godown.batch
+                ).balance_stock || 0;
+              // console.log("balance_stock", balance_stock);
 
-            const balance_stock =
-              product.GodownList.find(
+              let updatedStock;
+
+              if (godownCountDiff > 0) {
+                const absoluteCount = Math.abs(godownCountDiff);
+                // console.log("greater than 0");
+
+                updatedStock = balance_stock - absoluteCount;
+              } else {
+                const absoluteCount = Math.abs(godownCountDiff);
+
+                updatedStock = balance_stock + absoluteCount;
+              }
+
+              // console.log("updatedStock", updatedStock);
+
+              if (godownCountDiff !== 0) {
+                await productModel.updateOne(
+                  {
+                    _id: product._id,
+                    "GodownList.batch": godown.batch || null,
+                  },
+                  { $set: { "GodownList.$.balance_stock": updatedStock } }
+                );
+              }
+            } else if (godown.godown_id && !godown.batch) {
+              const existingGodown = existingItem?.GodownList.find(
                 (sGodown) => sGodown.godown_id === godown.godown_id
-              ).balance_stock || 0;
-
-            // console.log("balance_stock", balance_stock);
-            let updatedStock;
-
-            if (godownCountDiff > 0) {
-              const absoluteCount = Math.abs(godownCountDiff);
-              // console.log("greater than 0");
-
-              updatedStock = balance_stock - absoluteCount;
-              // console.log("updatedStock", updatedStock);
-            } else {
-              const absoluteCount = Math.abs(godownCountDiff);
-
-              // console.log("less than 0");
-
-              updatedStock = balance_stock + absoluteCount;
-              // console.log("updatedStock", updatedStock);
-            }
-
-            if (godownCountDiff !== 0) {
-              await productModel.updateOne(
-                {
-                  _id: product._id,
-                  "GodownList.godown_id": godown.godown_id || null,
-                },
-                { $set: { "GodownList.$.balance_stock": updatedStock } }
               );
+
+              const godownCountDiff =
+                parseFloat(godown.count) - (existingGodown?.count || 0) || 0;
+
+              // console.log("godownCountDiff", godownCountDiff);
+
+              let productItem = productModel.findOne({
+                _id: product._id,
+              });
+
+              const balance_stock =
+                product.GodownList.find(
+                  (sGodown) => sGodown.godown_id === godown.godown_id
+                ).balance_stock || 0;
+
+              // console.log("balance_stock", balance_stock);
+              let updatedStock;
+
+              if (godownCountDiff > 0) {
+                const absoluteCount = Math.abs(godownCountDiff);
+                // console.log("greater than 0");
+
+                updatedStock = balance_stock - absoluteCount;
+                // console.log("updatedStock", updatedStock);
+              } else {
+                const absoluteCount = Math.abs(godownCountDiff);
+
+                // console.log("less than 0");
+
+                updatedStock = balance_stock + absoluteCount;
+                // console.log("updatedStock", updatedStock);
+              }
+
+              if (godownCountDiff !== 0) {
+                await productModel.updateOne(
+                  {
+                    _id: product._id,
+                    "GodownList.godown_id": godown.godown_id || null,
+                  },
+                  { $set: { "GodownList.$.balance_stock": updatedStock } }
+                );
+              }
+            } else if (godown.godown_id && godown.batch) {
+              const existingGodown = existingItem?.GodownList.find(
+                (sGodown) =>
+                  sGodown.godown_id === godown.godown_id &&
+                  sGodown.batch === godown.batch
+              );
+              const godownCountDiff =
+                parseFloat(godown.count) - (existingGodown?.count || 0) || 0;
+              // console.log("godownCountDiff", godownCountDiff);
+              let productItem = productModel.findOne({
+                _id: product._id,
+              });
+              const balance_stock =
+                product.GodownList.find(
+                  (sGodown) =>
+                    sGodown.godown_id === godown.godown_id &&
+                    sGodown.batch === godown.batch
+                ).balance_stock || 0;
+
+              // console.log("balance_stock", balance_stock);
+
+              let updatedStock;
+
+              if (godownCountDiff > 0) {
+                const absoluteCount = Math.abs(godownCountDiff);
+                // console.log("greater than 0");
+                updatedStock = balance_stock - absoluteCount;
+                // console.log("updatedStock", updatedStock);
+              } else {
+                const absoluteCount = Math.abs(godownCountDiff);
+
+                // console.log("less than 0");
+                updatedStock = balance_stock + absoluteCount;
+                // console.log("updatedStock", updatedStock);
+              }
+
+              if (godownCountDiff !== 0) {
+                await productModel.updateOne(
+                  {
+                    _id: product._id,
+                    "GodownList.godown_id": godown.godown_id || null,
+                    "GodownList.batch": godown.batch || null,
+                  },
+                  { $set: { "GodownList.$.balance_stock": updatedStock } }
+                );
+              }
             }
           }
         }
@@ -3291,8 +3354,6 @@ export const editSale = async (req, res) => {
     const result = await existingSale.save();
 
     ///////////////////////////////////// for reflecting the rate change in outstanding  ////////////////////////////////////
-
-
 
     const newBillValue = Number(lastAmount);
     // const oldBillValue = Number(existingSale.finalAmount);

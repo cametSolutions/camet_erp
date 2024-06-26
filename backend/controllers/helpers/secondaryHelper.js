@@ -2,7 +2,6 @@ import productModel from "../../models/productModel.js";
 import { truncateToNDecimals } from "./helper.js";
 // import TallyData from "../models/TallyData.js";
 
-
 /////////////////////// for deleting whole items in edit sale ////////////////////////////////////
 
 export const deleteItemsInSaleEdit = async (deletedItems) => {
@@ -36,7 +35,7 @@ export const deleteItemsInSaleEdit = async (deletedItems) => {
 
       if (deletedItem.hasGodownOrBatch) {
         for (const godown of deletedItem.GodownList) {
-          if (godown.batch) {
+          if (godown.batch && !godown.godown_id) {
             const godownFound = product.GodownList.find(
               (sGodown) => sGodown.batch === godown.batch
             );
@@ -56,7 +55,7 @@ export const deleteItemsInSaleEdit = async (deletedItems) => {
               console.error("Godown not found for batch:", godown.batch);
               // Handle not found error
             }
-          } else if (godown.godown_id) {
+          } else if (godown.godown_id && !godown.batch) {
             const godownFound = product.GodownList.find(
               (sGodown) => sGodown.godown_id === godown.godown_id
             );
@@ -69,6 +68,32 @@ export const deleteItemsInSaleEdit = async (deletedItems) => {
                 {
                   _id: product._id,
                   "GodownList.godown_id": godown.godown_id || null,
+                },
+                { $set: { "GodownList.$.balance_stock": updatedStock } }
+              );
+            } else {
+              console.error(
+                "Godown not found for godown_id:",
+                godown.godown_id
+              );
+              // Handle not found error
+            }
+          } else if (godown.godown_id && godown.batch) {
+            const godownFound = product.GodownList.find(
+              (sGodown) =>
+                sGodown.godown_id === godown.godown_id &&
+                sGodown.batch === godown.batch
+            );
+            if (godownFound) {
+              const balance_stock = Number(godownFound.balance_stock || 0);
+              const updatedStock =
+                Number(balance_stock || 0) + Number(godown.count || 0);
+
+              await productModel.updateOne(
+                {
+                  _id: product._id,
+                  "GodownList.godown_id": godown.godown_id || null,
+                  "GodownList.batch": godown.batch || null,
                 },
                 { $set: { "GodownList.$.balance_stock": updatedStock } }
               );
@@ -147,7 +172,7 @@ export const deleteGodownsOrBatchesInSaleEdit = async (
 
       // console.log("itemUpdatedStock",itemUpdatedStock);
 
-      if (deletedGodown.batch) {
+      if (deletedGodown.batch && !deletedGodown.godown_id) {
         const godown = product.GodownList.find(
           (sGodown) => sGodown.batch === deletedGodown.batch
         );
@@ -173,7 +198,7 @@ export const deleteGodownsOrBatchesInSaleEdit = async (
           console.error("Godown not found for batch:", deletedGodown.batch);
           // Handle not found error
         }
-      } else if (deletedGodown.godown_id) {
+      } else if (deletedGodown.godown_id && !deletedGodown.batch) {
         const godown = product.GodownList.find(
           (sGodown) => sGodown.godown_id === deletedGodown.godown_id
         );
@@ -188,6 +213,37 @@ export const deleteGodownsOrBatchesInSaleEdit = async (
             $set: { "GodownList.$.balance_stock": updatedStock },
           };
 
+          try {
+            const result = await productModel.updateOne(filter, update);
+            // console.log("result", result);
+          } catch (updateError) {
+            console.error("Error updating product:", updateError);
+            // Handle update error
+          }
+        } else {
+          console.error(
+            "Godown not found for godown_id:",
+            deletedGodown.godown_id
+          );
+          // Handle not found error
+        }
+      } else if (deletedGodown.godown_id && deletedGodown.batch) {
+        const godown = product.GodownList.find(
+          (sGodown) =>
+            sGodown.godown_id === deletedGodown.godown_id &&
+            sGodown.batch === deletedGodown.batch
+        );
+        if (godown) {
+          const balance_stock = godown.balance_stock || 0;
+          const updatedStock = balance_stock + deletedGodown.count;
+          const filter = {
+            _id: product._id,
+            "GodownList.godown_id": deletedGodown.godown_id,
+            "GodownList.batch": deletedGodown.batch,
+          };
+          const update = {
+            $set: { "GodownList.$.balance_stock": updatedStock },
+          };
           try {
             const result = await productModel.updateOne(filter, update);
             // console.log("result", result);
@@ -278,7 +334,7 @@ export const addingAnItemInSale = async (items) => {
 
       if (item.hasGodownOrBatch) {
         for (const godown of item.GodownList) {
-          if (godown.batch) {
+          if (godown.batch && !godown.godown_id) {
             const godownIndex = product.GodownList.findIndex(
               (g) => g.batch === godown.batch
             );
@@ -301,7 +357,7 @@ export const addingAnItemInSale = async (items) => {
                 },
               });
             }
-          } else if (godown.godown_id) {
+          } else if (godown.godown_id && !godown.batch) {
             const godownIndex = product.GodownList.findIndex(
               (g) => g.godown_id === godown.godown_id
             );
@@ -317,6 +373,31 @@ export const addingAnItemInSale = async (items) => {
                   filter: {
                     _id: product._id,
                     "GodownList.godown_id": godown.godown_id,
+                  },
+                  update: {
+                    $set: { "GodownList.$.balance_stock": newGodownStock },
+                  },
+                },
+              });
+            }
+          } else if (godown.godown_id && godown.batch) {
+            const godownIndex = product.GodownList.findIndex(
+              (g) =>
+                g.godown_id === godown.godown_id && g.batch === godown.batch
+            );
+            if (godownIndex !== -1 && godown.count && godown.count > 0) {
+              const currentGodownStock =
+                product.GodownList[godownIndex].balance_stock || 0;
+              const newGodownStock = truncateToNDecimals(
+                currentGodownStock - godown.count,
+                3
+              );
+              godownUpdates.push({
+                updateOne: {
+                  filter: {
+                    _id: product._id,
+                    "GodownList.godown_id": godown.godown_id,
+                    "GodownList.batch": godown.batch,
                   },
                   update: {
                     $set: { "GodownList.$.balance_stock": newGodownStock },

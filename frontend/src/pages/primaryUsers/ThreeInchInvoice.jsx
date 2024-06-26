@@ -7,8 +7,8 @@ import { toast } from "react-toastify";
 import { MdPrint } from "react-icons/md";
 import numberToWords from "number-to-words";
 import { Link } from "react-router-dom";
-import SidebarSec from "../../components/secUsers/SidebarSec";
 import SalesThreeInchPdf from "../../components/common/SalesThreeInchPdf";
+import Sidebar from "../../components/homePage/Sidebar";
 
 function ThreeInchInvoice() {
   const [data, setData] = useState([]);
@@ -27,7 +27,7 @@ function ThreeInchInvoice() {
     const getTransactionDetails = async () => {
       try {
         // Fetch invoice details
-        const res = await api.get(`/api/sUsers/getInvoiceDetails/${id}`, {
+        const res = await api.get(`/api/pUsers/getInvoiceDetails/${id}`, {
           withCredentials: true,
         });
 
@@ -37,7 +37,7 @@ function ThreeInchInvoice() {
 
         // Fetch company details using the cmp_id
         const companyDetails = await api.get(
-          `/api/sUsers/getSingleOrganization/${cmpId}`,
+          `/api/pUsers/getSingleOrganization/${cmpId}`,
           {
             withCredentials: true,
           }
@@ -106,8 +106,6 @@ function ThreeInchInvoice() {
     }
   }, [data]);
 
-
-
   const handlePrint = useReactToPrint({
     documentTitle: `Sale Order ${data?.salesNumber}`,
     onBeforePrint: () => console.log("before printing..."),
@@ -118,12 +116,12 @@ function ThreeInchInvoice() {
   return (
     <div className="flex">
       <div className="">
-        <SidebarSec />
+        <Sidebar />
       </div>
       <div className="flex-1 h-screen overflow-y-scroll">
         <div className="bg-[#012a4a]   sticky top-0 p-3 px-5 text-white text-lg font-bold flex items-center gap-3  shadow-lg justify-between">
           <div className="flex gap-2 ">
-            <Link to={`/sUsers/InvoiceDetails/${id}`}>
+            <Link to={`/pUsers/InvoiceDetails/${id}`}>
               <IoIosArrowRoundBack className="text-3xl" />
             </Link>
             <p>Share Your Order</p>
@@ -152,4 +150,4 @@ function ThreeInchInvoice() {
   );
 }
 
-export default ThreeInchInvoice ;
+export default ThreeInchInvoice;
