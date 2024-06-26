@@ -161,7 +161,7 @@
       "Primary_user_id": "65bcc9346b50fc180e8e804d",
       "GodownList": [
         {
-          "balance_stock": -12,
+          "balance_stock": 100,
           "godown": "Main Location",
           "godown_id": "ID:62",
           "batch": "110",
@@ -169,15 +169,15 @@
           "expdt": "2 Days"
         },
         {
-          "balance_stock": 1002,
+          "balance_stock": 200,
           "godown": "Dummy Location",
           "godown_id": "ID:007",
-          "batch": "W67",
+          "batch": "110",
           "mfgdt": "1-Apr-18",
           "expdt": "2 Days"
         },
         {
-          "balance_stock": 25,
+          "balance_stock":300 ,
           "godown": "Main Location",
           "godown_id": "ID:62",
           "batch": "A-1",
@@ -185,7 +185,7 @@
           "expdt": "3 Months"
         },
         {
-          "balance_stock": 25,
+          "balance_stock": 400,
           "godown": "Main Location",
           "godown_id": "ID:62",
           "batch": "A-2",
@@ -193,7 +193,7 @@
           "expdt": "3 Months"
         },
         {
-          "balance_stock": 20,
+          "balance_stock": 500,
           "godown": "Main Location",
           "godown_id": "ID:62",
           "batch": "CH - 01",
@@ -201,7 +201,7 @@
           "expdt": "1 Years"
         },
         {
-          "balance_stock": 15,
+          "balance_stock": 600,
           "godown": "Main Location",
           "godown_id": "ID:62",
           "batch": "Ch-04",
@@ -436,7 +436,7 @@
       "sub_category": "null",
       "unit": "Nos",
       "alt_unit": "null",
-      "alt_unit": "null",
+  
       "unit_conversion": 0,
       "alt_unit_conversion": 1,
       "hsn_code": "12121",
@@ -488,7 +488,17 @@
         {
           "alt_unit": "null",
           "pricelevel": "P1",
-          "pricerate": 42
+          "pricerate": 100
+        },
+        {
+          "alt_unit": "null",
+          "pricelevel": "P2",
+          "pricerate": 200
+        },
+        {
+          "alt_unit": "null",
+          "pricelevel": "P3",
+          "pricerate": 300
         }
       ]
     }
