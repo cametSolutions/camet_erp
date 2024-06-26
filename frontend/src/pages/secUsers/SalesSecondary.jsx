@@ -29,6 +29,7 @@ import {
 import { IoIosArrowRoundBack } from "react-icons/io";
 import { Button, Label, Modal, TextInput } from "flowbite-react";
 import SidebarSec from "../../components/secUsers/SidebarSec";
+import { PiAddressBookFill } from "react-icons/pi";
 
 function SalesSecondary() {
   const [showSidebar, setShowSidebar] = useState(false);
@@ -516,13 +517,23 @@ function SalesSecondary() {
               <p className="font-bold uppercase text-xs">Party name</p>
               <span className="text-red-500 mt-[-4px] font-bold">*</span>
             </div>
+
             {Object.keys(party).length !== 0 && (
-              <div>
-                <Link to={"/sUsers/searchPartySales"}>
-                  <p className="text-violet-500 p-1 px-3  text-xs border border-1 border-gray-300 rounded-2xl cursor-pointer">
-                    Change
-                  </p>
-                </Link>
+              <div className="flex  items-center">
+                <div>
+                  <Link to={"/sUsers/searchPartySales"}>
+                    <p className="text-violet-500 p-1 px-3  text-xs border border-1 border-gray-300 rounded-2xl cursor-pointer">
+                      Change
+                    </p>
+                  </Link>
+                </div>
+                <div>
+                  <Link to={"/sUsers/searchPartySales"}>
+                    <p className="text-violet-500 p-1 px-3  text-2xl  border-gray-300 rounded-2xl cursor-pointer">
+                    <PiAddressBookFill />
+                    </p>
+                  </Link>
+                </div>
               </div>
             )}
           </div>
