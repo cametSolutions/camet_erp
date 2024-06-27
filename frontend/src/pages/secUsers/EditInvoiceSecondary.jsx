@@ -36,6 +36,8 @@ import { IoIosArrowRoundBack } from "react-icons/io";
 import { Button, Label, Modal, TextInput } from "flowbite-react";
 import { useParams } from "react-router-dom";
 import SidebarSec from "../../components/secUsers/SidebarSec";
+import { PiAddressBookFill } from "react-icons/pi";
+
 
 function EditInvoiceSecondary() {
   const cmp_id = useSelector(
@@ -522,7 +524,7 @@ console.log(InvoiceIdForEdit);
               <span className="text-red-500 mt-[-4px] font-bold">*</span>
             </div>
             {Object.keys(party).length !== 0 && (
-              <div>
+              <div className="flex items-center">
                 {/* <Link to={"/sUsers/searchParty"}> */}
                 <p
                   onClick={() => {
@@ -534,6 +536,12 @@ console.log(InvoiceIdForEdit);
                 >
                   Change
                 </p>
+
+                <Link to={`/sUsers/billToSalesOrder/${party._id}`}>
+                  <p className="text-violet-500 p-1 px-3  text-2xl  border-gray-300 rounded-2xl cursor-pointer">
+                    <PiAddressBookFill />
+                  </p>
+                </Link>
                 {/* </Link> */}
               </div>
             )}

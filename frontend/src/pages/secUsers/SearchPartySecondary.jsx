@@ -2,7 +2,6 @@
 import { useState, useEffect } from "react";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import { useNavigate } from "react-router-dom";
-import { IoIosSearch } from "react-icons/io";
 import { IoArrowDown } from "react-icons/io5";
 import { HashLoader } from "react-spinners";
 import { useSelector } from "react-redux";
@@ -11,7 +10,6 @@ import { useDispatch } from "react-redux";
 import { addParty } from "../../../slices/invoiceSecondary";
 import SidebarSec from "../../components/secUsers/SidebarSec";
 import { useLocation } from "react-router-dom";
-import { IoIosCloseCircleOutline } from "react-icons/io";
 import SearchBar from "../../components/common/SearchBar";
 
 

@@ -21,6 +21,7 @@ export const salesSecondarySlice = createSlice({
   reducers: {
     addParty: (state, action) => {
       state.party = action.payload;
+      state.newBillToShipTo = {}
     },
     removeParty: (state) => {
       state.party = {};
@@ -209,6 +210,10 @@ export const salesSecondarySlice = createSlice({
         }
       }
     },
+
+    addNewAddress: (state, action) => {
+      state.party.newBillToShipTo = action.payload;
+    },
   },
 });
 
@@ -244,7 +249,10 @@ export const {
   setBatchHeight,
   removeGodownOrBatch,
   addAllFieldsFromEditSalesPage,
-  addPriceRate
+  addPriceRate,
+  addNewAddress
+  
+
 } = salesSecondarySlice.actions;
 
 export default salesSecondarySlice.reducer;

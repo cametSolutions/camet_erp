@@ -35,6 +35,7 @@ import { MdPlaylistAdd } from "react-icons/md";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import { Button, Label, Modal, TextInput } from "flowbite-react";
 import SidebarSec from "../../components/secUsers/SidebarSec";
+import { PiAddressBookFill } from "react-icons/pi";
 
 function EditSale() {
   ////////////////////////////////state//////////////////////////////////////////////////////
@@ -237,8 +238,6 @@ function EditSale() {
 
     fetchSingleOrganization();
   }, [refreshCmp, orgId]);
-
-
 
   useEffect(() => {
     const fetchGodownname = async () => {
@@ -574,12 +573,21 @@ function EditSale() {
               <span className="text-red-500 mt-[-4px] font-bold">*</span>
             </div>
             {Object.keys(party).length !== 0 && (
-              <div>
-                <Link to={"/sUsers/searchPartySales"}>
-                  <p className="text-violet-500 p-1 px-3  text-xs border border-1 border-gray-300 rounded-2xl cursor-pointer">
-                    Change
-                  </p>
-                </Link>
+              <div className="flex items-center ">
+                <div>
+                  <Link to={"/sUsers/searchPartySales"}>
+                    <p className="text-violet-500 p-1 px-3  text-xs border border-1 border-gray-300 rounded-2xl cursor-pointer">
+                      Change
+                    </p>
+                  </Link>
+                </div>
+                <div>
+                  <Link to={`/sUsers/billToSales/${party._id}`}>
+                    <p className="text-violet-500 p-1 px-3  text-2xl  border-gray-300 rounded-2xl cursor-pointer">
+                      <PiAddressBookFill />
+                    </p>
+                  </Link>
+                </div>
               </div>
             )}
           </div>
@@ -669,7 +677,7 @@ function EditSale() {
                     <div className="flex-1">
                       <div className="flex justify-between font-bold text-xs gap-10">
                         <p>{el.product_name}</p>
-                       
+
                         <p className="text-nowrap">
                           ₹{" "}
                           {el?.GodownList.reduce((acc, curr) => {

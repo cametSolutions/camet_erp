@@ -528,7 +528,7 @@ function SalesSecondary() {
                   </Link>
                 </div>
                 <div>
-                  <Link to={"/sUsers/searchPartySales"}>
+                  <Link to={`/sUsers/billToSales/${party._id}`}>
                     <p className="text-violet-500 p-1 px-3  text-2xl  border-gray-300 rounded-2xl cursor-pointer">
                     <PiAddressBookFill />
                     </p>

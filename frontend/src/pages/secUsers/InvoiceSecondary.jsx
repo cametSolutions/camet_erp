@@ -28,6 +28,7 @@ import {
 } from "../../../slices/invoiceSecondary";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import SidebarSec from "../../components/secUsers/SidebarSec";
+import { PiAddressBookFill } from "react-icons/pi";
 
 function InvoiceSecondary() {
   const cmp_id = useSelector(
@@ -422,10 +423,16 @@ function InvoiceSecondary() {
               <span className="text-red-500 mt-[-4px] font-bold">*</span>
             </div>
             {Object.keys(party).length !== 0 && (
-              <div>
+              <div className="flex items-center">
                 <Link to={"/sUsers/searchParty"}>
                   <p className="text-violet-500 p-1 px-3  text-xs border border-1 border-gray-300 rounded-2xl cursor-pointer">
                     Change
+                  </p>
+                </Link>
+
+                <Link to={`/sUsers/billToSalesOrder/${party._id}`}>
+                  <p className="text-violet-500 p-1 px-3  text-2xl  border-gray-300 rounded-2xl cursor-pointer">
+                    <PiAddressBookFill />
                   </p>
                 </Link>
               </div>

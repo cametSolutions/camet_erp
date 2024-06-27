@@ -10,6 +10,51 @@ function SaleOrderPdf({
   subTotal,
   additinalCharge,
 }) {
+
+
+  const party = data?.party;
+  console.log(party);
+
+  let address;
+
+  if (
+    party?.newBillToShipTo &&
+    Object.keys(party?.newBillToShipTo).length > 0
+  ) {
+    address = party?.newBillToShipTo;
+  } else {
+    if (party) {
+      const {
+        partyName,
+        mobileNumber,
+        emailID,
+        gstNo,
+        state_reference,
+        billingAddress,
+        shippingAddress,
+        pincode,
+      } = party;
+
+      address = {
+        billToName: partyName,
+        billToAddress: billingAddress,
+        billToPin: pincode,
+        billToGst: gstNo,
+        billToMobile: mobileNumber,
+        billToEmail: emailID,
+        billToSupply: state_reference,
+        shipToName: partyName,
+        shipToAddress: shippingAddress,
+        shipToPin: pincode,
+        shipToGst: gstNo,
+        shipToMobile: mobileNumber,
+        shipToEmail: emailID,
+        shipToSupply: state_reference,
+      };
+    }
+  }
+
+
   return (
     <div>
       <div
@@ -80,34 +125,32 @@ function SaleOrderPdf({
           </div>
         </div>
 
-        <div className="flex md:gap-[130px] justify-between  text-[9px] md:text-xs mt-4 px-5 border-t-2 pt-4">
-          <div className=" border-gray-300 pb-4 mb-2">
-            <h2 className=" text-xs font-bold mb-1">Bill To:</h2>
-            <div className="text-gray-700 ">{data?.party?.partyName}</div>
-            {data?.party?.billingAddress?.split(/[\n,]+/).map((line, index) => (
-              <div key={index} className="text-gray-700 ">
-                {line.trim()}
+         <div className="flex md:gap-[130px] justify-between text-[9px] md:text-xs mt-4 px-5 border-t-2 pt-4">
+              <div className="border-gray-300 pb-4 mb-2">
+                <h2 className="text-xs font-bold mb-1">Bill To:</h2>
+                <div className="text-gray-700 ">{address?.billToName}</div>
+                {address?.billToAddress?.split(/[\n,]+/).map((line, index) => (
+                  <div key={index} className="text-gray-700">
+                    {line.trim()}
+                  </div>
+                ))}
+                <div className="text-gray-700">{address?.billToEmail}</div>
+                <div className="text-gray-700">{address?.billToMobile}</div>
               </div>
-            ))}{" "}
-            {/* <div className="text-gray-700 mb-0.5">Anytown, USA 12345</div> */}
-            <div className="text-gray-700   ">{data?.party?.emailID}</div>
-            <div className="text-gray-700">{data?.party?.mobileNumber}</div>
-          </div>
-          <div className=" border-gray-300 pb-4 mb-0.5">
-            <h2 className="text-xs font-bold mb-1">Ship To:</h2>
-            <div className="text-gray-700 ">{data?.party?.partyName}</div>
-            {data?.party?.shippingAddress
-              ?.split(/[\n,]+/)
-              .map((line, index) => (
-                <div key={index} className="text-gray-700 ">
-                  {line.trim()}
-                </div>
-              ))}{" "}
-            {/* <div className="text-gray-700 mb-0.5">Anytown, USA 12345</div> */}
-            <div className="text-gray-700 ">{data?.party?.emailID}</div>
-            <div className="text-gray-700">{data?.party?.mobileNumber}</div>
-          </div>
-        </div>
+              <div className="border-gray-300 pb-4 mb-0.5">
+                <h2 className="text-xs font-bold mb-1">Ship To:</h2>
+                <div className="text-gray-700">{address?.shipToName}</div>
+                {address?.shipToAddress
+                  ?.split(/[\n,]+/)
+                  .map((line, index) => (
+                    <div key={index} className="text-gray-700">
+                      {line.trim()}
+                    </div>
+                  ))}
+                <div className="text-gray-700">{address?.shipToEmail}</div>
+                <div className="text-gray-700">{address?.shipToMobile}</div>
+              </div>
+            </div>
 
         {/* <hr className="border-t-2 border-black mb-0.5" /> */}
         <table className="w-full text-left  bg-slate-200">

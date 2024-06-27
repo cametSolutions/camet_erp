@@ -130,6 +130,9 @@ export const invoiceSliceSecondary = createSlice({
     saveId: (state, action) => {
       state.id = action.payload;
     },
+    addNewAddress: (state, action) => {
+      state.party.newBillToShipTo = action.payload;
+    },
   },
 });
 
@@ -160,6 +163,7 @@ export const {
   saveId,
   addAllProducts,
   addPriceRate,
+  addNewAddress
 } = invoiceSliceSecondary.actions;
 
 export default invoiceSliceSecondary.reducer;
