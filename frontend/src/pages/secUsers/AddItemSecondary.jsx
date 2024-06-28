@@ -40,8 +40,6 @@ function AddItemSecondary() {
   const [loader, setLoader] = useState(false);
   const [listHeight, setListHeight] = useState(0);
   const [scrollPosition, setScrollPosition] = useState(0);
-  const [selectedPriceRates, setSelectedPriceRates] = useState({});
-  console.log("selectedPriceRates", selectedPriceRates);
 
   ///////////////////////////cpm_id///////////////////////////////////
 
@@ -112,9 +110,16 @@ function AddItemSecondary() {
           console.log(updatedItems);
 
           setItem(updatedItems);
+          if(updatedItems.length > 0){
+            fetchFilters()
+          }
+          setRefresh(!refresh);
         } else {
           console.log(productData);
           setItem(productData);
+          if(productData.length > 0){
+            fetchFilters()
+          }
         }
 
         if (brandFromRedux) {
@@ -133,7 +138,66 @@ function AddItemSecondary() {
       }
     };
     fetchProducts();
+    
   }, [cpm_id]);
+
+
+    //////////////////////////////fetchFilters////////////////////////////////
+
+    // useEffect(() => {
+      const fetchFilters = async () => {
+        try {
+          let res;
+          if (type == "self") {
+            res = await api.get(`/api/sUsers/fetchFilters/${orgId}`, {
+              withCredentials: true,
+            });
+          } else {
+            res = await api.get(`/api/sUsers/fetchAdditionalDetails/${orgId}`, {
+              withCredentials: true,
+            });
+          }
+  
+          if (type === "self") {
+            const { brands, categories, subcategories, priceLevels } =
+              res.data.data;
+  
+            console.log(priceLevels);
+            setBrands(brands);
+            setCategories(categories);
+            setSubCategories(subcategories);
+            setPriceLevels(priceLevels);
+            if (priceLevelFromRedux == "") {
+              console.log("haii");
+              const defaultPriceLevel = priceLevels[0];
+              // const defaultPriceLevel = ""
+              setSelectedPriceLevel(defaultPriceLevel);
+              dispatch(setPriceLevel(defaultPriceLevel));
+              // addSelectedRate(defaultPriceLevel);
+            }
+          } else {
+            const { priceLevels, brands, categories, subcategories } = res.data;
+  
+            setBrands(brands);
+            setCategories(categories);
+            setSubCategories(subcategories);
+  
+            setPriceLevels(priceLevels);
+            if (priceLevelFromRedux == "") {
+              console.log("haii");
+              const defaultPriceLevel = priceLevels[0];
+              // const defaultPriceLevel = ""
+              setSelectedPriceLevel(defaultPriceLevel);
+              dispatch(setPriceLevel(defaultPriceLevel));
+              // addSelectedRate(defaultPriceLevel);
+            }
+          }
+        } catch (error) {
+          console.log(error);
+        }
+      };
+      // fetchFilters();
+    // }, [orgId, type]);
 
   ///////////////////////////setSelectedPriceLevel fom redux///////////////////////////////////
 
@@ -152,6 +216,7 @@ function AddItemSecondary() {
     (state) => state.secSelectedOrganization.secSelectedOrg.type
   );
 
+  console.log(type);
   /////////////////////////scroll////////////////////////////
 
   useEffect(() => {
@@ -161,61 +226,7 @@ function AddItemSecondary() {
     }
   }, []);
 
-  //////////////////////////////fetchFilters////////////////////////////////
 
-  useEffect(() => {
-    const fetchFilters = async () => {
-      try {
-        let res;
-        if (type == "self") {
-          res = await api.get(`/api/sUsers/fetchFilters/${orgId}`, {
-            withCredentials: true,
-          });
-        } else {
-          res = await api.get(`/api/sUsers/fetchAdditionalDetails/${orgId}`, {
-            withCredentials: true,
-          });
-        }
-
-        if (type === "self") {
-          const { brands, categories, subcategories, priceLevels } =
-            res.data.data;
-
-          console.log(priceLevels);
-          setBrands(brands);
-          setCategories(categories);
-          setSubCategories(subcategories);
-          setPriceLevels(priceLevels);
-          if (priceLevelFromRedux == "") {
-            console.log("haii");
-            const defaultPriceLevel = priceLevels[0];
-            // const defaultPriceLevel = ""
-            setSelectedPriceLevel(defaultPriceLevel);
-            // dispatch(setPriceLevel(defaultPriceLevel));
-          }
-        } else {
-          const { priceLevels, brands, categories, subcategories } = res.data;
-
-          setBrands(brands);
-          setCategories(categories);
-          setSubCategories(subcategories);
-
-          setPriceLevels(priceLevels);
-          if (priceLevelFromRedux == "") {
-            console.log("haii");
-            const defaultPriceLevel = priceLevels[0];
-            // const defaultPriceLevel = ""
-            setSelectedPriceLevel(defaultPriceLevel);
-            dispatch(setPriceLevel(defaultPriceLevel));
-            addSelectedRate(defaultPriceLevel);
-          }
-        }
-      } catch (error) {
-        console.log(error);
-      }
-    };
-    fetchFilters();
-  }, [orgId, type]);
 
   const searchData = (data) => {
     setSearch(data);
@@ -244,20 +255,6 @@ function AddItemSecondary() {
       return brandMatch && categoryMatch && subCategoryMatch && searchMatch;
     });
   };
-
-  useEffect(() => {
-    const updatedSelectedPriceRate = item.map((item) => ({
-      _id: item._id,
-      pricerate:
-        item.Priceleveles.find(
-          (level) => level.pricelevel === selectedPriceLevel
-        )?.pricerate || 0, // Default to 0 if pricerate is not found
-    }));
-
-    setSelectedPriceRates(updatedSelectedPriceRate);
-
-    console.log(updatedSelectedPriceRate);
-  }, [selectedPriceLevel]);
 
   ///////////////////////////filter items call ///////////////////////////////////
 
@@ -312,7 +309,6 @@ function AddItemSecondary() {
       priceRate = item.selectedPriceRate || 0;
     }
 
-
     let subtotal = priceRate * item?.count;
     let discountedSubtotal = subtotal;
 
@@ -329,6 +325,48 @@ function AddItemSecondary() {
       (discountedSubtotal * (item.newGst || item.igst || 0)) / 100;
     return discountedSubtotal + gstAmount;
   };
+
+  //////////////////////////////////////////addSelectedRate initially not in redux/////////////////////////////////////////////
+
+  const addSelectedRate = (pricelevel) => {
+    console.log(pricelevel);
+    console.log("haii");
+    console.log(item);
+    // if (item?.length > 0) {
+      console.log("haii");
+
+      const updatedItems = filteredItems.map((item) => {
+        // console.log(item);
+        const priceRate =
+          item?.Priceleveles?.find((item) => item.pricelevel === pricelevel)
+            ?.pricerate || 0;
+
+        const reduxItem = itemsFromRedux.find((p) => p._id === item._id);
+        const reduxRate = reduxItem?.selectedPriceRate || null;
+
+        return {
+          ...item,
+          selectedPriceRate: reduxRate ?? priceRate,
+        };
+      });
+
+      console.log(updatedItems.map((item) => item.selectedPriceRate));
+
+      setItem(updatedItems);
+    // }
+  };
+
+  useEffect(() => {
+
+    console.log(selectedPriceLevel);
+    if (selectedPriceLevel) {
+      console.log(selectedPriceLevel);
+
+      addSelectedRate(selectedPriceLevel);
+    }
+  }, [selectedPriceLevel,refresh]);
+
+  console.log(item.map((item) => item.selectedPriceRate));
 
   ///////////////////////////handleTotalChangeWithPriceLevel and add price rate ///////////////////////////////////
 
@@ -362,34 +400,6 @@ function AddItemSecondary() {
   };
 
   console.log(item);
-
-  //////////////////////////////////////////addSelectedRate initially not in redux/////////////////////////////////////////////
-
-  const addSelectedRate = (pricelevel) => {
-    if (item?.length > 0) {
-      const updatedItems = filteredItems.map((item) => {
-        const priceRate =
-          item?.Priceleveles?.find((item) => item.pricelevel === pricelevel)
-            ?.pricerate || 0;
-
-        const reduxItem = itemsFromRedux.find((p) => p._id === item._id);
-        const reduxRate = reduxItem?.selectedPriceRate || null;
-
-        return {
-          ...item,
-          selectedPriceRate: reduxRate ?? priceRate,
-        };
-      });
-
-      setItem(updatedItems);
-    }
-  };
-
-  useEffect(() => {
-    addSelectedRate(selectedPriceLevel);
-  }, [selectedPriceLevel]);
-
-  //////////////////////////////////////////handlepriceRateChange/////////////////////////////////////////////
 
   ///////////////////////////handleIncrement///////////////////////////////////
 
@@ -502,6 +512,8 @@ function AddItemSecondary() {
     //   navigate("/sUsers/invoice");
     // }
   };
+
+  console.log(item);
 
   ///////////////////////////react window ///////////////////////////////////
 
@@ -763,7 +775,7 @@ function AddItemSecondary() {
             ref={listRef}
             style={{
               scrollbarWidth: "thin",
-              scrollbarColor: "transparent transparent",
+              // scrollbarColor: "transparent transparent",
               marginTop: "6px",
             }}
             className=""

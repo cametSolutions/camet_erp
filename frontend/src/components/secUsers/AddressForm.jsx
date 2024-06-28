@@ -181,7 +181,7 @@ function AddressForm({ getFormData, newBillToShipTo, partyDetails }) {
   return (
     <div className="px-3">
       <div className="flex h-screen bg-gray-100">
-        <div className="m-auto">
+        <div className="m-auto ">
           <div className="mt-5 bg-white rounded-t-lg shadow">
             <div className="flex">
               <div className="flex-1 py-5 pl-5 overflow-hidden">
@@ -247,7 +247,7 @@ function AddressForm({ getFormData, newBillToShipTo, partyDetails }) {
                 className="text-black placeholder-gray-600 w-full px-4 py-5 mt-2 text-base transition duration-500 ease-in-out transform border-transparent rounded-lg bg-gray-200 focus:border-blueGray-500 focus:bg-white dark:focus:bg-gray-800 focus:outline-none focus:shadow-outline focus:ring-2 ring-offset-current ring-offset-2 ring-gray-400"
               />
               <div className="flex">
-                <div className="flex-grow w-1/4 pr-2">
+                <div className="flex-grow w-2/4 pr-2">
                   <label
                     htmlFor="billToPin"
                     className="block text-sm font-medium text-gray-700 mt-4"
@@ -283,7 +283,7 @@ function AddressForm({ getFormData, newBillToShipTo, partyDetails }) {
                 </div>
               </div>
               <div className="flex">
-                <div className="flex-grow w-1/4 pr-2">
+                <div className="flex-grow w-2/4 pr-2">
                   <label
                     htmlFor="billToMobile"
                     className="block text-sm font-medium text-gray-700 mt-4"
@@ -399,7 +399,7 @@ function AddressForm({ getFormData, newBillToShipTo, partyDetails }) {
                 className="text-black placeholder-gray-600 w-full px-4 py-5 mt-2 text-base transition duration-500 ease-in-out transform border-transparent rounded-lg bg-gray-200 focus:border-blueGray-500 focus:bg-white dark:focus:bg-gray-800 focus:outline-none focus:shadow-outline focus:ring-2 ring-offset-current ring-offset-2 ring-gray-400"
               />
               <div className="flex">
-                <div className="flex-grow w-1/4 pr-2">
+                <div className="flex-grow w-2/4 pr-2">
                   <label
                     htmlFor="shipToPin"
                     className="block text-sm font-medium text-gray-700 mt-4"
@@ -434,7 +434,7 @@ function AddressForm({ getFormData, newBillToShipTo, partyDetails }) {
                 </div>
               </div>
               <div className="flex">
-                <div className="flex-grow w-1/4 pr-2">
+                <div className="flex-grow w-2/4 pr-2">
                   <label
                     htmlFor="shipToMobile"
                     className="block text-sm font-medium text-gray-700 mt-4"
