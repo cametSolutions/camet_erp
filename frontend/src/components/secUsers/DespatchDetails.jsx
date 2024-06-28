@@ -1,6 +1,6 @@
 /* eslint-disable react/no-unknown-property */
-import { MdKeyboardArrowDown, MdKeyboardArrowUp } from "react-icons/md";
 import { useState } from "react";
+import { IoMdAdd } from "react-icons/io";
 
 function DespatchDetails() {
   const [open, setOpen] = useState(false);
@@ -25,19 +25,35 @@ function DespatchDetails() {
 
   return (
     <div>
-      <div
+      {/* <div
         onClick={() => setOpen(!open)}
         className="bg-white mt-2 flex gap-2 items-center p-4 cursor-pointer"
       >
         <p className="text-sm font-bold">Despatch Details</p>
         {open ? <MdKeyboardArrowUp /> : <MdKeyboardArrowDown />}
+      </div> */}
+      <div className="p-4 bg-white mt-3 shadow-lg">
+        <div className="flex items-center mb-2 gap-2 ">
+          <p className="font-bold uppercase text-xs">Details</p>
+          <span className="text-red-500 font-bold"> *</span>
+        </div>
+
+        <div className=" py-6 border  bg-white h-10 rounded-md flex  cursor-pointer justify-center   items-center font-medium text-violet-500 ">
+          <div
+            onClick={() => setOpen(!open)}
+            className="flex justify-center gap-2   hover_scale items-center  "
+          >
+            <IoMdAdd className="text-2xl" />
+            <p className="text-md font-semibold">Despatch Details</p>
+          </div>
+        </div>
       </div>
 
       {open && (
-        <div className="py-3 px-3 min-h-screen">
-          <div className="bg-white p-10 md:w-3/4 lg:w-1/2 mx-auto">
+        <div className="py-3 px-3 ">
+          <div className="bg-white p-10  mx-auto">
             <form action="">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-0 text-xs">
                 <div className="flex flex-col mb-5">
                   <label
                     htmlFor="challanNo"
@@ -52,7 +68,11 @@ function DespatchDetails() {
                     placeholder="Challan No"
                     value={formValues.challanNo}
                     onChange={handleInputChange}
-                    className="py-2 border-b-2 border-gray-400 focus:border-green-400 text-gray-600 placeholder-gray-400 outline-none"
+                    className=" input-field py-2 border-b-2 border-x-0 border-t-0 border-gray-400 outline-none shadow-none text-gray-600 placeholder-gray-400"
+                    style={{
+                      boxShadow: "none",
+                      borderColor: "#b6b6b6",
+                    }}
                   />
                 </div>
 
@@ -70,7 +90,11 @@ function DespatchDetails() {
                     placeholder="Container No"
                     value={formValues.containerNo}
                     onChange={handleInputChange}
-                    className="py-2 border-b-2 border-gray-400 focus:border-green-400 text-gray-600 placeholder-gray-400 outline-none"
+                    style={{
+                      boxShadow: "none",
+                      borderColor: "#b6b6b6",
+                    }}
+                    className=" input-field  py-2 border-b-2 border-x-0 border-t-0 border-gray-400  text-gray-600 placeholder-gray-400 outline-none"
                   />
                 </div>
 
@@ -88,11 +112,15 @@ function DespatchDetails() {
                     placeholder="Despatch Through"
                     value={formValues.despatchThrough}
                     onChange={handleInputChange}
-                    className="py-2 border-b-2 border-gray-400 focus:border-green-400 text-gray-600 placeholder-gray-400 outline-none"
+                    style={{
+                      boxShadow: "none",
+                      borderColor: "#b6b6b6",
+                    }}
+                    className=" input-field  py-2 border-b-2 border-x-0 border-t-0 border-gray-400  text-gray-600 placeholder-gray-400 outline-none"
                   />
                 </div>
 
-                <div className="flex flex-col mb-5">
+                <div className="flex flex-col mb-5 col">
                   <label
                     htmlFor="destination"
                     className="mb-2 font-bold text-gray-600"
@@ -106,7 +134,11 @@ function DespatchDetails() {
                     placeholder="Destination"
                     value={formValues.destination}
                     onChange={handleInputChange}
-                    className="py-2 border-b-2 border-gray-400 focus:border-green-400 text-gray-600 placeholder-gray-400 outline-none"
+                    style={{
+                      boxShadow: "none",
+                      borderColor: "#b6b6b6",
+                    }}
+                    className=" input-field  py-2 border-b-2 border-x-0 border-t-0 border-gray-400  text-gray-600 placeholder-gray-400 outline-none"
                   />
                 </div>
 
@@ -124,7 +156,11 @@ function DespatchDetails() {
                     placeholder="Vehicle No"
                     value={formValues.vehicleNo}
                     onChange={handleInputChange}
-                    className="py-2 border-b-2 border-gray-400 focus:border-green-400 text-gray-600 placeholder-gray-400 outline-none"
+                    style={{
+                      boxShadow: "none",
+                      borderColor: "#b6b6b6",
+                    }}
+                    className=" input-field  py-2 border-b-2 border-x-0 border-t-0 border-gray-400  text-gray-600 placeholder-gray-400 outline-none"
                   />
                 </div>
 
@@ -142,14 +178,18 @@ function DespatchDetails() {
                     placeholder="Order No"
                     value={formValues.orderNo}
                     onChange={handleInputChange}
-                    className="py-2 border-b-2 border-gray-400 focus:border-green-400 text-gray-600 placeholder-gray-400 outline-none"
+                    style={{
+                      boxShadow: "none",
+                      borderColor: "#b6b6b6",
+                    }}
+                    className="input-field py-2 border-b-2 border-x-0 border-t-0 border-gray-400  text-gray-600 placeholder-gray-400 outline-none"
                   />
                 </div>
 
-                <div className="flex flex-col mb-5">
+                <div className="flex flex-col col md:col-span-2 mb-5">
                   <label
                     htmlFor="termsOfPay"
-                    className="mb-2 font-bold text-gray-600"
+                    className=" input-field mb-2 font-bold text-gray-600"
                   >
                     Terms of Pay
                   </label>
@@ -160,11 +200,15 @@ function DespatchDetails() {
                     placeholder="Terms of Pay"
                     value={formValues.termsOfPay}
                     onChange={handleInputChange}
-                    className="py-2 border-b-2 border-gray-400 focus:border-green-400 text-gray-600 placeholder-gray-400 outline-none"
+                    style={{
+                      boxShadow: "none",
+                      borderColor: "#b6b6b6",
+                    }}
+                    className=" input-field py-2 border-b-2 border-x-0 border-t-0 border-gray-400  text-gray-600 placeholder-gray-400 outline-none"
                   />
                 </div>
 
-                <div className="flex flex-col mb-5">
+                <div className="flex flex-col md:col-span-2 mb-5">
                   <label
                     htmlFor="termsOfDelivery"
                     className="mb-2 font-bold text-gray-600"
@@ -178,7 +222,11 @@ function DespatchDetails() {
                     placeholder="Terms of Delivery"
                     value={formValues.termsOfDelivery}
                     onChange={handleInputChange}
-                    className="py-2 border-b-2 border-gray-400 focus:border-green-400 text-gray-600 placeholder-gray-400 outline-none"
+                    style={{
+                      boxShadow: "none",
+                      borderColor: "#b6b6b6",
+                    }}
+                    className=" input-field py-2 border-b-2 border-x-0 border-t-0 border-gray-400  text-gray-600 placeholder-gray-400 outline-none"
                   />
                 </div>
               </div>
