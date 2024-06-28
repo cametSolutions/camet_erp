@@ -503,6 +503,8 @@ function AddItemSecondary() {
     // }
   };
 
+  console.log(item);
+
   ///////////////////////////react window ///////////////////////////////////
 
   const Row = ({ index, style }) => {
