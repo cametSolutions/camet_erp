@@ -181,7 +181,7 @@ function AddressForm({ getFormData, newBillToShipTo, partyDetails }) {
   return (
     <div className="px-3">
       <div className="flex h-screen bg-gray-100">
-        <div className="m-auto">
+        <div className="m-auto ">
           <div className="mt-5 bg-white rounded-t-lg shadow">
             <div className="flex">
               <div className="flex-1 py-5 pl-5 overflow-hidden">

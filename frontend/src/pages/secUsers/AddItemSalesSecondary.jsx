@@ -44,7 +44,7 @@ function AddItemSalesSecondary() {
   const [loader, setLoader] = useState(false);
   const [listHeight, setListHeight] = useState(0);
   const [scrollPosition, setScrollPosition] = useState(0);
-  const [refresh, setRefresh] = useState(false)
+  const [refresh, setRefresh] = useState(false);
 
   const [godownname, setGodownname] = useState("");
   const [heights, setHeights] = useState({});
@@ -168,7 +168,6 @@ function AddItemSalesSecondary() {
                   GodownList: updatedGodownList,
                 };
 
-                // console.log(updaTedReduxItem);
 
                 return updaTedReduxItem;
               } else {
@@ -192,8 +191,14 @@ function AddItemSalesSecondary() {
             }
           });
           setItem(updatedItems);
+          if (updatedItems.length > 0) {
+            fetchFilters()
+          }
         } else {
           setItem(productData);
+          if (productData.length > 0) {
+            fetchFilters()
+          }
         }
 
         if (brandFromRedux) {
@@ -252,7 +257,7 @@ function AddItemSalesSecondary() {
 
   //////////////////////////////fetchFilters////////////////////////////////
 
-  useEffect(() => {
+  // useEffect(() => {
     const fetchFilters = async () => {
       try {
         let res;
@@ -295,8 +300,8 @@ function AddItemSalesSecondary() {
         console.log(error);
       }
     };
-    fetchFilters();
-  }, [orgId, type]);
+    // fetchFilters();
+  // }, [orgId, type]);
 
   ///////////////////////////filter items///////////////////////////////////
 
@@ -337,7 +342,6 @@ function AddItemSalesSecondary() {
   //////////////////////////////////////////addSelectedRate initially not in redux/////////////////////////////////////////////
 
   const addSelectedRate = (pricelevel) => {
-    console.log(pricelevel);
     if (item?.length > 0) {
       const updatedItems = filteredItems.map((item) => {
         const priceRate =
@@ -345,10 +349,8 @@ function AddItemSalesSecondary() {
             (priceLevelItem) => priceLevelItem.pricelevel === pricelevel
           )?.pricerate || 0;
 
-        console.log(priceRate);
 
         const reduxItem = itemsFromRedux.find((p) => p._id === item._id);
-        console.log(reduxItem);
         // const reduxRate = reduxItem?.selectedPriceRate || null;
 
         // if (item?.hasGodownOrBatch) {
@@ -356,7 +358,6 @@ function AddItemSalesSecondary() {
           (godownOrBatch, index) => {
             const reduxRateOfGodown =
               reduxItem?.GodownList?.[index]?.selectedPriceRate;
-            console.log(reduxRateOfGodown);
             return {
               ...godownOrBatch,
               selectedPriceRate:
@@ -365,23 +366,22 @@ function AddItemSalesSecondary() {
           }
         );
 
-
         return {
           ...item,
           GodownList: updatedGodownList,
         };
-  
       });
-
 
       setItem(updatedItems);
     }
   };
 
+
   useEffect(() => {
     addSelectedRate(selectedPriceLevel);
-  }, [selectedPriceLevel,refresh]);
+  }, [selectedPriceLevel, refresh]);
 
+  
 
   ///////////////////////////calculateTotal///////////////////////////////////
 
@@ -661,9 +661,7 @@ function AddItemSalesSecondary() {
           item?.Priceleveles.find(
             (priceLevelItem) => priceLevelItem.pricelevel === pricelevel
           )?.pricerate || 0;
-        console.log(individualTotals);
-        console.log(total);
-        console.log(newPriceRate);
+      
         // if (item?.hasGodownOrBatch) {
         const updatedGodownList = item?.GodownList.map((godown, idx) => {
           return {
@@ -675,7 +673,6 @@ function AddItemSalesSecondary() {
           };
         });
 
-        console.log(updatedGodownList);
         dispatch(
           updateItem({ ...item, GodownList: updatedGodownList, total: total })
         );
@@ -684,13 +681,10 @@ function AddItemSalesSecondary() {
           GodownList: updatedGodownList,
           total: total,
         };
-
-
       }
       return item;
     });
 
-    console.log(updatedItems);
 
     setItem(updatedItems);
   };
@@ -698,7 +692,6 @@ function AddItemSalesSecondary() {
   ///////////////////////////handlePriceLevelChange///////////////////////////////////
 
   const handlePriceLevelChange = (e) => {
-    console.log("haii");
     const selectedValue = e.target.value;
     setSelectedPriceLevel(selectedValue);
     dispatch(setPriceLevel(selectedValue));
@@ -753,7 +746,6 @@ function AddItemSalesSecondary() {
       }
 
       // Log the updated items
-      console.log(updatedItems);
 
       return updatedItems;
     });
