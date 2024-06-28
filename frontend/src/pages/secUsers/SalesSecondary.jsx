@@ -30,6 +30,7 @@ import { IoIosArrowRoundBack } from "react-icons/io";
 import { Button, Label, Modal, TextInput } from "flowbite-react";
 import SidebarSec from "../../components/secUsers/SidebarSec";
 import { PiAddressBookFill } from "react-icons/pi";
+import DespatchDetails from "../../components/secUsers/DespatchDetails";
 
 function SalesSecondary() {
   const [showSidebar, setShowSidebar] = useState(false);
@@ -565,7 +566,14 @@ function SalesSecondary() {
           )}
         </div>
 
+
+
+        {/* Despatch details */}
+
+        <DespatchDetails/>
+
         {/* adding items */}
+
 
         {items.length == 0 && (
           <div className="bg-white p-4 pb-6  drop-shadow-lg mt-2 md:mt-3">

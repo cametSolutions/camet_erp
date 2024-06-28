@@ -12,19 +12,36 @@ function SalesPdf({
   additinalCharge,
 }) {
   const calculateDiscountAmntOFNoBAtch = (el) => {
-    const selectedPriceRate = el?.GodownList[0]?.selectedPriceRate || 0;
-    const count = el?.count || 0;
-    const total = el?.total || 0;
+    if (!el || !el.GodownList || !el.GodownList[0]) {
+        console.error("Invalid input data");
+        return 0;
+    }
+
+    console.log("Calculating discount amount for item:", el);
+
+    const selectedPriceRate = parseFloat(el.GodownList[0].selectedPriceRate) || 0;
+    const count = parseFloat(el.count) || 0;
+    const total = parseFloat(el.total) || 0;
     const igst = parseFloat(el.igst) || 0;
 
+    console.log("selectedPriceRate:", selectedPriceRate);
+    console.log("count:", count);
+    console.log("total:", total);
+    console.log("igst:", igst);
+
     const priceRateCount = selectedPriceRate * count;
+    console.log("priceRateCount:", priceRateCount);
 
-    const igstFactor = (total - (total * 100) / (igst + 100)).toFixed(2);
+    const igstFactor = Number((total - (total * 100) / (igst + 100)).toFixed(2));
+    console.log("igstFactor:", igstFactor);
 
-    const finalValue = priceRateCount + Number(igstFactor) - total;
+    const finalValue = parseFloat((priceRateCount + igstFactor - total).toFixed(2));
+    console.log("finalValue:", finalValue);
 
     return finalValue;
-  };
+};
+
+  
 
   const party = data?.party;
   console.log(party);
