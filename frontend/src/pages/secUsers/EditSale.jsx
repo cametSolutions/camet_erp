@@ -18,10 +18,8 @@ import {
   setItem,
   setSelectedPriceLevel,
   setAdditionalCharges,
-  setSelectedPriceLevel as setSelectedPriceLevelInRedux,
-  //   setFinalAmount,
-  //   setOrderNumber,
   setFinalAmount,
+  addDespatchDetails,
 } from "../../../slices/salesSecondary";
 import { useDispatch } from "react-redux";
 import { IoIosArrowDown } from "react-icons/io";
@@ -36,6 +34,7 @@ import { IoIosArrowRoundBack } from "react-icons/io";
 import { Button, Label, Modal, TextInput } from "flowbite-react";
 import SidebarSec from "../../components/secUsers/SidebarSec";
 import { PiAddressBookFill } from "react-icons/pi";
+import DespatchDetails from "../../components/secUsers/DespatchDetails";
 
 function EditSale() {
   ////////////////////////////////state//////////////////////////////////////////////////////
@@ -88,23 +87,20 @@ function EditSale() {
   const type = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg.type
   );
+
   const salesDetailsFromRedux = useSelector((state) => state.salesSecondary);
 
   console.log(salesDetailsFromRedux);
   const {
     party: partyFromRedux,
     items: itemsFromRedux,
-    // selectedPriceLevel: selectedPriceLevelFromRedux,
-    // additionalChargesitems: additionalChargesitemsFromRedux,
+    despatchDetails: despatchDetailsFromRedux,
     finalAmount: finalAmountFromRedux,
-    // brand: brandFromRedux,
-    // category: categoryFromRedux,
-    // subcategory: subcategoryFromRedux,
-    // id: idFromRedux,
     heights: heightsFromRedux,
   } = salesDetailsFromRedux;
 
   console.log(partyFromRedux);
+  console.log(despatchDetailsFromRedux);
 
   ////////////////////////////////utils//////////////////////////////////////////////////////
 
@@ -128,6 +124,7 @@ function EditSale() {
           additionalCharges,
           finalAmount,
           salesNumber,
+          despatchDetails,
         } = res.data.data;
 
         console.log(partyFromRedux);
@@ -166,7 +163,7 @@ function EditSale() {
         ) {
           setAdditional(true);
 
-          const newRows = additionalCharges.map((el, index) => {
+          const newRows = additionalCharges.map((el) => {
             return {
               option: el.option,
               value: el.value,
@@ -182,6 +179,17 @@ function EditSale() {
         if (Object.keys(heightsFromRedux).length == 0) {
           console.log("haii");
           //   dispatch(setBatchHeight());
+        }
+
+        console.log(despatchDetailsFromRedux);
+        console.log(Object.keys(despatchDetailsFromRedux));
+        if (
+          Object.keys(despatchDetailsFromRedux).every(
+            (key) => despatchDetailsFromRedux[key] == ""
+          )
+        ) {
+          console.log("haii");
+          dispatch(addDespatchDetails(despatchDetails));
         }
       } catch (error) {
         console.log(error);
@@ -443,9 +451,10 @@ function EditSale() {
       lastAmount,
       orgId,
       salesNumber,
+       despatchDetails :despatchDetailsFromRedux,
     };
 
-    console.log(formData);
+    // console.log(formData);
 
     try {
       const res = await api.post(`/api/sUsers/editSale/${id}`, formData, {
@@ -455,7 +464,6 @@ function EditSale() {
         withCredentials: true,
       });
 
-      console.log(res.data);
       toast.success(res.data.message);
 
       navigate(`/sUsers/salesDetails/${res.data.data._id}`);
@@ -618,6 +626,10 @@ function EditSale() {
             </div>
           )}
         </div>
+
+        {/* Despatch details */}
+
+        <DespatchDetails tab={"sale"} />
 
         {/* adding items */}
 

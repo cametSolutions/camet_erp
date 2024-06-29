@@ -1,6 +1,6 @@
 /* eslint-disable react/prop-types */
 /* eslint-disable react/no-unknown-property */
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { IoMdAdd } from "react-icons/io";
 import _ from "lodash";
 import { addDespatchDetails as addInSales } from "../../../slices/salesSecondary";
@@ -15,10 +15,16 @@ function DespatchDetails({ tab }) {
       : state.invoiceSecondary.despatchDetails
   );
 
+  const [formValues, setFormValues] = useState({});
 
+  console.log(despatchDetails);
+  useEffect(() => {
+    if (despatchDetails) {
+      setFormValues(despatchDetails);
+    }
+  }, [despatchDetails]);
 
   const [open, setOpen] = useState(false);
-  const [formValues, setFormValues] = useState(despatchDetails);
   const dispatch = useDispatch();
   const [errors, setErrors] = useState({});
 

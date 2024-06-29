@@ -2985,6 +2985,7 @@ export const editSale = async (req, res) => {
       additionalChargesFromRedux,
       lastAmount,
       salesNumber,
+      despatchDetails
     } = req.body;
 
     let productUpdates = [];
@@ -3354,6 +3355,7 @@ export const editSale = async (req, res) => {
     existingSale.additionalCharges = additionalChargesFromRedux;
     existingSale.finalAmount = lastAmount;
     existingSale.salesNumber = salesNumber;
+    existingSale.despatchDetails = despatchDetails;
 
     const result = await existingSale.save();
 
@@ -3362,9 +3364,6 @@ export const editSale = async (req, res) => {
     const newBillValue = Number(lastAmount);
     // const oldBillValue = Number(existingSale.finalAmount);
     const diffBillValue = newBillValue - oldBillValue;
-    console.log("editSale: newBillValue:", newBillValue);
-    console.log("editSale: oldBillValue:", oldBillValue);
-    console.log("editSale: diffBillValue:", diffBillValue);
 
     const matchedOutStanding = await TallyData.findOne({
       party_id: party?.party_master_id,
@@ -3391,14 +3390,7 @@ export const editSale = async (req, res) => {
     } else {
       console.log("editSale: matched outstanding not found");
     }
-    // await updateOutstanding(
-    //   salesNumber,
-    //   orgId,
-    //   party?.party_master_id,
-    //   billValue
-    // );
 
-    // console.log("editSale: sale updated");
     res
       .status(200)
       .json({ success: true, message: "Sale updated", data: result });
