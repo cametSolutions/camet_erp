@@ -61,8 +61,11 @@ function SalesSecondary() {
   const type = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg.type
   );
-  console.log(type);
-  console.log(godownname);
+  const despatchDetails = useSelector(
+    (state) => state.salesSecondary.despatchDetails
+  );
+
+
   useEffect(() => {
     const getAdditionalChargesIntegrated = async () => {
       try {
@@ -388,6 +391,7 @@ function SalesSecondary() {
     const formData = {
       party,
       items,
+      despatchDetails,
       priceLevelFromRedux,
       additionalChargesFromRedux,
       lastAmount,
@@ -570,7 +574,7 @@ function SalesSecondary() {
 
         {/* Despatch details */}
 
-        <DespatchDetails/>
+        <DespatchDetails tab={"sale"}/>
 
         {/* adding items */}
 

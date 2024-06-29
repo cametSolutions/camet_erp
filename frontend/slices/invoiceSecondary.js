@@ -8,6 +8,18 @@ const initialState = {
   additionalCharges: [],
   finalAmount: 0,
   persistScrollId: "",
+  despatchDetails: {
+    challanNo: "",
+    containerNo: "",
+    despatchThrough: "",
+    destination: "",
+    vehicleNo: "",
+    orderNo: "",
+    // eWayNo: "",
+    // irnNo: "",
+    termsOfPay: "",
+    termsOfDelivery: "",
+  },
 };
 
 export const invoiceSliceSecondary = createSlice({
@@ -133,6 +145,12 @@ export const invoiceSliceSecondary = createSlice({
     addNewAddress: (state, action) => {
       state.party.newBillToShipTo = action.payload;
     },
+    addDespatchDetails: (state, action) => {
+      return {
+        ...state,
+        despatchDetails: action.payload,
+      };
+    },
   },
 });
 
@@ -163,7 +181,8 @@ export const {
   saveId,
   addAllProducts,
   addPriceRate,
-  addNewAddress
+  addNewAddress,
+  addDespatchDetails
 } = invoiceSliceSecondary.actions;
 
 export default invoiceSliceSecondary.reducer;

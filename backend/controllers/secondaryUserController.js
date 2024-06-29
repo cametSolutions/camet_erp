@@ -860,6 +860,7 @@ export const createInvoice = async (req, res) => {
       additionalChargesFromRedux,
       lastAmount,
       orderNumber,
+      despatchDetails
     } = req.body;
 
     // Manually fetch the last invoice to get the serial number
@@ -962,6 +963,7 @@ export const createInvoice = async (req, res) => {
       Primary_user_id: owner,
       Secondary_user_id,
       orderNumber,
+      despatchDetails
     });
 
     const result = await invoice.save();
@@ -1852,6 +1854,7 @@ export const createSale = async (req, res) => {
       orgId,
       party,
       items,
+      despatchDetails,
       priceLevelFromRedux,
       additionalChargesFromRedux,
       lastAmount,
@@ -2111,6 +2114,7 @@ export const createSale = async (req, res) => {
       cmp_id: orgId,
       partyAccount: party?.partyName,
       party,
+      despatchDetails,
       items: updatedItems,
       priceLevel: priceLevelFromRedux,
       additionalCharges: updateAdditionalCharge,
@@ -2180,7 +2184,7 @@ export const createSale = async (req, res) => {
       { upsert: true, new: true }
     );
 
-    res.status(201).json({ success: true, data: result });
+    res.status(201).json({ success: true, data: result, message: "Sale created successfully" });
   } catch (error) {
     console.error(error);
     res.status(500).json({

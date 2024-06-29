@@ -13,6 +13,18 @@ const initialState = {
   subcategory: "",
   id: "",
   heights: {},
+  despatchDetails: {
+    challanNo: "",
+    containerNo: "",
+    despatchThrough: "",
+    destination: "",
+    vehicleNo: "",
+    orderNo: "",
+    // eWayNo: "",
+    // irnNo: "",
+    termsOfPay: "",
+    termsOfDelivery: "",
+  },
 };
 
 export const salesSecondarySlice = createSlice({
@@ -21,7 +33,7 @@ export const salesSecondarySlice = createSlice({
   reducers: {
     addParty: (state, action) => {
       state.party = action.payload;
-      state.newBillToShipTo = {}
+      state.newBillToShipTo = {};
     },
     removeParty: (state) => {
       state.party = {};
@@ -70,7 +82,6 @@ export const salesSecondarySlice = createSlice({
       }
     },
 
-    
     changeIgstAndDiscount: (state, action) => {
       const id = action.payload._id;
       const igst = action.payload?.igst || 0;
@@ -187,15 +198,15 @@ export const salesSecondarySlice = createSlice({
           } else {
             return acc;
           }
-        },0);
+        }, 0);
 
-        const newTotal=currentItem.GodownList.reduce((acc, curr) => {
+        const newTotal = currentItem.GodownList.reduce((acc, curr) => {
           if (curr.added) {
             return acc + curr.individualTotal;
           } else {
             return acc;
           }
-        },0);
+        }, 0);
 
         currentItem.count = newCount;
         currentItem.total = newTotal;
@@ -213,6 +224,13 @@ export const salesSecondarySlice = createSlice({
 
     addNewAddress: (state, action) => {
       state.party.newBillToShipTo = action.payload;
+    },
+
+    addDespatchDetails: (state, action) => {
+      return {
+        ...state,
+        despatchDetails: action.payload,
+      };
     },
   },
 });
@@ -250,9 +268,8 @@ export const {
   removeGodownOrBatch,
   addAllFieldsFromEditSalesPage,
   addPriceRate,
-  addNewAddress
-  
-
+  addNewAddress,
+  addDespatchDetails,
 } = salesSecondarySlice.actions;
 
 export default salesSecondarySlice.reducer;

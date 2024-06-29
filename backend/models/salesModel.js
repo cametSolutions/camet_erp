@@ -11,6 +11,7 @@ const salesSchema = new mongoose.Schema(
     party: { type: Object, required: true },
     priceLevel: { type: String },
     items: { type: Array, required: true },
+    despatchDetails: { type: Object  },
     additionalCharges: { type: Array, required: true },
     finalAmount: { type: String, required: true },
     batchHeights: { type: Object },

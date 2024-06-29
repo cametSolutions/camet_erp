@@ -11,6 +11,7 @@ import {
   addAdditionalCharges,
   AddFinalAmount,
   deleteRow,
+  
 } from "../../../slices/invoiceSecondary";
 import { useDispatch } from "react-redux";
 import { IoIosArrowDown } from "react-icons/io";
@@ -29,6 +30,8 @@ import {
 import { IoIosArrowRoundBack } from "react-icons/io";
 import SidebarSec from "../../components/secUsers/SidebarSec";
 import { PiAddressBookFill } from "react-icons/pi";
+import DespatchDetails from "../../components/secUsers/DespatchDetails";
+
 
 function InvoiceSecondary() {
   const cmp_id = useSelector(
@@ -51,6 +54,10 @@ function InvoiceSecondary() {
   const orgId = useSelector(
     (state) => state?.secSelectedOrganization?.secSelectedOrg?._id
   );
+  const despatchDetails = useSelector(
+    (state) => state.invoiceSecondary.despatchDetails
+  );
+
 
   useEffect(() => {
     localStorage.removeItem("scrollPositionAddItem");
@@ -333,6 +340,7 @@ function InvoiceSecondary() {
       lastAmount,
       orgId,
       orderNumber,
+      despatchDetails
     };
 
     console.log(formData);
@@ -465,6 +473,10 @@ function InvoiceSecondary() {
             </div>
           )}
         </div>
+
+             {/* Despatch details */}
+
+             <DespatchDetails tab={"order"}/>
 
         {/* adding items */}
 
