@@ -181,8 +181,7 @@ function EditSale() {
           //   dispatch(setBatchHeight());
         }
 
-        console.log(despatchDetailsFromRedux);
-        console.log(Object.keys(despatchDetailsFromRedux));
+  
         if (
           Object.keys(despatchDetailsFromRedux).every(
             (key) => despatchDetailsFromRedux[key] == ""

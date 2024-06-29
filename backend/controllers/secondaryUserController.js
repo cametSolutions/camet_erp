@@ -1548,6 +1548,7 @@ export const editInvoice = async (req, res) => {
       additionalChargesFromRedux,
       lastAmount,
       orderNumber,
+      despatchDetails
     } = req.body;
 
     let productUpdates = [];
@@ -1632,6 +1633,7 @@ export const editInvoice = async (req, res) => {
         Primary_user_id,
         Secondary_user_id,
         orderNumber,
+        despatchDetails
       },
       { new: true } // This option returns the updated document
     );
@@ -3193,22 +3195,22 @@ export const editSale = async (req, res) => {
               }
             } else if (godown.godown_id && !godown.batch) {
               const existingGodown = existingItem?.GodownList.find(
-                (sGodown) => sGodown.godown_id === godown.godown_id
+                (sGodown) => sGodown?.godown_id === godown?.godown_id
               );
 
               const godownCountDiff =
-                parseFloat(godown.count) - (existingGodown?.count || 0) || 0;
+                parseFloat(godown?.count) - (existingGodown?.count || 0) || 0;
 
               // console.log("godownCountDiff", godownCountDiff);
 
-              let productItem = productModel.findOne({
+              let productItem = productModel?.findOne({
                 _id: product._id,
               });
 
               const balance_stock =
                 product.GodownList.find(
-                  (sGodown) => sGodown.godown_id === godown.godown_id
-                ).balance_stock || 0;
+                  (sGodown) => sGodown?.godown_id === godown?.godown_id
+                )?.balance_stock || 0;
 
               // console.log("balance_stock", balance_stock);
               let updatedStock;
@@ -3237,24 +3239,24 @@ export const editSale = async (req, res) => {
                   { $set: { "GodownList.$.balance_stock": updatedStock } }
                 );
               }
-            } else if (godown.godown_id && godown.batch) {
-              const existingGodown = existingItem?.GodownList.find(
+            } else if (godown?.godown_id && godown?.batch) {
+              const existingGodown = existingItem?.GodownList?.find(
                 (sGodown) =>
-                  sGodown.godown_id === godown.godown_id &&
-                  sGodown.batch === godown.batch
+                  sGodown?.godown_id === godown?.godown_id &&
+                  sGodown?.batch === godown?.batch
               );
               const godownCountDiff =
-                parseFloat(godown.count) - (existingGodown?.count || 0) || 0;
+                parseFloat(godown?.count) - (existingGodown?.count || 0) || 0;
               // console.log("godownCountDiff", godownCountDiff);
               let productItem = productModel.findOne({
-                _id: product._id,
+                _id: product?._id,
               });
               const balance_stock =
                 product.GodownList.find(
                   (sGodown) =>
-                    sGodown.godown_id === godown.godown_id &&
-                    sGodown.batch === godown.batch
-                ).balance_stock || 0;
+                    sGodown?.godown_id === godown?.godown_id &&
+                    sGodown?.batch === godown?.batch
+                )?.balance_stock || 0;
 
               // console.log("balance_stock", balance_stock);
 
@@ -3277,8 +3279,8 @@ export const editSale = async (req, res) => {
                 await productModel.updateOne(
                   {
                     _id: product._id,
-                    "GodownList.godown_id": godown.godown_id || null,
-                    "GodownList.batch": godown.batch || null,
+                    "GodownList.godown_id": godown?.godown_id || null,
+                    "GodownList.batch": godown?.batch || null,
                   },
                   { $set: { "GodownList.$.balance_stock": updatedStock } }
                 );

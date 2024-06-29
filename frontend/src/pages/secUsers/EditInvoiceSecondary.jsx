@@ -10,6 +10,8 @@ import {
   addAdditionalCharges,
   AddFinalAmount,
   deleteRow,
+  addDespatchDetails,
+
 } from "../../../slices/invoiceSecondary";
 import { useDispatch } from "react-redux";
 import { IoIosArrowDown } from "react-icons/io";
@@ -37,6 +39,8 @@ import { Button, Label, Modal, TextInput } from "flowbite-react";
 import { useParams } from "react-router-dom";
 import SidebarSec from "../../components/secUsers/SidebarSec";
 import { PiAddressBookFill } from "react-icons/pi";
+import DespatchDetails from "../../components/secUsers/DespatchDetails";
+
 
 
 function EditInvoiceSecondary() {
@@ -225,12 +229,8 @@ const handleRateChange = (index, value) => {
   const partyFromRedux = useSelector((state) => state.invoiceSecondary.party);
   const items = useSelector((state) => state.invoiceSecondary.items);
   const itemsFromRedux = useSelector((state) => state.invoiceSecondary.items);
-  console.log(itemsFromRedux);
-  const priceLevelFromRedux =
-    useSelector((state) => state.invoiceSecondary.selectedPriceLevel) || "";
-
-
-
+  const despatchDetailsFromRedux = useSelector((state) => state.invoiceSecondary.despatchDetails);
+  const priceLevelFromRedux =useSelector((state) => state.invoiceSecondary.selectedPriceLevel) || "";
   useEffect(() => {
     const fetchInvoiceDetails = async () => {
       try {
@@ -246,6 +246,7 @@ const handleRateChange = (index, value) => {
           additionalCharges,
           finalAmount,
           orderNumber,
+          despatchDetails
         } = res.data.data;
 
         // additionalCharges: [ { option: 'option 1', value: '95', action: 'add' } ],
@@ -289,6 +290,15 @@ const handleRateChange = (index, value) => {
           });
           setRows(newRows);
         
+        }
+
+        if (
+          Object.keys(despatchDetailsFromRedux).every(
+            (key) => despatchDetailsFromRedux[key] == ""
+          )
+        ) {
+          console.log("haii");
+          dispatch(addDespatchDetails(despatchDetails));
         }
       } catch (error) {
         console.log(error);
@@ -396,6 +406,7 @@ console.log(InvoiceIdForEdit);
       lastAmount,
       orgId,
       orderNumber,
+      despatchDetails :despatchDetailsFromRedux,
     };
 
     console.log(formData);
@@ -577,6 +588,10 @@ console.log(InvoiceIdForEdit);
             </div>
           )}
         </div>
+
+         {/* Despatch details */}
+
+         <DespatchDetails tab={"order"} />
 
         {/* adding items */}
 
