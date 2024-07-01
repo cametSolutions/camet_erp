@@ -112,42 +112,64 @@ function ShareInvoiceSecondary() {
   // }
 
   const handlePrint = useReactToPrint({
-    documentTitle: `Sale Order ${data.orderNumber}`,
+    content: () => contentToPrint.current,
+    // documentTitle: `Sales ${data.salesNumber}`,
     pageStyle: `
-    @page {
-      size: A4;
-      margin: 20mm 10mm;
-
-    }
-
-    @media print {
-      body {
-        -webkit-print-color-adjust: exact;
-        font-family: 'Arial', sans-serif;
+      @page {
+        size: A4;
+        margin: 0mm 10mm 9mm 10mm;
       }
-
-      .pdf-page {
-        page-break-after: always;
+  
+      @media print {
+        body {
+          -webkit-print-color-adjust: exact;
+          font-family: 'Arial', sans-serif;
+        }
+  
+        .pdf-page {
+          page-break-after: always;
+        }
+  
+        .pdf-content {
+          font-size: 19px;
+        }
+  
+        .print-md-layout {
+          display: flex;
+          flex-direction: row;
+          justify-content: space-between;
+          align-items: flex-start;
+          gap: 8px;
+          padding: 1rem 2rem;
+          width: 100%;
+        }
+  
+        .bill-to, .ship-to {
+          width: 50%;
+          padding-right: 1rem;
+          border-right: 1px solid #e5e7eb; /* Tailwind color gray-300 */
+        }
+  
+        .details-table {
+          width: 50%;
+          padding-left: 1rem;
+        }
+  
+        .details-table td {
+          font-size: 11px;
+          color: #6b7280; /* Tailwind color gray-500 */
+        }
+  
+        /* Force flex-row for print */
+        @media print {
+          .print-md-layout {
+            display: flex !important;
+            flex-direction: row !important;
+          }
+        }
       }
-
-      .pdf-header {
-        font-size: 16px;
-        // font-weight: bold;
-      }
-
-      .pdf-content {
-        font-size: 19px;
-      }
-
-      .pdf-footer {
-        position: fixed;
-        bottom: 0;
-        width: 100%;
-        text-align: center;
-        font-size: 12px;
-      }
-    }
-  `,
+    `,
+    onAfterPrint: () => console.log("after printing..."),
     removeAfterPrint: true,
   });
 

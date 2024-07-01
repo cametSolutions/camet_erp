@@ -8,7 +8,6 @@ import { addDespatchDetails as addInOrder } from "../../../slices/invoiceSeconda
 import { useDispatch, useSelector } from "react-redux";
 
 function DespatchDetails({ tab }) {
-  console.log(tab);
   const despatchDetails = useSelector((state) =>
     tab === "sale"
       ? state.salesSecondary.despatchDetails
@@ -17,7 +16,6 @@ function DespatchDetails({ tab }) {
 
   const [formValues, setFormValues] = useState({});
 
-  console.log(despatchDetails);
   useEffect(() => {
     if (despatchDetails) {
       setFormValues(despatchDetails);

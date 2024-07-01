@@ -1,6 +1,5 @@
 import { MdOutlineArrowBack } from "react-icons/md";
 
-import { IoMdShareAlt } from "react-icons/io";
 import { MdTextsms } from "react-icons/md";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
@@ -10,7 +9,6 @@ import dayjs from "dayjs";
 import { FaEdit } from "react-icons/fa";
 import { useLocation, useNavigate } from "react-router-dom";
 import SidebarSec from "../../components/secUsers/SidebarSec";
-import Swal from "sweetalert2";
 import SalesProductDetails from "../../components/common/SalesProductDetails";
 import SwallFireForPdf from "../../components/common/SwallFireForPdf";
 
@@ -47,26 +45,7 @@ function SalesDetailsSecondary() {
     }
   };
 
-  const chooseFormat = () => {
-    Swal.fire({
-      title: "Which format would you like?",
-      html: "<p>Choose between:</p>",
-      showDenyButton: true,
-      showCancelButton: true,
-      confirmButtonText: "Tax Invoice",
-      denyButtonText: `POS format`,
-      customClass: {
-        container: "swal2-container-custom",
-      },
-    }).then((result) => {
-      if (result.isConfirmed) {
-        // Swal.fire("Tax Invoice selected", "", "success");
-        navigate(`/sUsers/shareSales/${data._id}`);
-      } else if (result.isDenied) {
-        navigate(`/sUsers/shareSalesThreeInch/${data._id}`);
-      }
-    });
-  };
+
 
   console.log(data.items);
 
