@@ -188,6 +188,7 @@ function SaleOrderPdf({
             </tr>
           </tfoot>
         </table>
+        
 
         <PdfFooter
               bank={bank}
