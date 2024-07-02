@@ -28,7 +28,6 @@ import ProductDetails from "../../components/common/ProductDetails";
 import { IoIosArrowDown } from "react-icons/io";
 import { IoIosArrowUp } from "react-icons/io";
 
-// import SelectDefaultModal from "../../../constants/components/SelectDefaultModal";
 
 function AddItemSalesSecondary() {
   const [item, setItem] = useState([]);

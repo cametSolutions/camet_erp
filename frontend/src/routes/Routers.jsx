@@ -78,7 +78,7 @@ import OrderConfigurationsSecondary from '../pages/secUsers/OrderConfigurationsS
 // inventory 
 import InventoryPrimaryUser from '../pages/primaryUsers/InventoryPrimaryUser'
 import InventorySecondaryUser from '../pages/secUsers/InventorySecondaryUser'
-import SelectDefaultModal from '../../constants/components/SelectDefaultModal'
+// import SelectDefaultModal from '../../constants/components/SelectDefaultModal'
 import SalesDetails from '../pages/primaryUsers/SalesDetails'
 import ShareSales from '../pages/primaryUsers/ShareSales'
 import SalesSecondary from '../pages/secUsers/SalesSecondary'
@@ -158,7 +158,7 @@ const Routers = () => {
         <Route path='/pUsers/editAdditionalCharge/:id' element={<ProtectedPriRoute><EditAdditionalCharges/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/OrderConfigurations' element={<ProtectedPriRoute><OrderConfigurations/></ProtectedPriRoute>}></Route>
 
-        <Route path='/pUsers/modal' element={<ProtectedPriRoute><SelectDefaultModal/></ProtectedPriRoute>}></Route>
+        {/* <Route path='/pUsers/modal' element={<ProtectedPriRoute><SelectDefaultModal/></ProtectedPriRoute>}></Route> */}
         <Route path='/pUsers/salesDetails/:id' element={<ProtectedPriRoute><SalesDetails/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/shareSalesThreeInch/:id' element={<ProtectedPriRoute><ThreeInchSales/></ProtectedPriRoute>}></Route>
 

@@ -25,12 +25,10 @@ import { FixedSizeList as List } from "react-window";
 import { Button, Modal } from "flowbite-react";
 import { toast } from "react-toastify";
 import SidebarSec from "../../components/secUsers/SidebarSec";
-import { IoIosCloseCircleOutline } from "react-icons/io";
 import { Decimal } from "decimal.js";
 import SearchBar from "../../components/common/SearchBar";
 
 
-// import SelectDefaultModal from "../../../constants/components/SelectDefaultModal";
 
 function AddItemPurchase() {
   const [item, setItem] = useState([]);
