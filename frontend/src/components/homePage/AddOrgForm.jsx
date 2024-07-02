@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 /* eslint-disable react/prop-types */
 import { useState, useEffect } from "react";
 import uploadImageToCloudinary from "../../../utils/uploadCloudinary.js";
@@ -7,7 +8,7 @@ import { HashLoader } from "react-spinners";
 import { industries } from "../../../constants/industries.js";
 import { statesData } from "../../../constants/states.js";
 
-function AddOrgForm({ onSubmit }) {
+function AddOrgForm({ onSubmit, orgData = {} }) {
   const [name, setName] = useState("");
   const [pin, setPin] = useState("");
   const [state, setState] = useState("32");
@@ -32,9 +33,6 @@ function AddOrgForm({ onSubmit }) {
   const [batchEnabled, setBatchEnabled] = useState(false);
   const [industry, setIndustry] = useState("");
 
-  console.log(industry);
-
-
   useEffect(() => {
     const getUserData = async () => {
       try {
@@ -48,6 +46,57 @@ function AddOrgForm({ onSubmit }) {
     };
     getUserData();
   }, []);
+
+  console.log(orgData);
+
+
+  useEffect(() => {
+    if (Object.keys(orgData).length > 0) {
+      const {
+        name,
+        flat,
+        road,
+        landmark,
+        email,
+        mobile,
+        senderId,
+        username,
+        password,
+        pin,
+        gstNum,
+        country,
+        logo,
+        state,
+        website,
+        type,
+        pan,
+        financialYear,
+        batchEnabled,
+        industry
+      } = orgData;
+
+      setName(name);
+      setFlat(flat);
+      setRoad(road);
+      setLandmark(landmark);
+      setEmail(email);
+      setMobile(mobile);
+      setSenderId(senderId);
+      setUsername(username);
+      setPassword(password);
+      setPin(pin);
+      setGst(gstNum);
+      setCountry(country);
+      setLogo(logo);
+      setState(state);
+      setWebsite(website);
+      setType(type);
+      setPan(pan);
+      setFinancialYear(financialYear);
+      setBatchEnabled(batchEnabled);
+      setIndustry(industry)
+    }
+  }, [orgData]);
 
   const handleCheckboxChange = () => {
     setShowInputs(!showInputs);
@@ -169,6 +218,7 @@ function AddOrgForm({ onSubmit }) {
       financialYear,
       type,
       batchEnabled,
+      industry
     };
 
     console.log(formData);

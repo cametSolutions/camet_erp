@@ -1,7 +1,6 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import api from "../../api/api.js";
 import { toast } from "react-toastify";
-import uploadImageToCloudinary from "../../../utils/uploadCloudinary.js";
 import Sidebar from "../../components/homePage/Sidebar.jsx";
 // import { useNavigate } from "react-router-dom";
 import { IoReorderThreeSharp } from "react-icons/io5";

@@ -15,6 +15,7 @@ const organizationSchema = new mongoose.Schema(
     gstNum: { type: String },
     website: { type: String },
     pan: { type: String },
+    industry: { type: Number },
     financialYear: { type: String },
     country: { type: String },
     logo: { type: String },

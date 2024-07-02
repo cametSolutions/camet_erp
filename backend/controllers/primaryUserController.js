@@ -197,7 +197,8 @@ export const addOrganizations = async (req, res) => {
     username,
     password,
     type,
-    batchEnabled
+    batchEnabled,
+    industry
 
   } = req.body;
   console.log(req.file);
@@ -225,7 +226,8 @@ export const addOrganizations = async (req, res) => {
       financialYear,
       gstNum: gst,
       type,
-      batchEnabled
+      batchEnabled,
+      industry
     });
 
     if (organization) {
