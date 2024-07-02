@@ -111,6 +111,7 @@ import ThreeInchInvoiceSec from '../pages/secUsers/ThreeInchInvoiceSec'
 import ThreeInchInvoice from '../pages/primaryUsers/ThreeInchInvoice'
 import BillToSales from '../pages/secUsers/BillToSales'
 import BillToSalesOrder from '../pages/secUsers/BillToSalesOrder'
+import AddBrand from '../pages/primaryUsers/AddBrand'
 const Routers = () => {
   return (
     <Routes>
@@ -169,6 +170,7 @@ const Routers = () => {
         <Route path='/pUsers/sharePurchase/:id' element={<ProtectedPriRoute><SharePurchasePrimary/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/sharePurchaseThreeInch/:id' element={<ProtectedPriRoute><ThreeInchPurchasePrimary/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/shareInvoiceThreeInch/:id' element={<ProtectedSecRoute><ThreeInchInvoice/></ProtectedSecRoute>}></Route> 
+        <Route path='/pUsers/brand' element={<ProtectedSecRoute><AddBrand/></ProtectedSecRoute>}></Route> 
 
 
 
