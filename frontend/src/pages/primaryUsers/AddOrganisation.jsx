@@ -1,31 +1,17 @@
-import { useState } from "react";
 import api from "../../api/api.js";
 import { toast } from "react-toastify";
 import { IoReorderThreeSharp } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
 import AddOrgForm from "../../components/homePage/AddOrgForm.jsx";
+import { useSidebar } from "../../layout/Layout";
 
 const AddOrganisation = () => {
-
-  const [showSidebar, setShowSidebar] = useState(false);
-
-
-
-  const handleToggleSidebar = () => {
-    if (window.innerWidth < 768) {
-      setShowSidebar(!showSidebar);
-    }
-  };
-
-
+  const {  handleToggleSidebar } = useSidebar();
 
   const navigate = useNavigate();
 
   const submitHandler = async (formData) => {
-
-
     console.log(formData);
-
 
     try {
       const res = await api.post("/api/pUsers/addOrganizations", formData, {
@@ -44,20 +30,6 @@ const AddOrganisation = () => {
     }
   };
 
-  // useEffect(() => {
-  //   const getUserData = async () => {
-  //     try {
-  //       const res = await api.get("/api/pUsers/getPrimaryUserData", {
-  //         withCredentials: true,
-  //       });
-  //       setUserData(res.data.data.userData);
-  //     } catch (error) {
-  //       console.log(error);
-  //     }
-  //   };
-  //   getUserData();
-  // }, []);
-
   return (
     <div className="flex ">
       {/* <div className="" style={{ height: "100vh" }}>
@@ -65,7 +37,7 @@ const AddOrganisation = () => {
       </div> */}
 
       <div className=" ">
-        <section className=" bg-blueGray-50 h-screen ">
+        <section className=" bg-blueGray-50 ">
           <div className="bg-[#201450] sticky top-0 p-3 z-100 text-white text-lg font-bold flex items-center gap-3 z-20">
             <IoReorderThreeSharp
               onClick={handleToggleSidebar}

@@ -345,16 +345,14 @@ function InventoryPrimaryUser() {
   };
 
   return (
-    <div className="flex relative h-screen ">
-      <div>
-        <Sidebar TAB={"product"} showBar={showSidebar} />
-      </div>
+    <div className="flex relative ">
+    
 
-      <div className="flex-1  overflow-y-scroll ">
+      <div className="flex-1   ">
         <div className="sticky top-0 z-20 h-[117px]">
           <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3  flex justify-between items-center  ">
             <div className="flex items-center justify-center gap-2">
-              <Link to={"/sUsers/dashboard"}>
+              <Link to={"/pUsers/dashboard"}>
                 <IoIosArrowRoundBack className="text-3xl text-white cursor-pointer " />
               </Link>
               <p className="text-white text-lg   font-bold ">Inventory</p>

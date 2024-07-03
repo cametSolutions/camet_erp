@@ -17,9 +17,9 @@ import { removeAll } from "../../../slices/invoice";
 import { removeAllSales } from "../../../slices/sales";
 import { useDispatch } from "react-redux";
 import { toast } from "react-toastify";
+import { useSidebar } from "../../layout/Layout";
 
 function Dashboard() {
-  const [showSidebar, setShowSidebar] = useState(false);
   const [data, setData] = useState([]);
   const navigate = useNavigate();
 
@@ -27,11 +27,7 @@ function Dashboard() {
   console.log(org);
   const dispatch = useDispatch();
 
-  const handleToggleSidebar = () => {
-    if (window.innerWidth < 768) {
-      setShowSidebar(!showSidebar);
-    }
-  };
+  const {  handleToggleSidebar } = useSidebar();
 
   useEffect(() => {
     if (org) {

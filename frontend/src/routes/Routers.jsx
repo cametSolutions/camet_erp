@@ -116,7 +116,7 @@ import AddCategory from '../pages/primaryUsers/AddCategory'
 import AddSubCategory from '../pages/primaryUsers/AddSubCategory'
 import AddGodown from '../pages/primaryUsers/AddGodown'
 import AddPriceLevel from '../pages/primaryUsers/AddPriceLevel'
-import Layout from '../layout/Layout'
+
 const Routers = () => {
   return (
     <Routes>
@@ -184,14 +184,14 @@ const Routers = () => {
 
 
         {/* admin */}
-        <Route path='/admin/login' element={<AdminLogin/>}></Route>
-        <Route path='/admin/home' element={<ProtectedAdmin><AdminHome/></ProtectedAdmin>}></Route>
+        {/* <Route path='/admin/login' element={<AdminLogin/>}></Route>
+        <Route path='/admin/home' element={<ProtectedAdmin><AdminHome/></ProtectedAdmin>}></Route> */}
 
         {/* sec users */}
-        <Route path='/sUsers/login' element={<SecLogin/>}></Route>
+        {/* <Route path='/sUsers/login' element={<SecLogin/>}></Route>
         <Route path='/sUsers/forgotPassword' element={<ForgotPasswordSec/>}></Route>
         <Route path='/sUsers/otp' element={<OtpSec/>}></Route>
-        <Route path='/sUsers/resetPassword' element={<ResetPasswordSec/>}></Route>
+        <Route path='/sUsers/resetPassword' element={<ResetPasswordSec/>}></Route> */}
 
 
 

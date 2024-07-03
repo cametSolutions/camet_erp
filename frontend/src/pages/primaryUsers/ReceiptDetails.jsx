@@ -85,12 +85,9 @@ function ReceiptDetails() {
   console.log(data);
 
   return (
-    <div className="flex">
-      <div>
-        <Sidebar />
-      </div>
+    
 
-      <div className="bg-[rgb(244,246,254)] flex-1 h-screen overflow-y-scroll relative ">
+      <div className="bg-[rgb(244,246,254)] flex-1 relative ">
         {/* headinh section  */}
         <div className="flex bg-[#012a4a] items-center justify-between">
           <div className="flex items-center gap-3  text-white text-md p-4 ">
@@ -204,7 +201,6 @@ function ReceiptDetails() {
           </div>
         </div>
       </div>
-    </div>
   );
 }
 

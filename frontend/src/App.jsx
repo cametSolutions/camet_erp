@@ -9,25 +9,65 @@ import ForgotPasswordPrimary from "./pages/primaryUsers/ForgotPasswordPrimary";
 import Otp from "./pages/primaryUsers/Otp";
 import ResetPassword from "./pages/primaryUsers/ResetPassword";
 import { Route, Routes } from "react-router-dom";
+import AdminLogin from "./pages/admin/AdminLogin";
+import ProtectedAdmin from "./routes/ProtectedAdmin";
+import SecLogin from "./pages/secUsers/SecLogin";
+import ForgotPasswordSec from "./pages/secUsers/ForgotPasswordSec";
+import AdminHome from "./pages/admin/AdminHome";
+import OtpSec from "./pages/secUsers/OtpSec";
+import ResetPasswordSec from "./pages/secUsers/ResetPasswordSec";
+import ServerError from "./pages/errorPages/ServerError";
+import ErrorPage from "./pages/errorPages/Notfound";
 
 export default function App() {
   return (
     <>
       <Routes>
-        <Route path="/notFound" element={<Notfound />}></Route>
-        <Route path="/" element={<Login />}></Route>
-        <Route path="/pUsers/register" element={<Register />}></Route>
-        <Route path="/pUsers/login" element={<Login></Login>}></Route>
+        {/* Routes without Layout */}
+        <Route path="/" element={<Login />} />
+        <Route path="/notFound" element={<Notfound />} />
+        <Route path="/pUsers/register" element={<Register />} />
+        <Route path="/pUsers/login" element={<Login />} />
         <Route
           path="/pUsers/forgotPassword"
           element={<ForgotPasswordPrimary />}
+        />
+        <Route path="/pUsers/otp" element={<Otp />} />
+        <Route path="/pUsers/resetPassword" element={<ResetPassword />} />
+        <Route path="/admin/login" element={<AdminLogin />}></Route>
+        <Route
+          path="/admin/home"
+          element={
+            <ProtectedAdmin>
+              <AdminHome />
+            </ProtectedAdmin>
+          }
         ></Route>
-        <Route path="/pUsers/otp" element={<Otp />}></Route>
-        <Route path="/pUsers/resetPassword" element={<ResetPassword />}></Route>
+
+        {/* sec users */}
+        <Route path="/sUsers/login" element={<SecLogin />}></Route>
+        <Route
+          path="/sUsers/forgotPassword"
+          element={<ForgotPasswordSec />}
+        ></Route>
+        <Route path="/sUsers/otp" element={<OtpSec />}></Route>
+        <Route
+          path="/sUsers/resetPassword"
+          element={<ResetPasswordSec />}
+        ></Route>
+        <Route path="/errorPage" element={<ErrorPage />} />
+        <Route path="/serverError" element={<ServerError />} />
+
+        {/* Routes with Layout */}
+        <Route
+          path="*"
+          element={
+            <Layout>
+              <Routers />
+            </Layout>
+          }
+        />
       </Routes>
-      <Layout>
-        <Routers />
-      </Layout>
     </>
   );
 }

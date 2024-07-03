@@ -11,6 +11,7 @@ import Swal from "sweetalert2";
 import { removeAll } from "../../../slices/invoice";
 
 import { useDispatch } from "react-redux";
+import { useSidebar } from "../../layout/Layout";
 
 function AddChargesList() {
   const [additional, setAdditional] = useState([]);
@@ -54,11 +55,8 @@ function AddChargesList() {
 
   console.log(additional);
 
-  const handleToggleSidebar = () => {
-    if (window.innerWidth < 768) {
-      setShowSidebar(!showSidebar);
-    }
-  };
+  const {  handleToggleSidebar } = useSidebar();
+
 
   const handleDelete = async (id) => {
     const confirmResult = await Swal.fire({
@@ -101,11 +99,9 @@ function AddChargesList() {
 
   return (
     <div className="flex">
-      <div className="" style={{ height: "100vh" }}>
-        <Sidebar TAB={"additionalCharge"} showBar={showSidebar} />
-      </div>
+    
 
-      <section className=" flex-1 antialiased bg-gray-100 text-gray-600 h-screen py-0 md:p-6 overflow-y-scroll   ">
+      <section className=" flex-1 antialiased bg-gray-100 text-gray-600 h-screen   ">
         <div className="block md:hidden bg-[#201450] text-white mb-2 p-3 flex items-center gap-3  text-lg">
           <IoReorderThreeSharp
             onClick={handleToggleSidebar}
@@ -121,9 +117,9 @@ function AddChargesList() {
             </Link>
           </div>
         </div>
-        <div className="flex flex-col h-full px-[5px]">
+        <div className="flex flex-col h-full ">
           {/* <!-- Table --> */}
-          <div className="w-full max-w-[59rem] mx-auto  bg-white shadow-lg rounded-sm border  border-gray-200">
+          <div className="w-full  mx-auto  bg-white shadow-lg rounded-sm border  border-gray-200">
             <header className=" hidden md:block px-5 py-4 border-b border-gray-100 bg bg-[#261b56] text-white">
               <div className="flex justify-between items-center">
                 <h2 className="font-semibold ">Additional Charges</h2>

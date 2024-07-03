@@ -22,7 +22,6 @@ function Transaction() {
 
   const [startDate, setStartDate] = useState(new Date());
   const [endDate, setEndDate] = useState(new Date());
-  const [showSidebar, setShowSidebar] = useState(false);
   const [total, setTotal] = useState(0);
 
   const navigate = useNavigate();
@@ -138,10 +137,7 @@ function Transaction() {
   console.log(finalData);
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      <div>
-        <Sidebar TAB={"transaction"} showBar={showSidebar} />
-      </div>
+   
       <div className="flex-1">
         <div className=" flex-1   h-screen overflow-y-scroll ">
           <div className="sticky top-0 flex flex-col z-30 bg-white">
@@ -365,7 +361,6 @@ function Transaction() {
           </div>
         </div>
       </div>
-    </div>
   );
 }
 

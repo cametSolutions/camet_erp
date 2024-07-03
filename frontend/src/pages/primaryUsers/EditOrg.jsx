@@ -4,34 +4,14 @@ import { toast } from "react-toastify";
 import { IoReorderThreeSharp } from "react-icons/io5";
 import { useParams, useNavigate } from "react-router-dom";
 import AddOrgForm from "../../components/homePage/AddOrgForm.jsx";
-
+import { useSidebar } from "../../layout/Layout";
 const EditOrg = () => {
 
   const [orgData, setOrgData] = useState({});
-  // const [name, setName] = useState("");
-  // const [place, setPlace] = useState("");
-  // const [pin, setPin] = useState("");
-  // const [state, setState] = useState("");
-  // const [country, setCountry] = useState("India");
-  // const [mobile, setMobile] = useState("");
-  // const [gst, setGst] = useState("");
-  // const [email, setEmail] = useState("");
-  // const [flat, setFlat] = useState("");
-  // const [road, setRoad] = useState("");
-  // const [landmark, setLandmark] = useState("");
-  // const [logo, setLogo] = useState("");
-  // const [loader, setLoader] = useState(false);
-  const [showSidebar, setShowSidebar] = useState(false);
+
+
   const [showInputs, setShowInputs] = useState(false);
-  // const [senderId, setSenderId] = useState("");
-  // const [username, setUsername] = useState("");
-  // const [password, setPassword] = useState("");
-  // const [userData, setUserData] = useState("");
-  // const [website, setWebsite] = useState("");
-  // const [pan, setPan] = useState("");
-  // const [financialYear, setFinancialYear] = useState("");
-  // const [type, setType] = useState("self");
-  // const [batchEnabled, setBatchEnabled] = useState(false);
+
 
   const { id } = useParams();
   const navigate = useNavigate();
@@ -48,25 +28,7 @@ const EditOrg = () => {
 
         setOrgData(res.data.organizationData);
 
-        // setName(name);
-        // setFlat(flat);
-        // setRoad(road);
-        // setLandmark(landmark);
-        // setEmail(email);
-        // setMobile(mobile);
-        // setSenderId(senderId);
-        // setUsername(username);
-        // setPassword(password);
-        // setPin(pin);
-        // setGst(gstNum);
-        // setCountry(country);
-        // setLogo(logo);
-        // setState(state);
-        // setWebsite(website);
-        // setPan(pan);
-        // setFinancialYear(financialYear);
-        // setType(type);
-        // setBatchEnabled(batchEnabled);
+ 
 
         if (senderId.length > 0) {
           setShowInputs(true);
@@ -83,11 +45,8 @@ const EditOrg = () => {
 
 
 
-  const handleToggleSidebar = () => {
-    if (window.innerWidth < 768) {
-      setShowSidebar(!showSidebar);
-    }
-  };
+  const {  handleToggleSidebar } = useSidebar();
+
 
   const submitHandler = async (formData) => {
 
