@@ -121,13 +121,13 @@ const Routers = () => {
   return (
     <Routes>
       <Route path='*' element={<Notfound/>}></Route>
-      <Route path='/notFound' element={<Notfound/>}></Route>
+      {/* <Route path='/notFound' element={<Notfound/>}></Route>
         <Route path='/' element={<Login/>}></Route>
         <Route path='/pUsers/register' element={<Register/>}></Route>
         <Route path='/pUsers/login' element={<Login></Login>}></Route>
         <Route path='/pUsers/forgotPassword' element={<ForgotPasswordPrimary/>}></Route>
         <Route path='/pUsers/otp' element={<Otp/>}></Route>
-        <Route path='/pUsers/resetPassword' element={<ResetPassword/>}></Route>
+        <Route path='/pUsers/resetPassword' element={<ResetPassword/>}></Route> */}
         {/* <Route path='/pUsers/home' element={<Home></Home>}></Route> */}
         <Route path='/pUsers/addOrganization' element={<ProtectedPriRoute><AddOrganisation/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/editOrg/:id' element={<ProtectedPriRoute><EditOrg/></ProtectedPriRoute>}></Route>

@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import api from "../../api/api";
 import { toast } from "react-toastify";
 import Pagination from "../../components/common/Pagination";
-import Sidebar from "../../components/homePage/Sidebar";
 import { IoReorderThreeSharp } from "react-icons/io5";
 import { Link } from "react-router-dom";
 
@@ -83,11 +82,8 @@ function SecUsersList() {
 
   return (
     <div className="flex">
-      <div className="sb" style={{ height: "100vh" }}>
-        <Sidebar TAB={"agentLIst"} showBar={showSidebar} />
-      </div>
-
-      <body className="flex-1 antialiased font-sans  h-screen overflow-y-scroll">
+  
+      <body className="flex-1 antialiased font-sans  h-screen ">
         <div className="block md:hidden bg-[#201450] text-white mb-1 p-3  text-lg flex items-center gap-3 text-lg">
           <IoReorderThreeSharp
             onClick={handleToggleSidebar}

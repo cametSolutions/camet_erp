@@ -3,7 +3,6 @@ import api from "../../api/api";
 import { toast } from "react-toastify";
 import { FaRegEye } from "react-icons/fa";
 import { IoMdEyeOff } from "react-icons/io";
-import Sidebar from "../../components/homePage/Sidebar";
 import { Link } from "react-router-dom";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import { useNavigate } from "react-router-dom";
@@ -145,12 +144,10 @@ function AddSecUsers() {
 
   return (
     <div className="flex">
-      <div className="" style={{ height: "100vh" }}>
-        <Sidebar TAB={"addSec"} showBar={showSidebar} />
-      </div>
+    
 
       <div className="flex-1 ">
-        <section className=" bg-blueGray-50 h-screen overflow-y-scroll">
+        <section className=" bg-blueGray-50 h-screen ">
           <div className="block  bg-[#201450] text-white mb-2 p-3 flex items-center gap-3 sticky top-0 z-20 text-lg  ">
             <Link to={"/pUsers/retailers"}>
               <IoIosArrowRoundBack className="text-3xl text-white cursor-pointer " />

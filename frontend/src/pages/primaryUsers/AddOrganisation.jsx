@@ -1,8 +1,6 @@
 import { useState } from "react";
 import api from "../../api/api.js";
 import { toast } from "react-toastify";
-import Sidebar from "../../components/homePage/Sidebar.jsx";
-// import { useNavigate } from "react-router-dom";
 import { IoReorderThreeSharp } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
 import AddOrgForm from "../../components/homePage/AddOrgForm.jsx";
@@ -62,12 +60,12 @@ const AddOrganisation = () => {
 
   return (
     <div className="flex ">
-      <div className="" style={{ height: "100vh" }}>
+      {/* <div className="" style={{ height: "100vh" }}>
         <Sidebar TAB={"addOrg"} showBar={showSidebar} />
-      </div>
+      </div> */}
 
       <div className=" ">
-        <section className=" bg-blueGray-50 h-screen overflow-y-scroll ">
+        <section className=" bg-blueGray-50 h-screen ">
           <div className="bg-[#201450] sticky top-0 p-3 z-100 text-white text-lg font-bold flex items-center gap-3 z-20">
             <IoReorderThreeSharp
               onClick={handleToggleSidebar}

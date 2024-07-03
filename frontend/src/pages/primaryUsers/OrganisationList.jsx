@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import api from "../../api/api";
 import { toast } from "react-toastify";
 import Pagination from "../../components/common/Pagination";
-import Sidebar from "../../components/homePage/Sidebar";
 import { IoReorderThreeSharp } from "react-icons/io5";
 import { FaEdit } from "react-icons/fa";
 import { Link } from "react-router-dom";
@@ -51,11 +50,9 @@ function OrganisationList() {
   console.log(organizations);
   return (
     <div className="flex">
-      <div className="" style={{ height: "100vh" }}>
-        <Sidebar TAB={"orgList"} showBar={showSidebar} />
-      </div>
+      
 
-      <section className=" flex-1 antialiased bg-gray-100 text-gray-600 h-screen py-0 md:p-6 overflow-y-scroll   ">
+      <section className=" flex-1 antialiased bg-gray-100 text-gray-600 h-screen py-0 md:p-6   ">
         <div className="block md:hidden bg-[#201450] text-white mb-2 p-3 flex items-center gap-3  text-lg">
           <IoReorderThreeSharp
             onClick={handleToggleSidebar}
