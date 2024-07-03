@@ -112,6 +112,11 @@ import ThreeInchInvoice from '../pages/primaryUsers/ThreeInchInvoice'
 import BillToSales from '../pages/secUsers/BillToSales'
 import BillToSalesOrder from '../pages/secUsers/BillToSalesOrder'
 import AddBrand from '../pages/primaryUsers/AddBrand'
+import AddCategory from '../pages/primaryUsers/AddCategory'
+import AddSubCategory from '../pages/primaryUsers/AddSubCategory'
+import AddGodown from '../pages/primaryUsers/AddGodown'
+import AddPriceLevel from '../pages/primaryUsers/AddPriceLevel'
+import Layout from '../layout/Layout'
 const Routers = () => {
   return (
     <Routes>
@@ -171,6 +176,10 @@ const Routers = () => {
         <Route path='/pUsers/sharePurchaseThreeInch/:id' element={<ProtectedPriRoute><ThreeInchPurchasePrimary/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/shareInvoiceThreeInch/:id' element={<ProtectedSecRoute><ThreeInchInvoice/></ProtectedSecRoute>}></Route> 
         <Route path='/pUsers/brand' element={<ProtectedSecRoute><AddBrand/></ProtectedSecRoute>}></Route> 
+        <Route path='/pUsers/category' element={<ProtectedSecRoute><AddCategory/></ProtectedSecRoute>}></Route> 
+        <Route path='/pUsers/subcategory' element={<ProtectedSecRoute><AddSubCategory/></ProtectedSecRoute>}></Route> 
+        <Route path='/pUsers/godown' element={<ProtectedSecRoute><AddGodown/></ProtectedSecRoute>}></Route> 
+        <Route path='/pUsers/pricelevel' element={<ProtectedSecRoute><AddPriceLevel/></ProtectedSecRoute>}></Route> 
 
 
 

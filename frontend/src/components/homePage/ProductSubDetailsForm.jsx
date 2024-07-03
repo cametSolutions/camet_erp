@@ -1,33 +1,173 @@
-import { useState } from "react";
-import { FaArrowDown, FaArrowUp, FaEdit, FaTrash } from "react-icons/fa";
+/* eslint-disable no-unused-vars */
+/* eslint-disable react/prop-types */
+import { useEffect, useState } from "react";
+import { FaEdit, FaTrash } from "react-icons/fa";
+import { toast } from "react-toastify";
+import api from "../../api/api";
+import Swal from "sweetalert2";
+import { useSelector } from "react-redux";
 
-const ProductSubDetailsForm = () => {
-  const [description, setDescription] = useState("");
+const ProductSubDetailsForm = ({ tab }) => {
+  const [value, setValue] = useState("");
+  const [data, setData] = useState([]);
+  const [reload, setReload] = useState(false);
+  const [edit, setEdit] = useState({
+    id: "",
+    enabled: false,
+  });
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    // Handle submission logic here
+  const orgId = useSelector(
+    (state) => state.setSelectedOrganization.selectedOrg._id
+  );
+
+  useEffect(() => {
+    getSubDetails();
+    setValue("");
+  }, [reload]);
+
+  useEffect(() => {
+    if (value === "") {
+      setEdit(false);
+    }
+  }, [value]);
+
+  const getSubDetails = async (data) => {
+    try {
+      const res = await api.get(
+        `/api/pUsers/getProductSubDetails/${orgId}?type=${tab}`,
+        {
+          withCredentials: true,
+        }
+      );
+      setData(res?.data?.data);
+    } catch (error) {
+      console.log(error);
+      toast.error(error.response.data.message);
+    }
+  };
+
+  const handleSubmit = async (value) => {
+    const formData = {
+      [tab]: value,
+    };
+    console.log(formData);
+
+    try {
+      const res = await api.post(
+        `/api/pUsers/addProductSubDetails/${orgId}`,
+        formData,
+        {
+          withCredentials: true,
+        }
+      );
+
+      toast.success(res.data.message);
+      setReload(!reload);
+    } catch (error) {
+      console.log(error);
+      toast.error(error.response.data.message);
+    }
+  };
+
+  const deleteSubDetails = async (id, type) => {
+    try {
+      // Show a confirmation dialog
+      const result = await Swal.fire({
+        title: "Are you sure?",
+        text: `You are about to delete this ${tab}. This action cannot be undone!`,
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Yes, delete it!",
+      });
+
+      // If the user confirms the deletion
+      if (result.isConfirmed) {
+        const res = await api.delete(
+          `/api/pUsers/deleteProductSubDetails/${orgId}/${id}?type=${tab}`,
+          {
+            withCredentials: true,
+          }
+        );
+
+        setReload(!reload);
+        // Show a success message
+        Swal.fire("Deleted!", `The ${tab} has been deleted.`, "success");
+
+        // You might want to update your local state here
+      }
+    } catch (error) {
+      console.log(error);
+
+      // Show an error message
+      Swal.fire(
+        "Error",
+        error.response?.data?.message || "An error occurred while deleting",
+        "error"
+      );
+    }
+  };
+
+  const handleEdit = async (id, value) => {
+    setValue(value);
+    setEdit({
+      id,
+
+      enabled: true,
+    });
+  };
+
+  // Edit subdetails
+  const editSubDetails = async (id, data) => {
+    const formData = {
+      [tab]: value,
+    };
+    try {
+      const res = await api.put(
+        `/api/pUsers/editProductSubDetails/${orgId}/${id}?type=${tab}`,
+        formData,
+        {
+          withCredentials: true,
+        }
+      );
+      toast.success(res.data.message);
+      setValue("");
+      setReload(!reload);
+    } catch (error) {
+      console.log(error);
+      toast.error(error.response?.data?.message || "An error occurred");
+    }
   };
 
   return (
     <div className="  mt-1    ">
-      <h1 className="text-sm font-bold mb-6  text-gray-800 px-6 pt-6 ">
-        ADD YOUR DESIRED BRAND
+      <h1 className="text-sm font-bold mb-6  text-gray-800 px-6 pt-6  uppercase">
+        ADD YOUR DESIRED {tab}
       </h1>
       <div className="flex items-center gap-1 w-full px-6  ">
         <input
           type="text"
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              handleSubmit(value);
+            }
+          }}
           placeholder="Enter your brand name"
           className="w-full md:w-1/2  p-1  border border-gray-300 rounded"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
         />
         <div className="flex justify-between">
           <button
-            type="submit"
+            onClick={
+              edit?.enabled
+                ? () => editSubDetails(edit.id, value)
+                : () => handleSubmit(value)
+            }
             className="bg-gray-800 text-white px-4 py-1 rounded "
           >
-            SUBMIT
+            {edit ? "Update" : "Submit"}
           </button>
         </div>
       </div>
@@ -36,14 +176,9 @@ const ProductSubDetailsForm = () => {
           <div className="relative flex flex-col min-w-0 break-words bg-white w-full mb-6 shadow-lg rounded">
             <div className="rounded-t mb-0 px-4 py-3 border-0">
               <div className="flex flex-wrap items-center">
-                <div className="relative w-full px-4 max-w-full flex-grow flex-1">
-                  <h3 className="font-semibold text-base text-blueGray-700">
-                    Brands
-                  </h3>
-                </div>
                 <div className="relative w-full px-4 max-w-full flex-grow flex-1 text-right">
                   <button
-                    className="bg-indigo-500 text-white active:bg-indigo-600 text-xs font-bold uppercase px-3 py-1 rounded outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
+                    className="bg-indigo-500 text-white active:bg-indigo-600 text-xs font-bold uppercase px-3 py-1 rounded outline-none focus:outline-none  mb-1 ease-linear transition-all duration-150"
                     type="button"
                   >
                     See all
@@ -69,68 +204,37 @@ const ProductSubDetailsForm = () => {
                 </thead>
 
                 <tbody>
-                  <tr>
-                    <th className="px-6 text-left col-span-2 text-wrap border-t-0 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4 text-blueGray-700">
-                      /argon/
-                    </th>
-                    <td className="text-center flex justify-center px-6 border-t-0 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
-                      <p className="text-blue-500" ><FaEdit size={15}/></p>
-                    </td>
-                    <td className="text-right  px-6 border-t-0 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
-                      <p className="flex justify-end mr-4 text-red-500"><FaTrash/></p>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th className="px-6 text-left col-span-2 text-wrap border-t-0 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4 text-blueGray-700">
-                      /argon/
-                    </th>
-                    <td className="text-center flex justify-center px-6 border-t-0 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
-                      <p className="text-blue-500" ><FaEdit size={15}/></p>
-                    </td>
-                    <td className="text-right  px-6 border-t-0 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
-                      <p className="flex justify-end mr-4 text-red-500"><FaTrash/></p>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th className="px-6 text-left col-span-2 text-wrap border-t-0 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4 text-blueGray-700">
-                      /argon/
-                    </th>
-                    <td className="text-center flex justify-center px-6 border-t-0 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
-                      <p className="text-blue-500" ><FaEdit size={15}/></p>
-                    </td>
-                    <td className="text-right  px-6 border-t-0 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
-                      <p className="flex justify-end mr-4 text-red-500"><FaTrash/></p>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th className="px-6 text-left col-span-2 text-wrap border-t-0 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4 text-blueGray-700">
-                      /argon/
-                    </th>
-                    <td className="text-center flex justify-center px-6 border-t-0 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
-                      <p className="text-blue-500" ><FaEdit size={15}/></p>
-                    </td>
-                    <td className="text-right  px-6 border-t-0 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
-                      <p className="flex justify-end mr-4 text-red-500"><FaTrash/></p>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th className="px-6 text-left col-span-2 text-wrap border-t-0 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4 text-blueGray-700">
-                      /argon/
-                    </th>
-                    <td className="text-center flex justify-center px-6 border-t-0 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
-                      <p className="text-blue-500" ><FaEdit size={15}/></p>
-                    </td>
-                    <td className="text-right  px-6 border-t-0 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
-                      <p className="flex justify-end mr-4 text-red-500"><FaTrash/></p>
-                    </td>
-                  </tr>
+                  {data?.map((el) => (
+                    <tr key={el._id}>
+                      <th className="px-6 text-left col-span-2 text-wrap border-t-0 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4 text-blueGray-700">
+                        {el[tab]}
+                      </th>
+                      <td className="cursor-pointer text-center flex justify-center px-6 border-t-0 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
+                        <p
+                          onClick={() => {
+                            handleEdit(el._id, el[tab]);
+                          }}
+                          className="text-blue-500"
+                        >
+                          <FaEdit size={15} />
+                        </p>
+                      </td>
+                      <td className=" cursor-pointer text-right  px-6 border-t-0 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
+                        <p
+                          onClick={() => deleteSubDetails(el._id)}
+                          className="flex justify-end mr-4 text-red-500"
+                        >
+                          <FaTrash />
+                        </p>
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
           </div>
         </div>
       </section>
-      );
     </div>
   );
 };

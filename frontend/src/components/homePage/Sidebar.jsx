@@ -24,7 +24,9 @@ import { BiSolidCategoryAlt } from "react-icons/bi";
 import { TbCategory2 } from "react-icons/tb";
 import { RiBox3Fill } from "react-icons/ri";
 import { IoIosArrowDown } from "react-icons/io";
-import { IoIosArrowUp } from "react-icons/io";
+import { IoIosArrowUp,IoIosPricetags } from "react-icons/io";
+import { HiBuildingStorefront } from "react-icons/hi2";
+
 
 function Sidebar({ TAB, showBar }) {
   const [showSidebar, setShowSidebar] = useState(false);
@@ -464,7 +466,7 @@ function Sidebar({ TAB, showBar }) {
                         </li>
                         <li className="">
                           <Link
-                            to="/pUsers/inventory/p1"
+                            to="/pUsers/category"
                             onClick={handleSidebarItemClick}
                             className=" ml-4 rounded-md mt-5 px-4 py-2 flex items-center gap-4 text-sm font-medium text-white hover:bg-gray-800 hover:text-white"
                           >
@@ -475,13 +477,35 @@ function Sidebar({ TAB, showBar }) {
                         </li>
                         <li className="">
                           <Link
-                            to="/pUsers/inventory/p1"
+                            to="/pUsers/subcategory"
                             onClick={handleSidebarItemClick}
                             className=" ml-4 rounded-md mt-5 px-4 py-2 flex items-center gap-4 text-sm font-medium text-white hover:bg-gray-800 hover:text-white"
                           >
                             <TbCategory2 />
 
                             <span>Sub Category</span>
+                          </Link>
+                        </li>
+                        <li className="">
+                          <Link
+                            to="/pUsers/godown"
+                            onClick={handleSidebarItemClick}
+                            className=" ml-4 rounded-md mt-5 px-4 py-2 flex items-center gap-4 text-sm font-medium text-white hover:bg-gray-800 hover:text-white"
+                          >
+                            <HiBuildingStorefront />
+
+                            <span>Godown</span>
+                          </Link>
+                        </li>
+                        <li className="">
+                          <Link
+                            to="/pUsers/pricelevel"
+                            onClick={handleSidebarItemClick}
+                            className=" ml-4 rounded-md mt-5 px-4 py-2 flex items-center gap-4 text-sm font-medium text-white hover:bg-gray-800 hover:text-white"
+                          >
+                            <IoIosPricetags />
+
+                            <span>Price Level</span>
                           </Link>
                         </li>
                       </ul>
