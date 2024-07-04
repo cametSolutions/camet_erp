@@ -16,7 +16,8 @@ import { registerPrimaryUser,login,addOrganizations,
   deleteAdditionalCharge,EditAditionalCharge,addconfigurations,
   createSale,saveSalesNumber,getSalesDetails,fetchGodownsAndPriceLevels,fetchAdditionalDetails,
   addSecondaryConfigurations,findPrimaryUserGodowns,findPrimaryUserGodownsSelf,
-  godownwiseProducts,godownwiseProductsSelf,fetchAdditionalCharges,getPurchaseDetails,addProductSubDetails,getProductSubDetails,deleteProductSubDetails,editProductSubDetails} from '../controllers/primaryUserController.js';
+  godownwiseProducts,godownwiseProductsSelf,fetchAdditionalCharges,getPurchaseDetails,addProductSubDetails,
+  getProductSubDetails,deleteProductSubDetails,editProductSubDetails,getAllSubDetails} from '../controllers/primaryUserController.js';
 import { singleUpload } from '../multer/multer.js';
 import { primaryIsBlocked } from '../middlewares/isBlocked.js';
 import { companyAuthentication } from '../middlewares/authCompany.js';
@@ -92,6 +93,7 @@ router.post("/addProductSubDetails/:orgId",authPrimary,primaryIsBlocked,addProdu
 router.get("/getProductSubDetails/:orgId",authPrimary,primaryIsBlocked,getProductSubDetails)
 router.delete("/deleteProductSubDetails/:orgId/:id",authPrimary,primaryIsBlocked,deleteProductSubDetails)
 router.put("/editProductSubDetails/:orgId/:id",authPrimary,primaryIsBlocked,editProductSubDetails)
+router.get("/getAllSubDetails/:orgId",authPrimary,primaryIsBlocked,getAllSubDetails)
 
 
 
