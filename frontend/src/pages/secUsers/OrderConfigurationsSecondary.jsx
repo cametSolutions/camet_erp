@@ -4,10 +4,11 @@ import api from "../../api/api";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import {  IoReorderThreeSharp } from "react-icons/io5";
-import SidebarSec from "../../components/secUsers/SidebarSec";
 import { useDispatch } from "react-redux";
 import { removeAll } from "../../../slices/invoiceSecondary";
 import { removeAllSales } from "../../../slices/salesSecondary";
+import { useSidebar } from "../../layout/Layout";
+
 
 
 
@@ -25,6 +26,8 @@ function OrderConfigurationsSecondary() {
   const org =useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
+  const {  handleToggleSidebar } = useSidebar();
+
 
   console.log(org);
   const dispatch=useDispatch()
@@ -135,17 +138,10 @@ function OrderConfigurationsSecondary() {
     }
   };
 
-  const handleToggleSidebar = () => {
-    if (window.innerWidth < 768) {
-      setShowSidebar(!showSidebar);
-    }
-  };
+
 
   return (
-    <div className="flex">
-      <div className="">
-        <SidebarSec TAB={"terms"} showBar={showSidebar} />
-      </div>
+  
       <div className=" flex-1 h-screen overflow-y-scroll">
         <div className="bg-[#201450] sticky top-0 p-3 z-100 text-white text-lg font-bold flex items-center gap-3 z-20">
         <IoReorderThreeSharp
@@ -240,7 +236,6 @@ function OrderConfigurationsSecondary() {
           </div>
         </div>
       </div>
-    </div>
   );
 }
 

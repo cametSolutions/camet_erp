@@ -1,7 +1,6 @@
 /* eslint-disable react/no-unknown-property */
 /* eslint-disable react/jsx-no-target-blank */
 
-import Sidebar from "../../components/homePage/Sidebar";
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import api from "../../api/api";
@@ -13,7 +12,6 @@ import { units } from "../../../constants/units";
 import { MdPlaylistAdd } from "react-icons/md";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import { useNavigate,Link } from "react-router-dom";
-import SidebarSec from "../../components/secUsers/SidebarSec";
 
 function AddProductSecondary() {
   const [showSidebar, setShowSidebar] = useState(false);
@@ -547,11 +545,8 @@ function AddProductSecondary() {
 
 
   return (
-    <div className="flex ">
-      <div>
-        <SidebarSec />
-      </div>
-      <div className="flex-1 h-screen overflow-y-scroll">
+   
+      <div className="flex-1">
         <div className="bg-[#012A4A] sticky top-0 p-3 z-100 text-white text-lg font-bold flex items-center gap-3 z-20">
            <Link to={"/sUsers/productList"}>
           <IoIosArrowRoundBack
@@ -1802,7 +1797,6 @@ function AddProductSecondary() {
           </div>
         </section>
       </div>
-    </div>
   );
 }
 

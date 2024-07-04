@@ -155,11 +155,9 @@ function Contacts() {
   return (
     <>
       <div className="flex relative h-screen ">
-        <div>
-          <SidebarSec TAB={"invoice"} showBar={showSidebar} />
-        </div>
+       
 
-        <div className="flex-1 bg-slate-50 overflow-y-scroll ">
+        <div className="flex-1 bg-slate-50 ">
           <div className="sticky top-0 z-20">
             <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex  items-center gap-2  ">
               <IoIosArrowRoundBack

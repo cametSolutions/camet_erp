@@ -8,7 +8,6 @@ import { toast } from "react-toastify";
 import dayjs from "dayjs";
 import { FaEdit } from "react-icons/fa";
 import { useLocation, useNavigate } from "react-router-dom";
-import SidebarSec from "../../components/secUsers/SidebarSec";
 import SalesProductDetails from "../../components/common/SalesProductDetails";
 import SwallFireForPdf from "../../components/common/SwallFireForPdf";
 
@@ -50,12 +49,9 @@ function SalesDetailsSecondary() {
   console.log(data.items);
 
   return (
-    <div className="flex relative">
-      <div>
-        <SidebarSec />
-      </div>
+     
 
-      <div className="bg-[rgb(244,246,254)] flex-1 h-screen overflow-y-scroll relative  pb-[70px] md:pb-0 ">
+      <div className="bg-[rgb(244,246,254)] flex-1  relative  pb-[70px] md:pb-0 ">
         {/* headinh section  */}
         <div className="flex bg-[#012a4a] items-center justify-between sticky top-0 z-10">
           <div className="flex items-center gap-3  text-white text-md p-4 ">
@@ -182,7 +178,6 @@ function SalesDetailsSecondary() {
           </div>
         </div>
       </div>
-    </div>
   );
 }
 

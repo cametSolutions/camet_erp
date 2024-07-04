@@ -12,10 +12,6 @@ import SidebarSec from "../../components/secUsers/SidebarSec";
 import { HashLoader } from "react-spinners";
 import SearchBar from "../../components/common/SearchBar";
 
-
-
-
-
 // import { MdCancel } from "react-icons/md";
 
 function SearchPartySalesSecondary() {
@@ -48,11 +44,9 @@ function SearchPartySalesSecondary() {
 
         setParties(res.data.partyList);
         setLoading(false);
-
       } catch (error) {
         console.log(error);
         setLoading(false);
-
       }
     };
     fetchParties();
@@ -60,7 +54,7 @@ function SearchPartySalesSecondary() {
 
   const selectHandler = (el) => {
     dispatch(addParty(el));
-    navigate(-1)
+    navigate(-1);
     // if (location?.state?.from === "editSales") {
     //   navigate(`/sUsers/editSales/${location?.state?.id}`);
     // } else {
@@ -68,15 +62,14 @@ function SearchPartySalesSecondary() {
     // }
   };
 
-  const backHandler=()=>{
-    navigate(-1)
+  const backHandler = () => {
+    navigate(-1);
     // if (location?.state?.from === "editSales") {
     //   navigate(`/sUsers/editSales/${location?.state?.id}`);
     // } else {
     //   navigate("/sUsers/sales");
     // }
-
-  }
+  };
 
   console.log(parties);
   useEffect(() => {
@@ -91,16 +84,12 @@ function SearchPartySalesSecondary() {
   }, [search, parties]);
 
   return (
-    <div className="flex relative h-screen ">
-      <div>
-        <SidebarSec  showBar={showSidebar} />
-      </div>
-
-      <div className="flex-1 bg-slate-50 overflow-y-scroll ">
+    <div className=" ">
+      <div className="flex-1 bg-slate-50  ">
         <div className="sticky top-0 z-20">
           <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex  items-center gap-2  ">
             <IoIosArrowRoundBack
-            onClick={backHandler}
+              onClick={backHandler}
               // onClick={() => {
               //   navigate("/sUsers/invoice");
               // }}
@@ -143,7 +132,6 @@ function SearchPartySalesSecondary() {
                   </svg>
                 </div>
                 <SearchBar onType={searchData} />
-
               </div>
 
               {/* search bar */}

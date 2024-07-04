@@ -1,5 +1,4 @@
 /* eslint-disable react/no-unknown-property */
-import SidebarSec from "../../components/secUsers/SidebarSec";
 import { FaArrowDown } from "react-icons/fa6";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
@@ -16,7 +15,6 @@ import { useNavigate } from "react-router-dom";
 
 function Outstanding() {
   const [data, setData] = useState([]);
-  const [showSidebar, setShowSidebar] = useState(false);
 
 
   const [search, setSearch] = useState("");
@@ -28,11 +26,7 @@ function Outstanding() {
   console.log(secUser);
 
 
-  const handleToggleSidebar = () => {
-    if (window.innerWidth < 768) {
-      setShowSidebar(!showSidebar);
-    }
-  };
+
 
   function formatAmount(amount) {
     return amount.toLocaleString("en-IN", { maximumFractionDigits: 2 });
@@ -86,11 +80,9 @@ function Outstanding() {
   console.log(finalData);
 
   return (
-    <div className="flex h-screen overflow-y-hidden">
-      <SidebarSec TAB={"outstanding"} showBar={showSidebar} />
 
      
-      <div className=" flex-1   h-screen overflow-y-scroll    ">
+      <div className="  ">
         <div className="sticky top-0 flex flex-col z-30 bg-white">
           <div className="bg-white"></div>
           <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex  items-center gap-2  ">
@@ -171,7 +163,6 @@ function Outstanding() {
         )}
 
       </div>
-    </div>
   );
 }
 

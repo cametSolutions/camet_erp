@@ -29,7 +29,8 @@ const Layout = ({ children }) => {
         />
       );
     } else if (location.pathname.includes("/sUsers/")) {
-      return <SidebarSec />;
+      return <SidebarSec   showBar={showSidebar}
+      handleToggleSidebar={handleToggleSidebar} />;
     } else if (location.pathname.includes("/admin/")) {
       return (
         <AdminSidebar

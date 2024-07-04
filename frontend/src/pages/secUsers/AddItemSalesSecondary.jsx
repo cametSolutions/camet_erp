@@ -1031,12 +1031,9 @@ function AddItemSalesSecondary() {
   };
 
   return (
-    <div className="flex relative">
-      <div>
-        <SidebarSec TAB={"sales"} />
-      </div>
-
-      <div className="flex-1 bg-slate-50 h-screen overflow-y-scroll  ">
+    <div className="">
+  
+      <div className="flex-1 bg-slate-50 h-screen   ">
         <div className="sticky top-0 h-[165px] ">
           <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3  ">
             <div className="flex justify-between  items-center gap-2 ">

@@ -1,4 +1,3 @@
-import SidebarSec from "../../components/secUsers/SidebarSec";
 import { FaPhoneVolume } from "react-icons/fa6";
 import { IoPersonSharp } from "react-icons/io5";
 import { TbMoneybag } from "react-icons/tb";
@@ -117,10 +116,8 @@ function OutStandingDetails({ onTabChange }) {
   };
 
   return (
-    <div className="flex">
-      <SidebarSec />
 
-      <div className=" flex-1 h-screen overflow-scroll lg:px-[100px]  lg:mt-2  pb-28 bg-[rgb(244,246,254)]   ">
+      <div className=" flex-1 h-screen  pb-28 bg-[rgb(244,246,254)]   ">
         <div className="sticky  top-0 z-10 w-full shadow-lg  flex flex-col rounded-[3px] gap-1">
           {/* receive payment */}
 
@@ -265,7 +262,6 @@ function OutStandingDetails({ onTabChange }) {
           </div>
         </div>
       </div>
-    </div>
   );
 }
 

@@ -3,13 +3,11 @@ import { useReactToPrint } from "react-to-print";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import api from "../../api/api";
 import { useParams } from "react-router-dom";
-import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import { MdPrint } from "react-icons/md";
 import numberToWords from "number-to-words";
 import { Link } from "react-router-dom";
 import SidebarSec from "../../components/secUsers/SidebarSec";
-import QRCode from "react-qr-code";
 import SaleOrderPdf from "../../components/common/SaleOrderPdf";
 
 function ShareInvoiceSecondary() {
@@ -175,10 +173,8 @@ function ShareInvoiceSecondary() {
 
   return (
     <div className="flex">
-      <div className="">
-        <SidebarSec />
-      </div>
-      <div className="flex-1 h-screen overflow-y-scroll">
+     
+      <div className="flex-1">
         <div className="bg-[#012a4a]   sticky top-0 p-3 px-5 text-white text-lg font-bold flex items-center gap-3  shadow-lg justify-between">
           <div className="flex gap-2 ">
             <Link to={`/sUsers/InvoiceDetails/${id}`}>
