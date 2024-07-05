@@ -121,7 +121,7 @@ function AddPartySecondary() {
 
   return (
     
-      <div className="flex-1 flex flex-col ">
+      <div className=" ">
         <div className="bg-[#012A4A] sticky top-0 p-3 z-100 text-white text-lg font-bold flex items-center gap-3 z-20">
          <Link to={'/sUsers/partyList'}>
           <IoIosArrowRoundBack className="block md:hidden text-3xl" />
@@ -129,7 +129,7 @@ function AddPartySecondary() {
           <p>Add Party Details </p>
         </div>
 
-        <section className=" bg-blueGray-50 h-screen  ">
+        <section className=" bg-blueGray-50 ">
           <div className="w-full lg:w-8/12 px-4 mx-auto  pb-[30px] mt-5  ">
             <div className="relative flex flex-col min-w-0 break-words w-full mb-6 shadow-lg rounded-lg bg-blueGray-100 border-0">
               <div className="rounded-t bg-white mb-0 px-6 py-2">

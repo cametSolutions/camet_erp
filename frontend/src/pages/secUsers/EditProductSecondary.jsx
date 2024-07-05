@@ -892,7 +892,7 @@ function EditProductSecondary() {
                       type="button"
                     >
                       <span className="md:hidden">
-                        {selectedBrand.length > 0
+                        {selectedBrand?.length > 0
                           ? selectedBrand.length > 5
                             ? `${selectedBrand.slice(0, 5)}...`
                             : selectedBrand
