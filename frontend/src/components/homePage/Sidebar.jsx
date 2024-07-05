@@ -177,7 +177,7 @@ function Sidebar({ TAB, showBar }) {
         overflow-y-auto`}
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
-        <div className="w-full sticky top-0">
+        <div className="w-full relative">
           <div
             onClick={handleSidebarItemClick}
             className="text-white text-3xl absolute right-0 top-[-20px]  md:hidden  "
@@ -185,7 +185,6 @@ function Sidebar({ TAB, showBar }) {
             <IoReorderThreeSharp />
           </div>
         </div>
-        
         <div className="flex flex-col items-center mt-6 -mx-2">
           <img
             className="object-cover w-24 h-24 mx-2 rounded-full"
