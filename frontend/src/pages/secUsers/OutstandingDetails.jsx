@@ -117,7 +117,7 @@ function OutStandingDetails({ onTabChange }) {
 
   return (
 
-      <div className=" flex-1 h-screen  pb-28 bg-[rgb(244,246,254)]   ">
+      <div className="  pb-28 bg-[rgb(244,246,254)]   ">
         <div className="sticky  top-0 z-10 w-full shadow-lg  flex flex-col rounded-[3px] gap-1">
           {/* receive payment */}
 

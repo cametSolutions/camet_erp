@@ -6,11 +6,15 @@ import { toast } from "react-toastify";
 import api from "../../api/api";
 import Swal from "sweetalert2";
 import { useSelector } from "react-redux";
+import Pagination from "../../components/common/Pagination";
 
 const ProductSubDetailsForm = ({ tab }) => {
   const [value, setValue] = useState("");
   const [data, setData] = useState([]);
   const [reload, setReload] = useState(false);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [postPerPage, setPostPerPage] = useState(5);
   const [edit, setEdit] = useState({
     id: "",
     enabled: false,
@@ -140,8 +144,13 @@ const ProductSubDetailsForm = ({ tab }) => {
     }
   };
 
+
+  const lastPostIndex = currentPage * postPerPage;
+  const firstPostIndex = lastPostIndex - postPerPage;
+  const finalData = data.slice(firstPostIndex, lastPostIndex);
+
   return (
-    <div className="  mt-1    ">
+    <div className=" mb-6   ">
       <h1 className="text-sm font-bold mb-6  text-gray-800 px-6 pt-6  uppercase">
         ADD YOUR DESIRED {tab}
       </h1>
@@ -172,9 +181,9 @@ const ProductSubDetailsForm = ({ tab }) => {
         </div>
       </div>
       <section className="py-1 bg-blueGray-50 px-1">
-        <div className="w-full  mb-12 xl:mb-0  mt-12">
+        <div className="w-full   xl:mb-0  mt-12">
           <div className="relative flex flex-col min-w-0 break-words bg-white w-full mb-6 shadow-lg rounded">
-            <div className="rounded-t mb-0 px-4 py-3 border-0">
+            {/* <div className="rounded-t mb-0 px-4 py-3 border-0">
               <div className="flex flex-wrap items-center">
                 <div className="relative w-full px-4 max-w-full flex-grow flex-1 text-right">
                   <button
@@ -185,7 +194,7 @@ const ProductSubDetailsForm = ({ tab }) => {
                   </button>
                 </div>
               </div>
-            </div>
+            </div> */}
 
             <div className="block w-full overflow-x-auto">
               <table className="items-center bg-transparent w-full border-collapse">
@@ -204,7 +213,7 @@ const ProductSubDetailsForm = ({ tab }) => {
                 </thead>
 
                 <tbody>
-                  {data?.map((el) => (
+                  {finalData?.map((el) => (
                     <tr key={el._id}>
                       <th className="px-6 text-left col-span-2 text-wrap border-t-0 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4 text-blueGray-700">
                         {el[tab]}
@@ -235,6 +244,15 @@ const ProductSubDetailsForm = ({ tab }) => {
           </div>
         </div>
       </section>
+
+      <div className="mt-1">
+        <Pagination
+          postPerPage={postPerPage}
+          totalPosts={data.length}
+          setCurrentPage={setCurrentPage}
+          currentPage={currentPage}
+        />
+      </div>
     </div>
   );
 };

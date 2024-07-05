@@ -154,7 +154,6 @@ function Contacts() {
 
   return (
     <>
-      <div className="flex relative h-screen ">
        
 
         <div className="flex-1 bg-slate-50 ">
@@ -245,7 +244,7 @@ function Contacts() {
             </div>
           )}
         </div>
-      </div>
+     
       <Modal
         style={{
           scrollbarWidth: "thin",

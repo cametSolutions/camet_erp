@@ -55,11 +55,8 @@ function EditProductSecondary() {
   };
 
   return (
-    <div className="flex ">
-      <div>
-        <SidebarSec />
-      </div>
-      <div className="flex-1 h-screen overflow-y-scroll">
+    
+      <div className="flex-1">
         <div className="bg-[#012A4A] sticky top-0 p-3 z-100 text-white text-lg font-bold flex items-center gap-3 z-20">
           <Link to={"/sUsers/productList"}>
             <IoIosArrowRoundBack className="block md:hidden text-3xl" />
@@ -72,7 +69,6 @@ function EditProductSecondary() {
           productData={productData}
         />
       </div>
-    </div>
   );
 }
 
