@@ -273,9 +273,9 @@ function AddItemSalesSecondary() {
         if (type === "self") {
           const { brands, categories, subcategories, priceLevels } =
             res.data.data;
-          setBrands(brands);
-          setCategories(categories);
-          setSubCategories(subcategories);
+          // setBrands(brands);
+          // setCategories(categories);
+          // setSubCategories(subcategories);
           setPriceLevels(priceLevels);
           if (priceLevelFromRedux == "") {
             const defaultPriceLevel = priceLevels[0];
@@ -284,9 +284,9 @@ function AddItemSalesSecondary() {
         } else {
           const { priceLevels, brands, categories, subcategories } = res.data;
 
-          setBrands(brands);
-          setCategories(categories);
-          setSubCategories(subcategories);
+          // setBrands(brands);
+          // setCategories(categories);
+          // setSubCategories(subcategories);
 
           setPriceLevels(priceLevels);
           if (priceLevelFromRedux == "") {
@@ -1037,7 +1037,7 @@ function AddItemSalesSecondary() {
       </div>
 
       <div className="flex-1 bg-slate-50 h-screen overflow-y-scroll  ">
-        <div className="sticky top-0 h-[165px] ">
+        <div className="sticky top-0  ">
           <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3  ">
             <div className="flex justify-between  items-center gap-2 ">
               <div className="flex items-center gap-2">
