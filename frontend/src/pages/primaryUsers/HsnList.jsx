@@ -93,11 +93,11 @@ function HsnList() {
   return (
      
 
-      <section className=" flex-1 antialiased bg-gray-100 text-gray-600 h-screen    ">
-        <div className="block md:hidden bg-[#201450] text-white mb-2 p-3 flex items-center gap-3  text-lg">
+      <section className="  antialiased  text-gray-600     ">
+        <div className=" md:hidden sticky top-0 bg-[#201450] text-white mb-2 p-3 flex items-center gap-3  text-lg">
           <IoReorderThreeSharp
             onClick={handleToggleSidebar}
-            className="block md:hidden text-3xl"
+            className="block md:hidden text-3xl cursor-pointer"
           />
 
           <div className="flex items-center justify-between w-full">

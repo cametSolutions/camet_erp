@@ -59,8 +59,8 @@ function BankList() {
       </div> */}
 
       <section className=" flex-1 antialiased  text-gray-600   ">
-        <div className="block md:hidden bg-[#201450] text-white mb-2 p-3 flex items-center gap-3 text-lg justify-between ">
-          <div className="flex items-center justify-center gap-2 sticky top-0">
+        <div className=" md:hidden bg-[#201450] text-white mb-2 p-3 flex items-center gap-3 text-lg justify-between  sticky top-0 ">
+          <div className="flex items-center justify-center gap-2">
             <IoReorderThreeSharp
               onClick={handleToggleSidebar}
               className="block md:hidden text-3xl"

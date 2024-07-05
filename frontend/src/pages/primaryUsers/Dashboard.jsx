@@ -85,12 +85,9 @@ function Dashboard() {
   console.log(filteredData);
 
   return (
-    <div className="flex bg-[#f9fdff]  ">
-      {/* <div>
-        <Sidebar TAB={"dash"} showBar={showSidebar} />
-      </div> */}
+   
 
-      <div className="flex-1 h-screen ">
+      <div className="">
         <div className="sticky top-0 z-[10]">
           <div className="sticky top-0  ">
             <div className="bg-[#012a4a]   sticky top-0 p-3  text-white text-lg font-bold flex items-center gap-3  shadow-lg">
@@ -284,7 +281,7 @@ function Dashboard() {
 
         {/* transactions */}
       </div>
-    </div>
+   
   );
 }
 

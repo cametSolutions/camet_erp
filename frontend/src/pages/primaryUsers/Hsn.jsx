@@ -281,7 +281,7 @@ const navigate=useNavigate()
         <div className="bg-[#012A4A] sticky top-0 p-3 z-100 text-white text-lg font-bold flex items-center gap-3 z-20">
           <IoIosArrowRoundBack
             onClick={() => navigate(-1)}
-            className="block md:hidden text-3xl"
+            className="block md:hidden text-3xl cursor-pointer"
           />
           <p>Tax classification</p>
         </div>

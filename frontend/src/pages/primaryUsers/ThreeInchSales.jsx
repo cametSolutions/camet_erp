@@ -114,11 +114,8 @@ function ThreeInchSales() {
   });
 
   return (
-    <div className="flex">
-      <div className="">
-        <Sidebar />
-      </div>
-      <div className="flex-1 h-screen overflow-y-scroll">
+    
+      <div className="flex-1 ">
         <div className="bg-[#012a4a]   sticky top-0 p-3 px-5 text-white text-lg font-bold flex items-center gap-3  shadow-lg justify-between">
           <div className="flex gap-2 ">
             <Link to={`/pUsers/salesDetails/${id}`}>
@@ -145,7 +142,6 @@ function ThreeInchSales() {
           inWords={inWords}
         />
       </div>
-    </div>
   );
 }
 

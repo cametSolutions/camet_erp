@@ -46,7 +46,7 @@ const { handleToggleSidebar } = useSidebar();
 
   console.log(organizations);
   return (
-    <section className=" flex-1  bg-gray-100 text-gray-600 h-screen  ">
+    <section className=" flex-1  bg-gray-100 text-gray-600   ">
       <div className="block sticky top-0 md:hidden bg-[#201450] text-white mb-2 p-3 flex items-center gap-3  text-lg">
         <IoReorderThreeSharp
           onClick={handleToggleSidebar}

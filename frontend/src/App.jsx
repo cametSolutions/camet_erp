@@ -34,7 +34,7 @@ export default function App() {
         />
         <Route path="/pUsers/otp" element={<Otp />} />
         <Route path="/pUsers/resetPassword" element={<ResetPassword />} />
-        <Route path="/admin/login" element={<AdminLogin />}></Route>
+        <Route path="/admin/login" element={<AdminLogin />} />
         <Route
           path="/admin/home"
           element={
@@ -42,19 +42,12 @@ export default function App() {
               <AdminHome />
             </ProtectedAdmin>
           }
-        ></Route>
-
+        />
         {/* sec users */}
-        <Route path="/sUsers/login" element={<SecLogin />}></Route>
-        <Route
-          path="/sUsers/forgotPassword"
-          element={<ForgotPasswordSec />}
-        ></Route>
-        <Route path="/sUsers/otp" element={<OtpSec />}></Route>
-        <Route
-          path="/sUsers/resetPassword"
-          element={<ResetPasswordSec />}
-        ></Route>
+        <Route path="/sUsers/login" element={<SecLogin />} />
+        <Route path="/sUsers/forgotPassword" element={<ForgotPasswordSec />} />
+        <Route path="/sUsers/otp" element={<OtpSec />} />
+        <Route path="/sUsers/resetPassword" element={<ResetPasswordSec />} />
         <Route path="/errorPage" element={<ErrorPage />} />
         <Route path="/serverError" element={<ServerError />} />
 

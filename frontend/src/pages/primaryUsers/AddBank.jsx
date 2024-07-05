@@ -89,10 +89,9 @@ const AddBank = () => {
   };
 
   return (
-    <div className="flex ">
     
       <div className=" ">
-        <section className=" bg-blueGray-50 h-screen  ">
+        <section className=" bg-blueGray-50 ">
           <div className="bg-[#201450] sticky top-0 p-3 z-100 text-white text-lg font-bold flex items-center gap-3 z-20">
            <IoIosArrowRoundBack
                 onClick={() => {
@@ -250,7 +249,6 @@ const AddBank = () => {
           </div>
         </section>
       </div>
-    </div>
   );
 };
 

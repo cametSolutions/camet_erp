@@ -8,7 +8,7 @@ function AddGodown() {
   return (
  
 
-    <div className="flex-1 h-screen ">
+    <div className="flex-1  ">
       <div className="bg-[#201450]  sticky top-0 p-3 z-100 text-white text-lg font-bold flex items-center gap-3 z-20">
         <IoReorderThreeSharp
             onClick={handleToggleSidebar}

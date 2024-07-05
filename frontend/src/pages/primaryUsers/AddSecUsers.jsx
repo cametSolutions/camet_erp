@@ -147,7 +147,7 @@ function AddSecUsers() {
     
 
       <div className="flex-1 ">
-        <section className=" bg-blueGray-50 h-screen ">
+        <section className=" bg-blueGray-50 ">
           <div className="block  bg-[#201450] text-white mb-2 p-3 flex items-center gap-3 sticky top-0 z-20 text-lg  ">
             <Link to={"/pUsers/retailers"}>
               <IoIosArrowRoundBack className="text-3xl text-white cursor-pointer " />

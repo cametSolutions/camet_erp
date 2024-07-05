@@ -70,7 +70,7 @@ function SalesDetails() {
     <div className="">
      
 
-      <div className="bg-[rgb(244,246,254)] flex-1 h-screen relative  pb-[70px] md:pb-0 ">
+      <div className="bg-[rgb(244,246,254)]  relative  pb-[70px] md:pb-0 ">
         {/* headinh section  */}
         <div className="flex bg-[#012a4a] items-center justify-between  sticky top-0 z-10">
           <div className="flex items-center gap-3  text-white text-md p-4 ">
