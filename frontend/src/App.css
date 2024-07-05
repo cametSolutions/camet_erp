@@ -233,9 +233,14 @@
 
 
 
+
+
 @media (max-width: 640px) {
   .modal-dialog {
     top: 50% !important;
     transform: translateY(-50%);
   }
 }
+
+
+

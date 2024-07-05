@@ -20,7 +20,11 @@ import salesModel from "../models/salesModel.js";
 import AdditionalChargesModel from "../models/additionalChargesModel.js";
 import { truncateToNDecimals } from "./helpers/helper.js";
 import purchaseModel from "../models/purchaseModel.js";
-
+import { Brand } from "../models/subDetails.js";
+import { Category } from "../models/subDetails.js";
+import { Subcategory } from "../models/subDetails.js";
+import { Godown } from "../models/subDetails.js";
+import { PriceLevel } from "../models/subDetails.js";
 
 // @desc Register Primary user
 // route POST/api/pUsers/register
@@ -197,8 +201,8 @@ export const addOrganizations = async (req, res) => {
     username,
     password,
     type,
-    batchEnabled
-
+    batchEnabled,
+    industry,
   } = req.body;
   console.log(req.file);
   console.log(req.body);
@@ -225,7 +229,8 @@ export const addOrganizations = async (req, res) => {
       financialYear,
       gstNum: gst,
       type,
-      batchEnabled
+      batchEnabled,
+      industry,
     });
 
     if (organization) {
@@ -614,7 +619,6 @@ export const transactions = async (req, res) => {
           createdAt: 1,
           itemsLength: { $size: "$items" },
           Secondary_user_id: "$Secondary_user_id",
-
         },
       },
     ]);
@@ -635,7 +639,7 @@ export const transactions = async (req, res) => {
 
     console.log(sales);
 
-    const combined = [...transactions, ...invoices, ...sales,...purchases];
+    const combined = [...transactions, ...invoices, ...sales, ...purchases];
     combined.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
     if (combined.length > 0) {
@@ -711,7 +715,7 @@ export const fetchBanks = async (req, res) => {
       {
         $project: {
           bank_name: 1,
-          bank_ledname:1,
+          bank_ledname: 1,
         },
       },
     ]);
@@ -1312,14 +1316,14 @@ export const getProducts = async (req, res) => {
       for (let i = 0; i < products.length; i++) {
         const product = products[i];
         const hasGodownOrBatch = product.GodownList.some(
-          item => item.godown || item.batch
+          (item) => item.godown || item.batch
         );
         filteredProducts.push({
-          ...product?. _doc,  // Use _doc to get the plain JS object from the Mongoose document
-          hasGodownOrBatch
+          ...product?._doc, // Use _doc to get the plain JS object from the Mongoose document
+          hasGodownOrBatch,
         });
       }
-console.log("filteredProducts", filteredProducts);
+      console.log("filteredProducts", filteredProducts);
       return res.status(200).json({
         productData: filteredProducts,
         message: "Products fetched",
@@ -2130,7 +2134,6 @@ export const editInvoice = async (req, res) => {
   }
 };
 
-
 // @desc adding additional charges in orgData
 // route POST /api/pUsers/addAdditionalCharge
 
@@ -2280,7 +2283,7 @@ export const addconfigurations = async (req, res) => {
       // Validate selectedBank as an ObjectId if needed
       if (mongoose.Types.ObjectId.isValid(selectedBank)) {
         bankId = selectedBank;
-      } 
+      }
     }
 
     const newConfigurations = {
@@ -2304,7 +2307,6 @@ export const addconfigurations = async (req, res) => {
     });
   }
 };
-
 
 // @desc   saveSalesNumber
 // route post/api/pUsers/saveSalesNumber/cmp_id
@@ -2359,9 +2361,12 @@ export const createSale = async (req, res) => {
 
       // Calculate the new balance stock
       const productBalanceStock = truncateToNDecimals(product.balance_stock, 3);
-      console.log("productBalanceStock",productBalanceStock);
+      console.log("productBalanceStock", productBalanceStock);
       const itemCount = truncateToNDecimals(item.count, 3);
-      const newBalanceStock =truncateToNDecimals(( productBalanceStock - itemCount),3);
+      const newBalanceStock = truncateToNDecimals(
+        productBalanceStock - itemCount,
+        3
+      );
       // console.log("newBalanceStock",newBalanceStock);
 
       // Prepare product update operation
@@ -2381,7 +2386,7 @@ export const createSale = async (req, res) => {
         if (godownIndex !== -1) {
           // Calculate the new godown stock
           const newGodownStock = truncateToNDecimals(
-            (product.GodownList[godownIndex].balance_stock) - godown.count,
+            product.GodownList[godownIndex].balance_stock - godown.count,
             3
           );
 
@@ -2638,7 +2643,6 @@ export const fetchGodownsAndPriceLevels = async (req, res) => {
   }
 };
 
-
 // @desc  fetchAdditionalDetails
 // route get/api/pUsers/fetchAdditionalDetails
 
@@ -2729,21 +2733,19 @@ export const addSecondaryConfigurations = async (req, res) => {
 
   try {
     const {
-    
       selectedPriceLevels,
       salesConfiguration,
       salesOrderConfiguration,
       receiptConfiguration,
-      vanSaleConfiguration ,
+      vanSaleConfiguration,
       purchaseConfiguration,
       vanSale,
     } = req.body;
-    let {selectedGodowns}= req.body;
+    let { selectedGodowns } = req.body;
 
-    if (selectedGodowns.every(godown => godown === null)) {
+    if (selectedGodowns.every((godown) => godown === null)) {
       selectedGodowns = [];
     }
-
 
     console.log(selectedGodowns);
     console.log(vanSaleConfiguration);
@@ -2801,8 +2803,6 @@ export const addSecondaryConfigurations = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
-
-
 
 export const findPrimaryUserGodowns = async (req, res) => {
   const cmp_id = req.params.cmp_id;
@@ -2964,8 +2964,6 @@ export const fetchAdditionalCharges = async (req, res) => {
   }
 };
 
-
-
 // @desc toget the details of transaction or purchase
 // route get/api/sUsers/getPurchaseDetails
 
@@ -2987,5 +2985,284 @@ export const getPurchaseDetails = async (req, res) => {
   } catch (error) {
     console.error("Error fetching purchase details:", error);
     res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+// @desc adding subDetails of product such as brand category subcategory etc
+// route post/api/pUsers/addProductSubDetails
+
+export const addProductSubDetails = async (req, res) => {
+  try {
+    const subDetails = req.body;
+    const key = Object.keys(subDetails)[0];
+    const orgId = req.params.orgId;
+
+    let Model;
+    let dataToSave;
+
+    switch (key) {
+      case "brand":
+        Model = Brand;
+        dataToSave = {
+          brand: subDetails[key],
+          cmp_id: orgId,
+          Primary_user_id: req.pUserId,
+        };
+        break;
+      case "category":
+        Model = Category;
+        dataToSave = {
+          category: subDetails[key],
+          cmp_id: orgId,
+          Primary_user_id: req.pUserId,
+        };
+        break;
+      case "subcategory":
+        Model = Subcategory;
+        dataToSave = {
+          subcategory: subDetails[key],
+          categoryId: subDetails.categoryId, // Make sure to send categoryId from client
+          cmp_id: orgId,
+          Primary_user_id: req.pUserId,
+        };
+        break;
+      case "godown":
+        Model = Godown;
+        dataToSave = {
+          godown: subDetails[key],
+          address: subDetails.address, // Make sure to send address from client
+          cmp_id: orgId,
+          Primary_user_id: req.pUserId,
+        };
+        break;
+      case "pricelevel":
+        Model = PriceLevel;
+        dataToSave = {
+          pricelevel: subDetails[key],
+          cmp_id: orgId,
+          Primary_user_id: req.pUserId,
+        };
+        break;
+      default:
+        return res.status(400).json({ message: "Invalid sub-detail type" });
+    }
+
+    const newSubDetail = new Model(dataToSave);
+    await newSubDetail.save();
+
+    res.status(201).json({ message: `${key} added successfully` });
+  } catch (error) {
+    console.error("Error in addProductSubDetails:", error);
+    res
+      .status(500)
+      .json({ message: "An error occurred while adding the sub-detail" });
+  }
+};
+
+// @desc get subDetails of product such as brand category subcategory etc
+// route get/api/pUsers/getProductSubDetails
+
+export const getProductSubDetails = async (req, res) => {
+  console.log("gitt it");
+  try {
+    const { orgId } = req.params;
+    const { type } = req.query; // 'type' can be 'brand', 'category', 'subcategory', 'godown', or 'pricelevel'
+    const Primary_user_id = req.pUserId;
+
+    let data;
+
+    switch (type) {
+      case "brand":
+        data = await Brand.find({
+          cmp_id: orgId,
+          Primary_user_id: Primary_user_id,
+        });
+        break;
+      case "category":
+        data = await Category.find({
+          cmp_id: orgId,
+          Primary_user_id: Primary_user_id,
+        });
+        break;
+      case "subcategory":
+        data = await Subcategory.find({
+          cmp_id: orgId,
+          Primary_user_id: Primary_user_id,
+        });
+        break;
+      case "godown":
+        data = await Godown.find({
+          cmp_id: orgId,
+          Primary_user_id: Primary_user_id,
+        });
+        break;
+      case "pricelevel":
+        data = await PriceLevel.find({
+          cmp_id: orgId,
+          Primary_user_id: Primary_user_id,
+        });
+        break;
+      default:
+        return res.status(400).json({ message: "Invalid sub-detail type" });
+    }
+
+    res.status(200).json({
+      message: `${type} details retrieved successfully`,
+      data: data,
+    });
+  } catch (error) {
+    console.error("Error in getProductSubDetails:", error);
+    res
+      .status(500)
+      .json({ message: "An error occurred while fetching the sub-details" });
+  }
+};
+
+// @des  delete subDetails of product such as brand category subcategory etc
+// route delete/api/pUsers/deleteProductSubDetails
+export const deleteProductSubDetails = async (req, res) => {
+  try {
+    const { orgId, id } = req.params;
+    const { type } = req.query;
+
+    let Model;
+    switch (type) {
+      case "brand":
+        Model = Brand;
+        break;
+      case "category":
+        Model = Category;
+        break;
+      case "subcategory":
+        Model = Subcategory;
+        break;
+      case "godown":
+        Model = Godown;
+        break;
+      case "pricelevel":
+        Model = PriceLevel;
+        break;
+      default:
+        return res.status(400).json({ message: "Invalid sub-detail type" });
+    }
+
+    const deletedItem = await Model.findOneAndDelete({
+      _id: id,
+      cmp_id: orgId,
+    });
+
+    if (!deletedItem) {
+      return res.status(404).json({ message: "Item not found" });
+    }
+
+    res.status(200).json({ message: `${type} deleted successfully` });
+  } catch (error) {
+    console.error("Error in deleteProductSubDetails:", error);
+    res
+      .status(500)
+      .json({ message: "An error occurred while deleting the sub-detail" });
+  }
+};
+
+// @des  edit  subDetails of product such as brand category subcategory etc
+// route put/api/pUsers/deleteProductSubDetails
+export const editProductSubDetails = async (req, res) => {
+  try {
+    const { orgId, id } = req.params;
+    const { type } = req.query;
+    const updateData = req.body[type];
+
+    let Model;
+    switch (type) {
+      case "brand":
+        Model = Brand;
+        break;
+      case "category":
+        Model = Category;
+        break;
+      case "subcategory":
+        Model = Subcategory;
+        break;
+      case "godown":
+        Model = Godown;
+        break;
+      case "pricelevel":
+        Model = PriceLevel;
+        break;
+      default:
+        return res.status(400).json({ message: "Invalid sub-detail type" });
+    }
+
+    const queryConditions = { _id: id, cmp_id: orgId };
+    const updateOperation = { [type]: updateData };
+
+    const result = await Model.updateOne(queryConditions, updateOperation);
+
+    if (result.modifiedCount === 0) {
+      return res
+        .status(404)
+        .json({ message: "Item not found or not modified" });
+    }
+
+    const updatedItem = await Model.findOne(queryConditions);
+
+    res.status(200).json({
+      message: `${type} updated successfully`,
+      data: updatedItem,
+    });
+  } catch (error) {
+    console.error("Error in editProductSubDetails:", error);
+    res
+      .status(500)
+      .json({ message: "An error occurred while updating the sub-detail" });
+  }
+};
+
+// @desc get ** all ** subDetails of product such as brand category subcategory etc
+// route get/api/pUsers/getProductSubDetails
+
+export const getAllSubDetails = async (req, res) => {
+  try {
+    const  cmp_id=req.params.orgId;
+    const  Primary_user_id=req.pUserId;
+
+    if (!cmp_id || !Primary_user_id) {
+      console.log(
+        "cmp_id and Primary_user_id are required in getAllSubDetails "
+      );
+      return;
+    }
+
+    const [brands, categories, subcategories, godowns, priceLevels] =
+      await Promise.all([
+        Brand.find({ cmp_id, Primary_user_id }).select("_id brand"),
+        Category.find({ cmp_id, Primary_user_id }).select("_id category"),
+        Subcategory.find({ cmp_id, Primary_user_id }).select(
+          "_id subcategory"
+        ),
+        Godown.find({ cmp_id, Primary_user_id }).select("_id godown"),
+        PriceLevel.find({ cmp_id, Primary_user_id }).select("_id pricelevel"),
+      ]);
+
+    const result = {
+      brands: brands.map((b) => ({ _id: b._id, name: b.brand })),
+      categories: categories.map((c) => ({ _id: c._id, name: c.category })),
+      subcategories: subcategories.map((s) => ({
+        _id: s._id,
+        name: s.subcategory,
+      })),
+      godowns: godowns.map((g) => ({ _id: g._id, name: g.godown })),
+      priceLevels: priceLevels.map((p) => ({ _id: p._id, name: p.pricelevel })),
+    };
+
+    res.status(200).json({
+      message: "All subdetails retrieved successfully",
+      data: result,
+    });
+  } catch (error) {
+    console.error("Error in getAllSubDetails:", error);
+    res
+      .status(500)
+      .json({ message: "An error occurred while fetching the subdetails" });
   }
 };

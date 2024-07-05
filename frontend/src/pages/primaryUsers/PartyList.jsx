@@ -11,7 +11,6 @@ import { FaEdit } from "react-icons/fa";
 import Swal from "sweetalert2";
 import { Link } from "react-router-dom";
 import { HashLoader } from "react-spinners";
-import { IoIosSearch } from "react-icons/io";
 import { FixedSizeList as List } from "react-window";
 import { IoIosAddCircle } from "react-icons/io";
 import { removeAll } from "../../../slices/invoice";
@@ -19,6 +18,8 @@ import { removeAllSales } from "../../../slices/sales";
 
 import { useDispatch } from "react-redux";
 import SearchBar from "../../components/common/SearchBar";
+import { useSidebar } from "../../layout/Layout";
+
 
 
 function PartyList() {
@@ -120,11 +121,8 @@ function PartyList() {
 
   console.log(parties);
 
-  const handleToggleSidebar = () => {
-    if (window.innerWidth < 768) {
-      setShowSidebar(!showSidebar);
-    }
-  };
+  const {  handleToggleSidebar } = useSidebar();
+
 
   const Row = ({ index, style }) => {
     const el = filteredParty[index];
@@ -183,12 +181,9 @@ function PartyList() {
   };
 
   return (
-    <div className="flex relative h-screen ">
-      <div>
-        <Sidebar TAB={"addParty"} showBar={showSidebar} />
-      </div>
+    
 
-      <div className="flex-1 bg-slate-50 overflow-y-scroll ">
+      <div className="flex-1 bg-slate-50  ">
         <div className="sticky top-0 z-20">
           <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3  flex justify-between items-center  ">
             <div className="flex items-center justify-center gap-2">
@@ -269,7 +264,7 @@ function PartyList() {
         </div>
       </Link> */}
       </div>
-    </div>
+
   );
 }
 

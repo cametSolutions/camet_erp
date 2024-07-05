@@ -16,7 +16,8 @@ import { registerPrimaryUser,login,addOrganizations,
   deleteAdditionalCharge,EditAditionalCharge,addconfigurations,
   createSale,saveSalesNumber,getSalesDetails,fetchGodownsAndPriceLevels,fetchAdditionalDetails,
   addSecondaryConfigurations,findPrimaryUserGodowns,findPrimaryUserGodownsSelf,
-  godownwiseProducts,godownwiseProductsSelf,fetchAdditionalCharges,getPurchaseDetails} from '../controllers/primaryUserController.js';
+  godownwiseProducts,godownwiseProductsSelf,fetchAdditionalCharges,getPurchaseDetails,addProductSubDetails,
+  getProductSubDetails,deleteProductSubDetails,editProductSubDetails,getAllSubDetails} from '../controllers/primaryUserController.js';
 import { singleUpload } from '../multer/multer.js';
 import { primaryIsBlocked } from '../middlewares/isBlocked.js';
 import { companyAuthentication } from '../middlewares/authCompany.js';
@@ -88,6 +89,11 @@ router.get("/godownProductFilter/:cmp_id/:godown_id",authPrimary,primaryIsBlocke
 router.get("/godownProductFilterSelf/:cmp_id/:godown_name",authPrimary,primaryIsBlocked,companyAuthentication,godownwiseProductsSelf)
 router.get("/additionalcharges/:cmp_id",authPrimary,primaryIsBlocked,companyAuthentication,fetchAdditionalCharges)
 router.get("/getPurchaseDetails/:id",authPrimary,primaryIsBlocked,getPurchaseDetails)
+router.post("/addProductSubDetails/:orgId",authPrimary,primaryIsBlocked,addProductSubDetails)
+router.get("/getProductSubDetails/:orgId",authPrimary,primaryIsBlocked,getProductSubDetails)
+router.delete("/deleteProductSubDetails/:orgId/:id",authPrimary,primaryIsBlocked,deleteProductSubDetails)
+router.put("/editProductSubDetails/:orgId/:id",authPrimary,primaryIsBlocked,editProductSubDetails)
+router.get("/getAllSubDetails/:orgId",authPrimary,primaryIsBlocked,getAllSubDetails)
 
 
 

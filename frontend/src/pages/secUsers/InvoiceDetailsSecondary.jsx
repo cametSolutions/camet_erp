@@ -1,13 +1,11 @@
 import { MdOutlineArrowBack } from "react-icons/md";
-import { IoMdShareAlt } from "react-icons/io";
 import { MdTextsms } from "react-icons/md";
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import api from "../../api/api";
 import { toast } from "react-toastify";
 import dayjs from "dayjs";
 import { FaEdit } from "react-icons/fa";
-import SidebarSec from "../../components/secUsers/SidebarSec";
 import { useLocation, useNavigate } from "react-router-dom";
 import SwallFireForPdf from "../../components/common/SwallFireForPdf";
 import SalesOrderProductDetails from "../../components/common/SalesOrderProductDetails";
@@ -44,12 +42,8 @@ function InvoiceDetailsSecondary() {
     }
   };
   return (
-    <div className="flex relative">
-      <div>
-        <SidebarSec />
-      </div>
-
-      <div className="bg-[rgb(244,246,254)] flex-1 h-screen overflow-y-scroll relative  pb-[70px] md:pb-0 ">
+   
+      <div className="bg-[rgb(244,246,254)] flex-1 relative  pb-[70px] md:pb-0 ">
         {/* headinh section  */}
         <div className="flex bg-[#012a4a] items-center justify-between sticky top-0 z-20">
           <div className="flex items-center gap-3  text-white text-md p-4 ">
@@ -158,7 +152,6 @@ function InvoiceDetailsSecondary() {
           </div>
         </div>
       </div>
-    </div>
   );
 }
 

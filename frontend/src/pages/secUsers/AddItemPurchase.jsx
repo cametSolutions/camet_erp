@@ -25,12 +25,10 @@ import { FixedSizeList as List } from "react-window";
 import { Button, Modal } from "flowbite-react";
 import { toast } from "react-toastify";
 import SidebarSec from "../../components/secUsers/SidebarSec";
-import { IoIosCloseCircleOutline } from "react-icons/io";
 import { Decimal } from "decimal.js";
 import SearchBar from "../../components/common/SearchBar";
 
 
-// import SelectDefaultModal from "../../../constants/components/SelectDefaultModal";
 
 function AddItemPurchase() {
   const [item, setItem] = useState([]);
@@ -833,11 +831,9 @@ function AddItemPurchase() {
 
   return (
     <div className="flex relative">
-      <div>
-        <SidebarSec TAB={"purchase"} />
-      </div>
+     
 
-      <div className="flex-1 bg-slate-50 h-screen overflow-y-scroll  ">
+      <div className="flex-1 bg-slate-50 h-screen   ">
         <div className="sticky top-0 h-[165px] ">
           <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3  ">
             <div className="flex justify-between  items-center gap-2 ">

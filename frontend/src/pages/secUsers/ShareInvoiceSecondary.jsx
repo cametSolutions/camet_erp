@@ -3,13 +3,11 @@ import { useReactToPrint } from "react-to-print";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import api from "../../api/api";
 import { useParams } from "react-router-dom";
-import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import { MdPrint } from "react-icons/md";
 import numberToWords from "number-to-words";
 import { Link } from "react-router-dom";
 import SidebarSec from "../../components/secUsers/SidebarSec";
-import QRCode from "react-qr-code";
 import SaleOrderPdf from "../../components/common/SaleOrderPdf";
 
 function ShareInvoiceSecondary() {
@@ -112,51 +110,71 @@ function ShareInvoiceSecondary() {
   // }
 
   const handlePrint = useReactToPrint({
-    documentTitle: `Sale Order ${data.orderNumber}`,
+    content: () => contentToPrint.current,
+    // documentTitle: `Sales ${data.salesNumber}`,
     pageStyle: `
-    @page {
-      size: A4;
-      margin: 20mm 10mm;
-
-    }
-
-    @media print {
-      body {
-        -webkit-print-color-adjust: exact;
-        font-family: 'Arial', sans-serif;
+      @page {
+        size: A4;
+        margin: 0mm 10mm 9mm 10mm;
       }
-
-      .pdf-page {
-        page-break-after: always;
+  
+      @media print {
+        body {
+          -webkit-print-color-adjust: exact;
+          font-family: 'Arial', sans-serif;
+        }
+  
+        .pdf-page {
+          page-break-after: always;
+        }
+  
+        .pdf-content {
+          font-size: 19px;
+        }
+  
+        .print-md-layout {
+          display: flex;
+          flex-direction: row;
+          justify-content: space-between;
+          align-items: flex-start;
+          gap: 8px;
+          padding: 1rem 2rem;
+          width: 100%;
+        }
+  
+        .bill-to, .ship-to {
+          width: 50%;
+          padding-right: 1rem;
+          border-right: 1px solid #e5e7eb; /* Tailwind color gray-300 */
+        }
+  
+        .details-table {
+          width: 50%;
+          padding-left: 1rem;
+        }
+  
+        .details-table td {
+          font-size: 11px;
+          color: #6b7280; /* Tailwind color gray-500 */
+        }
+  
+        /* Force flex-row for print */
+        @media print {
+          .print-md-layout {
+            display: flex !important;
+            flex-direction: row !important;
+          }
+        }
       }
-
-      .pdf-header {
-        font-size: 16px;
-        // font-weight: bold;
-      }
-
-      .pdf-content {
-        font-size: 19px;
-      }
-
-      .pdf-footer {
-        position: fixed;
-        bottom: 0;
-        width: 100%;
-        text-align: center;
-        font-size: 12px;
-      }
-    }
-  `,
+    `,
+    onAfterPrint: () => console.log("after printing..."),
     removeAfterPrint: true,
   });
 
   return (
     <div className="flex">
-      <div className="">
-        <SidebarSec />
-      </div>
-      <div className="flex-1 h-screen overflow-y-scroll">
+     
+      <div className="flex-1">
         <div className="bg-[#012a4a]   sticky top-0 p-3 px-5 text-white text-lg font-bold flex items-center gap-3  shadow-lg justify-between">
           <div className="flex gap-2 ">
             <Link to={`/sUsers/InvoiceDetails/${id}`}>

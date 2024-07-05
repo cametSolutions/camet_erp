@@ -163,10 +163,9 @@ function Payment() {
   };
 
   return (
-    <div className="flex">
-      <SidebarSec className="h-screen overflow-y-scroll" />
+  
 
-      <div className="flex-1">
+      <div >
         <div className="bg-[#eaeaea] flex flex-col h-screen  ">
           <div className="bg-[#012a4a] shadow-lg px-4 py-4 pb-3 flex justify-between items-center z-10  ">
             <div className="flex items-center gap-2">
@@ -178,7 +177,7 @@ function Payment() {
             </p>
           </div>
 
-          <div className="flex justify-center mt-5 overflow-y-scroll mb-5">
+          <div className="flex justify-center mt-5  mb-5">
             <div className="relative bg-white w-5/6 md:w-3/6  shadow-lg rounded-lg overflow-hidden ">
               <div className=" px-2 uppercase flex justify-center items-center gap-2 py-3 bg-blue-500">
                 <MdPayment className="text-xl"></MdPayment>
@@ -420,7 +419,6 @@ function Payment() {
           </div>
         </div>
       </div>
-    </div>
   );
 }
 

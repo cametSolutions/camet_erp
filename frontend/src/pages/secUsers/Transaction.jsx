@@ -20,7 +20,6 @@ function Transaction() {
   const [search, setSearch] = useState("");
   const [startDate, setStartDate] = useState(new Date());
   const [endDate, setEndDate] = useState(new Date());
-  const [showSidebar, setShowSidebar] = useState(false);
   const [total, setTotal] = useState(0);
 
   const org = useSelector(
@@ -121,12 +120,9 @@ function Transaction() {
   console.log(data);
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      <div>
-        <SidebarSec TAB={"transaction"} showBar={showSidebar} />
-      </div>
+     
       <div className="flex-1">
-        <div className=" flex-1   h-screen overflow-y-scroll ">
+        <div className=" flex-1   ">
           <div className="sticky top-0 flex flex-col z-30 bg-white">
             <div className="bg-white"></div>
             <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex items-center gap-2  ">
@@ -311,7 +307,6 @@ function Transaction() {
           </div>
         </div>
       </div>
-    </div>
   );
 }
 

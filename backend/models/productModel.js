@@ -27,13 +27,13 @@ const productSchema = new mongoose.Schema({
     ref: "SecondaryUser",
   },
   brand: {
-    type: String,
+    type: Object,
   },
   category: {
-    type: String,
+    type: Object,
   },
   sub_category: {
-    type: String,
+    type: Object,
   },
   unit: {
     type: String,

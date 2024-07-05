@@ -1,8 +1,9 @@
 /* eslint-disable react/prop-types */
-import { IoIosArrowRoundBack } from "react-icons/io";
-import { IoIosArrowRoundForward } from "react-icons/io";
+
+import { RiArrowLeftSLine, RiArrowRightSLine } from "react-icons/ri";
 
 function Pagination({ totalPosts, postPerPage, setCurrentPage, currentPage }) {
+  console.log(totalPosts);
   let pages = [];
 
   for (let i = 1; i <= Math.ceil(totalPosts / postPerPage); i++) {
@@ -50,19 +51,19 @@ function Pagination({ totalPosts, postPerPage, setCurrentPage, currentPage }) {
           <li onClick={previous}>
             <a
               href="#"
-              className="flex items-center justify-center text-[30px] px-4 h-10 ms-0 leading-tight hover:scale-125 transition ease-in-out"
+              className="flex items-center justify-center text-[20px] px-4 h-10 ms-0 leading-tight hover:scale-125 transition ease-in-out"
             >
-              <IoIosArrowRoundBack />
+              {totalPosts > 0 && <RiArrowLeftSLine />}
             </a>
           </li>
           {renderPages()}
           <li onClick={next}>
             <a
               href="#"
-              className="flex items-center text-[30px] justify-center px-4 h-10 leading-tight hover:scale-125 transition ease-in-out"
+              className="flex items-center text-[20px] justify-center px-4 h-10 leading-tight hover:scale-125 transition ease-in-out"
             >
-              <IoIosArrowRoundForward />
-            </a>
+              {totalPosts > 0 && <RiArrowRightSLine />}
+              </a>
           </li>
         </ul>
       </nav>
@@ -71,4 +72,3 @@ function Pagination({ totalPosts, postPerPage, setCurrentPage, currentPage }) {
 }
 
 export default Pagination;
-

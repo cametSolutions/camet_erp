@@ -28,7 +28,6 @@ import ProductDetails from "../../components/common/ProductDetails";
 import { IoIosArrowDown } from "react-icons/io";
 import { IoIosArrowUp } from "react-icons/io";
 
-// import SelectDefaultModal from "../../../constants/components/SelectDefaultModal";
 
 function AddItemSalesSecondary() {
   const [item, setItem] = useState([]);
@@ -274,9 +273,9 @@ function AddItemSalesSecondary() {
         if (type === "self") {
           const { brands, categories, subcategories, priceLevels } =
             res.data.data;
-          setBrands(brands);
-          setCategories(categories);
-          setSubCategories(subcategories);
+          // setBrands(brands);
+          // setCategories(categories);
+          // setSubCategories(subcategories);
           setPriceLevels(priceLevels);
           if (priceLevelFromRedux == "") {
             const defaultPriceLevel = priceLevels[0];
@@ -285,9 +284,9 @@ function AddItemSalesSecondary() {
         } else {
           const { priceLevels, brands, categories, subcategories } = res.data;
 
-          setBrands(brands);
-          setCategories(categories);
-          setSubCategories(subcategories);
+          // setBrands(brands);
+          // setCategories(categories);
+          // setSubCategories(subcategories);
 
           setPriceLevels(priceLevels);
           if (priceLevelFromRedux == "") {
@@ -1032,12 +1031,9 @@ function AddItemSalesSecondary() {
   };
 
   return (
-    <div className="flex relative">
-      <div>
-        <SidebarSec TAB={"sales"} />
-      </div>
-
-      <div className="flex-1 bg-slate-50 h-screen overflow-y-scroll  ">
+    <div className="">
+  
+      <div className="flex-1 bg-slate-50 h-screen   ">
         <div className="sticky top-0 h-[165px] ">
           <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3  ">
             <div className="flex justify-between  items-center gap-2 ">

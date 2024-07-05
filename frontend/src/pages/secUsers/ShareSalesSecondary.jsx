@@ -100,103 +100,77 @@ function ShareSalesSecondary() {
     }
   }, [data]);
 
-  // if (totalAmount) {
 
-  //   // setInWords(mergedWord)
-  // }
 
-  // const handlePrint = useReactToPrint({
-  //   documentTitle: `Sale Order ${data.salesNumber}`,
-  //   onBeforePrint: () => console.log("before printing..."),
-  //   onAfterPrint: () => console.log("after printing..."),
-  //   removeAfterPrint: true,
-  // });
-
-//   const handlePrint = useReactToPrint({
-//     content: () => contentToPrint.current,
-//     documentTitle: `Sale Order ${data.salesNumber}`,
-
-//     pageStyle: `
-//     @page {
-       
-
-//         @bottom-right {
-//             content: "Page " counter(page);
-//           }
-// }`,
-
-//     onAfterPrint: () => console.log("after printing..."),
-//     removeAfterPrint: true,
-//   });
-
-const handlePrint = useReactToPrint({
-  content: () => contentToPrint.current,
-  // documentTitle: `Sales ${data.salesNumber}`,
-  pageStyle: `
-    @page {
-      size: A4;
-      margin: 20mm 10mm;
-
-    }
-
-    @media print {
-      body {
-        -webkit-print-color-adjust: exact;
-        font-family: 'Arial', sans-serif;
+  const handlePrint = useReactToPrint({
+    content: () => contentToPrint.current,
+    // documentTitle: `Sales ${data.salesNumber}`,
+    pageStyle: `
+      @page {
+        size: A4;
+        margin: 0mm 10mm 9mm 10mm;
       }
-
-      .pdf-page {
-        page-break-after: always;
+  
+      @media print {
+        body {
+          -webkit-print-color-adjust: exact;
+          font-family: 'Arial', sans-serif;
+        }
+  
+        .pdf-page {
+          page-break-after: always;
+        }
+  
+        .pdf-content {
+          font-size: 19px;
+        }
+  
+        .print-md-layout {
+          display: flex;
+          flex-direction: row;
+          justify-content: space-between;
+          align-items: flex-start;
+          gap: 8px;
+          padding: 1rem 2rem;
+          width: 100%;
+        }
+  
+        .bill-to, .ship-to {
+          width: 50%;
+          padding-right: 1rem;
+          border-right: 1px solid #e5e7eb; /* Tailwind color gray-300 */
+        }
+  
+        .details-table {
+          width: 50%;
+          padding-left: 1rem;
+        }
+  
+        .details-table td {
+          font-size: 11px;
+          color: #6b7280; /* Tailwind color gray-500 */
+        }
+  
+        /* Force flex-row for print */
+        @media print {
+          .print-md-layout {
+            display: flex !important;
+            flex-direction: row !important;
+          }
+        }
       }
+    `,
+    onAfterPrint: () => console.log("after printing..."),
+    removeAfterPrint: true,
+  });
+  
 
-      .pdf-header {
-        font-size: 16px;
-        // font-weight: bold;
-      }
 
-      .pdf-content {
-        font-size: 19px;
-      }
-
-      .pdf-footer {
-        position: fixed;
-        bottom: 0;
-        width: 100%;
-        text-align: center;
-        font-size: 12px;
-      }
-    }
-  `,
-  onAfterPrint: () => console.log("after printing..."),
-  removeAfterPrint: true,
-});
-
-  // const insertPageBreaks = () => {
-  //   const pdfContent = contentToPrint.current;
-  //   const pages = pdfContent.querySelectorAll(".pdf-page");
-  //   let currentPageHeight = 0;
-  //   const pageHeightLimit = 1123; // Approx height for A4 at 96dpi, adjust as needed
-
-  //   pages.forEach(page => {
-  //     const pageContent = page.children;
-  //     Array.from(pageContent).forEach(element => {
-  //       currentPageHeight += element.clientHeight;
-  //       if (currentPageHeight > pageHeightLimit) {
-  //         const breakDiv = document.createElement("div");
-  //         breakDiv.className = "page-break";
-  //         element.parentNode.insertBefore(breakDiv, element);
-  //         currentPageHeight = element.clientHeight;
-  //       }
-  //     });
-  //   });
-  // };
 
   return (
-    <div className="flex">
+    <div className="">
+   
       <div className="">
-        <SidebarSec />
-      </div>
-      <div className="flex-1 h-screen overflow-y-scroll">
         <div className="bg-[#012a4a]   sticky top-0 p-3 px-5 text-white text-lg font-bold flex items-center gap-3  shadow-lg justify-between">
           <div className="flex gap-2 ">
             <Link to={`/sUsers/salesDetails/${id}`}>

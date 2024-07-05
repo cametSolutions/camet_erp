@@ -78,7 +78,7 @@ import OrderConfigurationsSecondary from '../pages/secUsers/OrderConfigurationsS
 // inventory 
 import InventoryPrimaryUser from '../pages/primaryUsers/InventoryPrimaryUser'
 import InventorySecondaryUser from '../pages/secUsers/InventorySecondaryUser'
-import SelectDefaultModal from '../../constants/components/SelectDefaultModal'
+// import SelectDefaultModal from '../../constants/components/SelectDefaultModal'
 import SalesDetails from '../pages/primaryUsers/SalesDetails'
 import ShareSales from '../pages/primaryUsers/ShareSales'
 import SalesSecondary from '../pages/secUsers/SalesSecondary'
@@ -111,17 +111,23 @@ import ThreeInchInvoiceSec from '../pages/secUsers/ThreeInchInvoiceSec'
 import ThreeInchInvoice from '../pages/primaryUsers/ThreeInchInvoice'
 import BillToSales from '../pages/secUsers/BillToSales'
 import BillToSalesOrder from '../pages/secUsers/BillToSalesOrder'
+import AddBrand from '../pages/primaryUsers/AddBrand'
+import AddCategory from '../pages/primaryUsers/AddCategory'
+import AddSubCategory from '../pages/primaryUsers/AddSubCategory'
+import AddGodown from '../pages/primaryUsers/AddGodown'
+import AddPriceLevel from '../pages/primaryUsers/AddPriceLevel'
+
 const Routers = () => {
   return (
     <Routes>
       <Route path='*' element={<Notfound/>}></Route>
-      <Route path='/notFound' element={<Notfound/>}></Route>
+      {/* <Route path='/notFound' element={<Notfound/>}></Route>
         <Route path='/' element={<Login/>}></Route>
         <Route path='/pUsers/register' element={<Register/>}></Route>
         <Route path='/pUsers/login' element={<Login></Login>}></Route>
         <Route path='/pUsers/forgotPassword' element={<ForgotPasswordPrimary/>}></Route>
         <Route path='/pUsers/otp' element={<Otp/>}></Route>
-        <Route path='/pUsers/resetPassword' element={<ResetPassword/>}></Route>
+        <Route path='/pUsers/resetPassword' element={<ResetPassword/>}></Route> */}
         {/* <Route path='/pUsers/home' element={<Home></Home>}></Route> */}
         <Route path='/pUsers/addOrganization' element={<ProtectedPriRoute><AddOrganisation/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/editOrg/:id' element={<ProtectedPriRoute><EditOrg/></ProtectedPriRoute>}></Route>
@@ -158,7 +164,7 @@ const Routers = () => {
         <Route path='/pUsers/editAdditionalCharge/:id' element={<ProtectedPriRoute><EditAdditionalCharges/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/OrderConfigurations' element={<ProtectedPriRoute><OrderConfigurations/></ProtectedPriRoute>}></Route>
 
-        <Route path='/pUsers/modal' element={<ProtectedPriRoute><SelectDefaultModal/></ProtectedPriRoute>}></Route>
+        {/* <Route path='/pUsers/modal' element={<ProtectedPriRoute><SelectDefaultModal/></ProtectedPriRoute>}></Route> */}
         <Route path='/pUsers/salesDetails/:id' element={<ProtectedPriRoute><SalesDetails/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/shareSalesThreeInch/:id' element={<ProtectedPriRoute><ThreeInchSales/></ProtectedPriRoute>}></Route>
 
@@ -169,18 +175,23 @@ const Routers = () => {
         <Route path='/pUsers/sharePurchase/:id' element={<ProtectedPriRoute><SharePurchasePrimary/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/sharePurchaseThreeInch/:id' element={<ProtectedPriRoute><ThreeInchPurchasePrimary/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/shareInvoiceThreeInch/:id' element={<ProtectedSecRoute><ThreeInchInvoice/></ProtectedSecRoute>}></Route> 
+        <Route path='/pUsers/brand' element={<ProtectedSecRoute><AddBrand/></ProtectedSecRoute>}></Route> 
+        <Route path='/pUsers/category' element={<ProtectedSecRoute><AddCategory/></ProtectedSecRoute>}></Route> 
+        <Route path='/pUsers/subcategory' element={<ProtectedSecRoute><AddSubCategory/></ProtectedSecRoute>}></Route> 
+        <Route path='/pUsers/godown' element={<ProtectedSecRoute><AddGodown/></ProtectedSecRoute>}></Route> 
+        <Route path='/pUsers/pricelevel' element={<ProtectedSecRoute><AddPriceLevel/></ProtectedSecRoute>}></Route> 
 
 
 
         {/* admin */}
-        <Route path='/admin/login' element={<AdminLogin/>}></Route>
-        <Route path='/admin/home' element={<ProtectedAdmin><AdminHome/></ProtectedAdmin>}></Route>
+        {/* <Route path='/admin/login' element={<AdminLogin/>}></Route>
+        <Route path='/admin/home' element={<ProtectedAdmin><AdminHome/></ProtectedAdmin>}></Route> */}
 
         {/* sec users */}
-        <Route path='/sUsers/login' element={<SecLogin/>}></Route>
+        {/* <Route path='/sUsers/login' element={<SecLogin/>}></Route>
         <Route path='/sUsers/forgotPassword' element={<ForgotPasswordSec/>}></Route>
         <Route path='/sUsers/otp' element={<OtpSec/>}></Route>
-        <Route path='/sUsers/resetPassword' element={<ResetPasswordSec/>}></Route>
+        <Route path='/sUsers/resetPassword' element={<ResetPasswordSec/>}></Route> */}
 
 
 

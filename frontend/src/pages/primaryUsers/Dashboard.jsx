@@ -17,9 +17,9 @@ import { removeAll } from "../../../slices/invoice";
 import { removeAllSales } from "../../../slices/sales";
 import { useDispatch } from "react-redux";
 import { toast } from "react-toastify";
+import { useSidebar } from "../../layout/Layout";
 
 function Dashboard() {
-  const [showSidebar, setShowSidebar] = useState(false);
   const [data, setData] = useState([]);
   const navigate = useNavigate();
 
@@ -27,11 +27,7 @@ function Dashboard() {
   console.log(org);
   const dispatch = useDispatch();
 
-  const handleToggleSidebar = () => {
-    if (window.innerWidth < 768) {
-      setShowSidebar(!showSidebar);
-    }
-  };
+  const {  handleToggleSidebar } = useSidebar();
 
   useEffect(() => {
     if (org) {
@@ -89,12 +85,9 @@ function Dashboard() {
   console.log(filteredData);
 
   return (
-    <div className="flex bg-[#f9fdff]  ">
-      <div>
-        <Sidebar TAB={"dash"} showBar={showSidebar} />
-      </div>
+   
 
-      <div className="flex-1 h-screen overflow-y-scroll">
+      <div className="">
         <div className="sticky top-0 z-[10]">
           <div className="sticky top-0  ">
             <div className="bg-[#012a4a]   sticky top-0 p-3  text-white text-lg font-bold flex items-center gap-3  shadow-lg">
@@ -288,7 +281,7 @@ function Dashboard() {
 
         {/* transactions */}
       </div>
-    </div>
+   
   );
 }
 

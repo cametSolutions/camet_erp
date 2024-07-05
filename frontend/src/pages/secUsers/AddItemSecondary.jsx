@@ -163,9 +163,9 @@ function AddItemSecondary() {
               res.data.data;
   
             console.log(priceLevels);
-            setBrands(brands);
-            setCategories(categories);
-            setSubCategories(subcategories);
+            // setBrands(brands);
+            // setCategories(categories);
+            // setSubCategories(subcategories);
             setPriceLevels(priceLevels);
             if (priceLevelFromRedux == "") {
               console.log("haii");
@@ -178,9 +178,9 @@ function AddItemSecondary() {
           } else {
             const { priceLevels, brands, categories, subcategories } = res.data;
   
-            setBrands(brands);
-            setCategories(categories);
-            setSubCategories(subcategories);
+            // setBrands(brands);
+            // setCategories(categories);
+            // setSubCategories(subcategories);
   
             setPriceLevels(priceLevels);
             if (priceLevelFromRedux == "") {
@@ -636,11 +636,9 @@ function AddItemSecondary() {
 
   return (
     <div className="flex relative">
-      <div>
-        <SidebarSec TAB={"invoice"} />
-      </div>
+      
 
-      <div className="flex-1 bg-slate-50 h-screen overflow-y-scroll  ">
+      <div className="flex-1 bg-slate-50 h-screen   ">
         <div className="sticky top-0 h-[157px]">
           <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex justify-between  items-center gap-2  ">
             <div className="flex items-center gap-2">

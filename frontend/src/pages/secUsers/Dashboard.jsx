@@ -10,7 +10,6 @@ import api from "../../api/api";
 import dayjs from "dayjs";
 import { IoArrowRedoOutline } from "react-icons/io5";
 import { FaCaretDown } from "react-icons/fa";
-import SidebarSec from "../../components/secUsers/SidebarSec";
 import { useNavigate } from "react-router-dom";
 import { FcCancel } from "react-icons/fc";
 import { BiSolidAddToQueue } from "react-icons/bi";
@@ -20,9 +19,10 @@ import { removeAllSales } from "../../../slices/salesSecondary";
 import { toast } from "react-toastify";
 import { MdInventory } from "react-icons/md";
 import { RiContactsFill } from "react-icons/ri";
+import { useSidebar } from "../../layout/Layout";
+
 
 function Dashboard() {
-  const [showSidebar, setShowSidebar] = useState(false);
   const [data, setData] = useState([]);
 
   const navigate = useNavigate();
@@ -34,11 +34,7 @@ function Dashboard() {
   console.log(org);
   const dispatch = useDispatch();
 
-  const handleToggleSidebar = () => {
-    if (window.innerWidth < 768) {
-      setShowSidebar(!showSidebar);
-    }
-  };
+  const {  handleToggleSidebar } = useSidebar();
 
   useEffect(() => {
     if (org) {
@@ -94,12 +90,12 @@ function Dashboard() {
   };
 
   return (
-    <div className="flex bg-[#f9fdff]  ">
-      <div>
+    <div className="  ">
+      {/* <div>
         <SidebarSec TAB={"dash"} showBar={showSidebar} />
-      </div>
+      </div> */}
 
-      <div className="flex-1 h-screen overflow-y-scroll">
+      <div className=" ">
         <div className="sticky top-0 z-[10]">
           <div className="sticky top-0  ">
             <div className="bg-[#012a4a]   sticky top-0 p-3  text-white text-lg font-bold flex items-center gap-3  shadow-lg">

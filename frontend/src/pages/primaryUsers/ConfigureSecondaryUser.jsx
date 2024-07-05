@@ -387,11 +387,8 @@ function ConfigureSecondaryUser() {
   };
 
   return (
-    <div className="flex overflow-y-hidden">
-      <div className="" style={{ height: "100vh" }}>
-        <Sidebar TAB={"addSec"} />
-      </div>
-      <div className="flex-1 h-screen overflow-y-scroll   ">
+    
+      <div className="flex-1   ">
         <div className="  bg-[#201450] text-white mb-2 p-3 flex items-center gap-3 sticky top-0 z-20 text-lg   ">
           <Link to={`/pUsers/editUser/${userId}`}>
             <IoIosArrowRoundBack className="text-3xl text-white cursor-pointer " />
@@ -830,7 +827,6 @@ function ConfigureSecondaryUser() {
           </div>
         </section>
       </div>
-    </div>
   );
 }
 

@@ -324,10 +324,8 @@ function EditItemPurchase() {
 
   return (
     <div className="flex ">
-      <div>
-        <SidebarSec />
-      </div>
-      <div className=" h-screen overflow-y-auto flex-1">
+    
+      <div className="  flex-1">
         <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex  items-center gap-2 sticky top-0 z-20 ">
           <IoIosArrowRoundBack
             // onClick={() => {
