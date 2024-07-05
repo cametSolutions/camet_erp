@@ -2,7 +2,6 @@
 /* eslint-disable react/jsx-no-target-blank */
 
 import Sidebar from "../../components/homePage/Sidebar";
-import { useEffect } from "react";
 import { useSelector } from "react-redux";
 import api from "../../api/api";
 import { toast } from "react-toastify";

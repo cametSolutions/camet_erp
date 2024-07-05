@@ -14,69 +14,11 @@ import AddProductForm from "../../components/common/Forms/AddProductForm";
 
 function EditProduct() {
   const { id } = useParams();
-
-  const [selectedBrand, setSelectedBrand] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("");
-  const [selectedSubCategory, setSelectedSubCategory] = useState("");
-  const [unit, setUnit] = useState("");
-  const [altUnit, setAltUnit] = useState("");
-  const [product_name, setProduct_name] = useState("");
-  const [product_code, setProduct_code] = useState("");
-  const [balance_stock, setBalance_stock] = useState("");
-  const [alt_unit_conversion, setAlt_unit_conversion] = useState("");
-  const [unit_conversion, setUnit_conversion] = useState("");
-  const [hsn_code, setHsn_code] = useState("");
-  const [purchase_price, setPurchase_price] = useState("");
-  const [purchase_stock, set_Purchase_stock] = useState("");
-
-
-
   const [productData, setProductData] = useState({})
-
-
-  ///////////// levelname table ///////////////////
-
-  const [rows, setRows] = useState([
-    { id: Math.random(), pricelevel: "", pricerate: "" },
-  ]);
-  const [levelNameData, setLevelNameData] = useState([]);
-
-  useEffect(() => {
-    // Update levelNameData whenever rows change
-    setLevelNameData(
-      rows.map((row) => ({
-        pricelevel: row.pricelevel,
-        pricerate: row.pricerate,
-      }))
-    );
-  }, [rows]);
-
-  ///////////// location table ///////////////////
-
-  const [locationRows, setLocationRows] = useState([
-    { id: Math.random(), godown: "", balance_stock: "" },
-  ]);
-  const [locationData, setLocationData] = useState([]);
-
-  useEffect(() => {
-    // Update levelNameData whenever rows change
-    setLocationData(
-      locationRows.map((row) => ({
-        godown: row.godown,
-        balance_stock: row.balance_stock,
-      }))
-    );
-  }, [locationRows]);
-
-  ////////////////////////treble enddddd///////////////////////////////////////////////////////////
 
   const orgId = useSelector(
     (state) => state.setSelectedOrganization.selectedOrg._id
   );
-
-
-
-
 
   ////fetching data for edit
   useEffect(() => {
