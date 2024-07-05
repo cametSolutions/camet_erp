@@ -399,23 +399,7 @@ function Sidebar({ TAB, showBar }) {
                         </a>
                       </Link>
                     )}
-                    <Link to={"/pUsers/productList"}>
-                      <a
-                        onClick={() => {
-                          handleSidebarItemClick("outstanding");
-                        }}
-                        className={` ${
-                          TAB === "product"
-                            ? "bg-gray-800 text-white"
-                            : "text-gray-400"
-                        } hover:bg-gray-800 hover:text-white flex items-center px-4 py-2 mt-5 transition-colors duration-300 transform rounded-lg   `}
-                        href="#"
-                      >
-                        <MdOutlineProductionQuantityLimits />
-
-                        <span className="mx-4 font-medium">Products</span>
-                      </a>
-                    </Link>
+               
 
                     <a
                       onClick={() => {
@@ -444,7 +428,7 @@ function Sidebar({ TAB, showBar }) {
                       <ul className="mt-2 space-y-2 ">
                         <li className="">
                           <Link
-                            to="/pUsers/inventory/p1"
+                            to="/pUsers/productList"
                             onClick={handleSidebarItemClick}
                             className=" ml-4 rounded-md mt-5 px-4 py-2 flex items-center gap-4 text-sm font-medium text-white hover:bg-gray-800 hover:text-white"
                           >

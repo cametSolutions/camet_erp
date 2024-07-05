@@ -122,7 +122,7 @@ function AddOrgForm({ onSubmit, orgData = {} }) {
       !country ||
       !flat.trim() ||
       !road.trim() ||
-      !industry.trim() ||
+      !industry ||
       // (website && !website.trim()) ||
       !financialYear.trim() ||
       !landmark.trim() ||

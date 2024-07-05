@@ -47,7 +47,7 @@ function Contacts() {
       title: "Purchase",
       icon: purchase,
       to: "/sUsers/purchase",
-      active: true,
+      active: false,
     },
     {
       title: "Debit Note",

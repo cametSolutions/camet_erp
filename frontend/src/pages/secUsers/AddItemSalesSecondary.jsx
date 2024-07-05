@@ -273,9 +273,9 @@ function AddItemSalesSecondary() {
         if (type === "self") {
           const { brands, categories, subcategories, priceLevels } =
             res.data.data;
-          setBrands(brands);
-          setCategories(categories);
-          setSubCategories(subcategories);
+          // setBrands(brands);
+          // setCategories(categories);
+          // setSubCategories(subcategories);
           setPriceLevels(priceLevels);
           if (priceLevelFromRedux == "") {
             const defaultPriceLevel = priceLevels[0];
@@ -284,9 +284,9 @@ function AddItemSalesSecondary() {
         } else {
           const { priceLevels, brands, categories, subcategories } = res.data;
 
-          setBrands(brands);
-          setCategories(categories);
-          setSubCategories(subcategories);
+          // setBrands(brands);
+          // setCategories(categories);
+          // setSubCategories(subcategories);
 
           setPriceLevels(priceLevels);
           if (priceLevelFromRedux == "") {
