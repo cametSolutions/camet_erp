@@ -174,12 +174,12 @@ const Routers = () => {
         <Route path='/pUsers/purchaseDetails/:id' element={<ProtectedPriRoute><PurchaseDetailsPrimary/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/sharePurchase/:id' element={<ProtectedPriRoute><SharePurchasePrimary/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/sharePurchaseThreeInch/:id' element={<ProtectedPriRoute><ThreeInchPurchasePrimary/></ProtectedPriRoute>}></Route>
-        <Route path='/pUsers/shareInvoiceThreeInch/:id' element={<ProtectedSecRoute><ThreeInchInvoice/></ProtectedSecRoute>}></Route> 
-        <Route path='/pUsers/brand' element={<ProtectedSecRoute><AddBrand/></ProtectedSecRoute>}></Route> 
-        <Route path='/pUsers/category' element={<ProtectedSecRoute><AddCategory/></ProtectedSecRoute>}></Route> 
-        <Route path='/pUsers/subcategory' element={<ProtectedSecRoute><AddSubCategory/></ProtectedSecRoute>}></Route> 
-        <Route path='/pUsers/godown' element={<ProtectedSecRoute><AddGodown/></ProtectedSecRoute>}></Route> 
-        <Route path='/pUsers/pricelevel' element={<ProtectedSecRoute><AddPriceLevel/></ProtectedSecRoute>}></Route> 
+        <Route path='/pUsers/shareInvoiceThreeInch/:id' element={<ProtectedPriRoute><ThreeInchInvoice/></ProtectedPriRoute>}></Route> 
+        <Route path='/pUsers/brand' element={<ProtectedPriRoute><AddBrand/></ProtectedPriRoute>}></Route> 
+        <Route path='/pUsers/category' element={<ProtectedPriRoute><AddCategory/></ProtectedPriRoute>}></Route> 
+        <Route path='/pUsers/subcategory' element={<ProtectedPriRoute><AddSubCategory/></ProtectedPriRoute>}></Route> 
+        <Route path='/pUsers/godown' element={<ProtectedPriRoute><AddGodown/></ProtectedPriRoute>}></Route> 
+        <Route path='/pUsers/pricelevel' element={<ProtectedPriRoute><AddPriceLevel/></ProtectedPriRoute>}></Route> 
 
 
 

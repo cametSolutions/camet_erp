@@ -21,7 +21,6 @@ import {
 } from "../../../slices/invoiceSecondary";
 import { HashLoader } from "react-spinners";
 import { FixedSizeList as List } from "react-window";
-import SidebarSec from "../../components/secUsers/SidebarSec";
 import { Decimal } from "decimal.js";
 import SearchBar from "../../components/common/SearchBar";
 
@@ -45,6 +44,12 @@ function AddItemSecondary() {
 
   const cpm_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
+  );
+  const orgId = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg._id
+  );
+  const type = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg.type
   );
 
   ///////////////////////////itemsFromRedux///////////////////////////////////
@@ -110,15 +115,15 @@ function AddItemSecondary() {
           console.log(updatedItems);
 
           setItem(updatedItems);
-          if(updatedItems.length > 0){
-            fetchFilters()
+          if (updatedItems.length > 0) {
+            fetchFilters();
           }
           setRefresh(!refresh);
         } else {
           console.log(productData);
           setItem(productData);
-          if(productData.length > 0){
-            fetchFilters()
+          if (productData.length > 0) {
+            fetchFilters();
           }
         }
 
@@ -138,66 +143,39 @@ function AddItemSecondary() {
       }
     };
     fetchProducts();
-    
   }, [cpm_id]);
 
+  //////////////////////////////fetchFilters////////////////////////////////
 
-    //////////////////////////////fetchFilters////////////////////////////////
+  useEffect(() => {
+  const fetchFilters = async () => {
+    try {
+      const res = await api.get(`/api/sUsers/fetchAdditionalDetails/${cpm_id}`, {
+        withCredentials: true,
+      });
+      // }
 
-    // useEffect(() => {
-      const fetchFilters = async () => {
-        try {
-          let res;
-          if (type == "self") {
-            res = await api.get(`/api/sUsers/fetchFilters/${orgId}`, {
-              withCredentials: true,
-            });
-          } else {
-            res = await api.get(`/api/sUsers/fetchAdditionalDetails/${orgId}`, {
-              withCredentials: true,
-            });
-          }
-  
-          if (type === "self") {
-            const { brands, categories, subcategories, priceLevels } =
-              res.data.data;
-  
-            console.log(priceLevels);
-            // setBrands(brands);
-            // setCategories(categories);
-            // setSubCategories(subcategories);
-            setPriceLevels(priceLevels);
-            if (priceLevelFromRedux == "") {
-              console.log("haii");
-              const defaultPriceLevel = priceLevels[0];
-              // const defaultPriceLevel = ""
-              setSelectedPriceLevel(defaultPriceLevel);
-              dispatch(setPriceLevel(defaultPriceLevel));
-              // addSelectedRate(defaultPriceLevel);
-            }
-          } else {
-            const { priceLevels, brands, categories, subcategories } = res.data;
-  
-            // setBrands(brands);
-            // setCategories(categories);
-            // setSubCategories(subcategories);
-  
-            setPriceLevels(priceLevels);
-            if (priceLevelFromRedux == "") {
-              console.log("haii");
-              const defaultPriceLevel = priceLevels[0];
-              // const defaultPriceLevel = ""
-              setSelectedPriceLevel(defaultPriceLevel);
-              dispatch(setPriceLevel(defaultPriceLevel));
-              // addSelectedRate(defaultPriceLevel);
-            }
-          }
-        } catch (error) {
-          console.log(error);
-        }
-      };
-      // fetchFilters();
-    // }, [orgId, type]);
+      const { priceLevels, brands, categories, subcategories } = res.data;
+
+      // setBrands(brands);
+      // setCategories(categories);
+      // setSubCategories(subcategories);
+
+      setPriceLevels(priceLevels);
+      if (priceLevelFromRedux == "") {
+        console.log("haii");
+        const defaultPriceLevel = priceLevels[0];
+        // const defaultPriceLevel = ""
+        setSelectedPriceLevel(defaultPriceLevel);
+        dispatch(setPriceLevel(defaultPriceLevel));
+        // addSelectedRate(defaultPriceLevel);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+  fetchFilters();
+  }, [orgId, type]);
 
   ///////////////////////////setSelectedPriceLevel fom redux///////////////////////////////////
 
@@ -209,12 +187,6 @@ function AddItemSecondary() {
 
   //////////////////////////////orgId////////////////////////////////
 
-  const orgId = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg._id
-  );
-  const type = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg.type
-  );
 
   console.log(type);
   /////////////////////////scroll////////////////////////////
@@ -225,8 +197,6 @@ function AddItemSecondary() {
       setScrollPosition(parseInt(storedScrollPosition, 10));
     }
   }, []);
-
-
 
   const searchData = (data) => {
     setSearch(data);
@@ -333,38 +303,37 @@ function AddItemSecondary() {
     console.log("haii");
     console.log(item);
     // if (item?.length > 0) {
-      console.log("haii");
+    console.log("haii");
 
-      const updatedItems = filteredItems.map((item) => {
-        // console.log(item);
-        const priceRate =
-          item?.Priceleveles?.find((item) => item.pricelevel === pricelevel)
-            ?.pricerate || 0;
+    const updatedItems = filteredItems.map((item) => {
+      // console.log(item);
+      const priceRate =
+        item?.Priceleveles?.find((item) => item.pricelevel === pricelevel)
+          ?.pricerate || 0;
 
-        const reduxItem = itemsFromRedux.find((p) => p._id === item._id);
-        const reduxRate = reduxItem?.selectedPriceRate || null;
+      const reduxItem = itemsFromRedux.find((p) => p._id === item._id);
+      const reduxRate = reduxItem?.selectedPriceRate || null;
 
-        return {
-          ...item,
-          selectedPriceRate: reduxRate ?? priceRate,
-        };
-      });
+      return {
+        ...item,
+        selectedPriceRate: reduxRate ?? priceRate,
+      };
+    });
 
-      console.log(updatedItems.map((item) => item.selectedPriceRate));
+    console.log(updatedItems.map((item) => item.selectedPriceRate));
 
-      setItem(updatedItems);
+    setItem(updatedItems);
     // }
   };
 
   useEffect(() => {
-
     console.log(selectedPriceLevel);
     if (selectedPriceLevel) {
       console.log(selectedPriceLevel);
 
       addSelectedRate(selectedPriceLevel);
     }
-  }, [selectedPriceLevel,refresh]);
+  }, [selectedPriceLevel, refresh]);
 
   console.log(item.map((item) => item.selectedPriceRate));
 
@@ -636,8 +605,6 @@ function AddItemSecondary() {
 
   return (
     <div className="flex relative">
-      
-
       <div className="flex-1 bg-slate-50 h-screen   ">
         <div className="sticky top-0 h-[157px]">
           <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex justify-between  items-center gap-2  ">
