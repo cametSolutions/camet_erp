@@ -5,12 +5,9 @@ import api from "../../api/api";
 import { toast } from "react-toastify";
 import { IoReorderThreeSharp } from "react-icons/io5";
 import { useSelector } from "react-redux";
-import { MdDelete } from "react-icons/md";
-import { FaEdit } from "react-icons/fa";
 import Swal from "sweetalert2";
 import { Link } from "react-router-dom";
 import { HashLoader } from "react-spinners";
-import { FixedSizeList as List } from "react-window";
 import { IoIosAddCircle } from "react-icons/io";
 import { useDispatch } from "react-redux";
 import { removeAll } from "../../../slices/invoiceSecondary";
@@ -141,21 +138,11 @@ function PartyListSecondary() {
         {/* invoiec date */}
         <div className=" p-4  bg-white drop-shadow-lg">
           <div className="flex justify-between  items-center">
-            {/* <div className=" flex flex-col gap-1 justify-center">
-          <p className="text-md font-semibold text-violet-400">
-            Search Parties
-          </p>
-        </div>
-        <div className="flex items-center hover_scale cursor-pointer">
-          <p className="text-pink-500 m-2 cursor-pointer  ">Cancel</p>
-          <MdCancel className="text-pink-500" />
-        </div> */}
           </div>
           <div className=" md:w-1/2 ">
             {/* search bar */}
             <SearchBar onType={searchData} />
 
-            {/* search bar */}
           </div>
         </div>
       </div>
@@ -166,16 +153,16 @@ function PartyListSecondary() {
         <div className="flex justify-center items-center h-screen">
           <HashLoader color="#363ad6" />
         </div>
-      ) : parties.length > 0 ? (
+      ) : parties.length === 0 ? (
+        <div className="font-bold flex justify-center items-center mt-12 text-gray-500">
+          No Parties!!!
+        </div>
+      ) : (
         <PartyLIst
           type={type}
           filteredParty={filteredParty}
           deleteHandler={deleteHandler}
         />
-      ) : (
-        <div className="font-bold flex justify-center items-center mt-12 text-gray-500">
-          No Parties !!!
-        </div>
       )}
     </div>
   );
