@@ -1,28 +1,60 @@
 /* eslint-disable react/prop-types */
 import { BiSolidAddToQueue } from 'react-icons/bi';
+import { IoReceiptSharp } from 'react-icons/io5';
 import { MdInventory } from 'react-icons/md';
+import { RiContactsFill } from 'react-icons/ri';
 
-function DashboardCardPrimary({ receiptTotal, handleLinkClick }) {
-  const cardData = [
-    {
-      icon: <BiSolidAddToQueue />,
-      bgColor: 'bg-green-500',
-      title: `₹${receiptTotal.toFixed(2)}`,
-      subtitle: 'Transactions',
-      link: '/pUsers/transaction'
-    },
-    {
-      icon: <MdInventory />,
-      bgColor: 'bg-blue-500',
-      title: '',
-      subtitle: 'Inventory',
-      link: '/pUsers/Inventory'
-    }
-  ];
+const DashboardCards = ({ userType, receiptTotal, handleLinkClick }) => {
+  const cardData = {
+    primary: [
+      {
+        icon: <BiSolidAddToQueue />,
+        bgColor: 'bg-green-500',
+        title: `₹${receiptTotal.toFixed(2)}`,
+        subtitle: 'Transactions',
+        link: '/pUsers/transaction'
+      },
+      {
+        icon: <MdInventory />,
+        bgColor: 'bg-blue-500',
+        subtitle: 'Inventory',
+        link: '/pUsers/Inventory'
+      }
+    ],
+    secondary: [
+      {
+        icon: <BiSolidAddToQueue />,
+        bgColor: 'bg-green-500',
+        title: `₹${receiptTotal.toFixed(2)}`,
+        subtitle: 'Transactions',
+        link: '/sUsers/transaction'
+      },
+      {
+        icon: <IoReceiptSharp />,
+        bgColor: 'bg-red-500',
+        subtitle: 'Outstanding',
+        link: '/sUsers/outstanding'
+      },
+      {
+        icon: <MdInventory />,
+        bgColor: 'bg-blue-500',
+        subtitle: 'Stock Register',
+        link: '/sUsers/Inventory'
+      },
+      {
+        icon: <RiContactsFill />,
+        bgColor: 'bg-blue-500',
+        subtitle: 'Contacts',
+        link: '/sUsers/contacts'
+      }
+    ]
+  };
+
+  const cards = cardData[userType];
 
   return (
-    <div className="w-full md:w-6.5/12 sticky top-[100px] grid grid-cols-2 lg:grid-cols-2 p-6 gap-4 md:gap-6 bg-white">
-      {cardData.map((card, index) => (
+    <div className={`grid ${userType === 'primary' ? 'grid-cols-2' : 'grid-cols-2 lg:grid-cols-4'} p-6 ${userType === 'primary' ? 'lg:px-6' : 'lg:px-12'} gap-4 md:gap-6 bg-white ${userType === 'primary' ? 'w-full md:w-6.5/12 sticky top-[100px]' : ''}`}>
+      {cards.map((card, index) => (
         <div
           key={index}
           onClick={() => handleLinkClick(card.link)}
@@ -49,6 +81,6 @@ function DashboardCardPrimary({ receiptTotal, handleLinkClick }) {
       ))}
     </div>
   );
-}
+};
 
-export default DashboardCardPrimary;
+export default DashboardCards;

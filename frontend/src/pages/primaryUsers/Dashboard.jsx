@@ -116,6 +116,7 @@ function Dashboard() {
             <DashboardCardPrimary
               receiptTotal={receiptTotal}
               handleLinkClick={handleLinkClick}
+              userType={"primary"}
             />
             {/* tiles */}
 
