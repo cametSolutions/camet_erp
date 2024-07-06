@@ -19,6 +19,7 @@ import { removeAllSales } from "../../../slices/sales";
 import { useDispatch } from "react-redux";
 import SearchBar from "../../components/common/SearchBar";
 import { useSidebar } from "../../layout/Layout";
+import PartyListComponent from "../../components/common/List/PartyListComponent";
 
 
 
@@ -231,31 +232,20 @@ function PartyList() {
         {/* adding party */}
 
         {loader ? (
-          <div className="flex justify-center items-center h-screen">
-            <HashLoader color="#363ad6" />
-          </div>
-        ) : parties.length > 0 ? (
-          <div
-            style={{
-              scrollbarWidth: "thin",
-              scrollbarColor: "transparent transparent",
-            }}
-          >
-            <List
-              className=""
-              height={500} // Specify the height of your list
-              itemCount={filteredParty.length} // Specify the total number of items
-              itemSize={160} // Specify the height of each item
-              width="100%" // Specify the width of your list
-            >
-              {Row}
-            </List>
-          </div>
-        ) : (
-          <div className="font-bold flex justify-center items-center mt-12 text-gray-500">
-            No Parties !!!
-          </div>
-        )}
+        <div className="flex justify-center items-center h-screen">
+          <HashLoader color="#363ad6" />
+        </div>
+      ) : parties.length === 0 ? (
+        <div className="font-bold flex justify-center items-center mt-12 text-gray-500">
+          No Parties!!!
+        </div>
+      ) : (
+        <PartyListComponent
+          type={type}
+          filteredParty={filteredParty}
+          deleteHandler={deleteHandler}
+        />
+      )}
 
         {/* <Link to={"/pUsers/addParty"} className="flex justify-center">
         <div className=" px-4  absolute bottom-2 text-white bg-violet-700 rounded-3xl p-2 flex items-center justify-center gap-2 hover_scale cursor-pointer ">

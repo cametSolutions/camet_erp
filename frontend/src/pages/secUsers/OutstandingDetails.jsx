@@ -11,6 +11,7 @@ import { useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { addSettlementData } from "../../../slices/settlementDataSlice";
+import CallIcon from "../../components/common/CallIcon";
 
 function OutStandingDetails({ onTabChange }) {
   const [data, setData] = useState([]);
@@ -161,7 +162,8 @@ function OutStandingDetails({ onTabChange }) {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <FaPhoneVolume />
+              <CallIcon phoneNumber={data[0]?.mobile_no} size={18} color="green" />
+
                 <p className="text-[13px] ">
                   {data[0]?.mobile_no === "null" ? "Nil" : data[0]?.mobile_no}
                 </p>

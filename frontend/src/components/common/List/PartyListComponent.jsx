@@ -3,36 +3,15 @@ import { FaEdit } from "react-icons/fa";
 import { MdDelete } from "react-icons/md";
 import { Link } from "react-router-dom";
 import { FixedSizeList as List } from "react-window";
-import { IoIosCall } from "react-icons/io";
-import { useEffect, useState } from 'react';
+import CallIcon from "../CallIcon";
 
-function PartyList({ filteredParty, type, deleteHandler }) {
-  const [isMobile, setIsMobile] = useState(false);
+function PartyListComponent({ filteredParty, type, deleteHandler }) {
 
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth <= 768); // Adjust this value as needed
-    };
-    
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
 
   const handleDelete = (id) => {
     deleteHandler(id);
   };
 
-  const handleCallClick = (phoneNumber) => {
-    if (isMobile) {
-      window.location.href = `tel:${phoneNumber}`;
-    } else {
-      navigator.clipboard.writeText(phoneNumber)
-        .then(() => alert('Phone number copied to clipboard!'))
-        .catch(err => console.error('Failed to copy: ', err));
-    }
-  };
 
   const Row = ({ index, style }) => {
     const el = filteredParty[index];
@@ -65,12 +44,14 @@ function PartyList({ filteredParty, type, deleteHandler }) {
                 : ""
             } flex justify-center items-center gap-4`}
           >
-            <IoIosCall
+            {/* <IoIosCall
               color="green"
               size={20}
               onClick={() => handleCallClick(el?.mobileNumber)}
               className="cursor-pointer"
-            />
+            /> */}
+
+            <CallIcon phoneNumber={el?.mobileNumber} size={18} color="green" />
             <Link to={`/sUsers/editParty/${el._id}`}>
               <FaEdit className="text-blue-500" />
             </Link>
@@ -111,4 +92,4 @@ function PartyList({ filteredParty, type, deleteHandler }) {
   );
 }
 
-export default PartyList;
+export default PartyListComponent;

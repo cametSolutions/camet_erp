@@ -14,7 +14,8 @@ import { removeAll } from "../../../slices/invoiceSecondary";
 import { removeAllSales } from "../../../slices/salesSecondary";
 import SearchBar from "../../components/common/SearchBar";
 import { useSidebar } from "../../layout/Layout";
-import PartyLIst from "../../components/common/List/PartyLIst";
+import PartyLIst from "../../components/common/List/PartyListComponent";
+import PartyListComponent from "../../components/common/List/PartyListComponent";
 
 function PartyListSecondary() {
   const [parties, setParties] = useState([]);
@@ -137,12 +138,10 @@ function PartyListSecondary() {
 
         {/* invoiec date */}
         <div className=" p-4  bg-white drop-shadow-lg">
-          <div className="flex justify-between  items-center">
-          </div>
+          <div className="flex justify-between  items-center"></div>
           <div className=" md:w-1/2 ">
             {/* search bar */}
             <SearchBar onType={searchData} />
-
           </div>
         </div>
       </div>
@@ -158,7 +157,7 @@ function PartyListSecondary() {
           No Parties!!!
         </div>
       ) : (
-        <PartyLIst
+        <PartyListComponent
           type={type}
           filteredParty={filteredParty}
           deleteHandler={deleteHandler}
