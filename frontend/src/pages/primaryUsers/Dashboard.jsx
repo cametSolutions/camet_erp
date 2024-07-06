@@ -1,16 +1,12 @@
 /* eslint-disable react/no-unescaped-entities */
 /* eslint-disable react/no-unknown-property */
 import { useState, useEffect } from "react";
-import Sidebar from "../../components/homePage/Sidebar";
 import { IoReorderThreeSharp } from "react-icons/io5";
 import { useSelector } from "react-redux";
 import { MdInventory } from "react-icons/md";
 import { CiCalendarDate } from "react-icons/ci";
 import api from "../../api/api";
-import dayjs from "dayjs";
-import { IoArrowRedoOutline } from "react-icons/io5";
 import { FaCaretDown } from "react-icons/fa";
-import { FcCancel } from "react-icons/fc";
 import { useNavigate } from "react-router-dom";
 import { BiSolidAddToQueue } from "react-icons/bi";
 import { removeAll } from "../../../slices/invoice";
@@ -18,6 +14,8 @@ import { removeAllSales } from "../../../slices/sales";
 import { useDispatch } from "react-redux";
 import { toast } from "react-toastify";
 import { useSidebar } from "../../layout/Layout";
+import DashboardTransaction from "../../components/common/DashboardTransaction";
+import DashboardCardPrimary from "../../components/homePage/DashboardCardPrimary";
 
 function Dashboard() {
   const [data, setData] = useState([]);
@@ -27,7 +25,7 @@ function Dashboard() {
   console.log(org);
   const dispatch = useDispatch();
 
-  const {  handleToggleSidebar } = useSidebar();
+  const { handleToggleSidebar } = useSidebar();
 
   useEffect(() => {
     if (org) {
@@ -85,203 +83,76 @@ function Dashboard() {
   console.log(filteredData);
 
   return (
-   
-
-      <div className="">
-        <div className="sticky top-0 z-[10]">
-          <div className="sticky top-0  ">
-            <div className="bg-[#012a4a]   sticky top-0 p-3  text-white text-lg font-bold flex items-center gap-3  shadow-lg">
-              <IoReorderThreeSharp
-                onClick={handleToggleSidebar}
-                className="block md:hidden text-3xl"
-              />
-              <p>Dashboard</p>
-            </div>
-
-            {/* tiles */}
-
-            <div className=" bg-white shadow-lg p-2  flex items-center gap-3">
-              <div className="bg-blue-500 rounded-full w-[30px] h-[30px]  flex justify-center items-center text-md  text-white font-bold">
-                <div className="rounded-full w-[25px] h-[25px] md:w-[25px] md:h-[25px] bg-[#012a4a] flex items-center justify-center">
-                  <p>{org?.name?.slice(0, 1)}</p>
-                </div>
-              </div>
-              <p className="font-bold text-md md:text-lg">
-                {org?.name || "Company Name"}
-              </p>
-              <FaCaretDown />
-            </div>
-          </div>
-          <div className="grid grid-cols-2 lg:grid-cols-4 p-6 lg:px-12 gap-4 md:gap-6 bg-white  ">
-            {/* <Link to={"/pUsers/transaction"}> */}
-            <div
-              onClick={() => handleLinkClick("/pUsers/transaction")}
-              className="flex flex-wrap -mx-6   duration-150 hover:scale-105 ease-in-out cursor-pointer  "
-            >
-              <div className="w-full px-6 ">
-                <div className="flex items-center px-2 py-3 md:px-5 md:py-2 shadow-sm rounded-md bg-slate-100 h-24">
-                  <div className="p-3 rounded-full bg-green-500 bg-opacity-75 text-2xl text-white">
-                    <BiSolidAddToQueue />
-                  </div>
-
-                  <div className="mx-2 md:mx-5">
-                    <h4 className=" sm:text-md md:text-lg  font-semibold text-gray-700">
-                      ₹{receiptTotal.toFixed(2)}
-                    </h4>
-                    <div className="text-gray-500  text-[15px] ">
-                      Transactions
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            {/* </Link> */}
-            {/* <Link to={"/pUsers/outstanding"}> */}
-
-            {/* </Link> */}
-
-            {/* <Link to={"/pUsers/sales"}> */}
-
-            {/* </Link> */}
-            {/* <Link to={'/pUsers/invoice'} > */}
-
-            {/* </Link> */}
-            <div
-              onClick={() => handleLinkClick("/pUsers/Inventory")}
-              className="flex flex-wrap -mx-6  duration-150 hover:scale-105 ease-in-out cursor-pointer"
-            >
-              <div className="w-full px-6 ">
-                <div className="flex items-center px-2 py-3 md:px-5 md:py-2 shadow-sm rounded-md bg-slate-100 h-24">
-                  <div className="p-3 rounded-full bg-blue-500 bg-opacity-75 text-2xl text-white">
-                    <MdInventory />
-                  </div>
-
-                  <div className="mx-5 py-2.5">
-                    {/* <h4 className=" sm:text-md md:text-2xl  font-semibold text-gray-700">
-                      ₹0
-                    </h4> */}
-                    <div className="text-gray-500 text-md">Inventory </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+    <div className="">
+      <div className="sticky top-0  ">
+        <div className="sticky top-0  z-[100] h-[100px] ">
+          <div className="bg-[#012a4a]   sticky top-0 p-3  text-white text-lg font-bold flex items-center gap-3  shadow-lg">
+            <IoReorderThreeSharp
+              onClick={handleToggleSidebar}
+              className="block md:hidden text-3xl"
+            />
+            <p>Dashboard</p>
           </div>
 
-          {/* tiles */}
+          {/* company name */}
 
-          {/* transactions */}
-          <hr />
-          <hr />
-
-          <div className=" bg-white px-4 p-2 z-40 text-gray-500 text-sm md:text-lg font-bold flex items-center gap-3 z shadow-lg sm:sticky top-[115px]">
-            <p> Today's Transactions</p>
-
-
-            <p className="text-[9px] md:text-sm">( {new Date().toDateString()} )</p>
-            <CiCalendarDate className="text-xl font-bold text-violet-500" />
+          <div className="  bg-white shadow-lg p-2  flex items-center gap-3">
+            <div className="bg-blue-500 rounded-full w-[30px] h-[30px]  flex justify-center items-center text-md  text-white font-bold">
+              <div className="rounded-full w-[25px] h-[25px] md:w-[25px] md:h-[25px] bg-[#012a4a] flex items-center justify-center">
+                <p>{org?.name?.slice(0, 1)}</p>
+              </div>
+            </div>
+            <p className="font-bold text-md md:text-lg">
+              {org?.name || "Company Name"}
+            </p>
             <FaCaretDown />
           </div>
         </div>
+        {/* company name */}
 
-        <div className="z-0 p-3 md:p-5 lg:p-6">
-          {/* one */}
-          <div className="grid grid-cols-1 gap-4  text-center pb-7 mt-5 md:px-8 ">
-            {filteredData?.map((el, index) => (
-              <div
-                key={index}
-                onClick={() => {
-                  const navigationPath =
-                    el.type === "Receipt"
-                      ? `/pUsers/receiptDetails/${el._id}`
-                      : el.type === "Tax Invoice"
-                      ? `/pUsers/salesDetails/${el._id}`
-                      : el.type === "Purchase"
-                      ? `/pUsers/purchaseDetails/${el._id}`
-                      : `/pUsers/InvoiceDetails/${el._id}`;
-                  navigate(navigationPath, { state: { from: "dashboard" } });
-                }}
-                className={`${
-                  el?.isCancelled ? "bg-gray-200 pointer-events-none " : ""
-                } bg-[#f8ffff] cursor-pointer rounded-md shadow-xl border border-gray-100 flex flex-col justify-between px-4 transition-all duration-150 transform hover:scale-105 ease-in-out`}
-              >
-                <div className=" flex justify-start text-xs mt-2 ">
-                  <div
-                    className={` ${
-                      el.type === "Receipt"
-                      ? "bg-[#FB6D48]"
-                      : el.type === "Tax Invoice"
-                      ? "bg-violet-500"
-                      : el.type === "Purchase"
-                      ? "bg-pink-500"
-                      : "bg-[#3ed57a]"
-                    }   flex items-center text-white px-2 rounded-sm `}
-                  >
-                    {/* <FaRegCircleDot /> */}
-                    <p className=" p-1  rounded-lg px-3 font-semibold">
-                      {" "}
-                      {el.type}
-                    </p>
-                  </div>
-                </div>
+        <div className="flex flex-col md:flex-row   ">
+          <div className="sticky top-[100px] z-20  shadow-xl  ">
+            {/* tiles */}
+            <DashboardCardPrimary
+              receiptTotal={receiptTotal}
+              handleLinkClick={handleLinkClick}
+            />
+            {/* tiles */}
 
-                <div className="flex justify-between ">
-                  <div className=" h-full px-2 py-4  lg:p-6 w-[150px] md:w-[180px] lg:w-[300px] flex justify-center items-start relative flex-col ">
-                    <p className="font-bold md:font-semibold text-[11.3px] md:text-[15px] text-left mb-3 ">
-                      {el.party_name}
-                    </p>
-                    <p className="font-bold md:font-semibold text-[11.3px] md:text-[15px] text-left text-violet-500 ">
-                      {el.billNo}
-                    </p>
+            <div className=" md:hidden border-t-2  bg-white px-4 p-2  text-gray-500 text-sm md:text-lg font-bold flex items-center gap-3 z shadow-lg sm:sticky top-[115px]">
+              <p> Today's Transactions</p>
 
-                    <p className="text-gray-400 text-sm  ">
-                      {dayjs(el?.createdAt).format("DD/MM/YYYY")}
-                    </p>
-                  </div>
-                  <div className=" h-full p-2 lg:p-6 w-[150px] md:w-[180px] lg:w-[300px] flex justify-center items-end relative flex-col">
-                    <div className="flex-col  ">
-                      <p className=" font-semibold text-green-600  ">
-                        ₹{el.enteredAmount}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <hr />
-                <hr />
-                <hr />
-                <div className="flex justify-between p-4">
-                  {/* <button
-                    onClick={() => {
-                      handleCancel(el._id);
-                    }}
-                    className="p-2 py-1 rounded-lg text-white bg-red-500 flex items-center gap-2 transition-all duration-150 transform hover:scale-105 hover:bg-red-600"
-                  >
-                    <ImCancelCircle />
-                    {el.isCancelled ? "Cancelled" : "Cancel"}
-                  </button> */}
-
-                  <div className=" flex items-center justify-between w-full gap-2 text-md text-violet-500">
-                    <div className="flex items-center gap-2">
-                      <IoArrowRedoOutline />
-
-                      <p>Send Receipt</p>
-                    </div>
-                    {el.isCancelled && (
-                      <div className="flex justify-center items-center gap-2 text-red-500">
-                        <FcCancel />
-                        <p>Canelled</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
+              <p className="text-[9px] md:text-sm">
+                ( {new Date().toDateString()} )
+              </p>
+              <CiCalendarDate className="text-xl font-bold text-violet-500" />
+              <FaCaretDown />
+            </div>
           </div>
-          {/* one */}
-        </div>
 
-        {/* transactions */}
+          {/* transactions */}
+
+          <div className=" md:flex-1 z-10  ">
+            <div className="hidden md:block  md:sticky md:top-[97px] z-10">
+              <div className=" bg-white p-2  text-gray-500 text-sm md:text-lg font-bold flex items-center gap-3 z shadow-lg  ">
+                <p> Today's Transactions</p>
+
+                <p className="text-[9px] md:text-sm">
+                  ( {new Date().toDateString()} )
+                </p>
+                <CiCalendarDate className="text-xl font-bold text-violet-500" />
+                <FaCaretDown />
+              </div>
+            </div>
+            {/* one */}
+            <DashboardTransaction filteredData={filteredData} />
+            {/* one */}
+          </div>
+
+          {/* transactions */}
+        </div>
       </div>
-   
+    </div>
   );
 }
 
