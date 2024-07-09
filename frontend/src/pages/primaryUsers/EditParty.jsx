@@ -1,4 +1,4 @@
-import Sidebar from "../../components/homePage/Sidebar";
+// import Sidebar from "../../components/homePage/Sidebar";
 import { useState, useEffect } from "react";
 import { accountGroups } from "../../../constants/accountGroups";
 import { toast } from "react-toastify";
@@ -8,6 +8,7 @@ import { useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import { Link } from "react-router-dom";
+
 
 function EditParty() {
   const [tab, setTab] = useState("business");
@@ -89,7 +90,7 @@ function EditParty() {
       [
         accountGroup,
         partyName,
-        emailID,
+        //  emailID,
         // gstNo,
         // panNo,
         // billingAddress,
@@ -100,17 +101,17 @@ function EditParty() {
       toast.error("All fields are required");
       return;
     }
-    if (mobileNumber === "") {
-      toast.error("All fields are required");
-      return;
-    }
+    // if (mobileNumber === "") {
+    //   toast.error("All fields are required");
+    //   return;
+    // }
 
-    if (!/^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/.test(emailID)) {
+    if (emailID && !/^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/.test(emailID)) {
       toast.error("Invalid email address");
       return;
     }
 
-    if (!/^\d{10}$/.test(mobileNumber)) {
+    if (mobileNumber && !/^\d{10}$/.test(mobileNumber)) {
       toast.error("Mobile number must be 10 digits");
       return;
     }
@@ -166,7 +167,7 @@ function EditParty() {
         <Link to={"/pUsers/partyList"}>
           <IoIosArrowRoundBack className="text-3xl text-white cursor-pointer md:hidden" />
         </Link>
-        <p>Edit Customers Details </p>
+        <p>Edit Customers Details. </p>
       </div>
       <section className=" bg-blueGray-50">
         <div className="w-full lg:w-8/12 px-4 mx-auto  pb-[30px] mt-5  ">

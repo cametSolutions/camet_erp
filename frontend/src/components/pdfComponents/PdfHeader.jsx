@@ -109,12 +109,15 @@ function PdfHeader({ data, org, address, despatchDetails, tab="sales" }) {
 
         <table className=" m details-table md:w-1/2  w-full  divide-y divide-gray-200  ">
           <tbody className="  ">
+            {despatchDetails?.challanNo && (
             <tr className="flex justify-between">
               <td className="text-gray-500 mb-0.5  text-[11px]">Challan No:</td>
               <td className="text-gray-500 mb-0.5  text-[11px]">
                 {despatchDetails?.challanNo}
               </td>
             </tr>
+               )}
+               {despatchDetails?.containerNo && (
             <tr className="flex justify-between">
               <td className="text-gray-500 mb-0.5  text-[11px]">
                 Container No:
@@ -123,6 +126,8 @@ function PdfHeader({ data, org, address, despatchDetails, tab="sales" }) {
                 {despatchDetails?.containerNo}
               </td>
             </tr>
+              )}
+              {despatchDetails?.despatchThrough && (        
             <tr className="flex justify-between">
               <td className="text-gray-500 mb-0.5  text-[11px]">
                 Despatch Through:
@@ -131,6 +136,8 @@ function PdfHeader({ data, org, address, despatchDetails, tab="sales" }) {
                 {despatchDetails?.despatchThrough}
               </td>
             </tr>
+              )}
+              {despatchDetails?.destination && (
             <tr className="flex justify-between">
               <td className="text-gray-500 mb-0.5  text-[11px]">
                 Destination:
@@ -138,20 +145,25 @@ function PdfHeader({ data, org, address, despatchDetails, tab="sales" }) {
               <td className="text-gray-500 mb-0.5  text-[11px]">
                 {despatchDetails?.destination}
               </td>
-            </tr>
+            </tr> 
+              )}
+            {despatchDetails?.vehicleNo && (
             <tr className="flex justify-between">
               <td className="text-gray-500 mb-0.5  text-[11px]">Vehicle No:</td>
               <td className="text-gray-500 mb-0.5  text-[11px]">
                 {despatchDetails?.vehicleNo}
               </td>
             </tr>
-
+            )}
+            {despatchDetails?.orderNo && (
             <tr className="flex justify-between">
               <td className="text-gray-500 mb-0.5  text-[11px]">Order No:</td>
               <td className="text-gray-500 mb-0.5  text-[11px]">
                 {despatchDetails?.orderNo}
               </td>
             </tr>
+              )}
+              {despatchDetails?.termsOfPay && (
             <tr className="flex justify-between">
               <td className="text-gray-500 mb-0.5  text-[11px]">
                 Terms Of Pay:
@@ -160,6 +172,8 @@ function PdfHeader({ data, org, address, despatchDetails, tab="sales" }) {
                 {despatchDetails?.termsOfPay}
               </td>
             </tr>
+              )}
+              {despatchDetails?.termsOfDelivery && (
             <tr className="flex justify-between">
               <td className="text-gray-500 mb-0.5  text-[11px]">
                 Terms Of Delivery
@@ -168,6 +182,7 @@ function PdfHeader({ data, org, address, despatchDetails, tab="sales" }) {
                 {despatchDetails?.termsOfDelivery}
               </td>
             </tr>
+              )}
           </tbody>
         </table>
       </div>
