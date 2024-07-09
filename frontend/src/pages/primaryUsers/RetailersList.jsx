@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import api from "../../api/api";
 import { toast } from "react-toastify";
 import Pagination from "../../components/common/Pagination";
-import Sidebar from "../../components/homePage/Sidebar";
 import { IoReorderThreeSharp } from "react-icons/io5";
 
 import { FaEdit } from "react-icons/fa";
@@ -11,6 +10,7 @@ import { removeAll } from "../../../slices/invoice";
 import { removeAllSales } from "../../../slices/sales";
 
 import { useDispatch } from "react-redux";
+import { useSidebar } from "../../layout/Layout";
 
 function RetailersList() {
   const [organizations, setOrganizations] = useState([]);
@@ -22,6 +22,9 @@ function RetailersList() {
   const [postPerPage, setPostPerPage] = useState(5);
   const [showSidebar, setShowSidebar] = useState(false);
   const dispatch=useDispatch()
+
+  const {  handleToggleSidebar } = useSidebar();
+
 
 
   useEffect(() => {
@@ -56,11 +59,7 @@ function RetailersList() {
 
   }, []);
 
-  const handleToggleSidebar = () => {
-    if (window.innerWidth < 768) {
-      setShowSidebar(!showSidebar);
-    }
-  };
+
 
   console.log(organizations);
   console.log(secondaryUsers);
@@ -90,13 +89,10 @@ function RetailersList() {
   const finalSecUsers = filteredSecUsers.slice(firstPostIndex, lastPostIndex);
 
   return (
-    <div className="flex">
-      <div className="" style={{ height: "100vh" }}>
-        <Sidebar TAB={"agentLIst"} showBar={showSidebar} />
-      </div>
+   
 
-      <section className=" flex-1 antialiased bg-gray-100 text-gray-600 h-screen py-0 md:p-6 overflow-y-scroll   ">
-        <div className="block md:hidden bg-[#201450] text-white mb-2 p-3 flex items-center gap-3 text-lg ">
+      <section className="  antialiased  text-gray-600    ">
+        <div className=" md:hidden bg-[#201450] text-white mb-2 p-3 flex items-center gap-3 text-lg sticky top-0 ">
           <IoReorderThreeSharp
             onClick={handleToggleSidebar}
             className="block md:hidden text-3xl"
@@ -110,9 +106,9 @@ function RetailersList() {
             </Link>
           </div>
         </div>
-        <div className="flex flex-col h-full px-[5px]">
+        <div className="flex flex-col h-full ">
           {/* <!-- Table --> */}
-          <div className="w-full max-w-[59rem] mx-auto  bg-white shadow-lg rounded-sm border  border-gray-200 ">
+          <div className="w-full  mx-auto  bg-white shadow-lg rounded-sm border  border-gray-200 ">
             <header className=" hidden md:block px-5 py-4 border-b border-gray-100 bg bg-[#261b56] text-white">
               <div className="flex justify-between items-center">
                 <h2 className="font-semibold ">Your Users</h2>
@@ -250,7 +246,6 @@ function RetailersList() {
           </div>
         </div>
       </section>
-    </div>
   );
 }
 

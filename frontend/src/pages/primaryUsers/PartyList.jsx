@@ -11,13 +11,17 @@ import { FaEdit } from "react-icons/fa";
 import Swal from "sweetalert2";
 import { Link } from "react-router-dom";
 import { HashLoader } from "react-spinners";
-import { IoIosSearch } from "react-icons/io";
 import { FixedSizeList as List } from "react-window";
 import { IoIosAddCircle } from "react-icons/io";
 import { removeAll } from "../../../slices/invoice";
 import { removeAllSales } from "../../../slices/sales";
 
 import { useDispatch } from "react-redux";
+import SearchBar from "../../components/common/SearchBar";
+import { useSidebar } from "../../layout/Layout";
+import PartyListComponent from "../../components/common/List/PartyListComponent";
+
+
 
 function PartyList() {
   const [parties, setParties] = useState([]);
@@ -36,6 +40,9 @@ function PartyList() {
     (state) => state.setSelectedOrganization.selectedOrg.type
   );
   const dispatch=useDispatch()
+  const searchData = (data) => {
+    setSearch(data);
+  };
 
   useEffect(() => {
     setLoader(true);
@@ -115,11 +122,8 @@ function PartyList() {
 
   console.log(parties);
 
-  const handleToggleSidebar = () => {
-    if (window.innerWidth < 768) {
-      setShowSidebar(!showSidebar);
-    }
-  };
+  const {  handleToggleSidebar } = useSidebar();
+
 
   const Row = ({ index, style }) => {
     const el = filteredParty[index];
@@ -178,12 +182,9 @@ function PartyList() {
   };
 
   return (
-    <div className="flex relative h-screen ">
-      <div>
-        <Sidebar TAB={"addParty"} showBar={showSidebar} />
-      </div>
+    
 
-      <div className="flex-1 bg-slate-50 overflow-y-scroll ">
+      <div className="flex-1 bg-slate-50  ">
         <div className="sticky top-0 z-20">
           <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3  flex justify-between items-center  ">
             <div className="flex items-center justify-center gap-2">
@@ -220,42 +221,8 @@ function PartyList() {
             </div>
             <div className=" md:w-1/2 ">
               {/* search bar */}
-              <div className="relative  ">
-                <div className="absolute inset-y-0 start-0 flex items-center  pointer-events-none ">
-                  <svg
-                    className="w-4 h-4 text-gray-500 "
-                    aria-hidden="true"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      stroke="currentColor"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"
-                    />
-                  </svg>
-                </div>
-                <div class="relative">
-                  <input
-                    onChange={(e) => setSearch(e.target.value)}
-                    value={search}
-                    type="search"
-                    id="default-search"
-                    class="block w-full p-2  text-sm text-gray-900 border  rounded-lg border-gray-300  bg-gray-50 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Search party by name..."
-                    required
-                  />
-                  <button
-                    type="submit"
-                    class="text-white absolute end-[10px] top-1/2 transform -translate-y-1/2 bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-md px-2 py-1"
-                  >
-                    <IoIosSearch />
-                  </button>
-                </div>
-              </div>
+              <SearchBar onType={searchData} />
+
 
               {/* search bar */}
             </div>
@@ -265,31 +232,20 @@ function PartyList() {
         {/* adding party */}
 
         {loader ? (
-          <div className="flex justify-center items-center h-screen">
-            <HashLoader color="#363ad6" />
-          </div>
-        ) : parties.length > 0 ? (
-          <div
-            style={{
-              scrollbarWidth: "thin",
-              scrollbarColor: "transparent transparent",
-            }}
-          >
-            <List
-              className=""
-              height={500} // Specify the height of your list
-              itemCount={filteredParty.length} // Specify the total number of items
-              itemSize={160} // Specify the height of each item
-              width="100%" // Specify the width of your list
-            >
-              {Row}
-            </List>
-          </div>
-        ) : (
-          <div className="font-bold flex justify-center items-center mt-12 text-gray-500">
-            No Parties !!!
-          </div>
-        )}
+        <div className="flex justify-center items-center h-screen">
+          <HashLoader color="#363ad6" />
+        </div>
+      ) : parties.length === 0 ? (
+        <div className="font-bold flex justify-center items-center mt-12 text-gray-500">
+          No Parties!!!
+        </div>
+      ) : (
+        <PartyListComponent
+          type={type}
+          filteredParty={filteredParty}
+          deleteHandler={deleteHandler}
+        />
+      )}
 
         {/* <Link to={"/pUsers/addParty"} className="flex justify-center">
         <div className=" px-4  absolute bottom-2 text-white bg-violet-700 rounded-3xl p-2 flex items-center justify-center gap-2 hover_scale cursor-pointer ">
@@ -298,7 +254,7 @@ function PartyList() {
         </div>
       </Link> */}
       </div>
-    </div>
+
   );
 }
 

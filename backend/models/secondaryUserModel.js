@@ -23,6 +23,7 @@ const secondaryUserSchema = new mongoose.Schema(
         salesConfiguration: { type: Object },
         salesOrderConfiguration: { type: Object },
         receiptConfiguration: { type: Object },
+        purchaseConfiguration: { type: Object },
         vanSaleConfiguration: { type: Object },
         vanSale: { type: Boolean },
         // vanSaleGodown:{type:String}
@@ -32,6 +33,7 @@ const secondaryUserSchema = new mongoose.Schema(
     orderNumber: { type: Number, default: 1 },
     salesNumber: { type: Number, default: 1 },
     vanSalesNumber: { type: Number, default: 1 },
+    purchaseNumber: { type: Number, default: 1 },
   },
   {
     timestamps: true,

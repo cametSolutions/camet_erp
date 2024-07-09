@@ -10,6 +10,8 @@ import {
   addAdditionalCharges,
   AddFinalAmount,
   deleteRow,
+  addDespatchDetails,
+
 } from "../../../slices/invoiceSecondary";
 import { useDispatch } from "react-redux";
 import { IoIosArrowDown } from "react-icons/io";
@@ -28,12 +30,18 @@ import {
   setFinalAmount,
   setAdditionalCharges,
   setSelectedPriceLevel,
-  saveId
+  saveId,
+  removeItem
+
 } from "../../../slices/invoiceSecondary";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import { Button, Label, Modal, TextInput } from "flowbite-react";
 import { useParams } from "react-router-dom";
 import SidebarSec from "../../components/secUsers/SidebarSec";
+import { PiAddressBookFill } from "react-icons/pi";
+import DespatchDetails from "../../components/secUsers/DespatchDetails";
+
+
 
 function EditInvoiceSecondary() {
   const cmp_id = useSelector(
@@ -51,7 +59,6 @@ function EditInvoiceSecondary() {
     suffixDetails: "",
   });
   const [additional, setAdditional] = useState(false);
-  const [refresh, setRefresh] = useState(false);
   const [refreshCmp, setrefreshCmp] = useState(false);
   const [orderNumber, setOrderNumber] = useState("");
   const [additionalChragesFromCompany, setAdditionalChragesFromCompany] =  useState([]);
@@ -222,12 +229,8 @@ const handleRateChange = (index, value) => {
   const partyFromRedux = useSelector((state) => state.invoiceSecondary.party);
   const items = useSelector((state) => state.invoiceSecondary.items);
   const itemsFromRedux = useSelector((state) => state.invoiceSecondary.items);
-  console.log(itemsFromRedux);
-  const priceLevelFromRedux =
-    useSelector((state) => state.invoiceSecondary.selectedPriceLevel) || "";
-
-
-
+  const despatchDetailsFromRedux = useSelector((state) => state.invoiceSecondary.despatchDetails);
+  const priceLevelFromRedux =useSelector((state) => state.invoiceSecondary.selectedPriceLevel) || "";
   useEffect(() => {
     const fetchInvoiceDetails = async () => {
       try {
@@ -243,6 +246,7 @@ const handleRateChange = (index, value) => {
           additionalCharges,
           finalAmount,
           orderNumber,
+          despatchDetails
         } = res.data.data;
 
         // additionalCharges: [ { option: 'option 1', value: '95', action: 'add' } ],
@@ -286,6 +290,15 @@ const handleRateChange = (index, value) => {
           });
           setRows(newRows);
         
+        }
+
+        if (
+          Object.keys(despatchDetailsFromRedux).every(
+            (key) => despatchDetailsFromRedux[key] == ""
+          )
+        ) {
+          console.log("haii");
+          dispatch(addDespatchDetails(despatchDetails));
         }
       } catch (error) {
         console.log(error);
@@ -393,6 +406,7 @@ console.log(InvoiceIdForEdit);
       lastAmount,
       orgId,
       orderNumber,
+      despatchDetails :despatchDetailsFromRedux,
     };
 
     console.log(formData);
@@ -448,11 +462,9 @@ console.log(InvoiceIdForEdit);
 
   return (
     <div className="flex relative ">
-      <div>
-        <SidebarSec TAB={"invoice"} showBar={showSidebar} refresh={refreshCmp} />
-      </div>
+   
 
-      <div className="flex-1 bg-slate-100  h-screen overflow-y-scroll  ">
+      <div className="flex-1 bg-slate-100    ">
         <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex  items-center gap-2 sticky top-0 z-50  ">
           {/* <IoReorderThreeSharp
             onClick={handleToggleSidebar}
@@ -521,7 +533,7 @@ console.log(InvoiceIdForEdit);
               <span className="text-red-500 mt-[-4px] font-bold">*</span>
             </div>
             {Object.keys(party).length !== 0 && (
-              <div>
+              <div className="flex items-center">
                 {/* <Link to={"/sUsers/searchParty"}> */}
                 <p
                   onClick={() => {
@@ -533,6 +545,12 @@ console.log(InvoiceIdForEdit);
                 >
                   Change
                 </p>
+
+                <Link to={`/sUsers/billToSalesOrder/${party._id}`}>
+                  <p className="text-violet-500 p-1 px-3  text-2xl  border-gray-300 rounded-2xl cursor-pointer">
+                    <PiAddressBookFill />
+                  </p>
+                </Link>
                 {/* </Link> */}
               </div>
             )}
@@ -568,6 +586,10 @@ console.log(InvoiceIdForEdit);
             </div>
           )}
         </div>
+
+         {/* Despatch details */}
+
+         <DespatchDetails tab={"order"} />
 
         {/* adding items */}
 
@@ -614,68 +636,61 @@ console.log(InvoiceIdForEdit);
 
               {items.map((el, index) => (
                 <>
-                  <div key={index} className="py-3 mt-0 px-6 bg-white ">
-                    <div className="flex justify-between font-bold text-xs">
-                      <p>{el.product_name}</p>
-                      <p> ₹ {el.total ?? 0}</p>
-                    </div>
-                    <div className="flex justify-between items-center mt-2 ">
-                      <div className="w-3/5 md:w-2/5 font-semibold text-gray-500 text-xs  flex flex-col gap-2 ">
-                        <div className="flex justify-between">
-                          <p className="text-nowrap">
-                            Qty <span className="text-xs">x</span> Rate
-                          </p>
-                          <p className="text-nowrap">
-                            {el.count} {el.unit} X{" "}
-                            {el.Priceleveles.find(
-                              (item) => item.pricelevel == priceLevelFromRedux
-                            )?.pricerate || 0}
-                          </p>
-                        </div>
-                        <div className="flex justify-between">
-                          <p className="text-nowrap"> Tax </p>
-                          <p className="text-nowrap">
-                            ({el.igst} %)
-                            {/* {(el.Priceleveles.find(
-              (item) => item.pricelevel == priceLevelFromRedux
-            ).pricerate *
-              el.count *
-              el.igst) /
-              100}{" "} */}
-                          </p>
-                        </div>
-                        {(el.discount > 0 || el.discountPercentage > 0) && (
-                          <div className="flex justify-between">
-                            <p className="text-nowrap"> Discount </p>
-                            <div className="flex items-center">
-                              <p className="text-nowrap ">
-                                {el.discount > 0
-                                  ? `₹ ${el.discount}`
-                                  : `${el.discountPercentage}%`}
-                              </p>
-                            </div>
-                          </div>
-                        )}
+                  <div key={index} className="py-3 mt-0 px-3 md:px-6 bg-white flex items-center gap-1.5 md:gap-4">
+                    <div onClick={()=>{dispatch(removeItem(el))}} className=" text-gray-500 text-sm cursor-pointer "><MdCancel/></div>
+                    <div className=" flex-1">
+                      <div className="flex justify-between font-bold text-xs gap-10">
+                        <p>{el.product_name}</p>
+                        <p className="text-nowrap"> ₹ {el.total ?? 0}</p>
                       </div>
-                      {/* <Link
+                      <div className="flex justify-between items-center mt-2 ">
+                        <div className="w-3/5 md:w-2/5 font-semibold text-gray-500 text-xs  flex flex-col gap-2 ">
+                          <div className="flex justify-between">
+                            <p className="text-nowrap">
+                              Qty <span className="text-xs">x</span> Rate
+                            </p>
+                            <p className="text-nowrap">
+                              {el.count} {el.unit} X{" "}
+                              {el?.selectedPriceRate|| 0}
+                            </p>
+                          </div>
+                          <div className="flex justify-between">
+                            <p className="text-nowrap"> Tax </p>
+                            <p className="text-nowrap">({el.igst} %)</p>
+                          </div>
+                          {(el.discount > 0 || el.discountPercentage > 0) && (
+                            <div className="flex justify-between">
+                              <p className="text-nowrap"> Discount </p>
+                              <div className="flex items-center">
+                                <p className="text-nowrap ">
+                                  {el.discount > 0
+                                    ? `₹ ${el.discount}`
+                                    : `${el.discountPercentage}%`}
+                                </p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        {/* <Link
                         to={{
-                          pathname: `/sUsers/editItem/${el._id}`,
+                          pathname: `/pUsers/editItem/${el._id}`,
                           state: { from: "invoice" }, // Set the state to indicate where the user is coming from
                         }}
                       > */}
-                      <div className="">
-                        <p
-                          onClick={() => {
-                            navigate(`/sUsers/editItem/${el._id}`, {
-                              state: { from: "editInvoice",id:id },
-                            });
-                          }}
-                          className="text-violet-500 text-xs md:text-base font-bold  p-1  px-4   border border-1 border-gray-300 rounded-2xl cursor-pointer"
-                        >
-                          Edit
-                        </p>
+                        <div className="">
+                          <p
+                            onClick={() => {
+                              navigate(`/sUsers/editItem/${el._id}`, {
+                                state: { from: "invoice" },
+                              });
+                            }}
+                            className="text-violet-500 text-xs md:text-base font-bold  p-1  px-4   border border-1 border-gray-300 rounded-2xl cursor-pointer"
+                          >
+                            Edit
+                          </p>
+                        </div>
+                        {/* </Link> */}
                       </div>
-                      {/* </Link> */}
                     </div>
                   </div>
                   <hr />

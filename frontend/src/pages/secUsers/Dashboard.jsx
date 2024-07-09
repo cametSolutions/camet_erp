@@ -4,16 +4,12 @@ import { useState, useEffect } from "react";
 import { IoReorderThreeSharp } from "react-icons/io5";
 import { useSelector } from "react-redux";
 import { IoReceiptSharp } from "react-icons/io5";
-import { BsGraphUp } from "react-icons/bs";
-import { HiDocumentText } from "react-icons/hi2";
-import { FaCartArrowDown } from "react-icons/fa6";
+
 import { CiCalendarDate } from "react-icons/ci";
 import api from "../../api/api";
-import { Link } from "react-router-dom";
 import dayjs from "dayjs";
 import { IoArrowRedoOutline } from "react-icons/io5";
 import { FaCaretDown } from "react-icons/fa";
-import SidebarSec from "../../components/secUsers/SidebarSec";
 import { useNavigate } from "react-router-dom";
 import { FcCancel } from "react-icons/fc";
 import { BiSolidAddToQueue } from "react-icons/bi";
@@ -22,14 +18,11 @@ import { removeAll } from "../../../slices/invoiceSecondary";
 import { removeAllSales } from "../../../slices/salesSecondary";
 import { toast } from "react-toastify";
 import { MdInventory } from "react-icons/md";
-
-
-
-
+import { RiContactsFill } from "react-icons/ri";
+import { useSidebar } from "../../layout/Layout";
 
 
 function Dashboard() {
-  const [showSidebar, setShowSidebar] = useState(false);
   const [data, setData] = useState([]);
 
   const navigate = useNavigate();
@@ -39,35 +32,32 @@ function Dashboard() {
   );
 
   console.log(org);
-  const dispatch=useDispatch()
+  const dispatch = useDispatch();
 
-  const handleToggleSidebar = () => {
-    if (window.innerWidth < 768) {
-      setShowSidebar(!showSidebar);
-    }
-  };
+  const {  handleToggleSidebar } = useSidebar();
 
   useEffect(() => {
-    const fetchTransactions = async () => {
-      try {
-        const res = await api.get(`/api/sUsers/transactions/${org._id}`, {
-          withCredentials: true,
-        });
+    if (org) {
+      const fetchTransactions = async () => {
+        try {
+          const res = await api.get(`/api/sUsers/transactions/${org._id}`, {
+            withCredentials: true,
+          });
 
-        console.log(res.data);
+          console.log(res.data);
 
-        setData(res.data.data.combined);
+          setData(res.data.data.combined);
 
-        // dispatch(addData(res.data.outstandingData));
-      } catch (error) {
-        console.log(error);
-        setData([])
-      }
-    };
-    fetchTransactions();
-    dispatch(removeAll())
-    dispatch(removeAllSales())
-
+          // dispatch(addData(res.data.outstandingData));
+        } catch (error) {
+          console.log(error);
+          setData([]);
+        }
+      };
+      fetchTransactions();
+      dispatch(removeAll());
+      dispatch(removeAllSales());
+    }
   }, [org]);
 
   console.log(data);
@@ -77,9 +67,7 @@ function Dashboard() {
   // Filter data based on today's date
   const filteredData = data?.filter((item) => {
     const createdAtDate = new Date(item.createdAt);
-    return (
-      createdAtDate.toDateString() === today.toDateString() 
-    );
+    return createdAtDate.toDateString() === today.toDateString();
   });
 
   const receiptTotal = filteredData?.reduce((acc, curr) => {
@@ -90,31 +78,24 @@ function Dashboard() {
     }
   }, 0);
 
-
   const handleLinkClick = (to) => {
     if (org == undefined) {
       toast.error("No company available");
-    } 
-    else if (
-      org.isApproved===false
-    ){
+    } else if (org.isApproved === false) {
       toast.error("Company approval pending ");
-
-    }
-    
-    else {
-      navigate(to);
+    } else {
+      console.log(receiptTotal);
+      navigate(to, { state: { receiptTotal } });
     }
   };
 
-
   return (
-    <div className="flex bg-[#f9fdff]  ">
-      <div>
+    <div className="  ">
+      {/* <div>
         <SidebarSec TAB={"dash"} showBar={showSidebar} />
-      </div>
+      </div> */}
 
-      <div className="flex-1 h-screen overflow-y-scroll">
+      <div className=" ">
         <div className="sticky top-0 z-[10]">
           <div className="sticky top-0  ">
             <div className="bg-[#012a4a]   sticky top-0 p-3  text-white text-lg font-bold flex items-center gap-3  shadow-lg">
@@ -139,104 +120,93 @@ function Dashboard() {
           </div>
           <div className="grid grid-cols-2 lg:grid-cols-4 p-6 lg:px-12 gap-4 md:gap-6 bg-white  ">
             {/* <Link to={"/sUsers/transaction"}> */}
-              <div
-             onClick={() => handleLinkClick("/sUsers/transaction")}
-
-               className="flex flex-wrap -mx-6   duration-150 hover:scale-105 ease-in-out cursor-pointer  ">
-                <div className="w-full px-6 ">
-                  <div className="flex items-center px-2 py-3 md:px-5 md:py-2 shadow-sm rounded-md bg-slate-100 h-24">
-                    <div className="p-3 rounded-full bg-green-500 bg-opacity-75 text-2xl text-white">
-                      <BiSolidAddToQueue />
-                    </div>
-
-                    <div className="mx-2 md:mx-5">
-                      <h4 className=" sm:text-md md:text-lg  font-semibold text-gray-700">
-                        ₹{receiptTotal.toFixed(2)}
-                      </h4>
-                      <div className="text-gray-500  text-[15px] ">Transactions</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            {/* </Link> */}
-            {/* <Link to={"/sUsers/outstanding"}> */}
-              <div
-             onClick={() => handleLinkClick("/sUsers/outstanding")}
-
-               className="flex flex-wrap -mx-6  duration-150 hover:scale-105 ease-in-out cursor-pointer">
-                <div className="w-full px-6 ">
-                  <div className="flex items-center px-2 py-3 md:px-5 md:py-2 shadow-sm rounded-md bg-slate-100 h-24">
-                    <div className="p-3 rounded-full bg-red-500 bg-opacity-75 text-2xl text-white">
-                      <IoReceiptSharp />
-                    </div>
-
-                    <div className="mx-5 py-2.5">
-                      {/* <h4 className=" sm:text-md md:text-2xl  font-semibold text-gray-700">
-                        ₹0
-                      </h4> */}
-                      <div className="text-gray-500 text-md">Reciept</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            {/* </Link> */}
-           
-            {/* <Link to={"/sUsers/sales"}> */}
-            <div 
-             onClick={() => handleLinkClick("/sUsers/sales")}
-
-            className="flex flex-wrap -mx-6  duration-150 hover:scale-105 ease-in-out cursor-pointer">
+            <div
+              onClick={() => handleLinkClick("/sUsers/transaction")}
+              className="flex flex-wrap -mx-6   duration-150 hover:scale-105 ease-in-out cursor-pointer  "
+            >
               <div className="w-full px-6 ">
                 <div className="flex items-center px-2 py-3 md:px-5 md:py-2 shadow-sm rounded-md bg-slate-100 h-24">
-                  <div className="p-3 rounded-full bg-orange-500 bg-opacity-75 text-2xl  text-white">
-                    <FaCartArrowDown />
+                  <div className="p-3 rounded-full bg-green-500 bg-opacity-75 text-2xl text-white">
+                    <BiSolidAddToQueue />
                   </div>
 
-                  <div className="mx-5 ">
-                    {/* <h4 className=" sm:text-md md:text-2xl  font-semibold text-gray-700">
-                      ₹0
-                    </h4> */}
-                    <div className="text-gray-500 text-md">Sales </div>
+                  <div className="mx-2 md:mx-5">
+                    <h4 className=" sm:text-md md:text-lg  font-semibold text-gray-700">
+                      ₹{receiptTotal.toFixed(2)}
+                    </h4>
+                    <div className="text-gray-500  text-[15px] ">
+                      Transactions
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
             {/* </Link> */}
-            {/* <Link to={'/sUsers/invoice'} > */}
-            <div 
-             onClick={() => handleLinkClick("/sUsers/invoice")}
-
-            className="flex flex-wrap -mx-6  duration-150 hover:scale-105 ease-in-out cursor-pointer">
+            {/* <Link to={"/sUsers/outstanding"}> */}
+            <div
+              onClick={() => handleLinkClick("/sUsers/outstanding")}
+              className="flex flex-wrap -mx-6  duration-150 hover:scale-105 ease-in-out cursor-pointer"
+            >
               <div className="w-full px-6 ">
-                <div className="flex items-center px-2 py-3 md:px-5 md:py-2 shadow-sm rounded-md bg-slate-100 h-24" >
-                  <div className="p-3 rounded-full bg-blue-500 bg-opacity-75 text-2xl text-white">
-                    <HiDocumentText />
+                <div className="flex items-center px-2 py-3 md:px-5 md:py-2 shadow-sm rounded-md bg-slate-100 h-24">
+                  <div className="p-3 rounded-full bg-red-500 bg-opacity-75 text-2xl text-white">
+                    <IoReceiptSharp />
                   </div>
 
-                  <div className="mx-5 py-2.5">
+                  <div className="mx-1 md:mx-4 py-2.5">
                     {/* <h4 className=" sm:text-md md:text-2xl  font-semibold text-gray-700">
-                      ₹0
-                    </h4> */}
-                    <div className="text-gray-500 text-md">Sale Order </div>
+                        ₹0
+                      </h4> */}
+                    <div className="text-gray-500 text-md">Outstanding</div>
                   </div>
                 </div>
               </div>
             </div>
+            {/* </Link> */}
+
+            {/* <Link to={"/sUsers/sales"}> */}
+          
+            {/* </Link> */}
+            {/* <Link to={'/sUsers/invoice'} > */}
+        
             <div
               onClick={() => handleLinkClick("/sUsers/Inventory")}
-
-              className="flex flex-wrap -mx-6  duration-150 hover:scale-105 ease-in-out cursor-pointer">
+              className="flex flex-wrap -mx-6  duration-150 hover:scale-105 ease-in-out cursor-pointer"
+            >
               <div className="w-full px-6 ">
-                <div className="flex items-center px-2 py-3 md:px-5 md:py-2 shadow-sm rounded-md bg-slate-100 h-24" >
+                <div className="flex items-center px-2 py-3 md:px-5 md:py-2 shadow-sm rounded-md bg-slate-100 h-24">
                   <div className="p-3 rounded-full bg-blue-500 bg-opacity-75 text-2xl text-white">
-                  <MdInventory />
+                    <MdInventory />
                   </div>
 
                   <div className="mx-5 py-2.5">
                     {/* <h4 className=" sm:text-md md:text-2xl  font-semibold text-gray-700">
                       ₹0
                     </h4> */}
-                    <div className="text-gray-500 text-md">Inventory </div>
+                    <div className="text-gray-500 text-md">Stock Register</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+
+            {/* contact */}
+
+            <div
+              onClick={() => handleLinkClick("/sUsers/contacts")}
+              className="flex flex-wrap -mx-6  duration-150 hover:scale-105 ease-in-out cursor-pointer"
+            >
+              <div className="w-full px-6 ">
+                <div className="flex items-center px-2 py-3 md:px-5 md:py-2 shadow-sm rounded-md bg-slate-100 h-24">
+                  <div className="p-3 rounded-full bg-blue-500 bg-opacity-75 text-2xl text-white">
+                    <RiContactsFill />
+                  </div>
+
+                  <div className="mx-5 py-2.5">
+                    {/* <h4 className=" sm:text-md md:text-2xl  font-semibold text-gray-700">
+                      ₹0
+                    </h4> */}
+                    <div className="text-gray-500 text-md">Contacts</div>
                   </div>
                 </div>
               </div>
@@ -250,9 +220,11 @@ function Dashboard() {
           <hr />
           <hr />
 
-          <div className=" bg-white px-4 p-2 z-40 text-gray-500 text-lg font-bold flex items-center gap-3 z shadow-lg sm:sticky top-[115px]">
+          <div className=" bg-white px-4 p-2 z-40 text-gray-500 text-sm md:text-lg font-bold flex items-center gap-3 z shadow-lg sm:sticky top-[115px]">
             <p> Today's Transactions</p>
 
+
+            <p className="text-[9px] md:text-sm">( {new Date().toDateString()} )</p>
             <CiCalendarDate className="text-xl font-bold text-violet-500" />
             <FaCaretDown />
           </div>
@@ -265,19 +237,35 @@ function Dashboard() {
               <div
                 key={index}
                 onClick={() => {
-                  const navigationPath = el.type === "Receipt" ? `/sUsers/receiptDetails/${el._id}` :el.type==="Tax Invoice"?`/sUsers/salesDetails/${el._id}`: `/sUsers/InvoiceDetails/${el._id}`;
-                  navigate(navigationPath, { state: {from:"dashboard" } });
-                 }}
+                  const navigationPath =
+                    el.type === "Receipt"
+                      ? `/sUsers/receiptDetails/${el._id}`
+                      : el.type === "Tax Invoice"
+                      ? `/sUsers/salesDetails/${el._id}`
+                      : el.type === "Purchase"? `/sUsers/purchaseDetails/${el._id}`
+                      : `/sUsers/InvoiceDetails/${el._id}`;
+                  navigate(navigationPath, { state: { from: "dashboard" } });
+                }}
                 className={`${
                   el?.isCancelled ? "bg-gray-200 pointer-events-none " : ""
                 } bg-[#f8ffff] cursor-pointer rounded-md shadow-xl border border-gray-100 flex flex-col justify-between px-4 transition-all duration-150 transform hover:scale-105 ease-in-out`}
               >
                 <div className=" flex justify-start text-xs mt-2 ">
-                  <div className={` ${el.type==="Receipt" ? "bg-[#FB6D48]" :el.type==="Tax Invoice"? "bg-violet-500": "bg-[#3ed57a]" }   flex items-center text-white px-2 rounded-sm `}>
+                  <div
+                    className={` ${
+                      el.type === "Receipt"
+                        ? "bg-[#FB6D48]"
+                        : el.type === "Tax Invoice"
+                        ? "bg-violet-500"
+                        : el.type === "Purchase"
+                        ? "bg-pink-500"
+                        : "bg-[#3ed57a]"
+                    }   flex items-center text-white px-2 rounded-sm `}
+                  >
                     {/* <FaRegCircleDot /> */}
                     <p className=" p-1  rounded-lg px-3 font-semibold">
                       {" "}
-                    {el.type}
+                      {el.type}
                     </p>
                   </div>
                 </div>

@@ -7,16 +7,14 @@ import { MdModeEditOutline } from "react-icons/md";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
-import { changeIgstAndDiscount } from "../../../slices/salesSecondary";
-import { toast } from "react-toastify";
-import { Button, Modal } from "flowbite-react";
+import { updateItem } from "../../../slices/salesSecondary";
 
 function EditItemSalesSecondary() {
   const [item, setItem] = useState([]);
   const [newPrice, setNewPrice] = useState("");
   const [quantity, setQuantity] = useState("");
   const [unit, setUnit] = useState("");
-  const [hsn, setHsn] = useState([]);
+  // const [hsn, setHsn] = useState([]);
   const [igst, setIgst] = useState("");
   const [discount, setDiscount] = useState("");
   const [type, setType] = useState("amount");
@@ -25,55 +23,67 @@ function EditItemSalesSecondary() {
   const [discountAmount, setDiscountAmount] = useState(0); // State for discount amount
   const [discountPercentage, setDiscountPercentage] = useState(0);
 
-  const [openModal, setOpenModal] = useState(false);
-  const [totalCount, setTotalCount] = useState(0);
-  const [godown, setGodown] = useState([]);
-  const { id } = useParams();
+  const { id, index } = useParams();
+  console.log(index);
   const navigate = useNavigate();
   const location = useLocation();
 
   const ItemsFromRedux = useSelector((state) => state.salesSecondary.items);
   const selectedItem = ItemsFromRedux.filter((el) => el._id === id);
-  console.log(selectedItem);
-  console.log(godown);
-  const selectedPriceLevel = useSelector(
-    (state) => state.salesSecondary.selectedPriceLevel
-  );
+
   const orgId = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
 
+  const selectedGodown = selectedItem[0]?.GodownList[index];
+
+  // useEffect(() => {
+  //   const fetchHsn = async () => {
+  //     try {
+  //       const res = await api.get(`/api/sUsers/fetchHsn/${orgId}`, {
+  //         withCredentials: true,
+  //       });
+
+  //       setHsn(res.data.data);
+
+  //       // console.log(res.data.organizationData);
+  //     } catch (error) {
+  //       console.log(error);
+  //     }
+  //   };
+  //   fetchHsn();
+  // }, [orgId]);
+
   useEffect(() => {
-    const fetchHsn = async () => {
-      try {
-        const res = await api.get(`/api/sUsers/fetchHsn/${orgId}`, {
-          withCredentials: true,
-        });
+    // if (selectedPriceLevel === "" || selectedPriceLevel === undefined) {
+    //   navigate("/sUsers/addItemSales");
+    // } else {
+    setItem(selectedItem[0]);
+    // const price = selectedItem[0].Priceleveles.find(
+    //   (item) => item.pricelevel === selectedPriceLevel
+    // )?.pricerate;
 
-        setHsn(res.data.data);
+    if (selectedItem[0]?.hasGodownOrBatch) {
+      setNewPrice(selectedGodown?.selectedPriceRate || 0);
 
-        // console.log(res.data.organizationData);
-      } catch (error) {
-        console.log(error);
+      console.log("haii");
+      setQuantity(selectedGodown?.count || 1);
+      if (selectedGodown?.discountPercentage > 0) {
+        setDiscount(selectedGodown?.discountPercentage);
+        setType("percentage");
+      } else if (selectedGodown?.discount > 0) {
+        setDiscount(selectedGodown?.discount);
+        setType("amount");
+      } else if (
+        selectedGodown?.discountPercentage == 0 &&
+        selectedGodown?.discount == 0
+      ) {
+        setDiscount("");
       }
-    };
-    fetchHsn();
-  }, [orgId]);
-
-  useEffect(() => {
-    if (selectedPriceLevel === "" || selectedPriceLevel === undefined) {
-      navigate("/sUsers/addItemSales");
     } else {
-      setItem(selectedItem[0]);
-      const price = selectedItem[0].Priceleveles.find(
-        (item) => item.pricelevel === selectedPriceLevel
-      )?.pricerate;
+      setNewPrice(selectedItem[0]?.GodownList[0]?.selectedPriceRate || 0);
 
-      setNewPrice(price);
       setQuantity(selectedItem[0]?.count || 1);
-      setUnit(selectedItem[0]?.unit);
-      setIgst(selectedItem[0]?.igst);
-
       if (selectedItem[0].discountPercentage > 0) {
         setDiscount(selectedItem[0].discountPercentage);
         setType("percentage");
@@ -87,10 +97,13 @@ function EditItemSalesSecondary() {
         setDiscount("");
       }
     }
+    setUnit(selectedItem[0]?.unit);
+    setIgst(selectedItem[0]?.igst);
+    // }
   }, []);
 
   useEffect(() => {
-    const taxExclusivePrice = parseFloat(newPrice) * parseInt(quantity) || 0;
+    const taxExclusivePrice = parseFloat(newPrice) * Number(quantity) || 0;
     setTaxExclusivePrice(taxExclusivePrice);
     // Calculate the discount amount and percentage
     let calculatedDiscountAmount = 0;
@@ -127,118 +140,101 @@ function EditItemSalesSecondary() {
 
   const submitHandler = () => {
     console.log(item);
-    const newItem = { ...item };
+    const newItem = structuredClone(item);
 
-    newItem.total = totalAmount;
-    newItem.count = parseInt(quantity);
-    newItem.newGst = igst;
-    newItem.godownList = godown;
-    if (type === "amount") {
-      newItem.discount = discountAmount;
-      newItem.discountPercentage = "";
+    console.log(newPrice); // Deep copy to avoid mutation
+
+    if (selectedItem[0]?.hasGodownOrBatch) {
+      console.log("haii");
+      const newGodownList = newItem.GodownList.map((godown, idx) => {
+        if (idx == index) {
+          console.log(godown);
+          return {
+            ...godown,
+            count: Number(quantity) || 0,
+            selectedPriceRate: Number(newPrice) || 0,
+            discount: type === "amount" ? discountAmount : "",
+            discountPercentage:
+              type === "amount" ? "" : parseFloat(discountPercentage),
+            individualTotal: Number(totalAmount.toFixed(2)),
+          };
+        } else {
+          return godown;
+        }
+      });
+
+      console.log(newGodownList);
+
+      newItem.GodownList = newGodownList;
+      newItem.count = Number(
+        newGodownList
+          ?.reduce((acc, curr) => (acc += curr?.count || 0), 0)
+          .toFixed(2)
+      );
+
+      newItem.count = Number(
+        newGodownList?.reduce((acc, curr) => {
+          if (curr.added === true) {
+            return acc + curr.count;
+          } else {
+            return acc;
+          }
+        },0)
+      );
+      newItem.total = Number(
+        newGodownList
+          .reduce((acc, curr) => acc + (curr?.added?curr.individualTotal:0 || 0), 0)
+          .toFixed(2)
+      );
+      console.log(newItem.total);
+      console.log(newItem);
     } else {
-      newItem.discount = "";
+      // newItem.total = Number(totalAmount.toFixed(2));
+      newItem.GodownList[0].individualTotal = Number(totalAmount.toFixed(2));
+      newItem.total = Number(totalAmount.toFixed(2));
+      newItem.count = quantity || 0;
+      const godownList = [...newItem.GodownList];
+      console.log(godownList);
+      godownList[0].selectedPriceRate = Number(newPrice) || 0;
 
-      newItem.discountPercentage = parseFloat(discountPercentage);
+      newItem.GodownList = godownList;
+      newItem.newGst = igst;
+      if (type === "amount") {
+        newItem.discount = discountAmount;
+        newItem.discountPercentage = "";
+      } else {
+        newItem.discount = "";
+        newItem.discountPercentage = parseFloat(discountPercentage);
+      }
     }
 
     console.log(newItem);
-    dispatch(changeIgstAndDiscount(newItem));
-    // navigate("/sUsers/addItem");
-    handleBackClick();
+
+    dispatch(updateItem(newItem));
+    navigate(-1);
   };
 
   const handleBackClick = () => {
-    console.log(location.state);
-
-    if (location.state.id && location.state.from == "addItemSales") {
-      console.log("haii");
-      navigate("/sUsers/addItemSales", {
-        state: { from: "editSales", id: location.state.id },
-      });
-    } else if (location.state.from === "sales") {
-      console.log("haii");
-
-      navigate("/sUsers/sales");
-    } else if (location?.state?.from === "addItemSales") {
-      console.log("haii");
-
-      navigate("/sUsers/addItemSales");
-    } else if (location?.state?.from === "editSales") {
-      console.log("haii");
-
-      navigate(`/sUsers/editSales/${location.state.id}`);
-    } else {
-      console.log("haii");
-
-      navigate("/sUsers/addItemSales");
-    }
+    navigate(-1);
   };
 
-  /////////////////////////modal popup /////////////////////////////
-
-  function onCloseModal() {
-    setOpenModal(false);
-  }
-
-  const openModalHandler = () => {
-    console.log(selectedItem);
-    if (selectedItem[0]?.GodownList?.length > 0) {
-      setOpenModal(true);
-      if (godown.length === 0) {
-        setGodown(selectedItem[0]?.GodownList);
+  const handleDirectQuantityChange = (value) => {
+    if (value.includes(".")) {
+      // Split the value into parts before and after the decimal point
+      const parts = value.split(".");
+      // Check the length of the part after the decimal point
+      if (parts[1].length > 3) {
+        return;
       }
     }
-  };
 
-  // Function to handle incrementing the count
-  const incrementCount = (index) => {
-    const newGodownItems = godown.map((item) => ({ ...item })); // Deep copy each item object
-    console.log(newGodownItems);
-
-    if (newGodownItems[index].balance_stock >= 1) {
-      newGodownItems[index].count += 1;
-      newGodownItems[index].balance_stock -= 1;
-      setGodown(newGodownItems);
-      setTotalCount(totalCount + 1);
-      console.log(godown);
-    } else {
-      toast("Insufficient stock to increment count.");
-    }
-  };
-
-  // Function to handle decrementing the count
-  const decrementCount = (index) => {
-    const newGodownItems = godown.map((item) => ({ ...item })); // Assuming godown is the correct state variable name
-    console.log(newGodownItems);
-
-    if (newGodownItems[index].count > 0) {
-      newGodownItems[index].count -= 1;
-      newGodownItems[index].balance_stock += 1; // Increase balance_stock by 1
-      setGodown(newGodownItems); // Corrected function name to setGodown
-      setTotalCount(totalCount - 1);
-      console.log(godown);
-    } else {
-      toast("Cannot decrement count as it is already at 0.");
-    }
-  };
-
-  ///////////////////////////modalSubmit///////////////////////////////////
-  console.log(godown);
-
-  const modalSubmit = () => {
-    const totalCount = godown.reduce((acc, curr) => acc + curr.count, 0);
-    console.log(totalCount);
-    setQuantity(totalCount);
-    setOpenModal(false);
+    setQuantity(value);
   };
 
   return (
-    <div className="flex ">
-      <div>
-        <SidebarSec />
-      </div>
-      <div className=" h-screen overflow-y-auto flex-1">
+    <div className=" ">
+     
+      <div className=" h-screen  flex-1">
         <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex  items-center gap-2 sticky top-0 z-20 ">
           <IoIosArrowRoundBack
             // onClick={() => {
@@ -269,11 +265,14 @@ function EditItemSalesSecondary() {
                     <div className="flex flex-col">
                       <label className="leading-loose">Price</label>
                       <input
-                        disabled
-                        value={newPrice || 0}
-                        type="text"
-                        className="px-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm border-gray-300 rounded-md focus:outline-none text-gray-600"
-                        placeholder="Price"
+                        onChange={(e) => {
+                          setNewPrice(e.target.value);
+                        }}
+                        // disabled
+                        value={newPrice}
+                        type="number"
+                        className=" input-number px-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm border-gray-300 rounded-md focus:outline-none text-gray-600"
+                        placeholder="0"
                       />
                     </div>
 
@@ -282,12 +281,15 @@ function EditItemSalesSecondary() {
                         <label className="leading-loose">Quantity</label>
                         <div className="relative focus-within:text-gray-600 text-gray-400">
                           <input
-                            onClick={openModalHandler}
-                            onChange={(e) => setQuantity(e.target.value)}
+                            // readOnly={selectedItem[0]?.GodownList?.length > 0 && godownName=="nil"}
+                            // onClick={openModalHandler}
+                            onChange={(e) => {
+                              handleDirectQuantityChange(e.target.value);
+                            }}
                             value={quantity}
-                            type="text"
-                            className="pr-4 pl-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm border-gray-300 rounded-md focus:outline-none text-gray-600"
-                            placeholder=""
+                            type="number"
+                            className=" input-number pr-4 pl-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm border-gray-300 rounded-md focus:outline-none text-gray-600"
+                            placeholder="0"
                           />
                           <div className="absolute left-3 top-2"></div>
                         </div>
@@ -447,126 +449,6 @@ function EditItemSalesSecondary() {
             </div>
           </div>
         </div>
-
-        <Modal
-          style={{
-            scrollbarWidth: "thin",
-            scrollbarColor: "transparent transparent",
-          }}
-          show={openModal}
-          size="md"
-          onClose={onCloseModal}
-          popup
-          className="modal-dialog"
-        >
-          <Modal.Header />
-          <Modal.Body>
-            <div className="space-y-6">
-              {/* Existing sign-in form */}
-              <div>
-                <div className="flex justify-between  bg-[#579BB1] p-2 rounded-sm items-center">
-                  <h3 className=" text-base md:text-xl  font-medium text-gray-900 dark:text-white ">
-                    Godown List
-                  </h3>
-
-                  <h3 className="font-medium  text-right  text-white ">
-                    Total Count:{" "}
-                    <span className="text-white  font-bold">
-                      {godown.reduce((acc, curr) => {
-                        return (acc = acc + curr.count);
-                      }, 0)}
-                    </span>
-                  </h3>
-                </div>
-                <div className="table-container overflow-y-auto max-h-[250px]">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th
-                          scope="col"
-                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                        >
-                          Godown Name
-                        </th>
-                        {/* <th
-                          scope="col"
-                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                        >
-                          Balance Stock
-                        </th> */}
-                        <th
-                          scope="col"
-                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                        >
-                          Count
-                        </th>
-                        <th scope="col" className="relative px-6 py-3">
-                          <span className="sr-only">Edit</span>
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {godown.map((item, index) => (
-                        <tr key={index}>
-                          <td className="px-6 py-4 ">
-                            <div className="text-sm text-gray-900">
-                              {item.godown}
-                            </div>
-                            <div className="text-sm text-gray-900 mt-1">
-                              Stock :{" "}
-                              <span className="text-green-500 font-bold">
-                                {item.balance_stock}
-                              </span>
-                            </div>
-                          </td>
-                          {/* <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-500">
-                              {item.balance_stock}
-                            </div>
-                          </td> */}
-                          {/* <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-500">
-                              {item.count}
-                            </div>
-                          </td> */}
-                          <td className=" px-6 py-4 whitespace-nowrap text-sm font-medium flex justify-center  ">
-                            <div className="flex gap-3 items-center justify-center">
-                              <button
-                                onClick={() => decrementCount(index)}
-                                className="text-indigo-600 hover:text-indigo-900  text-lg"
-                              >
-                                -
-                              </button>
-
-                              {item.count}
-                              <div></div>
-
-                              <button
-                                onClick={() => incrementCount(index)}
-                                className="text-indigo-600 hover:text-indigo-900 text-lg"
-                              >
-                                +
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-              <div className="w-full">
-                <Button
-                  onClick={() => {
-                    modalSubmit(godown[0]?._id);
-                  }}
-                >
-                  Submit
-                </Button>
-              </div>
-            </div>
-          </Modal.Body>
-        </Modal>
       </div>
     </div>
   );

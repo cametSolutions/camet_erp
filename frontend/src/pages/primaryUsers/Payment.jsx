@@ -32,6 +32,10 @@ function Payment() {
 
         console.log(res.data);
         setBanks(res.data.data);
+        setChequeDetails({
+          ...chequeDetails,
+          bank: res?.data?.data[0]?.bank_ledname
+        })
       } catch (error) {
         console.log(error);
       }
@@ -329,7 +333,7 @@ function Payment() {
                       >
                         {/* Map through the array of banks and create options */}
                         {banks.map((bank, index) => (
-                          <option key={index} value={bank.bank_name}>
+                          <option key={index} value={bank.bank_ledname}>
                             {bank.bank_name}
                           </option>
                         ))}

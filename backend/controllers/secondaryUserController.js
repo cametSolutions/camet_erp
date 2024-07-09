@@ -12,10 +12,23 @@ import HsnModel from "../models/hsnModel.js";
 import OragnizationModel from "../models/OragnizationModel.js";
 import Organization from "../models/OragnizationModel.js";
 import AdditionalChargesModel from "../models/additionalChargesModel.js";
+import { truncateToNDecimals } from "./helpers/helper.js";
 
 import bcrypt from "bcryptjs";
 import mongoose from "mongoose";
 import salesModel from "../models/salesModel.js";
+import purchaseModel from "../models/purchaseModel.js";
+import {
+  deleteItemsInSaleEdit,
+  deleteGodownsOrBatchesInSaleEdit,
+  updateSaleableStock,
+  addingAnItemInSale,
+  addingNewBatchesOrGodownsInSale,
+  calculateUpdatedItemValues,
+  updateAdditionalChargeInSale,
+  deleteItemsInSaleOrderEdit,
+  addingAnItemInSaleOrderEdit,
+} from "./helpers/secondaryHelper.js";
 
 // @desc Login secondary user
 // route POST/api/sUsers/login
@@ -37,8 +50,8 @@ export const login = async (req, res) => {
     if (!secUser) {
       return res.status(404).json({ message: "Invalid User" });
     }
-    const Blocked = secUser.get("isBlocked")
-
+    const Blocked = secUser.get("isBlocked");
+    console.log(Blocked);
     if (Blocked == true) {
       return res.status(401).json({ message: "User is blocked" });
     }
@@ -58,7 +71,7 @@ export const login = async (req, res) => {
     }
 
     const { name, _id, mobile } = secUser._doc;
-   
+
     const token = generateSecToken(res, secUser._id);
 
     return res.status(200).json({
@@ -67,7 +80,6 @@ export const login = async (req, res) => {
       data: { email, name, _id, mobile },
     });
   } catch (error) {
-
     return res.status(500).json({ status: false, message: "Failed to login!" });
   }
 };
@@ -92,7 +104,6 @@ export const getSecUserData = async (req, res) => {
         .json({ message: "secondaryUSerData not found", data: { userData } });
     }
   } catch (error) {
-  
     return res
       .status(500)
       .json({ status: false, message: "internal sever error" });
@@ -134,7 +145,6 @@ export const fetchOutstandingTotal = async (req, res) => {
         .json({ message: "No outstandingData were found for user" });
     }
   } catch (error) {
-   
     return res
       .status(500)
       .json({ success: false, message: "Internal server error, try again!" });
@@ -164,7 +174,6 @@ export const fetchOutstandingDetails = async (req, res) => {
         .json({ message: "No outstandings were found for user" });
     }
   } catch (error) {
-  
     return res
       .status(500)
       .json({ success: false, message: "Internal server error, try again!" });
@@ -325,8 +334,21 @@ export const transactions = async (req, res) => {
         },
       },
     ]);
+    const purchases = await purchaseModel.aggregate([
+      { $match: { Secondary_user_id: userId, cmp_id: cmp_id } },
+      {
+        $project: {
+          party_name: "$party.partyName",
+          // mobileNumber:"$party.mobileNumber",
+          type: "Purchase",
+          enteredAmount: "$finalAmount",
+          createdAt: 1,
+          itemsLength: { $size: "$items" },
+        },
+      },
+    ]);
 
-    const combined = [...transactions, ...invoices, ...sales];
+    const combined = [...transactions, ...invoices, ...sales, ...purchases];
     combined.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
     if (combined.length > 0) {
@@ -338,7 +360,7 @@ export const transactions = async (req, res) => {
       return res.status(404).json({ message: "Transactions not found" });
     }
   } catch (error) {
-
+    console.log(error);
     return res.status(500).json({
       status: false,
       message: "Internal server error",
@@ -367,13 +389,11 @@ export const cancelTransaction = async (req, res) => {
       },
     ]);
 
-
     for (const { billNo, currentAmount } of transactions) {
       await TallyData.updateOne(
         { bill_no: billNo },
         { $set: { bill_pending_amt: currentAmount } }
       );
- 
     }
 
     await TransactionModel.updateOne(
@@ -401,6 +421,7 @@ export const fetchBanks = async (req, res) => {
       {
         $project: {
           bank_name: 1,
+          bank_ledname: 1,
         },
       },
     ]);
@@ -413,7 +434,6 @@ export const fetchBanks = async (req, res) => {
       return res.status(404).json({ message: "Bank data not found" });
     }
   } catch (error) {
-   
     return res
       .status(500)
       .json({ status: false, message: "Internal server error" });
@@ -425,7 +445,6 @@ export const fetchBanks = async (req, res) => {
 
 export const sendOtp = async (req, res) => {
   const { email } = req.body;
-  
 
   try {
     const validEmail = await SecondaryUser.findOne({ email: email });
@@ -434,7 +453,6 @@ export const sendOtp = async (req, res) => {
     }
 
     const otp = generateNumericOTP(6);
- 
 
     // Save OTP in the database
     const saveOtp = await SecondaryUser.updateOne({ email }, { $set: { otp } });
@@ -459,17 +477,14 @@ export const sendOtp = async (req, res) => {
     // Send the email
     transporter.sendMail(mailOptions, function (error, info) {
       if (error) {
-    
         return res.status(500).json({ error: "Error sending email" });
       } else {
-      
         return res
           .status(200)
           .json({ message: "OTP sent successfully", data: otp });
       }
     });
   } catch (error) {
-  
     return res.status(500).json({ error: "Internal server error" });
   }
 };
@@ -479,7 +494,6 @@ export const sendOtp = async (req, res) => {
 
 export const submitOtp = async (req, res) => {
   const { Otp, otpEmailSec } = req.body;
- 
 
   try {
     // Retrieve user data based on the provided email
@@ -562,21 +576,38 @@ export const getTransactionDetails = async (req, res) => {
 export const PartyList = async (req, res) => {
   const cmp_id = req.params.cmp_id;
   const Primary_user_id = req.owner;
+  const secUserId = req.sUserId;
   try {
     const partyList = await PartyModel.find({
       cmp_id: cmp_id,
       Primary_user_id: Primary_user_id,
     });
-   
+
+    const secUser = await SecondaryUser.findById(secUserId);
+    if (!secUser) {
+      return res.status(404).json({ message: "Secondary user not found" });
+    }
+
+    const configuration = secUser.configurations.find(
+      (item) => item.organization == cmp_id
+    );
+
+    let vanSaleConfig = false;
+    if (configuration) {
+      const { vanSale } = configuration;
+      vanSaleConfig = vanSale;
+    }
+
     if (partyList) {
-      res
-        .status(200)
-        .json({ message: "parties fetched", partyList: partyList });
+      res.status(200).json({
+        message: "parties fetched",
+        partyList: partyList,
+        vanSale: vanSaleConfig,
+      });
     } else {
       res.status(404).json({ message: "No parties found" });
     }
   } catch (error) {
-    
     res
       .status(500)
       .json({ success: false, message: "Internal server error, try again!" });
@@ -647,7 +678,7 @@ export const addParty = async (req, res) => {
 };
 
 // @desc getting product list
-// route get/api/pUsers/getProducts
+// route get/api/pUsers/
 
 export const getProducts = async (req, res) => {
   const Secondary_user_id = req.sUserId;
@@ -666,79 +697,149 @@ export const getProducts = async (req, res) => {
     );
 
     let products;
+    const matchStage = {
+      $match: {
+        cmp_id: cmp_id,
+        Primary_user_id: Primary_user_id,
+      },
+    };
 
-    if (configuration) {
+    if (
+      configuration &&
+      configuration.selectedGodowns &&
+      configuration.selectedGodowns.length > 0
+    ) {
       const { selectedGodowns } = configuration;
 
-      if (selectedGodowns && selectedGodowns.length > 0) {
-        products = await productModel.aggregate([
-          {
-            $match: {
-              cmp_id: cmp_id,
-              Primary_user_id: Primary_user_id,
-              "GodownList.godown_id": { $in: selectedGodowns },
+      console.log("selectedGodowns", selectedGodowns);
+
+      matchStage.$match["GodownList.godown_id"] = { $in: selectedGodowns };
+
+      const projectStage = {
+        $project: {
+          product_name: 1,
+          cmp_id: 1,
+          product_code: 1,
+          balance_stock: 1,
+          Primary_user_id: 1,
+          brand: 1,
+          category: 1,
+          sub_category: 1,
+          unit: 1,
+          alt_unit: 1,
+          unit_conversion: 1,
+          alt_unit_conversion: 1,
+          hsn_code: 1,
+          purchase_price: 1,
+          purchase_cost: 1,
+          Priceleveles: 1,
+          GodownList: {
+            $filter: {
+              input: "$GodownList",
+              as: "godown",
+              cond: { $in: ["$$godown.godown_id", selectedGodowns] },
             },
           },
-          {
-            $project: {
-              product_name: 1,
-              cmp_id: 1,
-              product_code: 1,
-              balance_stock: 1,
-              Primary_user_id: 1,
-              brand: 1,
-              category: 1,
-              sub_category: 1,
-              unit: 1,
-              alt_unit: 1,
-              unit_conversion: 1,
-              alt_unit_conversion: 1,
-              hsn_code: 1,
-              purchase_price: 1,
-              purchase_cost: 1,
-              Priceleveles: 1,
-              GodownList: {
-                $filter: {
-                  input: "$GodownList",
-                  as: "godown",
-                  cond: { $in: ["$$godown.godown_id", selectedGodowns] },
+          cgst: 1,
+          sgst: 1,
+          igst: 1,
+          cess: 1,
+          addl_cess: 1,
+          state_cess: 1,
+          product_master_id: 1,
+          __v: 1,
+        },
+      };
+
+      const addFieldsStage = {
+        $addFields: {
+          hasGodownOrBatch: {
+            $anyElementTrue: {
+              $map: {
+                input: "$GodownList",
+                as: "godown",
+                in: {
+                  $or: [
+                    { $ifNull: ["$$godown.godown", false] },
+                    { $ifNull: ["$$godown.batch", false] },
+                  ],
                 },
               },
-              cgst: 1,
-              sgst: 1,
-              igst: 1,
-              cess: 1,
-              addl_cess: 1,
-              state_cess: 1,
-              product_master_id: 1,
-              __v: 1,
             },
           },
-        ]);
-      } else {
-        products = await productModel.find({
-          Primary_user_id: Primary_user_id,
-          cmp_id: cmp_id,
-        });
-      }
+        },
+      };
+
+      const aggregationPipeline = [matchStage, projectStage, addFieldsStage];
+
+      products = await productModel.aggregate(aggregationPipeline);
     } else {
-      // If configuration is not present, fetch all products
-      products = await productModel.find({
-        Primary_user_id: Primary_user_id,
-        cmp_id: cmp_id,
-      });
+      console.log("no configuration or no selected godowns");
+
+      const projectStage = {
+        $project: {
+          product_name: 1,
+          cmp_id: 1,
+          product_code: 1,
+          balance_stock: 1,
+          Primary_user_id: 1,
+          brand: 1,
+          category: 1,
+          sub_category: 1,
+          unit: 1,
+          alt_unit: 1,
+          unit_conversion: 1,
+          alt_unit_conversion: 1,
+          hsn_code: 1,
+          purchase_price: 1,
+          purchase_cost: 1,
+          Priceleveles: 1,
+          GodownList: 1, // Keep the GodownList as it is
+          cgst: 1,
+          sgst: 1,
+          igst: 1,
+          cess: 1,
+          addl_cess: 1,
+          state_cess: 1,
+          product_master_id: 1,
+          __v: 1,
+        },
+      };
+
+      const addFieldsStage = {
+        $addFields: {
+          hasGodownOrBatch: {
+            $anyElementTrue: {
+              $map: {
+                input: "$GodownList",
+                as: "godown",
+                in: {
+                  $or: [
+                    { $ifNull: ["$$godown.godown", false] },
+                    { $ifNull: ["$$godown.batch", false] },
+                  ],
+                },
+              },
+            },
+          },
+        },
+      };
+
+      const aggregationPipeline = [matchStage, projectStage, addFieldsStage];
+
+      products = await productModel.aggregate(aggregationPipeline);
     }
 
-    if (products.length > 0) {
+    if (products && products.length > 0) {
       return res.status(200).json({
         productData: products,
         message: "Products fetched",
       });
     } else {
-      return res.status(404).json({ message: "No products were found " });
+      return res.status(404).json({ message: "No products were found" });
     }
   } catch (error) {
- 
+    console.log(error);
     return res
       .status(500)
       .json({ success: false, message: "Internal server error, try again!" });
@@ -750,7 +851,6 @@ export const createInvoice = async (req, res) => {
   const Secondary_user_id = req.sUserId;
   const owner = req.owner.toString();
 
-
   try {
     const {
       orgId,
@@ -760,13 +860,16 @@ export const createInvoice = async (req, res) => {
       additionalChargesFromRedux,
       lastAmount,
       orderNumber,
+      despatchDetails
     } = req.body;
 
+    // Manually fetch the last invoice to get the serial number
     const lastInvoice = await invoiceModel.findOne(
       {},
       {},
       { sort: { serialNumber: -1 } }
     );
+
     let newSerialNumber = 1;
 
     // Check if there's a last invoice and calculate the new serial number
@@ -774,19 +877,93 @@ export const createInvoice = async (req, res) => {
       newSerialNumber = lastInvoice.serialNumber + 1;
     }
 
+    const updatedItems = items.map(async (item) => {
+      // Find the corresponding price rate for the selected price level
+      const selectedPriceLevel = item.Priceleveles.find(
+        (priceLevel) => priceLevel.pricelevel === priceLevelFromRedux
+      );
+      // If a corresponding price rate is found, assign it to selectedPrice, otherwise assign null
+      const selectedPrice = item?.selectedPriceRate || 0;
+      // Calculate total price after applying discount
+      let totalPrice = selectedPrice * (item.count || 1) || 0;
+      if (
+        item.discount !== 0 &&
+        item.discount !== undefined &&
+        item.discount !== ""
+      ) {
+        // If discount is present (amount), subtract it from the total price
+        totalPrice -= item.discount;
+      } else if (
+        item.discountPercentage !== 0 &&
+        item.discountPercentage !== undefined &&
+        item.discountPercentage !== ""
+      ) {
+        // If discount is present (percentage), calculate the discount amount and subtract it from the total price
+        const discountAmount = (totalPrice * item.discountPercentage) / 100;
+        totalPrice -= discountAmount;
+      }
+
+      const itemCount = parseFloat(item.count);
+      let product = await productModel.findById(item._id); // Assuming you have a productId in the item object
+      if (!product) {
+        throw new Error(`Product with ID ${item._id} not found`);
+      }
+      const productBalanceStock = parseFloat(product.balance_stock) || 0; // Consider balance_stock as zero if null
+      const newBalanceStock = truncateToNDecimals(
+        productBalanceStock - itemCount,
+        3
+      );
+
+      await productModel.updateOne(
+        { _id: product._id },
+        { $set: { balance_stock: newBalanceStock } }
+      );
+
+      // Calculate tax amounts
+      const { cgst, sgst, igst } = item;
+      const cgstAmt = (totalPrice * cgst) / 100;
+      const sgstAmt = (totalPrice * sgst) / 100;
+      const igstAmt = (totalPrice * igst) / 100;
+
+      return {
+        ...item,
+        selectedPrice: selectedPrice,
+        cgstAmt: parseFloat(cgstAmt.toFixed(2)),
+        sgstAmt: parseFloat(sgstAmt.toFixed(2)),
+        igstAmt: parseFloat(igstAmt.toFixed(2)),
+        subTotal: totalPrice, // Optional: Include total price in the item object
+      };
+    });
+
+    const updatedItemsResults = await Promise.all(updatedItems);
+
+    let updateAdditionalCharge;
+    if (additionalChargesFromRedux.length > 0) {
+      updateAdditionalCharge = additionalChargesFromRedux.map((charge) => {
+        const { value, taxPercentage } = charge;
+
+        const taxAmt = (parseFloat(value) * parseFloat(taxPercentage)) / 100;
+
+        return {
+          ...charge,
+          taxAmt: taxAmt,
+        };
+      });
+    }
+
     const invoice = new invoiceModel({
       serialNumber: newSerialNumber,
       cmp_id: orgId, // Corrected typo and used correct assignment operator
       partyAccount: party?.partyName,
-
       party,
-      items,
+      items: updatedItemsResults,
       priceLevel: priceLevelFromRedux, // Corrected typo and used correct assignment operator
-      additionalCharges: additionalChargesFromRedux, // Corrected typo and used correct assignment operator
+      additionalCharges: updateAdditionalCharge, // Corrected typo and used correct assignment operator
       finalAmount: lastAmount, // Corrected typo and used correct assignment operator
       Primary_user_id: owner,
       Secondary_user_id,
       orderNumber,
+      despatchDetails
     });
 
     const result = await invoice.save();
@@ -804,25 +981,26 @@ export const createInvoice = async (req, res) => {
     const configuration = secondaryUser.configurations.find(
       (config) => config.organization.toString() === orgId
     );
+
     if (configuration) {
       if (
         configuration.salesOrderConfiguration &&
-        Object.values(configuration.salesOrderConfiguration).every(
-          (value) => value !== ""
-        )
+        Object.entries(configuration.salesOrderConfiguration)
+          .filter(([key]) => key !== "startingNumber")
+          .every(([_, value]) => value !== "")
       ) {
         orderConfig = true;
       }
     }
 
-    if (orderConfig) {
-      const increaseSalesNumber = await SecondaryUser.findByIdAndUpdate(
+    if (orderConfig === true) {
+      await SecondaryUser.findByIdAndUpdate(
         Secondary_user_id,
         { $inc: { orderNumber: 1 } },
         { new: true }
       );
     } else {
-      const increaseOrderNumber = await OragnizationModel.findByIdAndUpdate(
+      await OragnizationModel.findByIdAndUpdate(
         orgId,
         { $inc: { orderNumber: 1 } },
         { new: true }
@@ -831,7 +1009,7 @@ export const createInvoice = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: "Invoice created successfully",
+      message: "Sale order created successfully",
       data: result,
     });
   } catch (error) {
@@ -856,7 +1034,7 @@ export const invoiceList = async (req, res) => {
       Secondary_user_id: userId,
       cmp_id: cmp_id,
     });
-   
+
     if (invoiceList) {
       res
         .status(200)
@@ -892,7 +1070,6 @@ export const getSinglePartyDetails = async (req, res) => {
 
 export const editParty = async (req, res) => {
   const party_id = req.params.id;
-
 
   try {
     const updateParty = await PartyModel.findOneAndUpdate(
@@ -955,7 +1132,6 @@ export const getSingleOrganization = async (req, res) => {
       return res.status(404).json({ message: "No organization found " });
     }
   } catch (error) {
-    
     return res
       .status(500)
       .json({ success: false, message: "Internal server error, try again!" });
@@ -967,12 +1143,11 @@ export const getSingleOrganization = async (req, res) => {
 
 export const fetchHsn = async (req, res) => {
   const cmp_id = req.params.cmp_id;
-  
+
   try {
     const hsn = await HsnModel.find({
       cpm_id: cmp_id,
     });
-   
 
     if (hsn) {
       return res.status(200).json({ message: "hsn fetched", data: hsn });
@@ -980,7 +1155,6 @@ export const fetchHsn = async (req, res) => {
       return res.status(404).json({ message: "hsn data not found" });
     }
   } catch (error) {
-
     return res
       .status(500)
       .json({ status: false, message: "Internal server error" });
@@ -993,10 +1167,8 @@ export const addDataToOrg = async (req, res) => {
   try {
     const orgId = req.params.cmp_id;
 
-   
-
     const org = await OragnizationModel.findById(orgId);
-  
+
     if (org) {
       const fieldToUpdate = Object.keys(req.body)[0];
       const newData = req.body[fieldToUpdate];
@@ -1035,8 +1207,6 @@ export const editDataInOrg = async (req, res) => {
     const newData = req.body[fieldToUpdate];
     const index = parseInt(req.body.index);
 
-   
-
     const org = await OragnizationModel.findById(orgId);
     if (!org) {
       return res
@@ -1063,12 +1233,12 @@ export const editDataInOrg = async (req, res) => {
 export const deleteDataInOrg = async (req, res) => {
   try {
     const orgId = req.params.cmp_id;
-   
+
     const fieldToDelete = Object.keys(req.body)[0];
     const indexToDelete = req.body[fieldToDelete];
 
     const org = await OragnizationModel.findById(orgId);
-    
+
     if (!org) {
       return res
         .status(404)
@@ -1076,7 +1246,7 @@ export const deleteDataInOrg = async (req, res) => {
     }
 
     const neededField = org[fieldToDelete];
-   
+
     neededField.splice(indexToDelete, 1);
     await org.save(); // Save the organization after deletion
     return res
@@ -1273,8 +1443,6 @@ export const editProduct = async (req, res) => {
       addl_cess,
     };
 
-    
-
     const updateProduct = await productModel.findOneAndUpdate(
       { _id: productId },
       dataToSave,
@@ -1296,7 +1464,7 @@ export const editProduct = async (req, res) => {
 
 export const deleteProduct = async (req, res) => {
   const productId = req.params.id;
- 
+
   try {
     const deletedProduct = await productModel.findByIdAndDelete(productId);
     if (deletedProduct) {
@@ -1380,30 +1548,99 @@ export const editInvoice = async (req, res) => {
       additionalChargesFromRedux,
       lastAmount,
       orderNumber,
+      despatchDetails
     } = req.body;
-    
 
+    let productUpdates = [];
 
+    const existingInvoice = await invoiceModel.findById(invoiceId);
+    if (!existingInvoice) {
+      console.log("editSaleOrder: existingInvoice not found");
+      return res
+        .status(404)
+        .json({ success: false, message: "Sale Order not found" });
+    }
+
+    //////////////////////////// To handle the deletion and updating of products   starts //////////////////////////////////////////
+    const updatedItemIds = items.map((item) => item._id);
+    const deletedItems = existingInvoice.items.filter(
+      (item) => !updatedItemIds.includes(item._id)
+    );
+
+    if (deletedItems.length > 0) {
+      productUpdates = await deleteItemsInSaleOrderEdit(
+        deletedItems,
+        productUpdates
+      );
+      existingInvoice.items = existingInvoice.items.filter(
+        (item) => !deletedItems.includes(item)
+      );
+    }
+
+    //////////////////////////// To handle the addition of a new item in sale order starts  //////////////////////////////////////////
+    const newItems = items.filter(
+      (item) => !existingInvoice?.items?.some((sItem) => sItem._id === item._id)
+    );
+
+    const oldItems = items.filter((item) =>
+      existingInvoice?.items?.some((sItem) => sItem._id === item._id)
+    );
+
+    if (newItems.length > 0) {
+      productUpdates = await addingAnItemInSaleOrderEdit(
+        newItems,
+        productUpdates
+      );
+    }
+    await productModel.bulkWrite(productUpdates);
+
+    for (const item of oldItems) {
+      console.log("editSaleOrder: item", item);
+      const product = await productModel.findOne({ _id: item._id });
+      if (!product) {
+        console.log("editSaleOrder: product not found");
+        throw new Error(`Product not found for item ID: ${item._id}`);
+      }
+
+      const existingItem = existingInvoice.items.find(
+        (sItem) => sItem._id === item._id
+      );
+
+      await updateSaleableStock(
+        product,
+        item.count || 0,
+        existingItem?.count || 0
+      );
+    }
+
+    let updatedItems = items;
+    if (items.length > 0) {
+      updatedItems = await calculateUpdatedItemValues(
+        items,
+        priceLevelFromRedux
+      );
+    }
 
     const result = await invoiceModel.findByIdAndUpdate(
       invoiceId, // Use the invoiceId to find the document
       {
         cmp_id: orgId,
         party,
-        items,
+        items: updatedItems,
         priceLevel: priceLevelFromRedux,
         additionalCharges: additionalChargesFromRedux,
         finalAmount: lastAmount,
         Primary_user_id,
         Secondary_user_id,
         orderNumber,
+        despatchDetails
       },
       { new: true } // This option returns the updated document
     );
 
     return res.status(200).json({
       success: true,
-      message: "Invoice Updated successfully",
+      message: "Sale order Updated successfully",
       data: result,
     });
   } catch (error) {
@@ -1434,7 +1671,6 @@ export const fetchFilters = async (req, res) => {
       return res.status(404).json({ message: "filers  not found" });
     }
   } catch (error) {
-    
     return res
       .status(500)
       .json({ status: false, message: "Internal server error" });
@@ -1449,15 +1685,12 @@ export const deleteAdditionalCharge = async (req, res) => {
     const id = req.params.id;
     const addlId = new mongoose.Types.ObjectId(id);
 
-    
     const cmp_id = req.params.cmp_id;
     const org = await OragnizationModel.findById(cmp_id);
-   
 
     const indexToDelete = org.additionalCharges.findIndex((item) =>
       item._id.equals(addlId)
     );
- 
 
     if (indexToDelete !== -1) {
       org.additionalCharges.splice(indexToDelete, 1);
@@ -1529,15 +1762,12 @@ export const EditAditionalCharge = async (req, res) => {
     const id = req.params.id;
     const addlId = new mongoose.Types.ObjectId(id);
 
-
     const cmp_id = req.params.cmp_id;
     const org = await OragnizationModel.findById(cmp_id);
- 
 
     const indexToUpdate = org.additionalCharges.findIndex((item) =>
       item._id.equals(addlId)
     );
-
 
     if (indexToUpdate !== -1) {
       // Assuming req.body contains the updated fields for the additional charge
@@ -1579,14 +1809,22 @@ export const addconfigurations = async (req, res) => {
   try {
     const org = await OragnizationModel.findById(cmp_id);
     if (!org) {
-      res.status(404).json({ message: "Organization not found" });
+      return res.status(404).json({ message: "Organization not found" });
     }
 
-    // org.termsAndConditions.push(req.body);
-
     const { selectedBank, termsList } = req.body;
+
+    // Check if selectedBank is provided
+    let bankId = null; // Default to null if not provided
+    if (selectedBank) {
+      // Validate selectedBank as an ObjectId if needed
+      if (mongoose.Types.ObjectId.isValid(selectedBank)) {
+        bankId = selectedBank;
+      }
+    }
+
     const newConfigurations = {
-      bank: selectedBank,
+      bank: bankId, // Use the validated bankId or null
       terms: termsList,
     };
     org.configurations = [newConfigurations];
@@ -1618,11 +1856,26 @@ export const createSale = async (req, res) => {
       orgId,
       party,
       items,
+      despatchDetails,
       priceLevelFromRedux,
       additionalChargesFromRedux,
       lastAmount,
       salesNumber,
     } = req.body;
+
+    const secondaryUser = await SecondaryUser.findById(Secondary_user_id);
+    const secondaryMobile = secondaryUser?.mobile;
+
+    if (!secondaryUser) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Secondary user not found" });
+    }
+    const configuration = secondaryUser.configurations.find(
+      (config) => config.organization.toString() === orgId
+    );
+
+    const vanSaleConfig = configuration?.vanSale;
 
     // Prepare bulk operations for product and godown updates
     const productUpdates = [];
@@ -1636,8 +1889,14 @@ export const createSale = async (req, res) => {
         throw new Error(`Product not found for item ID: ${item._id}`);
       }
 
-      // Calculate the new balance stock
-      const newBalanceStock = parseInt(product.balance_stock) - item.count;
+      const itemCount = parseFloat(item.count);
+      const productBalanceStock = parseFloat(product.balance_stock);
+      const newBalanceStock = truncateToNDecimals(
+        productBalanceStock - itemCount,
+        3
+      );
+
+      console.log("newBalanceStock", newBalanceStock);
 
       // Prepare product update operation
       productUpdates.push({
@@ -1647,35 +1906,136 @@ export const createSale = async (req, res) => {
         },
       });
 
-      // Update the godown stock for each specified godown
-      for (const godown of item.GodownList) {
-        // Find the corresponding godown in the product's GodownList
-        const godownIndex = product.GodownList.findIndex(
-          (g) => g.godown === godown.godown
-        );
-        if (godownIndex !== -1) {
-          // Calculate the new godown stock
-          const newGodownStock =
-            parseInt(product.GodownList[godownIndex].balance_stock) -
-            godown.count;
+      // Process godown and batch updates
+      if (item.hasGodownOrBatch) {
+        for (const godown of item.GodownList) {
+          if (godown.batch && !godown?.godown_id) {
+            // Case: Batch only or Godown with Batch
+            const godownIndex = product.GodownList.findIndex(
+              (g) => g.batch === godown.batch
+            );
 
-          // Prepare godown update operation
-          godownUpdates.push({
-            updateOne: {
-              filter: { _id: product._id, "GodownList.godown": godown.godown },
-              update: {
-                $set: { "GodownList.$.balance_stock": newGodownStock },
-              },
-            },
-          });
+            console.log("gggg", product.GodownList[godownIndex]);
+
+            if (godownIndex !== -1) {
+              if (godown.count && godown.count > 0) {
+                const currentGodownStock =
+                  product.GodownList[godownIndex].balance_stock || 0;
+                const newGodownStock = truncateToNDecimals(
+                  currentGodownStock - godown.count,
+                  3
+                );
+
+                console.log("newGodownStock", newGodownStock);
+
+                // Prepare godown update operation
+                godownUpdates.push({
+                  updateOne: {
+                    filter: {
+                      _id: product._id,
+                      "GodownList.batch": godown.batch,
+                    },
+                    update: {
+                      $set: { "GodownList.$.balance_stock": newGodownStock },
+                    },
+                  },
+                });
+              }
+            }
+          } else if (godown.godown_id && godown.batch) {
+            console.log("have batch and godown_id");
+            const godownIndex = product.GodownList.findIndex(
+              (g) =>
+                g.batch === godown.batch && g.godown_id === godown.godown_id
+            );
+
+            console.log("gggg", product.GodownList[godownIndex]);
+
+            if (godownIndex !== -1) {
+              if (godown.count && godown.count > 0) {
+                const currentGodownStock =
+                  product.GodownList[godownIndex].balance_stock || 0;
+                const newGodownStock = truncateToNDecimals(
+                  currentGodownStock - godown.count,
+                  3
+                );
+
+                console.log("newGodownStock", newGodownStock);
+
+                // Prepare godown update operation
+                godownUpdates.push({
+                  updateOne: {
+                    filter: {
+                      _id: product._id,
+                      "GodownList.batch": godown.batch,
+                      "GodownList.godown_id": godown.godown_id,
+                    },
+                    update: {
+                      $set: { "GodownList.$.balance_stock": newGodownStock },
+                    },
+                  },
+                });
+              }
+            }
+          } else if (godown.godown_id && !godown?.batch) {
+            // Case: Godown only
+            const godownIndex = product.GodownList.findIndex(
+              (g) => g.godown_id === godown.godown_id
+            );
+
+            if (godownIndex !== -1) {
+              if (godown.count && godown.count > 0) {
+                const currentGodownStock =
+                  product.GodownList[godownIndex].balance_stock || 0;
+                const newGodownStock = truncateToNDecimals(
+                  currentGodownStock - godown.count,
+                  3
+                );
+
+                // Prepare godown update operation
+                godownUpdates.push({
+                  updateOne: {
+                    filter: {
+                      _id: product._id,
+                      "GodownList.godown_id": godown.godown_id,
+                    },
+                    update: {
+                      $set: { "GodownList.$.balance_stock": newGodownStock },
+                    },
+                  },
+                });
+              }
+            }
+          }
         }
+      } else {
+        // Case: No Godown
+        product.GodownList = product.GodownList.map((godown) => {
+          const currentGodownStock = godown.balance_stock || 0;
+          const newGodownStock = truncateToNDecimals(
+            currentGodownStock - item.count,
+            3
+          );
+          return {
+            ...godown,
+            balance_stock: newGodownStock,
+          };
+        });
+
+        // Prepare godown update operation
+        godownUpdates.push({
+          updateOne: {
+            filter: { _id: product._id },
+            update: { $set: { GodownList: product.GodownList } },
+          },
+        });
       }
     }
 
     // Execute bulk operations
+    // await productModel.bulkWrite(productUpdates);
     await productModel.bulkWrite(productUpdates);
     await productModel.bulkWrite(godownUpdates);
-
 
     const lastSale = await salesModel.findOne(
       {},
@@ -1689,18 +2049,77 @@ export const createSale = async (req, res) => {
       newSerialNumber = lastSale.serialNumber + 1;
     }
 
+    const updatedItems = items.map((item) => {
+      // Find the corresponding price rate for the selected price level
+      // const selectedPriceLevel = item.Priceleveles.find(
+      //   (priceLevel) => priceLevel.pricelevel === priceLevelFromRedux
+      // );
+      // If a corresponding price rate is found, assign it to selectedPrice, otherwise assign null
+      // const selectedPrice = selectedPriceLevel
+      //   ? selectedPriceLevel.pricerate
+      //   : 0;
+
+      // Calculate total price after applying discount
+      // let totalPrice = selectedPrice * (item.count || 1) || 0; // Default count to 1 if not provided
+      let totalPrice = item?.GodownList.reduce((acc, curr) => {
+        console.log("curr?.individualTotal", curr?.individualTotal);
+
+        return (acc = acc + Number(curr?.individualTotal));
+      }, 0);
+      if (item.discount) {
+        // If discount is present (amount), subtract it from the total price
+        totalPrice -= item.discount;
+      } else if (item.discountPercentage) {
+        // If discount is present (percentage), calculate the discount amount and subtract it from the total price
+        const discountAmount = (totalPrice * item.discountPercentage) / 100;
+        totalPrice -= discountAmount;
+      }
+
+      console.log("totalPrice", totalPrice);
+
+      // Calculate tax amounts
+      const { cgst, sgst, igst } = item;
+      const cgstAmt = parseFloat(((totalPrice * cgst) / 100).toFixed(2));
+      const sgstAmt = parseFloat(((totalPrice * sgst) / 100).toFixed(2));
+      const igstAmt = parseFloat(((totalPrice * igst) / 100).toFixed(2));
+
+      return {
+        ...item,
+        // selectedPrice: selectedPrice,
+        cgstAmt: cgstAmt,
+        sgstAmt: sgstAmt,
+        igstAmt: igstAmt,
+        subTotal: totalPrice - (Number(igstAmt) || 0),
+      };
+    });
+
+    let updateAdditionalCharge;
+
+    if (additionalChargesFromRedux.length > 0) {
+      updateAdditionalCharge = additionalChargesFromRedux.map((charge) => {
+        const { value, taxPercentage } = charge;
+
+        const taxAmt = parseFloat(
+          ((parseFloat(value) * parseFloat(taxPercentage)) / 100).toFixed(2)
+        );
+
+        return {
+          ...charge,
+          taxAmt: taxAmt,
+        };
+      });
+    }
 
     // Continue with the rest of your function...
     const sales = new salesModel({
       serialNumber: newSerialNumber,
-
       cmp_id: orgId,
       partyAccount: party?.partyName,
-
       party,
-      items,
+      despatchDetails,
+      items: updatedItems,
       priceLevel: priceLevelFromRedux,
-      additionalCharges: additionalChargesFromRedux,
+      additionalCharges: updateAdditionalCharge,
       finalAmount: lastAmount,
       Primary_user_id,
       Secondary_user_id,
@@ -1709,46 +2128,33 @@ export const createSale = async (req, res) => {
 
     const result = await sales.save();
 
-    const secondaryUser = await SecondaryUser.findById(Secondary_user_id);
-
-    if (!secondaryUser) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Secondary user not found" });
-    }
-
     let salesConfig = false;
 
-    const configuration = secondaryUser.configurations.find(
-      (config) => config.organization.toString() === orgId
-    );
     if (configuration) {
       if (
         configuration.salesConfiguration &&
-        Object.values(configuration.salesConfiguration).every(
-          (value) => value !== ""
-        )
+        Object.entries(configuration.salesConfiguration)
+          .filter(([key]) => key !== "startingNumber")
+          .every(([_, value]) => value !== "")
       ) {
         salesConfig = true;
       }
     }
 
-    const vanSaleConfig = configuration?.vanSale;
-
     if (vanSaleConfig) {
-      const increaseSalesNumber = await SecondaryUser.findByIdAndUpdate(
+      await SecondaryUser.findByIdAndUpdate(
         Secondary_user_id,
         { $inc: { vanSalesNumber: 1 } },
         { new: true }
       );
     } else if (salesConfig) {
-      const increaseSalesNumber = await SecondaryUser.findByIdAndUpdate(
+      await SecondaryUser.findByIdAndUpdate(
         Secondary_user_id,
         { $inc: { salesNumber: 1 } },
         { new: true }
       );
     } else {
-      const increaseSalesNumber = await OragnizationModel.findByIdAndUpdate(
+      await OragnizationModel.findByIdAndUpdate(
         orgId,
         { $inc: { salesNumber: 1 } },
         { new: true }
@@ -1766,10 +2172,10 @@ export const createSale = async (req, res) => {
       email: party?.emailID,
       mobile_no: party?.mobileNumber,
       party_name: party?.partyName,
-      user_id: party?.mobileNumber || "null",
+      user_id: secondaryMobile || "null",
     };
 
-    const updatedDocument = await TallyData.findOneAndUpdate(
+    await TallyData.findOneAndUpdate(
       {
         cmp_id: orgId,
         bill_no: salesNumber,
@@ -1780,16 +2186,12 @@ export const createSale = async (req, res) => {
       { upsert: true, new: true }
     );
 
-    return res.status(200).json({
-      success: true,
-      message: "Sale created successfully",
-      data: result,
-    });
+    res.status(201).json({ success: true, data: result, message: "Sale created successfully" });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({
+    res.status(500).json({
       success: false,
-      message: "Internal server error, try again!",
+      message: "An error occurred while creating the sale.",
       error: error.message,
     });
   }
@@ -1851,14 +2253,21 @@ export const fetchAdditionalDetails = async (req, res) => {
   try {
     const secUser = await SecondaryUser.findById(secondary_user_id);
 
+    let selectedPriceLevels;
 
     const configuration = secUser.configurations.find(
       (item) => item.organization.toString() === cmp_id
     );
 
-    const { selectedPriceLevels } = configuration
-  
+    console.log("configuration", configuration);
+
+    if (configuration) {
+      selectedPriceLevels = configuration.selectedPriceLevels;
+    }
+
     let priceLevelsResult = [];
+    console.log("selectedPriceLevels", priceLevelsResult);
+
     if (selectedPriceLevels && selectedPriceLevels.length == 0) {
       priceLevelsResult = await productModel.aggregate([
         {
@@ -1959,50 +2368,34 @@ export const fetchConfigurationNumber = async (req, res) => {
       (item) => item.organization.toString() === cmp_id
     );
 
-
-    if (!configuration) {
-      switch (title) {
-        case "sales":
-          configDetails = company?.salesNumberDetails;
-          configurationNumber = company?.salesNumber;
-          break;
-        case "salesOrder":
-          configDetails = company?.OrderNumberDetails;
-          configurationNumber = company?.orderNumber;
-          break;
-        case "receipt":
-          configDetails = company?.receiptNumberDetails;
-          break;
-        default:
-          configDetails = null;
-          break;
-      }
-    } else {
+    if (configuration) {
       switch (title) {
         case "sales":
           if (
             configuration.vanSale &&
-            Object.values(configuration.salesConfiguration).every(
-              (value) => value === ""
-            )
+            Object.entries(configuration.vanSaleConfiguration)
+              .filter(([key]) => key !== "startingNumber")
+              .every(([_, value]) => value !== "")
           ) {
             configDetails = configuration.vanSaleConfiguration;
             configurationNumber = secUser?.vanSalesNumber;
           } else {
-            configDetails =
-              configuration.salesConfiguration || company?.salesNumberDetails;
+            configDetails = configuration.salesConfiguration || "";
             configurationNumber = secUser?.salesNumber;
           }
           break;
         case "salesOrder":
-          configDetails =
-            configuration.salesOrderConfiguration ||
-            company?.OrderNumberDetails;
+          configDetails = configuration.salesOrderConfiguration || "";
+
           configurationNumber = secUser?.orderNumber;
           break;
+        case "purchase":
+          configDetails = configuration.purchaseConfiguration || "";
+
+          configurationNumber = secUser?.purchaseNumber;
+          break;
         case "receipt":
-          configDetails =
-            configuration.receiptConfiguration || company?.receiptNumberDetails;
+          configDetails = configuration.receiptConfiguration || "";
           break;
         default:
           configDetails = null;
@@ -2012,19 +2405,28 @@ export const fetchConfigurationNumber = async (req, res) => {
 
     if (
       !configDetails ||
-      Object.values(configDetails).every((value) => value === "")
+      Object.entries(configDetails)
+        .filter(([key]) => key !== "startingNumber")
+        .every(([_, value]) => value === "")
     ) {
       switch (title) {
         case "sales":
-          configDetails = company?.salesNumberDetails;
+          configDetails = "";
           configurationNumber = company?.salesNumber;
           break;
         case "salesOrder":
-          configDetails = company?.OrderNumberDetails;
+          configDetails = "";
           configurationNumber = company?.orderNumber;
           break;
         case "receipt":
+          configDetails = "";
+
           configDetails = company?.receiptNumberDetails;
+          break;
+        case "purchase":
+          configDetails = "";
+
+          configurationNumber = company?.purchaseNumber;
           break;
         default:
           configDetails = null;
@@ -2032,28 +2434,26 @@ export const fetchConfigurationNumber = async (req, res) => {
       }
     }
 
-    if (configDetails == undefined && configuration == undefined) {
-      
-
+    if (!configuration) {
       switch (title) {
         case "sales":
-          // configDetails = company?.salesNumberDetails;
           configurationNumber = company?.salesNumber;
           break;
         case "salesOrder":
-          // configDetails = company?.OrderNumberDetails;
           configurationNumber = company?.orderNumber;
           break;
-        // case "receipt":
-        //   configDetails = company?.receiptNumberDetails;
-        //   break;
+        case "receipt":
+          configurationNumber = company?.receiptNumberDetails;
+          break;
+        case "purchase":
+          configurationNumber = company?.purchaseNumber;
+          break;
         default:
           configurationNumber = null;
           break;
       }
     }
 
-   
     if (configDetails) {
       res.json({
         message: "Configuration details fetched",
@@ -2204,7 +2604,7 @@ export const godownwiseProducts = async (req, res) => {
         },
       },
     ]);
-   
+
     res.json(products);
   } catch (error) {
     console.error("Error fetching godownwise products:", error);
@@ -2245,7 +2645,7 @@ export const godownwiseProductsSelf = async (req, res) => {
         },
       },
     ]);
-    
+
     res.json(products);
   } catch (error) {
     console.error("Error fetching godownwise products:", error);
@@ -2262,18 +2662,17 @@ export const fetchAdditionalCharges = async (req, res) => {
       cmp_id: cmp_id,
       Primary_user_id: pUser,
     });
-    
-  
+
     res.json(aditionalDetails);
   } catch (error) {
     console.error("Error fetching godownwise products:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
-}
-export const findGodownsNames =async(req,res)=>{
-  const cmp_id=req.params.cmp_id
-  const selectedUser=req.sUserId
-  try{
+};
+export const findGodownsNames = async (req, res) => {
+  const cmp_id = req.params.cmp_id;
+  const selectedUser = req.sUserId;
+  try {
     const secUser = await SecondaryUser.findById(selectedUser);
     if (!secUser) {
       return res.status(404).json({ message: "Secondary user not found" });
@@ -2284,13 +2683,725 @@ export const findGodownsNames =async(req,res)=>{
     );
     if (configuration) {
       const { vanSaleConfiguration } = configuration;
-      const godownname=vanSaleConfiguration.vanSaleGodownName
-      console.log(godownname)
-      res.status(200).json(godownname)
+      const godownname = vanSaleConfiguration.vanSaleGodownName;
+      console.log(godownname);
+      res.status(200).json(godownname);
+    }
+  } catch (error) {
+    res.status(500).json({ message: "internal server error" });
+  }
+};
 
+// route POST /api/pUsers/createSale
+
+export const createPurchase = async (req, res) => {
+  const Primary_user_id = req.owner;
+  const Secondary_user_id = req.sUserId;
+
+  try {
+    const {
+      orgId,
+      party,
+      items,
+      priceLevelFromRedux,
+      additionalChargesFromRedux,
+      lastAmount,
+      purchaseNumber,
+    } = req.body;
+
+    const secondaryUser = await SecondaryUser.findById(Secondary_user_id);
+    const secondaryMobile = secondaryUser.mobile;
+
+    console.log("secondaryMobile", secondaryMobile);
+    if (!secondaryUser) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Secondary user not found" });
+    }
+    const configuration = secondaryUser.configurations.find(
+      (config) => config.organization.toString() === orgId
+    );
+
+    // Prepare bulk operations for product and godown updates
+    let productUpdates = [];
+    let godownUpdates = [];
+
+    // Process each item to update product stock and godown stock
+    for (const item of items) {
+      // Find the product in the product model
+      const product = await productModel.findOne({ _id: item._id });
+      if (!product) {
+        throw new Error(`Product not found for item ID: ${item._id}`);
+      }
+
+      // Calculate the new balance stock
+      // Calculate the new balance stock
+      const productBalanceStock = truncateToNDecimals(product.balance_stock, 3);
+      console.log("productBalanceStock", productBalanceStock);
+      const itemCount = truncateToNDecimals(item.count, 3);
+      const newBalanceStock = truncateToNDecimals(
+        productBalanceStock + itemCount,
+        3
+      );
+
+      console.log("productBalanceStock", productBalanceStock);
+      console.log("newBalanceStock", newBalanceStock);
+
+      // Prepare product update operation
+      productUpdates.push({
+        updateOne: {
+          filter: { _id: product._id },
+          update: { $set: { balance_stock: newBalanceStock } },
+        },
+      });
+
+      console.log("godown", item.GodownList);
+
+      // Update the godown stock for each specified godown
+      for (const godown of item.GodownList) {
+        // Find the corresponding godown in the product's GodownList
+        const godownIndex = product.GodownList.findIndex(
+          (g) => g.godown_id === godown.godown_id
+        );
+        if (godownIndex !== -1) {
+          // Calculate the new godown stock
+          const newGodownStock = truncateToNDecimals(
+            product.GodownList[godownIndex].balance_stock + godown.count,
+            3
+          );
+
+          // Prepare godown update operation
+          godownUpdates.push({
+            updateOne: {
+              filter: {
+                _id: product._id,
+                "GodownList.godown": godown.godown,
+              },
+              update: {
+                $set: { "GodownList.$.balance_stock": newGodownStock },
+              },
+            },
+          });
+        }
+      }
+    }
+
+    // Execute bulk operations
+    await productModel.bulkWrite(productUpdates);
+    await productModel.bulkWrite(godownUpdates);
+
+    const lastPurchse = await purchaseModel.findOne(
+      {},
+      {},
+      { sort: { serialNumber: -1 } }
+    );
+    let newSerialNumber = 1;
+
+    // Check if there's a last invoice and calculate the new serial number
+    if (lastPurchse && !isNaN(lastPurchse.serialNumber)) {
+      newSerialNumber = lastPurchse.serialNumber + 1;
+    }
+
+    const updatedItems = items.map((item) => {
+      // Find the corresponding price rate for the selected price level
+      const selectedPriceLevel = item.Priceleveles.find(
+        (priceLevel) => priceLevel.pricelevel === priceLevelFromRedux
+      );
+      // If a corresponding price rate is found, assign it to selectedPrice, otherwise assign null
+      const selectedPrice = selectedPriceLevel
+        ? selectedPriceLevel.pricerate
+        : 0;
+
+      // Calculate total price after applying discount
+      let totalPrice = selectedPrice * (item.count || 1) || 0; // Default count to 1 if not provided
+      if (item.discount) {
+        // If discount is present (amount), subtract it from the total price
+        totalPrice -= item.discount;
+      } else if (item.discountPercentage) {
+        // If discount is present (percentage), calculate the discount amount and subtract it from the total price
+        const discountAmount = (totalPrice * item.discountPercentage) / 100;
+        totalPrice -= discountAmount;
+      }
+
+      // Calculate tax amounts
+      const { cgst, sgst, igst } = item;
+      const cgstAmt = (totalPrice * cgst) / 100;
+      const sgstAmt = (totalPrice * sgst) / 100;
+      const igstAmt = (totalPrice * igst) / 100;
+
+      // console.log("haii",typeof(parseFloat(sgstAmt.toFixed(2))),);
+
+      return {
+        ...item,
+        selectedPrice: selectedPrice,
+        cgstAmt: parseFloat(cgstAmt.toFixed(2)),
+        sgstAmt: parseFloat(sgstAmt.toFixed(2)),
+        igstAmt: parseFloat(igstAmt.toFixed(2)),
+        subTotal: totalPrice, // Optional: Include total price in the item object
+      };
+    });
+
+    let updateAdditionalCharge;
+
+    if (additionalChargesFromRedux.length > 0) {
+      updateAdditionalCharge = additionalChargesFromRedux.map((charge) => {
+        const { value, taxPercentage } = charge;
+
+        const taxAmt = (parseFloat(value) * parseFloat(taxPercentage)) / 100;
+        console.log(taxAmt);
+
+        return {
+          ...charge,
+          taxAmt: taxAmt,
+        };
+      });
+    }
+
+    // Continue with the rest of your function...
+    const purchase = new purchaseModel({
+      serialNumber: newSerialNumber,
+
+      cmp_id: orgId,
+      partyAccount: party?.partyName,
+
+      party,
+      items: updatedItems,
+      priceLevel: priceLevelFromRedux,
+      additionalCharges: updateAdditionalCharge,
+      finalAmount: lastAmount,
+      Primary_user_id,
+      Secondary_user_id,
+      purchaseNumber,
+    });
+
+    const result = await purchase.save();
+
+    let purchaseConfig = false;
+
+    if (configuration) {
+      if (
+        configuration?.purchaseConfiguration &&
+        Object.entries(configuration?.purchaseConfiguration)
+          .filter(([key]) => key !== "startingNumber")
+          .every(([, value]) => value !== "")
+      ) {
+        purchaseConfig = true;
+      }
+    }
+
+    // // const vanSaleConfig = configuration?.vanSale;
+
+    // if (vanSaleConfig) {
+    //   const increaseSalesNumber = await SecondaryUser.findByIdAndUpdate(
+    //     Secondary_user_id,
+    //     { $inc: { vanSalesNumber: 1 } },
+    //     { new: true }
+    //   );
+    if (purchaseConfig) {
+      const increasPurchaseNumber = await SecondaryUser.findByIdAndUpdate(
+        Secondary_user_id,
+        { $inc: { purchaseNumber: 1 } },
+        { new: true }
+      );
+    } else {
+      const increasPurchaseNumber = await OragnizationModel.findByIdAndUpdate(
+        orgId,
+        { $inc: { purchaseNumber: 1 } },
+        { new: true }
+      );
+    }
+
+    const billData = {
+      Primary_user_id,
+      bill_no: purchaseNumber,
+      cmp_id: orgId,
+      party_id: party?.party_master_id,
+      bill_amount: lastAmount,
+      bill_date: new Date(),
+      bill_pending_amt: lastAmount,
+      email: party?.emailID,
+      mobile_no: party?.mobileNumber,
+      party_name: party?.partyName,
+      user_id: secondaryMobile || "null",
+    };
+
+    const updatedDocument = await TallyData.findOneAndUpdate(
+      {
+        cmp_id: orgId,
+        bill_no: purchaseNumber,
+        Primary_user_id: Primary_user_id,
+        party_id: party?.party_master_id,
+      },
+      billData,
+      { upsert: true, new: true }
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Purchase created successfully",
+      data: result,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error, try again!",
+      error: error.message,
+    });
   }
-    
-}catch(error){
-    res.status(500).json({message:"internal server error"})
+};
+
+// @desc toget the details of transaction or purchase
+// route get/api/sUsers/getPurchaseDetails
+
+export const getPurchaseDetails = async (req, res) => {
+  const purchaseId = req.params.id;
+
+  try {
+    const purchaseDetails = await purchaseModel.findById(purchaseId);
+
+    if (purchaseDetails) {
+      res
+        .status(200)
+        .json({ message: "purchaseDetails  fetched", data: purchaseDetails });
+    } else {
+      res.status(404).json({ error: "Purchase not found" });
+    }
+  } catch (error) {
+    console.error("Error fetching purchase details:", error);
+    res.status(500).json({ error: "Internal Server Error" });
   }
-}
+};
+
+// @desc to edit sale
+// route get/api/sUsers/editSaleSale
+
+export const editSale = async (req, res) => {
+  const saleId = req.params.id;
+  try {
+    const {
+      orgId,
+      party,
+      items,
+      priceLevelFromRedux,
+      additionalChargesFromRedux,
+      lastAmount,
+      salesNumber,
+      despatchDetails
+    } = req.body;
+
+    let productUpdates = [];
+
+    // Fetch the existing sale
+
+    const existingSale = await salesModel.findById(saleId);
+    if (!existingSale) {
+      console.log("editSale: existingSale not found");
+      return res
+        .status(404)
+        .json({ success: false, message: "Sale not found" });
+    }
+
+    const oldBillValue = existingSale.finalAmount;
+
+    //////////////////////////// To handle the deletion and updating of products   starts //////////////////////////////////////////
+
+    const updatedItemIds = items.map((item) => item._id);
+    const deletedItems = existingSale.items.filter(
+      (item) => !updatedItemIds.includes(item._id)
+    );
+    // Process each deleted item to update product stock and godown stock
+    if (deletedItems.length > 0) {
+      await deleteItemsInSaleEdit(deletedItems, productUpdates);
+      existingSale.items = existingSale.items.filter(
+        (item) => !deletedItems.includes(item)
+      );
+    }
+
+    ////////////////////////////// To handle the deletion and updating of products ends //////////////////////////////////////////
+
+    //////////////////////////// To handle the addition of a new item in sale starts  //////////////////////////////////////////
+    const newItems = items.filter(
+      (item) => !existingSale?.items?.some((sItem) => sItem._id === item._id)
+    );
+
+    const oldItems = items.filter((item) =>
+      existingSale?.items?.some((sItem) => sItem._id === item._id)
+    );
+
+    if (newItems.length > 0) {
+      await addingAnItemInSale(newItems);
+    }
+    //////////////////////////// To handle the addition of a new item in sale ends  //////////////////////////////////////////
+
+    ////////////////////////////// Process each item to update product stock and godown stock /////////////////////////////////////////////////
+    for (const item of oldItems) {
+      // Find the product in the product model
+      const product = await productModel.findOne({ _id: item._id });
+      if (!product) {
+        console.log("editSale: product not found");
+        throw new Error(`Product not found for item ID: ${item._id}`);
+      }
+
+      const existingItem = existingSale.items.find(
+        (sItem) => sItem._id === item._id
+      );
+
+      /////////////////////////////// for updating salable stock ///////////////////////////
+
+      await updateSaleableStock(
+        product,
+        item.count || 0,
+        existingItem?.count || 0
+      );
+
+      /////////////////////////////// for updating salable stock  end  ///////////////////////////
+
+      /////////////////////////////// Process godown and batch updates ///////////////////////////
+      if (item.hasGodownOrBatch) {
+        ///////////////////////////////for handle deletion of godown or batch start///////////////////////////////
+
+        const updatedGodowns = item.GodownList.filter(
+          (godown) => godown.added == true
+        );
+        // console.log("updatedGodowns", updatedGodowns);
+        const existingGodownList =
+          existingItem?.GodownList.filter((godown) => {
+            return godown.added == true;
+          }) || [];
+        // console.log("existingGodownList", existingGodownList);
+
+        let deletedGodowns = [];
+        for (const godown of existingGodownList) {
+          if (godown.batch && !godown.godown_id) {
+            // Check if the object with the same batch exists in updatedGodownList
+            const foundInUpdated = updatedGodowns.some(
+              (updated) => updated.batch === godown.batch
+            );
+            if (!foundInUpdated) {
+              deletedGodowns.push(godown); // Add to deletedGodowns if not found
+            }
+          } else if (godown.godown_id && !godown.batch) {
+            // Check if the object with the same godown_id exists in updatedGodowns
+            const foundInUpdated = updatedGodowns.some(
+              (updated) => updated.godown_id === godown.godown_id
+            );
+            if (!foundInUpdated) {
+              deletedGodowns.push(godown); // Add to deletedGodown if not found
+            }
+          } else if (godown.batch && godown.godown_id) {
+            // Check if the object with the same batch and godown_id exists in updatedGodowns
+            const foundInUpdated = updatedGodowns.some(
+              (updated) =>
+                updated.batch === godown.batch &&
+                updated.godown_id === godown.godown_id
+            );
+            if (!foundInUpdated) {
+              deletedGodowns.push(godown); // Add to deletedGodown if not found
+            }
+          }
+        }
+
+        // console.log("deletedGodowns", deletedGodowns);
+
+        let newGodowns = [];
+
+        for (const updatedGodown of updatedGodowns) {
+          if (updatedGodown.batch && !updatedGodown.godown_id) {
+            // Check if the object with the same batch exists in existingGodownList
+            const foundInExisting = existingGodownList.some(
+              (existing) => existing.batch === updatedGodown.batch
+            );
+            if (!foundInExisting) {
+              newGodowns.push(updatedGodown); // Add to newGodowns if not found
+            }
+          } else if (updatedGodown.godown_id && !updatedGodown.batch) {
+            // Check if the object with the same godown_id exists in existingGodownList
+            const foundInExisting = existingGodownList.some(
+              (existing) => existing.godown_id === updatedGodown.godown_id
+            );
+            if (!foundInExisting) {
+              newGodowns.push(updatedGodown); // Add to newGodowns if not found
+            }
+          } else if (updatedGodown.batch && updatedGodown.godown_id) {
+            // Check if the object with the same batch and godown_id exists in existingGodownList
+            const foundInExisting = existingGodownList.some(
+              (existing) =>
+                existing.batch === updatedGodown.batch &&
+                existing.godown_id === updatedGodown.godown_id
+            );
+            if (!foundInExisting) {
+              newGodowns.push(updatedGodown); // Add to newGodowns if not found
+            }
+          }
+
+          // console.log("newGodowns", newGodowns);
+          if (newGodowns.length > 0) {
+            await addingNewBatchesOrGodownsInSale(newGodowns, product);
+          }
+
+          // Process deleted godowns or batches
+
+          if (deletedGodowns.length > 0) {
+            await deleteGodownsOrBatchesInSaleEdit(deletedGodowns, product);
+          }
+          ///////////////////////////////for handle deletion of godown or batch start///////////////////////////////
+
+          /////////////////////////////////////for  updating balance stock of godowns  ////////////////////////////////////
+
+          for (const godown of item.GodownList) {
+            if (godown.batch && !godown.godown_id) {
+              const existingGodown = existingItem?.GodownList.find(
+                (sGodown) => sGodown.batch === godown.batch
+              );
+              const godownCountDiff =
+                parseFloat(godown.count) - (existingGodown?.count || 0) || 0;
+
+              // console.log("godownCountDiff", godownCountDiff);
+
+              let productItem = productModel.findOne({
+                _id: product._id,
+              });
+
+              const balance_stock =
+                product.GodownList.find(
+                  (sGodown) => sGodown.batch === godown.batch
+                ).balance_stock || 0;
+              // console.log("balance_stock", balance_stock);
+
+              let updatedStock;
+
+              if (godownCountDiff > 0) {
+                const absoluteCount = Math.abs(godownCountDiff);
+                // console.log("greater than 0");
+
+                updatedStock = balance_stock - absoluteCount;
+              } else {
+                const absoluteCount = Math.abs(godownCountDiff);
+
+                updatedStock = balance_stock + absoluteCount;
+              }
+
+              // console.log("updatedStock", updatedStock);
+
+              if (godownCountDiff !== 0) {
+                await productModel.updateOne(
+                  {
+                    _id: product._id,
+                    "GodownList.batch": godown.batch || null,
+                  },
+                  { $set: { "GodownList.$.balance_stock": updatedStock } }
+                );
+              }
+            } else if (godown.godown_id && !godown.batch) {
+              const existingGodown = existingItem?.GodownList.find(
+                (sGodown) => sGodown?.godown_id === godown?.godown_id
+              );
+
+              const godownCountDiff =
+                parseFloat(godown?.count) - (existingGodown?.count || 0) || 0;
+
+              // console.log("godownCountDiff", godownCountDiff);
+
+              let productItem = productModel?.findOne({
+                _id: product._id,
+              });
+
+              const balance_stock =
+                product.GodownList.find(
+                  (sGodown) => sGodown?.godown_id === godown?.godown_id
+                )?.balance_stock || 0;
+
+              // console.log("balance_stock", balance_stock);
+              let updatedStock;
+
+              if (godownCountDiff > 0) {
+                const absoluteCount = Math.abs(godownCountDiff);
+                // console.log("greater than 0");
+
+                updatedStock = balance_stock - absoluteCount;
+                // console.log("updatedStock", updatedStock);
+              } else {
+                const absoluteCount = Math.abs(godownCountDiff);
+
+                // console.log("less than 0");
+
+                updatedStock = balance_stock + absoluteCount;
+                // console.log("updatedStock", updatedStock);
+              }
+
+              if (godownCountDiff !== 0) {
+                await productModel.updateOne(
+                  {
+                    _id: product._id,
+                    "GodownList.godown_id": godown.godown_id || null,
+                  },
+                  { $set: { "GodownList.$.balance_stock": updatedStock } }
+                );
+              }
+            } else if (godown?.godown_id && godown?.batch) {
+              const existingGodown = existingItem?.GodownList?.find(
+                (sGodown) =>
+                  sGodown?.godown_id === godown?.godown_id &&
+                  sGodown?.batch === godown?.batch
+              );
+              const godownCountDiff =
+                parseFloat(godown?.count) - (existingGodown?.count || 0) || 0;
+              // console.log("godownCountDiff", godownCountDiff);
+              let productItem = productModel.findOne({
+                _id: product?._id,
+              });
+              const balance_stock =
+                product.GodownList.find(
+                  (sGodown) =>
+                    sGodown?.godown_id === godown?.godown_id &&
+                    sGodown?.batch === godown?.batch
+                )?.balance_stock || 0;
+
+              // console.log("balance_stock", balance_stock);
+
+              let updatedStock;
+
+              if (godownCountDiff > 0) {
+                const absoluteCount = Math.abs(godownCountDiff);
+                // console.log("greater than 0");
+                updatedStock = balance_stock - absoluteCount;
+                // console.log("updatedStock", updatedStock);
+              } else {
+                const absoluteCount = Math.abs(godownCountDiff);
+
+                // console.log("less than 0");
+                updatedStock = balance_stock + absoluteCount;
+                // console.log("updatedStock", updatedStock);
+              }
+
+              if (godownCountDiff !== 0) {
+                await productModel.updateOne(
+                  {
+                    _id: product._id,
+                    "GodownList.godown_id": godown?.godown_id || null,
+                    "GodownList.batch": godown?.batch || null,
+                  },
+                  { $set: { "GodownList.$.balance_stock": updatedStock } }
+                );
+              }
+            }
+          }
+        }
+      } else {
+        ////// no godown or batch//////////
+
+        // console.log("nohasGodownOrBatch ");
+
+        const product_godown_balance_stock = Number(
+          product.GodownList[0].balance_stock
+        );
+
+        const itemCountDiff =
+          parseFloat(item.count) - (existingItem?.count || 0) || 0;
+        let updatedStock;
+        let updatedGodownStock;
+
+        if (itemCountDiff > 0) {
+          const absoluteCount = Math.abs(itemCountDiff);
+          // console.log("greater than 0");
+
+          updatedGodownStock = product_godown_balance_stock - absoluteCount;
+          // console.log("updatedStock", updatedStock);
+        } else {
+          const absoluteCount = Math.abs(itemCountDiff);
+
+          // console.log("less than 0");
+
+          updatedGodownStock = product_godown_balance_stock + absoluteCount;
+
+          // console.log("updatedStock", updatedStock);
+        }
+
+        if (itemCountDiff !== 0) {
+          await productModel.updateOne(
+            { _id: product._id },
+            {
+              $set: {
+                "GodownList.0.balance_stock": updatedGodownStock,
+              },
+            }
+          );
+        }
+      }
+    }
+
+    ///////////////////////////////////// for calculating values like igst amount and updated items  ////////////////////////////////////
+
+    let updatedItems = items;
+    if (items.length > 0) {
+      updatedItems = await calculateUpdatedItemValues(
+        items,
+        priceLevelFromRedux
+      );
+    }
+    let updateAdditionalCharge = additionalChargesFromRedux;
+    if (additionalChargesFromRedux.length > 0) {
+      updateAdditionalCharge = await updateAdditionalChargeInSale(
+        additionalChargesFromRedux
+      );
+    }
+
+    // console.log("updatedItems", updatedItems);
+
+    // Update the existing sale
+    existingSale.partyAccount = party?.partyName;
+    existingSale.party = party;
+    existingSale.items = updatedItems;
+    existingSale.priceLevel = priceLevelFromRedux;
+    existingSale.additionalCharges = additionalChargesFromRedux;
+    existingSale.finalAmount = lastAmount;
+    existingSale.salesNumber = salesNumber;
+    existingSale.despatchDetails = despatchDetails;
+
+    const result = await existingSale.save();
+
+    ///////////////////////////////////// for reflecting the rate change in outstanding  ////////////////////////////////////
+
+    const newBillValue = Number(lastAmount);
+    // const oldBillValue = Number(existingSale.finalAmount);
+    const diffBillValue = newBillValue - oldBillValue;
+
+    const matchedOutStanding = await TallyData.findOne({
+      party_id: party?.party_master_id,
+      cmp_id: orgId,
+      bill_no: salesNumber,
+    });
+
+    if (matchedOutStanding) {
+      console.log("editSale: matched outstanding found");
+      const newOutstanding =
+        Number(matchedOutStanding?.bill_pending_amt) + diffBillValue;
+
+      console.log("editSale: new outstanding calculated", newOutstanding);
+      await TallyData.updateOne(
+        {
+          party_id: party?.party_master_id,
+          cmp_id: orgId,
+          bill_no: salesNumber,
+        },
+        { $set: { bill_pending_amt: newOutstanding } }
+      );
+
+      console.log("editSale: outstanding updated");
+    } else {
+      console.log("editSale: matched outstanding not found");
+    }
+
+    res
+      .status(200)
+      .json({ success: true, message: "Sale updated", data: result });
+  } catch (error) {
+    console.error("editSale: error", error);
+    res.status(500).json({
+      success: false,
+      message: "An error occurred while editing the sale.",
+      error: error.message,
+    });
+  }
+};

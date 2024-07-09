@@ -11,6 +11,7 @@ import {
   addAdditionalCharges,
   AddFinalAmount,
   deleteRow,
+  
 } from "../../../slices/invoiceSecondary";
 import { useDispatch } from "react-redux";
 import { IoIosArrowDown } from "react-icons/io";
@@ -24,10 +25,13 @@ import { MdPlaylistAdd } from "react-icons/md";
 import {
   removeAll,
   removeAdditionalCharge,
+  removeItem,
 } from "../../../slices/invoiceSecondary";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import SidebarSec from "../../components/secUsers/SidebarSec";
-import { Button, Label, Modal, TextInput } from "flowbite-react";
+import { PiAddressBookFill } from "react-icons/pi";
+import DespatchDetails from "../../components/secUsers/DespatchDetails";
+
 
 function InvoiceSecondary() {
   const cmp_id = useSelector(
@@ -36,19 +40,10 @@ function InvoiceSecondary() {
   const type = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg.type
   );
-  const [showSidebar, setShowSidebar] = useState(false);
-  const [openModal, setOpenModal] = useState(false);
-  const [modalInputs, setModalInputs] = useState({
-    startingNumber: "1",
-    widthOfNumericalPart: "",
-    prefixDetails: "",
-    suffixDetails: "",
-  });
+
   const [subTotal, setSubTotal] = useState(0);
   const [additional, setAdditional] = useState(false);
-  const [refresh, setRefresh] = useState(false);
   const [orderNumber, setOrderNumber] = useState("");
-  const [refreshCmp, setrefreshCmp] = useState(false);
   const [additionalChragesFromCompany, setAdditionalChragesFromCompany] =
     useState([]);
 
@@ -59,24 +54,32 @@ function InvoiceSecondary() {
   const orgId = useSelector(
     (state) => state?.secSelectedOrganization?.secSelectedOrg?._id
   );
-  useEffect(()=>{
-   
+  const despatchDetails = useSelector(
+    (state) => state.invoiceSecondary.despatchDetails
+  );
+
+
+  useEffect(() => {
+    localStorage.removeItem("scrollPositionAddItem");
+  }, []);
+
+  useEffect(() => {
     const getAdditionalChargesIntegrated = async () => {
       try {
         const res = await api.get(`/api/sUsers/additionalcharges/${cmp_id}`, {
           withCredentials: true,
         });
-        console.log(res.data)
+        console.log(res.data);
         setAdditionalChragesFromCompany(res.data);
       } catch (error) {
         console.log(error);
         toast.error(error.response.data.message);
       }
     };
-  if(type != "self" ){
-    getAdditionalChargesIntegrated()
-  }
-  },[])
+    if (type != "self") {
+      getAdditionalChargesIntegrated();
+    }
+  }, []);
 
   useEffect(() => {
     const fetchSingleOrganization = async () => {
@@ -89,7 +92,7 @@ function InvoiceSecondary() {
         );
 
         console.log(res.data.organizationData);
-        if(type == "self"){
+        if (type == "self") {
           setAdditionalChragesFromCompany(
             res.data.organizationData.additionalCharges
           );
@@ -98,10 +101,9 @@ function InvoiceSecondary() {
         console.log(error);
       }
     };
-    
+
     fetchSingleOrganization();
-    
-  }, [refreshCmp, orgId]);
+  }, [orgId]);
 
   useEffect(() => {
     const fetchConfigurationNumber = async () => {
@@ -139,19 +141,6 @@ function InvoiceSecondary() {
           const finalOrderNumber = prefixDetails + padedNumber + suffixDetails;
           console.log(finalOrderNumber);
           setOrderNumber(finalOrderNumber);
-          setModalInputs({
-            widthOfNumericalPart: widthOfNumericalPart,
-            prefixDetails: prefixDetails,
-            suffixDetails: suffixDetails,
-          });
-        } else {
-          setOrderNumber(orderNumber);
-          setModalInputs({
-            startingNumber: "1",
-            widthOfNumericalPart: "",
-            prefixDetails: "",
-            suffixDetails: "",
-          });
         }
       } catch (error) {
         console.log(error);
@@ -283,8 +272,9 @@ function InvoiceSecondary() {
     }, 0);
   }, [rows]);
 
-  const totalAmount =
+  const totalAmountNotRounded =
     parseFloat(subTotal) + additionalChargesTotal || parseFloat(subTotal);
+  const totalAmount = Math.round(totalAmountNotRounded);
 
   const navigate = useNavigate();
 
@@ -350,6 +340,7 @@ function InvoiceSecondary() {
       lastAmount,
       orgId,
       orderNumber,
+      despatchDetails
     };
 
     console.log(formData);
@@ -374,42 +365,10 @@ function InvoiceSecondary() {
     }
   };
 
-  function onCloseModal() {
-    setOpenModal(false);
-    // setEmail('');
-  }
-
-  const saveOrderNumber = async () => {
-    try {
-      const res = await api.post(
-        `/api/sUsers/saveOrderNumber/${orgId}`,
-        modalInputs,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-          withCredentials: true,
-        }
-      );
-
-      toast(res.data.message);
-      setOpenModal(false);
-      setrefreshCmp(!refreshCmp);
-
-      console.log(res);
-    } catch (error) {
-      console.log(error);
-      toast.error(error.response.data.message);
-    }
-  };
-
   return (
     <div className="flex relative ">
-      <div>
-        <SidebarSec TAB={"invoice"} showBar={showSidebar} />
-      </div>
-
-      <div className="flex-1 bg-slate-100  h-screen overflow-y-scroll  ">
+   
+      <div className="flex-1 bg-slate-100  h-screen  ">
         <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex  items-center gap-2 sticky top-0 z-50  ">
           {/* <IoReorderThreeSharp
             onClick={handleToggleSidebar}
@@ -436,28 +395,27 @@ function InvoiceSecondary() {
             </p>
           </div>
           <div className="flex items-center gap-3">
-          <div className=" hidden md:block ">
-            <div className="  flex gap-5 items-center ">
+            <div className=" hidden md:block ">
+              <div className="  flex gap-5 items-center ">
+                <button
+                  onClick={submitHandler}
+                  className=" bottom-0 text-white bg-violet-700  w-full rounded-md  p-2 flex items-center justify-center gap-2 hover_scale cursor-pointer "
+                >
+                  <IoIosAddCircle className="text-2xl" />
+                  <p>Generate Order</p>
+                </button>
+              </div>
+            </div>
+            <div>
               <button
-                onClick={submitHandler}
-                className=" bottom-0 text-white bg-violet-700  w-full rounded-md  p-2 flex items-center justify-center gap-2 hover_scale cursor-pointer "
+                onClick={() => {
+                  dispatch(removeAll());
+                }}
+                className="  text-red-500 text-xs  p-1 px-3  border border-1 border-gray-300 rounded-2xl cursor-pointer"
               >
-                <IoIosAddCircle className="text-2xl" />
-                <p>Generate Order</p>
+                Cancel
               </button>
             </div>
-          </div>
-          <div>
-            <button
-              onClick={() => {
-                dispatch(removeAll());
-              }}
-              className="  text-red-500 text-xs  p-1 px-3  border border-1 border-gray-300 rounded-2xl cursor-pointer"
-            >
-              Cancel
-            </button>
-          </div>
-
           </div>
         </div>
 
@@ -470,10 +428,16 @@ function InvoiceSecondary() {
               <span className="text-red-500 mt-[-4px] font-bold">*</span>
             </div>
             {Object.keys(party).length !== 0 && (
-              <div>
+              <div className="flex items-center">
                 <Link to={"/sUsers/searchParty"}>
                   <p className="text-violet-500 p-1 px-3  text-xs border border-1 border-gray-300 rounded-2xl cursor-pointer">
                     Change
+                  </p>
+                </Link>
+
+                <Link to={`/sUsers/billToSalesOrder/${party._id}`}>
+                  <p className="text-violet-500 p-1 px-3  text-2xl  border-gray-300 rounded-2xl cursor-pointer">
+                    <PiAddressBookFill />
                   </p>
                 </Link>
               </div>
@@ -506,6 +470,10 @@ function InvoiceSecondary() {
             </div>
           )}
         </div>
+
+             {/* Despatch details */}
+
+             <DespatchDetails tab={"order"}/>
 
         {/* adding items */}
 
@@ -546,61 +514,74 @@ function InvoiceSecondary() {
 
               {items.map((el, index) => (
                 <>
-                  <div key={index} className="py-3 mt-0 px-6 bg-white ">
-                    <div className="flex justify-between font-bold text-xs">
-                      <p>{el.product_name}</p>
-                      <p> ₹ {el.total ?? 0}</p>
+                  <div
+                    key={index}
+                    className="py-3 mt-0 px-3 md:px-6 bg-white flex items-center gap-1.5 md:gap-4"
+                  >
+                    <div
+                      onClick={() => {
+                        dispatch(removeItem(el));
+                      }}
+                      className=" text-gray-500 text-sm cursor-pointer "
+                    >
+                      <MdCancel />
                     </div>
-                    <div className="flex justify-between items-center mt-2 ">
-                      <div className="w-3/5 md:w-2/5 font-semibold text-gray-500 text-xs  flex flex-col gap-2 ">
-                        <div className="flex justify-between">
-                          <p className="text-nowrap">
-                            Qty <span className="text-xs">x</span> Rate
-                          </p>
-                          <p className="text-nowrap">
-                            {el.count} {el.unit} X{" "}
-                            {el.Priceleveles.find(
-                              (item) => item.pricelevel == priceLevelFromRedux
-                            )?.pricerate || 0}
-                          </p>
-                        </div>
-                        <div className="flex justify-between">
-                          <p className="text-nowrap"> Tax </p>
-                          <p className="text-nowrap">
-                            ({el.igst} %)
-                            {/* {(el.Priceleveles.find(
-              (item) => item.pricelevel == priceLevelFromRedux
-            ).pricerate *
-              el.count *
-              el.igst) /
-              100}{" "} */}
-                          </p>
-                        </div>
-                        {(el.discount > 0 || el.discountPercentage > 0) && (
-                          <div className="flex justify-between">
-                            <p className="text-nowrap"> Discount </p>
-                            <div className="flex items-center">
-                              <p className="text-nowrap ">
-                                {el.discount > 0
-                                  ? `₹ ${el.discount}`
-                                  : `${el.discountPercentage}%`}
-                              </p>
-                            </div>
-                          </div>
-                        )}
+                    <div className=" flex-1">
+                      <div className="flex justify-between font-bold text-xs gap-10">
+                        <p>{el.product_name}</p>
+                        <p className="text-nowrap"> ₹ {el.total ?? 0}</p>
                       </div>
-                      {/* <Link to={`/sUsers/editItem/${el._id}`}> */}
+                      <div className="flex justify-between items-center mt-2 ">
+                        <div className="w-3/5 md:w-2/5 font-semibold text-gray-500 text-xs  flex flex-col gap-2 ">
+                          <div className="flex justify-between">
+                            <p className="text-nowrap">
+                              Qty <span className="text-xs">x</span> Rate
+                            </p>
+                            <p className="text-nowrap">
+                              {el.count} {el.unit} X{" "}
+                              {/* {el.Priceleveles.find(
+                                (item) => item.pricelevel == priceLevelFromRedux
+                              )?.pricerate || 0} */}
+                              {el?.selectedPriceRate || 0}
+                            </p>
+                          </div>
+                          <div className="flex justify-between">
+                            <p className="text-nowrap"> Tax </p>
+                            <p className="text-nowrap">({el.igst} %)</p>
+                          </div>
+                          {(el.discount > 0 || el.discountPercentage > 0) && (
+                            <div className="flex justify-between">
+                              <p className="text-nowrap"> Discount </p>
+                              <div className="flex items-center">
+                                <p className="text-nowrap ">
+                                  {el.discount > 0
+                                    ? `₹ ${el.discount}`
+                                    : `${el.discountPercentage}%`}
+                                </p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        {/* <Link
+                        to={{
+                          pathname: `/pUsers/editItem/${el._id}`,
+                          state: { from: "invoice" }, // Set the state to indicate where the user is coming from
+                        }}
+                      > */}
                         <div className="">
                           <p
-                          onClick={() => {
-                            navigate(`/sUsers/editItem/${el._id}`, {
-                              state: { from: "invoice" },
-                            });
-                          }} className="text-violet-500 text-xs md:text-base font-bold  p-1  px-4   border border-1 border-gray-300 rounded-2xl cursor-pointer">
+                            onClick={() => {
+                              navigate(`/sUsers/editItem/${el._id}`, {
+                                state: { from: "invoice" },
+                              });
+                            }}
+                            className="text-violet-500 text-xs md:text-base font-bold  p-1  px-4   border border-1 border-gray-300 rounded-2xl cursor-pointer"
+                          >
                             Edit
                           </p>
                         </div>
-                      {/* </Link> */}
+                        {/* </Link> */}
+                      </div>
                     </div>
                   </div>
                   <hr />
@@ -614,289 +595,294 @@ function InvoiceSecondary() {
               )}`}</p>
             </div>
             {type == "self" && (
-          <>
-            {additional ? (
-              <div className="container mx-auto mt-2 bg-white p-4 text-xs">
-                <div className="flex  items-center justify-between  font-bold  text-[13px]">
-                  <div className="flex  items-center gap-3">
-                    <IoIosArrowDown className="font-bold text-[15px]" />
-                    <p className="text-blue-800">Additional Charges</p>
+              <>
+                {additional ? (
+                  <div className="container mx-auto mt-2 bg-white p-4 text-xs">
+                    <div className="flex  items-center justify-between  font-bold  text-[13px]">
+                      <div className="flex  items-center gap-3">
+                        <IoIosArrowDown className="font-bold text-[15px]" />
+                        <p className="text-blue-800">Additional Charges</p>
+                      </div>
+                      <button
+                        onClick={cancelHandler}
+                        // onClick={() => {setAdditional(false);dispatch(removeAdditionalCharge());setRefresh(!refresh);setRows()}}
+                        className="text-violet-500 p-1 px-3  text-xs border border-1 border-gray-300 rounded-2xl cursor-pointer"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                    <div className="container mx-auto  mt-2  md:px-8 ">
+                      <table className="table-fixed w-full bg-white ">
+                        <tbody>
+                          {rows.map((row, index) => (
+                            <tr key={index} className="">
+                              <td className=" w-2  ">
+                                <MdCancel
+                                  onClick={() => {
+                                    handleDeleteRow(index);
+                                  }}
+                                  className="text-sm cursor-pointer text-gray-500 hover:text-black"
+                                />
+                              </td>
+                              <td className=" flex flex-col justify-center ml-2 mt-3.5 ">
+                                <select
+                                  value={row._id}
+                                  onChange={(e) =>
+                                    handleLevelChange(index, e.target.value)
+                                  }
+                                  className="block w-full   bg-white text-sm focus:outline-none border-none border-b-gray-500 "
+                                >
+                                  {additionalChragesFromCompany.length > 0 ? (
+                                    additionalChragesFromCompany.map(
+                                      (el, index) => (
+                                        <option key={index} value={el._id}>
+                                          {" "}
+                                          {el.name}{" "}
+                                        </option>
+                                      )
+                                    )
+                                  ) : (
+                                    <option>No charges available</option>
+                                  )}
+                                </select>
+
+                                {row?.taxPercentage !== "" && (
+                                  <div className="ml-3 text-[9px] text-gray-400">
+                                    GST @ {row?.taxPercentage} %
+                                  </div>
+                                )}
+                              </td>
+                              <td className="">
+                                <div className="flex gap-3 px-5 ">
+                                  <div
+                                    onClick={() => {
+                                      actionChange(index, "add");
+                                    }}
+                                    className={` ${
+                                      row.action === "add"
+                                        ? "border-violet-500 "
+                                        : ""
+                                    }  cursor-pointer p-1 px-1.5 rounded-md  border  bg-gray-100 `}
+                                  >
+                                    <IoMdAdd />
+                                  </div>
+                                  <div
+                                    onClick={() => {
+                                      actionChange(index, "sub");
+                                    }}
+                                    className={` ${
+                                      row.action === "sub"
+                                        ? "border-violet-500 "
+                                        : ""
+                                    }  cursor-pointer p-1 px-1.5 rounded-md  border  bg-gray-100 `}
+                                  >
+                                    <FiMinus />
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-4 py-2">
+                                <div className="flex items-center">
+                                  <span className="mr-0 ">₹</span>
+                                  <input
+                                    type="number"
+                                    value={row.value}
+                                    onChange={(e) =>
+                                      handleRateChange(index, e.target.value)
+                                    }
+                                    className={` ${
+                                      additionalChragesFromCompany.length === 0
+                                        ? "pointer-events-none opacity-20 "
+                                        : ""
+                                    }   block w-full py-2 px-4 bg-white text-sm focus:outline-none border-b-2 border-t-0 border-l-0 border-r-0 `}
+                                  />
+                                </div>
+
+                                {row?.taxPercentage !== "" &&
+                                  row.value !== "" && (
+                                    <div className="ml-3 text-[9.5px] text-gray-400 mt-2">
+                                      With tax : ₹{" "}
+                                      {(parseFloat(row?.value) *
+                                        (100 + parseFloat(row.taxPercentage))) /
+                                        100}{" "}
+                                    </div>
+                                  )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                      <button
+                        onClick={handleAddRow}
+                        className="mt-4 px-4 py-1 bg-pink-500 text-white rounded"
+                      >
+                        <MdPlaylistAdd />
+                      </button>
+                    </div>
                   </div>
-                  <button
-                    onClick={cancelHandler}
-                    // onClick={() => {setAdditional(false);dispatch(removeAdditionalCharge());setRefresh(!refresh);setRows()}}
-                    className="text-violet-500 p-1 px-3  text-xs border border-1 border-gray-300 rounded-2xl cursor-pointer"
-                  >
-                    Cancel
-                  </button>
-                </div>
-                <div className="container mx-auto  mt-2  md:px-8 ">
-                  <table className="table-fixed w-full bg-white ">
-                    <tbody>
-                      {rows.map((row, index) => (
-                        <tr key={index} className="">
-                          <td className=" w-2  ">
-                            <MdCancel
-                              onClick={() => {
-                                handleDeleteRow(index);
-                              }}
-                              className="text-sm cursor-pointer text-gray-500 hover:text-black"
-                            />
-                          </td>
-                          <td className=" flex flex-col justify-center ml-2 mt-3.5 ">
-                            <select
-                              value={row._id}
-                              onChange={(e) =>
-                                handleLevelChange(index, e.target.value)
-                              }
-                              className="block w-full   bg-white text-sm focus:outline-none border-none border-b-gray-500 "
-                            >
-                              {additionalChragesFromCompany.length > 0 ? (
-                                additionalChragesFromCompany.map(
-                                  (el, index) => (
-                                    <option key={index} value={el._id}>
-                                      {" "}
-                                      {el.name}{" "}
-                                    </option>
-                                  )
-                                )
-                              ) : (
-                                <option>No charges available</option>
-                              )}
-                            </select>
-
-                            {row?.taxPercentage !== "" && (
-                              <div className="ml-3 text-[9px] text-gray-400">
-                                GST @ {row?.taxPercentage} %
-                              </div>
-                            )}
-                          </td>
-                          <td className="">
-                            <div className="flex gap-3 px-5 ">
-                              <div
-                                onClick={() => {
-                                  actionChange(index, "add");
-                                }}
-                                className={` ${
-                                  row.action === "add"
-                                    ? "border-violet-500 "
-                                    : ""
-                                }  cursor-pointer p-1 px-1.5 rounded-md  border  bg-gray-100 `}
-                              >
-                                <IoMdAdd />
-                              </div>
-                              <div
-                                onClick={() => {
-                                  actionChange(index, "sub");
-                                }}
-                                className={` ${
-                                  row.action === "sub"
-                                    ? "border-violet-500 "
-                                    : ""
-                                }  cursor-pointer p-1 px-1.5 rounded-md  border  bg-gray-100 `}
-                              >
-                                <FiMinus />
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-4 py-2">
-                            <div className="flex items-center">
-                              <span className="mr-0 ">₹</span>
-                              <input
-                                type="number"
-                                value={row.value}
-                                onChange={(e) =>
-                                  handleRateChange(index, e.target.value)
-                                }
-                                className={` ${
-                                  additionalChragesFromCompany.length === 0
-                                    ? "pointer-events-none opacity-20 "
-                                    : ""
-                                }   block w-full py-2 px-4 bg-white text-sm focus:outline-none border-b-2 border-t-0 border-l-0 border-r-0 `}
-                              />
-                            </div>
-
-                            {row?.taxPercentage !== "" && row.value !== "" && (
-                              <div className="ml-3 text-[9.5px] text-gray-400 mt-2">
-                                With tax : ₹{" "}
-                                {(parseFloat(row?.value) *
-                                  (100 + parseFloat(row.taxPercentage))) /
-                                  100}{" "}
-                              </div>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                  <button
-                    onClick={handleAddRow}
-                    className="mt-4 px-4 py-1 bg-pink-500 text-white rounded"
-                  >
-                    <MdPlaylistAdd />
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className=" flex justify-end items-center mt-4 font-semibold gap-1 text-violet-500 cursor-pointer pr-4">
-                <div
-                  onClick={() => {
-                    setAdditional(true);
-                  }}
-                  className="flex items-center"
-                >
-                  <IoMdAdd className="text-2xl" />
-                  <p>Additional Charges </p>
-                </div>
-              </div>
-            )}
-            </>
-        )}
-        {type != "self" && (
-          <>
-           {additional ? (
-              <div className="container mx-auto mt-2 bg-white p-4 text-xs">
-                <div className="flex  items-center justify-between  font-bold  text-[13px]">
-                  <div className="flex  items-center gap-3">
-                    <IoIosArrowDown className="font-bold text-[15px]" />
-                    <p className="text-blue-800">Additional Charges</p>
+                ) : (
+                  <div className=" flex justify-end items-center mt-4 font-semibold gap-1 text-violet-500 cursor-pointer pr-4">
+                    <div
+                      onClick={() => {
+                        setAdditional(true);
+                      }}
+                      className="flex items-center"
+                    >
+                      <IoMdAdd className="text-2xl" />
+                      <p>Additional Charges </p>
+                    </div>
                   </div>
-                  <button
-                    onClick={cancelHandler}
-                    // onClick={() => {setAdditional(false);dispatch(removeAdditionalCharge());setRefresh(!refresh);setRows()}}
-                    className="text-violet-500 p-1 px-3  text-xs border border-1 border-gray-300 rounded-2xl cursor-pointer"
-                  >
-                    Cancel
-                  </button>
-                </div>
-                <div className="container mx-auto  mt-2  md:px-8 ">
-                  <table className="table-fixed w-full bg-white ">
-                    <tbody>
-                      {rows.map((row, index) => (
-                        <tr key={index} className="">
-                          <td className=" w-2  ">
-                            <MdCancel
-                              onClick={() => {
-                                handleDeleteRow(index);
-                              }}
-                              className="text-sm cursor-pointer text-gray-500 hover:text-black"
-                            />
-                          </td>
-                          <td className=" flex flex-col justify-center ml-2 mt-3.5 ">
-                            <select
-                              value={row._id}
-                              onChange={(e) =>
-                                handleLevelChange(index, e.target.value)
-                              }
-                              className="block w-full   bg-white text-sm focus:outline-none border-none border-b-gray-500 "
-                            >
-                              {additionalChragesFromCompany.length > 0 ? (
-                                additionalChragesFromCompany.map(
-                                  (el, index) => (
-                                    <option key={index} value={el._id}>
-                                      {" "}
-                                      {el.name}{" "}
-                                    </option>
-                                  )
-                                )
-                              ) : (
-                                <option>No charges available</option>
-                              )}
-                            </select>
-
-                            {row?.taxPercentage !== "" && (
-                              <div className="ml-3 text-[9px] text-gray-400">
-                                GST @ {row?.taxPercentage} %
-                              </div>
-                            )}
-                          </td>
-                          <td className="">
-                            <div className="flex gap-3 px-5 ">
-                              <div
-                                onClick={() => {
-                                  actionChange(index, "add");
-                                }}
-                                className={` ${
-                                  row.action === "add"
-                                    ? "border-violet-500 "
-                                    : ""
-                                }  cursor-pointer p-1 px-1.5 rounded-md  border  bg-gray-100 `}
-                              >
-                                <IoMdAdd />
-                              </div>
-                              <div
-                                onClick={() => {
-                                  actionChange(index, "sub");
-                                }}
-                                className={` ${
-                                  row.action === "sub"
-                                    ? "border-violet-500 "
-                                    : ""
-                                }  cursor-pointer p-1 px-1.5 rounded-md  border  bg-gray-100 `}
-                              >
-                                <FiMinus />
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-4 py-2">
-                            <div className="flex items-center">
-                              <span className="mr-0 ">₹</span>
-                              <input
-                                type="number"
-                                value={row.value}
-                                onChange={(e) =>
-                                  handleRateChange(index, e.target.value)
-                                }
-                                className={` ${
-                                  additionalChragesFromCompany.length === 0
-                                    ? "pointer-events-none opacity-20 "
-                                    : ""
-                                }   block w-full py-2 px-4 bg-white text-sm focus:outline-none border-b-2 border-t-0 border-l-0 border-r-0 `}
-                              />
-                            </div>
-
-                            {row?.taxPercentage !== "" && row.value !== "" && (
-                              <div className="ml-3 text-[9.5px] text-gray-400 mt-2">
-                                With tax : ₹{" "}
-                                {(parseFloat(row?.value) *
-                                  (100 + parseFloat(row.taxPercentage))) /
-                                  100}{" "}
-                              </div>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                  <button
-                    onClick={handleAddRow}
-                    className="mt-4 px-4 py-1 bg-pink-500 text-white rounded"
-                  >
-                    <MdPlaylistAdd />
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className=" flex justify-end items-center mt-4 font-semibold gap-1 text-violet-500 cursor-pointer pr-4">
-                <div
-                  onClick={() => {
-                    setAdditional(true);
-                  }}
-                  className="flex items-center"
-                >
-                  <IoMdAdd className="text-2xl" />
-                  <p>Additional Charges </p>
-                </div>
-              </div>
+                )}
+              </>
             )}
-            </>
-        )}
+            {type != "self" && (
+              <>
+                {additional ? (
+                  <div className="container mx-auto mt-2 bg-white p-4 text-xs">
+                    <div className="flex  items-center justify-between  font-bold  text-[13px]">
+                      <div className="flex  items-center gap-3">
+                        <IoIosArrowDown className="font-bold text-[15px]" />
+                        <p className="text-blue-800">Additional Charges</p>
+                      </div>
+                      <button
+                        onClick={cancelHandler}
+                        // onClick={() => {setAdditional(false);dispatch(removeAdditionalCharge());setRefresh(!refresh);setRows()}}
+                        className="text-violet-500 p-1 px-3  text-xs border border-1 border-gray-300 rounded-2xl cursor-pointer"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                    <div className="container mx-auto  mt-2  md:px-8 ">
+                      <table className="table-fixed w-full bg-white ">
+                        <tbody>
+                          {rows.map((row, index) => (
+                            <tr key={index} className="">
+                              <td className=" w-2  ">
+                                <MdCancel
+                                  onClick={() => {
+                                    handleDeleteRow(index);
+                                  }}
+                                  className="text-sm cursor-pointer text-gray-500 hover:text-black"
+                                />
+                              </td>
+                              <td className=" flex flex-col justify-center ml-2 mt-3.5 ">
+                                <select
+                                  value={row._id}
+                                  onChange={(e) =>
+                                    handleLevelChange(index, e.target.value)
+                                  }
+                                  className="block w-full   bg-white text-sm focus:outline-none border-none border-b-gray-500 "
+                                >
+                                  {additionalChragesFromCompany.length > 0 ? (
+                                    additionalChragesFromCompany.map(
+                                      (el, index) => (
+                                        <option key={index} value={el._id}>
+                                          {" "}
+                                          {el.name}{" "}
+                                        </option>
+                                      )
+                                    )
+                                  ) : (
+                                    <option>No charges available</option>
+                                  )}
+                                </select>
+
+                                {row?.taxPercentage !== "" && (
+                                  <div className="ml-3 text-[9px] text-gray-400">
+                                    GST @ {row?.taxPercentage} %
+                                  </div>
+                                )}
+                              </td>
+                              <td className="">
+                                <div className="flex gap-3 px-5 ">
+                                  <div
+                                    onClick={() => {
+                                      actionChange(index, "add");
+                                    }}
+                                    className={` ${
+                                      row.action === "add"
+                                        ? "border-violet-500 "
+                                        : ""
+                                    }  cursor-pointer p-1 px-1.5 rounded-md  border  bg-gray-100 `}
+                                  >
+                                    <IoMdAdd />
+                                  </div>
+                                  <div
+                                    onClick={() => {
+                                      actionChange(index, "sub");
+                                    }}
+                                    className={` ${
+                                      row.action === "sub"
+                                        ? "border-violet-500 "
+                                        : ""
+                                    }  cursor-pointer p-1 px-1.5 rounded-md  border  bg-gray-100 `}
+                                  >
+                                    <FiMinus />
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-4 py-2">
+                                <div className="flex items-center">
+                                  <span className="mr-0 ">₹</span>
+                                  <input
+                                    type="number"
+                                    value={row.value}
+                                    onChange={(e) =>
+                                      handleRateChange(index, e.target.value)
+                                    }
+                                    className={` ${
+                                      additionalChragesFromCompany.length === 0
+                                        ? "pointer-events-none opacity-20 "
+                                        : ""
+                                    }   block w-full py-2 px-4 bg-white text-sm focus:outline-none border-b-2 border-t-0 border-l-0 border-r-0 `}
+                                  />
+                                </div>
+
+                                {row?.taxPercentage !== "" &&
+                                  row.value !== "" && (
+                                    <div className="ml-3 text-[9.5px] text-gray-400 mt-2">
+                                      With tax : ₹{" "}
+                                      {(parseFloat(row?.value) *
+                                        (100 + parseFloat(row.taxPercentage))) /
+                                        100}{" "}
+                                    </div>
+                                  )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                      <button
+                        onClick={handleAddRow}
+                        className="mt-4 px-4 py-1 bg-pink-500 text-white rounded"
+                      >
+                        <MdPlaylistAdd />
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className=" flex justify-end items-center mt-4 font-semibold gap-1 text-violet-500 cursor-pointer pr-4">
+                    <div
+                      onClick={() => {
+                        setAdditional(true);
+                      }}
+                      className="flex items-center"
+                    >
+                      <IoMdAdd className="text-2xl" />
+                      <p>Additional Charges </p>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
           </>
         )}
 
-        <div className="flex justify-between bg-white mt-2 mb-14 p-3">
+        <div className="flex justify-between bg-white mt-2 p-3">
           <p className="font-bold text-lg">Total Amount</p>
-          <p className="font-bold text-lg">₹ {totalAmount.toFixed(2) ?? 0}</p>
+          <div className="flex flex-col items-center">
+            <p className="font-bold text-lg">₹ {totalAmount.toFixed(2) ?? 0}</p>
+            <p className="text-[9px] text-gray-400">(rounded)</p>
+          </div>
         </div>
 
         <div className=" md:hidden ">
@@ -910,177 +896,7 @@ function InvoiceSecondary() {
             </button>
           </div>
         </div>
-
-        {openModal && (
-          <div
-            id="popup-modal"
-            className="  absolute top-0 right-0 bottom-0 left-0 z-50 flex justify-center items-center"
-          >
-            <div className="relative p-4 w-full max-w-md max-h-full">
-              <div className="relative  rounded-lg shadow bg-gray-700">
-                <button
-                  onClick={() => setOpenModal(false)}
-                  type="button"
-                  className="absolute top-3 end-2.5 text-gray-400 bg-transparent   rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center hover:bg-gray-600 hover:text-white"
-                  data-modal-hide="popup-modal"
-                >
-                  <svg
-                    className="w-3 h-3"
-                    aria-hidden="true"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 14 14"
-                  >
-                    <path
-                      stroke="currentColor"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"
-                    />
-                  </svg>
-                  <span className="sr-only">Close modal</span>
-                </button>
-                <div className="p-4 md:p-5 text-center">
-                  <svg
-                    className="mx-auto mb-4 text-gray-200 w-12 h-12 "
-                    aria-hidden="true"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      stroke="currentColor"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M10 11V6m0 8h.01M19 10a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                    />
-                  </svg>
-                  <h3 className="mb-5 text-lg font-normal text-gray-200 ">
-                    You haven't added any HSN yet!!
-                  </h3>
-
-                  <button
-                    type="button"
-                    className="text-white bg-blue-600 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-500  font-medium rounded-lg text-sm inline-flex items-center px-5 py-2.5 text-center mr-3"
-                    onClick={() => {
-                      navigate("/sUsers/hsn");
-                    }}
-                  >
-                    Add HSN
-                  </button>
-                  <button
-                    data-modal-hide="popup-modal"
-                    type="button"
-                    onClick={() => setOpenModal(false)}
-                    className=" bg-red-500 text-white hover:bg-red-700 focus:outline-none   rounded-lg font-medium text-sm inline-flex items-center px-5 py-2.5 text-center"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
-
-      <Modal
-        style={{
-          scrollbarWidth: "thin",
-          scrollbarColor: "transparent transparent",
-        }}
-        show={openModal}
-        size="md"
-        onClose={onCloseModal}
-        popup
-      >
-        <Modal.Header />
-        <Modal.Body>
-          <div className="space-y-6">
-            <h3 className="text-xl font-medium text-gray-900 dark:text-white ">
-              Enter Details
-            </h3>
-            <div>
-              <div className="mb-2 block">
-                <Label htmlFor="startingNumber" value="Starting Number" />
-              </div>
-              <TextInput
-                disabled
-                id="startingNumber"
-                placeholder="1"
-                type="number"
-                value={modalInputs.startingNumber}
-                onChange={(e) =>
-                  setModalInputs({
-                    ...modalInputs,
-                    startingNumber: e.target.value,
-                  })
-                }
-                required
-              />
-            </div>
-            <div>
-              <div className="mb-2 block">
-                <Label
-                  htmlFor="widthOfNumericalPart"
-                  value="Width of Numerical Part"
-                />
-              </div>
-              <TextInput
-                id="widthOfNumericalPart"
-                placeholder="4"
-                type="number"
-                value={modalInputs.widthOfNumericalPart}
-                onChange={(e) =>
-                  setModalInputs({
-                    ...modalInputs,
-                    widthOfNumericalPart: e.target.value,
-                  })
-                }
-                required
-              />
-            </div>
-            <div>
-              <div className="mb-2 block">
-                <Label htmlFor="prefixDetails" value="Prefix Details" />
-              </div>
-              <TextInput
-                id="prefixDetails"
-                placeholder="ABC"
-                value={modalInputs.prefixDetails}
-                onChange={(e) =>
-                  setModalInputs({
-                    ...modalInputs,
-                    prefixDetails: e.target.value,
-                  })
-                }
-                required
-              />
-            </div>
-            <div>
-              <div className="mb-2 block">
-                <Label htmlFor="suffixDetails" value="Suffix Details" />
-              </div>
-              <TextInput
-                id="suffixDetails"
-                placeholder="XYZ"
-                value={modalInputs.suffixDetails}
-                onChange={(e) =>
-                  setModalInputs({
-                    ...modalInputs,
-                    suffixDetails: e.target.value,
-                  })
-                }
-                required
-              />
-            </div>
-            <div className="w-full">
-              <Button onClick={saveOrderNumber}>Submit</Button>
-            </div>
-          </div>
-        </Modal.Body>
-      </Modal>
     </div>
   );
 }

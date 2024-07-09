@@ -2,7 +2,6 @@
 import { useState, useEffect } from "react";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import { useNavigate } from "react-router-dom";
-import { IoIosSearch } from "react-icons/io";
 import { IoArrowDown } from "react-icons/io5";
 import { useSelector } from "react-redux";
 import api from "../../api/api";
@@ -10,6 +9,8 @@ import { useDispatch } from "react-redux";
 import { addParty } from "../../../slices/salesSecondary";
 import { useLocation } from "react-router-dom";
 import SidebarSec from "../../components/secUsers/SidebarSec";
+import { HashLoader } from "react-spinners";
+import SearchBar from "../../components/common/SearchBar";
 
 // import { MdCancel } from "react-icons/md";
 
@@ -18,6 +19,8 @@ function SearchPartySalesSecondary() {
   const [parties, setParties] = useState([]);
   const [search, setSearch] = useState("");
   const [filteredParties, setFilteredParties] = useState([]);
+  const [loading, setLoading] = useState(true);
+
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const location = useLocation();
@@ -28,6 +31,10 @@ function SearchPartySalesSecondary() {
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
 
+  const searchData = (data) => {
+    setSearch(data);
+  };
+
   useEffect(() => {
     const fetchParties = async () => {
       try {
@@ -36,8 +43,10 @@ function SearchPartySalesSecondary() {
         });
 
         setParties(res.data.partyList);
+        setLoading(false);
       } catch (error) {
         console.log(error);
+        setLoading(false);
       }
     };
     fetchParties();
@@ -45,21 +54,22 @@ function SearchPartySalesSecondary() {
 
   const selectHandler = (el) => {
     dispatch(addParty(el));
-    if (location?.state?.from === "editSales") {
-      navigate(`/sUsers/editSales/${location?.state?.id}`);
-    } else {
-      navigate("/sUsers/sales");
-    }
+    navigate(-1);
+    // if (location?.state?.from === "editSales") {
+    //   navigate(`/sUsers/editSales/${location?.state?.id}`);
+    // } else {
+    //   navigate("/sUsers/sales");
+    // }
   };
 
-  const backHandler=()=>{
-    if (location?.state?.from === "editSales") {
-      navigate(`/sUsers/editSales/${location?.state?.id}`);
-    } else {
-      navigate("/sUsers/sales");
-    }
-
-  }
+  const backHandler = () => {
+    navigate(-1);
+    // if (location?.state?.from === "editSales") {
+    //   navigate(`/sUsers/editSales/${location?.state?.id}`);
+    // } else {
+    //   navigate("/sUsers/sales");
+    // }
+  };
 
   console.log(parties);
   useEffect(() => {
@@ -74,16 +84,12 @@ function SearchPartySalesSecondary() {
   }, [search, parties]);
 
   return (
-    <div className="flex relative h-screen ">
-      <div>
-        <SidebarSec  showBar={showSidebar} />
-      </div>
-
-      <div className="flex-1 bg-slate-50 overflow-y-scroll ">
+    <div className=" ">
+      <div className="flex-1 bg-slate-50  ">
         <div className="sticky top-0 z-20">
           <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex  items-center gap-2  ">
             <IoIosArrowRoundBack
-            onClick={backHandler}
+              onClick={backHandler}
               // onClick={() => {
               //   navigate("/sUsers/invoice");
               // }}
@@ -125,23 +131,7 @@ function SearchPartySalesSecondary() {
                     />
                   </svg>
                 </div>
-                <div class="relative">
-                  <input
-                    onChange={(e) => setSearch(e.target.value)}
-                    value={search}
-                    type="search"
-                    id="default-search"
-                    class="block w-full p-2  text-sm text-gray-900 border  rounded-lg border-gray-300  bg-gray-50 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Search party by name..."
-                    required
-                  />
-                  <button
-                    type="submit"
-                    class="text-white absolute end-[10px] top-1/2 transform -translate-y-1/2 bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-md px-2 py-1"
-                  >
-                    <IoIosSearch />
-                  </button>
-                </div>
+                <SearchBar onType={searchData} />
               </div>
 
               {/* search bar */}
@@ -151,7 +141,15 @@ function SearchPartySalesSecondary() {
 
         {/* adding party */}
 
-        {filteredParties?.length > 0 ? (
+        {loading ? (
+          // Show loader while data is being fetched
+          <div className=" flex justify-center items-center h-screen">
+            <figure className="  w-[60px] h-[60px] rounded-full border-2 border-solid border-primaryColor flex items-center justify-center ">
+              <HashLoader color="#6056ec" size={30} speedMultiplier={1.6} />
+            </figure>
+          </div>
+        ) : filteredParties?.length > 0 ? (
+          // Show party list if parties are available
           filteredParties?.map((el, index) => (
             <div
               onClick={() => {
@@ -164,14 +162,15 @@ function SearchPartySalesSecondary() {
                 <p className="font-bold">{el?.partyName}</p>
                 <p className="font-medium text-gray-500 text-sm">Customer</p>
               </div>
-              <div className=" flex items-center gap-2">
+              <div className="flex items-center gap-2">
                 <p className="font-bold">₹ 12,000</p>
                 <IoArrowDown className="text-green-500" />
               </div>
             </div>
           ))
         ) : (
-          <div className=" font-bold flex justify-center items-center mt-12 text-gray-500">
+          // Show message if no parties are available
+          <div className="font-bold flex justify-center items-center mt-12 text-gray-500">
             No Parties !!!
           </div>
         )}

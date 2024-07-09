@@ -3,24 +3,26 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import { useNavigate, useLocation } from "react-router-dom";
-import { IoIosSearch } from "react-icons/io";
 import api from "../../api/api";
 import { MdOutlineQrCodeScanner } from "react-icons/md";
 import { useSelector } from "react-redux";
-import { addItem, removeItem } from "../../../slices/invoiceSecondary";
 import { useDispatch } from "react-redux";
-import { changeCount } from "../../../slices/invoiceSecondary";
-import { setPriceLevel } from "../../../slices/invoiceSecondary";
 import {
+  addAllProducts,
+  addItem,
+  removeItem,
   changeTotal,
   setBrandInRedux,
   setCategoryInRedux,
   setSubCategoryInRedux,
+  setPriceLevel,
+  changeCount,
+  addPriceRate,
 } from "../../../slices/invoiceSecondary";
 import { HashLoader } from "react-spinners";
 import { FixedSizeList as List } from "react-window";
-import SidebarSec from "../../components/secUsers/SidebarSec";
-import { toast } from "react-toastify";
+import { Decimal } from "decimal.js";
+import SearchBar from "../../components/common/SearchBar";
 
 function AddItemSecondary() {
   const [item, setItem] = useState([]);
@@ -36,11 +38,18 @@ function AddItemSecondary() {
   const [priceLevels, setPriceLevels] = useState([]);
   const [loader, setLoader] = useState(false);
   const [listHeight, setListHeight] = useState(0);
+  const [scrollPosition, setScrollPosition] = useState(0);
 
   ///////////////////////////cpm_id///////////////////////////////////
 
   const cpm_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
+  );
+  const orgId = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg._id
+  );
+  const type = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg.type
   );
 
   ///////////////////////////itemsFromRedux///////////////////////////////////
@@ -60,6 +69,8 @@ function AddItemSecondary() {
     useSelector((state) => state.invoiceSecondary.category) || "";
   const subCategoryFromRedux =
     useSelector((state) => state.invoiceSecondary.subcategory) || "";
+  const allProductsFromRedux =
+    useSelector((state) => state.invoiceSecondary.products) || "";
 
   ///////////////////////////navigate dispatch///////////////////////////////////
 
@@ -69,18 +80,27 @@ function AddItemSecondary() {
   const location = useLocation();
 
   ///////////////////////////fetchProducts///////////////////////////////////
-
   useEffect(() => {
     const fetchProducts = async () => {
       setLoader(true);
+
+      let productData;
+
       try {
-        const res = await api.get(`/api/sUsers/getProducts/${cpm_id}`, {
-          withCredentials: true,
-        });
+        if (allProductsFromRedux.length === 0) {
+          const res = await api.get(`/api/sUsers/getProducts/${cpm_id}`, {
+            withCredentials: true,
+          });
+
+          productData = res.data.productData;
+          dispatch(addAllProducts(res.data.productData));
+        } else {
+          productData = allProductsFromRedux;
+        }
 
         if (itemsFromRedux.length > 0) {
           const reduxItemIds = itemsFromRedux.map((el) => el._id);
-          const updatedItems = res.data.productData.map((product) => {
+          const updatedItems = productData.map((product) => {
             if (reduxItemIds.includes(product._id)) {
               // If the product ID exists in Redux, replace it with the corresponding Redux item
               const reduxItem = itemsFromRedux.find(
@@ -91,10 +111,22 @@ function AddItemSecondary() {
               return product;
             }
           });
+
+          console.log(updatedItems);
+
           setItem(updatedItems);
+          if (updatedItems.length > 0) {
+            fetchFilters();
+          }
+          setRefresh(!refresh);
         } else {
-          setItem(res.data.productData);
+          console.log(productData);
+          setItem(productData);
+          if (productData.length > 0) {
+            fetchFilters();
+          }
         }
+
         if (brandFromRedux) {
           setSelectedBrand(brandFromRedux);
         }
@@ -113,24 +145,37 @@ function AddItemSecondary() {
     fetchProducts();
   }, [cpm_id]);
 
-  ///////////////////////////priceLevelSet///////////////////////////////////
+  //////////////////////////////fetchFilters////////////////////////////////
 
-  // useEffect(() => {
-  //   const priceLevelSet = Array.from(
-  //     new Set(
-  //       item.flatMap((item) =>
-  //         item?.Priceleveles.map((level) => level?.pricelevel)
-  //       )
-  //     )
-  //   );
-  //   setPriceLevels(priceLevelSet);
+  useEffect(() => {
+  const fetchFilters = async () => {
+    try {
+      const res = await api.get(`/api/sUsers/fetchAdditionalDetails/${cpm_id}`, {
+        withCredentials: true,
+      });
+      // }
 
-  //   if (priceLevelFromRedux === "") {
-  //     const defaultPriceLevel = priceLevelSet[0];
-  //     setSelectedPriceLevel(defaultPriceLevel);
-  //     dispatch(setPriceLevel(defaultPriceLevel));
-  //   }
-  // }, [item]);
+      const { priceLevels, brands, categories, subcategories } = res.data;
+
+      // setBrands(brands);
+      // setCategories(categories);
+      // setSubCategories(subcategories);
+
+      setPriceLevels(priceLevels);
+      if (priceLevelFromRedux == "") {
+        console.log("haii");
+        const defaultPriceLevel = priceLevels[0];
+        // const defaultPriceLevel = ""
+        setSelectedPriceLevel(defaultPriceLevel);
+        dispatch(setPriceLevel(defaultPriceLevel));
+        // addSelectedRate(defaultPriceLevel);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+  fetchFilters();
+  }, [orgId, type]);
 
   ///////////////////////////setSelectedPriceLevel fom redux///////////////////////////////////
 
@@ -140,97 +185,22 @@ function AddItemSecondary() {
 
   ///////////////////////////sdo persisting of products///////////////////////////////////
 
-  useEffect(() => {
-    if (itemsFromRedux.length > 0) {
-      const updatedItems = item.map((currentItem) => {
-        // Find the corresponding item in itemsFromRedux
-        const matchingItem = itemsFromRedux.find(
-          (el) => el._id === currentItem._id
-        );
-        if (matchingItem) {
-          // If matching item found, return it with updated count and total
-          return {
-            ...currentItem,
-            count: matchingItem.count,
-            total: matchingItem.total,
-          };
-        } else {
-          // If no matching item found, return the current item
-          return currentItem;
-        }
-      });
-
-      // Update the state with the modified items
-      setItem(updatedItems);
-    }
-  }, [itemsFromRedux, refresh]);
-
   //////////////////////////////orgId////////////////////////////////
 
-  const orgId = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg._id
-  );
-  const type = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg.type
-  );
 
   console.log(type);
-
-  //////////////////////////////fetchFilters////////////////////////////////
+  /////////////////////////scroll////////////////////////////
 
   useEffect(() => {
-    const fetchFilters = async () => {
-      try {
-        let res;
-        if (type == "self") {
-          res = await api.get(`/api/sUsers/fetchFilters/${orgId}`, {
-            withCredentials: true,
-          });
-        } else {
-          res = await api.get(`/api/sUsers/fetchAdditionalDetails/${orgId}`, {
-            withCredentials: true,
-          });
-        }
+    const storedScrollPosition = localStorage.getItem("scrollPositionAddItem");
+    if (storedScrollPosition) {
+      setScrollPosition(parseInt(storedScrollPosition, 10));
+    }
+  }, []);
 
-        if (type === "self") {
-          const { brands, categories, subcategories, priceLevels } =
-            res.data.data;
-
-          console.log(priceLevels);
-          setBrands(brands);
-          setCategories(categories);
-          setSubCategories(subcategories);
-          setPriceLevels(priceLevels);
-          if (priceLevelFromRedux == "") {
-            console.log("haii");
-            const defaultPriceLevel = priceLevels[0];
-            setSelectedPriceLevel(defaultPriceLevel);
-            dispatch(setPriceLevel(defaultPriceLevel));
-          }
-        } else {
-          const { priceLevels, brands, categories, subcategories } = res.data;
-
-          setBrands(brands);
-          setCategories(categories);
-          setSubCategories(subcategories);
-          console.log(priceLevels);
-
-          setPriceLevels(priceLevels);
-          if (priceLevelFromRedux == "") {
-            console.log("haii");
-            const defaultPriceLevel = priceLevels[0];
-            setSelectedPriceLevel(defaultPriceLevel);
-            dispatch(setPriceLevel(defaultPriceLevel));
-          }
-        }
-      } catch (error) {
-        console.log(error);
-      }
-    };
-    fetchFilters();
-  }, [orgId, type]);
-
-  console.log(priceLevels);
+  const searchData = (data) => {
+    setSearch(data);
+  };
 
   ///////////////////////////filter items///////////////////////////////////
 
@@ -274,29 +244,42 @@ function AddItemSecondary() {
     const updatedItems = [...item];
     const index = updatedItems.findIndex((item) => item._id === _id);
     // Create a shallow copy of the items
-    const itemToUpdate = updatedItems[index];
+    const itemToUpdate = { ...updatedItems[index] };
+    console.log(itemToUpdate);
     if (itemToUpdate) {
       // Toggle the 'added' state of the item
       itemToUpdate.added = !itemToUpdate.added;
       itemToUpdate.count = 1;
+      // item.update.selectedPriceRate=
       const total = calculateTotal(itemToUpdate, selectedPriceLevel).toFixed(2);
       itemToUpdate.total = total;
+      updatedItems[index] = itemToUpdate;
 
       dispatch(changeTotal(itemToUpdate));
+      setItem(updatedItems);
+      setRefresh(!refresh);
+      dispatch(addItem(itemToUpdate));
+      if (selectedPriceLevel === "") {
+        navigate(`/sUsers/editItem/${_id}`);
+      }
     }
-    setItem(updatedItems);
-    setRefresh(!refresh);
-    dispatch(addItem(updatedItems[index]));
   };
 
   ///////////////////////////calculateTotal///////////////////////////////////
 
-  const calculateTotal = (item, selectedPriceLevel) => {
-    const priceRate =
-      item.Priceleveles.find((level) => level.pricelevel === selectedPriceLevel)
-        ?.pricerate || 0;
+  const calculateTotal = (item, selectedPriceLevel, situation = "normal") => {
+    //add default value for selectedPriceLevel
+    let priceRate;
+    if (situation === "priceLevelChange") {
+      priceRate =
+        item.Priceleveles.find(
+          (level) => level.pricelevel === selectedPriceLevel
+        )?.pricerate || 0;
+    } else {
+      priceRate = item.selectedPriceRate || 0;
+    }
 
-    let subtotal = priceRate * parseInt(item?.count);
+    let subtotal = priceRate * item?.count;
     let discountedSubtotal = subtotal;
 
     if (item.discount !== 0 && item.discount !== undefined) {
@@ -313,13 +296,66 @@ function AddItemSecondary() {
     return discountedSubtotal + gstAmount;
   };
 
-  ///////////////////////////handleTotalChangeWithPriceLevel///////////////////////////////////
+  //////////////////////////////////////////addSelectedRate initially not in redux/////////////////////////////////////////////
+
+  const addSelectedRate = (pricelevel) => {
+    console.log(pricelevel);
+    console.log("haii");
+    console.log(item);
+    // if (item?.length > 0) {
+    console.log("haii");
+
+    const updatedItems = filteredItems.map((item) => {
+      // console.log(item);
+      const priceRate =
+        item?.Priceleveles?.find((item) => item.pricelevel === pricelevel)
+          ?.pricerate || 0;
+
+      const reduxItem = itemsFromRedux.find((p) => p._id === item._id);
+      const reduxRate = reduxItem?.selectedPriceRate || null;
+
+      return {
+        ...item,
+        selectedPriceRate: reduxRate ?? priceRate,
+      };
+    });
+
+    console.log(updatedItems.map((item) => item.selectedPriceRate));
+
+    setItem(updatedItems);
+    // }
+  };
+
+  useEffect(() => {
+    console.log(selectedPriceLevel);
+    if (selectedPriceLevel) {
+      console.log(selectedPriceLevel);
+
+      addSelectedRate(selectedPriceLevel);
+    }
+  }, [selectedPriceLevel, refresh]);
+
+  console.log(item.map((item) => item.selectedPriceRate));
+
+  ///////////////////////////handleTotalChangeWithPriceLevel and add price rate ///////////////////////////////////
 
   const handleTotalChangeWithPriceLevel = (pricelevel) => {
     const updatedItems = filteredItems.map((item) => {
       if (item.added === true) {
-        const newTotal = calculateTotal(item, pricelevel).toFixed(2);
+        const newTotal = calculateTotal(
+          item,
+          pricelevel,
+          "priceLevelChange"
+        ).toFixed(2);
         dispatch(changeTotal({ ...item, total: newTotal }));
+
+        const newPriceRate = item?.Priceleveles.find(
+          (item) => item.pricelevel === pricelevel
+        )?.pricerate;
+        console.log(newPriceRate);
+        dispatch(
+          addPriceRate({ _id: item._id, selectedPriceRate: newPriceRate })
+        );
 
         return {
           ...item,
@@ -332,6 +368,8 @@ function AddItemSecondary() {
     setItem(updatedItems);
   };
 
+  console.log(item);
+
   ///////////////////////////handleIncrement///////////////////////////////////
 
   const handleIncrement = (_id) => {
@@ -340,10 +378,15 @@ function AddItemSecondary() {
 
     const currentItem = { ...updatedItems[index] };
 
+    console.log(currentItem.count);
+
     if (!currentItem.count) {
       currentItem.count = 1;
     } else {
-      currentItem.count += 1;
+      // currentItem.count += 1;
+      currentItem.count = new Decimal(currentItem.count);
+      currentItem.count = currentItem.count.add(new Decimal(1));
+      currentItem.count = parseFloat(currentItem.count.toString());
     }
 
     currentItem.total = calculateTotal(currentItem, selectedPriceLevel).toFixed(
@@ -359,24 +402,27 @@ function AddItemSecondary() {
 
   ///////////////////////////handleDecrement///////////////////////////////////
   const handleDecrement = (_id) => {
-    const updatedItems = [...item]; 
-    const index = updatedItems.findIndex(item => item._id === _id);
+    const updatedItems = [...item];
+    const index = updatedItems.findIndex((item) => item._id === _id);
     // Make a copy of the array
     const currentItem = { ...updatedItems[index] };
 
     // Decrement the count if it's greater than 0
     if (currentItem.count > 0) {
-      currentItem.count -= 1;
-      if (currentItem.count === 0) {
+      currentItem.count = new Decimal(currentItem.count);
+      currentItem.count = currentItem.count.sub(new Decimal(1));
+      currentItem.count = parseFloat(currentItem.count.toString());
+      if (currentItem.count <= 0) {
         dispatch(removeItem(currentItem));
-        updatedItems[index] = { ...currentItem, added: false }; // Make a copy and update the 'added' property
+        updatedItems[index] = { ...currentItem, added: false, total: 0 }; // Make a copy and update the 'added' property
       } else {
         // Use the calculateTotal function to calculate the total for the current item
         currentItem.total = calculateTotal(
           currentItem,
           selectedPriceLevel
         ).toFixed(2);
-        updatedItems[index] = currentItem; // Update the item in the copied array
+        // Create a new object with updated 'added' property
+        updatedItems[index] = { ...currentItem, added: currentItem.added };
       }
 
       setItem(updatedItems);
@@ -394,143 +440,14 @@ function AddItemSecondary() {
     setSelectedPriceLevel(selectedValue);
     dispatch(setPriceLevel(selectedValue));
     handleTotalChangeWithPriceLevel(selectedValue);
-  };
-
-  ///////////////////////////react window ///////////////////////////////////
-
-  const Row = ({ index, style }) => {
-    const el = filteredItems[index];
-    const adjustedStyle = {
-      ...style,
-      marginTop: "16px",
-      height: "160px",
-    };
-    return (
-      <div
-        style={adjustedStyle}
-        key={index}
-        className="bg-white p-4 py-2 pb-6  mt-4 flex justify-between items-center  rounded-sm cursor-pointer border-b-2 shadow-lg "
-      >
-        <div className="flex items-start gap-3 md:gap-4  ">
-          <div className="w-10 mt-1  uppercase h-10 rounded-lg bg-violet-200 flex items-center justify-center font-semibold text-gray-400">
-            {el.product_name.slice(0, 1)}
-          </div>
-          <div className="flex flex-col font-bold text-sm md:text-sm  gap-1 leading-normal">
-            <p>{el.product_name}</p>
-            <div className="flex gap-1 items-center">
-              <p>
-                ₹{" "}
-                {
-                  el?.Priceleveles.find(
-                    (item) => item.pricelevel === selectedPriceLevel
-                  )?.pricerate
-                }{" "}
-                /
-              </p>{" "}
-              <span className="text-[10px] mt-1">{el.unit}</span>
-            </div>
-            <div className="flex">
-              <p className="text-red-500">STOCK : </p>
-              <span>{el.balance_stock}</span>
-            </div>
-            <div>
-              <span>Total : ₹ </span>
-              <span>{el.total || 0}</span>
-            </div>
-          </div>
-        </div>
-        {el.added ? (
-          <div className="flex items-center flex-col gap-2">
-            <button
-              onClick={() => {
-                navigate(`/sUsers/editItem/${el._id}`, {
-                  state: { from: "editItem", id: location?.state?.id },
-                });
-              }}
-              type="button"
-              className="  mt-3  px-2 py-1  rounded-md border-violet-500 font-bold border  text-violet-500 text-xs"
-            >
-              Edit
-            </button>
-            <div
-              className="py-2 px-3 inline-block bg-white  "
-              data-hs-input-number
-            >
-              <div className="flex items-center gap-x-1.5">
-                <button
-                  onClick={() => handleDecrement(el._id)}
-                  type="button"
-                  className="size-6 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-md border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none"
-                  data-hs-input-number-decrement
-                >
-                  <svg
-                    className="flex-shrink-0 size-3.5"
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M5 12h14" />
-                  </svg>
-                </button>
-                <input
-                  className="p-0 w-6 bg-transparent border-0 text-gray-800 text-center focus:ring-0 "
-                  type="text"
-                  disabled
-                  value={el.count ? el.count : 0} // Display the count from the state
-                  data-hs-input-number-input
-                />
-                <button
-                  onClick={() => {
-                    handleIncrement(el._id);
-                  }}
-                  type="button"
-                  className="size-6 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-md border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none "
-                  data-hs-input-number-increment
-                >
-                  <svg
-                    className="flex-shrink-0 size-3.5"
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M5 12h14" />
-                    <path d="M12 5v14" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div>
-            <div
-              className="px-4 py-2 rounded-md border-violet-500 font-bold border-2 text-violet-500 text-xs"
-              onClick={() => handleAddClick(el._id)}
-            >
-              Add
-            </div>
-          </div>
-        )}
-      </div>
-    );
+    // addSelectedRate(selectedValue);
   };
 
   /////////////////////////// calculateHeight ///////////////////////////////////
 
   useEffect(() => {
     const calculateHeight = () => {
-      const newHeight = window.innerHeight - 227;
+      const newHeight = window.innerHeight - 250;
       setListHeight(newHeight);
     };
 
@@ -545,10 +462,10 @@ function AddItemSecondary() {
   }, []);
 
   const continueHandler = () => {
-    if (selectedPriceLevel === "") {
-      toast.error("Select a price level ");
-    }
-    console.log(location.state);
+    // if (selectedPriceLevel === "") {
+    //   toast.error("Select a price level ");
+    // }
+    // console.log(location.state);
     if (location?.state?.from === "editInvoice") {
       navigate(`/sUsers/editInvoice/${location.state.id}`);
     } else {
@@ -557,22 +474,138 @@ function AddItemSecondary() {
   };
 
   const backHandler = () => {
-    if (location?.state?.from === "editInvoice") {
-      navigate(`/sUsers/editInvoice/${location.state.id}`);
-    } else {
-      navigate("/sUsers/invoice");
-    }
+    navigate(-1);
+    // if (location?.state?.from === "editInvoice") {
+    //   navigate(`/sUsers/editInvoice/${location.state.id}`);
+    // } else {
+    //   navigate("/sUsers/invoice");
+    // }
   };
 
-  console.log(listHeight);
+  console.log(item);
+
+  ///////////////////////////react window ///////////////////////////////////
+
+  const Row = ({ index, style }) => {
+    const el = filteredItems[index];
+    const adjustedStyle = {
+      ...style,
+      marginTop: "16px",
+      height: "160px",
+    };
+    return (
+      <div
+        style={adjustedStyle}
+        key={el._id}
+        className="flex flex-col bg-white shadow-lg  "
+      >
+        <div className=" p-4 py-2 pb-2 mt-7   flex justify-between items-center  rounded-sm cursor-pointer  ">
+          <div className="flex items-start gap-3 md:gap-4  ">
+            <div className="w-10 mt-1  uppercase h-10 rounded-lg bg-violet-200 flex items-center justify-center font-semibold text-gray-400">
+              {el?.product_name?.slice(0, 1)}
+            </div>
+            <div className="flex flex-col font-bold text-sm md:text-sm  gap-1 leading-normal">
+              <p>{el.product_name}</p>
+              <div className="flex gap-1 items-center">
+                <p>₹ {el.selectedPriceRate}</p>{" "}
+                <span className="text-[10px] mt-1">/ {el?.unit}</span>
+              </div>
+
+              <div className="flex">
+                <p className="text-red-500">STOCK : </p>
+                <span>{el.balance_stock}</span>
+              </div>
+
+              <div>
+                <span>Total : ₹ </span>
+                <span>{el.total || 0}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-col items-center justify-center gap-4">
+            <button
+              className={`${
+                el?.added ? "ml-11  py-1 px-2" : " px-4 py-2"
+              }  rounded-md border-violet-500 font-bold border-2 text-violet-500 text-xs  `}
+              onClick={() => {
+                el.added
+                  ? navigate(`/sUsers/editItem/${el._id}`)
+                  : handleAddClick(el._id);
+              }}
+            >
+              {el.added ? "Edit" : "Add"}
+            </button>
+
+            <div className="flex items-center justify-end px-4  ">
+              {el.added ? (
+                <div className="flex items-center gap-x-1.5 pl-11">
+                  <button
+                    onClick={() => handleDecrement(el._id)}
+                    type="button"
+                    className="size-6 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-md border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none"
+                    data-hs-input-number-decrement
+                  >
+                    <svg
+                      className="flex-shrink-0 size-3.5"
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M5 12h14" />
+                    </svg>
+                  </button>
+                  <input
+                    className="p-0 w-12 bg-transparent border-0 text-gray-800 text-center focus:ring-0 "
+                    type="text"
+                    disabled
+                    value={el.count ? el.count : 0} // Display the count from the state
+                    data-hs-input-number-input
+                  />
+                  <button
+                    onClick={() => {
+                      handleIncrement(el._id);
+                    }}
+                    type="button"
+                    className="size-6 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-md border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none "
+                    data-hs-input-number-increment
+                  >
+                    <svg
+                      className="flex-shrink-0 size-3.5"
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M5 12h14" />
+                      <path d="M12 5v14" />
+                    </svg>
+                  </button>
+                </div>
+              ) : (
+                <div></div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="flex relative">
-      <div>
-        <SidebarSec TAB={"invoice"} />
-      </div>
-
-      <div className="flex-1 bg-slate-50 h-screen overflow-y-scroll  ">
+      <div className="flex-1 bg-slate-50 h-screen   ">
         <div className="sticky top-0 h-[157px]">
           <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex justify-between  items-center gap-2  ">
             <div className="flex items-center gap-2">
@@ -600,11 +633,6 @@ function AddItemSecondary() {
                       No price level added
                     </option>
                   )}
-                  {/* {priceLevels.map((el, index) => (
-                    <option key={index} value={el?.pricelevel}>
-                      {el?.pricelevel}
-                    </option>
-                  ))} */}
                 </select>
               </div>
               <MdOutlineQrCodeScanner className="text-white text-lg  cursor-pointer md:text-xl" />
@@ -632,24 +660,8 @@ function AddItemSecondary() {
                     />
                   </svg>
                 </div>
-                <div class="relative">
-                  <input
-                    onChange={(e) => {
-                      setSearch(e.target.value);
-                    }}
-                    type="search"
-                    id="default-search"
-                    className="block w-full p-2 text-sm text-gray-900 border  rounded-lg border-gray-300  bg-gray-50 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Search party by Item name..."
-                    required
-                  />
-                  <button
-                    type="submit"
-                    class="text-white absolute end-[10px] top-1/2 transform -translate-y-1/2 bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-md px-2 py-1"
-                  >
-                    <IoIosSearch />
-                  </button>
-                </div>
+
+                <SearchBar onType={searchData} />
               </div>
             </div>
           </div>
@@ -728,13 +740,22 @@ function AddItemSecondary() {
             ref={listRef}
             style={{
               scrollbarWidth: "thin",
-              scrollbarColor: "transparent transparent",
+              // scrollbarColor: "transparent transparent",
+              marginTop: "6px",
             }}
             className=""
             height={listHeight} // Specify the height of your list
             itemCount={filteredItems.length} // Specify the total number of items
-            itemSize={170} // Specify the height of each item
+            itemSize={175} // Specify the height of each item
             width="100%" // Specify the width of your list
+            initialScrollOffset={scrollPosition}
+            onScroll={({ scrollOffset }) => {
+              setScrollPosition(scrollOffset);
+              localStorage.setItem(
+                "scrollPositionAddItem",
+                scrollOffset.toString()
+              );
+            }}
           >
             {Row}
           </List>

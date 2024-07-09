@@ -1,4 +1,3 @@
-import SidebarSec from "../../components/secUsers/SidebarSec";
 import { FaPhoneVolume } from "react-icons/fa6";
 import { IoPersonSharp } from "react-icons/io5";
 import { TbMoneybag } from "react-icons/tb";
@@ -12,6 +11,7 @@ import { useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { addSettlementData } from "../../../slices/settlementDataSlice";
+import CallIcon from "../../components/common/CallIcon";
 
 function OutStandingDetails({ onTabChange }) {
   const [data, setData] = useState([]);
@@ -117,10 +117,8 @@ function OutStandingDetails({ onTabChange }) {
   };
 
   return (
-    <div className="flex">
-      <SidebarSec />
 
-      <div className=" flex-1 h-screen overflow-scroll lg:px-[100px]  lg:mt-2  pb-28 bg-[rgb(244,246,254)]   ">
+      <div className="  pb-28 bg-[rgb(244,246,254)]   ">
         <div className="sticky  top-0 z-10 w-full shadow-lg  flex flex-col rounded-[3px] gap-1">
           {/* receive payment */}
 
@@ -164,7 +162,8 @@ function OutStandingDetails({ onTabChange }) {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <FaPhoneVolume />
+              <CallIcon phoneNumber={data[0]?.mobile_no} size={18} color="green" />
+
                 <p className="text-[13px] ">
                   {data[0]?.mobile_no === "null" ? "Nil" : data[0]?.mobile_no}
                 </p>
@@ -265,7 +264,6 @@ function OutStandingDetails({ onTabChange }) {
           </div>
         </div>
       </div>
-    </div>
   );
 }
 

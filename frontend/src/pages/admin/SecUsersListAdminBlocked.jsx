@@ -311,7 +311,8 @@ function SecUsersListAdminBlocked() {
                 </table>
                 <div className="px-5 py-5 bg-white border-t flex flex-col xs:flex-row sm:items-start md:items-center xs:justify-between          ">
                   <span className="text-xs xs:text-sm text-gray-900">
-                    Showing 1 to 4 of 50 Entries
+                  Showing {firstPostIndex+1} to {lastPostIndex >filteredSecUsers?.length? filteredSecUsers?.length:lastPostIndex} of {filteredSecUsers?.length} Entries
+
                   </span>
                   <div className="inline-flex mt-2 xs:mt-0">
                     <Pagination

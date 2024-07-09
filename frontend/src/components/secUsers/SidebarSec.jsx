@@ -22,7 +22,6 @@ import { IoMdSettings } from "react-icons/io";
 
 
 function SidebarSec({ TAB,showBar }) {
-  console.log(TAB);
   const [showSidebar, setShowSidebar] = useState(false);
   const [userData, setUserData] = useState({});
   const [tab, setTab] = useState("");
@@ -37,10 +36,8 @@ function SidebarSec({ TAB,showBar }) {
   const prevOrg = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
-  console.log(prevOrg);
   // setOrg(prevOrg)
 
-  console.log(tab);
 
   useEffect(() => {
     const getUserData = async () => {
@@ -52,12 +49,10 @@ function SidebarSec({ TAB,showBar }) {
         setCompanies(res?.data?.data?.userData.organization)
        
         if(prevOrg=='' || prevOrg==null){
-          console.log("haiii");
           setOrg(res.data.data.userData.organization[0])
           dispatch(setSecSelectedOrganization(res.data.data.userData.organization[0]))
-        }else{
+        }else{25
           setOrg(prevOrg);
-          console.log("haiii");
          
         }
       } catch (error) {
@@ -67,8 +62,7 @@ function SidebarSec({ TAB,showBar }) {
     getUserData();
   }, []);
 
-  console.log(userData);
- console.log(companies);
+
 
   useEffect(() => {
     if (window.innerWidth < 768) {
@@ -172,7 +166,7 @@ function SidebarSec({ TAB,showBar }) {
         <div className="flex flex-col items-center mt-6 -mx-2">
           <img
             className="object-cover w-24 h-24 mx-2 rounded-full"
-            src="https://i.pinimg.com/736x/8b/16/7a/8b167af653c2399dd93b952a48740620.jpg"
+            src={org?.logo || "https://i.pinimg.com/736x/8b/16/7a/8b167af653c2399dd93b952a48740620.jpg"  }
             alt="avatar"
           />
           <h4 className="mx-2 mt-2 font-medium text-white">
@@ -338,7 +332,7 @@ function SidebarSec({ TAB,showBar }) {
                       >
                         <IoMdSettings />
 
-                        <span className="mx-4 font-medium">Order Configurations</span>
+                        <span className="mx-4 font-medium">Settings</span>
                       </a>
                     </Link></>
             )

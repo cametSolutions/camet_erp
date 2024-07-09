@@ -1,16 +1,14 @@
 import { MdOutlineArrowBack } from "react-icons/md";
-import Sidebar from "../../components/homePage/Sidebar";
 import { FaArrowDown } from "react-icons/fa6";
 import { FcCancel } from "react-icons/fc";
 import { IoMdShareAlt } from "react-icons/io";
 import { MdTextsms } from "react-icons/md";
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, } from "react-router-dom";
 import api from "../../api/api";
 import { toast } from "react-toastify";
 import dayjs from "dayjs";
 import Swal from "sweetalert2";
-import SidebarSec from "../../components/secUsers/SidebarSec";
 import { useLocation, useNavigate } from "react-router-dom";
 
 function ReceiptDetails() {
@@ -89,11 +87,9 @@ function ReceiptDetails() {
 
   return (
     <div className="flex">
-      <div>
-        <SidebarSec />
-      </div>
+      
 
-      <div className="bg-[rgb(244,246,254)] flex-1 h-screen overflow-y-scroll relative ">
+      <div className="bg-[rgb(244,246,254)] flex-1 h-screen  relative ">
         {/* headinh section  */}
         <div className="flex bg-[#012a4a] items-center justify-between">
           <div className="flex items-center gap-3  text-white text-md p-4 ">

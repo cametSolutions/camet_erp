@@ -7,6 +7,7 @@ import { FaRegEye } from "react-icons/fa";
 import { IoMdEyeOff } from "react-icons/io";
 import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
+// import {triggerInstallPrompt} from '../../../dist/registerSW.js'
 
 function Login() {
   const [email, setEmail] = useState("");
@@ -14,13 +15,14 @@ function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [loader, setLoader] = useState(false);
 
+
   const navigate = useNavigate();
 
   useEffect(() => {
     const userData = JSON.parse(localStorage.getItem("pUserData"));
     console.log(userData);
     if (userData) {
-      navigate("/pUsers/outstanding");
+      navigate("/pUsers/dashboard");
     }
   }, []);
 
@@ -60,6 +62,7 @@ function Login() {
         toast.success(res.data.message);
         const loginData = JSON.stringify(res.data.data);
         localStorage.setItem("pUserData", loginData);
+        // triggerInstallPrompt();
 
         navigate("/pUsers/dashboard");
 

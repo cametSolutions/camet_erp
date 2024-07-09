@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import Sidebar from "../../components/homePage/Sidebar";
 import { useSelector } from "react-redux";
 import api from "../../api/api";
 import { toast } from "react-toastify";
@@ -8,6 +7,7 @@ import {  IoReorderThreeSharp } from "react-icons/io5";
 import { useDispatch } from "react-redux";
 import { removeAll } from "../../../slices/invoice";
 import { removeAllSales } from "../../../slices/sales";
+import { useSidebar } from "../../layout/Layout";
 
 
 function OrderConfigurations() {
@@ -16,7 +16,6 @@ function OrderConfigurations() {
   const [selectedBank, setSelectedBank] = useState("");
   const [termsInput, setTermsInput] = useState("");
   const [termsList, setTermsList] = useState([]);
-  const [showSidebar, setShowSidebar] = useState(false);
 
 
   console.log(termsList);
@@ -100,14 +99,11 @@ function OrderConfigurations() {
   console.log(selectedBank);
 
   const submitHandler = async () => {
-    if (!selectedBank) {
-      toast.error("Select Bank");
+    if (!selectedBank && termsList.length == 0 ) {
+      toast.error("At least configure one field");
       return;
     }
-    if (termsList.length == 0) {
-      toast.error("Add terms");
-      return;
-    }
+ 
 
     const formData = {
       selectedBank,
@@ -134,18 +130,12 @@ function OrderConfigurations() {
     }
   };
 
-  const handleToggleSidebar = () => {
-    if (window.innerWidth < 768) {
-      setShowSidebar(!showSidebar);
-    }
-  };
+  const {  handleToggleSidebar } = useSidebar();
+
 
   return (
-    <div className="flex">
-      <div className="">
-        <Sidebar TAB={"terms"} showBar={showSidebar}  />
-      </div>
-      <div className=" flex-1 h-screen overflow-y-scroll">
+   
+      <div className=" flex-1 ">
         <div className="bg-[#201450] sticky top-0 p-3 z-100 text-white text-lg font-bold flex items-center gap-3 z-20">
         <IoReorderThreeSharp
             onClick={handleToggleSidebar}
@@ -239,7 +229,6 @@ function OrderConfigurations() {
           </div>
         </div>
       </div>
-    </div>
   );
 }
 

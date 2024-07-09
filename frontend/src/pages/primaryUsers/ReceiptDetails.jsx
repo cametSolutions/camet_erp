@@ -85,14 +85,11 @@ function ReceiptDetails() {
   console.log(data);
 
   return (
-    <div className="flex">
-      <div>
-        <Sidebar />
-      </div>
+    
 
-      <div className="bg-[rgb(244,246,254)] flex-1 h-screen overflow-y-scroll relative ">
+      <div className="bg-[rgb(244,246,254)] flex-1 relative h-screen ">
         {/* headinh section  */}
-        <div className="flex bg-[#012a4a] items-center justify-between">
+        <div className="flex bg-[#012a4a] items-center justify-between sticky top-0">
           <div className="flex items-center gap-3  text-white text-md p-4 ">
             <MdOutlineArrowBack
               onClick={backHandler}
@@ -204,7 +201,6 @@ function ReceiptDetails() {
           </div>
         </div>
       </div>
-    </div>
   );
 }
 

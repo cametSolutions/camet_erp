@@ -15,6 +15,7 @@ const organizationSchema = new mongoose.Schema(
     gstNum: { type: String },
     website: { type: String },
     pan: { type: String },
+    industry: { type: Number },
     financialYear: { type: String },
     country: { type: String },
     logo: { type: String },
@@ -28,10 +29,12 @@ const organizationSchema = new mongoose.Schema(
     levelNames: { type: Array },
     locations: { type: Array },
     type: { type: String, default: "self" },
+    batchEnabled: { type: Boolean, default: false },
     orderNumber: { type: Number, default: 1 },
     OrderNumberValue: { type: String },
     OrderNumberDetails: { type: Object },
     salesNumber:{ type: Number, default: 1 },
+    purchaseNumber:{ type: Number, default: 1 },
     salesNumberDetails: { type: Object },
     additionalCharges: [
       {

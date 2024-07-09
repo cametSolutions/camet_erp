@@ -1,12 +1,25 @@
 import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
+  products: [],
   party: {},
   items: [],
   selectedPriceLevel: "",
   additionalCharges: [],
   finalAmount: 0,
-  persistScrollId:""
+  persistScrollId: "",
+  despatchDetails: {
+    challanNo: "",
+    containerNo: "",
+    despatchThrough: "",
+    destination: "",
+    vehicleNo: "",
+    orderNo: "",
+    // eWayNo: "",
+    // irnNo: "",
+    termsOfPay: "",
+    termsOfDelivery: "",
+  },
 };
 
 export const invoiceSliceSecondary = createSlice({
@@ -21,6 +34,9 @@ export const invoiceSliceSecondary = createSlice({
     },
     addItem: (state, action) => {
       state.items.push(action.payload);
+    },
+    addAllProducts: (state, action) => {
+      state.products = action.payload;
     },
     removeItem: (state, action) => {
       const id = action.payload._id;
@@ -44,6 +60,17 @@ export const invoiceSliceSecondary = createSlice({
         state.items[indexToUpdate].total = newTotal;
       }
     },
+
+    addPriceRate: (state, action) => {
+      const id = action.payload._id;
+      const selectedPriceRate = action.payload?.selectedPriceRate || 0;
+      console.log(selectedPriceRate);
+      const indexToUpdate = state.items.findIndex((el) => el._id == id);
+      if (indexToUpdate !== -1) {
+        state.items[indexToUpdate].selectedPriceRate = selectedPriceRate;
+      }
+    },
+   
     changeIgstAndDiscount: (state, action) => {
       const id = action.payload._id;
       const igst = action.payload?.igst || 0;
@@ -96,24 +123,33 @@ export const invoiceSliceSecondary = createSlice({
     setSubCategoryInRedux: (state, action) => {
       state.subcategory = action.payload;
     },
-    setParty:(state,action)=>{
-      state.party=action.payload
+    setParty: (state, action) => {
+      state.party = action.payload;
     },
-    setItem:(state,action)=>{
-      state.items=action.payload
+    setItem: (state, action) => {
+      state.items = action.payload;
     },
-    setSelectedPriceLevel:(state,action)=>{
-      state.selectedPriceLevel=action.payload
+    setSelectedPriceLevel: (state, action) => {
+      state.selectedPriceLevel = action.payload;
     },
-    setAdditionalCharges:(state,action)=>{
-      state.additionalCharges=action.payload
+    setAdditionalCharges: (state, action) => {
+      state.additionalCharges = action.payload;
     },
-    setFinalAmount:(state,action)=>{
-      state.finalAmount=action.payload
+    setFinalAmount: (state, action) => {
+      state.finalAmount = action.payload;
     },
-    
-    saveId:(state,action)=>{
-      state.id=action.payload
+
+    saveId: (state, action) => {
+      state.id = action.payload;
+    },
+    addNewAddress: (state, action) => {
+      state.party.newBillToShipTo = action.payload;
+    },
+    addDespatchDetails: (state, action) => {
+      return {
+        ...state,
+        despatchDetails: action.payload,
+      };
     },
   },
 });
@@ -142,7 +178,11 @@ export const {
   setSelectedPriceLevel,
   setFinalAmount,
   setAdditionalCharges,
-  saveId
+  saveId,
+  addAllProducts,
+  addPriceRate,
+  addNewAddress,
+  addDespatchDetails
 } = invoiceSliceSecondary.actions;
 
 export default invoiceSliceSecondary.reducer;

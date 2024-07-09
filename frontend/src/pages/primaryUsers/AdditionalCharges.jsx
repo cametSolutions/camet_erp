@@ -1,4 +1,3 @@
-import Sidebar from "../../components/homePage/Sidebar";
 import { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 import api from "../../api/api";
@@ -72,11 +71,8 @@ function AdditionalCharges() {
   console.log(taxPercentage);
 
   return (
-    <div className="flex">
-      <div className="">
-        <Sidebar TAB={"additionalCharge"} />
-      </div>
-      <div className=" flex-1 h-screen overflow-y-scroll">
+    
+      <div className=" flex-1 ">
         <div className="bg-[#201450] sticky top-0 p-3 z-100 text-white text-lg font-bold flex items-center gap-3 z-20">
           <IoIosArrowRoundBack
             onClick={() => {
@@ -165,7 +161,6 @@ function AdditionalCharges() {
           </div>
         </div>
       </div>
-    </div>
   );
 }
 

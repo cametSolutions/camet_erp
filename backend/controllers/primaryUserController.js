@@ -18,6 +18,13 @@ import invoiceModel from "../models/invoiceModel.js";
 import bankModel from "../models/bankModel.js";
 import salesModel from "../models/salesModel.js";
 import AdditionalChargesModel from "../models/additionalChargesModel.js";
+import { truncateToNDecimals } from "./helpers/helper.js";
+import purchaseModel from "../models/purchaseModel.js";
+import { Brand } from "../models/subDetails.js";
+import { Category } from "../models/subDetails.js";
+import { Subcategory } from "../models/subDetails.js";
+import { Godown } from "../models/subDetails.js";
+import { PriceLevel } from "../models/subDetails.js";
 
 // @desc Register Primary user
 // route POST/api/pUsers/register
@@ -194,6 +201,8 @@ export const addOrganizations = async (req, res) => {
     username,
     password,
     type,
+    batchEnabled,
+    industry,
   } = req.body;
   console.log(req.file);
   console.log(req.body);
@@ -220,6 +229,8 @@ export const addOrganizations = async (req, res) => {
       financialYear,
       gstNum: gst,
       type,
+      batchEnabled,
+      industry,
     });
 
     if (organization) {
@@ -569,6 +580,7 @@ export const transactions = async (req, res) => {
           // totalBillAmount: 1,
           cmp_id: 1,
           type: "Receipt",
+          Secondary_user_id: "$agentId",
 
           // billNo: "$billData.billNo",
           // settledAmount: "$billData.settledAmount",
@@ -592,6 +604,7 @@ export const transactions = async (req, res) => {
           enteredAmount: "$finalAmount",
           createdAt: 1,
           itemsLength: { $size: "$items" },
+          Secondary_user_id: "$Secondary_user_id",
         },
       },
     ]);
@@ -605,13 +618,28 @@ export const transactions = async (req, res) => {
           enteredAmount: "$finalAmount",
           createdAt: 1,
           itemsLength: { $size: "$items" },
+          Secondary_user_id: "$Secondary_user_id",
+        },
+      },
+    ]);
+
+    const purchases = await purchaseModel.aggregate([
+      { $match: { cmp_id: cmp_id } },
+      {
+        $project: {
+          party_name: "$party.partyName",
+          // mobileNumber:"$party.mobileNumber",
+          type: "Purchase",
+          enteredAmount: "$finalAmount",
+          createdAt: 1,
+          itemsLength: { $size: "$items" },
         },
       },
     ]);
 
     console.log(sales);
 
-    const combined = [...transactions, ...invoices, ...sales];
+    const combined = [...transactions, ...invoices, ...sales, ...purchases];
     combined.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
     if (combined.length > 0) {
@@ -687,6 +715,7 @@ export const fetchBanks = async (req, res) => {
       {
         $project: {
           bank_name: 1,
+          bank_ledname: 1,
         },
       },
     ]);
@@ -1274,13 +1303,33 @@ export const getProducts = async (req, res) => {
       Primary_user_id: Primary_user_id,
       cmp_id: cmp_id,
     });
-    if (products) {
+    // const products = await productModel.aggregate([
+    //   { $match: {  Primary_user_id: Primary_user_id,  cmp_id: cmp_id, } },
+    //   // Add more stages as needed for your aggregation pipeline
+    // ]);
+
+    // console.log(products);
+
+    if (products && products.length > 0) {
+      // Add the check for GodownList
+      const filteredProducts = [];
+      for (let i = 0; i < products.length; i++) {
+        const product = products[i];
+        const hasGodownOrBatch = product.GodownList.some(
+          (item) => item.godown || item.batch
+        );
+        filteredProducts.push({
+          ...product?._doc, // Use _doc to get the plain JS object from the Mongoose document
+          hasGodownOrBatch,
+        });
+      }
+      console.log("filteredProducts", filteredProducts);
       return res.status(200).json({
-        productData: products,
+        productData: filteredProducts,
         message: "Products fetched",
       });
     } else {
-      return res.status(404).json({ message: "No products were found " });
+      return res.status(404).json({ message: "No products were found" });
     }
   } catch (error) {
     console.log(error);
@@ -1515,8 +1564,8 @@ export const editParty = async (req, res) => {
 };
 
 // @desc create in voice
-
 // route POST /api/pUsers/createInvoice
+
 export const createInvoice = async (req, res) => {
   const Primary_user_id = req.pUserId;
   try {
@@ -1544,16 +1593,62 @@ export const createInvoice = async (req, res) => {
       newSerialNumber = lastInvoice.serialNumber + 1;
     }
 
+    const updatedItems = items.map((item) => {
+      const selectedPriceLevel = item.Priceleveles.find(
+        (priceLevel) => priceLevel.pricelevel === priceLevelFromRedux
+      );
+      const selectedPrice = selectedPriceLevel
+        ? selectedPriceLevel.pricerate
+        : null;
+
+      let totalPrice = selectedPrice * (item.count || 1) || 0;
+      if (item.discount) {
+        totalPrice -= item.discount;
+      } else if (item.discountPercentage) {
+        const discountAmount = (totalPrice * item.discountPercentage) / 100;
+        totalPrice -= discountAmount;
+      }
+
+      // Calculate tax amounts
+      const { cgst, sgst, igst } = item;
+      const cgstAmt = (totalPrice * cgst) / 100;
+      const sgstAmt = (totalPrice * sgst) / 100;
+      const igstAmt = (totalPrice * igst) / 100;
+
+      return {
+        ...item,
+        selectedPrice: selectedPrice,
+        cgstAmt: parseFloat(cgstAmt.toFixed(2)),
+        sgstAmt: parseFloat(sgstAmt.toFixed(2)),
+        igstAmt: parseFloat(igstAmt.toFixed(2)),
+        subTotal: totalPrice,
+      };
+    });
+
+    let updateAdditionalCharge;
+    if (additionalChargesFromRedux.length > 0) {
+      updateAdditionalCharge = additionalChargesFromRedux.map((charge) => {
+        const { value, taxPercentage } = charge;
+
+        const taxAmt = (parseFloat(value) * parseFloat(taxPercentage)) / 100;
+        console.log(taxAmt);
+
+        return {
+          ...charge,
+          taxAmt: taxAmt,
+        };
+      });
+    }
+
     const invoice = new invoiceModel({
       serialNumber: newSerialNumber,
-      cmp_id: orgId, // Corrected typo and used correct assignment operator
-      partyAccount:party?.partyName,
-
+      cmp_id: orgId,
+      partyAccount: party?.partyName,
       party,
-      items,
-      priceLevel: priceLevelFromRedux, // Corrected typo and used correct assignment operator
-      additionalCharges: additionalChargesFromRedux, // Corrected typo and used correct assignment operator
-      finalAmount: lastAmount, // Corrected typo and used correct assignment operator
+      items: updatedItems, // Use updated items array
+      priceLevel: priceLevelFromRedux,
+      additionalCharges: updateAdditionalCharge,
+      finalAmount: lastAmount,
       Primary_user_id,
       orderNumber,
     });
@@ -1576,7 +1671,7 @@ export const createInvoice = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Internal server error, try again!",
-      error: error.message, // Include error message for debugging
+      error: error.message,
     });
   }
 };
@@ -1960,19 +2055,68 @@ export const editInvoice = async (req, res) => {
 
     console.log(req.body);
 
+    // Calculate updated items
+    const updatedItems = items.map((item) => {
+      const selectedPriceLevel = item.Priceleveles.find(
+        (priceLevel) => priceLevel.pricelevel === priceLevelFromRedux
+      );
+      const selectedPrice = selectedPriceLevel
+        ? selectedPriceLevel.pricerate
+        : null;
+
+      let totalPrice = selectedPrice * (item.count || 1) || 0;
+      if (item.discount) {
+        totalPrice -= item.discount;
+      } else if (item.discountPercentage) {
+        const discountAmount = (totalPrice * item.discountPercentage) / 100;
+        totalPrice -= discountAmount;
+      }
+
+      // Calculate tax amounts
+      const { cgst, sgst, igst } = item;
+      const cgstAmt = (totalPrice * cgst) / 100;
+      const sgstAmt = (totalPrice * sgst) / 100;
+      const igstAmt = (totalPrice * igst) / 100;
+
+      return {
+        ...item,
+        selectedPrice: selectedPrice,
+        cgstAmt: parseFloat(cgstAmt.toFixed(2)),
+        sgstAmt: parseFloat(sgstAmt.toFixed(2)),
+        igstAmt: parseFloat(igstAmt.toFixed(2)),
+        subTotal: totalPrice,
+      };
+    });
+
+    let updateAdditionalCharge;
+    if (additionalChargesFromRedux.length > 0) {
+      updateAdditionalCharge = additionalChargesFromRedux.map((charge) => {
+        const { value, taxPercentage } = charge;
+
+        const taxAmt = (parseFloat(value) * parseFloat(taxPercentage)) / 100;
+        console.log(taxAmt);
+
+        return {
+          ...charge,
+          taxAmt: taxAmt,
+        };
+      });
+    }
+
+    // Update the invoice document
     const result = await invoiceModel.findByIdAndUpdate(
-      invoiceId, // Use the invoiceId to find the document
+      invoiceId,
       {
         cmp_id: orgId,
         party,
-        items,
+        items: updatedItems,
         priceLevel: priceLevelFromRedux,
-        additionalCharges: additionalChargesFromRedux,
+        additionalCharges: updateAdditionalCharge,
         finalAmount: lastAmount,
         Primary_user_id,
         orderNumber,
       },
-      { new: true } // This option returns the updated document
+      { new: true }
     );
 
     return res.status(200).json({
@@ -1985,7 +2129,7 @@ export const editInvoice = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Internal server error, try again!",
-      error: error.message, // Include error message for debugging
+      error: error.message,
     });
   }
 };
@@ -2128,14 +2272,22 @@ export const addconfigurations = async (req, res) => {
   try {
     const org = await OragnizationModel.findById(cmp_id);
     if (!org) {
-      res.status(404).json({ message: "Organization not found" });
+      return res.status(404).json({ message: "Organization not found" });
     }
 
-    // org.termsAndConditions.push(req.body);
-
     const { selectedBank, termsList } = req.body;
+
+    // Check if selectedBank is provided
+    let bankId = null; // Default to null if not provided
+    if (selectedBank) {
+      // Validate selectedBank as an ObjectId if needed
+      if (mongoose.Types.ObjectId.isValid(selectedBank)) {
+        bankId = selectedBank;
+      }
+    }
+
     const newConfigurations = {
-      bank: selectedBank,
+      bank: bankId, // Use the validated bankId or null
       terms: termsList,
     };
     org.configurations = [newConfigurations];
@@ -2208,7 +2360,14 @@ export const createSale = async (req, res) => {
       }
 
       // Calculate the new balance stock
-      const newBalanceStock = parseInt(product.balance_stock) - item.count;
+      const productBalanceStock = truncateToNDecimals(product.balance_stock, 3);
+      console.log("productBalanceStock", productBalanceStock);
+      const itemCount = truncateToNDecimals(item.count, 3);
+      const newBalanceStock = truncateToNDecimals(
+        productBalanceStock - itemCount,
+        3
+      );
+      // console.log("newBalanceStock",newBalanceStock);
 
       // Prepare product update operation
       productUpdates.push({
@@ -2226,16 +2385,17 @@ export const createSale = async (req, res) => {
         );
         if (godownIndex !== -1) {
           // Calculate the new godown stock
-          const newGodownStock =
-            parseInt(product.GodownList[godownIndex].balance_stock) -
-            godown.count;
+          const newGodownStock = truncateToNDecimals(
+            product.GodownList[godownIndex].balance_stock - godown.count,
+            3
+          );
 
           // Prepare godown update operation
           godownUpdates.push({
             updateOne: {
               filter: { _id: product._id, "GodownList.godown": godown.godown },
               update: {
-                $set: { "GodownList.$.balance_stock": newGodownStock },
+                $set: { "GodownList.$.balance_stock": godown.balance_stock },
               },
             },
           });
@@ -2271,15 +2431,63 @@ export const createSale = async (req, res) => {
       newSerialNumber = lastSale.serialNumber + 1;
     }
 
+    const updatedItems = items.map((item) => {
+      const selectedPriceLevel = item.Priceleveles.find(
+        (priceLevel) => priceLevel.pricelevel === priceLevelFromRedux
+      );
+      const selectedPrice = selectedPriceLevel
+        ? selectedPriceLevel.pricerate
+        : null;
+
+      let totalPrice = selectedPrice * (item.count || 1) || 0; // Default count to 1 if not provided
+      if (item.discount) {
+        totalPrice -= item.discount;
+      } else if (item.discountPercentage) {
+        const discountAmount = (totalPrice * item.discountPercentage) / 100;
+        totalPrice -= discountAmount;
+      }
+
+      // Calculate tax amounts
+      const { cgst, sgst, igst } = item;
+      const cgstAmt = (totalPrice * cgst) / 100;
+      const sgstAmt = (totalPrice * sgst) / 100;
+      const igstAmt = (totalPrice * igst) / 100;
+
+      return {
+        ...item,
+        selectedPrice: selectedPrice,
+        cgstAmt: parseFloat(cgstAmt.toFixed(2)),
+        sgstAmt: parseFloat(sgstAmt.toFixed(2)),
+        igstAmt: parseFloat(igstAmt.toFixed(2)),
+        subTotal: totalPrice, // Optional: Include total price in the item object
+      };
+    });
+
+    let updateAdditionalCharge;
+
+    if (additionalChargesFromRedux.length > 0) {
+      updateAdditionalCharge = additionalChargesFromRedux.map((charge) => {
+        const { value, taxPercentage } = charge;
+
+        const taxAmt = (parseFloat(value) * parseFloat(taxPercentage)) / 100;
+        console.log(taxAmt);
+
+        return {
+          ...charge,
+          taxAmt: taxAmt,
+        };
+      });
+    }
+
     // Continue with the rest of your function...
     const sales = new salesModel({
       serialNumber: newSerialNumber,
-      partyAccount:party?.partyName,
+      partyAccount: party?.partyName,
       cmp_id: orgId,
       party,
-      items,
+      items: updatedItems,
       priceLevel: priceLevelFromRedux,
-      additionalCharges: additionalChargesFromRedux,
+      additionalCharges: updateAdditionalCharge,
       finalAmount: lastAmount,
       Primary_user_id,
       salesNumber,
@@ -2317,7 +2525,7 @@ export const createSale = async (req, res) => {
       { upsert: true, new: true }
     );
 
-    console.log("changedGodowns",changedGodowns);
+    console.log("changedGodowns", changedGodowns);
 
     return res.status(200).json({
       success: true,
@@ -2375,14 +2583,14 @@ export const fetchGodownsAndPriceLevels = async (req, res) => {
       { $unwind: "$Priceleveles" },
       {
         $match: {
-          "Priceleveles.pricelevel": { $ne: null },
-          "Priceleveles.pricelevel": { $ne: "" },
+          "Priceleveles.pricelevel": { $exists: true, $ne: null, $ne: "" },
         },
       },
       {
         $group: {
           _id: "$Priceleveles.pricelevel", // Group by price level
-          //  priceRate: { $first: "$Priceleveles.pricerate" } // Take the first pricerate as an example
+          // Assuming you want to take the first pricerate as an example
+          priceRate: { $first: "$Priceleveles.pricerate" },
         },
       },
     ]);
@@ -2398,8 +2606,7 @@ export const fetchGodownsAndPriceLevels = async (req, res) => {
       { $unwind: "$GodownList" },
       {
         $match: {
-          "GodownList.godown_id": { $ne: null },
-          "GodownList.godown_id": { $ne: "" },
+          "GodownList.godown_id": { $exists: true, $ne: null, $ne: "" },
         },
       },
       {
@@ -2515,7 +2722,7 @@ export const fetchAdditionalDetails = async (req, res) => {
 };
 
 // @desc  adding configurations for secondary
-// route get/api/pUsers/addSecondaryConfigurations
+// route post/api/pUsers/addSecondaryConfigurations
 
 export const addSecondaryConfigurations = async (req, res) => {
   const cmp_id = req.params.cmp_id;
@@ -2526,14 +2733,19 @@ export const addSecondaryConfigurations = async (req, res) => {
 
   try {
     const {
-      selectedGodowns = [],
       selectedPriceLevels,
       salesConfiguration,
       salesOrderConfiguration,
       receiptConfiguration,
-      vanSaleConfiguration = [],
+      vanSaleConfiguration,
+      purchaseConfiguration,
       vanSale,
     } = req.body;
+    let { selectedGodowns } = req.body;
+
+    if (selectedGodowns.every((godown) => godown === null)) {
+      selectedGodowns = [];
+    }
 
     console.log(selectedGodowns);
     console.log(vanSaleConfiguration);
@@ -2545,6 +2757,7 @@ export const addSecondaryConfigurations = async (req, res) => {
       salesConfiguration,
       salesOrderConfiguration,
       receiptConfiguration,
+      purchaseConfiguration,
       vanSaleConfiguration,
       vanSale,
     };
@@ -2590,20 +2803,6 @@ export const addSecondaryConfigurations = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
-
-// // Helper function to modify field names in configuration objects
-// const modifyFieldNames = (config) => {
-//   // Modify the field names here as needed
-//   return {
-//     prefixDetails: config.prefix,
-//     suffixDetails: config.suffix,
-//     startingNumber: config.startingNumber,
-//     widthOfNumericalPart: config.numericalWidth,
-//     configurationNumber:config.configurationNumber
-//   };
-// };
-
-// finding godowns for primary users (in)
 
 export const findPrimaryUserGodowns = async (req, res) => {
   const cmp_id = req.params.cmp_id;
@@ -2762,5 +2961,308 @@ export const fetchAdditionalCharges = async (req, res) => {
   } catch (error) {
     console.error("Error fetching godownwise products:", error);
     res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+// @desc toget the details of transaction or purchase
+// route get/api/sUsers/getPurchaseDetails
+
+export const getPurchaseDetails = async (req, res) => {
+  const purchaseId = req.params.id;
+
+  console.log("purchaseId", purchaseId);
+
+  try {
+    const purchaseDetails = await purchaseModel.findById(purchaseId);
+
+    if (purchaseDetails) {
+      res
+        .status(200)
+        .json({ message: "purchaseDetails  fetched", data: purchaseDetails });
+    } else {
+      res.status(404).json({ error: "Purchase not found" });
+    }
+  } catch (error) {
+    console.error("Error fetching purchase details:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+// @desc adding subDetails of product such as brand category subcategory etc
+// route post/api/pUsers/addProductSubDetails
+
+export const addProductSubDetails = async (req, res) => {
+  try {
+    const subDetails = req.body;
+    const key = Object.keys(subDetails)[0];
+    const orgId = req.params.orgId;
+
+    let Model;
+    let dataToSave;
+
+    switch (key) {
+      case "brand":
+        Model = Brand;
+        dataToSave = {
+          brand: subDetails[key],
+          cmp_id: orgId,
+          Primary_user_id: req.pUserId,
+        };
+        break;
+      case "category":
+        Model = Category;
+        dataToSave = {
+          category: subDetails[key],
+          cmp_id: orgId,
+          Primary_user_id: req.pUserId,
+        };
+        break;
+      case "subcategory":
+        Model = Subcategory;
+        dataToSave = {
+          subcategory: subDetails[key],
+          categoryId: subDetails.categoryId, // Make sure to send categoryId from client
+          cmp_id: orgId,
+          Primary_user_id: req.pUserId,
+        };
+        break;
+      case "godown":
+        Model = Godown;
+        dataToSave = {
+          godown: subDetails[key],
+          address: subDetails.address, // Make sure to send address from client
+          cmp_id: orgId,
+          Primary_user_id: req.pUserId,
+        };
+        break;
+      case "pricelevel":
+        Model = PriceLevel;
+        dataToSave = {
+          pricelevel: subDetails[key],
+          cmp_id: orgId,
+          Primary_user_id: req.pUserId,
+        };
+        break;
+      default:
+        return res.status(400).json({ message: "Invalid sub-detail type" });
+    }
+
+    const newSubDetail = new Model(dataToSave);
+    await newSubDetail.save();
+
+    res.status(201).json({ message: `${key} added successfully` });
+  } catch (error) {
+    console.error("Error in addProductSubDetails:", error);
+    res
+      .status(500)
+      .json({ message: "An error occurred while adding the sub-detail" });
+  }
+};
+
+// @desc get subDetails of product such as brand category subcategory etc
+// route get/api/pUsers/getProductSubDetails
+
+export const getProductSubDetails = async (req, res) => {
+  console.log("gitt it");
+  try {
+    const { orgId } = req.params;
+    const { type } = req.query; // 'type' can be 'brand', 'category', 'subcategory', 'godown', or 'pricelevel'
+    const Primary_user_id = req.pUserId;
+
+    let data;
+
+    switch (type) {
+      case "brand":
+        data = await Brand.find({
+          cmp_id: orgId,
+          Primary_user_id: Primary_user_id,
+        });
+        break;
+      case "category":
+        data = await Category.find({
+          cmp_id: orgId,
+          Primary_user_id: Primary_user_id,
+        });
+        break;
+      case "subcategory":
+        data = await Subcategory.find({
+          cmp_id: orgId,
+          Primary_user_id: Primary_user_id,
+        });
+        break;
+      case "godown":
+        data = await Godown.find({
+          cmp_id: orgId,
+          Primary_user_id: Primary_user_id,
+        });
+        break;
+      case "pricelevel":
+        data = await PriceLevel.find({
+          cmp_id: orgId,
+          Primary_user_id: Primary_user_id,
+        });
+        break;
+      default:
+        return res.status(400).json({ message: "Invalid sub-detail type" });
+    }
+
+    res.status(200).json({
+      message: `${type} details retrieved successfully`,
+      data: data,
+    });
+  } catch (error) {
+    console.error("Error in getProductSubDetails:", error);
+    res
+      .status(500)
+      .json({ message: "An error occurred while fetching the sub-details" });
+  }
+};
+
+// @des  delete subDetails of product such as brand category subcategory etc
+// route delete/api/pUsers/deleteProductSubDetails
+export const deleteProductSubDetails = async (req, res) => {
+  try {
+    const { orgId, id } = req.params;
+    const { type } = req.query;
+
+    let Model;
+    switch (type) {
+      case "brand":
+        Model = Brand;
+        break;
+      case "category":
+        Model = Category;
+        break;
+      case "subcategory":
+        Model = Subcategory;
+        break;
+      case "godown":
+        Model = Godown;
+        break;
+      case "pricelevel":
+        Model = PriceLevel;
+        break;
+      default:
+        return res.status(400).json({ message: "Invalid sub-detail type" });
+    }
+
+    const deletedItem = await Model.findOneAndDelete({
+      _id: id,
+      cmp_id: orgId,
+    });
+
+    if (!deletedItem) {
+      return res.status(404).json({ message: "Item not found" });
+    }
+
+    res.status(200).json({ message: `${type} deleted successfully` });
+  } catch (error) {
+    console.error("Error in deleteProductSubDetails:", error);
+    res
+      .status(500)
+      .json({ message: "An error occurred while deleting the sub-detail" });
+  }
+};
+
+// @des  edit  subDetails of product such as brand category subcategory etc
+// route put/api/pUsers/deleteProductSubDetails
+export const editProductSubDetails = async (req, res) => {
+  try {
+    const { orgId, id } = req.params;
+    const { type } = req.query;
+    const updateData = req.body[type];
+
+    let Model;
+    switch (type) {
+      case "brand":
+        Model = Brand;
+        break;
+      case "category":
+        Model = Category;
+        break;
+      case "subcategory":
+        Model = Subcategory;
+        break;
+      case "godown":
+        Model = Godown;
+        break;
+      case "pricelevel":
+        Model = PriceLevel;
+        break;
+      default:
+        return res.status(400).json({ message: "Invalid sub-detail type" });
+    }
+
+    const queryConditions = { _id: id, cmp_id: orgId };
+    const updateOperation = { [type]: updateData };
+
+    const result = await Model.updateOne(queryConditions, updateOperation);
+
+    if (result.modifiedCount === 0) {
+      return res
+        .status(404)
+        .json({ message: "Item not found or not modified" });
+    }
+
+    const updatedItem = await Model.findOne(queryConditions);
+
+    res.status(200).json({
+      message: `${type} updated successfully`,
+      data: updatedItem,
+    });
+  } catch (error) {
+    console.error("Error in editProductSubDetails:", error);
+    res
+      .status(500)
+      .json({ message: "An error occurred while updating the sub-detail" });
+  }
+};
+
+// @desc get ** all ** subDetails of product such as brand category subcategory etc
+// route get/api/pUsers/getProductSubDetails
+
+export const getAllSubDetails = async (req, res) => {
+  try {
+    const  cmp_id=req.params.orgId;
+    const  Primary_user_id=req.pUserId;
+
+    if (!cmp_id || !Primary_user_id) {
+      console.log(
+        "cmp_id and Primary_user_id are required in getAllSubDetails "
+      );
+      return;
+    }
+
+    const [brands, categories, subcategories, godowns, priceLevels] =
+      await Promise.all([
+        Brand.find({ cmp_id, Primary_user_id }).select("_id brand"),
+        Category.find({ cmp_id, Primary_user_id }).select("_id category"),
+        Subcategory.find({ cmp_id, Primary_user_id }).select(
+          "_id subcategory"
+        ),
+        Godown.find({ cmp_id, Primary_user_id }).select("_id godown"),
+        PriceLevel.find({ cmp_id, Primary_user_id }).select("_id pricelevel"),
+      ]);
+
+    const result = {
+      brands: brands.map((b) => ({ _id: b._id, name: b.brand })),
+      categories: categories.map((c) => ({ _id: c._id, name: c.category })),
+      subcategories: subcategories.map((s) => ({
+        _id: s._id,
+        name: s.subcategory,
+      })),
+      godowns: godowns.map((g) => ({ _id: g._id, name: g.godown })),
+      priceLevels: priceLevels.map((p) => ({ _id: p._id, name: p.pricelevel })),
+    };
+
+    res.status(200).json({
+      message: "All subdetails retrieved successfully",
+      data: result,
+    });
+  } catch (error) {
+    console.error("Error in getAllSubDetails:", error);
+    res
+      .status(500)
+      .json({ message: "An error occurred while fetching the subdetails" });
   }
 };

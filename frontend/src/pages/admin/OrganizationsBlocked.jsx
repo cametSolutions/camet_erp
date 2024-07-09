@@ -106,13 +106,7 @@ function OrganisationsBlocked() {
                     ))}
                   </select>
                   <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                    <svg
-                      className="fill-current h-4 w-4"
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 20 20"
-                    >
-                      <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
-                    </svg>
+                    
                   </div>
                 </div>
               </div>
@@ -265,7 +259,7 @@ function OrganisationsBlocked() {
                 </table>
                 <div className="px-5 py-5 bg-white border-t flex flex-col xs:flex-row items-center xs:justify-between          ">
                   <span className="text-xs xs:text-sm text-gray-900">
-                    Showing {firstPostIndex+1} to {lastPostIndex} of {filteredOrganizations?.length} Entries
+                    Showing {firstPostIndex+1} to {lastPostIndex>filteredOrganizations?.length ? filteredOrganizations?.length:lastPostIndex} of {filteredOrganizations?.length} Entries
                   </span>
                   <div className="inline-flex mt-2 xs:mt-0">
                     <Pagination

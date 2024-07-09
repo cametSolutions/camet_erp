@@ -8,6 +8,7 @@ import adminDataReducer from "../slices/adminData";
 import invoice from "../slices/invoice";
 import invoiceSecondary from "../slices/invoiceSecondary";
 import sales from '../slices/sales'
+import purchase from '../slices/purchase'
 import salesSecondary from '../slices/salesSecondary'
 
 export const store = configureStore({
@@ -21,6 +22,7 @@ export const store = configureStore({
     invoice: invoice,
     invoiceSecondary: invoiceSecondary,
     sales:sales,
-    salesSecondary:salesSecondary
+    salesSecondary:salesSecondary,
+    purchase:purchase
   },
 });
