@@ -37,12 +37,8 @@ export const login = async (req, res) => {
     if (!secUser) {
       return res.status(404).json({ message: "Invalid User" });
     }
-<<<<<<< HEAD
     const Blocked = secUser.get("isBlocked")
-=======
-    const Blocked = secUser.get("isBlocked");
-    console.log(Blocked);
->>>>>>> b86b5ab6e578d2b0b263469dc78b8ff51bb58c46
+
     if (Blocked == true) {
       return res.status(401).json({ message: "User is blocked" });
     }
@@ -766,25 +762,12 @@ export const createInvoice = async (req, res) => {
       orderNumber,
     } = req.body;
 
-<<<<<<< HEAD
-  // Manually fetch the last invoice to get the serial number
-  const lastInvoice = await invoiceModel.findOne({}, {}, { sort: { 'serialNumber': -1 } });
-
- 
-  let newSerialNumber = 1; 
-
-   // Check if there's a last invoice and calculate the new serial number
-   if (lastInvoice && !isNaN(lastInvoice.serialNumber)) {
-    newSerialNumber = lastInvoice.serialNumber + 1;
-  }
-=======
     const lastInvoice = await invoiceModel.findOne(
       {},
       {},
       { sort: { serialNumber: -1 } }
     );
     let newSerialNumber = 1;
->>>>>>> b86b5ab6e578d2b0b263469dc78b8ff51bb58c46
 
     // Check if there's a last invoice and calculate the new serial number
     if (lastInvoice && !isNaN(lastInvoice.serialNumber)) {
@@ -2286,7 +2269,6 @@ export const fetchAdditionalCharges = async (req, res) => {
     console.error("Error fetching godownwise products:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
-<<<<<<< HEAD
 }
 export const findGodownsNames =async(req,res)=>{
   const cmp_id=req.params.cmp_id
@@ -2312,4 +2294,3 @@ export const findGodownsNames =async(req,res)=>{
     res.status(500).json({message:"internal server error"})
   }
 }
-b5ab6e578d2b0b263469dc78b8ff51bb58c46
