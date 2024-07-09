@@ -77,7 +77,7 @@ function AddProductForm({ orgId, submitData, productData = {} }) {
   useEffect(() => {
     const fetchAllSubDetails = async () => {
       try {
-        const res = await api.get(`/api/pUsers/getAllSubDetails/${orgId}`, {
+        const res = await api.get(`/api/sUsers/getAllSubDetails/${orgId}`, {
           withCredentials: true,
         });
 
@@ -100,7 +100,7 @@ function AddProductForm({ orgId, submitData, productData = {} }) {
 
   const fetchHsn = async () => {
     try {
-      const res = await api.get(`/api/pUsers/fetchHsn/${orgId}`, {
+      const res = await api.get(`/api/sUsers/fetchHsn/${orgId}`, {
         withCredentials: true,
       });
 
