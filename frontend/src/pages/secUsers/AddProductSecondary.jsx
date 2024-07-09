@@ -42,7 +42,7 @@ function AddProductSecondary() {
           </Link>
           <p>Add Product</p>
         </div>
-        <AddProductForm orgId={orgId} submitData={submitHandler} />
+        <AddProductForm orgId={orgId} submitData={submitHandler} userType="secondaryUser" />
       </div>
   );
 }

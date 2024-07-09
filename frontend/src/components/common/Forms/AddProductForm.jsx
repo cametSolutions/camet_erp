@@ -9,7 +9,7 @@ import { MdPlaylistAdd } from "react-icons/md";
 import { toast } from "react-toastify";
 import api from "../../../api/api";
 
-function AddProductForm({ orgId, submitData, productData = {} }) {
+function AddProductForm({ orgId, submitData, productData = {},userType}) {
   const [hsn, setHsn] = useState([]);
   const [tab, setTab] = useState("priceLevel");
   const [unit, setUnit] = useState("");
@@ -77,9 +77,16 @@ function AddProductForm({ orgId, submitData, productData = {} }) {
   useEffect(() => {
     const fetchAllSubDetails = async () => {
       try {
-        const res = await api.get(`/api/sUsers/getAllSubDetails/${orgId}`, {
+        let res 
+        if(userType==="secondaryUser"){
+          res = await api.get(`/api/sUsers/getAllSubDetails/${orgId}`, {
           withCredentials: true,
         });
+      }else if(userType==="primaryUser"){
+        res = await api.get(`/api/pUsers/getAllSubDetails/${orgId}`, {
+          withCredentials: true,
+        });
+      }
         const { brands, categories, subcategories, godowns, priceLevels } =
           res.data.data;
         setBrand(brands);
