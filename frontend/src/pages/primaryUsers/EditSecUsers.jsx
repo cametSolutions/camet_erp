@@ -3,7 +3,7 @@ import api from "../../api/api";
 import { toast } from "react-toastify";
 import { FaRegEye } from "react-icons/fa";
 import { IoMdEyeOff } from "react-icons/io";
-import Sidebar from "../../components/homePage/Sidebar";
+// import Sidebar from "../../components/homePage/Sidebar";
 import { Link } from "react-router-dom";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import { useParams, useNavigate } from "react-router-dom";

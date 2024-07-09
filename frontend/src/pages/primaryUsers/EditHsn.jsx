@@ -1,5 +1,5 @@
 /* eslint-disable react/no-unknown-property */
-import Sidebar from "../../components/homePage/Sidebar";
+// import Sidebar from "../../components/homePage/Sidebar";
 import { IoReorderThreeSharp } from "react-icons/io5";
 import { useState, useEffect } from "react";
 import { useSelector } from "react-redux";

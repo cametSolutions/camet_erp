@@ -44,7 +44,7 @@ function AddPartySecondary() {
       [
         accountGroup,
         partyName,
-        emailID,
+        // emailID,
         // gstNo,
         // panNo,
         // billingAddress,
@@ -55,17 +55,17 @@ function AddPartySecondary() {
       toast.error("All fields are required");
       return;
     }
-    if (mobileNumber === "") {
-      toast.error("All fields are required");
-      return;
-    }
+    // if (mobileNumber === "") {
+    //   toast.error("All fields are required");
+    //   return;
+    // }
 
-    if (!/^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/.test(emailID)) {
+    if (emailID && !/^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/.test(emailID)) {
       toast.error("Invalid email address");
       return;
     }
 
-    if (!/^\d{10}$/.test(mobileNumber)) {
+    if (mobileNumber && !/^\d{10}$/.test(mobileNumber)) {
       toast.error("Mobile number must be 10 digits");
       return;
     }

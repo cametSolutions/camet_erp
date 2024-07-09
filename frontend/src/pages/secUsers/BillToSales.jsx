@@ -1,5 +1,5 @@
 import { IoIosArrowRoundBack } from "react-icons/io";
-import SidebarSec from "../../components/secUsers/SidebarSec";
+
 import { useNavigate } from "react-router-dom";
 import AddressForm from "../../components/secUsers/AddressForm";
 import { useDispatch, useSelector } from "react-redux";
@@ -22,9 +22,6 @@ function BillToSales() {
 
   return (
     <div className="flex ">
-      <div>
-        <SidebarSec TAB={"Sales"} />
-      </div>
       <div className="flex-1 bg-slate-100  h-screen overflow-y-scroll ">
         <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex  items-center gap-2 sticky top-0 z-50  ">
           <IoIosArrowRoundBack
