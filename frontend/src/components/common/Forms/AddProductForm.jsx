@@ -9,7 +9,7 @@ import { MdPlaylistAdd } from "react-icons/md";
 import { toast } from "react-toastify";
 import api from "../../../api/api";
 
-function AddProductForm({ orgId, submitData, productData = {} }) {
+function AddProductForm({ orgId, submitData, productData = {},userType}) {
   const [hsn, setHsn] = useState([]);
   const [tab, setTab] = useState("priceLevel");
   const [unit, setUnit] = useState("");
@@ -77,10 +77,16 @@ function AddProductForm({ orgId, submitData, productData = {} }) {
   useEffect(() => {
     const fetchAllSubDetails = async () => {
       try {
-        const res = await api.get(`/api/pUsers/getAllSubDetails/${orgId}`, {
+        let res 
+        if(userType==="secondaryUser"){
+          res = await api.get(`/api/sUsers/getAllSubDetails/${orgId}`, {
           withCredentials: true,
         });
-
+      }else if(userType==="primaryUser"){
+        res = await api.get(`/api/pUsers/getAllSubDetails/${orgId}`, {
+          withCredentials: true,
+        });
+      }
         const { brands, categories, subcategories, godowns, priceLevels } =
           res.data.data;
         setBrand(brands);
@@ -100,7 +106,7 @@ function AddProductForm({ orgId, submitData, productData = {} }) {
 
   const fetchHsn = async () => {
     try {
-      const res = await api.get(`/api/pUsers/fetchHsn/${orgId}`, {
+      const res = await api.get(`/api/sUsers/fetchHsn/${orgId}`, {
         withCredentials: true,
       });
 
@@ -212,14 +218,14 @@ function AddProductForm({ orgId, submitData, productData = {} }) {
 
     let isError = false;
 
-    if (rows[0].pricelevel !== "" || rows[0].pricerate !== "") {
+    if (rows[0]?.pricelevel !== "" || rows[0]?.pricerate !== "") {
       rows.map((el) => {
-        if (el.pricerate === "") {
+        if (el?.pricerate === "") {
           toast.error("Rate must be filled");
           isError = true;
           return;
         }
-        if (el.pricelevel === "") {
+        if (el?.pricelevel === "") {
           toast.error("Level name must be filled");
           isError = true;
           return;
@@ -234,13 +240,13 @@ function AddProductForm({ orgId, submitData, productData = {} }) {
 
     if (locationRows[0].godown !== "" || locationRows[0].balance_stock !== "") {
       locationRows.map((el) => {
-        if (el.balance_stock === "") {
+        if (el?.balance_stock === "") {
           toast.error("stock must be filled");
           isError = true;
 
           return;
         }
-        if (el.godown === "") {
+        if (el?.godown === "") {
           toast.error("location name must be filled");
           isError = true;
 
@@ -468,8 +474,8 @@ function AddProductForm({ orgId, submitData, productData = {} }) {
                       <option value="">Select Hsn</option>
                       {hsn.length > 0 ? (
                         hsn.map((el, index) => (
-                          <option key={index} value={el._id}>
-                            {el.hsn}
+                          <option key={index} value={el?._id}>
+                            {el?.hsn}
                           </option>
                         ))
                       ) : (
@@ -559,7 +565,7 @@ function AddProductForm({ orgId, submitData, productData = {} }) {
                   <select
                     onChange={(e) => {
                       const selectedBrandObj = brand.find(
-                        (b) => b._id === e.target.value
+                        (b) => b?._id === e?.target?.value
                       );
                       setSelectedBrand(selectedBrandObj); // Set the state with the entire brand object
                     }}
@@ -588,7 +594,7 @@ function AddProductForm({ orgId, submitData, productData = {} }) {
                   <select
                     onChange={(e) => {
                       const selectedCategoryObj = category?.find(
-                        (c) => c._id === e.target.value
+                        (c) => c?._id === e?.target?.value
                       );
                       setSelectedCategory(selectedCategoryObj); // Set the state with the entire brand object
                     }}
@@ -598,7 +604,7 @@ function AddProductForm({ orgId, submitData, productData = {} }) {
                   >
                     <option value="">Select a Category</option>
                     {category?.map((el, index) => (
-                      <option key={index} value={el._id}>
+                      <option key={index} value={el?._id}>
                         {el?.name}
                       </option>
                     ))}
@@ -616,7 +622,7 @@ function AddProductForm({ orgId, submitData, productData = {} }) {
                   <select
                     onChange={(e) => {
                       const selectedSubCategoryObj = subcategory?.find(
-                        (c) => c._id === e.target.value
+                        (c) => c?._id === e?.target?.value
                       );
                       setSelectedSubcategory(selectedSubCategoryObj); // Set the state with the entire brand object
                     }}
@@ -626,7 +632,7 @@ function AddProductForm({ orgId, submitData, productData = {} }) {
                   >
                     <option value="">Select a Sub Category</option>
                     {subcategory?.map((el, index) => (
-                      <option key={index} value={el._id}>
+                      <option key={index} value={el?._id}>
                         {el?.name}
                       </option>
                     ))}
@@ -673,11 +679,11 @@ function AddProductForm({ orgId, submitData, productData = {} }) {
                     </tr>
                   </thead>
                   <tbody>
-                    {rows.map((row, index) => (
-                      <tr key={row.id} className="border-b bg-[#EFF6FF] ">
+                    {rows?.map((row, index) => (
+                      <tr key={row?.id} className="border-b bg-[#EFF6FF] ">
                         <td className="px-4 py-2">
                           <select
-                            value={row.id}
+                            value={row?.id}
                             onChange={(e) => {
                               return handleLevelChange(index, e.target.value);
                             }}
@@ -699,9 +705,9 @@ function AddProductForm({ orgId, submitData, productData = {} }) {
                         <td className="px-4 ">
                           <input
                             type="number"
-                            value={row.pricerate}
+                            value={row?.pricerate}
                             onChange={(e) =>
-                              handleRateChange(index, e.target.value)
+                              handleRateChange(index, e?.target?.value)
                             }
                             className="w-full  text-center py-1 px-4 border bg-[#EFF6FF] border-gray-400  border-x-0 border-t-0  text-sm focus:outline-none"
                             style={{
@@ -712,7 +718,7 @@ function AddProductForm({ orgId, submitData, productData = {} }) {
                         </td>
                         <td className="px-4 py-2">
                           <button
-                            onClick={() => handleDeleteRow(row.id)}
+                            onClick={() => handleDeleteRow(row?.id)}
                             className="text-red-600 hover:text-red-800"
                           >
                             <MdDelete />
@@ -744,13 +750,13 @@ function AddProductForm({ orgId, submitData, productData = {} }) {
                     </tr>
                   </thead>
                   <tbody>
-                    {locationRows.map((row, index) => (
-                      <tr key={row.id} className="border-b bg-[#EFF6FF] ">
+                    {locationRows?.map((row, index) => (
+                      <tr key={row?.id} className="border-b bg-[#EFF6FF] ">
                         <td className="px-4 py-2">
                           <select
-                            value={row.godown_id}
+                            value={row?.godown_id}
                             onChange={(e) =>
-                              handleLocationChange(index, e.target.value)
+                              handleLocationChange(index, e?.target?.value)
                             }
                             className="block w-full  px-4  rounded-md bg-[#EFF6FF] text-sm focus:outline-none border-none"
                             style={{
@@ -760,7 +766,7 @@ function AddProductForm({ orgId, submitData, productData = {} }) {
                           >
                             {/* Options for dropdown */}
                             <option value="">Select Location</option>
-                            {godown.map((el, index) => (
+                            {godown?.map((el, index) => (
                               <option key={index} value={el?._id}>
                                 {el?.name}
                               </option>
@@ -771,9 +777,9 @@ function AddProductForm({ orgId, submitData, productData = {} }) {
                           <input
                             type="number"
                             // min="0"
-                            value={row.balance_stock}
+                            value={row?.balance_stock}
                             onChange={(e) =>
-                              handleLocationRateChange(index, e.target.value)
+                              handleLocationRateChange(index, e?.target.value)
                             }
                             className="w-full  text-center py-1 px-4 border bg-[#EFF6FF] border-gray-400  border-x-0 border-t-0  text-sm focus:outline-none"
                             style={{
@@ -784,7 +790,7 @@ function AddProductForm({ orgId, submitData, productData = {} }) {
                         </td>
                         <td className="px-4 py-2">
                           <button
-                            onClick={() => handleDeleteLocationRow(row.godown_id)}
+                            onClick={() => handleDeleteLocationRow(row?.godown_id)}
                             className="text-red-600 hover:text-red-800"
                           >
                             <MdDelete />

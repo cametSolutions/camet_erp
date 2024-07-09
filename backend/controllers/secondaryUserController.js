@@ -13,6 +13,11 @@ import OragnizationModel from "../models/OragnizationModel.js";
 import Organization from "../models/OragnizationModel.js";
 import AdditionalChargesModel from "../models/additionalChargesModel.js";
 import { truncateToNDecimals } from "./helpers/helper.js";
+import { Brand } from "../models/subDetails.js";
+import { Category } from "../models/subDetails.js";
+import { Subcategory } from "../models/subDetails.js";
+import { Godown } from "../models/subDetails.js";
+import { PriceLevel } from "../models/subDetails.js";
 
 import bcrypt from "bcryptjs";
 import mongoose from "mongoose";
@@ -3403,5 +3408,52 @@ export const editSale = async (req, res) => {
       message: "An error occurred while editing the sale.",
       error: error.message,
     });
+  }
+};
+
+
+export const getAllSubDetails = async (req, res) => {
+  try {
+    const  cmp_id=req.params.orgId;
+    const  Primary_user_id=req.owner;
+console.log(cmp_id,Primary_user_id)
+    if (!cmp_id || !Primary_user_id) {
+      console.log(
+        "cmp_id and Primary_user_id are required in getAllSubDetails "
+      );
+      return;
+    }
+
+    const [brands, categories, subcategories, godowns, priceLevels] =
+      await Promise.all([
+        Brand.find({ cmp_id, Primary_user_id }).select("_id brand"),
+        Category.find({ cmp_id, Primary_user_id }).select("_id category"),
+        Subcategory.find({ cmp_id, Primary_user_id }).select(
+          "_id subcategory"
+        ),
+        Godown.find({ cmp_id, Primary_user_id }).select("_id godown"),
+        PriceLevel.find({ cmp_id, Primary_user_id }).select("_id pricelevel"),
+      ]);
+
+    const result = {
+      brands: brands.map((b) => ({ _id: b._id, name: b.brand })),
+      categories: categories.map((c) => ({ _id: c._id, name: c.category })),
+      subcategories: subcategories.map((s) => ({
+        _id: s._id,
+        name: s.subcategory,
+      })),
+      godowns: godowns.map((g) => ({ _id: g._id, name: g.godown })),
+      priceLevels: priceLevels.map((p) => ({ _id: p._id, name: p.pricelevel })),
+    };
+
+    res.status(200).json({
+      message: "All subdetails retrieved successfully",
+      data: result,
+    });
+  } catch (error) {
+    console.error("Error in getAllSubDetails:", error);
+    res
+      .status(500)
+      .json({ message: "An error occurred while fetching the subdetails" });
   }
 };

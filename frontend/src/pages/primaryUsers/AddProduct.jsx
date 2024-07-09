@@ -51,7 +51,7 @@ function AddProduct() {
           </Link>
           <p>Add Product</p>
         </div>
-     <AddProductForm orgId={orgId}  submitData={submitHandler}/>
+     <AddProductForm orgId={orgId}  submitData={submitHandler} userType="primaryUser"/>
       </div>
   );
 }
