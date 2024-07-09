@@ -147,7 +147,7 @@ function AddressForm({ getFormData, newBillToShipTo, partyDetails }) {
     ];
   
     for (const field of requiredFields) {
-      if (field.value.trim() === "") {
+      if (field.value === "" ) {
         toast.error(field.message);
         return;
       }
