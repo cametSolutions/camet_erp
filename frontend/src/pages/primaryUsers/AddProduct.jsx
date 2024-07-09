@@ -1,7 +1,7 @@
 /* eslint-disable react/no-unknown-property */
 /* eslint-disable react/jsx-no-target-blank */
 
-import Sidebar from "../../components/homePage/Sidebar";
+// import Sidebar from "../../components/homePage/Sidebar";
 import { useSelector } from "react-redux";
 import api from "../../api/api";
 import { toast } from "react-toastify";

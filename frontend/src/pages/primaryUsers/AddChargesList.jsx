@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import api from "../../api/api";
 import Pagination from "../../components/common/Pagination";
-import Sidebar from "../../components/homePage/Sidebar";
+// import Sidebar from "../../components/homePage/Sidebar";
 import { IoReorderThreeSharp } from "react-icons/io5";
 import { FaEdit } from "react-icons/fa";
 import { Link } from "react-router-dom";
