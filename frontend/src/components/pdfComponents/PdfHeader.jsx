@@ -60,18 +60,19 @@ function PdfHeader({ data, org, address, despatchDetails, tab="sales" }) {
       <div className="  flex  justify-between px-5 gap-6  bg-slate-100 py-2">
         <div className="">
           <div className="text-gray-500 mb-0.5 md:text-xs text-[9px]">
-            Pan No: {org?.pan}
+            Pan No: {org?.pan && org?.pan}
           </div>
           <div className="text-gray-500 mb-0.5 md:text-xs text-[9px]">
-            Gst No: {org?.gstNum}
+            Gst No: {org?.gstNum && org?.gstNum !== null ? org.gstNum : ""}
+
           </div>
         </div>
         <div className="flex flex-col">
           <div className="text-gray-500 mb-0.5 md:text-xs text-[9px] text-right">
-            {org?.email}
+          {org?.email && org?.email !== null ? org.email : ""}
           </div>
           <div className="text-gray-500 mb-0.5 md:text-xs text-[9px] text-right">
-            {org?.website}
+          {org?.website && org?.website !== null ? org.website : ""}
           </div>
         </div>
       </div>
@@ -88,8 +89,8 @@ function PdfHeader({ data, org, address, despatchDetails, tab="sales" }) {
                 {line.trim()}
               </div>
             ))}
-            <div className="text-gray-700">{address?.billToEmail}</div>
-            <div className="text-gray-700">{address?.billToMobile}</div>
+            <div className="text-gray-700">{address?.billToEmail && address?.billToEmail !== "null" ? address?.billToEmail:""}</div>
+            <div className="text-gray-700">{address?.billToMobile && address?.billToMobile !== "null" ? address?.billToMobile:""}</div>
           </div>
           <div className="border-gray-300 ">
             <h2 className="text-xs font-bold mb-1">Ship To:</h2>
@@ -99,8 +100,9 @@ function PdfHeader({ data, org, address, despatchDetails, tab="sales" }) {
                 {line.trim()}
               </div>
             ))}
-            <div className="text-gray-700">{address?.shipToEmail}</div>
-            <div className="text-gray-700">{address?.shipToMobile}</div>
+
+            <div className="text-gray-700">{address?.shipToEmail !== "null" ? address?.shipToEmail:""}</div>
+            <div className="text-gray-700">{address?.shipToMobile && address?.shipToMobile !== "null" ? address?.shipToMobile:""}</div>
           </div>
         </div>
 
