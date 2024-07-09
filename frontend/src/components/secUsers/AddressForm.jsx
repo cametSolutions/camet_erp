@@ -147,34 +147,38 @@ function AddressForm({ getFormData, newBillToShipTo, partyDetails }) {
     ];
   
     for (const field of requiredFields) {
-      if (field.value === "" ) {
-        toast.error(field.message);
+      if (field.value === null ) { 
+        setFormData((prev) => ({
+          ...prev,
+          field: "",
+      }));
+      
         return;
       }
     }
   
-    const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
-    const mobileRegex = /^\d{10}$/;
-    const gstRegex = /^[0-9A-Za-z]{15}$/;
-    const pinRegex = /^\d{6}$/;
+    // const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
+    // const mobileRegex = /^\d{10}$/;
+    // const gstRegex = /^[0-9A-Za-z]{15}$/;
+    // const pinRegex = /^\d{6}$/;
   
-    const validations = [
-      { value: billToEmail, regex: emailRegex, message: "Invalid Bill To Email" },
-      { value: shipToEmail, regex: emailRegex, message: "Invalid Ship To Email" },
-      { value: billToMobile, regex: mobileRegex, message: "Bill To Mobile must be 10 digits" },
-      { value: shipToMobile, regex: mobileRegex, message: "Ship To Mobile must be 10 digits" },
-      { value: billToGst, regex: gstRegex, message: "Invalid Bill To GST" },
-      { value: shipToGst, regex: gstRegex, message: "Invalid Ship To GST" },
-      { value: billToPin, regex: pinRegex, message: "Invalid Bill To Pin" },
-      { value: shipToPin, regex: pinRegex, message: "Invalid Ship To Pin" },
-    ];
+    // const validations = [
+    //   { value: billToEmail, regex: emailRegex, message: "Invalid Bill To Email" },
+    //   { value: shipToEmail, regex: emailRegex, message: "Invalid Ship To Email" },
+    //   { value: billToMobile, regex: mobileRegex, message: "Bill To Mobile must be 10 digits" },
+    //   { value: shipToMobile, regex: mobileRegex, message: "Ship To Mobile must be 10 digits" },
+    //   { value: billToGst, regex: gstRegex, message: "Invalid Bill To GST" },
+    //   { value: shipToGst, regex: gstRegex, message: "Invalid Ship To GST" },
+    //   { value: billToPin, regex: pinRegex, message: "Invalid Bill To Pin" },
+    //   { value: shipToPin, regex: pinRegex, message: "Invalid Ship To Pin" },
+    // ];
   
-    for (const validation of validations) {
-      if (!validation.regex.test(validation.value)) {
-        toast.error(validation.message);
-        return;
-      }
-    }
+    // for (const validation of validations) {
+    //   if (!validation.regex.test(validation.value)) {
+    //     toast.error(validation.message);
+    //     return;
+    //   }
+    // }
     getFormData(formData);
   };
 
