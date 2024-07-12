@@ -507,7 +507,7 @@ function AddItemSecondary() {
             <div className="flex flex-col font-bold text-sm md:text-sm  gap-1 leading-normal">
               <p>{el.product_name}</p>
               <div className="flex gap-1 items-center">
-                <p>₹ {el.selectedPriceRate}</p>{" "}
+                <p>₹ {el.selectedPriceRate || 0}</p>{" "}
                 <span className="text-[10px] mt-1">/ {el?.unit}</span>
               </div>
 
