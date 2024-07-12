@@ -27,7 +27,6 @@ import ProductDetails from "../../components/common/ProductDetails";
 import { IoIosArrowDown } from "react-icons/io";
 import { IoIosArrowUp } from "react-icons/io";
 
-
 function AddItemSalesSecondary() {
   const [item, setItem] = useState([]);
   const [selectedPriceLevel, setSelectedPriceLevel] = useState("");
@@ -166,7 +165,6 @@ function AddItemSalesSecondary() {
                   GodownList: updatedGodownList,
                 };
 
-
                 return updaTedReduxItem;
               } else {
                 const matchedGodown = product?.GodownList?.[0];
@@ -190,13 +188,16 @@ function AddItemSalesSecondary() {
           });
           setItem(updatedItems);
           if (updatedItems.length > 0) {
-            fetchFilters()
+            fetchFilters();
           }
+
+          setRefresh((prevRefresh) => !prevRefresh);
         } else {
           setItem(productData);
           if (productData.length > 0) {
-            fetchFilters()
+            fetchFilters();
           }
+          setRefresh((prevRefresh) => !prevRefresh);
         }
 
         if (brandFromRedux) {
@@ -256,49 +257,49 @@ function AddItemSalesSecondary() {
   //////////////////////////////fetchFilters////////////////////////////////
 
   // useEffect(() => {
-    const fetchFilters = async () => {
-      try {
-        let res;
-        if (type == "self") {
-          res = await api.get(`/api/sUsers/fetchFilters/${orgId}`, {
-            withCredentials: true,
-          });
-        } else {
-          res = await api.get(`/api/sUsers/fetchAdditionalDetails/${orgId}`, {
-            withCredentials: true,
-          });
-        }
-
-        if (type === "self") {
-          const { brands, categories, subcategories, priceLevels } =
-            res.data.data;
-          // setBrands(brands);
-          // setCategories(categories);
-          // setSubCategories(subcategories);
-          setPriceLevels(priceLevels);
-          if (priceLevelFromRedux == "") {
-            const defaultPriceLevel = priceLevels[0];
-            dispatch(setPriceLevel(defaultPriceLevel));
-          }
-        } else {
-          const { priceLevels, brands, categories, subcategories } = res.data;
-
-          // setBrands(brands);
-          // setCategories(categories);
-          // setSubCategories(subcategories);
-
-          setPriceLevels(priceLevels);
-          if (priceLevelFromRedux == "") {
-            const defaultPriceLevel = priceLevels[0];
-            setSelectedPriceLevel(defaultPriceLevel);
-            dispatch(setPriceLevel(defaultPriceLevel));
-          }
-        }
-      } catch (error) {
-        console.log(error);
+  const fetchFilters = async () => {
+    try {
+      let res;
+      if (type == "self") {
+        res = await api.get(`/api/sUsers/fetchFilters/${orgId}`, {
+          withCredentials: true,
+        });
+      } else {
+        res = await api.get(`/api/sUsers/fetchAdditionalDetails/${orgId}`, {
+          withCredentials: true,
+        });
       }
-    };
-    // fetchFilters();
+
+      if (type === "self") {
+        const { brands, categories, subcategories, priceLevels } =
+          res.data.data;
+        // setBrands(brands);
+        // setCategories(categories);
+        // setSubCategories(subcategories);
+        setPriceLevels(priceLevels);
+        if (priceLevelFromRedux == "") {
+          const defaultPriceLevel = priceLevels[0];
+          dispatch(setPriceLevel(defaultPriceLevel));
+        }
+      } else {
+        const { priceLevels, brands, categories, subcategories } = res.data;
+
+        // setBrands(brands);
+        // setCategories(categories);
+        // setSubCategories(subcategories);
+
+        setPriceLevels(priceLevels);
+        if (priceLevelFromRedux == "") {
+          const defaultPriceLevel = priceLevels[0];
+          setSelectedPriceLevel(defaultPriceLevel);
+          dispatch(setPriceLevel(defaultPriceLevel));
+        }
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+  // fetchFilters();
   // }, [orgId, type]);
 
   ///////////////////////////filter items///////////////////////////////////
@@ -347,7 +348,6 @@ function AddItemSalesSecondary() {
             (priceLevelItem) => priceLevelItem.pricelevel === pricelevel
           )?.pricerate || 0;
 
-
         const reduxItem = itemsFromRedux.find((p) => p._id === item._id);
         // const reduxRate = reduxItem?.selectedPriceRate || null;
 
@@ -374,15 +374,11 @@ function AddItemSalesSecondary() {
     }
   };
 
-
   console.log(item);
-
 
   useEffect(() => {
     addSelectedRate(selectedPriceLevel);
   }, [selectedPriceLevel, refresh]);
-
-  
 
   ///////////////////////////calculateTotal///////////////////////////////////
 
@@ -662,7 +658,7 @@ function AddItemSalesSecondary() {
           item?.Priceleveles.find(
             (priceLevelItem) => priceLevelItem.pricelevel === pricelevel
           )?.pricerate || 0;
-      
+
         // if (item?.hasGodownOrBatch) {
         const updatedGodownList = item?.GodownList.map((godown, idx) => {
           return {
@@ -685,7 +681,6 @@ function AddItemSalesSecondary() {
       }
       return item;
     });
-
 
     setItem(updatedItems);
   };
@@ -1034,7 +1029,6 @@ function AddItemSalesSecondary() {
 
   return (
     <div className="">
-  
       <div className="flex-1 bg-slate-50 h-screen   ">
         <div className="sticky top-0 h-[165px] ">
           <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3  ">
