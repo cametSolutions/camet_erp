@@ -3,12 +3,10 @@
 import { useState, useEffect } from "react";
 import { IoReorderThreeSharp } from "react-icons/io5";
 import { useSelector } from "react-redux";
-import { MdInventory } from "react-icons/md";
 import { CiCalendarDate } from "react-icons/ci";
 import api from "../../api/api";
 import { FaCaretDown } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
-import { BiSolidAddToQueue } from "react-icons/bi";
 import { removeAll } from "../../../slices/invoice";
 import { removeAllSales } from "../../../slices/sales";
 import { useDispatch } from "react-redux";

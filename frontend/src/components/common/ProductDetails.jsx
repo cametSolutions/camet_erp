@@ -1,6 +1,6 @@
 /* eslint-disable react/no-unknown-property */
 /* eslint-disable react/prop-types */
-import { useEffect, useRef,useState } from "react";
+import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { setBatchHeight } from "../../../slices/salesSecondary";
@@ -33,7 +33,8 @@ const ProductDetails = ({
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  console.log(heights);
+  console.log(batchOrGodownList);
+
 
   return (
     <div
@@ -76,7 +77,7 @@ const ProductDetails = ({
                 <>
                   <div className="flex items-center">
                     <p className="   text-xs md:text-sm">
-                      ₹ {item?.selectedPriceRate || ""}/{" "}
+                      ₹ {item?.selectedPriceRate || 0}/{" "}
                       <span className="text-black">{details?.unit || ""}</span>
                     </p>
 

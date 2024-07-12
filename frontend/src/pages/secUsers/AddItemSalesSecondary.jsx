@@ -21,7 +21,6 @@ import {
 import { HashLoader } from "react-spinners";
 import { VariableSizeList as List } from "react-window";
 import { toast } from "react-toastify";
-import SidebarSec from "../../components/secUsers/SidebarSec";
 import { Decimal } from "decimal.js";
 import SearchBar from "../../components/common/SearchBar";
 import ProductDetails from "../../components/common/ProductDetails";
@@ -374,6 +373,9 @@ function AddItemSalesSecondary() {
       setItem(updatedItems);
     }
   };
+
+
+  console.log(item);
 
 
   useEffect(() => {
