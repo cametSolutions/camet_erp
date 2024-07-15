@@ -1817,7 +1817,7 @@ export const addconfigurations = async (req, res) => {
       return res.status(404).json({ message: "Organization not found" });
     }
 
-    const { selectedBank, termsList } = req.body;
+    const { selectedBank, termsList,enableBillToShipTo } = req.body;
 
     // Check if selectedBank is provided
     let bankId = null; // Default to null if not provided
@@ -1831,6 +1831,7 @@ export const addconfigurations = async (req, res) => {
     const newConfigurations = {
       bank: bankId, // Use the validated bankId or null
       terms: termsList,
+      enableBillToShipTo
     };
     org.configurations = [newConfigurations];
 

@@ -146,7 +146,7 @@ function SalesThreeInchPdf({
             Name: {data?.party?.partyName}
           </p>
           <p className="text-black text-[9px] font-bold">
-            {[address?.billToAddress, address?.billToPin, address?.billToMobil]
+            {[address?.billToAddress,]
               .filter((item) => item != null && item !== "" && item !== "null")
               .join(", ") || "Address not available"}
           </p>
