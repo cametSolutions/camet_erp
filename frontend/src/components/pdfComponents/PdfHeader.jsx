@@ -16,13 +16,25 @@ function PdfHeader({ data, org, address, despatchDetails, tab = "sales" }) {
       pdfNumber = "Unknown"; // or any default value you prefer
       break;
   }
+  function capitalizeFirstLetter(str) {
+    return str.charAt(0).toUpperCase() + str.slice(1);
+  }
 
-  console.log(org);
+  console.log(despatchDetails);
+
+  
   let  enableBillToShipTo 
+
+  let displayTitles={}
   if (org?.configurations) {
   enableBillToShipTo = (org?.configurations[0]?.enableBillToShipTo) ?? true;
+
+  const despatchDetailsConfig = (org?.configurations[0]?.despatchDetails) ?? {}
+  for (const key in despatchDetailsConfig) {
+    displayTitles[key] = despatchDetailsConfig[key] || capitalizeFirstLetter(key.split(/(?=[A-Z])/).join(" "));
   }
-  console.log(enableBillToShipTo);
+  }
+ 
 
   return (
     <div>
@@ -134,88 +146,31 @@ function PdfHeader({ data, org, address, despatchDetails, tab = "sales" }) {
         {/* table */}
         <hr className="mb-1" />
 
-        <table className=" m details-table md:w-1/2  w-full  divide-y divide-gray-200  ">
-          <tbody className="  ">
-            {despatchDetails?.challanNo && (
-              <tr className="flex justify-between">
-                <td className="text-gray-500 mb-0.5  text-[11px]">
-                  Challan No:
-                </td>
-                <td className="text-gray-500 mb-0.5  text-[11px]">
-                  {despatchDetails?.challanNo}
-                </td>
-              </tr>
-            )}
-            {despatchDetails?.containerNo && (
-              <tr className="flex justify-between">
-                <td className="text-gray-500 mb-0.5  text-[11px]">
-                  Container No:
-                </td>
-                <td className="text-gray-500 mb-0.5  text-[11px]">
-                  {despatchDetails?.containerNo}
-                </td>
-              </tr>
-            )}
-            {despatchDetails?.despatchThrough && (
-              <tr className="flex justify-between">
-                <td className="text-gray-500 mb-0.5  text-[11px]">
-                  Despatch Through:
-                </td>
-                <td className="text-gray-500 mb-0.5  text-[11px]">
-                  {despatchDetails?.despatchThrough}
-                </td>
-              </tr>
-            )}
-            {despatchDetails?.destination && (
-              <tr className="flex justify-between">
-                <td className="text-gray-500 mb-0.5  text-[11px]">
-                  Destination:
-                </td>
-                <td className="text-gray-500 mb-0.5  text-[11px]">
-                  {despatchDetails?.destination}
-                </td>
-              </tr>
-            )}
-            {despatchDetails?.vehicleNo && (
-              <tr className="flex justify-between">
-                <td className="text-gray-500 mb-0.5  text-[11px]">
-                  Vehicle No:
-                </td>
-                <td className="text-gray-500 mb-0.5  text-[11px]">
-                  {despatchDetails?.vehicleNo}
-                </td>
-              </tr>
-            )}
-            {despatchDetails?.orderNo && (
-              <tr className="flex justify-between">
-                <td className="text-gray-500 mb-0.5  text-[11px]">Order No:</td>
-                <td className="text-gray-500 mb-0.5  text-[11px]">
-                  {despatchDetails?.orderNo}
-                </td>
-              </tr>
-            )}
-            {despatchDetails?.termsOfPay && (
-              <tr className="flex justify-between">
-                <td className="text-gray-500 mb-0.5  text-[11px]">
-                  Terms Of Pay:
-                </td>
-                <td className="text-gray-500 mb-0.5  text-[11px]">
-                  {despatchDetails?.termsOfPay}
-                </td>
-              </tr>
-            )}
-            {despatchDetails?.termsOfDelivery && (
-              <tr className="flex justify-between">
-                <td className="text-gray-500 mb-0.5  text-[11px]">
-                  Terms Of Delivery
-                </td>
-                <td className="text-gray-500 mb-0.5  text-[11px]">
-                  {despatchDetails?.termsOfDelivery}
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+        <table className="m details-table md:w-1/2 w-full divide-y divide-gray-200">
+  <tbody>
+    {
+    despatchDetails && (
+      
+      Object?.entries(despatchDetails)?.map(([key, value]) => {
+        if (value) {
+          return (
+            <tr key={key} className="flex justify-between">
+              <td className="text-gray-500 mb-0.5 text-[11px]">
+                {displayTitles[key] || capitalizeFirstLetter(key?.split(/(?=[A-Z])/).join(" "))}:
+              </td>
+              <td className="text-gray-500 mb-0.5 text-[11px]">
+                {value}
+              </td>
+            </tr>
+          );
+        }
+        return null;
+      })
+    )
+    
+    }
+  </tbody>
+</table>
       </div>
     </div>
   );

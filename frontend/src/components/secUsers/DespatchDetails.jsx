@@ -6,6 +6,7 @@ import _ from "lodash";
 import { addDespatchDetails as addInSales } from "../../../slices/salesSecondary";
 import { addDespatchDetails as addInOrder } from "../../../slices/invoiceSecondary";
 import { useDispatch, useSelector } from "react-redux";
+import api from "../../api/api";
 
 function DespatchDetails({ tab }) {
   const despatchDetails = useSelector((state) =>
@@ -15,7 +16,46 @@ function DespatchDetails({ tab }) {
   );
 
   const [formValues, setFormValues] = useState({});
+  const [displayTitles, setDisplayTitles] = useState({});
+  const cmp_id = useSelector(
+    (state) => state?.secSelectedOrganization?.secSelectedOrg?._id
+  );
 
+  console.log(cmp_id);
+
+  useEffect(() => {
+    const getSingleOrganization = async () => {
+      try {
+        const res = await api.get(
+          `/api/sUsers/getSingleOrganization/${cmp_id}`,
+          {
+            withCredentials: true,
+          }
+        );
+        const company = res?.data?.organizationData;
+        console.log(res?.data?.organizationData);
+
+        if (company && company.configurations.length > 0) {
+          console.log(company.configurations);
+
+          const { despatchDetails } = company.configurations[0];
+          console.log(despatchDetails);
+          const titles = {};
+          for (const key in despatchDetails) {
+            titles[key] = despatchDetails[key] || capitalizeFirstLetter(key.split(/(?=[A-Z])/).join(" "));
+          }
+
+          console.log(titles);
+          setDisplayTitles(titles);
+        }
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    getSingleOrganization();
+  }, [cmp_id]);
+
+  console.log(displayTitles);
   useEffect(() => {
     if (despatchDetails) {
       setFormValues(despatchDetails);
@@ -130,7 +170,7 @@ function DespatchDetails({ tab }) {
                     >
                       {key === "irnNo"
                         ? "IRN No"
-                        : capitalizeFirstLetter(
+                        : displayTitles[key] || capitalizeFirstLetter(
                             key.split(/(?=[A-Z])/).join(" ")
                           )}{" "}
                     </label>
@@ -141,7 +181,7 @@ function DespatchDetails({ tab }) {
                       placeholder={
                         key === "irnNo"
                           ? "IRN No"
-                          : capitalizeFirstLetter(
+                          :displayTitles[key] || capitalizeFirstLetter(
                               key.split(/(?=[A-Z])/).join(" ")
                             )
                       }
