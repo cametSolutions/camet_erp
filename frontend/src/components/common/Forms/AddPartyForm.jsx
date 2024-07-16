@@ -1,9 +1,10 @@
+/* eslint-disable react/prop-types */
 import { useEffect, useState } from "react";
 import { accountGroups02 } from "../../../../constants/accountGroups";
 import { toast } from "react-toastify";
 import { useSelector } from "react-redux";
 
-function AddPartyForm({submitHandler}) {
+function AddPartyForm({ submitHandler, partyDetails = {} }) {
   const [tab, setTab] = useState("business");
   const [accountGroup, setAccountGroup] = useState("");
   const [partyName, setPartyName] = useState("");
@@ -24,12 +25,42 @@ function AddPartyForm({submitHandler}) {
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
 
+  console.log(partyDetails);
+
   // const user = JSON.parse(localStorage.getItem("sUserData"));
   // const userId = user._id;
   useEffect(() => {
     setCmp_id(companytId);
-    // setSecondary_user_id(userId);
-  }, []);
+    if (Object.entries(partyDetails?.length > 0)) {
+      const {
+        accountGroup,
+        partyName,
+        mobileNumber,
+        emailID,
+        gstNo,
+        panNo,
+        billingAddress,
+        shippingAddress,
+        creditPeriod,
+        creditLimit,
+        openingBalanceType,
+        openingBalanceAmount,
+      } = partyDetails;
+
+      setAccountGroup(accountGroup);
+      setPartyName(partyName);
+      setMobileNumber(mobileNumber);
+      setEmailID(emailID);
+      setGstNo(gstNo);
+      setPanNo(panNo);
+      setBillingAddress(billingAddress);
+      setShippingAddress(shippingAddress);
+      setCreditPeriod(creditPeriod);
+      setOpeningBalanceAmount(openingBalanceAmount);
+      setOpeningBalanceType(openingBalanceType);
+      setCreditLimit(creditLimit);
+    }
+  }, [partyDetails]);
 
   const submitForm = async () => {
     let accGroupValidation = false;
@@ -109,7 +140,7 @@ function AddPartyForm({submitHandler}) {
     };
 
     console.log(formData);
-    submitHandler(formData)
+    submitHandler(formData);
   };
 
   return (
