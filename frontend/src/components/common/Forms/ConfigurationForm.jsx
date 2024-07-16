@@ -104,7 +104,7 @@ function ConfigurationForm({
                       Terms and Condition
                     </label> */}
 
-                    <div className="flex mt-7  ">
+                    <div className="flex mt-7 justify-center  ">
                       <div className=" border-b border-solid border-[#0066ff43]  ">
                         <button
                           type="button"

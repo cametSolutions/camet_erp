@@ -921,7 +921,7 @@ export const addParty = async (req, res) => {
   try {
     const {
       cpm_id: cmp_id,
-      Primary_user_id,
+      // Primary_user_id,
       accountGroup,
       partyName,
       mobileNumber,
@@ -938,7 +938,7 @@ export const addParty = async (req, res) => {
 
     const party = new PartyModel({
       cmp_id,
-      Primary_user_id,
+      Primary_user_id:req?.pUserId,
       accountGroup,
       partyName,
       mobileNumber,

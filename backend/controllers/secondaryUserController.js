@@ -625,7 +625,7 @@ export const addParty = async (req, res) => {
   try {
     const {
       cpm_id: cmp_id,
-      Secondary_user_id,
+      // Secondary_user_id,
       accountGroup,
       partyName,
       mobileNumber,
@@ -640,13 +640,15 @@ export const addParty = async (req, res) => {
       openingBalanceAmount,
     } = req.body;
 
+    const Secondary_user_id = req?.sUserId;
+
     const Primary_user = await SecondaryUser.findById(Secondary_user_id);
     const Primary_user_id = await Primary_user.primaryUser;
 
     const party = new PartyModel({
       cmp_id,
-      Primary_user_id,
-      Secondary_user_id,
+      Primary_user_id: req.owner,
+      Secondary_user_id: req.sUserId,
       accountGroup,
       partyName,
       mobileNumber,
@@ -866,7 +868,7 @@ export const createInvoice = async (req, res) => {
       lastAmount,
       orderNumber,
       despatchDetails,
-      selectedDate
+      selectedDate,
     } = req.body;
 
     // Manually fetch the last invoice to get the serial number
@@ -970,7 +972,7 @@ export const createInvoice = async (req, res) => {
       Secondary_user_id,
       orderNumber,
       despatchDetails,
-      createdAt: selectedDate
+      createdAt: selectedDate,
     });
 
     const result = await invoice.save();
@@ -1556,7 +1558,7 @@ export const editInvoice = async (req, res) => {
       lastAmount,
       orderNumber,
       despatchDetails,
-      selectedDate
+      selectedDate,
     } = req.body;
 
     let productUpdates = [];
@@ -1629,7 +1631,7 @@ export const editInvoice = async (req, res) => {
       );
     }
 
-    console.log("selected date ",selectedDate);
+    console.log("selected date ", selectedDate);
 
     const result = await invoiceModel.findByIdAndUpdate(
       invoiceId,
@@ -1645,12 +1647,10 @@ export const editInvoice = async (req, res) => {
           Secondary_user_id,
           orderNumber,
           despatchDetails,
-          createdAt: new Date(selectedDate)
-        }
+          createdAt: new Date(selectedDate),
+        },
       },
-      { new: true,
-        timestamps: false,
-       }
+      { new: true, timestamps: false }
     );
 
     return res.status(200).json({
@@ -1827,7 +1827,8 @@ export const addconfigurations = async (req, res) => {
       return res.status(404).json({ message: "Organization not found" });
     }
 
-    const { selectedBank, termsList,enableBillToShipTo,despatchDetails } = req.body;
+    const { selectedBank, termsList, enableBillToShipTo, despatchDetails } =
+      req.body;
 
     // Check if selectedBank is provided
     let bankId = null; // Default to null if not provided
@@ -1842,7 +1843,7 @@ export const addconfigurations = async (req, res) => {
       bank: bankId, // Use the validated bankId or null
       terms: termsList,
       enableBillToShipTo,
-      despatchDetails
+      despatchDetails,
     };
     org.configurations = [newConfigurations];
 
@@ -1878,7 +1879,7 @@ export const createSale = async (req, res) => {
       additionalChargesFromRedux,
       lastAmount,
       salesNumber,
-      selectedDate
+      selectedDate,
     } = req.body;
 
     const secondaryUser = await SecondaryUser.findById(Secondary_user_id);
@@ -2123,7 +2124,7 @@ export const createSale = async (req, res) => {
 
         return {
           ...charge,
-          taxAmt: taxAmt
+          taxAmt: taxAmt,
         };
       });
     }
@@ -2205,7 +2206,13 @@ export const createSale = async (req, res) => {
       { upsert: true, new: true }
     );
 
-    res.status(201).json({ success: true, data: result, message: "Sale created successfully" });
+    res
+      .status(201)
+      .json({
+        success: true,
+        data: result,
+        message: "Sale created successfully",
+      });
   } catch (error) {
     console.error(error);
     res.status(500).json({
@@ -3007,9 +3014,8 @@ export const editSale = async (req, res) => {
       lastAmount,
       salesNumber,
       despatchDetails,
-      selectedDate
+      selectedDate,
     } = req.body;
-
 
     console.log("selectedDate", selectedDate);
 
@@ -3383,7 +3389,6 @@ export const editSale = async (req, res) => {
     existingSale.despatchDetails = despatchDetails;
     existingSale.createdAt = new Date(selectedDate);
 
-
     console.log("existingSale", existingSale);
 
     const result = await existingSale.save();
@@ -3433,12 +3438,11 @@ export const editSale = async (req, res) => {
   }
 };
 
-
 export const getAllSubDetails = async (req, res) => {
   try {
-    const  cmp_id=req.params.orgId;
-    const  Primary_user_id=req.owner;
-console.log(cmp_id,Primary_user_id)
+    const cmp_id = req.params.orgId;
+    const Primary_user_id = req.owner;
+    console.log(cmp_id, Primary_user_id);
     if (!cmp_id || !Primary_user_id) {
       console.log(
         "cmp_id and Primary_user_id are required in getAllSubDetails "
@@ -3450,9 +3454,7 @@ console.log(cmp_id,Primary_user_id)
       await Promise.all([
         Brand.find({ cmp_id, Primary_user_id }).select("_id brand"),
         Category.find({ cmp_id, Primary_user_id }).select("_id category"),
-        Subcategory.find({ cmp_id, Primary_user_id }).select(
-          "_id subcategory"
-        ),
+        Subcategory.find({ cmp_id, Primary_user_id }).select("_id subcategory"),
         Godown.find({ cmp_id, Primary_user_id }).select("_id godown"),
         PriceLevel.find({ cmp_id, Primary_user_id }).select("_id pricelevel"),
       ]);
