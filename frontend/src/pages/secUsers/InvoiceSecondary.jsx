@@ -11,6 +11,7 @@ import {
   addAdditionalCharges,
   AddFinalAmount,
   deleteRow,
+  changeDate
   
 } from "../../../slices/invoiceSecondary";
 import { useDispatch } from "react-redux";
@@ -40,6 +41,9 @@ function InvoiceSecondary() {
   const type = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg.type
   );
+  const date = useSelector((state) => state.invoiceSecondary.date);
+  console.log(date);
+  const [selectedDate, setSelectedDate] = useState(new Date());
 
   const [subTotal, setSubTotal] = useState(0);
   const [additional, setAdditional] = useState(false);
@@ -61,6 +65,9 @@ function InvoiceSecondary() {
 
   useEffect(() => {
     localStorage.removeItem("scrollPositionAddItem");
+    if (date) {
+      setSelectedDate(date);
+    }
   }, []);
 
   useEffect(() => {
@@ -340,7 +347,8 @@ function InvoiceSecondary() {
       lastAmount,
       orgId,
       orderNumber,
-      despatchDetails
+      despatchDetails,
+      selectedDate
     };
 
     console.log(formData);
@@ -390,9 +398,22 @@ function InvoiceSecondary() {
               {" "}
               Order #{orderNumber}
             </p>
-            <p className="font-semibold   text-gray-500 text-xs md:text-base">
-              {new Date().toDateString()}
-            </p>
+            <div className="flex items-center">
+              <p className="font-semibold   text-gray-500 text-xs md:text-base">
+                {new Date(selectedDate).toDateString()}
+              </p>
+
+              <input
+                onChange={(e) => {
+                  setSelectedDate(e.target.value);
+                  dispatch(changeDate(new Date(e.target.value)));
+                }}
+                type="date"
+                min={new Date().toISOString().split("T")[0]}
+                className="w-20 border-none cursor-pointer  "
+                style={{ boxShadow: "none", borderColor: "#b6b6b6" }}
+              />
+            </div>
           </div>
           <div className="flex items-center gap-3">
             <div className=" hidden md:block ">

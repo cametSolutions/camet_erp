@@ -25,13 +25,12 @@ import {
   removeAdditionalCharge,
   removeItem,
   removeGodownOrBatch,
+  changeDate,
 } from "../../../slices/salesSecondary";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import { Button, Label, Modal, TextInput } from "flowbite-react";
 import { PiAddressBookFill } from "react-icons/pi";
 import DespatchDetails from "../../components/secUsers/DespatchDetails";
-
-
 function SalesSecondary() {
   const [openModal, setOpenModal] = useState(false);
   const [modalInputs, setModalInputs] = useState({
@@ -47,7 +46,12 @@ function SalesSecondary() {
   const [salesNumber, setSalesNumber] = useState("");
   const [additionalChragesFromCompany, setAdditionalChragesFromCompany] =
     useState([]);
-  console.log(modalInputs);
+
+  const date = useSelector((state) => state.salesSecondary.date);
+  const [selectedDate, setSelectedDate] = useState(new Date());
+
+  console.log(selectedDate);
+
   const additionalChargesFromRedux = useSelector(
     (state) => state.salesSecondary.additionalCharges
   );
@@ -63,7 +67,6 @@ function SalesSecondary() {
   const despatchDetails = useSelector(
     (state) => state.salesSecondary.despatchDetails
   );
-
 
   useEffect(() => {
     const getAdditionalChargesIntegrated = async () => {
@@ -85,6 +88,9 @@ function SalesSecondary() {
 
   useEffect(() => {
     localStorage.removeItem("scrollPositionAddItemSales");
+    if (date) {
+      setSelectedDate(date);
+    }
   }, []);
 
   useEffect(() => {
@@ -186,8 +192,6 @@ function SalesSecondary() {
     fetchGodownname();
   }, []);
 
-  console.log(salesNumber);
-
   const [rows, setRows] = useState(
     additionalChargesFromRedux.length > 0
       ? additionalChargesFromRedux
@@ -205,8 +209,6 @@ function SalesSecondary() {
         ]
       : [] // Fallback to an empty array if additionalChragesFromCompany is also empty
   );
-
-  console.log(rows);
 
   useEffect(() => {
     if (additionalChargesFromRedux.length > 0) {
@@ -397,6 +399,7 @@ function SalesSecondary() {
       orgId,
       salesNumber,
       batchHeights,
+      selectedDate,
     };
 
     console.log(formData);
@@ -453,8 +456,6 @@ function SalesSecondary() {
 
   return (
     <div className="">
-   
-
       <div className="flex-1 bg-slate-100 h -screen ">
         <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex  items-center gap-2 sticky top-0 z-50  ">
           {/* <IoReorderThreeSharp
@@ -474,9 +475,23 @@ function SalesSecondary() {
             <p className="text-md font-semibold text-violet-400">
               Sale #{salesNumber}
             </p>
-            <p className="font-semibold   text-gray-500 text-xs md:text-base">
-              {new Date().toDateString()}
-            </p>
+
+            <div className="flex items-center">
+              <p className="font-semibold   text-gray-500 text-xs md:text-base">
+                {new Date(selectedDate).toDateString()}
+              </p>
+
+              <input
+                onChange={(e) => {
+                  setSelectedDate(e.target.value);
+                  dispatch(changeDate(new Date(e.target.value)));
+                }}
+                type="date"
+                min={new Date().toISOString().split("T")[0]}
+                className="w-20 border-none cursor-pointer  "
+                style={{ boxShadow: "none", borderColor: "#b6b6b6" }}
+              />
+            </div>
           </div>
           <div className="  ">
             <div className="  flex gap-5 items-center ">
@@ -532,7 +547,7 @@ function SalesSecondary() {
                 <div>
                   <Link to={`/sUsers/billToSales/${party._id}`}>
                     <p className="text-violet-500 p-1 px-3  text-2xl  border-gray-300 rounded-2xl cursor-pointer">
-                    <PiAddressBookFill />
+                      <PiAddressBookFill />
                     </p>
                   </Link>
                 </div>
@@ -567,14 +582,11 @@ function SalesSecondary() {
           )}
         </div>
 
-
-
         {/* Despatch details */}
 
-        <DespatchDetails tab={"sale"}/>
+        <DespatchDetails tab={"sale"} />
 
         {/* adding items */}
-
 
         {items.length == 0 && (
           <div className="bg-white p-4 pb-6  drop-shadow-lg mt-2 md:mt-3">

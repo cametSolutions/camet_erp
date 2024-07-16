@@ -15,6 +15,11 @@ const salesSchema = new mongoose.Schema(
     additionalCharges: { type: Array, required: true },
     finalAmount: { type: String, required: true },
     batchHeights: { type: Object },
+    createdAt: {
+      type: Date,
+      default: Date.now,
+      immutable: false // This allows the field to be updated
+    }
   },
   {
     timestamps: true,

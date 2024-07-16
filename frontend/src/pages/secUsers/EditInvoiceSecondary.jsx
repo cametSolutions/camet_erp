@@ -11,6 +11,8 @@ import {
   AddFinalAmount,
   deleteRow,
   addDespatchDetails,
+  changeDate,
+
 
 } from "../../../slices/invoiceSecondary";
 import { useDispatch } from "react-redux";
@@ -62,9 +64,10 @@ function EditInvoiceSecondary() {
   const [refreshCmp, setrefreshCmp] = useState(false);
   const [orderNumber, setOrderNumber] = useState("");
   const [additionalChragesFromCompany, setAdditionalChragesFromCompany] =  useState([]);
+  const dateFromRedux = useSelector((state) => state.invoiceSecondary.date);
 
+  const [selectedDate, setSelectedDate] = useState(dateFromRedux);
 
-  console.log(modalInputs);
 
   const additionalChargesFromRedux = useSelector(
     (state) => state.invoiceSecondary.additionalCharges
@@ -231,6 +234,7 @@ const handleRateChange = (index, value) => {
   const itemsFromRedux = useSelector((state) => state.invoiceSecondary.items);
   const despatchDetailsFromRedux = useSelector((state) => state.invoiceSecondary.despatchDetails);
   const priceLevelFromRedux =useSelector((state) => state.invoiceSecondary.selectedPriceLevel) || "";
+
   useEffect(() => {
     const fetchInvoiceDetails = async () => {
       try {
@@ -246,8 +250,12 @@ const handleRateChange = (index, value) => {
           additionalCharges,
           finalAmount,
           orderNumber,
-          despatchDetails
+          despatchDetails,
+          createdAt,
+
         } = res.data.data;
+
+        console.log(createdAt);
 
         // additionalCharges: [ { option: 'option 1', value: '95', action: 'add' } ],
         if (Object.keys(partyFromRedux) == 0) {
@@ -260,6 +268,10 @@ const handleRateChange = (index, value) => {
         }
         if (itemsFromRedux.length == 0) {
           dispatch(setItem(items));
+        }
+        if (!dateFromRedux) {
+          setSelectedDate(createdAt);
+          dispatch(changeDate(createdAt));
         }
 
         if (priceLevelFromRedux == "") {
@@ -407,6 +419,8 @@ console.log(InvoiceIdForEdit);
       orgId,
       orderNumber,
       despatchDetails :despatchDetailsFromRedux,
+      selectedDate:dateFromRedux||new Date()
+
     };
 
     console.log(formData);
@@ -486,9 +500,23 @@ console.log(InvoiceIdForEdit);
             <p className="text-md font-semibold text-violet-400">
               Order #{orderNumber}
             </p>
-            <p className="font-semibold   text-gray-500 text-xs md:text-base">
-              {new Date().toDateString()}
-            </p>
+          
+            <div className="flex gap-2 items-center">
+              <p className="font-semibold   text-gray-500 text-xs md:text-base">
+                {new Date(selectedDate).toDateString()}
+              </p>
+
+              <input
+                onChange={(e) => {
+                  setSelectedDate(e.target.value);
+                  dispatch(changeDate(new Date(e.target.value)));
+                }}
+                type="date"
+                min={new Date().toISOString().split("T")[0]}
+                className="w-20 border-none cursor-pointer  "
+                style={{ boxShadow: "none", borderColor: "#b6b6b6" }}
+              />
+            </div>
           </div>
           <div className="  ">
             <div className="  flex gap-5 items-center ">

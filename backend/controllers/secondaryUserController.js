@@ -865,7 +865,8 @@ export const createInvoice = async (req, res) => {
       additionalChargesFromRedux,
       lastAmount,
       orderNumber,
-      despatchDetails
+      despatchDetails,
+      selectedDate
     } = req.body;
 
     // Manually fetch the last invoice to get the serial number
@@ -968,7 +969,8 @@ export const createInvoice = async (req, res) => {
       Primary_user_id: owner,
       Secondary_user_id,
       orderNumber,
-      despatchDetails
+      despatchDetails,
+      createdAt: selectedDate
     });
 
     const result = await invoice.save();
@@ -1553,7 +1555,8 @@ export const editInvoice = async (req, res) => {
       additionalChargesFromRedux,
       lastAmount,
       orderNumber,
-      despatchDetails
+      despatchDetails,
+      selectedDate
     } = req.body;
 
     let productUpdates = [];
@@ -1626,21 +1629,28 @@ export const editInvoice = async (req, res) => {
       );
     }
 
+    console.log("selected date ",selectedDate);
+
     const result = await invoiceModel.findByIdAndUpdate(
-      invoiceId, // Use the invoiceId to find the document
+      invoiceId,
       {
-        cmp_id: orgId,
-        party,
-        items: updatedItems,
-        priceLevel: priceLevelFromRedux,
-        additionalCharges: additionalChargesFromRedux,
-        finalAmount: lastAmount,
-        Primary_user_id,
-        Secondary_user_id,
-        orderNumber,
-        despatchDetails
+        $set: {
+          cmp_id: orgId,
+          party,
+          items: updatedItems,
+          priceLevel: priceLevelFromRedux,
+          additionalCharges: additionalChargesFromRedux,
+          finalAmount: lastAmount,
+          Primary_user_id,
+          Secondary_user_id,
+          orderNumber,
+          despatchDetails,
+          createdAt: new Date(selectedDate)
+        }
       },
-      { new: true } // This option returns the updated document
+      { new: true,
+        timestamps: false,
+       }
     );
 
     return res.status(200).json({
@@ -1867,6 +1877,7 @@ export const createSale = async (req, res) => {
       additionalChargesFromRedux,
       lastAmount,
       salesNumber,
+      selectedDate
     } = req.body;
 
     const secondaryUser = await SecondaryUser.findById(Secondary_user_id);
@@ -2111,7 +2122,7 @@ export const createSale = async (req, res) => {
 
         return {
           ...charge,
-          taxAmt: taxAmt,
+          taxAmt: taxAmt
         };
       });
     }
@@ -2130,6 +2141,7 @@ export const createSale = async (req, res) => {
       Primary_user_id,
       Secondary_user_id,
       salesNumber,
+      createdAt: new Date(selectedDate),
     });
 
     const result = await sales.save();
@@ -2993,8 +3005,12 @@ export const editSale = async (req, res) => {
       additionalChargesFromRedux,
       lastAmount,
       salesNumber,
-      despatchDetails
+      despatchDetails,
+      selectedDate
     } = req.body;
+
+
+    console.log("selectedDate", selectedDate);
 
     let productUpdates = [];
 
@@ -3364,6 +3380,10 @@ export const editSale = async (req, res) => {
     existingSale.finalAmount = lastAmount;
     existingSale.salesNumber = salesNumber;
     existingSale.despatchDetails = despatchDetails;
+    existingSale.createdAt = new Date(selectedDate);
+
+
+    console.log("existingSale", existingSale);
 
     const result = await existingSale.save();
 
