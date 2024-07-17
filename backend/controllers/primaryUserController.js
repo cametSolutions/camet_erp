@@ -2732,8 +2732,6 @@ export const addSecondaryConfigurations = async (req, res) => {
   const Primary_user_id = req.pUserId;
   const secondary_user_id = req.params.userId;
 
-  console.log("req.body", req.body);
-
   try {
     const {
       selectedPriceLevels,
@@ -2750,9 +2748,6 @@ export const addSecondaryConfigurations = async (req, res) => {
       selectedGodowns = [];
     }
 
-    console.log(selectedGodowns);
-    console.log(vanSaleConfiguration);
-
     const dataToAdd = {
       organization: cmp_id,
       selectedGodowns,
@@ -2765,8 +2760,6 @@ export const addSecondaryConfigurations = async (req, res) => {
       vanSale,
     };
 
-    console.log("dataToAdd", dataToAdd);
-
     const secUser = await SecondaryUser.findById(secondary_user_id);
 
     if (!secUser) {
@@ -2774,37 +2767,32 @@ export const addSecondaryConfigurations = async (req, res) => {
     }
 
     const newCmpId = new mongoose.Types.ObjectId(cmp_id);
-    console.log("newCmpId", newCmpId);
 
     const existingConfigIndex = secUser.configurations.findIndex((config) => {
       return config.organization.equals(newCmpId);
     });
 
-    console.log(existingConfigIndex);
-
     if (existingConfigIndex !== -1) {
       // Configuration already exists
+      const existingConfig = secUser.configurations[existingConfigIndex];
 
-      // Update existing configuration
-      secUser.configurations[existingConfigIndex] = dataToAdd;
+      // Preserve existing counts while updating other fields
+      secUser.configurations[existingConfigIndex] = {
+        ...existingConfig.toObject(),
+        ...dataToAdd,
+      };
     } else {
-
-      // console.log("new config");
-
+      // Configuration does not exist, create new
       const newConfiguration = {
         ...dataToAdd,
         orderNumber: 1,
         salesNumber: 1,
         purchaseNumber: 1,
         receiptNumber: 1,
-        vanSalesNumber:1
+        vanSalesNumber: 1,
       };
       secUser.configurations.push(newConfiguration);
-      // console.log("New configuration added:", newConfiguration);
     }
-
-
-    console.log("secUser", secUser);
 
     const result = await secUser.save();
 
@@ -2822,6 +2810,7 @@ export const addSecondaryConfigurations = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
 
 export const findPrimaryUserGodowns = async (req, res) => {
   const cmp_id = req.params.cmp_id;

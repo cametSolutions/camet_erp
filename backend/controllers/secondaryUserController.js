@@ -2168,17 +2168,36 @@ export const createSale = async (req, res) => {
     }
 
     if (vanSaleConfig) {
-      await SecondaryUser.findByIdAndUpdate(
-        Secondary_user_id,
-        { $inc: { vanSalesNumber: 1 } },
-        { new: true }
-      );
+      // await SecondaryUser.findByIdAndUpdate(
+      //   Secondary_user_id,
+      //   { $inc: { vanSalesNumber: 1 } },
+      //   { new: true }
+      // );
+      const updatedConfiguration = secondaryUser.configurations.map((config) => {
+        if (config.organization.toString() === orgId) {
+          return {
+            ...config,
+            vanSalesNumber: (config.vanSalesNumber || 0) + 1,
+          };
+        }
+        return config;
+      });
+      secondaryUser.configurations = updatedConfiguration;
+      await secondaryUser.save();
     } else if (salesConfig) {
-      await SecondaryUser.findByIdAndUpdate(
-        Secondary_user_id,
-        { $inc: { salesNumber: 1 } },
-        { new: true }
-      );
+
+
+      const updatedConfiguration = secondaryUser.configurations.map((config) => {
+        if (config.organization.toString() === orgId) {
+          return {
+            ...config,
+            salesNumber: (config.salesNumber || 0) + 1,
+          };
+        }
+        return config;
+      });
+      secondaryUser.configurations = updatedConfiguration;
+      await secondaryUser.save();
     } else {
       await OragnizationModel.findByIdAndUpdate(
         orgId,
