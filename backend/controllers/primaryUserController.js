@@ -938,7 +938,7 @@ export const addParty = async (req, res) => {
 
     const party = new PartyModel({
       cmp_id,
-      Primary_user_id:req?.pUserId,
+      Primary_user_id: req?.pUserId,
       accountGroup,
       partyName,
       mobileNumber,
@@ -2783,12 +2783,27 @@ export const addSecondaryConfigurations = async (req, res) => {
     console.log(existingConfigIndex);
 
     if (existingConfigIndex !== -1) {
+      // Configuration already exists
+
       // Update existing configuration
       secUser.configurations[existingConfigIndex] = dataToAdd;
     } else {
-      // Add new configuration
-      secUser.configurations.push(dataToAdd);
+
+      // console.log("new config");
+
+      const newConfiguration = {
+        ...dataToAdd,
+        orderNumber: 1,
+        salesNumber: 1,
+        purchaseNumber: 1,
+        receiptNumber: 1
+      };
+      secUser.configurations.push(newConfiguration);
+      // console.log("New configuration added:", newConfiguration);
     }
+
+
+    console.log("secUser", secUser);
 
     const result = await secUser.save();
 
@@ -3267,3 +3282,37 @@ export const getAllSubDetails = async (req, res) => {
       .json({ message: "An error occurred while fetching the subdetails" });
   }
 };
+
+// @desc get ** all ** current numbers of sales sale orders etc
+// route get/api/pUsers/fetchConfigurationCurrentNumber
+
+// export const fetchConfigurationCurrentNumber = async (req, res) => {
+//   const cmp_id = req.params.orgId;
+//   const secondary_user_id = req.params._id;
+
+//   if (!cmp_id || !secondary_user_id) {
+//     console.log(
+//       "cmp_id and secondary_user_id are required in fetchConfigurationCurrentNumber "
+//     );
+//     return;
+//   }
+
+//   try {
+//     const secUser = await SecondaryUser.findById(secondary_user_id);
+//     const company = await OragnizationModel.findById(cmp_id);
+//     if (!secUser) {
+//       return res.status(404).json({ message: "User not found" });
+//     }
+
+//     const configuration = secUser.configurations.find(
+//       (item) => item.organization.toString() === cmp_id
+//     );
+
+
+
+
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ error: "Internal Server Error" });
+//   }
+// };

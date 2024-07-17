@@ -2494,6 +2494,10 @@ export const fetchConfigurationNumber = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
+
+
+
 export const findSecondaryUserGodowns = async (req, res) => {
   const cmp_id = req.params.cmp_id;
   const secondary_user_id = req.sUserId;
@@ -2553,6 +2557,11 @@ export const findSecondaryUserGodowns = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
+
+
+
+
 export const findPrimaryUserGodownsSelf = async (req, res) => {
   const cmp_id = req.params.cmp_id;
   const sUser = req.sUserId;

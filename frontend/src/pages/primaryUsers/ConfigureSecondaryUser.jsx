@@ -1,6 +1,5 @@
 /* eslint-disable no-case-declarations */
 import { useEffect, useState, useRef } from "react";
-import Sidebar from "../../components/homePage/Sidebar";
 
 import api from "../../api/api";
 import { toast } from "react-toastify";
@@ -21,7 +20,6 @@ function ConfigureSecondaryUser() {
 
   const isFirstRender = useRef(true);
 
-  console.log(godowns);
 
   const [sales, setSales] = useState([
     {
@@ -69,6 +67,11 @@ function ConfigureSecondaryUser() {
   // const org = useSelector((state) => state.setSelectedOrganization.selectedOrg);
   const navigate = useNavigate();
 
+  
+  const orgId = useSelector((state) => state.setSelectedOrganization.selectedOrg._id);
+
+  //////////////////////////////// fetchGodownsAndPriceLevels ////////////////////////////////////
+
   useEffect(() => {
     const fetchGodowns = async () => {
       try {
@@ -89,8 +92,40 @@ function ConfigureSecondaryUser() {
       }
     };
 
+
+    const fetchConfigurationNumber = async () => {
+      try {
+        const res = await api.get(
+          `/api/pUsers/fetchConfigurationCurrentNumber/${orgId}/sales`,
+
+          {
+            withCredentials: true,
+          }
+        );
+
+        console.log(res.data);
+        // if (res.data.message === "default") {
+        //   const { configurationNumber } = res.data;
+        //   setSalesNumber(configurationNumber);
+        //   return;
+        // }
+
+        const { configDetails, configurationNumber } = res.data;
+        console.log(configDetails);
+        console.log(configurationNumber);
+
+      } catch (error) {
+        console.log(error);
+      }
+    };
+
+    fetchConfigurationNumber();
+
     fetchGodowns();
   }, []);
+
+
+
 
   useEffect(() => {
     if (isFirstRender.current) {
@@ -111,7 +146,9 @@ function ConfigureSecondaryUser() {
     setVanSaleGodownName(selectedGodowns[0]);
   }, [shouldCheckAllFields]);
 
-  console.log(vanSaleGodownName);
+
+
+  //////////////////////////////// getSecUserDetails ////////////////////////////////////
 
   useEffect(() => {
     const fetchSingleUser = async () => {
@@ -214,7 +251,6 @@ function ConfigureSecondaryUser() {
     console.log(section);
   };
 
-  console.log(sales);
 
   const getConfigValue = (section, field) => {
     switch (section) {
@@ -550,6 +586,42 @@ function ConfigureSecondaryUser() {
                     htmlFor="widthOfNumericalPart"
                   >
                     Width of Numerical Part
+                  </label>
+                  <input
+                    type="number"
+                    id="widthOfNumericalPart"
+                    className={`  ${
+                      vanSale && selectedConfig == "sales"
+                        ? "pointer-events-none  opacity-45 "
+                        : ""
+                    }    border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150`}
+                    onChange={(e) =>
+                      updateConfig(
+                        selectedConfig,
+                        "widthOfNumericalPart",
+                        e.target.value
+                      )
+                    }
+                    value={getConfigValue(
+                      selectedConfig,
+                      "widthOfNumericalPart"
+                    )}
+                    placeholder="Width of Numerical Part"
+                  />
+                </div>
+              </div>
+
+              <div className="w-full lg:w-6/12 px-4">
+                <div className="relative w-full mb-3">
+                  <label
+                    className={`   ${
+                      vanSale && selectedConfig == "sales"
+                        ? "pointer-events-none  opacity-45 "
+                        : ""
+                    }   block uppercase text-blueGray-600 text-xs font-bold mb-2`}
+                    htmlFor="widthOfNumericalPart"
+                  >
+                    Current Number
                   </label>
                   <input
                     type="number"

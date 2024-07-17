@@ -94,6 +94,7 @@ router.get("/getProductSubDetails/:orgId",authPrimary,primaryIsBlocked,getProduc
 router.delete("/deleteProductSubDetails/:orgId/:id",authPrimary,primaryIsBlocked,deleteProductSubDetails)
 router.put("/editProductSubDetails/:orgId/:id",authPrimary,primaryIsBlocked,editProductSubDetails)
 router.get("/getAllSubDetails/:orgId",authPrimary,primaryIsBlocked,getAllSubDetails)
+// router.get("/fetchConfigurationCurrentNumber/:orgId",authPrimary,primaryIsBlocked,fetchConfigurationCurrentNumber)
 
 
 
