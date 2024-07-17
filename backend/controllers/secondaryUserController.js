@@ -1003,11 +1003,17 @@ export const createInvoice = async (req, res) => {
     }
 
     if (orderConfig === true) {
-      await SecondaryUser.findByIdAndUpdate(
-        Secondary_user_id,
-        { $inc: { orderNumber: 1 } },
-        { new: true }
-      );
+      const updatedConfiguration = secondaryUser.configurations.map((config) => {
+        if (config.organization.toString() === orgId) {
+          return {
+            ...config,
+            orderNumber: (config.orderNumber || 0) + 1,
+          };
+        }
+        return config;
+      });
+      secondaryUser.configurations = updatedConfiguration;
+      await secondaryUser.save();
     } else {
       await OragnizationModel.findByIdAndUpdate(
         orgId,
