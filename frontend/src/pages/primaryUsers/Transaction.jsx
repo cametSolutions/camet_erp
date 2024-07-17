@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import api from "../../api/api";
 import dayjs from "dayjs";
 import { IoArrowRedoOutline } from "react-icons/io5";
-import Sidebar from "../../components/homePage/Sidebar";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { FcCancel } from "react-icons/fc";
@@ -20,7 +19,7 @@ function Transaction() {
   const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState("");
 
-  const [startDate, setStartDate] = useState(new Date());
+  const [   startDate, setStartDate] = useState(new Date());
   const [endDate, setEndDate] = useState(new Date());
   const [total, setTotal] = useState(0);
 

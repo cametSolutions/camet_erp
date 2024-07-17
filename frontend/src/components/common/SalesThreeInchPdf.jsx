@@ -1,7 +1,15 @@
 /* eslint-disable react/prop-types */
 import QRCode from "react-qr-code";
 
-function SalesThreeInchPdf({ contentToPrint, data, org, subTotal, bank ,additinalCharge,inWords}) {
+function SalesThreeInchPdf({
+  contentToPrint,
+  data,
+  org,
+  subTotal,
+  bank,
+  additinalCharge,
+  inWords,
+}) {
   const calculateTotalTax = () => {
     const individualTax = data?.items?.map(
       (el) => el?.total - (el?.total * 100) / (parseFloat(el.igst) + 100)
@@ -9,7 +17,6 @@ function SalesThreeInchPdf({ contentToPrint, data, org, subTotal, bank ,additina
     const totalTax = individualTax
       ?.reduce((acc, curr) => (acc += curr), 0)
       .toFixed(2);
-
 
     return totalTax;
   };
@@ -38,6 +45,48 @@ function SalesThreeInchPdf({ contentToPrint, data, org, subTotal, bank ,additina
     }, 0); // Initialize the accumulator with 0
   };
 
+  console.log(data);
+  const party = data?.party;
+  let address;
+
+  if (
+    party?.newBillToShipTo &&
+    Object.keys(party?.newBillToShipTo).length > 0
+  ) {
+    address = party?.newBillToShipTo;
+  } else {
+    if (party) {
+      const {
+        partyName,
+        mobileNumber,
+        emailID,
+        gstNo,
+        state_reference,
+        billingAddress,
+        shippingAddress,
+        pincode,
+      } = party;
+
+      address = {
+        billToName: partyName,
+        billToAddress: billingAddress,
+        billToPin: pincode,
+        billToGst: gstNo,
+        billToMobile: mobileNumber,
+        billToEmail: emailID,
+        billToSupply: state_reference,
+        shipToName: partyName,
+        shipToAddress: shippingAddress,
+        shipToPin: pincode,
+        shipToGst: gstNo,
+        shipToMobile: mobileNumber,
+        shipToEmail: emailID,
+        shipToSupply: state_reference,
+      };
+    }
+  }
+
+  console.log(address);
   return (
     <div
       ref={contentToPrint}
@@ -96,6 +145,11 @@ function SalesThreeInchPdf({ contentToPrint, data, org, subTotal, bank ,additina
           <p className="text-black   text-[9px] font-bold mt-6">
             Name: {data?.party?.partyName}
           </p>
+          <p className="text-black text-[9px] font-bold">
+            {[address?.billToAddress,]
+              .filter((item) => item != null && item !== "" && item !== "null")
+              .join(", ") || "Address not available"}
+          </p>
         </div>
 
         {/* <hr className="border-t-2 border-black mb-0.5" /> */}
@@ -118,13 +172,12 @@ function SalesThreeInchPdf({ contentToPrint, data, org, subTotal, bank ,additina
           <tbody>
             {data?.items?.length > 0 &&
               data?.items.map((el, index) => {
+                const total = el?.total || 0;
+                console.log("total", total);
+                const count = el?.count || 0;
+                console.log("count", count);
+                const rate = (total / count).toFixed(2) || 0;
 
-                const total=el?.total ||0;
-                console.log("total",total)
-                const count=el?.count || 0;
-                console.log("count",count);
-                const rate=(total/count).toFixed(2) || 0;
-               
                 return (
                   <tr
                     key={index}
@@ -140,8 +193,7 @@ function SalesThreeInchPdf({ contentToPrint, data, org, subTotal, bank ,additina
                       {el?.count} {el?.unit}
                     </td>
                     <td className="py-2 text-black font-bold  text-right pr-2 text-nowrap">
-                      ₹{" "}
-                      {rate|| 0}
+                      ₹ {rate || 0}
                     </td>
 
                     <td className="py-4 text-black  font-bold text-right">

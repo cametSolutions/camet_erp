@@ -20,6 +20,7 @@ import {
   setAdditionalCharges,
   setFinalAmount,
   addDespatchDetails,
+  changeDate,
 } from "../../../slices/salesSecondary";
 import { useDispatch } from "react-redux";
 import { IoIosArrowDown } from "react-icons/io";
@@ -32,7 +33,6 @@ import { IoIosAddCircle } from "react-icons/io";
 import { MdPlaylistAdd } from "react-icons/md";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import { Button, Label, Modal, TextInput } from "flowbite-react";
-import SidebarSec from "../../components/secUsers/SidebarSec";
 import { PiAddressBookFill } from "react-icons/pi";
 import DespatchDetails from "../../components/secUsers/DespatchDetails";
 
@@ -50,6 +50,8 @@ function EditSale() {
   const [godownname, setGodownname] = useState("");
   const [refreshCmp, setrefreshCmp] = useState(false);
   const [salesNumber, setSalesNumber] = useState("");
+  const date = useSelector((state) => state.salesSecondary.date);
+  const [selectedDate, setSelectedDate] = useState(date);
 
   const [additionalChragesFromCompany, setAdditionalChragesFromCompany] =
     useState([]);
@@ -89,18 +91,17 @@ function EditSale() {
   );
 
   const salesDetailsFromRedux = useSelector((state) => state.salesSecondary);
-
   console.log(salesDetailsFromRedux);
+
   const {
     party: partyFromRedux,
     items: itemsFromRedux,
     despatchDetails: despatchDetailsFromRedux,
     finalAmount: finalAmountFromRedux,
     heights: heightsFromRedux,
-  } = salesDetailsFromRedux;
+    date: dateFromRedux,
 
-  console.log(partyFromRedux);
-  console.log(despatchDetailsFromRedux);
+  } = salesDetailsFromRedux;
 
   ////////////////////////////////utils//////////////////////////////////////////////////////
 
@@ -125,9 +126,10 @@ function EditSale() {
           finalAmount,
           salesNumber,
           despatchDetails,
+          createdAt,
         } = res.data.data;
 
-        console.log(partyFromRedux);
+        console.log(createdAt);
 
         // // additionalCharges: [ { option: 'option 1', value: '95', action: 'add' } ],
         if (Object.keys(partyFromRedux) == 0) {
@@ -141,6 +143,11 @@ function EditSale() {
         }
         if (finalAmount) {
           dispatch(setFinalAmount(finalAmountFromRedux));
+        }
+
+        if (!dateFromRedux) {
+          setSelectedDate(createdAt);
+          dispatch(changeDate(createdAt));
         }
 
         if (priceLevelFromRedux == "") {
@@ -181,7 +188,6 @@ function EditSale() {
           //   dispatch(setBatchHeight());
         }
 
-  
         if (
           Object.keys(despatchDetailsFromRedux).every(
             (key) => despatchDetailsFromRedux[key] == ""
@@ -450,10 +456,11 @@ function EditSale() {
       lastAmount,
       orgId,
       salesNumber,
-       despatchDetails :despatchDetailsFromRedux,
+      despatchDetails: despatchDetailsFromRedux,
+      selectedDate:dateFromRedux||new Date()
     };
 
-    // console.log(formData);
+    console.log(formData);
 
     try {
       const res = await api.post(`/api/sUsers/editSale/${id}`, formData, {
@@ -506,12 +513,8 @@ function EditSale() {
     }
   };
 
-  console.log(additionalChragesFromCompany);
-  console.log(godownname);
-
   return (
     <div className="flex relative ">
-     
       <div className="flex-1 bg-slate-100  h-screen   ">
         <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex  items-center gap-2 sticky top-0 z-50  ">
           {/* <IoReorderThreeSharp
@@ -531,9 +534,22 @@ function EditSale() {
             <p className="text-md font-semibold text-violet-400">
               Sale #{salesNumber}
             </p>
-            <p className="font-semibold   text-gray-500 text-xs md:text-base">
-              {new Date().toDateString()}
-            </p>
+            <div className="flex gap-2 items-center">
+              <p className="font-semibold   text-gray-500 text-xs md:text-base">
+                {new Date(selectedDate).toDateString()}
+              </p>
+
+              <input
+                onChange={(e) => {
+                  setSelectedDate(e.target.value);
+                  dispatch(changeDate(new Date(e.target.value)));
+                }}
+                type="date"
+                min={new Date().toISOString().split("T")[0]}
+                className="w-20 border-none cursor-pointer  "
+                style={{ boxShadow: "none", borderColor: "#b6b6b6" }}
+              />
+            </div>
           </div>
           <div className="  ">
             <div className="  flex gap-5 items-center ">

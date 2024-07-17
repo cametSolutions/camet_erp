@@ -921,7 +921,7 @@ export const addParty = async (req, res) => {
   try {
     const {
       cpm_id: cmp_id,
-      Primary_user_id,
+      // Primary_user_id,
       accountGroup,
       partyName,
       mobileNumber,
@@ -938,7 +938,7 @@ export const addParty = async (req, res) => {
 
     const party = new PartyModel({
       cmp_id,
-      Primary_user_id,
+      Primary_user_id:req?.pUserId,
       accountGroup,
       partyName,
       mobileNumber,
@@ -2275,7 +2275,8 @@ export const addconfigurations = async (req, res) => {
       return res.status(404).json({ message: "Organization not found" });
     }
 
-    const { selectedBank, termsList } = req.body;
+    const { selectedBank, termsList, enableBillToShipTo, despatchDetails } =
+      req.body;
 
     // Check if selectedBank is provided
     let bankId = null; // Default to null if not provided
@@ -2289,6 +2290,8 @@ export const addconfigurations = async (req, res) => {
     const newConfigurations = {
       bank: bankId, // Use the validated bankId or null
       terms: termsList,
+      enableBillToShipTo,
+      despatchDetails,
     };
     org.configurations = [newConfigurations];
 
@@ -3223,8 +3226,8 @@ export const editProductSubDetails = async (req, res) => {
 
 export const getAllSubDetails = async (req, res) => {
   try {
-    const  cmp_id=req.params.orgId;
-    const  Primary_user_id=req.pUserId;
+    const cmp_id = req.params.orgId;
+    const Primary_user_id = req.pUserId;
 
     if (!cmp_id || !Primary_user_id) {
       console.log(
@@ -3237,9 +3240,7 @@ export const getAllSubDetails = async (req, res) => {
       await Promise.all([
         Brand.find({ cmp_id, Primary_user_id }).select("_id brand"),
         Category.find({ cmp_id, Primary_user_id }).select("_id category"),
-        Subcategory.find({ cmp_id, Primary_user_id }).select(
-          "_id subcategory"
-        ),
+        Subcategory.find({ cmp_id, Primary_user_id }).select("_id subcategory"),
         Godown.find({ cmp_id, Primary_user_id }).select("_id godown"),
         PriceLevel.find({ cmp_id, Primary_user_id }).select("_id pricelevel"),
       ]);

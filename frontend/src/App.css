@@ -243,4 +243,28 @@
 }
 
 
+/* Hide the text inside the date input */
+input[type="date"]::-webkit-datetime-edit,
+input[type="date"]::-webkit-inner-spin-button,
+input[type="date"]::-webkit-clear-button {
+    display: none;
+}
+
+/* Hide the default arrow for Firefox */
+input[type="date"]::-moz-clear {
+    display: none;
+}
+
+/* Hide the placeholder text */
+input[type="date"] {
+    color: transparent;
+}
+
+/* To show placeholder text when selected */
+input[type="date"]:focus,
+input[type="date"]:hover {
+    color: black;
+}
+
+
 

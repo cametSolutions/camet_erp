@@ -33,8 +33,8 @@ const organizationSchema = new mongoose.Schema(
     orderNumber: { type: Number, default: 1 },
     OrderNumberValue: { type: String },
     OrderNumberDetails: { type: Object },
-    salesNumber:{ type: Number, default: 1 },
-    purchaseNumber:{ type: Number, default: 1 },
+    salesNumber: { type: Number, default: 1 },
+    purchaseNumber: { type: Number, default: 1 },
     salesNumberDetails: { type: Object },
     additionalCharges: [
       {
@@ -48,6 +48,8 @@ const organizationSchema = new mongoose.Schema(
       {
         bank: { type: mongoose.Schema.Types.ObjectId, ref: "BankDetails" },
         terms: { type: Array },
+        enableBillToShipTo: { type: Boolean, default: true   },
+        despatchDetails:{type:Object}
       },
     ],
   },

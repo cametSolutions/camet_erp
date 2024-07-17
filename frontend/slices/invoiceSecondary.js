@@ -1,6 +1,7 @@
 import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
+  date:"",
   products: [],
   party: {},
   items: [],
@@ -151,6 +152,9 @@ export const invoiceSliceSecondary = createSlice({
         despatchDetails: action.payload,
       };
     },
+    changeDate: (state, action) => {
+      state.date = action.payload;
+    },
   },
 });
 
@@ -182,7 +186,8 @@ export const {
   addAllProducts,
   addPriceRate,
   addNewAddress,
-  addDespatchDetails
+  addDespatchDetails,
+  changeDate
 } = invoiceSliceSecondary.actions;
 
 export default invoiceSliceSecondary.reducer;

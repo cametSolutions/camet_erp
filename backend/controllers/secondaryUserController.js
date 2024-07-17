@@ -625,7 +625,7 @@ export const addParty = async (req, res) => {
   try {
     const {
       cpm_id: cmp_id,
-      Secondary_user_id,
+      // Secondary_user_id,
       accountGroup,
       partyName,
       mobileNumber,
@@ -640,13 +640,15 @@ export const addParty = async (req, res) => {
       openingBalanceAmount,
     } = req.body;
 
+    const Secondary_user_id = req?.sUserId;
+
     const Primary_user = await SecondaryUser.findById(Secondary_user_id);
     const Primary_user_id = await Primary_user.primaryUser;
 
     const party = new PartyModel({
       cmp_id,
-      Primary_user_id,
-      Secondary_user_id,
+      Primary_user_id: req.owner,
+      Secondary_user_id: req.sUserId,
       accountGroup,
       partyName,
       mobileNumber,
@@ -865,7 +867,8 @@ export const createInvoice = async (req, res) => {
       additionalChargesFromRedux,
       lastAmount,
       orderNumber,
-      despatchDetails
+      despatchDetails,
+      selectedDate,
     } = req.body;
 
     // Manually fetch the last invoice to get the serial number
@@ -968,7 +971,8 @@ export const createInvoice = async (req, res) => {
       Primary_user_id: owner,
       Secondary_user_id,
       orderNumber,
-      despatchDetails
+      despatchDetails,
+      createdAt: selectedDate,
     });
 
     const result = await invoice.save();
@@ -1553,7 +1557,8 @@ export const editInvoice = async (req, res) => {
       additionalChargesFromRedux,
       lastAmount,
       orderNumber,
-      despatchDetails
+      despatchDetails,
+      selectedDate,
     } = req.body;
 
     let productUpdates = [];
@@ -1626,21 +1631,26 @@ export const editInvoice = async (req, res) => {
       );
     }
 
+    console.log("selected date ", selectedDate);
+
     const result = await invoiceModel.findByIdAndUpdate(
-      invoiceId, // Use the invoiceId to find the document
+      invoiceId,
       {
-        cmp_id: orgId,
-        party,
-        items: updatedItems,
-        priceLevel: priceLevelFromRedux,
-        additionalCharges: additionalChargesFromRedux,
-        finalAmount: lastAmount,
-        Primary_user_id,
-        Secondary_user_id,
-        orderNumber,
-        despatchDetails
+        $set: {
+          cmp_id: orgId,
+          party,
+          items: updatedItems,
+          priceLevel: priceLevelFromRedux,
+          additionalCharges: additionalChargesFromRedux,
+          finalAmount: lastAmount,
+          Primary_user_id,
+          Secondary_user_id,
+          orderNumber,
+          despatchDetails,
+          createdAt: new Date(selectedDate),
+        },
       },
-      { new: true } // This option returns the updated document
+      { new: true, timestamps: false }
     );
 
     return res.status(200).json({
@@ -1817,7 +1827,8 @@ export const addconfigurations = async (req, res) => {
       return res.status(404).json({ message: "Organization not found" });
     }
 
-    const { selectedBank, termsList } = req.body;
+    const { selectedBank, termsList, enableBillToShipTo, despatchDetails } =
+      req.body;
 
     // Check if selectedBank is provided
     let bankId = null; // Default to null if not provided
@@ -1831,6 +1842,8 @@ export const addconfigurations = async (req, res) => {
     const newConfigurations = {
       bank: bankId, // Use the validated bankId or null
       terms: termsList,
+      enableBillToShipTo,
+      despatchDetails,
     };
     org.configurations = [newConfigurations];
 
@@ -1866,6 +1879,7 @@ export const createSale = async (req, res) => {
       additionalChargesFromRedux,
       lastAmount,
       salesNumber,
+      selectedDate,
     } = req.body;
 
     const secondaryUser = await SecondaryUser.findById(Secondary_user_id);
@@ -2129,6 +2143,7 @@ export const createSale = async (req, res) => {
       Primary_user_id,
       Secondary_user_id,
       salesNumber,
+      createdAt: new Date(selectedDate),
     });
 
     const result = await sales.save();
@@ -2191,7 +2206,13 @@ export const createSale = async (req, res) => {
       { upsert: true, new: true }
     );
 
-    res.status(201).json({ success: true, data: result, message: "Sale created successfully" });
+    res
+      .status(201)
+      .json({
+        success: true,
+        data: result,
+        message: "Sale created successfully",
+      });
   } catch (error) {
     console.error(error);
     res.status(500).json({
@@ -2992,8 +3013,11 @@ export const editSale = async (req, res) => {
       additionalChargesFromRedux,
       lastAmount,
       salesNumber,
-      despatchDetails
+      despatchDetails,
+      selectedDate,
     } = req.body;
+
+    console.log("selectedDate", selectedDate);
 
     let productUpdates = [];
 
@@ -3363,6 +3387,9 @@ export const editSale = async (req, res) => {
     existingSale.finalAmount = lastAmount;
     existingSale.salesNumber = salesNumber;
     existingSale.despatchDetails = despatchDetails;
+    existingSale.createdAt = new Date(selectedDate);
+
+    console.log("existingSale", existingSale);
 
     const result = await existingSale.save();
 
@@ -3411,12 +3438,11 @@ export const editSale = async (req, res) => {
   }
 };
 
-
 export const getAllSubDetails = async (req, res) => {
   try {
-    const  cmp_id=req.params.orgId;
-    const  Primary_user_id=req.owner;
-console.log(cmp_id,Primary_user_id)
+    const cmp_id = req.params.orgId;
+    const Primary_user_id = req.owner;
+    console.log(cmp_id, Primary_user_id);
     if (!cmp_id || !Primary_user_id) {
       console.log(
         "cmp_id and Primary_user_id are required in getAllSubDetails "
@@ -3428,9 +3454,7 @@ console.log(cmp_id,Primary_user_id)
       await Promise.all([
         Brand.find({ cmp_id, Primary_user_id }).select("_id brand"),
         Category.find({ cmp_id, Primary_user_id }).select("_id category"),
-        Subcategory.find({ cmp_id, Primary_user_id }).select(
-          "_id subcategory"
-        ),
+        Subcategory.find({ cmp_id, Primary_user_id }).select("_id subcategory"),
         Godown.find({ cmp_id, Primary_user_id }).select("_id godown"),
         PriceLevel.find({ cmp_id, Primary_user_id }).select("_id pricelevel"),
       ]);
