@@ -2796,7 +2796,8 @@ export const addSecondaryConfigurations = async (req, res) => {
         orderNumber: 1,
         salesNumber: 1,
         purchaseNumber: 1,
-        receiptNumber: 1
+        receiptNumber: 1,
+        vanSalesNumber:1
       };
       secUser.configurations.push(newConfiguration);
       // console.log("New configuration added:", newConfiguration);

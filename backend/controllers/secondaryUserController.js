@@ -2394,6 +2394,8 @@ export const fetchConfigurationNumber = async (req, res) => {
       (item) => item.organization.toString() === cmp_id
     );
 
+    
+
     if (configuration) {
       switch (title) {
         case "sales":
@@ -2404,21 +2406,21 @@ export const fetchConfigurationNumber = async (req, res) => {
               .every(([_, value]) => value !== "")
           ) {
             configDetails = configuration.vanSaleConfiguration;
-            configurationNumber = secUser?.vanSalesNumber;
+            configurationNumber = configuration?.vanSalesNumber;
           } else {
             configDetails = configuration.salesConfiguration || "";
-            configurationNumber = secUser?.salesNumber;
+            configurationNumber = configuration?.salesNumber;
           }
           break;
         case "salesOrder":
           configDetails = configuration.salesOrderConfiguration || "";
 
-          configurationNumber = secUser?.orderNumber;
+          configurationNumber = configuration?.orderNumber;
           break;
         case "purchase":
           configDetails = configuration.purchaseConfiguration || "";
 
-          configurationNumber = secUser?.purchaseNumber;
+          configurationNumber = configuration?.purchaseNumber;
           break;
         case "receipt":
           configDetails = configuration.receiptConfiguration || "";

@@ -30,6 +30,7 @@ const secondaryUserSchema = new mongoose.Schema(
         salesNumber: { type: Number },
         purchaseNumber: { type: Number },
         receiptNumber: { type: Number },
+        vanSalesNumber: { type: Number },
         // vanSaleGodown:{type:String}
       },
     ],
