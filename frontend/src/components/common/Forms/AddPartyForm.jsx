@@ -18,20 +18,20 @@ function AddPartyForm({ submitHandler, partyDetails = {} }) {
   const [creditLimit, setCreditLimit] = useState("");
   const [openingBalanceType, setOpeningBalanceType] = useState("");
   const [openingBalanceAmount, setOpeningBalanceAmount] = useState("");
-  const [cpm_id, setCmp_id] = useState("");
+  // const [cpm_id, setCmp_id] = useState("");
   // const [Secondary_user_id, setSecondary_user_id] = useState("");
 
-  const companytId = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg._id
-  );
+  // const companytId = useSelector(
+  //   (state) => state.secSelectedOrganization.secSelectedOrg._id
+  // );
 
   console.log(partyDetails);
 
   // const user = JSON.parse(localStorage.getItem("sUserData"));
   // const userId = user._id;
   useEffect(() => {
-    setCmp_id(companytId);
-    if (Object.entries(partyDetails?.length > 0)) {
+    // setCmp_id(companytId);
+    if (Object.entries(partyDetails)?.length>0) {
       const {
         accountGroup,
         partyName,
@@ -123,7 +123,7 @@ function AddPartyForm({ submitHandler, partyDetails = {} }) {
     }
 
     const formData = {
-      cpm_id,
+      // cpm_id,
       // Secondary_user_id,
       accountGroup,
       partyName,

@@ -143,10 +143,10 @@ function OrderConfigurations() {
   };
 
   const submitHandler = async () => {
-    if (!selectedBank && termsList.length == 0 ) {
-      toast.error("At least configure one field");
-      return;
-    }
+    // if (!selectedBank && termsList.length == 0 ) {
+    //   toast.error("At least configure one field");
+    //   return;
+    // }
 
 
     const continueWithSubmission = validateDespatchDetails(despatchDetails);
