@@ -5,8 +5,10 @@ import { Link } from "react-router-dom";
 import { FixedSizeList as List } from "react-window";
 import CallIcon from "../CallIcon";
 
-function PartyListComponent({ filteredParty, type, deleteHandler }) {
+function PartyListComponent({ filteredParty, type, deleteHandler,user="secondary" }) {
 
+
+  console.log(user);
 
   const handleDelete = (id) => {
     deleteHandler(id);
@@ -52,7 +54,7 @@ function PartyListComponent({ filteredParty, type, deleteHandler }) {
             /> */}
 
             <CallIcon phoneNumber={el?.mobileNumber} size={18} color="green" />
-            <Link to={`/sUsers/editParty/${el._id}`}>
+            <Link to={`/${user==="secondary"?"sUsers":"pUsers"}/editParty/${el._id}`}>
               <FaEdit className="text-blue-500" />
             </Link>
             <MdDelete
