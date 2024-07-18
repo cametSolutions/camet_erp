@@ -31,7 +31,7 @@ function AddPartyForm({ submitHandler, partyDetails = {} }) {
   // const userId = user._id;
   useEffect(() => {
     setCmp_id(companytId);
-    if (Object.entries(partyDetails?.length > 0)) {
+    if (Object.entries(partyDetails)?.length>0) {
       const {
         accountGroup,
         partyName,
