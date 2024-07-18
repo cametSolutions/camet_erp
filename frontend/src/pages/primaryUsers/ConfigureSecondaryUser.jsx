@@ -20,13 +20,13 @@ function ConfigureSecondaryUser() {
 
   const isFirstRender = useRef(true);
 
-
   const [sales, setSales] = useState([
     {
       prefixDetails: "",
       suffixDetails: "",
       // startingNumber: "",
       widthOfNumericalPart: "",
+      currentNumber: "",
     },
   ]);
   const [salesOrder, setSalesOrder] = useState([
@@ -35,6 +35,7 @@ function ConfigureSecondaryUser() {
       suffixDetails: "",
       // startingNumber: "",
       widthOfNumericalPart: "",
+      currentNumber: "",
     },
   ]);
   const [receipt, setReceipt] = useState([
@@ -43,6 +44,7 @@ function ConfigureSecondaryUser() {
       suffixDetails: "",
       // startingNumber: "",
       widthOfNumericalPart: "",
+      currentNumber: "",
     },
   ]);
   const [purchase, setPurchase] = useState([
@@ -51,6 +53,7 @@ function ConfigureSecondaryUser() {
       suffixDetails: "",
       // startingNumber: "",
       widthOfNumericalPart: "",
+      currentNumber: "",
     },
   ]);
 
@@ -60,6 +63,7 @@ function ConfigureSecondaryUser() {
       suffixDetails: "",
       // startingNumber: "",
       widthOfNumericalPart: "",
+      currentNumber: "",
     },
   ]);
 
@@ -67,8 +71,6 @@ function ConfigureSecondaryUser() {
   // const org = useSelector((state) => state.setSelectedOrganization.selectedOrg);
   const navigate = useNavigate();
 
-  
-  const orgId = useSelector((state) => state.setSelectedOrganization.selectedOrg._id);
 
   //////////////////////////////// fetchGodownsAndPriceLevels ////////////////////////////////////
 
@@ -92,11 +94,10 @@ function ConfigureSecondaryUser() {
       }
     };
 
-
     const fetchConfigurationNumber = async () => {
       try {
         const res = await api.get(
-          `/api/pUsers/fetchConfigurationCurrentNumber/${orgId}/sales`,
+          `/api/pUsers/fetchConfigurationCurrentNumber/${id}/${userId}`,
 
           {
             withCredentials: true,
@@ -104,16 +105,66 @@ function ConfigureSecondaryUser() {
         );
 
         console.log(res.data);
-        // if (res.data.message === "default") {
-        //   const { configurationNumber } = res.data;
-        //   setSalesNumber(configurationNumber);
-        //   return;
-        // }
+        const {
+          orderNumber,
+          salesNumber,
+          purchaseNumber,
+          receiptNumber,
+          vanSalesNumber,
+        } = res.data;
 
-        const { configDetails, configurationNumber } = res.data;
-        console.log(configDetails);
-        console.log(configurationNumber);
+        console.log(orderNumber, salesNumber, purchaseNumber, receiptNumber);
 
+        if (salesNumber) {
+          setSales((prevSales) => {
+            // Create a copy of the first object and update its properties
+            const updatedSales = {
+              ...prevSales[0],
+              currentNumber: salesNumber,
+            };
+            return [updatedSales];
+          });
+        }
+        if (orderNumber) {
+          setSalesOrder((prevSaleOrder) => {
+            // Create a copy of the first object and update its properties
+            const updatedSaleOrder = {
+              ...prevSaleOrder[0],
+              currentNumber: orderNumber,
+            };
+            return [updatedSaleOrder];
+          });
+        }
+        if (purchaseNumber) {
+          setPurchase((prevPurchase) => {
+            // Create a copy of the first object and update its properties
+            const updatedPurchase = {
+              ...prevPurchase[0],
+              currentNumber: purchaseNumber,
+            };
+            return [updatedPurchase];
+          });
+        }
+        if (receiptNumber) {
+          setReceipt((prevReceipt) => {
+            // Create a copy of the first object and update its properties
+            const updatedReceipt = {
+              ...prevReceipt[0],
+              currentNumber: receiptNumber,
+            };
+            return [updatedReceipt];
+          });
+        }
+        if (vanSalesNumber) {
+          setVanSaleConfig((prevVanSaleConfig) => {
+            // Create a copy of the first object and update its properties
+            const updatedVanSaleConfig = {
+              ...prevVanSaleConfig[0],
+              currentNumber: vanSalesNumber,
+            };
+            return [updatedVanSaleConfig];
+          });
+        }
       } catch (error) {
         console.log(error);
       }
@@ -124,8 +175,7 @@ function ConfigureSecondaryUser() {
     fetchGodowns();
   }, []);
 
-
-
+  console.log(sales, salesOrder, receipt, purchase, vanSaleConfig);
 
   useEffect(() => {
     if (isFirstRender.current) {
@@ -145,8 +195,6 @@ function ConfigureSecondaryUser() {
     setVanSale(allFieldsFilled);
     setVanSaleGodownName(selectedGodowns[0]);
   }, [shouldCheckAllFields]);
-
-
 
   //////////////////////////////// getSecUserDetails ////////////////////////////////////
 
@@ -250,7 +298,6 @@ function ConfigureSecondaryUser() {
 
     console.log(section);
   };
-
 
   const getConfigValue = (section, field) => {
     switch (section) {
@@ -625,7 +672,7 @@ function ConfigureSecondaryUser() {
                   </label>
                   <input
                     type="number"
-                    id="widthOfNumericalPart"
+                    id="currentNumber"
                     className={`  ${
                       vanSale && selectedConfig == "sales"
                         ? "pointer-events-none  opacity-45 "
@@ -634,13 +681,13 @@ function ConfigureSecondaryUser() {
                     onChange={(e) =>
                       updateConfig(
                         selectedConfig,
-                        "widthOfNumericalPart",
+                        "currentNumber",
                         e.target.value
                       )
                     }
                     value={getConfigValue(
                       selectedConfig,
-                      "widthOfNumericalPart"
+                      "currentNumber"
                     )}
                     placeholder="Width of Numerical Part"
                   />

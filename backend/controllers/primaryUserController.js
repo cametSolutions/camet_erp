@@ -2811,7 +2811,6 @@ export const addSecondaryConfigurations = async (req, res) => {
   }
 };
 
-
 export const findPrimaryUserGodowns = async (req, res) => {
   const cmp_id = req.params.cmp_id;
   const Primary_user_id = req.pUserId;
@@ -3275,34 +3274,52 @@ export const getAllSubDetails = async (req, res) => {
 
 // @desc get ** all ** current numbers of sales sale orders etc
 // route get/api/pUsers/fetchConfigurationCurrentNumber
+export const fetchConfigurationCurrentNumber = async (req, res) => {
+  const cmp_id = req.params.orgId;
+  const secondary_user_id = req.params._id;
 
-// export const fetchConfigurationCurrentNumber = async (req, res) => {
-//   const cmp_id = req.params.orgId;
-//   const secondary_user_id = req.params._id;
+  if (!cmp_id || !secondary_user_id) {
+    console.log(
+      "cmp_id and secondary_user_id are required in fetchConfigurationCurrentNumber "
+    );
+    return res
+      .status(400)
+      .json({ message: "cmp_id and secondary_user_id are required" });
+  }
 
-//   if (!cmp_id || !secondary_user_id) {
-//     console.log(
-//       "cmp_id and secondary_user_id are required in fetchConfigurationCurrentNumber "
-//     );
-//     return;
-//   }
+  try {
+    const secUser = await SecondaryUser.findById(secondary_user_id);
+    const company = await OragnizationModel.findById(cmp_id);
+    if (!secUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
 
-//   try {
-//     const secUser = await SecondaryUser.findById(secondary_user_id);
-//     const company = await OragnizationModel.findById(cmp_id);
-//     if (!secUser) {
-//       return res.status(404).json({ message: "User not found" });
-//     }
+    let configuration = secUser.configurations.find(
+      (item) => item.organization.toString() === cmp_id
+    );
 
-//     const configuration = secUser.configurations.find(
-//       (item) => item.organization.toString() === cmp_id
-//     );
+    if (!configuration) {
+      configuration = company;
+    }
 
+    const {
+      orderNumber,
+      salesNumber,
+      purchaseNumber,
+      receiptNumber,
+      vanSalesNumber,
+    } = configuration;
 
-
-
-//   } catch (error) {
-//     console.error(error);
-//     res.status(500).json({ error: "Internal Server Error" });
-//   }
-// };
+    return res.status(200).json({
+      message: "Configuration numbers retrieved successfully",
+      orderNumber,
+      salesNumber,
+      purchaseNumber,
+      receiptNumber,
+      vanSalesNumber,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};

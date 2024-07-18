@@ -144,15 +144,15 @@ function SalesSecondary() {
           const { widthOfNumericalPart, prefixDetails, suffixDetails } =
             configDetails;
           const newOrderNumber = configurationNumber.toString();
-          console.log(newOrderNumber);
-          console.log(widthOfNumericalPart);
-          console.log(prefixDetails);
-          console.log(suffixDetails);
+          // console.log(newOrderNumber);
+          // console.log(widthOfNumericalPart);
+          // console.log(prefixDetails);
+          // console.log(suffixDetails);
 
           const padedNumber = newOrderNumber.padStart(widthOfNumericalPart, 0);
-          console.log(padedNumber);
-          const finalOrderNumber = prefixDetails + padedNumber + suffixDetails;
-          console.log(finalOrderNumber);
+          // console.log(padedNumber);
+          const finalOrderNumber =[prefixDetails, padedNumber , suffixDetails].filter(Boolean).join('-')
+          // console.log(finalOrderNumber);
           setSalesNumber(finalOrderNumber);
           setModalInputs({
             widthOfNumericalPart: widthOfNumericalPart,

@@ -1,11 +1,9 @@
 /* eslint-disable react/no-unknown-property */
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import SidebarSec from "../../components/secUsers/SidebarSec";
-import api from "../../api/api";
 import { MdModeEditOutline } from "react-icons/md";
 import { IoIosArrowRoundBack } from "react-icons/io";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { updateItem } from "../../../slices/salesSecondary";
 
@@ -26,42 +24,18 @@ function EditItemSalesSecondary() {
   const { id, index } = useParams();
   console.log(index);
   const navigate = useNavigate();
-  const location = useLocation();
 
   const ItemsFromRedux = useSelector((state) => state.salesSecondary.items);
   const selectedItem = ItemsFromRedux.filter((el) => el._id === id);
 
-  const orgId = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg._id
-  );
-
+ 
   const selectedGodown = selectedItem[0]?.GodownList[index];
 
-  // useEffect(() => {
-  //   const fetchHsn = async () => {
-  //     try {
-  //       const res = await api.get(`/api/sUsers/fetchHsn/${orgId}`, {
-  //         withCredentials: true,
-  //       });
 
-  //       setHsn(res.data.data);
-
-  //       // console.log(res.data.organizationData);
-  //     } catch (error) {
-  //       console.log(error);
-  //     }
-  //   };
-  //   fetchHsn();
-  // }, [orgId]);
 
   useEffect(() => {
-    // if (selectedPriceLevel === "" || selectedPriceLevel === undefined) {
-    //   navigate("/sUsers/addItemSales");
-    // } else {
+  
     setItem(selectedItem[0]);
-    // const price = selectedItem[0].Priceleveles.find(
-    //   (item) => item.pricelevel === selectedPriceLevel
-    // )?.pricerate;
 
     if (selectedItem[0]?.hasGodownOrBatch) {
       setNewPrice(selectedGodown?.selectedPriceRate || 0);

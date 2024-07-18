@@ -145,7 +145,7 @@ function InvoiceSecondary() {
 
           const padedNumber = newOrderNumber.padStart(widthOfNumericalPart, 0);
           console.log(padedNumber);
-          const finalOrderNumber = prefixDetails + padedNumber + suffixDetails;
+          const finalOrderNumber = [prefixDetails , padedNumber , suffixDetails].filter(Boolean).join('-');
           console.log(finalOrderNumber);
           setOrderNumber(finalOrderNumber);
         }

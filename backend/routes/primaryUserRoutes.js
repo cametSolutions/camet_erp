@@ -17,7 +17,7 @@ import { registerPrimaryUser,login,addOrganizations,
   createSale,saveSalesNumber,getSalesDetails,fetchGodownsAndPriceLevels,fetchAdditionalDetails,
   addSecondaryConfigurations,findPrimaryUserGodowns,findPrimaryUserGodownsSelf,
   godownwiseProducts,godownwiseProductsSelf,fetchAdditionalCharges,getPurchaseDetails,addProductSubDetails,
-  getProductSubDetails,deleteProductSubDetails,editProductSubDetails,getAllSubDetails} from '../controllers/primaryUserController.js';
+  getProductSubDetails,deleteProductSubDetails,editProductSubDetails,getAllSubDetails,fetchConfigurationCurrentNumber} from '../controllers/primaryUserController.js';
 import { singleUpload } from '../multer/multer.js';
 import { primaryIsBlocked } from '../middlewares/isBlocked.js';
 import { companyAuthentication } from '../middlewares/authCompany.js';
@@ -94,7 +94,7 @@ router.get("/getProductSubDetails/:orgId",authPrimary,primaryIsBlocked,getProduc
 router.delete("/deleteProductSubDetails/:orgId/:id",authPrimary,primaryIsBlocked,deleteProductSubDetails)
 router.put("/editProductSubDetails/:orgId/:id",authPrimary,primaryIsBlocked,editProductSubDetails)
 router.get("/getAllSubDetails/:orgId",authPrimary,primaryIsBlocked,getAllSubDetails)
-// router.get("/fetchConfigurationCurrentNumber/:orgId",authPrimary,primaryIsBlocked,fetchConfigurationCurrentNumber)
+router.get("/fetchConfigurationCurrentNumber/:orgId/:_id",authPrimary,primaryIsBlocked,fetchConfigurationCurrentNumber)
 
 
 
