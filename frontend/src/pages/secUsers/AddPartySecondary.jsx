@@ -4,13 +4,21 @@ import { IoIosArrowRoundBack } from "react-icons/io";
 import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import AddPartyForm from "../../components/common/Forms/AddPartyForm";
+import { useSelector } from "react-redux";
 
 function AddPartySecondary() {
 
   const navigate = useNavigate();
 
+    const companyId = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg._id
+  );
+
+
   const submitHandler = async (formData) => {
-    console.log(formData);
+    
+    formData.cpm_id = companyId 
+    // console.log(formData);
 
     try {
       const res = await api.post("/api/sUsers/addParty", formData, {
