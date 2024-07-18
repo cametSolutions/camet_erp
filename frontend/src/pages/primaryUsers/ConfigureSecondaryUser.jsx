@@ -71,7 +71,6 @@ function ConfigureSecondaryUser() {
   // const org = useSelector((state) => state.setSelectedOrganization.selectedOrg);
   const navigate = useNavigate();
 
-
   //////////////////////////////// fetchGodownsAndPriceLevels ////////////////////////////////////
 
   useEffect(() => {
@@ -343,6 +342,7 @@ function ConfigureSecondaryUser() {
 
     let isAllFilled = true;
     let isAllEmpty = true;
+    const alphanumericRegex = /^[a-zA-Z0-9]+$/;
 
     console.log(obj);
 
@@ -352,6 +352,12 @@ function ConfigureSecondaryUser() {
 
       if (obj[key] !== "") {
         isAllEmpty = false;
+
+        // Check if the value is alphanumeric
+        if (!alphanumericRegex.test(obj[key])) {
+          isAllFilled = false;
+          toast.error(`${key} must contain only alphanumeric characters`);
+        }
       } else {
         isAllFilled = false;
       }
@@ -361,7 +367,6 @@ function ConfigureSecondaryUser() {
     if (obj?.widthOfNumericalPart && Number(obj?.widthOfNumericalPart) > 6) {
       isAllFilled = false;
       toast.error("Width of numerical part must be less than 6");
-      // return
     }
 
     return isAllFilled || isAllEmpty;
@@ -399,46 +404,60 @@ function ConfigureSecondaryUser() {
 
     const salesValidation = validateObject(formData.salesConfiguration, [
       "startingNumber",
+      "currentNumber",
     ]);
-
+    if (salesValidation === false) {
+      toast.error("Fill all sales details or leave all fields empty");
+      return;
+    }
     console.log(salesValidation);
     const salesOrderValidation = validateObject(
       formData.salesOrderConfiguration,
-      ["startingNumber"]
+      ["startingNumber", "currentNumber"]
     );
-    const receiptValidation = validateObject(formData.receiptConfiguration, [
-      "startingNumber",
-    ]);
-    const purchaseValidation = validateObject(formData.purchaseConfiguration, [
-      "startingNumber",
-    ]);
 
     if (salesOrderValidation === false) {
       toast.error("Fill all sales order details or leave all fields empty");
       return;
-    } else if (salesValidation === false) {
-      toast.error("Fill all sales details or leave all fields empty");
-      return;
-    } else if (receiptValidation === false) {
+    }
+
+    const receiptValidation = validateObject(formData.receiptConfiguration, [
+      "startingNumber",
+      "currentNumber",
+    ]);
+
+    if (receiptValidation === false) {
       toast.error("Fill all receipt details or leave all fields empty");
       return;
-    } else if (purchaseValidation === false) {
+    }
+    const purchaseValidation = validateObject(formData.purchaseConfiguration, [
+      "startingNumber",
+      "currentNumber",
+    ]);
+    if (purchaseValidation === false) {
       toast.error("Fill all purchase details or leave all fields empty");
       return;
     }
-    // if (vanSale) {
+
     const vanSaleConfiguration = formData.vanSaleConfiguration;
     console.log(vanSaleConfiguration);
 
     //   console.log(vanSaleConfiguration);
 
     let vanSaleValidation = true;
+    const excludedFields = ["startingNumber", "currentNumber"];
 
     // Check if all properties of the object are empty
-    if (Object.values(vanSaleConfiguration).every((value) => value === "")) {
+    if (
+      Object.entries(vanSaleConfiguration).every(
+        ([key, value]) => excludedFields.includes(key) || value === ""
+      )
+    ) {
       vanSaleValidation = true;
     } else if (
-      Object.values(vanSaleConfiguration).every((value) => value !== "")
+      Object.entries(vanSaleConfiguration).every(
+        ([key, value]) => excludedFields.includes(key) || value !== ""
+      )
     ) {
       vanSaleValidation = true;
     } else {
@@ -685,10 +704,7 @@ function ConfigureSecondaryUser() {
                         e.target.value
                       )
                     }
-                    value={getConfigValue(
-                      selectedConfig,
-                      "currentNumber"
-                    )}
+                    value={getConfigValue(selectedConfig, "currentNumber")}
                     placeholder="Width of Numerical Part"
                   />
                 </div>
