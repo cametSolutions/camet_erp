@@ -34,7 +34,7 @@ import {
   deleteItemsInSaleOrderEdit,
   addingAnItemInSaleOrderEdit,
   extractCentralNumber,
-  checkForNumberExistence
+  checkForNumberExistence,
 } from "./helpers/secondaryHelper.js";
 
 // @desc Login secondary user
@@ -872,6 +872,20 @@ export const createInvoice = async (req, res) => {
       despatchDetails,
       selectedDate,
     } = req.body;
+
+    const NumberExistence = await checkForNumberExistence(
+      invoiceModel,
+      "orderNumber",
+      orderNumber,
+      orgId
+    );
+
+    if (NumberExistence) {
+      return res.status(400).json({
+        message: "SaleOrder with the same number already exists",
+      });
+    }
+
 
     // Manually fetch the last invoice to get the serial number
     const lastInvoice = await invoiceModel.findOne(
@@ -1892,20 +1906,19 @@ export const createSale = async (req, res) => {
       selectedDate,
     } = req.body;
 
-    const centralSalesNumber = await extractCentralNumber(salesNumber);
 
-    const NumberExistence = await checkForNumberExistence(salesModel,
-    "salesNumber",
-    centralSalesNumber,
-    orgId);
+    const NumberExistence = await checkForNumberExistence(
+      salesModel,
+      "salesNumber",
+      salesNumber,
+      orgId
+    );
 
 
-    console.log("NumberExistence",NumberExistence);
-
-    if (NumberExistence){
+    if (NumberExistence) {
       return res.status(400).json({
         message: "Sales with the same number already exists",
-      })
+      });
     }
 
     const secondaryUser = await SecondaryUser.findById(Secondary_user_id);
@@ -1920,12 +1933,7 @@ export const createSale = async (req, res) => {
       (config) => config.organization.toString() === orgId
     );
 
-    const salesExists = await checkForNumberExistence(
-      salesModel,
-      "salesNumber",
-      NewsalesNumber,
-      cmp_id
-    );
+ 
 
     const vanSaleConfig = configuration?.vanSale;
 

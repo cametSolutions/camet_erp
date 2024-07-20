@@ -654,10 +654,10 @@ export const checkForNumberExistence = async (
   cmp_id
 ) => {
   try {
-    const centralNumber = parseInt(newValue, 10);
-    const regex = new RegExp(`^(${centralNumber}|.*-(0*${centralNumber})-.*)$`);
+    // const centralNumber = parseInt(newValue, 10);
+    // const regex = new RegExp(`^(${centralNumber}|.*-(0*${centralNumber})-.*)$`);
     const docs = await model.find({
-      [fieldName]: { $regex: regex },
+      [fieldName]: newValue,
       cmp_id: cmp_id,
     });
 
