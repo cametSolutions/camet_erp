@@ -35,6 +35,7 @@ const organizationSchema = new mongoose.Schema(
     OrderNumberDetails: { type: Object },
     salesNumber: { type: Number, default: 1 },
     purchaseNumber: { type: Number, default: 1 },
+    vanSalesNumber: { type: Number, default: 1 },
     salesNumberDetails: { type: Object },
     additionalCharges: [
       {

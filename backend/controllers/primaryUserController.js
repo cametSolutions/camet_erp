@@ -2748,6 +2748,12 @@ export const addSecondaryConfigurations = async (req, res) => {
       selectedGodowns = [];
     }
 
+    const NeworderNumber = salesOrderConfiguration.currentNumber || 0;
+    const NewsalesNumber = salesConfiguration.currentNumber || 0;
+    const NewreceiptNumber = receiptConfiguration.currentNumber || 0;
+    const NewvanSalesNumber = vanSaleConfiguration.currentNumber || 0;
+    const NewpurchaseNumber = purchaseConfiguration.currentNumber || 0;
+
     const dataToAdd = {
       organization: cmp_id,
       selectedGodowns,
@@ -2772,6 +2778,98 @@ export const addSecondaryConfigurations = async (req, res) => {
       return config.organization.equals(newCmpId);
     });
 
+    let existingConfig;
+
+    if (existingConfigIndex == -1) {
+      const company = await OragnizationModel.findById(newCmpId);
+
+      if (!company) {
+        return res.status(404).json({ error: "Company not found" });
+      }
+      existingConfig = {
+        orderNumber: company.orderNumber,
+        salesNumber: company.salesNumber,
+        purchaseNumber: company.purchaseNumber,
+        receiptNumber: company.receiptNumber,
+        vanSalesNumber: company.vanSalesNumber,
+      };
+    } else {
+      const existingConfiguration = secUser.configurations[existingConfigIndex];
+
+      existingConfig = {
+        orderNumber: existingConfiguration.orderNumber,
+        salesNumber: existingConfiguration.salesNumber,
+        purchaseNumber: existingConfiguration.purchaseNumber,
+        receiptNumber: existingConfiguration.receiptNumber,
+        vanSalesNumber: existingConfiguration.vanSalesNumber,
+      };
+    }
+
+
+    const changes = {
+      orderNumber: existingConfig.orderNumber !== NeworderNumber,
+      salesNumber: existingConfig.salesNumber !== NewsalesNumber,
+      purchaseNumber: existingConfig.purchaseNumber !== NewpurchaseNumber,
+      receiptNumber: existingConfig.receiptNumber !== NewreceiptNumber,
+      vanSalesNumber: existingConfig.vanSalesNumber !== NewvanSalesNumber,
+    };
+
+
+    console.log(changes);
+
+    const checkForNumberExistence = async (model, fieldName, newValue, cmp_id) => {
+
+      console.log(model, fieldName, newValue, cmp_id);
+      const centralNumber = parseInt(newValue, 10);
+      const regex = new RegExp(`^(${centralNumber}|.*-(0*${centralNumber})-.*)$`);
+      const docs = await model.find({
+        [fieldName]: { $regex: regex },
+        cmp_id: cmp_id
+      });
+
+      console.log(docs.map((el)=>el[fieldName]));
+      return docs.length > 0;
+    };
+
+    if (changes.salesNumber) {
+      const salesExists = await checkForNumberExistence(salesModel, 'salesNumber', NewsalesNumber,cmp_id);
+
+      console.log("salesExists",salesExists);
+      if (salesExists) {
+        return res.status(400).json({ message: `Sales is added with this number ${NewsalesNumber}` });
+      }
+    }
+
+    if (changes.orderNumber) {
+      const orderExists = await checkForNumberExistence(invoiceModel, 'orderNumber', NeworderNumber,cmp_id);
+      console.log("orderExists",orderExists);
+
+      if (orderExists) {
+        return res.status(400).json({ message: `Order is added with this number ${NeworderNumber}` });
+      }
+    }
+
+    if (changes.purchaseNumber) {
+      const purchaseExists = await checkForNumberExistence(purchaseModel, 'purchaseNumber', NewpurchaseNumber,cmp_id);
+      if (purchaseExists) {
+        return res.status(400).json({ message: `Purchase is added with this number ${NewpurchaseNumber}` });
+      }
+    }
+
+    // if (changes.receiptNumber) {
+    //   const receiptExists = await checkForNumberExistence(ReceiptModel, 'receiptNumber', NewreceiptNumber);
+    //   if (receiptExists) {
+    //     return res.status(400).json({ message: `Receipt is added with this number ${NewreceiptNumber}` });
+    //   }
+    // }
+
+    if (changes.vanSalesNumber) {
+      const vanSalesExists = await checkForNumberExistence(salesModel, 'salesNumber', NewvanSalesNumber,cmp_id);
+      if (vanSalesExists) {
+        return res.status(400).json({ message: `Van Sales is added with this number ${NewvanSalesNumber}` });
+      }
+    }
+
     if (existingConfigIndex !== -1) {
       // Configuration already exists
       const existingConfig = secUser.configurations[existingConfigIndex];
@@ -2780,16 +2878,21 @@ export const addSecondaryConfigurations = async (req, res) => {
       secUser.configurations[existingConfigIndex] = {
         ...existingConfig.toObject(),
         ...dataToAdd,
+        orderNumber: NeworderNumber,
+        salesNumber: NewsalesNumber,
+        purchaseNumber: NewpurchaseNumber,
+        receiptNumber: NewreceiptNumber,
+        vanSalesNumber: NewvanSalesNumber,
       };
     } else {
       // Configuration does not exist, create new
       const newConfiguration = {
         ...dataToAdd,
-        orderNumber: 1,
-        salesNumber: 1,
-        purchaseNumber: 1,
-        receiptNumber: 1,
-        vanSalesNumber: 1,
+        orderNumber: NeworderNumber,
+        salesNumber: NewsalesNumber,
+        purchaseNumber: NewpurchaseNumber,
+        receiptNumber: NewreceiptNumber,
+        vanSalesNumber: NewvanSalesNumber,
       };
       secUser.configurations.push(newConfiguration);
     }

@@ -625,18 +625,46 @@ export const addingAnItemInSaleOrderEdit = async (items, productUpdates) => {
   }
 };
 
-// export const updateOutstanding = async (bill_no, cmp_id, party_id,newBillAmount) => {
+//////////////////////////////for extracting central number ///////////////////////////////////////////
 
-//   const bill = await TallyData.findOne({ bill_no, cmp_id, party_id });
-//   if (!bill) {
-//     throw new Error(`Bill not found for bill number ${bill_no}`);
-//   }
+export const extractCentralNumber = (number) => {
+  try {
+    const match = number.match(/^[^-]+-(\d+)-[^-]+$/);
 
-//   const existingBillAmount = bill?.bill_amount;
-//   const billAmountDifference = existingBillAmount - newBillAmount\;
+    if (match) {
+      // Remove leading zeros from the captured group
+      const centralNumber = match[1].replace(/^0+/, "");
+      return centralNumber;
+    }
 
-//   try {
-//   } catch (error) {
-//     console.log("Error in updateOutstanding", error);
-//   }
-// };
+    // If the number doesn't match the pattern, return it as is
+    return number;
+  } catch (error) {
+    console.error("Error extracting central number:", error);
+    throw error;
+  }
+};
+
+////////////////////////////// checkForNumberExistence ///////////////////////////////////////////
+
+export const checkForNumberExistence = async (
+  model,
+  fieldName,
+  newValue,
+  cmp_id
+) => {
+  try {
+    const centralNumber = parseInt(newValue, 10);
+    const regex = new RegExp(`^(${centralNumber}|.*-(0*${centralNumber})-.*)$`);
+    const docs = await model.find({
+      [fieldName]: { $regex: regex },
+      cmp_id: cmp_id,
+    });
+
+    console.log(docs.map((el) => el[fieldName]));
+    return docs.length > 0;
+  } catch (error) {
+    console.log("Error checking for number existence:", error);
+    throw error;
+  }
+};

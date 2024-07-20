@@ -33,6 +33,8 @@ import {
   updateAdditionalChargeInSale,
   deleteItemsInSaleOrderEdit,
   addingAnItemInSaleOrderEdit,
+  extractCentralNumber,
+  checkForNumberExistence
 } from "./helpers/secondaryHelper.js";
 
 // @desc Login secondary user
@@ -1003,15 +1005,17 @@ export const createInvoice = async (req, res) => {
     }
 
     if (orderConfig === true) {
-      const updatedConfiguration = secondaryUser.configurations.map((config) => {
-        if (config.organization.toString() === orgId) {
-          return {
-            ...config,
-            orderNumber: (config.orderNumber || 0) + 1,
-          };
+      const updatedConfiguration = secondaryUser.configurations.map(
+        (config) => {
+          if (config.organization.toString() === orgId) {
+            return {
+              ...config,
+              orderNumber: (config.orderNumber || 0) + 1,
+            };
+          }
+          return config;
         }
-        return config;
-      });
+      );
       secondaryUser.configurations = updatedConfiguration;
       await secondaryUser.save();
     } else {
@@ -1888,6 +1892,22 @@ export const createSale = async (req, res) => {
       selectedDate,
     } = req.body;
 
+    const centralSalesNumber = await extractCentralNumber(salesNumber);
+
+    const NumberExistence = await checkForNumberExistence(salesModel,
+    "salesNumber",
+    centralSalesNumber,
+    orgId);
+
+
+    console.log("NumberExistence",NumberExistence);
+
+    if (NumberExistence){
+      return res.status(400).json({
+        message: "Sales with the same number already exists",
+      })
+    }
+
     const secondaryUser = await SecondaryUser.findById(Secondary_user_id);
     const secondaryMobile = secondaryUser?.mobile;
 
@@ -1898,6 +1918,13 @@ export const createSale = async (req, res) => {
     }
     const configuration = secondaryUser.configurations.find(
       (config) => config.organization.toString() === orgId
+    );
+
+    const salesExists = await checkForNumberExistence(
+      salesModel,
+      "salesNumber",
+      NewsalesNumber,
+      cmp_id
     );
 
     const vanSaleConfig = configuration?.vanSale;
@@ -2173,29 +2200,31 @@ export const createSale = async (req, res) => {
       //   { $inc: { vanSalesNumber: 1 } },
       //   { new: true }
       // );
-      const updatedConfiguration = secondaryUser.configurations.map((config) => {
-        if (config.organization.toString() === orgId) {
-          return {
-            ...config,
-            vanSalesNumber: (config.vanSalesNumber || 0) + 1,
-          };
+      const updatedConfiguration = secondaryUser.configurations.map(
+        (config) => {
+          if (config.organization.toString() === orgId) {
+            return {
+              ...config,
+              vanSalesNumber: (config.vanSalesNumber || 0) + 1,
+            };
+          }
+          return config;
         }
-        return config;
-      });
+      );
       secondaryUser.configurations = updatedConfiguration;
       await secondaryUser.save();
     } else if (salesConfig) {
-
-
-      const updatedConfiguration = secondaryUser.configurations.map((config) => {
-        if (config.organization.toString() === orgId) {
-          return {
-            ...config,
-            salesNumber: (config.salesNumber || 0) + 1,
-          };
+      const updatedConfiguration = secondaryUser.configurations.map(
+        (config) => {
+          if (config.organization.toString() === orgId) {
+            return {
+              ...config,
+              salesNumber: (config.salesNumber || 0) + 1,
+            };
+          }
+          return config;
         }
-        return config;
-      });
+      );
       secondaryUser.configurations = updatedConfiguration;
       await secondaryUser.save();
     } else {
@@ -2231,13 +2260,11 @@ export const createSale = async (req, res) => {
       { upsert: true, new: true }
     );
 
-    res
-      .status(201)
-      .json({
-        success: true,
-        data: result,
-        message: "Sale created successfully",
-      });
+    res.status(201).json({
+      success: true,
+      data: result,
+      message: "Sale created successfully",
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({
@@ -2419,8 +2446,6 @@ export const fetchConfigurationNumber = async (req, res) => {
       (item) => item.organization.toString() === cmp_id
     );
 
-    
-
     if (configuration) {
       switch (title) {
         case "sales":
@@ -2522,9 +2547,6 @@ export const fetchConfigurationNumber = async (req, res) => {
   }
 };
 
-
-
-
 export const findSecondaryUserGodowns = async (req, res) => {
   const cmp_id = req.params.cmp_id;
   const secondary_user_id = req.sUserId;
@@ -2584,10 +2606,6 @@ export const findSecondaryUserGodowns = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
-
-
-
-
 
 export const findPrimaryUserGodownsSelf = async (req, res) => {
   const cmp_id = req.params.cmp_id;

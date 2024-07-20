@@ -15,7 +15,6 @@ function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [loader, setLoader] = useState(false);
 
-
   const navigate = useNavigate();
 
   useEffect(() => {
