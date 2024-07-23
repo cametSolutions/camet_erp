@@ -59,7 +59,7 @@ function Contacts() {
     {
       title: "VanSale",
       icon: vanSaleImg,
-      to: "/sUsers/sales",
+      to: "/sUsers/vanSale",
       active: vanSale,
     },
   ];

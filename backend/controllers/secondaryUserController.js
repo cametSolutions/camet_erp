@@ -22,6 +22,7 @@ import { PriceLevel } from "../models/subDetails.js";
 import bcrypt from "bcryptjs";
 import mongoose from "mongoose";
 import salesModel from "../models/salesModel.js";
+import vanSaleModel from "../models/vanSaleModel.js";
 import purchaseModel from "../models/purchaseModel.js";
 import {
   deleteItemsInSaleEdit,
@@ -885,7 +886,6 @@ export const createInvoice = async (req, res) => {
         message: "SaleOrder with the same number already exists",
       });
     }
-
 
     // Manually fetch the last invoice to get the serial number
     const lastInvoice = await invoiceModel.findOne(
@@ -1905,15 +1905,24 @@ export const createSale = async (req, res) => {
       salesNumber,
       selectedDate,
     } = req.body;
+    const vanSaleQuery = req.query.vanSale;
+    console.log("vanSaleQuery", vanSaleQuery);
 
+    let model = salesModel;
+
+    if (vanSaleQuery==true) {
+      model = vanSaleModel;
+    }
+
+
+    console.log("model",model);
 
     const NumberExistence = await checkForNumberExistence(
-      salesModel,
+      model,
       "salesNumber",
       salesNumber,
       orgId
     );
-
 
     if (NumberExistence) {
       return res.status(400).json({
@@ -1932,8 +1941,6 @@ export const createSale = async (req, res) => {
     const configuration = secondaryUser.configurations.find(
       (config) => config.organization.toString() === orgId
     );
-
- 
 
     const vanSaleConfig = configuration?.vanSale;
 
@@ -2097,7 +2104,7 @@ export const createSale = async (req, res) => {
     await productModel.bulkWrite(productUpdates);
     await productModel.bulkWrite(godownUpdates);
 
-    const lastSale = await salesModel.findOne(
+    const lastSale = await model.findOne(
       {},
       {},
       { sort: { serialNumber: -1 } }
@@ -2171,7 +2178,7 @@ export const createSale = async (req, res) => {
     }
 
     // Continue with the rest of your function...
-    const sales = new salesModel({
+    const sales = new model({
       serialNumber: newSerialNumber,
       cmp_id: orgId,
       partyAccount: party?.partyName,

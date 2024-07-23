@@ -3405,6 +3405,9 @@ export const fetchConfigurationCurrentNumber = async (req, res) => {
       configuration = company;
     }
 
+
+    console.log("configuration",configuration);
+
     const {
       orderNumber,
       salesNumber,

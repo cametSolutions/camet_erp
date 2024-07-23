@@ -116,6 +116,8 @@ import AddCategory from '../pages/primaryUsers/AddCategory'
 import AddSubCategory from '../pages/primaryUsers/AddSubCategory'
 import AddGodown from '../pages/primaryUsers/AddGodown'
 import AddPriceLevel from '../pages/primaryUsers/AddPriceLevel'
+import VanSaleSecondary from '../pages/secUsers/VanSaleSecondary'
+import AddItemVanSaleSecondary from '../pages/secUsers/AddItemVanSaleSecondary '
 
 const Routers = () => {
   return (
@@ -242,6 +244,8 @@ const Routers = () => {
         <Route path='/sUsers/editSale/:id' element={<ProtectedSecRoute><EditSale/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/billToSales/:id' element={<ProtectedSecRoute><BillToSales/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/billToSalesOrder/:id' element={<ProtectedSecRoute><BillToSalesOrder/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/vanSale' element={<ProtectedSecRoute><VanSaleSecondary/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/addItemVanSale' element={<ProtectedSecRoute><AddItemVanSaleSecondary/></ProtectedSecRoute>}></Route>
 
 
         {/* errorPage */}
