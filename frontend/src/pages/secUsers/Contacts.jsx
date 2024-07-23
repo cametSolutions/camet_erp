@@ -27,16 +27,15 @@ import SearchBar from "../../components/common/SearchBar";
 // import { MdCancel } from "react-icons/md";
 
 function Contacts() {
-  const [showSidebar, setShowSidebar] = useState(false);
   const [parties, setParties] = useState([]);
   const [search, setSearch] = useState("");
   const [filteredParties, setFilteredParties] = useState([]);
   const [loading, setLoading] = useState(true);
   const [openModal, setOpenModal] = useState(false);
   const [selectedParty, setSelectedParty] = useState("");
-  const [vanSale, setVanSale] = useState(false);
+  // const [vanSale, setVanSale] = useState(false);
   const tiles = [
-    { title: "Sales", icon: sale, to: "/sUsers/sales", active: !vanSale },
+    { title: "Sales", icon: sale, to: "/sUsers/sales", active: true },
     {
       title: "Credit Note",
       icon: credit,
@@ -60,7 +59,7 @@ function Contacts() {
       title: "VanSale",
       icon: vanSaleImg,
       to: "/sUsers/vanSale",
-      active: vanSale,
+      active: true,
     },
   ];
 
@@ -85,7 +84,7 @@ function Contacts() {
         setLoading(false);
 
         setParties(res?.data?.partyList);
-        setVanSale(res?.data?.vanSale);
+        // setVanSale(res?.data?.vanSale);
       } catch (error) {
         setLoading(false);
         console.log(error);

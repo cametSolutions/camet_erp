@@ -109,7 +109,7 @@ function VanSaleSecondary() {
     const fetchConfigurationNumber = async () => {
       try {
         const res = await api.get(
-          `/api/sUsers/fetchConfigurationNumber/${orgId}/sales`,
+          `/api/sUsers/fetchConfigurationNumber/${orgId}/vanSale`,
 
           {
             withCredentials: true,

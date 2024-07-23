@@ -26,6 +26,7 @@ const secondaryUserSchema = new mongoose.Schema(
         purchaseConfiguration: { type: Object },
         vanSaleConfiguration: { type: Object },
         vanSale: { type: Boolean },
+        selectedVanSaleGodowns: { type: Array },
         orderNumber: { type: Number },
         salesNumber: { type: Number },
         purchaseNumber: { type: Number },

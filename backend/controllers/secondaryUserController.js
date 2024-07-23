@@ -693,6 +693,11 @@ export const addParty = async (req, res) => {
 export const getProducts = async (req, res) => {
   const Secondary_user_id = req.sUserId;
   const cmp_id = req.params.cmp_id;
+
+  // const vanSaleQuery = req.params.vanSale;
+
+
+  // console.log("vanSaleQuery", vanSaleQuery);
   const Primary_user_id = new mongoose.Types.ObjectId(req.owner);
 
   try {
@@ -706,148 +711,148 @@ export const getProducts = async (req, res) => {
       (item) => item.organization == cmp_id
     );
 
-    let products;
-    const matchStage = {
-      $match: {
-        cmp_id: cmp_id,
-        Primary_user_id: Primary_user_id,
-      },
-    };
+    // let products;
+    // const matchStage = {
+    //   $match: {
+    //     cmp_id: cmp_id,
+    //     Primary_user_id: Primary_user_id,
+    //   },
+    // };
 
-    if (
-      configuration &&
-      configuration.selectedGodowns &&
-      configuration.selectedGodowns.length > 0
-    ) {
-      const { selectedGodowns } = configuration;
+    // if (
+    //   configuration &&
+    //   configuration.selectedGodowns &&
+    //   configuration.selectedGodowns.length > 0
+    // ) {
+    //   const { selectedGodowns } = configuration;
 
-      console.log("selectedGodowns", selectedGodowns);
+    //   console.log("selectedGodowns", selectedGodowns);
 
-      matchStage.$match["GodownList.godown_id"] = { $in: selectedGodowns };
+    //   matchStage.$match["GodownList.godown_id"] = { $in: selectedGodowns };
 
-      const projectStage = {
-        $project: {
-          product_name: 1,
-          cmp_id: 1,
-          product_code: 1,
-          balance_stock: 1,
-          Primary_user_id: 1,
-          brand: 1,
-          category: 1,
-          sub_category: 1,
-          unit: 1,
-          alt_unit: 1,
-          unit_conversion: 1,
-          alt_unit_conversion: 1,
-          hsn_code: 1,
-          purchase_price: 1,
-          purchase_cost: 1,
-          Priceleveles: 1,
-          GodownList: {
-            $filter: {
-              input: "$GodownList",
-              as: "godown",
-              cond: { $in: ["$$godown.godown_id", selectedGodowns] },
-            },
-          },
-          cgst: 1,
-          sgst: 1,
-          igst: 1,
-          cess: 1,
-          addl_cess: 1,
-          state_cess: 1,
-          product_master_id: 1,
-          __v: 1,
-        },
-      };
+    //   const projectStage = {
+    //     $project: {
+    //       product_name: 1,
+    //       cmp_id: 1,
+    //       product_code: 1,
+    //       balance_stock: 1,
+    //       Primary_user_id: 1,
+    //       brand: 1,
+    //       category: 1,
+    //       sub_category: 1,
+    //       unit: 1,
+    //       alt_unit: 1,
+    //       unit_conversion: 1,
+    //       alt_unit_conversion: 1,
+    //       hsn_code: 1,
+    //       purchase_price: 1,
+    //       purchase_cost: 1,
+    //       Priceleveles: 1,
+    //       GodownList: {
+    //         $filter: {
+    //           input: "$GodownList",
+    //           as: "godown",
+    //           cond: { $in: ["$$godown.godown_id", selectedGodowns] },
+    //         },
+    //       },
+    //       cgst: 1,
+    //       sgst: 1,
+    //       igst: 1,
+    //       cess: 1,
+    //       addl_cess: 1,
+    //       state_cess: 1,
+    //       product_master_id: 1,
+    //       __v: 1,
+    //     },
+    //   };
 
-      const addFieldsStage = {
-        $addFields: {
-          hasGodownOrBatch: {
-            $anyElementTrue: {
-              $map: {
-                input: "$GodownList",
-                as: "godown",
-                in: {
-                  $or: [
-                    { $ifNull: ["$$godown.godown", false] },
-                    { $ifNull: ["$$godown.batch", false] },
-                  ],
-                },
-              },
-            },
-          },
-        },
-      };
+    //   const addFieldsStage = {
+    //     $addFields: {
+    //       hasGodownOrBatch: {
+    //         $anyElementTrue: {
+    //           $map: {
+    //             input: "$GodownList",
+    //             as: "godown",
+    //             in: {
+    //               $or: [
+    //                 { $ifNull: ["$$godown.godown", false] },
+    //                 { $ifNull: ["$$godown.batch", false] },
+    //               ],
+    //             },
+    //           },
+    //         },
+    //       },
+    //     },
+    //   };
 
-      const aggregationPipeline = [matchStage, projectStage, addFieldsStage];
+    //   const aggregationPipeline = [matchStage, projectStage, addFieldsStage];
 
-      products = await productModel.aggregate(aggregationPipeline);
-    } else {
-      console.log("no configuration or no selected godowns");
+    //   products = await productModel.aggregate(aggregationPipeline);
+    // } else {
+    //   console.log("no configuration or no selected godowns");
 
-      const projectStage = {
-        $project: {
-          product_name: 1,
-          cmp_id: 1,
-          product_code: 1,
-          balance_stock: 1,
-          Primary_user_id: 1,
-          brand: 1,
-          category: 1,
-          sub_category: 1,
-          unit: 1,
-          alt_unit: 1,
-          unit_conversion: 1,
-          alt_unit_conversion: 1,
-          hsn_code: 1,
-          purchase_price: 1,
-          purchase_cost: 1,
-          Priceleveles: 1,
-          GodownList: 1, // Keep the GodownList as it is
-          cgst: 1,
-          sgst: 1,
-          igst: 1,
-          cess: 1,
-          addl_cess: 1,
-          state_cess: 1,
-          product_master_id: 1,
-          __v: 1,
-        },
-      };
+    //   const projectStage = {
+    //     $project: {
+    //       product_name: 1,
+    //       cmp_id: 1,
+    //       product_code: 1,
+    //       balance_stock: 1,
+    //       Primary_user_id: 1,
+    //       brand: 1,
+    //       category: 1,
+    //       sub_category: 1,
+    //       unit: 1,
+    //       alt_unit: 1,
+    //       unit_conversion: 1,
+    //       alt_unit_conversion: 1,
+    //       hsn_code: 1,
+    //       purchase_price: 1,
+    //       purchase_cost: 1,
+    //       Priceleveles: 1,
+    //       GodownList: 1, // Keep the GodownList as it is
+    //       cgst: 1,
+    //       sgst: 1,
+    //       igst: 1,
+    //       cess: 1,
+    //       addl_cess: 1,
+    //       state_cess: 1,
+    //       product_master_id: 1,
+    //       __v: 1,
+    //     },
+    //   };
 
-      const addFieldsStage = {
-        $addFields: {
-          hasGodownOrBatch: {
-            $anyElementTrue: {
-              $map: {
-                input: "$GodownList",
-                as: "godown",
-                in: {
-                  $or: [
-                    { $ifNull: ["$$godown.godown", false] },
-                    { $ifNull: ["$$godown.batch", false] },
-                  ],
-                },
-              },
-            },
-          },
-        },
-      };
+    //   const addFieldsStage = {
+    //     $addFields: {
+    //       hasGodownOrBatch: {
+    //         $anyElementTrue: {
+    //           $map: {
+    //             input: "$GodownList",
+    //             as: "godown",
+    //             in: {
+    //               $or: [
+    //                 { $ifNull: ["$$godown.godown", false] },
+    //                 { $ifNull: ["$$godown.batch", false] },
+    //               ],
+    //             },
+    //           },
+    //         },
+    //       },
+    //     },
+    //   };
 
-      const aggregationPipeline = [matchStage, projectStage, addFieldsStage];
+    //   const aggregationPipeline = [matchStage, projectStage, addFieldsStage];
 
-      products = await productModel.aggregate(aggregationPipeline);
-    }
+    //   products = await productModel.aggregate(aggregationPipeline);
+    // }
 
-    if (products && products.length > 0) {
-      return res.status(200).json({
-        productData: products,
-        message: "Products fetched",
-      });
-    } else {
-      return res.status(404).json({ message: "No products were found" });
-    }
+    // if (products && products.length > 0) {
+    //   return res.status(200).json({
+    //     productData: products,
+    //     message: "Products fetched",
+    //   });
+    // } else {
+    //   return res.status(404).json({ message: "No products were found" });
+    // }
   } catch (error) {
     console.log(error);
     return res
@@ -1907,15 +1912,17 @@ export const createSale = async (req, res) => {
     } = req.body;
     const vanSaleQuery = req.query.vanSale;
     console.log("vanSaleQuery", vanSaleQuery);
+    console.log("vanSaleQuery type", typeof vanSaleQuery);
 
-    let model = salesModel;
+    let model;
 
-    if (vanSaleQuery==true) {
+    if (vanSaleQuery === "true") {
       model = vanSaleModel;
+    } else {
+      model = salesModel;
     }
 
-
-    console.log("model",model);
+    console.log("model", model);
 
     const NumberExistence = await checkForNumberExistence(
       model,
@@ -2209,7 +2216,7 @@ export const createSale = async (req, res) => {
       }
     }
 
-    if (vanSaleConfig) {
+    if (vanSaleQuery==="true") {
       // await SecondaryUser.findByIdAndUpdate(
       //   Secondary_user_id,
       //   { $inc: { vanSalesNumber: 1 } },
@@ -2228,7 +2235,7 @@ export const createSale = async (req, res) => {
       );
       secondaryUser.configurations = updatedConfiguration;
       await secondaryUser.save();
-    } else if (salesConfig) {
+    } else if (salesConfig && vanSaleQuery==="false") {
       const updatedConfiguration = secondaryUser.configurations.map(
         (config) => {
           if (config.organization.toString() === orgId) {
@@ -2442,109 +2449,84 @@ export const fetchAdditionalDetails = async (req, res) => {
 // route get/api/sUsers/fetchConfigurationNumber
 
 export const fetchConfigurationNumber = async (req, res) => {
-  const cmp_id = req.params.cmp_id;
-  const title = req.params.title;
+  const { cmp_id, title } = req.params;
   const secUserId = req.sUserId;
 
   try {
-    const secUser = await SecondaryUser.findById(secUserId);
-    const company = await OragnizationModel.findById(cmp_id);
+    const [secUser, company] = await Promise.all([
+      SecondaryUser.findById(secUserId),
+      OragnizationModel.findById(cmp_id),
+    ]);
 
     if (!secUser) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    let configDetails;
-    let configurationNumber;
+    if (!company) {
+      return res.status(404).json({ message: "Company not found" });
+    }
 
     const configuration = secUser.configurations.find(
       (item) => item.organization.toString() === cmp_id
     );
 
-    if (configuration) {
-      switch (title) {
-        case "sales":
-          if (
-            configuration.vanSale &&
-            Object.entries(configuration.vanSaleConfiguration)
-              .filter(([key]) => key !== "startingNumber")
-              .every(([_, value]) => value !== "")
-          ) {
-            configDetails = configuration.vanSaleConfiguration;
-            configurationNumber = configuration?.vanSalesNumber;
-          } else {
-            configDetails = configuration.salesConfiguration || "";
-            configurationNumber = configuration?.salesNumber;
-          }
-          break;
-        case "salesOrder":
-          configDetails = configuration.salesOrderConfiguration || "";
+    const getConfigDetails = () => {
+      if (!configuration) return null;
 
-          configurationNumber = configuration?.orderNumber;
-          break;
-        case "purchase":
-          configDetails = configuration.purchaseConfiguration || "";
+      const configs = {
+        sales: configuration.salesConfiguration,
+        salesOrder: configuration.salesOrderConfiguration,
+        purchase: configuration.purchaseConfiguration,
+        receipt: configuration.receiptConfiguration,
+        vanSale: configuration.vanSaleConfiguration,
+      };
 
-          configurationNumber = configuration?.purchaseNumber;
-          break;
-        case "receipt":
-          configDetails = configuration.receiptConfiguration || "";
-          break;
-        default:
-          configDetails = null;
-          break;
+      // if (title === 'sales' && configuration.vanSale) {
+      //   const vanSaleConfig = configuration.vanSaleConfiguration;
+      //   if (Object.entries(vanSaleConfig)
+      //     .filter(([key]) => key !== "startingNumber")
+      //     .every(([_, value]) => value !== "")) {
+      //     return vanSaleConfig;
+      //   }
+      // }
+
+      return configs[title] || null;
+    };
+
+    const getConfigNumber = () => {
+      if (configuration) {
+        const numbers = {
+          sales: configuration.salesNumber,
+          salesOrder: configuration.orderNumber,
+          purchase: configuration.purchaseNumber,
+          vanSale: configuration.vanSalesNumber,
+          receipt: null, // Add if there's a specific receipt number for user config
+        };
+        return numbers[title] || null;
       }
-    }
 
+      const companyNumbers = {
+        sales: company.salesNumber,
+        salesOrder: company.orderNumber,
+        purchase: company.purchaseNumber,
+        vanSale: company.vanSalesNumber,
+        // receipt: company.receiptNumberDetails
+      };
+      return companyNumbers[title] || null;
+    };
+
+    let configDetails = getConfigDetails();
+    let configurationNumber = getConfigNumber();
+
+    // If configDetails is empty or all values except startingNumber are empty, use company defaults
     if (
       !configDetails ||
       Object.entries(configDetails)
         .filter(([key]) => key !== "startingNumber")
         .every(([_, value]) => value === "")
     ) {
-      switch (title) {
-        case "sales":
-          configDetails = "";
-          configurationNumber = company?.salesNumber;
-          break;
-        case "salesOrder":
-          configDetails = "";
-          configurationNumber = company?.orderNumber;
-          break;
-        case "receipt":
-          configDetails = "";
-
-          configDetails = company?.receiptNumberDetails;
-          break;
-        case "purchase":
-          configDetails = "";
-
-          configurationNumber = company?.purchaseNumber;
-          break;
-        default:
-          configDetails = null;
-          break;
-      }
-    }
-
-    if (!configuration) {
-      switch (title) {
-        case "sales":
-          configurationNumber = company?.salesNumber;
-          break;
-        case "salesOrder":
-          configurationNumber = company?.orderNumber;
-          break;
-        case "receipt":
-          configurationNumber = company?.receiptNumberDetails;
-          break;
-        case "purchase":
-          configurationNumber = company?.purchaseNumber;
-          break;
-        default:
-          configurationNumber = null;
-          break;
-      }
+      configDetails = "";
+      configurationNumber = getConfigNumber(); // Ensure we're using the company default
     }
 
     if (configDetails) {
@@ -2554,7 +2536,7 @@ export const fetchConfigurationNumber = async (req, res) => {
         configurationNumber,
       });
     } else {
-      res.status(200).json({ message: "default", configurationNumber });
+      res.json({ message: "default", configurationNumber });
     }
   } catch (error) {
     console.error(error);

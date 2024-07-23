@@ -35,7 +35,7 @@ router.post('/cancelTransaction/:id',authSecondary,secondaryIsBlocked,cancelTran
 router.get('/fetchBanks/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,fetchBanks)
 router.get('/PartyList/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,PartyList)
 router.post('/addParty',authSecondary,secondaryIsBlocked,addParty)
-router.get('/getProducts/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,getProducts)
+router.get('/getProducts/:cmp_id/:vanSale',authSecondary,secondaryIsBlocked,companyAuthentication,getProducts)
 router.post('/createInvoice',authSecondary,secondaryIsBlocked,createInvoice)
 router.get('/invoiceList/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,invoiceList)
 router.get('/getSinglePartyDetails/:id',authSecondary,secondaryIsBlocked,getSinglePartyDetails)

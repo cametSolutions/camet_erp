@@ -2740,6 +2740,7 @@ export const addSecondaryConfigurations = async (req, res) => {
       receiptConfiguration,
       vanSaleConfiguration,
       purchaseConfiguration,
+      selectedVanSaleGodowns,
       vanSale,
     } = req.body;
     let { selectedGodowns } = req.body;
@@ -2763,6 +2764,7 @@ export const addSecondaryConfigurations = async (req, res) => {
       receiptConfiguration,
       purchaseConfiguration,
       vanSaleConfiguration,
+      selectedVanSaleGodowns,
       vanSale,
     };
 
