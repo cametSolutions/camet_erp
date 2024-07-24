@@ -22,6 +22,7 @@ import { PriceLevel } from "../models/subDetails.js";
 import bcrypt from "bcryptjs";
 import mongoose from "mongoose";
 import salesModel from "../models/salesModel.js";
+import vanSaleModel from "../models/vanSaleModel.js";
 import purchaseModel from "../models/purchaseModel.js";
 import {
   deleteItemsInSaleEdit,
@@ -341,6 +342,20 @@ export const transactions = async (req, res) => {
         },
       },
     ]);
+
+    const vanSales = await vanSaleModel.aggregate([
+      { $match: { Secondary_user_id: userId, cmp_id: cmp_id } },
+      {
+        $project: {
+          party_name: "$party.partyName",
+          // mobileNumber:"$party.mobileNumber",
+          type: "Van Sale",
+          enteredAmount: "$finalAmount",
+          createdAt: 1,
+          itemsLength: { $size: "$items" },
+        },
+      },
+    ]);
     const purchases = await purchaseModel.aggregate([
       { $match: { Secondary_user_id: userId, cmp_id: cmp_id } },
       {
@@ -355,7 +370,7 @@ export const transactions = async (req, res) => {
       },
     ]);
 
-    const combined = [...transactions, ...invoices, ...sales, ...purchases];
+    const combined = [...transactions, ...invoices, ...sales, ...purchases, ...vanSales];
     combined.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
     if (combined.length > 0) {
@@ -692,6 +707,11 @@ export const addParty = async (req, res) => {
 export const getProducts = async (req, res) => {
   const Secondary_user_id = req.sUserId;
   const cmp_id = req.params.cmp_id;
+
+  const vanSaleQuery = req.query.vanSale;
+  const isVanSale = vanSaleQuery === 'true';
+
+  console.log("isVanSale", isVanSale);
   const Primary_user_id = new mongoose.Types.ObjectId(req.owner);
 
   try {
@@ -713,12 +733,16 @@ export const getProducts = async (req, res) => {
       },
     };
 
-    if (
-      configuration &&
-      configuration.selectedGodowns &&
-      configuration.selectedGodowns.length > 0
-    ) {
-      const { selectedGodowns } = configuration;
+    let selectedGodowns;
+    if (isVanSale && configuration && configuration.selectedVanSaleGodowns) {
+      selectedGodowns = configuration.selectedVanSaleGodowns;
+    } else if (configuration && configuration.selectedGodowns) {
+      selectedGodowns = configuration.selectedGodowns;
+    }
+
+
+    if (selectedGodowns && selectedGodowns.length > 0) {
+  
 
       console.log("selectedGodowns", selectedGodowns);
 
@@ -885,7 +909,6 @@ export const createInvoice = async (req, res) => {
         message: "SaleOrder with the same number already exists",
       });
     }
-
 
     // Manually fetch the last invoice to get the serial number
     const lastInvoice = await invoiceModel.findOne(
@@ -1905,15 +1928,26 @@ export const createSale = async (req, res) => {
       salesNumber,
       selectedDate,
     } = req.body;
+    const vanSaleQuery = req.query.vanSale;
+    console.log("vanSaleQuery", vanSaleQuery);
+    console.log("vanSaleQuery type", typeof vanSaleQuery);
 
+    let model;
+
+    if (vanSaleQuery === "true") {
+      model = vanSaleModel;
+    } else {
+      model = salesModel;
+    }
+
+    console.log("model", model);
 
     const NumberExistence = await checkForNumberExistence(
-      salesModel,
+      model,
       "salesNumber",
       salesNumber,
       orgId
     );
-
 
     if (NumberExistence) {
       return res.status(400).json({
@@ -1932,8 +1966,6 @@ export const createSale = async (req, res) => {
     const configuration = secondaryUser.configurations.find(
       (config) => config.organization.toString() === orgId
     );
-
- 
 
     const vanSaleConfig = configuration?.vanSale;
 
@@ -2097,7 +2129,7 @@ export const createSale = async (req, res) => {
     await productModel.bulkWrite(productUpdates);
     await productModel.bulkWrite(godownUpdates);
 
-    const lastSale = await salesModel.findOne(
+    const lastSale = await model.findOne(
       {},
       {},
       { sort: { serialNumber: -1 } }
@@ -2171,7 +2203,7 @@ export const createSale = async (req, res) => {
     }
 
     // Continue with the rest of your function...
-    const sales = new salesModel({
+    const sales = new model({
       serialNumber: newSerialNumber,
       cmp_id: orgId,
       partyAccount: party?.partyName,
@@ -2202,7 +2234,7 @@ export const createSale = async (req, res) => {
       }
     }
 
-    if (vanSaleConfig) {
+    if (vanSaleQuery==="true") {
       // await SecondaryUser.findByIdAndUpdate(
       //   Secondary_user_id,
       //   { $inc: { vanSalesNumber: 1 } },
@@ -2221,7 +2253,7 @@ export const createSale = async (req, res) => {
       );
       secondaryUser.configurations = updatedConfiguration;
       await secondaryUser.save();
-    } else if (salesConfig) {
+    } else if (salesConfig && vanSaleQuery==="false") {
       const updatedConfiguration = secondaryUser.configurations.map(
         (config) => {
           if (config.organization.toString() === orgId) {
@@ -2288,9 +2320,21 @@ export const createSale = async (req, res) => {
 
 export const getSalesDetails = async (req, res) => {
   const saleId = req.params.id;
+  const vanSaleQuery=req.query.vanSale;
+
+const isVanSale=vanSaleQuery==="true";
+
+console.log("isVanSale",isVanSale);
+
+let model;
+if(isVanSale){
+  model=vanSaleModel
+}else{
+  model=salesModel
+}
 
   try {
-    const saleDetails = await salesModel.findById(saleId);
+    const saleDetails = await model.findById(saleId);
 
     if (saleDetails) {
       res
@@ -2435,109 +2479,84 @@ export const fetchAdditionalDetails = async (req, res) => {
 // route get/api/sUsers/fetchConfigurationNumber
 
 export const fetchConfigurationNumber = async (req, res) => {
-  const cmp_id = req.params.cmp_id;
-  const title = req.params.title;
+  const { cmp_id, title } = req.params;
   const secUserId = req.sUserId;
 
   try {
-    const secUser = await SecondaryUser.findById(secUserId);
-    const company = await OragnizationModel.findById(cmp_id);
+    const [secUser, company] = await Promise.all([
+      SecondaryUser.findById(secUserId),
+      OragnizationModel.findById(cmp_id),
+    ]);
 
     if (!secUser) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    let configDetails;
-    let configurationNumber;
+    if (!company) {
+      return res.status(404).json({ message: "Company not found" });
+    }
 
     const configuration = secUser.configurations.find(
       (item) => item.organization.toString() === cmp_id
     );
 
-    if (configuration) {
-      switch (title) {
-        case "sales":
-          if (
-            configuration.vanSale &&
-            Object.entries(configuration.vanSaleConfiguration)
-              .filter(([key]) => key !== "startingNumber")
-              .every(([_, value]) => value !== "")
-          ) {
-            configDetails = configuration.vanSaleConfiguration;
-            configurationNumber = configuration?.vanSalesNumber;
-          } else {
-            configDetails = configuration.salesConfiguration || "";
-            configurationNumber = configuration?.salesNumber;
-          }
-          break;
-        case "salesOrder":
-          configDetails = configuration.salesOrderConfiguration || "";
+    const getConfigDetails = () => {
+      if (!configuration) return null;
 
-          configurationNumber = configuration?.orderNumber;
-          break;
-        case "purchase":
-          configDetails = configuration.purchaseConfiguration || "";
+      const configs = {
+        sales: configuration.salesConfiguration,
+        salesOrder: configuration.salesOrderConfiguration,
+        purchase: configuration.purchaseConfiguration,
+        receipt: configuration.receiptConfiguration,
+        vanSale: configuration.vanSaleConfiguration,
+      };
 
-          configurationNumber = configuration?.purchaseNumber;
-          break;
-        case "receipt":
-          configDetails = configuration.receiptConfiguration || "";
-          break;
-        default:
-          configDetails = null;
-          break;
+      // if (title === 'sales' && configuration.vanSale) {
+      //   const vanSaleConfig = configuration.vanSaleConfiguration;
+      //   if (Object.entries(vanSaleConfig)
+      //     .filter(([key]) => key !== "startingNumber")
+      //     .every(([_, value]) => value !== "")) {
+      //     return vanSaleConfig;
+      //   }
+      // }
+
+      return configs[title] || null;
+    };
+
+    const getConfigNumber = () => {
+      if (configuration) {
+        const numbers = {
+          sales: configuration.salesNumber,
+          salesOrder: configuration.orderNumber,
+          purchase: configuration.purchaseNumber,
+          vanSale: configuration.vanSalesNumber,
+          receipt: null, // Add if there's a specific receipt number for user config
+        };
+        return numbers[title] || null;
       }
-    }
 
+      const companyNumbers = {
+        sales: company.salesNumber,
+        salesOrder: company.orderNumber,
+        purchase: company.purchaseNumber,
+        vanSale: company.vanSalesNumber,
+        // receipt: company.receiptNumberDetails
+      };
+      return companyNumbers[title] || null;
+    };
+
+    let configDetails = getConfigDetails();
+    let configurationNumber = getConfigNumber();
+
+    // If configDetails is empty or all values except startingNumber are empty, use company defaults
     if (
       !configDetails ||
       Object.entries(configDetails)
         .filter(([key]) => key !== "startingNumber")
         .every(([_, value]) => value === "")
     ) {
-      switch (title) {
-        case "sales":
-          configDetails = "";
-          configurationNumber = company?.salesNumber;
-          break;
-        case "salesOrder":
-          configDetails = "";
-          configurationNumber = company?.orderNumber;
-          break;
-        case "receipt":
-          configDetails = "";
-
-          configDetails = company?.receiptNumberDetails;
-          break;
-        case "purchase":
-          configDetails = "";
-
-          configurationNumber = company?.purchaseNumber;
-          break;
-        default:
-          configDetails = null;
-          break;
-      }
-    }
-
-    if (!configuration) {
-      switch (title) {
-        case "sales":
-          configurationNumber = company?.salesNumber;
-          break;
-        case "salesOrder":
-          configurationNumber = company?.orderNumber;
-          break;
-        case "receipt":
-          configurationNumber = company?.receiptNumberDetails;
-          break;
-        case "purchase":
-          configurationNumber = company?.purchaseNumber;
-          break;
-        default:
-          configurationNumber = null;
-          break;
-      }
+      configDetails = "";
+      configurationNumber = getConfigNumber(); // Ensure we're using the company default
     }
 
     if (configDetails) {
@@ -2547,7 +2566,7 @@ export const fetchConfigurationNumber = async (req, res) => {
         configurationNumber,
       });
     } else {
-      res.status(200).json({ message: "default", configurationNumber });
+      res.json({ message: "default", configurationNumber });
     }
   } catch (error) {
     console.error(error);
@@ -3066,6 +3085,18 @@ export const getPurchaseDetails = async (req, res) => {
 
 export const editSale = async (req, res) => {
   const saleId = req.params.id;
+
+  const vanSaleQuery=req.query.vanSale;
+
+  const isVanSale=vanSaleQuery==="true";
+  
+  let model;
+  if(isVanSale){
+    model=vanSaleModel
+  }else{
+    model=salesModel
+  }
+
   try {
     const {
       orgId,
@@ -3085,7 +3116,7 @@ export const editSale = async (req, res) => {
 
     // Fetch the existing sale
 
-    const existingSale = await salesModel.findById(saleId);
+    const existingSale = await model.findById(saleId);
     if (!existingSale) {
       console.log("editSale: existingSale not found");
       return res

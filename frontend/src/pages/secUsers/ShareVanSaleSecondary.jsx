@@ -7,17 +7,17 @@ import { toast } from "react-toastify";
 import { MdPrint } from "react-icons/md";
 import numberToWords from "number-to-words";
 import { Link } from "react-router-dom";
-import SaleOrderPdf from "../../components/common/SaleOrderPdf";
+import SalesPdf from "../../components/common/SalesPdf";
 
-function ShareInvoiceSecondary() {
+function ShareVanSaleSecondary() {
   const [data, setData] = useState([]);
   const [org, setOrg] = useState([]);
   const [subTotal, setSubTotal] = useState("");
   const [additinalCharge, setAdditinalCharge] = useState("");
-  const [finalAmount, setFinalAmount] = useState("");
   const [inWords, setInWords] = useState("");
-  const { id } = useParams();
   const [bank, setBank] = useState([]);
+
+  const { id } = useParams();
 
   const contentToPrint = useRef(null);
 
@@ -25,7 +25,10 @@ function ShareInvoiceSecondary() {
     const getTransactionDetails = async () => {
       try {
         // Fetch invoice details
-        const res = await api.get(`/api/sUsers/getInvoiceDetails/${id}`, {
+        const res = await api.get(`/api/sUsers/getSalesDetails/${id}`, {
+          params: {
+            vanSale:true
+          },
           withCredentials: true,
         });
 
@@ -42,7 +45,7 @@ function ShareInvoiceSecondary() {
         );
 
         setData(res.data.data);
-        setOrg(companyDetails.data.organizationData);
+        setOrg(companyDetails?.data?.organizationData);
         setBank(
           companyDetails?.data?.organizationData?.configurations[0]?.bank
         );
@@ -56,6 +59,8 @@ function ShareInvoiceSecondary() {
   }, [id]);
 
   console.log(data);
+
+  //  console.log(org?.configurations[0]?.terms);
 
   useEffect(() => {
     if (data && data.items) {
@@ -78,18 +83,12 @@ function ShareInvoiceSecondary() {
         ?.toFixed(2);
       setAdditinalCharge(addiTionalCharge);
 
-      const finalAmount = data.finalAmount;
-
-      setFinalAmount(finalAmount);
-
-      const [integerPart, decimalPart] = finalAmount.toString().split(".");
+      const [integerPart, decimalPart] = data.finalAmount.toString().split(".");
       const integerWords = numberToWords.toWords(parseInt(integerPart, 10));
       console.log(integerWords);
-
       const decimalWords = decimalPart
         ? ` and ${numberToWords.toWords(parseInt(decimalPart, 10))} `
-        : " and Zero ";
-
+        : " and Zero";
       console.log(decimalWords);
 
       const mergedWord = [
@@ -103,10 +102,7 @@ function ShareInvoiceSecondary() {
     }
   }, [data]);
 
-  // if (totalAmount) {
 
-  //   // setInWords(mergedWord)
-  // }
 
   const handlePrint = useReactToPrint({
     content: () => contentToPrint.current,
@@ -169,14 +165,17 @@ function ShareInvoiceSecondary() {
     onAfterPrint: () => console.log("after printing..."),
     removeAfterPrint: true,
   });
+  
+
+
 
   return (
-    <div className="flex">
-     
-      <div className="flex-1">
+    <div className="">
+   
+      <div className="">
         <div className="bg-[#012a4a]   sticky top-0 p-3 px-5 text-white text-lg font-bold flex items-center gap-3  shadow-lg justify-between">
           <div className="flex gap-2 ">
-            <Link to={`/sUsers/InvoiceDetails/${id}`}>
+            <Link to={(-1)}>
               <IoIosArrowRoundBack className="text-3xl" />
             </Link>
             <p>Share Your Order</p>
@@ -191,7 +190,7 @@ function ShareInvoiceSecondary() {
           </div>
         </div>
 
-        <SaleOrderPdf
+        <SalesPdf
           contentToPrint={contentToPrint}
           data={data}
           org={org}
@@ -205,4 +204,4 @@ function ShareInvoiceSecondary() {
   );
 }
 
-export default ShareInvoiceSecondary;
+export default ShareVanSaleSecondary;

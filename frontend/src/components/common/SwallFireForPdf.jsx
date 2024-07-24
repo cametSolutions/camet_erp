@@ -3,9 +3,9 @@ import Swal from "sweetalert2";
 import { IoMdShareAlt } from "react-icons/io";
 import { useNavigate } from "react-router-dom";
 
-function SwallFireForPdf({ data, tab = "sales" ,user}) {
-  let selectedUser=user=="primary"?"pUsers":"sUsers"
-    console.log(data);
+function SwallFireForPdf({ data, tab = "sales", user }) {
+  let selectedUser = user == "primary" ? "pUsers" : "sUsers";
+  console.log(data);
   const navigate = useNavigate();
   const chooseFormat = () => {
     Swal.fire({
@@ -22,6 +22,8 @@ function SwallFireForPdf({ data, tab = "sales" ,user}) {
       if (result.isConfirmed) {
         if (tab === "salesOrder") {
           navigate(`/${selectedUser}/shareInvoice/${data._id}`);
+        } else if (tab === "vanSale") {
+          navigate(`/${selectedUser}/shareVanSale/${data._id}`);
         } else {
           navigate(`/${selectedUser}/shareSales/${data._id}`);
         }
@@ -29,7 +31,12 @@ function SwallFireForPdf({ data, tab = "sales" ,user}) {
       } else if (result.isDenied) {
         if (tab === "salesOrder") {
           navigate(`/${selectedUser}/shareInvoiceThreeInch/${data._id}`);
-        } else {
+        } 
+        else if (tab === "vanSale") {
+          navigate(`/${selectedUser}/shareVanSaleThreeInch/${data._id}`);
+        } 
+        
+        else {
           navigate(`/${selectedUser}/shareSalesThreeInch/${data._id}`);
         }
       }

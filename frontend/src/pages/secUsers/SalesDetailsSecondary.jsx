@@ -13,7 +13,6 @@ import SwallFireForPdf from "../../components/common/SwallFireForPdf";
 
 function SalesDetailsSecondary() {
   const [data, setData] = useState("");
-  const [refresh, setRefresh] = useState(false);
 
   const { id } = useParams();
   console.log(id);
@@ -24,6 +23,7 @@ function SalesDetailsSecondary() {
     const getTransactionDetails = async () => {
       try {
         const res = await api.get(`/api/sUsers/getSalesDetails/${id}`, {
+          params:{vanSale:false},
           withCredentials: true,
         });
         setData(res.data.data);
@@ -33,7 +33,7 @@ function SalesDetailsSecondary() {
       }
     };
     getTransactionDetails();
-  }, [refresh]);
+  }, []);
 
   console.log(data);
   const backHandler = () => {

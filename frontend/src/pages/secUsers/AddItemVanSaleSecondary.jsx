@@ -27,7 +27,7 @@ import ProductDetails from "../../components/common/ProductDetails";
 import { IoIosArrowDown } from "react-icons/io";
 import { IoIosArrowUp } from "react-icons/io";
 
-function AddItemSalesSecondary() {
+function AddItemVanSaleSecondary() {
   const [item, setItem] = useState([]);
   const [selectedPriceLevel, setSelectedPriceLevel] = useState("");
   const [brands, setBrands] = useState([]);
@@ -43,7 +43,7 @@ function AddItemSalesSecondary() {
   const [scrollPosition, setScrollPosition] = useState(0);
   const [refresh, setRefresh] = useState(false);
 
-  // const [godownname, setGodownname] = useState("");
+  const [godownname, setGodownname] = useState("");
   const [heights, setHeights] = useState({});
 
   ///////////////////////////cpm_id///////////////////////////////////
@@ -82,22 +82,22 @@ function AddItemSalesSecondary() {
   const listRef = useRef(null);
   const location = useLocation();
 
-  // ///////////////////////////Godown name///////////////////////////////////
-  // useEffect(() => {
-  //   const fetchGodownname = async () => {
-  //     try {
-  //       const godown = await api.get(`/api/sUsers/godownsName/${cpm_id}`, {
-  //         withCredentials: true,
-  //       });
-  //       setGodownname(godown.data || "");
-  //       // setGodownname("")
-  //     } catch (error) {
-  //       console.log(error);
-  //       toast.error(error.message);
-  //     }
-  //   };
-  //   fetchGodownname();
-  // }, []);
+  ///////////////////////////Godown name///////////////////////////////////
+  useEffect(() => {
+    const fetchGodownname = async () => {
+      try {
+        const godown = await api.get(`/api/sUsers/godownsName/${cpm_id}`, {
+          withCredentials: true,
+        });
+        setGodownname(godown.data || "");
+        // setGodownname("")
+      } catch (error) {
+        console.log(error);
+        toast.error(error.message);
+      }
+    };
+    fetchGodownname();
+  }, []);
 
   const searchData = (data) => {
     setSearch(data);
@@ -112,8 +112,8 @@ function AddItemSalesSecondary() {
 
       try {
         if (allProductsFromRedux.length === 0) {
-          const res = await api.get(`/api/sUsers/getProducts/${cpm_id}`, {
-            params:{vanSale:false},
+             const res = await api.get(`/api/sUsers/getProducts/${cpm_id}`, {
+            params:{vanSale:true},
             withCredentials: true,
           });
           productData = res.data.productData;
@@ -1018,7 +1018,7 @@ function AddItemSalesSecondary() {
               handleDecrement={handleDecrement}
               selectedPriceLevel={selectedPriceLevel}
               handleAddClick={handleAddClick}
-              godownName="nil"
+              godownName={godownname}
               details={el}
               setHeight={(height) => setHeight(index, height)}
             />
@@ -1154,11 +1154,11 @@ function AddItemSalesSecondary() {
               </select>
             </div>
           </div>
-          {/* <div type="button" className="flex  px-4 bg-white ">
+          <div type="button" className="flex  px-4 bg-white ">
             <p className="text-xs  p-0.5 px-1 text-black font-bold opacity-60 mb-2  ">
               {godownname}
             </p>
-          </div> */}
+          </div>
         </div>
 
         {loader ? (
@@ -1211,4 +1211,4 @@ function AddItemSalesSecondary() {
   );
 }
 
-export default AddItemSalesSecondary;
+export default AddItemVanSaleSecondary;

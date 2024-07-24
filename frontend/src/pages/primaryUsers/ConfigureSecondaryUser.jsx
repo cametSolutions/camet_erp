@@ -1,24 +1,24 @@
 /* eslint-disable no-case-declarations */
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 
 import api from "../../api/api";
 import { toast } from "react-toastify";
 import { Link } from "react-router-dom";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import { useParams, useNavigate } from "react-router-dom";
-import { useSelector } from "react-redux";
 
 function ConfigureSecondaryUser() {
   const [godowns, setGodowns] = useState([]);
   const [priceLevels, setPriceLevels] = useState([]);
   const [selectedPriceLevels, setSelectedPriceLevels] = useState([]);
   const [selectedGodowns, setSelectedGodowns] = useState([]);
+  const [selectedVanSaleGodowns, setSelectedVanSaleGodowns] = useState([]);
   const [vanSaleGodownName, setVanSaleGodownName] = useState("");
   const [selectedConfig, setSelectedConfig] = useState("sales");
   const [vanSale, setVanSale] = useState(false);
-  const [shouldCheckAllFields, setShouldCheckAllFields] = useState(false);
+  // const [shouldCheckAllFields, setShouldCheckAllFields] = useState(false);
 
-  const isFirstRender = useRef(true);
+  // const isFirstRender = useRef(true);
 
   const [sales, setSales] = useState([
     {
@@ -176,24 +176,24 @@ function ConfigureSecondaryUser() {
 
   console.log(sales, salesOrder, receipt, purchase, vanSaleConfig);
 
-  useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      return;
-    }
+  // useEffect(() => {
+  //   if (isFirstRender.current) {
+  //     isFirstRender.current = false;
+  //     return;
+  //   }
 
-    const allFieldsFilled = vanSaleConfig.every(
-      (field) =>
-        field.prefixDetails !== "" &&
-        field.suffixDetails !== "" &&
-        field.widthOfNumericalPart !== ""
-    );
-    if (allFieldsFilled) {
-      setSelectedGodowns([]);
-    }
-    setVanSale(allFieldsFilled);
-    setVanSaleGodownName(selectedGodowns[0]);
-  }, [shouldCheckAllFields]);
+  //   const allFieldsFilled = vanSaleConfig.every(
+  //     (field) =>
+  //       field.prefixDetails !== "" &&
+  //       field.suffixDetails !== "" &&
+  //       field.widthOfNumericalPart !== ""
+  //   );
+  //   if (allFieldsFilled) {
+  //     setSelectedGodowns([]);
+  //   }
+  //   setVanSale(allFieldsFilled);
+  //   setVanSaleGodownName(selectedGodowns[0]);
+  // }, [shouldCheckAllFields]);
 
   //////////////////////////////// getSecUserDetails ////////////////////////////////////
 
@@ -221,11 +221,11 @@ function ConfigureSecondaryUser() {
             receiptConfiguration,
             vanSaleConfiguration,
             purchaseConfiguration,
+            selectedVanSaleGodowns,
             vanSale,
           } = configurations[0];
 
-          console.log(vanSaleConfiguration);
-          console.log(selectedGodowns);
+        
 
           // const {
           //   godownConfigOption,
@@ -261,6 +261,9 @@ function ConfigureSecondaryUser() {
           if (vanSaleConfiguration) {
             setVanSaleConfig([vanSaleConfiguration]);
           }
+          if (selectedVanSaleGodowns?.length > 0) {
+            setSelectedVanSaleGodowns([selectedVanSaleGodowns[0]]);
+          }
         }
       } catch (error) {
         console.log(error);
@@ -288,7 +291,7 @@ function ConfigureSecondaryUser() {
         break;
       case "vanSale":
         setVanSaleConfig([{ ...vanSaleConfig[0], [field]: value }]);
-        setShouldCheckAllFields(!shouldCheckAllFields);
+        // setShouldCheckAllFields(!shouldCheckAllFields);
 
         break;
       default:
@@ -316,6 +319,7 @@ function ConfigureSecondaryUser() {
   };
 
   const handleCheckboxChange = (type, value, checked) => {
+    console.log(type, value, checked);
     if (type === "priceLevel") {
       if (checked) {
         setSelectedPriceLevels([...selectedPriceLevels, value]);
@@ -334,17 +338,23 @@ function ConfigureSecondaryUser() {
       } else {
         setSelectedGodowns(selectedGodowns.filter((item) => item !== value));
       }
+    } else if (type === "vanSaleGodown") {
+      if (checked) {
+        setSelectedVanSaleGodowns([value]);
+      } else {
+        setSelectedVanSaleGodowns(
+          selectedVanSaleGodowns.filter((item) => item !== value)
+        );
+      }
     }
   };
 
-  function validateObject(obj, excludedFields = []) {
-    console.log("haii");
+  console.log(selectedVanSaleGodowns);
 
+  function validateObject(obj, excludedFields = []) {
     let isAllFilled = true;
     let isAllEmpty = true;
     const alphanumericRegex = /^[a-zA-Z0-9]+$/;
-
-    console.log(obj);
 
     for (let key in obj) {
       // Skip the excluded fields
@@ -374,28 +384,28 @@ function ConfigureSecondaryUser() {
 
   console.log(vanSaleGodownName);
   const submitHandler = async () => {
-    const initial = {
-      prefixDetails: "",
-      suffixDetails: "",
-      // startingNumber: "",
-      widthOfNumericalPart: "",
-    };
+    // const initial = {
+    //   prefixDetails: "",
+    //   suffixDetails: "",
+    //   // startingNumber: "",
+    //   widthOfNumericalPart: "",
+    // };
 
     let formData = {};
 
     formData = {
       selectedGodowns,
       selectedPriceLevels,
-      salesConfiguration: vanSale ? initial : sales[0],
+      salesConfiguration: sales[0],
       salesOrderConfiguration: salesOrder[0],
       receiptConfiguration: receipt[0],
       purchaseConfiguration: purchase[0],
+      selectedVanSaleGodowns,
       vanSaleConfiguration: {
         ...vanSaleConfig[0],
-        vanSaleGodownName: vanSale
-          ? godowns?.filter((el) => el?.id == selectedGodowns[0])[0]?.godown ||
-            ""
-          : "",
+        vanSaleGodownName:
+          godowns?.filter((el) => el?.id == selectedVanSaleGodowns[0])[0]
+            ?.godown || "",
       },
       vanSale: vanSale,
     };
@@ -406,6 +416,7 @@ function ConfigureSecondaryUser() {
       "startingNumber",
       "currentNumber",
     ]);
+
     if (salesValidation === false) {
       toast.error("Fill all sales details or leave all fields empty");
       return;
@@ -480,7 +491,6 @@ function ConfigureSecondaryUser() {
           withCredentials: true,
         }
       );
-
       toast.success(res.data.message);
       navigate(`/pUsers/editUser/${userId}`);
     } catch (error) {
@@ -491,6 +501,7 @@ function ConfigureSecondaryUser() {
     // Existing API call...
   };
 
+  console.log(selectedConfig);
   return (
     <div className="flex-1   ">
       <div className="  bg-[#201450] text-white mb-2 p-3 flex items-center gap-3 sticky top-0 z-20 text-lg   ">
@@ -546,11 +557,8 @@ function ConfigureSecondaryUser() {
               <div className="w-full lg:w-6/12 px-4">
                 <div className="relative w-full mb-3">
                   <label
-                    className={`   ${
-                      vanSale && selectedConfig == "sales"
-                        ? "pointer-events-none  opacity-45 "
-                        : ""
-                    }   block uppercase text-blueGray-600 text-xs font-bold mb-2`}
+                    className={`  
+                       block uppercase text-blueGray-600 text-xs font-bold mb-2`}
                     htmlFor="prefixDetails"
                   >
                     prefixDetails
@@ -558,11 +566,7 @@ function ConfigureSecondaryUser() {
                   <input
                     type="text"
                     id="prefixDetails"
-                    className={`  ${
-                      vanSale && selectedConfig == "sales"
-                        ? "pointer-events-none  opacity-45 "
-                        : ""
-                    }    border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150`}
+                    className={`   border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150`}
                     onChange={(e) =>
                       updateConfig(
                         selectedConfig,
@@ -578,11 +582,7 @@ function ConfigureSecondaryUser() {
               <div className="w-full lg:w-6/12 px-4">
                 <div className="relative w-full mb-3">
                   <label
-                    className={`   ${
-                      vanSale && selectedConfig == "sales"
-                        ? "pointer-events-none  opacity-45 "
-                        : ""
-                    }   block uppercase text-blueGray-600 text-xs font-bold mb-2`}
+                    className={`   block uppercase text-blueGray-600 text-xs font-bold mb-2`}
                     htmlFor="suffixDetails"
                   >
                     suffixDetails
@@ -590,11 +590,7 @@ function ConfigureSecondaryUser() {
                   <input
                     type="text"
                     id="suffixDetails"
-                    className={`  ${
-                      vanSale && selectedConfig == "sales"
-                        ? "pointer-events-none  opacity-45 "
-                        : ""
-                    }    border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150`}
+                    className={`    border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150`}
                     onChange={(e) =>
                       updateConfig(
                         selectedConfig,
@@ -610,11 +606,7 @@ function ConfigureSecondaryUser() {
               <div className="w-full lg:w-6/12 px-4">
                 <div className="relative w-full mb-3">
                   <label
-                    className={`   ${
-                      vanSale && selectedConfig == "sales"
-                        ? "pointer-events-none  opacity-45 "
-                        : ""
-                    }   block uppercase text-blueGray-600 text-xs font-bold mb-2`}
+                    className={`   block uppercase text-blueGray-600 text-xs font-bold mb-2`}
                     htmlFor="startingNumber"
                   >
                     Starting Number
@@ -623,11 +615,7 @@ function ConfigureSecondaryUser() {
                     disabled
                     type="number"
                     id="startingNumber"
-                    className={`  ${
-                      vanSale && selectedConfig == "sales"
-                        ? "pointer-events-none  opacity-45 "
-                        : ""
-                    }    border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150`}
+                    className={`   border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150`}
                     // onChange={(e) =>
                     //   updateConfig(
                     //     selectedConfig,
@@ -644,11 +632,7 @@ function ConfigureSecondaryUser() {
               <div className="w-full lg:w-6/12 px-4">
                 <div className="relative w-full mb-3">
                   <label
-                    className={`   ${
-                      vanSale && selectedConfig == "sales"
-                        ? "pointer-events-none  opacity-45 "
-                        : ""
-                    }   block uppercase text-blueGray-600 text-xs font-bold mb-2`}
+                    className={`    block uppercase text-blueGray-600 text-xs font-bold mb-2`}
                     htmlFor="widthOfNumericalPart"
                   >
                     Width of Numerical Part
@@ -656,11 +640,7 @@ function ConfigureSecondaryUser() {
                   <input
                     type="number"
                     id="widthOfNumericalPart"
-                    className={`  ${
-                      vanSale && selectedConfig == "sales"
-                        ? "pointer-events-none  opacity-45 "
-                        : ""
-                    }    border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150`}
+                    className={`    border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150`}
                     onChange={(e) =>
                       updateConfig(
                         selectedConfig,
@@ -680,11 +660,7 @@ function ConfigureSecondaryUser() {
               <div className="w-full lg:w-6/12 px-4">
                 <div className="relative w-full mb-3">
                   <label
-                    className={`   ${
-                      vanSale && selectedConfig == "sales"
-                        ? "pointer-events-none  opacity-45 "
-                        : ""
-                    }   block uppercase text-blueGray-600 text-xs font-bold mb-2`}
+                    className={`    block uppercase text-blueGray-600 text-xs font-bold mb-2`}
                     htmlFor="widthOfNumericalPart"
                   >
                     Current Number
@@ -692,11 +668,7 @@ function ConfigureSecondaryUser() {
                   <input
                     type="number"
                     id="currentNumber"
-                    className={`  ${
-                      vanSale && selectedConfig == "sales"
-                        ? "pointer-events-none  opacity-45 "
-                        : ""
-                    }    border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150`}
+                    className={`     border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150`}
                     onChange={(e) =>
                       updateConfig(
                         selectedConfig,
@@ -757,14 +729,47 @@ function ConfigureSecondaryUser() {
                 {/* {type !== "self" && ( */}
                 <div className="lg:col-span-1">
                   <h6 className="text-blueGray-400 text-sm mb-4 font-bold uppercase">
-                    Locations
+                    {selectedConfig === "vanSale"
+                      ? "Van sale Locations"
+                      : "Locations"}
                   </h6>
                   <div
                     className={` 
                      
                        space-y-2 `}
                   >
-                    {godowns?.length > 0 ? (
+                    {selectedConfig === "vanSale" ? (
+                      godowns?.length > 0 ? (
+                        godowns?.map((item, index) => (
+                          <div key={index} className="flex items-center">
+                            <input
+                              type="checkbox"
+                              id={`godownCheckbox${index}`}
+                              value={item?.id}
+                              checked={selectedVanSaleGodowns.includes(
+                                item?.id
+                              )}
+                              onChange={(e) =>
+                                handleCheckboxChange(
+                                  "vanSaleGodown",
+                                  e.target.value,
+                                  e.target.checked
+                                )
+                              }
+                              className="mr-2"
+                            />
+                            <label
+                              htmlFor={`godownCheckbox${index}`}
+                              className="text-blueGray-600"
+                            >
+                              {item?.godown}
+                            </label>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-blueGray-600">No Godowns added</p>
+                      )
+                    ) : godowns?.length > 0 ? (
                       godowns?.map((item, index) => (
                         <div key={index} className="flex items-center">
                           <input
@@ -792,163 +797,39 @@ function ConfigureSecondaryUser() {
                     ) : (
                       <p className="text-blueGray-600">No Godowns added</p>
                     )}
+                    {/* {godowns?.length > 0 ? (
+                      godowns?.map((item, index) => (
+                        <div key={index} className="flex items-center">
+                          <input
+                            type="checkbox"
+                            id={`godownCheckbox${index}`}
+                            value={item?.id}
+                            checked={selectedGodowns.includes(item?.id)}
+                            onChange={(e) =>
+                              handleCheckboxChange(
+                                "godown",
+                                e.target.value,
+                                e.target.checked
+                              )
+                            }
+                            className="mr-2"
+                          />
+                          <label
+                            htmlFor={`godownCheckbox${index}`}
+                            className="text-blueGray-600"
+                          >
+                            {item?.godown}
+                          </label>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-blueGray-600">No Godowns added</p>
+                    )} */}
                   </div>
                 </div>
-                {/* )} */}
-                {/* {type == "self" && (
-                    <div className="lg:col-span-1">
-                      <h6 className="text-blueGray-400 text-sm mb-4 font-bold uppercase">
-                        Locations
-                      </h6>
-                      <div
-                        className={` ${
-                          vanSale ? "pointer-events-none opacity-45" : ""
-                        } space-y-2 `}
-                      >
-                        {godowns?.length > 0 ? (
-                          godowns?.map((item, index) => (
-                            <div key={index} className="flex items-center">
-                              <input
-                                type="checkbox"
-                                id={`godownCheckbox${index}`}
-                                value={item?.id}
-                                checked={selectedGodowns.includes(item?.id)}
-                                onChange={(e) =>
-                                  handleCheckboxChange(
-                                    "godown",
-                                    e.target.value,
-                                    e.target.checked
-                                  )
-                                }
-                                className="mr-2"
-                              />
-                              <label
-                                htmlFor={`godownCheckbox${index}`}
-                                className="text-blueGray-600"
-                              >
-                                {item?.godown}
-                              </label>
-                            </div>
-                          ))
-                        ) : (
-                          <p className="text-blueGray-600">No Godowns added</p>
-                        )}
-                      </div>
-                    </div>
-                  )} */}
               </div>
 
               <hr className="mt-5 border-b-1 border-blueGray-300" />
-
-              {/* {vanSale && (
-                  <>
-                    <div className="w-full lg:w-6/12 px-4 mt-10">
-                      <div className="relative w-full mb-3">
-                        <label
-                          className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
-                          htmlFor="grid-password"
-                        >
-                          Configuration Godown
-                        </label>
-                        <select
-                          className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                          onChange={(e) => {
-                            setGodownConfigOption(e.target.value); // Save the id
-                            setVanSaleGodownName(
-                              e.target.options[e.target.selectedIndex].text
-                            ); // Save the godown name
-                          }}
-                          value={godownConfigOption}
-                        >
-                          {godowns?.length > 0 ? (
-                            godowns?.map((el, index) => (
-                              <option key={index} value={el.id}>
-                                {el.godown[0]}
-                              </option>
-                            ))
-                          ) : (
-                            <option value="">No godowns </option>
-                          )}
-                        </select>
-                      </div>
-                    </div>
-                    <div className="flex flex-wrap  mt-8">
-                      <div className="w-full lg:w-6/12 px-4">
-                        <div className="relative w-full mb-3">
-                          <label
-                            className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
-                            htmlFor="grid-password"
-                          >
-                            prefixDetails
-                          </label>
-                          <input
-                            type="text"
-                            className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                            onChange={(e) => setGodownPrefix(e.target.value)}
-                            value={godownPrefix}
-                            placeholder="prefixDetails"
-                          />
-                        </div>
-                      </div>
-                      <div className="w-full lg:w-6/12 px-4">
-                        <div className="relative w-full mb-3">
-                          <label
-                            className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
-                            htmlFor="grid-password"
-                          >
-                            suffixDetails
-                          </label>
-                          <input
-                            type="text"
-                            className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                            onChange={(e) => setGodownSuffix(e.target.value)}
-                            value={godownSuffix}
-                            placeholder="suffixDetails"
-                          />
-                        </div>
-                      </div>
-                      <div className="w-full lg:w-6/12 px-4">
-                        <div className="relative w-full mb-3">
-                          <label
-                            className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
-                            htmlFor="grid-password"
-                          >
-                            Starting Number
-                          </label>
-                          <input
-                            disabled
-                            type="number"
-                            className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                            onChange={(e) =>
-                              setGodownStartingNumber(e.target.value)
-                            }
-                            value={godownStartingNumber}
-                            placeholder="Starting Number"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="w-full lg:w-6/12 px-4">
-                        <div className="relative w-full mb-3">
-                          <label
-                            className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
-                            htmlFor="widthOfNumericalPart"
-                          >
-                            Width of Numerical Part
-                          </label>
-                          <input
-                            onChange={(e) => setGodownWidth(e.target.value)}
-                            value={godownWidth}
-                            type="number"
-                            id="widthOfNumericalPart"
-                            className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                            placeholder="Width of Numerical Part"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </>
-                )} */}
             </section>
           </form>
           <button

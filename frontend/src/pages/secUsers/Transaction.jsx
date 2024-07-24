@@ -224,6 +224,7 @@ function Transaction() {
                       ? `/sUsers/receiptDetails/${el._id}`
                       : el.type === "Tax Invoice"
                       ? `/sUsers/salesDetails/${el._id}`
+                      : el.type === "Van Sale"?`/sUsers/vanSaleDetails/${el._id}`
                       : el.type === "Purchase"
                       ? `/sUsers/purchaseDetails/${el._id}`
                       : `/sUsers/InvoiceDetails/${el._id}`

@@ -405,7 +405,7 @@ function SalesSecondary() {
     console.log(formData);
 
     try {
-      const res = await api.post("/api/sUsers/createSale", formData, {
+      const res = await api.post(`/api/sUsers/createSale?vanSale=${false}`, formData, {
         headers: {
           "Content-Type": "application/json",
         },

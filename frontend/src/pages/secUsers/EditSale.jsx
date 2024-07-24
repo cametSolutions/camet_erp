@@ -464,6 +464,9 @@ function EditSale() {
 
     try {
       const res = await api.post(`/api/sUsers/editSale/${id}`, formData, {
+        params:{
+          vasSale:false
+        },
         headers: {
           "Content-Type": "application/json",
         },
