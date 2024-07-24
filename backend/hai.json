@@ -410,6 +410,11 @@
           "balance_stock": 50,
           "godown": "GD 2",
           "godown_id": "ID:169"
+        },
+        {
+          "balance_stock": 50,
+          "godown": "GD 1",
+          "godown_id": "ID:169"
         }
       ],
       "Priceleveles": [

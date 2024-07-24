@@ -8,7 +8,6 @@ import { HashLoader } from "react-spinners";
 
 import { VariableSizeList as List } from "react-window";
 import { useSelector } from "react-redux";
-import SidebarSec from "../../components/secUsers/SidebarSec";
 import { IoIosArrowRoundBack } from "react-icons/io";
 
 import { useDispatch } from "react-redux";
@@ -21,14 +20,11 @@ import ProductDetails from "../../components/common/ProductDetails";
 function InventorySecondaryUser() {
   const [products, setProducts] = useState([]);
 
-  const [showSidebar, setShowSidebar] = useState(false);
-  const [refresh, setRefresh] = useState(false);
   const [loader, setLoader] = useState(true);
   const [search, setSearch] = useState("");
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [listHeight, setListHeight] = useState(0);
-  const [ingodowns, setIngodowns] = useState("");
-  const [selfgodowns, setSelfGodowms] = useState("");
+
   const [heights, setHeights] = useState({});
 
   const cmp_id = useSelector(
@@ -46,88 +42,7 @@ function InventorySecondaryUser() {
 
   console.log(type);
 
-  const handleFilterProduct = async (selectedValue) => {
-    setLoader(true);
-    try {
-      if (selectedValue == "") {
-        setRefresh(!refresh);
-      } else {
-        const res = await api.get(
-          `/api/sUsers/godownProductFilter/${cmp_id}/${selectedValue}`,
-          {
-            withCredentials: true,
-          }
-        );
-
-        console.log(res.data);
-
-        setProducts(res.data);
-      }
-    } catch (error) {
-      console.log(error);
-    } finally {
-      setLoader(false);
-    }
-  };
-  const handleFilterProductSelf = async (selectedValue) => {
-    setLoader(true);
-    try {
-      if (selectedValue == "") {
-        setRefresh(!refresh);
-      } else {
-        const res = await api.get(
-          `/api/sUsers/godownProductFilterSelf/${cmp_id}/${selectedValue}`,
-          {
-            withCredentials: true,
-          }
-        );
-        setLoader(true);
-        console.log(res.data);
-
-        setProducts(res.data);
-      }
-    } catch (error) {
-      console.log(error);
-      // toast.error(error.response.data.message);
-    } finally {
-      setLoader(false);
-    }
-  };
-
   // getting godowns data
-
-  useEffect(() => {
-    if (type == "self") {
-      const fetchgetGodowmsSelf = async () => {
-        try {
-          const res = await api.get(`/api/sUsers/getGodownsSelf/${cmp_id}`, {
-            withCredentials: true,
-          });
-          console.log("welocme", res.data.godowndata);
-
-          setSelfGodowms(res.data.godowndata);
-        } catch (error) {
-          console.log(error);
-          // toast.error(error.response.data.message);
-        }
-      };
-      fetchgetGodowmsSelf();
-    } else {
-      const fetchgetGodowms = async () => {
-        try {
-          const res = await api.get(`/api/sUsers/getGodowns/${cmp_id}`, {
-            withCredentials: true,
-          });
-          console.log(res);
-          setIngodowns(res.data.godowndata);
-        } catch (error) {
-          console.log(error);
-          // toast.error(error.response.data.message);
-        }
-      };
-      fetchgetGodowms();
-    }
-  }, []);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -147,7 +62,7 @@ function InventorySecondaryUser() {
     };
     fetchProducts();
     dispatch(removeAll());
-  }, [refresh, cmp_id]);
+  }, [cmp_id]);
 
   console.log(products);
 
@@ -160,7 +75,7 @@ function InventorySecondaryUser() {
       );
       setFilteredProducts(filtered);
     }
-  }, [search, products, refresh]);
+  }, [search, products]);
 
   useEffect(() => {
     const calculateHeight = () => {
@@ -216,15 +131,13 @@ function InventorySecondaryUser() {
     // return
   };
 
-
-  const  truncateToNDecimals=(num, n)=> {
+  const truncateToNDecimals = (num, n) => {
     const parts = num.toString().split(".");
     if (parts.length === 1) return num; // No decimal part
     parts[1] = parts[1].substring(0, n);
     console.log(parseFloat(parts.join("."))); // Truncate the decimal part
     return parseFloat(parts.join("."));
-  }
-
+  };
 
   const Row = ({ index, style }) => {
     const el = filteredProducts[index];
@@ -239,7 +152,9 @@ function InventorySecondaryUser() {
         <div
           key={index}
           style={adjustedStyle}
-          className={`bg-white  pb-6 mt-4 flex flex-col  rounded-sm cursor-pointer  py-4 border-t ${!el?.hasGodownOrBatch?"shadow-lg":""}  `}
+          className={`bg-white  pb-6 mt-4 flex flex-col  rounded-sm cursor-pointer  py-4 border-t ${
+            !el?.hasGodownOrBatch ? "shadow-lg" : ""
+          }  `}
         >
           <div className="flex justify-between w-full gap-3   px-5  ">
             <div className="">
@@ -287,10 +202,13 @@ function InventorySecondaryUser() {
                   </p>
                   <h2 className="font-semibold text-green-500 ml-1">
                     {" "}
-                    {truncateToNDecimals((el?.GodownList?.reduce(
-                      (acc, curr) => acc + (curr?.balance_stock || 0),
-                      0
-                    ) || 0)-(el?.balance_stock || 0),3)}
+                    {truncateToNDecimals(
+                      (el?.GodownList?.reduce(
+                        (acc, curr) => acc + (curr?.balance_stock || 0),
+                        0
+                      ) || 0) - (el?.balance_stock || 0),
+                      3
+                    )}
                   </h2>
                 </div>
               </div>
@@ -330,145 +248,61 @@ function InventorySecondaryUser() {
   };
 
   return (
-    <div className=" ">
-  
-
-      <div className="flex-1   ">
-        <div className="sticky top-0 z-20 h-[117px]">
-          <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3  flex justify-between items-center  ">
-            <div className="flex items-center justify-center gap-2">
-              <Link to={"/sUsers/dashboard"}>
-                <IoIosArrowRoundBack className="text-3xl text-white cursor-pointer " />
-              </Link>
-              <p className="text-white text-lg   font-bold ">Stock Register</p>
-            </div>
-            {/* {type !== "self" && (
-              <div>
-                <Link>
-                  <div className="relative">
-                    <select
-                      className="appearance-none flex items-center gap-2 text-white bg-[#40679E] px-2 py-1 rounded-md text-sm hover:scale-105 duration-100 ease-in-out"
-                      onChange={(e) => {
-                        handleFilterProduct(e.target.value);
-                      }}
-                    >
-                      <option value="">All</option>
-                      {ingodowns &&
-                        ingodowns?.length > 0 &&
-                        ingodowns?.map((godown, index) => (
-                          <option key={index} value={godown?._id}>
-                            <IoIosAddCircle className="text-xl" />
-                            {godown?.godown[0]}
-                          </option>
-                        ))}
-                    </select>
-
-                    <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                      <svg
-                        className="w-4 h-4 text-white pointer-events-none"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M9 5l7 7-7 7"
-                        ></path>
-                      </svg>
-                    </div>
-                  </div>
-                </Link>
-              </div>
-            )}
-            {type === "self" && (
-              <div>
-                <Link>
-                  <div className="relative">
-                    <select
-                      className="appearance-none flex items-center gap-2 text-white bg-[#40679E] px-2 py-1 rounded-md text-sm hover:scale-105 duration-100 ease-in-out"
-                      onChange={(e) => handleFilterProductSelf(e.target.value)}
-                    >
-                      <option value="">All</option>
-                      {selfgodowns &&
-                        selfgodowns.map((godown, index) => (
-                          <option key={index} value={godown}>
-                            <IoIosAddCircle className="text-xl" />
-                            {godown}
-                          </option>
-                        ))}
-                    </select>
-                    <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                      <svg
-                        className="w-4 h-4 text-white pointer-events-none"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M9 5l7 7-7 7"
-                        ></path>
-                      </svg>
-                    </div>
-                  </div>
-                </Link>
-              </div>
-            )} */}
-          </div>
-
-          {/* invoiec date */}
-          <div className=" p-4  bg-white drop-shadow-lg">
-            <div className="flex justify-between  items-center"></div>
-            <div className=" md:w-1/2 ">
-              {/* search bar */}
-              <SearchBar onType={searchData} />
-
-              {/* search bar */}
-            </div>
+    <div className="flex-1   ">
+      <div className="sticky top-0 z-20 h-[117px]">
+        <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3  flex justify-between items-center  ">
+          <div className="flex items-center justify-center gap-2">
+            <Link to={"/sUsers/dashboard"}>
+              <IoIosArrowRoundBack className="text-3xl text-white cursor-pointer " />
+            </Link>
+            <p className="text-white text-lg   font-bold ">Stock Register</p>
           </div>
         </div>
 
-        {/* adding party */}
+        {/* invoiec date */}
+        <div className=" p-4  bg-white drop-shadow-lg">
+          <div className="flex justify-between  items-center"></div>
+          <div className=" md:w-1/2 ">
+            {/* search bar */}
+            <SearchBar onType={searchData} />
 
-        {loader ? (
-          // Show loader while data is being fetched
-          <div className="flex justify-center items-center h-screen">
-            <HashLoader color="#363ad6" />
+            {/* search bar */}
           </div>
-        ) : filteredProducts.length > 0 ? (
-          // Show product list if products are available
-          <div
-            style={{
-              scrollbarWidth: "thin",
-              scrollbarColor: "transparent transparent",
-            }}
-          >
-            <List
-              ref={listRef}
-              className=""
-              height={listHeight} // Specify the height of your list
-              itemCount={filteredProducts.length} // Specify the total number of items
-              itemSize={getItemSize} // Specify the height of each item
-              width="100%" // Specify the width of your list
-            >
-              {Row}
-            </List>
-          </div>
-        ) : (
-          // Show message if no products are available
-          <div className="font-bold flex justify-center items-center mt-12 text-gray-500">
-            No Products !!!
-          </div>
-        )}
+        </div>
       </div>
 
-      <div className="h-screen flex justify-center items-center "></div>
+      {/* adding party */}
+
+      {loader ? (
+        // Show loader while data is being fetched
+        <div className="flex justify-center items-center h-screen">
+          <HashLoader color="#363ad6" />
+        </div>
+      ) : filteredProducts.length > 0 ? (
+        // Show product list if products are available
+        <div
+          style={{
+            scrollbarWidth: "thin",
+            scrollbarColor: "transparent transparent",
+          }}
+        >
+          <List
+            ref={listRef}
+            className=""
+            height={listHeight} // Specify the height of your list
+            itemCount={filteredProducts.length} // Specify the total number of items
+            itemSize={getItemSize} // Specify the height of each item
+            width="100%" // Specify the width of your list
+          >
+            {Row}
+          </List>
+        </div>
+      ) : (
+        // Show message if no products are available
+        <div className="font-bold flex justify-center items-center mt-12 text-gray-500">
+          No Products !!!
+        </div>
+      )}
     </div>
   );
 }
