@@ -117,7 +117,7 @@ import AddSubCategory from '../pages/primaryUsers/AddSubCategory'
 import AddGodown from '../pages/primaryUsers/AddGodown'
 import AddPriceLevel from '../pages/primaryUsers/AddPriceLevel'
 import VanSaleSecondary from '../pages/secUsers/VanSaleSecondary'
-import AddItemVanSaleSecondary from '../pages/secUsers/AddItemVanSaleSecondary '
+import AddItemVanSaleSecondary from '../pages/secUsers/AddItemVanSaleSecondary'
 
 const Routers = () => {
   return (

@@ -112,7 +112,8 @@ function AddItemVanSaleSecondary() {
 
       try {
         if (allProductsFromRedux.length === 0) {
-          const res = await api.get(`/api/sUsers/getProducts/${cpm_id}`, {
+             const res = await api.get(`/api/sUsers/getProducts/${cpm_id}`, {
+            params:{vanSale:true},
             withCredentials: true,
           });
           productData = res.data.productData;
