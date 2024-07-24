@@ -124,6 +124,7 @@ import ThreeInchVanSaleSec from '../pages/secUsers/ThreeInchVanSaleSec'
 import VanSaleDetails from '../pages/primaryUsers/VanSaleDetails '
 import ShareVanSale from '../pages/primaryUsers/ShareVanSale'
 import ThreeInchVanSale from '../pages/primaryUsers/ThreeInchVanSale '
+import EditVanSale from '../pages/secUsers/EditVanSale'
 
 const Routers = () => {
   return (
@@ -254,6 +255,7 @@ const Routers = () => {
         <Route path='/sUsers/sharePurchase/:id' element={<ProtectedSecRoute><SharePurchaseSecondary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/sharePurchaseThreeInch/:id' element={<ProtectedSecRoute><ThreeInchPurchaseSec/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/editSale/:id' element={<ProtectedSecRoute><EditSale/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/editVanSale/:id' element={<ProtectedSecRoute><EditVanSale/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/billToSales/:id' element={<ProtectedSecRoute><BillToSales/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/billToSalesOrder/:id' element={<ProtectedSecRoute><BillToSalesOrder/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/vanSale' element={<ProtectedSecRoute><VanSaleSecondary/></ProtectedSecRoute>}></Route>

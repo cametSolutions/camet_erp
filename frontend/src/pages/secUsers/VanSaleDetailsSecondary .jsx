@@ -93,7 +93,7 @@ function VanSaleDetailsSecondary () {
                 </p>
               </div> */}
               <div
-                onClick={() => navigate(`/sUsers/editSale/${data._id}`)}
+                onClick={() => navigate(`/sUsers/editVanSale/${data._id}`)}
                 className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer"
               >
                 <FaEdit className="text-blue-500" />

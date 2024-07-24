@@ -3085,6 +3085,18 @@ export const getPurchaseDetails = async (req, res) => {
 
 export const editSale = async (req, res) => {
   const saleId = req.params.id;
+
+  const vanSaleQuery=req.query.vanSale;
+
+  const isVanSale=vanSaleQuery==="true";
+  
+  let model;
+  if(isVanSale){
+    model=vanSaleModel
+  }else{
+    model=salesModel
+  }
+
   try {
     const {
       orgId,
@@ -3104,7 +3116,7 @@ export const editSale = async (req, res) => {
 
     // Fetch the existing sale
 
-    const existingSale = await salesModel.findById(saleId);
+    const existingSale = await model.findById(saleId);
     if (!existingSale) {
       console.log("editSale: existingSale not found");
       return res
