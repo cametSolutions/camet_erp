@@ -25,6 +25,7 @@ import { Category } from "../models/subDetails.js";
 import { Subcategory } from "../models/subDetails.js";
 import { Godown } from "../models/subDetails.js";
 import { PriceLevel } from "../models/subDetails.js";
+import vanSaleModel from "../models/vanSaleModel.js";
 
 // @desc Register Primary user
 // route POST/api/pUsers/register
@@ -623,6 +624,20 @@ export const transactions = async (req, res) => {
       },
     ]);
 
+    const vanSales = await vanSaleModel.aggregate([
+      { $match: { cmp_id: cmp_id } },
+      {
+        $project: {
+          party_name: "$party.partyName",
+          // mobileNumber:"$party.mobileNumber",
+          type: "Van Sale",
+          enteredAmount: "$finalAmount",
+          createdAt: 1,
+          itemsLength: { $size: "$items" },
+        },
+      },
+    ]);
+
     const purchases = await purchaseModel.aggregate([
       { $match: { cmp_id: cmp_id } },
       {
@@ -639,7 +654,13 @@ export const transactions = async (req, res) => {
 
     console.log(sales);
 
-    const combined = [...transactions, ...invoices, ...sales, ...purchases];
+    const combined = [
+      ...transactions,
+      ...invoices,
+      ...sales,
+      ...purchases,
+      ...vanSales,
+    ];
     combined.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
     if (combined.length > 0) {
@@ -2552,8 +2573,21 @@ export const createSale = async (req, res) => {
 export const getSalesDetails = async (req, res) => {
   const saleId = req.params.id;
 
+  const vanSaleQuery = req.query.vanSale;
+
+  const isVanSale = vanSaleQuery === "true";
+
+  console.log("isVanSale", isVanSale);
+
+  let model;
+  if (isVanSale) {
+    model = vanSaleModel;
+  } else {
+    model = salesModel;
+  }
+
   try {
-    const saleDetails = await salesModel.findById(saleId);
+    const saleDetails = await model.findById(saleId);
 
     if (saleDetails) {
       res
@@ -2807,7 +2841,6 @@ export const addSecondaryConfigurations = async (req, res) => {
       };
     }
 
-
     const changes = {
       orderNumber: existingConfig.orderNumber !== NeworderNumber,
       salesNumber: existingConfig.salesNumber !== NewsalesNumber,
@@ -2816,45 +2849,77 @@ export const addSecondaryConfigurations = async (req, res) => {
       vanSalesNumber: existingConfig.vanSalesNumber !== NewvanSalesNumber,
     };
 
-
     console.log(changes);
 
-    const checkForNumberExistence = async (model, fieldName, newValue, cmp_id) => {
-
+    const checkForNumberExistence = async (
+      model,
+      fieldName,
+      newValue,
+      cmp_id
+    ) => {
       console.log(model, fieldName, newValue, cmp_id);
       const centralNumber = parseInt(newValue, 10);
-      const regex = new RegExp(`^(${centralNumber}|.*-(0*${centralNumber})-.*)$`);
+      const regex = new RegExp(
+        `^(${centralNumber}|.*-(0*${centralNumber})-.*)$`
+      );
       const docs = await model.find({
         [fieldName]: { $regex: regex },
-        cmp_id: cmp_id
+        cmp_id: cmp_id,
       });
 
-      console.log(docs.map((el)=>el[fieldName]));
+      console.log(docs.map((el) => el[fieldName]));
       return docs.length > 0;
     };
 
     if (changes.salesNumber) {
-      const salesExists = await checkForNumberExistence(salesModel, 'salesNumber', NewsalesNumber,cmp_id);
+      const salesExists = await checkForNumberExistence(
+        salesModel,
+        "salesNumber",
+        NewsalesNumber,
+        cmp_id
+      );
 
-      console.log("salesExists",salesExists);
+      console.log("salesExists", salesExists);
       if (salesExists) {
-        return res.status(400).json({ message: `Sales is added with this number ${NewsalesNumber}` });
+        return res
+          .status(400)
+          .json({
+            message: `Sales is added with this number ${NewsalesNumber}`,
+          });
       }
     }
 
     if (changes.orderNumber) {
-      const orderExists = await checkForNumberExistence(invoiceModel, 'orderNumber', NeworderNumber,cmp_id);
-      console.log("orderExists",orderExists);
+      const orderExists = await checkForNumberExistence(
+        invoiceModel,
+        "orderNumber",
+        NeworderNumber,
+        cmp_id
+      );
+      console.log("orderExists", orderExists);
 
       if (orderExists) {
-        return res.status(400).json({ message: `Order is added with this number ${NeworderNumber}` });
+        return res
+          .status(400)
+          .json({
+            message: `Order is added with this number ${NeworderNumber}`,
+          });
       }
     }
 
     if (changes.purchaseNumber) {
-      const purchaseExists = await checkForNumberExistence(purchaseModel, 'purchaseNumber', NewpurchaseNumber,cmp_id);
+      const purchaseExists = await checkForNumberExistence(
+        purchaseModel,
+        "purchaseNumber",
+        NewpurchaseNumber,
+        cmp_id
+      );
       if (purchaseExists) {
-        return res.status(400).json({ message: `Purchase is added with this number ${NewpurchaseNumber}` });
+        return res
+          .status(400)
+          .json({
+            message: `Purchase is added with this number ${NewpurchaseNumber}`,
+          });
       }
     }
 
@@ -2866,9 +2931,18 @@ export const addSecondaryConfigurations = async (req, res) => {
     // }
 
     if (changes.vanSalesNumber) {
-      const vanSalesExists = await checkForNumberExistence(salesModel, 'salesNumber', NewvanSalesNumber,cmp_id);
+      const vanSalesExists = await checkForNumberExistence(
+        salesModel,
+        "salesNumber",
+        NewvanSalesNumber,
+        cmp_id
+      );
       if (vanSalesExists) {
-        return res.status(400).json({ message: `Van Sales is added with this number ${NewvanSalesNumber}` });
+        return res
+          .status(400)
+          .json({
+            message: `Van Sales is added with this number ${NewvanSalesNumber}`,
+          });
       }
     }
 
@@ -3407,8 +3481,7 @@ export const fetchConfigurationCurrentNumber = async (req, res) => {
       configuration = company;
     }
 
-
-    console.log("configuration",configuration);
+    console.log("configuration", configuration);
 
     const {
       orderNumber,

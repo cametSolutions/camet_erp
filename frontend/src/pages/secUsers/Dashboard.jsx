@@ -21,7 +21,6 @@ import { MdInventory } from "react-icons/md";
 import { RiContactsFill } from "react-icons/ri";
 import { useSidebar } from "../../layout/Layout";
 
-
 function Dashboard() {
   const [data, setData] = useState([]);
 
@@ -34,7 +33,7 @@ function Dashboard() {
   console.log(org);
   const dispatch = useDispatch();
 
-  const {  handleToggleSidebar } = useSidebar();
+  const { handleToggleSidebar } = useSidebar();
 
   useEffect(() => {
     if (org) {
@@ -165,10 +164,10 @@ function Dashboard() {
             {/* </Link> */}
 
             {/* <Link to={"/sUsers/sales"}> */}
-          
+
             {/* </Link> */}
             {/* <Link to={'/sUsers/invoice'} > */}
-        
+
             <div
               onClick={() => handleLinkClick("/sUsers/Inventory")}
               className="flex flex-wrap -mx-6  duration-150 hover:scale-105 ease-in-out cursor-pointer"
@@ -188,7 +187,6 @@ function Dashboard() {
                 </div>
               </div>
             </div>
-
 
             {/* contact */}
 
@@ -223,8 +221,9 @@ function Dashboard() {
           <div className=" bg-white px-4 p-2 z-40 text-gray-500 text-sm md:text-lg font-bold flex items-center gap-3 z shadow-lg sm:sticky top-[115px]">
             <p> Today's Transactions</p>
 
-
-            <p className="text-[9px] md:text-sm">( {new Date().toDateString()} )</p>
+            <p className="text-[9px] md:text-sm">
+              ( {new Date().toDateString()} )
+            </p>
             <CiCalendarDate className="text-xl font-bold text-violet-500" />
             <FaCaretDown />
           </div>
@@ -242,7 +241,10 @@ function Dashboard() {
                       ? `/sUsers/receiptDetails/${el._id}`
                       : el.type === "Tax Invoice"
                       ? `/sUsers/salesDetails/${el._id}`
-                      : el.type === "Purchase"? `/sUsers/purchaseDetails/${el._id}`
+                      : el.type === "Van Sale"
+                      ? `/sUsers/vanSaleDetails/${el._id}`
+                      : el.type === "Purchase"
+                      ? `/sUsers/purchaseDetails/${el._id}`
                       : `/sUsers/InvoiceDetails/${el._id}`;
                   navigate(navigationPath, { state: { from: "dashboard" } });
                 }}

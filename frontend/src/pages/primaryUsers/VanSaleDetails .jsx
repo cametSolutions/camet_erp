@@ -11,7 +11,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import SalesProductDetails from "../../components/common/SalesProductDetails";
 
-function SalesDetails() {
+function VanSaleDetails () {
   const [data, setData] = useState("");
 
   const { id } = useParams();
@@ -23,6 +23,9 @@ function SalesDetails() {
     const getTransactionDetails = async () => {
       try {
         const res = await api.get(`/api/pUsers/getSalesDetails/${id}`, {
+          params: {
+            vanSale:true
+          },
           withCredentials: true,
         });
         setData(res.data.data);
@@ -57,9 +60,9 @@ function SalesDetails() {
     }).then((result) => {
       if (result.isConfirmed) {
         // Swal.fire("Tax Invoice selected", "", "success");
-        navigate(`/pUsers/shareSales/${data._id}`);
+        navigate(`/pUsers/shareVanSale/${data._id}`);
       } else if (result.isDenied) {
-        navigate(`/pUsers/shareSalesThreeInch/${data._id}`);
+        navigate(`/pUsers/shareVanSaleThreeInch/${data._id}`);
       }
     });
   };
@@ -77,7 +80,7 @@ function SalesDetails() {
               className="text-2xl cursor-pointer"
             />
 
-            <h3 className="font-bold">Sales Details</h3>
+            <h3 className="font-bold">Van Sale Details</h3>
           </div>
       
         </div>
@@ -165,4 +168,4 @@ function SalesDetails() {
   );
 }
 
-export default SalesDetails;
+export default VanSaleDetails;

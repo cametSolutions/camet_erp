@@ -1,17 +1,16 @@
 import { MdOutlineArrowBack } from "react-icons/md";
-
-import { IoMdShareAlt } from "react-icons/io";
 import { MdTextsms } from "react-icons/md";
 import { useEffect, useState } from "react";
-import { useParams, } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import api from "../../api/api";
 import { toast } from "react-toastify";
 import dayjs from "dayjs";
+import { FaEdit } from "react-icons/fa";
 import { useLocation, useNavigate } from "react-router-dom";
-import Swal from "sweetalert2";
 import SalesProductDetails from "../../components/common/SalesProductDetails";
+import SwallFireForPdf from "../../components/common/SwallFireForPdf";
 
-function SalesDetails() {
+function VanSaleDetailsSecondary () {
   const [data, setData] = useState("");
 
   const { id } = useParams();
@@ -22,7 +21,8 @@ function SalesDetails() {
   useEffect(() => {
     const getTransactionDetails = async () => {
       try {
-        const res = await api.get(`/api/pUsers/getSalesDetails/${id}`, {
+        const res = await api.get(`/api/sUsers/getSalesDetails/${id}`, {
+          params:{vanSale:true},
           withCredentials: true,
         });
         setData(res.data.data);
@@ -37,49 +37,33 @@ function SalesDetails() {
   console.log(data);
   const backHandler = () => {
     if (location?.state?.from === "dashboard") {
-      navigate("/pUsers/dashboard");
+      navigate("/sUsers/dashboard");
     } else {
-      navigate("/pUsers/transaction");
+      navigate("/sUsers/transaction");
     }
   };
 
-  const chooseFormat = () => {
-    Swal.fire({
-      title: "Which format would you like?",
-      html: "<p>Choose between:</p>",
-      showDenyButton: true,
-      showCancelButton: true,
-      confirmButtonText: "Tax Invoice",
-      denyButtonText: `POS format`,
-      customClass: {
-        container: "swal2-container-custom",
-      },
-    }).then((result) => {
-      if (result.isConfirmed) {
-        // Swal.fire("Tax Invoice selected", "", "success");
-        navigate(`/pUsers/shareSales/${data._id}`);
-      } else if (result.isDenied) {
-        navigate(`/pUsers/shareSalesThreeInch/${data._id}`);
-      }
-    });
-  };
+
+
+  console.log(data.items);
 
   return (
-    <div className="">
      
 
-      <div className="bg-[rgb(244,246,254)]  relative  pb-[70px] md:pb-0 ">
+      <div className="bg-[rgb(244,246,254)] flex-1  relative  pb-[70px] md:pb-0 ">
         {/* headinh section  */}
-        <div className="flex bg-[#012a4a] items-center justify-between  sticky top-0 z-10">
+        <div className="flex bg-[#012a4a] items-center justify-between sticky top-0 z-10">
           <div className="flex items-center gap-3  text-white text-md p-4 ">
             <MdOutlineArrowBack
               onClick={backHandler}
               className="text-2xl cursor-pointer"
             />
 
-            <h3 className="font-bold">Sales Details</h3>
+            <h3 className="font-bold">Van Sale Details</h3>
           </div>
-      
+          {/* <div className="text-white mr-4 bg-pink-700 p-0 px-2 rounded-md text-center transition-all duration-150 transform hover:scale-105">
+            <button>Cancel</button>
+          </div> */}
         </div>
         {/* headinh section  */}
 
@@ -94,16 +78,36 @@ function SalesDetails() {
             </p>
           </div>
 
-          <div className="hidden md:block z-0">
+          <div className="hidden md:block">
             <div className="  flex justify-center p-4 gap-12 text-lg text-violet-500 mr-4">
-       
+              {/* <div
+                onClick={() => handleCancel(data._id)}
+                disabled={data?.isCancelled}
+                className={`flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110 cursor-pointer ${
+                  data.isCancelled ? "opacity-50 pointer-events-none" : ""
+                }`}
+              >
+                <FcCancel className="text-violet-500" />
+                <p className="text-black font-bold text-sm">
+                  {data?.isCancelled ? "Cancelled" : "Cancel"}
+                </p>
+              </div> */}
               <div
+                onClick={() => navigate(`/sUsers/editSale/${data._id}`)}
+                className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer"
+              >
+                <FaEdit className="text-blue-500" />
+                <p className="text-black font-bold text-sm">Edit</p>
+              </div>
+              {/* <Link to={`/sUsers/shareSales/${data._id}`}> */}
+              {/* <div
                 onClick={chooseFormat}
                 className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer"
               >
                 <IoMdShareAlt />
                 <p className="text-black font-bold text-sm">Share</p>
-              </div>
+              </div> */}
+              <SwallFireForPdf data={data} tab="vanSale" />
               {/* </Link> */}
               <div className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer">
                 <MdTextsms className="text-green-500" />
@@ -119,7 +123,15 @@ function SalesDetails() {
         <div className="bg-white mt-2 p-4  ">
           <div className="flex justify-between text-sm mb-2">
             <h2 className="font-semibold text-sm  text-gray-500">PARTY NAME</h2>
-      
+            {/* <div className="flex items-center gap-2 text-green-500">
+              <p className="text-black">
+                Current Balance :{" "}
+                <span className="text-green-500 font-bold">
+                ₹{(data.totalBillAmount - data.enteredAmount).toFixed(2)}
+                </span>
+              </p>
+              <FaArrowDown />
+            </div> */}
           </div>
           <hr />
           <hr />
@@ -143,17 +155,21 @@ function SalesDetails() {
           additionalCharges={data?.additionalCharges}
         />
 
-        <div className=" block md:hidden ">
+        {/* payment method */}
+
+        <div className=" block md:hidden z-0 ">
           <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 flex justify-center p-4 gap-12 text-lg text-violet-500  ">
-        
+     
             <div
-              onClick={chooseFormat}
+              onClick={() => navigate(`/sUsers/editSale/${data._id}`)}
               className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer"
             >
-              <IoMdShareAlt />
-              <p className="text-black font-bold text-sm">Share</p>
+              <FaEdit className="text-blue-500" />
+              <p className="text-black font-bold text-sm">Edit</p>
             </div>
-            {/* </Link> */}
+            {/* <Link to={`/sUsers/shareSales/${data._id}`}> */}
+            <SwallFireForPdf data={data} tab="vanSale"  />
+
             <div className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer">
               <MdTextsms className="text-green-500" />
               <p className="text-black font-bold text-sm">Sms</p>
@@ -161,8 +177,7 @@ function SalesDetails() {
           </div>
         </div>
       </div>
-    </div>
   );
 }
 
-export default SalesDetails;
+export default VanSaleDetailsSecondary;

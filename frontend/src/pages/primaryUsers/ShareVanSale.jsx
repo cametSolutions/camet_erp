@@ -7,17 +7,18 @@ import { toast } from "react-toastify";
 import { MdPrint } from "react-icons/md";
 import numberToWords from "number-to-words";
 import { Link } from "react-router-dom";
-import SaleOrderPdf from "../../components/common/SaleOrderPdf";
+import SalesPdf from "../../components/common/SalesPdf";
 
-function ShareInvoiceSecondary() {
+function ShareVanSale() {
   const [data, setData] = useState([]);
   const [org, setOrg] = useState([]);
   const [subTotal, setSubTotal] = useState("");
   const [additinalCharge, setAdditinalCharge] = useState("");
-  const [finalAmount, setFinalAmount] = useState("");
+  // const [finalAmount, setFinalAmount] = useState("");
   const [inWords, setInWords] = useState("");
-  const { id } = useParams();
   const [bank, setBank] = useState([]);
+
+  const { id } = useParams();
 
   const contentToPrint = useRef(null);
 
@@ -25,7 +26,10 @@ function ShareInvoiceSecondary() {
     const getTransactionDetails = async () => {
       try {
         // Fetch invoice details
-        const res = await api.get(`/api/sUsers/getInvoiceDetails/${id}`, {
+        const res = await api.get(`/api/pUsers/getSalesDetails/${id}`, {
+          params:{
+            vanSale:true
+          },
           withCredentials: true,
         });
 
@@ -35,14 +39,14 @@ function ShareInvoiceSecondary() {
 
         // Fetch company details using the cmp_id
         const companyDetails = await api.get(
-          `/api/sUsers/getSingleOrganization/${cmpId}`,
+          `/api/pUsers/getSingleOrganization/${cmpId}`,
           {
             withCredentials: true,
           }
         );
 
         setData(res.data.data);
-        setOrg(companyDetails.data.organizationData);
+        setOrg(companyDetails?.data?.organizationData);
         setBank(
           companyDetails?.data?.organizationData?.configurations[0]?.bank
         );
@@ -55,7 +59,9 @@ function ShareInvoiceSecondary() {
     getTransactionDetails();
   }, [id]);
 
-  console.log(data);
+  console.log(bank);
+
+  //  console.log(org?.configurations[0]?.terms);
 
   useEffect(() => {
     if (data && data.items) {
@@ -79,17 +85,16 @@ function ShareInvoiceSecondary() {
       setAdditinalCharge(addiTionalCharge);
 
       const finalAmount = data.finalAmount;
+      console.log(finalAmount);
 
-      setFinalAmount(finalAmount);
+      // setFinalAmount(finalAmount);
 
       const [integerPart, decimalPart] = finalAmount.toString().split(".");
       const integerWords = numberToWords.toWords(parseInt(integerPart, 10));
       console.log(integerWords);
-
       const decimalWords = decimalPart
         ? ` and ${numberToWords.toWords(parseInt(decimalPart, 10))} `
-        : " and Zero ";
-
+        : " and Zero";
       console.log(decimalWords);
 
       const mergedWord = [
@@ -109,74 +114,21 @@ function ShareInvoiceSecondary() {
   // }
 
   const handlePrint = useReactToPrint({
-    content: () => contentToPrint.current,
-    // documentTitle: `Sales ${data.salesNumber}`,
-    pageStyle: `
-      @page {
-        size: A4;
-        margin: 0mm 10mm 9mm 10mm;
-      }
-  
-      @media print {
-        body {
-          -webkit-print-color-adjust: exact;
-          font-family: 'Arial', sans-serif;
-        }
-  
-        .pdf-page {
-          page-break-after: always;
-        }
-  
-        .pdf-content {
-          font-size: 19px;
-        }
-  
-        .print-md-layout {
-          display: flex;
-          flex-direction: row;
-          justify-content: space-between;
-          align-items: flex-start;
-          gap: 8px;
-          padding: 1rem 2rem;
-          width: 100%;
-        }
-  
-        .bill-to, .ship-to {
-          width: 50%;
-          padding-right: 1rem;
-          border-right: 1px solid #e5e7eb; /* Tailwind color gray-300 */
-        }
-  
-        .details-table {
-          width: 50%;
-          padding-left: 1rem;
-        }
-  
-        .details-table td {
-          font-size: 11px;
-          color: #6b7280; /* Tailwind color gray-500 */
-        }
-  
-        /* Force flex-row for print */
-        @media print {
-          .print-md-layout {
-            display: flex !important;
-            flex-direction: row !important;
-          }
-        }
-      }
-    `,
+    documentTitle: `Sale Order ${data.salesNumber}`,
+    onBeforePrint: () => console.log("before printing..."),
     onAfterPrint: () => console.log("after printing..."),
     removeAfterPrint: true,
   });
 
+
+
   return (
-    <div className="flex">
+    <div className="">
      
-      <div className="flex-1">
+      <div className="flex-1 ">
         <div className="bg-[#012a4a]   sticky top-0 p-3 px-5 text-white text-lg font-bold flex items-center gap-3  shadow-lg justify-between">
           <div className="flex gap-2 ">
-            <Link to={`/sUsers/InvoiceDetails/${id}`}>
+            <Link to={(-1)}>
               <IoIosArrowRoundBack className="text-3xl" />
             </Link>
             <p>Share Your Order</p>
@@ -191,7 +143,7 @@ function ShareInvoiceSecondary() {
           </div>
         </div>
 
-        <SaleOrderPdf
+        <SalesPdf
           contentToPrint={contentToPrint}
           data={data}
           org={org}
@@ -205,4 +157,4 @@ function ShareInvoiceSecondary() {
   );
 }
 
-export default ShareInvoiceSecondary;
+export default ShareVanSale;

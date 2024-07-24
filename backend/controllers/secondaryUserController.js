@@ -342,6 +342,20 @@ export const transactions = async (req, res) => {
         },
       },
     ]);
+
+    const vanSales = await vanSaleModel.aggregate([
+      { $match: { Secondary_user_id: userId, cmp_id: cmp_id } },
+      {
+        $project: {
+          party_name: "$party.partyName",
+          // mobileNumber:"$party.mobileNumber",
+          type: "Van Sale",
+          enteredAmount: "$finalAmount",
+          createdAt: 1,
+          itemsLength: { $size: "$items" },
+        },
+      },
+    ]);
     const purchases = await purchaseModel.aggregate([
       { $match: { Secondary_user_id: userId, cmp_id: cmp_id } },
       {
@@ -356,7 +370,7 @@ export const transactions = async (req, res) => {
       },
     ]);
 
-    const combined = [...transactions, ...invoices, ...sales, ...purchases];
+    const combined = [...transactions, ...invoices, ...sales, ...purchases, ...vanSales];
     combined.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
     if (combined.length > 0) {
@@ -2306,9 +2320,21 @@ export const createSale = async (req, res) => {
 
 export const getSalesDetails = async (req, res) => {
   const saleId = req.params.id;
+  const vanSaleQuery=req.query.vanSale;
+
+const isVanSale=vanSaleQuery==="true";
+
+console.log("isVanSale",isVanSale);
+
+let model;
+if(isVanSale){
+  model=vanSaleModel
+}else{
+  model=salesModel
+}
 
   try {
-    const saleDetails = await salesModel.findById(saleId);
+    const saleDetails = await model.findById(saleId);
 
     if (saleDetails) {
       res

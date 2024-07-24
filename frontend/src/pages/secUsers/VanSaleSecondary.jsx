@@ -377,7 +377,6 @@ function VanSaleSecondary() {
       selectedDate,
     };
 
-    console.log(formData);
 
     try {
       const res = await api.post(`/api/sUsers/createSale?vanSale=${true}`, formData, {
@@ -387,10 +386,9 @@ function VanSaleSecondary() {
         withCredentials: true,
       });
 
-      console.log(res.data);
       toast.success(res.data.message);
 
-      navigate(`/sUsers/salesDetails/${res.data.data._id}`);
+      navigate(`/sUsers/vanSaleDetails/${res.data.data._id}`);
       dispatch(removeAll());
     } catch (error) {
       toast.error(error.response.data.message);
@@ -398,7 +396,6 @@ function VanSaleSecondary() {
     }
   };
 
-  console.log(items);
 
   return (
     <div className="">

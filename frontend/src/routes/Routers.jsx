@@ -118,6 +118,12 @@ import AddGodown from '../pages/primaryUsers/AddGodown'
 import AddPriceLevel from '../pages/primaryUsers/AddPriceLevel'
 import VanSaleSecondary from '../pages/secUsers/VanSaleSecondary'
 import AddItemVanSaleSecondary from '../pages/secUsers/AddItemVanSaleSecondary'
+import VanSaleDetailsSecondary from '../pages/secUsers/VanSaleDetailsSecondary '
+import ShareVanSaleSecondary from '../pages/secUsers/ShareVanSaleSecondary'
+import ThreeInchVanSaleSec from '../pages/secUsers/ThreeInchVanSaleSec'
+import VanSaleDetails from '../pages/primaryUsers/VanSaleDetails '
+import ShareVanSale from '../pages/primaryUsers/ShareVanSale'
+import ThreeInchVanSale from '../pages/primaryUsers/ThreeInchVanSale '
 
 const Routers = () => {
   return (
@@ -168,9 +174,12 @@ const Routers = () => {
 
         {/* <Route path='/pUsers/modal' element={<ProtectedPriRoute><SelectDefaultModal/></ProtectedPriRoute>}></Route> */}
         <Route path='/pUsers/salesDetails/:id' element={<ProtectedPriRoute><SalesDetails/></ProtectedPriRoute>}></Route>
+        <Route path='/pUsers/vanSaleDetails/:id' element={<ProtectedPriRoute><VanSaleDetails/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/shareSalesThreeInch/:id' element={<ProtectedPriRoute><ThreeInchSales/></ProtectedPriRoute>}></Route>
+        <Route path='/pUsers/shareVanSaleThreeInch/:id' element={<ProtectedPriRoute><ThreeInchVanSale/></ProtectedPriRoute>}></Route>
 
         <Route path='/pUsers/shareSales/:id' element={<ProtectedPriRoute><ShareSales/></ProtectedPriRoute>}></Route>
+        <Route path='/pUsers/shareVanSale/:id' element={<ProtectedPriRoute><ShareVanSale/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/configureSecondaryUser/:id/:userId/:cmp_name' element={<ProtectedPriRoute><ConfigureSecondaryUser/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/Inventory' element={<ProtectedPriRoute><InventoryPrimaryUser/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/purchaseDetails/:id' element={<ProtectedPriRoute><PurchaseDetailsPrimary/></ProtectedPriRoute>}></Route>
@@ -231,8 +240,11 @@ const Routers = () => {
         <Route path='/sUsers/addItemSales' element={<ProtectedSecRoute><AddItemSalesSecondary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/editItemSales/:id/:godownName/:index' element={<ProtectedSecRoute><EditItemSalesSecondary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/salesDetails/:id' element={<ProtectedSecRoute><SalesDetailsSecondary/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/vanSaleDetails/:id' element={<ProtectedSecRoute><VanSaleDetailsSecondary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/shareSales/:id' element={<ProtectedSecRoute><ShareSalesSecondary/></ProtectedSecRoute>}></Route> 
+        <Route path='/sUsers/shareVanSale/:id' element={<ProtectedSecRoute><ShareVanSaleSecondary/></ProtectedSecRoute>}></Route> 
         <Route path='/sUsers/shareSalesThreeInch/:id' element={<ProtectedSecRoute><ThreeInchSalesSec/></ProtectedSecRoute>}></Route> 
+        <Route path='/sUsers/shareVanSaleThreeInch/:id' element={<ProtectedSecRoute><ThreeInchVanSaleSec/></ProtectedSecRoute>}></Route> 
         <Route path='/sUsers/contacts' element={<ProtectedSecRoute><Contacts/></ProtectedSecRoute>}></Route> 
         <Route path='/sUsers/purchase' element={<ProtectedSecRoute><Purchase/></ProtectedSecRoute>}></Route> 
         <Route path='/sUsers/searchPartyPurchase' element={<ProtectedSecRoute><SearchPartyPurchase/></ProtectedSecRoute>}></Route> 
