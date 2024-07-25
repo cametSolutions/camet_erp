@@ -491,6 +491,9 @@ function AddItemVanSaleSecondary() {
 
           itemToUpdate.GodownList[idx] = currentBatchOrGodown;
         }
+        if(itemToUpdate.hasGodownOrBatch &&(itemToUpdate.GodownList.every((godown)=>!godown.batch))){
+          itemToUpdate.GodownList[0].count =   new Decimal(itemToUpdate.count || 0).add(1).toNumber() || 1;
+        }
         itemToUpdate.count =
           new Decimal(itemToUpdate.count || 0).add(1).toNumber() || 1;
 
@@ -514,6 +517,8 @@ function AddItemVanSaleSecondary() {
       }
       return item;
     });
+
+    
 
     setItem(updatedItems);
     if (selectedPriceLevel === "") {
@@ -786,6 +791,8 @@ function AddItemVanSaleSecondary() {
     });
   }, []);
 
+  console.log(filteredItems);
+
   const Row = ({ index, style }) => {
     const el = filteredItems[index];
     // const isExpanded = expandedProductId === el?._id;
@@ -982,7 +989,7 @@ function AddItemVanSaleSecondary() {
               )}
             </div>
           ) : (
-            !el?.hasGodownOrBatch && (
+            !el?.hasGodownOrBatch || (el.GodownList.every((godown)=>!godown.batch)) && (
               <div
                 onClick={() => {
                   handleAddClick(el?._id);
@@ -994,7 +1001,7 @@ function AddItemVanSaleSecondary() {
             )
           )}
         </div>
-        {el?.hasGodownOrBatch && (
+        {el?.hasGodownOrBatch  && ( el.GodownList.some((godown)=>godown.batch)) && (
           <div className="px-6">
             <div
               onClick={() => {
@@ -1010,7 +1017,7 @@ function AddItemVanSaleSecondary() {
           </div>
         )}
 
-        {el?.isExpanded && (
+        {el?.isExpanded &&  (
           <div className=" bg-white">
             <ProductDetails
               heights={heights}
