@@ -137,7 +137,6 @@ function EditItemSalesSecondary() {
         }
       });
 
-      console.log(newGodownList);
 
       newItem.GodownList = newGodownList;
       newItem.count = Number(
@@ -146,15 +145,21 @@ function EditItemSalesSecondary() {
           .toFixed(2)
       );
 
+
       newItem.count = Number(
         newGodownList?.reduce((acc, curr) => {
           if (curr.added === true) {
+            console.log("haii");
             return acc + curr.count;
           } else {
+            console.log("haii");
+
             return acc;
           }
         },0)
       );
+
+      console.log(newItem.count);
       newItem.total = Number(
         newGodownList
           .reduce((acc, curr) => acc + (curr?.added?curr.individualTotal:0 || 0), 0)

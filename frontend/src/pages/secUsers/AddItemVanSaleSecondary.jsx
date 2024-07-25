@@ -112,8 +112,8 @@ function AddItemVanSaleSecondary() {
 
       try {
         if (allProductsFromRedux.length === 0) {
-             const res = await api.get(`/api/sUsers/getProducts/${cpm_id}`, {
-            params:{vanSale:true},
+          const res = await api.get(`/api/sUsers/getProducts/${cpm_id}`, {
+            params: { vanSale: true },
             withCredentials: true,
           });
           productData = res.data.productData;
@@ -375,8 +375,6 @@ function AddItemVanSaleSecondary() {
     }
   };
 
-  console.log(item);
-
   useEffect(() => {
     addSelectedRate(selectedPriceLevel);
   }, [selectedPriceLevel, refresh]);
@@ -478,7 +476,7 @@ function AddItemVanSaleSecondary() {
   const handleAddClick = (_id, idx) => {
     const updatedItems = item.map((item) => {
       if (item._id === _id) {
-        const itemToUpdate = { ...item, GodownList: [...item.GodownList] };
+        const itemToUpdate = structuredClone(item);
 
         if (itemToUpdate.GodownList[idx]) {
           const currentBatchOrGodown = { ...itemToUpdate.GodownList[idx] };
@@ -491,13 +489,19 @@ function AddItemVanSaleSecondary() {
 
           itemToUpdate.GodownList[idx] = currentBatchOrGodown;
         }
-        if(itemToUpdate.hasGodownOrBatch &&(itemToUpdate.GodownList.every((godown)=>!godown.batch))){
-          itemToUpdate.GodownList[0].count =   new Decimal(itemToUpdate.count || 0).add(1).toNumber() || 1;
+        if (
+          itemToUpdate.hasGodownOrBatch &&
+          itemToUpdate.GodownList.every((godown) => !godown.batch)
+        ) {
+          itemToUpdate.GodownList[0].count =
+            new Decimal(itemToUpdate.count || 0).add(1).toNumber() || 1;
+            itemToUpdate.GodownList[0].added=true;
         }
         itemToUpdate.count =
           new Decimal(itemToUpdate.count || 0).add(1).toNumber() || 1;
 
         const totalData = calculateTotal(itemToUpdate, selectedPriceLevel);
+
         const updatedGodownListWithTotals = itemToUpdate.GodownList.map(
           (godown, index) => ({
             ...godown,
@@ -518,13 +522,13 @@ function AddItemVanSaleSecondary() {
       return item;
     });
 
-    
-
     setItem(updatedItems);
     if (selectedPriceLevel === "") {
       navigate(`/sUsers/editItemSales/${_id}/${godownname || "nil"}/${idx}`);
     }
   };
+
+  console.log(godownname);
 
   ///////////////////////////handleIncrement///////////////////////////////////
 
@@ -567,6 +571,11 @@ function AddItemVanSaleSecondary() {
         currentItem.GodownList = updatedGodownListWithTotals;
         currentItem.total = totalData.total; // Update the overall total
       } else {
+
+        if ( currentItem?.hasGodownOrBatch && currentItem?.GodownList.every((godown) => !godown.batch)) {
+          
+          currentItem.GodownList[0].count = new Decimal(currentItem.GodownList[0].count).add(1).toNumber();
+        }
         // Increment the count of the currentItem by 1
         currentItem.count = new Decimal(currentItem.count).add(1).toNumber();
 
@@ -628,6 +637,12 @@ function AddItemVanSaleSecondary() {
         currentItem.GodownList = updatedGodownListWithTotals;
         currentItem.total = totalData.total; // Update the overall total
       } else {
+
+        
+        if ( currentItem?.hasGodownOrBatch && currentItem?.GodownList.every((godown) => !godown.batch)) {
+          
+          currentItem.GodownList[0].count = new Decimal(currentItem.GodownList[0].count).sub(1).toNumber();
+        }
         currentItem.count = new Decimal(currentItem.count).sub(1).toNumber();
 
         // Ensure count does not go below 0
@@ -700,12 +715,7 @@ function AddItemVanSaleSecondary() {
     handleTotalChangeWithPriceLevel(selectedValue);
   };
 
-  // function truncateToNDecimals(num, n) {
-  //   const parts = num.toString().split(".");
-  //   if (parts.length === 1) return num; // No decimal part
-  //   parts[1] = parts[1].substring(0, n); // Truncate the decimal part
-  //   return parseFloat(parts.join("."));
-  // }
+console.log(item);
 
   ///////////////////////////react window ///////////////////////////////////
 
@@ -833,7 +843,7 @@ function AddItemVanSaleSecondary() {
                   : el?.product_name.slice(0, 30) + "..."}
                 {/* {el?.product_name} */}
               </p>
-              {el?.hasGodownOrBatch && (
+              {el?.hasGodownOrBatch && el.GodownList.some((godown)=>godown.batch) && (
                 <div className="flex flex-col">
                   <div className="flex">
                     <span>Net Amount : ₹ </span>
@@ -852,7 +862,7 @@ function AddItemVanSaleSecondary() {
                 </div>
               )}
 
-              {!el?.hasGodownOrBatch && (
+              {el?.hasGodownOrBatch && el.GodownList.some((godown)=>!godown.batch) && (
                 <>
                   <div className="flex gap-1 items-center">
                     <p>
@@ -894,102 +904,92 @@ function AddItemVanSaleSecondary() {
             </div>
           )} */}
 
-          {el?.added && el?.count && !el?.hasGodownOrBatch > 0 ? (
+          {el?.added && el?.count > 0   &&  el?.hasGodownOrBatch && el?.GodownList.every((godown) => !godown.batch)  ? (
             <div className="flex items-center flex-col gap-2">
-              {/* <Link
-              // to={`/sUsers/editItem/${el?._id}`}
-              to={{
-                pathname: `/sUsers/editItem/${el?._id}`,
-                state: { from: "addItem" },
-              }}
-            > */}
-
-              {!el?.hasGodownOrBatch && (
-                <>
-                  <button
-                    onClick={() => {
-                      navigate(
-                        `/sUsers/editItemSales/${el?._id}/${
-                          godownname || "nil"
-                        }/null`,
-                        {
-                          state: {
-                            from: "editItemSales",
-                            id: location?.state?.id,
-                          },
-                        }
-                      );
-                      // saveScrollPosition();
-                    }}
-                    type="button"
-                    className="  mt-3  px-2 py-1  rounded-md border-violet-500 font-bold border  text-violet-500 text-xs"
-                  >
-                    Edit
-                  </button>
-                  <div
-                    className="py-2 px-3 inline-block bg-white  "
-                    data-hs-input-number
-                  >
-                    <div className="flex items-center gap-x-1.5">
-                      <button
-                        onClick={() => handleDecrement(el?._id)}
-                        type="button"
-                        className="size-6 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-md border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none"
-                        data-hs-input-number-decrement
+              <>
+                <button
+                  onClick={() => {
+                    navigate(
+                      `/sUsers/editItemSales/${el?._id}/${
+                        godownname || "nil"
+                      }/0`,
+                      {
+                        state: {
+                          from: "editItemSales",
+                          id: location?.state?.id,
+                        },
+                      }
+                    );
+                    // saveScrollPosition();
+                  }}
+                  type="button"
+                  className="  mt-3  px-2 py-1  rounded-md border-violet-500 font-bold border  text-violet-500 text-xs"
+                >
+                  Edit
+                </button>
+                <div
+                  className="py-2 px-3 inline-block bg-white  "
+                  data-hs-input-number
+                >
+                  <div className="flex items-center gap-x-1.5">
+                    <button
+                      onClick={() => handleDecrement(el?._id)}
+                      type="button"
+                      className="size-6 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-md border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none"
+                      data-hs-input-number-decrement
+                    >
+                      <svg
+                        className="flex-shrink-0 size-3.5"
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
                       >
-                        <svg
-                          className="flex-shrink-0 size-3.5"
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="24"
-                          height="24"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <path d="M5 12h14" />
-                        </svg>
-                      </button>
-                      <input
-                        className="p-0 w-12 bg-transparent border-0 text-gray-800 text-center focus:ring-0 "
-                        type="text"
-                        disabled
-                        value={el?.count ? el?.count : 0} // Display the count from the state
-                        data-hs-input-number-input
-                      />
-                      <button
-                        onClick={() => {
-                          handleIncrement(el?._id);
-                        }}
-                        type="button"
-                        className="size-6 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-md border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none "
-                        data-hs-input-number-increment
+                        <path d="M5 12h14" />
+                      </svg>
+                    </button>
+                    <input
+                      className="p-0 w-12 bg-transparent border-0 text-gray-800 text-center focus:ring-0 "
+                      type="text"
+                      disabled
+                      value={el?.count ? el?.count : 0} // Display the count from the state
+                      data-hs-input-number-input
+                    />
+                    <button
+                      onClick={() => {
+                        handleIncrement(el?._id);
+                      }}
+                      type="button"
+                      className="size-6 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-md border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none "
+                      data-hs-input-number-increment
+                    >
+                      <svg
+                        className="flex-shrink-0 size-3.5"
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
                       >
-                        <svg
-                          className="flex-shrink-0 size-3.5"
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="24"
-                          height="24"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <path d="M5 12h14" />
-                          <path d="M12 5v14" />
-                        </svg>
-                      </button>
-                    </div>
+                        <path d="M5 12h14" />
+                        <path d="M12 5v14" />
+                      </svg>
+                    </button>
                   </div>
-                </>
-              )}
+                </div>
+              </>
             </div>
           ) : (
-            !el?.hasGodownOrBatch || (el.GodownList.every((godown)=>!godown.batch)) && (
+           el?.hasGodownOrBatch && el?.GodownList.every((godown) => !godown.batch) && (
               <div
                 onClick={() => {
                   handleAddClick(el?._id);
@@ -1001,23 +1001,24 @@ function AddItemVanSaleSecondary() {
             )
           )}
         </div>
-        {el?.hasGodownOrBatch  && ( el.GodownList.some((godown)=>godown.batch)) && (
-          <div className="px-6">
-            <div
-              onClick={() => {
-                handleExpansion(el?._id);
-                setTimeout(() => listRef.current.resetAfterIndex(index), 0);
-              }}
-              className="p-2 border-gray-300 border rounded-md w-full text-violet-500 mt-4 font-semibold flex items-center justify-center gap-3"
-            >
-              {el?.isExpanded ? "Hide Details" : "Show Details"}
+        {el?.hasGodownOrBatch &&
+          el.GodownList.some((godown) => godown.batch) && (
+            <div className="px-6">
+              <div
+                onClick={() => {
+                  handleExpansion(el?._id);
+                  setTimeout(() => listRef.current.resetAfterIndex(index), 0);
+                }}
+                className="p-2 border-gray-300 border rounded-md w-full text-violet-500 mt-4 font-semibold flex items-center justify-center gap-3"
+              >
+                {el?.isExpanded ? "Hide Details" : "Show Details"}
 
-              {el?.isExpanded ? <IoIosArrowUp /> : <IoIosArrowDown />}
+                {el?.isExpanded ? <IoIosArrowUp /> : <IoIosArrowDown />}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {el?.isExpanded &&  (
+        {el?.isExpanded && (
           <div className=" bg-white">
             <ProductDetails
               heights={heights}
