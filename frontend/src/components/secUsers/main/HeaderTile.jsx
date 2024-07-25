@@ -44,7 +44,7 @@ function HeaderTile({
                 className=" bottom-0 text-white bg-violet-700  w-full rounded-md  p-2 flex items-center justify-center gap-2 hover_scale cursor-pointer "
               >
                 <IoIosAddCircle className="text-2xl" />
-                <p>{tab==="add"?"Generate Van Sale":"Edit Van Sale"}</p>
+                <p>{tab==="add"?`Generate ${title}`:`Edit ${title}`}</p>
               </button>
             </div>
             <div></div>
