@@ -11,8 +11,7 @@ import {
   addAdditionalCharges,
   AddFinalAmount,
   deleteRow,
-  changeDate
-  
+  changeDate,
 } from "../../../slices/invoiceSecondary";
 import { useDispatch } from "react-redux";
 import { IoIosArrowDown } from "react-icons/io";
@@ -32,7 +31,8 @@ import { IoIosArrowRoundBack } from "react-icons/io";
 import SidebarSec from "../../components/secUsers/SidebarSec";
 import { PiAddressBookFill } from "react-icons/pi";
 import DespatchDetails from "../../components/secUsers/DespatchDetails";
-
+import HeaderTile from "../../components/secUsers/main/HeaderTile";
+import AddPartyTile from "../../components/secUsers/main/AddPartyTile";
 
 function InvoiceSecondary() {
   const cmp_id = useSelector(
@@ -61,7 +61,6 @@ function InvoiceSecondary() {
   const despatchDetails = useSelector(
     (state) => state.invoiceSecondary.despatchDetails
   );
-
 
   useEffect(() => {
     localStorage.removeItem("scrollPositionAddItem");
@@ -145,7 +144,9 @@ function InvoiceSecondary() {
 
           const padedNumber = newOrderNumber.padStart(widthOfNumericalPart, 0);
           console.log(padedNumber);
-          const finalOrderNumber = [prefixDetails , padedNumber , suffixDetails].filter(Boolean).join('-');
+          const finalOrderNumber = [prefixDetails, padedNumber, suffixDetails]
+            .filter(Boolean)
+            .join("-");
           console.log(finalOrderNumber);
           setOrderNumber(finalOrderNumber);
         }
@@ -348,7 +349,7 @@ function InvoiceSecondary() {
       orgId,
       orderNumber,
       despatchDetails,
-      selectedDate
+      selectedDate,
     };
 
     console.log(formData);
@@ -375,7 +376,6 @@ function InvoiceSecondary() {
 
   return (
     <div className="flex relative ">
-   
       <div className="flex-1 bg-slate-100  h-screen  ">
         <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex  items-center gap-2 sticky top-0 z-50  ">
           {/* <IoReorderThreeSharp
@@ -392,57 +392,21 @@ function InvoiceSecondary() {
 
         {/* invoiec date */}
 
-        <div className="flex justify-between  p-4 bg-white drop-shadow-lg items-center text-xs md:text-base ">
-          <div className=" flex flex-col gap-1 justify-center">
-            <p className="text-md font-semibold text-violet-400">
-              {" "}
-              Order #{orderNumber}
-            </p>
-            <div className="flex items-center">
-              <p className="font-semibold   text-gray-500 text-xs md:text-base">
-                {new Date(selectedDate).toDateString()}
-              </p>
-
-              <input
-                onChange={(e) => {
-                  setSelectedDate(e.target.value);
-                  dispatch(changeDate(new Date(e.target.value)));
-                }}
-                type="date"
-                min={new Date().toISOString().split("T")[0]}
-                className="w-20 border-none cursor-pointer  "
-                style={{ boxShadow: "none", borderColor: "#b6b6b6" }}
-              />
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <div className=" hidden md:block ">
-              <div className="  flex gap-5 items-center ">
-                <button
-                  onClick={submitHandler}
-                  className=" bottom-0 text-white bg-violet-700  w-full rounded-md  p-2 flex items-center justify-center gap-2 hover_scale cursor-pointer "
-                >
-                  <IoIosAddCircle className="text-2xl" />
-                  <p>Generate Order</p>
-                </button>
-              </div>
-            </div>
-            <div>
-              <button
-                onClick={() => {
-                  dispatch(removeAll());
-                }}
-                className="  text-red-500 text-xs  p-1 px-3  border border-1 border-gray-300 rounded-2xl cursor-pointer"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
+        <HeaderTile
+          title={"Order"}
+          number={orderNumber}
+          selectedDate={selectedDate}
+          setSelectedDate={setSelectedDate}
+          dispatch={dispatch}
+          changeDate={changeDate}
+          submitHandler={submitHandler}
+          removeAll={removeAll}
+          tab="add"
+        />
 
         {/* adding party */}
 
-        <div className="bg-white  py-3 px-4 pb-3 drop-shadow-lg mt-2 md:mt-3 text-xs md:text-base">
+        {/* <div className="bg-white  py-3 px-4 pb-3 drop-shadow-lg mt-2 md:mt-3 text-xs md:text-base">
           <div className="flex justify-between">
             <div className="flex gap-2 ">
               <p className="font-bold uppercase text-xs">Party name</p>
@@ -490,11 +454,19 @@ function InvoiceSecondary() {
               </div>
             </div>
           )}
-        </div>
+        </div> */}
 
-             {/* Despatch details */}
+        <AddPartyTile
+          party={party}
+          dispatch={dispatch}
+          removeParty={removeParty}
+          link="/sUsers/searchPartySales"
+          linkBillTo="/sUsers/billToSalesOrder"
+        />
 
-             <DespatchDetails tab={"order"}/>
+        {/* Despatch details */}
+
+        <DespatchDetails tab={"order"} />
 
         {/* adding items */}
 

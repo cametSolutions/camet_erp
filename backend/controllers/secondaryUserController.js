@@ -734,11 +734,15 @@ export const getProducts = async (req, res) => {
     };
 
     let selectedGodowns;
-    if (isVanSale && configuration && configuration.selectedVanSaleGodowns) {
+    if (isVanSale &&  configuration?.selectedVanSaleGodowns.length >0) {
+
+      console.log("vansale");
       selectedGodowns = configuration.selectedVanSaleGodowns;
-    } else if (configuration && configuration.selectedGodowns) {
+    } else if ( !isVanSale && configuration && configuration.selectedGodowns) {
       selectedGodowns = configuration.selectedGodowns;
     }
+
+    console.log("selectedGodowns",selectedGodowns);
 
 
     if (selectedGodowns && selectedGodowns.length > 0) {
@@ -2389,7 +2393,6 @@ export const fetchAdditionalDetails = async (req, res) => {
       (item) => item.organization.toString() === cmp_id
     );
 
-    console.log("configuration", configuration);
 
     if (configuration) {
       selectedPriceLevels = configuration.selectedPriceLevels;
@@ -2791,7 +2794,6 @@ export const findGodownsNames = async (req, res) => {
     if (configuration) {
       const { vanSaleConfiguration } = configuration;
       const godownname = vanSaleConfiguration.vanSaleGodownName;
-      console.log(godownname);
       res.status(200).json(godownname);
     }
   } catch (error) {

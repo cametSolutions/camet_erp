@@ -15,6 +15,8 @@ function OrganisationList() {
   const [currentPage, setCurrentPage] = useState(1);
   const [postPerPage, setPostPerPage] = useState(6);
 
+
+
   const dispatch = useDispatch();
 const { handleToggleSidebar } = useSidebar();
 
@@ -115,7 +117,7 @@ const { handleToggleSidebar } = useSidebar();
                         <td className="p-2 whitespace-nowrap">
                           <div className="flex items-center">
                             <div className="font-medium text-gray-800">
-                              {item.name}
+                              {item?.name}
                             </div>
                           </div>
                         </td>
@@ -123,28 +125,28 @@ const { handleToggleSidebar } = useSidebar();
                             <div className="text-left"> {item.place}</div>
                           </td> */}
                         <td className="p-2 whitespace-nowrap">
-                          <div className="text-left"> {item.email}</div>
+                          <div className="text-left"> {item?.email}</div>
                         </td>
                         <td className="p-2 whitespace-nowrap">
-                          <div className="text-left"> {item.mobile}</div>
+                          <div className="text-left"> {item?.mobile}</div>
                         </td>
 
                         <td className="p-2 whitespace-nowrap">
-                          <div className="text-left"> {item.gstNum}</div>
+                          <div className="text-left"> {item?.gstNum}</div>
                         </td>
                         <td className="p-2 whitespace-nowrap">
                           <div className="text-left font-medium text-green-500">
-                            {item.pin}
+                            {item?.pin}
                           </div>
                         </td>
                         <td className="p-2 whitespace-nowrap">
-                          <div className=" text-center">{item.state}</div>
+                          <div className=" text-center">{item?.state}</div>
                         </td>
                         <td className="p-2 whitespace-nowrap">
-                          <div className=" text-center">{item.country}</div>
+                          <div className=" text-center">{item?.country}</div>
                         </td>
 
-                        <Link to={`/pUsers/editOrg/${item._id}`}>
+                        <Link to={`/pUsers/editOrg/${item?._id}`}>
                           {/* <td className="flex items-center justify-center">
                               <div className="h-full flex justify-center items-center">
                                 
