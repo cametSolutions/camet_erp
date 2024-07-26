@@ -182,6 +182,7 @@ export const getPrimaryUserData = async (req, res) => {
 
 // @desc Adding organizations by primary users
 // route POST/api/pUsers/addOrganizations
+
 export const addOrganizations = async (req, res) => {
   const {
     name,
