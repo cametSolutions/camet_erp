@@ -736,7 +736,6 @@ export const getProducts = async (req, res) => {
     let selectedGodowns;
     if (isVanSale &&  configuration?.selectedVanSaleGodowns.length >0) {
 
-      console.log("vansale");
       selectedGodowns = configuration.selectedVanSaleGodowns;
     } else if ( !isVanSale && configuration && configuration.selectedGodowns) {
       selectedGodowns = configuration.selectedGodowns;
