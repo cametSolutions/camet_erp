@@ -3,6 +3,8 @@ import { BiSolidAddToQueue } from 'react-icons/bi';
 import { IoReceiptSharp } from 'react-icons/io5';
 import { MdInventory } from 'react-icons/md';
 import { RiContactsFill } from 'react-icons/ri';
+import { BiTransfer } from "react-icons/bi";
+
 
 const DashboardCards = ({ userType, receiptTotal, handleLinkClick }) => {
   const cardData = {
@@ -43,9 +45,15 @@ const DashboardCards = ({ userType, receiptTotal, handleLinkClick }) => {
       },
       {
         icon: <RiContactsFill />,
-        bgColor: 'bg-blue-500',
+        bgColor: 'bg-[#9b5de5]',
         subtitle: 'Contacts',
         link: '/sUsers/contacts'
+      },
+      {
+        icon: <BiTransfer />,
+        bgColor: 'bg-[#134074]',
+        subtitle: 'Stock Transfer',
+        link: '/sUsers/stockTransfer'
       }
     ]
   };

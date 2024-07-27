@@ -11,7 +11,6 @@ import { useDispatch } from "react-redux";
 import { addParty as invoiceAddParty } from "../../../slices/invoiceSecondary";
 import { addParty as salesAddParty } from "../../../slices/salesSecondary";
 import { addParty as purchaseAddParty } from "../../../slices/purchase";
-import SidebarSec from "../../components/secUsers/SidebarSec";
 import { Modal } from "flowbite-react";
 import sale from "../../assets/images/sale.png";
 import credit from "../../assets/images/credit.png";

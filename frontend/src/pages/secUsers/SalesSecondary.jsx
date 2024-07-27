@@ -471,7 +471,7 @@ function SalesSecondary() {
           handleRateChange={handleRateChange}
           handleAddRow={handleAddRow}
           setAdditional={setAdditional}
-          urlToAddItem="/sUsers/addItemSale"
+          urlToAddItem="/sUsers/addItemSales"
           urlToEditItem="/sUsers/editItemSales"
         />
 

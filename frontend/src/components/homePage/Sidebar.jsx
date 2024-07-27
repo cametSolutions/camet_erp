@@ -15,7 +15,6 @@ import { IoReorderThreeSharp } from "react-icons/io5";
 import { MdDashboard } from "react-icons/md";
 import { TiUserAdd } from "react-icons/ti";
 import { HiDocumentText } from "react-icons/hi2";
-import { MdOutlineProductionQuantityLimits } from "react-icons/md";
 import { RingLoader } from "react-spinners";
 import { GiMoneyStack } from "react-icons/gi";
 import { IoMdSettings } from "react-icons/io";
@@ -24,9 +23,10 @@ import { BiSolidCategoryAlt } from "react-icons/bi";
 import { TbCategory2 } from "react-icons/tb";
 import { RiBox3Fill } from "react-icons/ri";
 import { IoIosArrowDown } from "react-icons/io";
-import { IoIosArrowUp,IoIosPricetags } from "react-icons/io";
+import { IoIosArrowUp, IoIosPricetags } from "react-icons/io";
 import { HiBuildingStorefront } from "react-icons/hi2";
-
+import { MdOutlineInventory } from "react-icons/md";
+import Header from "../common/sidebar/Header";
 
 function Sidebar({ TAB, showBar }) {
   const [showSidebar, setShowSidebar] = useState(false);
@@ -35,16 +35,136 @@ function Sidebar({ TAB, showBar }) {
   const [organizations, setOrganizations] = useState([]);
   const [selectedOrg, setSelectedOrg] = useState("");
   const [loader, setLoader] = useState(false);
-
   const [expandedSections, setExpandedSections] = useState({
     inventory: false,
   });
 
-  const navigate = useNavigate();
-  const dispatch = useDispatch();
   const selectedOrgFromRedux = useSelector(
     (state) => state.setSelectedOrganization.selectedOrg
   );
+  const [selectedTab, setSelectedTab] = useState(
+    localStorage.getItem("selectedPrimarySidebarTab") || ""
+  );
+  const [selectedSubTab, setSelectedSubTab] = useState(
+    localStorage.getItem("selectedSubTab") || ""
+  );
+
+  console.log(selectedTab);
+  console.log(selectedOrgFromRedux);
+  const navItems = [
+    {
+      to: "/pUsers/dashboard",
+      tab: "dash",
+      icon: <MdDashboard />,
+      label: "Dashboard",
+    },
+    {
+      to: "/pUsers/organizationList",
+      tab: "orgList",
+      icon: <BsFillBuildingsFill />,
+      label: "Company",
+    },
+  ];
+
+  if (
+    organizations &&
+    organizations.length > 0 &&
+    selectedOrgFromRedux?.isApproved === true
+  ) {
+    navItems.push(
+      {
+        to: "/pUsers/retailers",
+        tab: "addSec",
+        icon: <SlUserFollow />,
+        label: "Users",
+      },
+      {
+        to: "/pUsers/bankList",
+        tab: "addBank",
+        icon: <PiBankFill />,
+        label: "Banks",
+      },
+      {
+        to: "/pUsers/partyList",
+        tab: "addParty",
+        icon: <TiUserAdd />,
+        label: "Customers",
+      }
+    );
+
+    if (selectedOrg.type === "self") {
+      navItems.push({
+        to: "/pUsers/hsnList",
+        tab: "hsn",
+        icon: <HiDocumentText />,
+        label: "Tax classification",
+      });
+    }
+
+    navItems.push({
+      to: "#",
+      // tab: "product",
+      icon: <MdOutlineInventory />,
+      label: "Inventory",
+      onClick: () => toggleSection("inventory"),
+      subItems: [
+        {
+          to: "/pUsers/productList",
+          label: "Products",
+          icon: <RiBox3Fill />,
+          tab: "product",
+        },
+        {
+          to: "/pUsers/brand",
+          label: "Brand",
+          icon: <TbBrandAppgallery />,
+          tab: "brand",
+        },
+        {
+          to: "/pUsers/category",
+          label: "Category",
+          icon: <BiSolidCategoryAlt />,
+          tab: "category",
+        },
+        {
+          to: "/pUsers/subcategory",
+          label: "Sub Category",
+          icon: <TbCategory2 />,
+          tab: "subcategory",
+        },
+        {
+          to: "/pUsers/godown",
+          label: "Godown",
+          icon: <HiBuildingStorefront />,
+          tab: "godown",
+        },
+        {
+          to: "/pUsers/pricelevel",
+          label: "Price Level",
+          icon: <IoIosPricetags />,
+          tab: "pricelevel",
+        },
+      ],
+    });
+
+    navItems.push(
+      {
+        to: "/pUsers/additionalChargesList",
+        tab: "additionalCharge",
+        icon: <GiMoneyStack />,
+        label: "Additional Charges",
+      },
+      {
+        to: "/pUsers/OrderConfigurations",
+        tab: "terms",
+        icon: <IoMdSettings />,
+        label: "Settings",
+      }
+    );
+  }
+
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   useEffect(() => {
     if (TAB == "addOrg") {
@@ -122,10 +242,12 @@ function Sidebar({ TAB, showBar }) {
     }
   }, [showSidebar]);
 
-  const handleSidebarItemClick = () => {
+  const handleSidebarItemClick = (tab) => {
+    console.log("haii");
     if (window.innerWidth < 768) {
       setShowSidebar(!showSidebar);
     }
+    localStorage.setItem("selectedPrimarySidebarTab", tab);
   };
 
   const handleLogout = async () => {
@@ -155,6 +277,7 @@ function Sidebar({ TAB, showBar }) {
   };
 
   console.log(expandedSections);
+  console.log(navItems);
 
   return (
     <div className="relative">
@@ -177,7 +300,7 @@ function Sidebar({ TAB, showBar }) {
         overflow-y-auto`}
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
-        <div className="w-full relative">
+        <div className="w-full sticky top-0">
           <div
             onClick={handleSidebarItemClick}
             className="text-white text-3xl absolute right-0 top-[-20px]  md:hidden  "
@@ -185,7 +308,8 @@ function Sidebar({ TAB, showBar }) {
             <IoReorderThreeSharp />
           </div>
         </div>
-        <div className="flex flex-col items-center mt-6 -mx-2">
+
+        {/* <div className="flex flex-col items-center mt-6 -mx-2">
           <img
             className="object-cover w-24 h-24 mx-2 rounded-full"
             // src="https://i.pinimg.com/736x/8b/16/7a/8b167af653c2399dd93b952a48740620.jpg"
@@ -283,256 +407,87 @@ function Sidebar({ TAB, showBar }) {
               <div class="text">Logout</div>
             </button>
           </div>
-        </div>
+        </div> */}
+
+        <Header
+          selectedOrg={selectedOrg}
+          userData={userData}
+          setDropdown={setDropdown}
+          dropdown={dropdown}
+          organizations={organizations}
+          setShowSidebar={setShowSidebar}
+          setLoader={setLoader}
+          setSelectedOrg={setSelectedOrg}
+          dispatch={dispatch}
+          navigate={navigate}
+          setSelectedOrganization={setSelectedOrganization}
+          showSidebar={showSidebar}
+          handleLogout={handleLogout}
+        />
 
         <div className="">
           <div className="flex flex-col justify-between flex-1 mt-6  ">
             <nav>
-              <Link to={"/pUsers/dashboard"}>
-                <a
-                  onClick={() => {
-                    handleSidebarItemClick("outstanding");
-                  }}
-                  className={` ${
-                    TAB === "dash" ? "bg-gray-800 text-white" : "text-gray-400"
-                  } hover:bg-gray-800 hover:text-white flex items-center px-4 py-2 mt-5 transition-colors duration-300 transform rounded-lg   `}
-                  href="#"
-                >
-                  <MdDashboard />
-
-                  <span className="mx-4 font-medium">Dashboard</span>
-                </a>
-              </Link>
-
-              <Link to={"/pUsers/organizationList"}>
-                <a
-                  onClick={() => {
-                    handleSidebarItemClick("outstanding");
-                  }}
-                  className={` ${
-                    TAB === "orgList" || TAB === "addOrg"
-                      ? "bg-gray-800 text-white"
-                      : "text-gray-400"
-                  } hover:bg-gray-800 hover:text-white flex items-center px-4 py-2 mt-5 transition-colors duration-300 transform rounded-lg   `}
-                  href="#"
-                >
-                  <BsFillBuildingsFill />
-
-                  <span className="mx-4 font-medium">Company</span>
-                </a>
-              </Link>
-
-              {organizations &&
-                organizations.length > 0 &&
-                selectedOrgFromRedux?.isApproved === true && (
-                  <>
-                    <Link to={"/pUsers/retailers"}>
-                      <a
-                        onClick={() => {
-                          handleSidebarItemClick("outstanding");
-                        }}
-                        className={` ${
-                          TAB === "agentLIst" || TAB === "addSec"
-                            ? "bg-gray-800 text-white"
-                            : "text-gray-400"
-                        } hover:bg-gray-800 hover:text-white flex items-center px-4 py-2 mt-5 transition-colors duration-300 transform rounded-lg   `}
-                        href="#"
-                      >
-                        <SlUserFollow />
-
-                        <span className="mx-4 font-medium">Users</span>
-                      </a>
-                    </Link>
-                    <Link to={"/pUsers/bankList"}>
-                      <a
-                        onClick={() => {
-                          handleSidebarItemClick("outstanding");
-                        }}
-                        className={` ${
-                          TAB === "bankList" || TAB === "addBank"
-                            ? "bg-gray-800 text-white"
-                            : "text-gray-400"
-                        } hover:bg-gray-800 hover:text-white flex items-center px-4 py-2 mt-5 transition-colors duration-300 transform rounded-lg   `}
-                        href="#"
-                      >
-                        <PiBankFill />
-
-                        <span className="mx-4 font-medium">Banks</span>
-                      </a>
-                    </Link>
-                    <Link to={"/pUsers/partyList"}>
-                      <a
-                        onClick={() => {
-                          handleSidebarItemClick("addParty");
-                        }}
-                        className={` ${
-                          TAB === "addParty"
-                            ? "bg-gray-800 text-white"
-                            : "text-gray-400"
-                        } hover:bg-gray-800 hover:text-white flex items-center px-4 py-2 mt-5 transition-colors duration-300 transform rounded-lg   `}
-                        href="#"
-                      >
-                        <TiUserAdd />
-
-                        <span className="mx-4 font-medium">Customers</span>
-                      </a>
-                    </Link>
-
-                    {selectedOrg.type === "self" && (
-                      <Link to={"/pUsers/hsnList"}>
-                        <a
-                          onClick={() => {
-                            handleSidebarItemClick("addParty");
-                          }}
-                          className={` ${
-                            TAB === "hsn"
-                              ? "bg-gray-800 text-white"
-                              : "text-gray-400"
-                          } hover:bg-gray-800 hover:text-white flex items-center px-4 py-2 mt-5 transition-colors duration-300 transform rounded-lg   `}
-                          href="#"
-                        >
-                          <HiDocumentText />
-
-                          <span className="mx-4 font-medium">
-                            Tax classification
-                          </span>
-                        </a>
-                      </Link>
-                    )}
-               
-
+              {navItems.map((item, index) => (
+                <div key={index}>
+                  <Link to={item.to}>
                     <a
                       onClick={() => {
-                        toggleSection("inventory");
+                        setSelectedTab(item.tab);
+                        handleSidebarItemClick(item.tab);
+                        if (item.onClick) item.onClick();
                       }}
-                      className={` ${
-                        TAB === "product"
+                      className={`${
+                        selectedTab === item.tab
                           ? "bg-gray-800 text-white"
                           : "text-gray-400"
-                      } hover:bg-gray-800 hover:text-white flex items-center px-4 py-2 mt-5 transition-colors duration-300 transform rounded-lg   `}
-                      href="#"
+                      } hover:bg-gray-800 hover:text-white flex items-center px-4 py-2 mt-5 transition-colors duration-300 transform rounded-lg`}
                     >
-                      <MdOutlineProductionQuantityLimits />
-                      <div className="flex  items-center justify-between w-full">
-                        <span className="mx-4 font-medium">Inventory</span>
-
-                        {expandedSections.inventory ? (
-                          <IoIosArrowUp />
-                        ) : (
-                          <IoIosArrowDown />
-                        )}
+                      <div className="flex items-center">
+                        {item.icon}
+                        <span className="mx-4 font-medium">{item.label}</span>
                       </div>
+                      {item.subItems && (
+                        <div className="flex items-center justify-between w-full cursor-pointer ml-6">
+                          {expandedSections.inventory ? (
+                            <IoIosArrowUp />
+                          ) : (
+                            <IoIosArrowDown />
+                          )}
+                        </div>
+                      )}
                     </a>
-
-                    {expandedSections.inventory && (
-                      <ul className="mt-2 space-y-2 ">
-                        <li className="">
+                  </Link>
+                  {item.subItems && expandedSections.inventory && (
+                    <ul className="mt-2 space-y-2">
+                      {item.subItems.map((subItem, subIndex) => (
+                        <li
+                          key={subIndex}
+                          className={`${
+                            selectedSubTab === subItem.tab
+                              ? " text-white"
+                              : "text-gray-400"
+                          }  hover:text-white ml-4 rounded-md mt-5 px-4 py-2 flex items-center gap-4 text-sm font-medium`}
+                          href="#"
+                        >
                           <Link
-                            to="/pUsers/productList"
-                            onClick={handleSidebarItemClick}
-                            className=" ml-4 rounded-md mt-5 px-4 py-2 flex items-center gap-4 text-sm font-medium text-white hover:bg-gray-800 hover:text-white"
+                            className="flex items-center gap-3 mb-3"
+                            to={subItem.to}
+                            onClick={() => {
+                              handleSidebarItemClick;
+                              setSelectedTab(item.tab);
+                              setSelectedSubTab(subItem.tab);
+                            }}
                           >
-                            <RiBox3Fill />
-
-                            <span>Products</span>
+                            {subItem.icon}
+                            <span>{subItem.label}</span>
                           </Link>
                         </li>
-                        <li className="">
-                          <Link
-                            to="/pUsers/brand"
-                            onClick={handleSidebarItemClick}
-                            className=" ml-4 rounded-md mt-5 px-4 py-2 flex items-center gap-4 text-sm font-medium text-white hover:bg-gray-800 hover:text-white"
-                          >
-                            <TbBrandAppgallery />
-
-                            <span>Brand</span>
-                          </Link>
-                        </li>
-                        <li className="">
-                          <Link
-                            to="/pUsers/category"
-                            onClick={handleSidebarItemClick}
-                            className=" ml-4 rounded-md mt-5 px-4 py-2 flex items-center gap-4 text-sm font-medium text-white hover:bg-gray-800 hover:text-white"
-                          >
-                            <BiSolidCategoryAlt />
-
-                            <span>Category</span>
-                          </Link>
-                        </li>
-                        <li className="">
-                          <Link
-                            to="/pUsers/subcategory"
-                            onClick={handleSidebarItemClick}
-                            className=" ml-4 rounded-md mt-5 px-4 py-2 flex items-center gap-4 text-sm font-medium text-white hover:bg-gray-800 hover:text-white"
-                          >
-                            <TbCategory2 />
-
-                            <span>Sub Category</span>
-                          </Link>
-                        </li>
-                        <li className="">
-                          <Link
-                            to="/pUsers/godown"
-                            onClick={handleSidebarItemClick}
-                            className=" ml-4 rounded-md mt-5 px-4 py-2 flex items-center gap-4 text-sm font-medium text-white hover:bg-gray-800 hover:text-white"
-                          >
-                            <HiBuildingStorefront />
-
-                            <span>Godown</span>
-                          </Link>
-                        </li>
-                        <li className="">
-                          <Link
-                            to="/pUsers/pricelevel"
-                            onClick={handleSidebarItemClick}
-                            className=" ml-4 rounded-md mt-5 px-4 py-2 flex items-center gap-4 text-sm font-medium text-white hover:bg-gray-800 hover:text-white"
-                          >
-                            <IoIosPricetags />
-
-                            <span>Price Level</span>
-                          </Link>
-                        </li>
-                      </ul>
-                    )}
-
-                    <Link to={"/pUsers/additionalChargesList"}>
-                      <a
-                        onClick={() => {
-                          handleSidebarItemClick("outstanding");
-                        }}
-                        className={` ${
-                          TAB === "additionalCharge"
-                            ? "bg-gray-800 text-white"
-                            : "text-gray-400"
-                        } hover:bg-gray-800 hover:text-white flex items-center px-4 py-2 mt-5 transition-colors duration-300 transform rounded-lg   `}
-                        href="#"
-                      >
-                        <GiMoneyStack />
-
-                        <span className="mx-4 font-medium">
-                          Additional Charges
-                        </span>
-                      </a>
-                    </Link>
-                    <Link to={"/pUsers/OrderConfigurations"}>
-                      <a
-                        onClick={() => {
-                          handleSidebarItemClick("outstanding");
-                        }}
-                        className={` ${
-                          TAB === "terms"
-                            ? "bg-gray-800 text-white"
-                            : "text-gray-400"
-                        } hover:bg-gray-800 hover:text-white flex items-center px-4 py-2 mt-5 transition-colors duration-300 transform rounded-lg   `}
-                        href="#"
-                      >
-                        <IoMdSettings />
-
-                        <span className="mx-4 font-medium">Settings</span>
-                      </a>
-                    </Link>
-                  </>
-                )}
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              ))}
             </nav>
           </div>
         </div>

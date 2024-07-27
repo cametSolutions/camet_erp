@@ -144,7 +144,7 @@ function Dashboard() {
               </div>
             </div>
             {/* one */}
-            <DashboardTransaction filteredData={filteredData} />
+            <DashboardTransaction filteredData={filteredData} userType={"primary"} />
             {/* one */}
           </div>
 

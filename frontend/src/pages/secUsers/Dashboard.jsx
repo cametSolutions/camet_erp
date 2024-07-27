@@ -20,6 +20,8 @@ import { toast } from "react-toastify";
 import { MdInventory } from "react-icons/md";
 import { RiContactsFill } from "react-icons/ri";
 import { useSidebar } from "../../layout/Layout";
+import DashboardCardSecondary from "../../components/homePage/DashboardCardPrimary";
+import DashboardTransaction from "../../components/common/DashboardTransaction";
 
 function Dashboard() {
   const [data, setData] = useState([]);
@@ -117,101 +119,11 @@ function Dashboard() {
               <FaCaretDown />
             </div>
           </div>
-          <div className="grid grid-cols-2 lg:grid-cols-4 p-6 lg:px-12 gap-4 md:gap-6 bg-white  ">
-            {/* <Link to={"/sUsers/transaction"}> */}
-            <div
-              onClick={() => handleLinkClick("/sUsers/transaction")}
-              className="flex flex-wrap -mx-6   duration-150 hover:scale-105 ease-in-out cursor-pointer  "
-            >
-              <div className="w-full px-6 ">
-                <div className="flex items-center px-2 py-3 md:px-5 md:py-2 shadow-sm rounded-md bg-slate-100 h-24">
-                  <div className="p-3 rounded-full bg-green-500 bg-opacity-75 text-2xl text-white">
-                    <BiSolidAddToQueue />
-                  </div>
-
-                  <div className="mx-2 md:mx-5">
-                    <h4 className=" sm:text-md md:text-lg  font-semibold text-gray-700">
-                      ₹{receiptTotal.toFixed(2)}
-                    </h4>
-                    <div className="text-gray-500  text-[15px] ">
-                      Transactions
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            {/* </Link> */}
-            {/* <Link to={"/sUsers/outstanding"}> */}
-            <div
-              onClick={() => handleLinkClick("/sUsers/outstanding")}
-              className="flex flex-wrap -mx-6  duration-150 hover:scale-105 ease-in-out cursor-pointer"
-            >
-              <div className="w-full px-6 ">
-                <div className="flex items-center px-2 py-3 md:px-5 md:py-2 shadow-sm rounded-md bg-slate-100 h-24">
-                  <div className="p-3 rounded-full bg-red-500 bg-opacity-75 text-2xl text-white">
-                    <IoReceiptSharp />
-                  </div>
-
-                  <div className="mx-1 md:mx-4 py-2.5">
-                    {/* <h4 className=" sm:text-md md:text-2xl  font-semibold text-gray-700">
-                        ₹0
-                      </h4> */}
-                    <div className="text-gray-500 text-md">Outstanding</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            {/* </Link> */}
-
-            {/* <Link to={"/sUsers/sales"}> */}
-
-            {/* </Link> */}
-            {/* <Link to={'/sUsers/invoice'} > */}
-
-            <div
-              onClick={() => handleLinkClick("/sUsers/Inventory")}
-              className="flex flex-wrap -mx-6  duration-150 hover:scale-105 ease-in-out cursor-pointer"
-            >
-              <div className="w-full px-6 ">
-                <div className="flex items-center px-2 py-3 md:px-5 md:py-2 shadow-sm rounded-md bg-slate-100 h-24">
-                  <div className="p-3 rounded-full bg-blue-500 bg-opacity-75 text-2xl text-white">
-                    <MdInventory />
-                  </div>
-
-                  <div className="mx-5 py-2.5">
-                    {/* <h4 className=" sm:text-md md:text-2xl  font-semibold text-gray-700">
-                      ₹0
-                    </h4> */}
-                    <div className="text-gray-500 text-md">Stock Register</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* contact */}
-
-            <div
-              onClick={() => handleLinkClick("/sUsers/contacts")}
-              className="flex flex-wrap -mx-6  duration-150 hover:scale-105 ease-in-out cursor-pointer"
-            >
-              <div className="w-full px-6 ">
-                <div className="flex items-center px-2 py-3 md:px-5 md:py-2 shadow-sm rounded-md bg-slate-100 h-24">
-                  <div className="p-3 rounded-full bg-blue-500 bg-opacity-75 text-2xl text-white">
-                    <RiContactsFill />
-                  </div>
-
-                  <div className="mx-5 py-2.5">
-                    {/* <h4 className=" sm:text-md md:text-2xl  font-semibold text-gray-700">
-                      ₹0
-                    </h4> */}
-                    <div className="text-gray-500 text-md">Contacts</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            {/* </Link> */}
-          </div>
-
+          <DashboardCardSecondary
+              receiptTotal={receiptTotal}
+              handleLinkClick={handleLinkClick}
+              userType={"secondary"}
+            />
           {/* tiles */}
 
           {/* transactions */}
@@ -231,99 +143,8 @@ function Dashboard() {
 
         <div className="z-0 p-3 md:p-5 lg:p-6">
           {/* one */}
-          <div className="grid grid-cols-1 gap-4  text-center pb-7 mt-5 md:px-8 ">
-            {filteredData?.map((el, index) => (
-              <div
-                key={index}
-                onClick={() => {
-                  const navigationPath =
-                    el.type === "Receipt"
-                      ? `/sUsers/receiptDetails/${el._id}`
-                      : el.type === "Tax Invoice"
-                      ? `/sUsers/salesDetails/${el._id}`
-                      : el.type === "Van Sale"
-                      ? `/sUsers/vanSaleDetails/${el._id}`
-                      : el.type === "Purchase"
-                      ? `/sUsers/purchaseDetails/${el._id}`
-                      : `/sUsers/InvoiceDetails/${el._id}`;
-                  navigate(navigationPath, { state: { from: "dashboard" } });
-                }}
-                className={`${
-                  el?.isCancelled ? "bg-gray-200 pointer-events-none " : ""
-                } bg-[#f8ffff] cursor-pointer rounded-md shadow-xl border border-gray-100 flex flex-col justify-between px-4 transition-all duration-150 transform hover:scale-105 ease-in-out`}
-              >
-                <div className=" flex justify-start text-xs mt-2 ">
-                  <div
-                    className={` ${
-                      el.type === "Receipt"
-                        ? "bg-[#FB6D48]"
-                        : el.type === "Tax Invoice"
-                        ? "bg-violet-500"
-                        : el.type === "Purchase"
-                        ? "bg-pink-500"
-                        : "bg-[#3ed57a]"
-                    }   flex items-center text-white px-2 rounded-sm `}
-                  >
-                    {/* <FaRegCircleDot /> */}
-                    <p className=" p-1  rounded-lg px-3 font-semibold">
-                      {" "}
-                      {el.type}
-                    </p>
-                  </div>
-                </div>
+          <DashboardTransaction filteredData={filteredData} userType={"secondary"} />
 
-                <div className="flex justify-between ">
-                  <div className=" h-full px-2 py-4  lg:p-6 w-[150px] md:w-[180px] lg:w-[300px] flex justify-center items-start relative flex-col ">
-                    <p className="font-bold md:font-semibold text-[11.3px] md:text-[15px] text-left mb-3 ">
-                      {el.party_name}
-                    </p>
-                    <p className="font-bold md:font-semibold text-[11.3px] md:text-[15px] text-left text-violet-500 ">
-                      {el.billNo}
-                    </p>
-
-                    <p className="text-gray-400 text-sm  ">
-                      {dayjs(el?.createdAt).format("DD/MM/YYYY")}
-                    </p>
-                  </div>
-                  <div className=" h-full p-2 lg:p-6 w-[150px] md:w-[180px] lg:w-[300px] flex justify-center items-end relative flex-col">
-                    <div className="flex-col  ">
-                      <p className=" font-semibold text-green-600  ">
-                        ₹{el.enteredAmount}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <hr />
-                <hr />
-                <hr />
-                <div className="flex justify-between p-4">
-                  {/* <button
-                    onClick={() => {
-                      handleCancel(el._id);
-                    }}
-                    className="p-2 py-1 rounded-lg text-white bg-red-500 flex items-center gap-2 transition-all duration-150 transform hover:scale-105 hover:bg-red-600"
-                  >
-                    <ImCancelCircle />
-                    {el.isCancelled ? "Cancelled" : "Cancel"}
-                  </button> */}
-
-                  <div className=" flex items-center justify-between w-full gap-2 text-md text-violet-500">
-                    <div className="flex items-center gap-2">
-                      <IoArrowRedoOutline />
-
-                      <p>Send Receipt</p>
-                    </div>
-                    {el.isCancelled && (
-                      <div className="flex justify-center items-center gap-2 text-red-500">
-                        <FcCancel />
-                        <p>Canelled</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
           {/* one */}
         </div>
 

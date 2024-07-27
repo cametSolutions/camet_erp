@@ -5,38 +5,71 @@ import api from "../../api/api";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
-import { setSecSelectedOrganization ,removeSecSelectedOrg} from "../../../slices/secSelectedOrgSlice";
+import {
+  setSecSelectedOrganization,
+  removeSecSelectedOrg,
+} from "../../../slices/secSelectedOrgSlice";
 import { Link } from "react-router-dom";
 import { IoReorderThreeSharp } from "react-icons/io5";
 import { MdDashboard } from "react-icons/md";
 import { TiUserAdd } from "react-icons/ti";
 import { MdOutlineProductionQuantityLimits } from "react-icons/md";
 import { RingLoader } from "react-spinners";
-import { GiMoneyStack } from "react-icons/gi";
 import { IoMdSettings } from "react-icons/io";
 
-
-
-
-
-
-
-function SidebarSec({ TAB,showBar }) {
+function SidebarSec({ TAB, showBar }) {
   const [showSidebar, setShowSidebar] = useState(false);
   const [userData, setUserData] = useState({});
-  const [tab, setTab] = useState("");
   const [dropdown, setDropdown] = useState(false);
   const [org, setOrg] = useState("");
   const [loader, setLoader] = useState(false);
-  const [companies, setCompanies] = useState([])
+  const [companies, setCompanies] = useState([]);
 
+  const selectedTab=localStorage.getItem("selectedSecondatSidebarTab")
+
+  const [tab, setTab] = useState(selectedTab);
   const navigate = useNavigate();
+
+  const navItems = [
+    {
+      to: "/sUsers/dashboard",
+      tab: "dash",
+      icon: <MdDashboard />,
+      label: "Dashboard",
+    },
+  ];
+
+  if (companies && companies.length > 0 && org.isApproved === true) {
+    const additionalTabs = [
+      {
+        to: "/sUsers/partyList",
+        tab: "addParty",
+        icon: <TiUserAdd />,
+        label: "Customers",
+      },
+      {
+        to: "/sUsers/productList",
+        label: "Products",
+        icon: <MdOutlineProductionQuantityLimits />,
+        tab: "product",
+      },
+      {
+        to: "/sUsers/OrderConfigurations",
+        tab: "terms",
+        icon: <IoMdSettings />,
+        label: "Settings",
+      },
+    ];
+
+    additionalTabs.map((item) => {
+      return navItems.push(item);
+    });
+  }
 
   const dispatch = useDispatch();
   const prevOrg = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
-  // setOrg(prevOrg)
 
 
   useEffect(() => {
@@ -46,14 +79,16 @@ function SidebarSec({ TAB,showBar }) {
           withCredentials: true,
         });
         setUserData(res?.data?.data?.userData);
-        setCompanies(res?.data?.data?.userData.organization)
-       
-        if(prevOrg=='' || prevOrg==null){
-          setOrg(res.data.data.userData.organization[0])
-          dispatch(setSecSelectedOrganization(res.data.data.userData.organization[0]))
-        }else{25
+        setCompanies(res?.data?.data?.userData.organization);
+
+        if (prevOrg == "" || prevOrg == null) {
+          setOrg(res.data.data.userData.organization[0]);
+          dispatch(
+            setSecSelectedOrganization(res.data.data.userData.organization[0])
+          );
+        } else {
+          25;
           setOrg(prevOrg);
-         
         }
       } catch (error) {
         console.log(error);
@@ -62,21 +97,17 @@ function SidebarSec({ TAB,showBar }) {
     getUserData();
   }, []);
 
-
-
   useEffect(() => {
     if (window.innerWidth < 768) {
       setShowSidebar(!showSidebar);
     }
   }, [showBar]);
 
-  useEffect(()=>{
-
+  useEffect(() => {
     if (window.innerWidth < 768) {
       setShowSidebar(false);
     }
-
-  },[])
+  }, []);
 
   const handleSidebarItemClick = (newTab) => {
     if (window.innerWidth < 768) {
@@ -84,6 +115,7 @@ function SidebarSec({ TAB,showBar }) {
     }
 
     setTab(newTab);
+    localStorage.setItem("selectedPrimarySidebarTab", newTab);
     // onTabChange(newTab);
   };
 
@@ -97,8 +129,8 @@ function SidebarSec({ TAB,showBar }) {
         }
       );
       toast.success(res.data.message);
-      localStorage.removeItem('sUserData');
-      dispatch(removeSecSelectedOrg())
+      localStorage.removeItem("sUserData");
+      dispatch(removeSecSelectedOrg());
       navigate("/sUsers/login");
     } catch (error) {
       console.error(error);
@@ -107,10 +139,7 @@ function SidebarSec({ TAB,showBar }) {
   };
 
   const handleDropDownchange = (el) => {
-    // console.log(el);
-    // setDropdown(!dropdown);
-    // setOrg(el);
-    // dispatch(setSecSelectedOrganization(el));
+
     setDropdown(!dropdown);
     if (window.innerWidth <= 640) {
       setShowSidebar(!showSidebar);
@@ -121,15 +150,12 @@ function SidebarSec({ TAB,showBar }) {
       dispatch(setSecSelectedOrganization(el));
       navigate("/sUsers/dashboard");
       setLoader(false);
-
-  }, 1000);
-}
-
-
+    }, 1000);
+  };
 
   return (
     <div>
-       {loader && (
+      {loader && (
         <div className=" absolute top-0 w-screen h-screen z-50  flex justify-center items-center bg-black/[0.5]">
           <RingLoader color="#1c14a0" />
         </div>
@@ -145,7 +171,7 @@ function SidebarSec({ TAB,showBar }) {
         overflow-y-auto`}
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
-         <div className="w-full relative">
+        <div className="w-full relative">
           <div
             onClick={handleSidebarItemClick}
             className="text-white text-3xl absolute right-0 top-[-20px]  md:hidden  "
@@ -153,7 +179,6 @@ function SidebarSec({ TAB,showBar }) {
             <IoReorderThreeSharp />
           </div>
         </div>
-       
 
         {/* <a href="#" className="mx-auto">
           <img
@@ -166,12 +191,13 @@ function SidebarSec({ TAB,showBar }) {
         <div className="flex flex-col items-center mt-6 -mx-2">
           <img
             className="object-cover w-24 h-24 mx-2 rounded-full"
-            src={org?.logo || "https://i.pinimg.com/736x/8b/16/7a/8b167af653c2399dd93b952a48740620.jpg"  }
+            src={
+              org?.logo ||
+              "https://i.pinimg.com/736x/8b/16/7a/8b167af653c2399dd93b952a48740620.jpg"
+            }
             alt="avatar"
           />
-          <h4 className="mx-2 mt-2 font-medium text-white">
-            {userData.name}
-          </h4>
+          <h4 className="mx-2 mt-2 font-medium text-white">{userData.name}</h4>
           <p className="mx-2 mt-1 text-sm font-medium text-white">
             {userData.email}
           </p>
@@ -216,18 +242,19 @@ function SidebarSec({ TAB,showBar }) {
                   class="py-2 text-sm text-gray-200"
                   aria-labelledby="dropdownDefaultButton"
                 >
-                  {userData && userData?.organization?.map((el, index) => (
-                    <li key={index}>
-                      <a
-                        // onClick={()=>{setDropdown(!dropdown);setOrg(el)}}
-                        onClick={() => handleDropDownchange(el)}
-                        href="#"
-                        className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
-                      >
-                        {el.name}
-                      </a>
-                    </li>
-                  ))}
+                  {userData &&
+                    userData?.organization?.map((el, index) => (
+                      <li key={index}>
+                        <a
+                          // onClick={()=>{setDropdown(!dropdown);setOrg(el)}}
+                          onClick={() => handleDropDownchange(el)}
+                          href="#"
+                          className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
+                        >
+                          {el.name}
+                        </a>
+                      </li>
+                    ))}
                 </ul>
               </div>
             </div>
@@ -248,99 +275,36 @@ function SidebarSec({ TAB,showBar }) {
 
         <div className="">
           <div className="flex flex-col justify-between flex-1 mt-6  ">
-            <nav>
-
-
-            <Link to={'/sUsers/dashboard'}>
-              <a
-                onClick={() => {
-                  handleSidebarItemClick("transaction");
-                }}
-                className={` ${
-                  TAB === "transaction"
-                    ? "bg-gray-800 text-white"
-                    : "text-gray-400"
-                } hover:bg-gray-800 hover:text-white flex items-center px-4 py-2 mt-5 transition-colors duration-300 transform rounded-lg   `}
-                href="#"
-              >
-               <MdDashboard/>
-
-                <span className="mx-4 font-medium">Dashboard</span>
-              </a>
-              </Link>
-
-
-
-
-
-           {
-            companies && companies.length >0 && org.isApproved===true &&  (
-
-              <><Link to={"/sUsers/partyList"}>
+          <nav>
+              {navItems.map((item, index) => (
+                <div key={index}>
+                  <Link to={item.to}>
                     <a
                       onClick={() => {
-                        handleSidebarItemClick("addParty");
-                      } }
-                      className={` ${TAB === "addParty"
-                          ? "bg-gray-800 text-white"
-                          : "text-gray-400"} hover:bg-gray-800 hover:text-white flex items-center px-4 py-2 mt-5 transition-colors duration-300 transform rounded-lg   `}
-                      href="#"
+                        // setSelectedTab(item.tab);
+                        handleSidebarItemClick(item.tab);
+                        if (item.onClick) item.onClick();
+                      }}
+                      className={`
+
+                        ${
+                          tab===item.tab
+                            ? "bg-gray-800 text-white"
+                            : "text-gray-400 hover:bg-gray-800 hover:text-white"
+                        }
+                       
+                       text-gray-400 flex items-center px-4 py-2 mt-5 transition-colors duration-300 transform rounded-lg`}
                     >
-                      <TiUserAdd />
-
-                      <span className="mx-4 font-medium">Customers</span>
+                      <div className="flex items-center">
+                        {item.icon}
+                        <span className="mx-4 font-medium">{item.label}</span>
+                      </div>
+                 
                     </a>
-                  </Link><Link to={"/sUsers/productList"}>
-                      <a
-                        onClick={() => {
-                          handleSidebarItemClick("outstanding");
-                        } }
-                        className={` ${TAB === "productList"
-                            ? "bg-gray-800 text-white"
-                            : "text-gray-400"} hover:bg-gray-800 hover:text-white flex items-center px-4 py-2 mt-5 transition-colors duration-300 transform rounded-lg   `}
-                        href="#"
-                      >
-                        <MdOutlineProductionQuantityLimits />
-
-                        <span className="mx-4 font-medium">Products</span>
-                      </a>
-                    </Link>
-                    {/* <Link to={"/sUsers/additionalChargesList"}>
-                      <a
-                        onClick={() => {
-                          handleSidebarItemClick("outstanding");
-                        } }
-                        className={` ${TAB === "additionalCharge"
-                            ? "bg-gray-800 text-white"
-                            : "text-gray-400"} hover:bg-gray-800 hover:text-white flex items-center px-4 py-2 mt-5 transition-colors duration-300 transform rounded-lg   `}
-                        href="#"
-                      >
-                        <GiMoneyStack />
-
-                        <span className="mx-4 font-medium">Additional Charges</span>
-                      </a>
-                    </Link> */}
-                    <Link to={"/sUsers/OrderConfigurations"}>
-                      <a
-                        onClick={() => {
-                          handleSidebarItemClick("outstanding");
-                        } }
-                        className={` ${TAB === "terms"
-                            ? "bg-gray-800 text-white"
-                            : "text-gray-400"} hover:bg-gray-800 hover:text-white flex items-center px-4 py-2 mt-5 transition-colors duration-300 transform rounded-lg   `}
-                        href="#"
-                      >
-                        <IoMdSettings />
-
-                        <span className="mx-4 font-medium">Settings</span>
-                      </a>
-                    </Link></>
-            )
-           }
-
-
-
-             
+                  </Link>
+                
+                </div>
+              ))}
             </nav>
           </div>
         </div>
