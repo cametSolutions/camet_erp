@@ -10,6 +10,7 @@ import invoiceSecondary from "../slices/invoiceSecondary";
 import sales from '../slices/sales'
 import purchase from '../slices/purchase'
 import salesSecondary from '../slices/salesSecondary'
+import stockTransferSecondary from "../slices/stockTransferSecondary";
 
 export const store = configureStore({
   reducer: {
@@ -23,6 +24,7 @@ export const store = configureStore({
     invoiceSecondary: invoiceSecondary,
     sales:sales,
     salesSecondary:salesSecondary,
-    purchase:purchase
+    purchase:purchase,
+    stockTransferSecondary:stockTransferSecondary
   },
 });

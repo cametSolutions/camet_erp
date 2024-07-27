@@ -125,6 +125,7 @@ import VanSaleDetails from '../pages/primaryUsers/VanSaleDetails '
 import ShareVanSale from '../pages/primaryUsers/ShareVanSale'
 import ThreeInchVanSale from '../pages/primaryUsers/ThreeInchVanSale '
 import EditVanSale from '../pages/secUsers/EditVanSale'
+import StockTransferSecondary from '../pages/secUsers/StockTransferSecondary'
 
 const Routers = () => {
   return (
@@ -260,6 +261,7 @@ const Routers = () => {
         <Route path='/sUsers/billToSalesOrder/:id' element={<ProtectedSecRoute><BillToSalesOrder/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/vanSale' element={<ProtectedSecRoute><VanSaleSecondary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/addItemVanSale' element={<ProtectedSecRoute><AddItemVanSaleSecondary/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/stockTransfer' element={<ProtectedSecRoute><StockTransferSecondary/></ProtectedSecRoute>}></Route>
 
 
         {/* errorPage */}
