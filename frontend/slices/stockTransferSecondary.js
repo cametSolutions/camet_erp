@@ -14,10 +14,22 @@ const stockTransferSlice = createSlice({
   initialState,
   reducers: {
     addSelectedGodown: (state, action) => {
-      console.log(action.payload);
+      const { id, godown } = action.payload;
+
+      state.selectedGodown = {
+        godown,
+        godown_id: id,
+      };
+    },
+    removeAll: (state) => {
+      Object.assign(state, initialState);
+    },
+
+    removeGodown: (state) => {
+      state.selectedGodown = initialState.selectedGodown;
     },
   },
 });
 
-export const {addSelectedGodown} = stockTransferSlice.actions;
+export const { addSelectedGodown, removeAll ,removeGodown} = stockTransferSlice.actions;
 export default stockTransferSlice.reducer;

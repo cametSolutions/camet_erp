@@ -2676,7 +2676,7 @@ export const fetchGodownsAndPriceLevels = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error fetching sale details:", error);
+    console.error("Error fetching godowns and pricelevel:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };

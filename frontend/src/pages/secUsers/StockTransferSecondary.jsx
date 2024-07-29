@@ -3,7 +3,6 @@ import { useEffect, useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
 import {
-  removeParty,
   addAdditionalCharges,
   AddFinalAmount,
   deleteRow,
@@ -15,18 +14,19 @@ import { useNavigate } from "react-router-dom";
 import api from "../../api/api";
 import { IoIosAddCircle } from "react-icons/io";
 import {
-  removeAll,
+
   removeAdditionalCharge,
   removeItem,
   removeGodownOrBatch,
   changeDate,
 } from "../../../slices/salesSecondary";
+
+import { removeAll,removeGodown } from "../../../slices/stockTransferSecondary";
 import { IoIosArrowRoundBack } from "react-icons/io";
 
-import DespatchDetails from "../../components/secUsers/DespatchDetails";
 import HeaderTile from "../../components/secUsers/main/HeaderTile";
-import AddPartyTile from "../../components/secUsers/main/AddPartyTile";
 import AddItemTile from "../../components/secUsers/main/AddItemTile";
+import AddGodown from "../../components/secUsers/AddGodown";
 function StockTransferSecondary() {
   const [additional, setAdditional] = useState(false);
   const [godownname, setGodownname] = useState("");
@@ -271,7 +271,8 @@ function StockTransferSecondary() {
     setRows(newRows);
     dispatch(deleteRow(index)); // You need to create an action to handle row deletion in Redux
   };
-  const party = useSelector((state) => state.salesSecondary.party);
+  const selectedGodown = useSelector((state) => state.stockTransferSecondary.selectedGodown.godown);
+  console.log(selectedGodown);
   const items = useSelector((state) => state.salesSecondary.items);
   const priceLevelFromRedux =
     useSelector((state) => state.salesSecondary.selectedPriceLevel) || "";
@@ -307,12 +308,11 @@ function StockTransferSecondary() {
   const navigate = useNavigate();
 
   const handleAddItem = () => {
-    console.log(Object.keys(party).length);
-    if (Object.keys(party).length === 0) {
-      toast.error("Select a party first");
+    if (!selectedGodown) {
+      toast.error("Select a Godown first");
       return;
     }
-    navigate("/sUsers/addItemSales");
+    navigate("/sUsers/addItemStockTransfer");
   };
 
   const cancelHandler = () => {
@@ -437,17 +437,14 @@ function StockTransferSecondary() {
 
         {/* adding party */}
 
-        <AddPartyTile
-          party={party}
+        <AddGodown
+          selectedGodown={selectedGodown}
           dispatch={dispatch}
-          removeParty={removeParty}
-          link="/sUsers/searchPartySales"
-          linkBillTo="/sUsers/billToSales"
+          removeGodown={removeGodown}
+          link="/sUsers/searchGodown"
         />
 
-        {/* Despatch details */}
-
-        <DespatchDetails tab={"sale"} />
+      
 
         {/* adding items */}
 
@@ -471,9 +468,11 @@ function StockTransferSecondary() {
           handleRateChange={handleRateChange}
           handleAddRow={handleAddRow}
           setAdditional={setAdditional}
-          urlToAddItem="/sUsers/addItemSales"
+          urlToAddItem="/sUsers/addItemStockTransfer"
           urlToEditItem="/sUsers/editItemSales"
         />
+
+    
 
         <div className="flex justify-between bg-white mt-2 p-3">
           <p className="font-bold text-lg">Total Amount</p>

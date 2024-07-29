@@ -46,6 +46,7 @@ const showSwalAlert = (message, icon, redirectUrl, removeItem) => {
     }
   });
 };
+
 const showSwalAlert2 = (message, icon) => {
   Swal.fire({
     title: 'Alert',

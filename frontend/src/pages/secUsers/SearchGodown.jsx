@@ -4,23 +4,21 @@ import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import api from "../../api/api";
 import { useDispatch } from "react-redux";
-import { addParty } from "../../../slices/salesSecondary";
+import { addSelectedGodown } from "../../../slices/stockTransferSecondary";
 
-
-import PartyList from "../../components/secUsers/main/PartyList";
+import GodownList from "../../components/secUsers/StockTransfer/GodownList";
 
 // import { MdCancel } from "react-icons/md";
 
-function SearchPartySalesSecondary() {
-  const [parties, setParties] = useState([]);
+function SearchGodown() {
+  const [godowns, setGodowns] = useState([]);
   const [search, setSearch] = useState("");
-  const [filteredParties, setFilteredParties] = useState([]);
+  const [filteredGodowns, setFilteredGodowns] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  console.log(parties);
 
   const cpm_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
@@ -31,56 +29,53 @@ function SearchPartySalesSecondary() {
   };
 
   useEffect(() => {
-    const fetchParties = async () => {
+    const fetchGodowns = async () => {
       try {
-        const res = await api.get(`/api/sUsers/PartyList/${cpm_id}`, {
+        const res = await api.get(`/api/sUsers/fetchGodowns/${cpm_id}`, {
           withCredentials: true,
         });
 
-        setParties(res.data.partyList);
+        setGodowns(res?.data?.data?.godowns);
         setLoading(false);
       } catch (error) {
         console.log(error);
         setLoading(false);
       }
     };
-    fetchParties();
+    fetchGodowns();
   }, [cpm_id]);
 
   const selectHandler = (el) => {
-    dispatch(addParty(el));
+    dispatch(addSelectedGodown(el));
     navigate(-1);
-
   };
 
   const backHandler = () => {
     navigate(-1);
-  
   };
 
-  console.log(parties);
   useEffect(() => {
     if (search === "") {
-      setFilteredParties(parties);
+      setFilteredGodowns(godowns);
     } else {
-      const filtered = parties.filter((el) =>
+      const filtered = godowns.filter((el) =>
         el.partyName.toLowerCase().includes(search.toLowerCase())
       );
-      setFilteredParties(filtered);
+      setFilteredGodowns(filtered);
     }
-  }, [search, parties]);
+  }, [search, godowns]);
 
   return (
     <div className=" ">
-      <PartyList
+      <GodownList
         backHandler={backHandler}
         searchData={searchData}
         loading={loading}
-        filteredParties={filteredParties}
+        filteredGodowns={filteredGodowns}
         selectHandler={selectHandler}
       />
     </div>
   );
 }
 
-export default SearchPartySalesSecondary;
+export default SearchGodown;

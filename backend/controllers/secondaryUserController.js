@@ -370,7 +370,13 @@ export const transactions = async (req, res) => {
       },
     ]);
 
-    const combined = [...transactions, ...invoices, ...sales, ...purchases, ...vanSales];
+    const combined = [
+      ...transactions,
+      ...invoices,
+      ...sales,
+      ...purchases,
+      ...vanSales,
+    ];
     combined.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
     if (combined.length > 0) {
@@ -709,9 +715,12 @@ export const getProducts = async (req, res) => {
   const cmp_id = req.params.cmp_id;
 
   const vanSaleQuery = req.query.vanSale;
-  const isVanSale = vanSaleQuery === 'true';
+  const isVanSale = vanSaleQuery === "true";
+
+  const excludeGodownId = req.query.excludeGodownId;
 
   console.log("isVanSale", isVanSale);
+  console.log("excludeGodownId", excludeGodownId);
   const Primary_user_id = new mongoose.Types.ObjectId(req.owner);
 
   try {
@@ -725,8 +734,7 @@ export const getProducts = async (req, res) => {
       (item) => item.organization == cmp_id
     );
 
-    let products;
-    const matchStage = {
+    let matchStage = {
       $match: {
         cmp_id: cmp_id,
         Primary_user_id: Primary_user_id,
@@ -734,137 +742,126 @@ export const getProducts = async (req, res) => {
     };
 
     let selectedGodowns;
-    if (isVanSale &&  configuration?.selectedVanSaleGodowns.length >0) {
-
+    if (isVanSale && configuration?.selectedVanSaleGodowns.length > 0) {
       selectedGodowns = configuration.selectedVanSaleGodowns;
-    } else if ( !isVanSale && configuration && configuration.selectedGodowns) {
+    } else if (!isVanSale && configuration && configuration.selectedGodowns) {
       selectedGodowns = configuration.selectedGodowns;
     }
 
-    console.log("selectedGodowns",selectedGodowns);
+    console.log("selectedGodowns", selectedGodowns);
 
+    let projectStage = {
+      $project: {
+        product_name: 1,
+        cmp_id: 1,
+        product_code: 1,
+        balance_stock: 1,
+        Primary_user_id: 1,
+        brand: 1,
+        category: 1,
+        sub_category: 1,
+        unit: 1,
+        alt_unit: 1,
+        unit_conversion: 1,
+        alt_unit_conversion: 1,
+        hsn_code: 1,
+        purchase_price: 1,
+        purchase_cost: 1,
+        Priceleveles: 1,
+        cgst: 1,
+        sgst: 1,
+        igst: 1,
+        cess: 1,
+        addl_cess: 1,
+        state_cess: 1,
+        product_master_id: 1,
+        __v: 1,
+        GodownList: 1,
+      },
+    };
 
     if (selectedGodowns && selectedGodowns.length > 0) {
-  
-
       console.log("selectedGodowns", selectedGodowns);
 
       matchStage.$match["GodownList.godown_id"] = { $in: selectedGodowns };
 
-      const projectStage = {
-        $project: {
-          product_name: 1,
-          cmp_id: 1,
-          product_code: 1,
-          balance_stock: 1,
-          Primary_user_id: 1,
-          brand: 1,
-          category: 1,
-          sub_category: 1,
-          unit: 1,
-          alt_unit: 1,
-          unit_conversion: 1,
-          alt_unit_conversion: 1,
-          hsn_code: 1,
-          purchase_price: 1,
-          purchase_cost: 1,
-          Priceleveles: 1,
-          GodownList: {
-            $filter: {
+      projectStage.$project.GodownList = {
+        $filter: {
+          input: "$GodownList",
+          as: "godown",
+          cond: { $in: ["$$godown.godown_id", selectedGodowns] },
+        },
+      };
+    }
+
+    if (excludeGodownId) {
+      projectStage.$project.GodownList = {
+        $filter: {
+          input: "$GodownList",
+          as: "godown",
+          cond: { $ne: ["$$godown.godown_id", excludeGodownId] },
+        },
+      };
+    }
+
+    const addFieldsStage = {
+      $addFields: {
+        hasGodownOrBatch: {
+          $anyElementTrue: {
+            $map: {
               input: "$GodownList",
               as: "godown",
-              cond: { $in: ["$$godown.godown_id", selectedGodowns] },
-            },
-          },
-          cgst: 1,
-          sgst: 1,
-          igst: 1,
-          cess: 1,
-          addl_cess: 1,
-          state_cess: 1,
-          product_master_id: 1,
-          __v: 1,
-        },
-      };
-
-      const addFieldsStage = {
-        $addFields: {
-          hasGodownOrBatch: {
-            $anyElementTrue: {
-              $map: {
-                input: "$GodownList",
-                as: "godown",
-                in: {
-                  $or: [
-                    { $ifNull: ["$$godown.godown", false] },
-                    { $ifNull: ["$$godown.batch", false] },
-                  ],
-                },
+              in: {
+                $or: [
+                  { $ifNull: ["$$godown.godown", false] },
+                  { $ifNull: ["$$godown.batch", false] },
+                ],
               },
             },
           },
         },
-      };
+      },
+    };
 
-      const aggregationPipeline = [matchStage, projectStage, addFieldsStage];
+    // Add a new stage to filter out products with empty GodownList
+    const filterEmptyGodownListStage = {
+      $match: {
+        $expr: { 
+          $cond: {
+            if: { $eq: [excludeGodownId, null] },
+            then: { $gt: [{ $size: "$GodownList" }, 0] },
+            else: { 
+              $and: [
+                { $gt: [{ $size: "$GodownList" }, 0] },
+                { 
+                  $anyElementTrue: {
+                    $map: {
+                      input: "$GodownList",
+                      as: "godown",
+                      in: { 
+                        $and: [
+                          { $ifNull: ["$$godown.godown", false] },
+                          { $ifNull: ["$$godown.godown_id", false] }
+                        ]
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    };
+    
+    const aggregationPipeline = [
+      matchStage,
+      projectStage,
+      addFieldsStage,
+      filterEmptyGodownListStage
+    ];
 
-      products = await productModel.aggregate(aggregationPipeline);
-    } else {
-      console.log("no configuration or no selected godowns");
-
-      const projectStage = {
-        $project: {
-          product_name: 1,
-          cmp_id: 1,
-          product_code: 1,
-          balance_stock: 1,
-          Primary_user_id: 1,
-          brand: 1,
-          category: 1,
-          sub_category: 1,
-          unit: 1,
-          alt_unit: 1,
-          unit_conversion: 1,
-          alt_unit_conversion: 1,
-          hsn_code: 1,
-          purchase_price: 1,
-          purchase_cost: 1,
-          Priceleveles: 1,
-          GodownList: 1, // Keep the GodownList as it is
-          cgst: 1,
-          sgst: 1,
-          igst: 1,
-          cess: 1,
-          addl_cess: 1,
-          state_cess: 1,
-          product_master_id: 1,
-          __v: 1,
-        },
-      };
-
-      const addFieldsStage = {
-        $addFields: {
-          hasGodownOrBatch: {
-            $anyElementTrue: {
-              $map: {
-                input: "$GodownList",
-                as: "godown",
-                in: {
-                  $or: [
-                    { $ifNull: ["$$godown.godown", false] },
-                    { $ifNull: ["$$godown.batch", false] },
-                  ],
-                },
-              },
-            },
-          },
-        },
-      };
-
-      const aggregationPipeline = [matchStage, projectStage, addFieldsStage];
-
-      products = await productModel.aggregate(aggregationPipeline);
-    }
+    const products = await productModel.aggregate(aggregationPipeline);
 
     if (products && products.length > 0) {
       return res.status(200).json({
@@ -2237,7 +2234,7 @@ export const createSale = async (req, res) => {
       }
     }
 
-    if (vanSaleQuery==="true") {
+    if (vanSaleQuery === "true") {
       // await SecondaryUser.findByIdAndUpdate(
       //   Secondary_user_id,
       //   { $inc: { vanSalesNumber: 1 } },
@@ -2256,7 +2253,7 @@ export const createSale = async (req, res) => {
       );
       secondaryUser.configurations = updatedConfiguration;
       await secondaryUser.save();
-    } else if (salesConfig && vanSaleQuery==="false") {
+    } else if (salesConfig && vanSaleQuery === "false") {
       const updatedConfiguration = secondaryUser.configurations.map(
         (config) => {
           if (config.organization.toString() === orgId) {
@@ -2323,18 +2320,18 @@ export const createSale = async (req, res) => {
 
 export const getSalesDetails = async (req, res) => {
   const saleId = req.params.id;
-  const vanSaleQuery=req.query.vanSale;
+  const vanSaleQuery = req.query.vanSale;
 
-const isVanSale=vanSaleQuery==="true";
+  const isVanSale = vanSaleQuery === "true";
 
-console.log("isVanSale",isVanSale);
+  console.log("isVanSale", isVanSale);
 
-let model;
-if(isVanSale){
-  model=vanSaleModel
-}else{
-  model=salesModel
-}
+  let model;
+  if (isVanSale) {
+    model = vanSaleModel;
+  } else {
+    model = salesModel;
+  }
 
   try {
     const saleDetails = await model.findById(saleId);
@@ -2391,7 +2388,6 @@ export const fetchAdditionalDetails = async (req, res) => {
     const configuration = secUser.configurations.find(
       (item) => item.organization.toString() === cmp_id
     );
-
 
     if (configuration) {
       selectedPriceLevels = configuration.selectedPriceLevels;
@@ -3087,15 +3083,15 @@ export const getPurchaseDetails = async (req, res) => {
 export const editSale = async (req, res) => {
   const saleId = req.params.id;
 
-  const vanSaleQuery=req.query.vanSale;
+  const vanSaleQuery = req.query.vanSale;
 
-  const isVanSale=vanSaleQuery==="true";
-  
+  const isVanSale = vanSaleQuery === "true";
+
   let model;
-  if(isVanSale){
-    model=vanSaleModel
-  }else{
-    model=salesModel
+  if (isVanSale) {
+    model = vanSaleModel;
+  } else {
+    model = salesModel;
   }
 
   try {
@@ -3532,6 +3528,9 @@ export const editSale = async (req, res) => {
   }
 };
 
+// @desc get brands, categories, subcategories, godowns, priceLevels
+// route get/api/sUsers/getAllSubDetails
+
 export const getAllSubDetails = async (req, res) => {
   try {
     const cmp_id = req.params.orgId;
@@ -3573,5 +3572,55 @@ export const getAllSubDetails = async (req, res) => {
     res
       .status(500)
       .json({ message: "An error occurred while fetching the subdetails" });
+  }
+};
+
+// @desc to fetch godowns
+// route get/api/sUsers/fetchGodowns
+
+export const fetchGodowns = async (req, res) => {
+  const Primary_user_id = req.owner;
+  const cmp_id = req.params.cmp_id;
+
+  try {
+    const godownsResult = await productModel.aggregate([
+      {
+        $match: {
+          Primary_user_id: new mongoose.Types.ObjectId(Primary_user_id),
+          cmp_id: cmp_id,
+        },
+      },
+      { $unwind: "$GodownList" },
+      {
+        $match: {
+          "GodownList.godown_id": { $exists: true, $ne: null, $ne: "" },
+        },
+      },
+      {
+        $group: {
+          _id: "$GodownList.godown_id",
+          godown: { $addToSet: "$GodownList.godown" }, // Collect unique cmp_id values for each godown
+        },
+      },
+      { $match: { _id: { $ne: null } } },
+    ]);
+
+
+
+
+    const result = godownsResult.map((item) => ({
+      id: item._id || "",
+      godown: item.godown[0] || "",
+    }));
+
+    res.status(200).json({
+      message: "Godowns  fetched",
+      data: {
+        godowns: result,
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching godowns and pricelevel:", error);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 };

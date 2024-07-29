@@ -13,7 +13,7 @@ import {login,getSecUserData,fetchOutstandingTotal,
     getSalesDetails,saveSalesNumber,fetchAdditionalDetails,
     fetchConfigurationNumber,findSecondaryUserGodowns,findPrimaryUserGodownsSelf,
     godownwiseProducts,godownwiseProductsSelf,fetchAdditionalCharges,
-    findGodownsNames,createPurchase,getPurchaseDetails,editSale,getAllSubDetails} from "../controllers/secondaryUserController.js"
+    findGodownsNames,createPurchase,getPurchaseDetails,editSale,getAllSubDetails,fetchGodowns} from "../controllers/secondaryUserController.js"
 import { authSecondary } from '../middlewares/authSecUsers.js';
 import { secondaryIsBlocked } from '../middlewares/isBlocked.js';
 import { companyAuthentication } from '../middlewares/authCompany.js';
@@ -74,6 +74,7 @@ router.get("/godownsName/:cmp_id",authSecondary,secondaryIsBlocked,companyAuthen
 router.get('/getPurchaseDetails/:id',authSecondary,secondaryIsBlocked,getPurchaseDetails)
 router.post('/editSale/:id',authSecondary,secondaryIsBlocked,editSale)
 router.get("/getAllSubDetails/:orgId",authSecondary,secondaryIsBlocked,getAllSubDetails)
+router.get("/fetchGodowns/:cmp_id",authSecondary,secondaryIsBlocked,fetchGodowns)
 
 
 
