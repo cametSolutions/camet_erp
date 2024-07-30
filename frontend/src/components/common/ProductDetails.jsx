@@ -3,38 +3,38 @@
 import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
-import { setBatchHeight } from "../../../slices/salesSecondary";
+// import { setBatchHeight } from "../../../slices/salesSecondary";
 
 const ProductDetails = ({
   details,
   setHeight,
   handleAddClick,
-  selectedPriceLevel,
+  // selectedPriceLevel,
   handleIncrement,
   handleDecrement,
   godownName,
   heights,
   tab = "",
 }) => {
+
+  console.log(tab);
   const detailsRef = useRef();
   const batchOrGodownList = details?.GodownList;
-  const priceRate =
-    details?.Priceleveles.find(
-      (level) => level.pricelevel === selectedPriceLevel
-    )?.pricerate || 0;
+  // const priceRate =
+  //   details?.Priceleveles.find(
+  //     (level) => level.pricelevel === selectedPriceLevel
+  //   )?.pricerate || 0;
 
-    useEffect(() => {
-      if (detailsRef.current) {
-        setHeight(detailsRef.current.offsetHeight);
-      }
-    }, [details, heights, setHeight]);
-
+  useEffect(() => {
+    if (detailsRef.current) {
+      setHeight(detailsRef.current.offsetHeight);
+    }
+  }, [details, heights, setHeight]);
 
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
   console.log(batchOrGodownList);
-
 
   return (
     <div
@@ -76,14 +76,19 @@ const ProductDetails = ({
               {tab !== "inventory" && (
                 <>
                   <div className="flex items-center">
-                    <p className="   text-xs md:text-sm">
-                      ₹ {item?.selectedPriceRate || 0}/{" "}
-                      <span className="text-black">{details?.unit || ""}</span>
-                    </p>
-
-                    <p className="  text-xs md:text-sm ml-2 font-semibold">
-                      ( ₹ {item?.individualTotal} )
-                    </p>
+                    {tab !== "stockTransfer" && (
+                      <>
+                        <p className="   text-xs md:text-sm">
+                          ₹ {item?.selectedPriceRate || 0}/{" "}
+                          <span className="text-black">
+                            {details?.unit || ""}
+                          </span>
+                        </p>
+                        <p className="  text-xs md:text-sm ml-2 font-semibold">
+                          ( ₹ {item?.individualTotal} )
+                        </p>
+                      </>
+                    )}
                   </div>
                   <p className="text-gray-500 font-semibold  text-sm md:text-sm ">
                     {" "}
@@ -113,25 +118,16 @@ const ProductDetails = ({
                       <div>
                         <button
                           onClick={() => {
-                            dispatch(setBatchHeight(heights));
                             navigate(
                               `/sUsers/editItemSales/${details?._id}/${
                                 godownName || "nil"
-                              }/${index}`
+                              }/${index}`,
+                              {
+                                state:{from:tab}
+                              }
                             );
 
-                            // navigate(
-                            //   `/sUsers/editItemSales/${el?._id}/${
-                            //     godownname || "nil"
-                            //   }`,
-                            //   {
-                            //     state: {
-                            //       from: "editItemSales",
-                            //       id: location?.state?.id,
-                            //     },
-                            //   }
-                            // );
-                            // // saveScrollPosition();
+                   
                           }}
                           className=" px-2 rounded-md border-violet-500 font-bold border-2 text-violet-500 text-xs"
                         >
@@ -193,13 +189,12 @@ const ProductDetails = ({
                     </div>
                   )}
                 </div>
-              ) :(
+              ) : (
                 <p className="text-gray-500 font-semibold  text-[9px] md:text-sm ">
-                    {" "}
-                    Stock: {item.balance_stock}
-                  </p>
-              )
-            }
+                  {" "}
+                  Stock: {item.balance_stock}
+                </p>
+              )}
             </div>
           </div>
           <hr className="   border-slate-300 mx-2 " />

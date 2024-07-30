@@ -25,8 +25,9 @@ function AddItemTile({
   handleAddRow,
   setAdditional,
   urlToAddItem,
-  urlToEditItem
+  urlToEditItem,
 }) {
+  console.log(type);
   return (
     <div>
       {items.length == 0 && (
@@ -88,12 +89,12 @@ function AddItemTile({
                         {el?.GodownList.reduce((acc, curr) => {
                           if (el?.hasGodownOrBatch) {
                             if (curr?.added) {
-                              return (acc = acc + curr?.individualTotal);
+                              return (acc = acc + (curr?.individualTotal || 0));
                             } else {
                               return acc;
                             }
                           } else {
-                            return (acc = acc + curr?.individualTotal);
+                            return (acc = acc + (curr?.individualTotal || 0));
                           }
                         }, 0)}
                       </p>
@@ -186,7 +187,7 @@ function AddItemTile({
                                           godownname === "" ? "nil" : godownname
                                         }/${idx}`,
                                         {
-                                          state: { from: "sales" },
+                                          state: { from: type },
                                         }
                                       );
                                     }}
@@ -194,15 +195,6 @@ function AddItemTile({
                                   >
                                     Edit
                                   </p>
-                                  {/* <MdCancel
-      onClick={() => {
-        // Handle the removal of this specific godownOrBatch item here
-        console.log(
-          `Remove godownOrBatch at index ${idx}`
-        );
-      }}
-      className="text-gray-500 text-sm cursor-pointer"
-    /> */}
                                 </div>
                               </div>
                             </div>
@@ -218,10 +210,6 @@ function AddItemTile({
                             </p>
                             <p className="text-nowrap">
                               {el.count} {el.unit} X{" "}
-                              {/* {el.Priceleveles.find(
-                                  (item) =>
-                                    item.pricelevel === priceLevelFromRedux
-                                )?.pricerate || 0} */}
                               {el?.GodownList[0]?.selectedPriceRate || 0}
                             </p>
                           </div>
@@ -256,13 +244,6 @@ function AddItemTile({
                           >
                             Edit
                           </p>
-                          {/* <MdCancel
-                              onClick={() => {
-                                // Handle the removal of this specific item here
-                                console.log(`Remove item at index ${index}`);
-                              }}
-                              className="text-gray-500 text-sm cursor-pointer"
-                            /> */}
                         </div>
                       </div>
                     )}
@@ -272,13 +253,158 @@ function AddItemTile({
               </>
             ))}
           </div>
-          <div className="flex  justify-between items-center bg-white p-2 px-4">
-            <p className="text-sm md:text-base font-bold">Items Subtotal:</p>
-            <p className="text-sm md:text-base font-bold">{` ₹ ${subTotal.toFixed(
-              2
-            )}`}</p>
-          </div>
-          {type == "self" && (
+          {type !== "stockTransfer" && (
+            <div className="flex  justify-between items-center bg-white p-2 px-4">
+              <p className="text-sm md:text-base font-bold">Items Subtotal:</p>
+              <p className="text-sm md:text-base font-bold">{` ₹ ${subTotal.toFixed(
+                2
+              )}`}</p>
+            </div>
+          )}
+
+          {/* {type == "self" &&  ( */}
+          <>
+            {additional && type !== "stockTransfer" ? (
+              <div className="container mx-auto mt-2 bg-white p-4 text-xs">
+                <div className="flex  items-center justify-between  font-bold  text-[13px]">
+                  <div className="flex  items-center gap-3">
+                    <IoIosArrowDown className="font-bold text-[15px]" />
+                    <p className="text-blue-800">Additional Charges</p>
+                  </div>
+                  <button
+                    onClick={cancelHandler}
+                    // onClick={() => {setAdditional(false);dispatch(removeAdditionalCharge());setRefresh(!refresh);setRows()}}
+                    className="text-violet-500 p-1 px-3  text-xs border border-1 border-gray-300 rounded-2xl cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                </div>
+                <div className="container mx-auto  mt-2  md:px-8 ">
+                  <table className="table-fixed w-full bg-white ">
+                    <tbody>
+                      {rows.map((row, index) => (
+                        <tr key={index} className="">
+                          <td className=" w-2  ">
+                            <MdCancel
+                              onClick={() => {
+                                handleDeleteRow(index);
+                              }}
+                              className="text-sm cursor-pointer text-gray-500 hover:text-black"
+                            />
+                          </td>
+                          <td className=" flex flex-col justify-center ml-2 mt-3.5 ">
+                            <select
+                              value={row._id}
+                              onChange={(e) =>
+                                handleLevelChange(index, e.target.value)
+                              }
+                              className="block w-full   bg-white text-sm focus:outline-none border-none border-b-gray-500 "
+                            >
+                              {additionalChragesFromCompany.length > 0 ? (
+                                additionalChragesFromCompany.map(
+                                  (el, index) => (
+                                    <option key={index} value={el._id}>
+                                      {" "}
+                                      {el.name}{" "}
+                                    </option>
+                                  )
+                                )
+                              ) : (
+                                <option>No charges available</option>
+                              )}
+                            </select>
+
+                            {row?.taxPercentage !== "" && (
+                              <div className="ml-3 text-[9px] text-gray-400">
+                                GST @ {row?.taxPercentage} %
+                              </div>
+                            )}
+                          </td>
+                          <td className="">
+                            <div className="flex gap-3 px-5 ">
+                              <div
+                                onClick={() => {
+                                  actionChange(index, "add");
+                                }}
+                                className={` ${
+                                  row.action === "add"
+                                    ? "border-violet-500 "
+                                    : ""
+                                }  cursor-pointer p-1 px-1.5 rounded-md  border  bg-gray-100 `}
+                              >
+                                <IoMdAdd />
+                              </div>
+                              <div
+                                onClick={() => {
+                                  actionChange(index, "sub");
+                                }}
+                                className={` ${
+                                  row.action === "sub"
+                                    ? "border-violet-500 "
+                                    : ""
+                                }  cursor-pointer p-1 px-1.5 rounded-md  border  bg-gray-100 `}
+                              >
+                                <FiMinus />
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-4 py-2">
+                            <div className="flex items-center">
+                              <span className="mr-0 ">₹</span>
+                              <input
+                                type="number"
+                                value={row.value}
+                                onChange={(e) =>
+                                  handleRateChange(index, e.target.value)
+                                }
+                                className={` ${
+                                  additionalChragesFromCompany.length === 0
+                                    ? "pointer-events-none opacity-20 "
+                                    : ""
+                                }   block w-full py-2 px-4 bg-white text-sm focus:outline-none border-b-2 border-t-0 border-l-0 border-r-0 `}
+                              />
+                            </div>
+
+                            {row?.taxPercentage !== "" && row.value !== "" && (
+                              <div className="ml-3 text-[9.5px] text-gray-400 mt-2">
+                                With tax : ₹{" "}
+                                {(parseFloat(row?.value) *
+                                  (100 + parseFloat(row.taxPercentage))) /
+                                  100}{" "}
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  <button
+                    onClick={handleAddRow}
+                    className="mt-4 px-4 py-1 bg-pink-500 text-white rounded"
+                  >
+                    <MdPlaylistAdd />
+                  </button>
+                </div>
+              </div>
+            ) : (
+              type !== "stockTransfer" && (
+                <div className=" flex justify-end items-center mt-4 font-semibold gap-1 text-violet-500 cursor-pointer pr-4">
+                  <div
+                    onClick={() => {
+                      setAdditional(true);
+                    }}
+                    className="flex items-center"
+                  >
+                    <IoMdAdd className="text-2xl" />
+                    <p>Additional Charges </p>
+                  </div>
+                </div>
+              )
+            )}
+          </>
+          {/* ) */}
+          {/* } */}
+          {/* {type != "self" && (
             <>
               {additional ? (
                 <div className="container mx-auto mt-2 bg-white p-4 text-xs">
@@ -417,147 +543,7 @@ function AddItemTile({
                 </div>
               )}
             </>
-          )}
-          {type != "self" && (
-            <>
-              {additional ? (
-                <div className="container mx-auto mt-2 bg-white p-4 text-xs">
-                  <div className="flex  items-center justify-between  font-bold  text-[13px]">
-                    <div className="flex  items-center gap-3">
-                      <IoIosArrowDown className="font-bold text-[15px]" />
-                      <p className="text-blue-800">Additional Charges</p>
-                    </div>
-                    <button
-                      onClick={cancelHandler}
-                      // onClick={() => {setAdditional(false);dispatch(removeAdditionalCharge());setRefresh(!refresh);setRows()}}
-                      className="text-violet-500 p-1 px-3  text-xs border border-1 border-gray-300 rounded-2xl cursor-pointer"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                  <div className="container mx-auto  mt-2  md:px-8 ">
-                    <table className="table-fixed w-full bg-white ">
-                      <tbody>
-                        {rows.map((row, index) => (
-                          <tr key={index} className="">
-                            <td className=" w-2  ">
-                              <MdCancel
-                                onClick={() => {
-                                  handleDeleteRow(index);
-                                }}
-                                className="text-sm cursor-pointer text-gray-500 hover:text-black"
-                              />
-                            </td>
-                            <td className=" flex flex-col justify-center ml-2 mt-3.5 ">
-                              <select
-                                value={row._id}
-                                onChange={(e) =>
-                                  handleLevelChange(index, e.target.value)
-                                }
-                                className="block w-full   bg-white text-sm focus:outline-none border-none border-b-gray-500 "
-                              >
-                                {additionalChragesFromCompany.length > 0 ? (
-                                  additionalChragesFromCompany.map(
-                                    (el, index) => (
-                                      <option key={index} value={el._id}>
-                                        {" "}
-                                        {el.name}{" "}
-                                      </option>
-                                    )
-                                  )
-                                ) : (
-                                  <option>No charges available</option>
-                                )}
-                              </select>
-
-                              {row?.taxPercentage !== "" && (
-                                <div className="ml-3 text-[9px] text-gray-400">
-                                  GST @ {row?.taxPercentage} %
-                                </div>
-                              )}
-                            </td>
-                            <td className="">
-                              <div className="flex gap-3 px-5 ">
-                                <div
-                                  onClick={() => {
-                                    actionChange(index, "add");
-                                  }}
-                                  className={` ${
-                                    row.action === "add"
-                                      ? "border-violet-500 "
-                                      : ""
-                                  }  cursor-pointer p-1 px-1.5 rounded-md  border  bg-gray-100 `}
-                                >
-                                  <IoMdAdd />
-                                </div>
-                                <div
-                                  onClick={() => {
-                                    actionChange(index, "sub");
-                                  }}
-                                  className={` ${
-                                    row.action === "sub"
-                                      ? "border-violet-500 "
-                                      : ""
-                                  }  cursor-pointer p-1 px-1.5 rounded-md  border  bg-gray-100 `}
-                                >
-                                  <FiMinus />
-                                </div>
-                              </div>
-                            </td>
-                            <td className="px-4 py-2">
-                              <div className="flex items-center">
-                                <span className="mr-0 ">₹</span>
-                                <input
-                                  type="number"
-                                  value={row.value}
-                                  onChange={(e) =>
-                                    handleRateChange(index, e.target.value)
-                                  }
-                                  className={` ${
-                                    additionalChragesFromCompany.length === 0
-                                      ? "pointer-events-none opacity-20 "
-                                      : ""
-                                  }   block w-full py-2 px-4 bg-white text-sm focus:outline-none border-b-2 border-t-0 border-l-0 border-r-0 `}
-                                />
-                              </div>
-
-                              {row?.taxPercentage !== "" &&
-                                row.value !== "" && (
-                                  <div className="ml-3 text-[9.5px] text-gray-400 mt-2">
-                                    With tax : ₹{" "}
-                                    {(parseFloat(row?.value) *
-                                      (100 + parseFloat(row.taxPercentage))) /
-                                      100}{" "}
-                                  </div>
-                                )}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                    <button
-                      onClick={handleAddRow}
-                      className="mt-4 px-4 py-1 bg-pink-500 text-white rounded"
-                    >
-                      <MdPlaylistAdd />
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className=" flex justify-end items-center mt-4 font-semibold gap-1 text-violet-500 cursor-pointer pr-4">
-                  <div
-                    onClick={() => {
-                      setAdditional(true);
-                    }}
-                    className="flex items-center"
-                  >
-                    <IoMdAdd className="text-2xl" />
-                    <p>Additional Charges </p>
-                  </div>
-                </div>
-              )}
-            </>
-          )}
+          )} */}
         </>
       )}
     </div>

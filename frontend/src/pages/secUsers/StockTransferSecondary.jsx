@@ -1,307 +1,130 @@
 /* eslint-disable react/no-unescaped-entities */
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
-import {
-  addAdditionalCharges,
-  AddFinalAmount,
-  deleteRow,
-} from "../../../slices/salesSecondary";
+
 import { useDispatch } from "react-redux";
 
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import api from "../../api/api";
 import { IoIosAddCircle } from "react-icons/io";
-import {
 
-  removeAdditionalCharge,
+import {
+  removeAll,
+  removeGodown,
   removeItem,
   removeGodownOrBatch,
   changeDate,
-} from "../../../slices/salesSecondary";
-
-import { removeAll,removeGodown } from "../../../slices/stockTransferSecondary";
+  AddFinalAmount
+} from "../../../slices/stockTransferSecondary";
 import { IoIosArrowRoundBack } from "react-icons/io";
 
 import HeaderTile from "../../components/secUsers/main/HeaderTile";
 import AddItemTile from "../../components/secUsers/main/AddItemTile";
 import AddGodown from "../../components/secUsers/AddGodown";
 function StockTransferSecondary() {
-  const [additional, setAdditional] = useState(false);
-  const [godownname, setGodownname] = useState("");
 
   const [salesNumber, setSalesNumber] = useState("");
-  const [additionalChragesFromCompany, setAdditionalChragesFromCompany] =
-    useState([]);
 
-  const date = useSelector((state) => state.salesSecondary.date);
+
+  const date = useSelector((state) => state.stockTransferSecondary.date);
   const [selectedDate, setSelectedDate] = useState(new Date());
 
-  console.log(selectedDate);
-
-  const additionalChargesFromRedux = useSelector(
-    (state) => state.salesSecondary.additionalCharges
-  );
   const orgId = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
-  const cmp_id = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg._id
-  );
-  const type = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg.type
-  );
-  const despatchDetails = useSelector(
-    (state) => state.salesSecondary.despatchDetails
-  );
+
+
 
   useEffect(() => {
-    const getAdditionalChargesIntegrated = async () => {
-      try {
-        const res = await api.get(`/api/sUsers/additionalcharges/${cmp_id}`, {
-          withCredentials: true,
-        });
-        console.log(res.data);
-        setAdditionalChragesFromCompany(res.data);
-      } catch (error) {
-        console.log(error);
-        toast.error(error.response.data.message);
-      }
-    };
-    if (type != "self") {
-      getAdditionalChargesIntegrated();
-    }
-  }, []);
-
-  useEffect(() => {
-    localStorage.removeItem("scrollPositionAddItemSales");
+    // localStorage.removeItem("scrollPositionAddItemSales");
     if (date) {
       setSelectedDate(date);
     }
   }, []);
 
-  useEffect(() => {
-    const fetchSingleOrganization = async () => {
-      try {
-        const res = await api.get(
-          `/api/sUsers/getSingleOrganization/${orgId}`,
-          {
-            withCredentials: true,
-          }
-        );
 
-        console.log(res.data.organizationData);
-        // setCompany(res.data.organizationData);
-        if (type == "self") {
-          setAdditionalChragesFromCompany(
-            res.data.organizationData.additionalCharges
-          );
-        }
-      } catch (error) {
-        console.log(error);
-      }
-    };
+  // useEffect(() => {
+  //   const fetchConfigurationNumber = async () => {
+  //     try {
+  //       const res = await api.get(
+  //         `/api/sUsers/fetchConfigurationNumber/${orgId}/sales`,
 
-    fetchSingleOrganization();
-  }, [orgId]);
+  //         {
+  //           withCredentials: true,
+  //         }
+  //       );
 
-  useEffect(() => {
-    const fetchConfigurationNumber = async () => {
-      try {
-        const res = await api.get(
-          `/api/sUsers/fetchConfigurationNumber/${orgId}/sales`,
+  //       console.log(res.data);
+  //       if (res.data.message === "default") {
+  //         const { configurationNumber } = res.data;
+  //         setSalesNumber(configurationNumber);
+  //         return;
+  //       }
 
-          {
-            withCredentials: true,
-          }
-        );
+  //       const { configDetails, configurationNumber } = res.data;
+  //       console.log(configDetails);
+  //       console.log(configurationNumber);
 
-        console.log(res.data);
-        if (res.data.message === "default") {
-          const { configurationNumber } = res.data;
-          setSalesNumber(configurationNumber);
-          return;
-        }
+  //       if (configDetails) {
+  //         const { widthOfNumericalPart, prefixDetails, suffixDetails } =
+  //           configDetails;
+  //         const newOrderNumber = configurationNumber.toString();
+  //         // console.log(newOrderNumber);
+  //         // console.log(widthOfNumericalPart);
+  //         // console.log(prefixDetails);
+  //         // console.log(suffixDetails);
 
-        const { configDetails, configurationNumber } = res.data;
-        console.log(configDetails);
-        console.log(configurationNumber);
+  //         const padedNumber = newOrderNumber.padStart(widthOfNumericalPart, 0);
+  //         // console.log(padedNumber);
+  //         const finalOrderNumber = [prefixDetails, padedNumber, suffixDetails]
+  //           .filter(Boolean)
+  //           .join("-");
+  //         // console.log(finalOrderNumber);
+  //         setSalesNumber(finalOrderNumber);
+  //       } else {
+  //         setSalesNumber(salesNumber);
+  //       }
+  //     } catch (error) {
+  //       console.log(error);
+  //     }
+  //   };
 
-        if (configDetails) {
-          const { widthOfNumericalPart, prefixDetails, suffixDetails } =
-            configDetails;
-          const newOrderNumber = configurationNumber.toString();
-          // console.log(newOrderNumber);
-          // console.log(widthOfNumericalPart);
-          // console.log(prefixDetails);
-          // console.log(suffixDetails);
+  //   fetchConfigurationNumber();
+  // }, []);
 
-          const padedNumber = newOrderNumber.padStart(widthOfNumericalPart, 0);
-          // console.log(padedNumber);
-          const finalOrderNumber = [prefixDetails, padedNumber, suffixDetails]
-            .filter(Boolean)
-            .join("-");
-          // console.log(finalOrderNumber);
-          setSalesNumber(finalOrderNumber);
-        } else {
-          setSalesNumber(salesNumber);
-        }
-      } catch (error) {
-        console.log(error);
-      }
-    };
 
-    fetchConfigurationNumber();
-  }, []);
 
-  useEffect(() => {
-    const fetchGodownname = async () => {
-      try {
-        const godown = await api.get(`/api/sUsers/godownsName/${cmp_id}`, {
-          withCredentials: true,
-        });
-        console.log(godown);
-        setGodownname(godown.data || "");
-      } catch (error) {
-        console.log(error);
-        toast.error(error.message);
-      }
-    };
-    fetchGodownname();
-  }, []);
 
-  const [rows, setRows] = useState(
-    additionalChargesFromRedux.length > 0
-      ? additionalChargesFromRedux
-      : additionalChragesFromCompany.length > 0
-      ? [
-          {
-            option: additionalChragesFromCompany[0].name,
-            value: "",
-            action: "add",
-            taxPercentage: additionalChragesFromCompany[0].taxPercentage,
-            hsn: additionalChragesFromCompany[0].hsn,
-            _id: additionalChragesFromCompany[0]._id,
-            finalValue: "",
-          },
-        ]
-      : [] // Fallback to an empty array if additionalChragesFromCompany is also empty
-  );
 
-  useEffect(() => {
-    if (additionalChargesFromRedux.length > 0) {
-      setAdditional(true);
-    }
-  }, []);
   const [subTotal, setSubTotal] = useState(0);
   const dispatch = useDispatch();
 
-  const handleAddRow = () => {
-    const hasEmptyValue = rows.some((row) => row.value === "");
-    console.log(hasEmptyValue);
-    if (hasEmptyValue) {
-      toast.error("Please add a value.");
-      return;
-    }
 
-    setRows([
-      ...rows,
-      {
-        option: additionalChragesFromCompany[0]?.name,
-        value: "",
-        action: "add",
-        taxPercentage: additionalChragesFromCompany[0]?.taxPercentage,
-        hsn: additionalChragesFromCompany[0]?.hsn,
-        _id: additionalChragesFromCompany[0]?._id,
-        finalValue: "",
-      },
-    ]);
-  };
 
-  const handleLevelChange = (index, id) => {
-    const selectedOption = additionalChragesFromCompany.find(
-      (option) => option._id === id
-    );
-    console.log(selectedOption);
+  const selectedGodown = useSelector(
+    (state) => state.stockTransferSecondary.selectedGodown.godown
+  );
 
-    const newRows = [...rows];
-    newRows[index] = {
-      ...newRows[index],
-      option: selectedOption?.name,
-      taxPercentage: selectedOption?.taxPercentage,
-      hsn: selectedOption?.hsn,
-      _id: selectedOption?._id,
-      finalValue: "",
-    };
-    console.log(newRows);
-    setRows(newRows);
 
-    dispatch(addAdditionalCharges({ index, row: newRows[index] }));
-  };
-
-  console.log(rows);
-
-  const handleRateChange = (index, value) => {
-    const newRows = [...rows];
-    let updatedRow = { ...newRows[index], value: value }; // Create a new object with the updated value
-
-    if (updatedRow.taxPercentage && updatedRow.taxPercentage !== "") {
-      const taxAmount =
-        (parseFloat(value) * parseFloat(updatedRow.taxPercentage)) / 100;
-      updatedRow.finalValue = parseFloat(value) + taxAmount;
-    } else {
-      updatedRow.finalValue = parseFloat(value);
-    }
-    newRows[index] = updatedRow;
-    setRows(newRows);
-    dispatch(addAdditionalCharges({ index, row: updatedRow }));
-  };
-
-  const actionChange = (index, value) => {
-    const newRows = [...rows];
-    const updatedRow = { ...newRows[index], action: value }; // Create a new object with the updated action
-    newRows[index] = updatedRow; // Replace the old row with the updated one in the newRows array
-    setRows(newRows);
-    dispatch(addAdditionalCharges({ index, row: updatedRow }));
-  };
-
-  const handleDeleteRow = (index) => {
-    const newRows = rows.filter((_, i) => i !== index); // Create a new array without the deleted row
-    setRows(newRows);
-    dispatch(deleteRow(index)); // You need to create an action to handle row deletion in Redux
-  };
-  const selectedGodown = useSelector((state) => state.stockTransferSecondary.selectedGodown.godown);
-  console.log(selectedGodown);
-  const items = useSelector((state) => state.salesSecondary.items);
-  const priceLevelFromRedux =
-    useSelector((state) => state.salesSecondary.selectedPriceLevel) || "";
-  const batchHeights = useSelector((state) => state.salesSecondary.heights);
+  const selectedGodownId = useSelector(
+    (state) => state.stockTransferSecondary.selectedGodown.godown_id
+  );
+  console.log(selectedGodownId);
+  const items = useSelector((state) => state.stockTransferSecondary.items);
 
   useEffect(() => {
     const subTotal = items.reduce((acc, curr) => {
       return (acc = acc + (parseFloat(curr.total) || 0));
     }, 0);
-    console.log(subTotal);
     setSubTotal(subTotal);
   }, [items]);
 
-  const additionalChargesTotal = useMemo(() => {
-    return rows.reduce((acc, curr) => {
-      let value = curr.finalValue === "" ? 0 : parseFloat(curr.finalValue);
-      if (curr.action === "add") {
-        return acc + value;
-      } else if (curr.action === "sub") {
-        return acc - value;
-      }
-      return acc;
-    }, 0);
-  }, [rows]);
 
-  console.log(additionalChargesTotal);
-  const totalAmountNotRounded =
-    parseFloat(subTotal) + additionalChargesTotal || parseFloat(subTotal);
-  const totalAmount = Math.round(totalAmountNotRounded);
+
+
+  const totalAmount = parseFloat(subTotal)
 
   console.log(totalAmount);
 
@@ -315,28 +138,10 @@ function StockTransferSecondary() {
     navigate("/sUsers/addItemStockTransfer");
   };
 
-  const cancelHandler = () => {
-    setAdditional(false);
-    dispatch(removeAdditionalCharge());
-    setRows([
-      {
-        option: additionalChragesFromCompany[0].name,
-        value: "",
-        action: "add",
-        taxPercentage: additionalChragesFromCompany[0].taxPercentage,
-        hsn: additionalChragesFromCompany[0].hsn,
-      },
-    ]);
-  };
 
   const submitHandler = async () => {
     console.log("haii");
-    if (Object.keys(party).length == 0) {
-      console.log("haii");
-
-      toast.error("Add a party first");
-      return;
-    }
+  
     if (items.length == 0) {
       console.log("haii");
 
@@ -344,48 +149,26 @@ function StockTransferSecondary() {
       return;
     }
 
-    if (additional) {
-      console.log("haii");
-
-      const hasEmptyValue = rows.some((row) => row.value === "");
-      if (hasEmptyValue) {
-        console.log("haii");
-
-        toast.error("Please add a value.");
-        return;
-      }
-      const hasNagetiveValue = rows.some((row) => parseFloat(row.value) < 0);
-      if (hasNagetiveValue) {
-        console.log("haii");
-
-        toast.error("Please add a positive value");
-        return;
-      }
-      console.log("haii");
-    }
 
     const lastAmount = totalAmount.toFixed(2);
 
     dispatch(AddFinalAmount(lastAmount));
 
     const formData = {
-      party,
-      items,
-      despatchDetails,
-      priceLevelFromRedux,
-      additionalChargesFromRedux,
-      lastAmount,
-      orgId,
-      salesNumber,
-      batchHeights,
       selectedDate,
+      orgId,
+      selectedGodown,
+      selectedGodownId,
+      items,
+      lastAmount,
+      // salesNumber,
     };
 
     console.log(formData);
 
     try {
       const res = await api.post(
-        `/api/sUsers/createSale?vanSale=${false}`,
+        `/api/sUsers/createStockTransfer`,
         formData,
         {
           headers: {
@@ -444,8 +227,6 @@ function StockTransferSecondary() {
           link="/sUsers/searchGodown"
         />
 
-      
-
         {/* adding items */}
 
         <AddItemTile
@@ -455,24 +236,12 @@ function StockTransferSecondary() {
           removeItem={removeItem}
           removeGodownOrBatch={removeGodownOrBatch}
           navigate={navigate}
-          godownname={godownname}
+          godownname={""}
           subTotal={subTotal}
-          type="sale"
-          additional={additional}
-          cancelHandler={cancelHandler}
-          rows={rows}
-          handleDeleteRow={handleDeleteRow}
-          handleLevelChange={handleLevelChange}
-          additionalChragesFromCompany={additionalChragesFromCompany}
-          actionChange={actionChange}
-          handleRateChange={handleRateChange}
-          handleAddRow={handleAddRow}
-          setAdditional={setAdditional}
+          type="stockTransfer"
           urlToAddItem="/sUsers/addItemStockTransfer"
           urlToEditItem="/sUsers/editItemSales"
         />
-
-    
 
         <div className="flex justify-between bg-white mt-2 p-3">
           <p className="font-bold text-lg">Total Amount</p>
@@ -489,7 +258,7 @@ function StockTransferSecondary() {
               className="fixed bottom-0 text-white bg-violet-700  w-full  p-2 py-4 flex items-center justify-center gap-2 hover_scale cursor-pointer "
             >
               <IoIosAddCircle className="text-2xl" />
-              <p>Generate Sale</p>
+              <p>Create Stock Transfer</p>
             </button>
           </div>
         </div>

@@ -16,7 +16,6 @@ import {
   setSubCategoryInRedux,
   addAllProducts,
   updateItem,
-  setBatchHeight,
 } from "../../../slices/salesSecondary";
 import { HashLoader } from "react-spinners";
 import { VariableSizeList as List } from "react-window";
@@ -51,8 +50,6 @@ function AddItemSalesSecondary() {
   const cpm_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
-  ///////////////////////////get height from redux///////////////////////////////////
-  const heightsFromRedux = useSelector((state) => state.salesSecondary.heights);
 
   ///////////////////////////itemsFromRedux///////////////////////////////////
 
@@ -517,7 +514,7 @@ function AddItemSalesSecondary() {
 
     setItem(updatedItems);
     if (selectedPriceLevel === "") {
-      navigate(`/sUsers/editItemSales/${_id}/${godownname || "nil"}/${idx}`);
+      navigate(`/sUsers/editItemSales/${_id}/${ "nil"}/${idx}`);
     }
   };
 
@@ -721,7 +718,6 @@ function AddItemSalesSecondary() {
   }, []);
 
   const continueHandler = () => {
-    dispatch(setBatchHeight(heights));
     navigate(-1);
   };
 
@@ -752,11 +748,6 @@ function AddItemSalesSecondary() {
     // setTimeout(() => listRef.current.resetAfterIndex(index), 0); // Uncomment if needed
   };
 
-  useEffect(() => {
-    if (Object.keys(heightsFromRedux).length > 0) {
-      setHeights(heightsFromRedux);
-    }
-  }, []);
 
   useEffect(() => {
     if (listRef.current) {
@@ -903,7 +894,7 @@ function AddItemSalesSecondary() {
                     onClick={() => {
                       navigate(
                         `/sUsers/editItemSales/${el?._id}/${
-                          godownname || "nil"
+                          "nil"
                         }/null`,
                         {
                           state: {

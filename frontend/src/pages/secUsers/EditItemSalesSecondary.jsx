@@ -6,6 +6,9 @@ import { IoIosArrowRoundBack } from "react-icons/io";
 import { useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { updateItem } from "../../../slices/salesSecondary";
+import { updateItem as updateItemStockTransfer } from "../../../slices/stockTransferSecondary";
+
+import { useLocation } from "react-router-dom";
 
 function EditItemSalesSecondary() {
   const [item, setItem] = useState([]);
@@ -22,19 +25,32 @@ function EditItemSalesSecondary() {
   const [discountPercentage, setDiscountPercentage] = useState(0);
 
   const { id, index } = useParams();
-  console.log(index);
+  const location = useLocation();
+
+  const selectedRedux =
+    location?.state?.from === "stockTransfer"
+      ? "stockTransferSecondary"
+      : "salesSecondary";
+
   const navigate = useNavigate();
 
-  const ItemsFromRedux = useSelector((state) => state.salesSecondary.items);
+  const ItemsFromRedux = useSelector((state) => {
+    switch (selectedRedux) {
+      case "salesSecondary":
+        return state.salesSecondary?.items;
+      case "stockTransferSecondary":
+        return state.stockTransferSecondary?.items;
+      default:
+        return [];
+    }
+  });
+
+  console.log(ItemsFromRedux);
   const selectedItem = ItemsFromRedux.filter((el) => el._id === id);
 
- 
   const selectedGodown = selectedItem[0]?.GodownList[index];
 
-
-
   useEffect(() => {
-  
     setItem(selectedItem[0]);
 
     if (selectedItem[0]?.hasGodownOrBatch) {
@@ -58,15 +74,15 @@ function EditItemSalesSecondary() {
       setNewPrice(selectedItem[0]?.GodownList[0]?.selectedPriceRate || 0);
 
       setQuantity(selectedItem[0]?.count || 1);
-      if (selectedItem[0].discountPercentage > 0) {
-        setDiscount(selectedItem[0].discountPercentage);
+      if (selectedItem[0]?.discountPercentage > 0) {
+        setDiscount(selectedItem[0]?.discountPercentage);
         setType("percentage");
-      } else if (selectedItem[0].discount > 0) {
-        setDiscount(selectedItem[0].discount);
+      } else if (selectedItem[0]?.discount > 0) {
+        setDiscount(selectedItem[0]?.discount);
         setType("amount");
       } else if (
-        selectedItem[0].discountPercentage == 0 &&
-        selectedItem[0].discount == 0
+        selectedItem[0]?.discountPercentage == 0 &&
+        selectedItem[0]?.discount == 0
       ) {
         setDiscount("");
       }
@@ -137,14 +153,12 @@ function EditItemSalesSecondary() {
         }
       });
 
-
       newItem.GodownList = newGodownList;
       newItem.count = Number(
         newGodownList
           ?.reduce((acc, curr) => (acc += curr?.count || 0), 0)
           .toFixed(2)
       );
-
 
       newItem.count = Number(
         newGodownList?.reduce((acc, curr) => {
@@ -156,13 +170,16 @@ function EditItemSalesSecondary() {
 
             return acc;
           }
-        },0)
+        }, 0)
       );
 
       console.log(newItem.count);
       newItem.total = Number(
         newGodownList
-          .reduce((acc, curr) => acc + (curr?.added?curr.individualTotal:0 || 0), 0)
+          .reduce(
+            (acc, curr) => acc + (curr?.added ? curr.individualTotal : 0 || 0),
+            0
+          )
           .toFixed(2)
       );
       console.log(newItem.total);
@@ -188,8 +205,12 @@ function EditItemSalesSecondary() {
     }
 
     console.log(newItem);
-
-    dispatch(updateItem(newItem));
+    if (selectedRedux === "stockTransferSecondary") {
+      dispatch(updateItemStockTransfer(newItem));
+    } else {
+      dispatch(updateItem(newItem));
+     
+    }
     navigate(-1);
   };
 
@@ -212,7 +233,6 @@ function EditItemSalesSecondary() {
 
   return (
     <div className=" ">
-     
       <div className=" h-screen  flex-1">
         <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex  items-center gap-2 sticky top-0 z-20 ">
           <IoIosArrowRoundBack
@@ -250,7 +270,7 @@ function EditItemSalesSecondary() {
                         // disabled
                         value={newPrice}
                         type="number"
-                        className=" input-number px-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm border-gray-300 rounded-md focus:outline-none text-gray-600"
+                        className={` ${selectedRedux==="stockTransferSecondary"?"pointer-events-none":"pointer-events-auto"} input-number px-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm border-gray-300 rounded-md focus:outline-none text-gray-600`}
                         placeholder="0"
                       />
                     </div>
@@ -303,7 +323,7 @@ function EditItemSalesSecondary() {
                             value={discount}
                             onChange={(e) => setDiscount(e.target.value)}
                             type="text"
-                            className="pr-4 pl-10 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm border-gray-300 rounded-md focus:outline-none text-gray-600"
+                            className={`   ${selectedRedux==="stockTransferSecondary"?"pointer-events-none":"pointer-events-auto"}    pr-4 pl-10 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm border-gray-300 rounded-md focus:outline-none text-gray-600`}
                             placeholder=""
                           />
                         </div>

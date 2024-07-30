@@ -6,18 +6,18 @@ import { useNavigate, useLocation } from "react-router-dom";
 import api from "../../api/api";
 import { MdOutlineQrCodeScanner } from "react-icons/md";
 import { useSelector } from "react-redux";
-import { addItem, removeItem } from "../../../slices/salesSecondary";
 import { useDispatch } from "react-redux";
-import { setPriceLevel } from "../../../slices/salesSecondary";
+
 import {
-  changeTotal,
   setBrandInRedux,
   setCategoryInRedux,
   setSubCategoryInRedux,
   addAllProducts,
   updateItem,
-  setBatchHeight,
-} from "../../../slices/salesSecondary";
+  addItem,
+  removeItem,
+} from "../../../slices/stockTransferSecondary";
+
 import { HashLoader } from "react-spinners";
 import { VariableSizeList as List } from "react-window";
 import { Decimal } from "decimal.js";
@@ -28,7 +28,6 @@ import { IoIosArrowUp } from "react-icons/io";
 
 function AddItemStockTransferSec() {
   const [item, setItem] = useState([]);
-  const [selectedPriceLevel, setSelectedPriceLevel] = useState("");
   const [brands, setBrands] = useState([]);
   const [categories, setCategories] = useState([]);
   const [subCategories, setSubCategories] = useState([]);
@@ -36,11 +35,10 @@ function AddItemStockTransferSec() {
   const [selectedCategory, setseleCtedCategory] = useState("");
   const [selectedSubCategory, setSelectedSubCategory] = useState("");
   const [search, setSearch] = useState("");
-  const [priceLevels, setPriceLevels] = useState([]);
   const [loader, setLoader] = useState(false);
   const [listHeight, setListHeight] = useState(0);
   const [scrollPosition, setScrollPosition] = useState(0);
-  const [refresh, setRefresh] = useState(false);
+  // const [refresh, setRefresh] = useState(false);
 
   // const [godownname, setGodownname] = useState("");
   const [heights, setHeights] = useState({});
@@ -53,40 +51,38 @@ function AddItemStockTransferSec() {
 
   ///////////////////////////selected Godown///////////////////////////////////
 
+  const selectedGodownId = useSelector(
+    (state) => state.stockTransferSecondary.selectedGodown.godown_id
+  );
+  console.log(selectedGodownId);
 
-const selectedGodownId=useSelector((state)=>state.stockTransferSecondary.selectedGodown.godown_id)
-console.log(selectedGodownId);
-
-useEffect(()=>{
-  if(!selectedGodownId){
-    navigate(-1)
-  }
-})
-
+  useEffect(() => {
+    if (!selectedGodownId || selectedGodownId === "") {
+      navigate(-1);
+    }
+  });
 
   ///////////////////////////get height from redux///////////////////////////////////
-  const heightsFromRedux = useSelector((state) => state.salesSecondary.heights);
 
   ///////////////////////////itemsFromRedux///////////////////////////////////
 
-  const itemsFromRedux = useSelector((state) => state.salesSecondary.items);
+  const itemsFromRedux = useSelector(
+    (state) => state.stockTransferSecondary.items
+  );
 
   ///////////////////////////priceLevelFromRedux///////////////////////////////////
 
-  const priceLevelFromRedux =
-    useSelector((state) => state.salesSecondary.selectedPriceLevel) || "";
-
   const allProductsFromRedux =
-    useSelector((state) => state.salesSecondary.products) || [];
+    useSelector((state) => state.stockTransferSecondary.products) || [];
 
   ///////////////////////////filters FromRedux///////////////////////////////////
 
   const brandFromRedux =
-    useSelector((state) => state.salesSecondary.brand) || "";
+    useSelector((state) => state.stockTransferSecondary.brand) || "";
   const categoryFromRedux =
-    useSelector((state) => state.salesSecondary.category) || "";
+    useSelector((state) => state.stockTransferSecondary.category) || "";
   const subCategoryFromRedux =
-    useSelector((state) => state.salesSecondary.subcategory) || "";
+    useSelector((state) => state.stockTransferSecondary.subcategory) || "";
 
   ///////////////////////////navigate dispatch///////////////////////////////////
 
@@ -126,7 +122,7 @@ useEffect(()=>{
       try {
         if (allProductsFromRedux.length === 0) {
           const res = await api.get(`/api/sUsers/getProducts/${cpm_id}`, {
-            params:{vanSale:false,excludeGodownId:selectedGodownId},
+            params: { vanSale: false, excludeGodownId: selectedGodownId },
             withCredentials: true,
           });
           productData = res.data.productData;
@@ -205,13 +201,13 @@ useEffect(()=>{
             fetchFilters();
           }
 
-          setRefresh((prevRefresh) => !prevRefresh);
+          // setRefresh((prevRefresh) => !prevRefresh);
         } else {
           setItem(productData);
           if (productData.length > 0) {
             fetchFilters();
           }
-          setRefresh((prevRefresh) => !prevRefresh);
+          // setRefresh((prevRefresh) => !prevRefresh);
         }
 
         if (brandFromRedux) {
@@ -237,13 +233,7 @@ useEffect(()=>{
       // listRef?.current?.scrollTo(parseInt(scrollPosition, 10));\
       window.scrollTo(0, scrollPosition);
     }
-  }, [cpm_id]);
-
-  ///////////////////////////setSelectedPriceLevel fom redux///////////////////////////////////
-
-  useEffect(() => {
-    setSelectedPriceLevel(priceLevelFromRedux);
-  }, []);
+  }, [cpm_id, selectedGodownId]);
 
   /////////////////////////scroll////////////////////////////
 
@@ -291,23 +281,12 @@ useEffect(()=>{
         // setCategories(categories);
         // setSubCategories(subcategories);
         setPriceLevels(priceLevels);
-        if (priceLevelFromRedux == "") {
-          const defaultPriceLevel = priceLevels[0];
-          dispatch(setPriceLevel(defaultPriceLevel));
-        }
       } else {
-        const { priceLevels, brands, categories, subcategories } = res.data;
+        const { brands, categories, subcategories } = res.data;
 
         // setBrands(brands);
         // setCategories(categories);
         // setSubCategories(subcategories);
-
-        setPriceLevels(priceLevels);
-        if (priceLevelFromRedux == "") {
-          const defaultPriceLevel = priceLevels[0];
-          setSelectedPriceLevel(defaultPriceLevel);
-          dispatch(setPriceLevel(defaultPriceLevel));
-        }
       }
     } catch (error) {
       console.log(error);
@@ -354,137 +333,137 @@ useEffect(()=>{
 
   //////////////////////////////////////////addSelectedRate initially not in redux/////////////////////////////////////////////
 
-  const addSelectedRate = (pricelevel) => {
-    if (item?.length > 0) {
-      const updatedItems = filteredItems.map((item) => {
-        const priceRate =
-          item?.Priceleveles?.find(
-            (priceLevelItem) => priceLevelItem.pricelevel === pricelevel
-          )?.pricerate || 0;
+  // const addSelectedRate = (pricelevel) => {
+  //   if (item?.length > 0) {
+  //     const updatedItems = filteredItems.map((item) => {
+  //       const priceRate =
+  //         item?.Priceleveles?.find(
+  //           (priceLevelItem) => priceLevelItem.pricelevel === pricelevel
+  //         )?.pricerate || 0;
 
-        const reduxItem = itemsFromRedux.find((p) => p._id === item._id);
-        // const reduxRate = reduxItem?.selectedPriceRate || null;
+  //       const reduxItem = itemsFromRedux.find((p) => p._id === item._id);
+  //       // const reduxRate = reduxItem?.selectedPriceRate || null;
 
-        // if (item?.hasGodownOrBatch) {
-        const updatedGodownList = item.GodownList.map(
-          (godownOrBatch, index) => {
-            const reduxRateOfGodown =
-              reduxItem?.GodownList?.[index]?.selectedPriceRate;
-            return {
-              ...godownOrBatch,
-              selectedPriceRate:
-                reduxRateOfGodown !== undefined ? reduxRateOfGodown : priceRate,
-            };
-          }
-        );
+  //       // if (item?.hasGodownOrBatch) {
+  //       const updatedGodownList = item.GodownList.map(
+  //         (godownOrBatch, index) => {
+  //           const reduxRateOfGodown =
+  //             reduxItem?.GodownList?.[index]?.selectedPriceRate;
+  //           return {
+  //             ...godownOrBatch,
+  //             selectedPriceRate:
+  //               reduxRateOfGodown !== undefined ? reduxRateOfGodown : priceRate,
+  //           };
+  //         }
+  //       );
 
-        return {
-          ...item,
-          GodownList: updatedGodownList,
-        };
-      });
+  //       return {
+  //         ...item,
+  //         GodownList: updatedGodownList,
+  //       };
+  //     });
 
-      setItem(updatedItems);
-    }
-  };
+  //     setItem(updatedItems);
+  //   }
+  // };
 
   console.log(item);
 
-  useEffect(() => {
-    addSelectedRate(selectedPriceLevel);
-  }, [selectedPriceLevel, refresh]);
+  // useEffect(() => {
+  //   addSelectedRate(selectedPriceLevel);
+  // }, [selectedPriceLevel, refresh]);
 
   ///////////////////////////calculateTotal///////////////////////////////////
 
-  const calculateTotal = (item, selectedPriceLevel, situation = "normal") => {
-    let priceRate = 0;
-    if (situation === "priceLevelChange") {
-      priceRate =
-        item.Priceleveles.find(
-          (level) => level.pricelevel === selectedPriceLevel
-        )?.pricerate || 0;
-    }
+  // const calculateTotal = (item, selectedPriceLevel, situation = "normal") => {
+  //   let priceRate = 0;
+  //   if (situation === "priceLevelChange") {
+  //     priceRate =
+  //       item.Priceleveles.find(
+  //         (level) => level.pricelevel === selectedPriceLevel
+  //       )?.pricerate || 0;
+  //   }
 
-    let subtotal = 0;
-    let individualTotals = [];
+  //   let subtotal = 0;
+  //   let individualTotals = [];
 
-    if (item.hasGodownOrBatch) {
-      item.GodownList.forEach((godownOrBatch, index) => {
-        if (situation == "normal") {
-          priceRate = godownOrBatch.selectedPriceRate;
-        }
-        let individualSubtotal = priceRate * Number(godownOrBatch.count) || 0;
-        let discountedSubtotal = individualSubtotal;
+  //   if (item.hasGodownOrBatch) {
+  //     item.GodownList.forEach((godownOrBatch, index) => {
+  //       if (situation == "normal") {
+  //         priceRate = godownOrBatch.selectedPriceRate;
+  //       }
+  //       let individualSubtotal = priceRate * Number(godownOrBatch.count) || 0;
+  //       let discountedSubtotal = individualSubtotal;
 
-        if (
-          godownOrBatch.discount !== 0 &&
-          godownOrBatch.discount !== undefined &&
-          godownOrBatch.discount !== ""
-        ) {
-          discountedSubtotal = discountedSubtotal - godownOrBatch.discount;
-        } else if (
-          godownOrBatch.discountPercentage !== 0 &&
-          godownOrBatch.discountPercentage !== undefined &&
-          godownOrBatch.discountPercentage !== ""
-        ) {
-          discountedSubtotal -=
-            (individualSubtotal * godownOrBatch.discountPercentage) / 100;
-        }
+  //       if (
+  //         godownOrBatch.discount !== 0 &&
+  //         godownOrBatch.discount !== undefined &&
+  //         godownOrBatch.discount !== ""
+  //       ) {
+  //         discountedSubtotal = discountedSubtotal - godownOrBatch.discount;
+  //       } else if (
+  //         godownOrBatch.discountPercentage !== 0 &&
+  //         godownOrBatch.discountPercentage !== undefined &&
+  //         godownOrBatch.discountPercentage !== ""
+  //       ) {
+  //         discountedSubtotal -=
+  //           (individualSubtotal * godownOrBatch.discountPercentage) / 100;
+  //       }
 
-        const gstAmount = (discountedSubtotal * (item.igst || 0)) / 100;
+  //       const gstAmount = (discountedSubtotal * (item.igst || 0)) / 100;
 
-        subtotal += discountedSubtotal + gstAmount;
+  //       subtotal += discountedSubtotal + gstAmount;
 
-        const individualTotal = parseFloat(
-          (discountedSubtotal + gstAmount).toFixed(2)
-        );
+  //       const individualTotal = parseFloat(
+  //         (discountedSubtotal + gstAmount).toFixed(2)
+  //       );
 
-        individualTotals.push({
-          index,
-          batch: godownOrBatch.batch,
-          individualTotal,
-        });
-      });
-    } else {
-      if (situation == "normal") {
-        priceRate = item.GodownList[0].selectedPriceRate;
-      }
-      let individualSubtotal = priceRate * Number(item.count);
-      let discountedSubtotal = individualSubtotal;
+  //       individualTotals.push({
+  //         index,
+  //         batch: godownOrBatch.batch,
+  //         individualTotal,
+  //       });
+  //     });
+  //   } else {
+  //     if (situation == "normal") {
+  //       priceRate = item.GodownList[0].selectedPriceRate;
+  //     }
+  //     let individualSubtotal = priceRate * Number(item.count);
+  //     let discountedSubtotal = individualSubtotal;
 
-      if (item.discount !== 0 && item.discount !== undefined) {
-        discountedSubtotal -= item.discount;
-      } else if (
-        item.discountPercentage !== 0 &&
-        item.discountPercentage !== undefined
-      ) {
-        discountedSubtotal -=
-          (individualSubtotal * item.discountPercentage) / 100;
-      }
+  //     if (item.discount !== 0 && item.discount !== undefined) {
+  //       discountedSubtotal -= item.discount;
+  //     } else if (
+  //       item.discountPercentage !== 0 &&
+  //       item.discountPercentage !== undefined
+  //     ) {
+  //       discountedSubtotal -=
+  //         (individualSubtotal * item.discountPercentage) / 100;
+  //     }
 
-      const gstAmount =
-        (discountedSubtotal * (item.newGst || item.igst || 0)) / 100;
+  //     const gstAmount =
+  //       (discountedSubtotal * (item.newGst || item.igst || 0)) / 100;
 
-      subtotal += discountedSubtotal + gstAmount;
+  //     subtotal += discountedSubtotal + gstAmount;
 
-      const individualTotal = parseFloat(
-        (discountedSubtotal + gstAmount).toFixed(2)
-      );
+  //     const individualTotal = parseFloat(
+  //       (discountedSubtotal + gstAmount).toFixed(2)
+  //     );
 
-      individualTotals.push({
-        index: 0,
-        batch: item.batch || "No batch",
-        individualTotal,
-      });
-    }
+  //     individualTotals.push({
+  //       index: 0,
+  //       batch: item.batch || "No batch",
+  //       individualTotal,
+  //     });
+  //   }
 
-    subtotal = parseFloat(subtotal.toFixed(2));
+  //   subtotal = parseFloat(subtotal.toFixed(2));
 
-    return {
-      individualTotals,
-      total: subtotal,
-    };
-  };
+  //   return {
+  //     individualTotals,
+  //     total: subtotal,
+  //   };
+  // };
 
   ///////////////////////////handleAddClick///////////////////////////////////
 
@@ -507,18 +486,18 @@ useEffect(()=>{
         itemToUpdate.count =
           new Decimal(itemToUpdate.count || 0).add(1).toNumber() || 1;
 
-        const totalData = calculateTotal(itemToUpdate, selectedPriceLevel);
-        const updatedGodownListWithTotals = itemToUpdate.GodownList.map(
-          (godown, index) => ({
-            ...godown,
-            individualTotal:
-              totalData.individualTotals.find(({ index: i }) => i === index)
-                ?.individualTotal || 0,
-          })
-        );
-        itemToUpdate.GodownList = updatedGodownListWithTotals;
+        // const totalData = calculateTotal(itemToUpdate, selectedPriceLevel);
+        // const updatedGodownListWithTotals = itemToUpdate.GodownList.map(
+        //   (godown, index) => ({
+        //     ...godown,
+        //     individualTotal:
+        //       totalData.individualTotals.find(({ index: i }) => i === index)
+        //         ?.individualTotal || 0,
+        //   })
+        // );
+        // itemToUpdate.GodownList = updatedGodownListWithTotals;
 
-        itemToUpdate.total = totalData?.total || 0;
+        // itemToUpdate.total = totalData?.total || 0;
         itemToUpdate.added = true;
 
         dispatch(addItem(itemToUpdate));
@@ -529,9 +508,6 @@ useEffect(()=>{
     });
 
     setItem(updatedItems);
-    if (selectedPriceLevel === "") {
-      navigate(`/sUsers/editItemSales/${_id}/${godownname || "nil"}/${idx}`);
-    }
   };
 
   ///////////////////////////handleIncrement///////////////////////////////////
@@ -563,25 +539,25 @@ useEffect(()=>{
         currentItem.count = sumOfCounts; // Update currentItem.count with the sum
 
         // Calculate totals and update individual batch totals
-        const totalData = calculateTotal(currentItem, selectedPriceLevel);
-        const updatedGodownListWithTotals = updatedGodownList.map(
-          (godown, index) => ({
-            ...godown,
-            individualTotal:
-              totalData.individualTotals.find(({ index: i }) => i === index)
-                ?.individualTotal || 0,
-          })
-        );
-        currentItem.GodownList = updatedGodownListWithTotals;
-        currentItem.total = totalData.total; // Update the overall total
+        // const totalData = calculateTotal(currentItem, selectedPriceLevel);
+        // const updatedGodownListWithTotals = updatedGodownList.map(
+        //   (godown, index) => ({
+        //     ...godown,
+        //     individualTotal:
+        //       totalData.individualTotals.find(({ index: i }) => i === index)
+        //         ?.individualTotal || 0,
+        //   })
+        // );
+        // currentItem.GodownList = updatedGodownListWithTotals;
+        // currentItem.total = totalData.total; // Update the overall total
       } else {
         // Increment the count of the currentItem by 1
         currentItem.count = new Decimal(currentItem.count).add(1).toNumber();
 
-        // Calculate totals and update individual total
-        const totalData = calculateTotal(currentItem, selectedPriceLevel);
-        currentItem.total = totalData.total;
-        currentItem.GodownList[0].individualTotal = totalData?.total; // Update the overall total
+        // // Calculate totals and update individual total
+        // const totalData = calculateTotal(currentItem, selectedPriceLevel);
+        // currentItem.total = totalData.total;
+        // currentItem.GodownList[0].individualTotal = totalData?.total; // Update the overall total
       }
 
       dispatch(updateItem(currentItem)); // Log the updated currentItem
@@ -624,17 +600,17 @@ useEffect(()=>{
         }
 
         // Calculate totals and update individual batch totals
-        const totalData = calculateTotal(currentItem, selectedPriceLevel);
-        const updatedGodownListWithTotals = updatedGodownList.map(
-          (godown, index) => ({
-            ...godown,
-            individualTotal:
-              totalData.individualTotals.find(({ index: i }) => i === index)
-                ?.individualTotal || 0,
-          })
-        );
-        currentItem.GodownList = updatedGodownListWithTotals;
-        currentItem.total = totalData.total; // Update the overall total
+        // const totalData = calculateTotal(currentItem, selectedPriceLevel);
+        // const updatedGodownListWithTotals = updatedGodownList.map(
+        //   (godown, index) => ({
+        //     ...godown,
+        //     individualTotal:
+        //       totalData.individualTotals.find(({ index: i }) => i === index)
+        //         ?.individualTotal || 0,
+        //   })
+        // );
+        // currentItem.GodownList = updatedGodownListWithTotals;
+        // currentItem.total = totalData.total; // Update the overall total
       } else {
         currentItem.count = new Decimal(currentItem.count).sub(1).toNumber();
 
@@ -642,10 +618,10 @@ useEffect(()=>{
         if (currentItem.count <= 0) currentItem.added = false;
 
         // Calculate totals and update individual total
-        const totalData = calculateTotal(currentItem, selectedPriceLevel);
+        // const totalData = calculateTotal(currentItem, selectedPriceLevel);
         // currentItem.individualTotal = totalData.total;
-        currentItem.GodownList[0].individualTotal = totalData?.total;
-        currentItem.total = totalData.total; // Update the overall total
+        // currentItem.GodownList[0].individualTotal = totalData?.total;
+        // currentItem.total = totalData.total; // Update the overall total
       }
 
       dispatch(updateItem(currentItem)); // Log the updated currentItem
@@ -699,15 +675,6 @@ useEffect(()=>{
     setItem(updatedItems);
   };
 
-  ///////////////////////////handlePriceLevelChange///////////////////////////////////
-
-  const handlePriceLevelChange = (e) => {
-    const selectedValue = e.target.value;
-    setSelectedPriceLevel(selectedValue);
-    dispatch(setPriceLevel(selectedValue));
-    handleTotalChangeWithPriceLevel(selectedValue);
-  };
-
   // function truncateToNDecimals(num, n) {
   //   const parts = num.toString().split(".");
   //   if (parts.length === 1) return num; // No decimal part
@@ -734,7 +701,6 @@ useEffect(()=>{
   }, []);
 
   const continueHandler = () => {
-    dispatch(setBatchHeight(heights));
     navigate(-1);
   };
 
@@ -760,16 +726,10 @@ useEffect(()=>{
       return updatedItems;
     });
 
-    setRefresh((prevRefresh) => !prevRefresh);
+    // setRefresh((prevRefresh) => !prevRefresh);
 
     // setTimeout(() => listRef.current.resetAfterIndex(index), 0); // Uncomment if needed
   };
-
-  useEffect(() => {
-    if (Object.keys(heightsFromRedux).length > 0) {
-      setHeights(heightsFromRedux);
-    }
-  }, []);
 
   useEffect(() => {
     if (listRef.current) {
@@ -900,15 +860,9 @@ useEffect(()=>{
             </div>
           )} */}
 
-          {el?.added && el?.count && !el?.hasGodownOrBatch > 0 ? (
+          {/* {el?.added && el?.count && !el?.hasGodownOrBatch > 0 ? (
             <div className="flex items-center flex-col gap-2">
-              {/* <Link
-              // to={`/sUsers/editItem/${el?._id}`}
-              to={{
-                pathname: `/sUsers/editItem/${el?._id}`,
-                state: { from: "addItem" },
-              }}
-            > */}
+   
 
               {!el?.hasGodownOrBatch && (
                 <>
@@ -916,7 +870,7 @@ useEffect(()=>{
                     onClick={() => {
                       navigate(
                         `/sUsers/editItemSales/${el?._id}/${
-                          godownname || "nil"
+                           "nil"
                         }/null`,
                         {
                           state: {
@@ -1005,7 +959,7 @@ useEffect(()=>{
                 Add
               </div>
             )
-          )}
+          )} */}
         </div>
         {el?.hasGodownOrBatch && (
           <div className="px-6">
@@ -1029,11 +983,12 @@ useEffect(()=>{
               heights={heights}
               handleIncrement={handleIncrement}
               handleDecrement={handleDecrement}
-              selectedPriceLevel={selectedPriceLevel}
+              // selectedPriceLevel={selectedPriceLevel}
               handleAddClick={handleAddClick}
               godownName="nil"
               details={el}
               setHeight={(height) => setHeight(index, height)}
+              tab="stockTransfer"
             />
           </div>
         )}
@@ -1055,25 +1010,6 @@ useEffect(()=>{
                 <p className="text-white text-sm   font-bold ">Add Item</p>
               </div>
               <div className="flex items-center gap-4 md:gap-6 ">
-                <div>
-                  <select
-                    onChange={(e) => handlePriceLevelChange(e)}
-                    value={selectedPriceLevel}
-                    className="block w-full p-1 px-3 truncate text-xs  border rounded-lg border-gray-100 bg-[#012a4a] text-white focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    {priceLevels.length > 0 ? (
-                      priceLevels.map((el, index) => (
-                        <option key={index} value={el}>
-                          {el}
-                        </option>
-                      ))
-                    ) : (
-                      <option key="no-price-level" value="No price level added">
-                        No price level added
-                      </option>
-                    )}
-                  </select>
-                </div>
                 <MdOutlineQrCodeScanner className="text-white text-lg  cursor-pointer md:text-xl" />
               </div>
             </div>

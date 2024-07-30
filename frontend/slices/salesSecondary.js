@@ -13,7 +13,6 @@ const initialState = {
   category: "",
   subcategory: "",
   id: "",
-  heights: {},
   despatchDetails: {
     challanNo: "",
     containerNo: "",
@@ -180,9 +179,7 @@ export const salesSecondarySlice = createSlice({
       }
     },
 
-    setBatchHeight: (state, action) => {
-      state.heights = action.payload;
-    },
+ 
 
     removeGodownOrBatch: (state, action) => {
       const id = action.payload.id;
