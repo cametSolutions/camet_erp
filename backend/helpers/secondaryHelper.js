@@ -1,5 +1,5 @@
-import productModel from "../../models/productModel.js";
-import { truncateToNDecimals } from "./helper.js";
+import productModel from "../models/productModel.js";
+import { truncateToNDecimals } from "../helpers/helper.js";
 // import TallyData from "../models/TallyData.js";
 
 /////////////////////// for deleting whole items in edit sale ////////////////////////////////////

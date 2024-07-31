@@ -18,7 +18,7 @@ import invoiceModel from "../models/invoiceModel.js";
 import bankModel from "../models/bankModel.js";
 import salesModel from "../models/salesModel.js";
 import AdditionalChargesModel from "../models/additionalChargesModel.js";
-import { truncateToNDecimals } from "./helpers/helper.js";
+import { truncateToNDecimals } from "../helpers/helper.js";
 import purchaseModel from "../models/purchaseModel.js";
 import { Brand } from "../models/subDetails.js";
 import { Category } from "../models/subDetails.js";

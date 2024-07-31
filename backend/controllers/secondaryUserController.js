@@ -12,7 +12,7 @@ import HsnModel from "../models/hsnModel.js";
 import OragnizationModel from "../models/OragnizationModel.js";
 import Organization from "../models/OragnizationModel.js";
 import AdditionalChargesModel from "../models/additionalChargesModel.js";
-import { truncateToNDecimals } from "./helpers/helper.js";
+import { truncateToNDecimals } from "../helpers/helper.js";
 import { Brand } from "../models/subDetails.js";
 import { Category } from "../models/subDetails.js";
 import { Subcategory } from "../models/subDetails.js";
@@ -36,7 +36,12 @@ import {
   addingAnItemInSaleOrderEdit,
   extractCentralNumber,
   checkForNumberExistence,
-} from "./helpers/secondaryHelper.js";
+} from "../helpers/secondaryHelper.js";
+
+import {
+  processStockTransfer,
+  handleStockTransfer,
+} from "../helpers/stockTranferHelper.js";
 
 // @desc Login secondary user
 // route POST/api/sUsers/login
@@ -3636,77 +3641,22 @@ export const createStockTransfer = async (req, res) => {
       lastAmount,
     } = req.body;
 
-    const updatedProducts = [];
+    const transferData = {
+      selectedDate,
+      orgId,
+      selectedGodown,
+      selectedGodownId,
+      items,
+      lastAmount,
+    };
 
-    for (const item of items) {
-      const product = await productModel.findById(item._id);
-      if (!product) {
-        throw new Error(`Product not found: ${item._id}`);
-      }
+    const updatedProducts = await processStockTransfer(transferData);
 
-      const sourceGodowns = item.GodownList.filter((g) => g.added === true);
-      if (sourceGodowns.length === 0) {
-        throw new Error(`No source godowns found for product: ${item._id}`);
-      }
-
-      let totalTransferCount = 0;
-
-      sourceGodowns.forEach((sourceGodown) => {
-        const transferCount = sourceGodown.count;
-        totalTransferCount += transferCount;
-
-        // Find the source godown in the product
-        const sourceGodownInProduct = product.GodownList.find(
-          (g) => g.godown_id === sourceGodown.godown_id
-        );
-        if (sourceGodownInProduct) {
-          sourceGodownInProduct.balance_stock -= transferCount;
-          console.log(`Reduced stock from ${sourceGodown.godown_id}: new balance is ${sourceGodownInProduct.balance_stock}`);
-        }
-
-        // Find the destination godown in the product
-        let destGodown = product.GodownList.find((g) => {
-          if (sourceGodown.batch) {
-            return g.godown_id === selectedGodownId && g.batch === sourceGodown.batch;
-          } else {
-            return g.godown_id === selectedGodownId;
-          }
-        });
-
-        if (destGodown) {
-          destGodown.balance_stock += transferCount;
-          console.log(`Increased stock to ${selectedGodownId}: new balance is ${destGodown.balance_stock}`);
-        } else {
-          // Create a new godown entry if not found
-          const newGodown = {
-            balance_stock: transferCount,
-            godown: selectedGodown,
-            godown_id: selectedGodownId,
-          };
-
-          if (sourceGodown.batch) {
-            newGodown.batch = sourceGodown.batch;
-            newGodown.mfgdt = sourceGodown.mfgdt ?? null;
-            newGodown.expdt = sourceGodown.expdt ?? null;
-          }
-
-          product.GodownList.push(newGodown);
-          console.log(`Created new godown ${selectedGodownId} with balance ${newGodown.balance_stock}`);
-        }
-      });
-
-      // Update the product's total balance stock
-      product.balance_stock -= totalTransferCount;  // Assuming you want to reduce the total balance by the transfer amount
-      console.log(`Final balance stock for product ${product._id}: ${product.balance_stock}`);
-
-      // await product.save();
-      const update=await productModel.findByIdAndUpdate(product._id,product)
-      updatedProducts.push(product);
-    }
-
+    const createNewStockTransfer = await handleStockTransfer(transferData);
+console.log("createNewStockTransfer", createNewStockTransfer);
     res.status(200).json({
       message: "Stock transfer completed successfully",
-      updatedProducts,
+      data:createNewStockTransfer
     });
   } catch (error) {
     console.error("Error in stock transfer:", error);
@@ -3716,7 +3666,5 @@ export const createStockTransfer = async (req, res) => {
     });
   }
 };
-
-
 
 

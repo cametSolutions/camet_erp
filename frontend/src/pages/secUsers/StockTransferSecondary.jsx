@@ -25,7 +25,7 @@ import AddItemTile from "../../components/secUsers/main/AddItemTile";
 import AddGodown from "../../components/secUsers/AddGodown";
 function StockTransferSecondary() {
 
-  const [salesNumber, setSalesNumber] = useState("");
+  // const [salesNumber, setSalesNumber] = useState("");
 
 
   const date = useSelector((state) => state.stockTransferSecondary.date);
@@ -181,8 +181,10 @@ function StockTransferSecondary() {
       console.log(res.data);
       toast.success(res.data.message);
 
-      navigate(`/sUsers/salesDetails/${res.data.data._id}`);
+      console.log(res.data.data._id);
+
       dispatch(removeAll());
+      navigate(`/sUsers/StockTransferDetails/${res.data.data._id}`);
     } catch (error) {
       toast.error(error.response.data.message);
       console.log(error);
@@ -208,7 +210,7 @@ function StockTransferSecondary() {
         {/* invoiec date */}
         <HeaderTile
           title={"stockTransfer"}
-          number={salesNumber}
+          number={""}
           selectedDate={selectedDate}
           setSelectedDate={setSelectedDate}
           dispatch={dispatch}

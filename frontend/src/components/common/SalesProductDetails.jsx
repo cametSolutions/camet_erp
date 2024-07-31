@@ -27,15 +27,19 @@ function SalesProductDetails({
         </div>
         <div className="flex items-center justify-between mt-2 text-sm">
           <p className="font-semibold text-gray-500">Additional Charge</p>
-          <p className="font-semibold">
-            ₹{" "}
-            {parseInt(
-              data?.additionalCharges?.reduce(
-                (acc, curr) => acc + curr?.finalValue,
-                0
-              )
-            ).toFixed(2)}
-          </p>
+          {additionalCharges?.length > 0 ? (
+            <p className="font-semibold">
+              ₹{" "}
+              {parseInt(
+                additionalCharges?.reduce(
+                  (acc, curr) => acc + curr?.finalValue,
+                  0
+                ) || 0
+              ).toFixed(2)}
+            </p>
+          ) : (
+            <p>₹{" "}0</p>
+          )}
         </div>
       </div>
 
@@ -181,30 +185,35 @@ function SalesProductDetails({
             ))}
           </div>
 
-          <div className=" flex gap-2 items-center font-bold text-md px-4 py-2 bg-white my-2">
-            <IoIosArrowDown className="font-bold" />
-            <p className=""> Additional Charges</p>
-            <span>({additionalCharges.length})</span>
-          </div>
-          <div className="p-4 bg-white text-gray-500 text-sm ">
-            {additionalCharges.map((values, index) => (
-              <div key={index} className="mb-2">
-                <div className="flex justify-between">
-                  <p className="font-bold text-black">{values?.option}</p>
-                  <p className="font-bold ">
-                    {values?.value} + ({values?.taxPercentage}%)
-                  </p>
-                </div>
-                <div className="flex justify-between">
-                  <p className="mt-1">Total</p>
-                  <p className="mt-1 text-black font-bold">
-                    {" "}
-                    ₹ {values?.finalValue}
-                  </p>
-                </div>
+          {additionalCharges?.length > 0 && (
+            <>
+              <div className=" flex gap-2 items-center font-bold text-md px-4 py-2 bg-white my-2">
+                <IoIosArrowDown className="font-bold" />
+                <p className=""> Additional Charges</p>
+
+                <span>({additionalCharges?.length})</span>
               </div>
-            ))}
-          </div>
+              <div className="p-4 bg-white text-gray-500 text-sm ">
+                {additionalCharges?.map((values, index) => (
+                  <div key={index} className="mb-2">
+                    <div className="flex justify-between">
+                      <p className="font-bold text-black">{values?.option}</p>
+                      <p className="font-bold ">
+                        {values?.value} + ({values?.taxPercentage}%)
+                      </p>
+                    </div>
+                    <div className="flex justify-between">
+                      <p className="mt-1">Total</p>
+                      <p className="mt-1 text-black font-bold">
+                        {" "}
+                        ₹ {values?.finalValue}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
         </>
       )}
     </div>

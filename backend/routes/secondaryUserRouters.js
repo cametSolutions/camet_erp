@@ -15,6 +15,8 @@ import {login,getSecUserData,fetchOutstandingTotal,
     godownwiseProducts,godownwiseProductsSelf,fetchAdditionalCharges,
     findGodownsNames,createPurchase,getPurchaseDetails,editSale,getAllSubDetails,
     fetchGodowns,createStockTransfer} from "../controllers/secondaryUserController.js"
+
+    import { getStockTransferDetails } from '../controllers/commonController.js';
 import { authSecondary } from '../middlewares/authSecUsers.js';
 import { secondaryIsBlocked } from '../middlewares/isBlocked.js';
 import { companyAuthentication } from '../middlewares/authCompany.js';
@@ -77,6 +79,7 @@ router.post('/editSale/:id',authSecondary,secondaryIsBlocked,editSale)
 router.get("/getAllSubDetails/:orgId",authSecondary,secondaryIsBlocked,getAllSubDetails)
 router.get("/fetchGodowns/:cmp_id",authSecondary,secondaryIsBlocked,fetchGodowns)
 router.post("/createStockTransfer",authSecondary,secondaryIsBlocked,createStockTransfer)
+router.get("/getStockTransferDetails/:id",authSecondary,secondaryIsBlocked,getStockTransferDetails)
 
 
 

@@ -177,7 +177,6 @@ export const addBankData = async (req, res) => {
 export const saveProductsFromTally = async (req, res) => {
   try {
     const productsToSave = req?.body?.data;
-    console.log("productsToSave", productsToSave);
 
     if (!productsToSave || !productsToSave.length) {
       return res.status(400).json({ message: "No products to save" });
@@ -197,7 +196,6 @@ export const saveProductsFromTally = async (req, res) => {
               product_master_id,
             });
 
-            console.log("existingProduct", existingProduct);
 
             if (existingProduct) {
               // Update the existing product
@@ -219,8 +217,7 @@ export const saveProductsFromTally = async (req, res) => {
             savedProduct = await newProduct.save();
           }
 
-          console.log("savedProduct", savedProduct);
-          return savedProduct;
+         return savedProduct;
         } catch (error) {
           console.error(`Error saving product with product_master_id ${product_master_id}:`, error);
           return null; // Return null if there is an error to continue processing other products
