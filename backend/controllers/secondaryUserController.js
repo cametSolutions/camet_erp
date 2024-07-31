@@ -42,6 +42,7 @@ import {
   processStockTransfer,
   handleStockTransfer,
 } from "../helpers/stockTranferHelper.js";
+import stockTransferModel from "../models/stockTransferModel.js";
 
 // @desc Login secondary user
 // route POST/api/sUsers/login
@@ -361,6 +362,7 @@ export const transactions = async (req, res) => {
         },
       },
     ]);
+
     const purchases = await purchaseModel.aggregate([
       { $match: { Secondary_user_id: userId, cmp_id: cmp_id } },
       {
@@ -374,6 +376,19 @@ export const transactions = async (req, res) => {
         },
       },
     ]);
+    const stockTransfer = await stockTransferModel.aggregate([
+      { $match: { Secondary_user_id: userId, cmp_id: cmp_id } },
+      {
+        $project: {
+          party_name: "$selectedGodown",
+          // mobileNumber:"$party.mobileNumber",
+          type: "Stock Transfer",
+          enteredAmount: "$finalAmount",
+          createdAt: 1,
+          itemsLength: { $size: "$items" },
+        },
+      },
+    ]);
 
     const combined = [
       ...transactions,
@@ -381,6 +396,7 @@ export const transactions = async (req, res) => {
       ...sales,
       ...purchases,
       ...vanSales,
+      ...stockTransfer,
     ];
     combined.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
@@ -3648,12 +3664,12 @@ export const createStockTransfer = async (req, res) => {
       selectedGodownId,
       items,
       lastAmount,
+      req
     };
 
     const updatedProducts = await processStockTransfer(transferData);
 
     const createNewStockTransfer = await handleStockTransfer(transferData);
-console.log("createNewStockTransfer", createNewStockTransfer);
     res.status(200).json({
       message: "Stock transfer completed successfully",
       data:createNewStockTransfer

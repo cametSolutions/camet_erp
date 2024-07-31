@@ -26,6 +26,7 @@ import { Subcategory } from "../models/subDetails.js";
 import { Godown } from "../models/subDetails.js";
 import { PriceLevel } from "../models/subDetails.js";
 import vanSaleModel from "../models/vanSaleModel.js";
+import stockTransferModel from "../models/stockTransferModel.js";
 
 // @desc Register Primary user
 // route POST/api/pUsers/register
@@ -653,6 +654,20 @@ export const transactions = async (req, res) => {
       },
     ]);
 
+    const stockTransfer = await stockTransferModel.aggregate([
+      { $match: {  cmp_id: cmp_id } },
+      {
+        $project: {
+          party_name: "$selectedGodown",
+          // mobileNumber:"$party.mobileNumber",
+          type: "Stock Transfer",
+          enteredAmount: "$finalAmount",
+          createdAt: 1,
+          itemsLength: { $size: "$items" },
+        },
+      },
+    ]);
+
     console.log(sales);
 
     const combined = [
@@ -661,6 +676,7 @@ export const transactions = async (req, res) => {
       ...sales,
       ...purchases,
       ...vanSales,
+      ...stockTransfer,
     ];
     combined.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 

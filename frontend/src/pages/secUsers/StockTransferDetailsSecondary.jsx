@@ -59,7 +59,7 @@ function StockTransferDetailsSecondary() {
               className="text-2xl cursor-pointer"
             />
 
-            <h3 className="font-bold">Sales Details</h3>
+            <h3 className="font-bold">Stock Transfer Details</h3>
           </div>
 
         </div>

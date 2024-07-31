@@ -109,9 +109,12 @@ export const handleStockTransfer = async ({
     selectedGodownId,
     items,
     lastAmount,
+    req
   }) => {
     try {
       const newStockTransfer = new stockTransferModel({
+        Primary_user_id:req.owner.toString(),
+        Secondary_user_id:req.sUserId,
         cmp_id: orgId,
         selectedGodown,
         selectedGodownId,

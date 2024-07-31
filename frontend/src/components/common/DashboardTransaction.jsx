@@ -4,8 +4,8 @@ import { FcCancel } from "react-icons/fc";
 import { IoArrowRedoOutline } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
 
-function DashboardTransaction({ filteredData,userType }) {
-console.log(userType);
+function DashboardTransaction({ filteredData, userType }) {
+  console.log(userType);
   const navigate = useNavigate();
   return (
     <div className="grid grid-cols-1 gap-4  text-center pb-7 mt-5 md:px-2 overflow-hidden  ">
@@ -15,14 +15,28 @@ console.log(userType);
           onClick={() => {
             const navigationPath =
               el.type === "Receipt"
-                ? `/${userType==="primary"?"pUsers":"sUsers"}/receiptDetails/${el._id}`
+                ? `/${
+                    userType === "primary" ? "pUsers" : "sUsers"
+                  }/receiptDetails/${el._id}`
                 : el.type === "Tax Invoice"
-                ? `/${userType==="primary"?"pUsers":"sUsers"}/salesDetails/${el._id}`
+                ? `/${
+                    userType === "primary" ? "pUsers" : "sUsers"
+                  }/salesDetails/${el._id}`
                 : el.type === "Van Sale"
-                ? `/${userType==="primary"?"pUsers":"sUsers"}/vanSaleDetails/${el._id}`
+                ? `/${
+                    userType === "primary" ? "pUsers" : "sUsers"
+                  }/vanSaleDetails/${el._id}`
                 : el.type === "Purchase"
-                ? `/${userType==="primary"?"pUsers":"sUsers"}/purchaseDetails/${el._id}`
-                : `/${userType==="primary"?"pUsers":"sUsers"}/InvoiceDetails/${el._id}`;
+                ? `/${
+                    userType === "primary" ? "pUsers" : "sUsers"
+                  }/purchaseDetails/${el._id}`
+                : el.type === "Stock Transfer"
+                ? `/${
+                    userType === "primary" ? "pUsers" : "sUsers"
+                  }/stockTransferDetails/${el._id}`
+                : `/${
+                    userType === "primary" ? "pUsers" : "sUsers"
+                  }/InvoiceDetails/${el._id}`;
             navigate(navigationPath, { state: { from: "dashboard" } });
           }}
           className={`${
@@ -38,8 +52,11 @@ console.log(userType);
                   ? "bg-violet-500"
                   : el.type === "Purchase"
                   ? "bg-pink-500"
-                  : el.type === "Van Sale"? "bg-[#25cbcb]"
-                  : "bg-[#3ed57a]"
+                  : el.type === "Van Sale"
+                  ? "bg-[#25cbcb]"
+                  : el?.type === "Stock Transfer"
+                  ? "bg-[#c42383]"
+                  : "bg-[#f6f6f6]"
               }   flex items-center text-white px-2 rounded-sm `}
             >
               {/* <FaRegCircleDot /> */}
