@@ -6,6 +6,8 @@ const vanSaleSchema = new mongoose.Schema(
     salesNumber: { type: String, required: true },
     Primary_user_id: { type: String, required: true },
     Secondary_user_id: { type: String },
+    selectedGodownName:{ type: String, required: true },
+    selectedGodownId:{ type: String, required: true },
     cmp_id: { type: String, required: true },
     partyAccount: { type: String, required: true },
     party: { type: Object, required: true },

@@ -52,7 +52,7 @@ function AddItemVanSaleSecondary() {
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
   ///////////////////////////get height from redux///////////////////////////////////
-  const heightsFromRedux = useSelector((state) => state.salesSecondary.heights);
+  // const heightsFromRedux = useSelector((state) => state.salesSecondary.heights);
 
   ///////////////////////////itemsFromRedux///////////////////////////////////
 
@@ -89,7 +89,7 @@ function AddItemVanSaleSecondary() {
         const godown = await api.get(`/api/sUsers/godownsName/${cpm_id}`, {
           withCredentials: true,
         });
-        setGodownname(godown.data || "");
+        setGodownname(godown.data?.data?.godownName || "");
         // setGodownname("")
       } catch (error) {
         console.log(error);
@@ -736,7 +736,6 @@ console.log(item);
   }, []);
 
   const continueHandler = () => {
-    dispatch(setBatchHeight(heights));
     navigate(-1);
   };
 
@@ -767,11 +766,11 @@ console.log(item);
     // setTimeout(() => listRef.current.resetAfterIndex(index), 0); // Uncomment if needed
   };
 
-  useEffect(() => {
-    if (Object.keys(heightsFromRedux).length > 0) {
-      setHeights(heightsFromRedux);
-    }
-  }, []);
+  // useEffect(() => {
+  //   if (Object.keys(heightsFromRedux).length > 0) {
+  //     setHeights(heightsFromRedux);
+  //   }
+  // }, []);
 
   useEffect(() => {
     if (listRef.current) {

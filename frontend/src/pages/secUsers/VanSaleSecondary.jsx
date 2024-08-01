@@ -30,6 +30,7 @@ import AddItemTile from "../../components/secUsers/main/AddItemTile";
 function VanSaleSecondary() {
   const [additional, setAdditional] = useState(false);
   const [godownname, setGodownname] = useState("");
+  const [godownId, setGodownId] = useState("");
 
   const [refreshCmp, setrefreshCmp] = useState(false);
   const [salesNumber, setSalesNumber] = useState("");
@@ -158,7 +159,8 @@ function VanSaleSecondary() {
           withCredentials: true,
         });
         console.log(godown);
-        setGodownname(godown.data || "");
+        setGodownname(godown.data?.data?.godownName || "");
+        setGodownId(godown.data?.data?.godownId || "");
       } catch (error) {
         console.log(error);
         toast.error(error.message);
@@ -166,6 +168,10 @@ function VanSaleSecondary() {
     };
     fetchGodownname();
   }, []);
+
+
+  console.log(godownname,godownId);
+
 
   const [rows, setRows] = useState(
     additionalChargesFromRedux.length > 0
@@ -326,38 +332,31 @@ function VanSaleSecondary() {
   };
 
   const submitHandler = async () => {
-    console.log("haii");
     if (Object.keys(party).length == 0) {
-      console.log("haii");
 
       toast.error("Add a party first");
       return;
     }
     if (items.length == 0) {
-      console.log("haii");
 
       toast.error("Add at least an item");
       return;
     }
 
     if (additional) {
-      console.log("haii");
 
       const hasEmptyValue = rows.some((row) => row.value === "");
       if (hasEmptyValue) {
-        console.log("haii");
 
         toast.error("Please add a value.");
         return;
       }
       const hasNagetiveValue = rows.some((row) => parseFloat(row.value) < 0);
       if (hasNagetiveValue) {
-        console.log("haii");
 
         toast.error("Please add a positive value");
         return;
       }
-      console.log("haii");
     }
 
     const lastAmount = totalAmount.toFixed(2);
@@ -365,6 +364,8 @@ function VanSaleSecondary() {
     dispatch(AddFinalAmount(lastAmount));
 
     const formData = {
+      selectedGodownName:godownname|| "",
+      selectedGodownId:godownId|| "",
       party,
       items,
       despatchDetails,

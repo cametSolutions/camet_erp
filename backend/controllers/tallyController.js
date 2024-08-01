@@ -4,8 +4,7 @@ import BankDetailsModel from "../models/bankModel.js";
 import partyModel from "../models/partyModel.js";
 import productModel from "../models/productModel.js";
 import AdditionalCharges from "../models/additionalChargesModel.js";
-import invoiceModel from "../models/invoiceModel.js";
-import salesModel from "../models/salesModel.js";
+import { fetchData } from "../helpers/tallyHelper.js";
 
 export const saveDataFromTally = async (req, res) => {
   try {
@@ -49,39 +48,6 @@ export const saveDataFromTally = async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 };
-
-// @desc for giving transactions to tally
-// route GET/api/tally/giveTransaction
-
-export const giveTransaction = async (req, res) => {
-  const cmp_id = req.params.cmp_id;
-  const SNo = req.params.SNo;
-
-  console.log("SNo", SNo);
-  try {
-    const transactions = await TransactionModel.find({
-      cmp_id: cmp_id,
-      serialNumber: { $gt: SNo },
-    });
-    if (transactions.length > 0) {
-      return res.status(200).json({
-        message: "Transactions fetched",
-        data: transactions,
-      });
-    } else {
-      return res.status(404).json({ message: "Transactions not found" });
-    }
-  } catch (error) {
-    console.log(error);
-    return res.status(500).json({
-      status: false,
-      message: "Internal server error",
-    });
-  }
-};
-
-// @desc for giving transactions to tally
-// route GET/api/tally/giveTransaction
 
 export const addBankData = async (req, res) => {
   try {
@@ -350,60 +316,38 @@ export const saveAdditionalChargesFromTally = async (req, res) => {
   }
 };
 
-// @desc for giving invoices to tally
-// route GET/api/tally/giveInvoice
 
+// // @desc for giving invoices to tally
+// // route GET/api/tally/giveInvoice
 export const giveInvoice = async (req, res) => {
   const cmp_id = req.params.cmp_id;
   const serialNumber = req.params.SNo;
-  try {
-    const invoices = await invoiceModel.find({
-      cmp_id: cmp_id,
-      serialNumber: { $gt: serialNumber }, // Assuming serialNumber is the correct field name
-    });
-    if (invoices.length > 0) {
-      return res.status(200).json({
-        message: "Orders fetched",
-        data: invoices,
-      
-      });
-    } else {
-      return res.status(404).json({ message: "Order not found" });
-    }
-  } catch (error) {
-    console.log(error);
-    return res.status(500).json({
-      status: false,
-      message: "Internal server error",
-    });``
-  }
+  return fetchData('invoices', cmp_id, serialNumber, res);
 };
 
-// @desc for giving sales to tally
-// route GET/api/tally/giveSales
+// // @desc for giving sales to tally
+// // route GET/api/tally/giveSales
 
 export const giveSales = async (req, res) => {
   const cmp_id = req.params.cmp_id;
-  const serialNumber = req.params.SNo; // Assuming SNo is the correct parameter name for serial number
-
-  try {
-    const sales = await salesModel.find({
-      cmp_id: cmp_id,
-      serialNumber: { $gt: serialNumber }, // Assuming serialNumber is the correct field name in your sales schema
-    });
-    if (sales.length > 0) {
-      return res.status(200).json({
-        message: "Sales fetched",
-        data: sales,
-      });
-    } else {
-      return res.status(404).json({ message: "Sales not found" });
-    }
-  } catch (error) {
-    console.log(error);
-    return res.status(500).json({
-      status: false,
-      message: "Internal server error",
-    });
-  }
+  const serialNumber = req.params.SNo;
+  return fetchData('sales', cmp_id, serialNumber, res);
 };
+
+// // @desc for giving van sales to tally
+// // route GET/api/tally/giveVanSales
+
+export const giveVanSales = async (req, res) => {
+  const cmp_id = req.params.cmp_id;
+  const serialNumber = req.params.SNo;
+  return fetchData('vanSales', cmp_id, serialNumber, res);
+};
+
+// @desc for giving transactions to tally
+// route GET/api/tally/giveTransaction
+export const giveTransaction = async (req, res) => {
+  const cmp_id = req.params.cmp_id;
+  const serialNumber = req.params.SNo;
+  return fetchData('transactions', cmp_id, serialNumber, res);
+};
+

@@ -1940,6 +1940,8 @@ export const createSale = async (req, res) => {
 
   try {
     const {
+      selectedGodownId,
+      selectedGodownName,
       orgId,
       party,
       items,
@@ -2226,6 +2228,8 @@ export const createSale = async (req, res) => {
 
     // Continue with the rest of your function...
     const sales = new model({
+      selectedGodownId:selectedGodownId?? "",
+      selectedGodownName: selectedGodownName? selectedGodownName[0] : "",
       serialNumber: newSerialNumber,
       cmp_id: orgId,
       partyAccount: party?.partyName,
@@ -2810,8 +2814,14 @@ export const findGodownsNames = async (req, res) => {
     );
     if (configuration) {
       const { vanSaleConfiguration } = configuration;
-      const godownname = vanSaleConfiguration.vanSaleGodownName;
-      res.status(200).json(godownname);
+      const godownName = vanSaleConfiguration.vanSaleGodownName;
+      const godownId = configuration.selectedVanSaleGodowns[0];
+
+      const data = {
+        godownName,
+        godownId,
+      };
+      res.status(200).json({ message: "godown details fetched", data: data });
     }
   } catch (error) {
     res.status(500).json({ message: "internal server error" });
@@ -3732,7 +3742,10 @@ export const editStockTransfer = async (req, res) => {
     existingTransfer.lastAmount = lastAmount;
     existingTransfer.updatedAt = new Date();
 
-    await stockTransferModel.findByIdAndUpdate(existingTransfer._id, existingTransfer);
+    await stockTransferModel.findByIdAndUpdate(
+      existingTransfer._id,
+      existingTransfer
+    );
 
     res.status(200).json({
       message: "Stock transfer updated successfully",
