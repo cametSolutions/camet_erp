@@ -3,25 +3,18 @@
 import { useState, useEffect } from "react";
 import { IoReorderThreeSharp } from "react-icons/io5";
 import { useSelector } from "react-redux";
-import { IoReceiptSharp } from "react-icons/io5";
-
 import { CiCalendarDate } from "react-icons/ci";
 import api from "../../api/api";
-import dayjs from "dayjs";
-import { IoArrowRedoOutline } from "react-icons/io5";
 import { FaCaretDown } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
-import { FcCancel } from "react-icons/fc";
-import { BiSolidAddToQueue } from "react-icons/bi";
 import { useDispatch } from "react-redux";
 import { removeAll } from "../../../slices/invoiceSecondary";
 import { removeAllSales } from "../../../slices/salesSecondary";
 import { toast } from "react-toastify";
-import { MdInventory } from "react-icons/md";
-import { RiContactsFill } from "react-icons/ri";
 import { useSidebar } from "../../layout/Layout";
 import DashboardCardSecondary from "../../components/homePage/DashboardCardPrimary";
 import DashboardTransaction from "../../components/common/DashboardTransaction";
+import DashBoard from "../../components/common/DashBoard";
 
 function Dashboard() {
   const [data, setData] = useState([]);
@@ -32,7 +25,6 @@ function Dashboard() {
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
 
-  console.log(org);
   const dispatch = useDispatch();
 
   const { handleToggleSidebar } = useSidebar();
@@ -44,8 +36,6 @@ function Dashboard() {
           const res = await api.get(`/api/sUsers/transactions/${org._id}`, {
             withCredentials: true,
           });
-
-          console.log(res.data);
 
           setData(res.data.data.combined);
 
@@ -60,8 +50,6 @@ function Dashboard() {
       dispatch(removeAllSales());
     }
   }, [org]);
-
-  console.log(data);
 
   const today = new Date();
 
@@ -85,72 +73,20 @@ function Dashboard() {
     } else if (org.isApproved === false) {
       toast.error("Company approval pending ");
     } else {
-      console.log(receiptTotal);
       navigate(to, { state: { receiptTotal } });
     }
   };
 
   return (
-    <div className="  ">
-      {/* <div>
-        <SidebarSec TAB={"dash"} showBar={showSidebar} />
-      </div> */}
+    <DashBoard
+      handleToggleSidebar={handleToggleSidebar}
+      filteredData={filteredData}
+      org={org}
+      receiptTotal={receiptTotal}
+      handleLinkClick={handleLinkClick}
+    type="secondary"
 
-      <div className=" ">
-        <div className="sticky top-0 z-[10]">
-          <div className="sticky top-0  ">
-            <div className="bg-[#012a4a]   sticky top-0 p-3  text-white text-lg font-bold flex items-center gap-3  shadow-lg">
-              <IoReorderThreeSharp
-                onClick={handleToggleSidebar}
-                className="block md:hidden text-3xl"
-              />
-              <p>Dashboard</p>
-            </div>
-
-            {/* tiles */}
-
-            <div className=" bg-white shadow-lg p-2  flex items-center gap-3">
-              <div className="bg-blue-500 rounded-full w-[30px] h-[30px]  flex justify-center items-center text-md  text-white font-bold">
-                <div className="rounded-full w-[25px] h-[25px] md:w-[25px] md:h-[25px] bg-[#012a4a] flex items-center justify-center">
-                  <p>{org?.name?.slice(0, 1)}</p>
-                </div>
-              </div>
-              <p className="font-bold text-md md:text-lg">{org?.name}</p>
-              <FaCaretDown />
-            </div>
-          </div>
-          <DashboardCardSecondary
-              receiptTotal={receiptTotal}
-              handleLinkClick={handleLinkClick}
-              userType={"secondary"}
-            />
-          {/* tiles */}
-
-          {/* transactions */}
-          <hr />
-          <hr />
-
-          <div className=" bg-white px-4 p-2 z-40 text-gray-500 text-sm md:text-lg font-bold flex items-center gap-3 z shadow-lg sm:sticky top-[115px]">
-            <p> Today's Transactions</p>
-
-            <p className="text-[9px] md:text-sm">
-              ( {new Date().toDateString()} )
-            </p>
-            <CiCalendarDate className="text-xl font-bold text-violet-500" />
-            <FaCaretDown />
-          </div>
-        </div>
-
-        <div className="z-0 p-3 md:p-5 lg:p-6">
-          {/* one */}
-          <DashboardTransaction filteredData={filteredData} userType={"secondary"} />
-
-          {/* one */}
-        </div>
-
-        {/* transactions */}
-      </div>
-    </div>
+    />
   );
 }
 

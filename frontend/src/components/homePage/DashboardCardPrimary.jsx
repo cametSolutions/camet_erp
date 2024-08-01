@@ -61,7 +61,7 @@ const DashboardCards = ({ userType, receiptTotal, handleLinkClick }) => {
   const cards = cardData[userType];
 
   return (
-    <div className={`grid ${userType === 'primary' ? 'grid-cols-2' : 'grid-cols-2 lg:grid-cols-4'} p-6 ${userType === 'primary' ? 'lg:px-6' : 'lg:px-12'} gap-4 md:gap-6 bg-white ${userType === 'primary' ? 'w-full md:w-6.5/12 sticky top-[100px]' : ''}`}>
+    <div className={`grid grid-cols-2 p-6 lg:px-6 gap-4 md:gap-6 bg-white w-full md:w-6.5/12 sticky top-[100px] `}>
       {cards.map((card, index) => (
         <div
           key={index}
