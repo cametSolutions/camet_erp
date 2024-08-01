@@ -57,6 +57,12 @@ const stockTransferSlice = createSlice({
         state.items.push(action.payload);
       }
     },
+
+    addAllItems: (state, action) => {
+      state.items = action.payload;
+    },
+
+
     updateItem: (state, actions) => {
       const index = state.items.findIndex(
         (el) => el._id === actions.payload._id
@@ -125,6 +131,7 @@ export const {
   removeItem,
   removeGodownOrBatch,
   changeDate,
-  AddFinalAmount
+  AddFinalAmount,
+  addAllItems 
 } = stockTransferSlice.actions;
 export default stockTransferSlice.reducer;

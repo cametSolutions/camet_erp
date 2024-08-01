@@ -129,6 +129,7 @@ import StockTransferSecondary from '../pages/secUsers/StockTransferSecondary'
 import SearchGodown from '../pages/secUsers/SearchGodown'
 import AddItemStockTransferSec from '../pages/secUsers/AddItemStockTransferSec'
 import StockTransferDetailsSecondary from '../pages/secUsers/StockTransferDetailsSecondary'
+import EditStockTransferSecondary from '../pages/secUsers/EditStockTransferSecondary'
 
 const Routers = () => {
   return (
@@ -268,6 +269,7 @@ const Routers = () => {
         <Route path='/sUsers/searchGodown' element={<ProtectedSecRoute><SearchGodown/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/addItemStockTransfer' element={<ProtectedSecRoute><AddItemStockTransferSec/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/StockTransferDetails/:id' element={<ProtectedSecRoute><StockTransferDetailsSecondary/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/editStockTransfer/:id' element={<ProtectedSecRoute><EditStockTransferSecondary/></ProtectedSecRoute>}></Route>
 
 
         {/* errorPage */}

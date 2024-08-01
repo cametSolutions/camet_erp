@@ -24,11 +24,11 @@ export const processStockTransfer = async ({
         throw new Error(`No source godowns found for product: ${item._id}`);
       }
 
-      let totalTransferCount = 0;
+      // let totalTransferCount = 0;
 
       sourceGodowns.forEach((sourceGodown) => {
         const transferCount = sourceGodown.count;
-        totalTransferCount += transferCount;
+        // totalTransferCount += transferCount;
 
         let sourceGodownInProduct = product.GodownList.find((g) => {
           if (sourceGodown.batch) {
@@ -43,9 +43,9 @@ export const processStockTransfer = async ({
 
         if (sourceGodownInProduct) {
           sourceGodownInProduct.balance_stock -= transferCount;
-          console.log(
-            `Reduced stock from ${sourceGodown.godown_id} and batch ${sourceGodown.batch} and count ${transferCount}: new balance is ${sourceGodownInProduct.balance_stock}`
-          );
+          // console.log(
+          //   `Reduced stock from ${sourceGodown.godown_id} and batch ${sourceGodown.batch} and count ${transferCount}: new balance is ${sourceGodownInProduct.balance_stock}`
+          // );
         }
 
         let destGodown = destinationProduct.GodownList.find((g) => {
@@ -58,11 +58,14 @@ export const processStockTransfer = async ({
           }
         });
 
+
+        // console.log("destGodown", destGodown);
+
         if (destGodown) {
           destGodown.balance_stock += transferCount;
-          console.log(
-            `Increased stock to ${selectedGodownId}: new balance is ${destGodown.balance_stock}`
-          );
+          // console.log(
+          //   `Increased stock to ${selectedGodownId}: new balance is ${destGodown.balance_stock}`
+          // );
         } else {
           const newGodown = {
             balance_stock: transferCount,
@@ -77,19 +80,20 @@ export const processStockTransfer = async ({
           }
 
           product.GodownList.push(newGodown);
-          console.log(
-            `Created new godown ${selectedGodownId} with balance ${newGodown.balance_stock}`
-          );
+          // console.log(
+          //   `Created new godown ${selectedGodownId} with balance ${newGodown.balance_stock}`
+          // );
         }
       });
 
-      product.balance_stock -= totalTransferCount;
-      console.log(
-        `Final balance stock for product ${product._id}: ${product.balance_stock}`
-      );
+      // product.balance_stock -= totalTransferCount;
+      // console.log(
+      //   `Final balance stock for product ${product._id}: ${product.balance_stock}`
+      // );
 
-      //   await product.save();
       const update = await productModel.findByIdAndUpdate(product._id, product);
+
+      // console.log("productsssssssssss", product);
       updatedProducts.push(product);
     }
 
@@ -101,7 +105,6 @@ export const processStockTransfer = async ({
 };
 
 //////////////////////////  creation of stock transfer document ///////////////////
-
 export const handleStockTransfer = async ({
     selectedDate,
     orgId,
@@ -130,3 +133,58 @@ export const handleStockTransfer = async ({
       throw error; // Re-throw the error or handle it as needed
     }
   };
+
+
+  ////////////////////////// Revert stock levels affected by an existing transfer ///////////////////
+
+export const revertStockTransfer = async (existingTransfer) => {
+  const { items, selectedGodownId } = existingTransfer;
+
+  for (const item of items) {
+    const product = await productModel.findById(item._id);
+    if (!product) {
+      throw new Error(`Product not found: ${item._id}`);
+    }
+
+    const sourceGodowns = item.GodownList.filter((g) => g.added === true);
+    if (sourceGodowns.length === 0) {
+      throw new Error(`No source godowns found for product: ${item._id}`);
+    }
+
+    // let totalRevertCount = 0;
+
+    sourceGodowns.forEach((sourceGodown) => {
+      const revertCount = sourceGodown.count;
+      // totalRevertCount += revertCount;
+
+      let sourceGodownInProduct = product.GodownList.find((g) => {
+        if (sourceGodown.batch) {
+          return g.godown_id === sourceGodown.godown_id && g.batch === sourceGodown.batch;
+        } else {
+          return g.godown_id === sourceGodown.godown_id;
+        }
+      });
+
+      if (sourceGodownInProduct) {
+        sourceGodownInProduct.balance_stock += revertCount;
+      }
+
+      let destGodown = product.GodownList.find((g) => {
+        if (sourceGodown.batch) {
+          return g.godown_id === selectedGodownId && g.batch === sourceGodown.batch;
+        } else {
+          return g.godown_id === selectedGodownId;
+        }
+      });
+
+      if (destGodown) {
+        destGodown.balance_stock -= revertCount;
+      }
+    });
+
+    // product.balance_stock += totalRevertCount;
+
+    // console.log("final product", product);
+    await productModel.updateOne({ _id: product._id }, product);
+  }
+};

@@ -4,7 +4,7 @@ import { IoPerson } from 'react-icons/io5';
 import { MdOutlineClose } from 'react-icons/md';
 import { Link } from 'react-router-dom';
 
-function AddGodown({selectedGodown,dispatch,removeGodown ,link}) {
+function AddGodown({selectedGodown,dispatch,removeGodown ,link,tab}) {
   return (
     <div>
          <div className="bg-white  py-3 px-4 pb-3 drop-shadow-lg mt-2 md:mt-3 text-xs md:text-base ">
@@ -16,13 +16,19 @@ function AddGodown({selectedGodown,dispatch,removeGodown ,link}) {
 
             {selectedGodown && (
               <div className="flex  items-center">
-                <div>
-                  <Link to={link}>
-                    <p className="text-violet-500 p-1 px-3  text-xs border border-1 border-gray-300 rounded-2xl cursor-pointer">
-                      Change
-                    </p>
-                  </Link>
-                </div>
+
+                {
+                  tab!=="edit" && (
+                    <div>
+                    <Link to={link}>
+                      <p className="text-violet-500 p-1 px-3  text-xs border border-1 border-gray-300 rounded-2xl cursor-pointer">
+                        Change
+                      </p>
+                    </Link>
+                  </div>
+                  )
+                }
+            
              
               </div>
             )}
@@ -43,14 +49,18 @@ function AddGodown({selectedGodown,dispatch,removeGodown ,link}) {
                 <IoPerson className="ml-4 text-gray-500" />
                 <span>{selectedGodown}</span>
               </div>
-              <div className="">
-                <MdOutlineClose
-                  onClick={() => {
-                    dispatch(removeGodown());
-                  }}
-                  className="mr-2 text-pink-500 hover_scale hover:text-pink-700"
-                />
-              </div>
+              {
+                tab!=="edit" && (
+                  <div>
+                    <Link to={link}>
+                      <p className="text-violet-500 p-1 px-3  text-xs border border-1 border-gray-300 rounded-2xl cursor-pointer">
+                        Change
+                      </p>
+                    </Link>
+                  </div>
+                )
+              }
+      
             </div>
           )}
         </div>

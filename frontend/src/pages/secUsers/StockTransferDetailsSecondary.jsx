@@ -9,7 +9,6 @@ import dayjs from "dayjs";
 import { FaEdit } from "react-icons/fa";
 import { useLocation, useNavigate } from "react-router-dom";
 import SalesProductDetails from "../../components/common/SalesProductDetails";
-import SwallFireForPdf from "../../components/common/SwallFireForPdf";
 
 function StockTransferDetailsSecondary() {
   const [data, setData] = useState("");
@@ -80,7 +79,7 @@ function StockTransferDetailsSecondary() {
             <div className="  flex justify-center p-4 gap-12 text-lg text-violet-500 mr-4">
        
               <div
-                onClick={() => navigate(`/sUsers/editSale/${data._id}`)}
+                onClick={() => navigate(`/sUsers/editStockTransfer/${data._id}`)}
                 className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer"
               >
                 <FaEdit className="text-blue-500" />
@@ -132,7 +131,7 @@ function StockTransferDetailsSecondary() {
           <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 flex justify-center p-4 gap-12 text-lg text-violet-500  ">
      
             <div
-              onClick={() => navigate(`/sUsers/editSale/${data._id}`)}
+              onClick={() => navigate(`/sUsers/editStockTransfer/${data._id}`)}
               className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer"
             >
               <FaEdit className="text-blue-500" />
