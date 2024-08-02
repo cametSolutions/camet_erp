@@ -15,8 +15,7 @@ import { FixedSizeList as List } from "react-window";
 import { useSelector } from "react-redux";
 
 import { useDispatch } from "react-redux";
-import { removeAll } from "../../../slices/invoiceSecondary";
-import { removeAllSales } from "../../../slices/salesSecondary";
+
 import SearchBar from "../../components/common/SearchBar";
 import { useSidebar } from "../../layout/Layout";
 
@@ -66,8 +65,7 @@ function ProductListSecondary() {
       }
     };
     fetchProducts();
-    dispatch(removeAll());
-    dispatch(removeAllSales());
+
   }, [refresh, cmp_id]);
 
 

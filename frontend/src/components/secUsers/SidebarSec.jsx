@@ -17,6 +17,10 @@ import { MdOutlineProductionQuantityLimits } from "react-icons/md";
 import { RingLoader } from "react-spinners";
 import { IoMdSettings } from "react-icons/io";
 
+import { removeAll } from "../../../slices/invoiceSecondary";
+import { removeAllSales } from "../../../slices/salesSecondary";
+import { removeAll as removeAllStock } from "../../../slices/stockTransferSecondary";
+
 function SidebarSec({ TAB, showBar }) {
   const [showSidebar, setShowSidebar] = useState(false);
   const [userData, setUserData] = useState({});
@@ -29,6 +33,11 @@ function SidebarSec({ TAB, showBar }) {
 
   const [tab, setTab] = useState(selectedTab);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const prevOrg = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg
+  );
+
 
   const navItems = [
     {
@@ -66,10 +75,6 @@ function SidebarSec({ TAB, showBar }) {
     });
   }
 
-  const dispatch = useDispatch();
-  const prevOrg = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg
-  );
 
 
   useEffect(() => {
@@ -116,6 +121,9 @@ function SidebarSec({ TAB, showBar }) {
 
     setTab(newTab);
     localStorage.setItem("selectedPrimarySidebarTab", newTab);
+    dispatch(removeAll());
+    dispatch(removeAllSales());
+    dispatch(removeAllStock());
     // onTabChange(newTab);
   };
 

@@ -3,15 +3,11 @@
 import { useEffect, useState } from "react";
 import api from "../../api/api";
 import { toast } from "react-toastify";
-import Sidebar from "../../components/homePage/Sidebar";
 import { IoReorderThreeSharp } from "react-icons/io5";
 import { useSelector } from "react-redux";
-import { MdDelete } from "react-icons/md";
-import { FaEdit } from "react-icons/fa";
 import Swal from "sweetalert2";
 import { Link } from "react-router-dom";
 import { HashLoader } from "react-spinners";
-import { FixedSizeList as List } from "react-window";
 import { IoIosAddCircle } from "react-icons/io";
 import { removeAll } from "../../../slices/invoice";
 import { removeAllSales } from "../../../slices/sales";
@@ -27,7 +23,6 @@ function PartyList() {
   const [parties, setParties] = useState([]);
   const [search, setSearch] = useState("");
 
-  const [showSidebar, setShowSidebar] = useState(false);
   const [refresh, setRefresh] = useState(false);
   const [loader, setLoader] = useState(false);
   const [filteredParty, setFilteredParty] = useState([]);

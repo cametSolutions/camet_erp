@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { removeAll } from "../../../slices/invoiceSecondary";
 import { removeAllSales } from "../../../slices/salesSecondary";
+import { removeAll as removeAllStock } from "../../../slices/stockTransferSecondary";
 import { toast } from "react-toastify";
 import { useSidebar } from "../../layout/Layout";
 import DashBoard from "../../components/common/DashBoard";
@@ -41,8 +42,7 @@ function Dashboard() {
         }
       };
       fetchTransactions();
-      dispatch(removeAll());
-      dispatch(removeAllSales());
+  
     }
   }, [org]);
 

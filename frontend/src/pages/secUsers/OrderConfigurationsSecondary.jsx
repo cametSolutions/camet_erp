@@ -5,8 +5,7 @@ import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import { IoReorderThreeSharp } from "react-icons/io5";
 import { useDispatch } from "react-redux";
-import { removeAll } from "../../../slices/invoiceSecondary";
-import { removeAllSales } from "../../../slices/salesSecondary";
+
 import { useSidebar } from "../../layout/Layout";
 import ConfigurationForm from "../../components/common/Forms/ConfigurationForm";
 
@@ -75,8 +74,6 @@ function OrderConfigurationsSecondary() {
       }
     };
     getSingleOrganization();
-    dispatch(removeAll());
-    dispatch(removeAllSales());
   }, [org]);
 
   const navigate = useNavigate();

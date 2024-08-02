@@ -10,11 +10,9 @@ import { Link } from "react-router-dom";
 import { HashLoader } from "react-spinners";
 import { IoIosAddCircle } from "react-icons/io";
 import { useDispatch } from "react-redux";
-import { removeAll } from "../../../slices/invoiceSecondary";
-import { removeAllSales } from "../../../slices/salesSecondary";
+
 import SearchBar from "../../components/common/SearchBar";
 import { useSidebar } from "../../layout/Layout";
-import PartyLIst from "../../components/common/List/PartyListComponent";
 import PartyListComponent from "../../components/common/List/PartyListComponent";
 
 function PartyListSecondary() {
@@ -57,8 +55,7 @@ function PartyListSecondary() {
       }
     };
     fetchParties();
-    dispatch(removeAll());
-    dispatch(removeAllSales());
+
   }, [cpm_id, refresh]);
   useEffect(() => {
     if (search === "") {
