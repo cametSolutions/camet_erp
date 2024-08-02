@@ -1,19 +1,14 @@
 /* eslint-disable react/no-unescaped-entities */
 /* eslint-disable react/no-unknown-property */
 import { useState, useEffect } from "react";
-import { IoReorderThreeSharp } from "react-icons/io5";
 import { useSelector } from "react-redux";
-import { CiCalendarDate } from "react-icons/ci";
 import api from "../../api/api";
-import { FaCaretDown } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { removeAll } from "../../../slices/invoiceSecondary";
 import { removeAllSales } from "../../../slices/salesSecondary";
 import { toast } from "react-toastify";
 import { useSidebar } from "../../layout/Layout";
-import DashboardCardSecondary from "../../components/homePage/DashboardCardPrimary";
-import DashboardTransaction from "../../components/common/DashboardTransaction";
 import DashBoard from "../../components/common/DashBoard";
 
 function Dashboard() {

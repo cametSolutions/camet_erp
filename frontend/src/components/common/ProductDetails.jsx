@@ -2,8 +2,7 @@
 /* eslint-disable react/prop-types */
 import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { useDispatch } from "react-redux";
-// import { setBatchHeight } from "../../../slices/salesSecondary";
+
 
 const ProductDetails = ({
   details,
@@ -17,13 +16,8 @@ const ProductDetails = ({
   tab = "",
 }) => {
 
-  console.log(tab);
   const detailsRef = useRef();
   const batchOrGodownList = details?.GodownList;
-  // const priceRate =
-  //   details?.Priceleveles.find(
-  //     (level) => level.pricelevel === selectedPriceLevel
-  //   )?.pricerate || 0;
 
   useEffect(() => {
     if (detailsRef.current) {
@@ -32,9 +26,7 @@ const ProductDetails = ({
   }, [details, heights, setHeight]);
 
   const navigate = useNavigate();
-  const dispatch = useDispatch();
 
-  console.log(batchOrGodownList);
 
   return (
     <div

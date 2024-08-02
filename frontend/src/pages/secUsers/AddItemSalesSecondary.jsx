@@ -19,7 +19,6 @@ import {
 } from "../../../slices/salesSecondary";
 import { HashLoader } from "react-spinners";
 import { VariableSizeList as List } from "react-window";
-import { toast } from "react-toastify";
 import { Decimal } from "decimal.js";
 import SearchBar from "../../components/common/SearchBar";
 import ProductDetails from "../../components/common/ProductDetails";
@@ -80,21 +79,7 @@ function AddItemSalesSecondary() {
   const location = useLocation();
 
   // ///////////////////////////Godown name///////////////////////////////////
-  // useEffect(() => {
-  //   const fetchGodownname = async () => {
-  //     try {
-  //       const godown = await api.get(`/api/sUsers/godownsName/${cpm_id}`, {
-  //         withCredentials: true,
-  //       });
-  //       setGodownname(godown.data || "");
-  //       // setGodownname("")
-  //     } catch (error) {
-  //       console.log(error);
-  //       toast.error(error.message);
-  //     }
-  //   };
-  //   fetchGodownname();
-  // }, []);
+
 
   const searchData = (data) => {
     setSearch(data);
@@ -297,8 +282,7 @@ function AddItemSalesSecondary() {
       console.log(error);
     }
   };
-  // fetchFilters();
-  // }, [orgId, type]);
+
 
   ///////////////////////////filter items///////////////////////////////////
 
@@ -335,6 +319,9 @@ function AddItemSalesSecondary() {
       search
     );
   }, [item, selectedBrand, selectedCategory, selectedSubCategory, search]);
+
+  console.log(filteredItems?.length);
+  console.log(item?.length);
 
   //////////////////////////////////////////addSelectedRate initially not in redux/////////////////////////////////////////////
 
@@ -692,14 +679,8 @@ function AddItemSalesSecondary() {
     handleTotalChangeWithPriceLevel(selectedValue);
   };
 
-  // function truncateToNDecimals(num, n) {
-  //   const parts = num.toString().split(".");
-  //   if (parts.length === 1) return num; // No decimal part
-  //   parts[1] = parts[1].substring(0, n); // Truncate the decimal part
-  //   return parseFloat(parts.join("."));
-  // }
 
-  ///////////////////////////react window ///////////////////////////////////
+
 
   /////////////////////////// calculateHeight ///////////////////////////////////
 
@@ -728,25 +709,30 @@ function AddItemSalesSecondary() {
   /////////////////////expansion panel////////////////////
 
   const handleExpansion = (id) => {
-    setItem((prevItems) => {
-      const updatedItems = [...prevItems];
-      const index = updatedItems.findIndex((item) => item._id === id);
 
-      if (index !== -1) {
-        const itemToUpdate = { ...updatedItems[index] };
-        itemToUpdate.isExpanded = !itemToUpdate.isExpanded;
-        updatedItems[index] = itemToUpdate;
-      }
-
-      // Log the updated items
-
-      return updatedItems;
-    });
-
-    setRefresh((prevRefresh) => !prevRefresh);
-
-    // setTimeout(() => listRef.current.resetAfterIndex(index), 0); // Uncomment if needed
+    const currentItems = [...item];
+  
+    const updatedItems = structuredClone(currentItems);
+    const index = updatedItems.findIndex((item) => item._id === id);
+  
+    if (index !== -1) {
+      updatedItems[index].isExpanded = !updatedItems[index].isExpanded;
+    }
+  
+    // Log the updated items for debugging
+    console.log(updatedItems.length);
+    console.log(updatedItems);
+  
+    // Update state with the new items array
+    setItem(updatedItems);
+  
+    // Optionally update refresh state or other operations
+    // setRefresh((prevRefresh) => !prevRefresh);
+  
   };
+
+  console.log(item);
+  
 
 
   useEffect(() => {

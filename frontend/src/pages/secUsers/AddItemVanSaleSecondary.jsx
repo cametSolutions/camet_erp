@@ -746,24 +746,26 @@ console.log(item);
   /////////////////////expansion panel////////////////////
 
   const handleExpansion = (id) => {
-    setItem((prevItems) => {
-      const updatedItems = [...prevItems];
-      const index = updatedItems.findIndex((item) => item._id === id);
 
-      if (index !== -1) {
-        const itemToUpdate = { ...updatedItems[index] };
-        itemToUpdate.isExpanded = !itemToUpdate.isExpanded;
-        updatedItems[index] = itemToUpdate;
-      }
-
-      // Log the updated items
-
-      return updatedItems;
-    });
-
-    setRefresh((prevRefresh) => !prevRefresh);
-
-    // setTimeout(() => listRef.current.resetAfterIndex(index), 0); // Uncomment if needed
+    const currentItems = [...item];
+  
+    const updatedItems = structuredClone(currentItems);
+    const index = updatedItems.findIndex((item) => item._id === id);
+  
+    if (index !== -1) {
+      updatedItems[index].isExpanded = !updatedItems[index].isExpanded;
+    }
+  
+    // Log the updated items for debugging
+    console.log(updatedItems.length);
+    console.log(updatedItems);
+  
+    // Update state with the new items array
+    setItem(updatedItems);
+  
+    // Optionally update refresh state or other operations
+    // setRefresh((prevRefresh) => !prevRefresh);
+  
   };
 
   // useEffect(() => {
