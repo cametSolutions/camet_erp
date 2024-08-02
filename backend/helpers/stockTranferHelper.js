@@ -1,3 +1,4 @@
+import OragnizationModel from "../models/OragnizationModel.js";
 import productModel from "../models/productModel.js";
 import stockTransferModel from "../models/stockTransferModel.js";
 
@@ -58,7 +59,6 @@ export const processStockTransfer = async ({
           }
         });
 
-
         // console.log("destGodown", destGodown);
 
         if (destGodown) {
@@ -106,36 +106,37 @@ export const processStockTransfer = async ({
 
 //////////////////////////  creation of stock transfer document ///////////////////
 export const handleStockTransfer = async ({
-    selectedDate,
-    orgId,
-    selectedGodown,
-    selectedGodownId,
-    items,
-    lastAmount,
-    req
-  }) => {
-    try {
-      const newStockTransfer = new stockTransferModel({
-        Primary_user_id:req.owner.toString(),
-        Secondary_user_id:req.sUserId,
-        cmp_id: orgId,
-        selectedGodown,
-        selectedGodownId,
-        items,
-        finalAmount:lastAmount,
-        createdAt: selectedDate,
-      });
-  
-      const result = await newStockTransfer.save();
-      return result;
-    } catch (error) {
-      console.error('Error creating stock transfer:', error);
-      throw error; // Re-throw the error or handle it as needed
-    }
-  };
+  stockTransferNumber,
+  selectedDate,
+  orgId,
+  selectedGodown,
+  selectedGodownId,
+  items,
+  lastAmount,
+  req,
+}) => {
+  try {
+    const newStockTransfer = new stockTransferModel({
+      stockTransferNumber,
+      Primary_user_id: req.owner.toString(),
+      Secondary_user_id: req.sUserId,
+      cmp_id: orgId,
+      selectedGodown,
+      selectedGodownId,
+      items,
+      finalAmount: lastAmount,
+      createdAt: selectedDate,
+    });
 
+    const result = await newStockTransfer.save();
+    return result;
+  } catch (error) {
+    console.error("Error creating stock transfer:", error);
+    throw error; // Re-throw the error or handle it as needed
+  }
+};
 
-  ////////////////////////// Revert stock levels affected by an existing transfer ///////////////////
+////////////////////////// Revert stock levels affected by an existing transfer ///////////////////
 
 export const revertStockTransfer = async (existingTransfer) => {
   const { items, selectedGodownId } = existingTransfer;
@@ -159,7 +160,10 @@ export const revertStockTransfer = async (existingTransfer) => {
 
       let sourceGodownInProduct = product.GodownList.find((g) => {
         if (sourceGodown.batch) {
-          return g.godown_id === sourceGodown.godown_id && g.batch === sourceGodown.batch;
+          return (
+            g.godown_id === sourceGodown.godown_id &&
+            g.batch === sourceGodown.batch
+          );
         } else {
           return g.godown_id === sourceGodown.godown_id;
         }
@@ -171,7 +175,9 @@ export const revertStockTransfer = async (existingTransfer) => {
 
       let destGodown = product.GodownList.find((g) => {
         if (sourceGodown.batch) {
-          return g.godown_id === selectedGodownId && g.batch === sourceGodown.batch;
+          return (
+            g.godown_id === selectedGodownId && g.batch === sourceGodown.batch
+          );
         } else {
           return g.godown_id === selectedGodownId;
         }
@@ -188,3 +194,70 @@ export const revertStockTransfer = async (existingTransfer) => {
     await productModel.updateOne({ _id: product._id }, product);
   }
 };
+
+//////////////////////////////// increaseStockTransferNumber /////////////////////////////////////
+
+export const increaseStockTransferNumber = async (secondaryUser, orgId) => {
+  try {
+    let stConfig = false;
+
+    console.log("orgId:", orgId);
+
+    const configuration = secondaryUser.configurations.find(
+      (config) => config.organization.toString() === orgId
+    );
+
+    if (!configuration) {
+      console.log("Configuration not found for orgId:", orgId);
+    } else {
+      // console.log("Configuration found:", configuration);
+
+      if (
+        configuration.stockTransferConfiguration &&
+        Object.entries(configuration.stockTransferConfiguration)
+          .filter(([key]) => key !== "startingNumber")
+          .every(([_, value]) => value !== "")
+      ) {
+        stConfig = true;
+      }
+      // console.log("stConfig:", stConfig);
+    }
+
+    if (stConfig) {
+      const updatedConfiguration = secondaryUser.configurations.map(
+        (config) => {
+          if (config.organization.toString() === orgId) {
+            const newStockTransferNumber = (config.stockTransferNumber || 0) + 1;
+            console.log("Updating stockTransferNumber from", config.stockTransferNumber, "to", newStockTransferNumber);
+
+            return {
+              ...config,
+              stockTransferNumber: newStockTransferNumber,
+            };
+          }
+          return config;
+        }
+      );
+
+      // console.log("Updated Configuration:", updatedConfiguration[0]._doc);
+
+      // Update the configurations in the secondaryUser object
+      secondaryUser.configurations = updatedConfiguration;
+
+      // // Save the secondaryUser object
+      await secondaryUser.save();
+      // console.log("secondaryUser saved with updated configuration");
+    } else {
+      const updatedOrganization = await OragnizationModel.findByIdAndUpdate(
+        orgId,
+        { $inc: { stockTransferNumber: 1 } },
+        { new: true }
+      );
+
+      // console.log("Updated Organization stockTransferNumber:", updatedOrganization.stockTransferNumber);
+    }
+  } catch (error) {
+    console.log("Error in increaseStockTransferNumber:", error);
+  }
+};
+

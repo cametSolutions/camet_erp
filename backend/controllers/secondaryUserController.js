@@ -42,6 +42,7 @@ import {
   processStockTransfer,
   handleStockTransfer,
   revertStockTransfer,
+  increaseStockTransferNumber,
 } from "../helpers/stockTranferHelper.js";
 import stockTransferModel from "../models/stockTransferModel.js";
 
@@ -2228,8 +2229,8 @@ export const createSale = async (req, res) => {
 
     // Continue with the rest of your function...
     const sales = new model({
-      selectedGodownId:selectedGodownId?? "",
-      selectedGodownName: selectedGodownName? selectedGodownName[0] : "",
+      selectedGodownId: selectedGodownId ?? "",
+      selectedGodownName: selectedGodownName ? selectedGodownName[0] : "",
       serialNumber: newSerialNumber,
       cmp_id: orgId,
       partyAccount: party?.partyName,
@@ -2504,6 +2505,8 @@ export const fetchAdditionalDetails = async (req, res) => {
 
 export const fetchConfigurationNumber = async (req, res) => {
   const { cmp_id, title } = req.params;
+
+  console.log("title", title);
   const secUserId = req.sUserId;
 
   try {
@@ -2533,19 +2536,12 @@ export const fetchConfigurationNumber = async (req, res) => {
         purchase: configuration.purchaseConfiguration,
         receipt: configuration.receiptConfiguration,
         vanSale: configuration.vanSaleConfiguration,
+        stockTransfer: configuration.stockTransferConfiguration,
       };
-
-      // if (title === 'sales' && configuration.vanSale) {
-      //   const vanSaleConfig = configuration.vanSaleConfiguration;
-      //   if (Object.entries(vanSaleConfig)
-      //     .filter(([key]) => key !== "startingNumber")
-      //     .every(([_, value]) => value !== "")) {
-      //     return vanSaleConfig;
-      //   }
-      // }
 
       return configs[title] || null;
     };
+
 
     const getConfigNumber = () => {
       if (configuration) {
@@ -2554,6 +2550,7 @@ export const fetchConfigurationNumber = async (req, res) => {
           salesOrder: configuration.orderNumber,
           purchase: configuration.purchaseNumber,
           vanSale: configuration.vanSalesNumber,
+          stockTransfer: configuration.stockTransferNumber,
           receipt: null, // Add if there's a specific receipt number for user config
         };
         return numbers[title] || null;
@@ -2564,13 +2561,20 @@ export const fetchConfigurationNumber = async (req, res) => {
         salesOrder: company.orderNumber,
         purchase: company.purchaseNumber,
         vanSale: company.vanSalesNumber,
+        stockTransfer: company.stockTransferNumber,
         // receipt: company.receiptNumberDetails
       };
+
+
+      // console.log("companyNumbers", companyNumbers);
       return companyNumbers[title] || null;
     };
 
     let configDetails = getConfigDetails();
     let configurationNumber = getConfigNumber();
+
+
+    console.log(getConfigNumber());
 
     // If configDetails is empty or all values except startingNumber are empty, use company defaults
     if (
@@ -3666,9 +3670,11 @@ export const createStockTransfer = async (req, res) => {
       selectedGodownId,
       items,
       lastAmount,
+      stockTransferNumber
     } = req.body;
 
     const transferData = {
+      stockTransferNumber,
       selectedDate,
       orgId,
       selectedGodown,
@@ -3678,9 +3684,34 @@ export const createStockTransfer = async (req, res) => {
       req,
     };
 
-    const updatedProducts = await processStockTransfer(transferData);
+    const id = req.sUserId;
+    const secondaryUser = await SecondaryUser.findById(id);
 
+    if (!secondaryUser) {
+      return res.status(404).json({
+        error: "Secondary user not found",
+      });
+    }
+
+    // const NumberExistence = await checkForNumberExistence(
+    //   stockTransferModel,
+    //   "stockTransferNumber",
+    //   stockTransferNumber,
+    //   orgId
+    // );
+
+    // if (NumberExistence) {
+    //   return res.status(400).json({
+    //     message: "Stock Transfer with the same number already exists",
+    //   });
+    // }
+
+
+    const updatedProducts = await processStockTransfer(transferData);
     const createNewStockTransfer = await handleStockTransfer(transferData);
+    const increaseSTNumber = await increaseStockTransferNumber(secondaryUser,orgId);
+
+
     res.status(200).json({
       message: "Stock transfer completed successfully",
       data: createNewStockTransfer,

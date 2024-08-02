@@ -2,6 +2,8 @@ import mongoose from "mongoose";
 
 const StockTransferSchema = new mongoose.Schema(
   {
+
+    stockTransferNumber:{type:String, required:true}, 
     Primary_user_id: { type: String, required: true },
     Secondary_user_id: { type: String },
     cmp_id: { type: String, required: true },

@@ -20,52 +20,21 @@ function ConfigureSecondaryUser() {
 
   // const isFirstRender = useRef(true);
 
-  const [sales, setSales] = useState([
-    {
-      prefixDetails: "",
-      suffixDetails: "",
-      // startingNumber: "",
-      widthOfNumericalPart: "",
-      currentNumber: "",
-    },
-  ]);
-  const [salesOrder, setSalesOrder] = useState([
-    {
-      prefixDetails: "",
-      suffixDetails: "",
-      // startingNumber: "",
-      widthOfNumericalPart: "",
-      currentNumber: "",
-    },
-  ]);
-  const [receipt, setReceipt] = useState([
-    {
-      prefixDetails: "",
-      suffixDetails: "",
-      // startingNumber: "",
-      widthOfNumericalPart: "",
-      currentNumber: "",
-    },
-  ]);
-  const [purchase, setPurchase] = useState([
-    {
-      prefixDetails: "",
-      suffixDetails: "",
-      // startingNumber: "",
-      widthOfNumericalPart: "",
-      currentNumber: "",
-    },
-  ]);
+  const initialConfig = [{
+    prefixDetails: "",
+    suffixDetails: "",
+    widthOfNumericalPart: "",
+    currentNumber: "",
+  }];
 
-  const [vanSaleConfig, setVanSaleConfig] = useState([
-    {
-      prefixDetails: "",
-      suffixDetails: "",
-      // startingNumber: "",
-      widthOfNumericalPart: "",
-      currentNumber: "",
-    },
-  ]);
+  const [sales, setSales] = useState(initialConfig);
+  const [salesOrder, setSalesOrder] = useState(initialConfig);
+  const [receipt, setReceipt] = useState(initialConfig);
+  const [purchase, setPurchase] = useState(initialConfig);
+  const [vanSaleConfig, setVanSaleConfig] = useState(initialConfig);
+  const [stockTransfer, setStockTransfer] = useState(initialConfig);
+
+
 
   const { id, userId, cmp_name } = useParams();
   // const org = useSelector((state) => state.setSelectedOrganization.selectedOrg);
@@ -110,9 +79,10 @@ function ConfigureSecondaryUser() {
           purchaseNumber,
           receiptNumber,
           vanSalesNumber,
+          stockTransferNumber,
         } = res.data;
 
-        console.log(orderNumber, salesNumber, purchaseNumber, receiptNumber);
+        console.log(orderNumber, salesNumber, purchaseNumber, receiptNumber,stockTransferNumber);
 
         if (salesNumber) {
           setSales((prevSales) => {
@@ -164,6 +134,16 @@ function ConfigureSecondaryUser() {
             return [updatedVanSaleConfig];
           });
         }
+        if (stockTransferNumber) {
+          setStockTransfer((prevStockTransfer) => {
+            // Create a copy of the first object and update its properties
+            const updatedStockTransfer = {
+              ...prevStockTransfer[0],
+              currentNumber: stockTransferNumber,
+            };
+            return [updatedStockTransfer];
+          });
+        }
       } catch (error) {
         console.log(error);
       }
@@ -174,26 +154,7 @@ function ConfigureSecondaryUser() {
     fetchGodowns();
   }, []);
 
-  console.log(sales, salesOrder, receipt, purchase, vanSaleConfig);
 
-  // useEffect(() => {
-  //   if (isFirstRender.current) {
-  //     isFirstRender.current = false;
-  //     return;
-  //   }
-
-  //   const allFieldsFilled = vanSaleConfig.every(
-  //     (field) =>
-  //       field.prefixDetails !== "" &&
-  //       field.suffixDetails !== "" &&
-  //       field.widthOfNumericalPart !== ""
-  //   );
-  //   if (allFieldsFilled) {
-  //     setSelectedGodowns([]);
-  //   }
-  //   setVanSale(allFieldsFilled);
-  //   setVanSaleGodownName(selectedGodowns[0]);
-  // }, [shouldCheckAllFields]);
 
   //////////////////////////////// getSecUserDetails ////////////////////////////////////
 
@@ -227,17 +188,9 @@ function ConfigureSecondaryUser() {
 
         
 
-          // const {
-          //   godownConfigOption,
-          //   prefixDetails,
-          //   suffixDetails,
-          //   startingNumber,
-          //   widthOfNumericalPart,
-          //   vanSaleGodownName,
-          // } = vanSaleConfiguration;
+
 
           if (selectedGodowns) {
-            console.log("haii");
             setSelectedGodowns(selectedGodowns);
           }
 
@@ -291,7 +244,10 @@ function ConfigureSecondaryUser() {
         break;
       case "vanSale":
         setVanSaleConfig([{ ...vanSaleConfig[0], [field]: value }]);
-        // setShouldCheckAllFields(!shouldCheckAllFields);
+
+        break;
+      case "stockTransfer":
+        setStockTransfer([{ ...stockTransfer[0], [field]: value }]);
 
         break;
       default:
@@ -313,6 +269,8 @@ function ConfigureSecondaryUser() {
         return purchase[0][field];
       case "vanSale":
         return vanSaleConfig[0][field];
+      case "stockTransfer":
+        return stockTransfer[0][field];
       default:
         return "";
     }
@@ -349,7 +307,6 @@ function ConfigureSecondaryUser() {
     }
   };
 
-  console.log(selectedVanSaleGodowns);
 
   function validateObject(obj, excludedFields = []) {
     let isAllFilled = true;
@@ -382,14 +339,7 @@ function ConfigureSecondaryUser() {
     return isAllFilled || isAllEmpty;
   }
 
-  console.log(vanSaleGodownName);
   const submitHandler = async () => {
-    // const initial = {
-    //   prefixDetails: "",
-    //   suffixDetails: "",
-    //   // startingNumber: "",
-    //   widthOfNumericalPart: "",
-    // };
 
     let formData = {};
 
@@ -400,6 +350,7 @@ function ConfigureSecondaryUser() {
       salesOrderConfiguration: salesOrder[0],
       receiptConfiguration: receipt[0],
       purchaseConfiguration: purchase[0],
+      stockTransferConfiguration: stockTransfer[0],
       selectedVanSaleGodowns,
       vanSaleConfiguration: {
         ...vanSaleConfig[0],
@@ -421,7 +372,17 @@ function ConfigureSecondaryUser() {
       toast.error("Fill all sales details or leave all fields empty");
       return;
     }
-    console.log(salesValidation);
+    const stockTransferValidation = validateObject(formData.salesConfiguration, [
+      "startingNumber",
+      "currentNumber",
+    ]);
+
+    
+
+    if (stockTransferValidation === false) {
+      toast.error("Fill all Stock Transfer details or leave all fields empty");
+      return;
+    }
     const salesOrderValidation = validateObject(
       formData.salesOrderConfiguration,
       ["startingNumber", "currentNumber"]
@@ -544,6 +505,7 @@ function ConfigureSecondaryUser() {
                     <option value="receipt">Receipt</option>
                     <option value="purchase">Purchase</option>
                     <option value="vanSale">VanSale</option>
+                    <option value="stockTransfer">Stock Transfer</option>
                   </select>
                 </div>
               </div>

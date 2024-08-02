@@ -15,11 +15,10 @@ function HeaderTile({
     <div>
       <div className="flex justify-between  p-4 bg-white drop-shadow-lg items-center text-xs md:text-base ">
         <div className=" flex flex-col gap-1 justify-center">
-          {title !== "stockTransfer" && (
             <p className="text-md font-semibold text-violet-400">
               {title} #{number}
             </p>
-          )}
+          
 
           <div className="flex items-center">
             <p className="font-semibold   text-gray-500 text-xs md:text-base">
@@ -46,7 +45,7 @@ function HeaderTile({
                 className=" bottom-0 text-white bg-violet-700  w-full rounded-md  p-2 flex items-center justify-center gap-2 hover_scale cursor-pointer "
               >
                 <IoIosAddCircle className="text-2xl" />
-                {title === "stockTransfer" ? (
+                {title === "Stock Transfer" ? (
                   <p>Transfer Stock</p>
                 ) : (
                   <p>{tab === "add" ? `Generate ${title}` : `Edit ${title}`}</p>

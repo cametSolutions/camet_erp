@@ -25,7 +25,7 @@ import AddItemTile from "../../components/secUsers/main/AddItemTile";
 import AddGodown from "../../components/secUsers/AddGodown";
 function StockTransferSecondary() {
 
-  // const [salesNumber, setSalesNumber] = useState("");
+  const [stockTransferNumber, setStockTransferNumber] = useState("");
 
 
   const date = useSelector((state) => state.stockTransferSecondary.date);
@@ -45,54 +45,56 @@ function StockTransferSecondary() {
   }, []);
 
 
-  // useEffect(() => {
-  //   const fetchConfigurationNumber = async () => {
-  //     try {
-  //       const res = await api.get(
-  //         `/api/sUsers/fetchConfigurationNumber/${orgId}/sales`,
+  useEffect(() => {
+    const fetchConfigurationNumber = async () => {
+      try {
+        const res = await api.get(
+          `/api/sUsers/fetchConfigurationNumber/${orgId}/stockTransfer`,
 
-  //         {
-  //           withCredentials: true,
-  //         }
-  //       );
+          {
+            withCredentials: true,
+          }
+        );
 
-  //       console.log(res.data);
-  //       if (res.data.message === "default") {
-  //         const { configurationNumber } = res.data;
-  //         setSalesNumber(configurationNumber);
-  //         return;
-  //       }
+        console.log(res.data);
+        if (res.data.message === "default") {
+          const { configurationNumber } = res.data;
+          setStockTransferNumber(configurationNumber);
+          return;
+        }
 
-  //       const { configDetails, configurationNumber } = res.data;
-  //       console.log(configDetails);
-  //       console.log(configurationNumber);
+        const { configDetails, configurationNumber } = res.data;
+        console.log(configDetails);
+        console.log(configurationNumber);
 
-  //       if (configDetails) {
-  //         const { widthOfNumericalPart, prefixDetails, suffixDetails } =
-  //           configDetails;
-  //         const newOrderNumber = configurationNumber.toString();
-  //         // console.log(newOrderNumber);
-  //         // console.log(widthOfNumericalPart);
-  //         // console.log(prefixDetails);
-  //         // console.log(suffixDetails);
+        if (configDetails) {
+          const { widthOfNumericalPart, prefixDetails, suffixDetails } =
+            configDetails;
+          const newOrderNumber = configurationNumber.toString();
+          // console.log(newOrderNumber);
+          // console.log(widthOfNumericalPart);
+          // console.log(prefixDetails);
+          // console.log(suffixDetails);
 
-  //         const padedNumber = newOrderNumber.padStart(widthOfNumericalPart, 0);
-  //         // console.log(padedNumber);
-  //         const finalOrderNumber = [prefixDetails, padedNumber, suffixDetails]
-  //           .filter(Boolean)
-  //           .join("-");
-  //         // console.log(finalOrderNumber);
-  //         setSalesNumber(finalOrderNumber);
-  //       } else {
-  //         setSalesNumber(salesNumber);
-  //       }
-  //     } catch (error) {
-  //       console.log(error);
-  //     }
-  //   };
+          const padedNumber = newOrderNumber.padStart(widthOfNumericalPart, 0);
+          // console.log(padedNumber);
+          const finalOrderNumber = [prefixDetails, padedNumber, suffixDetails]
+            .filter(Boolean)
+            .join("-");
+          // console.log(finalOrderNumber);
+          setStockTransferNumber(finalOrderNumber);
+        } else {
+          setStockTransferNumber(stockTransferNumber);
+        }
+      } catch (error) {
+        console.log(error);
+      }
+    };
 
-  //   fetchConfigurationNumber();
-  // }, []);
+    fetchConfigurationNumber();
+  }, []);
+
+  console.log(stockTransferNumber);
 
 
 
@@ -161,7 +163,7 @@ function StockTransferSecondary() {
       selectedGodownId,
       items,
       lastAmount,
-      // salesNumber,
+      stockTransferNumber,
     };
 
     console.log(formData);
@@ -209,8 +211,8 @@ function StockTransferSecondary() {
 
         {/* invoiec date */}
         <HeaderTile
-          title={"stockTransfer"}
-          number={""}
+          title={"Stock Transfer"}
+          number={stockTransferNumber}
           selectedDate={selectedDate}
           setSelectedDate={setSelectedDate}
           dispatch={dispatch}

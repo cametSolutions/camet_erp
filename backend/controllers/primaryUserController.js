@@ -2790,6 +2790,7 @@ export const addSecondaryConfigurations = async (req, res) => {
       salesOrderConfiguration,
       receiptConfiguration,
       vanSaleConfiguration,
+      stockTransferConfiguration,
       purchaseConfiguration,
       selectedVanSaleGodowns,
       vanSale,
@@ -2805,6 +2806,8 @@ export const addSecondaryConfigurations = async (req, res) => {
     const NewreceiptNumber = receiptConfiguration.currentNumber || 0;
     const NewvanSalesNumber = vanSaleConfiguration.currentNumber || 0;
     const NewpurchaseNumber = purchaseConfiguration.currentNumber || 0;
+    const NewstockTransferNumber = stockTransferConfiguration.currentNumber || 0;
+
 
     const dataToAdd = {
       organization: cmp_id,
@@ -2814,6 +2817,7 @@ export const addSecondaryConfigurations = async (req, res) => {
       salesOrderConfiguration,
       receiptConfiguration,
       purchaseConfiguration,
+      stockTransferConfiguration,
       vanSaleConfiguration,
       selectedVanSaleGodowns,
       vanSale,
@@ -2845,6 +2849,7 @@ export const addSecondaryConfigurations = async (req, res) => {
         purchaseNumber: company.purchaseNumber,
         receiptNumber: company.receiptNumber,
         vanSalesNumber: company.vanSalesNumber,
+        stockTransferNumber: company.stockTransferNumber
       };
     } else {
       const existingConfiguration = secUser.configurations[existingConfigIndex];
@@ -2855,6 +2860,7 @@ export const addSecondaryConfigurations = async (req, res) => {
         purchaseNumber: existingConfiguration.purchaseNumber,
         receiptNumber: existingConfiguration.receiptNumber,
         vanSalesNumber: existingConfiguration.vanSalesNumber,
+        stockTransferNumber: existingConfiguration.stockTransferNumber,
       };
     }
 
@@ -2864,9 +2870,9 @@ export const addSecondaryConfigurations = async (req, res) => {
       purchaseNumber: existingConfig.purchaseNumber !== NewpurchaseNumber,
       receiptNumber: existingConfig.receiptNumber !== NewreceiptNumber,
       vanSalesNumber: existingConfig.vanSalesNumber !== NewvanSalesNumber,
+      stockTransferNumber: existingConfig.stockTransferNumber !== NewstockTransferNumber
     };
 
-    console.log(changes);
 
     const checkForNumberExistence = async (
       model,
@@ -2949,7 +2955,7 @@ export const addSecondaryConfigurations = async (req, res) => {
 
     if (changes.vanSalesNumber) {
       const vanSalesExists = await checkForNumberExistence(
-        salesModel,
+        vanSaleModel,
         "salesNumber",
         NewvanSalesNumber,
         cmp_id
@@ -2959,6 +2965,21 @@ export const addSecondaryConfigurations = async (req, res) => {
           .status(400)
           .json({
             message: `Van Sales is added with this number ${NewvanSalesNumber}`,
+          });
+      }
+    }
+    if (changes.stockTransferNumber) {
+      const stockTransferExists = await checkForNumberExistence(
+        stockTransferModel,
+        "stockTransferNumber",
+        NewstockTransferNumber,
+        cmp_id
+      );
+      if (stockTransferExists) {
+        return res
+          .status(400)
+          .json({
+            message: `Stock Transfer is added with this number ${NewstockTransferNumber}`,
           });
       }
     }
@@ -2976,6 +2997,7 @@ export const addSecondaryConfigurations = async (req, res) => {
         purchaseNumber: NewpurchaseNumber,
         receiptNumber: NewreceiptNumber,
         vanSalesNumber: NewvanSalesNumber,
+        stockTransferNumber: NewstockTransferNumber,
       };
     } else {
       // Configuration does not exist, create new
@@ -2986,6 +3008,7 @@ export const addSecondaryConfigurations = async (req, res) => {
         purchaseNumber: NewpurchaseNumber,
         receiptNumber: NewreceiptNumber,
         vanSalesNumber: NewvanSalesNumber,
+        stockTransferNumber: NewstockTransferNumber,
       };
       secUser.configurations.push(newConfiguration);
     }
@@ -3506,6 +3529,7 @@ export const fetchConfigurationCurrentNumber = async (req, res) => {
       purchaseNumber,
       receiptNumber,
       vanSalesNumber,
+      stockTransferNumber,
     } = configuration;
 
     return res.status(200).json({
@@ -3515,6 +3539,7 @@ export const fetchConfigurationCurrentNumber = async (req, res) => {
       purchaseNumber,
       receiptNumber,
       vanSalesNumber,
+      stockTransferNumber
     });
   } catch (error) {
     console.error(error);

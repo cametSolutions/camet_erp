@@ -14,7 +14,7 @@ function StockTransferDetailsSecondary() {
   const [data, setData] = useState("");
 
   const { id } = useParams();
-  console.log(id);
+  // console.log(id);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -33,7 +33,7 @@ function StockTransferDetailsSecondary() {
     getTransactionDetails();
   }, []);
 
-  console.log(data);
+  // console.log(data);
   const backHandler = () => {
     if (location?.state?.from === "dashboard") {
       navigate("/sUsers/dashboard");
@@ -44,7 +44,7 @@ function StockTransferDetailsSecondary() {
 
 
 
-  console.log(data.items);
+  // console.log(data.items);
 
   return (
      
@@ -68,7 +68,7 @@ function StockTransferDetailsSecondary() {
         <div className="bg-white p-4 mt-3 flex justify-between items-center">
           <div className=" ">
             <p className="text-sm text-violet-500 font-semibold ">
-              ID #{data?.salesNumber}
+              ID #{data?.stockTransferNumber}
             </p>
             <p className="text-xs font-medium text-gray-500 mt-1 ">
               {dayjs(data.createdAt).format("DD/MM/YYYY")}
