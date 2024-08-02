@@ -179,21 +179,17 @@ function StockTransferSecondary() {
           withCredentials: true,
         }
       );
+      console.log(res.data.data);
 
-      console.log(res.data);
       toast.success(res.data.message);
-
-      console.log(res.data.data._id);
-
-      dispatch(removeAll());
       navigate(`/sUsers/StockTransferDetails/${res.data.data._id}`);
+      dispatch(removeAll());
     } catch (error) {
-      toast.error(error.response.data.message);
+      toast.error(error?.response?.data?.message);
       console.log(error);
     }
   };
 
-  console.log(items);
 
   return (
     <div className="">

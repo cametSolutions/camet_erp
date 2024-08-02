@@ -19,7 +19,7 @@ const DashboardCards = ({ userType, receiptTotal, handleLinkClick }) => {
       {
         icon: <MdInventory />,
         bgColor: 'bg-blue-500',
-        subtitle: 'Inventory',
+        subtitle: 'Stock Register',
         link: '/pUsers/Inventory'
       }
     ],

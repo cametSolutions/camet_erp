@@ -350,4 +350,11 @@ export const giveTransaction = async (req, res) => {
   const serialNumber = req.params.SNo;
   return fetchData('transactions', cmp_id, serialNumber, res);
 };
+// @desc for giving stock transactions to tally
+// route GET/api/tally/getStockTransfers
+export const getStockTransfers = async (req, res) => {
+  const cmp_id = req.params.cmp_id;
+  const serialNumber = req.params.SNo;
+  return fetchData('stockTransfers', cmp_id, serialNumber, res);
+};
 

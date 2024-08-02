@@ -113,10 +113,12 @@ export const handleStockTransfer = async ({
   selectedGodownId,
   items,
   lastAmount,
+  serialNumber,
   req,
 }) => {
   try {
     const newStockTransfer = new stockTransferModel({
+      serialNumber,
       stockTransferNumber,
       Primary_user_id: req.owner.toString(),
       Secondary_user_id: req.sUserId,

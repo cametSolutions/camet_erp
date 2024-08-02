@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 const vanSaleSchema = new mongoose.Schema(
   {
-    serialNumber: { type: Number }, // Add this line to include a serial number field
+    serialNumber: { type: Number },
     salesNumber: { type: String, required: true },
     Primary_user_id: { type: String, required: true },
     Secondary_user_id: { type: String },

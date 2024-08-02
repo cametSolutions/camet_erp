@@ -1,7 +1,7 @@
 import express from "express";
 import { saveDataFromTally,giveTransaction,addBankData ,
     saveProductsFromTally,savePartyFromTally,
-    saveAdditionalChargesFromTally,giveInvoice,giveSales,giveVanSales} from "../controllers/tallyController.js";
+    saveAdditionalChargesFromTally,giveInvoice,giveSales,giveVanSales,getStockTransfers} from "../controllers/tallyController.js";
 
 const router =express.Router();
 
@@ -16,6 +16,7 @@ router.get('/getTransactions/:cmp_id/:SNo',giveTransaction)
 router.get('/getSalesOrders/:cmp_id/:SNo',giveInvoice)
 router.get('/getSales/:cmp_id/:SNo',giveSales)
 router.get('/getVanSales/:cmp_id/:SNo',giveVanSales)
+router.get('/getStockTransfers/:cmp_id/:SNo',getStockTransfers)
 
 
 export default router

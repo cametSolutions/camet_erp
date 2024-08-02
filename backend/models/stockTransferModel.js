@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 const StockTransferSchema = new mongoose.Schema(
   {
-
+    serialNumber: { type: Number },
     stockTransferNumber:{type:String, required:true}, 
     Primary_user_id: { type: String, required: true },
     Secondary_user_id: { type: String },

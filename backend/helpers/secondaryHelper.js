@@ -668,3 +668,26 @@ export const checkForNumberExistence = async (
     throw error;
   }
 };
+
+
+export const getNewSerialNumber = async (model, serialNumber) => {
+  try {
+    const lastDocument = await model.findOne(
+      {},
+      {},
+      { sort: { [serialNumber]: -1 } }
+    );
+
+    let newSerialNumber = 1;
+
+    if (lastDocument && !isNaN(lastDocument[serialNumber])) {
+      newSerialNumber = lastDocument[serialNumber] + 1;
+    }
+
+    return newSerialNumber;
+  } catch (error) {
+    console.error(`Error in getNewSerialNumber for model ${model.modelName}:`, error);
+    throw new Error("Error calculating new serial number");
+  }
+};
+

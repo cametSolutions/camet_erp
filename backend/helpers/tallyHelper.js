@@ -1,5 +1,6 @@
 import invoiceModel from "../models/invoiceModel.js";
 import salesModel from "../models/salesModel.js";
+import stockTransferModel from "../models/stockTransferModel.js";
 import TransactionModel from "../models/TransactionModel.js";
 import vanSaleModel from "../models/vanSaleModel.js";
 
@@ -17,6 +18,9 @@ export const fetchData = async (type, cmp_id, serialNumber, res) => {
         break;
         case 'transactions':
             model = TransactionModel;
+            break;
+        case 'stockTransfers':
+            model = stockTransferModel;
             break;
       default:
         return res.status(400).json({ message: "Invalid type parameter" });

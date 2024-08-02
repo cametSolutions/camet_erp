@@ -36,6 +36,7 @@ import {
   addingAnItemInSaleOrderEdit,
   extractCentralNumber,
   checkForNumberExistence,
+  getNewSerialNumber,
 } from "../helpers/secondaryHelper.js";
 
 import {
@@ -2542,7 +2543,6 @@ export const fetchConfigurationNumber = async (req, res) => {
       return configs[title] || null;
     };
 
-
     const getConfigNumber = () => {
       if (configuration) {
         const numbers = {
@@ -2565,14 +2565,12 @@ export const fetchConfigurationNumber = async (req, res) => {
         // receipt: company.receiptNumberDetails
       };
 
-
       // console.log("companyNumbers", companyNumbers);
       return companyNumbers[title] || null;
     };
 
     let configDetails = getConfigDetails();
     let configurationNumber = getConfigNumber();
-
 
     console.log(getConfigNumber());
 
@@ -3670,7 +3668,7 @@ export const createStockTransfer = async (req, res) => {
       selectedGodownId,
       items,
       lastAmount,
-      stockTransferNumber
+      stockTransferNumber,
     } = req.body;
 
     const transferData = {
@@ -3693,24 +3691,33 @@ export const createStockTransfer = async (req, res) => {
       });
     }
 
-    // const NumberExistence = await checkForNumberExistence(
-    //   stockTransferModel,
-    //   "stockTransferNumber",
-    //   stockTransferNumber,
-    //   orgId
-    // );
+    const NumberExistence = await checkForNumberExistence(
+      stockTransferModel,
+      "stockTransferNumber",
+      stockTransferNumber,
+      orgId
+    );
 
-    // if (NumberExistence) {
-    //   return res.status(400).json({
-    //     message: "Stock Transfer with the same number already exists",
-    //   });
-    // }
+    if (NumberExistence) {
+      return res.status(400).json({
+        message: "Stock Transfer with the same number already exists",
+      });
+    }
 
+    const addSerialNumber = await getNewSerialNumber(
+      stockTransferModel,
+      "serialNumber"
+    );
+    if (addSerialNumber) {
+      transferData.serialNumber = addSerialNumber;
+    }
 
     const updatedProducts = await processStockTransfer(transferData);
     const createNewStockTransfer = await handleStockTransfer(transferData);
-    const increaseSTNumber = await increaseStockTransferNumber(secondaryUser,orgId);
-
+    const increaseSTNumber = await increaseStockTransferNumber(
+      secondaryUser,
+      orgId
+    );
 
     res.status(200).json({
       message: "Stock transfer completed successfully",
