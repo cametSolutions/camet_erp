@@ -1,15 +1,12 @@
 /* eslint-disable react/no-unknown-property */
-import SidebarSec from "../../components/secUsers/SidebarSec";
 import { useEffect, useState } from "react";
 import api from "../../api/api";
-import dayjs from "dayjs";
-import { IoArrowRedoOutline } from "react-icons/io5";
+
 import { IoIosArrowRoundBack } from "react-icons/io";
 import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { FcCancel } from "react-icons/fc";
-import { FaRegCircleDot } from "react-icons/fa6";
+
 import DatePicker from "react-datepicker";
 
 import "react-datepicker/dist/react-datepicker.css";
@@ -26,9 +23,7 @@ function Transaction() {
   const org = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
-  const navigate = useNavigate();
 
-  console.log(org);
 
   useEffect(() => {
     const fetchTransactions = async () => {
@@ -49,7 +44,6 @@ function Transaction() {
     fetchTransactions();
   }, []);
 
-  console.log(data);
 
   const filterOutstanding = (data) => {
     return data?.filter((item) => {
@@ -118,7 +112,6 @@ function Transaction() {
   //   }
   // };
 
-  console.log(data);
 
   return (
      

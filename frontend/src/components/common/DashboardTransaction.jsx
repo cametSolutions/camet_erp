@@ -39,9 +39,10 @@ function DashboardTransaction({ filteredData, userType }) {
                   }/InvoiceDetails/${el._id}`;
             navigate(navigationPath, { state: { from: "dashboard" } });
           }}
-          className={`${
-            el?.isCancelled ? "bg-gray-200 pointer-events-none " : ""
-          } bg-[#fff] cursor-pointer rounded-md shadow-lg border border-gray-100 flex flex-col justify-between px-4 transition-all duration-150 transform hover:scale-105 ease-in-out`}
+          className={`
+          
+          
+          bg-[#fff] cursor-pointer rounded-md shadow-lg border border-gray-100 flex flex-col justify-between px-4 transition-all duration-150 transform hover:scale-105 ease-in-out`}
         >
           <div className=" flex justify-start text-xs mt-2 ">
             <div
@@ -56,7 +57,7 @@ function DashboardTransaction({ filteredData, userType }) {
                   ? "bg-[#25cbcb]"
                   : el?.type === "Stock Transfer"
                   ? "bg-[#c42383]"
-                  : "bg-[#f6f6f6]"
+                  : "bg-[#1b47ae]"
               }   flex items-center text-white px-2 rounded-sm `}
             >
               {/* <FaRegCircleDot /> */}

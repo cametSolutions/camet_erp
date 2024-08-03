@@ -669,7 +669,6 @@ export const checkForNumberExistence = async (
   }
 };
 
-
 export const getNewSerialNumber = async (model, serialNumber) => {
   try {
     const lastDocument = await model.findOne(
@@ -686,8 +685,44 @@ export const getNewSerialNumber = async (model, serialNumber) => {
 
     return newSerialNumber;
   } catch (error) {
-    console.error(`Error in getNewSerialNumber for model ${model.modelName}:`, error);
+    console.error(
+      `Error in getNewSerialNumber for model ${model.modelName}:`,
+      error
+    );
     throw new Error("Error calculating new serial number");
   }
 };
 
+////////////////////////////// revertBalanceStockOfSalesOrder ///////////////////////////////////////////
+
+export const revertBalanceStockOfSalesOrder = async (items) => {
+  try {
+    const revertStock = items?.map(async (item) => {
+      let product = await productModel.findById(item?._id);
+      if (!product) {
+        throw new Error(`Product not found for item ID: ${item?._id}`);
+      }
+
+      let itemCount = parseFloat(item?.count || 0);
+
+      let productBalanceStock = parseFloat(product?.balance_stock || 0);
+      let newBalanceStock = truncateToNDecimals(
+        productBalanceStock + itemCount,
+        3
+      );
+
+
+      await productModel.updateOne(
+        { _id: item?._id },
+        { $set: { balance_stock: newBalanceStock } }
+      );
+
+      return product;
+    });
+
+    await Promise.all(revertStock);
+  } catch (error) {
+    console.error("Error in reverting stock levels:", error);
+    throw error;
+  }
+};

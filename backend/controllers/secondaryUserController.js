@@ -37,6 +37,7 @@ import {
   extractCentralNumber,
   checkForNumberExistence,
   getNewSerialNumber,
+  revertBalanceStockOfSalesOrder
 } from "../helpers/secondaryHelper.js";
 
 import {
@@ -333,6 +334,8 @@ export const transactions = async (req, res) => {
           enteredAmount: "$finalAmount",
           createdAt: 1,
           itemsLength: { $size: "$items" },
+          isCancelled: 1,
+
         },
       },
     ]);
@@ -347,6 +350,8 @@ export const transactions = async (req, res) => {
           enteredAmount: "$finalAmount",
           createdAt: 1,
           itemsLength: { $size: "$items" },
+          isCancelled: 1,
+
         },
       },
     ]);
@@ -361,6 +366,8 @@ export const transactions = async (req, res) => {
           enteredAmount: "$finalAmount",
           createdAt: 1,
           itemsLength: { $size: "$items" },
+          isCancelled: 1,
+
         },
       },
     ]);
@@ -375,6 +382,8 @@ export const transactions = async (req, res) => {
           enteredAmount: "$finalAmount",
           createdAt: 1,
           itemsLength: { $size: "$items" },
+          isCancelled: 1,
+
         },
       },
     ]);
@@ -388,6 +397,8 @@ export const transactions = async (req, res) => {
           enteredAmount: "$finalAmount",
           createdAt: 1,
           itemsLength: { $size: "$items" },
+          isCancelled: 1,
+
         },
       },
     ]);
@@ -769,7 +780,6 @@ export const getProducts = async (req, res) => {
       selectedGodowns = configuration.selectedGodowns;
     }
 
-
     let projectStage = {
       $project: {
         product_name: 1,
@@ -801,7 +811,6 @@ export const getProducts = async (req, res) => {
     };
 
     if (selectedGodowns && selectedGodowns.length > 0) {
-
       matchStage.$match["GodownList.godown_id"] = { $in: selectedGodowns };
 
       projectStage.$project.GodownList = {
@@ -1696,7 +1705,6 @@ export const editInvoice = async (req, res) => {
       );
     }
 
-
     const result = await invoiceModel.findByIdAndUpdate(
       invoiceId,
       {
@@ -1957,7 +1965,6 @@ export const createSale = async (req, res) => {
       model = salesModel;
     }
 
-
     const NumberExistence = await checkForNumberExistence(
       model,
       "salesNumber",
@@ -2004,7 +2011,6 @@ export const createSale = async (req, res) => {
         3
       );
 
-
       // Prepare product update operation
       productUpdates.push({
         updateOne: {
@@ -2022,7 +2028,6 @@ export const createSale = async (req, res) => {
               (g) => g.batch === godown.batch
             );
 
-
             if (godownIndex !== -1) {
               if (godown.count && godown.count > 0) {
                 const currentGodownStock =
@@ -2031,7 +2036,6 @@ export const createSale = async (req, res) => {
                   currentGodownStock - godown.count,
                   3
                 );
-
 
                 // Prepare godown update operation
                 godownUpdates.push({
@@ -2054,7 +2058,6 @@ export const createSale = async (req, res) => {
                 g.batch === godown.batch && g.godown_id === godown.godown_id
             );
 
-
             if (godownIndex !== -1) {
               if (godown.count && godown.count > 0) {
                 const currentGodownStock =
@@ -2063,7 +2066,6 @@ export const createSale = async (req, res) => {
                   currentGodownStock - godown.count,
                   3
                 );
-
 
                 // Prepare godown update operation
                 godownUpdates.push({
@@ -2165,7 +2167,6 @@ export const createSale = async (req, res) => {
       // Calculate total price after applying discount
       // let totalPrice = selectedPrice * (item.count || 1) || 0; // Default count to 1 if not provided
       let totalPrice = item?.GodownList.reduce((acc, curr) => {
-
         return (acc = acc + Number(curr?.individualTotal));
       }, 0);
       if (item.discount) {
@@ -2176,7 +2177,6 @@ export const createSale = async (req, res) => {
         const discountAmount = (totalPrice * item.discountPercentage) / 100;
         totalPrice -= discountAmount;
       }
-
 
       // Calculate tax amounts
       const { cgst, sgst, igst } = item;
@@ -2334,7 +2334,6 @@ export const getSalesDetails = async (req, res) => {
   const vanSaleQuery = req.query.vanSale;
 
   const isVanSale = vanSaleQuery === "true";
-
 
   let model;
   if (isVanSale) {
@@ -2551,7 +2550,6 @@ export const fetchConfigurationNumber = async (req, res) => {
 
     let configDetails = getConfigDetails();
     let configurationNumber = getConfigNumber();
-
 
     // If configDetails is empty or all values except startingNumber are empty, use company defaults
     if (
@@ -2858,8 +2856,6 @@ export const createPurchase = async (req, res) => {
         3
       );
 
-   
-
       // Prepare product update operation
       productUpdates.push({
         updateOne: {
@@ -2867,7 +2863,6 @@ export const createPurchase = async (req, res) => {
           update: { $set: { balance_stock: newBalanceStock } },
         },
       });
-
 
       // Update the godown stock for each specified godown
       for (const godown of item.GodownList) {
@@ -3113,7 +3108,6 @@ export const editSale = async (req, res) => {
       despatchDetails,
       selectedDate,
     } = req.body;
-
 
     let productUpdates = [];
 
@@ -3766,6 +3760,53 @@ export const editStockTransfer = async (req, res) => {
     res.status(500).json({
       error: "Internal Server Error",
       details: error.message,
+    });
+  }
+};
+
+// @desc to cancel sale order
+// route delete/api/sUsers/cancelSalesOrder;
+
+export const cancelSalesOrder = async (req, res) => {
+  const invoiceId = req.params.id;
+  const secondary_user_id = req.sUserId;
+  const owner = req.owner.toString();
+
+  try {
+    // Find the invoice by ID
+    const invoice = await invoiceModel.findById(invoiceId);
+    if (!invoice) {
+      return res.status(404).json({
+        message: "Invoice not found",
+      });
+    }
+    // Check if the invoice is already cancelled
+    if (invoice?.isCancelled) {
+      return res.status(400).json({
+        success: false,
+        message: "Invoice is already cancelled",
+      });
+    }
+
+    // Revert the stock levels for each item in the invoice
+    await revertBalanceStockOfSalesOrder(invoice.items);
+
+    invoice.isCancelled = true;
+    const result=await invoiceModel.findByIdAndUpdate(invoiceId,invoice,{
+      new:true
+    });
+
+    return res.status(200).json({
+      message: "Invoice cancelled successfully",
+      data: result,
+    });
+
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error, try again!",
+      error: error.message,
     });
   }
 };

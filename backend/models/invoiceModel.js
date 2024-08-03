@@ -15,6 +15,7 @@ const invoiceSchema = new mongoose.Schema(
     despatchDetails: { type: Object },
     additionalCharges: { type: Array, required: true },
     finalAmount: { type: String, required: true },
+    isCancelled: { type: Boolean, default: false },
     createdAt: {
       type: Date,
       immutable: false  // Make sure this is false or not set

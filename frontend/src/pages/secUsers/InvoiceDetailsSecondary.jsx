@@ -9,15 +9,23 @@ import { FaEdit } from "react-icons/fa";
 import { useLocation, useNavigate } from "react-router-dom";
 import SwallFireForPdf from "../../components/common/SwallFireForPdf";
 import SalesOrderProductDetails from "../../components/common/SalesOrderProductDetails";
+import CancelButton from "../../components/common/CancelButton";
+
 
 function InvoiceDetailsSecondary() {
   const [data, setData] = useState("");
   const [refresh, setRefresh] = useState(false);
 
   const { id } = useParams();
-  console.log(id);
   const navigate = useNavigate();
   const location = useLocation();
+
+
+  const reFetch=()=>{
+
+    
+    setRefresh(!refresh)
+  }
 
   useEffect(() => {
     const getTransactionDetails = async () => {
@@ -32,7 +40,12 @@ function InvoiceDetailsSecondary() {
       }
     };
     getTransactionDetails();
-  }, [refresh]);
+  }, [refresh,id]);
+
+  console.log("refresh",refresh);
+  
+
+  
 
   const backHandler = () => {
     if (location?.state?.from === "dashboard") {
@@ -73,29 +86,20 @@ function InvoiceDetailsSecondary() {
 
           <div className="hidden md:block">
             <div className="  flex justify-center p-4 gap-12 text-lg text-violet-500 mr-4">
-              {/* <div
-                onClick={() => handleCancel(data._id)}
-                disabled={data?.isCancelled}
-                className={`flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110 cursor-pointer ${
-                  data.isCancelled ? "opacity-50 pointer-events-none" : ""
-                }`}
-              >
-                <FcCancel className="text-violet-500" />
-                <p className="text-black font-bold text-sm">
-                  {data?.isCancelled ? "Cancelled" : "Cancel"}
-                </p>
-              </div> */}
+            <CancelButton id={data._id} tab="SalesOrder"  isCancelled={data?.isCancelled} reFetch={reFetch}/>
               <div
                 onClick={() => navigate(`/sUsers/editInvoice/${data._id}`)}
-                className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer"
+                className={ ` ${data?.isCancelled && "pointer-events-none opacity-60"} flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer`}
               >
                 <FaEdit className="text-blue-500" />
                 <p className="text-black font-bold text-sm">Edit</p>
               </div>
           
-              <SwallFireForPdf data={data} tab={"salesOrder"} user={"secondary"} />
+              <SwallFireForPdf data={data} tab={"salesOrder"} user={"secondary"}   />
 
-              <div className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer">
+              <div 
+                className={ ` ${data?.isCancelled && "pointer-events-none opacity-60"} flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer`}
+                >
                 <MdTextsms className="text-green-500" />
                 <p className="text-black font-bold text-sm">Sms</p>
               </div>

@@ -47,8 +47,8 @@ function SwallFireForPdf({ data, tab = "sales", user }) {
     <div>
       <div
         onClick={chooseFormat}
-        className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer"
-      >
+        className={ ` ${data?.isCancelled && "pointer-events-none opacity-60"} flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer`}
+        >
         <IoMdShareAlt />
         <p className="text-black font-bold text-sm">Share</p>
       </div>

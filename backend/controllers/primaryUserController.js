@@ -608,6 +608,8 @@ export const transactions = async (req, res) => {
           createdAt: 1,
           itemsLength: { $size: "$items" },
           Secondary_user_id: "$Secondary_user_id",
+          isCancelled: 1,
+
         },
       },
     ]);
@@ -622,6 +624,8 @@ export const transactions = async (req, res) => {
           createdAt: 1,
           itemsLength: { $size: "$items" },
           Secondary_user_id: "$Secondary_user_id",
+          isCancelled: 1,
+
         },
       },
     ]);
@@ -650,6 +654,8 @@ export const transactions = async (req, res) => {
           enteredAmount: "$finalAmount",
           createdAt: 1,
           itemsLength: { $size: "$items" },
+          isCancelled: 1,
+
         },
       },
     ]);
@@ -664,6 +670,8 @@ export const transactions = async (req, res) => {
           enteredAmount: "$finalAmount",
           createdAt: 1,
           itemsLength: { $size: "$items" },
+          isCancelled: 1,
+
         },
       },
     ]);
@@ -713,6 +721,7 @@ export const cancelTransaction = async (req, res) => {
           currentAmount: {
             $sum: ["$billData.settledAmount", "$billData.remainingAmount"],
           },
+
         },
       },
     ]);
