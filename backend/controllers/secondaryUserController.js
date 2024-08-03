@@ -68,7 +68,6 @@ export const login = async (req, res) => {
       return res.status(404).json({ message: "Invalid User" });
     }
     const Blocked = secUser.get("isBlocked");
-    console.log(Blocked);
     if (Blocked == true) {
       return res.status(401).json({ message: "User is blocked" });
     }
@@ -743,8 +742,6 @@ export const getProducts = async (req, res) => {
 
   const excludeGodownId = req.query.excludeGodownId;
 
-  console.log("isVanSale", isVanSale);
-  console.log("excludeGodownId", excludeGodownId);
   const Primary_user_id = new mongoose.Types.ObjectId(req.owner);
 
   try {
@@ -772,7 +769,6 @@ export const getProducts = async (req, res) => {
       selectedGodowns = configuration.selectedGodowns;
     }
 
-    console.log("selectedGodowns", selectedGodowns);
 
     let projectStage = {
       $project: {
@@ -805,7 +801,6 @@ export const getProducts = async (req, res) => {
     };
 
     if (selectedGodowns && selectedGodowns.length > 0) {
-      console.log("selectedGodowns", selectedGodowns);
 
       matchStage.$match["GodownList.godown_id"] = { $in: selectedGodowns };
 
@@ -1676,7 +1671,6 @@ export const editInvoice = async (req, res) => {
     await productModel.bulkWrite(productUpdates);
 
     for (const item of oldItems) {
-      console.log("editSaleOrder: item", item);
       const product = await productModel.findOne({ _id: item._id });
       if (!product) {
         console.log("editSaleOrder: product not found");
@@ -1702,7 +1696,6 @@ export const editInvoice = async (req, res) => {
       );
     }
 
-    console.log("selected date ", selectedDate);
 
     const result = await invoiceModel.findByIdAndUpdate(
       invoiceId,
@@ -1955,8 +1948,6 @@ export const createSale = async (req, res) => {
       selectedDate,
     } = req.body;
     const vanSaleQuery = req.query.vanSale;
-    console.log("vanSaleQuery", vanSaleQuery);
-    console.log("vanSaleQuery type", typeof vanSaleQuery);
 
     let model;
 
@@ -1966,7 +1957,6 @@ export const createSale = async (req, res) => {
       model = salesModel;
     }
 
-    console.log("model", model);
 
     const NumberExistence = await checkForNumberExistence(
       model,
@@ -2014,7 +2004,6 @@ export const createSale = async (req, res) => {
         3
       );
 
-      console.log("newBalanceStock", newBalanceStock);
 
       // Prepare product update operation
       productUpdates.push({
@@ -2033,7 +2022,6 @@ export const createSale = async (req, res) => {
               (g) => g.batch === godown.batch
             );
 
-            console.log("gggg", product.GodownList[godownIndex]);
 
             if (godownIndex !== -1) {
               if (godown.count && godown.count > 0) {
@@ -2044,7 +2032,6 @@ export const createSale = async (req, res) => {
                   3
                 );
 
-                console.log("newGodownStock", newGodownStock);
 
                 // Prepare godown update operation
                 godownUpdates.push({
@@ -2067,7 +2054,6 @@ export const createSale = async (req, res) => {
                 g.batch === godown.batch && g.godown_id === godown.godown_id
             );
 
-            console.log("gggg", product.GodownList[godownIndex]);
 
             if (godownIndex !== -1) {
               if (godown.count && godown.count > 0) {
@@ -2078,7 +2064,6 @@ export const createSale = async (req, res) => {
                   3
                 );
 
-                console.log("newGodownStock", newGodownStock);
 
                 // Prepare godown update operation
                 godownUpdates.push({
@@ -2180,7 +2165,6 @@ export const createSale = async (req, res) => {
       // Calculate total price after applying discount
       // let totalPrice = selectedPrice * (item.count || 1) || 0; // Default count to 1 if not provided
       let totalPrice = item?.GodownList.reduce((acc, curr) => {
-        console.log("curr?.individualTotal", curr?.individualTotal);
 
         return (acc = acc + Number(curr?.individualTotal));
       }, 0);
@@ -2193,7 +2177,6 @@ export const createSale = async (req, res) => {
         totalPrice -= discountAmount;
       }
 
-      console.log("totalPrice", totalPrice);
 
       // Calculate tax amounts
       const { cgst, sgst, igst } = item;
@@ -2352,7 +2335,6 @@ export const getSalesDetails = async (req, res) => {
 
   const isVanSale = vanSaleQuery === "true";
 
-  console.log("isVanSale", isVanSale);
 
   let model;
   if (isVanSale) {
@@ -2422,7 +2404,6 @@ export const fetchAdditionalDetails = async (req, res) => {
     }
 
     let priceLevelsResult = [];
-    console.log("selectedPriceLevels", priceLevelsResult);
 
     if (selectedPriceLevels && selectedPriceLevels.length == 0) {
       priceLevelsResult = await productModel.aggregate([
@@ -2507,7 +2488,6 @@ export const fetchAdditionalDetails = async (req, res) => {
 export const fetchConfigurationNumber = async (req, res) => {
   const { cmp_id, title } = req.params;
 
-  console.log("title", title);
   const secUserId = req.sUserId;
 
   try {
@@ -2572,7 +2552,6 @@ export const fetchConfigurationNumber = async (req, res) => {
     let configDetails = getConfigDetails();
     let configurationNumber = getConfigNumber();
 
-    console.log(getConfigNumber());
 
     // If configDetails is empty or all values except startingNumber are empty, use company defaults
     if (
@@ -2789,7 +2768,6 @@ export const fetchAdditionalCharges = async (req, res) => {
   try {
     const cmp_id = req.params.cmp_id;
     const pUser = req.owner.toString();
-    console.log(pUser);
 
     const aditionalDetails = await AdditionalChargesModel.find({
       cmp_id: cmp_id,
@@ -2850,7 +2828,6 @@ export const createPurchase = async (req, res) => {
     const secondaryUser = await SecondaryUser.findById(Secondary_user_id);
     const secondaryMobile = secondaryUser.mobile;
 
-    console.log("secondaryMobile", secondaryMobile);
     if (!secondaryUser) {
       return res
         .status(404)
@@ -2875,15 +2852,13 @@ export const createPurchase = async (req, res) => {
       // Calculate the new balance stock
       // Calculate the new balance stock
       const productBalanceStock = truncateToNDecimals(product.balance_stock, 3);
-      console.log("productBalanceStock", productBalanceStock);
       const itemCount = truncateToNDecimals(item.count, 3);
       const newBalanceStock = truncateToNDecimals(
         productBalanceStock + itemCount,
         3
       );
 
-      console.log("productBalanceStock", productBalanceStock);
-      console.log("newBalanceStock", newBalanceStock);
+   
 
       // Prepare product update operation
       productUpdates.push({
@@ -2893,7 +2868,6 @@ export const createPurchase = async (req, res) => {
         },
       });
 
-      console.log("godown", item.GodownList);
 
       // Update the godown stock for each specified godown
       for (const godown of item.GodownList) {
@@ -2986,7 +2960,6 @@ export const createPurchase = async (req, res) => {
         const { value, taxPercentage } = charge;
 
         const taxAmt = (parseFloat(value) * parseFloat(taxPercentage)) / 100;
-        console.log(taxAmt);
 
         return {
           ...charge,
@@ -3141,7 +3114,6 @@ export const editSale = async (req, res) => {
       selectedDate,
     } = req.body;
 
-    console.log("selectedDate", selectedDate);
 
     let productUpdates = [];
 
@@ -3513,7 +3485,7 @@ export const editSale = async (req, res) => {
     existingSale.despatchDetails = despatchDetails;
     existingSale.createdAt = new Date(selectedDate);
 
-    console.log("existingSale", existingSale);
+    // console.log("existingSale", existingSale);
 
     const result = await existingSale.save();
 
@@ -3534,7 +3506,7 @@ export const editSale = async (req, res) => {
       const newOutstanding =
         Number(matchedOutStanding?.bill_pending_amt) + diffBillValue;
 
-      console.log("editSale: new outstanding calculated", newOutstanding);
+      // console.log("editSale: new outstanding calculated", newOutstanding);
       await TallyData.updateOne(
         {
           party_id: party?.party_master_id,
@@ -3544,7 +3516,7 @@ export const editSale = async (req, res) => {
         { $set: { bill_pending_amt: newOutstanding } }
       );
 
-      console.log("editSale: outstanding updated");
+      // console.log("editSale: outstanding updated");
     } else {
       console.log("editSale: matched outstanding not found");
     }
@@ -3569,7 +3541,6 @@ export const getAllSubDetails = async (req, res) => {
   try {
     const cmp_id = req.params.orgId;
     const Primary_user_id = req.owner;
-    console.log(cmp_id, Primary_user_id);
     if (!cmp_id || !Primary_user_id) {
       console.log(
         "cmp_id and Primary_user_id are required in getAllSubDetails "

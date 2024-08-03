@@ -668,7 +668,6 @@ export const transactions = async (req, res) => {
       },
     ]);
 
-    console.log(sales);
 
     const combined = [
       ...transactions,
