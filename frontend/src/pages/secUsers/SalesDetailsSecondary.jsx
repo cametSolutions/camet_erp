@@ -5,14 +5,17 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import api from "../../api/api";
 import { toast } from "react-toastify";
-import dayjs from "dayjs";
 import { FaEdit } from "react-icons/fa";
 import { useLocation, useNavigate } from "react-router-dom";
 import SalesProductDetails from "../../components/common/SalesProductDetails";
 import SwallFireForPdf from "../../components/common/SwallFireForPdf";
+import CancelButton from "../../components/common/CancelButton";
+import VoucherDetailsHeader from "../../components/common/VoucherDetailsHeader";
 
 function SalesDetailsSecondary() {
   const [data, setData] = useState("");
+  const [refresh, setRefresh] = useState(false);
+
 
   const { id } = useParams();
   console.log(id);
@@ -33,7 +36,14 @@ function SalesDetailsSecondary() {
       }
     };
     getTransactionDetails();
-  }, []);
+  }, [refresh,id]);
+
+  const reFetch=()=>{
+
+    
+    setRefresh(!refresh)
+  }
+
 
   console.log(data);
   const backHandler = () => {
@@ -68,57 +78,14 @@ function SalesDetailsSecondary() {
         </div>
         {/* headinh section  */}
 
-        {/* payment details */}
-        <div className="bg-white p-4 mt-3 flex justify-between items-center">
-          <div className=" ">
-            <p className="text-sm text-violet-500 font-semibold ">
-              ID #{data?.salesNumber}
-            </p>
-            <p className="text-xs font-medium text-gray-500 mt-1 ">
-              {dayjs(data.createdAt).format("DD/MM/YYYY")}
-            </p>
-          </div>
-
-          <div className="hidden md:block">
-            <div className="  flex justify-center p-4 gap-12 text-lg text-violet-500 mr-4">
-              {/* <div
-                onClick={() => handleCancel(data._id)}
-                disabled={data?.isCancelled}
-                className={`flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110 cursor-pointer ${
-                  data.isCancelled ? "opacity-50 pointer-events-none" : ""
-                }`}
-              >
-                <FcCancel className="text-violet-500" />
-                <p className="text-black font-bold text-sm">
-                  {data?.isCancelled ? "Cancelled" : "Cancel"}
-                </p>
-              </div> */}
-              <div
-                onClick={() => navigate(`/sUsers/editSale/${data._id}`)}
-                className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer"
-              >
-                <FaEdit className="text-blue-500" />
-                <p className="text-black font-bold text-sm">Edit</p>
-              </div>
-              {/* <Link to={`/sUsers/shareSales/${data._id}`}> */}
-              {/* <div
-                onClick={chooseFormat}
-                className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer"
-              >
-                <IoMdShareAlt />
-                <p className="text-black font-bold text-sm">Share</p>
-              </div> */}
-              <SwallFireForPdf data={data} />
-              {/* </Link> */}
-              <div className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer">
-                <MdTextsms className="text-green-500" />
-                <p className="text-black font-bold text-sm">Sms</p>
-              </div>
-            </div>
-          </div>
-        </div>
-        {/* payment details */}
-
+        <VoucherDetailsHeader
+        data={data}
+        reFetchParent={reFetch}
+        editLink={`/sUsers/editSale/${data?._id}`}
+        user={"secondary"}
+        number={data?.salesNumber}
+        tab={"Sales"}
+      />
         {/* party details */}
 
         <div className="bg-white mt-2 p-4  ">
@@ -160,6 +127,7 @@ function SalesDetailsSecondary() {
 
         <div className=" block md:hidden z-0 ">
           <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 flex justify-center p-4 gap-12 text-lg text-violet-500  ">
+          <CancelButton id={data._id} tab="Sales"  isCancelled={data?.isCancelled} reFetch={reFetch}/>
      
             <div
               onClick={() => navigate(`/sUsers/editSale/${data._id}`)}

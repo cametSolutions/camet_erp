@@ -16,6 +16,8 @@ const salesSchema = new mongoose.Schema(
     despatchDetails: { type: Object  },
     additionalCharges: { type: Array, required: true },
     finalAmount: { type: String, required: true },
+    isCancelled: { type: Boolean, default: false },
+
     batchHeights: { type: Object },
     createdAt: {
       type: Date,

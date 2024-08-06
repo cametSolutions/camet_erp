@@ -189,6 +189,10 @@ export const salesSecondarySlice = createSlice({
       if (index !== -1) {
         const currentItem = state.items[index];
         currentItem.GodownList[idx].added = false;
+        currentItem.GodownList[idx].count = 0;
+        currentItem.GodownList[idx].count = 0;
+        currentItem.GodownList[idx].individualTotal = 0;
+
 
         const newCount = currentItem.GodownList.reduce((acc, curr) => {
           if (curr.added) {

@@ -394,16 +394,16 @@ export const addingAnItemInSale = async (items) => {
               );
               godownUpdates.push({
                 updateOne: {
-                  filter: {
-                    _id: product._id,
-                    "GodownList.godown_id": godown.godown_id,
-                    "GodownList.batch": godown.batch,
-                  },
+                  filter: { _id: product._id },
                   update: {
-                    $set: { "GodownList.$.balance_stock": newGodownStock },
+                    $set: { "GodownList.$[elem].balance_stock": newGodownStock },
                   },
+                  arrayFilters: [
+                    { "elem.godown_id": godown.godown_id, "elem.batch": godown.batch }
+                  ],
                 },
               });
+              
             }
           }
         }
@@ -723,6 +723,142 @@ export const revertBalanceStockOfSalesOrder = async (items) => {
     await Promise.all(revertStock);
   } catch (error) {
     console.error("Error in reverting stock levels:", error);
+    throw error;
+  }
+};
+
+////////////////////////////// revertStockUpdatesSales ///////////////////////////////////////////
+
+
+export const revertStockUpdatesSales = async (items) => {
+  try {
+    const productUpdates = [];
+    const godownUpdates = [];
+
+    for (const item of items) {
+      const product = await productModel.findById(item._id);
+      if (!product) {
+        throw new Error(`Product not found for item ID: ${item._id}`);
+      }
+
+      const itemCount = parseFloat(item.count);
+      const productBalanceStock = parseFloat(product.balance_stock);
+      const newBalanceStock = truncateToNDecimals(productBalanceStock + itemCount, 3);
+
+      // Prepare product update operation
+      productUpdates.push({
+        updateOne: {
+          filter: { _id: product._id },
+          update: { $set: { balance_stock: newBalanceStock } },
+        },
+      });
+
+      // Process godown and batch updates
+      if (item.hasGodownOrBatch) {
+        for (const godown of item.GodownList) {
+          if (godown.batch && !godown?.godown_id) {
+            // Batch only
+            const godownIndex = product.GodownList.findIndex(
+              (g) => g.batch === godown.batch
+            );
+
+            if (godownIndex !== -1) {
+              if (godown.count && godown.count > 0) {
+                const currentGodownStock = product.GodownList[godownIndex].balance_stock || 0;
+                const newGodownStock = truncateToNDecimals(currentGodownStock + godown.count, 3);
+
+                // Prepare godown update operation
+                godownUpdates.push({
+                  updateOne: {
+                    filter: {
+                      _id: product._id,
+                      "GodownList.batch": godown.batch,
+                    },
+                    update: {
+                      $set: { "GodownList.$.balance_stock": newGodownStock },
+                    },
+                  },
+                });
+              }
+            }
+          } else if (godown.godown_id && godown.batch) {
+            // Godown with Batch
+            const godownIndex = product.GodownList.findIndex(
+              (g) => g.batch === godown.batch && g.godown_id === godown.godown_id
+            );
+
+            if (godownIndex !== -1) {
+              if (godown.count && godown.count > 0) {
+                const currentGodownStock = product.GodownList[godownIndex].balance_stock || 0;
+                const newGodownStock = truncateToNDecimals(currentGodownStock + godown.count, 3);
+
+                // Prepare godown update operation
+                godownUpdates.push({
+                  updateOne: {
+                    filter: {
+                      _id: product._id,
+                      "GodownList.batch": godown.batch,
+                      "GodownList.godown_id": godown.godown_id,
+                    },
+                    update: {
+                      $set: { "GodownList.$.balance_stock": newGodownStock },
+                    },
+                  },
+                });
+              }
+            }
+          } else if (godown.godown_id && !godown?.batch) {
+            // Godown only
+            const godownIndex = product.GodownList.findIndex(
+              (g) => g.godown_id === godown.godown_id
+            );
+
+            if (godownIndex !== -1) {
+              if (godown.count && godown.count > 0) {
+                const currentGodownStock = product.GodownList[godownIndex].balance_stock || 0;
+                const newGodownStock = truncateToNDecimals(currentGodownStock + godown.count, 3);
+
+                // Prepare godown update operation
+                godownUpdates.push({
+                  updateOne: {
+                    filter: {
+                      _id: product._id,
+                      "GodownList.godown_id": godown.godown_id,
+                    },
+                    update: {
+                      $set: { "GodownList.$.balance_stock": newGodownStock },
+                    },
+                  },
+                });
+              }
+            }
+          }
+        }
+      } else {
+        // No Godown
+        product.GodownList = product.GodownList.map((godown) => {
+          const currentGodownStock = godown.balance_stock || 0;
+          const newGodownStock = truncateToNDecimals(currentGodownStock + item.count, 3);
+          return {
+            ...godown,
+            balance_stock: newGodownStock,
+          };
+        });
+
+        // Prepare godown update operation
+        godownUpdates.push({
+          updateOne: {
+            filter: { _id: product._id },
+            update: { $set: { GodownList: product.GodownList } },
+          },
+        });
+      }
+    }
+
+    await productModel.bulkWrite(productUpdates);
+    await productModel.bulkWrite(godownUpdates);
+  } catch (error) {
+    console.error("Error in reverting stock updates:", error);
     throw error;
   }
 };

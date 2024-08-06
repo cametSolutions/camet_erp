@@ -481,7 +481,7 @@ function EditVanSale() {
 
       toast.success(res.data.message);
 
-      navigate(`/sUsers/vanSaleDetails/${res.data.data._id}`);
+      navigate(`/sUsers/vanSaleDetails/${id}`);
       dispatch(removeAll());
     } catch (error) {
       if (error.response && error.response.data) {

@@ -9,9 +9,11 @@ import dayjs from "dayjs";
 import { FaEdit } from "react-icons/fa";
 import { useLocation, useNavigate } from "react-router-dom";
 import SalesProductDetails from "../../components/common/SalesProductDetails";
+import VoucherDetailsHeader from "../../components/common/VoucherDetailsHeader";
 
 function StockTransferDetailsSecondary() {
   const [data, setData] = useState("");
+  const [refresh, setRefresh] = useState(false);
 
   const { id } = useParams();
   // console.log(id);
@@ -22,16 +24,22 @@ function StockTransferDetailsSecondary() {
     const getTransactionDetails = async () => {
       try {
         const res = await api.get(`/api/sUsers/getStockTransferDetails/${id}`, {
-          params:{vanSale:false},
+          params: { vanSale: false },
           withCredentials: true,
         });
         setData(res.data.data);
-      } catch (error) {        console.log(error);
+      } catch (error) {
+        console.log(error);
         toast.error(error.response.data.message);
       }
     };
     getTransactionDetails();
-  }, []);
+  }, [refresh,id]);
+
+
+  const reFetch=()=>{
+    setRefresh(!refresh);
+  }
 
   // console.log(data);
   const backHandler = () => {
@@ -42,63 +50,38 @@ function StockTransferDetailsSecondary() {
     }
   };
 
-
-
   // console.log(data.items);
 
   return (
-     
+    <div className="bg-[rgb(244,246,254)] flex-1  relative  pb-[70px] md:pb-0 ">
+      {/* headinh section  */}
+      <div className="flex bg-[#012a4a] items-center justify-between sticky top-0 z-10">
+        <div className="flex items-center gap-3  text-white text-md p-4 ">
+          <MdOutlineArrowBack
+            onClick={backHandler}
+            className="text-2xl cursor-pointer"
+          />
 
-      <div className="bg-[rgb(244,246,254)] flex-1  relative  pb-[70px] md:pb-0 ">
-        {/* headinh section  */}
-        <div className="flex bg-[#012a4a] items-center justify-between sticky top-0 z-10">
-          <div className="flex items-center gap-3  text-white text-md p-4 ">
-            <MdOutlineArrowBack
-              onClick={backHandler}
-              className="text-2xl cursor-pointer"
-            />
-
-            <h3 className="font-bold">Stock Transfer Details</h3>
-          </div>
-
+          <h3 className="font-bold">Stock Transfer Details</h3>
         </div>
-        {/* headinh section  */}
+      </div>
+      {/* headinh section  */}
 
-        {/* payment details */}
-        <div className="bg-white p-4 mt-3 flex justify-between items-center">
-          <div className=" ">
-            <p className="text-sm text-violet-500 font-semibold ">
-              ID #{data?.stockTransferNumber}
-            </p>
-            <p className="text-xs font-medium text-gray-500 mt-1 ">
-              {dayjs(data.createdAt).format("DD/MM/YYYY")}
-            </p>
-          </div>
+      {/* payment details */}
+  
 
-          <div className="hidden md:block">
-            <div className="  flex justify-center p-4 gap-12 text-lg text-violet-500 mr-4">
-       
-              <div
-                onClick={() => navigate(`/sUsers/editStockTransfer/${data._id}`)}
-                className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer"
-              >
-                <FaEdit className="text-blue-500" />
-                <p className="text-black font-bold text-sm">Edit</p>
-              </div>
-            
-              {/* </Link> */}
-              <div className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer">
-                <MdTextsms className="text-green-500" />
-                <p className="text-black font-bold text-sm">Sms</p>
-              </div>
-            </div>
-          </div>
-        </div>
-        {/* payment details */}
+      <VoucherDetailsHeader
+        data={data}
+        reFetchParent={reFetch}
+        editLink={`/sUsers/editStockTransfer/${data?._id}`}
+        user={"secondary"}
+        number={data?.stockTransferNumber}
+        tab={"stockTransfer"}
+      />
 
-        {/* party details */}
+      {/* party details */}
 
-        {/* <div className="bg-white mt-2 p-4  ">
+      {/* <div className="bg-white mt-2 p-4  ">
           <div className="flex justify-between text-sm mb-2">
             <h2 className="font-semibold text-sm  text-gray-500">PARTY NAME</h2>
    
@@ -115,37 +98,35 @@ function StockTransferDetailsSecondary() {
             </p>
           </div>
         </div> */}
-        {/* party details */}
-        {/* party Total Mount */}
+      {/* party details */}
+      {/* party Total Mount */}
 
-        <SalesProductDetails
-          data={data}
-          items={data?.items}
-          priceLevel={data?.priceLevel}
-          additionalCharges={data?.additionalCharges}
-        />
+      <SalesProductDetails
+        data={data}
+        items={data?.items}
+        priceLevel={data?.priceLevel}
+        additionalCharges={data?.additionalCharges}
+      />
 
-        {/* payment method */}
+      {/* payment method */}
 
-        <div className=" block md:hidden z-0 ">
-          <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 flex justify-center p-4 gap-12 text-lg text-violet-500  ">
-     
-            <div
-              onClick={() => navigate(`/sUsers/editStockTransfer/${data._id}`)}
-              className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer"
-            >
-              <FaEdit className="text-blue-500" />
-              <p className="text-black font-bold text-sm">Edit</p>
-            </div>
+      <div className=" block md:hidden z-0 ">
+        <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 flex justify-center p-4 gap-12 text-lg text-violet-500  ">
+          <div
+            onClick={() => navigate(`/sUsers/editStockTransfer/${data._id}`)}
+            className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer"
+          >
+            <FaEdit className="text-blue-500" />
+            <p className="text-black font-bold text-sm">Edit</p>
+          </div>
 
-
-            <div className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer">
-              <MdTextsms className="text-green-500" />
-              <p className="text-black font-bold text-sm">Sms</p>
-            </div>
+          <div className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer">
+            <MdTextsms className="text-green-500" />
+            <p className="text-black font-bold text-sm">Sms</p>
           </div>
         </div>
       </div>
+    </div>
   );
 }
 
