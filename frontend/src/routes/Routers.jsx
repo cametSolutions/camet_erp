@@ -130,6 +130,7 @@ import SearchGodown from '../pages/secUsers/SearchGodown'
 import AddItemStockTransferSec from '../pages/secUsers/AddItemStockTransferSec'
 import StockTransferDetailsSecondary from '../pages/secUsers/StockTransferDetailsSecondary'
 import EditStockTransferSecondary from '../pages/secUsers/EditStockTransferSecondary'
+import StockTransferDetailsPrimary from '../pages/primaryUsers/StockTransferDetailsPrimary'
 
 const Routers = () => {
   return (
@@ -197,6 +198,7 @@ const Routers = () => {
         <Route path='/pUsers/subcategory' element={<ProtectedPriRoute><AddSubCategory/></ProtectedPriRoute>}></Route> 
         <Route path='/pUsers/godown' element={<ProtectedPriRoute><AddGodown/></ProtectedPriRoute>}></Route> 
         <Route path='/pUsers/pricelevel' element={<ProtectedPriRoute><AddPriceLevel/></ProtectedPriRoute>}></Route> 
+        <Route path='/pUsers/stockTransferDetails/:id' element={<ProtectedPriRoute><StockTransferDetailsPrimary/></ProtectedPriRoute>}></Route> 
 
 
 

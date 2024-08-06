@@ -141,6 +141,9 @@ function ThreeInchSales() {
           additinalCharge={additinalCharge}
           inWords={inWords}
         />
+
+
+        
       </div>
   );
 }

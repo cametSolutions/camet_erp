@@ -86,6 +86,7 @@ function SalesDetailsSecondary() {
         number={data?.salesNumber}
         tab={"Sales"}
       />
+      
         {/* party details */}
 
         <div className="bg-white mt-2 p-4  ">
@@ -122,6 +123,9 @@ function SalesDetailsSecondary() {
           priceLevel={data?.priceLevel}
           additionalCharges={data?.additionalCharges}
         />
+
+
+        
 
         {/* payment method */}
 

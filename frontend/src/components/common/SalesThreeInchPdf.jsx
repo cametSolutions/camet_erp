@@ -86,13 +86,13 @@ function SalesThreeInchPdf({
     }
   }
 
-  console.log(address);
+  // console.log(address);
   return (
     <div
       ref={contentToPrint}
-      className="rounded-lg  px-3   flex justify-center "
+      className=" printable  rounded-lg  px-3   flex justify-center "
     >
-      <div className="  px-3 max-w-3xl mx-auto  md:block w-[18rem] ">
+      <div className=" print-container px-3 max-w-3xl mx-auto  md:block w-[18rem] ">
         <div className="flex justify-center ">
           <div className="font-bold text-md  mb-2 mt-6">INVOICE</div>
         </div>

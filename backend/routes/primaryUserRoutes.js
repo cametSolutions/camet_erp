@@ -21,6 +21,7 @@ import { registerPrimaryUser,login,addOrganizations,
 import { singleUpload } from '../multer/multer.js';
 import { primaryIsBlocked } from '../middlewares/isBlocked.js';
 import { companyAuthentication } from '../middlewares/authCompany.js';
+import { getStockTransferDetails } from '../controllers/commonController.js';
 
 router.post('/register', registerPrimaryUser);
 router.post('/login', login);
@@ -95,6 +96,7 @@ router.delete("/deleteProductSubDetails/:orgId/:id",authPrimary,primaryIsBlocked
 router.put("/editProductSubDetails/:orgId/:id",authPrimary,primaryIsBlocked,editProductSubDetails)
 router.get("/getAllSubDetails/:orgId",authPrimary,primaryIsBlocked,getAllSubDetails)
 router.get("/fetchConfigurationCurrentNumber/:orgId/:_id",authPrimary,primaryIsBlocked,fetchConfigurationCurrentNumber)
+router.get("/getStockTransferDetails/:id",authPrimary,primaryIsBlocked,getStockTransferDetails)
 
 
 

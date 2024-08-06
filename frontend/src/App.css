@@ -267,4 +267,26 @@ input[type="date"]:hover {
 }
 
 
+/* printStyles.css */
+@page {
+  size: 100mm auto;
+  margin: 0;
+}
+
+@media print {
+  body {
+    margin: 0;
+  }
+  
+  .printable {
+    width: 120mm;
+    margin: 0 auto;
+  }
+
+  .print-container {
+    page-break-after: avoid;
+  }
+}
+
+
 

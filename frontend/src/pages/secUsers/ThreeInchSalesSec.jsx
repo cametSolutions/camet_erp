@@ -136,7 +136,7 @@ function ThreeInchSalesSec() {
           </div>
         </div>
 
-        <SalesThreeInchPdf
+        {/* <SalesThreeInchPdf
           contentToPrint={contentToPrint}
           data={data}
           org={org}
@@ -144,7 +144,23 @@ function ThreeInchSalesSec() {
           bank={bank}
           additinalCharge={additinalCharge}
           inWords={inWords}
-        />
+        /> */}
+
+
+
+<div ref={contentToPrint}>
+      <div id="receipt" style={{ width: '80mm', fontSize: '12px', padding: '10px' }}>
+        <h2>Thank You for Shopping!</h2>
+        <hr />
+        <p>Item 1: $10.00</p>
+        <p>Item 2: $5.00</p>
+        <hr />
+        <p>Total: $15.00</p>
+        <p>Have a great day!</p>
+      </div>
+      <button >Print Receipt</button>
+    </div>
+
       </div>
     </div>
   );
