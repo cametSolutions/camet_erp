@@ -54,7 +54,7 @@ import {
   processSaleItems,
   updateSalesNumber,
   updateTallyData,
-  revertSaleStockUpdates
+  revertSaleStockUpdates,
 } from "../helpers/salesHelper.js";
 import stockTransferModel from "../models/stockTransferModel.js";
 
@@ -2349,8 +2349,7 @@ export const createSale = async (req, res) => {
       selectedDate,
     } = req.body;
 
-      const Secondary_user_id = req.sUserId;
-
+    const Secondary_user_id = req.sUserId;
 
     const NumberExistence = await checkForNumberExistence(
       req.query.vanSale === "true" ? vanSaleModel : salesModel,
@@ -2374,13 +2373,18 @@ export const createSale = async (req, res) => {
         .json({ success: false, message: "Secondary user not found" });
     }
 
-        const configuration = secondaryUser.configurations.find(
+    const configuration = secondaryUser.configurations.find(
       (config) => config.organization.toString() === orgId
     );
 
-        // const vanSaleConfig = configuration?.vanSale;
+    // const vanSaleConfig = configuration?.vanSale;
 
-    const updatedSalesNumber = await updateSalesNumber(orgId, req.query.vanSale, secondaryUser, configuration);
+    const updatedSalesNumber = await updateSalesNumber(
+      orgId,
+      req.query.vanSale,
+      secondaryUser,
+      configuration
+    );
     const updatedItems = processSaleItems(items);
     await handleSaleStockUpdates(items);
 
@@ -2392,10 +2396,20 @@ export const createSale = async (req, res) => {
       return { ...charge, taxAmt };
     });
 
-    const result = await createSaleRecord(req, salesNumber, updatedItems, updateAdditionalCharge);
-    await updateTallyData(orgId, salesNumber, req.owner, party, lastAmount,secondaryMobile);
-
-
+    const result = await createSaleRecord(
+      req,
+      salesNumber,
+      updatedItems,
+      updateAdditionalCharge
+    );
+    await updateTallyData(
+      orgId,
+      salesNumber,
+      req.owner,
+      party,
+      lastAmount,
+      secondaryMobile
+    );
 
     res.status(201).json({
       success: true,
@@ -2411,7 +2425,6 @@ export const createSale = async (req, res) => {
     });
   }
 };
-
 
 // @desc toget the details of transaction or sale
 // route get/api/sUsers/getSalesDetails
@@ -3625,9 +3638,8 @@ export const getPurchaseDetails = async (req, res) => {
 //   }
 // };
 
-
 export const editSale = async (req, res) => {
-  const  saleId  = req.params.id; // Assuming saleId is passed in the URL parameters
+  const saleId = req.params.id; // Assuming saleId is passed in the URL parameters
   const {
     selectedGodownId,
     selectedGodownName,
@@ -3644,29 +3656,33 @@ export const editSale = async (req, res) => {
 
   const vanSaleQuery = req.query.vanSale;
 
-    const isVanSale = vanSaleQuery === "true";
-  
-    let model;
-    if (isVanSale) {
-      model = vanSaleModel;
-    } else {
-      model = salesModel;
-    }
-  
+  const isVanSale = vanSaleQuery === "true";
+
+  let model;
+  if (isVanSale) {
+    model = vanSaleModel;
+  } else {
+    model = salesModel;
+  }
 
   try {
-   // Fetch existing sale record
-   const existingSale = await model.findById(saleId);
-   if (!existingSale) {
-     return res.status(404).json({ success: false, message: 'Sale not found' });
-   }
+    // Fetch existing sale record
+    const existingSale = await model.findById(saleId);
+    if (!existingSale) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Sale not found" });
+    }
 
- // Revert existing stock updates
-   await revertSaleStockUpdates(existingSale.items);
+    // Revert existing stock updates
+    await revertSaleStockUpdates(existingSale.items);
     // Process new sale items and update stock
-    const updatedItems = processSaleItems(items, priceLevelFromRedux, additionalChargesFromRedux);
+    const updatedItems = processSaleItems(
+      items,
+      priceLevelFromRedux,
+      additionalChargesFromRedux
+    );
 
-    
     await handleSaleStockUpdates(updatedItems);
 
     // Update existing sale record
@@ -3690,7 +3706,7 @@ export const editSale = async (req, res) => {
 
     await model.findByIdAndUpdate(saleId, updateData, { new: true });
 
-//     ///////////////////////////////////// for reflecting the rate change in outstanding  ////////////////////////////////////
+    //     ///////////////////////////////////// for reflecting the rate change in outstanding  ////////////////////////////////////
 
     const newBillValue = Number(lastAmount);
     const oldBillValue = Number(existingSale.finalAmount);
@@ -3724,18 +3740,17 @@ export const editSale = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: 'Sale edited successfully',
+      message: "Sale edited successfully",
     });
   } catch (error) {
     console.error(error);
     res.status(500).json({
       success: false,
-      message: 'An error occurred while editing the sale.',
+      message: "An error occurred while editing the sale.",
       error: error.message,
     });
   }
 };
-
 
 // @desc get brands, categories, subcategories, godowns, priceLevels
 // route get/api/sUsers/getAllSubDetails
@@ -4063,6 +4078,43 @@ export const cancelSale = async (req, res) => {
       success: false,
       message: "An error occurred while canceling the sale.",
       error: error.message,
+    });
+  }
+};
+
+// @desc to cancel stock tranfer
+// route post/api/sUsers/cancelstockTransfer;
+
+export const cancelStockTransfer = async (req,res) => {
+  const transferId = req.params.id;
+
+  try {
+    // Find the existing stock transfer document by ID
+    const existingTransfer = await stockTransferModel.findById(transferId);
+    if (!existingTransfer) {
+      return res.status(404).json({
+        error: "Stock transfer not found",
+      });
+    }
+
+    const result = await revertStockTransfer(existingTransfer);
+    existingTransfer.isCancelled = true;
+    const updateTransfer= await stockTransferModel.findByIdAndUpdate(
+      existingTransfer._id,
+      existingTransfer,
+      { new: true }
+    )
+
+    res.status(200).json({
+      message: "Stock transfer cancelled successfully",
+      data: existingTransfer,
+      updatedProducts: result,
+    })
+  } catch (error) {
+    console.error("Error in canceling stock transfer:", error);
+    res.status(500).json({
+      error: "Internal Server Error",
+      details: error.message,
     });
   }
 };

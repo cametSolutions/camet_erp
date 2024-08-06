@@ -14,7 +14,8 @@ import {login,getSecUserData,fetchOutstandingTotal,
     fetchConfigurationNumber,findSecondaryUserGodowns,findPrimaryUserGodownsSelf,
     godownwiseProducts,godownwiseProductsSelf,fetchAdditionalCharges,
     findGodownsNames,createPurchase,getPurchaseDetails,editSale,getAllSubDetails,
-    fetchGodowns,createStockTransfer,editStockTransfer,cancelSalesOrder,cancelSale} from "../controllers/secondaryUserController.js"
+    fetchGodowns,createStockTransfer,editStockTransfer,cancelSalesOrder,cancelSale,
+    cancelStockTransfer} from "../controllers/secondaryUserController.js"
 
     import { getStockTransferDetails } from '../controllers/commonController.js';
 import { authSecondary } from '../middlewares/authSecUsers.js';
@@ -83,6 +84,7 @@ router.get("/getStockTransferDetails/:id",authSecondary,secondaryIsBlocked,getSt
 router.post("/editStockTransfer/:id",authSecondary,secondaryIsBlocked,editStockTransfer)
 router.post("/cancelSalesOrder/:id",authSecondary,secondaryIsBlocked,cancelSalesOrder)
 router.post("/cancelSales/:id",authSecondary,secondaryIsBlocked,cancelSale)
+router.post("/cancelstockTransfer/:id",authSecondary,secondaryIsBlocked,cancelStockTransfer)
 
 
 

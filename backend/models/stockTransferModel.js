@@ -11,6 +11,7 @@ const StockTransferSchema = new mongoose.Schema(
     selectedGodownId: { type: String, required: true },
     items: { type: Array, required: true },
     finalAmount: { type: String, required: true },
+    isCancelled: { type: Boolean, default: false },
 
     createdAt: {
       type: Date,
