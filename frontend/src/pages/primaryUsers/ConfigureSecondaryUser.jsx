@@ -287,12 +287,12 @@ function ConfigureSecondaryUser() {
         );
       }
     } else if (type === "godown") {
+      console.log("haii");
+      
       if (checked) {
-        if (vanSale) {
-          setSelectedGodowns([value]);
-        } else {
+       
           setSelectedGodowns([...selectedGodowns, value]);
-        }
+        
       } else {
         setSelectedGodowns(selectedGodowns.filter((item) => item !== value));
       }
@@ -365,7 +365,7 @@ function ConfigureSecondaryUser() {
 
     const salesValidation = validateObject(formData.salesConfiguration, [
       "startingNumber",
-      "currentNumber",
+      // "currentNumber",
     ]);
 
     if (salesValidation === false) {
@@ -374,7 +374,7 @@ function ConfigureSecondaryUser() {
     }
     const stockTransferValidation = validateObject(formData.salesConfiguration, [
       "startingNumber",
-      "currentNumber",
+      // "currentNumber",
     ]);
 
     
@@ -385,7 +385,9 @@ function ConfigureSecondaryUser() {
     }
     const salesOrderValidation = validateObject(
       formData.salesOrderConfiguration,
-      ["startingNumber", "currentNumber"]
+      ["startingNumber",
+        //  "currentNumber"
+        ]
     );
 
     if (salesOrderValidation === false) {
@@ -395,7 +397,7 @@ function ConfigureSecondaryUser() {
 
     const receiptValidation = validateObject(formData.receiptConfiguration, [
       "startingNumber",
-      "currentNumber",
+      // "currentNumber",
     ]);
 
     if (receiptValidation === false) {
@@ -404,7 +406,7 @@ function ConfigureSecondaryUser() {
     }
     const purchaseValidation = validateObject(formData.purchaseConfiguration, [
       "startingNumber",
-      "currentNumber",
+      // "currentNumber",
     ]);
     if (purchaseValidation === false) {
       toast.error("Fill all purchase details or leave all fields empty");
@@ -417,7 +419,9 @@ function ConfigureSecondaryUser() {
     //   console.log(vanSaleConfiguration);
 
     let vanSaleValidation = true;
-    const excludedFields = ["startingNumber", "currentNumber"];
+    const excludedFields = ["startingNumber",
+      //  "currentNumber"
+      ];
 
     // Check if all properties of the object are empty
     if (
@@ -639,81 +643,115 @@ function ConfigureSecondaryUser() {
                       )
                     }
                     value={getConfigValue(selectedConfig, "currentNumber")}
-                    placeholder="Width of Numerical Part"
+                    placeholder="Current Number"
                   />
                 </div>
               </div>
             </div>
 
-            <section className="px-4">
-              <hr className="mt-5 border-b-1 border-blueGray-300" />
-              <h6 className="text-blueGray-400 text-sm mb-6 font-bold uppercase mt-10">
-                Price Levels and Locations
-              </h6>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4  ">
-                <div className="lg:col-span-1">
-                  <h6 className="text-blueGray-400 text-sm mb-4 font-bold uppercase  ">
-                    Price Levels
-                  </h6>
-                  <div className="space-y-2">
-                    {priceLevels?.length > 0 ? (
-                      priceLevels?.map((item, index) => (
-                        <div key={index} className="flex items-center">
-                          <input
-                            type="checkbox"
-                            id={`priceLevelCheckbox${index}`}
-                            value={item?.priceLevel}
-                            checked={selectedPriceLevels.includes(
-                              item?.priceLevel
-                            )}
-                            onChange={(e) =>
-                              handleCheckboxChange(
-                                "priceLevel",
-                                e.target.value,
-                                e.target.checked
-                              )
-                            }
-                            className="mr-2"
-                          />
-                          <label
-                            htmlFor={`priceLevelCheckbox${index}`}
-                            className="text-blueGray-600"
-                          >
-                            {item?.priceLevel}
-                          </label>
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-blueGray-600">No Price Levels added</p>
-                    )}
+            {
+              selectedConfig !=="receipt" &&   selectedConfig !=="stockTransfer" &&
+
+              (
+                <section className="px-4">
+                <hr className="mt-5 border-b-1 border-blueGray-300" />
+                <h6 className="text-blueGray-400 text-sm mb-6 font-bold uppercase mt-10">
+                  Price Levels and Locations
+                </h6>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4  ">
+                  <div className="lg:col-span-1">
+                    <h6 className="text-blueGray-400 text-sm mb-4 font-bold uppercase  ">
+                      Price Levels
+                    </h6>
+                    <div className="space-y-2">
+                      {priceLevels?.length > 0 ? (
+                        priceLevels?.map((item, index) => (
+                          <div key={index} className="flex items-center">
+                            <input
+                              type="checkbox"
+                              id={`priceLevelCheckbox${index}`}
+                              value={item?.priceLevel}
+                              checked={selectedPriceLevels.includes(
+                                item?.priceLevel
+                              )}
+                              onChange={(e) =>
+                                handleCheckboxChange(
+                                  "priceLevel",
+                                  e.target.value,
+                                  e.target.checked
+                                )
+                              }
+                              className="mr-2"
+                            />
+                            <label
+                              htmlFor={`priceLevelCheckbox${index}`}
+                              className="text-blueGray-600"
+                            >
+                              {item?.priceLevel}
+                            </label>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-blueGray-600">No Price Levels added</p>
+                      )}
+                    </div>
                   </div>
-                </div>
-                {/* {type !== "self" && ( */}
-                <div className="lg:col-span-1">
-                  <h6 className="text-blueGray-400 text-sm mb-4 font-bold uppercase">
-                    {selectedConfig === "vanSale"
-                      ? "Van sale Locations"
-                      : "Locations"}
-                  </h6>
-                  <div
-                    className={` 
-                     
-                       space-y-2 `}
-                  >
-                    {selectedConfig === "vanSale" ? (
-                      godowns?.length > 0 ? (
+                  {/* {type !== "self" && ( */}
+                  <div className="lg:col-span-1">
+                    <h6 className="text-blueGray-400 text-sm mb-4 font-bold uppercase">
+                      {selectedConfig === "vanSale"
+                        ? "Van sale Locations"
+                        : "Locations"}
+                    </h6>
+                    <div
+                      className={` 
+                       
+                         space-y-2 `}
+                    >
+  
+                      
+                      {selectedConfig === "vanSale" ? (
+                        godowns?.length > 0 ? (
+                          godowns?.map((item, index) => (
+                            <div key={index} className="flex items-center">
+                              <input
+                                type="checkbox"
+                                id={`godownCheckbox${index}`}
+                                value={item?.id}
+                                checked={selectedVanSaleGodowns.includes(
+                                  item?.id
+                                )}
+                                onChange={(e) =>
+                                  handleCheckboxChange(
+                                    "vanSaleGodown",
+                                    e.target.value,
+                                    e.target.checked
+                                  )
+                                }
+                                className="mr-2"
+                              />
+                              <label
+                                htmlFor={`godownCheckbox${index}`}
+                                className="text-blueGray-600"
+                              >
+                                {item?.godown}
+                              </label>
+                            </div>
+                          ))
+                        ) : (
+                          <p className="text-blueGray-600">No Godowns added</p>
+                        )
+                      ) : godowns?.length > 0 ? (
                         godowns?.map((item, index) => (
                           <div key={index} className="flex items-center">
                             <input
                               type="checkbox"
                               id={`godownCheckbox${index}`}
                               value={item?.id}
-                              checked={selectedVanSaleGodowns.includes(
-                                item?.id
-                              )}
+                              checked={selectedGodowns.includes(item?.id)}
                               onChange={(e) =>
                                 handleCheckboxChange(
-                                  "vanSaleGodown",
+                                  "godown",
                                   e.target.value,
                                   e.target.checked
                                 )
@@ -730,69 +768,18 @@ function ConfigureSecondaryUser() {
                         ))
                       ) : (
                         <p className="text-blueGray-600">No Godowns added</p>
-                      )
-                    ) : godowns?.length > 0 ? (
-                      godowns?.map((item, index) => (
-                        <div key={index} className="flex items-center">
-                          <input
-                            type="checkbox"
-                            id={`godownCheckbox${index}`}
-                            value={item?.id}
-                            checked={selectedGodowns.includes(item?.id)}
-                            onChange={(e) =>
-                              handleCheckboxChange(
-                                "godown",
-                                e.target.value,
-                                e.target.checked
-                              )
-                            }
-                            className="mr-2"
-                          />
-                          <label
-                            htmlFor={`godownCheckbox${index}`}
-                            className="text-blueGray-600"
-                          >
-                            {item?.godown}
-                          </label>
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-blueGray-600">No Godowns added</p>
-                    )}
-                    {/* {godowns?.length > 0 ? (
-                      godowns?.map((item, index) => (
-                        <div key={index} className="flex items-center">
-                          <input
-                            type="checkbox"
-                            id={`godownCheckbox${index}`}
-                            value={item?.id}
-                            checked={selectedGodowns.includes(item?.id)}
-                            onChange={(e) =>
-                              handleCheckboxChange(
-                                "godown",
-                                e.target.value,
-                                e.target.checked
-                              )
-                            }
-                            className="mr-2"
-                          />
-                          <label
-                            htmlFor={`godownCheckbox${index}`}
-                            className="text-blueGray-600"
-                          >
-                            {item?.godown}
-                          </label>
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-blueGray-600">No Godowns added</p>
-                    )} */}
+                      )}
+                    
+                    </div>
                   </div>
                 </div>
-              </div>
+  
+                <hr className="mt-5 border-b-1 border-blueGray-300" />
+              </section>
+              )
+            }
 
-              <hr className="mt-5 border-b-1 border-blueGray-300" />
-            </section>
+          
           </form>
           <button
             className="bg-pink-500 mt-10 ml-4 w-20 text-white active:bg-pink-600 font-bold uppercase text-xs px-4 py-2 rounded shadow hover:shadow-md outline-none focus:outline-none mr-1 ease-linear transition-all duration-150 transform hover:scale-105"
