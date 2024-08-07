@@ -90,6 +90,8 @@ function SalesThreeInchPdf({
   return (
     <div
       ref={contentToPrint}
+      style={{ width: "80mm",height:"auto" }}
+
       className="rounded-lg  px-3   flex justify-center "
     >
       <div className="  px-3 max-w-3xl mx-auto  md:block w-[18rem] ">

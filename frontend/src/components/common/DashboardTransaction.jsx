@@ -56,7 +56,7 @@ function DashboardTransaction({ filteredData, userType }) {
                   ? "bg-[#25cbcb]"
                   : el?.type === "Stock Transfer"
                   ? "bg-[#c42383]"
-                  : "bg-[#f6f6f6]"
+                  : "bg-[#2ae6ab]"
               }   flex items-center text-white px-2 rounded-sm `}
             >
               {/* <FaRegCircleDot /> */}
