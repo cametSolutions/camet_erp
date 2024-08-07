@@ -308,36 +308,65 @@ function ConfigureSecondaryUser() {
   };
 
 
-  function validateObject(obj, excludedFields = []) {
-    let isAllFilled = true;
-    let isAllEmpty = true;
-    const alphanumericRegex = /^[a-zA-Z0-9]+$/;
+  const formatFieldName = (fieldName) => {
+    // Split the camelCase field name into words
+    const words = fieldName.split(/(?=[A-Z])/);
+    // Capitalize the first word and join all words with spaces
+    return words.map((word, index) => 
+      index === 0 ? word.charAt(0).toUpperCase() + word.slice(1) : word.toLowerCase()
+    ).join(' ');
+  };
+  
 
-    for (let key in obj) {
-      // Skip the excluded fields
-      if (excludedFields.includes(key)) continue;
 
-      if (obj[key] !== "") {
-        isAllEmpty = false;
-
-        // Check if the value is alphanumeric
-        if (!alphanumericRegex.test(obj[key])) {
-          isAllFilled = false;
-          toast.error(`${key} must contain only alphanumeric characters`);
-        }
-      } else {
-        isAllFilled = false;
+  const validateConfiguration = (config, configName) => {
+    const mandatoryFields = ['currentNumber'];
+    const optionalFields = ['prefixDetails', 'suffixDetails', 'widthOfNumericalPart'];
+    const allFields = [...mandatoryFields, ...optionalFields];
+    
+    let errors = [];
+    let hasOptionalFields = false;
+  
+    // Check mandatory fields
+    for (let field of mandatoryFields) {
+      if (!config[field]) {
+        errors.push(`${configName}: ${formatFieldName(field)} is required`);
       }
     }
-
-    // Additional check for widthOfNumericalPart
-    if (obj?.widthOfNumericalPart && Number(obj?.widthOfNumericalPart) > 6) {
-      isAllFilled = false;
-      toast.error("Width of numerical part must be less than 6");
+  
+    // Check if any optional field is filled
+    for (let field of optionalFields) {
+      if (config[field]) {
+        hasOptionalFields = true;
+        break;
+      }
     }
-
-    return isAllFilled || isAllEmpty;
+  
+    // If any optional field is filled, all should be filled
+    if (hasOptionalFields) {
+      for (let field of optionalFields) {
+        if (!config[field]) {
+          errors.push(`${configName}: ${formatFieldName(field)} is required when any optional field is filled`);
+        }
+      }
+    }
+  
+  // Check for alphanumeric values and forward slash (not at the beginning)
+  const alphanumericWithSlashRegex = /^[a-zA-Z0-9][a-zA-Z0-9/]*$/;
+  for (let field of allFields) {
+    if (config[field] && !alphanumericWithSlashRegex.test(config[field])) {
+      errors.push(`${configName}: ${formatFieldName(field)} must start with and can only contain alphanumeric characters and forward slashes`);
+    }
   }
+
+    // Check widthOfNumericalPart
+    if (config.widthOfNumericalPart && Number(config.widthOfNumericalPart) > 6) {
+      errors.push(`${configName}: Width of numerical part must be less than or equal to 6`);
+    }
+  
+    return errors;
+  };
+  
 
   const submitHandler = async () => {
 
@@ -363,87 +392,106 @@ function ConfigureSecondaryUser() {
 
     console.log(formData);
 
-    const salesValidation = validateObject(formData.salesConfiguration, [
-      "startingNumber",
-      // "currentNumber",
-    ]);
+    // const salesValidation = validateObject(formData.salesConfiguration, [
+    //   "startingNumber",
+    //   "currentNumber",
+    // ]);
 
-    if (salesValidation === false) {
-      toast.error("Fill all sales details or leave all fields empty");
-      return;
-    }
-    const stockTransferValidation = validateObject(formData.salesConfiguration, [
-      "startingNumber",
-      // "currentNumber",
-    ]);
+    // if (salesValidation === false) {
+    //   toast.error("Fill all sales details or leave all fields empty");
+    //   return;
+    // }
+    // const stockTransferValidation = validateObject(formData.salesConfiguration, [
+    //   "startingNumber",
+    //   "currentNumber",
+    // ]);
 
     
 
-    if (stockTransferValidation === false) {
-      toast.error("Fill all Stock Transfer details or leave all fields empty");
-      return;
-    }
-    const salesOrderValidation = validateObject(
-      formData.salesOrderConfiguration,
-      ["startingNumber",
-        //  "currentNumber"
-        ]
-    );
+    // if (stockTransferValidation === false) {
+    //   toast.error("Fill all Stock Transfer details or leave all fields empty");
+    //   return;
+    // }
+    // const salesOrderValidation = validateObject(
+    //   formData.salesOrderConfiguration,
+    //   ["startingNumber",
+    //      "currentNumber"
+    //     ]
+    // );
 
-    if (salesOrderValidation === false) {
-      toast.error("Fill all sales order details or leave all fields empty");
-      return;
-    }
+    // if (salesOrderValidation === false) {
+    //   toast.error("Fill all sales order details or leave all fields empty");
+    //   return;
+    // }
 
-    const receiptValidation = validateObject(formData.receiptConfiguration, [
-      "startingNumber",
-      // "currentNumber",
-    ]);
+    // const receiptValidation = validateObject(formData.receiptConfiguration, [
+    //   "startingNumber",
+    //   "currentNumber",
+    // ]);
 
-    if (receiptValidation === false) {
-      toast.error("Fill all receipt details or leave all fields empty");
-      return;
-    }
-    const purchaseValidation = validateObject(formData.purchaseConfiguration, [
-      "startingNumber",
-      // "currentNumber",
-    ]);
-    if (purchaseValidation === false) {
-      toast.error("Fill all purchase details or leave all fields empty");
-      return;
-    }
+    // if (receiptValidation === false) {
+    //   toast.error("Fill all receipt details or leave all fields empty");
+    //   return;
+    // }
+    // const purchaseValidation = validateObject(formData.purchaseConfiguration, [
+    //   "startingNumber",
+    //   "currentNumber",
+    // ]);
+    // if (purchaseValidation === false) {
+    //   toast.error("Fill all purchase details or leave all fields empty");
+    //   return;
+    // }
 
-    const vanSaleConfiguration = formData.vanSaleConfiguration;
-    console.log(vanSaleConfiguration);
+    // const vanSaleConfiguration = formData.vanSaleConfiguration;
+    // console.log(vanSaleConfiguration);
 
-    //   console.log(vanSaleConfiguration);
+    // //   console.log(vanSaleConfiguration);
 
-    let vanSaleValidation = true;
-    const excludedFields = ["startingNumber",
-      //  "currentNumber"
-      ];
+    // let vanSaleValidation = true;
+    // const excludedFields = ["startingNumber",
+    //   //  "currentNumber"
+    //   ];
 
-    // Check if all properties of the object are empty
-    if (
-      Object.entries(vanSaleConfiguration).every(
-        ([key, value]) => excludedFields.includes(key) || value === ""
-      )
-    ) {
-      vanSaleValidation = true;
-    } else if (
-      Object.entries(vanSaleConfiguration).every(
-        ([key, value]) => excludedFields.includes(key) || value !== ""
-      )
-    ) {
-      vanSaleValidation = true;
-    } else {
-      vanSaleValidation = false; // Correctly assign false for mixed cases
-    }
+    // // Check if all properties of the object are empty
+    // if (
+    //   Object.entries(vanSaleConfiguration).every(
+    //     ([key, value]) => excludedFields.includes(key) || value === ""
+    //   )
+    // ) {
+    //   vanSaleValidation = true;
+    // } else if (
+    //   Object.entries(vanSaleConfiguration).every(
+    //     ([key, value]) => excludedFields.includes(key) || value !== ""
+    //   )
+    // ) {
+    //   vanSaleValidation = true;
+    // } else {
+    //   vanSaleValidation = false; // Correctly assign false for mixed cases
+    // }
 
-    if (vanSaleValidation === false) {
-      toast.error("Fill all van sales  details or leave all fields empty");
-      return;
-    }
+    // if (vanSaleValidation === false) {
+    //   toast.error("Fill all van sales  details or leave all fields empty");
+    //   return;
+    // }
+
+
+    
+  let allErrors = [];
+
+  // Validate each configuration
+  allErrors = allErrors.concat(validateConfiguration(formData.salesConfiguration, 'Sales'));
+  allErrors = allErrors.concat(validateConfiguration(formData.salesOrderConfiguration, 'Sales Order'));
+  allErrors = allErrors.concat(validateConfiguration(formData.receiptConfiguration, 'Receipt'));
+  allErrors = allErrors.concat(validateConfiguration(formData.purchaseConfiguration, 'Purchase'));
+  allErrors = allErrors.concat(validateConfiguration(formData.stockTransferConfiguration, 'Stock Transfer'));
+  allErrors = allErrors.concat(validateConfiguration(formData.vanSaleConfiguration, 'Van Sale'));
+
+
+  if (allErrors.length > 0) {
+    toast.error(allErrors[0]);  // Show only the first error
+    return;
+  }
+
 
     try {
       const res = await api.post(
@@ -569,7 +617,7 @@ function ConfigureSecondaryUser() {
                   />
                 </div>
               </div>
-              <div className="w-full lg:w-6/12 px-4">
+              {/* <div className="w-full lg:w-6/12 px-4">
                 <div className="relative w-full mb-3">
                   <label
                     className={`   block uppercase text-blueGray-600 text-xs font-bold mb-2`}
@@ -593,7 +641,7 @@ function ConfigureSecondaryUser() {
                     placeholder="Starting Number"
                   />
                 </div>
-              </div>
+              </div> */}
               {/* New input field for the width of the numerical part */}
               <div className="w-full lg:w-6/12 px-4">
                 <div className="relative w-full mb-3">
