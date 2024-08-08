@@ -37,6 +37,7 @@ const organizationSchema = new mongoose.Schema(
     purchaseNumber: { type: Number, default: 1 },
     vanSalesNumber: { type: Number, default: 1 },
     stockTransferNumber: { type: Number, default: 1 },
+    receiptNumber: { type: Number, default: 1 },
     salesNumberDetails: { type: Object },
     additionalCharges: [
       {
