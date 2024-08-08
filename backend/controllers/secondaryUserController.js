@@ -757,6 +757,7 @@ export const getProducts = async (req, res) => {
   const isVanSale = vanSaleQuery === "true";
 
   const excludeGodownId = req.query.excludeGodownId;
+  const stockTransfer = req.query.stockTransfer;
 
   const Primary_user_id = new mongoose.Types.ObjectId(req.owner);
 
@@ -815,7 +816,7 @@ export const getProducts = async (req, res) => {
       },
     };
 
-    if (selectedGodowns && selectedGodowns.length > 0) {
+    if (selectedGodowns && selectedGodowns.length > 0 && stockTransfer!=="true") {
       matchStage.$match["GodownList.godown_id"] = { $in: selectedGodowns };
 
       projectStage.$project.GodownList = {
@@ -2906,7 +2907,7 @@ export const findGodownsNames = async (req, res) => {
   }
 };
 
-// route POST /api/pUsers/createSale
+// route POST /api/pUsers/createPurchase
 
 export const createPurchase = async (req, res) => {
   const Primary_user_id = req.owner;
@@ -4068,6 +4069,8 @@ export const cancelSale = async (req, res) => {
       : salesModel
     ).findByIdAndUpdate(saleId, sale);
 
+
+
     res.status(200).json({
       success: true,
       message: "Sale canceled and stock reverted successfully",
@@ -4085,7 +4088,7 @@ export const cancelSale = async (req, res) => {
 // @desc to cancel stock tranfer
 // route post/api/sUsers/cancelstockTransfer;
 
-export const cancelStockTransfer = async (req,res) => {
+export const cancelStockTransfer = async (req, res) => {
   const transferId = req.params.id;
 
   try {
@@ -4099,17 +4102,17 @@ export const cancelStockTransfer = async (req,res) => {
 
     const result = await revertStockTransfer(existingTransfer);
     existingTransfer.isCancelled = true;
-    const updateTransfer= await stockTransferModel.findByIdAndUpdate(
+    const updateTransfer = await stockTransferModel.findByIdAndUpdate(
       existingTransfer._id,
       existingTransfer,
       { new: true }
-    )
+    );
 
     res.status(200).json({
       message: "Stock transfer cancelled successfully",
       data: existingTransfer,
       updatedProducts: result,
-    })
+    });
   } catch (error) {
     console.error("Error in canceling stock transfer:", error);
     res.status(500).json({
@@ -4118,3 +4121,5 @@ export const cancelStockTransfer = async (req,res) => {
     });
   }
 };
+
+

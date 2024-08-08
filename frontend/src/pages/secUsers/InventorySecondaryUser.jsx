@@ -49,6 +49,7 @@ function InventorySecondaryUser() {
       setLoader(true);
       try {
         const res = await api.get(`/api/sUsers/getProducts/${cmp_id}`, {
+         params:{stockTransfer:true},
           withCredentials: true,
         });
         setLoader(true);
@@ -64,7 +65,6 @@ function InventorySecondaryUser() {
     dispatch(removeAll());
   }, [cmp_id]);
 
-  console.log(products);
 
   useEffect(() => {
     if (search === "") {

@@ -7,7 +7,6 @@ import { toast } from "react-toastify";
 import { MdPrint } from "react-icons/md";
 import numberToWords from "number-to-words";
 import { Link } from "react-router-dom";
-import SidebarSec from "../../components/secUsers/SidebarSec";
 import SalesThreeInchPdf from "../../components/common/SalesThreeInchPdf";
 
 function ThreeInchSalesSec() {
@@ -118,7 +117,7 @@ function ThreeInchSalesSec() {
   return (
     <div className="">
      
-      <div className="flex-1 h-screen">
+      <div className="flex-1 h-screen ">
         <div className="bg-[#012a4a]   sticky top-0 p-3 px-5 text-white text-lg font-bold flex items-center gap-3  shadow-lg justify-between">
           <div className="flex gap-2 ">
             <Link to={`/sUsers/salesDetails/${id}`}>
@@ -136,7 +135,8 @@ function ThreeInchSalesSec() {
           </div>
         </div>
 
-        {/* <SalesThreeInchPdf
+      
+        <SalesThreeInchPdf
           contentToPrint={contentToPrint}
           data={data}
           org={org}
@@ -144,22 +144,7 @@ function ThreeInchSalesSec() {
           bank={bank}
           additinalCharge={additinalCharge}
           inWords={inWords}
-        /> */}
-
-
-
-<div ref={contentToPrint}>
-      <div id="receipt" style={{ width: '80mm', fontSize: '12px', padding: '10px' }}>
-        <h2>Thank You for Shopping!</h2>
-        <hr />
-        <p>Item 1: $10.00</p>
-        <p>Item 2: $5.00</p>
-        <hr />
-        <p>Total: $15.00</p>
-        <p>Have a great day!</p>
-      </div>
-      <button >Print Receipt</button>
-    </div>
+        />
 
       </div>
     </div>

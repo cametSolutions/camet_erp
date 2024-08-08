@@ -87,7 +87,7 @@ function Outstanding() {
           <div className="bg-white"></div>
           <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex  items-center gap-2  ">
           <IoIosArrowRoundBack
-              onClick={()=>{navigate(-1)}}
+              onClick={()=>{navigate("/sUsers/dashboard")}}
               className="block md:hidden text-white text-3xl"
             />
             <p className="text-white text-lg   font-bold ">Outstandings</p>

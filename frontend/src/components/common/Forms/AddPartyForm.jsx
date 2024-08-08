@@ -62,6 +62,9 @@ function AddPartyForm({ submitHandler, partyDetails = {} }) {
     }
   }, [partyDetails]);
 
+  console.log(accountGroup);
+  
+
   const submitForm = async () => {
     let accGroupValidation = false;
     if (
