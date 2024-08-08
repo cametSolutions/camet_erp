@@ -100,9 +100,9 @@ function SalesThreeInchPdf({
         </div>
         <div>
           <div className="bg-gray-500 h-1 w-full mt-1"></div>
-          <div className="flex items-center justify-between  bg-gray-300 px-3 py-1  font-bold">
-            <div className="text-[9px] ">Invoice #:{data?.salesNumber} </div>
-            <div className="text-[9px]">Date:{new Date().toDateString()} </div>
+          <div className="flex flex-col items-center justify-between  bg-gray-300 px-3 py-1  font-bold">
+            <div className="text-[11px] ">Invoice #:{data?.salesNumber} </div>
+            <div className="text-[11px]">Date:{new Date().toDateString()} </div>
           </div>
         </div>
 
@@ -144,10 +144,10 @@ function SalesThreeInchPdf({
         {/* </div> */}
 
         <div className="">
-          <p className="text-black   text-[9px] font-bold mt-6">
+          <p className="text-black   text-[11px] font-bold mt-6">
             Name: {data?.party?.partyName}
           </p>
-          <p className="text-black text-[9px] font-bold">
+          <p className="text-black text-[11px] font-bold">
             {[address?.billToAddress,]
               .filter((item) => item != null && item !== "" && item !== "null")
               .join(", ") || "Address not available"}
@@ -204,7 +204,7 @@ function SalesThreeInchPdf({
                   </tr>
                 );
               })}
-            <tr className=" border-y-2 border-t-2 border-gray-500  font-bold  text-[9px] bg-white">
+            <tr className=" border-y-2 border-t-2 border-gray-500  font-bold  text-[11px] bg-white">
               <td className="py-1 text-black ">Total</td>
               <td className=" col-span-2 py-1 text-black text-center">
                 {" "}
@@ -264,7 +264,7 @@ function SalesThreeInchPdf({
           <div className="w-1/2">
             <div className=" mt-3  ">
               <div className="  flex flex-col items-end ">
-                <div className="flex flex-col items-end text-[9px] text-black font-bold gap-1">
+                <div className="flex flex-col items-end text-[11px] text-black font-bold gap-1">
                   <p className={calculateTotalTax() > 0 ? "" : "hidden"}>
                     CGST : {(calculateTotalTax() / 2).toFixed(2)}
                   </p>
@@ -286,10 +286,10 @@ function SalesThreeInchPdf({
                 </div>
 
                 <div className="flex items-center mt-2 mb-1">
-                  <div className="text-black mr-2 font-bold text-[9px] ">
+                  <div className="text-black mr-2 font-bold text-[11px] ">
                     Add on charges:
                   </div>
-                  <div className="text-black font-bold text-[9px]">
+                  <div className="text-black font-bold text-[11px]">
                     ₹ {additinalCharge}
                   </div>
                 </div>
@@ -298,7 +298,7 @@ function SalesThreeInchPdf({
                 <>
                   <div
                     key={index}
-                    className="text-black  text-right font-semibold text-[9px] "
+                    className="text-black  text-right font-semibold text-[11px] "
                   >
                     <span>({el?.action === "add" ? "+" : "-"})</span>{" "}
                     {el?.option}: ₹ {el?.finalValue}
@@ -365,7 +365,7 @@ function SalesThreeInchPdf({
         <div className="text-black mb-2 font-bold text-[10px]">
           Terms and Conditions
         </div>
-        <div className="text-black text-[9px] leading-5">
+        <div className="text-black text-[11px] leading-5">
           {org?.configurations[0]?.terms?.map((el, index) => (
             <p key={index}>
               {" "}
