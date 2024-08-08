@@ -124,6 +124,8 @@ function DespatchDetails({ tab }) {
     return str.charAt(0).toUpperCase() + str.slice(1);
   }
 
+  const{title,...rest}=formValues
+
   return (
     <div>
       {/* <div
@@ -155,7 +157,7 @@ function DespatchDetails({ tab }) {
           <div className="bg-white pt-10 pb-6 px-4 md:px-7 mx-auto">
             <form>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-0 text-xs">
-                {Object.keys(formValues).map((key) => (
+                {Object.keys(rest).map((key) => (
                   <div
                     key={key}
                     className={`flex flex-col mb-5 ${

@@ -13,7 +13,12 @@ const vanSaleSchema = new mongoose.Schema(
     party: { type: Object, required: true },
     priceLevel: { type: String },
     items: { type: Array, required: true },
-    despatchDetails: { type: Object },
+    despatchDetails: { 
+      type: Object ,
+      set :function(value){
+        return  { title: "Despatch Details", ...value };
+      }
+    },
     additionalCharges: { type: Array, required: true },
     finalAmount: { type: String, required: true },
     isCancelled: { type: Boolean, default: false },
