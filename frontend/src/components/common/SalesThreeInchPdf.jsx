@@ -96,7 +96,7 @@ function SalesThreeInchPdf({
     >
       <div className="  px-3 max-w-3xl mx-auto  md:block w-[18rem] ">
         <div className="flex justify-center ">
-          <div className="font-bold text-md  mb-2 mt-6">INVOICE</div>
+          <div className="font-bold text-xl  mb-2 mt-6">INVOICE</div>
         </div>
         <div>
           <div className="bg-gray-500 h-1 w-full mt-1"></div>
@@ -183,7 +183,7 @@ function SalesThreeInchPdf({
                 return (
                   <tr
                     key={index}
-                    className="border-b border-t-1 text-[9px] bg-white"
+                    className="border-b border-t-1 text-[12px] bg-white"
                   >
                     <td className="py-2 text-black  font-bold  pr-2">
                       {el.product_name} <br />
