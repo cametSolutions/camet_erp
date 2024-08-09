@@ -3,31 +3,22 @@ import { toast } from 'react-toastify';
 import api from '../../../api/api';
 
 const PrintButton = ({ salesId }) => {
-//   const handlePrint = () => {
-//     // The URL should point to your Node.js server endpoint
-//     const printUrl = `my.bluetoothprint.scheme://http:///localhost:7000/api/print/${salesId}`;
-//     window.location.href = printUrl;
-//   };
-
-
   const handlePrint = async () => {
     try {
       // Fetch invoice details
-    //   const res = await api.get(`/api/sUsers/print-data/${salesId}`, {
-    //     withCredentials: true,
-    //   });
-const responceUrl="http://www.erp.camet.in/api/sUsers/print-data/salesId"
-      const bluetoothPrintUrl = `my.bluetoothprint.scheme://${responceUrl}`;
+      const response = await api.get(`/api/sUsers/print-data/${salesId}`, {
+        withCredentials: true,
+      });
 
-        // Open the link to trigger the Bluetooth Print app
-    window.location.href = bluetoothPrintUrl;
+      // Construct response URL (ensure it is properly encoded if necessary)
+      const responseUrl = encodeURIComponent(`https://www.erp.camet.in/api/sUsers/print-data/${salesId}`);
+      const bluetoothPrintUrl = `my.bluetoothprint.scheme://${responseUrl}`;
 
-      
-
-      
+      // Open the link to trigger the Bluetooth Print app
+      window.location.href = bluetoothPrintUrl;
     } catch (error) {
-      console.log(error);
-      toast.error(error.response.data.message);
+      console.error(error);
+      toast.error(error.response?.data?.message || 'An error occurred while trying to print.');
     }
   };
 
