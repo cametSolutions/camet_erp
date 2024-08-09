@@ -8,6 +8,7 @@ import { MdPrint } from "react-icons/md";
 import numberToWords from "number-to-words";
 import { Link } from "react-router-dom";
 import SalesThreeInchPdf from "../../components/common/SalesThreeInchPdf";
+import PrintButton from "../../components/common/buttons/PrintButton";
 
 function ThreeInchSalesSec() {
   const [data, setData] = useState([]);
@@ -144,6 +145,8 @@ function ThreeInchSalesSec() {
         inWords={inWords}
       />
          </div>
+
+
     </>
   );
 }
