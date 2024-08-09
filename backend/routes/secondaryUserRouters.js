@@ -17,7 +17,7 @@ import {login,getSecUserData,fetchOutstandingTotal,
     fetchGodowns,createStockTransfer,editStockTransfer,cancelSalesOrder,cancelSale,
     cancelStockTransfer} from "../controllers/secondaryUserController.js"
 
-    import { getStockTransferDetails } from '../controllers/commonController.js';
+    import { getStockTransferDetails,getPrintData } from '../controllers/commonController.js';
 import { authSecondary } from '../middlewares/authSecUsers.js';
 import { secondaryIsBlocked } from '../middlewares/isBlocked.js';
 import { companyAuthentication } from '../middlewares/authCompany.js';
@@ -85,23 +85,7 @@ router.post("/editStockTransfer/:id",authSecondary,secondaryIsBlocked,editStockT
 router.post("/cancelSalesOrder/:id",authSecondary,secondaryIsBlocked,cancelSalesOrder)
 router.post("/cancelSales/:id",authSecondary,secondaryIsBlocked,cancelSale)
 router.post("/cancelstockTransfer/:id",authSecondary,secondaryIsBlocked,cancelStockTransfer)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+router.post("/cancelstockTransfer/:id",authSecondary,secondaryIsBlocked,cancelStockTransfer)
+router.get("/print-data/:id",authSecondary,secondaryIsBlocked,getPrintData)
 
 export default router

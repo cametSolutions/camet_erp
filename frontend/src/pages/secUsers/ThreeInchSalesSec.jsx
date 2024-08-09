@@ -133,20 +133,18 @@ function ThreeInchSalesSec() {
       </div>
 
       <div className="  ">
+        <SalesThreeInchPdf
+          contentToPrint={contentToPrint}
+          data={data}
+          org={org}
+          subTotal={subTotal}
+          bank={bank}
+          additinalCharge={additinalCharge}
+          inWords={inWords}
+        />
+      </div>
 
-   
-      <SalesThreeInchPdf
-        contentToPrint={contentToPrint}
-        data={data}
-        org={org}
-        subTotal={subTotal}
-        bank={bank}
-        additinalCharge={additinalCharge}
-        inWords={inWords}
-      />
-         </div>
-
-
+      <PrintButton salesId={id}/>
     </>
   );
 }
