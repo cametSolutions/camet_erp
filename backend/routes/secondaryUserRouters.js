@@ -86,6 +86,6 @@ router.post("/cancelSalesOrder/:id",authSecondary,secondaryIsBlocked,cancelSales
 router.post("/cancelSales/:id",authSecondary,secondaryIsBlocked,cancelSale)
 router.post("/cancelstockTransfer/:id",authSecondary,secondaryIsBlocked,cancelStockTransfer)
 router.post("/cancelstockTransfer/:id",authSecondary,secondaryIsBlocked,cancelStockTransfer)
-router.get("/print-data/:id",authSecondary,secondaryIsBlocked,getPrintData)
+router.get("/print-data/:id",getPrintData)
 
 export default router
