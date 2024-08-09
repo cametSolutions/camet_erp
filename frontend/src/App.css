@@ -274,19 +274,20 @@ input[type="date"]:hover {
 }
 
 @media print {
-  body {
-    margin: 0;
-  }
-  
-  .printable {
-    width: 120mm;
-    margin: 0 auto;
+  /* Hide everything by default */
+  /* body * {
+    display: none;
+  } */
+
+  /* Show only the printable content */
+  .nonPrintable-content * {
+    display: none;
+    /* background-color: #c5390f; */
   }
 
-  .print-container {
-    page-break-after: avoid;
-  }
+
 }
+
 
 
 
