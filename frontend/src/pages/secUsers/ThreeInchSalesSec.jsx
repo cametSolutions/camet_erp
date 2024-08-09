@@ -105,8 +105,6 @@ function ThreeInchSalesSec() {
     }
   }, [data]);
 
-
-
   const handlePrint = useReactToPrint({
     documentTitle: `Sale Order ${data?.salesNumber}`,
     onBeforePrint: () => console.log("before printing..."),
@@ -115,39 +113,38 @@ function ThreeInchSalesSec() {
   });
 
   return (
-    <div className="">
-     
-      <div className="flex-1 h-screen ">
-        <div className="  nonPrintable-content bg-[#012a4a]   sticky top-0 p-3 px-5 text-white text-lg font-bold flex items-center gap-3  shadow-lg justify-between">
-          <div className="flex gap-2 ">
-            <Link to={`/sUsers/salesDetails/${id}`}>
-              <IoIosArrowRoundBack className="text-3xl" />
-            </Link>
-            <p>Share Your Order</p>
-          </div>
-          <div>
-            <MdPrint
-              onClick={() => {
-                handlePrint(null, () => contentToPrint.current);
-              }}
-              className="text-xl cursor-pointer "
-            />
-          </div>
+    <>
+      <div className="  nonPrintable-content bg-[#012a4a]   sticky top-0 p-3 px-5 text-white text-lg font-bold flex items-center gap-3  shadow-lg justify-between">
+        <div className="flex gap-2 ">
+          <Link to={`/sUsers/salesDetails/${id}`}>
+            <IoIosArrowRoundBack className="text-3xl" />
+          </Link>
+          <p>Share Your Order</p>
         </div>
-
-      
-        <SalesThreeInchPdf
-          contentToPrint={contentToPrint}
-          data={data}
-          org={org}
-          subTotal={subTotal}
-          bank={bank}
-          additinalCharge={additinalCharge}
-          inWords={inWords}
-        />
-
+        <div>
+          <MdPrint
+            onClick={() => {
+              handlePrint(null, () => contentToPrint.current);
+            }}
+            className="text-xl cursor-pointer "
+          />
+        </div>
       </div>
-    </div>
+
+      <div className="  ">
+
+   
+      <SalesThreeInchPdf
+        contentToPrint={contentToPrint}
+        data={data}
+        org={org}
+        subTotal={subTotal}
+        bank={bank}
+        additinalCharge={additinalCharge}
+        inWords={inWords}
+      />
+         </div>
+    </>
   );
 }
 

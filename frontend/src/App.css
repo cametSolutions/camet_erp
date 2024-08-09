@@ -285,6 +285,12 @@ input[type="date"]:hover {
     /* background-color: #c5390f; */
   }
 
+  .printableContent  {
+    display: block;
+  }
+
+
+
 
 }
 
