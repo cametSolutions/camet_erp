@@ -65,6 +65,9 @@ export const getPrintData = async (req, res) => {
       align: 2,
       format: 0,
     });
+
+    // Set the correct content type
+    res.setHeader('Content-Type', 'application/json');
     res.json(printData);
   } catch (error) {
     console.error("Error generating print data:", error);
