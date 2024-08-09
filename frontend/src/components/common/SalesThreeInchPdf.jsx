@@ -182,7 +182,7 @@ function SalesThreeInchPdf({
                 return (
                   <tr
                     key={index}
-                    className="border-b border-t-1 text-[12px] bg-white  text-center  "
+                    className="border-b  border-gray-500 border-t-2 text-[12px] bg-white  text-center  "
                   >
                     <td className="py-1 text-black  font-bold  pr-2 flex ">
                       {el.product_name} <br />
