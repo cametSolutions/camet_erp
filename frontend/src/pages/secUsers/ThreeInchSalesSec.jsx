@@ -114,7 +114,7 @@ function ThreeInchSalesSec() {
   });
 
   return (
-    <div style={{width:"80mm" ,backgroundColor:"red"}}>
+    <div style={{width:"80mm",height:"auto"}}>
       {/* <div className="  nonPrintable-content bg-[#012a4a]   sticky top-0 p-3 px-5 text-white text-lg font-bold flex items-center gap-3  shadow-lg justify-between">
         <div className="flex gap-2 ">
           <Link to={`/sUsers/salesDetails/${id}`}>
