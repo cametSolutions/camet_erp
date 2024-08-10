@@ -99,10 +99,10 @@ function SalesThreeInchPdf({
         </div>
         <div>
           <div className="flex items-center justify-between flex-col leading-4   font-bold">
-            <div className="text-[13px]  tracking-wide ">
+            <div className="text-[12px]  tracking-wide ">
               Invoice #:{data?.salesNumber}{" "}
             </div>
-            <div className="text-[13px] tracking-wide">
+            <div className="text-[12px] tracking-wide">
               Date:{new Date().toDateString()}{" "}
             </div>
           </div>
@@ -116,7 +116,7 @@ function SalesThreeInchPdf({
               </p>
             </div>
             <div className=" flex flex-col items-center leading-4 ">
-              <div className="text-black  text-[13px] font-semibold text-center">
+              <div className="text-black  text-[12px] font-semibold text-center">
                 {[
                   org?.flat,
                   org?.landmark,
@@ -128,16 +128,16 @@ function SalesThreeInchPdf({
                   .filter(Boolean) // Remove any falsy values (e.g., undefined or null)
                   .join(", ")}
               </div>
-              <div className="text-black font-semibold   text-[13px] ">
+              <div className="text-black font-semibold   text-[12px] ">
                 {org?.email}
               </div>
-              <div className="text-black font-semibold  text-[13px] ">
+              <div className="text-black font-semibold  text-[12px] ">
                 {org?.website}
               </div>
-              <div className="text-black font-semibold  text-[13px]">
+              <div className="text-black font-semibold  text-[12px]">
                 Gst No: {org?.gstNum}
               </div>
-              <div className="text-black font-semibold   text-[13px]">
+              <div className="text-black font-semibold   text-[12px]">
                 Pan No: {org?.pan}
               </div>
             </div>
@@ -149,7 +149,7 @@ function SalesThreeInchPdf({
           <p className="text-black   text-[13px] font-bold mt-6 tracking-wider">
             Name: {data?.party?.partyName}
           </p>
-          <p className="text-black text-[13px] font-semibold">
+          <p className="text-black text-[12px] font-semibold">
             {[address?.billToAddress]
               .filter((item) => item != null && item !== "" && item !== "null")
               .join(", ") || "Address not available"}
@@ -181,15 +181,15 @@ function SalesThreeInchPdf({
             {data?.items?.length > 0 &&
               data?.items.map((el, index) => {
                 const total = el?.total || 0;
-                console.log("total", total);
+                // console.log("total", total);
                 const count = el?.count || 0;
-                console.log("count", count);
+                // console.log("count", count);
                 const rate = (total / count).toFixed(2) || 0;
 
                 return (
                   <tr
                     key={index}
-                    className="border-b  border-gray-500 border-t-2 text-[12px] bg-white  text-center  "
+                    className="border-b  border-gray-500 border-t-2 text-[10px] bg-white  text-center  "
                   >
                     <td className="py-1 text-black  font-bold  pr-2 flex ">
                       {el.product_name} <br />
@@ -209,7 +209,7 @@ function SalesThreeInchPdf({
                   </tr>
                 );
               })}
-            <tr className=" border-y-2 border-t-2 border-gray-500  font-bold  text-[13px] bg-white">
+            <tr className=" border-y-2 border-t-2 border-gray-500  font-bold  text-[12px] bg-white">
               <td className="py-1 text-black ">Total</td>
               <td className=" col-span-2 py-1 text-black text-center">
                 {" "}
@@ -257,7 +257,7 @@ function SalesThreeInchPdf({
 
           <div className=" mt-1  ">
             <div className="  flex flex-col items-end ">
-              <div className="flex flex-col items-end text-[13px] text-black font-bold gap-1">
+              <div className="flex flex-col items-end text-[12px] text-black font-bold gap-1">
                 <p className={calculateTotalTax() > 0 ? "" : "hidden"}>
                   CGST : {(calculateTotalTax() / 2).toFixed(2)}
                 </p>
@@ -305,9 +305,9 @@ function SalesThreeInchPdf({
             <div className="flex justify-end  border-black  ">
               <div className="w-3/4"></div>
 
-              <div className="  text-black  font-extrabold text-[13px] flex justify-end   ">
+              <div className="  text-black  font-extrabold text-[11px] flex justify-end   ">
                 <p className="text-nowrap border-y-2 py-1">NET AMOUNT : </p>
-                <div className="text-black  font-bold text-[13px] text-nowrap  border-y-2 py-1    ">
+                <div className="text-black  font-bold text-[11px] text-nowrap  border-y-2 py-1    ">
                   ₹ {data?.finalAmount}
                 </div>
               </div>
