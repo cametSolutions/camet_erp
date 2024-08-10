@@ -90,9 +90,8 @@ function SalesThreeInchPdf({
   return (
     <div
       ref={contentToPrint}
-      style={{ width: "80mm",height:"auto",}}
-
-      className="  rounded-lg   flex justify-center pr-1 "
+      style={{ width: "80mm", height: "auto" }}
+      className="  rounded-lg   flex justify-center px-2.5 "
     >
       <div className=" print-container  max-w-3xl mx-auto  md:block w-full ">
         <div className="flex justify-center ">
@@ -100,8 +99,12 @@ function SalesThreeInchPdf({
         </div>
         <div>
           <div className="flex items-center justify-between flex-col leading-4   font-bold">
-            <div className="text-[13px]  tracking-wide ">Invoice #:{data?.salesNumber} </div>
-            <div className="text-[13px] tracking-wide">Date:{new Date().toDateString()} </div>
+            <div className="text-[13px]  tracking-wide ">
+              Invoice #:{data?.salesNumber}{" "}
+            </div>
+            <div className="text-[13px] tracking-wide">
+              Date:{new Date().toDateString()}{" "}
+            </div>
           </div>
         </div>
 
@@ -147,21 +150,25 @@ function SalesThreeInchPdf({
             Name: {data?.party?.partyName}
           </p>
           <p className="text-black text-[13px] font-semibold">
-            {[address?.billToAddress,]
+            {[address?.billToAddress]
               .filter((item) => item != null && item !== "" && item !== "null")
               .join(", ") || "Address not available"}
           </p>
         </div>
 
         {/* <hr className="border-t-2 border-black mb-0.5" /> */}
-        <table className="w-full text-left    mt-2 tracking-wider ">
+        <table className="w-full text-left     mt-2 tracking-wider ">
           <thead className="border-b border-t-2 border-black text-[10px] text-right ">
             <tr>
               <th className="text-black font-bold uppercase  px-1 text-left">
                 Items
               </th>
-              <th className="text-black font-bold uppercase text-center p-2">Qty</th>
-              <th className="text-black font-bold uppercase text-center p-2">Rate</th>
+              <th className="text-black font-bold uppercase text-center p-2">
+                Qty
+              </th>
+              <th className="text-black font-bold uppercase text-center p-2">
+                Rate
+              </th>
               {/* <th className="text-black font-bold uppercase p-2">Disc</th> */}
               {/* <th className="text-black font-bold uppercase p-2">Tax</th> */}
               <th className="text-black font-bold uppercase p-2 pr-0">
@@ -170,7 +177,7 @@ function SalesThreeInchPdf({
             </tr>
           </thead>
 
-          <tbody >
+          <tbody>
             {data?.items?.length > 0 &&
               data?.items.map((el, index) => {
                 const total = el?.total || 0;
@@ -186,17 +193,11 @@ function SalesThreeInchPdf({
                   >
                     <td className="py-1 text-black  font-bold  pr-2 flex ">
                       {el.product_name} <br />
-                      <p className="text-black ">
-                      ({el.igst}%)
-                      </p>
+                      <p className="text-black ">({el.igst}%)</p>
                     </td>
                     <td className="py-1 text-black  font-bold text-right pr-2">
-                      
                       {el?.count}
-                      <p className="text-[10px] font-semibold">
-
-                       {el?.unit}
-                      </p>
+                      <p className="text-[10px] font-semibold">{el?.unit}</p>
                     </td>
                     <td className="py-1 text-black font-bold  text-right pl-2 pr-1 text-nowrap">
                       {rate || 0}
@@ -254,53 +255,52 @@ function SalesThreeInchPdf({
             )}
           </div> */}
 
-            <div className=" mt-1  ">
-              <div className="  flex flex-col items-end ">
-                <div className="flex flex-col items-end text-[13px] text-black font-bold gap-1">
-                  <p className={calculateTotalTax() > 0 ? "" : "hidden"}>
-                    CGST : {(calculateTotalTax() / 2).toFixed(2)}
-                  </p>
-                  <p className={calculateTotalTax() > 0 ? "" : "hidden"}>
-                    SGST : {(calculateTotalTax() / 2).toFixed(2)}
-                  </p>
-             
-        
-                  <p className={calculateCess() > 0 ? "" : "hidden"}>
-                    CESS : {calculateCess()}
-                  </p>
-                  <p className={calculateAddCess() > 0 ? "" : "hidden"}>
-                    ADD.CESS : {calculateAddCess()}
-                  </p>
-                  <p className={calculateStateTax() > 0 ? "" : "hidden"}>
-                    STATE TAX : {calculateStateTax()}
-                  </p>
-                </div>
+          <div className=" mt-1  ">
+            <div className="  flex flex-col items-end ">
+              <div className="flex flex-col items-end text-[13px] text-black font-bold gap-1">
+                <p className={calculateTotalTax() > 0 ? "" : "hidden"}>
+                  CGST : {(calculateTotalTax() / 2).toFixed(2)}
+                </p>
+                <p className={calculateTotalTax() > 0 ? "" : "hidden"}>
+                  SGST : {(calculateTotalTax() / 2).toFixed(2)}
+                </p>
 
-                <div className="flex items-center mt-1 mb-1">
-                  <div className="text-black mr-2 font-bold text-[12px] ">
-                    Add on charges:
-                  </div>
-                  <div className="text-black font-bold text-[12px]">
-                     {additinalCharge}
-                  </div>
+                <p className={calculateCess() > 0 ? "" : "hidden"}>
+                  CESS : {calculateCess()}
+                </p>
+                <p className={calculateAddCess() > 0 ? "" : "hidden"}>
+                  ADD.CESS : {calculateAddCess()}
+                </p>
+                <p className={calculateStateTax() > 0 ? "" : "hidden"}>
+                  STATE TAX : {calculateStateTax()}
+                </p>
+              </div>
+
+              <div className="flex items-center mt-1 mb-1">
+                <div className="text-black mr-2 font-bold text-[12px] ">
+                  Add on charges:
+                </div>
+                <div className="text-black font-bold text-[12px]">
+                  {additinalCharge}
                 </div>
               </div>
-              {data?.additionalCharges?.map((el, index) => (
-                <>
-                  <div
-                    key={index}
-                    className="text-black  text-right font-semibold text-[12px] "
-                  >
-                    <span>({el?.action === "add" ? "+" : "-"})</span>{" "}
-                    {el?.option}: ₹ {el?.finalValue}
+            </div>
+            {data?.additionalCharges?.map((el, index) => (
+              <>
+                <div
+                  key={index}
+                  className="text-black  text-right font-semibold text-[12px] "
+                >
+                  <span>({el?.action === "add" ? "+" : "-"})</span> {el?.option}
+                  : ₹ {el?.finalValue}
+                </div>
+                {el?.taxPercentage && (
+                  <div className="text-black  text-right font-semibold text-[8px] mb-2">
+                    ( {el?.value} + {el?.taxPercentage}% )
                   </div>
-                  {el?.taxPercentage && (
-                    <div className="text-black  text-right font-semibold text-[8px] mb-2">
-                      ( {el?.value} + {el?.taxPercentage}% )
-                    </div>
-                  )}
-                </>
-              ))}
+                )}
+              </>
+            ))}
 
             <div className="flex justify-end  border-black  ">
               <div className="w-3/4"></div>
@@ -350,7 +350,7 @@ function SalesThreeInchPdf({
           </div>
         </div>
 
-            {/* <div className="mt-3  flex justify-center ">
+        {/* <div className="mt-3  flex justify-center ">
             {bank && Object.keys(bank).length > 0 ? (
               <>
           
