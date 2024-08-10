@@ -269,7 +269,7 @@ input[type="date"]:hover {
 
 /* printStyles.css */
 @page {
-  size: 100mm auto;
+  size: 80mm auto;
   margin: 0;
 }
 
@@ -286,7 +286,7 @@ input[type="date"]:hover {
   }
 
   .printableContent  {
-    display: block;
+    display: block !important;
   }
 
 

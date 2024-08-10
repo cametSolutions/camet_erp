@@ -11,7 +11,7 @@ const PrintButton = ({ salesId }) => {
       });
 
       // Construct response URL (ensure it is properly encoded if necessary)
-      const responseUrl = encodeURIComponent(`https://www.erp.camet.in/api/sUsers/print-data/${salesId}`);
+      const responseUrl = `https://www.erp.camet.in/api/sUsers/print-data/${salesId}`;
       const bluetoothPrintUrl = `my.bluetoothprint.scheme://${responseUrl}`;
 
       // Open the link to trigger the Bluetooth Print app

@@ -38,7 +38,8 @@ export const getPrintData = async (req, res) => {
       },
       {
         type: 0,
-        content: `Date: ${new Date(salesData.date).toLocaleDateString()}`,
+        // content: `Date: ${new Date(salesData.date).toLocaleDateString()}`,
+        content: `Date:11`,
         bold: 0,
         align: 1,
         format: 0,

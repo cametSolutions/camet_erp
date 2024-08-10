@@ -2868,7 +2868,7 @@ export const addSecondaryConfigurations = async (req, res) => {
         purchaseNumber: existingConfiguration.purchaseNumber,
         receiptNumber: existingConfiguration.receiptNumber,
         vanSalesNumber: existingConfiguration.vanSalesNumber,
-        stockTransferNumber: existingConfiguration.stockTransferNumber,
+      derNumber: existingConfiguration.stockTransferNumber,
       };
     }
 
