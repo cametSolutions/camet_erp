@@ -385,7 +385,7 @@ function SalesThreeInchPdf({
         <div className="text-black mb-2 font-bold text-[10px]">
           Terms and Conditions
         </div>
-        <div className="text-black text-[11px] leading-5">
+        <div className="text-black text-[9px] leading-5">
           {org?.configurations[0]?.terms?.map((el, index) => (
             <p key={index}>
               {" "}
