@@ -816,7 +816,11 @@ export const getProducts = async (req, res) => {
       },
     };
 
-    if (selectedGodowns && selectedGodowns.length > 0 && stockTransfer!=="true") {
+    if (
+      selectedGodowns &&
+      selectedGodowns.length > 0 &&
+      stockTransfer !== "true"
+    ) {
       matchStage.$match["GodownList.godown_id"] = { $in: selectedGodowns };
 
       projectStage.$project.GodownList = {
@@ -2505,7 +2509,7 @@ export const fetchAdditionalDetails = async (req, res) => {
 
     let priceLevelsResult = [];
 
-    if (selectedPriceLevels && selectedPriceLevels.length == 0) {
+    if (!selectedPriceLevels || selectedPriceLevels.length === 0) {
       priceLevelsResult = await productModel.aggregate([
         {
           $match: {
@@ -2891,6 +2895,7 @@ export const findGodownsNames = async (req, res) => {
     const configuration = secUser.configurations.find(
       (item) => item.organization == cmp_id
     );
+
     if (configuration) {
       const { vanSaleConfiguration } = configuration;
       const godownName = vanSaleConfiguration.vanSaleGodownName;
@@ -2900,7 +2905,13 @@ export const findGodownsNames = async (req, res) => {
         godownName,
         godownId,
       };
+      console.log("data", data);
+
       res.status(200).json({ message: "godown details fetched", data: data });
+    } else {
+      res
+        .status(404)
+        .json({ message: "No configuration found for van sale", data: null });
     }
   } catch (error) {
     res.status(500).json({ message: "internal server error" });
@@ -4062,14 +4073,14 @@ export const cancelSale = async (req, res) => {
     // Revert stock updates
     await revertSaleStockUpdates(sale.items);
 
+    
+
     // update Sale status
     sale.isCancelled = true;
     await (vanSaleQuery === "true"
       ? vanSaleModel
       : salesModel
     ).findByIdAndUpdate(saleId, sale);
-
-
 
     res.status(200).json({
       success: true,
@@ -4121,5 +4132,3 @@ export const cancelStockTransfer = async (req, res) => {
     });
   }
 };
-
-

@@ -89,11 +89,18 @@ function AddItemVanSaleSecondary() {
         const godown = await api.get(`/api/sUsers/godownsName/${cpm_id}`, {
           withCredentials: true,
         });
+
+        console.log(godown.data?.data?.godownName);
+        
         setGodownname(godown.data?.data?.godownName || "");
-        // setGodownname("")
+
+       
       } catch (error) {
         console.log(error);
-        toast.error(error.message);
+        console.log(error.response);
+        
+        navigate("/sUsers/vanSale");
+        toast.error(error.response.data.message);
       }
     };
     fetchGodownname();
@@ -495,7 +502,7 @@ function AddItemVanSaleSecondary() {
         ) {
           itemToUpdate.GodownList[0].count =
             new Decimal(itemToUpdate.count || 0).add(1).toNumber() || 1;
-            itemToUpdate.GodownList[0].added=true;
+          itemToUpdate.GodownList[0].added = true;
         }
         itemToUpdate.count =
           new Decimal(itemToUpdate.count || 0).add(1).toNumber() || 1;
@@ -571,10 +578,15 @@ function AddItemVanSaleSecondary() {
         currentItem.GodownList = updatedGodownListWithTotals;
         currentItem.total = totalData.total; // Update the overall total
       } else {
-
-        if ( currentItem?.hasGodownOrBatch && currentItem?.GodownList.every((godown) => !godown.batch)) {
-          
-          currentItem.GodownList[0].count = new Decimal(currentItem.GodownList[0].count).add(1).toNumber();
+        if (
+          currentItem?.hasGodownOrBatch &&
+          currentItem?.GodownList.every((godown) => !godown.batch)
+        ) {
+          currentItem.GodownList[0].count = new Decimal(
+            currentItem.GodownList[0].count
+          )
+            .add(1)
+            .toNumber();
         }
         // Increment the count of the currentItem by 1
         currentItem.count = new Decimal(currentItem.count).add(1).toNumber();
@@ -637,11 +649,15 @@ function AddItemVanSaleSecondary() {
         currentItem.GodownList = updatedGodownListWithTotals;
         currentItem.total = totalData.total; // Update the overall total
       } else {
-
-        
-        if ( currentItem?.hasGodownOrBatch && currentItem?.GodownList.every((godown) => !godown.batch)) {
-          
-          currentItem.GodownList[0].count = new Decimal(currentItem.GodownList[0].count).sub(1).toNumber();
+        if (
+          currentItem?.hasGodownOrBatch &&
+          currentItem?.GodownList.every((godown) => !godown.batch)
+        ) {
+          currentItem.GodownList[0].count = new Decimal(
+            currentItem.GodownList[0].count
+          )
+            .sub(1)
+            .toNumber();
         }
         currentItem.count = new Decimal(currentItem.count).sub(1).toNumber();
 
@@ -715,7 +731,7 @@ function AddItemVanSaleSecondary() {
     handleTotalChangeWithPriceLevel(selectedValue);
   };
 
-console.log(item);
+  console.log(item);
 
   ///////////////////////////react window ///////////////////////////////////
 
@@ -746,26 +762,24 @@ console.log(item);
   /////////////////////expansion panel////////////////////
 
   const handleExpansion = (id) => {
-
     const currentItems = [...item];
-  
+
     const updatedItems = structuredClone(currentItems);
     const index = updatedItems.findIndex((item) => item._id === id);
-  
+
     if (index !== -1) {
       updatedItems[index].isExpanded = !updatedItems[index].isExpanded;
     }
-  
+
     // Log the updated items for debugging
     console.log(updatedItems.length);
     console.log(updatedItems);
-  
+
     // Update state with the new items array
     setItem(updatedItems);
-  
+
     // Optionally update refresh state or other operations
     // setRefresh((prevRefresh) => !prevRefresh);
-  
   };
 
   // useEffect(() => {
@@ -844,50 +858,52 @@ console.log(item);
                   : el?.product_name.slice(0, 30) + "..."}
                 {/* {el?.product_name} */}
               </p>
-              {el?.hasGodownOrBatch && el.GodownList.some((godown)=>godown.batch) && (
-                <div className="flex flex-col">
-                  <div className="flex">
-                    <span>Net Amount : ₹ </span>
-                    <span>{el?.total || 0}</span>
-                  </div>
-                  <span className="text-gray-500 text-xs md:text-sm  ">
-                    Stock :
-                    <span>
-                      {" "}
-                      {el?.GodownList.reduce(
-                        (acc, curr) => (acc += curr.balance_stock),
-                        0
-                      ) || 0}
+              {el?.hasGodownOrBatch &&
+                el.GodownList.some((godown) => godown.batch) && (
+                  <div className="flex flex-col">
+                    <div className="flex">
+                      <span>Net Amount : ₹ </span>
+                      <span>{el?.total || 0}</span>
+                    </div>
+                    <span className="text-gray-500 text-xs md:text-sm  ">
+                      Stock :
+                      <span>
+                        {" "}
+                        {el?.GodownList.reduce(
+                          (acc, curr) => (acc += curr.balance_stock),
+                          0
+                        ) || 0}
+                      </span>
                     </span>
-                  </span>
-                </div>
-              )}
+                  </div>
+                )}
 
-              {el?.hasGodownOrBatch && el.GodownList.some((godown)=>!godown.batch) && (
-                <>
-                  <div className="flex gap-1 items-center">
-                    <p>
-                      ₹{" "}
-                      {
-                        // el?.Priceleveles?.find(
-                        //   (item) => item.pricelevel === selectedPriceLevel
-                        // )?.pricerate
-                        el?.GodownList[0]?.selectedPriceRate
-                      }{" "}
-                      /
-                    </p>{" "}
-                    <span className="text-[10px] mt-1">{el?.unit}</span>
-                  </div>
-                  <div className="flex">
-                    <p className="text-red-500">STOCK : </p>
-                    <span>{el?.GodownList[0]?.balance_stock}</span>
-                  </div>
-                  <div>
-                    <span>Total : ₹ </span>
-                    <span>{el?.GodownList[0]?.individualTotal || 0}</span>
-                  </div>
-                </>
-              )}
+              {el?.hasGodownOrBatch &&
+                el.GodownList.some((godown) => !godown.batch) && (
+                  <>
+                    <div className="flex gap-1 items-center">
+                      <p>
+                        ₹{" "}
+                        {
+                          // el?.Priceleveles?.find(
+                          //   (item) => item.pricelevel === selectedPriceLevel
+                          // )?.pricerate
+                          el?.GodownList[0]?.selectedPriceRate
+                        }{" "}
+                        /
+                      </p>{" "}
+                      <span className="text-[10px] mt-1">{el?.unit}</span>
+                    </div>
+                    <div className="flex">
+                      <p className="text-red-500">STOCK : </p>
+                      <span>{el?.GodownList[0]?.balance_stock}</span>
+                    </div>
+                    <div>
+                      <span>Total : ₹ </span>
+                      <span>{el?.GodownList[0]?.individualTotal || 0}</span>
+                    </div>
+                  </>
+                )}
             </div>
           </div>
 
@@ -905,7 +921,10 @@ console.log(item);
             </div>
           )} */}
 
-          {el?.added && el?.count > 0   &&  el?.hasGodownOrBatch && el?.GodownList.every((godown) => !godown.batch)  ? (
+          {el?.added &&
+          el?.count > 0 &&
+          el?.hasGodownOrBatch &&
+          el?.GodownList.every((godown) => !godown.batch) ? (
             <div className="flex items-center flex-col gap-2">
               <>
                 <button
@@ -990,7 +1009,8 @@ console.log(item);
               </>
             </div>
           ) : (
-           el?.hasGodownOrBatch && el?.GodownList.every((godown) => !godown.batch) && (
+            el?.hasGodownOrBatch &&
+            el?.GodownList.every((godown) => !godown.batch) && (
               <div
                 onClick={() => {
                   handleAddClick(el?._id);

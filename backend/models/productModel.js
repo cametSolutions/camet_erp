@@ -5,11 +5,10 @@ const productSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  cmp_id:{
-    type:String,
-    required:true
+  cmp_id: {
+    type: String,
+    required: true
   },
-
   product_code: {
     type: String,
   },
@@ -19,8 +18,7 @@ const productSchema = new mongoose.Schema({
   Primary_user_id: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "PrimaryUser",
-    required:true
-
+    required: true
   },
   Secondary_user_id: {
     type: mongoose.Schema.Types.ObjectId,
@@ -59,8 +57,8 @@ const productSchema = new mongoose.Schema({
     // required: true,
   },
   hsn_id: {
-    type: mongoose.Schema.Types.ObjectId,ref:"Hsn",
-    
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Hsn",
   },
   purchase_price: {
     type: String,
@@ -92,16 +90,60 @@ const productSchema = new mongoose.Schema({
   state_cess: {
     type: String,
   },
-product_master_id: {
+  product_master_id: {
     type: String,
   },
-
   subcategory_id: {
     type: String,
   },
   brand_id: {
     type: String,
   },
+});
+
+// Function to truncate to a specified number of decimals
+const truncateToNDecimals = (num, n) => {
+  const parts = num.toString().split(".");
+  if (parts.length === 1) return num; // No decimal part
+  parts[1] = parts[1].substring(0, n); // Truncate the decimal part
+  return parseFloat(parts.join("."));
+};
+
+// Pre-save middleware to truncate fields
+productSchema.pre('save', function(next) {
+  const n = 2; // Number of decimals to truncate to
+
+  const fieldsToTruncate = [
+    'balance_stock', 'purchase_price', 'purchase_cost',
+    'cgst', 'sgst', 'igst', 'cess', 'addl_cess', 'state_cess'
+  ];
+
+  fieldsToTruncate.forEach(field => {
+    if (this[field]) {
+      this[field] = truncateToNDecimals(this[field], n).toString();
+    }
+  });
+
+  next();
+});
+
+// Pre-update middleware to truncate fields
+productSchema.pre(['findOneAndUpdate', 'updateOne', 'updateMany'], function(next) {
+  const update = this.getUpdate();
+  const n = 2; // Number of decimals to truncate to
+
+  const fieldsToTruncate = [
+    'balance_stock', 'purchase_price', 'purchase_cost',
+    'cgst', 'sgst', 'igst', 'cess', 'addl_cess', 'state_cess'
+  ];
+
+  fieldsToTruncate.forEach(field => {
+    if (update[field]) {
+      update[field] = truncateToNDecimals(update[field], n).toString();
+    }
+  });
+
+  next();
 });
 
 export default mongoose.model("Product", productSchema);

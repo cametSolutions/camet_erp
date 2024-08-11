@@ -163,7 +163,8 @@ function VanSaleSecondary() {
         setGodownId(godown.data?.data?.godownId || "");
       } catch (error) {
         console.log(error);
-        toast.error(error.message);
+        toast.error(error.response.data.message);
+        navigate(-1)
       }
     };
     fetchGodownname();
