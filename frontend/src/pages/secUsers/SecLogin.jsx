@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import loginb from "../../assets/images/seclogin.jpg";
 import { toast } from "react-toastify";
 import { PropagateLoader } from "react-spinners";
@@ -18,6 +18,15 @@ function SecLogin() {
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
   };
+
+
+  useEffect(() => {
+    const userData = JSON.parse(localStorage.getItem("sUserData"));
+    console.log(userData);
+    if (userData) {
+      navigate("/sUsers/dashboard");
+    }
+  }, []);
 
   const submitHandler = async (e) => {
     e.preventDefault();
