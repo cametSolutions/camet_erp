@@ -122,7 +122,7 @@ function AddItemStockTransferSec() {
       try {
         if (allProductsFromRedux.length === 0) {
           const res = await api.get(`/api/sUsers/getProducts/${cpm_id}`, {
-            params: { vanSale: false, excludeGodownId: selectedGodownId },
+            params: { vanSale: false, excludeGodownId: selectedGodownId,stockTransfer:true },
             withCredentials: true,
           });
           productData = res.data.productData;

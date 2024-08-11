@@ -1,6 +1,5 @@
 import { useRef, useEffect, useState } from "react";
 import { useReactToPrint } from "react-to-print";
-import Sidebar from "../../components/homePage/Sidebar";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import api from "../../api/api";
 import { useParams } from "react-router-dom";
@@ -141,6 +140,9 @@ function ThreeInchSales() {
           additinalCharge={additinalCharge}
           inWords={inWords}
         />
+
+
+        
       </div>
   );
 }

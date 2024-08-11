@@ -25,18 +25,20 @@ import salesModel from "../models/salesModel.js";
 import vanSaleModel from "../models/vanSaleModel.js";
 import purchaseModel from "../models/purchaseModel.js";
 import {
-  deleteItemsInSaleEdit,
-  deleteGodownsOrBatchesInSaleEdit,
+  // deleteItemsInSaleEdit,
+  // deleteGodownsOrBatchesInSaleEdit,
+  // addingAnItemInSale,
+  // addingNewBatchesOrGodownsInSale,
+  // updateAdditionalChargeInSale,
+  // extractCentralNumber,
   updateSaleableStock,
-  addingAnItemInSale,
-  addingNewBatchesOrGodownsInSale,
   calculateUpdatedItemValues,
-  updateAdditionalChargeInSale,
   deleteItemsInSaleOrderEdit,
   addingAnItemInSaleOrderEdit,
-  extractCentralNumber,
   checkForNumberExistence,
   getNewSerialNumber,
+  revertBalanceStockOfSalesOrder,
+  revertStockUpdatesSales,
 } from "../helpers/secondaryHelper.js";
 
 import {
@@ -45,6 +47,15 @@ import {
   revertStockTransfer,
   increaseStockTransferNumber,
 } from "../helpers/stockTranferHelper.js";
+
+import {
+  handleSaleStockUpdates,
+  createSaleRecord,
+  processSaleItems,
+  updateSalesNumber,
+  updateTallyData,
+  revertSaleStockUpdates,
+} from "../helpers/salesHelper.js";
 import stockTransferModel from "../models/stockTransferModel.js";
 
 // @desc Login secondary user
@@ -68,7 +79,6 @@ export const login = async (req, res) => {
       return res.status(404).json({ message: "Invalid User" });
     }
     const Blocked = secUser.get("isBlocked");
-    console.log(Blocked);
     if (Blocked == true) {
       return res.status(401).json({ message: "User is blocked" });
     }
@@ -334,6 +344,7 @@ export const transactions = async (req, res) => {
           enteredAmount: "$finalAmount",
           createdAt: 1,
           itemsLength: { $size: "$items" },
+          isCancelled: 1,
         },
       },
     ]);
@@ -348,6 +359,7 @@ export const transactions = async (req, res) => {
           enteredAmount: "$finalAmount",
           createdAt: 1,
           itemsLength: { $size: "$items" },
+          isCancelled: 1,
         },
       },
     ]);
@@ -362,6 +374,7 @@ export const transactions = async (req, res) => {
           enteredAmount: "$finalAmount",
           createdAt: 1,
           itemsLength: { $size: "$items" },
+          isCancelled: 1,
         },
       },
     ]);
@@ -376,6 +389,7 @@ export const transactions = async (req, res) => {
           enteredAmount: "$finalAmount",
           createdAt: 1,
           itemsLength: { $size: "$items" },
+          isCancelled: 1,
         },
       },
     ]);
@@ -389,6 +403,7 @@ export const transactions = async (req, res) => {
           enteredAmount: "$finalAmount",
           createdAt: 1,
           itemsLength: { $size: "$items" },
+          isCancelled: 1,
         },
       },
     ]);
@@ -742,9 +757,8 @@ export const getProducts = async (req, res) => {
   const isVanSale = vanSaleQuery === "true";
 
   const excludeGodownId = req.query.excludeGodownId;
+  const stockTransfer = req.query.stockTransfer;
 
-  console.log("isVanSale", isVanSale);
-  console.log("excludeGodownId", excludeGodownId);
   const Primary_user_id = new mongoose.Types.ObjectId(req.owner);
 
   try {
@@ -771,8 +785,6 @@ export const getProducts = async (req, res) => {
     } else if (!isVanSale && configuration && configuration.selectedGodowns) {
       selectedGodowns = configuration.selectedGodowns;
     }
-
-    console.log("selectedGodowns", selectedGodowns);
 
     let projectStage = {
       $project: {
@@ -804,9 +816,7 @@ export const getProducts = async (req, res) => {
       },
     };
 
-    if (selectedGodowns && selectedGodowns.length > 0) {
-      console.log("selectedGodowns", selectedGodowns);
-
+    if (selectedGodowns && selectedGodowns.length > 0 && stockTransfer!=="true") {
       matchStage.$match["GodownList.godown_id"] = { $in: selectedGodowns };
 
       projectStage.$project.GodownList = {
@@ -1676,7 +1686,6 @@ export const editInvoice = async (req, res) => {
     await productModel.bulkWrite(productUpdates);
 
     for (const item of oldItems) {
-      console.log("editSaleOrder: item", item);
       const product = await productModel.findOne({ _id: item._id });
       if (!product) {
         console.log("editSaleOrder: product not found");
@@ -1701,8 +1710,6 @@ export const editInvoice = async (req, res) => {
         priceLevelFromRedux
       );
     }
-
-    console.log("selected date ", selectedDate);
 
     const result = await invoiceModel.findByIdAndUpdate(
       invoiceId,
@@ -1936,10 +1943,398 @@ export const addconfigurations = async (req, res) => {
 
 // route POST /api/pUsers/createSale
 
-export const createSale = async (req, res) => {
-  const Primary_user_id = req.owner;
-  const Secondary_user_id = req.sUserId;
+// export const createSale = async (req, res) => {
+//   const Primary_user_id = req.owner;
+//   const Secondary_user_id = req.sUserId;
 
+//   try {
+//     const {
+//       selectedGodownId,
+//       selectedGodownName,
+//       orgId,
+//       party,
+//       items,
+//       despatchDetails,
+//       priceLevelFromRedux,
+//       additionalChargesFromRedux,
+//       lastAmount,
+//       salesNumber,
+//       selectedDate,
+//     } = req.body;
+//     const vanSaleQuery = req.query.vanSale;
+
+//     let model;
+
+//     if (vanSaleQuery === "true") {
+//       model = vanSaleModel;
+//     } else {
+//       model = salesModel;
+//     }
+
+//     const NumberExistence = await checkForNumberExistence(
+//       model,
+//       "salesNumber",
+//       salesNumber,
+//       orgId
+//     );
+
+//     if (NumberExistence) {
+//       return res.status(400).json({
+//         message: "Sales with the same number already exists",
+//       });
+//     }
+
+//     const secondaryUser = await SecondaryUser.findById(Secondary_user_id);
+//     const secondaryMobile = secondaryUser?.mobile;
+
+//     if (!secondaryUser) {
+//       return res
+//         .status(404)
+//         .json({ success: false, message: "Secondary user not found" });
+//     }
+//     const configuration = secondaryUser.configurations.find(
+//       (config) => config.organization.toString() === orgId
+//     );
+
+//     const vanSaleConfig = configuration?.vanSale;
+
+//     // Prepare bulk operations for product and godown updates
+//     const productUpdates = [];
+//     const godownUpdates = [];
+
+//     // Process each item to update product stock and godown stock
+//     for (const item of items) {
+//       // Find the product in the product model
+//       const product = await productModel.findOne({ _id: item._id });
+//       if (!product) {
+//         throw new Error(`Product not found for item ID: ${item._id}`);
+//       }
+
+//       const itemCount = parseFloat(item.count);
+//       const productBalanceStock = parseFloat(product.balance_stock);
+//       const newBalanceStock = truncateToNDecimals(
+//         productBalanceStock - itemCount,
+//         3
+//       );
+
+//       // Prepare product update operation
+//       productUpdates.push({
+//         updateOne: {
+//           filter: { _id: product._id },
+//           update: { $set: { balance_stock: newBalanceStock } },
+//         },
+//       });
+
+//       // Process godown and batch updates
+//       if (item.hasGodownOrBatch) {
+//         for (const godown of item.GodownList) {
+//           if (godown.batch && !godown?.godown_id) {
+//             // Case: Batch only or Godown with Batch
+//             const godownIndex = product.GodownList.findIndex(
+//               (g) => g.batch === godown.batch
+//             );
+
+//             if (godownIndex !== -1) {
+//               if (godown.count && godown.count > 0) {
+//                 const currentGodownStock =
+//                   product.GodownList[godownIndex].balance_stock || 0;
+//                 const newGodownStock = truncateToNDecimals(
+//                   currentGodownStock - godown.count,
+//                   3
+//                 );
+
+//                 // Prepare godown update operation
+//                 godownUpdates.push({
+//                   updateOne: {
+//                     filter: {
+//                       _id: product._id,
+//                       "GodownList.batch": godown.batch,
+//                     },
+//                     update: {
+//                       $set: { "GodownList.$.balance_stock": newGodownStock },
+//                     },
+//                   },
+//                 });
+//               }
+//             }
+//           } else if (godown.godown_id && godown.batch) {
+//             // console.log("have batch and godown_id");
+//             const godownIndex = product.GodownList.findIndex(
+//               (g) =>
+//                 g.batch === godown.batch && g.godown_id === godown.godown_id
+//             );
+
+//             if (godownIndex !== -1) {
+//               if (godown.count && godown.count > 0) {
+//                 const currentGodownStock =
+//                   product.GodownList[godownIndex].balance_stock || 0;
+//                 const newGodownStock = truncateToNDecimals(
+//                   currentGodownStock - godown.count,
+//                   3
+//                 );
+
+//                 console.log("Godown Index:", godownIndex);
+//                 console.log("Product Godown List:", product.GodownList);
+
+//                 // Prepare godown update operation
+//                 godownUpdates.push({
+//                   updateOne: {
+//                     filter: { _id: product._id },
+//                     update: {
+//                       $set: { "GodownList.$[elem].balance_stock": newGodownStock },
+//                     },
+//                     arrayFilters: [
+//                       { "elem.godown_id": godown.godown_id, "elem.batch": godown.batch }
+//                     ],
+//                   },
+//                 });
+//               }
+//             }
+//           } else if (godown.godown_id && !godown?.batch) {
+//             // Case: Godown only
+//             const godownIndex = product.GodownList.findIndex(
+//               (g) => g.godown_id === godown.godown_id
+//             );
+
+//             if (godownIndex !== -1) {
+//               if (godown.count && godown.count > 0) {
+//                 const currentGodownStock =
+//                   product.GodownList[godownIndex].balance_stock || 0;
+//                 const newGodownStock = truncateToNDecimals(
+//                   currentGodownStock - godown.count,
+//                   3
+//                 );
+
+//                 // Prepare godown update operation
+//                 godownUpdates.push({
+//                   updateOne: {
+//                     filter: {
+//                       _id: product._id,
+//                       "GodownList.godown_id": godown.godown_id,
+//                     },
+//                     update: {
+//                       $set: { "GodownList.$.balance_stock": newGodownStock },
+//                     },
+//                   },
+//                 });
+//               }
+//             }
+//           }
+//         }
+//       } else {
+//         // Case: No Godown
+//         product.GodownList = product.GodownList.map((godown) => {
+//           const currentGodownStock = godown.balance_stock || 0;
+//           const newGodownStock = truncateToNDecimals(
+//             currentGodownStock - item.count,
+//             3
+//           );
+//           return {
+//             ...godown,
+//             balance_stock: newGodownStock,
+//           };
+//         });
+
+//         // Prepare godown update operation
+//         godownUpdates.push({
+//           updateOne: {
+//             filter: { _id: product._id },
+//             update: { $set: { GodownList: product.GodownList } },
+//           },
+//         });
+//       }
+//     }
+
+//     // Execute bulk operations
+//     // await productModel.bulkWrite(productUpdates);
+//     await productModel.bulkWrite(productUpdates);
+//     await productModel.bulkWrite(godownUpdates);
+
+//     const lastSale = await model.findOne(
+//       {},
+//       {},
+//       { sort: { serialNumber: -1 } }
+//     );
+//     let newSerialNumber = 1;
+
+//     // Check if there's a last invoice and calculate the new serial number
+//     if (lastSale && !isNaN(lastSale.serialNumber)) {
+//       newSerialNumber = lastSale.serialNumber + 1;
+//     }
+
+//     const updatedItems = items.map((item) => {
+//       // Find the corresponding price rate for the selected price level
+//       // const selectedPriceLevel = item.Priceleveles.find(
+//       //   (priceLevel) => priceLevel.pricelevel === priceLevelFromRedux
+//       // );
+//       // If a corresponding price rate is found, assign it to selectedPrice, otherwise assign null
+//       // const selectedPrice = selectedPriceLevel
+//       //   ? selectedPriceLevel.pricerate
+//       //   : 0;
+
+//       // Calculate total price after applying discount
+//       // let totalPrice = selectedPrice * (item.count || 1) || 0; // Default count to 1 if not provided
+//       let totalPrice = item?.GodownList.reduce((acc, curr) => {
+//         return (acc = acc + Number(curr?.individualTotal));
+//       }, 0);
+//       if (item.discount) {
+//         // If discount is present (amount), subtract it from the total price
+//         totalPrice -= item.discount;
+//       } else if (item.discountPercentage) {
+//         // If discount is present (percentage), calculate the discount amount and subtract it from the total price
+//         const discountAmount = (totalPrice * item.discountPercentage) / 100;
+//         totalPrice -= discountAmount;
+//       }
+
+//       // Calculate tax amounts
+//       const { cgst, sgst, igst } = item;
+//       const cgstAmt = parseFloat(((totalPrice * cgst) / 100).toFixed(2));
+//       const sgstAmt = parseFloat(((totalPrice * sgst) / 100).toFixed(2));
+//       const igstAmt = parseFloat(((totalPrice * igst) / 100).toFixed(2));
+
+//       return {
+//         ...item,
+//         // selectedPrice: selectedPrice,
+//         cgstAmt: cgstAmt,
+//         sgstAmt: sgstAmt,
+//         igstAmt: igstAmt,
+//         subTotal: totalPrice - (Number(igstAmt) || 0),
+//       };
+//     });
+
+//     let updateAdditionalCharge;
+
+//     if (additionalChargesFromRedux.length > 0) {
+//       updateAdditionalCharge = additionalChargesFromRedux.map((charge) => {
+//         const { value, taxPercentage } = charge;
+
+//         const taxAmt = parseFloat(
+//           ((parseFloat(value) * parseFloat(taxPercentage)) / 100).toFixed(2)
+//         );
+
+//         return {
+//           ...charge,
+//           taxAmt: taxAmt,
+//         };
+//       });
+//     }
+
+//     // Continue with the rest of your function...
+//     const sales = new model({
+//       selectedGodownId: selectedGodownId ?? "",
+//       selectedGodownName: selectedGodownName ? selectedGodownName[0] : "",
+//       serialNumber: newSerialNumber,
+//       cmp_id: orgId,
+//       partyAccount: party?.partyName,
+//       party,
+//       despatchDetails,
+//       items: updatedItems,
+//       priceLevel: priceLevelFromRedux,
+//       additionalCharges: updateAdditionalCharge,
+//       finalAmount: lastAmount,
+//       Primary_user_id,
+//       Secondary_user_id,
+//       salesNumber,
+//       createdAt: new Date(selectedDate),
+//     });
+
+//     const result = await sales.save();
+
+//     let salesConfig = false;
+
+//     if (configuration) {
+//       if (
+//         configuration.salesConfiguration &&
+//         Object.entries(configuration.salesConfiguration)
+//           .filter(([key]) => key !== "startingNumber")
+//           .every(([_, value]) => value !== "")
+//       ) {
+//         salesConfig = true;
+//       }
+//     }
+
+//     if (vanSaleQuery === "true") {
+//       // await SecondaryUser.findByIdAndUpdate(
+//       //   Secondary_user_id,
+//       //   { $inc: { vanSalesNumber: 1 } },
+//       //   { new: true }
+//       // );
+//       const updatedConfiguration = secondaryUser.configurations.map(
+//         (config) => {
+//           if (config.organization.toString() === orgId) {
+//             return {
+//               ...config,
+//               vanSalesNumber: (config.vanSalesNumber || 0) + 1,
+//             };
+//           }
+//           return config;
+//         }
+//       );
+//       secondaryUser.configurations = updatedConfiguration;
+//       await secondaryUser.save();
+//     } else if (salesConfig && vanSaleQuery === "false") {
+//       const updatedConfiguration = secondaryUser.configurations.map(
+//         (config) => {
+//           if (config.organization.toString() === orgId) {
+//             return {
+//               ...config,
+//               salesNumber: (config.salesNumber || 0) + 1,
+//             };
+//           }
+//           return config;
+//         }
+//       );
+//       secondaryUser.configurations = updatedConfiguration;
+//       await secondaryUser.save();
+//     } else {
+//       await OragnizationModel.findByIdAndUpdate(
+//         orgId,
+//         { $inc: { salesNumber: 1 } },
+//         { new: true }
+//       );
+//     }
+
+//     const billData = {
+//       Primary_user_id,
+//       bill_no: salesNumber,
+//       cmp_id: orgId,
+//       party_id: party?.party_master_id,
+//       bill_amount: lastAmount,
+//       bill_date: new Date(),
+//       bill_pending_amt: lastAmount,
+//       email: party?.emailID,
+//       mobile_no: party?.mobileNumber,
+//       party_name: party?.partyName,
+//       user_id: secondaryMobile || "null",
+//     };
+
+//     await TallyData.findOneAndUpdate(
+//       {
+//         cmp_id: orgId,
+//         bill_no: salesNumber,
+//         Primary_user_id: Primary_user_id,
+//         party_id: party?.party_master_id,
+//       },
+//       billData,
+//       { upsert: true, new: true }
+//     );
+
+//     res.status(201).json({
+//       success: true,
+//       data: result,
+//       message: "Sale created successfully",
+//     });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({
+//       success: false,
+//       message: "An error occurred while creating the sale.",
+//       error: error.message,
+//     });
+//   }
+// };
+
+export const createSale = async (req, res) => {
   try {
     const {
       selectedGodownId,
@@ -1954,25 +2349,14 @@ export const createSale = async (req, res) => {
       salesNumber,
       selectedDate,
     } = req.body;
-    const vanSaleQuery = req.query.vanSale;
-    console.log("vanSaleQuery", vanSaleQuery);
-    console.log("vanSaleQuery type", typeof vanSaleQuery);
 
-    let model;
-
-    if (vanSaleQuery === "true") {
-      model = vanSaleModel;
-    } else {
-      model = salesModel;
-    }
-
-    console.log("model", model);
+    const Secondary_user_id = req.sUserId;
 
     const NumberExistence = await checkForNumberExistence(
-      model,
+      req.query.vanSale === "true" ? vanSaleModel : salesModel,
       "salesNumber",
       salesNumber,
-      orgId
+      req.body.orgId
     );
 
     if (NumberExistence) {
@@ -1989,343 +2373,43 @@ export const createSale = async (req, res) => {
         .status(404)
         .json({ success: false, message: "Secondary user not found" });
     }
+
     const configuration = secondaryUser.configurations.find(
       (config) => config.organization.toString() === orgId
     );
 
-    const vanSaleConfig = configuration?.vanSale;
+    // const vanSaleConfig = configuration?.vanSale;
 
-    // Prepare bulk operations for product and godown updates
-    const productUpdates = [];
-    const godownUpdates = [];
-
-    // Process each item to update product stock and godown stock
-    for (const item of items) {
-      // Find the product in the product model
-      const product = await productModel.findOne({ _id: item._id });
-      if (!product) {
-        throw new Error(`Product not found for item ID: ${item._id}`);
-      }
-
-      const itemCount = parseFloat(item.count);
-      const productBalanceStock = parseFloat(product.balance_stock);
-      const newBalanceStock = truncateToNDecimals(
-        productBalanceStock - itemCount,
-        3
-      );
-
-      console.log("newBalanceStock", newBalanceStock);
-
-      // Prepare product update operation
-      productUpdates.push({
-        updateOne: {
-          filter: { _id: product._id },
-          update: { $set: { balance_stock: newBalanceStock } },
-        },
-      });
-
-      // Process godown and batch updates
-      if (item.hasGodownOrBatch) {
-        for (const godown of item.GodownList) {
-          if (godown.batch && !godown?.godown_id) {
-            // Case: Batch only or Godown with Batch
-            const godownIndex = product.GodownList.findIndex(
-              (g) => g.batch === godown.batch
-            );
-
-            console.log("gggg", product.GodownList[godownIndex]);
-
-            if (godownIndex !== -1) {
-              if (godown.count && godown.count > 0) {
-                const currentGodownStock =
-                  product.GodownList[godownIndex].balance_stock || 0;
-                const newGodownStock = truncateToNDecimals(
-                  currentGodownStock - godown.count,
-                  3
-                );
-
-                console.log("newGodownStock", newGodownStock);
-
-                // Prepare godown update operation
-                godownUpdates.push({
-                  updateOne: {
-                    filter: {
-                      _id: product._id,
-                      "GodownList.batch": godown.batch,
-                    },
-                    update: {
-                      $set: { "GodownList.$.balance_stock": newGodownStock },
-                    },
-                  },
-                });
-              }
-            }
-          } else if (godown.godown_id && godown.batch) {
-            console.log("have batch and godown_id");
-            const godownIndex = product.GodownList.findIndex(
-              (g) =>
-                g.batch === godown.batch && g.godown_id === godown.godown_id
-            );
-
-            console.log("gggg", product.GodownList[godownIndex]);
-
-            if (godownIndex !== -1) {
-              if (godown.count && godown.count > 0) {
-                const currentGodownStock =
-                  product.GodownList[godownIndex].balance_stock || 0;
-                const newGodownStock = truncateToNDecimals(
-                  currentGodownStock - godown.count,
-                  3
-                );
-
-                console.log("newGodownStock", newGodownStock);
-
-                // Prepare godown update operation
-                godownUpdates.push({
-                  updateOne: {
-                    filter: {
-                      _id: product._id,
-                      "GodownList.batch": godown.batch,
-                      "GodownList.godown_id": godown.godown_id,
-                    },
-                    update: {
-                      $set: { "GodownList.$.balance_stock": newGodownStock },
-                    },
-                  },
-                });
-              }
-            }
-          } else if (godown.godown_id && !godown?.batch) {
-            // Case: Godown only
-            const godownIndex = product.GodownList.findIndex(
-              (g) => g.godown_id === godown.godown_id
-            );
-
-            if (godownIndex !== -1) {
-              if (godown.count && godown.count > 0) {
-                const currentGodownStock =
-                  product.GodownList[godownIndex].balance_stock || 0;
-                const newGodownStock = truncateToNDecimals(
-                  currentGodownStock - godown.count,
-                  3
-                );
-
-                // Prepare godown update operation
-                godownUpdates.push({
-                  updateOne: {
-                    filter: {
-                      _id: product._id,
-                      "GodownList.godown_id": godown.godown_id,
-                    },
-                    update: {
-                      $set: { "GodownList.$.balance_stock": newGodownStock },
-                    },
-                  },
-                });
-              }
-            }
-          }
-        }
-      } else {
-        // Case: No Godown
-        product.GodownList = product.GodownList.map((godown) => {
-          const currentGodownStock = godown.balance_stock || 0;
-          const newGodownStock = truncateToNDecimals(
-            currentGodownStock - item.count,
-            3
-          );
-          return {
-            ...godown,
-            balance_stock: newGodownStock,
-          };
-        });
-
-        // Prepare godown update operation
-        godownUpdates.push({
-          updateOne: {
-            filter: { _id: product._id },
-            update: { $set: { GodownList: product.GodownList } },
-          },
-        });
-      }
-    }
-
-    // Execute bulk operations
-    // await productModel.bulkWrite(productUpdates);
-    await productModel.bulkWrite(productUpdates);
-    await productModel.bulkWrite(godownUpdates);
-
-    const lastSale = await model.findOne(
-      {},
-      {},
-      { sort: { serialNumber: -1 } }
+    const updatedSalesNumber = await updateSalesNumber(
+      orgId,
+      req.query.vanSale,
+      secondaryUser,
+      configuration
     );
-    let newSerialNumber = 1;
+    const updatedItems = processSaleItems(items);
+    await handleSaleStockUpdates(items);
 
-    // Check if there's a last invoice and calculate the new serial number
-    if (lastSale && !isNaN(lastSale.serialNumber)) {
-      newSerialNumber = lastSale.serialNumber + 1;
-    }
-
-    const updatedItems = items.map((item) => {
-      // Find the corresponding price rate for the selected price level
-      // const selectedPriceLevel = item.Priceleveles.find(
-      //   (priceLevel) => priceLevel.pricelevel === priceLevelFromRedux
-      // );
-      // If a corresponding price rate is found, assign it to selectedPrice, otherwise assign null
-      // const selectedPrice = selectedPriceLevel
-      //   ? selectedPriceLevel.pricerate
-      //   : 0;
-
-      // Calculate total price after applying discount
-      // let totalPrice = selectedPrice * (item.count || 1) || 0; // Default count to 1 if not provided
-      let totalPrice = item?.GodownList.reduce((acc, curr) => {
-        console.log("curr?.individualTotal", curr?.individualTotal);
-
-        return (acc = acc + Number(curr?.individualTotal));
-      }, 0);
-      if (item.discount) {
-        // If discount is present (amount), subtract it from the total price
-        totalPrice -= item.discount;
-      } else if (item.discountPercentage) {
-        // If discount is present (percentage), calculate the discount amount and subtract it from the total price
-        const discountAmount = (totalPrice * item.discountPercentage) / 100;
-        totalPrice -= discountAmount;
-      }
-
-      console.log("totalPrice", totalPrice);
-
-      // Calculate tax amounts
-      const { cgst, sgst, igst } = item;
-      const cgstAmt = parseFloat(((totalPrice * cgst) / 100).toFixed(2));
-      const sgstAmt = parseFloat(((totalPrice * sgst) / 100).toFixed(2));
-      const igstAmt = parseFloat(((totalPrice * igst) / 100).toFixed(2));
-
-      return {
-        ...item,
-        // selectedPrice: selectedPrice,
-        cgstAmt: cgstAmt,
-        sgstAmt: sgstAmt,
-        igstAmt: igstAmt,
-        subTotal: totalPrice - (Number(igstAmt) || 0),
-      };
+    const updateAdditionalCharge = additionalChargesFromRedux.map((charge) => {
+      const { value, taxPercentage } = charge;
+      const taxAmt = parseFloat(
+        ((parseFloat(value) * parseFloat(taxPercentage)) / 100).toFixed(2)
+      );
+      return { ...charge, taxAmt };
     });
 
-    let updateAdditionalCharge;
-
-    if (additionalChargesFromRedux.length > 0) {
-      updateAdditionalCharge = additionalChargesFromRedux.map((charge) => {
-        const { value, taxPercentage } = charge;
-
-        const taxAmt = parseFloat(
-          ((parseFloat(value) * parseFloat(taxPercentage)) / 100).toFixed(2)
-        );
-
-        return {
-          ...charge,
-          taxAmt: taxAmt,
-        };
-      });
-    }
-
-    // Continue with the rest of your function...
-    const sales = new model({
-      selectedGodownId: selectedGodownId ?? "",
-      selectedGodownName: selectedGodownName ? selectedGodownName[0] : "",
-      serialNumber: newSerialNumber,
-      cmp_id: orgId,
-      partyAccount: party?.partyName,
-      party,
-      despatchDetails,
-      items: updatedItems,
-      priceLevel: priceLevelFromRedux,
-      additionalCharges: updateAdditionalCharge,
-      finalAmount: lastAmount,
-      Primary_user_id,
-      Secondary_user_id,
+    const result = await createSaleRecord(
+      req,
       salesNumber,
-      createdAt: new Date(selectedDate),
-    });
-
-    const result = await sales.save();
-
-    let salesConfig = false;
-
-    if (configuration) {
-      if (
-        configuration.salesConfiguration &&
-        Object.entries(configuration.salesConfiguration)
-          .filter(([key]) => key !== "startingNumber")
-          .every(([_, value]) => value !== "")
-      ) {
-        salesConfig = true;
-      }
-    }
-
-    if (vanSaleQuery === "true") {
-      // await SecondaryUser.findByIdAndUpdate(
-      //   Secondary_user_id,
-      //   { $inc: { vanSalesNumber: 1 } },
-      //   { new: true }
-      // );
-      const updatedConfiguration = secondaryUser.configurations.map(
-        (config) => {
-          if (config.organization.toString() === orgId) {
-            return {
-              ...config,
-              vanSalesNumber: (config.vanSalesNumber || 0) + 1,
-            };
-          }
-          return config;
-        }
-      );
-      secondaryUser.configurations = updatedConfiguration;
-      await secondaryUser.save();
-    } else if (salesConfig && vanSaleQuery === "false") {
-      const updatedConfiguration = secondaryUser.configurations.map(
-        (config) => {
-          if (config.organization.toString() === orgId) {
-            return {
-              ...config,
-              salesNumber: (config.salesNumber || 0) + 1,
-            };
-          }
-          return config;
-        }
-      );
-      secondaryUser.configurations = updatedConfiguration;
-      await secondaryUser.save();
-    } else {
-      await OragnizationModel.findByIdAndUpdate(
-        orgId,
-        { $inc: { salesNumber: 1 } },
-        { new: true }
-      );
-    }
-
-    const billData = {
-      Primary_user_id,
-      bill_no: salesNumber,
-      cmp_id: orgId,
-      party_id: party?.party_master_id,
-      bill_amount: lastAmount,
-      bill_date: new Date(),
-      bill_pending_amt: lastAmount,
-      email: party?.emailID,
-      mobile_no: party?.mobileNumber,
-      party_name: party?.partyName,
-      user_id: secondaryMobile || "null",
-    };
-
-    await TallyData.findOneAndUpdate(
-      {
-        cmp_id: orgId,
-        bill_no: salesNumber,
-        Primary_user_id: Primary_user_id,
-        party_id: party?.party_master_id,
-      },
-      billData,
-      { upsert: true, new: true }
+      updatedItems,
+      updateAdditionalCharge
+    );
+    await updateTallyData(
+      orgId,
+      salesNumber,
+      req.owner,
+      party,
+      lastAmount,
+      secondaryMobile
     );
 
     res.status(201).json({
@@ -2351,8 +2435,6 @@ export const getSalesDetails = async (req, res) => {
   const vanSaleQuery = req.query.vanSale;
 
   const isVanSale = vanSaleQuery === "true";
-
-  console.log("isVanSale", isVanSale);
 
   let model;
   if (isVanSale) {
@@ -2422,7 +2504,6 @@ export const fetchAdditionalDetails = async (req, res) => {
     }
 
     let priceLevelsResult = [];
-    console.log("selectedPriceLevels", priceLevelsResult);
 
     if (selectedPriceLevels && selectedPriceLevels.length == 0) {
       priceLevelsResult = await productModel.aggregate([
@@ -2507,7 +2588,6 @@ export const fetchAdditionalDetails = async (req, res) => {
 export const fetchConfigurationNumber = async (req, res) => {
   const { cmp_id, title } = req.params;
 
-  console.log("title", title);
   const secUserId = req.sUserId;
 
   try {
@@ -2571,8 +2651,6 @@ export const fetchConfigurationNumber = async (req, res) => {
 
     let configDetails = getConfigDetails();
     let configurationNumber = getConfigNumber();
-
-    console.log(getConfigNumber());
 
     // If configDetails is empty or all values except startingNumber are empty, use company defaults
     if (
@@ -2789,7 +2867,6 @@ export const fetchAdditionalCharges = async (req, res) => {
   try {
     const cmp_id = req.params.cmp_id;
     const pUser = req.owner.toString();
-    console.log(pUser);
 
     const aditionalDetails = await AdditionalChargesModel.find({
       cmp_id: cmp_id,
@@ -2830,7 +2907,7 @@ export const findGodownsNames = async (req, res) => {
   }
 };
 
-// route POST /api/pUsers/createSale
+// route POST /api/pUsers/createPurchase
 
 export const createPurchase = async (req, res) => {
   const Primary_user_id = req.owner;
@@ -2850,7 +2927,6 @@ export const createPurchase = async (req, res) => {
     const secondaryUser = await SecondaryUser.findById(Secondary_user_id);
     const secondaryMobile = secondaryUser.mobile;
 
-    console.log("secondaryMobile", secondaryMobile);
     if (!secondaryUser) {
       return res
         .status(404)
@@ -2875,15 +2951,11 @@ export const createPurchase = async (req, res) => {
       // Calculate the new balance stock
       // Calculate the new balance stock
       const productBalanceStock = truncateToNDecimals(product.balance_stock, 3);
-      console.log("productBalanceStock", productBalanceStock);
       const itemCount = truncateToNDecimals(item.count, 3);
       const newBalanceStock = truncateToNDecimals(
         productBalanceStock + itemCount,
         3
       );
-
-      console.log("productBalanceStock", productBalanceStock);
-      console.log("newBalanceStock", newBalanceStock);
 
       // Prepare product update operation
       productUpdates.push({
@@ -2892,8 +2964,6 @@ export const createPurchase = async (req, res) => {
           update: { $set: { balance_stock: newBalanceStock } },
         },
       });
-
-      console.log("godown", item.GodownList);
 
       // Update the godown stock for each specified godown
       for (const godown of item.GodownList) {
@@ -2986,7 +3056,6 @@ export const createPurchase = async (req, res) => {
         const { value, taxPercentage } = charge;
 
         const taxAmt = (parseFloat(value) * parseFloat(taxPercentage)) / 100;
-        console.log(taxAmt);
 
         return {
           ...charge,
@@ -3114,8 +3183,477 @@ export const getPurchaseDetails = async (req, res) => {
 // @desc to edit sale
 // route get/api/sUsers/editSaleSale
 
+// export const editSale = async (req, res) => {
+//   const saleId = req.params.id;
+
+//   const vanSaleQuery = req.query.vanSale;
+
+//   const isVanSale = vanSaleQuery === "true";
+
+//   let model;
+//   if (isVanSale) {
+//     model = vanSaleModel;
+//   } else {
+//     model = salesModel;
+//   }
+
+//   try {
+//     const {
+//       orgId,
+//       party,
+//       items,
+//       priceLevelFromRedux,
+//       additionalChargesFromRedux,
+//       lastAmount,
+//       salesNumber,
+//       despatchDetails,
+//       selectedDate,
+//     } = req.body;
+
+//     let productUpdates = [];
+
+//     // Fetch the existing sale
+
+//     const existingSale = await model.findById(saleId);
+//     if (!existingSale) {
+//       console.log("editSale: existingSale not found");
+//       return res
+//         .status(404)
+//         .json({ success: false, message: "Sale not found" });
+//     }
+
+//     const oldBillValue = existingSale.finalAmount;
+
+//     //////////////////////////// To handle the deletion and updating of products   starts //////////////////////////////////////////
+
+//     const updatedItemIds = items.map((item) => item._id);
+//     const deletedItems = existingSale.items.filter(
+//       (item) => !updatedItemIds.includes(item._id)
+//     );
+//     // Process each deleted item to update product stock and godown stock
+//     if (deletedItems.length > 0) {
+//       await deleteItemsInSaleEdit(deletedItems, productUpdates);
+//       existingSale.items = existingSale.items.filter(
+//         (item) => !deletedItems.includes(item)
+//       );
+//     }
+
+//     ////////////////////////////// To handle the deletion and updating of products ends //////////////////////////////////////////
+
+//     //////////////////////////// To handle the addition of a new item in sale starts  //////////////////////////////////////////
+//     const newItems = items.filter(
+//       (item) => !existingSale?.items?.some((sItem) => sItem._id === item._id)
+//     );
+
+//     const oldItems = items.filter((item) =>
+//       existingSale?.items?.some((sItem) => sItem._id === item._id)
+//     );
+
+//     if (newItems.length > 0) {
+//       await addingAnItemInSale(newItems);
+//     }
+//     //////////////////////////// To handle the addition of a new item in sale ends  //////////////////////////////////////////
+
+//     ////////////////////////////// Process each item to update product stock and godown stock /////////////////////////////////////////////////
+//     for (const item of oldItems) {
+//       // Find the product in the product model
+//       const product = await productModel.findOne({ _id: item._id });
+//       if (!product) {
+//         console.log("editSale: product not found");
+//         throw new Error(`Product not found for item ID: ${item._id}`);
+//       }
+
+//       const existingItem = existingSale.items.find(
+//         (sItem) => sItem._id === item._id
+//       );
+
+//       /////////////////////////////// for updating salable stock ///////////////////////////
+
+//       await updateSaleableStock(
+//         product,
+//         item.count || 0,
+//         existingItem?.count || 0
+//       );
+
+//       /////////////////////////////// for updating salable stock  end  ///////////////////////////
+
+//       /////////////////////////////// Process godown and batch updates ///////////////////////////
+//       if (item.hasGodownOrBatch) {
+//         ///////////////////////////////for handle deletion of godown or batch start///////////////////////////////
+
+//         const updatedGodowns = item.GodownList.filter(
+//           (godown) => godown.added == true
+//         );
+//         // console.log("updatedGodowns", updatedGodowns);
+//         const existingGodownList =
+//           existingItem?.GodownList.filter((godown) => {
+//             return godown.added == true;
+//           }) || [];
+//         // console.log("existingGodownList", existingGodownList);
+
+//         let deletedGodowns = [];
+//         for (const godown of existingGodownList) {
+//           if (godown.batch && !godown.godown_id) {
+//             // Check if the object with the same batch exists in updatedGodownList
+//             const foundInUpdated = updatedGodowns.some(
+//               (updated) => updated.batch === godown.batch
+//             );
+//             if (!foundInUpdated) {
+//               deletedGodowns.push(godown); // Add to deletedGodowns if not found
+//             }
+//           } else if (godown.godown_id && !godown.batch) {
+//             // Check if the object with the same godown_id exists in updatedGodowns
+//             const foundInUpdated = updatedGodowns.some(
+//               (updated) => updated.godown_id === godown.godown_id
+//             );
+//             if (!foundInUpdated) {
+//               deletedGodowns.push(godown); // Add to deletedGodown if not found
+//             }
+//           } else if (godown.batch && godown.godown_id) {
+//             // Check if the object with the same batch and godown_id exists in updatedGodowns
+//             const foundInUpdated = updatedGodowns.some(
+//               (updated) =>
+//                 updated.batch === godown.batch &&
+//                 updated.godown_id === godown.godown_id
+//             );
+//             if (!foundInUpdated) {
+//               deletedGodowns.push(godown); // Add to deletedGodown if not found
+//             }
+//           }
+//         }
+
+//         // console.log("deletedGodowns", deletedGodowns);
+
+//         let newGodowns = [];
+
+//         for (const updatedGodown of updatedGodowns) {
+//           if (updatedGodown.batch && !updatedGodown.godown_id) {
+//             // Check if the object with the same batch exists in existingGodownList
+//             const foundInExisting = existingGodownList.some(
+//               (existing) => existing.batch === updatedGodown.batch
+//             );
+//             if (!foundInExisting) {
+//               newGodowns.push(updatedGodown); // Add to newGodowns if not found
+//             }
+//           } else if (updatedGodown.godown_id && !updatedGodown.batch) {
+//             // Check if the object with the same godown_id exists in existingGodownList
+//             const foundInExisting = existingGodownList.some(
+//               (existing) => existing.godown_id === updatedGodown.godown_id
+//             );
+//             if (!foundInExisting) {
+//               newGodowns.push(updatedGodown); // Add to newGodowns if not found
+//             }
+//           } else if (updatedGodown.batch && updatedGodown.godown_id) {
+//             // Check if the object with the same batch and godown_id exists in existingGodownList
+//             const foundInExisting = existingGodownList.some(
+//               (existing) =>
+//                 existing.batch === updatedGodown.batch &&
+//                 existing.godown_id === updatedGodown.godown_id
+//             );
+//             if (!foundInExisting) {
+//               newGodowns.push(updatedGodown); // Add to newGodowns if not found
+//             }
+//           }
+
+//           // console.log("newGodowns", newGodowns);
+//           if (newGodowns.length > 0) {
+//             await addingNewBatchesOrGodownsInSale(newGodowns, product);
+//           }
+
+//           // Process deleted godowns or batches
+
+//           if (deletedGodowns.length > 0) {
+//             await deleteGodownsOrBatchesInSaleEdit(deletedGodowns, product);
+//           }
+//           ///////////////////////////////for handle deletion of godown or batch start///////////////////////////////
+
+//           /////////////////////////////////////for  updating balance stock of godowns  ////////////////////////////////////
+
+//           for (const godown of item.GodownList) {
+//             if (godown.batch && !godown.godown_id) {
+//               const existingGodown = existingItem?.GodownList.find(
+//                 (sGodown) => sGodown.batch === godown.batch
+//               );
+//               const godownCountDiff =
+//                 parseFloat(godown.count) - (existingGodown?.count || 0) || 0;
+
+//               // console.log("godownCountDiff", godownCountDiff);
+
+//               let productItem = productModel.findOne({
+//                 _id: product._id,
+//               });
+
+//               const balance_stock =
+//                 product.GodownList.find(
+//                   (sGodown) => sGodown.batch === godown.batch
+//                 ).balance_stock || 0;
+//               // console.log("balance_stock", balance_stock);
+
+//               let updatedStock;
+
+//               if (godownCountDiff > 0) {
+//                 const absoluteCount = Math.abs(godownCountDiff);
+//                 // console.log("greater than 0");
+
+//                 updatedStock = balance_stock - absoluteCount;
+//               } else {
+//                 const absoluteCount = Math.abs(godownCountDiff);
+
+//                 updatedStock = balance_stock + absoluteCount;
+//               }
+
+//               // console.log("updatedStock", updatedStock);
+
+//               if (godownCountDiff !== 0) {
+//                 await productModel.updateOne(
+//                   {
+//                     _id: product._id,
+//                     "GodownList.batch": godown.batch || null,
+//                   },
+//                   { $set: { "GodownList.$.balance_stock": updatedStock } }
+//                 );
+//               }
+//             } else if (godown.godown_id && !godown.batch) {
+//               const existingGodown = existingItem?.GodownList.find(
+//                 (sGodown) => sGodown?.godown_id === godown?.godown_id
+//               );
+
+//               const godownCountDiff =
+//                 parseFloat(godown?.count) - (existingGodown?.count || 0) || 0;
+
+//               // console.log("godownCountDiff", godownCountDiff);
+
+//               let productItem = productModel?.findOne({
+//                 _id: product._id,
+//               });
+
+//               const balance_stock =
+//                 product.GodownList.find(
+//                   (sGodown) => sGodown?.godown_id === godown?.godown_id
+//                 )?.balance_stock || 0;
+
+//               // console.log("balance_stock", balance_stock);
+//               let updatedStock;
+
+//               if (godownCountDiff > 0) {
+//                 const absoluteCount = Math.abs(godownCountDiff);
+//                 // console.log("greater than 0");
+
+//                 updatedStock = balance_stock - absoluteCount;
+//                 // console.log("updatedStock", updatedStock);
+//               } else {
+//                 const absoluteCount = Math.abs(godownCountDiff);
+
+//                 // console.log("less than 0");
+
+//                 updatedStock = balance_stock + absoluteCount;
+//                 // console.log("updatedStock", updatedStock);
+//               }
+
+//               if (godownCountDiff !== 0) {
+//                 await productModel.updateOne(
+//                   {
+//                     _id: product._id,
+//                     "GodownList.godown_id": godown.godown_id || null,
+//                   },
+//                   { $set: { "GodownList.$.balance_stock": updatedStock } }
+//                 );
+//               }
+//             } else if (godown?.godown_id && godown?.batch) {
+//               const existingGodown = existingItem?.GodownList?.find(
+//                 (sGodown) =>
+//                   sGodown?.godown_id === godown?.godown_id &&
+//                   sGodown?.batch === godown?.batch
+//               );
+//               const godownCountDiff =
+//                 parseFloat(godown?.count) - (existingGodown?.count || 0) || 0;
+//               // console.log("godownCountDiff", godownCountDiff);
+//               let productItem = productModel.findOne({
+//                 _id: product?._id,
+//               });
+//               const balance_stock =
+//                 product.GodownList.find(
+//                   (sGodown) =>
+//                     sGodown?.godown_id === godown?.godown_id &&
+//                     sGodown?.batch === godown?.batch
+//                 )?.balance_stock || 0;
+
+//               // console.log("balance_stock", balance_stock);
+
+//               let updatedStock;
+
+//               if (godownCountDiff > 0) {
+//                 const absoluteCount = Math.abs(godownCountDiff);
+//                 // console.log("greater than 0");
+//                 updatedStock = balance_stock - absoluteCount;
+//                 // console.log("updatedStock", updatedStock);
+//               } else {
+//                 const absoluteCount = Math.abs(godownCountDiff);
+
+//                 // console.log("less than 0");
+//                 updatedStock = balance_stock + absoluteCount;
+//                 // console.log("updatedStock", updatedStock);
+//               }
+
+//               if (godownCountDiff !== 0) {
+//                 await productModel.updateOne(
+//                   {
+//                     _id: product._id,
+//                     "GodownList.godown_id": godown?.godown_id || null,
+//                     "GodownList.batch": godown?.batch || null,
+//                   },
+//                   {
+//                     $set: { "GodownList.$[elem].balance_stock": updatedStock },
+//                   },
+//                   {
+//                     arrayFilters: [
+//                       {
+//                         "elem.godown_id": godown?.godown_id || null,
+//                         "elem.batch": godown?.batch || null,
+//                       },
+//                     ],
+//                   }
+//                 );
+//               }
+//             }
+//           }
+//         }
+//       } else {
+//         ////// no godown or batch//////////
+
+//         // console.log("nohasGodownOrBatch ");
+
+//         const product_godown_balance_stock = Number(
+//           product.GodownList[0].balance_stock
+//         );
+
+//         const itemCountDiff =
+//           parseFloat(item.count) - (existingItem?.count || 0) || 0;
+//         let updatedStock;
+//         let updatedGodownStock;
+
+//         if (itemCountDiff > 0) {
+//           const absoluteCount = Math.abs(itemCountDiff);
+//           // console.log("greater than 0");
+
+//           updatedGodownStock = product_godown_balance_stock - absoluteCount;
+//           // console.log("updatedStock", updatedStock);
+//         } else {
+//           const absoluteCount = Math.abs(itemCountDiff);
+
+//           // console.log("less than 0");
+
+//           updatedGodownStock = product_godown_balance_stock + absoluteCount;
+
+//           // console.log("updatedStock", updatedStock);
+//         }
+
+//         if (itemCountDiff !== 0) {
+//           await productModel.updateOne(
+//             { _id: product._id },
+//             {
+//               $set: {
+//                 "GodownList.0.balance_stock": updatedGodownStock,
+//               },
+//             }
+//           );
+//         }
+//       }
+//     }
+
+//     ///////////////////////////////////// for calculating values like igst amount and updated items  ////////////////////////////////////
+
+//     let updatedItems = items;
+//     if (items.length > 0) {
+//       updatedItems = await calculateUpdatedItemValues(
+//         items,
+//         priceLevelFromRedux
+//       );
+//     }
+//     let updateAdditionalCharge = additionalChargesFromRedux;
+//     if (additionalChargesFromRedux.length > 0) {
+//       updateAdditionalCharge = await updateAdditionalChargeInSale(
+//         additionalChargesFromRedux
+//       );
+//     }
+
+//     // console.log("updatedItems", updatedItems);
+
+//     // Update the existing sale
+//     existingSale.partyAccount = party?.partyName;
+//     existingSale.party = party;
+//     existingSale.items = updatedItems;
+//     existingSale.priceLevel = priceLevelFromRedux;
+//     existingSale.additionalCharges = additionalChargesFromRedux;
+//     existingSale.finalAmount = lastAmount;
+//     existingSale.salesNumber = salesNumber;
+//     existingSale.despatchDetails = despatchDetails;
+//     existingSale.createdAt = new Date(selectedDate);
+
+//     // console.log("existingSale", existingSale);
+
+//     const result = await existingSale.save();
+
+//     ///////////////////////////////////// for reflecting the rate change in outstanding  ////////////////////////////////////
+
+//     const newBillValue = Number(lastAmount);
+//     // const oldBillValue = Number(existingSale.finalAmount);
+//     const diffBillValue = newBillValue - oldBillValue;
+
+//     const matchedOutStanding = await TallyData.findOne({
+//       party_id: party?.party_master_id,
+//       cmp_id: orgId,
+//       bill_no: salesNumber,
+//     });
+
+//     if (matchedOutStanding) {
+//       console.log("editSale: matched outstanding found");
+//       const newOutstanding =
+//         Number(matchedOutStanding?.bill_pending_amt) + diffBillValue;
+
+//       // console.log("editSale: new outstanding calculated", newOutstanding);
+//       await TallyData.updateOne(
+//         {
+//           party_id: party?.party_master_id,
+//           cmp_id: orgId,
+//           bill_no: salesNumber,
+//         },
+//         { $set: { bill_pending_amt: newOutstanding } }
+//       );
+
+//       // console.log("editSale: outstanding updated");
+//     } else {
+//       console.log("editSale: matched outstanding not found");
+//     }
+
+//     res
+//       .status(200)
+//       .json({ success: true, message: "Sale updated", data: result });
+//   } catch (error) {
+//     console.error("editSale: error", error);
+//     res.status(500).json({
+//       success: false,
+//       message: "An error occurred while editing the sale.",
+//       error: error.message,
+//     });
+//   }
+// };
+
 export const editSale = async (req, res) => {
-  const saleId = req.params.id;
+  const saleId = req.params.id; // Assuming saleId is passed in the URL parameters
+  const {
+    selectedGodownId,
+    selectedGodownName,
+    orgId,
+    party,
+    items,
+    despatchDetails,
+    priceLevelFromRedux,
+    additionalChargesFromRedux,
+    lastAmount,
+    salesNumber,
+    selectedDate,
+  } = req.body;
 
   const vanSaleQuery = req.query.vanSale;
 
@@ -3129,398 +3667,50 @@ export const editSale = async (req, res) => {
   }
 
   try {
-    const {
-      orgId,
-      party,
-      items,
-      priceLevelFromRedux,
-      additionalChargesFromRedux,
-      lastAmount,
-      salesNumber,
-      despatchDetails,
-      selectedDate,
-    } = req.body;
-
-    console.log("selectedDate", selectedDate);
-
-    let productUpdates = [];
-
-    // Fetch the existing sale
-
+    // Fetch existing sale record
     const existingSale = await model.findById(saleId);
     if (!existingSale) {
-      console.log("editSale: existingSale not found");
       return res
         .status(404)
         .json({ success: false, message: "Sale not found" });
     }
 
-    const oldBillValue = existingSale.finalAmount;
-
-    //////////////////////////// To handle the deletion and updating of products   starts //////////////////////////////////////////
-
-    const updatedItemIds = items.map((item) => item._id);
-    const deletedItems = existingSale.items.filter(
-      (item) => !updatedItemIds.includes(item._id)
-    );
-    // Process each deleted item to update product stock and godown stock
-    if (deletedItems.length > 0) {
-      await deleteItemsInSaleEdit(deletedItems, productUpdates);
-      existingSale.items = existingSale.items.filter(
-        (item) => !deletedItems.includes(item)
-      );
-    }
-
-    ////////////////////////////// To handle the deletion and updating of products ends //////////////////////////////////////////
-
-    //////////////////////////// To handle the addition of a new item in sale starts  //////////////////////////////////////////
-    const newItems = items.filter(
-      (item) => !existingSale?.items?.some((sItem) => sItem._id === item._id)
+    // Revert existing stock updates
+    await revertSaleStockUpdates(existingSale.items);
+    // Process new sale items and update stock
+    const updatedItems = processSaleItems(
+      items,
+      priceLevelFromRedux,
+      additionalChargesFromRedux
     );
 
-    const oldItems = items.filter((item) =>
-      existingSale?.items?.some((sItem) => sItem._id === item._id)
-    );
+    await handleSaleStockUpdates(updatedItems);
 
-    if (newItems.length > 0) {
-      await addingAnItemInSale(newItems);
-    }
-    //////////////////////////// To handle the addition of a new item in sale ends  //////////////////////////////////////////
+    // Update existing sale record
+    const updateData = {
+      selectedGodownId: selectedGodownId ?? "",
+      selectedGodownName: selectedGodownName ? selectedGodownName[0] : "",
+      serialNumber: existingSale.serialNumber, // Keep existing serial number
+      cmp_id: orgId,
+      partyAccount: party?.partyName,
+      party,
+      despatchDetails,
+      items: updatedItems,
+      priceLevel: priceLevelFromRedux,
+      additionalCharges: additionalChargesFromRedux,
+      finalAmount: lastAmount,
+      Primary_user_id: req.owner,
+      Secondary_user_id: req.secondaryUserId,
+      salesNumber: salesNumber,
+      createdAt: new Date(selectedDate),
+    };
 
-    ////////////////////////////// Process each item to update product stock and godown stock /////////////////////////////////////////////////
-    for (const item of oldItems) {
-      // Find the product in the product model
-      const product = await productModel.findOne({ _id: item._id });
-      if (!product) {
-        console.log("editSale: product not found");
-        throw new Error(`Product not found for item ID: ${item._id}`);
-      }
+    await model.findByIdAndUpdate(saleId, updateData, { new: true });
 
-      const existingItem = existingSale.items.find(
-        (sItem) => sItem._id === item._id
-      );
-
-      /////////////////////////////// for updating salable stock ///////////////////////////
-
-      await updateSaleableStock(
-        product,
-        item.count || 0,
-        existingItem?.count || 0
-      );
-
-      /////////////////////////////// for updating salable stock  end  ///////////////////////////
-
-      /////////////////////////////// Process godown and batch updates ///////////////////////////
-      if (item.hasGodownOrBatch) {
-        ///////////////////////////////for handle deletion of godown or batch start///////////////////////////////
-
-        const updatedGodowns = item.GodownList.filter(
-          (godown) => godown.added == true
-        );
-        // console.log("updatedGodowns", updatedGodowns);
-        const existingGodownList =
-          existingItem?.GodownList.filter((godown) => {
-            return godown.added == true;
-          }) || [];
-        // console.log("existingGodownList", existingGodownList);
-
-        let deletedGodowns = [];
-        for (const godown of existingGodownList) {
-          if (godown.batch && !godown.godown_id) {
-            // Check if the object with the same batch exists in updatedGodownList
-            const foundInUpdated = updatedGodowns.some(
-              (updated) => updated.batch === godown.batch
-            );
-            if (!foundInUpdated) {
-              deletedGodowns.push(godown); // Add to deletedGodowns if not found
-            }
-          } else if (godown.godown_id && !godown.batch) {
-            // Check if the object with the same godown_id exists in updatedGodowns
-            const foundInUpdated = updatedGodowns.some(
-              (updated) => updated.godown_id === godown.godown_id
-            );
-            if (!foundInUpdated) {
-              deletedGodowns.push(godown); // Add to deletedGodown if not found
-            }
-          } else if (godown.batch && godown.godown_id) {
-            // Check if the object with the same batch and godown_id exists in updatedGodowns
-            const foundInUpdated = updatedGodowns.some(
-              (updated) =>
-                updated.batch === godown.batch &&
-                updated.godown_id === godown.godown_id
-            );
-            if (!foundInUpdated) {
-              deletedGodowns.push(godown); // Add to deletedGodown if not found
-            }
-          }
-        }
-
-        // console.log("deletedGodowns", deletedGodowns);
-
-        let newGodowns = [];
-
-        for (const updatedGodown of updatedGodowns) {
-          if (updatedGodown.batch && !updatedGodown.godown_id) {
-            // Check if the object with the same batch exists in existingGodownList
-            const foundInExisting = existingGodownList.some(
-              (existing) => existing.batch === updatedGodown.batch
-            );
-            if (!foundInExisting) {
-              newGodowns.push(updatedGodown); // Add to newGodowns if not found
-            }
-          } else if (updatedGodown.godown_id && !updatedGodown.batch) {
-            // Check if the object with the same godown_id exists in existingGodownList
-            const foundInExisting = existingGodownList.some(
-              (existing) => existing.godown_id === updatedGodown.godown_id
-            );
-            if (!foundInExisting) {
-              newGodowns.push(updatedGodown); // Add to newGodowns if not found
-            }
-          } else if (updatedGodown.batch && updatedGodown.godown_id) {
-            // Check if the object with the same batch and godown_id exists in existingGodownList
-            const foundInExisting = existingGodownList.some(
-              (existing) =>
-                existing.batch === updatedGodown.batch &&
-                existing.godown_id === updatedGodown.godown_id
-            );
-            if (!foundInExisting) {
-              newGodowns.push(updatedGodown); // Add to newGodowns if not found
-            }
-          }
-
-          // console.log("newGodowns", newGodowns);
-          if (newGodowns.length > 0) {
-            await addingNewBatchesOrGodownsInSale(newGodowns, product);
-          }
-
-          // Process deleted godowns or batches
-
-          if (deletedGodowns.length > 0) {
-            await deleteGodownsOrBatchesInSaleEdit(deletedGodowns, product);
-          }
-          ///////////////////////////////for handle deletion of godown or batch start///////////////////////////////
-
-          /////////////////////////////////////for  updating balance stock of godowns  ////////////////////////////////////
-
-          for (const godown of item.GodownList) {
-            if (godown.batch && !godown.godown_id) {
-              const existingGodown = existingItem?.GodownList.find(
-                (sGodown) => sGodown.batch === godown.batch
-              );
-              const godownCountDiff =
-                parseFloat(godown.count) - (existingGodown?.count || 0) || 0;
-
-              // console.log("godownCountDiff", godownCountDiff);
-
-              let productItem = productModel.findOne({
-                _id: product._id,
-              });
-
-              const balance_stock =
-                product.GodownList.find(
-                  (sGodown) => sGodown.batch === godown.batch
-                ).balance_stock || 0;
-              // console.log("balance_stock", balance_stock);
-
-              let updatedStock;
-
-              if (godownCountDiff > 0) {
-                const absoluteCount = Math.abs(godownCountDiff);
-                // console.log("greater than 0");
-
-                updatedStock = balance_stock - absoluteCount;
-              } else {
-                const absoluteCount = Math.abs(godownCountDiff);
-
-                updatedStock = balance_stock + absoluteCount;
-              }
-
-              // console.log("updatedStock", updatedStock);
-
-              if (godownCountDiff !== 0) {
-                await productModel.updateOne(
-                  {
-                    _id: product._id,
-                    "GodownList.batch": godown.batch || null,
-                  },
-                  { $set: { "GodownList.$.balance_stock": updatedStock } }
-                );
-              }
-            } else if (godown.godown_id && !godown.batch) {
-              const existingGodown = existingItem?.GodownList.find(
-                (sGodown) => sGodown?.godown_id === godown?.godown_id
-              );
-
-              const godownCountDiff =
-                parseFloat(godown?.count) - (existingGodown?.count || 0) || 0;
-
-              // console.log("godownCountDiff", godownCountDiff);
-
-              let productItem = productModel?.findOne({
-                _id: product._id,
-              });
-
-              const balance_stock =
-                product.GodownList.find(
-                  (sGodown) => sGodown?.godown_id === godown?.godown_id
-                )?.balance_stock || 0;
-
-              // console.log("balance_stock", balance_stock);
-              let updatedStock;
-
-              if (godownCountDiff > 0) {
-                const absoluteCount = Math.abs(godownCountDiff);
-                // console.log("greater than 0");
-
-                updatedStock = balance_stock - absoluteCount;
-                // console.log("updatedStock", updatedStock);
-              } else {
-                const absoluteCount = Math.abs(godownCountDiff);
-
-                // console.log("less than 0");
-
-                updatedStock = balance_stock + absoluteCount;
-                // console.log("updatedStock", updatedStock);
-              }
-
-              if (godownCountDiff !== 0) {
-                await productModel.updateOne(
-                  {
-                    _id: product._id,
-                    "GodownList.godown_id": godown.godown_id || null,
-                  },
-                  { $set: { "GodownList.$.balance_stock": updatedStock } }
-                );
-              }
-            } else if (godown?.godown_id && godown?.batch) {
-              const existingGodown = existingItem?.GodownList?.find(
-                (sGodown) =>
-                  sGodown?.godown_id === godown?.godown_id &&
-                  sGodown?.batch === godown?.batch
-              );
-              const godownCountDiff =
-                parseFloat(godown?.count) - (existingGodown?.count || 0) || 0;
-              // console.log("godownCountDiff", godownCountDiff);
-              let productItem = productModel.findOne({
-                _id: product?._id,
-              });
-              const balance_stock =
-                product.GodownList.find(
-                  (sGodown) =>
-                    sGodown?.godown_id === godown?.godown_id &&
-                    sGodown?.batch === godown?.batch
-                )?.balance_stock || 0;
-
-              // console.log("balance_stock", balance_stock);
-
-              let updatedStock;
-
-              if (godownCountDiff > 0) {
-                const absoluteCount = Math.abs(godownCountDiff);
-                // console.log("greater than 0");
-                updatedStock = balance_stock - absoluteCount;
-                // console.log("updatedStock", updatedStock);
-              } else {
-                const absoluteCount = Math.abs(godownCountDiff);
-
-                // console.log("less than 0");
-                updatedStock = balance_stock + absoluteCount;
-                // console.log("updatedStock", updatedStock);
-              }
-
-              if (godownCountDiff !== 0) {
-                await productModel.updateOne(
-                  {
-                    _id: product._id,
-                    "GodownList.godown_id": godown?.godown_id || null,
-                    "GodownList.batch": godown?.batch || null,
-                  },
-                  { $set: { "GodownList.$.balance_stock": updatedStock } }
-                );
-              }
-            }
-          }
-        }
-      } else {
-        ////// no godown or batch//////////
-
-        // console.log("nohasGodownOrBatch ");
-
-        const product_godown_balance_stock = Number(
-          product.GodownList[0].balance_stock
-        );
-
-        const itemCountDiff =
-          parseFloat(item.count) - (existingItem?.count || 0) || 0;
-        let updatedStock;
-        let updatedGodownStock;
-
-        if (itemCountDiff > 0) {
-          const absoluteCount = Math.abs(itemCountDiff);
-          // console.log("greater than 0");
-
-          updatedGodownStock = product_godown_balance_stock - absoluteCount;
-          // console.log("updatedStock", updatedStock);
-        } else {
-          const absoluteCount = Math.abs(itemCountDiff);
-
-          // console.log("less than 0");
-
-          updatedGodownStock = product_godown_balance_stock + absoluteCount;
-
-          // console.log("updatedStock", updatedStock);
-        }
-
-        if (itemCountDiff !== 0) {
-          await productModel.updateOne(
-            { _id: product._id },
-            {
-              $set: {
-                "GodownList.0.balance_stock": updatedGodownStock,
-              },
-            }
-          );
-        }
-      }
-    }
-
-    ///////////////////////////////////// for calculating values like igst amount and updated items  ////////////////////////////////////
-
-    let updatedItems = items;
-    if (items.length > 0) {
-      updatedItems = await calculateUpdatedItemValues(
-        items,
-        priceLevelFromRedux
-      );
-    }
-    let updateAdditionalCharge = additionalChargesFromRedux;
-    if (additionalChargesFromRedux.length > 0) {
-      updateAdditionalCharge = await updateAdditionalChargeInSale(
-        additionalChargesFromRedux
-      );
-    }
-
-    // console.log("updatedItems", updatedItems);
-
-    // Update the existing sale
-    existingSale.partyAccount = party?.partyName;
-    existingSale.party = party;
-    existingSale.items = updatedItems;
-    existingSale.priceLevel = priceLevelFromRedux;
-    existingSale.additionalCharges = additionalChargesFromRedux;
-    existingSale.finalAmount = lastAmount;
-    existingSale.salesNumber = salesNumber;
-    existingSale.despatchDetails = despatchDetails;
-    existingSale.createdAt = new Date(selectedDate);
-
-    console.log("existingSale", existingSale);
-
-    const result = await existingSale.save();
-
-    ///////////////////////////////////// for reflecting the rate change in outstanding  ////////////////////////////////////
+    //     ///////////////////////////////////// for reflecting the rate change in outstanding  ////////////////////////////////////
 
     const newBillValue = Number(lastAmount);
-    // const oldBillValue = Number(existingSale.finalAmount);
+    const oldBillValue = Number(existingSale.finalAmount);
     const diffBillValue = newBillValue - oldBillValue;
 
     const matchedOutStanding = await TallyData.findOne({
@@ -3530,11 +3720,11 @@ export const editSale = async (req, res) => {
     });
 
     if (matchedOutStanding) {
-      console.log("editSale: matched outstanding found");
+      // console.log("editSale: matched outstanding found");
       const newOutstanding =
         Number(matchedOutStanding?.bill_pending_amt) + diffBillValue;
 
-      console.log("editSale: new outstanding calculated", newOutstanding);
+      // console.log("editSale: new outstanding calculated", newOutstanding);
       await TallyData.updateOne(
         {
           party_id: party?.party_master_id,
@@ -3544,16 +3734,17 @@ export const editSale = async (req, res) => {
         { $set: { bill_pending_amt: newOutstanding } }
       );
 
-      console.log("editSale: outstanding updated");
+      // console.log("editSale: outstanding updated");
     } else {
       console.log("editSale: matched outstanding not found");
     }
 
-    res
-      .status(200)
-      .json({ success: true, message: "Sale updated", data: result });
+    res.status(200).json({
+      success: true,
+      message: "Sale edited successfully",
+    });
   } catch (error) {
-    console.error("editSale: error", error);
+    console.error(error);
     res.status(500).json({
       success: false,
       message: "An error occurred while editing the sale.",
@@ -3569,7 +3760,6 @@ export const getAllSubDetails = async (req, res) => {
   try {
     const cmp_id = req.params.orgId;
     const Primary_user_id = req.owner;
-    console.log(cmp_id, Primary_user_id);
     if (!cmp_id || !Primary_user_id) {
       console.log(
         "cmp_id and Primary_user_id are required in getAllSubDetails "
@@ -3798,3 +3988,138 @@ export const editStockTransfer = async (req, res) => {
     });
   }
 };
+
+// @desc to cancel sale order
+// route delete/api/sUsers/cancelSalesOrder;
+
+export const cancelSalesOrder = async (req, res) => {
+  const invoiceId = req.params.id;
+  const secondary_user_id = req.sUserId;
+  const owner = req.owner.toString();
+
+  try {
+    // Find the invoice by ID
+    const invoice = await invoiceModel.findById(invoiceId);
+    if (!invoice) {
+      return res.status(404).json({
+        message: "Invoice not found",
+      });
+    }
+    // Check if the invoice is already cancelled
+    if (invoice?.isCancelled) {
+      return res.status(400).json({
+        success: false,
+        message: "Invoice is already cancelled",
+      });
+    }
+
+    // Revert the stock levels for each item in the invoice
+    await revertBalanceStockOfSalesOrder(invoice.items);
+
+    invoice.isCancelled = true;
+    const result = await invoiceModel.findByIdAndUpdate(invoiceId, invoice, {
+      new: true,
+    });
+
+    return res.status(200).json({
+      message: "Invoice cancelled successfully",
+      data: result,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error, try again!",
+      error: error.message,
+    });
+  }
+};
+
+// @desc to cancel sales
+// route delete/api/sUsers/cancelSales;
+
+export const cancelSale = async (req, res) => {
+  const saleId = req.params.id; // ID of the sale to cancel
+  const vanSaleQuery = req.query.vanSale;
+
+  // console.log("vanSaleQuery", vanSaleQuery);
+  // console.log("saleId", saleId);
+
+  try {
+    // Find the sale to cancel
+    const sale = await (vanSaleQuery === "true"
+      ? vanSaleModel
+      : salesModel
+    ).findById(saleId);
+    if (!sale) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Sale not found" });
+    }
+
+    console.log(sale);
+
+    // Revert stock updates
+    await revertSaleStockUpdates(sale.items);
+
+    // update Sale status
+    sale.isCancelled = true;
+    await (vanSaleQuery === "true"
+      ? vanSaleModel
+      : salesModel
+    ).findByIdAndUpdate(saleId, sale);
+
+
+
+    res.status(200).json({
+      success: true,
+      message: "Sale canceled and stock reverted successfully",
+    });
+  } catch (error) {
+    console.error("Error in canceling sale:", error);
+    res.status(500).json({
+      success: false,
+      message: "An error occurred while canceling the sale.",
+      error: error.message,
+    });
+  }
+};
+
+// @desc to cancel stock tranfer
+// route post/api/sUsers/cancelstockTransfer;
+
+export const cancelStockTransfer = async (req, res) => {
+  const transferId = req.params.id;
+
+  try {
+    // Find the existing stock transfer document by ID
+    const existingTransfer = await stockTransferModel.findById(transferId);
+    if (!existingTransfer) {
+      return res.status(404).json({
+        error: "Stock transfer not found",
+      });
+    }
+
+    const result = await revertStockTransfer(existingTransfer);
+    existingTransfer.isCancelled = true;
+    const updateTransfer = await stockTransferModel.findByIdAndUpdate(
+      existingTransfer._id,
+      existingTransfer,
+      { new: true }
+    );
+
+    res.status(200).json({
+      message: "Stock transfer cancelled successfully",
+      data: existingTransfer,
+      updatedProducts: result,
+    });
+  } catch (error) {
+    console.error("Error in canceling stock transfer:", error);
+    res.status(500).json({
+      error: "Internal Server Error",
+      details: error.message,
+    });
+  }
+};
+
+

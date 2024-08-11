@@ -410,6 +410,8 @@ function EditSale() {
   };
 
   const submitHandler = async () => {
+
+    // e.preventDefault();
     console.log("haii");
     if (Object.keys(party).length == 0) {
       console.log("haii");
@@ -475,7 +477,7 @@ function EditSale() {
 
       toast.success(res.data.message);
 
-      navigate(`/sUsers/salesDetails/${res.data.data._id}`);
+      navigate(`/sUsers/salesDetails/${id}`);
       dispatch(removeAll());
     } catch (error) {
       if (error.response && error.response.data) {

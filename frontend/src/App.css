@@ -204,14 +204,18 @@
   -moz-appearance: textfield;
 }
 
-
 .no-scrollbar::-webkit-scrollbar {
   display: none; /* Hides the scrollbar */
 }
 
 /* To set the scrollbar width and color in WebKit browsers */
 .no-scrollbar::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.5); /* Example: semi-transparent white */
+  background-color: rgba(
+    255,
+    255,
+    255,
+    0.5
+  ); /* Example: semi-transparent white */
 }
 
 .no-scrollbar::-webkit-scrollbar-track {
@@ -231,10 +235,6 @@
   border-color: #b6b6b6;
 }
 
-
-
-
-
 @media (max-width: 640px) {
   .modal-dialog {
     top: 50% !important;
@@ -242,29 +242,54 @@
   }
 }
 
-
 /* Hide the text inside the date input */
 input[type="date"]::-webkit-datetime-edit,
 input[type="date"]::-webkit-inner-spin-button,
 input[type="date"]::-webkit-clear-button {
-    display: none;
+  display: none;
 }
 
 /* Hide the default arrow for Firefox */
 input[type="date"]::-moz-clear {
-    display: none;
+  display: none;
 }
 
 /* Hide the placeholder text */
 input[type="date"] {
-    color: transparent;
+  color: transparent;
 }
 
 /* To show placeholder text when selected */
 input[type="date"]:focus,
 input[type="date"]:hover {
-    color: black;
+  color: black;
 }
 
+/* printStyles.css */
+@page {
+  size: 80mm auto;
+  margin: 0;
+}
 
+@media print {
+  Hide everything by default */ body * {
+    display: none;
+  }
 
+  /* Show only the printable content */
+  .nonPrintable-content * {
+    display: none;
+    /* background-color: #c5390f; */
+  }
+
+  .printableContent {
+    display: block !important;
+  }
+
+  .print-container {
+    width: 80mm;
+    height: auto;
+    overflow: hidden; /* Prevent any overflow issues */
+    margin: 0;
+  }
+}

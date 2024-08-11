@@ -10,6 +10,7 @@
   "author": "Midhun Mohan",
   "license": "ISC",
   "dependencies": {
+    "@react-pdf/renderer": "^3.4.4",
     "animate.css": "^4.1.1",
     "bcryptjs": "^2.4.3",
     "cloudinary": "^1.41.3",

@@ -162,7 +162,7 @@ function SidebarSec({ TAB, showBar }) {
   };
 
   return (
-    <div>
+    <div className="nonPrintable-content">
       {loader && (
         <div className=" absolute top-0 w-screen h-screen z-50  flex justify-center items-center bg-black/[0.5]">
           <RingLoader color="#1c14a0" />

@@ -5,9 +5,6 @@ import { useSelector } from "react-redux";
 import api from "../../api/api";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
-import { removeAll } from "../../../slices/invoiceSecondary";
-import { removeAllSales } from "../../../slices/salesSecondary";
-import { removeAll as removeAllStock } from "../../../slices/stockTransferSecondary";
 import { toast } from "react-toastify";
 import { useSidebar } from "../../layout/Layout";
 import DashBoard from "../../components/common/DashBoard";
@@ -21,7 +18,7 @@ function Dashboard() {
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
 
-  const dispatch = useDispatch();
+  // const dispatch = useDispatch();
 
   const { handleToggleSidebar } = useSidebar();
 

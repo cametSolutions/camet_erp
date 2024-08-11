@@ -7,8 +7,8 @@ import { toast } from "react-toastify";
 import { MdPrint } from "react-icons/md";
 import numberToWords from "number-to-words";
 import { Link } from "react-router-dom";
-import SidebarSec from "../../components/secUsers/SidebarSec";
 import SalesThreeInchPdf from "../../components/common/SalesThreeInchPdf";
+import PrintButton from "../../components/common/buttons/PrintButton";
 
 function ThreeInchSalesSec() {
   const [data, setData] = useState([]);
@@ -106,8 +106,6 @@ function ThreeInchSalesSec() {
     }
   }, [data]);
 
-
-
   const handlePrint = useReactToPrint({
     documentTitle: `Sale Order ${data?.salesNumber}`,
     onBeforePrint: () => console.log("before printing..."),
@@ -116,27 +114,25 @@ function ThreeInchSalesSec() {
   });
 
   return (
-    <div className="">
-     
-      <div className="flex-1 h-screen ">
-        <div className="bg-[#012a4a]   sticky top-0 p-3 px-5 text-white text-lg font-bold flex items-center gap-3  shadow-lg justify-between">
-          <div className="flex gap-2 ">
-            <Link to={`/sUsers/salesDetails/${id}`}>
-              <IoIosArrowRoundBack className="text-3xl" />
-            </Link>
-            <p>Share Your Order</p>
-          </div>
-          <div>
-            <MdPrint
-              onClick={() => {
-                handlePrint(null, () => contentToPrint.current);
-              }}
-              className="text-xl cursor-pointer "
-            />
-          </div>
+    <div >
+      <div className="  nonPrintable-content bg-[#012a4a]   sticky top-0 p-3 px-5 text-white text-lg font-bold flex items-center gap-3  shadow-lg justify-between">
+        <div className="flex gap-2 ">
+          <Link to={`/sUsers/salesDetails/${id}`}>
+            <IoIosArrowRoundBack className="text-3xl" />
+          </Link>
+          <p>Share Your Order</p>
         </div>
+        <div>
+          <MdPrint
+            onClick={() => {
+              handlePrint(null, () => contentToPrint.current);
+            }}
+            className="text-xl cursor-pointer "
+          />
+        </div>
+      </div>
 
-      
+      <div className="  ">
         <SalesThreeInchPdf
           contentToPrint={contentToPrint}
           data={data}
@@ -146,8 +142,20 @@ function ThreeInchSalesSec() {
           additinalCharge={additinalCharge}
           inWords={inWords}
         />
-
       </div>
+{/* 
+      <div>
+          <MdPrint
+            onClick={() => {
+              handlePrint(null, () => contentToPrint.current);
+            }}
+            className="text-xl cursor-pointer "
+          />
+        </div> */}
+
+      
+
+      {/* <PrintButton salesId={id}/> */}
     </div>
   );
 }

@@ -138,11 +138,11 @@ function SalesSecondary() {
           // console.log(suffixDetails);
 
           const padedNumber = newOrderNumber.padStart(widthOfNumericalPart, 0);
-          // console.log(padedNumber);
+          console.log(padedNumber);
           const finalOrderNumber = [prefixDetails, padedNumber, suffixDetails]
             .filter(Boolean)
             .join("-");
-          // console.log(finalOrderNumber);
+          console.log(finalOrderNumber);
           setSalesNumber(finalOrderNumber);
         } else {
           setSalesNumber(salesNumber);
@@ -151,6 +151,9 @@ function SalesSecondary() {
         console.log(error);
       }
     };
+
+    console.log(salesNumber);
+    
 
     fetchConfigurationNumber();
   }, []);

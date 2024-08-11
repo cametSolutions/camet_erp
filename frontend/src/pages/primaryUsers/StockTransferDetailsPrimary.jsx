@@ -5,13 +5,12 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import api from "../../api/api";
 import { toast } from "react-toastify";
-import dayjs from "dayjs";
 import { FaEdit } from "react-icons/fa";
 import { useLocation, useNavigate } from "react-router-dom";
 import SalesProductDetails from "../../components/common/SalesProductDetails";
 import VoucherDetailsHeader from "../../components/common/VoucherDetailsHeader";
 
-function StockTransferDetailsSecondary() {
+function StockTransferDetailsPrimary() {
   const [data, setData] = useState("");
   const [refresh, setRefresh] = useState(false);
 
@@ -23,7 +22,7 @@ function StockTransferDetailsSecondary() {
   useEffect(() => {
     const getTransactionDetails = async () => {
       try {
-        const res = await api.get(`/api/sUsers/getStockTransferDetails/${id}`, {
+        const res = await api.get(`/api/pUsers/getStockTransferDetails/${id}`, {
           params: { vanSale: false },
           withCredentials: true,
         });
@@ -67,7 +66,6 @@ function StockTransferDetailsSecondary() {
       </div>
       {/* headinh section  */}
 
-      {/* payment details */}
   
 
       <VoucherDetailsHeader
@@ -76,30 +74,9 @@ function StockTransferDetailsSecondary() {
         editLink={`/sUsers/editStockTransfer/${data?._id}`}
         user={"secondary"}
         number={data?.stockTransferNumber}
-        tab={"stockTransfer"}
+        tab={"primary"}
       />
 
-      {/* party details */}
-
-      {/* <div className="bg-white mt-2 p-4  ">
-          <div className="flex justify-between text-sm mb-2">
-            <h2 className="font-semibold text-sm  text-gray-500">PARTY NAME</h2>
-   
-          </div>
-          <hr />
-          <hr />
-          <hr />
-          <div className="mt-2">
-            <p className="font-semibold ">{data?.party?.partyName}</p>
-            <p className="text-xs mt-1 text-gray-400 font-semibold ">
-              {data?.party?.mobileNumber !== "null"
-                ? data?.party?.mobileNumber
-                : ""}
-            </p>
-          </div>
-        </div> */}
-      {/* party details */}
-      {/* party Total Mount */}
 
       <SalesProductDetails
         data={data}
@@ -130,4 +107,4 @@ function StockTransferDetailsSecondary() {
   );
 }
 
-export default StockTransferDetailsSecondary;
+export default StockTransferDetailsPrimary;
