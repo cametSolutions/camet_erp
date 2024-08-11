@@ -272,7 +272,8 @@ input[type="date"]:hover {
 }
 
 @media print {
-  Hide everything by default */ body * {
+  Hide everything by default 
+  */ body * {
     display: none;
   }
 
