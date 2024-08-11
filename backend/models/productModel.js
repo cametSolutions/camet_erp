@@ -70,7 +70,7 @@ const productSchema = new mongoose.Schema({
     type: Array, // Array of strings
   },
   GodownList: {
-    type: Array, // Array of strings
+    type: Array, // Array of objects with balance_stock
   },
   cgst: {
     type: String,
@@ -124,6 +124,14 @@ productSchema.pre('save', function(next) {
     }
   });
 
+  if (this.GodownList && Array.isArray(this.GodownList)) {
+    this.GodownList.forEach(godown => {
+      if (godown.balance_stock) {
+        godown.balance_stock = truncateToNDecimals(godown.balance_stock, n).toString();
+      }
+    });
+  }
+
   next();
 });
 
@@ -142,6 +150,14 @@ productSchema.pre(['findOneAndUpdate', 'updateOne', 'updateMany'], function(next
       update[field] = truncateToNDecimals(update[field], n).toString();
     }
   });
+
+  if (update.GodownList && Array.isArray(update.GodownList)) {
+    update.GodownList.forEach(godown => {
+      if (godown.balance_stock) {
+        godown.balance_stock = truncateToNDecimals(godown.balance_stock, n).toString();
+      }
+    });
+  }
 
   next();
 });

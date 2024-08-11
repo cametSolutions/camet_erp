@@ -282,7 +282,7 @@ function InventoryPrimaryUser() {
                   <h2 className="font-semibold text-green-500 ml-1 ">
                     {" "}
                     {el?.GodownList?.reduce(
-                      (acc, curr) => acc + (curr?.balance_stock || 0),
+                      (acc, curr) => acc + (Number(curr?.balance_stock) || 0),
                       0
                     ) || 0}
                   </h2>
@@ -303,9 +303,9 @@ function InventoryPrimaryUser() {
                   <h2 className="font-semibold text-green-500 ml-1">
                     {" "}
                     {truncateToNDecimals((el?.GodownList?.reduce(
-                      (acc, curr) => acc + (curr?.balance_stock || 0),
+                      (acc, curr) => acc + (Number(curr?.balance_stock) || 0),
                       0
-                    ) || 0)-(el?.balance_stock || 0),3)}
+                    ) || 0)-(Number(el?.balance_stock) || 0),3)}
                   </h2>
                 </div>
               </div>

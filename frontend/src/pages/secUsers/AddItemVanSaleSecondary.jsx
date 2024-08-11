@@ -870,7 +870,7 @@ function AddItemVanSaleSecondary() {
                       <span>
                         {" "}
                         {el?.GodownList.reduce(
-                          (acc, curr) => (acc += curr.balance_stock),
+                          (acc, curr) => (acc += Number(curr.balance_stock)),
                           0
                         ) || 0}
                       </span>
