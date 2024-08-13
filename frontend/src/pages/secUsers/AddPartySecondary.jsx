@@ -1,7 +1,7 @@
 import { toast } from "react-toastify";
 import api from "../../api/api";
 import { IoIosArrowRoundBack } from "react-icons/io";
-import { Link } from "react-router-dom";
+import { Link ,useLocation} from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import AddPartyForm from "../../components/common/Forms/AddPartyForm";
 import { useSelector } from "react-redux";
@@ -9,6 +9,9 @@ import { useSelector } from "react-redux";
 function AddPartySecondary() {
 
   const navigate = useNavigate();
+  const location = useLocation();
+  const querypram = new URLSearchParams(location.search);
+  const from = querypram.get("from");
 
     const companyId = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
@@ -29,7 +32,12 @@ function AddPartySecondary() {
       });
 
       toast.success(res.data.message);
-      navigate("/sUsers/partylist");
+      if(from==="contacts"){
+        navigate("/sUsers/contacts");
+      }else{
+
+        navigate("/sUsers/partylist");
+      }
     } catch (error) {
       toast.error(error.response.data.message);
       console.log(error);

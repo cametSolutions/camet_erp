@@ -14,10 +14,14 @@ import { AiFillCaretRight } from "react-icons/ai";
 import DashboardTransaction from "../../components/common/DashboardTransaction";
 
 function Transaction() {
-  const [data, setData] = useState([]);
+
+  const initialStartDate =localStorage.getItem("SecondaryTransactionStartDate") || new Date()
+  const initialEndDate=localStorage.getItem("SecondaryTransactionEndDate") || new Date()
+  
+  const [data, setData] = useState([initialStartDate]);
   const [search, setSearch] = useState("");
-  const [startDate, setStartDate] = useState(new Date());
-  const [endDate, setEndDate] = useState(new Date());
+  const [startDate, setStartDate] = useState(initialStartDate);
+  const [endDate, setEndDate] = useState(initialEndDate);
   const [total, setTotal] = useState(0);
 
   const org = useSelector(
@@ -95,22 +99,7 @@ function Transaction() {
     calulateTotal();
   }, [finalData]);
 
-  // const handleCancel = async (id) => {
-  //   try {
-  //     const res = await api.post(`/api/sUsers/cancelTransaction/${id}`, {}, {
-  //       withCredentials: true,
-  //     });
 
-  //     console.log(res.data);
-
-  //     toast.success(res.data.message);
-  //     setRefresh(!refresh);
-  //     // dispatch(addData(res.data.outstandingData));
-  //   } catch (error) {
-  //     console.log(error);
-  //     toast.error(error.response.data.message);
-  //   }
-  // };
 
 
   return (
@@ -190,7 +179,9 @@ function Transaction() {
                         console.log(dates);
                         if (dates) {
                           setStartDate(dates[0]);
+                          localStorage.setItem("SecondaryTransactionStartDate", dates[0]);
                           setEndDate(dates[1]);
+                          localStorage.setItem("SecondaryTransactionEndDate", dates[1]);
                         }
                       }}
                     />
@@ -207,7 +198,7 @@ function Transaction() {
             </div>
           </div>
 
-      <DashboardTransaction filteredData={finalData} userType="secondary"/>
+      <DashboardTransaction filteredData={finalData} userType="secondary" startDate={startDate} endDate={endDate}/>
         </div>
       </div>
   );

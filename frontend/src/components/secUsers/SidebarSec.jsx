@@ -124,6 +124,10 @@ function SidebarSec({ TAB, showBar }) {
     dispatch(removeAll());
     dispatch(removeAllSales());
     dispatch(removeAllStock());
+      // for removing date from local storage which is saved for transaction
+
+  localStorage.removeItem("SecondaryTransactionEndDate")
+  localStorage.removeItem("SecondaryTransactionStartDate")
     // onTabChange(newTab);
   };
 

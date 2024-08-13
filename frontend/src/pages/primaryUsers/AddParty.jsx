@@ -1,21 +1,24 @@
 import { toast } from "react-toastify";
 import api from "../../api/api";
 import { IoIosArrowRoundBack } from "react-icons/io";
-import { Link } from "react-router-dom";
+import { Link} from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import AddPartyForm from "../../components/common/Forms/AddPartyForm";
 import { useSelector } from "react-redux";
 
 function AddParty() {
   const navigate = useNavigate();
-  
+
+
   const cmp_id = useSelector(
     (state) => state.setSelectedOrganization.selectedOrg._id
   );
 
   const submitHandler = async (formData) => {
     // console.log(formData);
-    formData.cpm_id= cmp_id;
+    formData.cpm_id = cmp_id;
+
+    // console.log(formData);
 
     try {
       const res = await api.post("/api/pUsers/addParty", formData, {

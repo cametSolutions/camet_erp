@@ -39,7 +39,6 @@ function Dashboard() {
         }
       };
       fetchTransactions();
-  
     }
   }, [org]);
 
@@ -76,8 +75,8 @@ function Dashboard() {
       org={org}
       receiptTotal={receiptTotal}
       handleLinkClick={handleLinkClick}
-    type="secondary"
-
+      type="secondary"
+      from="dashboard"
     />
   );
 }

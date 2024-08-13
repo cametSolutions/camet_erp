@@ -731,6 +731,7 @@ export const addParty = async (req, res) => {
       return res.status(200).json({
         success: true,
         message: "Party added successfully",
+        result: result,
       });
     } else {
       return res.status(400).json({

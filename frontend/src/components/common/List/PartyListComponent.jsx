@@ -40,29 +40,27 @@ function PartyListComponent({ filteredParty, type, deleteHandler,user="secondary
             )}
           </div>
           <div
-            className={`${
-              type !== "self"
-                ? "pointer-events-none cursor-default opacity-50"
-                : ""
-            } flex justify-center items-center gap-4`}
+            className={` flex justify-center items-center gap-4`}
           >
-            {/* <IoIosCall
-              color="green"
-              size={20}
-              onClick={() => handleCallClick(el?.mobileNumber)}
-              className="cursor-pointer"
-            /> */}
+           
 
             <CallIcon phoneNumber={el?.mobileNumber} size={18} color="green" />
             <Link to={`/${user==="secondary"?"sUsers":"pUsers"}/editParty/${el._id}`}>
               <FaEdit className="text-blue-500" />
             </Link>
-            <MdDelete
-              onClick={() => {
-                handleDelete(el._id);
-              }}
-              className="text-red-500"
-            />
+
+            {
+              type == "self" && (
+                <MdDelete
+                onClick={() => {
+                  handleDelete(el._id);
+                }}
+                className="text-red-500"
+              />
+
+              )
+            }
+           
           </div>
         </div>
         <div className="flex gap-2 text-nowrap text-sm mt-1">

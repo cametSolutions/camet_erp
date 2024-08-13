@@ -4,9 +4,12 @@ import { FcCancel } from "react-icons/fc";
 import { IoArrowRedoOutline } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
 
-function DashboardTransaction({ filteredData, userType }) {
+function DashboardTransaction({ filteredData, userType ,from}) {
+  console.log(from)
   console.log(userType);
   const navigate = useNavigate();
+
+ 
   return (
     <div className="grid grid-cols-1 gap-4  text-center pb-7 mt-5 md:px-2 overflow-hidden  ">
       {filteredData?.map((el, index) => (
@@ -37,7 +40,7 @@ function DashboardTransaction({ filteredData, userType }) {
                 : `/${
                     userType === "primary" ? "pUsers" : "sUsers"
                   }/InvoiceDetails/${el._id}`;
-            navigate(navigationPath, { state: { from: "dashboard" } });
+            navigate(navigationPath, { state: { from: from } });
           }}
           className={`
           
@@ -90,15 +93,7 @@ function DashboardTransaction({ filteredData, userType }) {
           <hr />
           <hr />
           <div className="flex justify-between p-4">
-            {/* <button
-                    onClick={() => {
-                      handleCancel(el._id);
-                    }}
-                    className="p-2 py-1 rounded-lg text-white bg-red-500 flex items-center gap-2 transition-all duration-150 transform hover:scale-105 hover:bg-red-600"
-                  >
-                    <ImCancelCircle />
-                    {el.isCancelled ? "Cancelled" : "Cancel"}
-                  </button> */}
+        
 
             <div className=" flex items-center justify-between w-full gap-2 text-md text-violet-500">
               <div className="flex items-center gap-2">

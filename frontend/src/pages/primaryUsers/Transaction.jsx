@@ -1,33 +1,31 @@
 /* eslint-disable react/no-unknown-property */
 import { useEffect, useState } from "react";
 import api from "../../api/api";
-import dayjs from "dayjs";
-import { IoArrowRedoOutline } from "react-icons/io5";
 import { useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
-import { FcCancel } from "react-icons/fc";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import { Link } from "react-router-dom";
-import { FaRegCircleDot } from "react-icons/fa6";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { AiFillCaretRight } from "react-icons/ai";
 import DashboardTransaction from "../../components/common/DashboardTransaction";
 
 function Transaction() {
+
+  const initialStartDate =localStorage.getItem("PrimaryTransactionStartDate") || new Date()
+  const initialEndDate=localStorage.getItem("PrimaryTransactionEndDate") || new Date()
+
+
   const [data, setData] = useState([]);
   const [search, setSearch] = useState("");
   const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState("");
 
-  const [startDate, setStartDate] = useState(new Date());
-  const [endDate, setEndDate] = useState(new Date());
+  const [startDate, setStartDate] = useState(initialStartDate);
+  const [endDate, setEndDate] = useState(initialEndDate);
   const [total, setTotal] = useState(0);
 
-  const navigate = useNavigate();
 
   const org = useSelector((state) => state.setSelectedOrganization.selectedOrg);
-  console.log(org);
 
   useEffect(() => {
     const fetchTransactions = async () => {
@@ -36,7 +34,6 @@ function Transaction() {
           withCredentials: true,
         });
 
-        console.log(res.data);
 
         setData(res.data.data.combined);
 
@@ -60,7 +57,6 @@ function Transaction() {
           return item.organization.some((company) => company._id === org._id);
         });
 
-        console.log(companyWiseSecUsers.length);
         setUsers(companyWiseSecUsers);
       } catch (error) {
         console.log(error);
@@ -69,9 +65,7 @@ function Transaction() {
     fetchSecondaryUsers();
   }, []);
 
-  console.log(users);
-  console.log(selectedUser);
-  console.log(data);
+
 
   const filterOutstanding = (data) => {
     return data?.filter((item) => {
@@ -98,7 +92,6 @@ function Transaction() {
         secondaryUserIdMatch = item?.Secondary_user_id === selectedUser;
       }
 
-      console.log(secondaryUserIdMatch);
 
       return searchFilter && dateFilterCondition && secondaryUserIdMatch;
     });
@@ -122,7 +115,6 @@ function Transaction() {
       } catch (error) {
         console.error("Error when calculating total:", error);
       }
-      console.log(total);
       setTotal(total);
     } else {
       setTotal(0);
@@ -133,7 +125,6 @@ function Transaction() {
     calulateTotal();
   }, [finalData]);
 
-  console.log(finalData);
 
   return (
       <div className=" flex-1    ">
@@ -215,7 +206,10 @@ function Transaction() {
                       console.log(dates);
                       if (dates) {
                         setStartDate(dates[0]);
+                        localStorage.setItem("PrimaryTransactionStartDate", dates[0]);
                         setEndDate(dates[1]);
+                        localStorage.setItem("PrimaryTransactionEndDate", dates[1]);
+
                       }
                     }}
                   />

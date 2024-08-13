@@ -9,7 +9,7 @@ import api from "../../api/api";
 import { toast } from "react-toastify";
 import dayjs from "dayjs";
 import Swal from "sweetalert2";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 function ReceiptDetails() {
   const [data, setData] = useState("");
@@ -72,17 +72,11 @@ function ReceiptDetails() {
   };
   console.log(data);
 
-  const location = useLocation();
   const navigate = useNavigate();
-  console.log(location);
+
 
   const backHandler = () => {
-    if (location?.state?.from === "dashboard") {
-      navigate("/sUsers/dashboard");
-    }else{
-      navigate("/sUsers/transaction");
-
-    }
+  navigate(-1)
   };
 
   return (

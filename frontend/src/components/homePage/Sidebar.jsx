@@ -248,6 +248,8 @@ function Sidebar({ TAB, showBar }) {
       setShowSidebar(!showSidebar);
     }
     localStorage.setItem("selectedPrimarySidebarTab", tab);
+    localStorage.removeItem("PrimaryTransactionEndDate")
+    localStorage.removeItem("PrimaryTransactionStartDate")
   };
 
   const handleLogout = async () => {

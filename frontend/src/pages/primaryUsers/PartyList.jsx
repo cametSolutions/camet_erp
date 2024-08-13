@@ -136,14 +136,14 @@ function PartyList() {
               <p className="text-white text-lg   font-bold ">Your Customersaa</p>
             </div>
             <div>
-              {type === "self" && (
+        
                 <Link to={"/pUsers/addParty"}>
                   <button className="flex items-center gap-2 text-white bg-[#40679E] px-2 py-1 rounded-md text-sm  hover:scale-105 duration-100 ease-in-out ">
                     <IoIosAddCircle className="text-xl" />
                     Add Customers
                   </button>
                 </Link>
-              )}
+              
             </div>
           </div>
 

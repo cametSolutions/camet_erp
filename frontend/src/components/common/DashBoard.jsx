@@ -12,7 +12,8 @@ function DashBoard({
   org,
   receiptTotal,
   handleLinkClick,
-  type
+  type,
+  from
 }) {
   return (
     <div className="">
@@ -81,6 +82,7 @@ function DashBoard({
             <DashboardTransaction
               filteredData={filteredData}
               userType={type}
+              from={from}
             />
             {/* one */}
           </div>
