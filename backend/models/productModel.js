@@ -13,7 +13,7 @@ const productSchema = new mongoose.Schema({
     type: String,
   },
   balance_stock: {
-    type: String,
+    type: Number,
   },
   Primary_user_id: {
     type: mongoose.Schema.Types.ObjectId,
@@ -103,10 +103,7 @@ const productSchema = new mongoose.Schema({
 
 // Function to truncate to a specified number of decimals
 const truncateToNDecimals = (num, n) => {
-  const parts = num.toString().split(".");
-  if (parts.length === 1) return num; // No decimal part
-  parts[1] = parts[1].substring(0, n); // Truncate the decimal part
-  return parseFloat(parts.join("."));
+  return parseFloat(num.toFixed(n));
 };
 
 // Pre-save middleware to truncate fields
@@ -120,14 +117,14 @@ productSchema.pre('save', function(next) {
 
   fieldsToTruncate.forEach(field => {
     if (this[field]) {
-      this[field] = truncateToNDecimals(this[field], n).toString();
+      this[field] = truncateToNDecimals(this[field], n);
     }
   });
 
   if (this.GodownList && Array.isArray(this.GodownList)) {
     this.GodownList.forEach(godown => {
       if (godown.balance_stock) {
-        godown.balance_stock = truncateToNDecimals(godown.balance_stock, n).toString();
+        godown.balance_stock = truncateToNDecimals(godown.balance_stock, n);
       }
     });
   }
@@ -147,14 +144,14 @@ productSchema.pre(['findOneAndUpdate', 'updateOne', 'updateMany'], function(next
 
   fieldsToTruncate.forEach(field => {
     if (update[field]) {
-      update[field] = truncateToNDecimals(update[field], n).toString();
+      update[field] = truncateToNDecimals(update[field], n);
     }
   });
 
   if (update.GodownList && Array.isArray(update.GodownList)) {
     update.GodownList.forEach(godown => {
       if (godown.balance_stock) {
-        godown.balance_stock = truncateToNDecimals(godown.balance_stock, n).toString();
+        godown.balance_stock = truncateToNDecimals(godown.balance_stock, n);
       }
     });
   }
