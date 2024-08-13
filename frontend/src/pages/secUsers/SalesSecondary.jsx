@@ -29,7 +29,7 @@ import AddPartyTile from "../../components/secUsers/main/AddPartyTile";
 import AddItemTile from "../../components/secUsers/main/AddItemTile";
 function SalesSecondary() {
   const [additional, setAdditional] = useState(false);
-  const [godownname, setGodownname] = useState("");
+  // const [godownname, setGodownname] = useState("");
 
   const [salesNumber, setSalesNumber] = useState("");
   const [additionalChragesFromCompany, setAdditionalChragesFromCompany] =
@@ -158,21 +158,21 @@ function SalesSecondary() {
     fetchConfigurationNumber();
   }, []);
 
-  useEffect(() => {
-    const fetchGodownname = async () => {
-      try {
-        const godown = await api.get(`/api/sUsers/godownsName/${cmp_id}`, {
-          withCredentials: true,
-        });
-        console.log(godown);
-        setGodownname(godown.data || "");
-      } catch (error) {
-        console.log(error);
-        toast.error(error.message);
-      }
-    };
-    fetchGodownname();
-  }, []);
+  // useEffect(() => {
+  //   const fetchGodownname = async () => {
+  //     try {
+  //       const godown = await api.get(`/api/sUsers/godownsName/${cmp_id}`, {
+  //         withCredentials: true,
+  //       });
+  //       console.log(godown);
+  //       setGodownname(godown.data || "");
+  //     } catch (error) {
+  //       console.log(error);
+  //       toast.error(error.message);
+  //     }
+  //   };
+  //   fetchGodownname();
+  // }, []);
 
   const [rows, setRows] = useState(
     additionalChargesFromRedux.length > 0
@@ -284,7 +284,6 @@ function SalesSecondary() {
     const subTotal = items.reduce((acc, curr) => {
       return (acc = acc + (parseFloat(curr.total) || 0));
     }, 0);
-    console.log(subTotal);
     setSubTotal(subTotal);
   }, [items]);
 
@@ -461,7 +460,7 @@ function SalesSecondary() {
           removeItem={removeItem}
           removeGodownOrBatch={removeGodownOrBatch}
           navigate={navigate}
-          godownname={godownname}
+          godownname={""}
           subTotal={subTotal}
           type="sale"
           additional={additional}

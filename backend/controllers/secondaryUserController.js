@@ -2620,6 +2620,9 @@ export const fetchConfigurationNumber = async (req, res) => {
       (item) => item.organization.toString() === cmp_id
     );
 
+    console.log("configuration", configuration);
+    
+
     const getConfigDetails = () => {
       if (!configuration) return null;
 
@@ -2636,7 +2639,7 @@ export const fetchConfigurationNumber = async (req, res) => {
     };
 
     const getConfigNumber = () => {
-      if (configuration) {
+      if (configuration  ) { 
         const numbers = {
           sales: configuration.salesNumber,
           salesOrder: configuration.orderNumber,
@@ -3711,8 +3714,8 @@ export const editSale = async (req, res) => {
 
     // Update existing sale record
     const updateData = {
-      selectedGodownId: selectedGodownId ?? "",
-      selectedGodownName: selectedGodownName ? selectedGodownName[0] : "",
+      selectedGodownId: selectedGodownId ?selectedGodownId: existingSale.selectedGodownId,
+      selectedGodownName: selectedGodownName ? selectedGodownName[0] : existingSale.selectedGodownName,
       serialNumber: existingSale.serialNumber, // Keep existing serial number
       cmp_id: orgId,
       partyAccount: party?.partyName,

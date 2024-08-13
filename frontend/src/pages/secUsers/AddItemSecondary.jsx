@@ -245,7 +245,6 @@ function AddItemSecondary() {
     const index = updatedItems.findIndex((item) => item._id === _id);
     // Create a shallow copy of the items
     const itemToUpdate = { ...updatedItems[index] };
-    console.log(itemToUpdate);
     if (itemToUpdate) {
       // Toggle the 'added' state of the item
       itemToUpdate.added = !itemToUpdate.added;
@@ -259,7 +258,7 @@ function AddItemSecondary() {
       setItem(updatedItems);
       setRefresh(!refresh);
       dispatch(addItem(itemToUpdate));
-      if (selectedPriceLevel === "") {
+      if (selectedPriceLevel === "" || selectedPriceLevel === undefined || priceLevels.length === 0) {
         navigate(`/sUsers/editItem/${_id}`);
       }
     }

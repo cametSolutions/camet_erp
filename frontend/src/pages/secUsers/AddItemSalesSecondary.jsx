@@ -85,6 +85,7 @@ function AddItemSalesSecondary() {
     setSearch(data);
   };
 
+  
   ///////////////////////////fetchProducts///////////////////////////////////
 
   useEffect(() => {
@@ -499,11 +500,14 @@ function AddItemSalesSecondary() {
       return item;
     });
 
+    
+
     setItem(updatedItems);
-    if (selectedPriceLevel === "") {
+    if (selectedPriceLevel === "" || selectedPriceLevel === undefined || priceLevels.length===0) {
       navigate(`/sUsers/editItemSales/${_id}/${ "nil"}/${idx}`);
     }
   };
+
 
   ///////////////////////////handleIncrement///////////////////////////////////
 
@@ -850,29 +854,11 @@ function AddItemSalesSecondary() {
             </div>
           </div>
 
-          {/* {el?.hasGodownOrBatch && (
-            <div className="mt-1">
-              <span className="text-gray-500 text-xs md:text-sm  ">
-                Stock :{" "}
-              </span>
-              <span className="font-bold text-xs md:text-sm ">
-                {el?.GodownList.reduce(
-                  (acc, curr) => (acc += curr.balance_stock),
-                  0
-                ) || 0}
-              </span>
-            </div>
-          )} */}
+
 
           {el?.added && el?.count && !el?.hasGodownOrBatch > 0 ? (
             <div className="flex items-center flex-col gap-2">
-              {/* <Link
-              // to={`/sUsers/editItem/${el?._id}`}
-              to={{
-                pathname: `/sUsers/editItem/${el?._id}`,
-                state: { from: "addItem" },
-              }}
-            > */}
+     
 
               {!el?.hasGodownOrBatch && (
                 <>
