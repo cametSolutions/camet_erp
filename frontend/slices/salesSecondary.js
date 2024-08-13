@@ -1,6 +1,8 @@
 import { createSlice } from "@reduxjs/toolkit"; 
 
 const initialState = {
+  // selectedGodownName:"",
+  // selectedGodownId:"",
   date: "",
   products: [],
   party: {},

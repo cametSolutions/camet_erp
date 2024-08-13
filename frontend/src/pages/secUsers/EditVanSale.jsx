@@ -1,10 +1,7 @@
 /* eslint-disable react/no-unescaped-entities */
 import { useEffect, useState, useMemo } from "react";
-import { IoMdAdd } from "react-icons/io";
 import { Link } from "react-router-dom";
-import { IoPerson } from "react-icons/io5";
 import { useSelector } from "react-redux";
-import { MdOutlineClose } from "react-icons/md";
 import {
   removeParty,
   addAdditionalCharges,
@@ -23,17 +20,12 @@ import {
   changeDate,
 } from "../../../slices/salesSecondary";
 import { useDispatch } from "react-redux";
-import { IoIosArrowDown } from "react-icons/io";
-import { MdCancel } from "react-icons/md";
-import { FiMinus } from "react-icons/fi";
 import { toast } from "react-toastify";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../../api/api";
 import { IoIosAddCircle } from "react-icons/io";
-import { MdPlaylistAdd } from "react-icons/md";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import { Button, Label, Modal, TextInput } from "flowbite-react";
-import { PiAddressBookFill } from "react-icons/pi";
 import DespatchDetails from "../../components/secUsers/DespatchDetails";
 import HeaderTile from "../../components/secUsers/main/HeaderTile";
 import AddPartyTile from "../../components/secUsers/main/AddPartyTile";
@@ -50,7 +42,6 @@ function EditVanSale() {
     suffixDetails: "",
   });
   const [additional, setAdditional] = useState(false);
-  const [godownname, setGodownname] = useState("");
   const [refreshCmp, setrefreshCmp] = useState(false);
   const [salesNumber, setSalesNumber] = useState("");
   const date = useSelector((state) => state.salesSecondary.date);
@@ -81,6 +72,13 @@ function EditVanSale() {
       : [] // Fallback to an empty array if additionalChragesFromCompany is also empty
   );
 
+  const [godownname, setGodownname] = useState("");
+  const [godownId, setGodownId] = useState("");
+
+
+
+
+  
   ////////////////////////////////redux//////////////////////////////////////////////////////
 
   const orgId = useSelector(
@@ -133,6 +131,9 @@ function EditVanSale() {
           salesNumber,
           despatchDetails,
           createdAt,
+          selectedGodownName,
+          selectedGodownId
+
         } = res.data.data;
 
         console.log(createdAt);
@@ -202,6 +203,9 @@ function EditVanSale() {
           console.log("haii");
           dispatch(addDespatchDetails(despatchDetails));
         }
+
+        setSelectedGodownId(selectedGodownId || "");
+        setSelectedGodownName(selectedGodownName || "");
       } catch (error) {
         console.log(error);
       }
@@ -265,7 +269,8 @@ function EditVanSale() {
           withCredentials: true,
         });
         console.log(godown);
-        setGodownname(godown.data || "");
+        setGodownname(godown.data?.data?.godownName || "");
+        setGodownId(godown.data?.data?.godownId || "");
       } catch (error) {
         console.log(error);
         toast.error(error.message);
@@ -274,7 +279,6 @@ function EditVanSale() {
     fetchGodownname();
   }, []);
 
-  console.log(salesNumber);
 
   console.log(rows);
 
@@ -463,10 +467,13 @@ function EditVanSale() {
       orgId,
       salesNumber,
       despatchDetails: despatchDetailsFromRedux,
-      selectedDate:dateFromRedux||new Date()
+      selectedDate:dateFromRedux||new Date(),
+      selectedGodownId:godownId,
+      selectedGodownName:godownname,
     };
 
-    console.log(formData);
+
+    
 
     try {
       const res = await api.post(`/api/sUsers/editSale/${id}`, formData, {

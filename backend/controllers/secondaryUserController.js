@@ -3678,6 +3678,10 @@ export const editSale = async (req, res) => {
 
   const isVanSale = vanSaleQuery === "true";
 
+
+  console.log(selectedGodownName,selectedGodownId);
+  
+
   let model;
   if (isVanSale) {
     model = vanSaleModel;
