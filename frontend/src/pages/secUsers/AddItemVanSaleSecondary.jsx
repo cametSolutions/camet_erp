@@ -16,7 +16,6 @@ import {
   setSubCategoryInRedux,
   addAllProducts,
   updateItem,
-  setBatchHeight,
 } from "../../../slices/salesSecondary";
 import { HashLoader } from "react-spinners";
 import { VariableSizeList as List } from "react-window";
@@ -109,6 +108,10 @@ function AddItemVanSaleSecondary() {
   const searchData = (data) => {
     setSearch(data);
   };
+
+
+
+  
 
   ///////////////////////////fetchProducts///////////////////////////////////
 
@@ -530,12 +533,13 @@ function AddItemVanSaleSecondary() {
     });
 
     setItem(updatedItems);
-    if (selectedPriceLevel === "") {
+    if (selectedPriceLevel === "" || selectedPriceLevel===undefined || priceLevels.length===0 ) {
       navigate(`/sUsers/editItemSales/${_id}/${godownname || "nil"}/${idx}`);
     }
   };
 
-  console.log(godownname);
+  // console.log(priceLevels);
+  // console.log(selectedPriceLevel);
 
   ///////////////////////////handleIncrement///////////////////////////////////
 

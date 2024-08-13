@@ -131,15 +131,32 @@ function SalesThreeInchPdf({
               <div className="text-black font-semibold   text-[12px] ">
                 {org?.email}
               </div>
-              <div className="text-black font-semibold  text-[12px] ">
-                {org?.website}
-              </div>
-              <div className="text-black font-semibold  text-[12px]">
-                Gst No: {org?.gstNum}
-              </div>
-              <div className="text-black font-semibold   text-[12px]">
-                Pan No: {org?.pan}
-              </div>
+
+              {
+                org?.website && (
+                  <div className="text-black font-semibold  text-[12px]">
+                    Website: {org?.website}
+                  </div>
+                )
+              }
+
+              {
+                org?.gstNum && (
+                  <div className="text-black font-semibold  text-[12px]">
+                   Gst No: {org?.gstNum}
+                  </div>
+                )
+              }
+            
+             
+              {
+                org?.pan && (
+                  <div className="text-black font-semibold   text-[12px]">
+                  Pan No: {org?.pan}
+                </div>
+                )
+              }
+           
             </div>
           </div>
         </div>

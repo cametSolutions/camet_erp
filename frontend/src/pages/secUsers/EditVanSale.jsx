@@ -472,6 +472,9 @@ function EditVanSale() {
       selectedGodownName:godownname,
     };
 
+    console.log("form data", formData);
+    
+
 
     
 

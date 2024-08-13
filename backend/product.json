@@ -32,22 +32,7 @@
         }
       ],
      "Priceleveles": [
-        {
-          "alt_unit": "null",
-          "pricelevel": "P1",
-          
-          "pricerate": 100
-        },
-        {
-          "alt_unit": "null",
-          "pricelevel": "P2",
-          "pricerate": 200
-        },
-        {
-          "alt_unit": "null",
-          "pricelevel": "P3",
-          "pricerate": 300
-        }
+      
       ]
     },
     {
@@ -77,21 +62,7 @@
         }
       ],
       "Priceleveles": [
-        {
-          "alt_unit": "null",
-          "pricelevel": "P1",
-          "pricerate": 100
-        },
-        {
-          "alt_unit": "null",
-          "pricelevel": "P2",
-          "pricerate": 200
-        },
-        {
-          "alt_unit": "null",
-          "pricelevel": "P3",
-          "pricerate": 300
-        }
+      
       ]
     },
     {
@@ -122,21 +93,7 @@
         }
       ],
       "Priceleveles": [
-        {
-          "alt_unit": "null",
-          "pricelevel": "P1",
-          "pricerate": 100
-        },
-        {
-          "alt_unit": "null",
-          "pricelevel": "P2",
-          "pricerate": 200
-        },
-        {
-          "alt_unit": "null",
-          "pricelevel": "P3",
-          "pricerate": 300
-        }
+     
       ]
     },
     {
@@ -211,21 +168,7 @@
         }
       ],
       "Priceleveles": [
-        {
-          "alt_unit": "null",
-          "pricelevel": "P1",
-          "pricerate": 100
-        },
-        {
-          "alt_unit": "null",
-          "pricelevel": "P2",
-          "pricerate": 200
-        },
-        {
-          "alt_unit": "null",
-          "pricelevel": "P3",
-          "pricerate": 300
-        }
+     
       ]
     },
     {
@@ -276,21 +219,7 @@
         }
       ],
       "Priceleveles": [
-        {
-          "alt_unit": "null",
-          "pricelevel": "P1",
-          "pricerate": 100
-        },
-        {
-          "alt_unit": "null",
-          "pricelevel": "P2",
-          "pricerate": 200
-        },
-        {
-          "alt_unit": "null",
-          "pricelevel": "P3",
-          "pricerate": 300
-        }
+      
       ]
     },
     {
@@ -323,21 +252,7 @@
         }
       ],
       "Priceleveles": [
-        {
-          "alt_unit": "null",
-          "pricelevel": "P1",
-          "pricerate": 100
-        },
-        {
-          "alt_unit": "null",
-          "pricelevel": "P2",
-          "pricerate": 200
-        },
-        {
-          "alt_unit": "null",
-          "pricelevel": "P3",
-          "pricerate": 300
-        }
+    
       ]
     },
     {
@@ -368,21 +283,7 @@
         }
       ],
       "Priceleveles": [
-        {
-          "alt_unit": "null",
-          "pricelevel": "P1",
-          "pricerate": 100
-        },
-        {
-          "alt_unit": "null",
-          "pricelevel": "P2",
-          "pricerate": 200
-        },
-        {
-          "alt_unit": "null",
-          "pricelevel": "P3",
-          "pricerate": 300
-        }
+      
       ]
     },
     {
@@ -418,21 +319,7 @@
         }
       ],
       "Priceleveles": [
-        {
-          "alt_unit": "null",
-          "pricelevel": "P1",
-          "pricerate": 100
-        },
-        {
-          "alt_unit": "null",
-          "pricelevel": "P2",
-          "pricerate": 200
-        },
-        {
-          "alt_unit": "null",
-          "pricelevel": "P3",
-          "pricerate": 300
-        }
+      
       ]
     },
     {
@@ -461,9 +348,7 @@
         }
       ],
       "Priceleveles": [
-        {
-          "alt_unit": "null"
-        }
+     
       ]
     },
     {
@@ -491,21 +376,7 @@
         }
       ],
       "Priceleveles": [
-        {
-          "alt_unit": "null",
-          "pricelevel": "P1",
-          "pricerate": 100
-        },
-        {
-          "alt_unit": "null",
-          "pricelevel": "P2",
-          "pricerate": 200
-        },
-        {
-          "alt_unit": "null",
-          "pricelevel": "P3",
-          "pricerate": 300
-        }
+      
       ]
     }
   ]
