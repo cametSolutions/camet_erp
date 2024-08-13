@@ -229,22 +229,28 @@ export const confirmCollection = async (req, res) => {
     enteredAmount,
   } = collectionDetails;
 
+  console.log("collectionDetails.billData", collectionDetails.billData);
+
   try {
+    // Create a lookup map for billNo to remainingAmount
+    const billAmountMap = new Map(
+      billData.map((bill) => [bill.billNo, bill.remainingAmount])
+    );
+
     const outstandingData = await TallyData.find({
       cmp_id: collectionDetails.cmp_id,
-      bill_no: { $in: collectionDetails.billData.map((bill) => bill.billNo) },
+      bill_no: { $in: Array.from(billAmountMap.keys()) },
     });
 
     if (outstandingData.length > 0) {
-      const bulkUpdateOperations = outstandingData.map((doc, index) => ({
+      const bulkUpdateOperations = outstandingData.map((doc) => ({
         updateOne: {
           filter: {
             _id: doc._id,
           },
           update: {
             $set: {
-              bill_pending_amt:
-                collectionDetails.billData[index].remainingAmount,
+              bill_pending_amt: billAmountMap.get(doc.bill_no), // Use the map to get the remainingAmount
             },
           },
         },
@@ -279,6 +285,7 @@ export const confirmCollection = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
 
 // @desc logout
 // route GET/api/sUsers/logout

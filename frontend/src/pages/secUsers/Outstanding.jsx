@@ -70,9 +70,9 @@ function Outstanding() {
         ?.toLowerCase()
         .includes(search.toLowerCase());
 
-        const userIdFilter = (item.user_id === String(secUser.mobile)) || (item.user_id === 'null');
+        // const userIdFilter = (item.user_id === String(secUser.mobile)) || (item.user_id === 'null');
 
-      return searchFilter && userIdFilter
+      return searchFilter
     });
   };
 

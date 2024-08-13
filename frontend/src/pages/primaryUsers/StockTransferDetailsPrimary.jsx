@@ -43,9 +43,9 @@ function StockTransferDetailsPrimary() {
   // console.log(data);
   const backHandler = () => {
     if (location?.state?.from === "dashboard") {
-      navigate("/sUsers/dashboard");
+      navigate("/pUsers/dashboard");
     } else {
-      navigate("/sUsers/transaction");
+      navigate("/pUsers/transaction");
     }
   };
 
@@ -72,7 +72,7 @@ function StockTransferDetailsPrimary() {
         data={data}
         reFetchParent={reFetch}
         editLink={`/sUsers/editStockTransfer/${data?._id}`}
-        user={"secondary"}
+        user={"primary"}
         number={data?.stockTransferNumber}
         tab={"primary"}
       />
