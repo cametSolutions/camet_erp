@@ -486,12 +486,15 @@ function ConfigureSecondaryUser() {
   allErrors = allErrors.concat(validateConfiguration(formData.stockTransferConfiguration, 'Stock Transfer'));
   allErrors = allErrors.concat(validateConfiguration(formData.vanSaleConfiguration, 'Van Sale'));
 
+  if (selectedVanSaleGodowns.length === 0) {
+    allErrors.push('Van Sale: At least one Van Sale Godown must be selected');
+  }
 
   if (allErrors.length > 0) {
     toast.error(allErrors[0]);  // Show only the first error
     return;
   }
-
+ 
 
     try {
       const res = await api.post(

@@ -2638,8 +2638,8 @@ export const fetchConfigurationNumber = async (req, res) => {
       return configs[title] || null;
     };
 
-    const getConfigNumber = () => {
-      if (configuration  ) { 
+    const getConfigNumber = (noConfig = true) => {
+      if (configuration && noConfig===true  ) { 
         const numbers = {
           sales: configuration.salesNumber,
           salesOrder: configuration.orderNumber,
@@ -2649,17 +2649,20 @@ export const fetchConfigurationNumber = async (req, res) => {
           receipt: null, // Add if there's a specific receipt number for user config
         };
         return numbers[title] || null;
+      } else{
+        const companyNumbers = {
+          sales: company.salesNumber,
+          salesOrder: company.orderNumber,
+          purchase: company.purchaseNumber,
+          vanSale: company.vanSalesNumber,
+          stockTransfer: company.stockTransferNumber,
+          // receipt: company.receiptNumberDetails
+        };
+  
+
       }
 
-      const companyNumbers = {
-        sales: company.salesNumber,
-        salesOrder: company.orderNumber,
-        purchase: company.purchaseNumber,
-        vanSale: company.vanSalesNumber,
-        stockTransfer: company.stockTransferNumber,
-        // receipt: company.receiptNumberDetails
-      };
-
+    
       // console.log("companyNumbers", companyNumbers);
       return companyNumbers[title] || null;
     };
@@ -2675,7 +2678,7 @@ export const fetchConfigurationNumber = async (req, res) => {
         .every(([_, value]) => value === "")
     ) {
       configDetails = "";
-      configurationNumber = getConfigNumber(); // Ensure we're using the company default
+      configurationNumber = getConfigNumber(noConfig=false); // Ensure we're using the company default
     }
 
     if (configDetails) {
