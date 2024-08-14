@@ -183,6 +183,7 @@ function ConfigureSecondaryUser() {
             vanSaleConfiguration,
             purchaseConfiguration,
             selectedVanSaleGodowns,
+            stockTransferConfiguration,
             vanSale,
           } = configurations[0];
 
@@ -216,6 +217,9 @@ function ConfigureSecondaryUser() {
           }
           if (selectedVanSaleGodowns?.length > 0) {
             setSelectedVanSaleGodowns([selectedVanSaleGodowns[0]]);
+          }
+          if(stockTransferConfiguration){
+            setStockTransfer([stockTransferConfiguration]);
           }
         }
       } catch (error) {
