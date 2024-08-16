@@ -161,7 +161,11 @@ export const saveProductsFromTally = async (req, res) => {
               product_master_id,
             });
 
+            
+
             if (existingProduct) {
+            // console.log("existingProduct", existingProduct.product_name)
+
               // Update the existing product
               savedProduct = await productModel.findOneAndUpdate(
                 {
