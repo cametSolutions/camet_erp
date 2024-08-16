@@ -154,14 +154,12 @@ export const saveProductsFromTally = async (req, res) => {
         let savedProduct;
 
         try {
-          // If the item has a product_master_id, update the existing document
           if (product_master_id) {
             const existingProduct = await productModel.findOne({
               Primary_user_id,
               cmp_id,
               product_master_id,
             });
-
 
             if (existingProduct) {
               // Update the existing product
@@ -177,13 +175,13 @@ export const saveProductsFromTally = async (req, res) => {
             }
           }
 
-          // If no product_master_id is provided or product doesn't exist, create a new product
+          // If no existing product was found or updated, create a new one
           if (!savedProduct) {
             const newProduct = new productModel(productItem);
             savedProduct = await newProduct.save();
           }
 
-         return savedProduct;
+          return savedProduct;
         } catch (error) {
           console.error(`Error saving product with product_master_id ${product_master_id}:`, error);
           return null; // Return null if there is an error to continue processing other products
