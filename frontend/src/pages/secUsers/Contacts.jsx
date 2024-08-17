@@ -43,7 +43,7 @@ function Contacts() {
       title: "Purchase",
       icon: purchase,
       to: "/sUsers/purchase",
-      active: false,
+      active: true,
     },
     {
       title: "Debit Note",

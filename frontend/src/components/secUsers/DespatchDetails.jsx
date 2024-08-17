@@ -5,6 +5,7 @@ import { IoMdAdd } from "react-icons/io";
 import _ from "lodash";
 import { addDespatchDetails as addInSales } from "../../../slices/salesSecondary";
 import { addDespatchDetails as addInOrder } from "../../../slices/invoiceSecondary";
+import { addDespatchDetails as addInPurchase } from "../../../slices/purchase";
 import { useDispatch, useSelector } from "react-redux";
 import api from "../../api/api";
 
@@ -12,6 +13,7 @@ function DespatchDetails({ tab }) {
   const despatchDetails = useSelector((state) =>
     tab === "sale"
       ? state.salesSecondary.despatchDetails
+      :tab==="purchase"?state.purchase.despatchDetails
       : state.invoiceSecondary.despatchDetails
   );
 
@@ -77,6 +79,13 @@ function DespatchDetails({ tab }) {
         case "order":
           selectedDispatch = addInOrder;
           break;
+
+
+        case "purchase":
+          selectedDispatch = addInPurchase;
+          break;
+
+          
 
         default:
           break;

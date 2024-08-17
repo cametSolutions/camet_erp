@@ -1,16 +1,17 @@
 import { IoIosArrowRoundBack } from "react-icons/io";
+
 import { useNavigate } from "react-router-dom";
 import AddressForm from "../../components/secUsers/AddressForm";
 import { useDispatch, useSelector } from "react-redux";
-import { addNewAddress } from "../../../slices/invoiceSecondary";
+import { addNewAddress } from "../../../slices/purchase";
 
-function BillToSalesOrder() {
+function BillToPurchase() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const partyDetails = useSelector((state) => state.invoiceSecondary.party);
+  const partyDetails = useSelector((state) => state.purchase.party);
   const newBillToShipTo =
-    useSelector((state) => state.invoiceSecondary.party.newBillToShipTo) || {};
+    useSelector((state) => state.purchase.party.newBillToShipTo) || {};
 
     const submitFormData = (formData) => {
       
@@ -40,4 +41,4 @@ function BillToSalesOrder() {
   );
 }
 
-export default BillToSalesOrder;
+export default BillToPurchase;

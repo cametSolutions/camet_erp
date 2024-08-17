@@ -1,12 +1,12 @@
 
 import {Route,Routes} from 'react-router-dom'
-import Register from '../pages/primaryUsers/Register'
-import Login from '../pages/primaryUsers/Login'
+// import Register from '../pages/primaryUsers/Register'
+// import Login from '../pages/primaryUsers/Login'
 // import Home from '../pages/primaryUsers/Home'
 // import OrganizationList from '../components/homePage/OrganisationList'
-import AdminLogin from '../pages/admin/AdminLogin'
-import AdminHome from '../pages/admin/AdminHome'
-import SecLogin from '../pages/secUsers/SecLogin'
+// import AdminLogin from '../pages/admin/AdminLogin'
+// import AdminHome from '../pages/admin/AdminHome'
+// import SecLogin from '../pages/secUsers/SecLogin'
 import SecHome from '../pages/secUsers/SecHome'
 import Outstanding from '../pages/secUsers/Outstanding'
 import OutstandingDetails from '../pages/secUsers/OutstandingDetails'
@@ -21,14 +21,14 @@ import OrganizationList from '../../src/pages/primaryUsers/OrganisationList'
 import AddSecUsers from '../pages/primaryUsers/AddSecUsers'
 import SecUsersList from '../pages/primaryUsers/SecUsersList'
 import ProtectedPriRoute from './ProtectedPriRoute'
-import ProtectedAdmin from './ProtectedAdmin'
+// import ProtectedAdmin from './ProtectedAdmin'
 import BankList from '../pages/primaryUsers/BankList'
-import ForgotPasswordPrimary from '../pages/primaryUsers/ForgotPasswordPrimary'
-import Otp from '../pages/primaryUsers/Otp'
-import ResetPassword from '../pages/primaryUsers/ResetPassword'
-import ForgotPasswordSec from '../pages/secUsers/ForgotPasswordSec'
-import OtpSec from '../pages/secUsers/OtpSec'
-import ResetPasswordSec from '../pages/secUsers/ResetPasswordSec'
+// import ForgotPasswordPrimary from '../pages/primaryUsers/ForgotPasswordPrimary'
+// import Otp from '../pages/primaryUsers/Otp'
+// import ResetPassword from '../pages/primaryUsers/ResetPassword'
+// import ForgotPasswordSec from '../pages/secUsers/ForgotPasswordSec'
+// import OtpSec from '../pages/secUsers/OtpSec'
+// import ResetPasswordSec from '../pages/secUsers/ResetPasswordSec'
 import ReceiptDetails from '../pages/primaryUsers/ReceiptDetails'
 import SecReceptionDetails from '../pages/secUsers/ReceiptDetails'
 import Dashboard from '../pages/primaryUsers/Dashboard'
@@ -131,6 +131,7 @@ import AddItemStockTransferSec from '../pages/secUsers/AddItemStockTransferSec'
 import StockTransferDetailsSecondary from '../pages/secUsers/StockTransferDetailsSecondary'
 import EditStockTransferSecondary from '../pages/secUsers/EditStockTransferSecondary'
 import StockTransferDetailsPrimary from '../pages/primaryUsers/StockTransferDetailsPrimary'
+import BillToPurchase from '../pages/secUsers/BillToPurchase'
 
 const Routers = () => {
   return (
@@ -272,6 +273,7 @@ const Routers = () => {
         <Route path='/sUsers/addItemStockTransfer' element={<ProtectedSecRoute><AddItemStockTransferSec/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/StockTransferDetails/:id' element={<ProtectedSecRoute><StockTransferDetailsSecondary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/editStockTransfer/:id' element={<ProtectedSecRoute><EditStockTransferSecondary/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/billToPurchase/:id' element={<ProtectedSecRoute><BillToPurchase/></ProtectedSecRoute>}></Route>
 
 
         {/* errorPage */}

@@ -1,6 +1,9 @@
 import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
+  // selectedGodownName:"",
+  // selectedGodownId:"",
+  date: "",
   products: [],
   party: {},
   items: [],
@@ -12,6 +15,18 @@ const initialState = {
   category: "",
   subcategory: "",
   id: "",
+  despatchDetails: {
+    challanNo: "",
+    containerNo: "",
+    despatchThrough: "",
+    destination: "",
+    vehicleNo: "",
+    orderNo: "",
+    // eWayNo: "",
+    // irnNo: "",
+    termsOfPay: "",
+    termsOfDelivery: "",
+  },
 };
 
 export const purchaseSlice = createSlice({
@@ -20,15 +35,14 @@ export const purchaseSlice = createSlice({
   reducers: {
     addParty: (state, action) => {
       state.party = action.payload;
+      state.newBillToShipTo = {};
     },
     removeParty: (state) => {
       state.party = {};
     },
-    addItem: (state, action) => {
-      state.items.push(action.payload);
-    },
+
     addAllProducts: (state, action) => {
-      state.products=action.payload
+      state.products = action.payload;
     },
     removeItem: (state, action) => {
       const id = action.payload._id;
@@ -59,6 +73,17 @@ export const purchaseSlice = createSlice({
         state.items[indexToUpdate].total = newTotal;
       }
     },
+
+    addPriceRate: (state, action) => {
+      const id = action.payload._id;
+      const selectedPriceRate = action.payload?.selectedPriceRate || 0;
+      console.log(selectedPriceRate);
+      const indexToUpdate = state.items.findIndex((el) => el._id == id);
+      if (indexToUpdate !== -1) {
+        state.items[indexToUpdate].selectedPriceRate = selectedPriceRate;
+      }
+    },
+
     changeIgstAndDiscount: (state, action) => {
       const id = action.payload._id;
       const igst = action.payload?.igst || 0;
@@ -71,7 +96,6 @@ export const purchaseSlice = createSlice({
 
       const indexToUpdate = state.items.findIndex((el) => el._id === id);
       if (indexToUpdate !== -1) {
-        
         state.items[indexToUpdate].total = newTotal;
         state.items[indexToUpdate].discount = discount;
         state.items[indexToUpdate].igst = igst;
@@ -136,6 +160,85 @@ export const purchaseSlice = createSlice({
     removeAllSales: (state) => {
       Object.assign(state, initialState);
     },
+
+    addItem: (state, action) => {
+      const index = state.items.findIndex(
+        (el) => el._id === action.payload._id
+      );
+      if (index !== -1) {
+        state.items[index] = action.payload;
+      } else {
+        state.items.push(action.payload);
+      }
+    },
+
+    updateItem: (state, actions) => {
+      const index = state.items.findIndex(
+        (el) => el._id === actions.payload._id
+      );
+      if (index !== -1) {
+        state.items[index] = actions.payload;
+      }
+    },
+
+ 
+
+    removeGodownOrBatch: (state, action) => {
+      const id = action.payload.id;
+      const idx = action.payload.idx;
+
+      const index = state.items.findIndex((el) => el._id === id);
+      if (index !== -1) {
+        const currentItem = state.items[index];
+        currentItem.GodownList[idx].added = false;
+        currentItem.GodownList[idx].count = 0;
+        currentItem.GodownList[idx].count = 0;
+        currentItem.GodownList[idx].individualTotal = 0;
+
+
+        const newCount = currentItem.GodownList.reduce((acc, curr) => {
+          if (curr.added) {
+            return acc + curr.count;
+          } else {
+            return acc;
+          }
+        }, 0);
+
+        const newTotal = currentItem.GodownList.reduce((acc, curr) => {
+          if (curr.added) {
+            return acc + curr.individualTotal;
+          } else {
+            return acc;
+          }
+        }, 0);
+
+        currentItem.count = newCount;
+        currentItem.total = newTotal;
+
+        const allAddedFalse = currentItem.GodownList.every(
+          (item) => item.added === false || item.added == undefined
+        );
+
+        // If allAddedFalse is true, set currentItem.added to false
+        if (allAddedFalse) {
+          state.items.splice(index, 1);
+        }
+      }
+    },
+
+    addNewAddress: (state, action) => {
+      state.party.newBillToShipTo = action.payload;
+    },
+
+    addDespatchDetails: (state, action) => {
+      return {
+        ...state,
+        despatchDetails: action.payload,
+      };
+    },
+    changeDate: (state, action) => {
+      state.date = action.payload;
+    },
   },
 });
 
@@ -166,8 +269,15 @@ export const {
   saveId,
   removeAllSales,
   changeGodownCount,
-  addAllProducts
-  
+  addAllProducts,
+  updateItem,
+  setBatchHeight,
+  removeGodownOrBatch,
+  addAllFieldsFromEditSalesPage,
+  addPriceRate,
+  addNewAddress,
+  addDespatchDetails,
+  changeDate
 } = purchaseSlice.actions;
 
 export default purchaseSlice.reducer;
