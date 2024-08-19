@@ -111,7 +111,7 @@ const ProductDetails = ({
                         <button
                           onClick={() => {
                             navigate(
-                              `/sUsers/editItemSales/${details?._id}/${
+                              `/sUsers/editItem${tab}/${details?._id}/${
                                 godownName || "nil"
                               }/${index}`,
                               {

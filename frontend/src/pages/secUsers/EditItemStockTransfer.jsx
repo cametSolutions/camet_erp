@@ -2,13 +2,13 @@
 
 import { useNavigate } from "react-router-dom";
 import {  useDispatch, useSelector } from "react-redux";
-import { updateItem } from "../../../slices/salesSecondary";
+import { updateItem } from "../../../slices/stockTransferSecondary";
 import EditItemForm from "../../components/secUsers/main/Forms/EditItemForm";
 
-function EditItemSalesSecondary() {
+function EditItemStockTransfer() {
 
   const ItemsFromRedux = useSelector((state)=>{
-    return state.salesSecondary.items
+    return state.stockTransferSecondary.items
   })
 
   console.log(ItemsFromRedux);
@@ -92,20 +92,16 @@ function EditItemSalesSecondary() {
       }
     }
 
-    // console.log(newItem);
-    // if (selectedRedux === "stockTransferSecondary") {
-    //   dispatch(updateItemStockTransfer(newItem));
-    // } else {
+
       dispatch(updateItem(newItem));
-     
-    // }
+
     navigate(-1);
   };
   
 
   return (
-<EditItemForm submitHandler={submitHandler} ItemsFromRedux={ItemsFromRedux} from="sales"/>
+<EditItemForm submitHandler={submitHandler} ItemsFromRedux={ItemsFromRedux} from="stockTransfer"/>
   );
 }
 
-export default EditItemSalesSecondary;
+export default EditItemStockTransfer;

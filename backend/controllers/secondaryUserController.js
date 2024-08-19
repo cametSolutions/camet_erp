@@ -2620,7 +2620,7 @@ export const fetchConfigurationNumber = async (req, res) => {
       (item) => item.organization.toString() === cmp_id
     );
 
-    console.log("configuration", configuration);
+    // console.log("configuration", configuration);
     
 
     const getConfigDetails = () => {
@@ -2638,8 +2638,8 @@ export const fetchConfigurationNumber = async (req, res) => {
       return configs[title] || null;
     };
 
-    const getConfigNumber = (noConfig = true) => {
-      if (configuration && noConfig===true  ) { 
+    const getConfigNumber = () => {
+      if (configuration ) { 
         const numbers = {
           sales: configuration.salesNumber,
           salesOrder: configuration.orderNumber,
@@ -2678,7 +2678,7 @@ export const fetchConfigurationNumber = async (req, res) => {
         .every(([_, value]) => value === "")
     ) {
       configDetails = "";
-      configurationNumber = getConfigNumber(noConfig=false); // Ensure we're using the company default
+      configurationNumber = getConfigNumber(); // Ensure we're using the company default
     }
 
     if (configDetails) {

@@ -132,6 +132,7 @@ import StockTransferDetailsSecondary from '../pages/secUsers/StockTransferDetail
 import EditStockTransferSecondary from '../pages/secUsers/EditStockTransferSecondary'
 import StockTransferDetailsPrimary from '../pages/primaryUsers/StockTransferDetailsPrimary'
 import BillToPurchase from '../pages/secUsers/BillToPurchase'
+import EditItemStockTransfer from '../pages/secUsers/EditItemStockTransfer'
 
 const Routers = () => {
   return (
@@ -257,8 +258,10 @@ const Routers = () => {
         <Route path='/sUsers/contacts' element={<ProtectedSecRoute><Contacts/></ProtectedSecRoute>}></Route> 
         <Route path='/sUsers/purchase' element={<ProtectedSecRoute><Purchase/></ProtectedSecRoute>}></Route> 
         <Route path='/sUsers/searchPartyPurchase' element={<ProtectedSecRoute><SearchPartyPurchase/></ProtectedSecRoute>}></Route> 
-        <Route path='/sUsers/addItemPurchase' element={<ProtectedSecRoute><AddItemPurchase/></ProtectedSecRoute>}></Route> 
-        <Route path='/sUsers/editItemPurchase/:id' element={<ProtectedSecRoute><EditItemPurchase/></ProtectedSecRoute>}></Route> 
+        <Route path='/sUsers/addItemPurchase' element={<ProtectedSecRoute><AddItemPurchase/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/billToPurchase/:id' element={<ProtectedSecRoute><BillToPurchase/></ProtectedSecRoute>}></Route>
+
+        <Route path='/sUsers/editItemPurchase/:id/:godownName/:index' element={<ProtectedSecRoute><EditItemPurchase/></ProtectedSecRoute>}></Route> 
         <Route path='/sUsers/purchaseDetails/:id' element={<ProtectedSecRoute><PurchaseDetailsSecondary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/sharePurchase/:id' element={<ProtectedSecRoute><SharePurchaseSecondary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/sharePurchaseThreeInch/:id' element={<ProtectedSecRoute><ThreeInchPurchaseSec/></ProtectedSecRoute>}></Route>
@@ -272,8 +275,8 @@ const Routers = () => {
         <Route path='/sUsers/searchGodown' element={<ProtectedSecRoute><SearchGodown/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/addItemStockTransfer' element={<ProtectedSecRoute><AddItemStockTransferSec/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/StockTransferDetails/:id' element={<ProtectedSecRoute><StockTransferDetailsSecondary/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/editItemstockTransfer/:id/:godownName/:index' element={<ProtectedSecRoute><EditItemStockTransfer/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/editStockTransfer/:id' element={<ProtectedSecRoute><EditStockTransferSecondary/></ProtectedSecRoute>}></Route>
-        <Route path='/sUsers/billToPurchase/:id' element={<ProtectedSecRoute><BillToPurchase/></ProtectedSecRoute>}></Route>
 
 
         {/* errorPage */}

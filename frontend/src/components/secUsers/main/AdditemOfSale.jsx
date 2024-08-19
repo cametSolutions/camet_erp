@@ -8,17 +8,12 @@ import { VariableSizeList as List } from "react-window";
 
 
 /* eslint-disable react/prop-types */
-
-
-
-
-
 function AdditemOfSale({filteredItems,handleDecrement,
     listRef,heights,selectedPriceLevel,setHeight,backHandler,
     handlePriceLevelChange,priceLevels,searchData,selectedBrand,
     setSelectedBrand,dispatch,setBrandInRedux,brands,categories,selectedCategory,setseleCtedCategory,setCategoryInRedux,
     selectedSubCategory,setSelectedSubCategory,setSubCategoryInRedux,subCategories,loader,listHeight,getItemSize,scrollPosition,setScrollPosition,continueHandler,
-    item,
+    item,tab,
     handleExpansion,handleIncrement,handleAddClick}) {
 
     const navigate=useNavigate()
@@ -122,17 +117,16 @@ function AdditemOfSale({filteredItems,handleDecrement,
                       <button
                         onClick={() => {
                           navigate(
-                            `/sUsers/editItemSales/${el?._id}/${
+                            `/sUsers/editItem${tab}/${el?._id}/${
                               "nil"
                             }/null`,
                             {
                               state: {
-                                from: "editItemSales",
+                                from:tab,
                                 id: location?.state?.id,
                               },
                             }
                           );
-                          // saveScrollPosition();
                         }}
                         type="button"
                         className="  mt-3  px-2 py-1  rounded-md border-violet-500 font-bold border  text-violet-500 text-xs"
@@ -241,6 +235,7 @@ function AdditemOfSale({filteredItems,handleDecrement,
                   godownName="nil"
                   details={el}
                   setHeight={(height) => setHeight(index, height)}
+                  tab={tab}
                 />
               </div>
             )}
