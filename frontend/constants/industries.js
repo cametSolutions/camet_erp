@@ -16,4 +16,8 @@ export const industries = [
     code: 4,
     industry: "Retail & Distributers",
   },
+  {
+    code: 5,
+    industry: "Pharmacy & Healthcare",
+  },
 ];
