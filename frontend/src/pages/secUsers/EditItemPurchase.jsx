@@ -1,68 +1,73 @@
 /* eslint-disable react/no-unknown-property */
-
-import { useNavigate } from "react-router-dom";
-import {  useDispatch, useSelector } from "react-redux";
-import { updateItem } from "../../../slices/purchase";
-import EditItemForm from "../../components/secUsers/main/Forms/EditItemForm";
-
-function EditItemSalesSecondary() {
-
-  const ItemsFromRedux = useSelector((state)=>{
-    return state.purchase.items
-  })
-
-  
-  const dispatch = useDispatch();
-  const navigate=useNavigate();
-
-  const submitHandler = (item, index, quantity, newPrice, totalAmount, selectedItem,discountAmount,discountPercentage, type,igst) => {
-    const newItem = structuredClone(item);
+import { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
+import api from "../../api/api";
+import { MdModeEditOutline } from "react-icons/md";
+import { IoIosArrowRoundBack } from "react-icons/io";
+import { useNavigate, useLocation } from "react-router-dom";
+import { useSelector, useDispatch } from "react-redux";
+import { changeIgstAndDiscount ,changeGodownCount} from "../../../slices/purchase";
+import { toast } from "react-toastify";
+import { Button, Modal } from "flowbite-react";
+import { Decimal } from "decimal.js";
 
 
-    if (selectedItem[0]?.hasGodownOrBatch) {
-      const newGodownList = newItem.GodownList.map((godown, idx) => {
-        if (idx == index) {
-          return {
-            ...godown,
-            count: Number(quantity) || 0,
-            selectedPriceRate: Number(newPrice) || 0,
-            discount: type === "amount" ? discountAmount : "",
-            discountPercentage:
-              type === "amount" ? "" : parseFloat(discountPercentage),
-            individualTotal: Number(totalAmount.toFixed(2)),
-          };
-        } else {
-          return godown;
-        }
-      });
+function EditItemPurchase() {
+  const [item, setItem] = useState([]);
+  const [newPrice, setNewPrice] = useState("");
+  const [quantity, setQuantity] = useState("");
+  const [unit, setUnit] = useState("");
+  const [hsn, setHsn] = useState([]);
+  const [igst, setIgst] = useState("");
+  const [discount, setDiscount] = useState("");
+  const [type, setType] = useState("amount");
+  const [taxExclusivePrice, setTaxExclusivePrice] = useState(0);
+  const [totalAmount, setTotalAmount] = useState(0);
+  const [discountAmount, setDiscountAmount] = useState(0); // State for discount amount
+  const [discountPercentage, setDiscountPercentage] = useState(0);
 
-      newItem.GodownList = newGodownList;
-      newItem.count = Number(
-        newGodownList
-          ?.reduce((acc, curr) => (acc += curr?.count || 0), 0)
-          .toFixed(2)
-      );
+  const [openModal, setOpenModal] = useState(false);
+  const [totalCount, setTotalCount] = useState(0);
+  const [godown, setGodown] = useState([]);
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const location = useLocation();
 
-      newItem.count = Number(
-        newGodownList?.reduce((acc, curr) => {
-          if (curr.added === true) {
-            return acc + curr.count;
-          } else {
+  const ItemsFromRedux = useSelector((state) => state.purchase.items);
+  const selectedItem = ItemsFromRedux.filter((el) => el._id === id);
+  console.log(selectedItem);
+  console.log(godown);
+  const selectedPriceLevel = useSelector(
+    (state) => state.purchase?.selectedPriceLevel
+  );
+  const orgId = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg._id
+  );
 
-            return acc;
-          }
-        }, 0)
-      );
 
-      newItem.total = Number(
-        newGodownList
-          .reduce(
-            (acc, curr) => acc + (curr?.added ? curr.individualTotal : 0 || 0),
-            0
-          )
-          .toFixed(2)
-      );
-  
+
+
+
+  useEffect(() => {
+    const fetchHsn = async () => {
+      try {
+        const res = await api.get(`/api/sUsers/fetchHsn/${orgId}`, {
+          withCredentials: true,
+        });
+
+        setHsn(res.data.data);
+
+        // console.log(res.data.organizationData);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    fetchHsn();
+  }, [orgId]);
+
+  useEffect(() => {
+    if (selectedPriceLevel === "" || selectedPriceLevel === undefined) {
+      navigate("/sUsers/addItemPurchase");
     } else {
       // newItem.total = Number(totalAmount.toFixed(2));
       newItem.GodownList[0].individualTotal = Number(totalAmount.toFixed(2));

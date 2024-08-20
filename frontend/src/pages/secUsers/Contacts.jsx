@@ -67,7 +67,6 @@ function Contacts() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  console.log(parties);
 
   const cpm_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
@@ -151,7 +150,7 @@ function Contacts() {
     <>
       <div className="flex-1 bg-slate-50 ">
         <div className="sticky top-0 z-20">
-          <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3   items-center gap-2 flex justify-between items-center  ">
+          <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3   items-center gap-2 flex justify-between ">
             <div className="flex items-center gap-2">
               <IoIosArrowRoundBack
                 onClick={backHandler}

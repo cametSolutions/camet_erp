@@ -4,7 +4,6 @@ import api from "../../api/api";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import { IoReorderThreeSharp } from "react-icons/io5";
-import { useDispatch } from "react-redux";
 
 import { useSidebar } from "../../layout/Layout";
 import ConfigurationForm from "../../components/common/Forms/ConfigurationForm";
@@ -33,7 +32,6 @@ function OrderConfigurationsSecondary() {
   );
   const { handleToggleSidebar } = useSidebar();
 
-  const dispatch = useDispatch();
 
   useEffect(() => {
     const getSingleOrganization = async () => {

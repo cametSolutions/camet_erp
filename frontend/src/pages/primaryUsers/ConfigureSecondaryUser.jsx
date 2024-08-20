@@ -367,6 +367,16 @@ function ConfigureSecondaryUser() {
     if (config.widthOfNumericalPart && Number(config.widthOfNumericalPart) > 6) {
       errors.push(`${configName}: Width of numerical part must be less than or equal to 6`);
     }
+
+    if (configName === 'Van Sale' && errors.length === 0) {
+      if (mandatoryFields.every(field => config[field]) &&
+          optionalFields.every(field => config[field])) {
+        
+        if (selectedVanSaleGodowns.length === 0) {
+          errors.push('Van Sale: At least one Van Sale Godown must be selected');
+        }
+      }
+    }
   
     return errors;
   };
@@ -396,87 +406,7 @@ function ConfigureSecondaryUser() {
 
     console.log(formData);
 
-    // const salesValidation = validateObject(formData.salesConfiguration, [
-    //   "startingNumber",
-    //   "currentNumber",
-    // ]);
-
-    // if (salesValidation === false) {
-    //   toast.error("Fill all sales details or leave all fields empty");
-    //   return;
-    // }
-    // const stockTransferValidation = validateObject(formData.salesConfiguration, [
-    //   "startingNumber",
-    //   "currentNumber",
-    // ]);
-
-    
-
-    // if (stockTransferValidation === false) {
-    //   toast.error("Fill all Stock Transfer details or leave all fields empty");
-    //   return;
-    // }
-    // const salesOrderValidation = validateObject(
-    //   formData.salesOrderConfiguration,
-    //   ["startingNumber",
-    //      "currentNumber"
-    //     ]
-    // );
-
-    // if (salesOrderValidation === false) {
-    //   toast.error("Fill all sales order details or leave all fields empty");
-    //   return;
-    // }
-
-    // const receiptValidation = validateObject(formData.receiptConfiguration, [
-    //   "startingNumber",
-    //   "currentNumber",
-    // ]);
-
-    // if (receiptValidation === false) {
-    //   toast.error("Fill all receipt details or leave all fields empty");
-    //   return;
-    // }
-    // const purchaseValidation = validateObject(formData.purchaseConfiguration, [
-    //   "startingNumber",
-    //   "currentNumber",
-    // ]);
-    // if (purchaseValidation === false) {
-    //   toast.error("Fill all purchase details or leave all fields empty");
-    //   return;
-    // }
-
-    // const vanSaleConfiguration = formData.vanSaleConfiguration;
-    // console.log(vanSaleConfiguration);
-
-    // //   console.log(vanSaleConfiguration);
-
-    // let vanSaleValidation = true;
-    // const excludedFields = ["startingNumber",
-    //   //  "currentNumber"
-    //   ];
-
-    // // Check if all properties of the object are empty
-    // if (
-    //   Object.entries(vanSaleConfiguration).every(
-    //     ([key, value]) => excludedFields.includes(key) || value === ""
-    //   )
-    // ) {
-    //   vanSaleValidation = true;
-    // } else if (
-    //   Object.entries(vanSaleConfiguration).every(
-    //     ([key, value]) => excludedFields.includes(key) || value !== ""
-    //   )
-    // ) {
-    //   vanSaleValidation = true;
-    // } else {
-    //   vanSaleValidation = false; // Correctly assign false for mixed cases
-    // }
-
-    // if (vanSaleValidation === false) {
-    //   toast.error("Fill all van sales  details or leave all fields empty");
-    //   return;
-    // }
+ 
 
 
     
@@ -490,9 +420,9 @@ function ConfigureSecondaryUser() {
   allErrors = allErrors.concat(validateConfiguration(formData.stockTransferConfiguration, 'Stock Transfer'));
   allErrors = allErrors.concat(validateConfiguration(formData.vanSaleConfiguration, 'Van Sale'));
 
-  if (selectedVanSaleGodowns.length === 0) {
-    allErrors.push('Van Sale: At least one Van Sale Godown must be selected');
-  }
+  // if (selectedVanSaleGodowns.length === 0) {
+  //   allErrors.push('Van Sale: At least one Van Sale Godown must be selected');
+  // }
 
   if (allErrors.length > 0) {
     toast.error(allErrors[0]);  // Show only the first error
