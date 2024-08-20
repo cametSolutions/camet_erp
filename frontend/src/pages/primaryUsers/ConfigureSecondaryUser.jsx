@@ -261,7 +261,7 @@ function ConfigureSecondaryUser() {
     console.log(section);
   };
 
-  const getConfigValue = (section, field) => {
+  const   getConfigValue = (section, field) => {
     switch (section) {
       case "sales":
         return sales[0][field];
