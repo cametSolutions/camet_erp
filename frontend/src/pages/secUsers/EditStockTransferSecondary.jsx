@@ -32,6 +32,8 @@ function EditStockTransferSecondary() {
   const date = useSelector((state) => state.stockTransferSecondary.date);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [subTotal, setSubTotal] = useState(0);
+  const [stockTransferNumber, setStockTransferNumber] = useState("");
+
 
   const selectedGodown = useSelector(
     (state) => state.stockTransferSecondary.selectedGodown.godown
@@ -40,14 +42,12 @@ function EditStockTransferSecondary() {
   const selectedGodownId = useSelector(
     (state) => state.stockTransferSecondary.selectedGodown.godown_id
   );
-  console.log(selectedGodownId);
   const items = useSelector((state) => state.stockTransferSecondary.items);
   const finalAmount = useSelector(
     (state) => state.stockTransferSecondary.finalAmount
   );
   const createdAt = useSelector((state) => state.stockTransferSecondary.date);
 
-  console.log(createdAt);
 
   const orgId = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
@@ -71,15 +71,20 @@ function EditStockTransferSecondary() {
           withCredentials: true,
         });
 
+        console.log(res.data.data);
+        
+
         const {
           selectedGodown: selectedGodownFromAPi,
           selectedGodownId: selectedGodownIdFromApi,
           items: apiItems,
           finalAmount: finalAmountFromApi,
           createdAt: createdAtFromApi,
+          stockTransferNumber: stockTransferNumberFromApi,
         } = res.data.data;
 
-        console.log(selectedGodownIdFromApi);
+        setStockTransferNumber(stockTransferNumberFromApi);
+
 
         if (
           selectedGodown === "" &&
@@ -110,6 +115,9 @@ function EditStockTransferSecondary() {
     fetchSalesDetails();
   }, []);
 
+
+  
+
   useEffect(() => {
     const subTotal = items.reduce((acc, curr) => {
       return (acc = acc + (parseFloat(curr.total) || 0));
@@ -119,10 +127,8 @@ function EditStockTransferSecondary() {
 
   const totalAmount = parseFloat(subTotal);
 
-  console.log(totalAmount);
 
   const navigate = useNavigate();
-  console.log(selectedGodown);
 
   const handleAddItem = () => {
     if (!selectedGodown) {
@@ -151,9 +157,7 @@ function EditStockTransferSecondary() {
       lastAmount,
       // salesNumber,
     };
-    console.log(selectedGodownId);
-    console.log(formData);
-    console.log(id);
+
 
     try {
       const res = await api.post(`/api/sUsers/editStockTransfer/${id}`, formData, {
@@ -176,6 +180,8 @@ function EditStockTransferSecondary() {
     }
   };
 
+  
+
   return (
     <div className="">
       <div className="flex-1 bg-slate-100 h -screen ">
@@ -193,7 +199,7 @@ function EditStockTransferSecondary() {
         {/* invoiec date */}
         <HeaderTile
           title={"Transfer"}
-          number={""}
+          number={stockTransferNumber}
           selectedDate={selectedDate}
           setSelectedDate={setSelectedDate}
           dispatch={dispatch}

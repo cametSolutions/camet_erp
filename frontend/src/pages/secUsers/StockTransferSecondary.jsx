@@ -56,7 +56,6 @@ function StockTransferSecondary() {
           }
         );
 
-        console.log(res.data);
         if (res.data.message === "default") {
           const { configurationNumber } = res.data;
           setStockTransferNumber(configurationNumber);
@@ -64,17 +63,13 @@ function StockTransferSecondary() {
         }
 
         const { configDetails, configurationNumber } = res.data;
-        console.log(configDetails);
-        console.log(configurationNumber);
+        
 
         if (configDetails) {
           const { widthOfNumericalPart, prefixDetails, suffixDetails } =
             configDetails;
           const newOrderNumber = configurationNumber.toString();
-          // console.log(newOrderNumber);
-          // console.log(widthOfNumericalPart);
-          // console.log(prefixDetails);
-          // console.log(suffixDetails);
+         
 
           const padedNumber = newOrderNumber.padStart(widthOfNumericalPart, 0);
           // console.log(padedNumber);
@@ -94,7 +89,7 @@ function StockTransferSecondary() {
     fetchConfigurationNumber();
   }, []);
 
-  console.log(stockTransferNumber);
+  // console.log(stockTransferNumber);
 
 
 
@@ -113,7 +108,7 @@ function StockTransferSecondary() {
   const selectedGodownId = useSelector(
     (state) => state.stockTransferSecondary.selectedGodown.godown_id
   );
-  console.log(selectedGodownId);
+  // console.log(selectedGodownId);
   const items = useSelector((state) => state.stockTransferSecondary.items);
 
   useEffect(() => {
@@ -128,7 +123,7 @@ function StockTransferSecondary() {
 
   const totalAmount = parseFloat(subTotal)
 
-  console.log(totalAmount);
+  // console.log(totalAmount);
 
   const navigate = useNavigate();
 
@@ -142,10 +137,8 @@ function StockTransferSecondary() {
 
 
   const submitHandler = async () => {
-    console.log("haii");
   
     if (items.length == 0) {
-      console.log("haii");
 
       toast.error("Add at least an item");
       return;
@@ -166,7 +159,7 @@ function StockTransferSecondary() {
       stockTransferNumber,
     };
 
-    console.log(formData);
+    // console.log(formData);
 
     try {
       const res = await api.post(
@@ -179,7 +172,7 @@ function StockTransferSecondary() {
           withCredentials: true,
         }
       );
-      console.log(res.data.data);
+      // console.log(res.data.data);
 
       toast.success(res.data.message);
       navigate(`/sUsers/StockTransferDetails/${res.data.data._id}`);

@@ -368,9 +368,13 @@ function ConfigureSecondaryUser() {
       errors.push(`${configName}: Width of numerical part must be less than or equal to 6`);
     }
 
-    if (config==='Van Sale'){
-      if (selectedVanSaleGodowns.length === 0) {
-        errors.push('Van Sale: At least one Van Sale Godown must be selected');
+    if (configName === 'Van Sale' && errors.length === 0) {
+      if (mandatoryFields.every(field => config[field]) &&
+          optionalFields.every(field => config[field])) {
+        
+        if (selectedVanSaleGodowns.length === 0) {
+          errors.push('Van Sale: At least one Van Sale Godown must be selected');
+        }
       }
     }
   

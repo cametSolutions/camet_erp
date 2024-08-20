@@ -163,7 +163,7 @@ function VanSaleSecondary() {
         setGodownname(godownData?.godownName || "");
         setGodownId(godownData?.godownId || "");
         if (godownData?.godownName === "" || godownData?.godownId == "") {
-          toast.error("No godown is configured")
+          toast.error(" Van sale godown is not configured")
           navigate(-1);
         }
       } catch (error) {
