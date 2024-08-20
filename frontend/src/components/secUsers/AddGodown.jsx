@@ -4,7 +4,7 @@ import { IoPerson } from 'react-icons/io5';
 import { MdOutlineClose } from 'react-icons/md';
 import { Link } from 'react-router-dom';
 
-function AddGodown({selectedGodown,dispatch,removeGodown ,link,tab}) {
+function AddGodown({selectedGodown, link,tab,removeGodown,dispatch}) {
   return (
     <div>
          <div className="bg-white  py-3 px-4 pb-3 drop-shadow-lg mt-2 md:mt-3 text-xs md:text-base ">
@@ -52,11 +52,13 @@ function AddGodown({selectedGodown,dispatch,removeGodown ,link,tab}) {
               {
                 tab!=="edit" && (
                   <div>
-                    <Link to={link}>
-                      <p className="text-violet-500 p-1 px-3  text-xs border border-1 border-gray-300 rounded-2xl cursor-pointer">
-                        Change
+                    {/* <Link to={link}> */}
+                      <p 
+                      onClick={()=>{dispatch(removeGodown())}}
+                      className="text-red-500 p-1 px-3  text-md    rounded-2xl cursor-pointer">
+                        <MdOutlineClose/>
                       </p>
-                    </Link>
+                    {/* </Link> */}
                   </div>
                 )
               }

@@ -1,7 +1,6 @@
 /* eslint-disable react/no-unknown-property */
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import SidebarSec from "../../components/secUsers/SidebarSec";
 import api from "../../api/api";
 import { MdModeEditOutline } from "react-icons/md";
 import { IoIosArrowRoundBack } from "react-icons/io";

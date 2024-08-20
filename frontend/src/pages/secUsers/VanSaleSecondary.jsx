@@ -40,7 +40,6 @@ function VanSaleSecondary() {
   const date = useSelector((state) => state.salesSecondary.date);
   const [selectedDate, setSelectedDate] = useState(new Date());
 
-
   const additionalChargesFromRedux = useSelector(
     (state) => state.salesSecondary.additionalCharges
   );
@@ -124,7 +123,7 @@ function VanSaleSecondary() {
         }
 
         const { configDetails, configurationNumber } = res.data;
- 
+
         if (configDetails) {
           const { widthOfNumericalPart, prefixDetails, suffixDetails } =
             configDetails;
@@ -158,21 +157,25 @@ function VanSaleSecondary() {
         const godown = await api.get(`/api/sUsers/godownsName/${cmp_id}`, {
           withCredentials: true,
         });
-        console.log(godown);
-        setGodownname(godown.data?.data?.godownName || "");
-        setGodownId(godown.data?.data?.godownId || "");
+
+        const godownData = godown?.data?.data;
+        console.log(godownData);
+        setGodownname(godownData?.godownName || "");
+        setGodownId(godownData?.godownId || "");
+        if (godownData?.godownName === "" || godownData?.godownId == "") {
+          toast.error(" Van sale godown is not configured")
+          navigate(-1);
+        }
       } catch (error) {
         console.log(error);
         toast.error(error.response.data.message);
-        navigate(-1)
+        navigate(-1);
       }
     };
     fetchGodownname();
   }, []);
 
-
-  console.log(godownname,godownId);
-
+  console.log(godownname, godownId);
 
   const [rows, setRows] = useState(
     additionalChargesFromRedux.length > 0
@@ -334,27 +337,22 @@ function VanSaleSecondary() {
 
   const submitHandler = async () => {
     if (Object.keys(party).length == 0) {
-
       toast.error("Add a party first");
       return;
     }
     if (items.length == 0) {
-
       toast.error("Add at least an item");
       return;
     }
 
     if (additional) {
-
       const hasEmptyValue = rows.some((row) => row.value === "");
       if (hasEmptyValue) {
-
         toast.error("Please add a value.");
         return;
       }
       const hasNagetiveValue = rows.some((row) => parseFloat(row.value) < 0);
       if (hasNagetiveValue) {
-
         toast.error("Please add a positive value");
         return;
       }
@@ -365,8 +363,8 @@ function VanSaleSecondary() {
     dispatch(AddFinalAmount(lastAmount));
 
     const formData = {
-      selectedGodownName:godownname|| "",
-      selectedGodownId:godownId|| "",
+      selectedGodownName: godownname || "",
+      selectedGodownId: godownId || "",
       party,
       items,
       despatchDetails,
@@ -379,14 +377,17 @@ function VanSaleSecondary() {
       selectedDate,
     };
 
-
     try {
-      const res = await api.post(`/api/sUsers/createSale?vanSale=${true}`, formData, {
-        headers: {
-          "Content-Type": "application/json",
-        },
-        withCredentials: true,
-      });
+      const res = await api.post(
+        `/api/sUsers/createSale?vanSale=${true}`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+          withCredentials: true,
+        }
+      );
 
       toast.success(res.data.message);
 
@@ -397,7 +398,6 @@ function VanSaleSecondary() {
       console.log(error);
     }
   };
-
 
   return (
     <div className="">
@@ -410,7 +410,6 @@ function VanSaleSecondary() {
         </div>
 
         {/* invoiec date */}
-
 
         <HeaderTile
           title={"Van Sale"}
@@ -425,7 +424,6 @@ function VanSaleSecondary() {
         />
 
         {/* adding party */}
-
 
         <AddPartyTile
           party={party}
