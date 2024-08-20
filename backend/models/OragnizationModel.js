@@ -11,7 +11,7 @@ const organizationSchema = new mongoose.Schema(
     senderId: { type: String },
     username: { type: String },
     password: { type: String },
-    pin: { type: Number },
+    pin: { type: String },
     gstNum: { type: String },
     website: { type: String },
     pan: { type: String },
