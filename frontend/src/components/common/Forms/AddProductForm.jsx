@@ -31,9 +31,6 @@ function AddProductForm({ orgId, submitData, productData = {},userType}) {
   const [selectedCategory, setSelectedCategory] = useState({});
   const [selectedSubcategory, setSelectedSubcategory] = useState({});
   const [rows, setRows] = useState([{ id: "", pricelevel: "", pricerate: "" }]);
-
-  console.log(productData);
-
   useEffect(() => {
     if (Object.keys(productData).length > 0) {
       const {
@@ -66,7 +63,14 @@ function AddProductForm({ orgId, submitData, productData = {},userType}) {
       setSelectedBrand(brand);
       setSelectedCategory(category);
       setSelectedSubcategory(sub_category);
-      setRows(Priceleveles);
+      if(Priceleveles.length>0){
+        setRows(Priceleveles);
+      }else{
+        setRows(() => [
+          ...Priceleveles,{ id: '', pricelevel: '', pricerate: '' }
+        ]);
+      }
+      
       setLocationRows(GodownList);
       setHsn_code(hsn_id);
     }
@@ -131,6 +135,9 @@ function AddProductForm({ orgId, submitData, productData = {},userType}) {
     if (rows.length > 1) {
       setRows(rows.filter((row) => row.id !== id));
     }
+    else{
+      setRows([{ _id: "", pricelevel: "", pricerate: "" }]);
+    }
   };
 
   const handleLevelChange = (index, value) => {
@@ -182,6 +189,8 @@ function AddProductForm({ orgId, submitData, productData = {},userType}) {
     console.log(locationRows);
     if (locationRows.length > 1) {
       setLocationRows(locationRows.filter((row) => row.godown_id !== id));
+    }else{
+      setLocationRows([ { godown_id: "", godown: "", balance_stock: "" }]);
     }
   };
 

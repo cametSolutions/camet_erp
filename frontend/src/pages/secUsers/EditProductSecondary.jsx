@@ -67,6 +67,7 @@ function EditProductSecondary() {
           orgId={orgId}
           submitData={submitHandler}
           productData={productData}
+          userType="secondaryUser"
         />
       </div>
   );

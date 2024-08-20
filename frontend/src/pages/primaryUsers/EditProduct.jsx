@@ -76,7 +76,7 @@ function EditProduct() {
           </Link>
           <p>Edit Product</p>
         </div>
-        <AddProductForm orgId={orgId} submitData={submitHandler} productData={productData} />
+        <AddProductForm orgId={orgId} submitData={submitHandler} productData={productData} userType="primaryUser" />
       </div>
   
   );
