@@ -84,7 +84,6 @@ export const login = async (req, res) => {
   //email === email or mobile
   const { email, password } = req.body;
 
-  console.log(email);
 
   try {
     let primaryUser;
@@ -97,7 +96,6 @@ export const login = async (req, res) => {
       primaryUser = await PrimaryUser.findOne({ mobile: email });
     }
 
-    console.log("primaryUser", primaryUser);
 
     if (primaryUser.isApproved === false) {
       return res.status(401).json({ message: "User approval is pending" });
@@ -134,6 +132,7 @@ export const login = async (req, res) => {
     });
   } catch (error) {
     console.log(error);
+    
     return res.status(500).json({ status: false, message: "Failed to login!" });
   }
 };
@@ -153,6 +152,7 @@ export const primaryUserLogout = async (req, res) => {
     });
   } catch (error) {
     console.log(error);
+    
     return res.status(500).json({ status: false, message: "Failed to login!" });
   }
 };
@@ -175,6 +175,7 @@ export const getPrimaryUserData = async (req, res) => {
     }
   } catch (error) {
     console.log(error);
+    
     return res
       .status(500)
       .json({ status: false, message: "internal sever error" });
@@ -207,8 +208,7 @@ export const addOrganizations = async (req, res) => {
     batchEnabled,
     industry,
   } = req.body;
-  console.log(req.file);
-  console.log(req.body);
+
   const owner = req.pUserId;
   try {
     const organization = await Organization.create({
@@ -258,7 +258,6 @@ export const addOrganizations = async (req, res) => {
 
 export const getOrganizations = async (req, res) => {
   const userId = new mongoose.Types.ObjectId(req.pUserId);
-  console.log(userId);
   try {
     const organizations = await Organization.find({ owner: userId });
     if (organizations) {
@@ -273,6 +272,7 @@ export const getOrganizations = async (req, res) => {
     }
   } catch (error) {
     console.log(error);
+    
     return res
       .status(500)
       .json({ success: false, message: "Internal server error, try again!" });
@@ -284,8 +284,7 @@ export const getOrganizations = async (req, res) => {
 
 export const getSingleOrganization = async (req, res) => {
   const OrgId = new mongoose.Types.ObjectId(req.params.id);
-  console.log("OrgId", OrgId);
-  console.log(req.params.id);
+
   try {
     const organization = await Organization.findById(OrgId).populate({
       path: "configurations.bank",
@@ -301,6 +300,7 @@ export const getSingleOrganization = async (req, res) => {
     }
   } catch (error) {
     console.log(error);
+    
     return res
       .status(500)
       .json({ success: false, message: "Internal server error, try again!" });
@@ -385,7 +385,6 @@ export const addSecUsers = async (req, res) => {
 
 export const fetchSecondaryUsers = async (req, res) => {
   const userId = new mongoose.Types.ObjectId(req.pUserId);
-  console.log(userId);
   try {
     const secondaryUsers = await SecondaryUser.find({ primaryUser: userId })
       .populate("organization")
@@ -402,6 +401,7 @@ export const fetchSecondaryUsers = async (req, res) => {
     }
   } catch (error) {
     console.log(error);
+    
     return res
       .status(500)
       .json({ success: false, message: "Internal server error, try again!" });
@@ -442,6 +442,7 @@ export const fetchOutstandingTotal = async (req, res) => {
     }
   } catch (error) {
     console.log(error);
+    
     return res
       .status(500)
       .json({ success: false, message: "Internal server error, try again!" });
@@ -455,9 +456,7 @@ export const fetchOutstandingDetails = async (req, res) => {
   const userId = new mongoose.Types.ObjectId(req.pUserId);
   const partyId = req.params.id;
   const cmp_id = req.params.cmp_id;
-  console.log("cmp_id", cmp_id);
-  console.log("partyId", partyId);
-  console.log(userId);
+
   try {
     const outstandings = await TallyData.find({
       Primary_user_id: userId,
@@ -477,6 +476,7 @@ export const fetchOutstandingDetails = async (req, res) => {
     }
   } catch (error) {
     console.log(error);
+    
     return res
       .status(500)
       .json({ success: false, message: "Internal server error, try again!" });
@@ -506,7 +506,6 @@ export const confirmCollection = async (req, res) => {
     mobile_no,
   } = collectionDetails;
 
-  console.log("collectionDetails", collectionDetails);
 
   try {
     const outstandingData = await TallyData.find({
@@ -546,15 +545,14 @@ export const confirmCollection = async (req, res) => {
       });
 
       const savedTransaction = await transaction.save();
-      console.log("savedTransaction", savedTransaction);
 
       res.status(200).json({
         message: "Your Collection is confirmed",
         id: savedTransaction._id,
       });
-      console.log("Documents updated successfully");
     } else {
       console.log("No matching documents found for the given criteria");
+      
     }
   } catch (error) {
     console.error("Error updating documents:", error);
@@ -697,6 +695,7 @@ export const transactions = async (req, res) => {
     }
   } catch (error) {
     console.log(error);
+    
     return res.status(500).json({
       status: false,
       message: "Internal server error",
@@ -726,7 +725,6 @@ export const cancelTransaction = async (req, res) => {
       },
     ]);
 
-    console.log("Transactions to update:", transactions);
 
     for (const { billNo, currentAmount } of transactions) {
       await TallyData.updateOne(
@@ -734,6 +732,7 @@ export const cancelTransaction = async (req, res) => {
         { $set: { bill_pending_amt: currentAmount } }
       );
       console.log(`Updated bill_pending_amt for ${billNo}`);
+      
     }
 
     await TransactionModel.updateOne(
@@ -775,6 +774,7 @@ export const fetchBanks = async (req, res) => {
     }
   } catch (error) {
     console.log(error);
+    
     return res
       .status(500)
       .json({ status: false, message: "Internal server error" });
@@ -787,8 +787,7 @@ export const fetchBanks = async (req, res) => {
 export const bankList = async (req, res) => {
   const userId = req.pUserId;
   const cmp_id = req.params.cmp_id;
-  console.log("cmp_id", cmp_id);
-  console.log("userId", userId);
+ 
   try {
     const bankData = await BankDetails.aggregate([
       {
@@ -807,6 +806,7 @@ export const bankList = async (req, res) => {
     ]);
 
     // console.log(bankData);
+    
 
     if (bankData.length > 0) {
       return res
@@ -817,6 +817,7 @@ export const bankList = async (req, res) => {
     }
   } catch (error) {
     console.log(error);
+    
     return res
       .status(500)
       .json({ status: false, message: "Internal server error" });
@@ -828,7 +829,6 @@ export const bankList = async (req, res) => {
 
 export const sendOtp = async (req, res) => {
   const { email } = req.body;
-  console.log("email", email);
 
   try {
     const validEmail = await primaryUserModel.findOne({ email: email });
@@ -837,7 +837,6 @@ export const sendOtp = async (req, res) => {
     }
 
     const otp = generateNumericOTP(6);
-    console.log("otp", otp);
 
     // Save OTP in the database
     const saveOtp = await primaryUserModel.updateOne(
@@ -866,9 +865,11 @@ export const sendOtp = async (req, res) => {
     transporter.sendMail(mailOptions, function (error, info) {
       if (error) {
         console.log(error);
+        
         return res.status(500).json({ error: "Error sending email" });
       } else {
-        console.log("Email Sent:" + info.response);
+        // console.log("Email Sent:" + info.response);
+        
         return res
           .status(200)
           .json({ message: "OTP sent successfully", data: otp });
@@ -876,6 +877,7 @@ export const sendOtp = async (req, res) => {
     });
   } catch (error) {
     console.log(error);
+    
     return res.status(500).json({ error: "Internal server error" });
   }
 };
@@ -1083,10 +1085,8 @@ export const addDataToOrg = async (req, res) => {
   try {
     const orgId = req.params.cmp_id;
 
-    console.log(req.body);
 
     const org = await OragnizationModel.findById(orgId);
-    console.log(org);
     if (org) {
       const fieldToUpdate = Object.keys(req.body)[0];
       const newData = req.body[fieldToUpdate];
@@ -1125,8 +1125,7 @@ export const editDataInOrg = async (req, res) => {
     const newData = req.body[fieldToUpdate];
     const index = parseInt(req.body.index);
 
-    console.log("fieldToUpdate", fieldToUpdate);
-    console.log("index", index);
+ 
 
     const org = await OragnizationModel.findById(orgId);
     if (!org) {
@@ -1154,12 +1153,10 @@ export const editDataInOrg = async (req, res) => {
 export const deleteDataInOrg = async (req, res) => {
   try {
     const orgId = req.params.cmp_id;
-    console.log(req.body);
     const fieldToDelete = Object.keys(req.body)[0];
     const indexToDelete = req.body[fieldToDelete];
 
     const org = await OragnizationModel.findById(orgId);
-    console.log("org", org);
     if (!org) {
       return res
         .status(404)
@@ -1167,8 +1164,7 @@ export const deleteDataInOrg = async (req, res) => {
     }
 
     const neededField = org[fieldToDelete];
-    console.log("fieldToDelete", fieldToDelete);
-    console.log("neededField", neededField);
+
     neededField.splice(indexToDelete, 1);
     await org.save(); // Save the organization after deletion
     return res
@@ -1190,14 +1186,12 @@ export const deleteDataInOrg = async (req, res) => {
 export const fetchHsn = async (req, res) => {
   const cmp_id = req.params.cmp_id;
   const userId = req.pUserId;
-  console.log("cmp_id", cmp_id);
-  console.log("userId", userId);
+
   try {
     const hsn = await HsnModel.find({
       cpm_id: cmp_id,
       Primary_user_id: userId,
     });
-    console.log("hsn", hsn);
 
     if (hsn) {
       return res.status(200).json({ message: "hsn fetched", data: hsn });
@@ -1206,6 +1200,7 @@ export const fetchHsn = async (req, res) => {
     }
   } catch (error) {
     console.log(error);
+    
     return res
       .status(500)
       .json({ status: false, message: "Internal server error" });
@@ -1235,6 +1230,7 @@ export const fetchFilters = async (req, res) => {
     }
   } catch (error) {
     console.log(error);
+    
     return res
       .status(500)
       .json({ status: false, message: "Internal server error" });
@@ -1273,7 +1269,6 @@ export const addProduct = async (req, res) => {
     // Fetch HSN details
     const hsnDetails = await HsnModel.findById(hsn_code);
 
-    console.log("hsnDetails", hsnDetails);
 
     // Extract required fields from HSN details
     let cgst, sgst, igst, cess, addl_cess, hsn_id;
@@ -1342,8 +1337,7 @@ export const addProduct = async (req, res) => {
 export const getProducts = async (req, res) => {
   const Primary_user_id = req.pUserId;
   const cmp_id = req.params.cmp_id;
-  console.log("Primary_user_id", Primary_user_id);
-  console.log("cmp_id", cmp_id);
+
   try {
     const products = await productModel.find({
       Primary_user_id: Primary_user_id,
@@ -1355,6 +1349,7 @@ export const getProducts = async (req, res) => {
     // ]);
 
     // console.log(products);
+    
 
     if (products && products.length > 0) {
       // Add the check for GodownList
@@ -1369,7 +1364,6 @@ export const getProducts = async (req, res) => {
           hasGodownOrBatch,
         });
       }
-      console.log("filteredProducts", filteredProducts);
       return res.status(200).json({
         productData: filteredProducts,
         message: "Products fetched",
@@ -1379,6 +1373,7 @@ export const getProducts = async (req, res) => {
     }
   } catch (error) {
     console.log(error);
+    
     return res
       .status(500)
       .json({ success: false, message: "Internal server error, try again!" });
@@ -1390,7 +1385,6 @@ export const getProducts = async (req, res) => {
 
 export const deleteProduct = async (req, res) => {
   const productId = req.params.id;
-  console.log("productId", productId);
   try {
     const deletedProduct = await productModel.findByIdAndDelete(productId);
     if (deletedProduct) {
@@ -1500,7 +1494,6 @@ export const editProduct = async (req, res) => {
       addl_cess,
     };
 
-    console.log("dataToSave", dataToSave);
 
     const updateProduct = await productModel.findOneAndUpdate(
       { _id: productId },
@@ -1529,7 +1522,6 @@ export const PartyList = async (req, res) => {
       Primary_user_id: userId,
       cmp_id: cmp_id,
     });
-    console.log("partyList", partyList);
     if (partyList) {
       res
         .status(200)
@@ -1590,7 +1582,6 @@ export const getSinglePartyDetails = async (req, res) => {
 export const editParty = async (req, res) => {
   const party_id = req.params.id;
 
-  console.log(req.body);
 
   try {
     const updateParty = await PartyModel.findOneAndUpdate(
@@ -1624,7 +1615,7 @@ export const createInvoice = async (req, res) => {
       lastAmount,
       orderNumber,
     } = req.body;
-    console.log("orderNumber", orderNumber);
+    
 
     // Manually fetch the last invoice to get the serial number
     const lastInvoice = await invoiceModel.findOne(
@@ -1677,7 +1668,8 @@ export const createInvoice = async (req, res) => {
         const { value, taxPercentage } = charge;
 
         const taxAmt = (parseFloat(value) * parseFloat(taxPercentage)) / 100;
-        console.log(taxAmt);
+        // console.log(taxAmt);
+        
 
         return {
           ...charge,
@@ -1782,7 +1774,7 @@ export const invoiceList = async (req, res) => {
       Primary_user_id: userId,
       cmp_id: cmp_id,
     });
-    console.log("invoiceList", invoiceList);
+    
     if (invoiceList) {
       res
         .status(200)
@@ -1802,13 +1794,13 @@ export const invoiceList = async (req, res) => {
 
 export const deleteHsn = async (req, res) => {
   const hsnId = req.params.id;
-  console.log("hsnId", hsnId);
+  
   try {
     const newHsnId = new mongoose.Types.ObjectId(hsnId);
 
     const attachedProduct = await productModel.find({ hsn_id: newHsnId });
 
-    console.log("attachedProduct", attachedProduct);
+    
 
     if (attachedProduct.length > 0) {
       return res.status(404).json({
@@ -1842,12 +1834,12 @@ export const deleteHsn = async (req, res) => {
 // route get/api/pUsers/getSinglePartyDetails
 
 export const getSingleHsn = async (req, res) => {
-  console.log("haiiiiiiiiiiiiiiiiiiiii");
+  
   const id = req.params.hsnId;
   try {
     const hsn = await HsnModel.findById(id);
 
-    console.log("hsn", hsn);
+    
     if (hsn) {
       return res.status(200).json({ success: true, data: hsn });
     } else {
@@ -1868,7 +1860,7 @@ export const getSingleHsn = async (req, res) => {
 export const editHsn = async (req, res) => {
   const hsnId = req.params.hsnId;
 
-  console.log(req.body);
+  
 
   try {
     const updateHsn = await HsnModel.findOneAndUpdate(
@@ -1958,7 +1950,7 @@ export const getBankDetails = async (req, res) => {
 export const editBank = async (req, res) => {
   const bank_id = req.params.id;
 
-  console.log(req.body);
+  
 
   try {
     const updateParty = await bankModel.findOneAndUpdate(
@@ -2086,7 +2078,7 @@ export const getInvoiceDetails = async (req, res) => {
 export const editInvoice = async (req, res) => {
   const Primary_user_id = req.pUserId;
   const invoiceId = req.params.id;
-  console.log("invoiceId", invoiceId);
+  
   try {
     const {
       orgId,
@@ -2097,9 +2089,9 @@ export const editInvoice = async (req, res) => {
       lastAmount,
       orderNumber,
     } = req.body;
-    console.log("orderNumber", orderNumber);
+    
 
-    console.log(req.body);
+    
 
     // Calculate updated items
     const updatedItems = items.map((item) => {
@@ -2140,7 +2132,7 @@ export const editInvoice = async (req, res) => {
         const { value, taxPercentage } = charge;
 
         const taxAmt = (parseFloat(value) * parseFloat(taxPercentage)) / 100;
-        console.log(taxAmt);
+        
 
         return {
           ...charge,
@@ -2226,15 +2218,18 @@ export const deleteAdditionalCharge = async (req, res) => {
     const id = req.params.id;
     const addlId = new mongoose.Types.ObjectId(id);
 
-    console.log(addlId);
+    // console.log(addlId);
+    
     const cmp_id = req.params.cmp_id;
     const org = await OragnizationModel.findById(cmp_id);
-    console.log("org", org);
+    // console.log("org", org);
+    
 
     const indexToDelete = org.additionalCharges.findIndex((item) =>
       item._id.equals(addlId)
     );
-    console.log("indexToDelete", indexToDelete);
+    // console.log("indexToDelete", indexToDelete);
+    
 
     if (indexToDelete !== -1) {
       org.additionalCharges.splice(indexToDelete, 1);
@@ -2268,15 +2263,15 @@ export const EditAditionalCharge = async (req, res) => {
     const id = req.params.id;
     const addlId = new mongoose.Types.ObjectId(id);
 
-    console.log(addlId);
+    
     const cmp_id = req.params.cmp_id;
     const org = await OragnizationModel.findById(cmp_id);
-    console.log("org", org);
+    
 
     const indexToUpdate = org.additionalCharges.findIndex((item) =>
       item._id.equals(addlId)
     );
-    console.log("indexToUpdate", indexToUpdate);
+    
 
     if (indexToUpdate !== -1) {
       // Assuming req.body contains the updated fields for the additional charge
@@ -2410,13 +2405,14 @@ export const createSale = async (req, res) => {
 
       // Calculate the new balance stock
       const productBalanceStock = truncateToNDecimals(product.balance_stock, 3);
-      console.log("productBalanceStock", productBalanceStock);
+      
       const itemCount = truncateToNDecimals(item.count, 3);
       const newBalanceStock = truncateToNDecimals(
         productBalanceStock - itemCount,
         3
       );
       // console.log("newBalanceStock",newBalanceStock);
+      
 
       // Prepare product update operation
       productUpdates.push({
@@ -2519,7 +2515,7 @@ export const createSale = async (req, res) => {
         const { value, taxPercentage } = charge;
 
         const taxAmt = (parseFloat(value) * parseFloat(taxPercentage)) / 100;
-        console.log(taxAmt);
+        
 
         return {
           ...charge,
@@ -2574,7 +2570,6 @@ export const createSale = async (req, res) => {
       { upsert: true, new: true }
     );
 
-    console.log("changedGodowns", changedGodowns);
 
     return res.status(200).json({
       success: true,
@@ -2602,7 +2597,7 @@ export const getSalesDetails = async (req, res) => {
 
   const isVanSale = vanSaleQuery === "true";
 
-  console.log("isVanSale", isVanSale);
+  
 
   let model;
   if (isVanSale) {
@@ -2680,7 +2675,7 @@ export const fetchGodownsAndPriceLevels = async (req, res) => {
       { $match: { _id: { $ne: null } } },
     ]);
 
-    console.log(godownsResult);
+    
 
     const godownsWithPriceLevels = godownsResult.map((item) => ({
       id: item._id,
@@ -2888,7 +2883,7 @@ export const addSecondaryConfigurations = async (req, res) => {
       newValue,
       cmp_id
     ) => {
-      console.log(model, fieldName, newValue, cmp_id);
+      
       const centralNumber = parseInt(newValue, 10);
       const regex = new RegExp(
         `^(${centralNumber}|.*-(0*${centralNumber})-.*)$`
@@ -2898,7 +2893,7 @@ export const addSecondaryConfigurations = async (req, res) => {
         cmp_id: cmp_id,
       });
 
-      console.log(docs.map((el) => el[fieldName]));
+      
       return docs.length > 0;
     };
 
@@ -2910,7 +2905,7 @@ export const addSecondaryConfigurations = async (req, res) => {
         cmp_id
       );
 
-      console.log("salesExists", salesExists);
+      
       if (salesExists) {
         return res
           .status(400)
@@ -2927,7 +2922,7 @@ export const addSecondaryConfigurations = async (req, res) => {
         NeworderNumber,
         cmp_id
       );
-      console.log("orderExists", orderExists);
+      
 
       if (orderExists) {
         return res
@@ -3064,7 +3059,7 @@ export const findPrimaryUserGodowns = async (req, res) => {
       },
       { $match: { _id: { $ne: null } } },
     ]);
-    console.log(godownsResult);
+    
     if (godownsResult) {
       res.json({
         message: "additional details fetched",
@@ -3078,10 +3073,10 @@ export const findPrimaryUserGodowns = async (req, res) => {
 export const findPrimaryUserGodownsSelf = async (req, res) => {
   const cmp_id = req.params.cmp_id;
   const pUser = req.pUserId;
-  console.log(cmp_id);
+  
   try {
     const godowns = await Organization.find({ _id: cmp_id, owner: pUser });
-    console.log(godowns);
+    
     if (godowns) {
       res.json({
         message: "additional details fetched",
@@ -3096,7 +3091,7 @@ export const godownwiseProducts = async (req, res) => {
   try {
     const cmp_id = req.params.cmp_id;
     const godown_id = req.params.godown_id;
-    console.log(godown_id);
+    
     const puser_id = req.pUserId; // Assuming req.pUserId contains the user ID
 
     const products = await productModel.aggregate([
@@ -3129,6 +3124,7 @@ export const godownwiseProducts = async (req, res) => {
       },
     ]);
     // console.log(products)
+    
     res.json(products);
   } catch (error) {
     console.error("Error fetching godownwise products:", error);
@@ -3140,7 +3136,7 @@ export const godownwiseProductsSelf = async (req, res) => {
   try {
     const cmp_id = req.params.cmp_id;
     const godown = req.params.godown_name;
-    console.log(godown);
+    
     const puser_id = req.pUserId; // Assuming req.pUserId contains the user ID
 
     const products = await productModel.aggregate([
@@ -3173,6 +3169,7 @@ export const godownwiseProductsSelf = async (req, res) => {
       },
     ]);
     // console.log(products)
+    
     res.json(products);
   } catch (error) {
     console.error("Error fetching godownwise products:", error);
@@ -3183,14 +3180,14 @@ export const fetchAdditionalCharges = async (req, res) => {
   try {
     const cmp_id = req.params.cmp_id;
     const pUser = req.pUserId;
-    console.log(pUser);
+    
 
     const aditionalDetails = await AdditionalChargesModel.find({
       cmp_id: cmp_id,
       Primary_user_id: pUser,
     });
 
-    console.log(aditionalDetails);
+    
     res.json(aditionalDetails);
   } catch (error) {
     console.error("Error fetching godownwise products:", error);
@@ -3204,7 +3201,7 @@ export const fetchAdditionalCharges = async (req, res) => {
 export const getPurchaseDetails = async (req, res) => {
   const purchaseId = req.params.id;
 
-  console.log("purchaseId", purchaseId);
+  
 
   try {
     const purchaseDetails = await purchaseModel.findById(purchaseId);
@@ -3297,7 +3294,7 @@ export const addProductSubDetails = async (req, res) => {
 // route get/api/pUsers/getProductSubDetails
 
 export const getProductSubDetails = async (req, res) => {
-  console.log("gitt it");
+  
   try {
     const { orgId } = req.params;
     const { type } = req.query; // 'type' can be 'brand', 'category', 'subcategory', 'godown', or 'pricelevel'
@@ -3462,6 +3459,7 @@ export const getAllSubDetails = async (req, res) => {
 
     if (!cmp_id || !Primary_user_id) {
       console.log(
+        
         "cmp_id and Primary_user_id are required in getAllSubDetails "
       );
       return;
@@ -3507,6 +3505,7 @@ export const fetchConfigurationCurrentNumber = async (req, res) => {
 
   if (!cmp_id || !secondary_user_id) {
     console.log(
+      
       "cmp_id and secondary_user_id are required in fetchConfigurationCurrentNumber "
     );
     return res
@@ -3529,7 +3528,8 @@ export const fetchConfigurationCurrentNumber = async (req, res) => {
       configuration = company;
     }
 
-    console.log("configuration", configuration);
+    // console.log("configuration", configuration);
+    
 
     const {
       orderNumber,
