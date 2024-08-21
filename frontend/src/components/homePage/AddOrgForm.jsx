@@ -7,11 +7,12 @@ import api from "../../api/api.js";
 import { HashLoader } from "react-spinners";
 import { industries } from "../../../constants/industries.js";
 import { statesData } from "../../../constants/states.js";
+import { countries } from "../../../constants/countries.js";
 
 function AddOrgForm({ onSubmit, orgData = {} }) {
   const [name, setName] = useState("");
   const [pin, setPin] = useState("");
-  const [state, setState] = useState("32");
+  const [state, setState] = useState("");
   const [country, setCountry] = useState("India");
   const [mobile, setMobile] = useState("");
   const [gst, setGst] = useState("");
@@ -49,7 +50,6 @@ function AddOrgForm({ onSubmit, orgData = {} }) {
 
   console.log(orgData);
 
-
   useEffect(() => {
     if (Object.keys(orgData).length > 0) {
       const {
@@ -72,7 +72,7 @@ function AddOrgForm({ onSubmit, orgData = {} }) {
         pan,
         financialYear,
         batchEnabled,
-        industry
+        industry,
       } = orgData;
 
       setName(name);
@@ -94,7 +94,7 @@ function AddOrgForm({ onSubmit, orgData = {} }) {
       setPan(pan);
       setFinancialYear(financialYear);
       setBatchEnabled(batchEnabled);
-      setIndustry(industry)
+      setIndustry(industry);
     }
   }, [orgData]);
 
@@ -140,7 +140,7 @@ function AddOrgForm({ onSubmit, orgData = {} }) {
       }
     }
 
-    if (name.length > 30) {
+    if (name.length > 60) {
       toast.error("Name must be at most 30 characters");
       return;
     }
@@ -150,7 +150,7 @@ function AddOrgForm({ onSubmit, orgData = {} }) {
       return;
     }
 
-    if (!/^\d{10}$/.test(mobile)) {
+    if (!/^\d{10}$/.test(mobile) && country === "India") {
       toast.error("Mobile number must be 10 digits");
       return;
     }
@@ -170,19 +170,19 @@ function AddOrgForm({ onSubmit, orgData = {} }) {
 
     // / Additional PIN code validation
     const isPinValid = /^\d{6}$/.test(pin);
-    if (!isPinValid) {
+    if (!isPinValid && country === "India") {
       toast.error("Please enter a valid 6-digit PIN code");
       return;
     }
 
     const gstRegex = /^[0-9A-Za-z]{15}$/;
 
-    if (gst && !gstRegex.test(gst)) {
+    if (gst && !gstRegex.test(gst) && country === "India") {
       toast.error("Invalid GST number");
       return;
     }
 
-    if (pan && !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(pan)) {
+    if (pan && !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(pan) && country === "India") {
       toast.error("Invalid PAN number");
       return;
     }
@@ -218,7 +218,7 @@ function AddOrgForm({ onSubmit, orgData = {} }) {
       financialYear,
       type,
       batchEnabled,
-      industry
+      industry,
     };
 
     console.log(formData);
@@ -318,7 +318,82 @@ function AddOrgForm({ onSubmit, orgData = {} }) {
             Address
           </h6>
           <div className="flex flex-wrap">
-            <div className="w-full lg:w-12/12 px-4"></div>
+            {/* <div className="w-full lg:w-12/12 px-4"></div> */}
+            <div className="w-full lg:w-6/12 px-4">
+              <div className="relative w-full mb-3">
+                <label
+                  className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
+                  htmlFor="grid-password"
+                >
+                  Country
+                </label>
+                <select
+                  className="border-0 px-3 mr-12 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                  onChange={(e) => {
+                    setCountry(e.target.value);
+                    setState("");
+                  }}
+                  value={country}
+                >
+                  {countries.map((country) => (
+                    <option
+                      value={country?.countryName}
+                      key={country?.countryName}
+                    >
+                      {country?.countryName} ({country?.currency})
+                    </option>
+                  ))}
+
+                  {/* Add more options as needed */}
+                </select>
+              </div>
+            </div>
+            {country === "India" ? (
+              <div className="w-full lg:w-6/12 px-4">
+                <div className="relative w-full mb-3">
+                  <label
+                    className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
+                    htmlFor="grid-password"
+                  >
+                    State
+                  </label>
+                  <select
+                    className="border-0 px-2 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                    onChange={(e) => {
+                      setState(e.target.value);
+                    }}
+                    value={state}
+                  >
+                    <option value="" disabled>
+                      Select a state
+                    </option>
+                    {statesData.map((indianState) => (
+                      <option key={indianState} value={indianState?.stateCode}>
+                        {indianState?.stateName}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            ) : (
+              <div className="w-full lg:w-6/12 px-4">
+                <div className="relative w-full mb-3">
+                  <label
+                    className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
+                    htmlFor="grid-password"
+                  >
+                    State
+                  </label>
+                  <input
+                    className="border-0 px-2 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                    onChange={(e) => {
+                      setState(e.target.value);
+                    }}
+                    value={state}
+                  ></input>
+                </div>
+              </div>
+            )}
             <div className="w-full lg:w-6/12 px-4">
               <div className="relative w-full mb-3">
                 <label
@@ -385,8 +460,9 @@ function AddOrgForm({ onSubmit, orgData = {} }) {
                 >
                   Pin
                 </label>
+
                 <input
-                  type="number"
+                  type={country == "India" ? "number" : "text"}
                   className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                   onChange={(e) => {
                     setPin(e.target.value);
@@ -483,14 +559,13 @@ function AddOrgForm({ onSubmit, orgData = {} }) {
           </h6>
           <div className="flex flex-wrap">
             <div className="w-full lg:w-12/12 px-4"></div>
-
             <div className="w-full lg:w-6/12 px-4">
               <div className="relative w-full mb-3">
                 <label
                   className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
                   htmlFor="grid-password"
                 >
-                  GST no.
+                  {country == "India" ? "GST No" : "VAT No"}
                 </label>
                 <input
                   type=""
@@ -499,10 +574,11 @@ function AddOrgForm({ onSubmit, orgData = {} }) {
                     setGst(e.target.value);
                   }}
                   value={gst}
-                  placeholder="Gst No"
+                  placeholder={country == "India" ? "GST No" : "VAT No"}
                 />
               </div>
             </div>
+
             <div className="w-full lg:w-6/12 px-4">
               <div className="relative w-full mb-3">
                 <label
@@ -522,6 +598,7 @@ function AddOrgForm({ onSubmit, orgData = {} }) {
                 />
               </div>
             </div>
+
             <div className="w-full lg:w-6/12 px-4">
               <div className="relative w-full mb-3">
                 <label
@@ -541,6 +618,7 @@ function AddOrgForm({ onSubmit, orgData = {} }) {
                 />
               </div>
             </div>
+
             <div className="w-full lg:w-6/12 px-4">
               <div className="relative w-full mb-3">
                 <label
@@ -570,55 +648,6 @@ function AddOrgForm({ onSubmit, orgData = {} }) {
                 </select>
               </div>
             </div>
-
-            <div className="w-full lg:w-6/12 px-4">
-              <div className="relative w-full mb-3">
-                <label
-                  className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
-                  htmlFor="grid-password"
-                >
-                  Country
-                </label>
-                <select
-                  className="border-0 px-3 mr-12 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                  onChange={(e) => {
-                    setCountry(e.target.value);
-                  }}
-                  value={country}
-                >
-                  <option value="India">India</option>
-                  {/* Add more options as needed */}
-                </select>
-              </div>
-            </div>
-
-            <div className="w-full lg:w-6/12 px-4">
-              <div className="relative w-full mb-3">
-                <label
-                  className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
-                  htmlFor="grid-password"
-                >
-                  State
-                </label>
-                <select
-                  className="border-0 px-2 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                  onChange={(e) => {
-                    setState(e.target.value);
-                  }}
-                  value={state}
-                >
-                  <option value="" disabled>
-                    Select a state
-                  </option>
-                  {statesData.map((indianState) => (
-                    <option key={indianState} value={indianState?.stateCode}>
-                      {indianState?.stateName}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
             <div className="w-full lg:w-6/12 px-4">
               <div className="relative w-full mb-3">
                 <label
