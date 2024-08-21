@@ -1761,26 +1761,39 @@ export const editInvoice = async (req, res) => {
 export const fetchFilters = async (req, res) => {
   const cmp_id = req.params.cmp_id;
   try {
-    const filers = await OragnizationModel.findById(cmp_id);
 
-    const data = {
-      brands: filers?.brands,
-      categories: filers?.categories,
-      subcategories: filers?.subcategories,
-      priceLevels: filers?.levelNames,
+    const getFilters = async (model, field) => {
+      const filters = await model.find({ cmp_id: cmp_id });
+      return filters.map((item) => item[field]);  // Extract the specific field
     };
 
-    if (filers) {
-      return res.status(200).json({ message: "filers fetched", data: data });
+    // Await the results and extract the desired field
+    const brands = await getFilters(Brand, "brand");
+    const categories = await getFilters(Category, "category");
+    const subcategories = await getFilters(Subcategory, "subcategory");
+    const priceLevels = await getFilters(PriceLevel, "pricelevel");
+
+    const data = {
+      brands: brands,
+      categories: categories,
+      subcategories: subcategories,
+      priceLevels: priceLevels,
+    };
+
+    if (Object.entries(data).length > 0) {
+      return res.status(200).json({ message: "Filters fetched", data: data });
     } else {
-      return res.status(404).json({ message: "filers  not found" });
+      return res.status(404).json({ message: "Filters not found" });
     }
   } catch (error) {
+    console.log(error);
     return res
       .status(500)
       .json({ status: false, message: "Internal server error" });
   }
 };
+
+
 
 // @desc delete AdditionalCharge
 // route get/api/pUsers/deleteAdditionalCharge

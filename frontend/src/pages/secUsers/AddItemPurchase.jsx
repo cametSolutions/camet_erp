@@ -262,6 +262,7 @@ function AddItemPurchase() {
         setPriceLevels(priceLevels);
         if (priceLevelFromRedux == "") {
           const defaultPriceLevel = priceLevels[0];
+          setSelectedPriceLevel(defaultPriceLevel);
           dispatch(setPriceLevel(defaultPriceLevel));
         }
       } else {
@@ -282,6 +283,9 @@ function AddItemPurchase() {
       console.log(error);
     }
   };
+
+  console.log(selectedPriceLevel);
+  
 
   ///////////////////////////filter items///////////////////////////////////
 
@@ -719,8 +723,7 @@ function AddItemPurchase() {
     }
 
     // Log the updated items for debugging
-    console.log(updatedItems.length);
-    console.log(updatedItems);
+ 
 
     // Update state with the new items array
     setItem(updatedItems);
@@ -729,7 +732,6 @@ function AddItemPurchase() {
     // setRefresh((prevRefresh) => !prevRefresh);
   };
 
-  console.log(item);
 
   useEffect(() => {
     if (listRef.current) {
