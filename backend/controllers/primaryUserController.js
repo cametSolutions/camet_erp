@@ -1237,99 +1237,104 @@ export const fetchFilters = async (req, res) => {
   }
 };
 
-// @desc adding new Product
-// route POst/api/pUsers/addProduct
+// // @desc adding new Product
+// // route POst/api/pUsers/addProduct
 
-export const addProduct = async (req, res) => {
-  try {
-    const {
-      pUserId: Primary_user_id,
-      body: {
-        cmp_id,
-        product_name,
-        product_code,
-        balance_stock,
-        brand,
-        category,
-        sub_category,
-        unit,
-        alt_unit,
-        unit_conversion,
-        alt_unit_conversion,
-        // hsn_code,
-        purchase_price,
-        purchase_cost,
-        Priceleveles,
-        GodownList,
-      },
-    } = req;
+// export const addProduct = async (req, res) => {
+//   try {
+//     const {
+//       pUserId: Primary_user_id,
+//       body: {
+//         cmp_id,
+//         product_name,
+//         product_code,
+//         balance_stock,
+//         brand,
+//         category,
+//         batchEnabled,
+//         sub_category,
+//         unit,
+//         alt_unit,
+//         unit_conversion,
+//         alt_unit_conversion,
+//         // hsn_code,
+//         purchase_price,
+//         purchase_cost,
+//         Priceleveles,
+//         GodownList,
+//       },
+//     } = req;
 
-    let hsn_code = req.body.hsn_code;
+//     let hsn_code = req.body.hsn_code;
 
-    // Fetch HSN details
-    const hsnDetails = await HsnModel.findById(hsn_code);
+//     // Fetch HSN details
+//     const hsnDetails = await HsnModel.findById(hsn_code);
 
 
-    // Extract required fields from HSN details
-    let cgst, sgst, igst, cess, addl_cess, hsn_id;
-    if (hsnDetails) {
-      ({
-        igstRate: igst,
-        cgstRate: cgst,
-        sgstUtgstRate: sgst,
-        onValue: cess,
-        onQuantity: addl_cess,
-        hsn: hsn_code,
-        _id: hsn_id,
-      } = hsnDetails);
-    }
+//     // Extract required fields from HSN details
+//     let cgst, sgst, igst, cess, addl_cess, hsn_id;
+//     if (hsnDetails) {
+//       ({
+//         igstRate: igst,
+//         cgstRate: cgst,
+//         sgstUtgstRate: sgst,
+//         onValue: cess,
+//         onQuantity: addl_cess,
+//         hsn: hsn_code,
+//         _id: hsn_id,
+//       } = hsnDetails);
+//     }
 
-    // Prepare data to save
-    const dataToSave = {
-      cmp_id,
+//     // Prepare data to save
+//     const dataToSave = {
+//       cmp_id,
 
-      product_name,
-      Primary_user_id,
-      product_code,
-      balance_stock,
-      brand,
-      category,
-      sub_category,
-      unit,
-      alt_unit,
-      unit_conversion,
-      alt_unit_conversion,
-      hsn_code,
-      purchase_price,
-      purchase_cost,
-      Priceleveles,
-      GodownList,
-      cgst,
-      sgst,
-      igst,
-      cess,
-      addl_cess,
-      hsn_id,
-    };
+//       product_name,
+//       Primary_user_id,
+//       product_code,
+//       balance_stock,
+//       brand,
+//       category,
+//       sub_category,
+//       batchEnabled,
+//       unit,
+//       alt_unit,
+//       unit_conversion,
+//       alt_unit_conversion,
+//       hsn_code,
+//       purchase_price,
+//       purchase_cost,
+//       Priceleveles,
+//       GodownList,
+//       cgst,
+//       sgst,
+//       igst,
+//       cess,
+//       addl_cess,
+//       hsn_id,
+//     };
 
-    // Save the product
-    const newProduct = await productModel.create(dataToSave);
 
-    // Return success response
-    return res.status(200).json({
-      success: true,
-      message: "Product added successfully",
-    });
-  } catch (error) {
-    console.error(error);
+//     console.log("data to save in add product ",dataToSave);
+    
+//     // Save the product
+//     const newProduct = await productModel.create(dataToSave);
 
-    // Return error response
-    return res.status(500).json({
-      success: false,
-      message: "Internal server error, try again!",
-    });
-  }
-};
+//     // Return success response
+//     return res.status(200).json({
+//       success: true,
+//       message: "Product added successfully",
+//     });
+//   } catch (error) {
+//     console.error(error);
+
+//     // Return error response
+//     return res.status(500).json({
+//       success: false,
+//       message: "Internal server error, try again!",
+//     });
+//   }
+// };
 
 // @desc getting product list
 // route get/api/pUsers/getProducts

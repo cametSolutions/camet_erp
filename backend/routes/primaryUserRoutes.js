@@ -8,8 +8,8 @@ import { registerPrimaryUser,login,addOrganizations,
   transactions,cancelTransaction,fetchBanks,bankList,
   sendOtp,submitOtp,resetPassword,getTransactionDetails,getSingleOrganization,
   editOrg,addParty,addHsn,addDataToOrg,editDataInOrg,deleteDataInOrg,
-  fetchHsn,addProduct,getProducts,deleteProduct,productDetails,
-  editProduct,PartyList,deleteParty,getSinglePartyDetails,editParty,
+  fetchHsn,getProducts,deleteProduct,productDetails
+  ,PartyList,deleteParty,getSinglePartyDetails,editParty,
   fetchFilters,createInvoice,addBulkProducts,invoiceList,deleteHsn,
   getSingleHsn,editHsn,addBank,getBankDetails,editBank,getSecUserDetails,
   editSecUSer,saveOrderNumber,getInvoiceDetails,editInvoice,addAditionalCharge,
@@ -18,6 +18,8 @@ import { registerPrimaryUser,login,addOrganizations,
   addSecondaryConfigurations,findPrimaryUserGodowns,findPrimaryUserGodownsSelf,
   godownwiseProducts,godownwiseProductsSelf,fetchAdditionalCharges,getPurchaseDetails,addProductSubDetails,
   getProductSubDetails,deleteProductSubDetails,editProductSubDetails,getAllSubDetails,fetchConfigurationCurrentNumber} from '../controllers/primaryUserController.js';
+
+import {addProduct,editProduct} from "../controllers/commonController.js";
 import { singleUpload } from '../multer/multer.js';
 import { primaryIsBlocked } from '../middlewares/isBlocked.js';
 import { companyAuthentication } from '../middlewares/authCompany.js';

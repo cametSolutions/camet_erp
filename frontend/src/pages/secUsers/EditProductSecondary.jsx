@@ -13,6 +13,7 @@ import AddProductForm from "../../components/common/Forms/AddProductForm";
 function EditProductSecondary() {
   const { id } = useParams();
   const [productData, setProductData] = useState({});
+  const [isBatchEnabledInCompany, setIsBatchEnabledInCompany] = useState(false);
 
   const orgId = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
@@ -34,7 +35,34 @@ function EditProductSecondary() {
     getProductDetails();
   }, [id]);
 
+  console.log(isBatchEnabledInCompany);
+  
+
   const navigate = useNavigate();
+
+
+  useEffect(() => {
+    const fetchSingleOrganization = async () => {
+      try {
+        const res = await api.get(
+          `/api/pUsers/getSingleOrganization/${orgId}`,
+          {
+            withCredentials: true,
+          }
+        );
+
+        const {batchEnabled : batchEnabledFromApi} = res.data.organizationData;
+        console.log(batchEnabledFromApi);
+        
+      
+        setIsBatchEnabledInCompany(batchEnabledFromApi)
+       
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    fetchSingleOrganization();
+  }, [orgId]);
 
   const submitHandler = async (formData) => {
     try {
@@ -68,6 +96,7 @@ function EditProductSecondary() {
           submitData={submitHandler}
           productData={productData}
           userType="secondaryUser"
+          isBatchEnabledInCompany={isBatchEnabledInCompany}
         />
       </div>
   );

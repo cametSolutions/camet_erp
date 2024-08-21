@@ -1,3 +1,4 @@
+/* eslint-disable no-prototype-builtins */
 /* eslint-disable react/prop-types */
 /* eslint-disable react/no-unknown-property */
 import { useState, useEffect } from "react";
@@ -9,7 +10,7 @@ import { MdPlaylistAdd } from "react-icons/md";
 import { toast } from "react-toastify";
 import api from "../../../api/api";
 
-function AddProductForm({ orgId, submitData, productData = {},userType}) {
+function AddProductForm({ orgId, submitData, productData = {}, userType,isBatchEnabledInCompany=false }) {
   const [hsn, setHsn] = useState([]);
   const [tab, setTab] = useState("priceLevel");
   const [unit, setUnit] = useState("");
@@ -29,9 +30,17 @@ function AddProductForm({ orgId, submitData, productData = {},userType}) {
   const [priceLevel, setPriceLevel] = useState([]);
   const [selectedBrand, setSelectedBrand] = useState();
   const [selectedCategory, setSelectedCategory] = useState({});
+  const [batchEnabled, setBatchEnabled] = useState(false);
+
+
   const [selectedSubcategory, setSelectedSubcategory] = useState({});
   const [rows, setRows] = useState([{ id: "", pricelevel: "", pricerate: "" }]);
+
+
   useEffect(() => {
+
+    console.log("haiiiii");
+    
     if (Object.keys(productData).length > 0) {
       const {
         product_name,
@@ -49,6 +58,7 @@ function AddProductForm({ orgId, submitData, productData = {},userType}) {
         purchase_cost,
         Priceleveles,
         GodownList,
+        batchEnabled,
       } = productData;
 
       setProduct_name(product_name);
@@ -63,16 +73,30 @@ function AddProductForm({ orgId, submitData, productData = {},userType}) {
       setSelectedBrand(brand);
       setSelectedCategory(category);
       setSelectedSubcategory(sub_category);
-      if(Priceleveles.length>0){
+      if (Priceleveles.length > 0) {
         setRows(Priceleveles);
-      }else{
+      } else {
         setRows(() => [
-          ...Priceleveles,{ id: '', pricelevel: '', pricerate: '' }
+          ...Priceleveles,
+          { id: "", pricelevel: "", pricerate: "" },
         ]);
       }
-      
-      setLocationRows(GodownList);
+
+      if (
+        GodownList.length === 1 &&
+        !GodownList[0]?.hasOwnProperty("godown_id")
+      ) {
+        setLocationRows([{ godown: "", balance_stock: "" }]);
+      } else {
+        setLocationRows(GodownList);
+      }
+
       setHsn_code(hsn_id);
+      if(isBatchEnabledInCompany){
+        
+        setBatchEnabled(batchEnabled);
+
+      }
     }
   }, [productData]);
 
@@ -81,16 +105,16 @@ function AddProductForm({ orgId, submitData, productData = {},userType}) {
   useEffect(() => {
     const fetchAllSubDetails = async () => {
       try {
-        let res 
-        if(userType==="secondaryUser"){
+        let res;
+        if (userType === "secondaryUser") {
           res = await api.get(`/api/sUsers/getAllSubDetails/${orgId}`, {
-          withCredentials: true,
-        });
-      }else if(userType==="primaryUser"){
-        res = await api.get(`/api/pUsers/getAllSubDetails/${orgId}`, {
-          withCredentials: true,
-        });
-      }
+            withCredentials: true,
+          });
+        } else if (userType === "primaryUser") {
+          res = await api.get(`/api/pUsers/getAllSubDetails/${orgId}`, {
+            withCredentials: true,
+          });
+        }
         const { brands, categories, subcategories, godowns, priceLevels } =
           res.data.data;
         setBrand(brands);
@@ -107,6 +131,8 @@ function AddProductForm({ orgId, submitData, productData = {},userType}) {
     fetchAllSubDetails();
     fetchHsn();
   }, [orgId]);
+
+
 
   const fetchHsn = async () => {
     try {
@@ -134,8 +160,7 @@ function AddProductForm({ orgId, submitData, productData = {},userType}) {
   const handleDeleteRow = (id) => {
     if (rows.length > 1) {
       setRows(rows.filter((row) => row.id !== id));
-    }
-    else{
+    } else {
       setRows([{ _id: "", pricelevel: "", pricerate: "" }]);
     }
   };
@@ -185,12 +210,10 @@ function AddProductForm({ orgId, submitData, productData = {},userType}) {
   };
 
   const handleDeleteLocationRow = (id) => {
-
-    console.log(locationRows);
     if (locationRows.length > 1) {
       setLocationRows(locationRows.filter((row) => row.godown_id !== id));
-    }else{
-      setLocationRows([ { godown_id: "", godown: "", balance_stock: "" }]);
+    } else {
+      setLocationRows([{ godown_id: "", godown: "", balance_stock: "" }]);
     }
   };
 
@@ -209,8 +232,6 @@ function AddProductForm({ orgId, submitData, productData = {},userType}) {
   };
 
   const submitHandler = async () => {
-
-    console.log( hsn_code);
     // Check required fields
     if (!product_name.trim() || !unit || hsn_code.length === 0) {
       toast.error("Name, Unit, and HSN must be filled");
@@ -297,6 +318,49 @@ function AddProductForm({ orgId, submitData, productData = {},userType}) {
       levelNames = rows;
     }
 
+    const getLocation = () => {
+      const noLocation = [{ balance_stock: 0 }];
+
+      if (
+        batchEnabled &&
+        JSON.stringify(locations) === JSON.stringify(noLocation)
+      ) {
+        const finalLocations = [
+          {
+            batch: "Default batch",
+            balance_stock: 0,
+          },
+        ];
+
+        return finalLocations;
+      } else if (
+        batchEnabled &&
+        JSON.stringify(locations) !== JSON.stringify(noLocation)
+      ) {
+        const finalLocations = locations.map((location) => {
+          return {
+            ...location,
+            batch: "Default batch",
+          };
+        });
+
+        return finalLocations;
+      } else if (
+        !batchEnabled &&
+        JSON.stringify(locations) !== JSON.stringify(noLocation)
+      ) {
+        return locations.map((location) => {
+          const { batch, ...rest } = location;
+
+          return rest;
+        });
+      }else{
+        return locations
+      }
+    };
+
+
+
     // Create form data
     const formData = {
       cmp_id: orgId,
@@ -314,10 +378,11 @@ function AddProductForm({ orgId, submitData, productData = {},userType}) {
       purchase_price,
       purchase_cost: purchase_stock,
       Priceleveles: levelNames,
-      GodownList: locations,
+      GodownList: getLocation(),
+      batchEnabled,
     };
 
-    console.log(formData);
+    // console.log(formData);
 
     submitData(formData);
   };
@@ -648,6 +713,27 @@ function AddProductForm({ orgId, submitData, productData = {},userType}) {
                   </select>
                 </div>
               </div>
+
+              {
+                isBatchEnabledInCompany && (
+                  <div className="flex items-center mr-4 w-full mt-6 px-4">
+                  <input
+                    type="checkbox"
+                    id="valueCheckbox"
+                    className="form-checkbox h-5 w-5 text-indigo-600 transition duration-150 ease-in-out"
+                    checked={batchEnabled === true}
+                    onChange={() => {
+                      setBatchEnabled(!batchEnabled);
+                    }}
+                  />
+                  <label htmlFor="valueCheckbox" className="ml-2 text-gray-700">
+                    Batch Enabled
+                  </label>
+                </div>
+                )
+              }
+
+           
             </div>
 
             {/* adding level name end **********************************************************************************/}
@@ -799,7 +885,9 @@ function AddProductForm({ orgId, submitData, productData = {},userType}) {
                         </td>
                         <td className="px-4 py-2">
                           <button
-                            onClick={() => handleDeleteLocationRow(row?.godown_id)}
+                            onClick={() =>
+                              handleDeleteLocationRow(row?.godown_id)
+                            }
                             className="text-red-600 hover:text-red-800"
                           >
                             <MdDelete />

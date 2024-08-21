@@ -6,8 +6,8 @@ import {login,getSecUserData,fetchOutstandingTotal,
     submitOtp,resetPassword,getTransactionDetails,PartyList,addParty,getProducts,
     createInvoice,invoiceList,getSinglePartyDetails,editParty,
     deleteParty,getSingleOrganization,fetchHsn,
-    addDataToOrg,editDataInOrg,deleteDataInOrg,addProduct,
-    productDetails,editProduct,deleteProduct,saveOrderNumber,
+    addDataToOrg,editDataInOrg,deleteDataInOrg,
+    productDetails,deleteProduct,saveOrderNumber,
     getInvoiceDetails,editInvoice,fetchFilters,deleteAdditionalCharge,
     addAditionalCharge,EditAditionalCharge,addconfigurations,createSale,
     getSalesDetails,saveSalesNumber,fetchAdditionalDetails,
@@ -17,7 +17,7 @@ import {login,getSecUserData,fetchOutstandingTotal,
     fetchGodowns,createStockTransfer,editStockTransfer,cancelSalesOrder,cancelSale,
     cancelStockTransfer} from "../controllers/secondaryUserController.js"
 
-    import { getStockTransferDetails,getPrintData } from '../controllers/commonController.js';
+    import { getStockTransferDetails,addProduct ,editProduct} from '../controllers/commonController.js';
 import { authSecondary } from '../middlewares/authSecUsers.js';
 import { secondaryIsBlocked } from '../middlewares/isBlocked.js';
 import { companyAuthentication } from '../middlewares/authCompany.js';
@@ -86,6 +86,5 @@ router.post("/cancelSalesOrder/:id",authSecondary,secondaryIsBlocked,cancelSales
 router.post("/cancelSales/:id",authSecondary,secondaryIsBlocked,cancelSale)
 router.post("/cancelstockTransfer/:id",authSecondary,secondaryIsBlocked,cancelStockTransfer)
 router.post("/cancelstockTransfer/:id",authSecondary,secondaryIsBlocked,cancelStockTransfer)
-router.get("/print-data/:id",getPrintData)
 
 export default router

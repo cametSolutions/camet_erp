@@ -98,7 +98,13 @@ const productSchema = new mongoose.Schema({
   brand_id: {
     type: String,
   },
-});
+  batchEnabled:{
+    type: Boolean,
+    default: false
+  }
+}
+
+);
 
 // Function to truncate to a specified number of decimals
 // const truncateToNDecimals = (value, n) => {
