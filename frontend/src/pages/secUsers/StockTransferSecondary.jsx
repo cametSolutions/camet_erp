@@ -159,7 +159,6 @@ function StockTransferSecondary() {
       stockTransferNumber,
     };
 
-    // console.log(formData);
 
     try {
       const res = await api.post(

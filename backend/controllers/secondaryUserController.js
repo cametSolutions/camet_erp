@@ -2639,7 +2639,7 @@ export const fetchConfigurationNumber = async (req, res) => {
     };
 
     const getConfigNumber = () => {
-      if (configuration ) { 
+      if (configuration   ) { 
         const numbers = {
           sales: configuration.salesNumber,
           salesOrder: configuration.orderNumber,
@@ -2660,11 +2660,11 @@ export const fetchConfigurationNumber = async (req, res) => {
         };
   
 
+        return companyNumbers[title] || null;
       }
 
     
       // console.log("companyNumbers", companyNumbers);
-      return companyNumbers[title] || null;
     };
 
     let configDetails = getConfigDetails();

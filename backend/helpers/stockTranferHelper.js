@@ -215,10 +215,11 @@ export const increaseStockTransferNumber = async (secondaryUser, orgId) => {
       // console.log("Configuration found:", configuration);
 
       if (
-        configuration.stockTransferConfiguration &&
-        Object.entries(configuration.stockTransferConfiguration)
-          .filter(([key]) => key !== "startingNumber")
-          .every(([_, value]) => value !== "")
+        configuration.stockTransferConfiguration
+        //  &&
+        // Object.entries(configuration.stockTransferConfiguration)
+          // .filter(([key]) => key !== "startingNumber")
+          // .every(([_, value]) => value !== "")
       ) {
         stConfig = true;
       }
