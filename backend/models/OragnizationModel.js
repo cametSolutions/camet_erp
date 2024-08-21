@@ -18,6 +18,8 @@ const organizationSchema = new mongoose.Schema(
     industry: { type: Number },
     financialYear: { type: String },
     country: { type: String },
+    currency: { type: String },
+    currencyName: { type: String },
     logo: { type: String },
     state: { type: String },
     isBlocked: { type: Boolean, default: false },

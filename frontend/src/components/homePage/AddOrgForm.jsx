@@ -33,6 +33,8 @@ function AddOrgForm({ onSubmit, orgData = {} }) {
   const [type, setType] = useState("self");
   const [batchEnabled, setBatchEnabled] = useState(false);
   const [industry, setIndustry] = useState("");
+  const [currency, setCurrency] = useState("");
+  const [currencyName, setCurrencyName] = useState("");
 
   useEffect(() => {
     const getUserData = async () => {
@@ -199,7 +201,6 @@ function AddOrgForm({ onSubmit, orgData = {} }) {
     const formData = {
       name,
       // place,
-
       pin,
       state,
       country,
@@ -219,9 +220,12 @@ function AddOrgForm({ onSubmit, orgData = {} }) {
       type,
       batchEnabled,
       industry,
+      currency,
+      currencyName,
+      
     };
 
-    console.log(formData);
+    // console.log(formData);
     onSubmit(formData);
   };
 
@@ -331,6 +335,8 @@ function AddOrgForm({ onSubmit, orgData = {} }) {
                   className="border-0 px-3 mr-12 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                   onChange={(e) => {
                     setCountry(e.target.value);
+                    setCurrency(countries.find((c) => c.countryName === e.target.value)?.currency);
+                    setCurrencyName(countries.find((c) => c.countryName === e.target.value)?.currencyName);
                     setState("");
                   }}
                   value={country}
