@@ -17,14 +17,7 @@ import {
 } from "../../../slices/purchase";
 import { Decimal } from "decimal.js";
 import AdditemOfSale from "../../components/secUsers/main/AdditemOfSale";
-// import { HashLoader } from "react-spinners";
-// import { VariableSizeList as List } from "react-window";
-// import SearchBar from "../../components/common/SearchBar";
-// import ProductDetails from "../../components/common/ProductDetails";
-// import { IoIosArrowDown } from "react-icons/io";
-// import { IoIosArrowUp } from "react-icons/io";
-// import { IoIosArrowRoundBack } from "react-icons/io";
-// import { MdOutlineQrCodeScanner } from "react-icons/md";
+
 
 function AddItemPurchase() {
   const [item, setItem] = useState([]);
@@ -65,8 +58,7 @@ function AddItemPurchase() {
 
   ///////////////////////////filters FromRedux///////////////////////////////////
 
-  const brandFromRedux =
-    useSelector((state) => state.purchase.brand) || "";
+  const brandFromRedux = useSelector((state) => state.purchase.brand) || "";
   const categoryFromRedux =
     useSelector((state) => state.purchase.category) || "";
   const subCategoryFromRedux =
@@ -284,9 +276,6 @@ function AddItemPurchase() {
     }
   };
 
-  console.log(selectedPriceLevel);
-  
-
   ///////////////////////////filter items///////////////////////////////////
 
   const filterItems = (items, brand, category, subCategory, searchTerm) => {
@@ -323,9 +312,6 @@ function AddItemPurchase() {
     );
   }, [item, selectedBrand, selectedCategory, selectedSubCategory, search]);
 
-  console.log(filteredItems?.length);
-  console.log(item?.length);
-
   //////////////////////////////////////////addSelectedRate initially not in redux/////////////////////////////////////////////
 
   const addSelectedRate = (pricelevel) => {
@@ -361,8 +347,6 @@ function AddItemPurchase() {
       setItem(updatedItems);
     }
   };
-
-  console.log(item);
 
   useEffect(() => {
     addSelectedRate(selectedPriceLevel);
@@ -723,7 +707,6 @@ function AddItemPurchase() {
     }
 
     // Log the updated items for debugging
- 
 
     // Update state with the new items array
     setItem(updatedItems);
@@ -731,7 +714,6 @@ function AddItemPurchase() {
     // Optionally update refresh state or other operations
     // setRefresh((prevRefresh) => !prevRefresh);
   };
-
 
   useEffect(() => {
     if (listRef.current) {
@@ -761,10 +743,9 @@ function AddItemPurchase() {
     });
   }, []);
 
-
   return (
     <AdditemOfSale
-    tab={"Purchase"}
+      tab={"Purchase"}
       filteredItems={filteredItems}
       handleDecrement={handleDecrement}
       listRef={listRef}

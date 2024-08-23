@@ -31,7 +31,7 @@ const ProductDetails = ({
   return (
     <div
       ref={detailsRef}
-      className={`product-details mb-6 mt-12 w-full shadow-lg p-3  `}
+      className={`product-details mb-6 mt-8 w-full shadow-lg p-3  `}
     >
       {batchOrGodownList.map((item, index) => (
         <>

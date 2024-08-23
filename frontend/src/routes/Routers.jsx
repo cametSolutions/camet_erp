@@ -133,6 +133,7 @@ import EditStockTransferSecondary from '../pages/secUsers/EditStockTransferSecon
 import StockTransferDetailsPrimary from '../pages/primaryUsers/StockTransferDetailsPrimary'
 import BillToPurchase from '../pages/secUsers/BillToPurchase'
 import EditItemStockTransfer from '../pages/secUsers/EditItemStockTransfer'
+import AddbatchInPurchase from '../pages/secUsers/AddbatchInPurchase'
 
 const Routers = () => {
   return (
@@ -256,15 +257,22 @@ const Routers = () => {
         <Route path='/sUsers/shareSalesThreeInch/:id' element={<ProtectedSecRoute><ThreeInchSalesSec/></ProtectedSecRoute>}></Route> 
         <Route path='/sUsers/shareVanSaleThreeInch/:id' element={<ProtectedSecRoute><ThreeInchVanSaleSec/></ProtectedSecRoute>}></Route> 
         <Route path='/sUsers/contacts' element={<ProtectedSecRoute><Contacts/></ProtectedSecRoute>}></Route> 
+       
+       
+       {/* purchase */}
         <Route path='/sUsers/purchase' element={<ProtectedSecRoute><Purchase/></ProtectedSecRoute>}></Route> 
         <Route path='/sUsers/searchPartyPurchase' element={<ProtectedSecRoute><SearchPartyPurchase/></ProtectedSecRoute>}></Route> 
         <Route path='/sUsers/addItemPurchase' element={<ProtectedSecRoute><AddItemPurchase/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/billToPurchase/:id' element={<ProtectedSecRoute><BillToPurchase/></ProtectedSecRoute>}></Route>
-
         <Route path='/sUsers/editItemPurchase/:id/:godownName/:index' element={<ProtectedSecRoute><EditItemPurchase/></ProtectedSecRoute>}></Route> 
         <Route path='/sUsers/purchaseDetails/:id' element={<ProtectedSecRoute><PurchaseDetailsSecondary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/sharePurchase/:id' element={<ProtectedSecRoute><SharePurchaseSecondary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/sharePurchaseThreeInch/:id' element={<ProtectedSecRoute><ThreeInchPurchaseSec/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/addBatchPurchase/:id' element={<ProtectedSecRoute><AddbatchInPurchase/></ProtectedSecRoute>}></Route>
+       
+       
+       
+       
         <Route path='/sUsers/editSale/:id' element={<ProtectedSecRoute><EditSale/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/editVanSale/:id' element={<ProtectedSecRoute><EditVanSale/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/billToSales/:id' element={<ProtectedSecRoute><BillToSales/></ProtectedSecRoute>}></Route>

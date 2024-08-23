@@ -821,6 +821,7 @@ export const getProducts = async (req, res) => {
         product_master_id: 1,
         __v: 1,
         GodownList: 1,
+        batchEnabled:1
       },
     };
 

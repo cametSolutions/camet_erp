@@ -181,8 +181,6 @@ export const purchaseSlice = createSlice({
       }
     },
 
- 
-
     removeGodownOrBatch: (state, action) => {
       const id = action.payload.id;
       const idx = action.payload.idx;
@@ -194,7 +192,6 @@ export const purchaseSlice = createSlice({
         currentItem.GodownList[idx].count = 0;
         currentItem.GodownList[idx].count = 0;
         currentItem.GodownList[idx].individualTotal = 0;
-
 
         const newCount = currentItem.GodownList.reduce((acc, curr) => {
           if (curr.added) {
@@ -239,6 +236,31 @@ export const purchaseSlice = createSlice({
     changeDate: (state, action) => {
       state.date = action.payload;
     },
+    addBatch: (state, action) => {
+
+          ////in saved product
+          const currentProduct = state.products.find(
+            (el) => el._id === action.payload._id
+          );
+    
+          console.log(currentProduct);
+    
+          currentProduct.GodownList.push(action.payload?.GodownList[0]);
+      // in added item
+      const currentItem = state.items.find(
+        (el) => el._id === action.payload._id
+      );
+
+      console.log(currentItem);
+
+      if (currentItem) {
+        currentItem.GodownList.push(action.payload);
+      }else{
+        state.items.push(currentProduct);
+      }
+
+  
+    },
   },
 });
 
@@ -277,7 +299,8 @@ export const {
   addPriceRate,
   addNewAddress,
   addDespatchDetails,
-  changeDate
+  changeDate,
+  addBatch,
 } = purchaseSlice.actions;
 
 export default purchaseSlice.reducer;
