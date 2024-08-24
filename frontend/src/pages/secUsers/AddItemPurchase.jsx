@@ -706,9 +706,7 @@ function AddItemPurchase() {
       updatedItems[index].isExpanded = !updatedItems[index].isExpanded;
     }
 
-    // Log the updated items for debugging
 
-    // Update state with the new items array
     setItem(updatedItems);
 
     // Optionally update refresh state or other operations
