@@ -1,5 +1,6 @@
 /* eslint-disable react/prop-types */
 import QRCode from "react-qr-code";
+import { useSelector } from "react-redux";
 
 function SalesThreeInchPdf({
   contentToPrint,
@@ -9,7 +10,22 @@ function SalesThreeInchPdf({
   bank,
   additinalCharge,
   inWords,
+  userType,
 }) {
+
+  //used to fetch organization data form redux
+  let selectedOrganization;
+  if (userType == "primaryUser") {
+    selectedOrganization = useSelector(
+      (state) => state.setSelectedOrganization.selectedOrg
+    );
+  } else if (userType == "secondaryUser") {
+    selectedOrganization = useSelector(
+      (state) => state.secSelectedOrganization.selectedOrg
+    );
+  }
+  console.log(selectedOrganization);
+
   const calculateTotalTax = () => {
     const individualTax = data?.items?.map(
       (el) => el?.total - (el?.total * 100) / (parseFloat(el.igst) + 100)
@@ -323,9 +339,9 @@ function SalesThreeInchPdf({
               <div className="w-3/4"></div>
 
               <div className="  text-black  font-extrabold text-[11px] flex justify-end   ">
-                <p className="text-nowrap border-y-2 py-1">NET AMOUNT : </p>
+                <p className="text-nowrap border-y-2 py-1">NET AMOUNT :&nbsp; </p>
                 <div className="text-black  font-bold text-[11px] text-nowrap  border-y-2 py-1    ">
-                  ₹ {data?.finalAmount}
+                  {selectedOrganization?.currency} {data?.finalAmount}
                 </div>
               </div>
             </div>
@@ -335,7 +351,7 @@ function SalesThreeInchPdf({
               <div className="text-black font-bold text-[12px] flex flex-col justify-end text-right mt-1">
                 <p className="text-nowrap">Total Amount(in words)</p>
                 <div className="text-black full font-bold text-[12px] text-nowrap uppercase mt-1   ">
-                  <p className="whitespace-normal">₹ {inWords}</p>
+                  <p className="whitespace-normal">{inWords} {selectedOrganization?.currencyName}</p>
                 </div>
               </div>
             </div>

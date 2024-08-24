@@ -51,7 +51,7 @@ const AddOrganisation = () => {
               <div className="rounded-t bg-white mb-0 px-6 py-2">
                 <div className="text-center flex justify-between"></div>
               </div>
-              <AddOrgForm onSubmit={submitHandler} />
+              <AddOrgForm onSubmit={submitHandler}  />
             </div>
           </div>
         </section>

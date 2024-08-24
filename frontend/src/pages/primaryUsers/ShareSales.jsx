@@ -91,16 +91,13 @@ function ShareSales() {
       const [integerPart, decimalPart] = finalAmount.toString().split(".");
       const integerWords = numberToWords.toWords(parseInt(integerPart, 10));
       console.log(integerWords);
-      const decimalWords = decimalPart
-        ? ` and ${numberToWords.toWords(parseInt(decimalPart, 10))} `
-        : " and Zero";
-      console.log(decimalWords);
+      // const decimalWords = decimalPart
+      //   ? ` and ${numberToWords.toWords(parseInt(decimalPart, 10))} `
+      //   : " and Zero";
+      // console.log(decimalWords);
 
       const mergedWord = [
         ...integerWords,
-        " Rupees",
-        ...decimalWords,
-        "Paisa",
       ].join("");
 
       setInWords(mergedWord);
@@ -150,6 +147,7 @@ function ShareSales() {
           subTotal={subTotal}
           additinalCharge={additinalCharge}
           inWords={inWords}
+          userType="primaryUser"
         />
       </div>
     </div>

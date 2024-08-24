@@ -5,8 +5,16 @@ import { IoReorderThreeSharp } from "react-icons/io5";
 import { useParams, useNavigate } from "react-router-dom";
 import AddOrgForm from "../../components/homePage/AddOrgForm.jsx";
 import { useSidebar } from "../../layout/Layout";
-const EditOrg = () => {
+import { useDispatch } from "react-redux";
+import { setSelectedOrganization } from "../../../slices/PrimarySelectedOrgSlice.jsx";
+import { useSelector } from "react-redux";
 
+const EditOrg = () => {
+ const selectedOrganization = useSelector(
+    (state) => state.setSelectedOrganization.selectedOrg
+  );
+  
+  const dispatch = useDispatch();
   const [orgData, setOrgData] = useState({});
 
 
@@ -22,14 +30,7 @@ const EditOrg = () => {
         const res = await api.get(`/api/pUsers/getSingleOrganization/${id}`, {
           withCredentials: true,
         });
-
-      
-
-
         setOrgData(res.data.organizationData);
-
- 
-
         if (senderId.length > 0) {
           setShowInputs(true);
         }
@@ -60,7 +61,11 @@ const EditOrg = () => {
         },
         withCredentials: true,
       });
-
+      console.log(res.data.data._id)
+      if(res.data.data._id === selectedOrganization._id){
+        dispatch(setSelectedOrganization(res.data.data))
+      } 
+      
       toast.success(res.data.message);
       navigate("/pUsers/organizationList");
     } catch (error) {
