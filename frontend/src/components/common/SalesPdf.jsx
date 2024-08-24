@@ -1,8 +1,11 @@
 /* eslint-disable react/prop-types */
-import React from "react";
+import React, { useEffect, useState } from "react";
 import QRCode from "react-qr-code";
 import PdfHeader from "../pdfComponents/PdfHeader";
 import PdfFooter from "../pdfComponents/PdfFooter";
+import useFetch from "../../customHook/useFetch";
+import { useSelector } from "react-redux";
+import { toast } from "react-toastify";
 
 function SalesPdf({
   data,
@@ -12,7 +15,56 @@ function SalesPdf({
   inWords,
   subTotal,
   additinalCharge,
+  userType,
 }) {
+  let selectedOrganization;
+  if (userType == "primaryUser") {
+    selectedOrganization = useSelector(
+      (state) => state.setSelectedOrganization.selectedOrg
+    );
+  } else if (userType == "secondaryUser") {
+    selectedOrganization = useSelector(
+      (state) => state.secSelectedOrganization.selectedOrg
+    );
+  }
+
+  console.log(selectedOrganization);
+  //   const [organizationData,setOrganizationData] = useState({});
+
+  //   //concept used to get organization data from redux
+
+  // const reduxType =
+  // userType === "secondary"
+  //   ? "secSelectedOrganization"
+  //   : "selectedOrganization";
+  // console.log(reduxType);
+  // const cmp_id = useSelector((state) => state.selectedOrganization.secSelectedOrg?._id);
+  // console.log(cmp_id);
+
+  //   // custom hook used to fetch data
+  //    const { data: organization,loading:loading,error:error } = useFetch(`/api/pUsers/getSingleOrganization/${cmp_id}`);
+  //   useEffect(() => {
+  //     if ( organization) {
+  //       setOrganizationData( organization);
+  //     }
+  //   },[ organization])
+
+  //   useEffect(() => {
+  //     if (error) {
+  //       if (error.response) {
+  //         toast.error(error.response.data.message);
+  //       } else {
+  //         toast.error('Something went wrong!');
+  //       }
+  //     }
+  //   }, [error]);
+  //   console.log(organizationData);
+
+  //   if(loading){
+  //     return <div>loading......</div>
+  //}
+
+  // console.log(organizationData);
   const calculateDiscountAmntOFNoBAtch = (el) => {
     if (!el || !el.GodownList || !el.GodownList[0]) {
       console.error("Invalid input data");
@@ -107,8 +159,7 @@ function SalesPdf({
 
   return (
     <div>
-
-       {/* <style dangerouslySetInnerHTML={{ __html: `
+      {/* <style dangerouslySetInnerHTML={{ __html: `
         tbody::after {
           content: "";
           display: block;
@@ -185,20 +236,20 @@ function SalesPdf({
                                 el.GodownList.every(
                                   (godown) => godown.godown_id && !godown.batch
                                 ))) &&
-                              ` ₹ ${el.GodownList[0]?.selectedPriceRate || 0}`}
+                              `  ${el.GodownList[0]?.selectedPriceRate || 0}`}
                           </td>
 
                           <td className="pt-2 text-black text-right pr-2">
-                            {`₹ ${calculateDiscountAmntOFNoBAtch(el)}`}
+                            {` ${calculateDiscountAmntOFNoBAtch(el)}`}
                           </td>
                           <td className="pt-2 text-black text-right pr-2 font-bold">
-                            {` ₹ ${(
+                            {`  ${(
                               el?.total -
                               (el?.total * 100) / (parseFloat(el.igst) + 100)
                             )?.toFixed(2)}`}
                           </td>
                           <td className="pt-2 pr-1 text-black text-right font-bold">
-                            ₹ {el?.total}
+                             {el?.total}
                           </td>
                         </tr>
                         {el.hasGodownOrBatch &&
@@ -236,27 +287,26 @@ function SalesPdf({
                                   {godownOrBatch?.count} {el?.unit}
                                 </td>
                                 <td className="pt-2  text-end pr-2">
-                                  ₹{godownOrBatch?.selectedPriceRate || 0}
+                                  {godownOrBatch?.selectedPriceRate || 0}
                                 </td>
 
                                 <td className="pt-2  pr-2 text-end">
-                                  {` ₹ ${discountAmount}`}
+                                  {` ${discountAmount}`}
                                 </td>
 
                                 <td className="pt-2  text-black text-right pr-2">
-                                  {`₹ ${(
+                                  {`${(
                                     godownOrBatch?.individualTotal -
                                     (godownOrBatch?.individualTotal * 100) /
                                       (parseFloat(el.igst) + 100)
-                                  )?.toFixed(2)}` || "₹ 0"}
+                                  )?.toFixed(2)}` || " 0"}
                                 </td>
                                 <td className="pt-2 text-end pr-1">
-                                  <p>₹ {godownOrBatch.individualTotal ?? 0}</p>
+                                  <p>{godownOrBatch.individualTotal ?? 0}</p>
                                 </td>
                               </tr>
                             ) : null;
                           })}
-                        
                       </React.Fragment>
                     );
                   })}
@@ -274,10 +324,10 @@ function SalesPdf({
                   <td className="text-right pr-1 text-black font-bold text-[9px]"></td>
                   <td className="text-right pr-1 text-black font-bold text-[9px]"></td>
                   <td className="text-right pr-1 text-black font-bold text-[9px]">
-                    ₹ {calculateTotalTax()}
+                   {calculateTotalTax()}
                   </td>
                   <td className="text-right pr-1 text-black font-bold text-[9px]">
-                    ₹ {subTotal}
+                     {subTotal}
                   </td>
                 </tr>
               </tfoot>
@@ -290,6 +340,7 @@ function SalesPdf({
               additinalCharge={additinalCharge}
               inWords={inWords}
               tab={"sales"}
+              selectedOrganization={selectedOrganization}
             />
 
             <div className="page-number"></div>

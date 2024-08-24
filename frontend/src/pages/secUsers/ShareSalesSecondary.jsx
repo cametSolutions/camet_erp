@@ -196,6 +196,7 @@ function ShareSalesSecondary() {
           subTotal={subTotal}
           additinalCharge={additinalCharge}
           inWords={inWords}
+          userType="secondaryUser"
         />
       </div>
     </div>
