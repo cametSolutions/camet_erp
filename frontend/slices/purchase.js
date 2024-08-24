@@ -237,29 +237,26 @@ export const purchaseSlice = createSlice({
       state.date = action.payload;
     },
     addBatch: (state, action) => {
+      ////in saved product
+      const currentProduct = state.products.find(
+        (el) => el?._id === action.payload?._id
+      );
 
-          ////in saved product
-          const currentProduct = state.products.find(
-            (el) => el._id === action.payload._id
-          );
-    
-          console.log(currentProduct);
-    
-          currentProduct.GodownList.push(action.payload?.GodownList[0]);
+      console.log(currentProduct);
+
+      currentProduct?.GodownList?.push(action.payload?.GodownList[0]);
       // in added item
-      const currentItem = state.items.find(
-        (el) => el._id === action.payload._id
+      const currentItem = state?.items?.find(
+        (el) => el._id === action.payload?._id
       );
 
       console.log(currentItem);
 
       if (currentItem) {
-        currentItem.GodownList.push(action.payload);
-      }else{
-        state.items.push(currentProduct);
+        currentItem?.GodownList?.push(action?.payload);
+      } else {
+        state?.items?.push(currentProduct);
       }
-
-  
     },
   },
 });
