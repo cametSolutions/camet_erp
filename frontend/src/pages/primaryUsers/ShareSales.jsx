@@ -150,7 +150,7 @@ function ShareSales() {
           subTotal={subTotal}
           additinalCharge={additinalCharge}
           inWords={inWords}
-          userType="primary"
+          userType="primaryUser"
         />
       </div>
     </div>

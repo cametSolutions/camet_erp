@@ -208,7 +208,7 @@ export const addOrganizations = async (req, res) => {
     batchEnabled,
     industry,
     currency,
-    currencyName,
+    currencyName
   } = req.body;
 
   const owner = req.pUserId;
@@ -237,7 +237,7 @@ export const addOrganizations = async (req, res) => {
       batchEnabled,
       industry,
       currency,
-      currencyName,
+      currencyName
     });
 
     if (organization) {

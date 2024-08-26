@@ -10,13 +10,22 @@ import { useNavigate } from "react-router-dom";
 import DatePicker from "react-datepicker";
 
 import "react-datepicker/dist/react-datepicker.css";
+
 import { AiFillCaretRight } from "react-icons/ai";
 import DashboardTransaction from "../../components/common/DashboardTransaction";
 
 function Transaction() {
 
-  const initialStartDate =localStorage.getItem("SecondaryTransactionStartDate") || new Date()
-  const initialEndDate=localStorage.getItem("SecondaryTransactionEndDate") || new Date()
+  const initialStartDate = localStorage.getItem("SecondaryTransactionStartDate")
+  ? new Date(localStorage.getItem("SecondaryTransactionStartDate"))
+  : new Date();
+
+const initialEndDate = localStorage.getItem("SecondaryTransactionEndDate")
+  ? new Date(localStorage.getItem("SecondaryTransactionEndDate"))
+  : new Date();
+
+  console.log(initialEndDate);
+  
   
   const [data, setData] = useState([initialStartDate]);
   const [search, setSearch] = useState("");
@@ -179,9 +188,9 @@ function Transaction() {
                         console.log(dates);
                         if (dates) {
                           setStartDate(dates[0]);
-                          localStorage.setItem("SecondaryTransactionStartDate", dates[0]);
+                          localStorage.setItem("SecondaryTransactionStartDate", dates[0]?? new Date());
                           setEndDate(dates[1]);
-                          localStorage.setItem("SecondaryTransactionEndDate", dates[1]);
+                          localStorage.setItem("SecondaryTransactionEndDate", dates[1] ?? new Date());
                         }
                       }}
                     />

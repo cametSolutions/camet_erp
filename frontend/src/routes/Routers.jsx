@@ -131,6 +131,8 @@ import AddItemStockTransferSec from '../pages/secUsers/AddItemStockTransferSec'
 import StockTransferDetailsSecondary from '../pages/secUsers/StockTransferDetailsSecondary'
 import EditStockTransferSecondary from '../pages/secUsers/EditStockTransferSecondary'
 import StockTransferDetailsPrimary from '../pages/primaryUsers/StockTransferDetailsPrimary'
+import ReceiptPrintOut from '../pages/secUsers/ReceiptPrintOut'
+import ReceiptPrintOutPrimary from '../pages/primaryUsers/ReceiptPrintOut'
 
 const Routers = () => {
   return (
@@ -198,7 +200,8 @@ const Routers = () => {
         <Route path='/pUsers/subcategory' element={<ProtectedPriRoute><AddSubCategory/></ProtectedPriRoute>}></Route> 
         <Route path='/pUsers/godown' element={<ProtectedPriRoute><AddGodown/></ProtectedPriRoute>}></Route> 
         <Route path='/pUsers/pricelevel' element={<ProtectedPriRoute><AddPriceLevel/></ProtectedPriRoute>}></Route> 
-        <Route path='/pUsers/stockTransferDetails/:id' element={<ProtectedPriRoute><StockTransferDetailsPrimary/></ProtectedPriRoute>}></Route> 
+        <Route path='/pUsers/stockTransferDetails/:id' element={<ProtectedPriRoute><StockTransferDetailsPrimary/></ProtectedPriRoute>}></Route>
+        <Route path='/pUsers/ReceiptPrint' element={<ProtectedPriRoute><ReceiptPrintOutPrimary/></ProtectedPriRoute>}></Route>  
 
 
 
@@ -272,6 +275,7 @@ const Routers = () => {
         <Route path='/sUsers/addItemStockTransfer' element={<ProtectedSecRoute><AddItemStockTransferSec/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/StockTransferDetails/:id' element={<ProtectedSecRoute><StockTransferDetailsSecondary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/editStockTransfer/:id' element={<ProtectedSecRoute><EditStockTransferSecondary/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/receiptPrintOut' element={<ProtectedSecRoute><ReceiptPrintOut/></ProtectedSecRoute>}></Route>
 
 
         {/* errorPage */}

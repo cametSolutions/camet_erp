@@ -104,13 +104,48 @@ function ReceiptDetails() {
         {/* headinh section  */}
 
         {/* payment details */}
-        <div className=" mt-3 bg-white p-4">
-          <p className="text-sm text-violet-500 font-semibold ">
-            ID #{data._id}
-          </p>
-          <p className="text-xs font-medium text-gray-500 mt-1 ">
-            {dayjs(data.createdAt).format("DD/MM/YYYY")}
-          </p>
+        <div className="md:grid md:grid-cols-2 gap-4   ">
+          <div className=" mt-3 bg-white p-4">
+            <p className="text-sm text-violet-500 font-semibold ">
+              ID #{data._id}
+            </p>
+            <p className="text-xs font-medium text-gray-500 mt-1 ">
+              {dayjs(data.createdAt).format("DD/MM/YYYY")}
+            </p>
+          </div>
+          <div className="w-full flex justify-center bottom-0 absolute md:flex md:justify-end p-4 md:relative  gap-14 md:text-lg text-violet-500 md:mr-14 ">
+          <div
+              onClick={() => handleCancel(data._id)}
+              disabled={data.isCancelled}
+              className={`flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110 cursor-pointer ${
+                data.isCancelled ? "opacity-50 pointer-events-none" : ""
+              }`}
+            >
+              <FcCancel className="text-violet-500" />
+              <p className="text-black font-bold text-sm">
+                {data.isCancelled ? "Cancelled" : "Cancel"}
+              </p>
+            </div>
+            <div
+              className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer
+            "
+              onClick={() => {
+                navigate("/pUsers/ReceiptPrint", {
+                  state: {
+                    receiptData: data,
+                  },
+                });
+              }}
+            >
+              <IoMdShareAlt />
+
+              <p className="text-black font-bold text-sm">Share</p>
+            </div>
+            <div className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer">
+              <MdTextsms className="text-green-500" />
+              <p className="text-black font-bold text-sm">Sms</p>
+            </div>
+          </div>
         </div>
         {/* payment details */}
 
@@ -176,7 +211,7 @@ function ReceiptDetails() {
         </div>
         {/* payment method */}
 
-        <div>
+        {/* <div>
           <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 flex justify-center p-4 gap-12 text-lg text-violet-500">
             <div
               onClick={() => handleCancel(data._id)}
@@ -199,7 +234,7 @@ function ReceiptDetails() {
               <p className="text-black font-bold text-sm">Sms</p>
             </div>
           </div>
-        </div>
+        </div> */}
       </div>
   );
 }
