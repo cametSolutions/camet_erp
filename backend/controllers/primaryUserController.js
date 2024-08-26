@@ -3269,6 +3269,7 @@ export const addProductSubDetails = async (req, res) => {
           address: subDetails.address,
           cmp_id: orgId,
           Primary_user_id: req.pUserId,
+          defaultGodown: false,
         };
 
         // Check if this is the first godown for the company
@@ -3280,6 +3281,7 @@ export const addProductSubDetails = async (req, res) => {
             address: "Default Address",
             cmp_id: orgId,
             Primary_user_id: req.pUserId,
+            defaultGodown: true,
           });
           const savedDefaultGodown = await defaultGodown.save();
 

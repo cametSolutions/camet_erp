@@ -54,7 +54,6 @@ const ProductSubDetailsForm = ({ tab }) => {
     const formData = {
       [tab]: value,
     };
-    console.log(formData);
     if (tab === "godown" && data.length === 0) {
       const result = await Swal.fire({
         title: "Adding First Godown",

@@ -24,7 +24,8 @@ const subcategorySchema = new mongoose.Schema({
 const godownScheme = new mongoose.Schema({
     godown: { type: String, required: true },
     cmp_id: { type: String, required: true },
-    Primary_user_id: { type: String, required: true }
+    Primary_user_id: { type: String, required: true },
+    defaultGodown: { type: Boolean, required: true, default: false }
 });
 
 const priceLevelSchema = new mongoose.Schema({
