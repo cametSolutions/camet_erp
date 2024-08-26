@@ -1,7 +1,6 @@
 /* eslint-disable react/no-unknown-property */
 /* eslint-disable react/jsx-no-target-blank */
 
-import Sidebar from "../../components/homePage/Sidebar";
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import api from "../../api/api";
@@ -14,7 +13,8 @@ import AddProductForm from "../../components/common/Forms/AddProductForm";
 
 function EditProduct() {
   const { id } = useParams();
-  const [productData, setProductData] = useState({})
+  const [productData, setProductData] = useState({});
+  const [isBatchEnabledInCompany, setIsBatchEnabledInCompany] = useState(false);
 
   const orgId = useSelector(
     (state) => state.setSelectedOrganization.selectedOrg._id
@@ -28,10 +28,7 @@ function EditProduct() {
           withCredentials: true,
         });
 
-       
-
-        setProductData(res.data.data)
-
+        setProductData(res.data.data);
       } catch (error) {
         console.log(error);
       }
@@ -39,15 +36,30 @@ function EditProduct() {
     getProductDetails();
   }, []);
 
+  useEffect(() => {
+    const fetchSingleOrganization = async () => {
+      try {
+        const res = await api.get(
+          `/api/pUsers/getSingleOrganization/${orgId}`,
+          {
+            withCredentials: true,
+          }
+        );
+
+        const { batchEnabled: batchEnabledFromApi } = res.data.organizationData;
+        console.log(batchEnabledFromApi);
+
+        setIsBatchEnabledInCompany(batchEnabledFromApi);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    fetchSingleOrganization();
+  }, [orgId]);
+
   const navigate = useNavigate();
 
-  console.log(productData);
-
   const submitHandler = async (formData) => {
-   
-
-  
-
     console.log(formData);
     try {
       const res = await api.post(`/api/pUsers/editProduct/${id}`, formData, {
@@ -67,18 +79,21 @@ function EditProduct() {
   };
 
   return (
-  
-     
-      <div className="flex-1 ">
-        <div className="bg-[#012A4A] sticky top-0 p-3 z-100 text-white text-lg font-bold flex items-center gap-3 z-20">
-          <Link to={"/pUsers/productList"}>
-            <IoIosArrowRoundBack className="block md:hidden text-3xl" />
-          </Link>
-          <p>Edit Product</p>
-        </div>
-        <AddProductForm orgId={orgId} submitData={submitHandler} productData={productData} userType="primaryUser" />
+    <div className="flex-1 ">
+      <div className="bg-[#012A4A] sticky top-0 p-3 z-100 text-white text-lg font-bold flex items-center gap-3 z-20">
+        <Link to={"/pUsers/productList"}>
+          <IoIosArrowRoundBack className="block md:hidden text-3xl" />
+        </Link>
+        <p>Edit Product</p>
       </div>
-  
+      <AddProductForm
+        orgId={orgId}
+        submitData={submitHandler}
+        productData={productData}
+        userType="primaryUser"
+        isBatchEnabledInCompany={isBatchEnabledInCompany}
+      />
+    </div>
   );
 }
 

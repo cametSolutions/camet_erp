@@ -35,7 +35,6 @@ function EditProductSecondary() {
     getProductDetails();
   }, [id]);
 
-  console.log(isBatchEnabledInCompany);
   
 
   const navigate = useNavigate();

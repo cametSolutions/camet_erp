@@ -8,21 +8,40 @@ import { toast } from "react-toastify";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import { useNavigate, Link } from "react-router-dom";
 import AddProductForm from "../../components/common/Forms/AddProductForm";
+import { useEffect, useState } from "react";
 
 function AddProduct() {
-
+  const [isBatchEnabledInCompany, setIsBatchEnabledInCompany] = useState(false);
 
   const orgId = useSelector(
     (state) => state.setSelectedOrganization.selectedOrg._id
   );
-  
+  useEffect(() => {
+    const fetchSingleOrganization = async () => {
+      try {
+        const res = await api.get(
+          `/api/pUsers/getSingleOrganization/${orgId}`,
+          {
+            withCredentials: true,
+          }
+        );
+
+        const { batchEnabled: batchEnabledFromApi } = res.data.organizationData;
+        console.log(batchEnabledFromApi);
+
+        setIsBatchEnabledInCompany(batchEnabledFromApi);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    fetchSingleOrganization();
+  }, [orgId]);
 
   const navigate = useNavigate();
 
   const submitHandler = async (formData) => {
-
     console.log(formData);
-   
+
     try {
       const res = await api.post("/api/pUsers/addProduct", formData, {
         headers: {
@@ -43,16 +62,20 @@ function AddProduct() {
   // const navigate=useNavigate()
 
   return (
-  
-      <div className="flex-1 ">
-        <div className="bg-[#012A4A] sticky top-0 p-3 z-100 text-white text-lg font-bold flex items-center gap-3 z-20">
-          <Link to={"/pUsers/productList"}>
-            <IoIosArrowRoundBack className="block md:hidden text-3xl" />
-          </Link>
-          <p>Add Product</p>
-        </div>
-     <AddProductForm orgId={orgId}  submitData={submitHandler} userType="primaryUser"/>
+    <div className="flex-1 ">
+      <div className="bg-[#012A4A] sticky top-0 p-3 z-100 text-white text-lg font-bold flex items-center gap-3 z-20">
+        <Link to={"/pUsers/productList"}>
+          <IoIosArrowRoundBack className="block md:hidden text-3xl" />
+        </Link>
+        <p>Add Product</p>
       </div>
+      <AddProductForm
+        orgId={orgId}
+        submitData={submitHandler}
+        userType="primaryUser"
+        isBatchEnabledInCompany={isBatchEnabledInCompany}
+      />
+    </div>
   );
 }
 

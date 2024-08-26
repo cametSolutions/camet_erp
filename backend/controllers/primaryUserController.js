@@ -3291,6 +3291,7 @@ export const addProductSubDetails = async (req, res) => {
               {
                 $set: {
                   "GodownList.$[].godown": "Default Godown",
+                  "GodownList.$[].defaultGodown": true,
                   "GodownList.$[].godown_id": savedDefaultGodown._id
                 }
               }
@@ -3504,7 +3505,7 @@ export const getAllSubDetails = async (req, res) => {
         Brand.find({ cmp_id, Primary_user_id }).select("_id brand"),
         Category.find({ cmp_id, Primary_user_id }).select("_id category"),
         Subcategory.find({ cmp_id, Primary_user_id }).select("_id subcategory"),
-        Godown.find({ cmp_id, Primary_user_id }).select("_id godown"),
+        Godown.find({ cmp_id, Primary_user_id }).select("_id godown  defaultGodown"),
         PriceLevel.find({ cmp_id, Primary_user_id }).select("_id pricelevel"),
       ]);
 
@@ -3515,7 +3516,7 @@ export const getAllSubDetails = async (req, res) => {
         _id: s._id,
         name: s.subcategory,
       })),
-      godowns: godowns.map((g) => ({ _id: g._id, name: g.godown })),
+      godowns: godowns.map((g) => ({ _id: g._id, name: g.godown,defaultGodown:g.defaultGodown })),
       priceLevels: priceLevels.map((p) => ({ _id: p._id, name: p.pricelevel })),
     };
 

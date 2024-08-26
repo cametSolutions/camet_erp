@@ -9,8 +9,15 @@ import { units } from "../../../../constants/units";
 import { MdPlaylistAdd } from "react-icons/md";
 import { toast } from "react-toastify";
 import api from "../../../api/api";
+import Swal from "sweetalert2";
 
-function AddProductForm({ orgId, submitData, productData = {}, userType,isBatchEnabledInCompany=false }) {
+function AddProductForm({
+  orgId,
+  submitData,
+  productData = {},
+  userType,
+  isBatchEnabledInCompany = false,
+}) {
   const [hsn, setHsn] = useState([]);
   const [tab, setTab] = useState("priceLevel");
   const [unit, setUnit] = useState("");
@@ -32,15 +39,16 @@ function AddProductForm({ orgId, submitData, productData = {}, userType,isBatchE
   const [selectedCategory, setSelectedCategory] = useState({});
   const [batchEnabled, setBatchEnabled] = useState(false);
 
-
   const [selectedSubcategory, setSelectedSubcategory] = useState({});
   const [rows, setRows] = useState([{ id: "", pricelevel: "", pricerate: "" }]);
 
+  const [locationRows, setLocationRows] = useState([
+    { godown_id: "", godown: "", balance_stock: "" },
+  ]);
+  const [locationData, setLocationData] = useState([]);
 
   useEffect(() => {
 
-    console.log("haiiiii");
-    
     if (Object.keys(productData).length > 0) {
       const {
         product_name,
@@ -86,19 +94,20 @@ function AddProductForm({ orgId, submitData, productData = {}, userType,isBatchE
         GodownList.length === 1 &&
         !GodownList[0]?.hasOwnProperty("godown_id")
       ) {
-        setLocationRows([{ godown: "", balance_stock: "" }]);
+        setLocationRows([{ godown: "", balance_stock: "", }]);
       } else {
+        
         setLocationRows(GodownList);
       }
 
       setHsn_code(hsn_id);
-      if(isBatchEnabledInCompany){
-        
+      if (isBatchEnabledInCompany) {
         setBatchEnabled(batchEnabled);
-
       }
     }
   }, [productData]);
+
+  
 
   // api call to fetch all sub details
 
@@ -131,8 +140,6 @@ function AddProductForm({ orgId, submitData, productData = {}, userType,isBatchE
     fetchAllSubDetails();
     fetchHsn();
   }, [orgId]);
-
-
 
   const fetchHsn = async () => {
     try {
@@ -184,10 +191,7 @@ function AddProductForm({ orgId, submitData, productData = {}, userType,isBatchE
 
   ///////////// location table ///////////////////
 
-  const [locationRows, setLocationRows] = useState([
-    { godown_id: "", godown: "", balance_stock: "" },
-  ]);
-  const [locationData, setLocationData] = useState([]);
+
 
   useEffect(() => {
     // Update levelNameData whenever rows change
@@ -210,6 +214,25 @@ function AddProductForm({ orgId, submitData, productData = {}, userType,isBatchE
   };
 
   const handleDeleteLocationRow = (id) => {
+
+    
+    
+    const isDefaultGodown = locationRows.find(
+      (d) => d.godown_id === id
+    )?.defaultGodown;
+
+    console.log(isDefaultGodown);
+    
+    if (isDefaultGodown) {
+      Swal.fire({
+        title: "Cannot Delete",
+        text: "Cannot delete default godown",
+        icon: "warning",
+        confirmButtonText: "OK",
+      });
+      return;
+    }
+
     if (locationRows.length > 1) {
       setLocationRows(locationRows.filter((row) => row.godown_id !== id));
     } else {
@@ -354,12 +377,10 @@ function AddProductForm({ orgId, submitData, productData = {}, userType,isBatchE
 
           return rest;
         });
-      }else{
-        return locations
+      } else {
+        return locations;
       }
     };
-
-
 
     // Create form data
     const formData = {
@@ -714,9 +735,8 @@ function AddProductForm({ orgId, submitData, productData = {}, userType,isBatchE
                 </div>
               </div>
 
-              {
-                isBatchEnabledInCompany && (
-                  <div className="flex items-center mr-4 w-full mt-6 px-4">
+              {isBatchEnabledInCompany && (
+                <div className="flex items-center mr-4 w-full mt-6 px-4">
                   <input
                     type="checkbox"
                     id="valueCheckbox"
@@ -730,10 +750,7 @@ function AddProductForm({ orgId, submitData, productData = {}, userType,isBatchE
                     Batch Enabled
                   </label>
                 </div>
-                )
-              }
-
-           
+              )}
             </div>
 
             {/* adding level name end **********************************************************************************/}
