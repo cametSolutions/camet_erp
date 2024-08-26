@@ -86,6 +86,19 @@ const ProductSubDetailsForm = ({ tab }) => {
   };
 
   const deleteSubDetails = async (id, type) => {
+    if (tab === "godown") {
+      const isDefaultGodown = data.find((d) => d._id === id)?.defaultGodown;
+
+      if (isDefaultGodown) {
+        const result = await Swal.fire({
+          title: "Cannot Delete",
+          text: "Cannot delete default godown",
+          icon: "warning",
+          confirmButtonText: "OK",
+        });
+        return;
+      }
+    }
     try {
       // Show a confirmation dialog
       const result = await Swal.fire({
@@ -126,6 +139,19 @@ const ProductSubDetailsForm = ({ tab }) => {
   };
 
   const handleEdit = async (id, value) => {
+    if (tab === "godown") {
+      const isDefaultGodown = data.find((d) => d._id === id)?.defaultGodown;
+
+      if (isDefaultGodown) {
+        const result = await Swal.fire({
+          title: "Cannot Edit",
+          text: "Cannot edit default godown",
+          icon: "warning",
+          confirmButtonText: "OK",
+        });
+        return;
+      }
+    }
     setValue(value);
     setEdit({
       id,
