@@ -69,6 +69,8 @@ function AddProductForm({
         batchEnabled,
       } = productData;
 
+      
+
       setProduct_name(product_name);
       setProduct_code(product_code);
       setUnit(unit);
@@ -105,7 +107,7 @@ function AddProductForm({
         setBatchEnabled(batchEnabled);
       }
     }
-  }, [productData]);
+  }, [productData,isBatchEnabledInCompany]);
 
   
 
@@ -129,7 +131,17 @@ function AddProductForm({
         setBrand(brands);
         setCategory(categories);
         setSubcategory(subcategories);
+
         setGodown(godowns);
+        const defaultGodown=godowns.find((g) => g.defaultGodown === true);
+        // console.log(defaultGodown);
+        if(defaultGodown){
+          setLocationRows([{ godown_id: defaultGodown?._id, godown: defaultGodown?.name, balance_stock: 0 }]);
+        }
+        
+
+        // console.log(godowns);
+        
         setPriceLevel(priceLevels);
       } catch (error) {
         console.log(error);
@@ -140,6 +152,9 @@ function AddProductForm({
     fetchAllSubDetails();
     fetchHsn();
   }, [orgId]);
+
+  // console.log(locationRows);
+  
 
   const fetchHsn = async () => {
     try {
@@ -199,9 +214,13 @@ function AddProductForm({
       locationRows.map((row) => ({
         godown: row.godown,
         balance_stock: row.balance_stock,
+
       }))
     );
   }, [locationRows]);
+
+  console.log(locationRows);
+  
 
   const handleAddLocationRow = () => {
     const lastRow = locationRows[locationRows.length - 1];
