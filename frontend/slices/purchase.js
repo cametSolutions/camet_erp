@@ -245,6 +245,7 @@ export const purchaseSlice = createSlice({
       // console.log(currentProduct);
 
       currentProduct?.GodownList?.unshift(action.payload?.GodownList[0]);
+      currentProduct.isExpanded=true;
       // in added item
       const currentItem = state?.items?.find(
         (el) => el._id === action.payload?._id

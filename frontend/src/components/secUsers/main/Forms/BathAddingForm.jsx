@@ -52,7 +52,7 @@ function BathAddingForm({ onSave }) {
     price: "",
     expDate: new Date(),
     manufDate: new Date(),
-    openingStock: "",
+    openingStock: "0",
     quantity: "",
     godown: "",
     godown_id: "",
@@ -61,7 +61,7 @@ function BathAddingForm({ onSave }) {
   const [godowns, setGodowns] = useState([]);
 
   const orgId = useSelector(
-    (state) => state.setSelectedOrganization.selectedOrg._id
+    (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
 
   const getSubDetails = async () => {
@@ -256,6 +256,7 @@ function BathAddingForm({ onSave }) {
                 <div className="flex flex-col">
                   <label className="leading-loose">Opening Stock</label>
                   <input
+                  disabled
                     type="number"
                     name="openingStock"
                     value={formData.openingStock}

@@ -1,76 +1,74 @@
+import { useState } from "react";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import BathAddingForm from "../../components/secUsers/main/Forms/BathAddingForm";
 import { useNavigate, useParams } from "react-router-dom";
-// import {} from "../../../slices/purchase"
 import { addBatch } from "../../../slices/purchase";
 import { useDispatch, useSelector } from "react-redux";
+import { HashLoader } from "react-spinners";
 
 const AddbatchInPurchase = () => {
   const { id } = useParams();
-  console.log(id);
-
   const product = useSelector((state) =>
     state.purchase.products.find((product) => product._id === id)
   );
 
-  console.log(product);
-
   const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+
   const onSave = (formData) => {
-    const {
-      batchName,
-      quantity,
-      price,
-      openingStock,
-      expDate,
-      manufDate,
-      godown,
-      godown_id,
-    } = formData;
+    setLoading(true);
 
-    const newBatch = {
-      balance_stock: Number(openingStock),
+    setTimeout(() => {
+      const {
+        batchName,
+        quantity,
+        price,
+        openingStock,
+        expDate,
+        manufDate,
+        godown,
+        godown_id,
+      } = formData;
 
-      batch: batchName,
-      mfgdt: manufDate.toISOString().split("T")[0],
-      expdt: expDate.toISOString().split("T")[0],
-      selectedPriceRate: Number(price),
-      count: Number(quantity),
-      individualTotal: Number(price * quantity),
-      added: true,
-    };
+      const newBatch = {
+        balance_stock: Number(openingStock),
+        batch: batchName,
+        mfgdt: manufDate.toISOString().split("T")[0],
+        expdt: expDate.toISOString().split("T")[0],
+        selectedPriceRate: Number(price),
+        count: Number(quantity),
+        individualTotal: Number(price * quantity),
+        added: true,
+      };
 
-    // Conditionally add godown and godown_id if they are present
-    if (godown) newBatch.godown = godown;
-    if (godown_id) newBatch.godown_id = godown_id;
+      if (godown) newBatch.godown = godown;
+      if (godown_id) newBatch.godown_id = godown_id;
 
-    ////add tax if igst is present in product
-    if (product?.igst !== "" || product?.igst !== undefined) {
-      const totalAmount = Number(price * quantity);
-      const taxAmount = (parseFloat(product?.igst) / 100) * totalAmount;
-      const totalAmountWithTax = totalAmount + taxAmount;
+      if (product?.igst !== "" || product?.igst !== undefined) {
+        const totalAmount = Number(price * quantity);
+        const taxAmount = (parseFloat(product?.igst) / 100) * totalAmount;
+        const totalAmountWithTax = totalAmount + taxAmount;
+        newBatch.individualTotal = totalAmountWithTax;
+      }
 
-      // add it in the newBatch
-      newBatch.individualTotal = totalAmountWithTax;
-    }
+      const data = {
+        _id: id,
+        GodownList: [newBatch],
+      };
 
-    const data = {
-      _id: id,
-      GodownList: [newBatch],
-    };
-    formData.price = Number(formData.price);
-    formData.openingStock = Number(formData.openingStock);
-    formData.quantity = Number(formData.quantity);
+      formData.price = Number(formData.price);
+      formData.openingStock = Number(formData.openingStock);
+      formData.quantity = Number(formData.quantity);
 
-    console.log(data);
-    dispatch(addBatch(data));
-    navigate(-1);
+      dispatch(addBatch(data));
+      setLoading(false);
+      navigate(-1);
+    }, 2000);
   };
 
-  const navigate = useNavigate();
-
   return (
-    <div>
+    <div className="relative">
       <div className="bg-[#201450] sticky top-0 p-3 z-100 text-white text-lg font-bold flex items-center gap-3 z-20">
         <IoIosArrowRoundBack
           onClick={() => {
@@ -80,6 +78,14 @@ const AddbatchInPurchase = () => {
         />
         <p>Add Batch</p>
       </div>
+
+      {loading && (
+        <div className="fixed inset-0 flex justify-center items-center  bg-opacity-50 z-50">
+          <figure className="w-[60px] h-[60px] rounded-full border-2 border-solid border-primaryColor flex items-center justify-center">
+            <HashLoader color="#6056ec" size={30} speedMultiplier={1.6} />
+          </figure>
+        </div>
+      )}
 
       <BathAddingForm onSave={onSave} />
     </div>

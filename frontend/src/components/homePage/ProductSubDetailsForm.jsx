@@ -55,6 +55,19 @@ const ProductSubDetailsForm = ({ tab }) => {
       [tab]: value,
     };
     console.log(formData);
+    if (tab === "godown" && data.length === 0) {
+      const result = await Swal.fire({
+        title: "Adding First Godown",
+        text: "Adding your first godown will automatically create a Default godown. This default will be included in your GodownList and applied across all products.",
+        icon: "info",
+        confirmButtonText: "Proceed",
+        showCancelButton: true,
+      });
+
+      if (result.isDismissed) {
+        return; // Exit if the user cancels the action
+      }
+    }
 
     try {
       const res = await api.post(
@@ -143,7 +156,6 @@ const ProductSubDetailsForm = ({ tab }) => {
       toast.error(error.response?.data?.message || "An error occurred");
     }
   };
-
 
   const lastPostIndex = currentPage * postPerPage;
   const firstPostIndex = lastPostIndex - postPerPage;

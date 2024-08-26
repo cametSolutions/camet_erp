@@ -3257,7 +3257,7 @@ export const addProductSubDetails = async (req, res) => {
         Model = Subcategory;
         dataToSave = {
           subcategory: subDetails[key],
-          categoryId: subDetails.categoryId, // Make sure to send categoryId from client
+          categoryId: subDetails.categoryId,
           cmp_id: orgId,
           Primary_user_id: req.pUserId,
         };
@@ -3266,10 +3266,37 @@ export const addProductSubDetails = async (req, res) => {
         Model = Godown;
         dataToSave = {
           godown: subDetails[key],
-          address: subDetails.address, // Make sure to send address from client
+          address: subDetails.address,
           cmp_id: orgId,
           Primary_user_id: req.pUserId,
         };
+
+        // Check if this is the first godown for the company
+        const existingGodowns = await Godown.find({ cmp_id: orgId });
+        if (existingGodowns.length === 0) {
+          // Create default godown
+          const defaultGodown = new Godown({
+            godown: "Default Godown",
+            address: "Default Address",
+            cmp_id: orgId,
+            Primary_user_id: req.pUserId,
+          });
+          const savedDefaultGodown = await defaultGodown.save();
+
+            // Update all products with the default godown
+           const update= await productModel.updateMany(
+              { cmp_id: orgId },
+              {
+                $set: {
+                  "GodownList.$[].godown": "Default Godown",
+                  "GodownList.$[].godown_id": savedDefaultGodown._id
+                }
+              }
+            );
+
+            console.log("update",update);
+            
+        }
         break;
       case "pricelevel":
         Model = PriceLevel;
