@@ -242,10 +242,15 @@ export const purchaseSlice = createSlice({
         (el) => el?._id === action.payload?._id
       );
 
-      // console.log(currentProduct);
+      console.log(action.payload);
+      
+
+      console.log(currentProduct);
 
       currentProduct?.GodownList?.unshift(action.payload?.GodownList[0]);
       currentProduct.isExpanded=true;
+      currentProduct.added=true;
+
       // in added item
       const currentItem = state?.items?.find(
         (el) => el._id === action.payload?._id
@@ -254,7 +259,10 @@ export const purchaseSlice = createSlice({
       console.log(currentItem);
 
       if (currentItem) {
-        currentItem?.GodownList?.unshift(action?.payload);
+        currentItem?.GodownList?.unshift(action?.payload?.GodownList[0]);
+        currentItem.added=true;
+      currentProduct.isExpanded=true;
+
       } else {
         state?.items?.push(currentProduct);
       }

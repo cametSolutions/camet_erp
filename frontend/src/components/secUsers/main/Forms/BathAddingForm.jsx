@@ -42,7 +42,10 @@ const schema = z.object({
       (val) => !isNaN(parseInt(val)) && parseInt(val) > 0,
       "Quantity must be a positive number"
     ),
-  godown: z.string()
+    godown: z
+    .string()
+    .refine((val) => val !== "", "Godown selection is required")
+    .optional(),
   // godown_id can be added here if you need to validate it
 });
 
@@ -106,14 +109,20 @@ function BathAddingForm({ onSave }) {
       setFormData((prev) => ({
         ...prev,
         godown: selectedGodown?.godown,
-        godown_id: selectedGodown?._id || "", // Avoid errors by defaulting to empty string
+        godown_id: selectedGodown?._id || "",
       }));
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
 
-    // Only validate if the field exists in the schema
-    if (schema.shape.hasOwnProperty(name)) {
+    // Validate godown only if there are godowns available
+    if (name === "godown" && godowns.length > 0) {
+      const errorMessage = validateField(name, value);
+      setErrors((prev) => ({
+        ...prev,
+        [name]: errorMessage,
+      }));
+    } else if (schema.shape.hasOwnProperty(name)) {
       const errorMessage = validateField(name, value);
       setErrors((prev) => ({
         ...prev,
@@ -135,17 +144,30 @@ function BathAddingForm({ onSave }) {
 
   const validate = () => {
     const newErrors = {};
+  
+    // Conditionally add validation for the 'godown' field if godowns.length > 0
+    if (godowns.length > 0) {
+      const errorMessage = validateField("godown", formData.godown);
+      if (errorMessage) {
+        newErrors["godown"] = errorMessage;
+      }
+    }
+  
+    // Validate other fields
     Object.keys(formData).forEach((key) => {
-      if (schema.shape.hasOwnProperty(key)) {
+      // Skip 'godown' since it's already handled above
+      if (key !== "godown" && schema.shape.hasOwnProperty(key)) {
         const errorMessage = validateField(key, formData[key]);
         if (errorMessage) {
           newErrors[key] = errorMessage;
         }
       }
     });
+  
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
+  
 
   const handleSubmit = (e) => {
     e.preventDefault();

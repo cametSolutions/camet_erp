@@ -31,6 +31,8 @@ const AddbatchInPurchase = () => {
         godown_id,
       } = formData;
 
+      
+
       const newBatch = {
         balance_stock: Number(openingStock),
         batch: batchName,
@@ -39,11 +41,14 @@ const AddbatchInPurchase = () => {
         selectedPriceRate: Number(price),
         count: Number(quantity),
         individualTotal: Number(price * quantity),
+        discount:0,
+        discountPercentage:"",
         added: true,
       };
 
       if (godown) newBatch.godown = godown;
       if (godown_id) newBatch.godown_id = godown_id;
+      // if()
 
       if (product?.igst !== "" || product?.igst !== undefined) {
         const totalAmount = Number(price * quantity);
@@ -64,7 +69,7 @@ const AddbatchInPurchase = () => {
       dispatch(addBatch(data));
       setLoading(false);
       navigate(-1);
-    }, 2000);
+    }, 1000);
   };
 
   return (

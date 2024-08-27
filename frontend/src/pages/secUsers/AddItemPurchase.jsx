@@ -322,6 +322,8 @@ function AddItemPurchase() {
             (priceLevelItem) => priceLevelItem.pricelevel === pricelevel
           )?.pricerate || 0;
 
+          
+
         const reduxItem = itemsFromRedux.find((p) => p._id === item._id);
         // const reduxRate = reduxItem?.selectedPriceRate || null;
 
@@ -347,6 +349,9 @@ function AddItemPurchase() {
       setItem(updatedItems);
     }
   };
+
+
+  
 
   useEffect(() => {
     addSelectedRate(selectedPriceLevel);
@@ -622,6 +627,7 @@ function AddItemPurchase() {
 
   const handleTotalChangeWithPriceLevel = (pricelevel) => {
     const updatedItems = filteredItems.map((item) => {
+      
       if (item.added === true) {
         const { individualTotals, total } = calculateTotal(
           item,
@@ -634,6 +640,10 @@ function AddItemPurchase() {
           item?.Priceleveles.find(
             (priceLevelItem) => priceLevelItem.pricelevel === pricelevel
           )?.pricerate || 0;
+
+
+          console.log("newPriceRate", newPriceRate);
+          
 
         // if (item?.hasGodownOrBatch) {
         const updatedGodownList = item?.GodownList.map((godown, idx) => {
@@ -664,9 +674,11 @@ function AddItemPurchase() {
   ///////////////////////////handlePriceLevelChange///////////////////////////////////
 
   const handlePriceLevelChange = (e) => {
+    
     const selectedValue = e.target.value;
     setSelectedPriceLevel(selectedValue);
     dispatch(setPriceLevel(selectedValue));
+
     handleTotalChangeWithPriceLevel(selectedValue);
   };
 

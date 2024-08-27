@@ -48,7 +48,6 @@ function AddProductForm({
   const [locationData, setLocationData] = useState([]);
 
   useEffect(() => {
-
     if (Object.keys(productData).length > 0) {
       const {
         product_name,
@@ -68,8 +67,6 @@ function AddProductForm({
         GodownList,
         batchEnabled,
       } = productData;
-
-      
 
       setProduct_name(product_name);
       setProduct_code(product_code);
@@ -96,9 +93,8 @@ function AddProductForm({
         GodownList.length === 1 &&
         !GodownList[0]?.hasOwnProperty("godown_id")
       ) {
-        setLocationRows([{ godown: "", balance_stock: "", }]);
+        setLocationRows([{ godown: "", balance_stock: "" }]);
       } else {
-        
         setLocationRows(GodownList);
       }
 
@@ -107,9 +103,7 @@ function AddProductForm({
         setBatchEnabled(batchEnabled);
       }
     }
-  }, [productData,isBatchEnabledInCompany]);
-
-  
+  }, [productData, isBatchEnabledInCompany]);
 
   // api call to fetch all sub details
 
@@ -133,15 +127,21 @@ function AddProductForm({
         setSubcategory(subcategories);
 
         setGodown(godowns);
-        const defaultGodown=godowns.find((g) => g.defaultGodown === true);
+        const defaultGodown = godowns.find((g) => g.defaultGodown === true);
         // console.log(defaultGodown);
-        if(defaultGodown){
-          setLocationRows([{ godown_id: defaultGodown?._id, godown: defaultGodown?.name, balance_stock: 0 }]);
+        if (defaultGodown) {
+          setLocationRows([
+            {
+              godown_id: defaultGodown?._id,
+              godown: defaultGodown?.name,
+              balance_stock: 0,
+              defaultGodown: true,
+            },
+          ]);
         }
-        
 
         // console.log(godowns);
-        
+
         setPriceLevel(priceLevels);
       } catch (error) {
         console.log(error);
@@ -154,7 +154,6 @@ function AddProductForm({
   }, [orgId]);
 
   // console.log(locationRows);
-  
 
   const fetchHsn = async () => {
     try {
@@ -206,25 +205,20 @@ function AddProductForm({
 
   ///////////// location table ///////////////////
 
-
-
   useEffect(() => {
     // Update levelNameData whenever rows change
     setLocationData(
       locationRows.map((row) => ({
         godown: row.godown,
         balance_stock: row.balance_stock,
-
       }))
     );
   }, [locationRows]);
 
-  console.log(locationRows);
-  
 
   const handleAddLocationRow = () => {
     const lastRow = locationRows[locationRows.length - 1];
-    if (!lastRow.godown || !lastRow.balance_stock) {
+    if (!lastRow.godown || lastRow.balance_stock<0) {
       toast.error("Add Location  and Stock");
       return;
     }
@@ -234,14 +228,12 @@ function AddProductForm({
 
   const handleDeleteLocationRow = (id) => {
 
-    
-    
     const isDefaultGodown = locationRows.find(
       (d) => d.godown_id === id
     )?.defaultGodown;
 
     console.log(isDefaultGodown);
-    
+
     if (isDefaultGodown) {
       Swal.fire({
         title: "Cannot Delete",
@@ -260,6 +252,8 @@ function AddProductForm({
   };
 
   const handleLocationChange = (index, value) => {
+
+  
     const correspondingGodown = godown?.find((g) => g?._id === value)?.name;
     const newRows = [...locationRows];
     newRows[index].godown = correspondingGodown || "";
@@ -275,8 +269,8 @@ function AddProductForm({
 
   const submitHandler = async () => {
     // Check required fields
-    if (!product_name.trim() || !unit || hsn_code.length === 0) {
-      toast.error("Name, Unit, and HSN must be filled");
+    if (!product_name.trim() || !unit || hsn_code.length === 0 || !balance_stock) {
+      toast.error("Name, Unit, Balance stock and HSN must be filled");
       return;
     }
 
@@ -885,6 +879,7 @@ function AddProductForm({
                       <tr key={row?.id} className="border-b bg-[#EFF6FF] ">
                         <td className="px-4 py-2">
                           <select
+                          disabled={row.defaultGodown}
                             value={row?.godown_id}
                             onChange={(e) =>
                               handleLocationChange(index, e?.target?.value)
@@ -898,7 +893,7 @@ function AddProductForm({
                             {/* Options for dropdown */}
                             <option value="">Select Location</option>
                             {godown?.map((el, index) => (
-                              <option key={index} value={el?._id}>
+                              <option disabled={el?.defaultGodown} key={index} value={el?._id}>
                                 {el?.name}
                               </option>
                             ))}
