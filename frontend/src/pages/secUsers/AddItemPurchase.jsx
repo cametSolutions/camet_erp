@@ -283,6 +283,8 @@ function AddItemPurchase() {
       // Check if the item matches the brand filter
       const brandMatch = !brand || item.brand === brand;
 
+      
+
       // Check if the item matches the category filter
       const categoryMatch = !category || item.category === category;
 

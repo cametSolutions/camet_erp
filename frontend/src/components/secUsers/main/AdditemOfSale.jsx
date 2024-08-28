@@ -9,7 +9,8 @@ import SearchBar from "../../common/SearchBar";
 import { MdOutlineQrCodeScanner } from "react-icons/md";
 import { HashLoader } from "react-spinners";
 import { VariableSizeList as List } from "react-window";
-import { IoAddCircleSharp } from "react-icons/io5";
+import { IoAddCircleSharp, IoTrailSign } from "react-icons/io5";
+import { useMemo } from "react";
 
 /* eslint-disable react/prop-types */
 function AdditemOfSale({
@@ -50,10 +51,23 @@ function AdditemOfSale({
 }) {
   const navigate = useNavigate();
 
-  // console.log(filteredItems);
+  
+
+  // Filter items with balace stock zero for purchase only
+ 
+const displayedItems = useMemo(() => {
+  if (tab === "Purchase") {
+    return filteredItems.map(item => ({
+      ...item,
+      GodownList: item.GodownList.filter(godown => godown.balance_stock !== 0)
+    }));
+  }
+  return filteredItems;
+}, [filteredItems, tab]);
+
 
   const Row = ({ index, style }) => {
-    const el = filteredItems[index];
+    const el = displayedItems[index];
     // const isExpanded = expandedProductId === el?._id;
     const adjustedStyle = {
       ...style,
@@ -84,7 +98,7 @@ function AdditemOfSale({
                   el?.hasGodownOrBatch ? "mt-1" : "mt-4"
                 } max-w-1/2`}
               >
-                {el.hasGodownOrBatch
+                {el?.hasGodownOrBatch
                   ? el?.product_name.length < 30
                     ? el?.product_name
                     : el?.product_name.slice(0, 50) + "..."
