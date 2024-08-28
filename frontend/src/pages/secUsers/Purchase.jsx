@@ -335,7 +335,7 @@ function Purchase() {
       purchaseNumber,
     };
 
-    // console.log(formData);
+    console.log(formData);
 
     try {
       const res = await api.post("/api/sUsers/createPurchase", formData, {

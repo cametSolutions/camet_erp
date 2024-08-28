@@ -13,9 +13,11 @@ import {login,getSecUserData,fetchOutstandingTotal,
     getSalesDetails,saveSalesNumber,fetchAdditionalDetails,
     fetchConfigurationNumber,findSecondaryUserGodowns,findPrimaryUserGodownsSelf,
     godownwiseProducts,godownwiseProductsSelf,fetchAdditionalCharges,
-    findGodownsNames,createPurchase,getPurchaseDetails,editSale,getAllSubDetails,
+    findGodownsNames,getPurchaseDetails,editSale,getAllSubDetails,
     fetchGodowns,createStockTransfer,editStockTransfer,cancelSalesOrder,cancelSale,
     cancelStockTransfer} from "../controllers/secondaryUserController.js"
+ 
+import { createPurchase } from '../controllers/purchaseController.js';
 
     import { getStockTransferDetails,addProduct ,editProduct} from '../controllers/commonController.js';
 import { authSecondary } from '../middlewares/authSecUsers.js';
@@ -86,5 +88,10 @@ router.post("/cancelSalesOrder/:id",authSecondary,secondaryIsBlocked,cancelSales
 router.post("/cancelSales/:id",authSecondary,secondaryIsBlocked,cancelSale)
 router.post("/cancelstockTransfer/:id",authSecondary,secondaryIsBlocked,cancelStockTransfer)
 router.post("/cancelstockTransfer/:id",authSecondary,secondaryIsBlocked,cancelStockTransfer)
+
+
+///purchase routes
+router.post('/createPurchase',authSecondary,secondaryIsBlocked,createPurchase)
+
 
 export default router

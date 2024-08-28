@@ -753,6 +753,8 @@ function AddItemPurchase() {
     });
   }, []);
 
+  
+
   return (
     <AdditemOfSale
       tab={"Purchase"}

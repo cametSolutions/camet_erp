@@ -237,36 +237,63 @@ export const purchaseSlice = createSlice({
       state.date = action.payload;
     },
     addBatch: (state, action) => {
-      ////in saved product
-      const currentProduct = state.products.find(
-        (el) => el?._id === action.payload?._id
-      );
+      const { _id, GodownList } = action.payload;
+    
+      // Find the current product and current item
+      const currentProduct = state.products.find((el) => el?._id === _id);
+      const currentItem = state.items.find((el) => el._id === _id);
+    
+      if (currentProduct) {
+        // Check if the batch already exists in the current product's GodownList
+        const existingBatchIndex = currentProduct.GodownList.findIndex(
+          (batch) => batch.batch === GodownList[0]?.batch
+        );
+    
+        if (existingBatchIndex !== -1) {
+          // Overwrite the existing batch
+          currentProduct.GodownList[existingBatchIndex] = GodownList[0];
+        } else {
+          // Add the new batch if it doesn't already exist
+          currentProduct.GodownList.unshift(GodownList[0]);
+        }
+    
+        currentProduct.isExpanded = true;
+        currentProduct.added = true;
+        currentProduct.isExpanded = true;
 
-      console.log(action.payload);
-      
-
-      console.log(currentProduct);
-
-      currentProduct?.GodownList?.unshift(action.payload?.GodownList[0]);
-      currentProduct.isExpanded=true;
-      currentProduct.added=true;
-
-      // in added item
-      const currentItem = state?.items?.find(
-        (el) => el._id === action.payload?._id
-      );
-
-      console.log(currentItem);
-
+        console.log(currentProduct);
+        
+        currentProduct.count = currentProduct.GodownList.reduce((acc,curr)=>{
+          return acc + (curr.count || 0)
+        },0);
+      }
+    
       if (currentItem) {
-        currentItem?.GodownList?.unshift(action?.payload?.GodownList[0]);
-        currentItem.added=true;
-      currentProduct.isExpanded=true;
+        // Check if the batch already exists in the current item's GodownList
+        const existingBatchIndex = currentItem.GodownList.findIndex(
+          (batch) => batch.batch === GodownList[0]?.batch
+        );
+    
+        if (existingBatchIndex !== -1) {
+          // Overwrite the existing batch
+          currentItem.GodownList[existingBatchIndex] = GodownList[0];
+        } else {
+          // Add the new batch if it doesn't already exist
+          currentItem.GodownList.unshift(GodownList[0]);
+        }
+    
+        currentItem.added = true;
+        currentItem.isExpanded = true;
+        currentItem.count = currentItem.GodownList.reduce((acc,curr)=>{
+          return acc + (curr.count || 0)
+        },0);
 
       } else {
-        state?.items?.push(currentProduct);
+        // If the current item doesn't exist, push the product to the items list
+        state.items.push(currentProduct);
       }
-    },
+    }
+    
   },
 });
 

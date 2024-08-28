@@ -11,14 +11,18 @@ const AddbatchInPurchase = () => {
   const product = useSelector((state) =>
     state.purchase.products.find((product) => product._id === id)
   );
+  const item = useSelector((state) =>
+    state.purchase.items.find((product) => product._id === id)
+  );
+
+  console.log(item);
+  
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
 
   const onSave = (formData) => {
-    setLoading(true);
-
     setTimeout(() => {
       const {
         batchName,
@@ -30,9 +34,21 @@ const AddbatchInPurchase = () => {
         godown,
         godown_id,
       } = formData;
-
-      
-
+  
+      // Check if the batch already exists
+      if (item?.GodownList?.some((e) => e.batch === batchName)) {
+        const userConfirmed = window.confirm(
+          "Batch already added. It will be overwritten. Do you want to proceed?"
+        );
+  
+        // If the user cancels, exit the function
+        if (!userConfirmed) {
+          return;
+        }
+      }
+  
+      setLoading(true);
+  
       const newBatch = {
         balance_stock: Number(openingStock),
         batch: batchName,
@@ -41,36 +57,38 @@ const AddbatchInPurchase = () => {
         selectedPriceRate: Number(price),
         count: Number(quantity),
         individualTotal: Number(price * quantity),
-        discount:0,
-        discountPercentage:"",
+        discount: 0,
+        discountPercentage: "",
         added: true,
+        newBatch: true,
       };
-
+  
       if (godown) newBatch.godown = godown;
       if (godown_id) newBatch.godown_id = godown_id;
-      // if()
-
-      if (product?.igst !== "" || product?.igst !== undefined) {
+  
+      // Apply taxes if applicable
+      if (product?.igst !== "" && product?.igst !== undefined) {
         const totalAmount = Number(price * quantity);
         const taxAmount = (parseFloat(product?.igst) / 100) * totalAmount;
         const totalAmountWithTax = totalAmount + taxAmount;
         newBatch.individualTotal = totalAmountWithTax;
       }
-
+  
       const data = {
         _id: id,
         GodownList: [newBatch],
       };
-
+  
       formData.price = Number(formData.price);
       formData.openingStock = Number(formData.openingStock);
       formData.quantity = Number(formData.quantity);
-
+  
       dispatch(addBatch(data));
       setLoading(false);
       navigate(-1);
     }, 1000);
   };
+  
 
   return (
     <div className="relative">
