@@ -7,24 +7,24 @@ function SalesThreeInchPdf({
   data,
   org,
   subTotal,
-  bank,
   additinalCharge,
   inWords,
   userType,
 }) {
 
   //used to fetch organization data form redux
-  let selectedOrganization;
-  if (userType == "primaryUser") {
-    selectedOrganization = useSelector(
-      (state) => state.setSelectedOrganization.selectedOrg
-    );
-  } else if (userType == "secondaryUser") {
-    selectedOrganization = useSelector(
-      (state) => state.secSelectedOrganization.selectedOrg
-    );
-  }
-  console.log(selectedOrganization);
+  const primarySelectedOrg = useSelector(
+    (state) => state.setSelectedOrganization.selectedOrg
+  );
+  const secondarySelectedOrg = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg
+  );
+
+  const selectedOrganization = 
+    userType === "primaryUser" ? primarySelectedOrg : secondarySelectedOrg;
+
+
+    
 
   const calculateTotalTax = () => {
     const individualTax = data?.items?.map(

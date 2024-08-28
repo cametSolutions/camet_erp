@@ -3,9 +3,7 @@ import React, { useEffect, useState } from "react";
 import QRCode from "react-qr-code";
 import PdfHeader from "../pdfComponents/PdfHeader";
 import PdfFooter from "../pdfComponents/PdfFooter";
-import useFetch from "../../customHook/useFetch";
 import { useSelector } from "react-redux";
-import { toast } from "react-toastify";
 
 function SalesPdf({
   data,
@@ -17,54 +15,16 @@ function SalesPdf({
   additinalCharge,
   userType,
 }) {
-  let selectedOrganization;
-  if (userType == "primaryUser") {
-    selectedOrganization = useSelector(
-      (state) => state.setSelectedOrganization.selectedOrg
-    );
-  } else if (userType == "secondaryUser") {
-    selectedOrganization = useSelector(
-      (state) => state.secSelectedOrganization.selectedOrg
-    );
-  }
+  const primarySelectedOrg = useSelector(
+    (state) => state.setSelectedOrganization.selectedOrg
+  );
+  const secondarySelectedOrg = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg
+  );
 
-  console.log(selectedOrganization);
-  //   const [organizationData,setOrganizationData] = useState({});
-
-  //   //concept used to get organization data from redux
-
-  // const reduxType =
-  // userType === "secondary"
-  //   ? "secSelectedOrganization"
-  //   : "selectedOrganization";
-  // console.log(reduxType);
-  // const cmp_id = useSelector((state) => state.selectedOrganization.secSelectedOrg?._id);
-  // console.log(cmp_id);
-
-  //   // custom hook used to fetch data
-  //    const { data: organization,loading:loading,error:error } = useFetch(`/api/pUsers/getSingleOrganization/${cmp_id}`);
-  //   useEffect(() => {
-  //     if ( organization) {
-  //       setOrganizationData( organization);
-  //     }
-  //   },[ organization])
-
-  //   useEffect(() => {
-  //     if (error) {
-  //       if (error.response) {
-  //         toast.error(error.response.data.message);
-  //       } else {
-  //         toast.error('Something went wrong!');
-  //       }
-  //     }
-  //   }, [error]);
-  //   console.log(organizationData);
-
-  //   if(loading){
-  //     return <div>loading......</div>
-  //}
-
-  // console.log(organizationData);
+  const selectedOrganization = 
+    userType === "primaryUser" ? primarySelectedOrg : secondarySelectedOrg;
+ 
   const calculateDiscountAmntOFNoBAtch = (el) => {
     if (!el || !el.GodownList || !el.GodownList[0]) {
       console.error("Invalid input data");
@@ -109,9 +69,7 @@ function SalesPdf({
     }, 0);
   };
 
-  console.log(calculateTotalQunatity());
 
-  console.log(calculateTotalTax());
 
   const party = data?.party;
   const despatchDetails = data?.despatchDetails;
@@ -155,7 +113,6 @@ function SalesPdf({
     }
   }
 
-  console.log(address);
 
   return (
     <div>
