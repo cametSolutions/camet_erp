@@ -55,16 +55,18 @@ function AdditemOfSale({
 
   // Filter items with balace stock zero for purchase only
  
-const displayedItems = useMemo(() => {
-  if (tab === "Purchase") {
-    return filteredItems.map(item => ({
-      ...item,
-      GodownList: item.GodownList.filter(godown => godown.balance_stock !== 0)
-    }));
-  }
-  return filteredItems;
-}, [filteredItems, tab]);
-
+  const displayedItems = useMemo(() => {
+    if (tab === "Purchase") {
+      return filteredItems.map(item => ({
+        ...item,
+        GodownList: item.GodownList.filter(godown => 
+          godown.balance_stock !== 0 || godown.newBatch === true
+        )
+      }));
+    }
+    return filteredItems;
+  }, [filteredItems, tab]);
+  
 
   const Row = ({ index, style }) => {
     const el = displayedItems[index];

@@ -57,8 +57,6 @@ const AddbatchInPurchase = () => {
         selectedPriceRate: Number(price),
         count: Number(quantity),
         individualTotal: Number(price * quantity),
-        discount: 0,
-        discountPercentage: "",
         added: true,
         newBatch: true,
       };

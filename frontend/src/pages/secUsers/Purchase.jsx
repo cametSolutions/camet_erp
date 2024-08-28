@@ -28,7 +28,6 @@ import DespatchDetails from "../../components/secUsers/DespatchDetails";
 import AddItemTile from "../../components/secUsers/main/AddItemTile";
 
 function Purchase() {
-
   const [additional, setAdditional] = useState(false);
   const [godownname, setGodownname] = useState("");
 
@@ -95,47 +94,48 @@ function Purchase() {
     };
 
     fetchSingleOrganization();
+    fetchConfigurationNumber();
   }, [orgId]);
 
-  useEffect(() => {
-    const fetchConfigurationNumber = async () => {
-      try {
-        const res = await api.get(
-          `/api/sUsers/fetchConfigurationNumber/${orgId}/purchase`,
+  const fetchConfigurationNumber = async () => {
+    try {
+      const res = await api.get(
+        `/api/sUsers/fetchConfigurationNumber/${orgId}/purchase`,
 
-          {
-            withCredentials: true,
-          }
-        );
-
-        if (res.data.message === "default") {
-          const { configurationNumber } = res.data;
-          setPurchaseNumber(configurationNumber);
-          return;
+        {
+          withCredentials: true,
         }
+      );
 
-        const { configDetails, configurationNumber } = res.data;
-
-        if (configDetails) {
-          const { widthOfNumericalPart, prefixDetails, suffixDetails } =
-            configDetails;
-          const newOrderNumber = configurationNumber.toString();
-
-          const padedNumber = newOrderNumber.padStart(widthOfNumericalPart, 0);
-          const finalOrderNumber = prefixDetails + padedNumber + suffixDetails;
-          setPurchaseNumber(finalOrderNumber);
-   
-        } else {
-          setPurchaseNumber(purchaseNumber);
-   
-        }
-      } catch (error) {
-        console.log(error);
+      if (res.data.message === "default") {
+        const { configurationNumber } = res.data;
+        setPurchaseNumber(configurationNumber);
+        return;
       }
-    };
 
-    fetchConfigurationNumber();
-  }, []);
+      const { configDetails, configurationNumber } = res.data;
+
+      if (configDetails) {
+        const { widthOfNumericalPart, prefixDetails, suffixDetails } =
+          configDetails;
+        const newPurchaseNumber = configurationNumber.toString();
+        // console.log(newOrderNumber);
+        // console.log(widthOfNumericalPart);
+        // console.log(prefixDetails);
+        // console.log(suffixDetails);
+
+        const padedNumber = newPurchaseNumber.padStart(widthOfNumericalPart, 0);
+        const finalOrderNumber = [prefixDetails, padedNumber, suffixDetails]
+          .filter(Boolean)
+          .join("-");
+        setPurchaseNumber(finalOrderNumber);
+      } else {
+        setPurchaseNumber(purchaseNumber);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   useEffect(() => {
     const fetchGodownname = async () => {
@@ -355,9 +355,6 @@ function Purchase() {
     }
   };
 
-
-
-
   return (
     <div className="flex relative ">
       <div className="flex-1 bg-slate-100    ">
@@ -421,7 +418,7 @@ function Purchase() {
           urlToAddItem="/sUsers/addItemPurchase"
           urlToEditItem="/sUsers/editItemPurchase"
         />
-{/* 
+        {/* 
         {items.length == 0 && (
           <div className="bg-white p-4 pb-6  drop-shadow-lg mt-2 md:mt-3">
             <div className="flex gap-2 ">
@@ -840,11 +837,7 @@ function Purchase() {
             </button>
           </div>
         </div>
-
-      
       </div>
-
-    
     </div>
   );
 }
