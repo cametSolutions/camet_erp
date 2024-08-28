@@ -15,7 +15,6 @@ const AddbatchInPurchase = () => {
     state.purchase.items.find((product) => product._id === id)
   );
 
-  console.log(item);
   
 
   const dispatch = useDispatch();
@@ -36,7 +35,7 @@ const AddbatchInPurchase = () => {
       } = formData;
   
       // Check if the batch already exists
-      if (item?.GodownList?.some((e) => e.batch === batchName)) {
+      if (product?.GodownList?.some((e) => e.batch === batchName)) {
         const userConfirmed = window.confirm(
           "Batch already added. It will be overwritten. Do you want to proceed?"
         );

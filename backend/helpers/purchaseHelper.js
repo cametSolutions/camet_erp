@@ -54,19 +54,27 @@ export const handlePurchaseStockUpdates = async (items) => {
           }
 
           const existingBatchIndex = product.GodownList.findIndex(
-            (g) => g.batch === godown.batch
+            (g) =>
+              g.batch === godown.batch &&
+              (!godown.godown_id || g.godown_id === godown.godown_id)
           );
 
-
+          
           if (existingBatchIndex !== -1) {
-            // Overwrite existing batch
-            product.GodownList[existingBatchIndex] = newGodownEntry;
+            // Overwrite existing batch, add the balance_stock instead of replacing it
+       
+
+            const existingGodown=product.GodownList[existingBatchIndex];
+            const updatedStock=truncateToNDecimals(existingGodown.balance_stock+newBatchStock,3);
+            product.GodownList[existingBatchIndex]={
+              ...existingGodown,
+              ...newGodownEntry,
+              balance_stock:updatedStock
+            }
           } else {
             // Add new batch
             product.GodownList.push(newGodownEntry);
           }
-
-         
 
           godownUpdates.push({
             updateOne: {
@@ -227,10 +235,14 @@ export const createPurchaseRecord = async (
       newSerialNumber = lastPurchase.serialNumber + 1;
     }
 
+    console.log("PurchaseNumber: ", PurchaseNumber);
+    
+
     const purchase = new model({
       selectedGodownId: selectedGodownId ?? "",
       selectedGodownName: selectedGodownName ? selectedGodownName[0] : "",
       serialNumber: newSerialNumber,
+      purchaseNumber: PurchaseNumber,
       cmp_id: orgId,
       partyAccount: party?.partyName,
       party,
@@ -253,3 +265,53 @@ export const createPurchaseRecord = async (
     throw error;
   }
 };
+
+export const updatePurchaseNumber = async (orgId, secondaryUser) => {
+  try {
+    let purchaseConfig = false;
+
+    const configuration = secondaryUser.configurations.find(
+      (config) => config.organization.toString() === orgId
+    );
+
+    if (configuration) {
+      if (
+        configuration.purchaseConfiguration &&
+        Object.entries(configuration.purchaseConfiguration)
+          .filter(([key]) => key !== "startingNumber")
+          .every(([_, value]) => value !== "")
+      ) {
+        purchaseConfig = true;
+      }
+    }
+
+    if (purchaseConfig === true) {
+      const updatedConfiguration = secondaryUser.configurations.map(
+        (config) => {
+          if (config.organization.toString() === orgId) {
+            return {
+              ...config,
+              purchaseNumber: (config.purchaseNumber || 0) + 1,
+            };
+          }
+          return config;
+        }
+      );
+      secondaryUser.configurations = updatedConfiguration;
+      await secondaryUser.save();
+    } else {
+      await OragnizationModel.findByIdAndUpdate(
+        orgId,
+        { $inc: { purchaseNumber: 1 } },
+        { new: true }
+      );
+    }
+  } catch (error) {
+
+      console.error("Error in  updatePurchaseNumber :", error);
+      throw error;
+  }
+};
+
+
+

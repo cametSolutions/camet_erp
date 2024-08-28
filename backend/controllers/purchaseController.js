@@ -2,9 +2,13 @@ import { truncateToNDecimals } from "../helpers/helper.js";
 import {
   createPurchaseRecord,
   handlePurchaseStockUpdates,
+  updatePurchaseNumber
 } from "../helpers/purchaseHelper.js";
-import { processSaleItems as processPurchaseItems } from "../helpers/salesHelper.js";
+import {
+  processSaleItems as processPurchaseItems,
+} from "../helpers/salesHelper.js";
 import { checkForNumberExistence } from "../helpers/secondaryHelper.js";
+import purchaseModel from "../models/purchaseModel.js";
 import secondaryUserModel from "../models/secondaryUserModel.js";
 
 export const createPurchase = async (req, res) => {
@@ -25,18 +29,18 @@ export const createPurchase = async (req, res) => {
 
     const Secondary_user_id = req.sUserId;
 
-    //   const NumberExistence = await checkForNumberExistence(
-    //      purchaseModel,
-    //     "purchaseNumber",
-    //     purchaseNumber,
-    //     req.body.orgId
-    //   );
+    const NumberExistence = await checkForNumberExistence(
+      purchaseModel,
+      "purchaseNumber",
+      purchaseNumber,
+      req.body.orgId
+    );
 
-    //   if (NumberExistence) {
-    //     return res.status(400).json({
-    //       message: "Purchase with the same number already exists",
-    //     });
-    //   }
+    if (NumberExistence) {
+      return res.status(400).json({
+        message: "Purchase with the same number already exists",
+      });
+    }
 
     const secondaryUser = await secondaryUserModel.findById(Secondary_user_id);
     const secondaryMobile = secondaryUser?.mobile;
@@ -47,19 +51,14 @@ export const createPurchase = async (req, res) => {
         .json({ success: false, message: "Secondary user not found" });
     }
 
-    //   const configuration = secondaryUser.configurations.find(
-    //     (config) => config.organization.toString() === orgId
-    //   );
-
-    //   const updatedPurchaseNumber = await updatePurchaseNumber(
-    //     orgId,
-    //     req.query.vanPurchase,
-    //     secondaryUser,
-    //     configuration
-    //   );
-
+  
     await handlePurchaseStockUpdates(items);
     const updatedItems = await processPurchaseItems(items);
+    const updatedPurchaseNumber = await updatePurchaseNumber(
+      orgId,
+      secondaryUser
+    );
+
 
     const updateAdditionalCharge = additionalChargesFromRedux.map((charge) => {
       const { value, taxPercentage } = charge;
