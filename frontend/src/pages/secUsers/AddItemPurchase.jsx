@@ -722,6 +722,7 @@ function AddItemPurchase() {
 
 
     setItem(updatedItems);
+    dispatch(updateItem(updatedItems[index]));
 
     // Optionally update refresh state or other operations
     // setRefresh((prevRefresh) => !prevRefresh);
