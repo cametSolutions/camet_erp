@@ -1,7 +1,7 @@
 /* eslint-disable react/prop-types */
 import QRCode from "react-qr-code";
 
-function PdfFooter({bank,org,data,additinalCharge,inWords}) {
+function PdfFooter({bank,org,data,additinalCharge,inWords,selectedOrganization}) {
   return (
     <div>
           <div className="flex justify-between">
@@ -29,14 +29,14 @@ function PdfFooter({bank,org,data,additinalCharge,inWords}) {
                         width: "100%",
                       }}
                     >
-                      <QRCode
+                  <QRCode
                         size={250}
                         style={{
                           height: "auto",
                           maxWidth: "100%",
                           width: "100%",
                         }}
-                        value={`upi://pay?pa=${bank?.upi_id}&am=${data?.finalAmount}`}
+                        value={`upi:pay?pa=${bank?.upi_id}&am=${data?.finalAmount}`}
                         viewBox={`0 0 256 256`}
                       />
                     </div>
@@ -52,7 +52,7 @@ function PdfFooter({bank,org,data,additinalCharge,inWords}) {
                       Add on charges:
                     </div>
                     <div className="text-gray-700 font-bold text-[10px]">
-                      ₹ {additinalCharge}
+                   {additinalCharge}
                     </div>
                   </div>
                   {data?.additionalCharges?.map((el, index) => (
@@ -75,9 +75,9 @@ function PdfFooter({bank,org,data,additinalCharge,inWords}) {
                 <div className="flex justify-end border-black py-3">
                   <div className="w-3/4"></div>
                   <div className="w-2/4 text-gray-700 font-bold text-[10px] flex justify-end">
-                    <p className="text-nowrap border-y-2 py-2">TOTAL AMOUNT:</p>
+                    <p className="text-nowrap border-y-2 py-2">TOTAL AMOUNT :&nbsp;</p>
                     <div className="text-gray-700 font-bold text-[10px] text-nowrap border-y-2 py-2">
-                      ₹ {data?.finalAmount}
+                    {` ${selectedOrganization?.currency ?? ""} ${data?.finalAmount}`}
                     </div>
                   </div>
                 </div>
@@ -86,7 +86,7 @@ function PdfFooter({bank,org,data,additinalCharge,inWords}) {
                   <div className="text-gray-700 font-bold text-[10px] flex flex-col justify-end text-right mt-1">
                     <p className="text-nowrap">Total Amount(in words)</p>
                     <div className="text-gray-700 full font-bold text-[7.5px] text-nowrap uppercase mt-1">
-                      <p className="whitespace-normal">₹ {inWords}</p>
+                      <p className="whitespace-normal"> {inWords} {selectedOrganization?.currencyName }</p>
                     </div>
                   </div>
                 </div>

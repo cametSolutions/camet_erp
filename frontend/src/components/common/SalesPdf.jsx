@@ -1,8 +1,9 @@
 /* eslint-disable react/prop-types */
-import React from "react";
+import React, { useEffect, useState } from "react";
 import QRCode from "react-qr-code";
 import PdfHeader from "../pdfComponents/PdfHeader";
 import PdfFooter from "../pdfComponents/PdfFooter";
+import { useSelector } from "react-redux";
 
 function SalesPdf({
   data,
@@ -12,7 +13,18 @@ function SalesPdf({
   inWords,
   subTotal,
   additinalCharge,
+  userType,
 }) {
+  const primarySelectedOrg = useSelector(
+    (state) => state.setSelectedOrganization.selectedOrg
+  );
+  const secondarySelectedOrg = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg
+  );
+
+  const selectedOrganization = 
+    userType === "primaryUser" ? primarySelectedOrg : secondarySelectedOrg;
+ 
   const calculateDiscountAmntOFNoBAtch = (el) => {
     if (!el || !el.GodownList || !el.GodownList[0]) {
       console.error("Invalid input data");
@@ -57,9 +69,7 @@ function SalesPdf({
     }, 0);
   };
 
-  console.log(calculateTotalQunatity());
 
-  console.log(calculateTotalTax());
 
   const party = data?.party;
   const despatchDetails = data?.despatchDetails;
@@ -103,12 +113,10 @@ function SalesPdf({
     }
   }
 
-  console.log(address);
 
   return (
     <div>
-
-       {/* <style dangerouslySetInnerHTML={{ __html: `
+      {/* <style dangerouslySetInnerHTML={{ __html: `
         tbody::after {
           content: "";
           display: block;
@@ -185,20 +193,20 @@ function SalesPdf({
                                 el.GodownList.every(
                                   (godown) => godown.godown_id && !godown.batch
                                 ))) &&
-                              ` ₹ ${el.GodownList[0]?.selectedPriceRate || 0}`}
+                              `  ${el.GodownList[0]?.selectedPriceRate || 0}`}
                           </td>
 
                           <td className="pt-2 text-black text-right pr-2">
-                            {`₹ ${calculateDiscountAmntOFNoBAtch(el)}`}
+                            {` ${calculateDiscountAmntOFNoBAtch(el)}`}
                           </td>
                           <td className="pt-2 text-black text-right pr-2 font-bold">
-                            {` ₹ ${(
+                            {`  ${(
                               el?.total -
                               (el?.total * 100) / (parseFloat(el.igst) + 100)
                             )?.toFixed(2)}`}
                           </td>
                           <td className="pt-2 pr-1 text-black text-right font-bold">
-                            ₹ {el?.total}
+                             {el?.total}
                           </td>
                         </tr>
                         {el.hasGodownOrBatch &&
@@ -236,27 +244,26 @@ function SalesPdf({
                                   {godownOrBatch?.count} {el?.unit}
                                 </td>
                                 <td className="pt-2  text-end pr-2">
-                                  ₹{godownOrBatch?.selectedPriceRate || 0}
+                                  {godownOrBatch?.selectedPriceRate || 0}
                                 </td>
 
                                 <td className="pt-2  pr-2 text-end">
-                                  {` ₹ ${discountAmount}`}
+                                  {` ${discountAmount}`}
                                 </td>
 
                                 <td className="pt-2  text-black text-right pr-2">
-                                  {`₹ ${(
+                                  {`${(
                                     godownOrBatch?.individualTotal -
                                     (godownOrBatch?.individualTotal * 100) /
                                       (parseFloat(el.igst) + 100)
-                                  )?.toFixed(2)}` || "₹ 0"}
+                                  )?.toFixed(2)}` || " 0"}
                                 </td>
                                 <td className="pt-2 text-end pr-1">
-                                  <p>₹ {godownOrBatch.individualTotal ?? 0}</p>
+                                  <p>{godownOrBatch.individualTotal ?? 0}</p>
                                 </td>
                               </tr>
                             ) : null;
                           })}
-                        
                       </React.Fragment>
                     );
                   })}
@@ -274,10 +281,10 @@ function SalesPdf({
                   <td className="text-right pr-1 text-black font-bold text-[9px]"></td>
                   <td className="text-right pr-1 text-black font-bold text-[9px]"></td>
                   <td className="text-right pr-1 text-black font-bold text-[9px]">
-                    ₹ {calculateTotalTax()}
+                   {calculateTotalTax()}
                   </td>
                   <td className="text-right pr-1 text-black font-bold text-[9px]">
-                    ₹ {subTotal}
+                     {subTotal}
                   </td>
                 </tr>
               </tfoot>
@@ -290,6 +297,7 @@ function SalesPdf({
               additinalCharge={additinalCharge}
               inWords={inWords}
               tab={"sales"}
+              selectedOrganization={selectedOrganization}
             />
 
             <div className="page-number"></div>

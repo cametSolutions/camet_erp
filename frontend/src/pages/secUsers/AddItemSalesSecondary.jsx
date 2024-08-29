@@ -214,6 +214,11 @@ function AddItemSalesSecondary() {
     setSelectedPriceLevel(priceLevelFromRedux);
   }, []);
 
+
+
+  
+  
+
   /////////////////////////scroll////////////////////////////
 
   useEffect(() => {
@@ -267,8 +272,8 @@ function AddItemSalesSecondary() {
         if (priceLevelFromRedux == "") {
 
           const defaultPriceLevel = priceLevels[0];
-          setSelectedPriceLevel(defaultPriceLevel);   
-          dispatch(setSelectedPriceLevel(defaultPriceLevel));
+          setSelectedPriceLevel(defaultPriceLevel);
+          dispatch(setPriceLevel(defaultPriceLevel));
         }
       } else {
         
