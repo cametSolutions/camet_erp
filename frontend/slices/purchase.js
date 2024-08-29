@@ -157,9 +157,7 @@ export const purchaseSlice = createSlice({
     saveId: (state, action) => {
       state.id = action.payload;
     },
-    removeAllSales: (state) => {
-      Object.assign(state, initialState);
-    },
+  
 
     addItem: (state, action) => {
       const index = state.items.findIndex(
@@ -322,7 +320,6 @@ export const {
   setFinalAmount,
   setAdditionalCharges,
   saveId,
-  removeAllSales,
   changeGodownCount,
   addAllProducts,
   updateItem,

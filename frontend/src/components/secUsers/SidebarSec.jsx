@@ -20,6 +20,7 @@ import { IoMdSettings } from "react-icons/io";
 import { removeAll } from "../../../slices/invoiceSecondary";
 import { removeAllSales } from "../../../slices/salesSecondary";
 import { removeAll as removeAllStock } from "../../../slices/stockTransferSecondary";
+import { removeAll as removeAllPurchase } from "../../../slices/purchase";
 
 function SidebarSec({ TAB, showBar }) {
   const [showSidebar, setShowSidebar] = useState(false);
@@ -124,6 +125,7 @@ function SidebarSec({ TAB, showBar }) {
     dispatch(removeAll());
     dispatch(removeAllSales());
     dispatch(removeAllStock());
+    dispatch(removeAllPurchase());
       // for removing date from local storage which is saved for transaction
 
   localStorage.removeItem("SecondaryTransactionEndDate")
