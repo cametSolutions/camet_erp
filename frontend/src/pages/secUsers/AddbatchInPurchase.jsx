@@ -70,6 +70,7 @@ const AddbatchInPurchase = () => {
         const totalAmountWithTax = totalAmount + taxAmount;
         newBatch.individualTotal = totalAmountWithTax;
       }
+     
   
       const data = {
         _id: id,

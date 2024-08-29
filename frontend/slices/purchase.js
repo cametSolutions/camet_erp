@@ -236,10 +236,14 @@ export const purchaseSlice = createSlice({
     },
     addBatch: (state, action) => {
       const { _id, GodownList } = action.payload;
+     
     
       // Find the current product and current item
       const currentProduct = state.products.find((el) => el?._id === _id);
       const currentItem = state.items.find((el) => el._id === _id);
+
+      const individualTotal=GodownList[0]?.individualTotal;
+     
     
       if (currentProduct) {
         // Check if the batch already exists in the current product's GodownList
@@ -254,6 +258,7 @@ export const purchaseSlice = createSlice({
           // Add the new batch if it doesn't already exist
           currentProduct.GodownList.unshift(GodownList[0]);
         }
+        currentProduct.total=(currentProduct.total || 0)+(individualTotal || 0);
     
         currentProduct.isExpanded = true;
         currentProduct.added = true;
@@ -285,6 +290,8 @@ export const purchaseSlice = createSlice({
         currentItem.count = currentItem.GodownList.reduce((acc,curr)=>{
           return acc + (curr.count || 0)
         },0);
+        currentItem.total=( currentItem.total || 0)+(individualTotal || 0);
+
 
       } else {
         // If the current item doesn't exist, push the product to the items list

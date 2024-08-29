@@ -81,14 +81,7 @@ function EditItemSalesSecondary() {
         newItem.discountPercentage = parseFloat(discountPercentage);
       }
     }
-
-    // console.log(newItem);
-    // if (selectedRedux === "stockTransferSecondary") {
-    //   dispatch(updateItemStockTransfer(newItem));
-    // } else {
       dispatch(updateItem(newItem));
-     
-    // }
     navigate(-1);
   };
   
