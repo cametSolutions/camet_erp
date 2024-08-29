@@ -137,19 +137,19 @@ function Purchase() {
     }
   };
 
-  useEffect(() => {
-    const fetchGodownname = async () => {
-      try {
-        const godown = await api.get(`/api/sUsers/godownsName/${cmp_id}`, {
-          withCredentials: true,
-        });
-        setGodownname(godown.data || "");
-      } catch (error) {
-        toast.error(error.message);
-      }
-    };
-    fetchGodownname();
-  }, []);
+  // useEffect(() => {
+  //   const fetchGodownname = async () => {
+  //     try {
+  //       const godown = await api.get(`/api/sUsers/godownsName/${cmp_id}`, {
+  //         withCredentials: true,
+  //       });
+  //       setGodownname(godown.data || "");
+  //     } catch (error) {
+  //       toast.error(error.message);
+  //     }
+  //   };
+  //   fetchGodownname();
+  // }, []);
 
   const [rows, setRows] = useState(
     additionalChargesFromRedux?.length > 0
