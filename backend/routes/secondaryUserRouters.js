@@ -17,7 +17,7 @@ import {login,getSecUserData,fetchOutstandingTotal,
     fetchGodowns,createStockTransfer,editStockTransfer,cancelSalesOrder,cancelSale,
     cancelStockTransfer} from "../controllers/secondaryUserController.js"
  
-import { createPurchase } from '../controllers/purchaseController.js';
+import { createPurchase,editPurchase } from '../controllers/purchaseController.js';
 
     import { getStockTransferDetails,addProduct ,editProduct} from '../controllers/commonController.js';
 import { authSecondary } from '../middlewares/authSecUsers.js';
@@ -66,7 +66,6 @@ router.delete('/deleteAdditionalCharge/:id/:cmp_id',authSecondary,secondaryIsBlo
 router.post('/EditAditionalCharge/:cmp_id/:id',authSecondary,secondaryIsBlocked,companyAuthentication,EditAditionalCharge)
 router.post('/addconfigurations/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,addconfigurations)
 router.post('/createSale',authSecondary,secondaryIsBlocked,createSale)
-router.post('/createPurchase',authSecondary,secondaryIsBlocked,createPurchase)
 router.get('/getSalesDetails/:id',authSecondary,secondaryIsBlocked,getSalesDetails)
 router.post('/saveSalesNumber/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,saveSalesNumber)
 router.get('/fetchAdditionalDetails/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,fetchAdditionalDetails)
@@ -92,6 +91,7 @@ router.post("/cancelstockTransfer/:id",authSecondary,secondaryIsBlocked,cancelSt
 
 ///purchase routes
 router.post('/createPurchase',authSecondary,secondaryIsBlocked,createPurchase)
+router.post('/editPurchase/:id',authSecondary,secondaryIsBlocked,editPurchase)
 
 
 export default router

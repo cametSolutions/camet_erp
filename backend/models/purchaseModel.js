@@ -11,6 +11,20 @@ const purchaseSchema = new mongoose.Schema(
     party: { type: Object, required: true },
     priceLevel: { type: String, required: true },
     items: { type: Array, required: true },
+    despatchDetails: {
+      type: Object,
+      set: function (value) {
+        // Ensure the title is always included
+        return { title: "Despatch Details", ...value };
+      },
+    },
+    isCancelled: { type: Boolean, default: false },
+    createdAt: {
+      type: Date,
+      default: Date.now,
+      immutable: false // This allows the field to be updated
+    },
+
     additionalCharges: { type: Array, required: true },
     finalAmount: { type: String, required: true },
   },

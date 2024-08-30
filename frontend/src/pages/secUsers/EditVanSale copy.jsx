@@ -7,43 +7,72 @@ import {
   addAdditionalCharges,
   AddFinalAmount,
   deleteRow,
-} from "../../../slices/purchase";
-import { useDispatch } from "react-redux";
-
-import { toast } from "react-toastify";
-import { useNavigate } from "react-router-dom";
-import api from "../../api/api";
-import { IoIosAddCircle } from "react-icons/io";
-import {
   removeAll,
   removeAdditionalCharge,
   removeItem,
   removeGodownOrBatch,
+  setParty,
+  setItem,
+  setSelectedPriceLevel,
+  setAdditionalCharges,
+  setFinalAmount,
+  addDespatchDetails,
   changeDate,
-} from "../../../slices/purchase";
+} from "../../../slices/salesSecondary";
+import { useDispatch } from "react-redux";
+import { toast } from "react-toastify";
+import { useNavigate, useParams } from "react-router-dom";
+import api from "../../api/api";
+import { IoIosAddCircle } from "react-icons/io";
 import { IoIosArrowRoundBack } from "react-icons/io";
+import DespatchDetails from "../../components/secUsers/DespatchDetails";
 import HeaderTile from "../../components/secUsers/main/HeaderTile";
 import AddPartyTile from "../../components/secUsers/main/AddPartyTile";
-import DespatchDetails from "../../components/secUsers/DespatchDetails";
 import AddItemTile from "../../components/secUsers/main/AddItemTile";
 
-function Purchase() {
-  const [additional, setAdditional] = useState(false);
-  const [godownname, setGodownname] = useState("");
+function EditVanSale() {
+  ////////////////////////////////state//////////////////////////////////////////////////////
 
-  const [purchaseNumber, setPurchaseNumber] = useState("");
+
+  const [additional, setAdditional] = useState(false);
+  const [salesNumber, setSalesNumber] = useState("");
+  const date = useSelector((state) => state.salesSecondary.date);
+  const [selectedDate, setSelectedDate] = useState(date);
+
   const [additionalChragesFromCompany, setAdditionalChragesFromCompany] =
     useState([]);
-    
-    const date = useSelector((state) => state.purchase.date);
-    const despatchDetails = useSelector((state) => state.purchase.despatchDetails);
-
-    
-  const [selectedDate, setSelectedDate] = useState(date ? date : new Date());
+  const [subTotal, setSubTotal] = useState(0);
 
   const additionalChargesFromRedux = useSelector(
-    (state) => state.purchase?.additionalCharges
+    (state) => state.salesSecondary.additionalCharges
   );
+  const [rows, setRows] = useState(
+    additionalChargesFromRedux.length > 0
+      ? additionalChargesFromRedux
+      : additionalChragesFromCompany.length > 0
+      ? [
+          {
+            option: additionalChragesFromCompany[0].name,
+            value: "",
+            action: "add",
+            taxPercentage: additionalChragesFromCompany[0].taxPercentage,
+            hsn: additionalChragesFromCompany[0].hsn,
+            _id: additionalChragesFromCompany[0]._id,
+            finalValue: "",
+          },
+        ]
+      : [] // Fallback to an empty array if additionalChragesFromCompany is also empty
+  );
+
+  const [godownname, setGodownname] = useState("");
+  const [godownId, setGodownId] = useState("");
+
+
+
+
+  
+  ////////////////////////////////redux//////////////////////////////////////////////////////
+
   const orgId = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
@@ -54,12 +83,137 @@ function Purchase() {
     (state) => state.secSelectedOrganization.secSelectedOrg.type
   );
 
+  const salesDetailsFromRedux = useSelector((state) => state.salesSecondary);
+  console.log(salesDetailsFromRedux);
+
+  const {
+    party: partyFromRedux,
+    items: itemsFromRedux,
+    despatchDetails: despatchDetailsFromRedux,
+    finalAmount: finalAmountFromRedux,
+    heights: heightsFromRedux,
+    date: dateFromRedux,
+
+  } = salesDetailsFromRedux;
+
+  ////////////////////////////////utils//////////////////////////////////////////////////////
+
+  const dispatch = useDispatch();
+  const { id } = useParams();
+
+  ////////////////////////////////getting invoice details//////////////////////////////////////////////////////
+
+  useEffect(() => {
+    const fetchSalesDetails = async () => {
+      try {
+        const res = await api.get(`/api/sUsers/getSalesDetails/${id}`, {
+          params:{
+            vanSale:true
+          },
+          withCredentials: true,
+        });
+
+        console.log(res.data.data);
+        const {
+          party,
+          items,
+          priceLevel,
+          additionalCharges,
+          finalAmount,
+          salesNumber,
+          despatchDetails,
+          createdAt,
+          // selectedGodownName,
+          // selectedGodownId
+
+        } = res.data.data;
+
+        console.log(createdAt);
+
+        // // additionalCharges: [ { option: 'option 1', value: '95', action: 'add' } ],
+        if (Object.keys(partyFromRedux) == 0) {
+          console.log("haii");
+
+          dispatch(setParty(party));
+        }
+
+        if (itemsFromRedux.length == 0) {
+          dispatch(setItem(items));
+        }
+        if (finalAmount) {
+          dispatch(setFinalAmount(finalAmountFromRedux));
+        }
+
+        if (!dateFromRedux) {
+          setSelectedDate(createdAt);
+          dispatch(changeDate(createdAt));
+        }
+
+        if (priceLevelFromRedux == "") {
+          dispatch(setSelectedPriceLevel(priceLevel));
+        }
+        if (additionalChargesFromRedux.length == 0) {
+          dispatch(setAdditionalCharges(additionalCharges));
+        }
+
+        // dispatch(setFinalAmount(finalAmount));
+
+        if (salesNumber) {
+          setSalesNumber(salesNumber);
+        }
+
+        if (
+          additionalCharges &&
+          additionalCharges.length > 0 &&
+          additionalChargesFromRedux.length == 0
+        ) {
+          setAdditional(true);
+
+          const newRows = additionalCharges.map((el) => {
+            return {
+              option: el.option,
+              value: el.value,
+              action: el.action,
+              _id: el._id,
+              taxPercentage: el.taxPercentage,
+              hsn: el.hsn,
+              finalValue: el.finalValue,
+            };
+          });
+          setRows(newRows);
+        }
+        if (Object.keys(heightsFromRedux).length == 0) {
+          console.log("haii");
+          //   dispatch(setBatchHeight());
+        }
+
+        if (
+          Object.keys(despatchDetailsFromRedux).every(
+            (key) => despatchDetailsFromRedux[key] == ""
+          )
+        ) {
+          console.log("haii");
+          dispatch(addDespatchDetails(despatchDetails));
+        }
+
+        // setSelectedGodownId(selectedGodownId || "");
+        // setSelectedGodownName(selectedGodownName || "");
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    fetchSalesDetails();
+  }, []);
+
+  ////////////////////////////////getting additional charges//////////////////////////////////////////////////////
+
   useEffect(() => {
     const getAdditionalChargesIntegrated = async () => {
       try {
         const res = await api.get(`/api/sUsers/additionalcharges/${cmp_id}`, {
           withCredentials: true,
         });
+        console.log(res.data);
         setAdditionalChragesFromCompany(res.data);
       } catch (error) {
         console.log(error);
@@ -85,6 +239,7 @@ function Purchase() {
           }
         );
 
+        console.log(res.data.organizationData);
         // setCompany(res.data.organizationData);
         if (type == "self") {
           setAdditionalChragesFromCompany(
@@ -97,91 +252,37 @@ function Purchase() {
     };
 
     fetchSingleOrganization();
-    fetchConfigurationNumber();
-  }, [orgId]);
+  }, [ orgId]);
 
-  const fetchConfigurationNumber = async () => {
-    try {
-      const res = await api.get(
-        `/api/sUsers/fetchConfigurationNumber/${orgId}/purchase`,
-
-        {
+  useEffect(() => {
+    const fetchGodownname = async () => {
+      try {
+        const godown = await api.get(`/api/sUsers/godownsName/${cmp_id}`, {
           withCredentials: true,
-        }
-      );
-
-      if (res.data.message === "default") {
-        const { configurationNumber } = res.data;
-        setPurchaseNumber(configurationNumber);
-        return;
+        });
+        console.log(godown);
+        setGodownname(godown.data?.data?.godownName || "");
+        setGodownId(godown.data?.data?.godownId || "");
+      } catch (error) {
+        console.log(error);
+        toast.error(error.message);
       }
+    };
+    fetchGodownname();
+  }, []);
 
-      const { configDetails, configurationNumber } = res.data;
 
-      if (configDetails) {
-        const { widthOfNumericalPart, prefixDetails, suffixDetails } =
-          configDetails;
-        const newPurchaseNumber = configurationNumber.toString();
-        // console.log(newOrderNumber);
-        // console.log(widthOfNumericalPart);
-        // console.log(prefixDetails);
-        // console.log(suffixDetails);
-
-        const padedNumber = newPurchaseNumber.padStart(widthOfNumericalPart, 0);
-        const finalOrderNumber = [prefixDetails, padedNumber, suffixDetails]
-          .filter(Boolean)
-          .join("-");
-        setPurchaseNumber(finalOrderNumber);
-      } else {
-        setPurchaseNumber(purchaseNumber);
-      }
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
-  // useEffect(() => {
-  //   const fetchGodownname = async () => {
-  //     try {
-  //       const godown = await api.get(`/api/sUsers/godownsName/${cmp_id}`, {
-  //         withCredentials: true,
-  //       });
-  //       setGodownname(godown.data || "");
-  //     } catch (error) {
-  //       toast.error(error.message);
-  //     }
-  //   };
-  //   fetchGodownname();
-  // }, []);
-
-  const [rows, setRows] = useState(
-    additionalChargesFromRedux?.length > 0
-      ? additionalChargesFromRedux
-      : additionalChragesFromCompany.length > 0
-      ? [
-          {
-            option: additionalChragesFromCompany[0].name,
-            value: "",
-            action: "add",
-            taxPercentage: additionalChragesFromCompany[0].taxPercentage,
-            hsn: additionalChragesFromCompany[0].hsn,
-            _id: additionalChragesFromCompany[0]._id,
-            finalValue: "",
-          },
-        ]
-      : [] // Fallback to an empty array if additionalChragesFromCompany is also empty
-  );
+  console.log(rows);
 
   useEffect(() => {
     if (additionalChargesFromRedux.length > 0) {
       setAdditional(true);
     }
   }, []);
-  const [subTotal, setSubTotal] = useState(0);
-  const dispatch = useDispatch();
 
   const handleAddRow = () => {
     const hasEmptyValue = rows.some((row) => row.value === "");
+    console.log(hasEmptyValue);
     if (hasEmptyValue) {
       toast.error("Please add a value.");
       return;
@@ -205,6 +306,7 @@ function Purchase() {
     const selectedOption = additionalChragesFromCompany.find(
       (option) => option._id === id
     );
+    console.log(selectedOption);
 
     const newRows = [...rows];
     newRows[index] = {
@@ -215,10 +317,13 @@ function Purchase() {
       _id: selectedOption?._id,
       finalValue: "",
     };
+    console.log(newRows);
     setRows(newRows);
 
     dispatch(addAdditionalCharges({ index, row: newRows[index] }));
   };
+
+  console.log(rows);
 
   const handleRateChange = (index, value) => {
     const newRows = [...rows];
@@ -249,16 +354,16 @@ function Purchase() {
     setRows(newRows);
     dispatch(deleteRow(index)); // You need to create an action to handle row deletion in Redux
   };
-  const party = useSelector((state) => state.purchase?.party);
-  const items = useSelector((state) => state.purchase?.items);
+  const party = useSelector((state) => state.salesSecondary.party);
+  const items = useSelector((state) => state.salesSecondary.items);
   const priceLevelFromRedux =
-    useSelector((state) => state.purchase.selectedPriceLevel) || "";
+    useSelector((state) => state.salesSecondary.selectedPriceLevel) || "";
 
   useEffect(() => {
     const subTotal = items.reduce((acc, curr) => {
-      
       return (acc = acc + (parseFloat(curr.total) || 0));
     }, 0);
+    console.log(subTotal);
     setSubTotal(subTotal);
   }, [items]);
 
@@ -274,18 +379,22 @@ function Purchase() {
     }, 0);
   }, [rows]);
 
+  console.log(additionalChargesTotal);
   const totalAmountNotRounded =
     parseFloat(subTotal) + additionalChargesTotal || parseFloat(subTotal);
   const totalAmount = Math.round(totalAmountNotRounded);
 
+  console.log(totalAmount);
+
   const navigate = useNavigate();
 
   const handleAddItem = () => {
+    console.log(Object.keys(party).length);
     if (Object.keys(party).length === 0) {
       toast.error("Select a party first");
       return;
     }
-    navigate("/sUsers/addItemPurchase");
+    navigate("/sUsers/addItemSales");
   };
 
   const cancelHandler = () => {
@@ -303,26 +412,38 @@ function Purchase() {
   };
 
   const submitHandler = async () => {
+    console.log("haii");
     if (Object.keys(party).length == 0) {
+      console.log("haii");
+
       toast.error("Add a party first");
       return;
     }
     if (items.length == 0) {
+      console.log("haii");
+
       toast.error("Add at least an item");
       return;
     }
 
     if (additional) {
+      console.log("haii");
+
       const hasEmptyValue = rows.some((row) => row.value === "");
       if (hasEmptyValue) {
+        console.log("haii");
+
         toast.error("Please add a value.");
         return;
       }
       const hasNagetiveValue = rows.some((row) => parseFloat(row.value) < 0);
       if (hasNagetiveValue) {
+        console.log("haii");
+
         toast.error("Please add a positive value");
         return;
       }
+      console.log("haii");
     }
 
     const lastAmount = totalAmount.toFixed(2);
@@ -336,14 +457,24 @@ function Purchase() {
       additionalChargesFromRedux,
       lastAmount,
       orgId,
-      purchaseNumber,
-      despatchDetails
+      salesNumber,
+      despatchDetails: despatchDetailsFromRedux,
+      selectedDate:dateFromRedux||new Date(),
+      selectedGodownId:godownId,
+      selectedGodownName:godownname,
     };
 
-    // console.log(formData);
+    // console.log("form data", formData);
+    
+
+
+    
 
     try {
-      const res = await api.post("/api/sUsers/createPurchase", formData, {
+      const res = await api.post(`/api/sUsers/editSale/${id}`, formData, {
+        params:{
+          vanSale:true
+        },
         headers: {
           "Content-Type": "application/json",
         },
@@ -352,17 +483,23 @@ function Purchase() {
 
       toast.success(res.data.message);
 
-      navigate(`/sUsers/purchaseDetails/${res.data.data._id}`);
+      navigate(`/sUsers/vanSaleDetails/${id}`);
       dispatch(removeAll());
     } catch (error) {
-      toast.error(error.response.data.message);
+      if (error.response && error.response.data) {
+        toast.error(error.response.data.message);
+      } else {
+        toast.error("An unexpected error occurred.");
+      }
       console.log(error);
     }
   };
 
+
+
   return (
     <div className="flex relative ">
-      <div className="flex-1 bg-slate-100    ">
+      <div className="flex-1 bg-slate-100  h-screen   ">
         <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex  items-center gap-2 sticky top-0 z-50  ">
           {/* <IoReorderThreeSharp
             onClick={handleToggleSidebar}
@@ -371,21 +508,21 @@ function Purchase() {
           <Link to={"/sUsers/dashboard"}>
             <IoIosArrowRoundBack className="text-3xl text-white cursor-pointer md:hidden" />
           </Link>
-          <p className="text-white text-lg   font-bold ">Purchase</p>
+          <p className="text-white text-lg   font-bold ">Van Sale Edit</p>
         </div>
 
         {/* invoiec date */}
 
         <HeaderTile
-          title={"Purchase"}
-          number={purchaseNumber}
+          title={"Van Sale"}
+          number={salesNumber}
           selectedDate={selectedDate}
           setSelectedDate={setSelectedDate}
           dispatch={dispatch}
           changeDate={changeDate}
           submitHandler={submitHandler}
           removeAll={removeAll}
-          tab="add"
+          tab="edit"
         />
 
         {/* adding party */}
@@ -394,12 +531,17 @@ function Purchase() {
           party={party}
           dispatch={dispatch}
           removeParty={removeParty}
-          link="/sUsers/searchPartyPurchase"
-          linkBillTo="/sUsers/billToPurchase"
+          link="/sUsers/searchPartySales"
+          linkBillTo="/sUsers/billToSales"
         />
 
-        <DespatchDetails tab={"purchase"} />
+        {/* Despatch details */}
 
+        <DespatchDetails tab={"sale"} />
+
+        {/* adding items */}
+
+      
         <AddItemTile
           items={items}
           handleAddItem={handleAddItem}
@@ -407,7 +549,7 @@ function Purchase() {
           removeItem={removeItem}
           removeGodownOrBatch={removeGodownOrBatch}
           navigate={navigate}
-          godownname={""}
+          godownname={godownname}
           subTotal={subTotal}
           type="sale"
           additional={additional}
@@ -420,10 +562,9 @@ function Purchase() {
           handleRateChange={handleRateChange}
           handleAddRow={handleAddRow}
           setAdditional={setAdditional}
-          urlToAddItem="/sUsers/addItemPurchase"
-          urlToEditItem="/sUsers/editItemPurchase"
+          urlToAddItem="/sUsers/addItemVanSale"
+          urlToEditItem="/sUsers/editItemSales"
         />
-      
 
         <div className="flex justify-between bg-white mt-2 p-3">
           <p className="font-bold text-lg">Total Amount</p>
@@ -440,13 +581,17 @@ function Purchase() {
               className="fixed bottom-0 text-white bg-violet-700  w-full  p-2 py-4 flex items-center justify-center gap-2 hover_scale cursor-pointer "
             >
               <IoIosAddCircle className="text-2xl" />
-              <p>Generate Purchase</p>
+              <p>Edit Sale</p>
             </button>
           </div>
         </div>
+
+      
       </div>
+
+  
     </div>
   );
 }
 
-export default Purchase;
+export default EditVanSale;

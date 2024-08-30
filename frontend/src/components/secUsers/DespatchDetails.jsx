@@ -23,7 +23,7 @@ function DespatchDetails({ tab }) {
     (state) => state?.secSelectedOrganization?.secSelectedOrg?._id
   );
 
-  console.log(cmp_id);
+  console.log(despatchDetails);
 
   useEffect(() => {
     const getSingleOrganization = async () => {

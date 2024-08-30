@@ -18,33 +18,25 @@ import {
   setFinalAmount,
   addDespatchDetails,
   changeDate,
-} from "../../../slices/salesSecondary";
+} from "../../../slices/purchase";
 import { useDispatch } from "react-redux";
 import { toast } from "react-toastify";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../../api/api";
 import { IoIosAddCircle } from "react-icons/io";
 import { IoIosArrowRoundBack } from "react-icons/io";
-import { Button, Label, Modal, TextInput } from "flowbite-react";
 import DespatchDetails from "../../components/secUsers/DespatchDetails";
 import HeaderTile from "../../components/secUsers/main/HeaderTile";
 import AddPartyTile from "../../components/secUsers/main/AddPartyTile";
 import AddItemTile from "../../components/secUsers/main/AddItemTile";
 
-function EditVanSale() {
+function EditPurchase() {
   ////////////////////////////////state//////////////////////////////////////////////////////
 
-  const [openModal, setOpenModal] = useState(false);
-  const [modalInputs, setModalInputs] = useState({
-    startingNumber: "1",
-    widthOfNumericalPart: "",
-    prefixDetails: "",
-    suffixDetails: "",
-  });
+
   const [additional, setAdditional] = useState(false);
-  const [refreshCmp, setrefreshCmp] = useState(false);
-  const [salesNumber, setSalesNumber] = useState("");
-  const date = useSelector((state) => state.salesSecondary.date);
+  const [purchaseNumber, setSalesNumber] = useState("");
+  const date = useSelector((state) => state.purchase.date);
   const [selectedDate, setSelectedDate] = useState(date);
 
   const [additionalChragesFromCompany, setAdditionalChragesFromCompany] =
@@ -52,7 +44,7 @@ function EditVanSale() {
   const [subTotal, setSubTotal] = useState(0);
 
   const additionalChargesFromRedux = useSelector(
-    (state) => state.salesSecondary.additionalCharges
+    (state) => state.purchase.additionalCharges
   );
   const [rows, setRows] = useState(
     additionalChargesFromRedux.length > 0
@@ -91,8 +83,7 @@ function EditVanSale() {
     (state) => state.secSelectedOrganization.secSelectedOrg.type
   );
 
-  const salesDetailsFromRedux = useSelector((state) => state.salesSecondary);
-  console.log(salesDetailsFromRedux);
+  const purchaseDetailsFromRedux = useSelector((state) => state.purchase);
 
   const {
     party: partyFromRedux,
@@ -102,7 +93,9 @@ function EditVanSale() {
     heights: heightsFromRedux,
     date: dateFromRedux,
 
-  } = salesDetailsFromRedux;
+  } = purchaseDetailsFromRedux;
+
+  
 
   ////////////////////////////////utils//////////////////////////////////////////////////////
 
@@ -114,29 +107,29 @@ function EditVanSale() {
   useEffect(() => {
     const fetchSalesDetails = async () => {
       try {
-        const res = await api.get(`/api/sUsers/getSalesDetails/${id}`, {
+        const res = await api.get(`/api/sUsers/getPurchaseDetails/${id}`, {
           params:{
             vanSale:true
           },
           withCredentials: true,
         });
 
-        console.log(res.data.data);
+        // console.log(res.data.data);
         const {
           party,
           items,
           priceLevel,
           additionalCharges,
           finalAmount,
-          salesNumber,
+          purchaseNumber,
           despatchDetails,
           createdAt,
-          selectedGodownName,
-          selectedGodownId
+          // selectedGodownName,
+          // selectedGodownId
 
         } = res.data.data;
 
-        console.log(createdAt);
+        console.log(despatchDetails);
 
         // // additionalCharges: [ { option: 'option 1', value: '95', action: 'add' } ],
         if (Object.keys(partyFromRedux) == 0) {
@@ -166,8 +159,8 @@ function EditVanSale() {
 
         // dispatch(setFinalAmount(finalAmount));
 
-        if (salesNumber) {
-          setSalesNumber(salesNumber);
+        if (purchaseNumber) {
+          setSalesNumber(purchaseNumber);
         }
 
         if (
@@ -190,10 +183,12 @@ function EditVanSale() {
           });
           setRows(newRows);
         }
-        if (Object.keys(heightsFromRedux).length == 0) {
-          console.log("haii");
-          //   dispatch(setBatchHeight());
-        }
+        // if (Object.keys(heightsFromRedux).length == 0) {
+        //   console.log("haii");
+        //   //   dispatch(setBatchHeight());
+        // }
+
+        
 
         if (
           Object.keys(despatchDetailsFromRedux).every(
@@ -204,8 +199,8 @@ function EditVanSale() {
           dispatch(addDespatchDetails(despatchDetails));
         }
 
-        setSelectedGodownId(selectedGodownId || "");
-        setSelectedGodownName(selectedGodownName || "");
+        // setSelectedGodownId(selectedGodownId || "");
+        // setSelectedGodownName(selectedGodownName || "");
       } catch (error) {
         console.log(error);
       }
@@ -260,7 +255,7 @@ function EditVanSale() {
     };
 
     fetchSingleOrganization();
-  }, [refreshCmp, orgId]);
+  }, [ orgId]);
 
   useEffect(() => {
     const fetchGodownname = async () => {
@@ -362,10 +357,10 @@ function EditVanSale() {
     setRows(newRows);
     dispatch(deleteRow(index)); // You need to create an action to handle row deletion in Redux
   };
-  const party = useSelector((state) => state.salesSecondary.party);
-  const items = useSelector((state) => state.salesSecondary.items);
+  const party = useSelector((state) => state.purchase.party);
+  const items = useSelector((state) => state.purchase.items);
   const priceLevelFromRedux =
-    useSelector((state) => state.salesSecondary.selectedPriceLevel) || "";
+    useSelector((state) => state.purchase.selectedPriceLevel) || "";
 
   useEffect(() => {
     const subTotal = items.reduce((acc, curr) => {
@@ -465,21 +460,21 @@ function EditVanSale() {
       additionalChargesFromRedux,
       lastAmount,
       orgId,
-      salesNumber,
+      purchaseNumber,
       despatchDetails: despatchDetailsFromRedux,
       selectedDate:dateFromRedux||new Date(),
       selectedGodownId:godownId,
       selectedGodownName:godownname,
     };
 
-    console.log("form data", formData);
+    // console.log("form data", formData);
     
 
 
     
 
     try {
-      const res = await api.post(`/api/sUsers/editSale/${id}`, formData, {
+      const res = await api.post(`/api/sUsers/editPurchase/${id}`, formData, {
         params:{
           vanSale:true
         },
@@ -491,7 +486,7 @@ function EditVanSale() {
 
       toast.success(res.data.message);
 
-      navigate(`/sUsers/vanSaleDetails/${id}`);
+      navigate(`/sUsers/purchaseDetails/${id}`);
       dispatch(removeAll());
     } catch (error) {
       if (error.response && error.response.data) {
@@ -503,34 +498,7 @@ function EditVanSale() {
     }
   };
 
-  function onCloseModal() {
-    setOpenModal(false);
-    // setEmail('');
-  }
 
-  const saveSalesNumber = async () => {
-    try {
-      const res = await api.post(
-        `/api/sUsers/saveSalesNumber/${orgId}`,
-        modalInputs,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-          withCredentials: true,
-        }
-      );
-
-      toast(res.data.message);
-      setOpenModal(false);
-      setrefreshCmp(!refreshCmp);
-
-      console.log(res);
-    } catch (error) {
-      console.log(error);
-      toast.error(error.response.data.message);
-    }
-  };
 
   return (
     <div className="flex relative ">
@@ -543,14 +511,14 @@ function EditVanSale() {
           <Link to={"/sUsers/dashboard"}>
             <IoIosArrowRoundBack className="text-3xl text-white cursor-pointer md:hidden" />
           </Link>
-          <p className="text-white text-lg   font-bold ">Van Sale Edit</p>
+          <p className="text-white text-lg   font-bold ">Purchase Edit</p>
         </div>
 
         {/* invoiec date */}
 
         <HeaderTile
-          title={"Van Sale"}
-          number={salesNumber}
+          title={"Purchase"}
+          number={purchaseNumber}
           selectedDate={selectedDate}
           setSelectedDate={setSelectedDate}
           dispatch={dispatch}
@@ -566,13 +534,13 @@ function EditVanSale() {
           party={party}
           dispatch={dispatch}
           removeParty={removeParty}
-          link="/sUsers/searchPartySales"
-          linkBillTo="/sUsers/billToSales"
+          link="/sUsers/searchPartyPurchase"
+          linkBillTo="/sUsers/billToPurchase"
         />
 
         {/* Despatch details */}
 
-        <DespatchDetails tab={"sale"} />
+        <DespatchDetails tab={"purchase"} />
 
         {/* adding items */}
 
@@ -597,8 +565,8 @@ function EditVanSale() {
           handleRateChange={handleRateChange}
           handleAddRow={handleAddRow}
           setAdditional={setAdditional}
-          urlToAddItem="/sUsers/addItemVanSale"
-          urlToEditItem="/sUsers/editItemSales"
+          urlToAddItem="/sUsers/addItemPurchase"
+          urlToEditItem="/sUsers/editItemPurchase"
         />
 
         <div className="flex justify-between bg-white mt-2 p-3">
@@ -621,178 +589,12 @@ function EditVanSale() {
           </div>
         </div>
 
-        {openModal && (
-          <div
-            id="popup-modal"
-            className="  absolute top-0 right-0 bottom-0 left-0 z-50 flex justify-center items-center"
-          >
-            <div className="relative p-4 w-full max-w-md max-h-full">
-              <div className="relative  rounded-lg shadow bg-gray-700">
-                <button
-                  onClick={() => setOpenModal(false)}
-                  type="button"
-                  className="absolute top-3 end-2.5 text-gray-400 bg-transparent   rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center hover:bg-gray-600 hover:text-white"
-                  data-modal-hide="popup-modal"
-                >
-                  <svg
-                    className="w-3 h-3"
-                    aria-hidden="true"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 14 14"
-                  >
-                    <path
-                      stroke="currentColor"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"
-                    />
-                  </svg>
-                  <span className="sr-only">Close modal</span>
-                </button>
-                <div className="p-4 md:p-5 text-center">
-                  <svg
-                    className="mx-auto mb-4 text-gray-200 w-12 h-12 "
-                    aria-hidden="true"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      stroke="currentColor"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M10 11V6m0 8h.01M19 10a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                    />
-                  </svg>
-                  <h3 className="mb-5 text-lg font-normal text-gray-200 ">
-                    You haven't added any HSN yet!!
-                  </h3>
-
-                  <button
-                    type="button"
-                    className="text-white bg-blue-600 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-500  font-medium rounded-lg text-sm inline-flex items-center px-5 py-2.5 text-center mr-3"
-                    onClick={() => {
-                      navigate("/sUsers/hsn");
-                    }}
-                  >
-                    Add HSN
-                  </button>
-                  <button
-                    data-modal-hide="popup-modal"
-                    type="button"
-                    onClick={() => setOpenModal(false)}
-                    className=" bg-red-500 text-white hover:bg-red-700 focus:outline-none   rounded-lg font-medium text-sm inline-flex items-center px-5 py-2.5 text-center"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+      
       </div>
 
-      <Modal
-        style={{
-          scrollbarWidth: "thin",
-          scrollbarColor: "transparent transparent",
-        }}
-        show={openModal}
-        size="md"
-        onClose={onCloseModal}
-        popup
-      >
-        <Modal.Header />
-        <Modal.Body>
-          <div className="space-y-6">
-            <h3 className="text-xl font-medium text-gray-900 dark:text-white ">
-              Enter Details
-            </h3>
-            <div>
-              <div className="mb-2 block">
-                <Label htmlFor="startingNumber" value="Starting Number" />
-              </div>
-              <TextInput
-                disabled
-                id="startingNumber"
-                placeholder="1"
-                type="number"
-                value={modalInputs.startingNumber}
-                onChange={(e) =>
-                  setModalInputs({
-                    ...modalInputs,
-                    startingNumber: e.target.value,
-                  })
-                }
-                required
-              />
-            </div>
-            <div>
-              <div className="mb-2 block">
-                <Label
-                  htmlFor="widthOfNumericalPart"
-                  value="Width of Numerical Part"
-                />
-              </div>
-              <TextInput
-                id="widthOfNumericalPart"
-                placeholder="4"
-                type="number"
-                value={modalInputs.widthOfNumericalPart}
-                onChange={(e) =>
-                  setModalInputs({
-                    ...modalInputs,
-                    widthOfNumericalPart: e.target.value,
-                  })
-                }
-                required
-              />
-            </div>
-            <div>
-              <div className="mb-2 block">
-                <Label htmlFor="prefixDetails" value="Prefix Details" />
-              </div>
-              <TextInput
-                id="prefixDetails"
-                placeholder="ABC"
-                value={modalInputs.prefixDetails}
-                onChange={(e) =>
-                  setModalInputs({
-                    ...modalInputs,
-                    prefixDetails: e.target.value,
-                  })
-                }
-                required
-              />
-            </div>
-            <div>
-              <div className="mb-2 block">
-                <Label htmlFor="suffixDetails" value="Suffix Details" />
-              </div>
-              <TextInput
-                id="suffixDetails"
-                placeholder="XYZ"
-                value={modalInputs.suffixDetails}
-                onChange={(e) =>
-                  setModalInputs({
-                    ...modalInputs,
-                    suffixDetails: e.target.value,
-                  })
-                }
-                required
-              />
-            </div>
-            <div className="w-full">
-              <Button onClick={saveSalesNumber}>Submit</Button>
-            </div>
-          </div>
-        </Modal.Body>
-      </Modal>
+  
     </div>
   );
 }
 
-export default EditVanSale;
+export default EditPurchase;

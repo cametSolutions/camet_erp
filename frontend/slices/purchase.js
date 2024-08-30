@@ -248,7 +248,7 @@ export const purchaseSlice = createSlice({
       if (currentProduct) {
         // Check if the batch already exists in the current product's GodownList
         const existingBatchIndex = currentProduct.GodownList.findIndex(
-          (batch) => batch.batch === GodownList[0]?.batch
+          (batch) => batch.batch === GodownList[0]?.batch && batch.godown_id === GodownList[0]?.godown_id
         );
     
         if (existingBatchIndex !== -1) {
@@ -274,7 +274,7 @@ export const purchaseSlice = createSlice({
       if (currentItem) {
         // Check if the batch already exists in the current item's GodownList
         const existingBatchIndex = currentItem.GodownList.findIndex(
-          (batch) => batch.batch === GodownList[0]?.batch
+          (batch) => batch.batch === GodownList[0]?.batch && batch.godown_id === GodownList[0]?.godown_id
         );
     
         if (existingBatchIndex !== -1) {

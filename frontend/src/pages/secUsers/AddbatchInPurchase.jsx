@@ -35,7 +35,7 @@ const AddbatchInPurchase = () => {
       } = formData;
   
       // Check if the batch already exists
-      if (product?.GodownList?.some((e) => e.batch === batchName)) {
+      if (product?.GodownList?.some((e) => e.batch === batchName && e.godown_id === godown_id)) {
         const userConfirmed = window.confirm(
           "Batch already added. It will be overwritten. Do you want to proceed?"
         );

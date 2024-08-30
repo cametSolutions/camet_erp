@@ -290,6 +290,8 @@ function AddItemVanSaleSecondary() {
         setPriceLevels(priceLevels);
         if (priceLevelFromRedux == "") {
           const defaultPriceLevel = priceLevels[0];
+          setSelectedPriceLevel(defaultPriceLevel);
+
           dispatch(setPriceLevel(defaultPriceLevel));
         }
       } else {

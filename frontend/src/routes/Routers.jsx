@@ -124,7 +124,7 @@ import ThreeInchVanSaleSec from '../pages/secUsers/ThreeInchVanSaleSec'
 import VanSaleDetails from '../pages/primaryUsers/VanSaleDetails '
 import ShareVanSale from '../pages/primaryUsers/ShareVanSale'
 import ThreeInchVanSale from '../pages/primaryUsers/ThreeInchVanSale '
-import EditVanSale from '../pages/secUsers/EditVanSale'
+import EditVanSale from '../pages/secUsers/EditPurchase'
 import StockTransferSecondary from '../pages/secUsers/StockTransferSecondary'
 import SearchGodown from '../pages/secUsers/SearchGodown'
 import AddItemStockTransferSec from '../pages/secUsers/AddItemStockTransferSec'
@@ -136,6 +136,7 @@ import EditItemStockTransfer from '../pages/secUsers/EditItemStockTransfer'
 import AddbatchInPurchase from '../pages/secUsers/AddbatchInPurchase'
 import ReceiptPrintOut from '../pages/secUsers/ReceiptPrintOut'
 import ReceiptPrintOutPrimary from '../pages/primaryUsers/ReceiptPrintOut'
+import EditPurchase from '../pages/secUsers/EditPurchase'
 
 const Routers = () => {
   return (
@@ -272,6 +273,7 @@ const Routers = () => {
         <Route path='/sUsers/sharePurchase/:id' element={<ProtectedSecRoute><SharePurchaseSecondary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/sharePurchaseThreeInch/:id' element={<ProtectedSecRoute><ThreeInchPurchaseSec/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/addBatchPurchase/:id' element={<ProtectedSecRoute><AddbatchInPurchase/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/editPurchase/:id' element={<ProtectedSecRoute><EditPurchase/></ProtectedSecRoute>}></Route>
        
        
        
