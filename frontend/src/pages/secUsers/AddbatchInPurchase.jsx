@@ -101,7 +101,7 @@ const AddbatchInPurchase = () => {
       </div>
 
       {loading && (
-        <div className="fixed inset-0 flex justify-center items-center  bg-opacity-50 z-50">
+        <div className="fixed inset-0 flex justify-center items-center bg-black bg-opacity-50 z-50">
           <figure className="w-[60px] h-[60px] rounded-full border-2 border-solid border-primaryColor flex items-center justify-center">
             <HashLoader color="#6056ec" size={30} speedMultiplier={1.6} />
           </figure>

@@ -44,8 +44,10 @@ const schema = z.object({
     ),
     godown: z
     .string()
-    .refine((val) => val !== "", "Godown selection is required")
-    .optional(),
+    .min(1, "Godown is required")
+    .refine((val) => val !== "" && val !== undefined, "Godown selection is required")
+    
+    // .optional(),
   // godown_id can be added here if you need to validate it
 });
 
@@ -60,6 +62,10 @@ function BathAddingForm({ onSave }) {
     godown: "",
     godown_id: "",
   });
+
+
+  console.log(formData.godown);
+  
 
   const [godowns, setGodowns] = useState([]);
 
@@ -89,6 +95,9 @@ function BathAddingForm({ onSave }) {
   const [errors, setErrors] = useState({});
 
   const validateField = (name, value) => {
+
+    console.log(name,value);
+    
     try {
       const fieldSchema = schema.shape[name];
       fieldSchema.parse(value);
@@ -147,7 +156,11 @@ function BathAddingForm({ onSave }) {
   
     // Conditionally add validation for the 'godown' field if godowns.length > 0
     if (godowns.length > 0) {
+      console.log("here");
+      
       const errorMessage = validateField("godown", formData.godown);
+      console.log(errorMessage);
+      
       if (errorMessage) {
         newErrors["godown"] = errorMessage;
       }
@@ -167,11 +180,17 @@ function BathAddingForm({ onSave }) {
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
+
+  // console.log(errors);/
+  
   
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (validate()) {
+
+      // console.log(formData);
+      
       onSave(formData);
     }
   };
@@ -214,7 +233,7 @@ function BathAddingForm({ onSave }) {
                   )}
                 </div>
 
-                <div className="flex flex-col">
+                <div className={` ${godowns.length === 0 ? "hidden" : ""} flex flex-col`}>
                   <label className="leading-loose">Select Godown</label>
                   <select
                     name="godown"
