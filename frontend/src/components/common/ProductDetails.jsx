@@ -42,7 +42,7 @@ const ProductDetails = ({
             <div className="flex flex-col gap-1  ">
               {item?.batch && (
                 <p className="font-bold text-sm md:text-sm">
-                  Batch {item?.batch}
+                   {item?.batch}
                 </p>
               )}
 
