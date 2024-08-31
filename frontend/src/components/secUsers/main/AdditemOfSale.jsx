@@ -51,25 +51,38 @@ function AdditemOfSale({
 }) {
   const navigate = useNavigate();
 
-  
 
-  // Filter items with balace stock zero for purchase only
- 
+
+  // Filter items with balace stock zero for purchase only but not for normal no   batch and  no godown items
   const displayedItems = useMemo(() => {
     if (tab === "Purchase") {
-      return filteredItems.map(item => ({
-        ...item,
-        GodownList: item.GodownList.filter(godown => 
-          godown.balance_stock !== 0 || godown.newBatch === true
-        )
-      }));
+      return filteredItems.map((item) => {
+        // console.log('Processing item:', item);
+
+        const processedItem = {
+          ...item,
+          GodownList:
+            item.GodownList.length === 1 &&
+            item.GodownList[0].balance_stock === 0 &&
+            !item.GodownList[0].batch &&
+            !item.GodownList[0].godown_id
+              ? item.GodownList
+              : item.GodownList.filter(
+                  (godown) =>
+                    godown.balance_stock !== 0 || godown.newBatch === true
+                ),
+        };
+
+        // console.log('Processed item:', processedItem);
+        return processedItem;
+      });
     }
     return filteredItems;
   }, [filteredItems, tab]);
-  
 
   const Row = ({ index, style }) => {
     const el = displayedItems[index];
+
     // const isExpanded = expandedProductId === el?._id;
     const adjustedStyle = {
       ...style,

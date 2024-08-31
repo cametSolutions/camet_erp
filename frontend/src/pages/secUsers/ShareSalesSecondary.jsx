@@ -7,7 +7,6 @@ import { toast } from "react-toastify";
 import { MdPrint } from "react-icons/md";
 import numberToWords from "number-to-words";
 import { Link } from "react-router-dom";
-import SidebarSec from "../../components/secUsers/SidebarSec";
 import SalesPdf from "../../components/common/SalesPdf";
 
 function ShareSalesSecondary() {

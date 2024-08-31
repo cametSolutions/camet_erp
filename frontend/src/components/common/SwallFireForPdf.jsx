@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 
 function SwallFireForPdf({ data, tab = "sales", user }) {
   let selectedUser = user == "primary" ? "pUsers" : "sUsers";
-  console.log(data);
+  console.log(tab);
   const navigate = useNavigate();
   const chooseFormat = () => {
     Swal.fire({
@@ -22,9 +22,14 @@ function SwallFireForPdf({ data, tab = "sales", user }) {
       if (result.isConfirmed) {
         if (tab === "salesOrder") {
           navigate(`/${selectedUser}/shareInvoice/${data._id}`);
-        } else if (tab === "vanSale") {
+        } 
+        else if (tab === "vanSale") {
           navigate(`/${selectedUser}/shareVanSale/${data._id}`);
-        } else {
+        }
+        else if (tab === "purchase") {
+          navigate(`/${selectedUser}/sharePurchase/${data._id}`);
+        }
+         else {
           navigate(`/${selectedUser}/shareSales/${data._id}`);
         }
         // Swal.fire("Tax Invoice selected", "", "success");
@@ -35,6 +40,9 @@ function SwallFireForPdf({ data, tab = "sales", user }) {
         else if (tab === "vanSale") {
           navigate(`/${selectedUser}/shareVanSaleThreeInch/${data._id}`);
         } 
+        else if (tab === "purchase") {
+          navigate(`/${selectedUser}/sharePurchaseThreeInch/${data._id}`);
+        }
         
         else {
           navigate(`/${selectedUser}/shareSalesThreeInch/${data._id}`);

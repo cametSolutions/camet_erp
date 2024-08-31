@@ -352,6 +352,8 @@ function AddItemPurchase() {
     }
   };
 
+  console.log(item);
+  
 
   
 
@@ -755,6 +757,8 @@ function AddItemPurchase() {
       return prevHeights;
     });
   }, []);
+
+
 
   
 

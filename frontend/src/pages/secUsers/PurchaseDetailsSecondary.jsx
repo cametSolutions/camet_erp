@@ -1,14 +1,11 @@
 import { MdOutlineArrowBack } from "react-icons/md";
 
-import { IoMdShareAlt } from "react-icons/io";
 import { MdTextsms } from "react-icons/md";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import api from "../../api/api";
 import { toast } from "react-toastify";
-import dayjs from "dayjs";
 import { useLocation, useNavigate } from "react-router-dom";
-import SidebarSec from "../../components/secUsers/SidebarSec";
 import Swal from "sweetalert2";
 import VoucherDetailsHeader from "../../components/common/VoucherDetailsHeader";
 import SalesProductDetails from "../../components/common/SalesProductDetails";
@@ -22,7 +19,6 @@ function PurchaseDetailsSecondary() {
   const [refresh, setRefresh] = useState(false);
 
   const { id } = useParams();
-  console.log(id);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -49,7 +45,6 @@ function PurchaseDetailsSecondary() {
     getTransactionDetails();
   }, [refresh]);
 
-  console.log(data);
   const backHandler = () => {
     if (location?.state?.from === "dashboard") {
       navigate("/sUsers/dashboard");
@@ -58,28 +53,7 @@ function PurchaseDetailsSecondary() {
     }
   };
 
-  const chooseFormat = () => {
-    Swal.fire({
-      title: "Which format would you like?",
-      html: "<p>Choose between:</p>",
-      showDenyButton: true,
-      showCancelButton: true,
-      confirmButtonText: "Tax Invoice",
-      denyButtonText: `POS format`,
-      customClass: {
-        container: "swal2-container-custom",
-      },
-    }).then((result) => {
-      if (result.isConfirmed) {
-        // Swal.fire("Tax Invoice selected", "", "success");
-        navigate(`/sUsers/sharePurchase/${data._id}`)
-      } else if (result.isDenied) {
-        navigate(`/sUsers/sharePurchaseThreeInch/${data._id}`)
 
-      }
-    });
-    
-  };
 
   return (
     <div className="bg-[rgb(244,246,254)] flex-1  relative  pb-[70px] md:pb-0 ">
@@ -91,7 +65,7 @@ function PurchaseDetailsSecondary() {
           className="text-2xl cursor-pointer"
         />
 
-        <h3 className="font-bold">Sales Details</h3>
+        <h3 className="font-bold">Purchase Details</h3>
       </div>
       {/* <div className="text-white mr-4 bg-pink-700 p-0 px-2 rounded-md text-center transition-all duration-150 transform hover:scale-105">
         <button>Cancel</button>
@@ -105,7 +79,7 @@ function PurchaseDetailsSecondary() {
     editLink={`/sUsers/editPurchase/${data?._id}`}
     user={"secondary"}
     number={data?.purchaseNumber}
-    tab={"Purchase"}
+    tab={"purchase"}
   />
   
     {/* party details */}
