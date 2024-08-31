@@ -45,7 +45,10 @@ function AddProductForm({
   const [locationRows, setLocationRows] = useState([
     { godown_id: "", godown: "", balance_stock: "" },
   ]);
-  const [locationData, setLocationData] = useState([]);
+
+  // this is the original state for location if godownlist is like this GodownList: [{balance_stock:10(any number)}]
+
+  const [originalGodownList, setOriginalGodownList] = useState([]);
 
   useEffect(() => {
     if (Object.keys(productData).length > 0) {
@@ -94,6 +97,7 @@ function AddProductForm({
         !GodownList[0]?.hasOwnProperty("godown_id")
       ) {
         setLocationRows([{ godown: "", balance_stock: "" }]);
+        setOriginalGodownList(GodownList);
       } else {
         setLocationRows(GodownList);
       }
@@ -205,20 +209,9 @@ function AddProductForm({
 
   ///////////// location table ///////////////////
 
-  useEffect(() => {
-    // Update levelNameData whenever rows change
-    setLocationData(
-      locationRows.map((row) => ({
-        godown: row.godown,
-        balance_stock: row.balance_stock,
-      }))
-    );
-  }, [locationRows]);
-
-
   const handleAddLocationRow = () => {
     const lastRow = locationRows[locationRows.length - 1];
-    if (!lastRow.godown || lastRow.balance_stock<0) {
+    if (!lastRow.godown || lastRow.balance_stock < 0) {
       toast.error("Add Location  and Stock");
       return;
     }
@@ -227,7 +220,6 @@ function AddProductForm({
   };
 
   const handleDeleteLocationRow = (id) => {
-
     const isDefaultGodown = locationRows.find(
       (d) => d.godown_id === id
     )?.defaultGodown;
@@ -252,8 +244,6 @@ function AddProductForm({
   };
 
   const handleLocationChange = (index, value) => {
-
-  
     const correspondingGodown = godown?.find((g) => g?._id === value)?.name;
     const newRows = [...locationRows];
     newRows[index].godown = correspondingGodown || "";
@@ -269,7 +259,12 @@ function AddProductForm({
 
   const submitHandler = async () => {
     // Check required fields
-    if (!product_name.trim() || !unit || hsn_code.length === 0 || !balance_stock) {
+    if (
+      !product_name.trim() ||
+      !unit ||
+      hsn_code.length === 0 ||
+      !balance_stock
+    ) {
       toast.error("Name, Unit, Balance stock and HSN must be filled");
       return;
     }
@@ -326,6 +321,8 @@ function AddProductForm({
 
     let locations;
 
+    console.log(locationRows);
+
     const godownListFirstItem = locationRows[0];
     if (
       Object.keys(godownListFirstItem).every(
@@ -355,16 +352,22 @@ function AddProductForm({
     }
 
     const getLocation = () => {
+      const orginalStock = originalGodownList[0].balance_stock;
+
       const noLocation = [{ balance_stock: 0 }];
+
+      console.log(locations);
 
       if (
         batchEnabled &&
         JSON.stringify(locations) === JSON.stringify(noLocation)
       ) {
+        console.log("batch enabled and equals no location");
+
         const finalLocations = [
           {
             batch: "Default batch",
-            balance_stock: 0,
+            balance_stock: orginalStock,
           },
         ];
 
@@ -373,6 +376,8 @@ function AddProductForm({
         batchEnabled &&
         JSON.stringify(locations) !== JSON.stringify(noLocation)
       ) {
+        console.log("batch enabled and not  equals no location");
+
         const finalLocations = locations.map((location) => {
           return {
             ...location,
@@ -385,12 +390,27 @@ function AddProductForm({
         !batchEnabled &&
         JSON.stringify(locations) !== JSON.stringify(noLocation)
       ) {
+        console.log("not batch enabled and not  equals no location");
+
         return locations.map((location) => {
           const { batch, ...rest } = location;
 
           return rest;
         });
+      } else if (
+        !batchEnabled &&
+        JSON.stringify(locations) === JSON.stringify(noLocation)
+      ) {
+        console.log("not batch enabled and   equals no location");
+
+        return [
+          {
+            balance_stock: orginalStock,
+          },
+        ];
       } else {
+        console.log("heree");
+
         return locations;
       }
     };
@@ -415,8 +435,6 @@ function AddProductForm({
       GodownList: getLocation(),
       batchEnabled,
     };
-
-    // console.log(formData);
 
     submitData(formData);
   };
@@ -879,7 +897,7 @@ function AddProductForm({
                       <tr key={row?.id} className="border-b bg-[#EFF6FF] ">
                         <td className="px-4 py-2">
                           <select
-                          disabled={row.defaultGodown}
+                            disabled={row.defaultGodown}
                             value={row?.godown_id}
                             onChange={(e) =>
                               handleLocationChange(index, e?.target?.value)
@@ -893,7 +911,11 @@ function AddProductForm({
                             {/* Options for dropdown */}
                             <option value="">Select Location</option>
                             {godown?.map((el, index) => (
-                              <option disabled={el?.defaultGodown} key={index} value={el?._id}>
+                              <option
+                                disabled={el?.defaultGodown}
+                                key={index}
+                                value={el?._id}
+                              >
                                 {el?.name}
                               </option>
                             ))}

@@ -9,7 +9,6 @@ const purchaseSchema = new mongoose.Schema(
     cmp_id:{ type: String, required: true },
     partyAccount:{ type: String, required: true },
     party: { type: Object, required: true },
-    priceLevel: { type: String, required: true },
     items: { type: Array, required: true },
     despatchDetails: {
       type: Object,

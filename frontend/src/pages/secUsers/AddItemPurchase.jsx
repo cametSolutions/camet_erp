@@ -6,9 +6,7 @@ import api from "../../api/api";
 import { useSelector } from "react-redux";
 import { addItem, removeItem } from "../../../slices/purchase";
 import { useDispatch } from "react-redux";
-import { setPriceLevel } from "../../../slices/purchase";
 import {
-  changeTotal,
   setBrandInRedux,
   setCategoryInRedux,
   setSubCategoryInRedux,
@@ -18,10 +16,8 @@ import {
 import { Decimal } from "decimal.js";
 import AdditemOfSale from "../../components/secUsers/main/AdditemOfSale";
 
-
 function AddItemPurchase() {
   const [item, setItem] = useState([]);
-  const [selectedPriceLevel, setSelectedPriceLevel] = useState("");
   const [brands, setBrands] = useState([]);
   const [categories, setCategories] = useState([]);
   const [subCategories, setSubCategories] = useState([]);
@@ -29,7 +25,6 @@ function AddItemPurchase() {
   const [selectedCategory, setseleCtedCategory] = useState("");
   const [selectedSubCategory, setSelectedSubCategory] = useState("");
   const [search, setSearch] = useState("");
-  const [priceLevels, setPriceLevels] = useState([]);
   const [loader, setLoader] = useState(false);
   const [listHeight, setListHeight] = useState(0);
   const [scrollPosition, setScrollPosition] = useState(0);
@@ -49,9 +44,6 @@ function AddItemPurchase() {
   const itemsFromRedux = useSelector((state) => state.purchase.items);
 
   ///////////////////////////priceLevelFromRedux///////////////////////////////////
-
-  const priceLevelFromRedux =
-    useSelector((state) => state.purchase.selectedPriceLevel) || "";
 
   const allProductsFromRedux =
     useSelector((state) => state.purchase.products) || [];
@@ -193,18 +185,16 @@ function AddItemPurchase() {
     fetchProducts();
     const scrollPosition = parseInt(localStorage.getItem("scrollPosition"));
     // restoreScrollPosition(scrollPosition);
-
+    setRefresh((prevRefresh) => !prevRefresh);
     if (scrollPosition) {
       // listRef?.current?.scrollTo(parseInt(scrollPosition, 10));\
       window.scrollTo(0, scrollPosition);
     }
   }, [cpm_id]);
 
-  ///////////////////////////setSelectedPriceLevel fom redux///////////////////////////////////
-
   useEffect(() => {
-    setSelectedPriceLevel(priceLevelFromRedux);
-  }, []);
+    addSelectedRate();
+  }, [refresh]);
 
   /////////////////////////scroll////////////////////////////
 
@@ -217,64 +207,52 @@ function AddItemPurchase() {
     }
   }, []);
 
-  ///////////////////////////sdo persisting of products///////////////////////////////////
-
-  //////////////////////////////orgId////////////////////////////////
-
-  const orgId = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg._id
-  );
-
-  const type = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg.type
-  );
-
   //////////////////////////////fetchFilters////////////////////////////////
 
   // useEffect(() => {
-  const fetchFilters = async () => {
-    try {
-      let res;
-      if (type == "self") {
-        res = await api.get(`/api/sUsers/fetchFilters/${orgId}`, {
-          withCredentials: true,
-        });
-      } else {
-        res = await api.get(`/api/sUsers/fetchAdditionalDetails/${orgId}`, {
-          withCredentials: true,
-        });
-      }
+  // const fetchFilters = async () => {
+  //   try {
+  //     let res;
+  //     if (type == "self") {
+  //       res = await api.get(`/api/sUsers/fetchFilters/${orgId}`, {
+  //         withCredentials: true,
+  //       });
+  //     } else {
+  //       res = await api.get(`/api/sUsers/fetchAdditionalDetails/${orgId}`, {
+  //         withCredentials: true,
+  //       });
+  //     }
 
-      if (type === "self") {
-        const { brands, categories, subcategories, priceLevels } =
-          res.data.data;
-        // setBrands(brands);
-        // setCategories(categories);
-        // setSubCategories(subcategories);
-        setPriceLevels(priceLevels);
-        if (priceLevelFromRedux == "") {
-          const defaultPriceLevel = priceLevels[0];
-          setSelectedPriceLevel(defaultPriceLevel);
-          dispatch(setPriceLevel(defaultPriceLevel));
-        }
-      } else {
-        const { priceLevels, brands, categories, subcategories } = res.data;
+  //     if (type === "self") {
+  //       const { brands, categories, subcategories, priceLevels } =
+  //         res.data.data;
+  //       // setBrands(brands);
+  //       // setCategories(categories);
+  //       // setSubCategories(subcategories);
+  //       // setPriceLevels(priceLevels);
+  //       // if (priceLevelFromRedux == "") {
+  //       //   const defaultPriceLevel = priceLevels[0];
+  //       //   setSelectedPriceLevel(defaultPriceLevel);
+  //       //   dispatch(setPriceLevel(defaultPriceLevel));
+  //       // }
+  //     } else {
+  //       const { priceLevels, brands, categories, subcategories } = res.data;
 
-        // setBrands(brands);
-        // setCategories(categories);
-        // setSubCategories(subcategories);
+  //       // setBrands(brands);
+  //       // setCategories(categories);
+  //       // setSubCategories(subcategories);
 
-        setPriceLevels(priceLevels);
-        if (priceLevelFromRedux == "") {
-          const defaultPriceLevel = priceLevels[0];
-          setSelectedPriceLevel(defaultPriceLevel);
-          dispatch(setPriceLevel(defaultPriceLevel));
-        }
-      }
-    } catch (error) {
-      console.log(error);
-    }
-  };
+  //       setPriceLevels(priceLevels);
+  //       if (priceLevelFromRedux == "") {
+  //         const defaultPriceLevel = priceLevels[0];
+  //         setSelectedPriceLevel(defaultPriceLevel);
+  //         dispatch(setPriceLevel(defaultPriceLevel));
+  //       }
+  //     }
+  //   } catch (error) {
+  //     console.log(error);
+  //   }
+  // };
 
   ///////////////////////////filter items///////////////////////////////////
 
@@ -282,8 +260,6 @@ function AddItemPurchase() {
     return items?.filter((item) => {
       // Check if the item matches the brand filter
       const brandMatch = !brand || item.brand === brand;
-
-      
 
       // Check if the item matches the category filter
       const categoryMatch = !category || item.category === category;
@@ -316,15 +292,10 @@ function AddItemPurchase() {
 
   //////////////////////////////////////////addSelectedRate initially not in redux/////////////////////////////////////////////
 
-  const addSelectedRate = (pricelevel) => {
+  const addSelectedRate = () => {
     if (item?.length > 0) {
       const updatedItems = filteredItems.map((item) => {
-        const priceRate =
-          item?.Priceleveles?.find(
-            (priceLevelItem) => priceLevelItem.pricelevel === pricelevel
-          )?.pricerate || 0;
-
-          
+        const priceRate = 0;
 
         const reduxItem = itemsFromRedux.find((p) => p._id === item._id);
         // const reduxRate = reduxItem?.selectedPriceRate || null;
@@ -352,24 +323,14 @@ function AddItemPurchase() {
     }
   };
 
-  console.log(item);
   
-
-  
-
-  useEffect(() => {
-    addSelectedRate(selectedPriceLevel);
-  }, [selectedPriceLevel, refresh]);
 
   ///////////////////////////calculateTotal///////////////////////////////////
 
-  const calculateTotal = (item, selectedPriceLevel, situation = "normal") => {
+  const calculateTotal = (item, situation = "normal") => {
     let priceRate = 0;
     if (situation === "priceLevelChange") {
-      priceRate =
-        item.Priceleveles.find(
-          (level) => level.pricelevel === selectedPriceLevel
-        )?.pricerate || 0;
+      priceRate = 0;
     }
 
     let subtotal = 0;
@@ -474,7 +435,7 @@ function AddItemPurchase() {
         itemToUpdate.count =
           new Decimal(itemToUpdate.count || 0).add(1).toNumber() || 1;
 
-        const totalData = calculateTotal(itemToUpdate, selectedPriceLevel);
+        const totalData = calculateTotal(itemToUpdate);
         const updatedGodownListWithTotals = itemToUpdate.GodownList.map(
           (godown, index) => ({
             ...godown,
@@ -496,13 +457,7 @@ function AddItemPurchase() {
     });
 
     setItem(updatedItems);
-    if (
-      selectedPriceLevel === "" ||
-      selectedPriceLevel === undefined ||
-      priceLevels.length === 0
-    ) {
-      navigate(`/sUsers/editItemSales/${_id}/${"nil"}/${idx}`);
-    }
+    navigate(`/sUsers/editItemPurchase/${_id}/${"nil"}/${idx}`);
   };
 
   ///////////////////////////handleIncrement///////////////////////////////////
@@ -534,7 +489,7 @@ function AddItemPurchase() {
         currentItem.count = sumOfCounts; // Update currentItem.count with the sum
 
         // Calculate totals and update individual batch totals
-        const totalData = calculateTotal(currentItem, selectedPriceLevel);
+        const totalData = calculateTotal(currentItem);
         const updatedGodownListWithTotals = updatedGodownList.map(
           (godown, index) => ({
             ...godown,
@@ -550,7 +505,7 @@ function AddItemPurchase() {
         currentItem.count = new Decimal(currentItem.count).add(1).toNumber();
 
         // Calculate totals and update individual total
-        const totalData = calculateTotal(currentItem, selectedPriceLevel);
+        const totalData = calculateTotal(currentItem);
         currentItem.total = totalData.total;
         currentItem.GodownList[0].individualTotal = totalData?.total; // Update the overall total
       }
@@ -595,7 +550,7 @@ function AddItemPurchase() {
         }
 
         // Calculate totals and update individual batch totals
-        const totalData = calculateTotal(currentItem, selectedPriceLevel);
+        const totalData = calculateTotal(currentItem);
         const updatedGodownListWithTotals = updatedGodownList.map(
           (godown, index) => ({
             ...godown,
@@ -613,7 +568,7 @@ function AddItemPurchase() {
         if (currentItem.count <= 0) currentItem.added = false;
 
         // Calculate totals and update individual total
-        const totalData = calculateTotal(currentItem, selectedPriceLevel);
+        const totalData = calculateTotal(currentItem);
         // currentItem.individualTotal = totalData.total;
         currentItem.GodownList[0].individualTotal = totalData?.total;
         currentItem.total = totalData.total; // Update the overall total
@@ -625,65 +580,6 @@ function AddItemPurchase() {
     });
 
     setItem(updatedItems); // Update the state with the updated items
-  };
-
-  ///////////////////////////handleTotalChangeWithPriceLevel///////////////////////////////////
-
-  const handleTotalChangeWithPriceLevel = (pricelevel) => {
-    const updatedItems = filteredItems.map((item) => {
-      
-      if (item.added === true) {
-        const { individualTotals, total } = calculateTotal(
-          item,
-          pricelevel,
-          "priceLevelChange"
-        );
-
-        dispatch(changeTotal({ ...item, total: total }));
-        const newPriceRate =
-          item?.Priceleveles.find(
-            (priceLevelItem) => priceLevelItem.pricelevel === pricelevel
-          )?.pricerate || 0;
-
-
-          console.log("newPriceRate", newPriceRate);
-          
-
-        // if (item?.hasGodownOrBatch) {
-        const updatedGodownList = item?.GodownList.map((godown, idx) => {
-          return {
-            ...godown,
-            individualTotal:
-              individualTotals.find((el) => el.index === idx)
-                ?.individualTotal || 0,
-            selectedPriceRate: newPriceRate,
-          };
-        });
-
-        dispatch(
-          updateItem({ ...item, GodownList: updatedGodownList, total: total })
-        );
-        return {
-          ...item,
-          GodownList: updatedGodownList,
-          total: total,
-        };
-      }
-      return item;
-    });
-
-    setItem(updatedItems);
-  };
-
-  ///////////////////////////handlePriceLevelChange///////////////////////////////////
-
-  const handlePriceLevelChange = (e) => {
-    
-    const selectedValue = e.target.value;
-    setSelectedPriceLevel(selectedValue);
-    dispatch(setPriceLevel(selectedValue));
-
-    handleTotalChangeWithPriceLevel(selectedValue);
   };
 
   /////////////////////////// calculateHeight ///////////////////////////////////
@@ -722,7 +618,6 @@ function AddItemPurchase() {
       updatedItems[index].isExpanded = !updatedItems[index].isExpanded;
     }
 
-
     setItem(updatedItems);
     dispatch(updateItem(updatedItems[index]));
 
@@ -758,10 +653,6 @@ function AddItemPurchase() {
     });
   }, []);
 
-
-
-  
-
   return (
     <AdditemOfSale
       tab={"Purchase"}
@@ -769,11 +660,10 @@ function AddItemPurchase() {
       handleDecrement={handleDecrement}
       listRef={listRef}
       heights={heights}
-      selectedPriceLevel={selectedPriceLevel}
+      selectedPriceLevel={""}
       setHeight={setHeight}
       backHandler={backHandler}
-      handlePriceLevelChange={handlePriceLevelChange}
-      priceLevels={priceLevels}
+      priceLevels={[]}
       searchData={searchData}
       selectedBrand={selectedBrand}
       setSelectedBrand={setSelectedBrand}

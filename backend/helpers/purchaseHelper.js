@@ -250,7 +250,6 @@ export const createPurchaseRecord = async (
       party,
       despatchDetails,
       items: updatedItems,
-      priceLevel: req.body.priceLevelFromRedux,
       additionalCharges: updateAdditionalCharge,
       finalAmount: lastAmount,
       Primary_user_id,

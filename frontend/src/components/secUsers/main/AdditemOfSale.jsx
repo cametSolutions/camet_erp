@@ -51,13 +51,14 @@ function AdditemOfSale({
 }) {
   const navigate = useNavigate();
 
+  
+
 
 
   // Filter items with balace stock zero for purchase only but not for normal no   batch and  no godown items
   const displayedItems = useMemo(() => {
     if (tab === "Purchase") {
       return filteredItems.map((item) => {
-        // console.log('Processing item:', item);
 
         const processedItem = {
           ...item,
@@ -73,7 +74,6 @@ function AdditemOfSale({
                 ),
         };
 
-        // console.log('Processed item:', processedItem);
         return processedItem;
       });
     }
@@ -163,7 +163,7 @@ function AdditemOfSale({
                         // el?.Priceleveles?.find(
                         //   (item) => item.pricelevel === selectedPriceLevel
                         // )?.pricerate
-                        el?.GodownList[0]?.selectedPriceRate
+                     (   el?.GodownList[0]?.selectedPriceRate || 0)
                       }{" "}
                       /
                     </p>{" "}
@@ -327,8 +327,8 @@ function AdditemOfSale({
                 />
                 <p className="text-white text-sm   font-bold ">Add Item</p>
               </div>
-              <div className="flex items-center gap-4 md:gap-6 ">
-                <div>
+              <div className="flex items-center gap-4 md:gap-6  ">
+                <div className={`${tab==="Purchase" && "hidden"}`}>
                   <select
                     onChange={(e) => handlePriceLevelChange(e)}
                     value={selectedPriceLevel}

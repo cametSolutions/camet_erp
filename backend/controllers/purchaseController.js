@@ -22,7 +22,6 @@ export const createPurchase = async (req, res) => {
       party,
       items,
       despatchDetails,
-      priceLevelFromRedux,
       additionalChargesFromRedux,
       lastAmount,
       purchaseNumber,
@@ -104,7 +103,6 @@ export const editPurchase = async (req, res) => {
       party,
       items,
       despatchDetails,
-      priceLevelFromRedux,
       additionalChargesFromRedux,
       lastAmount,
       purchaseNumber,
@@ -123,7 +121,6 @@ export const editPurchase = async (req, res) => {
     // Process new sale items and update stock
     const updatedItems = processPurchaseItems(
       items,
-      priceLevelFromRedux,
       additionalChargesFromRedux
     );
 
@@ -139,7 +136,6 @@ export const editPurchase = async (req, res) => {
       party,
       despatchDetails,
       items: updatedItems,
-      priceLevel: priceLevelFromRedux,
       additionalCharges: additionalChargesFromRedux,
       finalAmount: lastAmount,
       Primary_user_id: req.owner,
