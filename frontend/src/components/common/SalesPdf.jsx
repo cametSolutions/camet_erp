@@ -1,6 +1,5 @@
 /* eslint-disable react/prop-types */
-import React, { useEffect, useState } from "react";
-import QRCode from "react-qr-code";
+import React from "react";
 import PdfHeader from "../pdfComponents/PdfHeader";
 import PdfFooter from "../pdfComponents/PdfFooter";
 import { useSelector } from "react-redux";
@@ -211,21 +210,27 @@ function SalesPdf({
                         </tr>
                         {el.hasGodownOrBatch &&
                           el.GodownList.map((godownOrBatch, idx) => {
+
+                            
                             const rate = godownOrBatch?.selectedPriceRate || 0;
                             const taxAmt =
                               Number(
                                 (
                                   godownOrBatch?.individualTotal -
                                   (godownOrBatch?.individualTotal * 100) /
-                                    (parseFloat(godownOrBatch.igst) + 100)
+                                    (parseFloat(el.igst) + 100)
                                 )?.toFixed(2)
                               ) || 0;
                             const count = godownOrBatch?.count || 0;
                             const finalAmt =
                               Number(godownOrBatch?.individualTotal) || 0;
 
+                            
+
+                              
+
                             const discountAmount =
-                              rate * count + taxAmt - Number(finalAmt) || 0;
+                            (  (rate * count) + (taxAmt - Number(finalAmt)) || 0).toFixed(2);
 
                             console.log(discountAmount);
 

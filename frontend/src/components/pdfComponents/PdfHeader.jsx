@@ -20,21 +20,23 @@ function PdfHeader({ data, org, address, despatchDetails, tab = "sales" }) {
     return str.charAt(0).toUpperCase() + str.slice(1);
   }
 
-  console.log(despatchDetails);
 
-  
-  let  enableBillToShipTo 
 
-  let displayTitles={}
+
+
+  let enableBillToShipTo;
+
+  let displayTitles = {};
   if (org?.configurations) {
-  enableBillToShipTo = (org?.configurations[0]?.enableBillToShipTo) ?? true;
+    enableBillToShipTo = org?.configurations[0]?.enableBillToShipTo ?? true;
 
-  const despatchDetailsConfig = (org?.configurations[0]?.despatchDetails) ?? {}
-  for (const key in despatchDetailsConfig) {
-    displayTitles[key] = despatchDetailsConfig[key] || capitalizeFirstLetter(key.split(/(?=[A-Z])/).join(" "));
+    const despatchDetailsConfig = org?.configurations[0]?.despatchDetails ?? {};
+    for (const key in despatchDetailsConfig) {
+      displayTitles[key] =
+        despatchDetailsConfig[key] ||
+        capitalizeFirstLetter(key.split(/(?=[A-Z])/).join(" "));
+    }
   }
-  }
- 
 
   return (
     <div>
@@ -99,47 +101,44 @@ function PdfHeader({ data, org, address, despatchDetails, tab = "sales" }) {
       <div className="   print-md-layout flex flex-col md:flex-row  w-full py-3 px-2 gap-3     ">
         {/* bill to  */}
         <div className=" bill-to  md:w-1/2  w-full mt-1  flex justify-between tracking-wider text-[11px]  md:border-r md:pr-4 ">
-        <div className="border-gray-300 mb-2 ">
-                <h2 className="text-xs font-bold mb-1">Bill To:</h2>
-                <div className="text-gray-700 ">{address?.billToName}</div>
-                {address?.billToAddress?.split(/[\n,]+/).map((line, index) => (
-                  <div key={index} className="text-gray-700">
-                    {line.trim()}
-                  </div>
-                ))}
-                <div className="text-gray-700">
-                  {address?.billToEmail && address?.billToEmail !== "null"
-                    ? address?.billToEmail
-                    : ""}
-                </div>
-                <div className="text-gray-700">
-                  {address?.billToMobile && address?.billToMobile !== "null"
-                    ? address?.billToMobile
-                    : ""}
-                </div>
+          <div className="border-gray-300 mb-2 ">
+            <h2 className="text-xs font-bold mb-1">Bill To:</h2>
+            <div className="text-gray-700 ">{address?.billToName}</div>
+            {address?.billToAddress?.split(/[\n,]+/).map((line, index) => (
+              <div key={index} className="text-gray-700">
+                {line.trim()}
               </div>
+            ))}
+            <div className="text-gray-700">
+              {address?.billToEmail && address?.billToEmail !== "null"
+                ? address?.billToEmail
+                : ""}
+            </div>
+            <div className="text-gray-700">
+              {address?.billToMobile && address?.billToMobile !== "null"
+                ? address?.billToMobile
+                : ""}
+            </div>
+          </div>
           {enableBillToShipTo && (
-          
-           
-              <div className="border-gray-300 ">
-                <h2 className="text-xs font-bold mb-1">Ship To:</h2>
-                <div className="text-gray-700">{address?.shipToName}</div>
-                {address?.shipToAddress?.split(/[\n,]+/).map((line, index) => (
-                  <div key={index} className="text-gray-700">
-                    {line.trim()}
-                  </div>
-                ))}
+            <div className="border-gray-300 ">
+              <h2 className="text-xs font-bold mb-1">Ship To:</h2>
+              <div className="text-gray-700">{address?.shipToName}</div>
+              {address?.shipToAddress?.split(/[\n,]+/).map((line, index) => (
+                <div key={index} className="text-gray-700">
+                  {line.trim()}
+                </div>
+              ))}
 
-                <div className="text-gray-700">
-                  {address?.shipToEmail !== "null" ? address?.shipToEmail : ""}
-                </div>
-                <div className="text-gray-700">
-                  {address?.shipToMobile && address?.shipToMobile !== "null"
-                    ? address?.shipToMobile
-                    : ""}
-                </div>
+              <div className="text-gray-700">
+                {address?.shipToEmail !== "null" ? address?.shipToEmail : ""}
               </div>
-            
+              <div className="text-gray-700">
+                {address?.shipToMobile && address?.shipToMobile !== "null"
+                  ? address?.shipToMobile
+                  : ""}
+              </div>
+            </div>
           )}
         </div>
 
@@ -147,30 +146,30 @@ function PdfHeader({ data, org, address, despatchDetails, tab = "sales" }) {
         <hr className="mb-1" />
 
         <table className="m details-table md:w-1/2 w-full divide-y divide-gray-200">
-  <tbody>
-    {
-    despatchDetails && (
-      
-      Object?.entries(despatchDetails)?.map(([key, value]) => {
-        if (value) {
-          return (
-            <tr key={key} className="flex justify-between">
-              <td className="text-gray-500 mb-0.5 text-[11px]">
-                {displayTitles[key] || capitalizeFirstLetter(key?.split(/(?=[A-Z])/).join(" "))}:
-              </td>
-              <td className="text-gray-500 mb-0.5 text-[11px]">
-                {value}
-              </td>
-            </tr>
-          );
-        }
-        return null;
-      })
-    )
-    
-    }
-  </tbody>
-</table>
+          <tbody>
+            {despatchDetails &&
+              Object?.entries(despatchDetails)?.filter(([key]) =>key!=='title') 
+              .map(([key, value]) => {
+                if (value) {
+                  return (
+                    <tr key={key} className="flex justify-between">
+                      <td className="text-gray-500 mb-0.5 text-[11px]">
+                        {displayTitles[key] ||
+                          capitalizeFirstLetter(
+                            key?.split(/(?=[A-Z])/).join(" ")
+                          )}
+                        :
+                      </td>
+                      <td className="text-gray-500 mb-0.5 text-[11px]">
+                        {value}
+                      </td>
+                    </tr>
+                  );
+                }
+                return null;
+              })}
+          </tbody>
+        </table>
       </div>
     </div>
   );
