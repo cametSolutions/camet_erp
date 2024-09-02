@@ -211,7 +211,6 @@ function SalesPdf({
                         {el.hasGodownOrBatch &&
                           el.GodownList.map((godownOrBatch, idx) => {
 
-                            console.log(godownOrBatch);
                             
                             const rate = godownOrBatch?.selectedPriceRate || 0;
                             const taxAmt =
@@ -226,15 +225,12 @@ function SalesPdf({
                             const finalAmt =
                               Number(godownOrBatch?.individualTotal) || 0;
 
-                              console.log(taxAmt);
-                              console.log(rate);
-                              console.log(count);
-                              console.log(finalAmt);
+                            
 
                               
 
                             const discountAmount =
-                              (rate * count) + (taxAmt - Number(finalAmt)) || 0;
+                            (  (rate * count) + (taxAmt - Number(finalAmt)) || 0).toFixed(2);
 
                             console.log(discountAmount);
 
