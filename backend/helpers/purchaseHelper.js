@@ -2,7 +2,6 @@ import productModel from "../models/productModel.js";
 import purchaseModel from "../models/purchaseModel.js";
 import { truncateToNDecimals } from "./helper.js";
 
-
 ///////////////////////// for stock update ////////////////////////////////
 export const handlePurchaseStockUpdates = async (items) => {
   const productUpdates = [];
@@ -41,49 +40,56 @@ export const handlePurchaseStockUpdates = async (items) => {
         if (godown.newBatch) {
           console.log("newBatch object: ", godown);
 
-          // Handle new batch logic
-          const newBatchStock = truncateToNDecimals(godownCount, 3);
-          const newGodownEntry = {
-            batch: godown.batch,
-            balance_stock: newBatchStock,
-            mfgdt: godown.mfgdt,
-            expdt: godown.expdt,
-          };
+          if (godownCount > 0) {
+            // Handle new batch logic
+            const newBatchStock = truncateToNDecimals(godownCount, 3);
+            const newGodownEntry = {
+              batch: godown.batch,
+              balance_stock: newBatchStock,
+              mfgdt: godown.mfgdt,
+              expdt: godown.expdt,
+            };
 
-          if (godown.godown_id) {
-            newGodownEntry.godown_id = godown.godown_id;
-            newGodownEntry.godown = godown.godown;
-          }
-
-          const existingBatchIndex = product.GodownList.findIndex(
-            (g) =>
-              g.batch === godown.batch &&
-              (!godown.godown_id || g.godown_id === godown.godown_id)
-          );
-
-          
-          if (existingBatchIndex !== -1) {
-            // Overwrite existing batch, add the balance_stock instead of replacing it
-       
-
-            const existingGodown=product.GodownList[existingBatchIndex];
-            const updatedStock=truncateToNDecimals(existingGodown.balance_stock+newBatchStock,3);
-            product.GodownList[existingBatchIndex]={
-              ...existingGodown,
-              ...newGodownEntry,
-              balance_stock:updatedStock
+            if (godown.godown_id) {
+              newGodownEntry.godown_id = godown.godown_id;
+              newGodownEntry.godown = godown.godown;
             }
-          } else {
-            // Add new batch
-            product.GodownList.push(newGodownEntry);
-          }
 
-          godownUpdates.push({
-            updateOne: {
-              filter: { _id: product._id },
-              update: { $set: { GodownList: product.GodownList } },
-            },
-          });
+            const existingBatchIndex = product.GodownList.findIndex(
+              (g) =>
+                g.batch === godown.batch &&
+                (!godown.godown_id || g.godown_id === godown.godown_id)
+            );
+
+            if (existingBatchIndex !== -1) {
+              // Overwrite existing batch, add the balance_stock instead of replacing it
+
+              const existingGodown = product.GodownList[existingBatchIndex];
+              const updatedStock = truncateToNDecimals(
+                existingGodown.balance_stock + newBatchStock,
+                3
+              );
+              product.GodownList[existingBatchIndex] = {
+                ...existingGodown,
+                ...newGodownEntry,
+                balance_stock: updatedStock,
+              };
+            } else {
+              // Add new batch
+              product.GodownList.push(newGodownEntry);
+            }
+
+            godownUpdates.push({
+              updateOne: {
+                filter: { _id: product._id },
+                update: { $set: { GodownList: product.GodownList } },
+              },
+            });
+          } else {
+            console.log(
+              `Skipping new batch for godown as count is not greater than zero: ${godownCount}`
+            );
+          }
         } else if (godown.batch && !godown.godown_id) {
           console.log("batch only ");
           const godownIndex = product.GodownList.findIndex(
@@ -238,7 +244,6 @@ export const createPurchaseRecord = async (
     }
 
     console.log("PurchaseNumber: ", PurchaseNumber);
-    
 
     const purchase = new model({
       selectedGodownId: selectedGodownId ?? "",
@@ -310,12 +315,10 @@ export const updatePurchaseNumber = async (orgId, secondaryUser) => {
       );
     }
   } catch (error) {
-
-      console.error("Error in  updatePurchaseNumber :", error);
-      throw error;
+    console.error("Error in  updatePurchaseNumber :", error);
+    throw error;
   }
 };
-
 
 // Helper function to revert stock changes
 // export const revertPurchaseStockUpdates = async (items) => {
@@ -335,8 +338,6 @@ export const updatePurchaseNumber = async (orgId, secondaryUser) => {
 //     console.log("productBalanceStock", productBalanceStock);
 //     console.log("newBalanceStock", newBalanceStock);
 
-    
-
 //     productUpdates.push({
 //       updateOne: {
 //         filter: { _id: product._id },
@@ -347,7 +348,7 @@ export const updatePurchaseNumber = async (orgId, secondaryUser) => {
 //     if (item.hasGodownOrBatch) {
 //       // Process godown and batch updates
 //       console.log("has godown or batch");
-      
+
 //       for (const godown of item.GodownList) {
 //         const godownCount = parseFloat(godown.count);
 
@@ -363,7 +364,6 @@ export const updatePurchaseNumber = async (orgId, secondaryUser) => {
 
 //             console.log("currentGodownStock", currentGodownStock);
 //             console.log("newGodownStock", newGodownStock);
-            
 
 //             godownUpdates.push({
 //               updateOne: {
@@ -378,8 +378,7 @@ export const updatePurchaseNumber = async (orgId, secondaryUser) => {
 //           console.log("have both godown and batch");
 
 //           console.log("godown count",godown.godown, godownCount);
-          
-          
+
 //           godownUpdates.push({
 //             updateOne: {
 //               filter: { _id: product._id },
@@ -423,7 +422,6 @@ export const updatePurchaseNumber = async (orgId, secondaryUser) => {
 //   // await productModel.bulkWrite(productUpdates);
 //   // await productModel.bulkWrite(godownUpdates);
 // };
-
 
 export const revertPurchaseStockUpdates = async (items) => {
   try {
@@ -499,9 +497,7 @@ export const revertPurchaseStockUpdates = async (items) => {
                   3
                 );
 
-
                 console.log("newGodownStock", newGodownStock);
-                
 
                 // Prepare godown update operation
                 godownUpdates.push({
@@ -585,6 +581,3 @@ export const revertPurchaseStockUpdates = async (items) => {
     throw error;
   }
 };
-
-
-

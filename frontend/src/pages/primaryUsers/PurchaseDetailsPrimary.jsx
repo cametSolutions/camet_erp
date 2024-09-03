@@ -2,7 +2,7 @@ import { MdOutlineArrowBack } from "react-icons/md";
 
 import { MdTextsms } from "react-icons/md";
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import api from "../../api/api";
 import { toast } from "react-toastify";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -11,6 +11,8 @@ import SalesProductDetails from "../../components/common/SalesProductDetails";
 import CancelButton from "../../components/common/CancelButton";
 import { FaEdit } from "react-icons/fa";
 import SwallFireForPdf from "../../components/common/SwallFireForPdf";
+import { IoMdShareAlt } from "react-icons/io";
+import dayjs from "dayjs";
 
 function PurchaseDetailsSecondary() {
   const [data, setData] = useState("");
@@ -65,14 +67,45 @@ function PurchaseDetailsSecondary() {
       </div>
       {/* headinh section  */}
 
-      <VoucherDetailsHeader
+      {/* <VoucherDetailsHeader
         data={data}
         reFetchParent={reFetch}
         editLink={`/pUsers/editPurchase/${data?._id}`}
         user={"primary"}
         number={data?.purchaseNumber}
         tab={"purchase"}
-      />
+      /> */}
+
+      <div className="bg-white p-4 mt-3 flex justify-between items-center">
+        <div className=" ">
+          <p className="text-sm text-violet-500 font-semibold ">
+            ID #{data?.salesNumber}
+          </p>
+          <p className="text-xs font-medium text-gray-500 mt-1 ">
+            {dayjs(data.createdAt).format("DD/MM/YYYY")}
+          </p>
+        </div>
+
+        <div className="hidden md:block z-0">
+          <div className="  flex justify-center p-4 gap-12 text-lg text-violet-500 mr-4">
+            <Link to={`/pUsers/sharePurchase/${data._id}`}>
+              <div
+                className={` ${
+                  data?.isCancelled && "pointer-events-none opacity-60"
+                } flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer`}
+              >
+                <IoMdShareAlt />
+                <p className="text-black font-bold text-sm">Share</p>
+              </div>
+            </Link>
+            {/* </Link> */}
+            <div className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer">
+              <MdTextsms className="text-green-500" />
+              <p className="text-black font-bold text-sm">Sms</p>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* party details */}
 
@@ -115,22 +148,17 @@ function PurchaseDetailsSecondary() {
 
       <div className=" block md:hidden z-0 ">
         <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 flex justify-center p-4 gap-12 text-lg text-violet-500  ">
-          <CancelButton
-            id={data._id}
-            tab="Sales"
-            isCancelled={data?.isCancelled}
-            reFetch={reFetch}
-          />
-
-          <div
-            onClick={() => navigate(`/pUsers/editSale/${data._id}`)}
-            className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer"
-          >
-            <FaEdit className="text-blue-500" />
-            <p className="text-black font-bold text-sm">Edit</p>
-          </div>
-          {/* <Link to={`/pUsers/shareSales/${data._id}`}> */}
-          <SwallFireForPdf data={data} />
+       
+        <Link to={`/pUsers/sharePurchase/${data._id}`}>
+              <div
+                className={` ${
+                  data?.isCancelled && "pointer-events-none opacity-60"
+                } flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer`}
+              >
+                <IoMdShareAlt />
+                <p className="text-black font-bold text-sm">Share</p>
+              </div>
+            </Link>
 
           <div className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer">
             <MdTextsms className="text-green-500" />

@@ -6,7 +6,7 @@ import api from "../../api/api";
 import { toast } from "react-toastify";
 import { useState } from "react";
 
-function CancelButton({ id, tab, isCancelled, reFetch, vanSale = false }) {
+function CancelButton({ id, tab, isCancelled, reFetch, vanSale = false,user }) {
   const [refresh, setRefresh] = useState(false);
   if (tab === "vanSale") {
     tab = "Sales";
@@ -14,7 +14,9 @@ function CancelButton({ id, tab, isCancelled, reFetch, vanSale = false }) {
   }
 
 
-  console.log(tab,vanSale);
+
+
+  console.log(user);
   
   const handleCancel = () => {
     Swal.fire({
