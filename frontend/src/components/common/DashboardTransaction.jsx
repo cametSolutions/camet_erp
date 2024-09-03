@@ -50,18 +50,13 @@ function DashboardTransaction({ filteredData, userType ,from}) {
           <div className=" flex justify-start text-xs mt-2 ">
             <div
               className={` ${
-                el.type === "Receipt"
-                  ? "bg-[#FB6D48]"
-                  : el.type === "Tax Invoice"
-                  ? "bg-violet-500"
-                  : el.type === "Purchase"
-                  ? "bg-pink-500"
-                  : el.type === "Van Sale"
-                  ? "bg-[#25cbcb]"
-                  : el?.type === "Stock Transfer"
-                  ? "bg-[#c42383]"
-                  : "bg-[#1b47ae]"
-              }   flex items-center text-white px-2 rounded-sm `}
+                el.type === "Receipt" ? "bg-red-500" :
+                el.type === "Tax Invoice" ? "bg-blue-500" :
+                el.type === "Purchase" ? "bg-green-500" :
+                el.type === "Van Sale" ? "bg-teal-500" :
+                el.type === "Stock Transfer" ? "bg-purple-500" :
+                "bg-gray-800"
+              } flex items-center text-white px-2 rounded-sm`}
             >
               {/* <FaRegCircleDot /> */}
               <p className=" p-1  rounded-lg px-3 font-semibold"> {el.type}</p>

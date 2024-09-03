@@ -102,10 +102,8 @@ import AddItemPurchase from '../pages/secUsers/AddItemPurchase'
 import EditItemPurchase from '../pages/secUsers/EditItemPurchase'
 import PurchaseDetailsSecondary from '../pages/secUsers/PurchaseDetailsSecondary'
 import SharePurchaseSecondary from '../pages/secUsers/SharePurchaseSecondary'
-import ThreeInchPurchaseSec from '../pages/secUsers/ThreeInchPurchaseSec'
 import PurchaseDetailsPrimary from '../pages/primaryUsers/PurchaseDetailsPrimary'
 import SharePurchasePrimary from '../pages/primaryUsers/SharePurchasePrimary'
-import ThreeInchPurchasePrimary from '../pages/primaryUsers/ThreeInchPurchasePrimary'
 import EditSale from '../pages/secUsers/EditSale'
 import ThreeInchInvoiceSec from '../pages/secUsers/ThreeInchInvoiceSec'
 import ThreeInchInvoice from '../pages/primaryUsers/ThreeInchInvoice'
@@ -196,7 +194,7 @@ const Routers = () => {
         <Route path='/pUsers/configureSecondaryUser/:id/:userId/:cmp_name' element={<ProtectedPriRoute><ConfigureSecondaryUser/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/Inventory' element={<ProtectedPriRoute><InventoryPrimaryUser/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/purchaseDetails/:id' element={<ProtectedPriRoute><PurchaseDetailsPrimary/></ProtectedPriRoute>}></Route>
-        <Route path='/pUsers/sharePurchaseThreeInch/:id' element={<ProtectedPriRoute><ThreeInchPurchasePrimary/></ProtectedPriRoute>}></Route>
+        <Route path='/pUsers/sharePurchase/:id' element={<ProtectedPriRoute><SharePurchasePrimary/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/shareInvoiceThreeInch/:id' element={<ProtectedPriRoute><ThreeInchInvoice/></ProtectedPriRoute>}></Route> 
         <Route path='/pUsers/brand' element={<ProtectedPriRoute><AddBrand/></ProtectedPriRoute>}></Route> 
         <Route path='/pUsers/category' element={<ProtectedPriRoute><AddCategory/></ProtectedPriRoute>}></Route> 
@@ -270,7 +268,6 @@ const Routers = () => {
         <Route path='/sUsers/editItemPurchase/:id/:godownName/:index' element={<ProtectedSecRoute><EditItemPurchase/></ProtectedSecRoute>}></Route> 
         <Route path='/sUsers/purchaseDetails/:id' element={<ProtectedSecRoute><PurchaseDetailsSecondary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/sharePurchase/:id' element={<ProtectedSecRoute><SharePurchaseSecondary/></ProtectedSecRoute>}></Route>
-        <Route path='/sUsers/sharePurchaseThreeInch/:id' element={<ProtectedSecRoute><ThreeInchPurchaseSec/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/addBatchPurchase/:id' element={<ProtectedSecRoute><AddbatchInPurchase/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/editPurchase/:id' element={<ProtectedSecRoute><EditPurchase/></ProtectedSecRoute>}></Route>
        

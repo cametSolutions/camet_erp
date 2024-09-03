@@ -4,8 +4,9 @@ import SwallFireForPdf from "./SwallFireForPdf";
 import { FaEdit } from "react-icons/fa";
 import CancelButton from "./CancelButton";
 import dayjs from "dayjs";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { IoMdShareAlt } from "react-icons/io";
 
 function VoucherDetailsHeader({
   data,
@@ -17,12 +18,14 @@ function VoucherDetailsHeader({
 }) {
   const [refresh, setRefresh] = useState(false);
 
-
   const navigate = useNavigate();
 
   const reFetch = () => {
     reFetchParent(!refresh);
   };
+
+  console.log(user);
+  
   return (
     <div>
       <div className="bg-white p-4 mt-3 flex justify-between items-center">
@@ -43,6 +46,10 @@ function VoucherDetailsHeader({
               isCancelled={data?.isCancelled}
               reFetch={reFetch}
             />
+
+            {
+              user==="secondary" && (
+
             <div
               onClick={() => navigate(editLink)}
               className={` ${
@@ -52,9 +59,25 @@ function VoucherDetailsHeader({
               <FaEdit className="text-blue-500" />
               <p className="text-black font-bold text-sm">Edit</p>
             </div>
+              )
+            }
 
-            {tab !== "stockTransfer" && (
+            {tab !== "stockTransfer" && tab !== "purchase" && (
               <SwallFireForPdf data={data} tab={tab} user={user} />
+            )}
+
+            {tab === "purchase" && (
+
+              <Link to={(`/${ user == "primary" ? "pUsers" : "sUsers"}/sharePurchase/${data._id}`)}> 
+              <div
+                className={` ${
+                  data?.isCancelled && "pointer-events-none opacity-60"
+                } flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer`}
+              >
+                <IoMdShareAlt />
+                <p className="text-black font-bold text-sm">Share</p>
+              </div>
+              </Link>
             )}
 
             <div
