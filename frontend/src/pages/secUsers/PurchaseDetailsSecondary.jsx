@@ -2,7 +2,7 @@ import { MdOutlineArrowBack } from "react-icons/md";
 
 import { MdTextsms } from "react-icons/md";
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import api from "../../api/api";
 import { toast } from "react-toastify";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -11,6 +11,7 @@ import SalesProductDetails from "../../components/common/SalesProductDetails";
 import CancelButton from "../../components/common/CancelButton";
 import { FaEdit } from "react-icons/fa";
 import SwallFireForPdf from "../../components/common/SwallFireForPdf";
+import { IoMdShareAlt } from "react-icons/io";
 
 function PurchaseDetailsSecondary() {
   const [data, setData] = useState("");
@@ -117,20 +118,28 @@ function PurchaseDetailsSecondary() {
         <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 flex justify-center p-4 gap-12 text-lg text-violet-500  ">
           <CancelButton
             id={data._id}
-            tab="Sales"
+            tab="purchase"
             isCancelled={data?.isCancelled}
             reFetch={reFetch}
           />
 
           <div
-            onClick={() => navigate(`/sUsers/editSale/${data._id}`)}
+            onClick={() => navigate(`/sUsers/editPurchase/${data._id}`)}
             className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer"
           >
             <FaEdit className="text-blue-500" />
             <p className="text-black font-bold text-sm">Edit</p>
           </div>
-          {/* <Link to={`/sUsers/shareSales/${data._id}`}> */}
-          <SwallFireForPdf data={data} />
+          <Link to={`/sUsers/sharePurchase/${data._id}`}>
+            <div
+              className={` ${
+                data?.isCancelled && "pointer-events-none opacity-60"
+              } flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer`}
+            >
+              <IoMdShareAlt />
+              <p className="text-black font-bold text-sm">Share</p>
+            </div>
+          </Link>
 
           <div className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer">
             <MdTextsms className="text-green-500" />

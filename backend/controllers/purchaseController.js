@@ -3,8 +3,7 @@ import {
   createPurchaseRecord,
   handlePurchaseStockUpdates,
   updatePurchaseNumber,
-   revertPurchaseStockUpdates
-  
+  revertPurchaseStockUpdates,
 } from "../helpers/purchaseHelper.js";
 import { processSaleItems as processPurchaseItems } from "../helpers/salesHelper.js";
 import { checkForNumberExistence } from "../helpers/secondaryHelper.js";
@@ -94,7 +93,6 @@ export const createPurchase = async (req, res) => {
 
 export const editPurchase = async (req, res) => {
   try {
-
     const purchaseId = req.params.id; // Assuming saleId is passed in the URL parameters
     const {
       selectedGodownId,
@@ -144,7 +142,9 @@ export const editPurchase = async (req, res) => {
       createdAt: new Date(selectedDate),
     };
 
-    await purchaseModel.findByIdAndUpdate(purchaseId, updateData, { new: true });
+    await purchaseModel.findByIdAndUpdate(purchaseId, updateData, {
+      new: true,
+    });
 
     //     ///////////////////////////////////// for reflecting the rate change in outstanding  ////////////////////////////////////
 
@@ -181,6 +181,43 @@ export const editPurchase = async (req, res) => {
     res.status(200).json({
       success: true,
       message: "purchase edited successfully",
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: "An error occurred while editing the sale.",
+      error: error.message,
+    });
+  }
+};
+
+// @desc cancel purchase
+// route GET/api/sUsers/cancelpurchase
+
+export const cancelPurchase = async (req, res) => {
+    try {
+    const purchaseId = req.params.id; // Assuming saleId is passed in the URL parameters
+    const existingPurchase = await purchaseModel.findById(purchaseId);
+    if (!existingPurchase) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Purchase not found" });
+    }
+
+    // Revert existing stock updates
+    await revertPurchaseStockUpdates(existingPurchase.items);
+
+    // flagging is cancelled true
+
+    existingPurchase.isCancelled = true;
+
+    const cancelledPurchase=await existingPurchase.save();
+
+    res.status(200).json({
+      success: true,
+      message: "purchase canceled successfully",
+      data:cancelledPurchase
     });
   } catch (error) {
     console.error(error);

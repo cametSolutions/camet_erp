@@ -4,12 +4,11 @@ import { FcCancel } from "react-icons/fc";
 import { IoArrowRedoOutline } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
 
-function DashboardTransaction({ filteredData, userType ,from}) {
-  console.log(from)
+function DashboardTransaction({ filteredData, userType, from }) {
+  console.log(from);
   console.log(userType);
   const navigate = useNavigate();
 
- 
   return (
     <div className="grid grid-cols-1 gap-4  text-center pb-7 mt-5 md:px-2 overflow-hidden  ">
       {filteredData?.map((el, index) => (
@@ -50,12 +49,17 @@ function DashboardTransaction({ filteredData, userType ,from}) {
           <div className=" flex justify-start text-xs mt-2 ">
             <div
               className={` ${
-                el.type === "Receipt" ? "bg-red-500" :
-                el.type === "Tax Invoice" ? "bg-blue-500" :
-                el.type === "Purchase" ? "bg-green-500" :
-                el.type === "Van Sale" ? "bg-teal-500" :
-                el.type === "Stock Transfer" ? "bg-purple-500" :
-                "bg-gray-800"
+                el.type === "Receipt"
+                  ? "bg-red-500"
+                  : el.type === "Tax Invoice"
+                  ? "bg-blue-500"
+                  : el.type === "Purchase"
+                  ? "bg-green-500"
+                  : el.type === "Van Sale"
+                  ? "bg-teal-500"
+                  : el.type === "Stock Transfer"
+                  ? "bg-purple-500"
+                  : "bg-gray-800"
               } flex items-center text-white px-2 rounded-sm`}
             >
               {/* <FaRegCircleDot /> */}
@@ -88,8 +92,6 @@ function DashboardTransaction({ filteredData, userType ,from}) {
           <hr />
           <hr />
           <div className="flex justify-between p-4">
-        
-
             <div className=" flex items-center justify-between w-full gap-2 text-md text-violet-500">
               <div className="flex items-center gap-2">
                 <IoArrowRedoOutline />
@@ -97,9 +99,9 @@ function DashboardTransaction({ filteredData, userType ,from}) {
                 <p>Send Receipt</p>
               </div>
               {el.isCancelled && (
-                <div className="flex justify-center items-center gap-2 text-red-500">
-                  <FcCancel />
-                  <p>Canelled</p>
+                <div className="flex justify-center items-center gap-2 text-white text-xs p-1 bg-gradient-to-b from-[#f14343] to-[#7e2d2d] rounded-sm px-2 shadow-lg">
+                  {/* <FcCancel /> */}
+                  <p>Cancelled</p>
                 </div>
               )}
             </div>
