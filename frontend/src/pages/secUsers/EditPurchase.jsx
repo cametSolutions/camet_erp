@@ -508,7 +508,7 @@ function EditPurchase() {
             onClick={handleToggleSidebar}
             className="block md:hidden text-white text-3xl"
           /> */}
-          <Link to={"/sUsers/dashboard"}>
+          <Link to={-1}>
             <IoIosArrowRoundBack className="text-3xl text-white cursor-pointer md:hidden" />
           </Link>
           <p className="text-white text-lg   font-bold ">Purchase Edit</p>

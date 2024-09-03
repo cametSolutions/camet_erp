@@ -19,6 +19,9 @@ import { registerPrimaryUser,login,addOrganizations,
   godownwiseProducts,godownwiseProductsSelf,fetchAdditionalCharges,getPurchaseDetails,addProductSubDetails,
   getProductSubDetails,deleteProductSubDetails,editProductSubDetails,getAllSubDetails,fetchConfigurationCurrentNumber} from '../controllers/primaryUserController.js';
 
+
+  import { cancelPurchase } from '../controllers/purchaseController.js';
+
 import {addProduct,editProduct} from "../controllers/commonController.js";
 import { singleUpload } from '../multer/multer.js';
 import { primaryIsBlocked } from '../middlewares/isBlocked.js';
@@ -99,6 +102,8 @@ router.put("/editProductSubDetails/:orgId/:id",authPrimary,primaryIsBlocked,edit
 router.get("/getAllSubDetails/:orgId",authPrimary,primaryIsBlocked,getAllSubDetails)
 router.get("/fetchConfigurationCurrentNumber/:orgId/:_id",authPrimary,primaryIsBlocked,fetchConfigurationCurrentNumber)
 router.get("/getStockTransferDetails/:id",authPrimary,primaryIsBlocked,getStockTransferDetails)
+router.post("/cancelpurchase/:id",authPrimary,primaryIsBlocked,cancelPurchase)
+
 
 
 
