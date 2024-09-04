@@ -135,6 +135,7 @@ import AddbatchInPurchase from '../pages/secUsers/AddbatchInPurchase'
 import ReceiptPrintOut from '../pages/secUsers/ReceiptPrintOut'
 import ReceiptPrintOutPrimary from '../pages/primaryUsers/ReceiptPrintOut'
 import EditPurchase from '../pages/secUsers/EditPurchase'
+import SelectVouchers from '../pages/secUsers/SelectVouchers'
 
 const Routers = () => {
   return (
@@ -286,7 +287,11 @@ const Routers = () => {
         <Route path='/sUsers/StockTransferDetails/:id' element={<ProtectedSecRoute><StockTransferDetailsSecondary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/editItemstockTransfer/:id/:godownName/:index' element={<ProtectedSecRoute><EditItemStockTransfer/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/editStockTransfer/:id' element={<ProtectedSecRoute><EditStockTransferSecondary/></ProtectedSecRoute>}></Route>
-        <Route path='/sUsers/receiptPrintOut' element={<ProtectedSecRoute><ReceiptPrintOut/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/receiptPrintOut' element={<ProtectedSecRoute><ReceiptPrintOut/></ProtectedSecRoute>}></Route>\
+
+
+        
+        <Route path='/sUsers/selectVouchers' element={<ProtectedSecRoute><SelectVouchers/></ProtectedSecRoute>}></Route>
 
 
         {/* errorPage */}

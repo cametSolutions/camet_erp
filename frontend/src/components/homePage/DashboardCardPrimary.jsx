@@ -4,6 +4,7 @@ import { IoReceiptSharp } from 'react-icons/io5';
 import { MdInventory } from 'react-icons/md';
 import { RiContactsFill } from 'react-icons/ri';
 import { BiTransfer } from "react-icons/bi";
+import { GiTicket } from "react-icons/gi";
 
 
 const DashboardCards = ({ userType, receiptTotal, handleLinkClick }) => {
@@ -54,6 +55,12 @@ const DashboardCards = ({ userType, receiptTotal, handleLinkClick }) => {
         bgColor: 'bg-[#134074]',
         subtitle: 'Stock Transfer',
         link: '/sUsers/stockTransfer'
+      },
+      {
+        icon: <GiTicket />,
+        bgColor: 'bg-[#219ebc]',
+        subtitle: 'Vouchers',
+        link: '/sUsers/selectVouchers'
       }
     ]
   };

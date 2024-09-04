@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 import api from "../../api/api";
 import { useNavigate } from "react-router-dom";
-import { useDispatch } from "react-redux";
 import { toast } from "react-toastify";
 import { useSidebar } from "../../layout/Layout";
 import DashBoard from "../../components/common/DashBoard";
