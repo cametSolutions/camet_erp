@@ -3,9 +3,27 @@ import PrimaryUsers from "../models/primaryUserModel.js";
 import generateAdminToken from "../utils/generateAdminToken.js";
 import Organization from "../models/OragnizationModel.js";
 import SecondaryUser from "../models/secondaryUserModel.js";
-import TallyData from '../models/TallyData.js'
-import Banks from '../models/bankModel.js'
+import TallyData from "../models/TallyData.js";
+import Banks from "../models/bankModel.js";
 import nodemailer from "nodemailer";
+import additionalChargesModel from "../models/additionalChargesModel.js";
+import hsnModel from "../models/hsnModel.js";
+import invoiceModel from "../models/invoiceModel.js";
+import partyModel from "../models/partyModel.js";
+import productModel from "../models/productModel.js";
+import purchaseModel from "../models/purchaseModel.js";
+import salesModel from "../models/salesModel.js";
+import stockTransferModel from "../models/stockTransferModel.js";
+import {
+  Brand,
+  Category,
+  Godown,
+  PriceLevel,
+  Subcategory,
+} from "../models/subDetails.js";
+import vanSaleModel from "../models/vanSaleModel.js";
+import TransactionModel from "../models/TransactionModel.js";
+
 
 // @desc Login Admin
 // route POST/api/admin/login
@@ -63,7 +81,6 @@ export const logout = async (req, res) => {
     return res.status(500).json({ status: false, message: "Failed to login!" });
   }
 };
-
 
 // @desc get admin data for side bar
 // route POST/api/admin/getAdminData
@@ -152,39 +169,99 @@ export const handlePrimaryApprove = async (req, res) => {
   }
 };
 
-
 // @desc handle deletion of primary user
 // route DELETE/api/admin/handlePrimaryDelete
-
 
 export const handlePrimaryDelete = async (req, res) => {
   const userId = req.params.id;
 
   try {
+    // First, find the organizations owned by this user
+    const organizations = await Organization.find({ owner: userId });
+    const organizationIds = organizations.map(org => org._id);
 
-
-    const [user,secUser,organizations,banks,tallies]=await Promise.all([
+    const deletionResults = await Promise.all([
       PrimaryUsers.findByIdAndDelete(userId),
       SecondaryUser.deleteMany({ primaryUser: userId }),
       Organization.deleteMany({ owner: userId }),
       Banks.deleteMany({ Primary_user_id: userId }),
-      TallyData.deleteMany({ Primary_user_id: userId })
-    ])
+      TallyData.deleteMany({ Primary_user_id: userId }),
+      additionalChargesModel.deleteMany({ Primary_user_id: userId }),
+      hsnModel.deleteMany({ Primary_user_id: userId }),
+      invoiceModel.deleteMany({ Primary_user_id: userId }),
+      partyModel.deleteMany({ Primary_user_id: userId }),
+      productModel.deleteMany({ Primary_user_id: userId }),
+      purchaseModel.deleteMany({ Primary_user_id: userId }),
+      salesModel.deleteMany({ Primary_user_id: userId }),
+      stockTransferModel.deleteMany({ Primary_user_id: userId }),
+      Brand.deleteMany({ Primary_user_id: userId }),
+      Category.deleteMany({ Primary_user_id: userId }),
+      Subcategory.deleteMany({ Primary_user_id: userId }),
+      Godown.deleteMany({ Primary_user_id: userId }),
+      PriceLevel.deleteMany({ Primary_user_id: userId }),
+      vanSaleModel.deleteMany({ Primary_user_id: userId }),
+      TransactionModel.deleteMany({ cmp_id: { $in: organizationIds } })
+    ]);
+
+    const [
+      user,
+      secUserResult,
+      orgResult,
+      banksResult,
+      talliesResult,
+      additionalChargesResult,
+      hsnResult,
+      invoiceResult,
+      partyResult,
+      productResult,
+      purchaseResult,
+      salesResult,
+      stockTransferResult,
+      brandResult,
+      categoryResult,
+      subcategoryResult,
+      godownResult,
+      priceLevelResult,
+      vanSaleResult,
+      TransactionResult
+    ] = deletionResults;
 
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
 
-    // Optionally, you can return a success message
-    res.status(200).json({ message: "User deleted successfully" });
+    const deletionCounts = {
+      user: user ? 1 : 0,
+      secondaryUsers: secUserResult.deletedCount,
+      organizations: orgResult.deletedCount,
+      banks: banksResult.deletedCount,
+      tallies: talliesResult.deletedCount,
+      additionalCharges: additionalChargesResult.deletedCount,
+      hsn: hsnResult.deletedCount,
+      invoices: invoiceResult.deletedCount,
+      parties: partyResult.deletedCount,
+      products: productResult.deletedCount,
+      purchases: purchaseResult.deletedCount,
+      sales: salesResult.deletedCount,
+      stockTransfers: stockTransferResult.deletedCount,
+      brands: brandResult.deletedCount,
+      categories: categoryResult.deletedCount,
+      subcategories: subcategoryResult.deletedCount,
+      godowns: godownResult.deletedCount,
+      priceLevels: priceLevelResult.deletedCount,
+      vanSales: vanSaleResult.deletedCount,
+      Transactions: TransactionResult.deletedCount
+    };
+
+    res.status(200).json({
+      message: "User and associated data deleted successfully",
+      deletionCounts: deletionCounts
+    });
   } catch (error) {
     console.error("Error:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };
-
-
-
 
 // @desc handle block of primary user
 // route POST/api/admin/handlePrimaryBlock
@@ -424,7 +501,9 @@ export const handleOrganizationApprove = async (req, res) => {
 // route POST/api/admin/getOrganizationsAdmin
 export const getOrganizationsAdmin = async (req, res) => {
   try {
-    const organizations = await Organization.find({}).sort({createdAt:-1}).populate("owner");
+    const organizations = await Organization.find({})
+      .sort({ createdAt: -1 })
+      .populate("owner");
     if (organizations) {
       return res.status(200).json({
         data: organizations,
@@ -470,16 +549,16 @@ export const getOrganizations = async (req, res) => {
 export const fetchSecondaryUsers = async (req, res) => {
   try {
     const secondaryUsers = await SecondaryUser.find({})
-    .populate({
-      path: "organization",
-      select: "name" 
-    })
-    .populate({
-      path:"primaryUser",
-      select:"userName"
-    }) 
-    .select("name email mobile isBlocked")
-    .exec();
+      .populate({
+        path: "organization",
+        select: "name",
+      })
+      .populate({
+        path: "primaryUser",
+        select: "userName",
+      })
+      .select("name email mobile isBlocked")
+      .exec();
     if (secondaryUsers) {
       return res.status(200).json({
         secondaryUsers: secondaryUsers,

@@ -3,11 +3,12 @@
 import { useEffect, useState } from "react";
 import api from "../../api/api";
 import dayjs from "dayjs";
-import Swal from "sweetalert2"; 
+import Swal from "sweetalert2";
 import { toast } from "react-toastify";
 import SecUserPopup from "../../components/admin/SecUserPopup";
 import Pagination from "../../components/common/Pagination";
 import { RiDeleteBin5Fill } from "react-icons/ri";
+import { RingLoader } from "react-spinners";
 
 function PrimaryUsers() {
   const [data, setData] = useState([]);
@@ -21,8 +22,7 @@ function PrimaryUsers() {
   const [currentPage, setCurrentPage] = useState(1);
   const [postPerPage, setPostPerPage] = useState(5);
   const [option, setOption] = useState("");
-
-  console.log(option);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const getPrimaryUsers = async () => {
@@ -30,7 +30,6 @@ function PrimaryUsers() {
         const res = await api.get("/api/admin/getPrimaryUsers", {
           withCredentials: true,
         });
-        console.log(res);
         setData(res?.data?.priUsers);
         setOrg(res?.data?.org);
         setSecUsers(res?.data?.secUsers);
@@ -131,15 +130,17 @@ function PrimaryUsers() {
       cancelButtonText: "Cancel it",
     });
     if (confirmResult?.isConfirmed) {
+      setLoading(true);
       try {
         const res = await api.delete(
           `/api/admin/handlePrimaryDelete/${userId}`,
-          
+
           {
             withCredentials: true,
           }
         );
-        console.log(res);
+
+        setLoading(false);
         setRefresh(!refresh);
         Swal.fire({
           title: "Done!",
@@ -263,10 +264,14 @@ function PrimaryUsers() {
   const firstPostIndex = lastPostIndex - postPerPage;
   const currentUsers = filteredData.slice(firstPostIndex, lastPostIndex);
 
-  console.log(filteredSecUsers);
 
   return (
     <div className="relative">
+      {loading && (
+        <div className=" absolute top-0 w-screen h-screen z-50  flex justify-center items-center bg-black/[0.5]">
+          <RingLoader color="#1c14a0" />
+        </div>
+      )}
       {/* <!-- component --> */}
       <div
         className="bg-white p-8 rounded-md w-full h-screen overflow-y-scroll"
@@ -393,7 +398,10 @@ function PrimaryUsers() {
                         </td>
                         <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
                           <p className="text-gray-900 whitespace-no-wrap">
-                            {org.filter((ele) => ele?.owner === item?._id)?.length}
+                            {
+                              org.filter((ele) => ele?.owner === item?._id)
+                                ?.length
+                            }
                           </p>
                         </td>
                         <td
@@ -541,15 +549,20 @@ function PrimaryUsers() {
                                 checked={item?.whatsApp === true}
                                 className="checkbox"
                                 type="checkbox"
-                              />?
-                              <div className="knobs"></div>
+                              />
+                              ?<div className="knobs"></div>
                               <div className="layer"></div>
                             </div>
                           </div>
                         </td>
 
                         <td className="flex justify-center items-center">
-                          <RiDeleteBin5Fill onClick={()=>{handleDelete(item?._id)}} className="cursor-pointer mt-4 text-[#72283b] transform duration-100 hover:scale-125 text-lg" />
+                          <RiDeleteBin5Fill
+                            onClick={() => {
+                              handleDelete(item?._id);
+                            }}
+                            className="cursor-pointer mt-4 text-[#72283b] transform duration-100 hover:scale-125 text-lg"
+                          />
                         </td>
                       </tr>
                     ))
@@ -562,7 +575,11 @@ function PrimaryUsers() {
               </table>
               <div className="px-5 py-5 bg-white border-t flex flex-col xs:flex-row sm:items-start md:items-center xs:justify-between ">
                 <span className="text-xs xs:text-sm text-gray-900">
-                Showing {firstPostIndex+1} to {lastPostIndex>filteredData?.length ? filteredData?.length:lastPostIndex} of {filteredData?.length} Entries
+                  Showing {firstPostIndex + 1} to{" "}
+                  {lastPostIndex > filteredData?.length
+                    ? filteredData?.length
+                    : lastPostIndex}{" "}
+                  of {filteredData?.length} Entries
                   {filteredData.length} Entries
                 </span>
                 <div className="inline-flex mt-2 xs:mt-0">
