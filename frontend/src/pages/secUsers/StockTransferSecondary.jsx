@@ -191,8 +191,8 @@ function StockTransferSecondary() {
             onClick={handleToggleSidebar}
             className="block md:hidden text-white text-3xl"
           /> */}
-          <Link to={"/sUsers/dashboard"}>
-            <IoIosArrowRoundBack className="text-3xl text-white cursor-pointer md:hidden" />
+          <Link to={"/sUsers/selectVouchers"}>
+            <IoIosArrowRoundBack className="text-3xl text-white cursor-pointer " />
           </Link>
           <p className="text-white text-lg   font-bold ">Stock Transfer</p>
         </div>
