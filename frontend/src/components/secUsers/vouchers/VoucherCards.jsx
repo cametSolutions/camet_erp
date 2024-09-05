@@ -11,7 +11,7 @@ import purchaseInvoice from "../../../assets/images/purchaseInvoice.png";
 import paymentout from "../../../assets/images/paymentout.png";
 import debitNote from "../../../assets/images/debitNote.png";
 import expense from "../../../assets/images/expense.png";
-import vanSale from "../../../assets/images/vansale.png";
+import vanSale from "../../../assets/images/vanSale.png";
 import stockTransfer from "../../../assets/images/stockTransfer.png";
 
 import paymentIn from "../../../assets/images/paymentIn.png";
