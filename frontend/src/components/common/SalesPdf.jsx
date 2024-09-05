@@ -1,6 +1,5 @@
 /* eslint-disable react/prop-types */
-import React, { useEffect, useState } from "react";
-import QRCode from "react-qr-code";
+import React from "react";
 import PdfHeader from "../pdfComponents/PdfHeader";
 import PdfFooter from "../pdfComponents/PdfFooter";
 import { useSelector } from "react-redux";

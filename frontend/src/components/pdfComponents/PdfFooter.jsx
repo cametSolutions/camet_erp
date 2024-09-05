@@ -2,6 +2,9 @@
 import QRCode from "react-qr-code";
 
 function PdfFooter({bank,org,data,additinalCharge,inWords,selectedOrganization}) {
+
+  console.log(selectedOrganization);
+  
   return (
     <div>
           <div className="flex justify-between">

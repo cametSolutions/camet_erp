@@ -2,6 +2,7 @@
 import QRCode from "react-qr-code";
 import PdfHeader from "../pdfComponents/PdfHeader";
 import PdfFooter from "../pdfComponents/PdfFooter";
+import { useSelector } from "react-redux";
 
 function SaleOrderPdf({
   data,
@@ -11,9 +12,20 @@ function SaleOrderPdf({
   inWords,
   subTotal,
   additinalCharge,
+  userType,
 }) {
   const party = data?.party;
   const despatchDetails = data?.despatchDetails;
+
+  const primarySelectedOrg = useSelector(
+    (state) => state.setSelectedOrganization.selectedOrg
+  );
+  const secondarySelectedOrg = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg
+  );
+
+  const selectedOrganization = 
+  userType === "primaryUser" ? primarySelectedOrg : secondarySelectedOrg;
 
   const calculateTotalTax = () => {
     const individualTax = data?.items?.map(
@@ -149,12 +161,12 @@ function SaleOrderPdf({
                       {count} {el?.unit}
                     </td>
                     <td className="py-4 text-black text-right pr-2 text-nowrap">
-                      ₹ {rate}
+                       {rate}
                     </td>
                     <td className="py-4 text-black text-right pr-2 ">
                       {discountAmount > 0
-                        ? ` ₹${discountAmount?.toFixed(2)} `
-                        : "₹ 0"}
+                        ? ` ${discountAmount?.toFixed(2)} `
+                        : " 0"}
                       {/* <br />
                         {el?.discountPercentage > 0 &&
                           `(${el?.discountPercentage}%)`} */}
@@ -162,7 +174,7 @@ function SaleOrderPdf({
                     <td className="py-4 text-black text-right pr-2">
                       {taxAmt}
                     </td>
-                    <td className="py-4 text-black text-right">₹ {finalAmt}</td>
+                    <td className="py-4 text-black text-right"> {finalAmt}</td>
                   </tr>
                 );
               })}
@@ -180,10 +192,10 @@ function SaleOrderPdf({
               <td className="text-right pr-1 text-black font-bold text-[9px]"></td>
               <td className="text-right pr-1 text-black font-bold text-[9px]"></td>
               <td className="text-right pr-1 text-black font-bold text-[9px]">
-                ₹ {calculateTotalTax()}
+                 {calculateTotalTax()}
               </td>
               <td className="text-right pr-1 text-black font-bold text-[9px]">
-                ₹ {subTotal}
+                 {subTotal}
               </td>
             </tr>
           </tfoot>
@@ -196,6 +208,7 @@ function SaleOrderPdf({
               data={data}
               additinalCharge={additinalCharge}
               inWords={inWords}
+              selectedOrganization={selectedOrganization}
             />
       </div>
     </div>
