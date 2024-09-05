@@ -141,6 +141,7 @@ function ThreeInchInvoice() {
         bank={bank}
         additinalCharge={additinalCharge}
         inWords={inWords}
+        userType="primaryUser"
       />
     </div> 
   
