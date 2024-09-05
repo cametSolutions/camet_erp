@@ -80,11 +80,14 @@ function PdfHeader({ data, org, address, despatchDetails, tab = "sales" }) {
 
       <div className="  flex  justify-between px-5 gap-6  bg-slate-100 py-2">
         <div className="">
+          {org?.pan && (
+            <div className="text-gray-500 mb-0.5 md:text-xs text-[9px]">
+             Pan: {org?.pan && org?.pan}
+            </div>
+          )}
           <div className="text-gray-500 mb-0.5 md:text-xs text-[9px]">
-            {org?.country === "India" ? "Pan" : "Vat"}: {org?.pan && org?.pan}
-          </div>
-          <div className="text-gray-500 mb-0.5 md:text-xs text-[9px]">
-            Gst No: {org?.gstNum && org?.gstNum !== null ? org.gstNum : ""}
+            {org?.country === "India" ? "Gst No" : "Vat"}:{" "}
+            {org?.gstNum && org?.gstNum !== null ? org.gstNum : ""}
           </div>
         </div>
         <div className="flex flex-col">
