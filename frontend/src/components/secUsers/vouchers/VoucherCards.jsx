@@ -128,8 +128,8 @@ const VoucherCards = ({ tab }) => {
   const CardContent = ({ item }) => (
     <div className="bg-slate-50 cursor-pointer flex gap-6 items-center p-3 md:p-4 hover:bg-slate-100 hover:shadow-lg transition-all duration-300 ease-in-out transform hover:-translate-y-1">
        {!item.active && (
-        <div className="absolute top-0 right-0 bg-[#7ecbaa] text-white text-xs font-bold px-2 py-1 rounded-bl-md flex justify-center items-center">
-          <IoAlertCircle className="w-4 h-4 inline-block " />
+        <div className="absolute top-0 right-0 bg-[#7ecbaa] text-white  text-xs  font-bold px-1 py-1  md:px-2 md:py-1 rounded-bl-md flex justify-center items-center">
+          <IoAlertCircle  className="w-4 h-4 inline-block " />
        
         </div>
       )}
