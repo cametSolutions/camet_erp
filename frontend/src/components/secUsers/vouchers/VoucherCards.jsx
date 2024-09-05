@@ -1,6 +1,6 @@
 /* eslint-disable react/prop-types */
 /* eslint-disable react/jsx-key */
-import  { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import sale from "../../../assets/images/sale.png";
 
@@ -17,7 +17,6 @@ import stockTransfer from "../../../assets/images/stockTransfer.png";
 import paymentIn from "../../../assets/images/paymentIn.png";
 import { IoAlertCircle } from "react-icons/io5";
 
-
 const salesTiles = [
   {
     title: "Sales",
@@ -29,8 +28,8 @@ const salesTiles = [
   {
     title: "Payment In",
     icon: paymentIn,
-   to: "/sUsers/creditnote ",
-    active: false,
+    to: "/sUsers/receipt ",
+    active: true,
     subtitle: "Track received payments",
   },
   {
@@ -122,18 +121,14 @@ const VoucherCards = ({ tab }) => {
     // Add more conditions here if you have other tabs
   }, [tab]);
 
-
-
-  
   const CardContent = ({ item }) => (
     <div className="bg-slate-50 cursor-pointer flex gap-6 items-center p-3 md:p-4 hover:bg-slate-100 hover:shadow-lg transition-all duration-300 ease-in-out transform hover:-translate-y-1">
-       {!item.active && (
+      {!item.active && (
         <div className="absolute top-0 right-0 bg-[#7ecbaa] text-white  text-xs  font-bold px-1 py-1  md:px-2 md:py-1 rounded-bl-md flex justify-center items-center">
-          <IoAlertCircle  className="w-4 h-4 inline-block " />
-       
+          <IoAlertCircle className="w-4 h-4 inline-block " />
         </div>
       )}
-      
+
       <aside>
         <div className="bg-white p-2 rounded-lg flex justify-center items-center w-12 h-12 md:w-16 md:h-16 shadow-lg">
           <img src={item.icon} alt={item.title} className="" />
@@ -146,22 +141,21 @@ const VoucherCards = ({ tab }) => {
     </div>
   );
 
-
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 gap-y-4 md:gap-y-8  p-2 md:p-4">
-    {selectedTab &&
-      selectedTab.map((item, index) => (
-        item.active ? (
-          <Link key={index} to={item.to}>
-            <CardContent item={item} />
-          </Link>
-        ) : (
-          <div key={index} className="">
-            <CardContent item={item} />
-          </div>
-        )
-      ))}
-  </div>
+      {selectedTab &&
+        selectedTab.map((item, index) =>
+          item.active ? (
+            <Link key={index} to={item.to}>
+              <CardContent item={item} />
+            </Link>
+          ) : (
+            <div key={index} className="">
+              <CardContent item={item} />
+            </div>
+          )
+        )}
+    </div>
   );
 };
 

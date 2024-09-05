@@ -2270,7 +2270,7 @@ export const fetchConfigurationNumber = async (req, res) => {
           purchase: configuration.purchaseNumber,
           vanSale: configuration.vanSalesNumber,
           stockTransfer: configuration.stockTransferNumber,
-          receipt: null, // Add if there's a specific receipt number for user config
+          receipt: configuration.receiptNumber, // Add if there's a specific receipt number for user config
         };
         return numbers[title] || null;
       } else{
@@ -2280,7 +2280,7 @@ export const fetchConfigurationNumber = async (req, res) => {
           purchase: company.purchaseNumber,
           vanSale: company.vanSalesNumber,
           stockTransfer: company.stockTransferNumber,
-          // receipt: company.receiptNumberDetails
+          receipt: company.receiptNumberDetails
         };
   
 

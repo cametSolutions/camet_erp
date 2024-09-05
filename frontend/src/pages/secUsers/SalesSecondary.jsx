@@ -38,7 +38,6 @@ function SalesSecondary() {
   const date = useSelector((state) => state.salesSecondary.date);
   const [selectedDate, setSelectedDate] = useState(new Date());
 
-  console.log(selectedDate);
 
   const additionalChargesFromRedux = useSelector(
     (state) => state.salesSecondary.additionalCharges

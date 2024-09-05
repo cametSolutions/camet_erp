@@ -6,7 +6,7 @@ function SelectVouchers() {
   return (
     <div>
       <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex  items-center gap-2 sticky top-0 z-50  ">
-        <Link to={-1}>
+        <Link to="/sUsers/dashboard">
           <IoIosArrowRoundBack className="text-3xl text-white cursor-pointer " />
         </Link>
         <p className="text-white text-lg   font-bold ">Vouchers</p>
