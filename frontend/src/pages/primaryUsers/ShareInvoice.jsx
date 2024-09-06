@@ -181,6 +181,7 @@ function ShareInvoice() {
           subTotal={subTotal}
           additinalCharge={additinalCharge}
           inWords={inWords}
+          userType="primaryUser"
         />
       </div>
     </div>);

@@ -144,6 +144,8 @@ function ThreeInchInvoiceSec() {
         bank={bank}
         additinalCharge={additinalCharge}
         inWords={inWords}
+        userType="secondaryUser"
+
       />
     </div> 
   

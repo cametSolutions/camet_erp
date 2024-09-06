@@ -199,6 +199,7 @@ function ShareInvoiceSecondary() {
           subTotal={subTotal}
           additinalCharge={additinalCharge}
           inWords={inWords}
+          userType="secondaryUser"
         />
       </div>
     </div>
