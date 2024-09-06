@@ -5,8 +5,15 @@ import { Link } from "react-router-dom";
 import api from "../../api/api";
 import HeaderTile from "../../components/secUsers/main/HeaderTile";
 import { useDispatch } from "react-redux";
-import { addReceiptNumber, changeDate ,removeAll,removeParty} from "../../../slices/receipt";
+import {
+  addReceiptNumber,
+  changeDate,
+  removeAll,
+  removeParty,
+} from "../../../slices/receipt";
 import AddPartyTile from "../../components/secUsers/main/AddPartyTile";
+import AddAmountTile from "../../components/secUsers/main/AddAmountTile";
+import PaymentModeTile from "../../components/secUsers/main/PaymentModeTile";
 
 function Receipt() {
   // ////////////////dispatch
@@ -87,8 +94,6 @@ function Receipt() {
     }
   }, []);
 
-
-
   return (
     <div>
       <header className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex  items-center gap-2 sticky top-0 z-50  ">
@@ -117,6 +122,9 @@ function Receipt() {
         link="/sUsers/searchPartyReceipt"
         linkBillTo=""
       />
+
+      <AddAmountTile party={party}  tab="receipt" />
+      <PaymentModeTile />
     </div>
   );
 }

@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import api from "../../api/api";
 import { useDispatch } from "react-redux";
-import { addParty } from "../../../slices/invoiceSecondary";
+import { addParty } from "../../../slices/receipt";
 import { useLocation } from "react-router-dom";
 import PartyList from "../../components/secUsers/main/PartyList";
 
@@ -19,16 +19,18 @@ function SearchPartyReciept() {
   const dispatch = useDispatch();
   const location = useLocation();
 
-
   const cpm_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
   useEffect(() => {
     const fetchParties = async () => {
       try {
-        const res = await api.get(`/api/sUsers/PartyList/${cpm_id}?outstanding=true`, {
-          withCredentials: true,
-        });
+        const res = await api.get(
+          `/api/sUsers/PartyList/${cpm_id}?outstanding=true`,
+          {
+            withCredentials: true,
+          }
+        );
         setLoading(false);
 
         setParties(res.data.partyList);
@@ -46,18 +48,10 @@ function SearchPartyReciept() {
 
   const selectHandler = (el) => {
     dispatch(addParty(el));
-    if (location?.state?.from === "editInvoice") {
-      navigate(`/sUsers/editinvoice/${location?.state?.id}`);
-    } else {
-      navigate("/sUsers/invoice");
-    }
+    navigate("/sUsers/receipt");
   };
   const backHandler = () => {
-    if (location?.state?.from === "editInvoice") {
-      navigate(`/sUsers/editinvoice/${location?.state?.id}`);
-    } else {
-      navigate("/sUsers/invoice");
-    }
+    navigate("/sUsers/receipt");
   };
 
   useEffect(() => {

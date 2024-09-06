@@ -138,6 +138,8 @@ import EditPurchase from '../pages/secUsers/EditPurchase'
 import SelectVouchers from '../pages/secUsers/SelectVouchers'
 import Receipt from '../pages/secUsers/Receipt'
 import SearchPartyReciept from '../pages/secUsers/SearchPartyReciept'
+import OutStandingDetails from '../pages/secUsers/OutstandingDetails'
+import OutstandingListOfReceipt from '../pages/secUsers/OutstandingListOfReceipt'
 
 const Routers = () => {
   return (
@@ -299,6 +301,7 @@ const Routers = () => {
         {/* receipt */}
         <Route path='/sUsers/receipt' element={<ProtectedSecRoute><Receipt/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/searchPartyReceipt' element={<ProtectedSecRoute><SearchPartyReciept/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/receipt/addAmount/:party_id' element={<ProtectedSecRoute><OutstandingListOfReceipt/></ProtectedSecRoute>}></Route>
 
 
 

@@ -192,6 +192,11 @@ export const fetchOutstandingDetails = async (req, res) => {
     }).sort({ bill_date: 1 });
     if (outstandings) {
       return res.status(200).json({
+        totalOutstandingAmount: outstandings.reduce(
+          (total, out) => total + out.bill_pending_amt,
+          0
+        ),
+
         outstandings: outstandings,
         message: "outstandings fetched",
       });
@@ -285,7 +290,6 @@ export const confirmCollection = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
-
 
 // @desc logout
 // route GET/api/sUsers/logout
@@ -655,7 +659,9 @@ export const PartyList = async (req, res) => {
   try {
     // Fetch parties and secondary user concurrently
     const [partyList, secUser] = await Promise.all([
-      PartyModel.find({ cmp_id, Primary_user_id }).select("_id partyName party_master_id"),
+      PartyModel.find({ cmp_id, Primary_user_id }).select(
+        "_id partyName party_master_id"
+      ),
       SecondaryUser.findById(secUserId),
     ]);
 
@@ -719,7 +725,6 @@ export const PartyList = async (req, res) => {
     res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
-
 
 // @desc adding new Party
 // route POst/api/pUsers/addParty
@@ -854,7 +859,7 @@ export const getProducts = async (req, res) => {
         product_master_id: 1,
         __v: 1,
         GodownList: 1,
-        batchEnabled:1
+        batchEnabled: 1,
       },
     };
 
@@ -1797,10 +1802,9 @@ export const editInvoice = async (req, res) => {
 export const fetchFilters = async (req, res) => {
   const cmp_id = req.params.cmp_id;
   try {
-
     const getFilters = async (model, field) => {
       const filters = await model.find({ cmp_id: cmp_id });
-      return filters.map((item) => item[field]);  // Extract the specific field
+      return filters.map((item) => item[field]); // Extract the specific field
     };
 
     // Await the results and extract the desired field
@@ -1828,8 +1832,6 @@ export const fetchFilters = async (req, res) => {
       .json({ status: false, message: "Internal server error" });
   }
 };
-
-
 
 // @desc delete AdditionalCharge
 // route get/api/pUsers/deleteAdditionalCharge
@@ -2001,7 +2003,6 @@ export const addconfigurations = async (req, res) => {
     });
   }
 };
-
 
 export const createSale = async (req, res) => {
   try {
@@ -2278,7 +2279,6 @@ export const fetchConfigurationNumber = async (req, res) => {
     );
 
     // console.log("configuration", configuration);
-    
 
     const getConfigDetails = () => {
       if (!configuration) return null;
@@ -2296,7 +2296,7 @@ export const fetchConfigurationNumber = async (req, res) => {
     };
 
     const getConfigNumber = () => {
-      if (configuration   ) { 
+      if (configuration) {
         const numbers = {
           sales: configuration.salesNumber,
           salesOrder: configuration.orderNumber,
@@ -2306,21 +2306,19 @@ export const fetchConfigurationNumber = async (req, res) => {
           receipt: configuration.receiptNumber, // Add if there's a specific receipt number for user config
         };
         return numbers[title] || null;
-      } else{
+      } else {
         const companyNumbers = {
           sales: company.salesNumber,
           salesOrder: company.orderNumber,
           purchase: company.purchaseNumber,
           vanSale: company.vanSalesNumber,
           stockTransfer: company.stockTransferNumber,
-          receipt: company.receiptNumberDetails
+          receipt: company.receiptNumberDetails,
         };
-  
 
         return companyNumbers[title] || null;
       }
 
-    
       // console.log("companyNumbers", companyNumbers);
     };
 
@@ -2862,8 +2860,6 @@ export const getPurchaseDetails = async (req, res) => {
   }
 };
 
-
-
 export const editSale = async (req, res) => {
   const saleId = req.params.id; // Assuming saleId is passed in the URL parameters
   const {
@@ -2884,9 +2880,7 @@ export const editSale = async (req, res) => {
 
   const isVanSale = vanSaleQuery === "true";
 
-
-  console.log(selectedGodownName,selectedGodownId);
-  
+  console.log(selectedGodownName, selectedGodownId);
 
   let model;
   if (isVanSale) {
@@ -2917,8 +2911,12 @@ export const editSale = async (req, res) => {
 
     // Update existing sale record
     const updateData = {
-      selectedGodownId: selectedGodownId ?selectedGodownId: existingSale.selectedGodownId,
-      selectedGodownName: selectedGodownName ? selectedGodownName[0] : existingSale.selectedGodownName,
+      selectedGodownId: selectedGodownId
+        ? selectedGodownId
+        : existingSale.selectedGodownId,
+      selectedGodownName: selectedGodownName
+        ? selectedGodownName[0]
+        : existingSale.selectedGodownName,
       serialNumber: existingSale.serialNumber, // Keep existing serial number
       cmp_id: orgId,
       partyAccount: party?.partyName,
@@ -3001,7 +2999,9 @@ export const getAllSubDetails = async (req, res) => {
         Brand.find({ cmp_id, Primary_user_id }).select("_id brand"),
         Category.find({ cmp_id, Primary_user_id }).select("_id category"),
         Subcategory.find({ cmp_id, Primary_user_id }).select("_id subcategory"),
-        Godown.find({ cmp_id, Primary_user_id }).select("_id godown defaultGodown"),
+        Godown.find({ cmp_id, Primary_user_id }).select(
+          "_id godown defaultGodown"
+        ),
         PriceLevel.find({ cmp_id, Primary_user_id }).select("_id pricelevel"),
       ]);
 
@@ -3012,7 +3012,11 @@ export const getAllSubDetails = async (req, res) => {
         _id: s._id,
         name: s.subcategory,
       })),
-      godowns: godowns.map((g) => ({ _id: g._id, name: g.godown,defaultGodown:g.defaultGodown })),
+      godowns: godowns.map((g) => ({
+        _id: g._id,
+        name: g.godown,
+        defaultGodown: g.defaultGodown,
+      })),
       priceLevels: priceLevels.map((p) => ({ _id: p._id, name: p.pricelevel })),
     };
 
@@ -3290,8 +3294,6 @@ export const cancelSale = async (req, res) => {
 
     // Revert stock updates
     await revertSaleStockUpdates(sale.items);
-
-    
 
     // update Sale status
     sale.isCancelled = true;
