@@ -648,45 +648,78 @@ export const getTransactionDetails = async (req, res) => {
 // route get/api/pUsers/PartyList;
 
 export const PartyList = async (req, res) => {
-  const cmp_id = req.params.cmp_id;
-  const Primary_user_id = req.owner;
-  const secUserId = req.sUserId;
-  try {
-    const partyList = await PartyModel.find({
-      cmp_id: cmp_id,
-      Primary_user_id: Primary_user_id,
-    });
+  const { cmp_id } = req.params;
+  const { owner: Primary_user_id, sUserId: secUserId } = req;
+  const { outstanding } = req.query;
 
-    const secUser = await SecondaryUser.findById(secUserId);
+  try {
+    // Fetch parties and secondary user concurrently
+    const [partyList, secUser] = await Promise.all([
+      PartyModel.find({ cmp_id, Primary_user_id }).select("_id partyName party_master_id"),
+      SecondaryUser.findById(secUserId),
+    ]);
+
     if (!secUser) {
       return res.status(404).json({ message: "Secondary user not found" });
     }
 
     const configuration = secUser.configurations.find(
-      (item) => item.organization == cmp_id
+      (config) => config.organization === cmp_id
     );
+    const vanSaleConfig = configuration?.vanSale || false;
 
-    let vanSaleConfig = false;
-    if (configuration) {
-      const { vanSale } = configuration;
-      vanSaleConfig = vanSale;
-    }
+    let partyListWithOutstanding = partyList;
+    if (outstanding === "true") {
+      const partyOutstandingData = await TallyData.aggregate([
+        {
+          $match: {
+            cmp_id,
+            Primary_user_id: String(Primary_user_id),
+          },
+        },
+        {
+          $group: {
+            _id: "$party_id",
+            totalOutstanding: { $sum: "$bill_pending_amt" },
+            latestBillDate: { $max: "$bill_date" },
+          },
+        },
+        {
+          $project: {
+            _id: 0,
+            party_id: "$_id",
+            totalOutstanding: 1,
+            latestBillDate: 1,
+          },
+        },
+      ]);
 
-    if (partyList) {
-      res.status(200).json({
-        message: "parties fetched",
-        partyList: partyList,
-        vanSale: vanSaleConfig,
+      partyListWithOutstanding = partyList.map((party) => {
+        const outstandingData = partyOutstandingData.find(
+          (item) => item.party_id === party.party_master_id
+        );
+        return {
+          ...party.toObject(),
+          totalOutstanding: outstandingData?.totalOutstanding || 0,
+          latestBillDate: outstandingData?.latestBillDate || null,
+        };
       });
     } else {
-      res.status(404).json({ message: "No parties found" });
+      // If not outstanding, convert to object without adding outstanding fields
+      partyListWithOutstanding = partyList.map((party) => party.toObject());
     }
+
+    res.status(200).json({
+      message: "Parties fetched",
+      partyList: partyListWithOutstanding,
+      vanSale: vanSaleConfig,
+    });
   } catch (error) {
-    res
-      .status(500)
-      .json({ success: false, message: "Internal server error, try again!" });
+    console.error("Error in PartyList:", error.message);
+    res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
+
 
 // @desc adding new Party
 // route POst/api/pUsers/addParty

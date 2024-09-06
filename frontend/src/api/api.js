@@ -3,16 +3,9 @@ import Swal from 'sweetalert2';
 
 
 const api = axios.create({
-<<<<<<< HEAD
   baseURL: 'http://localhost:7000',
   // baseURL:"https://www.erp.camet.in/"
   // baseURL:"https://www.erptest.camet.in/"
-=======
-  // baseURL: 'http://localhost:7000',
-  
-  
-  baseURL:"https://www.erp.camet.in/"
->>>>>>> 00a8f862cf209748c32df39b1ca1ad65cf05ab8f
 });
 
 

@@ -6,7 +6,7 @@ const tallySchema = new mongoose.Schema({
     Primary_user_id: { type: String, required: true },
     party_name: { type: String, required: true },
     alias: { type: String },
-    party_id: { type: Number, required: true },
+    party_id: { type: String, required: true },
     mobile_no: { type: String },
     email: { type: String },
     bill_date: { type: Date, required: true },

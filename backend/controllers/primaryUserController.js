@@ -973,7 +973,6 @@ export const addParty = async (req, res) => {
   try {
     const {
       cpm_id: cmp_id,
-      // Primary_user_id,
       accountGroup,
       partyName,
       mobileNumber,
@@ -986,8 +985,10 @@ export const addParty = async (req, res) => {
       creditLimit,
       openingBalanceType,
       openingBalanceAmount,
+      party_master_id // Check if provided
     } = req.body;
 
+    // Create a new party document with either the provided party_master_id or MongoDB generated _id
     const party = new PartyModel({
       cmp_id,
       Primary_user_id: req?.pUserId,
@@ -1003,9 +1004,16 @@ export const addParty = async (req, res) => {
       creditLimit,
       openingBalanceType,
       openingBalanceAmount,
+      party_master_id: party_master_id || undefined // Allow Mongoose to assign _id if not provided
     });
 
     const result = await party.save();
+
+    // If party_master_id is not provided, use the MongoDB generated _id
+    if (!party_master_id) {
+      result.party_master_id = result._id;
+      await result.save(); // Save the updated party with party_master_id set to _id
+    }
 
     if (result) {
       return res.status(200).json({
@@ -1025,6 +1033,7 @@ export const addParty = async (req, res) => {
       .json({ success: false, message: "Internal server error, try again!" });
   }
 };
+
 
 // @desc adding new Hsn
 // route POst/api/pUsers/addHsn
