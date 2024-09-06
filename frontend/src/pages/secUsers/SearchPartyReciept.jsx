@@ -19,7 +19,6 @@ function SearchPartyReciept() {
   const dispatch = useDispatch();
   const location = useLocation();
 
-  console.log(parties);
 
   const cpm_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
@@ -27,7 +26,7 @@ function SearchPartyReciept() {
   useEffect(() => {
     const fetchParties = async () => {
       try {
-        const res = await api.get(`/api/sUsers/PartyList/${cpm_id}`, {
+        const res = await api.get(`/api/sUsers/PartyList/${cpm_id}?outstanding=true`, {
           withCredentials: true,
         });
         setLoading(false);
@@ -61,7 +60,6 @@ function SearchPartyReciept() {
     }
   };
 
-  console.log(parties);
   useEffect(() => {
     if (search === "") {
       setFilteredParties(parties);
