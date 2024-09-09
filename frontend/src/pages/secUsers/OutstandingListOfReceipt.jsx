@@ -50,6 +50,9 @@ function OutstandingListOfReceipt() {
 
   const { party_id } = useParams();
 
+  console.log(party_id);
+  
+
   useEffect(() => {
     const fetchOutstandingDetails = async () => {
       try {
@@ -73,9 +76,9 @@ function OutstandingListOfReceipt() {
       }
     };
 
-    if (outstandings.length == 0 && totalBillAmount == 0) {
-      fetchOutstandingDetails();
-    }
+    fetchOutstandingDetails();
+    // if (outstandings.length == 0 && totalBillAmount == 0) {
+    // }
   }, [party_id, cmp_id]);
 
   const handleAmountChange = (event) => {
