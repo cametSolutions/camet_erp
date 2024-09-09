@@ -7,7 +7,7 @@ import { useNavigate } from "react-router-dom";
 function BankReceipt() {
   const [banks, setBanks] = useState([]);
   const cmp_id = useSelector(
-    (state) => state.setSelectedOrganization.selectedOrg._id
+    (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
 
   const { bankList } = useSelector((state) => state.receipt);
