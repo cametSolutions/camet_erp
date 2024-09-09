@@ -39,10 +39,10 @@ function AddAmountTile({ tab, party }) {
           </div>
         </>
       ) : (
-        <div>
+        <div className="px-1">
           <div className="flex items-center justify-between w-full ">
             <label
-              className=" uppercase text-blueGray-600 text-sm font-bold   w-2/3 "
+              className=" uppercase text-blueGray-600 text-sm font-bold w-2/3  "
               htmlFor="grid-password"
             >
               Amount
@@ -63,8 +63,8 @@ function AddAmountTile({ tab, party }) {
             <IoMdAdd className="text-xl" />
              Add More Bills
             </p>
-            <p className="text-red-500 text-xs md:text-md font-semibold">
-              Remaining Amount :₹ {totalBillAmount-enteredAmount}
+            <p className="text-xs md:text-md font-semibold mr-1">
+              Remaining Amount : <span className="text-red-500"> ₹ {totalBillAmount-enteredAmount}</span>
             </p>
           </section>
         </div>

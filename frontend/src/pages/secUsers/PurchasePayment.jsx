@@ -10,12 +10,12 @@ import {
   changeDate,
   removeAll,
   removeParty,
-} from "../../../slices/receipt";
+} from "../../../slices/payment";
 import AddPartyTile from "../../components/secUsers/main/AddPartyTile";
 import AddAmountTile from "../../components/secUsers/main/AddAmountTile";
 import PaymentModeTile from "../../components/secUsers/main/PaymentModeTile";
 
-function Receipt() {
+function PurchasePayment() {
   // ////////////////dispatch
   const dispatch = useDispatch();
   // ///////////////////  redux details /////////////////////
@@ -100,11 +100,11 @@ function Receipt() {
         <Link to={"/sUsers/selectVouchers"}>
           <IoIosArrowRoundBack className="text-3xl text-white cursor-pointer" />
         </Link>
-        <p className="text-white text-lg   font-bold ">Receipt</p>
+        <p className="text-white text-lg   font-bold ">Payment</p>
       </header>
 
       <HeaderTile
-        title={"Receipt"}
+        title={"Payment"}
         number={receiptNumber}
         selectedDate={selectedDate}
         setSelectedDate={setSelectedDate}
@@ -119,14 +119,14 @@ function Receipt() {
         party={party}
         dispatch={dispatch}
         removeParty={removeParty}
-        link="/sUsers/searchPartyReceipt"
+        link="/sUsers/searchPartyPurchasePayment"
         linkBillTo=""
       />
 
-      <AddAmountTile party={party}  tab="receipt" />
+      <AddAmountTile party={party}  tab="purchase" />
       <PaymentModeTile tab="receipt" />
     </div>
   );
 }
 
-export default Receipt;
+export default PurchasePayment;

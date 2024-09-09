@@ -67,8 +67,8 @@ const purchaseTiles = [
   {
     title: "Payment Out",
     icon: paymentout,
-    to: "/sUsers/creditnote",
-    active: false,
+    to: "/sUsers/paymentPurchase",
+    active: true,
     subtitle: "Record all payment outflows",
   },
   {

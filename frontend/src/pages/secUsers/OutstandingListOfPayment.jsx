@@ -11,11 +11,11 @@ import {
   addSettlementData,
   addOutstandings,
   setTotalBillAmount,
-} from "../../../slices/receipt";
+} from "../../../slices/payment";
 import CallIcon from "../../components/common/CallIcon";
 import { MdPeopleAlt } from "react-icons/md";
 
-function OutstandingListOfReceipt() {
+function OutstandingListOfPayment() {
   ///company Id
   const cmp_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
@@ -129,7 +129,7 @@ function OutstandingListOfReceipt() {
     };
 
     dispatch(addSettlementData(settlementData));
-    navigate("/sUsers/receipt");
+    navigate("/sUsers/paymentPurchase");
   };
 
   return (
@@ -142,7 +142,7 @@ function OutstandingListOfReceipt() {
             <div className="flex items-center gap-2">
               <IoIosArrowRoundBack
                 onClick={() => {
-                  navigate("/sUsers/receipt");
+                  navigate("/sUsers/outstanding");
                 }}
                 className="text-3xl text-white cursor-pointer"
               />
@@ -284,4 +284,4 @@ function OutstandingListOfReceipt() {
   );
 }
 
-export default OutstandingListOfReceipt;
+export default OutstandingListOfPayment;

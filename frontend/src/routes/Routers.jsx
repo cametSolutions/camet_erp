@@ -140,6 +140,10 @@ import Receipt from '../pages/secUsers/Receipt'
 import SearchPartyReciept from '../pages/secUsers/SearchPartyReciept'
 import OutStandingDetails from '../pages/secUsers/OutstandingDetails'
 import OutstandingListOfReceipt from '../pages/secUsers/OutstandingListOfReceipt'
+import BankReceipt from '../pages/secUsers/BankReceipt'
+import Payment from '../../slices/payment'
+import PurchasePayment from '../pages/secUsers/PurchasePayment'
+import SearchPartyPayment from '../pages/secUsers/SearchPartyPayment'
 
 const Routers = () => {
   return (
@@ -302,6 +306,13 @@ const Routers = () => {
         <Route path='/sUsers/receipt' element={<ProtectedSecRoute><Receipt/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/searchPartyReceipt' element={<ProtectedSecRoute><SearchPartyReciept/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/receipt/addAmount/:party_id' element={<ProtectedSecRoute><OutstandingListOfReceipt/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/receipt/bankList' element={<ProtectedSecRoute><BankReceipt/></ProtectedSecRoute>}></Route>
+
+        {/* payment */}
+        <Route path='/sUsers/paymentPurchase' element={<ProtectedSecRoute><PurchasePayment/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/searchPartyPurchasePayment' element={<ProtectedSecRoute><SearchPartyPayment/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/purchase/addAmount/:party_id' element={<ProtectedSecRoute><OutstandingListOfReceipt/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/purchase/bankList' element={<ProtectedSecRoute><BankReceipt/></ProtectedSecRoute>}></Route>
 
 
 

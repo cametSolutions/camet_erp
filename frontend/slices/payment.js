@@ -17,7 +17,7 @@ const initialState = {
   isNoteOpen: false,
 };
 
-export const receiptSlice = createSlice({
+export const paymentSlice = createSlice({
   name: "salesSecondary",
   initialState,
   reducers: {
@@ -92,6 +92,6 @@ export const {
   addChequeNumber,
   addChequeDate,
   addIsNoteOpen
-} = receiptSlice.actions;
+} = paymentSlice.actions;
 
-export default receiptSlice.reducer;
+export default paymentSlice.reducer;
