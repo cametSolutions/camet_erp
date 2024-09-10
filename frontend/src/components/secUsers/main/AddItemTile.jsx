@@ -27,7 +27,7 @@ function AddItemTile({
   urlToAddItem,
   urlToEditItem,
 }) {
-  console.log(type);
+  console.log(urlToAddItem);
   return (
     <div>
       {items.length == 0 && (

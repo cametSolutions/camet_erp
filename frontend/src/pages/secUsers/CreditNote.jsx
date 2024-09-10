@@ -298,7 +298,7 @@ function CreditNote() {
       toast.error("Select a party first");
       return;
     }
-    navigate("/sUsers/addItemSales");
+    navigate("/sUsers/addItemCreditNote");
   };
 
   const cancelHandler = () => {
@@ -443,7 +443,7 @@ function CreditNote() {
           navigate={navigate}
           godownname={""}
           subTotal={subTotal}
-          type="sale"
+          type="creditNote"
           additional={additional}
           cancelHandler={cancelHandler}
           rows={rows}
@@ -454,8 +454,8 @@ function CreditNote() {
           handleRateChange={handleRateChange}
           handleAddRow={handleAddRow}
           setAdditional={setAdditional}
-          urlToAddItem="/sUsers/addItemSales"
-          urlToEditItem="/sUsers/editItemSales"
+          urlToAddItem="/sUsers/addItemCreditNote"
+          urlToEditItem="/sUsers/editItemCreditNote"
         />
 
         <div className="flex justify-between bg-white mt-2 p-3">
