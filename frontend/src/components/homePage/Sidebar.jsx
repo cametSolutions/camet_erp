@@ -49,8 +49,7 @@ function Sidebar({ TAB, showBar }) {
     localStorage.getItem("selectedSubTab") || ""
   );
 
-  console.log(selectedTab);
-  console.log(selectedOrgFromRedux);
+
   const navItems = [
     {
       to: "/pUsers/dashboard",
@@ -243,7 +242,6 @@ function Sidebar({ TAB, showBar }) {
   }, [showSidebar]);
 
   const handleSidebarItemClick = (tab) => {
-    console.log("haii");
     if (window.innerWidth < 768) {
       setShowSidebar(!showSidebar);
     }
@@ -278,8 +276,7 @@ function Sidebar({ TAB, showBar }) {
     }));
   };
 
-  console.log(expandedSections);
-  console.log(navItems);
+
 
   return (
     <div className="relative">

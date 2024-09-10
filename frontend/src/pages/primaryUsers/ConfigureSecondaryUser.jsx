@@ -20,12 +20,14 @@ function ConfigureSecondaryUser() {
 
   // const isFirstRender = useRef(true);
 
-  const initialConfig = [{
-    prefixDetails: "",
-    suffixDetails: "",
-    widthOfNumericalPart: "",
-    currentNumber: "",
-  }];
+  const initialConfig = [
+    {
+      prefixDetails: "",
+      suffixDetails: "",
+      widthOfNumericalPart: "",
+      currentNumber: "",
+    },
+  ];
 
   const [sales, setSales] = useState(initialConfig);
   const [salesOrder, setSalesOrder] = useState(initialConfig);
@@ -33,8 +35,7 @@ function ConfigureSecondaryUser() {
   const [purchase, setPurchase] = useState(initialConfig);
   const [vanSaleConfig, setVanSaleConfig] = useState(initialConfig);
   const [stockTransfer, setStockTransfer] = useState(initialConfig);
-
-
+  const [creditNote, setCreditNote] = useState(initialConfig);
 
   const { id, userId, cmp_name } = useParams();
   // const org = useSelector((state) => state.setSelectedOrganization.selectedOrg);
@@ -52,7 +53,6 @@ function ConfigureSecondaryUser() {
           }
         );
 
-        console.log(res.data.data.godowns);
         setGodowns(res.data.data.godowns);
         setPriceLevels(res.data.data.priceLevels);
         setVanSaleGodownName(res.data.data.godowns[0]?.godown);
@@ -72,7 +72,6 @@ function ConfigureSecondaryUser() {
           }
         );
 
-        console.log(res.data);
         const {
           orderNumber,
           salesNumber,
@@ -80,9 +79,10 @@ function ConfigureSecondaryUser() {
           receiptNumber,
           vanSalesNumber,
           stockTransferNumber,
+          creditNoteNumber,
         } = res.data;
 
-        console.log(orderNumber, salesNumber, purchaseNumber, receiptNumber,stockTransferNumber);
+        // console.log(orderNumber, salesNumber, purchaseNumber, receiptNumber,stockTransferNumber);
 
         if (salesNumber) {
           setSales((prevSales) => {
@@ -144,6 +144,16 @@ function ConfigureSecondaryUser() {
             return [updatedStockTransfer];
           });
         }
+        if (creditNoteNumber) {
+          setCreditNote((prevCreditNote) => {
+            // Create a copy of the first object and update its properties
+            const updatedCreditNote = {
+              ...prevCreditNote[0],
+              currentNumber: creditNoteNumber,
+            };
+            return [updatedCreditNote];
+          });
+        }
       } catch (error) {
         console.log(error);
       }
@@ -153,8 +163,6 @@ function ConfigureSecondaryUser() {
 
     fetchGodowns();
   }, []);
-
-
 
   //////////////////////////////// getSecUserDetails ////////////////////////////////////
 
@@ -170,9 +178,6 @@ function ConfigureSecondaryUser() {
             fullConfigurations.find((item) => item.organization === id)
           ) || [];
 
-        console.log(res?.data?.data?.configurations);
-        console.log(configurations);
-
         if (configurations?.length > 0) {
           const {
             selectedGodowns,
@@ -184,12 +189,9 @@ function ConfigureSecondaryUser() {
             purchaseConfiguration,
             selectedVanSaleGodowns,
             stockTransferConfiguration,
+            creditNoteConfiguration,
             vanSale,
           } = configurations[0];
-
-        
-
-
 
           if (selectedGodowns) {
             setSelectedGodowns(selectedGodowns);
@@ -218,8 +220,11 @@ function ConfigureSecondaryUser() {
           if (selectedVanSaleGodowns?.length > 0) {
             setSelectedVanSaleGodowns([selectedVanSaleGodowns[0]]);
           }
-          if(stockTransferConfiguration){
+          if (stockTransferConfiguration) {
             setStockTransfer([stockTransferConfiguration]);
+          }
+          if (creditNoteConfiguration) {
+            setCreditNote([creditNoteConfiguration]);
           }
         }
       } catch (error) {
@@ -254,14 +259,16 @@ function ConfigureSecondaryUser() {
         setStockTransfer([{ ...stockTransfer[0], [field]: value }]);
 
         break;
+      case "creditNote":
+        setCreditNote([{ ...creditNote[0], [field]: value }]);
+
+        break;
       default:
         console.error("Invalid section");
     }
-
-    console.log(section);
   };
 
-  const   getConfigValue = (section, field) => {
+  const getConfigValue = (section, field) => {
     switch (section) {
       case "sales":
         return sales[0][field];
@@ -275,6 +282,8 @@ function ConfigureSecondaryUser() {
         return vanSaleConfig[0][field];
       case "stockTransfer":
         return stockTransfer[0][field];
+      case "creditNote":
+        return creditNote[0][field];
       default:
         return "";
     }
@@ -292,11 +301,9 @@ function ConfigureSecondaryUser() {
       }
     } else if (type === "godown") {
       console.log("haii");
-      
+
       if (checked) {
-       
-          setSelectedGodowns([...selectedGodowns, value]);
-        
+        setSelectedGodowns([...selectedGodowns, value]);
       } else {
         setSelectedGodowns(selectedGodowns.filter((item) => item !== value));
       }
@@ -311,33 +318,38 @@ function ConfigureSecondaryUser() {
     }
   };
 
-
   const formatFieldName = (fieldName) => {
     // Split the camelCase field name into words
     const words = fieldName.split(/(?=[A-Z])/);
     // Capitalize the first word and join all words with spaces
-    return words.map((word, index) => 
-      index === 0 ? word.charAt(0).toUpperCase() + word.slice(1) : word.toLowerCase()
-    ).join(' ');
+    return words
+      .map((word, index) =>
+        index === 0
+          ? word.charAt(0).toUpperCase() + word.slice(1)
+          : word.toLowerCase()
+      )
+      .join(" ");
   };
-  
-
 
   const validateConfiguration = (config, configName) => {
-    const mandatoryFields = ['currentNumber'];
-    const optionalFields = ['prefixDetails', 'suffixDetails', 'widthOfNumericalPart'];
+    const mandatoryFields = ["currentNumber"];
+    const optionalFields = [
+      "prefixDetails",
+      "suffixDetails",
+      "widthOfNumericalPart",
+    ];
     const allFields = [...mandatoryFields, ...optionalFields];
-    
+
     let errors = [];
     let hasOptionalFields = false;
-  
+
     // Check mandatory fields
     for (let field of mandatoryFields) {
       if (!config[field]) {
         errors.push(`${configName}: ${formatFieldName(field)} is required`);
       }
     }
-  
+
     // Check if any optional field is filled
     for (let field of optionalFields) {
       if (config[field]) {
@@ -345,45 +357,59 @@ function ConfigureSecondaryUser() {
         break;
       }
     }
-  
+
     // If any optional field is filled, all should be filled
     if (hasOptionalFields) {
       for (let field of optionalFields) {
         if (!config[field]) {
-          errors.push(`${configName}: ${formatFieldName(field)} is required when any optional field is filled`);
+          errors.push(
+            `${configName}: ${formatFieldName(
+              field
+            )} is required when any optional field is filled`
+          );
         }
       }
     }
-  
-  // Check for alphanumeric values and forward slash (not at the beginning)
-  const alphanumericWithSlashRegex = /^[a-zA-Z0-9][a-zA-Z0-9/]*$/;
-  for (let field of allFields) {
-    if (config[field] && !alphanumericWithSlashRegex.test(config[field])) {
-      errors.push(`${configName}: ${formatFieldName(field)} must start with and can only contain alphanumeric characters and forward slashes`);
+
+    // Check for alphanumeric values and forward slash (not at the beginning)
+    const alphanumericWithSlashRegex = /^[a-zA-Z0-9][a-zA-Z0-9/]*$/;
+    for (let field of allFields) {
+      if (config[field] && !alphanumericWithSlashRegex.test(config[field])) {
+        errors.push(
+          `${configName}: ${formatFieldName(
+            field
+          )} must start with and can only contain alphanumeric characters and forward slashes`
+        );
+      }
     }
-  }
 
     // Check widthOfNumericalPart
-    if (config.widthOfNumericalPart && Number(config.widthOfNumericalPart) > 6) {
-      errors.push(`${configName}: Width of numerical part must be less than or equal to 6`);
+    if (
+      config.widthOfNumericalPart &&
+      Number(config.widthOfNumericalPart) > 6
+    ) {
+      errors.push(
+        `${configName}: Width of numerical part must be less than or equal to 6`
+      );
     }
 
-    if (configName === 'Van Sale' && errors.length === 0) {
-      if (mandatoryFields.every(field => config[field]) &&
-          optionalFields.every(field => config[field])) {
-        
+    if (configName === "Van Sale" && errors.length === 0) {
+      if (
+        mandatoryFields.every((field) => config[field]) &&
+        optionalFields.every((field) => config[field])
+      ) {
         if (selectedVanSaleGodowns.length === 0) {
-          errors.push('Van Sale: At least one Van Sale Godown must be selected');
+          errors.push(
+            "Van Sale: At least one Van Sale Godown must be selected"
+          );
         }
       }
     }
-  
+
     return errors;
   };
-  
 
   const submitHandler = async () => {
-
     let formData = {};
 
     formData = {
@@ -394,6 +420,7 @@ function ConfigureSecondaryUser() {
       receiptConfiguration: receipt[0],
       purchaseConfiguration: purchase[0],
       stockTransferConfiguration: stockTransfer[0],
+      creditNoteConfiguration: creditNote[0],
       selectedVanSaleGodowns,
       vanSaleConfiguration: {
         ...vanSaleConfig[0],
@@ -406,29 +433,47 @@ function ConfigureSecondaryUser() {
 
     console.log(formData);
 
- 
+    let allErrors = [];
+
+    // Validate each configuration
+    allErrors = allErrors.concat(
+      validateConfiguration(formData.salesConfiguration, "Sales")
+    );
+    allErrors = allErrors.concat(
+      validateConfiguration(formData.salesOrderConfiguration, "Sales Order")
+    );
+    allErrors = allErrors.concat(
+      validateConfiguration(formData.receiptConfiguration, "Receipt")
+    );
+    allErrors = allErrors.concat(
+      validateConfiguration(formData.purchaseConfiguration, "Purchase")
+    );
+    allErrors = allErrors.concat(
+      validateConfiguration(
+        formData.stockTransferConfiguration,
+        "Stock Transfer"
+      )
+    );
+    allErrors = allErrors.concat(
+      validateConfiguration(formData.vanSaleConfiguration, "Van Sale")
+    );
+
+    allErrors = allErrors.concat(
+      validateConfiguration(formData.creditNoteConfiguration, "Credit Note")
+    );
+
+    // if (selectedVanSaleGodowns.length === 0) {
+    //   allErrors.push('Van Sale: At least one Van Sale Godown must be selected');
+    // }
+
+    if (allErrors.length > 0) {
+      toast.error(allErrors[0]); // Show only the first error
+      return;
+    }
 
 
+    console.log(formData);
     
-  let allErrors = [];
-
-  // Validate each configuration
-  allErrors = allErrors.concat(validateConfiguration(formData.salesConfiguration, 'Sales'));
-  allErrors = allErrors.concat(validateConfiguration(formData.salesOrderConfiguration, 'Sales Order'));
-  allErrors = allErrors.concat(validateConfiguration(formData.receiptConfiguration, 'Receipt'));
-  allErrors = allErrors.concat(validateConfiguration(formData.purchaseConfiguration, 'Purchase'));
-  allErrors = allErrors.concat(validateConfiguration(formData.stockTransferConfiguration, 'Stock Transfer'));
-  allErrors = allErrors.concat(validateConfiguration(formData.vanSaleConfiguration, 'Van Sale'));
-
-  // if (selectedVanSaleGodowns.length === 0) {
-  //   allErrors.push('Van Sale: At least one Van Sale Godown must be selected');
-  // }
-
-  if (allErrors.length > 0) {
-    toast.error(allErrors[0]);  // Show only the first error
-    return;
-  }
- 
 
     try {
       const res = await api.post(
@@ -451,7 +496,6 @@ function ConfigureSecondaryUser() {
     // Existing API call...
   };
 
-  console.log(selectedConfig);
   return (
     <div className="flex-1   ">
       <div className="  bg-[#201450] text-white mb-2 p-3 flex items-center gap-3 sticky top-0 z-20 text-lg   ">
@@ -495,6 +539,7 @@ function ConfigureSecondaryUser() {
                     <option value="purchase">Purchase</option>
                     <option value="vanSale">VanSale</option>
                     <option value="stockTransfer">Stock Transfer</option>
+                    <option value="creditNote">Credit Note</option>
                   </select>
                 </div>
               </div>
@@ -634,81 +679,109 @@ function ConfigureSecondaryUser() {
               </div>
             </div>
 
-            {
-              selectedConfig !=="receipt" &&   selectedConfig !=="stockTransfer" &&
-
-              (
+            {selectedConfig !== "receipt" &&
+              selectedConfig !== "stockTransfer" && (
                 <section className="px-4">
-                <hr className="mt-5 border-b-1 border-blueGray-300" />
-                <h6 className="text-blueGray-400 text-sm mb-6 font-bold uppercase mt-10">
-                  Price Levels and Locations
-                </h6>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4  ">
-                  <div className="lg:col-span-1">
-                    <h6 className="text-blueGray-400 text-sm mb-4 font-bold uppercase  ">
-                      Price Levels
-                    </h6>
-                    <div className="space-y-2">
-                      {priceLevels?.length > 0 ? (
-                        priceLevels?.map((item, index) => (
-                          <div key={index} className="flex items-center">
-                            <input
-                              type="checkbox"
-                              id={`priceLevelCheckbox${index}`}
-                              value={item?.priceLevel}
-                              checked={selectedPriceLevels.includes(
-                                item?.priceLevel
-                              )}
-                              onChange={(e) =>
-                                handleCheckboxChange(
-                                  "priceLevel",
-                                  e.target.value,
-                                  e.target.checked
-                                )
-                              }
-                              className="mr-2"
-                            />
-                            <label
-                              htmlFor={`priceLevelCheckbox${index}`}
-                              className="text-blueGray-600"
-                            >
-                              {item?.priceLevel}
-                            </label>
-                          </div>
-                        ))
-                      ) : (
-                        <p className="text-blueGray-600">No Price Levels added</p>
-                      )}
+                  <hr className="mt-5 border-b-1 border-blueGray-300" />
+                  <h6 className="text-blueGray-400 text-sm mb-6 font-bold uppercase mt-10">
+                    Price Levels and Locations
+                  </h6>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4  ">
+                    <div className="lg:col-span-1">
+                      <h6 className="text-blueGray-400 text-sm mb-4 font-bold uppercase  ">
+                        Price Levels
+                      </h6>
+                      <div className="space-y-2">
+                        {priceLevels?.length > 0 ? (
+                          priceLevels?.map((item, index) => (
+                            <div key={index} className="flex items-center">
+                              <input
+                                type="checkbox"
+                                id={`priceLevelCheckbox${index}`}
+                                value={item?.priceLevel}
+                                checked={selectedPriceLevels.includes(
+                                  item?.priceLevel
+                                )}
+                                onChange={(e) =>
+                                  handleCheckboxChange(
+                                    "priceLevel",
+                                    e.target.value,
+                                    e.target.checked
+                                  )
+                                }
+                                className="mr-2"
+                              />
+                              <label
+                                htmlFor={`priceLevelCheckbox${index}`}
+                                className="text-blueGray-600"
+                              >
+                                {item?.priceLevel}
+                              </label>
+                            </div>
+                          ))
+                        ) : (
+                          <p className="text-blueGray-600">
+                            No Price Levels added
+                          </p>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                  {/* {type !== "self" && ( */}
-                  <div className="lg:col-span-1">
-                    <h6 className="text-blueGray-400 text-sm mb-4 font-bold uppercase">
-                      {selectedConfig === "vanSale"
-                        ? "Van sale Locations"
-                        : "Locations"}
-                    </h6>
-                    <div
-                      className={` 
+                    {/* {type !== "self" && ( */}
+                    <div className="lg:col-span-1">
+                      <h6 className="text-blueGray-400 text-sm mb-4 font-bold uppercase">
+                        {selectedConfig === "vanSale"
+                          ? "Van sale Locations"
+                          : "Locations"}
+                      </h6>
+                      <div
+                        className={` 
                        
                          space-y-2 `}
-                    >
-  
-                      
-                      {selectedConfig === "vanSale" ? (
-                        godowns?.length > 0 ? (
+                      >
+                        {selectedConfig === "vanSale" ? (
+                          godowns?.length > 0 ? (
+                            godowns?.map((item, index) => (
+                              <div key={index} className="flex items-center">
+                                <input
+                                  type="checkbox"
+                                  id={`godownCheckbox${index}`}
+                                  value={item?.id}
+                                  checked={selectedVanSaleGodowns.includes(
+                                    item?.id
+                                  )}
+                                  onChange={(e) =>
+                                    handleCheckboxChange(
+                                      "vanSaleGodown",
+                                      e.target.value,
+                                      e.target.checked
+                                    )
+                                  }
+                                  className="mr-2"
+                                />
+                                <label
+                                  htmlFor={`godownCheckbox${index}`}
+                                  className="text-blueGray-600"
+                                >
+                                  {item?.godown}
+                                </label>
+                              </div>
+                            ))
+                          ) : (
+                            <p className="text-blueGray-600">
+                              No Godowns added
+                            </p>
+                          )
+                        ) : godowns?.length > 0 ? (
                           godowns?.map((item, index) => (
                             <div key={index} className="flex items-center">
                               <input
                                 type="checkbox"
                                 id={`godownCheckbox${index}`}
                                 value={item?.id}
-                                checked={selectedVanSaleGodowns.includes(
-                                  item?.id
-                                )}
+                                checked={selectedGodowns.includes(item?.id)}
                                 onChange={(e) =>
                                   handleCheckboxChange(
-                                    "vanSaleGodown",
+                                    "godown",
                                     e.target.value,
                                     e.target.checked
                                   )
@@ -725,46 +798,14 @@ function ConfigureSecondaryUser() {
                           ))
                         ) : (
                           <p className="text-blueGray-600">No Godowns added</p>
-                        )
-                      ) : godowns?.length > 0 ? (
-                        godowns?.map((item, index) => (
-                          <div key={index} className="flex items-center">
-                            <input
-                              type="checkbox"
-                              id={`godownCheckbox${index}`}
-                              value={item?.id}
-                              checked={selectedGodowns.includes(item?.id)}
-                              onChange={(e) =>
-                                handleCheckboxChange(
-                                  "godown",
-                                  e.target.value,
-                                  e.target.checked
-                                )
-                              }
-                              className="mr-2"
-                            />
-                            <label
-                              htmlFor={`godownCheckbox${index}`}
-                              className="text-blueGray-600"
-                            >
-                              {item?.godown}
-                            </label>
-                          </div>
-                        ))
-                      ) : (
-                        <p className="text-blueGray-600">No Godowns added</p>
-                      )}
-                    
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-  
-                <hr className="mt-5 border-b-1 border-blueGray-300" />
-              </section>
-              )
-            }
 
-          
+                  <hr className="mt-5 border-b-1 border-blueGray-300" />
+                </section>
+              )}
           </form>
           <button
             className="bg-pink-500 mt-10 ml-4 w-20 text-white active:bg-pink-600 font-bold uppercase text-xs px-4 py-2 rounded shadow hover:shadow-md outline-none focus:outline-none mr-1 ease-linear transition-all duration-150 transform hover:scale-105"

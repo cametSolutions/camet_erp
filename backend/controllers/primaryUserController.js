@@ -27,6 +27,8 @@ import { Godown } from "../models/subDetails.js";
 import { PriceLevel } from "../models/subDetails.js";
 import vanSaleModel from "../models/vanSaleModel.js";
 import stockTransferModel from "../models/stockTransferModel.js";
+import creditNoteModel from "../models/creditNoteModel.js";
+
 
 // @desc Register Primary user
 // route POST/api/pUsers/register
@@ -2812,11 +2814,14 @@ export const addSecondaryConfigurations = async (req, res) => {
       receiptConfiguration,
       vanSaleConfiguration,
       stockTransferConfiguration,
+      creditNoteConfiguration,
       purchaseConfiguration,
       selectedVanSaleGodowns,
       vanSale,
     } = req.body;
     let { selectedGodowns } = req.body;
+
+    
 
     if (selectedGodowns.every((godown) => godown === null)) {
       selectedGodowns = [];
@@ -2828,6 +2833,8 @@ export const addSecondaryConfigurations = async (req, res) => {
     const NewvanSalesNumber = vanSaleConfiguration.currentNumber || 0;
     const NewpurchaseNumber = purchaseConfiguration.currentNumber || 0;
     const NewstockTransferNumber = stockTransferConfiguration.currentNumber || 0;
+    const NewcreditNoteNumber = creditNoteConfiguration.currentNumber || 0;
+
 
 
     const dataToAdd = {
@@ -2839,10 +2846,13 @@ export const addSecondaryConfigurations = async (req, res) => {
       receiptConfiguration,
       purchaseConfiguration,
       stockTransferConfiguration,
+      creditNoteConfiguration,
       vanSaleConfiguration,
       selectedVanSaleGodowns,
       vanSale,
     };
+
+    
 
     const secUser = await SecondaryUser.findById(secondary_user_id);
 
@@ -2870,7 +2880,8 @@ export const addSecondaryConfigurations = async (req, res) => {
         purchaseNumber: company.purchaseNumber,
         receiptNumber: company.receiptNumber,
         vanSalesNumber: company.vanSalesNumber,
-        stockTransferNumber: company.stockTransferNumber
+        stockTransferNumber: company.stockTransferNumber,
+        creditNoteNumber: company.creditNoteNumber
       };
     } else {
       const existingConfiguration = secUser.configurations[existingConfigIndex];
@@ -2881,7 +2892,8 @@ export const addSecondaryConfigurations = async (req, res) => {
         purchaseNumber: existingConfiguration.purchaseNumber,
         receiptNumber: existingConfiguration.receiptNumber,
         vanSalesNumber: existingConfiguration.vanSalesNumber,
-      derNumber: existingConfiguration.stockTransferNumber,
+        stockTransferNumber: existingConfiguration.stockTransferNumber,
+        creditNoteNumber: existingConfiguration.creditNoteNumber
       };
     }
 
@@ -2891,7 +2903,8 @@ export const addSecondaryConfigurations = async (req, res) => {
       purchaseNumber: existingConfig.purchaseNumber !== NewpurchaseNumber,
       receiptNumber: existingConfig.receiptNumber !== NewreceiptNumber,
       vanSalesNumber: existingConfig.vanSalesNumber !== NewvanSalesNumber,
-      stockTransferNumber: existingConfig.stockTransferNumber !== NewstockTransferNumber
+      stockTransferNumber: existingConfig.stockTransferNumber !== NewstockTransferNumber,
+      creditNoteNumber: existingConfig.creditNoteNumber !== NewcreditNoteNumber
     };
 
 
@@ -3005,7 +3018,25 @@ export const addSecondaryConfigurations = async (req, res) => {
       }
     }
 
+    if (changes.creditNoteNumber) {
+      const creditNoteExists = await checkForNumberExistence(
+        creditNoteModel,
+        "creditNoteNumber",
+        NewcreditNoteNumber,
+        cmp_id
+      );
+      if (creditNoteExists) {
+        return res
+          .status(400)
+          .json({
+            message: `Credit Note is added with this number ${NewcreditNoteNumber}`,
+          });
+      }
+    }
+
     if (existingConfigIndex !== -1) {
+
+      
       // Configuration already exists
       const existingConfig = secUser.configurations[existingConfigIndex];
 
@@ -3019,6 +3050,7 @@ export const addSecondaryConfigurations = async (req, res) => {
         receiptNumber: NewreceiptNumber,
         vanSalesNumber: NewvanSalesNumber,
         stockTransferNumber: NewstockTransferNumber,
+        creditNoteNumber: NewcreditNoteNumber
       };
     } else {
       // Configuration does not exist, create new
@@ -3030,9 +3062,13 @@ export const addSecondaryConfigurations = async (req, res) => {
         receiptNumber: NewreceiptNumber,
         vanSalesNumber: NewvanSalesNumber,
         stockTransferNumber: NewstockTransferNumber,
+        creditNoteNumber: NewcreditNoteNumber
       };
       secUser.configurations.push(newConfiguration);
     }
+
+    // console.log("secUser.configurations", secUser.configurations);
+    
 
     const result = await secUser.save();
 
@@ -3310,7 +3346,6 @@ export const addProductSubDetails = async (req, res) => {
               }
             );
 
-            console.log("update",update);
             
         }
         break;
@@ -3586,7 +3621,11 @@ export const fetchConfigurationCurrentNumber = async (req, res) => {
       receiptNumber,
       vanSalesNumber,
       stockTransferNumber,
+      creditNoteNumber,
     } = configuration;
+    
+    // console.log("creditNoteNumber", creditNoteNumber);
+    
 
     return res.status(200).json({
       message: "Configuration numbers retrieved successfully",
@@ -3595,7 +3634,8 @@ export const fetchConfigurationCurrentNumber = async (req, res) => {
       purchaseNumber,
       receiptNumber,
       vanSalesNumber,
-      stockTransferNumber
+      stockTransferNumber,
+      creditNoteNumber,
     });
   } catch (error) {
     console.error(error);

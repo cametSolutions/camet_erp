@@ -26,6 +26,7 @@ const secondaryUserSchema = new mongoose.Schema(
         purchaseConfiguration: { type: Object },
         vanSaleConfiguration: { type: Object },
         stockTransferConfiguration: { type: Object },
+        creditNoteConfiguration: { type: Object },
         vanSale: { type: Boolean },
         selectedVanSaleGodowns: { type: Array },
         orderNumber: { type: Number },
@@ -34,6 +35,8 @@ const secondaryUserSchema = new mongoose.Schema(
         receiptNumber: { type: Number },
         vanSalesNumber: { type: Number },
         stockTransferNumber: { type: Number },
+        creditNoteNumber: { type: Number },
+
         // vanSaleGodown:{type:String}
       },
     ],
