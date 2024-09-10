@@ -13,6 +13,7 @@ import salesSecondary from '../slices/salesSecondary'
 import stockTransferSecondary from "../slices/stockTransferSecondary";
 import receipt from "../slices/receipt";
 import payment from "../slices/payment";
+import creditNote from "../slices/creditNote";
 
 export const store = configureStore({
   reducer: {
@@ -29,7 +30,8 @@ export const store = configureStore({
     purchase:purchase,
     stockTransferSecondary:stockTransferSecondary,
     receipt:receipt,
-    payment:payment
+    payment:payment,
+    creditNote:creditNote
     
   },
 });

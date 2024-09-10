@@ -35,8 +35,8 @@ const salesTiles = [
   {
     title: "Credit Note",
     icon: creditNote,
-    to: "/sUsers/creditnote",
-    active: false,
+    to: "/sUsers/creditNote",
+    active: true,
     subtitle: "Issue and track credit adjustments",
   },
   {

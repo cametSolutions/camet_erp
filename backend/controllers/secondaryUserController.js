@@ -57,6 +57,7 @@ import {
   revertSaleStockUpdates,
 } from "../helpers/salesHelper.js";
 import stockTransferModel from "../models/stockTransferModel.js";
+import creditNote from "../../frontend/slices/creditNote.js";
 
 // @desc Login secondary user
 // route POST/api/sUsers/login
@@ -2290,6 +2291,7 @@ export const fetchConfigurationNumber = async (req, res) => {
         receipt: configuration.receiptConfiguration,
         vanSale: configuration.vanSaleConfiguration,
         stockTransfer: configuration.stockTransferConfiguration,
+        creditNote: configuration.creditNoteConfiguration,
       };
 
       return configs[title] || null;
@@ -2303,7 +2305,8 @@ export const fetchConfigurationNumber = async (req, res) => {
           purchase: configuration.purchaseNumber,
           vanSale: configuration.vanSalesNumber,
           stockTransfer: configuration.stockTransferNumber,
-          receipt: configuration.receiptNumber, // Add if there's a specific receipt number for user config
+          receipt: configuration.receiptNumber,
+          creditNote: configuration.creditNoteNumber,
         };
         return numbers[title] || null;
       } else {
@@ -2314,6 +2317,7 @@ export const fetchConfigurationNumber = async (req, res) => {
           vanSale: company.vanSalesNumber,
           stockTransfer: company.stockTransferNumber,
           receipt: company.receiptNumberDetails,
+          creditNote: company.creditNoteNumberDetails,
         };
 
         return companyNumbers[title] || null;
