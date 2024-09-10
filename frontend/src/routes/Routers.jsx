@@ -145,6 +145,8 @@ import Payment from '../../slices/payment'
 import PurchasePayment from '../pages/secUsers/PurchasePayment'
 import SearchPartyPayment from '../pages/secUsers/SearchPartyPayment'
 import CreditNote from '../pages/secUsers/CreditNote'
+import SearchPartyCreditNote from '../pages/secUsers/SearchPartyCreditNote'
+import BillToCreditNote from '../pages/secUsers/BillToCreditNote'
 
 const Routers = () => {
   return (
@@ -315,8 +317,11 @@ const Routers = () => {
         <Route path='/sUsers/purchase/addAmount/:party_id' element={<ProtectedSecRoute><OutstandingListOfReceipt/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/purchase/bankList' element={<ProtectedSecRoute><BankReceipt/></ProtectedSecRoute>}></Route>
 
-         {/* payment */}
+         {/* creditNote */}
         <Route path='/sUsers/creditNote' element={<ProtectedSecRoute><CreditNote/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/searchPartyCreditNote' element={<ProtectedSecRoute><SearchPartyCreditNote/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/billToCreditNote/:id' element={<ProtectedSecRoute><BillToCreditNote/></ProtectedSecRoute>}></Route>
+
 
 
         {/* errorPage */}

@@ -156,21 +156,7 @@ function CreditNote() {
     fetchConfigurationNumber();
   }, []);
 
-  // useEffect(() => {
-  //   const fetchGodownname = async () => {
-  //     try {
-  //       const godown = await api.get(`/api/sUsers/godownsName/${cmp_id}`, {
-  //         withCredentials: true,
-  //       });
-  //       console.log(godown);
-  //       setGodownname(godown.data || "");
-  //     } catch (error) {
-  //       console.log(error);
-  //       toast.error(error.message);
-  //     }
-  //   };
-  //   fetchGodownname();
-  // }, []);
+
 
   const [rows, setRows] = useState(
     additionalChargesFromRedux.length > 0
@@ -421,7 +407,7 @@ function CreditNote() {
 
         {/* invoiec date */}
         <HeaderTile
-          title={"Sale"}
+          title={"Credit"}
           number={salesNumber}
           selectedDate={selectedDate}
           setSelectedDate={setSelectedDate}
@@ -438,13 +424,13 @@ function CreditNote() {
           party={party}
           dispatch={dispatch}
           removeParty={removeParty}
-          link="/sUsers/searchPartySales"
-          linkBillTo="/sUsers/billToSales"
+          link="/sUsers/searchPartyCreditNote"
+          linkBillTo="/sUsers/billToCreditNote"
         />
 
         {/* Despatch details */}
 
-        <DespatchDetails tab={"sale"} />
+        <DespatchDetails tab={"creditNote"} />
 
         {/* adding items */}
 

@@ -6,6 +6,7 @@ import _ from "lodash";
 import { addDespatchDetails as addInSales } from "../../../slices/salesSecondary";
 import { addDespatchDetails as addInOrder } from "../../../slices/invoiceSecondary";
 import { addDespatchDetails as addInPurchase } from "../../../slices/purchase";
+import { addDespatchDetails as addInCreditNote } from "../../../slices/creditNote";
 import { useDispatch, useSelector } from "react-redux";
 import api from "../../api/api";
 
@@ -13,7 +14,10 @@ function DespatchDetails({ tab }) {
   const despatchDetails = useSelector((state) =>
     tab === "sale"
       ? state.salesSecondary.despatchDetails
-      :tab==="purchase"?state.purchase.despatchDetails
+      : tab === "purchase"
+      ? state.purchase.despatchDetails
+      : tab === "creditNote"
+      ? state.creditNote.despatchDetails
       : state.invoiceSecondary.despatchDetails
   );
 
@@ -22,8 +26,6 @@ function DespatchDetails({ tab }) {
   const cmp_id = useSelector(
     (state) => state?.secSelectedOrganization?.secSelectedOrg?._id
   );
-
-  console.log(despatchDetails);
 
   useEffect(() => {
     const getSingleOrganization = async () => {
@@ -35,19 +37,16 @@ function DespatchDetails({ tab }) {
           }
         );
         const company = res?.data?.organizationData;
-        console.log(res?.data?.organizationData);
 
         if (company && company.configurations.length > 0) {
-          console.log(company.configurations);
-
           const { despatchDetails } = company.configurations[0];
-          console.log(despatchDetails);
           const titles = {};
           for (const key in despatchDetails) {
-            titles[key] = despatchDetails[key] || capitalizeFirstLetter(key.split(/(?=[A-Z])/).join(" "));
+            titles[key] =
+              despatchDetails[key] ||
+              capitalizeFirstLetter(key.split(/(?=[A-Z])/).join(" "));
           }
 
-          console.log(titles);
           setDisplayTitles(titles);
         }
       } catch (error) {
@@ -57,7 +56,6 @@ function DespatchDetails({ tab }) {
     getSingleOrganization();
   }, [cmp_id]);
 
-  console.log(displayTitles);
   useEffect(() => {
     if (despatchDetails) {
       setFormValues(despatchDetails);
@@ -80,12 +78,12 @@ function DespatchDetails({ tab }) {
           selectedDispatch = addInOrder;
           break;
 
-
         case "purchase":
           selectedDispatch = addInPurchase;
           break;
-
-          
+        case "creditNote":
+          selectedDispatch = addInCreditNote;
+          break;
 
         default:
           break;
@@ -133,7 +131,7 @@ function DespatchDetails({ tab }) {
     return str.charAt(0).toUpperCase() + str.slice(1);
   }
 
-  const{title,...rest}=formValues
+  const { title, ...rest } = formValues;
 
   return (
     <div>
@@ -181,7 +179,8 @@ function DespatchDetails({ tab }) {
                     >
                       {key === "irnNo"
                         ? "IRN No"
-                        : displayTitles[key] || capitalizeFirstLetter(
+                        : displayTitles[key] ||
+                          capitalizeFirstLetter(
                             key.split(/(?=[A-Z])/).join(" ")
                           )}{" "}
                     </label>
@@ -192,7 +191,8 @@ function DespatchDetails({ tab }) {
                       placeholder={
                         key === "irnNo"
                           ? "IRN No"
-                          :displayTitles[key] || capitalizeFirstLetter(
+                          : displayTitles[key] ||
+                            capitalizeFirstLetter(
                               key.split(/(?=[A-Z])/).join(" ")
                             )
                       }
