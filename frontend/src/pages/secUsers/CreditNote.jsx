@@ -61,7 +61,6 @@ function CreditNote() {
         const res = await api.get(`/api/sUsers/additionalcharges/${cmp_id}`, {
           withCredentials: true,
         });
-        console.log(res.data);
         setAdditionalChragesFromCompany(res.data);
       } catch (error) {
         console.log(error);
@@ -90,7 +89,6 @@ function CreditNote() {
           }
         );
 
-        console.log(res.data.organizationData);
         // setCompany(res.data.organizationData);
         if (type == "self") {
           setAdditionalChragesFromCompany(
@@ -123,8 +121,7 @@ function CreditNote() {
         }
 
         const { configDetails, configurationNumber } = res.data;
-        console.log(configDetails);
-        console.log(configurationNumber);
+      
 
         if (configDetails) {
           const { widthOfNumericalPart, prefixDetails, suffixDetails } =
@@ -136,11 +133,9 @@ function CreditNote() {
           // console.log(suffixDetails);
 
           const padedNumber = newOrderNumber.padStart(widthOfNumericalPart, 0);
-          console.log(padedNumber);
           const finalOrderNumber = [prefixDetails, padedNumber, suffixDetails]
             .filter(Boolean)
             .join("-");
-          console.log(finalOrderNumber);
           setSalesNumber(finalOrderNumber);
         } else {
           setSalesNumber(salesNumber);
@@ -150,7 +145,6 @@ function CreditNote() {
       }
     };
 
-    console.log(salesNumber);
     
 
     fetchConfigurationNumber();
@@ -186,7 +180,6 @@ function CreditNote() {
 
   const handleAddRow = () => {
     const hasEmptyValue = rows.some((row) => row.value === "");
-    console.log(hasEmptyValue);
     if (hasEmptyValue) {
       toast.error("Please add a value.");
       return;
@@ -210,7 +203,6 @@ function CreditNote() {
     const selectedOption = additionalChragesFromCompany.find(
       (option) => option._id === id
     );
-    console.log(selectedOption);
 
     const newRows = [...rows];
     newRows[index] = {
@@ -221,7 +213,6 @@ function CreditNote() {
       _id: selectedOption?._id,
       finalValue: "",
     };
-    console.log(newRows);
     setRows(newRows);
 
     dispatch(addAdditionalCharges({ index, row: newRows[index] }));
@@ -288,12 +279,10 @@ function CreditNote() {
     parseFloat(subTotal) + additionalChargesTotal || parseFloat(subTotal);
   const totalAmount = Math.round(totalAmountNotRounded);
 
-  console.log(totalAmount);
 
   const navigate = useNavigate();
 
   const handleAddItem = () => {
-    console.log(Object.keys(party).length);
     if (Object.keys(party).length === 0) {
       toast.error("Select a party first");
       return;
@@ -316,38 +305,31 @@ function CreditNote() {
   };
 
   const submitHandler = async () => {
-    console.log("haii");
     if (Object.keys(party).length == 0) {
-      console.log("haii");
 
       toast.error("Add a party first");
       return;
     }
     if (items.length == 0) {
-      console.log("haii");
 
       toast.error("Add at least an item");
       return;
     }
 
     if (additional) {
-      console.log("haii");
 
       const hasEmptyValue = rows.some((row) => row.value === "");
       if (hasEmptyValue) {
-        console.log("haii");
 
         toast.error("Please add a value.");
         return;
       }
       const hasNagetiveValue = rows.some((row) => parseFloat(row.value) < 0);
       if (hasNagetiveValue) {
-        console.log("haii");
 
         toast.error("Please add a positive value");
         return;
       }
-      console.log("haii");
     }
 
     const lastAmount = totalAmount.toFixed(2);
@@ -367,11 +349,10 @@ function CreditNote() {
       selectedDate,
     };
 
-    console.log(formData);
 
     try {
       const res = await api.post(
-        `/api/sUsers/createSale?vanSale=${false}`,
+        `/api/sUsers/createCreditNote?vanSale=${false}`,
         formData,
         {
           headers: {
@@ -381,7 +362,6 @@ function CreditNote() {
         }
       );
 
-      console.log(res.data);
       toast.success(res.data.message);
 
       navigate(`/sUsers/salesDetails/${res.data.data._id}`);
@@ -392,7 +372,6 @@ function CreditNote() {
     }
   };
 
-  console.log(items);
 
   return (
     <div className="">

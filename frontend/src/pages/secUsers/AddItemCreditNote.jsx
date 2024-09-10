@@ -744,15 +744,10 @@ console.log();
       updatedItems[index].isExpanded = !updatedItems[index].isExpanded;
     }
 
-    // Log the updated items for debugging
-    console.log(updatedItems.length);
-    console.log(updatedItems);
-
     // Update state with the new items array
     setItem(updatedItems);
 
-    // Optionally update refresh state or other operations
-    // setRefresh((prevRefresh) => !prevRefresh);
+
   };
 
 
