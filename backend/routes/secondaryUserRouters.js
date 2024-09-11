@@ -2,7 +2,7 @@ import express from 'express'
 const router = express.Router();
 import {login,getSecUserData,fetchOutstandingTotal,
     fetchOutstandingDetails,confirmCollection,logout,
-    transactions,cancelTransaction,fetchBanks,sendOtp,
+    cancelTransaction,fetchBanks,sendOtp,
     submitOtp,resetPassword,getTransactionDetails,PartyList,addParty,getProducts,
     createInvoice,invoiceList,getSinglePartyDetails,editParty,
     deleteParty,getSingleOrganization,fetchHsn,
@@ -20,7 +20,7 @@ import {login,getSecUserData,fetchOutstandingTotal,
 import { createPurchase,editPurchase,cancelPurchase } from '../controllers/purchaseController.js';
 import { createCreditNote } from '../controllers/creditNoteController.js';
 
-    import { getStockTransferDetails,addProduct ,editProduct,getCreditNoteDetails} from '../controllers/commonController.js';
+    import { getStockTransferDetails,addProduct ,editProduct,getCreditNoteDetails,transactions} from '../controllers/commonController.js';
 import { authSecondary } from '../middlewares/authSecUsers.js';
 import { secondaryIsBlocked } from '../middlewares/isBlocked.js';
 import { companyAuthentication } from '../middlewares/authCompany.js';

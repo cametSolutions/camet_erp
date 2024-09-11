@@ -7,3 +7,21 @@ export const  truncateToNDecimals=(num, n)=> {
 }
 
 
+/////helper for transactions
+
+export const aggregateTransactions = (model, matchCriteria, type) => {
+  return model.aggregate([
+    { $match: matchCriteria },
+    {
+      $project: {
+        party_name: type === 'Receipt' ? '$party_name' : '$party.partyName',
+        type: type,
+        enteredAmount: type === 'Receipt' ? '$enteredAmount' : '$finalAmount',
+        createdAt: 1,
+        itemsLength: type === 'Receipt' ? undefined : { $size: '$items' },
+        isCancelled: 1,
+      },
+    },
+  ]);
+};
+

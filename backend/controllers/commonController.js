@@ -3,6 +3,12 @@ import productModel from "../models/productModel.js";
 import salesModel from "../models/salesModel.js";
 import stockTransferModel from "../models/stockTransferModel.js";
 import creditNoteModel from "../models/creditNoteModel.js";
+import TransactionModel from "../models/TransactionModel.js";
+import invoiceModel from "../models/invoiceModel.js";
+import vanSaleModel from "../models/vanSaleModel.js";
+import purchaseModel from "../models/purchaseModel.js";
+import { aggregateTransactions } from "../helpers/helper.js";
+import { startOfDay, endOfDay } from "date-fns";
 
 // @desc to  get stock transfer details
 // route get/api/sUsers/getStockTransferDetails;
@@ -30,7 +36,6 @@ export const getStockTransferDetails = async (req, res) => {
 export const addProduct = async (req, res) => {
   try {
     const {
-    
       body: {
         cmp_id,
         product_name,
@@ -57,7 +62,6 @@ export const addProduct = async (req, res) => {
     // Fetch HSN details
     const hsnDetails = await hsnModel.findById(hsn_code);
 
-
     // Extract required fields from HSN details
     let cgst, sgst, igst, cess, addl_cess, hsn_id;
     if (hsnDetails) {
@@ -77,7 +81,7 @@ export const addProduct = async (req, res) => {
       cmp_id,
 
       product_name,
-      Primary_user_id :req.pUserId || req.owner,
+      Primary_user_id: req.pUserId || req.owner,
       product_code,
       balance_stock,
       brand,
@@ -101,9 +105,8 @@ export const addProduct = async (req, res) => {
       hsn_id,
     };
 
+    console.log("data to save in add product ", dataToSave);
 
-    console.log("data to save in add product ",dataToSave);
-    
     // Save the product
     const newProduct = await productModel.create(dataToSave);
 
@@ -123,7 +126,6 @@ export const addProduct = async (req, res) => {
   }
 };
 
-
 // @desc  edit product details
 // route get/api/pUsers/editProduct
 
@@ -132,7 +134,6 @@ export const editProduct = async (req, res) => {
 
   try {
     const {
-   
       body: {
         product_name,
         product_code,
@@ -149,7 +150,7 @@ export const editProduct = async (req, res) => {
         purchase_cost,
         Priceleveles,
         GodownList,
-        batchEnabled
+        batchEnabled,
       },
     } = req;
 
@@ -194,9 +195,8 @@ export const editProduct = async (req, res) => {
       igst,
       cess,
       addl_cess,
-      batchEnabled
+      batchEnabled,
     };
-
 
     const updateProduct = await productModel.findOneAndUpdate(
       { _id: productId },
@@ -213,7 +213,6 @@ export const editProduct = async (req, res) => {
     res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
-
 
 // @desc to  get details of credit note
 // route get/api/sUsers/getCreditNoteDetails
@@ -232,5 +231,69 @@ export const getCreditNoteDetails = async (req, res) => {
   } catch (error) {
     console.error("Error in getting Credit Note:", error);
     res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+// @desc to  get transactions
+// route get/api/sUsers/transactions
+
+export const transactions = async (req, res) => {
+  const userId = req.sUserId;
+  const cmp_id = req.params.cmp_id;
+  const { todayOnly } = req.query;
+
+  try {
+    const dateFilter =
+      todayOnly === "true"
+        ? {
+            createdAt: {
+              $gte: startOfDay(new Date()),
+              $lte: endOfDay(new Date()),
+            },
+          }
+        : {};
+
+    const matchCriteria = {
+      ...dateFilter,
+      cmp_id: cmp_id,
+      $or: [{ agentId: userId }, { Secondary_user_id: userId }],
+    };
+
+    const transactionPromises = [
+      aggregateTransactions(
+        TransactionModel,
+        { ...matchCriteria, agentId: userId },
+        "Receipt"
+      ),
+      aggregateTransactions(invoiceModel, matchCriteria, "Sale Order"),
+      aggregateTransactions(salesModel, matchCriteria, "Tax Invoice"),
+      aggregateTransactions(vanSaleModel, matchCriteria, "Van Sale"),
+      aggregateTransactions(purchaseModel, matchCriteria, "Purchase"),
+      aggregateTransactions(stockTransferModel, matchCriteria, "Credit"),
+      aggregateTransactions(creditNoteModel, matchCriteria, "Credit Note"),
+    ];
+
+    const results = await Promise.all(transactionPromises);
+
+    const combined = results
+      .flat()
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    if (combined.length > 0) {
+      return res.status(200).json({
+        message: `Transactions fetched${
+          todayOnly === "true" ? " for today" : ""
+        }`,
+        data: { combined },
+      });
+    } else {
+      return res.status(404).json({ message: "Transactions not found" });
+    }
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      status: false,
+      message: "Internal server error",
+    });
   }
 };

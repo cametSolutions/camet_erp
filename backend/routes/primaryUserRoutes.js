@@ -5,7 +5,7 @@ import { registerPrimaryUser,login,addOrganizations,
   primaryUserLogout ,getPrimaryUserData,getOrganizations,
   addSecUsers,fetchSecondaryUsers,
   fetchOutstandingTotal,fetchOutstandingDetails,confirmCollection,
-  transactions,cancelTransaction,fetchBanks,bankList,
+  cancelTransaction,fetchBanks,bankList,
   sendOtp,submitOtp,resetPassword,getTransactionDetails,getSingleOrganization,
   editOrg,addParty,addHsn,addDataToOrg,editDataInOrg,deleteDataInOrg,
   fetchHsn,getProducts,deleteProduct,productDetails
@@ -22,7 +22,7 @@ import { registerPrimaryUser,login,addOrganizations,
 
   import { cancelPurchase } from '../controllers/purchaseController.js';
 
-import {addProduct,editProduct} from "../controllers/commonController.js";
+import {addProduct,editProduct,transactions} from "../controllers/commonController.js";
 import { singleUpload } from '../multer/multer.js';
 import { primaryIsBlocked } from '../middlewares/isBlocked.js';
 import { companyAuthentication } from '../middlewares/authCompany.js';

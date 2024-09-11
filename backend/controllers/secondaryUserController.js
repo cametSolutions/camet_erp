@@ -57,7 +57,7 @@ import {
   revertSaleStockUpdates,
 } from "../helpers/salesHelper.js";
 import stockTransferModel from "../models/stockTransferModel.js";
-import creditNote from "../../frontend/slices/creditNote.js";
+import creditNoteModel from "../models/creditNoteModel.js";
 
 // @desc Login secondary user
 // route POST/api/sUsers/login
@@ -318,128 +318,49 @@ export const logout = async (req, res) => {
 export const transactions = async (req, res) => {
   const userId = req.sUserId;
   const cmp_id = req.params.cmp_id;
+  const { todayOnly } = req.query;
 
   try {
-    const transactions = await TransactionModel.aggregate([
-      { $match: { agentId: userId, cmp_id: cmp_id } },
-      {
-        $project: {
-          _id: 1,
-          party_id: 1,
-          party_name: 1,
-          enteredAmount: 1,
-          isCancelled: 1,
-          createdAt: 1,
-          // totalBillAmount: 1,
-          cmp_id: 1,
-          type: "Receipt",
+    const dateFilter = todayOnly === 'true' ? {
+      createdAt: {
+        $gte: startOfDay(new Date()),
+        $lte: endOfDay(new Date())
+      }
+    } : {};
 
-          // billNo: "$billData.billNo",
-          // settledAmount: "$billData.settledAmount",
-          // remainingAmount: "$billData.remainingAmount",
-          // paymentMethod: 1,
-          // paymentDetails: 1,
-          // agentName: 1,
-          // agentId: 1,
-        },
-      },
-      { $sort: { createdAt: -1 } },
-    ]);
+    const matchCriteria = {
+      ...dateFilter,
+      cmp_id: cmp_id,
+      $or: [
+        { agentId: userId },
+        { Secondary_user_id: userId }
+      ]
+    };
 
-    const invoices = await invoiceModel.aggregate([
-      { $match: { Secondary_user_id: userId, cmp_id: cmp_id } },
-      {
-        $project: {
-          party_name: "$party.partyName",
-          // mobileNumber:"$party.mobileNumber",
-          type: "Sale Order",
-          enteredAmount: "$finalAmount",
-          createdAt: 1,
-          itemsLength: { $size: "$items" },
-          isCancelled: 1,
-        },
-      },
-    ]);
-
-    const sales = await salesModel.aggregate([
-      { $match: { Secondary_user_id: userId, cmp_id: cmp_id } },
-      {
-        $project: {
-          party_name: "$party.partyName",
-          // mobileNumber:"$party.mobileNumber",
-          type: "Tax Invoice",
-          enteredAmount: "$finalAmount",
-          createdAt: 1,
-          itemsLength: { $size: "$items" },
-          isCancelled: 1,
-        },
-      },
-    ]);
-
-    const vanSales = await vanSaleModel.aggregate([
-      { $match: { Secondary_user_id: userId, cmp_id: cmp_id } },
-      {
-        $project: {
-          party_name: "$party.partyName",
-          // mobileNumber:"$party.mobileNumber",
-          type: "Van Sale",
-          enteredAmount: "$finalAmount",
-          createdAt: 1,
-          itemsLength: { $size: "$items" },
-          isCancelled: 1,
-        },
-      },
-    ]);
-
-    const purchases = await purchaseModel.aggregate([
-      { $match: { Secondary_user_id: userId, cmp_id: cmp_id } },
-      {
-        $project: {
-          party_name: "$party.partyName",
-          // mobileNumber:"$party.mobileNumber",
-          type: "Purchase",
-          enteredAmount: "$finalAmount",
-          createdAt: 1,
-          itemsLength: { $size: "$items" },
-          isCancelled: 1,
-        },
-      },
-    ]);
-    const stockTransfer = await stockTransferModel.aggregate([
-      { $match: { Secondary_user_id: userId, cmp_id: cmp_id } },
-      {
-        $project: {
-          party_name: "$selectedGodown",
-          // mobileNumber:"$party.mobileNumber",
-          type: "Stock Transfer",
-          enteredAmount: "$finalAmount",
-          createdAt: 1,
-          itemsLength: { $size: "$items" },
-          isCancelled: 1,
-        },
-      },
-    ]);
-
-    const combined = [
-      ...transactions,
-      ...invoices,
-      ...sales,
-      ...purchases,
-      ...vanSales,
-      ...stockTransfer,
+    const transactionPromises = [
+      aggregateTransactions(TransactionModel, { ...matchCriteria, agentId: userId }, 'Receipt'),
+      aggregateTransactions(invoiceModel, matchCriteria, 'Sale Order'),
+      aggregateTransactions(salesModel, matchCriteria, 'Tax Invoice'),
+      aggregateTransactions(vanSaleModel, matchCriteria, 'Van Sale'),
+      aggregateTransactions(purchaseModel, matchCriteria, 'Purchase'),
+      aggregateTransactions(stockTransferModel, matchCriteria, 'Credit'),
+      aggregateTransactions(creditNoteModel, matchCriteria, 'Credit Note'),
     ];
-    combined.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    const results = await Promise.all(transactionPromises);
+
+    const combined = results.flat().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
     if (combined.length > 0) {
       return res.status(200).json({
-        message: "Transactions fetched",
+        message: `Transactions fetched${todayOnly === 'true' ? ' for today' : ''}`,
         data: { combined },
       });
     } else {
       return res.status(404).json({ message: "Transactions not found" });
     }
   } catch (error) {
-    console.log(error);
+    console.error(error);
     return res.status(500).json({
       status: false,
       message: "Internal server error",
