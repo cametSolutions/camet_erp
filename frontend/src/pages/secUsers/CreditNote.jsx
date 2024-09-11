@@ -31,7 +31,7 @@ function CreditNote() {
   const [additional, setAdditional] = useState(false);
   // const [godownname, setGodownname] = useState("");
 
-  const [salesNumber, setSalesNumber] = useState("");
+  const [creditNoteNumber, setcreditNoteNumber] = useState("");
   const [additionalChragesFromCompany, setAdditionalChragesFromCompany] =
     useState([]);
 
@@ -116,7 +116,7 @@ function CreditNote() {
 
         if (res.data.message === "default") {
           const { configurationNumber } = res.data;
-          setSalesNumber(configurationNumber);
+          setcreditNoteNumber(configurationNumber);
           return;
         }
 
@@ -136,9 +136,9 @@ function CreditNote() {
           const finalOrderNumber = [prefixDetails, padedNumber, suffixDetails]
             .filter(Boolean)
             .join("-");
-          setSalesNumber(finalOrderNumber);
+          setcreditNoteNumber(finalOrderNumber);
         } else {
-          setSalesNumber(salesNumber);
+          setcreditNoteNumber(creditNoteNumber);
         }
       } catch (error) {
         console.log(error);
@@ -344,8 +344,7 @@ function CreditNote() {
       additionalChargesFromRedux,
       lastAmount,
       orgId,
-      salesNumber,
-      batchHeights,
+      creditNoteNumber,
       selectedDate,
     };
 
@@ -387,7 +386,7 @@ function CreditNote() {
         {/* invoiec date */}
         <HeaderTile
           title={"Credit"}
-          number={salesNumber}
+          number={creditNoteNumber}
           selectedDate={selectedDate}
           setSelectedDate={setSelectedDate}
           dispatch={dispatch}
