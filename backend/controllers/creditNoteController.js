@@ -2,7 +2,8 @@ import { truncateToNDecimals } from "../helpers/helper.js";
 import {
   createCreditNoteRecord,
   handleCreditNoteStockUpdates,
-  updateCreditNoteNumber
+  updateCreditNoteNumber,
+  revertCreditNoteStockUpdates
 } from "../helpers/creditNoteHelper.js";
 import { processSaleItems as processCreditNoteItems } from "../helpers/salesHelper.js";
 
@@ -87,3 +88,41 @@ export const createCreditNote = async (req, res) => {
     });
   }
 };
+
+// @desc cancel credit note
+// route GET/api/sUsers/cancelCreditNote
+
+export const cancelCreditNote = async (req, res) => {
+  try {
+  const creditNoteId = req.params.id; // Assuming saleId is passed in the URL parameters
+  const existingCreditNote = await creditNoteModel.findById(creditNoteId);
+  if (!existingCreditNote) {
+    return res
+      .status(404)
+      .json({ success: false, message: "Purchase not found" });
+  }
+
+  // Revert existing stock updates
+  await revertCreditNoteStockUpdates(existingCreditNote.items);
+
+  // flagging is cancelled true
+
+  existingCreditNote.isCancelled = true;
+
+  const cancelledPurchase=await existingCreditNote.save();
+
+  res.status(200).json({
+    success: true,
+    message: "purchase canceled successfully",
+    data:cancelledPurchase
+  });
+} catch (error) {
+  console.error(error);
+  res.status(500).json({
+    success: false,
+    message: "An error occurred while editing the sale.",
+    error: error.message,
+  });
+}
+};
+

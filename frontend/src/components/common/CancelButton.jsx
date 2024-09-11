@@ -6,18 +6,17 @@ import api from "../../api/api";
 import { toast } from "react-toastify";
 import { useState } from "react";
 
-function CancelButton({ id, tab, isCancelled, reFetch, vanSale = false,user }) {
+function CancelButton({ id, tab, isCancelled, reFetch, vanSale = false }) {
   const [refresh, setRefresh] = useState(false);
+
   if (tab === "vanSale") {
+
     tab = "Sales";
     vanSale = true;
   }
 
+  console.log(tab);
 
-
-
-  console.log(user);
-  
   const handleCancel = () => {
     Swal.fire({
       title: "Are you sure?",
@@ -32,6 +31,8 @@ function CancelButton({ id, tab, isCancelled, reFetch, vanSale = false,user }) {
 
       if (result.isConfirmed) {
         const deleteVoucher = async () => {
+          console.log(tab);
+
           try {
             const res = await api.post(
               `/api/sUsers/cancel${tab}/${id}?vanSale=${vanSale}`,

@@ -1,3 +1,5 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable react-refresh/only-export-components */
 /* eslint-disable react/prop-types */
 /* eslint-disable react/display-name */
 import React, { useMemo } from 'react';
@@ -26,7 +28,7 @@ const DashboardTransaction = ({ filteredData, userType, from }) => {
       "Van Sale": `${baseRoute}/vanSaleDetails/${id}`,
       Purchase: `${baseRoute}/purchaseDetails/${id}`,
       "Stock Transfer": `${baseRoute}/stockTransferDetails/${id}`,
-      "Credit Note": `${baseRoute}/CreditNoteDetails/${id}`,
+      "Credit Note": `${baseRoute}/creditDetails/${id}`,
       default: `${baseRoute}/InvoiceDetails/${id}`
     };
     return routes[type] || routes.default;

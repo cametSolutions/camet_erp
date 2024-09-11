@@ -370,7 +370,7 @@ export const updateCreditNoteNumber = async (orgId, secondaryUser) => {
 //   // await productModel.bulkWrite(godownUpdates);
 // };
 
-export const revertPurchaseStockUpdates = async (items) => {
+export const revertCreditNoteStockUpdates = async (items) => {
   try {
     const productUpdates = [];
     const godownUpdates = [];

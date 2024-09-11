@@ -18,7 +18,7 @@ import {login,getSecUserData,fetchOutstandingTotal,
     cancelStockTransfer} from "../controllers/secondaryUserController.js"
  
 import { createPurchase,editPurchase,cancelPurchase } from '../controllers/purchaseController.js';
-import { createCreditNote } from '../controllers/creditNoteController.js';
+import { createCreditNote,cancelCreditNote } from '../controllers/creditNoteController.js';
 
     import { getStockTransferDetails,addProduct ,editProduct,getCreditNoteDetails,transactions} from '../controllers/commonController.js';
 import { authSecondary } from '../middlewares/authSecUsers.js';
@@ -97,6 +97,7 @@ router.post("/cancelpurchase/:id",authSecondary,secondaryIsBlocked,cancelPurchas
 ///credit not routes
 router.post('/createCreditNote',authSecondary,secondaryIsBlocked,createCreditNote)
 router.get('/getCreditNoteDetails/:id',authSecondary,secondaryIsBlocked,getCreditNoteDetails)
+router.post('/cancelCreditNote/:id',authSecondary,secondaryIsBlocked,cancelCreditNote)
 
 
 export default router
