@@ -149,6 +149,7 @@ import SearchPartyCreditNote from '../pages/secUsers/SearchPartyCreditNote'
 import BillToCreditNote from '../pages/secUsers/BillToCreditNote'
 import AddItemCreditNote from '../pages/secUsers/AddItemCreditNote'
 import EditItemCreditNote from '../pages/secUsers/EditItemCreditNote'
+import CreditNoteDetailsSecondary from '../pages/secUsers/CreditNoteDetailsSecondary'
 
 const Routers = () => {
   return (
@@ -325,6 +326,7 @@ const Routers = () => {
         <Route path='/sUsers/billToCreditNote/:id' element={<ProtectedSecRoute><BillToCreditNote/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/addItemCreditNote' element={<ProtectedSecRoute><AddItemCreditNote/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/editItemCreditNote/:id/:godownName/:index' element={<ProtectedSecRoute><EditItemCreditNote/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/creditDetails/:id' element={<ProtectedSecRoute><CreditNoteDetailsSecondary/></ProtectedSecRoute>}></Route>
 
 
 

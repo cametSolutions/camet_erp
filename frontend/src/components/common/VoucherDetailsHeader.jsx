@@ -24,7 +24,6 @@ function VoucherDetailsHeader({
     reFetchParent(!refresh);
   };
 
-  console.log(user);
   
   return (
     <div>

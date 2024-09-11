@@ -2,6 +2,7 @@ import hsnModel from "../models/hsnModel.js";
 import productModel from "../models/productModel.js";
 import salesModel from "../models/salesModel.js";
 import stockTransferModel from "../models/stockTransferModel.js";
+import creditNoteModel from "../models/creditNoteModel.js";
 
 // @desc to  get stock transfer details
 // route get/api/sUsers/getStockTransferDetails;
@@ -210,5 +211,26 @@ export const editProduct = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
+};
+
+
+// @desc to  get details of credit note
+// route get/api/sUsers/getCreditNoteDetails
+export const getCreditNoteDetails = async (req, res) => {
+  try {
+    const id = req.params.id;
+
+    const details = await creditNoteModel.findById(id);
+    if (details) {
+      res
+        .status(200)
+        .json({ message: "Credit Note Details fetched", data: details });
+    } else {
+      res.status(404).json({ error: "Credit Note Details not found" });
+    }
+  } catch (error) {
+    console.error("Error in getting Credit Note:", error);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 };
