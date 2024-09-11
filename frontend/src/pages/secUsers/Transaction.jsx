@@ -24,7 +24,6 @@ const initialEndDate = localStorage.getItem("SecondaryTransactionEndDate")
   ? new Date(localStorage.getItem("SecondaryTransactionEndDate"))
   : new Date();
 
-  console.log(initialEndDate);
   
   
   const [data, setData] = useState([initialStartDate]);
@@ -45,7 +44,6 @@ const initialEndDate = localStorage.getItem("SecondaryTransactionEndDate")
           withCredentials: true,
         });
 
-        console.log(res.data);
 
         setData(res.data.data.combined);
 

@@ -315,58 +315,58 @@ export const logout = async (req, res) => {
 // @desc get transactions
 // route GET/api/sUsers/transactions
 
-export const transactions = async (req, res) => {
-  const userId = req.sUserId;
-  const cmp_id = req.params.cmp_id;
-  const { todayOnly } = req.query;
+// export const transactions = async (req, res) => {
+//   const userId = req.sUserId;
+//   const cmp_id = req.params.cmp_id;
+//   const { todayOnly } = req.query;
 
-  try {
-    const dateFilter = todayOnly === 'true' ? {
-      createdAt: {
-        $gte: startOfDay(new Date()),
-        $lte: endOfDay(new Date())
-      }
-    } : {};
+//   try {
+//     const dateFilter = todayOnly === 'true' ? {
+//       createdAt: {
+//         $gte: startOfDay(new Date()),
+//         $lte: endOfDay(new Date())
+//       }
+//     } : {};
 
-    const matchCriteria = {
-      ...dateFilter,
-      cmp_id: cmp_id,
-      $or: [
-        { agentId: userId },
-        { Secondary_user_id: userId }
-      ]
-    };
+//     const matchCriteria = {
+//       ...dateFilter,
+//       cmp_id: cmp_id,
+//       $or: [
+//         { agentId: userId },
+//         { Secondary_user_id: userId }
+//       ]
+//     };
 
-    const transactionPromises = [
-      aggregateTransactions(TransactionModel, { ...matchCriteria, agentId: userId }, 'Receipt'),
-      aggregateTransactions(invoiceModel, matchCriteria, 'Sale Order'),
-      aggregateTransactions(salesModel, matchCriteria, 'Tax Invoice'),
-      aggregateTransactions(vanSaleModel, matchCriteria, 'Van Sale'),
-      aggregateTransactions(purchaseModel, matchCriteria, 'Purchase'),
-      aggregateTransactions(stockTransferModel, matchCriteria, 'Credit'),
-      aggregateTransactions(creditNoteModel, matchCriteria, 'Credit Note'),
-    ];
+//     const transactionPromises = [
+//       aggregateTransactions(TransactionModel, { ...matchCriteria, agentId: userId }, 'Receipt'),
+//       aggregateTransactions(invoiceModel, matchCriteria, 'Sale Order'),
+//       aggregateTransactions(salesModel, matchCriteria, 'Tax Invoice'),
+//       aggregateTransactions(vanSaleModel, matchCriteria, 'Van Sale'),
+//       aggregateTransactions(purchaseModel, matchCriteria, 'Purchase'),
+//       aggregateTransactions(stockTransferModel, matchCriteria, 'Credit'),
+//       aggregateTransactions(creditNoteModel, matchCriteria, 'Credit Note'),
+//     ];
 
-    const results = await Promise.all(transactionPromises);
+//     const results = await Promise.all(transactionPromises);
 
-    const combined = results.flat().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+//     const combined = results.flat().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-    if (combined.length > 0) {
-      return res.status(200).json({
-        message: `Transactions fetched${todayOnly === 'true' ? ' for today' : ''}`,
-        data: { combined },
-      });
-    } else {
-      return res.status(404).json({ message: "Transactions not found" });
-    }
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({
-      status: false,
-      message: "Internal server error",
-    });
-  }
-};
+//     if (combined.length > 0) {
+//       return res.status(200).json({
+//         message: `Transactions fetched${todayOnly === 'true' ? ' for today' : ''}`,
+//         data: { combined },
+//       });
+//     } else {
+//       return res.status(404).json({ message: "Transactions not found" });
+//     }
+//   } catch (error) {
+//     console.error(error);
+//     return res.status(500).json({
+//       status: false,
+//       message: "Internal server error",
+//     });
+//   }
+// };
 
 // @desc for cancelling transactions
 // route GET/api/sUsers/cancelTransaction

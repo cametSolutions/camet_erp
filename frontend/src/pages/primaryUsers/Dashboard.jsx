@@ -25,7 +25,7 @@ function Dashboard() {
     if (org) {
       const fetchTransactions = async () => {
         try {
-          const res = await api.get(`/api/pUsers/transactions/${org._id}`, {
+          const res = await api.get(`/api/pUsers/transactions/${org._id}?todayOnly=true`, {
             withCredentials: true,
           });
 
