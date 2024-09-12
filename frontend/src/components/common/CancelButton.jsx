@@ -15,7 +15,6 @@ function CancelButton({ id, tab, isCancelled, reFetch, vanSale = false }) {
     vanSale = true;
   }
 
-  console.log(tab);
 
   const handleCancel = () => {
     Swal.fire({
@@ -25,7 +24,8 @@ function CancelButton({ id, tab, isCancelled, reFetch, vanSale = false }) {
       showCancelButton: true,
       confirmButtonColor: "#3085d6",
       cancelButtonColor: "#d33",
-      confirmButtonText: "Yes, delete it!",
+      cancelButtonText: "Go Back",
+      confirmButtonText: "Yes, Cancel it!",
     }).then((result) => {
       // If the user confirms the deletion
 

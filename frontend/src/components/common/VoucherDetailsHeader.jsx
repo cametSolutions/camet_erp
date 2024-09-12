@@ -24,10 +24,7 @@ function VoucherDetailsHeader({
     reFetchParent(!refresh);
   };
 
-  console.log(tab);
-  
 
-  
   return (
     <div>
       <div className="bg-white p-4 mt-3 flex justify-between items-center">
@@ -42,43 +39,44 @@ function VoucherDetailsHeader({
 
         <div className="hidden md:block">
           <div className="  flex justify-center p-4 gap-12 text-lg text-violet-500 mr-4">
-            <CancelButton
-              id={data._id}
-              tab={tab}
-              isCancelled={data?.isCancelled}
-              reFetch={reFetch}
-            />
-
-            {
-              user==="secondary" && (
-
-            <div
-              onClick={() => navigate(editLink)}
-              className={` ${
-                data?.isCancelled && "pointer-events-none opacity-60"
-              } flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer`}
-            >
-              <FaEdit className="text-blue-500" />
-              <p className="text-black font-bold text-sm">Edit</p>
-            </div>
-              )
-            }
+            {user === "secondary" && (
+              <>
+                <CancelButton
+                  id={data._id}
+                  tab={tab}
+                  isCancelled={data?.isCancelled}
+                  reFetch={reFetch}
+                />
+                <div
+                  onClick={() => navigate(editLink)}
+                  className={` ${
+                    data?.isCancelled && "pointer-events-none opacity-60"
+                  } flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer`}
+                >
+                  <FaEdit className="text-blue-500" />
+                  <p className="text-black font-bold text-sm">Edit</p>
+                </div>
+              </>
+            )}
 
             {tab !== "stockTransfer" && tab !== "purchase" && (
               <SwallFireForPdf data={data} tab={tab} user={user} />
             )}
 
             {tab === "purchase" && (
-
-              <Link to={(`/${ user == "primary" ? "pUsers" : "sUsers"}/sharePurchase/${data._id}`)}> 
-              <div
-                className={` ${
-                  data?.isCancelled && "pointer-events-none opacity-60"
-                } flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer`}
+              <Link
+                to={`/${
+                  user == "primary" ? "pUsers" : "sUsers"
+                }/sharePurchase/${data._id}`}
               >
-                <IoMdShareAlt />
-                <p className="text-black font-bold text-sm">Share</p>
-              </div>
+                <div
+                  className={` ${
+                    data?.isCancelled && "pointer-events-none opacity-60"
+                  } flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer`}
+                >
+                  <IoMdShareAlt />
+                  <p className="text-black font-bold text-sm">Share</p>
+                </div>
               </Link>
             )}
 

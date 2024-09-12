@@ -144,9 +144,6 @@ function CreditNote() {
         console.log(error);
       }
     };
-
-    
-
     fetchConfigurationNumber();
   }, []);
 
@@ -253,7 +250,6 @@ function CreditNote() {
   const items = useSelector((state) => state.creditNote.items);
   const priceLevelFromRedux =
     useSelector((state) => state.creditNote.selectedPriceLevel) || "";
-  const batchHeights = useSelector((state) => state.creditNote.heights);
 
   useEffect(() => {
     const subTotal = items.reduce((acc, curr) => {
@@ -363,7 +359,7 @@ function CreditNote() {
 
       toast.success(res.data.message);
 
-      navigate(`/sUsers/salesDetails/${res.data.data._id}`);
+      navigate(`/sUsers/creditDetails/${res.data.data._id}`);
       dispatch(removeAll());
     } catch (error) {
       toast.error(error.response.data.message);

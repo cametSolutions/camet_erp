@@ -126,3 +126,109 @@ export const cancelCreditNote = async (req, res) => {
 }
 };
 
+
+// @desc edit credit note
+// route GET/api/sUsers/editCreditNote
+
+
+export const editCreditNote = async (req, res) => {
+  try {
+    const creditNoteId = req.params.id; // Assuming saleId is passed in the URL parameters
+    const {
+      selectedGodownId,
+      selectedGodownName,
+      orgId,
+      party,
+      items,
+      despatchDetails,
+      additionalChargesFromRedux,
+      lastAmount,
+      creditNoteNumber,
+      selectedDate,
+    } = req.body;
+    // Fetch existing Purchase
+    const existingCreditNote = await creditNoteModel.findById(creditNoteId);
+    if (!existingCreditNote) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Purchase not found" });
+    }
+
+    // Revert existing stock updates
+    await revertCreditNoteStockUpdates(existingCreditNote.items);
+    // Process new sale items and update stock
+    const updatedItems = await processCreditNoteItems(
+      items,
+      additionalChargesFromRedux
+    );
+
+    await handleCreditNoteStockUpdates(updatedItems);
+
+    // Update existing sale record
+    const updateData = {
+      selectedGodownId: "",
+      selectedGodownName: "",
+      serialNumber: existingCreditNote.serialNumber, // Keep existing serial number
+      cmp_id: orgId,
+      partyAccount: party?.partyName,
+      party,
+      despatchDetails,
+      items: updatedItems,
+      additionalCharges: additionalChargesFromRedux,
+      finalAmount: lastAmount,
+      Primary_user_id: req.owner,
+      Secondary_user_id: req.secondaryUserId,
+      creditNoteNumber: creditNoteNumber,
+      createdAt: new Date(selectedDate),
+    };
+
+    await creditNoteModel.findByIdAndUpdate(creditNoteId, updateData, {
+      new: true,
+    });
+
+    //     ///////////////////////////////////// for reflecting the rate change in outstanding  ////////////////////////////////////
+
+    // const newBillValue = Number(lastAmount);
+    // const oldBillValue = Number(existingSale.finalAmount);
+    // const diffBillValue = newBillValue - oldBillValue;
+
+    // const matchedOutStanding = await TallyData.findOne({
+    //   party_id: party?.party_master_id,
+    //   cmp_id: orgId,
+    //   bill_no: salesNumber,
+    // });
+
+    // if (matchedOutStanding) {
+    //   // console.log("editSale: matched outstanding found");
+    //   const newOutstanding =
+    //     Number(matchedOutStanding?.bill_pending_amt) + diffBillValue;
+
+    //   // console.log("editSale: new outstanding calculated", newOutstanding);
+    //   await TallyData.updateOne(
+    //     {
+    //       party_id: party?.party_master_id,
+    //       cmp_id: orgId,
+    //       bill_no: salesNumber,
+    //     },
+    //     { $set: { bill_pending_amt: newOutstanding } }
+    //   );
+
+    //   // console.log("editSale: outstanding updated");
+    // } else {
+    //   console.log("editSale: matched outstanding not found");
+    // }
+
+    res.status(200).json({
+      success: true,
+      message: "purchase edited successfully",
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: "An error occurred while editing the sale.",
+      error: error.message,
+    });
+  }
+};
+

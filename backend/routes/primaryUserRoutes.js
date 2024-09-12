@@ -22,7 +22,7 @@ import { registerPrimaryUser,login,addOrganizations,
 
   import { cancelPurchase } from '../controllers/purchaseController.js';
 
-import {addProduct,editProduct,transactions} from "../controllers/commonController.js";
+import {addProduct,editProduct,getCreditNoteDetails,transactions} from "../controllers/commonController.js";
 import { singleUpload } from '../multer/multer.js';
 import { primaryIsBlocked } from '../middlewares/isBlocked.js';
 import { companyAuthentication } from '../middlewares/authCompany.js';
@@ -103,6 +103,11 @@ router.get("/getAllSubDetails/:orgId",authPrimary,primaryIsBlocked,getAllSubDeta
 router.get("/fetchConfigurationCurrentNumber/:orgId/:_id",authPrimary,primaryIsBlocked,fetchConfigurationCurrentNumber)
 router.get("/getStockTransferDetails/:id",authPrimary,primaryIsBlocked,getStockTransferDetails)
 router.post("/cancelpurchase/:id",authPrimary,primaryIsBlocked,cancelPurchase)
+
+
+////credit note
+router.get('/getCreditNoteDetails/:id',authPrimary,primaryIsBlocked,getCreditNoteDetails)
+
 
 
 

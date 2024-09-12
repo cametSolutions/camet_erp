@@ -5,14 +5,12 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import api from "../../api/api";
 import { toast } from "react-toastify";
-import { FaEdit } from "react-icons/fa";
 import { useLocation, useNavigate } from "react-router-dom";
 import SalesProductDetails from "../../components/common/SalesProductDetails";
 import SwallFireForPdf from "../../components/common/SwallFireForPdf";
-import CancelButton from "../../components/common/CancelButton";
 import VoucherDetailsHeader from "../../components/common/VoucherDetailsHeader";
 
-function CreditNoteDetailsSecondary() {
+function CreditNoteDetailsPrimary() {
   const [data, setData] = useState("");
   const [refresh, setRefresh] = useState(false);
 
@@ -24,7 +22,7 @@ function CreditNoteDetailsSecondary() {
   useEffect(() => {
     const getTransactionDetails = async () => {
       try {
-        const res = await api.get(`/api/sUsers/getCreditNoteDetails/${id}`, {
+        const res = await api.get(`/api/pUsers/getCreditNoteDetails/${id}`, {
           params:{vanSale:false},
           withCredentials: true,
         });
@@ -46,9 +44,9 @@ function CreditNoteDetailsSecondary() {
 
   const backHandler = () => {
     if (location?.state?.from === "dashboard") {
-      navigate("/sUsers/dashboard");
+      navigate("/pUsers/dashboard");
     } else {
-      navigate("/sUsers/transaction");
+      navigate("/pUsers/transaction");
     }
   };
 
@@ -78,8 +76,8 @@ function CreditNoteDetailsSecondary() {
         <VoucherDetailsHeader
         data={data}
         reFetchParent={reFetch}
-        editLink={`/sUsers/editCreditNote/${data?._id}`}
-        user={"secondary"}
+        editLink={`/pUsers/editCreditNote/${data?._id}`}
+        user={"primary"}
         number={data?.creditNoteNumber}
         tab={"CreditNote"}
       />
@@ -128,16 +126,8 @@ function CreditNoteDetailsSecondary() {
 
         <div className=" block md:hidden z-0 ">
           <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 flex justify-center p-4 gap-12 text-lg text-violet-500  ">
-          <CancelButton id={data._id} tab="CreditNote"  isCancelled={data?.isCancelled} reFetch={reFetch}/>
      
-            <div
-              onClick={() => navigate(`/sUsers/editCreditNote/${data._id}`)}
-              className={` ${data?.isCancelled?"pointer-events-none opacity-60" :""}  flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer`}
-            >
-              <FaEdit className ={`text-blue-500      `} />
-              <p className="text-black font-bold text-sm">Edit</p>
-            </div>
-            {/* <Link to={`/sUsers/shareSales/${data._id}`}> */}
+            {/* <Link to={`/pUsers/shareSales/${data._id}`}> */}
             <SwallFireForPdf data={data} tab="CreditNote" />
 
             <div className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer">
@@ -150,4 +140,4 @@ function CreditNoteDetailsSecondary() {
   );
 }
 
-export default CreditNoteDetailsSecondary;
+export default CreditNoteDetailsPrimary;

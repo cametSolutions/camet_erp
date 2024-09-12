@@ -232,7 +232,6 @@ function SalesPdf({
                             const discountAmount =
                             (  (rate * count) + (taxAmt - Number(finalAmt)) || 0).toFixed(2);
 
-                            console.log(discountAmount);
 
                             return godownOrBatch.added &&
                               godownOrBatch.batch ? (

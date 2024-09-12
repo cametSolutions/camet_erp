@@ -1,7 +1,6 @@
 /* eslint-disable react/prop-types */
 
 function PdfHeader({ data, org, address, despatchDetails, tab = "sales" }) {
-  console.log(org);
 
   let pdfNumber;
 

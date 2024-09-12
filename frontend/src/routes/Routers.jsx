@@ -150,6 +150,10 @@ import BillToCreditNote from '../pages/secUsers/BillToCreditNote'
 import AddItemCreditNote from '../pages/secUsers/AddItemCreditNote'
 import EditItemCreditNote from '../pages/secUsers/EditItemCreditNote'
 import CreditNoteDetailsSecondary from '../pages/secUsers/CreditNoteDetailsSecondary'
+import EditCreditNote from '../pages/secUsers/EditCreditNote'
+import ShareCreditNoteSecondary from '../pages/secUsers/ShareCreditNoteSecondary'
+import CreditNoteDetailsPrimary from '../pages/primaryUsers/CreditNoteDetailsPrimary'
+import ShareCreditNotePrimary from '../pages/primaryUsers/ShareCreditNotePrimary'
 
 const Routers = () => {
   return (
@@ -219,6 +223,9 @@ const Routers = () => {
         <Route path='/pUsers/stockTransferDetails/:id' element={<ProtectedPriRoute><StockTransferDetailsPrimary/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/ReceiptPrint' element={<ProtectedPriRoute><ReceiptPrintOutPrimary/></ProtectedPriRoute>}></Route>  
 
+         {/* creditNote */}
+        <Route path='/pUsers/creditDetails/:id' element={<ProtectedPriRoute><CreditNoteDetailsPrimary/></ProtectedPriRoute>}></Route>
+        <Route path='/pUsers/shareCreditNote/:id' element={<ProtectedPriRoute><ShareCreditNotePrimary/></ProtectedPriRoute>}></Route> 
 
 
         {/* admin */}
@@ -327,6 +334,9 @@ const Routers = () => {
         <Route path='/sUsers/addItemCreditNote' element={<ProtectedSecRoute><AddItemCreditNote/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/editItemCreditNote/:id/:godownName/:index' element={<ProtectedSecRoute><EditItemCreditNote/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/creditDetails/:id' element={<ProtectedSecRoute><CreditNoteDetailsSecondary/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/editCreditNote/:id' element={<ProtectedSecRoute><EditCreditNote/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/shareCreditNote/:id' element={<ProtectedSecRoute><ShareCreditNoteSecondary/></ProtectedSecRoute>}></Route> 
+
 
 
 

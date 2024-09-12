@@ -5,13 +5,12 @@ import { useNavigate } from "react-router-dom";
 
 function SwallFireForPdf({ data, tab = "sales", user }) {
   let selectedUser = user == "primary" ? "pUsers" : "sUsers";
-  console.log(tab);
   const navigate = useNavigate();
   const chooseFormat = () => {
     Swal.fire({
       title: "Which format would you like?",
       html: "<p>Choose between:</p>",
-      showDenyButton: true,
+      showDenyButton: tab=="CreditNote" ? false : true,
       showCancelButton: true,
       confirmButtonText: "Tax Invoice",
       denyButtonText: `POS format`,
@@ -28,6 +27,9 @@ function SwallFireForPdf({ data, tab = "sales", user }) {
         }
         else if (tab === "purchase") {
           navigate(`/${selectedUser}/sharePurchase/${data._id}`);
+        }
+        else if (tab === "CreditNote") {
+          navigate(`/${selectedUser}/shareCreditNote/${data._id}`);
         }
          else {
           navigate(`/${selectedUser}/shareSales/${data._id}`);
