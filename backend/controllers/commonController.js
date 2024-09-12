@@ -269,7 +269,7 @@ export const transactions = async (req, res) => {
       aggregateTransactions(salesModel, matchCriteria, "Tax Invoice"),
       aggregateTransactions(vanSaleModel, matchCriteria, "Van Sale"),
       aggregateTransactions(purchaseModel, matchCriteria, "Purchase"),
-      aggregateTransactions(stockTransferModel, matchCriteria, "Credit"),
+      aggregateTransactions(stockTransferModel, matchCriteria, "Stock Transfer"),
       aggregateTransactions(creditNoteModel, matchCriteria, "Credit Note"),
     ];
 
