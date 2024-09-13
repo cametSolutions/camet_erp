@@ -1,13 +1,14 @@
-import registerBackground from "../../assets/images/new.jpg";
-import registerBackground02 from "../../assets/images/new.jpg";
 import { useState } from "react";
 import { toast } from "react-toastify";
 import { PropagateLoader } from "react-spinners";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { FaRegEye } from "react-icons/fa";
 import { IoMdEyeOff } from "react-icons/io";
+import { MdAccountCircle } from "react-icons/md";
 import api from "../../api/api.js";
-import { useNavigate } from "react-router-dom";
+import { FaPhone } from "react-icons/fa6";
+import { MdEmail } from "react-icons/md";
+
 
 const Register = () => {
   const [userName, setUserName] = useState("");
@@ -18,25 +19,22 @@ const Register = () => {
   const [loader, setLoader] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [subscription, setSubscription] = useState(''); 
+  const [subscription, setSubscription] = useState("");
 
   const navigate = useNavigate();
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
   };
+
   const toggleConfirmPasswordVisibility = () => {
     setShowConfirmPassword(!showConfirmPassword);
   };
-
-
-  console.log(subscription);
 
   const submitHandler = async (event) => {
     event.preventDefault();
 
     // Validations
-
     if (!userName || !mobile || !email || !password || !confirmPassword) {
       toast.error("All fields must be filled");
       return;
@@ -52,14 +50,10 @@ const Register = () => {
       return;
     }
 
-
     if (subscription === "") {
       toast.error("Select your subscription");
       return;
     }
-
-
-
 
     if (password !== confirmPassword) {
       toast.error("Password and Confirm Password do not match");
@@ -85,8 +79,12 @@ const Register = () => {
       mobile,
       email,
       password,
-      subscription
+      subscription,
     };
+
+    console.log(formData);
+    
+
     try {
       const res = await api.post("/api/pUsers/register", formData, {
         headers: {
@@ -102,7 +100,6 @@ const Register = () => {
         setEmail("");
         setPassword("");
         setConfirmPassword("");
-
         navigate("/pUsers/login");
       }, 1000);
     } catch (error) {
@@ -114,175 +111,187 @@ const Register = () => {
   };
 
   return (
-    <div>
-      <div
-        className="min-h-screen py-20 relative"
-        style={{
-          backgroundImage: `url(${registerBackground})`,
-          backgroundSize: "cover",
-          backgroundRepeat: "no-repeat",
-          backgroundPosition: "center",
-          overflow: "hidden",
-        }}
-      >
-        <div
-          className="absolute top-0 left-0 w-full h-full"
-          style={{
-            backdropFilter: "blur(6px)",
-          }}
-        ></div>
-        <div className="container mx-auto relative z-10">
-          <div className="flex flex-col lg:flex-row w-10/12 lg:w-8/12 bg-white rounded-xl mx-auto shadow-lg overflow-hidden ">
-            <div
-              className="w-full lg:w-1/2 flex flex-col items-center justify-center p-12 bg-no-repeat bg-cover bg-center"
-              style={{
-                backgroundImage: `url(${registerBackground02})`,
-              }}
-            >
-              {/* <h1 className="text-black text-3xl mb-3">Welcome</h1> */}
-              <div>
-                {/* <p className="text-black">
-                  Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-                  Aenean suspendisse aliquam varius rutrum purus maecenas ac{" "}
-                  <a href="#" className="text-purple-500 font-semibold">
-                    Learn more
-                  </a>
-                </p> */}
+    <div className="font-[sans-serif] bg-white md:h-screen p-5">
+      <div className="flex items-center justify-center">
+        <div className="flex items-center p-6 h-full w-full  md:w-1/3   shadow-2xl ">
+          <form className="max-w-lg w-full mx-auto" onSubmit={submitHandler}>
+            <div className="mb-12 flex flex-col items-center justify-center gap-2">
+              <MdAccountCircle size={40} className="text-purple-500" />
+              <h3 className="text-gray-600 md:text-xl text-lg text-center font-extrabold max-md:text-center">
+                Create an account
+              </h3>
+            </div>
+
+            <div>
+              <label className="text-gray-800 text-sm block mb-2">
+                User Name
+              </label>
+              <div className="relative flex items-center">
+                <input
+                  name="name"
+                  type="text"
+                  required
+                  className="w-full bg-transparent text-sm border-b border-gray-300 focus:border-blue-500 px-2 py-3 outline-none"
+                  placeholder="Enter user name"
+                  value={userName}
+                  onChange={(e) => setUserName(e.target.value)}
+                />
+                <MdAccountCircle className="w-[18px] h-[18px] absolute right-2 text-gray-400" />
               </div>
             </div>
-            <div className="w-full lg:w-1/2 py-16  px-6 md:px-12 ">
-              <h2 className="text-3xl mb-4 text-center">Register</h2>
-              <p className="mb-4">
-                Create your account. It’s free and only takes a minute
-              </p>
-              <form onSubmit={submitHandler}>
-                <div>
-                  <input
-                    type="text"
-                    placeholder="User Name"
-                    className="border border-gray-400 py-1 px-2 w-full "
-                    onChange={(e) => {
-                      setUserName(e.target.value);
-                    }}
-                    value={userName}
-                  />
-                </div>
-                <div>
-                  <input
-                    type="number"
-                    placeholder="Mobile"
-                    className="border border-gray-400 py-1 px-2 w-full mt-5"
-                    onChange={(e) => {
-                      setMobile(e.target.value);
-                    }}
-                    value={mobile}
-                  />
-                </div>
-                <div className="mt-5">
-                  <input
-                    type="email"
-                    placeholder="Email"
-                    className="border border-gray-400 py-1 px-2 w-full"
-                    onChange={(e) => {
-                      setEmail(e.target.value);
-                    }}
-                    value={email}
-                  />
-                </div>
 
-                <div className="mt-3">
-                  <select
-                    className="border border-gray-400 py-1 px-2 w-full"
-                    onChange={(e) => {
-                      setSubscription(e.target.value);
-                    }}
-                    value={subscription}
-                  >
-                    <option value="" disabled>Select your subscription</option>
-                    <option value="monthly">Monthly</option>
-                    <option value="yearly">Yearly</option>
-                  </select>
-                </div>
-
-                <div className="mt-5 relative">
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Password"
-                    className="border border-gray-400 py-1 px-2 w-full"
-                    onChange={(e) => {
-                      setPassword(e.target.value);
-                    }}
-                    value={password}
-                  />
-                  <div className="absolute top-1/2 right-2 transform -translate-y-1/2">
-                    {!showPassword ? (
-                      <FaRegEye onClick={togglePasswordVisibility} />
-                    ) : (
-                      <IoMdEyeOff onClick={togglePasswordVisibility} />
-                    )}
-                  </div>
-                </div>
-
-                <div className="mt-5 relative">
-                  <input
-                    type={showConfirmPassword ? "text" : "password"}
-                    placeholder="Confirm password"
-                    className="border border-gray-400 py-1 px-2 w-full"
-                    onChange={(e) => {
-                      setConfirmPassword(e.target.value);
-                    }}
-                    value={confirmPassword}
-                  />
-                  <div className="absolute top-1/2 right-2 transform -translate-y-1/2">
-                    {!showConfirmPassword ? (
-                      <FaRegEye onClick={toggleConfirmPasswordVisibility} />
-                    ) : (
-                      <IoMdEyeOff onClick={toggleConfirmPasswordVisibility} />
-                    )}
-                  </div>
-                </div>
-                <div className="mt-5">
-                  <input type="checkbox" className="border border-gray-400" />
-                  <span>
-                    I accept the{" "}
-                    <a href="#" className="text-purple-500 font-semibold">
-                      Terms of Use
-                    </a>{" "}
-                    &{" "}
-                    <a href="#" className="text-purple-500 font-semibold">
-                      Privacy Policy
-                    </a>
-                  </span>
-                </div>
-                <div className="mt-5">
-                  <button
-                    type="submit"
-                    className="w-full bg-purple-500 py-3 text-center text-white "
-                  >
-                    {loader ? (
-                      <PropagateLoader
-                        color="#ffffff"
-                        size={10}
-                        speedMultiplier={1}
-                        className="mb-3"
-                      />
-                    ) : (
-                      "Register Now"
-                    )}
-                  </button>
-                </div>
-                <p className="text-center mt-3">
-                  Already have an account?{" "}
-                  <Link to={"/pUsers/login"}>
-                    {" "}
-                    <span className="text-blue-500 ml-1 cursor-pointer">
-                      Login
-                    </span>
-                  </Link>
-                </p>
-              </form>
+            <div className="mt-6">
+              <label className="text-gray-800 text-sm block mb-2">
+                Mobile Number
+              </label>
+              <div className="relative flex items-center">
+                <input
+                  name="mobile"
+                  type="tel"
+                  required
+                  className="w-full bg-transparent text-sm border-b border-gray-300 focus:border-blue-500 px-2 py-3 outline-none"
+                  placeholder="Enter mobile number"
+                  value={mobile}
+                  onChange={(e) => setMobile(e.target.value)}
+                />
+                <FaPhone className="absolute right-2 text-gray-400" />
+              </div>
             </div>
-          </div>
+
+            <div className="mt-6">
+              <label className="text-gray-800 text-sm block mb-2">Email</label>
+              <div className="relative flex items-center">
+                <input
+                  name="email"
+                  type="email"
+                  required
+                  className="w-full bg-transparent text-sm border-b border-gray-300 focus:border-blue-500 px-2 py-3 outline-none"
+                  placeholder="Enter email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+                <MdEmail className="absolute right-2 text-gray-400" />
+
+              </div>
+            </div>
+
+            <div className="mt-6">
+              <label className="text-gray-800 text-sm block mb-2">
+                Password
+              </label>
+              <div className="relative flex items-center">
+                <input
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  required
+                  className="w-full bg-transparent text-sm border-b border-gray-300 focus:border-blue-500 px-2 py-3 outline-none"
+                  placeholder="Enter password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+                {showPassword ? (
+                  <IoMdEyeOff
+                    className="w-[18px] h-[18px] absolute right-2 cursor-pointer text-gray-400"
+                    onClick={togglePasswordVisibility}
+                  />
+                ) : (
+                  <FaRegEye
+                    className="w-[18px] h-[18px] absolute right-2 cursor-pointer text-gray-400"
+                    onClick={togglePasswordVisibility}
+                  />
+                )}
+              </div>
+            </div>
+
+            <div className="mt-6">
+              <label className="text-gray-800 text-sm block mb-2">
+                Confirm Password
+              </label>
+              <div className="relative flex items-center">
+                <input
+                  name="confirmPassword"
+                  type={showConfirmPassword ? "text" : "password"}
+                  required
+                  className="w-full bg-transparent text-sm border-b border-gray-300 focus:border-blue-500 px-2 py-3 outline-none"
+                  placeholder="Confirm password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                />
+                {showConfirmPassword ? (
+                  <IoMdEyeOff
+                    className="w-[18px] h-[18px] absolute right-2 cursor-pointer text-gray-400"
+                    onClick={toggleConfirmPasswordVisibility}
+                  />
+                ) : (
+                  <FaRegEye
+                    className="w-[18px] h-[18px] absolute right-2 cursor-pointer text-gray-400"
+                    onClick={toggleConfirmPasswordVisibility}
+                  />
+                )}
+              </div>
+            </div>
+
+            <div className="mt-6">
+              <label className="text-gray-800 text-sm block mb-2">
+                Subscription
+              </label>
+              <select
+                className="w-full bg-transparent text-sm border-b border-gray-300 focus:border-blue-500 px-2 py-3 outline-none"
+                value={subscription}
+                onChange={(e) => setSubscription(e.target.value)}
+                required
+              >
+                <option value="">Select subscription</option>
+                <option value="monthly">Monthly</option>
+                <option value="yearly">Yearly</option>
+              </select>
+            </div>
+
+            <div className="flex items-center mt-6">
+              <input
+                id="terms"
+                name="terms"
+                type="checkbox"
+                required
+                className="h-4 w-4 shrink-0 rounded"
+              />
+              <label
+                htmlFor="terms"
+                className="ml-3 block text-sm text-gray-800"
+              >
+                I accept the{" "}
+                <Link
+                  to="/terms"
+                  className="text-blue-500 font-semibold hover:underline ml-1"
+                >
+                  Terms and Conditions
+                </Link>
+              </label>
+            </div>
+
+            <div className="mt-12">
+              <button
+                type="submit"
+                className="w-full py-3 px-6 text-sm tracking-wider font-semibold rounded-md bg-blue-600 hover:bg-blue-700 text-white focus:outline-none"
+                disabled={loader}
+              >
+                {loader ? (
+                  <PropagateLoader color="#ffffff" size={10} className="mb-2" />
+                ) : (
+                  "Create an account"
+                )}
+              </button>
+              <p className="text-sm mt-6 text-gray-800">
+                Already have an account?{" "}
+                <Link
+                  to="/pUsers/login"
+                  className="text-blue-500 font-semibold hover:underline ml-1"
+                >
+                  Login here
+                </Link>
+              </p>
+            </div>
+          </form>
         </div>
       </div>
     </div>

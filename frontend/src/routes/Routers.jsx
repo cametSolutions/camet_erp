@@ -159,14 +159,7 @@ const Routers = () => {
   return (
     <Routes>
       <Route path='*' element={<Notfound/>}></Route>
-      {/* <Route path='/notFound' element={<Notfound/>}></Route>
-        <Route path='/' element={<Login/>}></Route>
-        <Route path='/pUsers/register' element={<Register/>}></Route>
-        <Route path='/pUsers/login' element={<Login></Login>}></Route>
-        <Route path='/pUsers/forgotPassword' element={<ForgotPasswordPrimary/>}></Route>
-        <Route path='/pUsers/otp' element={<Otp/>}></Route>
-        <Route path='/pUsers/resetPassword' element={<ResetPassword/>}></Route> */}
-        {/* <Route path='/pUsers/home' element={<Home></Home>}></Route> */}
+
         <Route path='/pUsers/addOrganization' element={<ProtectedPriRoute><AddOrganisation/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/editOrg/:id' element={<ProtectedPriRoute><EditOrg/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/organizationList' element={<ProtectedPriRoute><OrganizationList/></ProtectedPriRoute>}></Route>
@@ -227,16 +220,6 @@ const Routers = () => {
         <Route path='/pUsers/creditDetails/:id' element={<ProtectedPriRoute><CreditNoteDetailsPrimary/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/shareCreditNote/:id' element={<ProtectedPriRoute><ShareCreditNotePrimary/></ProtectedPriRoute>}></Route> 
 
-
-        {/* admin */}
-        {/* <Route path='/admin/login' element={<AdminLogin/>}></Route>
-        <Route path='/admin/home' element={<ProtectedAdmin><AdminHome/></ProtectedAdmin>}></Route> */}
-
-        {/* sec users */}
-        {/* <Route path='/sUsers/login' element={<SecLogin/>}></Route>
-        <Route path='/sUsers/forgotPassword' element={<ForgotPasswordSec/>}></Route>
-        <Route path='/sUsers/otp' element={<OtpSec/>}></Route>
-        <Route path='/sUsers/resetPassword' element={<ResetPasswordSec/>}></Route> */}
 
 
 
