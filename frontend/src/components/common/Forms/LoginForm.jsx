@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unescaped-entities */
 /* eslint-disable react/prop-types */
 /* eslint-disable no-unused-vars */
 /* eslint-disable react/no-unknown-property */
@@ -63,6 +64,18 @@ function LoginForm({ user }) {
       }, 1000);
     }
   };
+
+
+  // const forgotPassword = () => {
+  //   console.log("kjshdf");
+    
+
+  //   if (!email) {
+  //     toast.error("Add your email address to send password reset link");
+  //     return;
+  //   }
+  //   // navigate(`/${user==="primary"?"pUsers":"sUsers"}/forgotPassword`);
+  // };
 
   
 
@@ -165,6 +178,7 @@ function LoginForm({ user }) {
                 </div>
                 <div className="text-sm">
                   <a
+                  // onClick={forgetPassword}
                     href="jajvascript:void(0);"
                     className="text-blue-600 hover:underline font-semibold"
                   >
