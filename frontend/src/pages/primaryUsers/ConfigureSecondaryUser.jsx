@@ -1,6 +1,4 @@
-/* eslint-disable no-case-declarations */
 import { useEffect, useState } from "react";
-
 import api from "../../api/api";
 import { toast } from "react-toastify";
 import { Link } from "react-router-dom";
@@ -16,9 +14,6 @@ function ConfigureSecondaryUser() {
   const [vanSaleGodownName, setVanSaleGodownName] = useState("");
   const [selectedConfig, setSelectedConfig] = useState("sales");
   const [vanSale, setVanSale] = useState(false);
-  // const [shouldCheckAllFields, setShouldCheckAllFields] = useState(false);
-
-  // const isFirstRender = useRef(true);
 
   const initialConfig = [
     {
@@ -36,12 +31,10 @@ function ConfigureSecondaryUser() {
   const [vanSaleConfig, setVanSaleConfig] = useState(initialConfig);
   const [stockTransfer, setStockTransfer] = useState(initialConfig);
   const [creditNote, setCreditNote] = useState(initialConfig);
+  const [debitNote, setDebitNote] = useState(initialConfig);
 
   const { id, userId, cmp_name } = useParams();
-  // const org = useSelector((state) => state.setSelectedOrganization.selectedOrg);
   const navigate = useNavigate();
-
-  //////////////////////////////// fetchGodownsAndPriceLevels ////////////////////////////////////
 
   useEffect(() => {
     const fetchGodowns = async () => {
@@ -66,7 +59,6 @@ function ConfigureSecondaryUser() {
       try {
         const res = await api.get(
           `/api/pUsers/fetchConfigurationCurrentNumber/${id}/${userId}`,
-
           {
             withCredentials: true,
           }
@@ -80,91 +72,34 @@ function ConfigureSecondaryUser() {
           vanSalesNumber,
           stockTransferNumber,
           creditNoteNumber,
+          debitNoteNumber,
         } = res.data;
 
-        // console.log(orderNumber, salesNumber, purchaseNumber, receiptNumber,stockTransferNumber);
+        const updateConfig = (setter, number) => {
+          if (number) {
+            setter((prev) => [{
+              ...prev[0],
+              currentNumber: number,
+            }]);
+          }
+        };
 
-        if (salesNumber) {
-          setSales((prevSales) => {
-            // Create a copy of the first object and update its properties
-            const updatedSales = {
-              ...prevSales[0],
-              currentNumber: salesNumber,
-            };
-            return [updatedSales];
-          });
-        }
-        if (orderNumber) {
-          setSalesOrder((prevSaleOrder) => {
-            // Create a copy of the first object and update its properties
-            const updatedSaleOrder = {
-              ...prevSaleOrder[0],
-              currentNumber: orderNumber,
-            };
-            return [updatedSaleOrder];
-          });
-        }
-        if (purchaseNumber) {
-          setPurchase((prevPurchase) => {
-            // Create a copy of the first object and update its properties
-            const updatedPurchase = {
-              ...prevPurchase[0],
-              currentNumber: purchaseNumber,
-            };
-            return [updatedPurchase];
-          });
-        }
-        if (receiptNumber) {
-          setReceipt((prevReceipt) => {
-            // Create a copy of the first object and update its properties
-            const updatedReceipt = {
-              ...prevReceipt[0],
-              currentNumber: receiptNumber,
-            };
-            return [updatedReceipt];
-          });
-        }
-        if (vanSalesNumber) {
-          setVanSaleConfig((prevVanSaleConfig) => {
-            // Create a copy of the first object and update its properties
-            const updatedVanSaleConfig = {
-              ...prevVanSaleConfig[0],
-              currentNumber: vanSalesNumber,
-            };
-            return [updatedVanSaleConfig];
-          });
-        }
-        if (stockTransferNumber) {
-          setStockTransfer((prevStockTransfer) => {
-            // Create a copy of the first object and update its properties
-            const updatedStockTransfer = {
-              ...prevStockTransfer[0],
-              currentNumber: stockTransferNumber,
-            };
-            return [updatedStockTransfer];
-          });
-        }
-        if (creditNoteNumber) {
-          setCreditNote((prevCreditNote) => {
-            // Create a copy of the first object and update its properties
-            const updatedCreditNote = {
-              ...prevCreditNote[0],
-              currentNumber: creditNoteNumber,
-            };
-            return [updatedCreditNote];
-          });
-        }
+        updateConfig(setSales, salesNumber);
+        updateConfig(setSalesOrder, orderNumber);
+        updateConfig(setPurchase, purchaseNumber);
+        updateConfig(setReceipt, receiptNumber);
+        updateConfig(setVanSaleConfig, vanSalesNumber);
+        updateConfig(setStockTransfer, stockTransferNumber);
+        updateConfig(setCreditNote, creditNoteNumber);
+        updateConfig(setDebitNote, debitNoteNumber);
       } catch (error) {
         console.log(error);
       }
     };
 
     fetchConfigurationNumber();
-
     fetchGodowns();
   }, []);
-
-  //////////////////////////////// getSecUserDetails ////////////////////////////////////
 
   useEffect(() => {
     const fetchSingleUser = async () => {
@@ -173,10 +108,7 @@ function ConfigureSecondaryUser() {
           withCredentials: true,
         });
         const fullConfigurations = res?.data?.data?.configurations;
-        const configurations =
-          new Array(
-            fullConfigurations.find((item) => item.organization === id)
-          ) || [];
+        const configurations = new Array(fullConfigurations.find((item) => item.organization === id)) || [];
 
         if (configurations?.length > 0) {
           const {
@@ -190,42 +122,22 @@ function ConfigureSecondaryUser() {
             selectedVanSaleGodowns,
             stockTransferConfiguration,
             creditNoteConfiguration,
+            debitNoteConfiguration,
             vanSale,
           } = configurations[0];
 
-          if (selectedGodowns) {
-            setSelectedGodowns(selectedGodowns);
-          }
-
-          if (selectedPriceLevels) {
-            setSelectedPriceLevels(selectedPriceLevels);
-          }
-          if (salesOrderConfiguration) {
-            setSalesOrder([salesOrderConfiguration]);
-          }
-          if (salesConfiguration) {
-            setSales([salesConfiguration]);
-          }
-          if (receiptConfiguration) {
-            setReceipt([receiptConfiguration]);
-          }
-          setVanSale(vanSale);
-
-          if (purchaseConfiguration) {
-            setPurchase([purchaseConfiguration]);
-          }
-          if (vanSaleConfiguration) {
-            setVanSaleConfig([vanSaleConfiguration]);
-          }
-          if (selectedVanSaleGodowns?.length > 0) {
-            setSelectedVanSaleGodowns([selectedVanSaleGodowns[0]]);
-          }
-          if (stockTransferConfiguration) {
-            setStockTransfer([stockTransferConfiguration]);
-          }
-          if (creditNoteConfiguration) {
-            setCreditNote([creditNoteConfiguration]);
-          }
+          setSelectedGodowns(selectedGodowns || []);
+          setSelectedPriceLevels(selectedPriceLevels || []);
+          setSalesOrder(salesOrderConfiguration ? [salesOrderConfiguration] : initialConfig);
+          setSales(salesConfiguration ? [salesConfiguration] : initialConfig);
+          setReceipt(receiptConfiguration ? [receiptConfiguration] : initialConfig);
+          setVanSale(vanSale || false);
+          setPurchase(purchaseConfiguration ? [purchaseConfiguration] : initialConfig);
+          setVanSaleConfig(vanSaleConfiguration ? [vanSaleConfiguration] : initialConfig);
+          setSelectedVanSaleGodowns(selectedVanSaleGodowns?.length > 0 ? [selectedVanSaleGodowns[0]] : []);
+          setStockTransfer(stockTransferConfiguration ? [stockTransferConfiguration] : initialConfig);
+          setCreditNote(creditNoteConfiguration ? [creditNoteConfiguration] : initialConfig);
+          setDebitNote(debitNoteConfiguration ? [debitNoteConfiguration] : initialConfig);
         }
       } catch (error) {
         console.log(error);
@@ -237,91 +149,59 @@ function ConfigureSecondaryUser() {
   const handleConfigSelection = (e) => {
     setSelectedConfig(e.target.value);
   };
+
   const updateConfig = (section, field, value) => {
-    switch (section) {
-      case "sales":
-        setSales([{ ...sales[0], [field]: value }]);
-        break;
-      case "salesOrder":
-        setSalesOrder([{ ...salesOrder[0], [field]: value }]);
-        break;
-      case "receipt":
-        setReceipt([{ ...receipt[0], [field]: value }]);
-        break;
-      case "purchase":
-        setPurchase([{ ...purchase[0], [field]: value }]);
-        break;
-      case "vanSale":
-        setVanSaleConfig([{ ...vanSaleConfig[0], [field]: value }]);
+    const updateFunction = {
+      sales: setSales,
+      salesOrder: setSalesOrder,
+      receipt: setReceipt,
+      purchase: setPurchase,
+      vanSale: setVanSaleConfig,
+      stockTransfer: setStockTransfer,
+      creditNote: setCreditNote,
+      debitNote: setDebitNote,
+    }[section];
 
-        break;
-      case "stockTransfer":
-        setStockTransfer([{ ...stockTransfer[0], [field]: value }]);
-
-        break;
-      case "creditNote":
-        setCreditNote([{ ...creditNote[0], [field]: value }]);
-
-        break;
-      default:
-        console.error("Invalid section");
+    if (updateFunction) {
+      updateFunction((prev) => [{...prev[0], [field]: value}]);
+    } else {
+      console.error("Invalid section");
     }
   };
 
   const getConfigValue = (section, field) => {
-    switch (section) {
-      case "sales":
-        return sales[0][field];
-      case "salesOrder":
-        return salesOrder[0][field];
-      case "receipt":
-        return receipt[0][field];
-      case "purchase":
-        return purchase[0][field];
-      case "vanSale":
-        return vanSaleConfig[0][field];
-      case "stockTransfer":
-        return stockTransfer[0][field];
-      case "creditNote":
-        return creditNote[0][field];
-      default:
-        return "";
-    }
+    const config = {
+      sales,
+      salesOrder,
+      receipt,
+      purchase,
+      vanSale: vanSaleConfig,
+      stockTransfer,
+      creditNote,
+      debitNote,
+    }[section];
+
+    return config ? config[0][field] : "";
   };
 
   const handleCheckboxChange = (type, value, checked) => {
-    console.log(type, value, checked);
-    if (type === "priceLevel") {
-      if (checked) {
-        setSelectedPriceLevels([...selectedPriceLevels, value]);
-      } else {
-        setSelectedPriceLevels(
-          selectedPriceLevels.filter((item) => item !== value)
-        );
-      }
-    } else if (type === "godown") {
-      console.log("haii");
+    const updateFunction = {
+      priceLevel: setSelectedPriceLevels,
+      godown: setSelectedGodowns,
+      vanSaleGodown: setSelectedVanSaleGodowns,
+    }[type];
 
-      if (checked) {
-        setSelectedGodowns([...selectedGodowns, value]);
-      } else {
-        setSelectedGodowns(selectedGodowns.filter((item) => item !== value));
-      }
-    } else if (type === "vanSaleGodown") {
-      if (checked) {
-        setSelectedVanSaleGodowns([value]);
-      } else {
-        setSelectedVanSaleGodowns(
-          selectedVanSaleGodowns.filter((item) => item !== value)
-        );
-      }
+    if (updateFunction) {
+      updateFunction(prev => 
+        checked 
+          ? (type === 'vanSaleGodown' ? [value] : [...prev, value])
+          : prev.filter(item => item !== value)
+      );
     }
   };
 
   const formatFieldName = (fieldName) => {
-    // Split the camelCase field name into words
     const words = fieldName.split(/(?=[A-Z])/);
-    // Capitalize the first word and join all words with spaces
     return words
       .map((word, index) =>
         index === 0
@@ -343,14 +223,12 @@ function ConfigureSecondaryUser() {
     let errors = [];
     let hasOptionalFields = false;
 
-    // Check mandatory fields
     for (let field of mandatoryFields) {
       if (!config[field]) {
         errors.push(`${configName}: ${formatFieldName(field)} is required`);
       }
     }
 
-    // Check if any optional field is filled
     for (let field of optionalFields) {
       if (config[field]) {
         hasOptionalFields = true;
@@ -358,7 +236,6 @@ function ConfigureSecondaryUser() {
       }
     }
 
-    // If any optional field is filled, all should be filled
     if (hasOptionalFields) {
       for (let field of optionalFields) {
         if (!config[field]) {
@@ -371,7 +248,6 @@ function ConfigureSecondaryUser() {
       }
     }
 
-    // Check for alphanumeric values and forward slash (not at the beginning)
     const alphanumericWithSlashRegex = /^[a-zA-Z0-9][a-zA-Z0-9/]*$/;
     for (let field of allFields) {
       if (config[field] && !alphanumericWithSlashRegex.test(config[field])) {
@@ -383,7 +259,6 @@ function ConfigureSecondaryUser() {
       }
     }
 
-    // Check widthOfNumericalPart
     if (
       config.widthOfNumericalPart &&
       Number(config.widthOfNumericalPart) > 6
@@ -410,9 +285,7 @@ function ConfigureSecondaryUser() {
   };
 
   const submitHandler = async () => {
-    let formData = {};
-
-    formData = {
+    let formData = {
       selectedGodowns,
       selectedPriceLevels,
       salesConfiguration: sales[0],
@@ -421,59 +294,38 @@ function ConfigureSecondaryUser() {
       purchaseConfiguration: purchase[0],
       stockTransferConfiguration: stockTransfer[0],
       creditNoteConfiguration: creditNote[0],
+      debitNoteConfiguration: debitNote[0],
       selectedVanSaleGodowns,
       vanSaleConfiguration: {
         ...vanSaleConfig[0],
         vanSaleGodownName:
-          godowns?.filter((el) => el?.id == selectedVanSaleGodowns[0])[0]
+          godowns?.find((el) => el?.id == selectedVanSaleGodowns[0])
             ?.godown || "",
       },
       vanSale: vanSale,
     };
 
-    console.log(formData);
-
     let allErrors = [];
 
-    // Validate each configuration
-    allErrors = allErrors.concat(
-      validateConfiguration(formData.salesConfiguration, "Sales")
-    );
-    allErrors = allErrors.concat(
-      validateConfiguration(formData.salesOrderConfiguration, "Sales Order")
-    );
-    allErrors = allErrors.concat(
-      validateConfiguration(formData.receiptConfiguration, "Receipt")
-    );
-    allErrors = allErrors.concat(
-      validateConfiguration(formData.purchaseConfiguration, "Purchase")
-    );
-    allErrors = allErrors.concat(
-      validateConfiguration(
-        formData.stockTransferConfiguration,
-        "Stock Transfer"
-      )
-    );
-    allErrors = allErrors.concat(
-      validateConfiguration(formData.vanSaleConfiguration, "Van Sale")
-    );
+    const configurations = [
+      { config: formData.salesConfiguration, name: "Sales" },
+      { config: formData.salesOrderConfiguration, name: "Sales Order" },
+      { config: formData.receiptConfiguration, name: "Receipt" },
+      { config: formData.purchaseConfiguration, name: "Purchase" },
+      { config: formData.stockTransferConfiguration, name: "Stock Transfer" },
+      { config: formData.vanSaleConfiguration, name: "Van Sale" },
+      { config: formData.creditNoteConfiguration, name: "Credit Note" },
+      { config: formData.debitNoteConfiguration, name: "Debit Note" },
+    ];
 
-    allErrors = allErrors.concat(
-      validateConfiguration(formData.creditNoteConfiguration, "Credit Note")
-    );
-
-    // if (selectedVanSaleGodowns.length === 0) {
-    //   allErrors.push('Van Sale: At least one Van Sale Godown must be selected');
-    // }
+    configurations.forEach(({ config, name }) => {
+      allErrors = allErrors.concat(validateConfiguration(config, name));
+    });
 
     if (allErrors.length > 0) {
-      toast.error(allErrors[0]); // Show only the first error
+      toast.error(allErrors[0]);
       return;
     }
-
-
-    console.log(formData);
-    
 
     try {
       const res = await api.post(
@@ -492,8 +344,6 @@ function ConfigureSecondaryUser() {
       toast.error(error.response.data.message);
       console.log(error);
     }
-
-    // Existing API call...
   };
 
   return (
@@ -540,6 +390,7 @@ function ConfigureSecondaryUser() {
                     <option value="vanSale">VanSale</option>
                     <option value="stockTransfer">Stock Transfer</option>
                     <option value="creditNote">Credit Note</option>
+                    <option value="debitNote">Debit Note</option>
                   </select>
                 </div>
               </div>

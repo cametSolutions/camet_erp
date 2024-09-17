@@ -83,7 +83,7 @@ export const createCreditNote = async (req, res) => {
     console.error(error);
     res.status(500).json({
       success: false,
-      message: "An error occurred while creating the purchase.",
+      message: "An error occurred while creating the Credit",
       error: error.message,
     });
   }

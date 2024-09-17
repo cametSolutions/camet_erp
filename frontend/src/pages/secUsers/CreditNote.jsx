@@ -447,7 +447,7 @@ function CreditNote() {
               className="fixed bottom-0 text-white bg-violet-700  w-full  p-2 py-4 flex items-center justify-center gap-2 hover_scale cursor-pointer "
             >
               <IoIosAddCircle className="text-2xl" />
-              <p>Generate Sale</p>
+              <p>Generate Credit</p>
             </button>
           </div>
         </div>

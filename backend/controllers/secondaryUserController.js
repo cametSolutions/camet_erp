@@ -2237,8 +2237,9 @@ export const fetchConfigurationNumber = async (req, res) => {
           purchase: company.purchaseNumber,
           vanSale: company.vanSalesNumber,
           stockTransfer: company.stockTransferNumber,
-          receipt: company.receiptNumberDetails,
-          creditNote: company.creditNoteNumberDetails,
+          receipt: company.receiptNumber,
+          creditNote: company.creditNoteNumber,
+          debitNote: company.debitNoteNumber,
         };
 
         return companyNumbers[title] || null;

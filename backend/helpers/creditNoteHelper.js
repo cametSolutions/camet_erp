@@ -1,6 +1,7 @@
 import productModel from "../models/productModel.js";
 import creditNoteModel from "../models/creditNoteModel.js";
 import { truncateToNDecimals } from "./helper.js";
+import OragnizationModel from "../models/OragnizationModel.js";
 
 ///////////////////////// for stock update ////////////////////////////////
 export const handleCreditNoteStockUpdates = async (items) => {

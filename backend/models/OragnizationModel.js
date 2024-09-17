@@ -41,6 +41,7 @@ const organizationSchema = new mongoose.Schema(
     stockTransferNumber: { type: Number, default: 1 },
     receiptNumber: { type: Number, default: 1 },  
     creditNoteNumber: { type: Number, default: 1 },  
+    debitNoteNumber: { type: Number, default: 1 },
     salesNumberDetails: { type: Object },
     currency: { type: String },
     currencyName: { type: String },
