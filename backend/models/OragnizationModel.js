@@ -50,6 +50,7 @@ const organizationSchema = new mongoose.Schema(
         taxPercentage: { type: String },
       },
     ],
+    printTitle: { type: String },
 
     configurations: [
       {

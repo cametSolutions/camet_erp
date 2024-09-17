@@ -7,10 +7,13 @@ import api from "../../api/api.js";
 import { HashLoader } from "react-spinners";
 import { industries } from "../../../constants/industries.js";
 import { statesData } from "../../../constants/states.js";
-import { countries, currencyNames, currencies } from "../../../constants/countries.js";
+import {
+  countries,
+  currencyNames,
+  currencies,
+} from "../../../constants/countries.js";
 
-
-function AddOrgForm({ onSubmit, orgData = {}  }) {
+function AddOrgForm({ onSubmit, orgData = {} }) {
   const [name, setName] = useState("");
   const [pin, setPin] = useState("");
   const [state, setState] = useState("");
@@ -34,10 +37,9 @@ function AddOrgForm({ onSubmit, orgData = {}  }) {
   const [type, setType] = useState("self");
   const [batchEnabled, setBatchEnabled] = useState(false);
   const [industry, setIndustry] = useState("");
-  const [currencyName,setCurrencyName] = useState("");
-  const [currency,setCurrency] = useState("");
-  
-
+  const [currencyName, setCurrencyName] = useState("");
+  const [currency, setCurrency] = useState("");
+  const [printTitle, setPrintTitle] = useState("");
 
   useEffect(() => {
     const getUserData = async () => {
@@ -79,7 +81,8 @@ function AddOrgForm({ onSubmit, orgData = {}  }) {
         batchEnabled,
         industry,
         currency,
-        currencyName
+        currencyName,
+        printTitle,
       } = orgData;
 
       setName(name);
@@ -104,6 +107,7 @@ function AddOrgForm({ onSubmit, orgData = {}  }) {
       setIndustry(industry);
       setCurrency(currency);
       setCurrencyName(currencyName);
+      setPrintTitle(printTitle);
     }
   }, [orgData]);
 
@@ -149,7 +153,7 @@ function AddOrgForm({ onSubmit, orgData = {}  }) {
       }
     }
 
-    if(currency.trim() === "" || currencyName.trim() === ""){
+    if (currency.trim() === "" || currencyName.trim() === "") {
       toast.error("Currency and Currency Name must be filled");
       return;
     }
@@ -209,6 +213,10 @@ function AddOrgForm({ onSubmit, orgData = {}  }) {
       toast.error("Invalid website URL");
       return;
     }
+    if (printTitle && printTitle.length > 30) {
+      toast.error("Print Title must be at most 30 characters");
+      return;
+    }
 
     const formData = {
       name,
@@ -233,7 +241,8 @@ function AddOrgForm({ onSubmit, orgData = {}  }) {
       batchEnabled,
       industry,
       currency,
-      currencyName
+      currencyName,
+      printTitle,
     };
 
     // console.log(formData);
@@ -346,8 +355,14 @@ function AddOrgForm({ onSubmit, orgData = {}  }) {
                   className="border-0 px-3 mr-12 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                   onChange={(e) => {
                     setCountry(e.target.value);
-                    setCurrency(countries.find((c) => c.countryName === e.target.value)?.currency);
-                    setCurrencyName(countries.find((c) => c.countryName === e.target.value)?.currencyName);
+                    setCurrency(
+                      countries.find((c) => c.countryName === e.target.value)
+                        ?.currency
+                    );
+                    setCurrencyName(
+                      countries.find((c) => c.countryName === e.target.value)
+                        ?.currencyName
+                    );
                     setState("");
                   }}
                   value={country}
@@ -411,13 +426,13 @@ function AddOrgForm({ onSubmit, orgData = {}  }) {
                 </div>
               </div>
             )}
-              <div className="w-full lg:w-6/12 px-4">
+            <div className="w-full lg:w-6/12 px-4">
               <div className="relative w-full mb-3">
                 <label
                   className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
                   htmlFor="grid-password"
                 >
-                Currency
+                  Currency
                 </label>
                 <select
                   className="border-0 px-3 mr-12 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
@@ -429,11 +444,8 @@ function AddOrgForm({ onSubmit, orgData = {}  }) {
                 >
                   <option value="">Select currency</option>
                   {currencies.map((currency) => (
-                    <option
-                      value={currency}
-                      key={currency}
-                    >
-                      {currency} 
+                    <option value={currency} key={currency}>
+                      {currency}
                     </option>
                   ))}
 
@@ -459,10 +471,7 @@ function AddOrgForm({ onSubmit, orgData = {}  }) {
                 >
                   <option value="">Select currency name</option>
                   {currencyNames.map((name) => (
-                    <option
-                      value={name}
-                      key={name}
-                    >
+                    <option value={name} key={name}>
                       {name}
                     </option>
                   ))}
@@ -749,6 +758,26 @@ function AddOrgForm({ onSubmit, orgData = {}  }) {
                     </option>
                   ))}
                 </select>
+              </div>
+            </div>
+
+            <div className="w-full lg:w-6/12 px-4">
+              <div className="relative w-full mb-3">
+                <label
+                  className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
+                  htmlFor="grid-password"
+                >
+                  Print Title
+                </label>
+                <input
+                  type="text"
+                  className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                  onChange={(e) => {
+                    setPrintTitle(e.target.value);
+                  }}
+                  value={printTitle}
+                  placeholder="Print Title"
+                />
               </div>
             </div>
 
