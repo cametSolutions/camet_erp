@@ -1,17 +1,33 @@
 /* eslint-disable react/prop-types */
 
 function PdfHeader({ data, org, address, despatchDetails, tab = "sales" }) {
-  console.log(org);
+
+  console.log(tab);
+  
 
   let pdfNumber;
+    
 
   switch (tab) {
-    case "sales":
+    case "sales ":
       pdfNumber = data?.salesNumber;
       break;
 
     case "salesOrder":
       pdfNumber = data?.orderNumber;
+      break;
+
+    case "vanSale":
+      pdfNumber = data?.salesNumber;
+      break;
+
+    case "purchase":
+      pdfNumber = data?.purchaseNumber;
+      break;
+
+
+    case "stockTransfer":
+      pdfNumber = data?.stockTransferNumber;
       break;
 
     default:
@@ -22,7 +38,6 @@ function PdfHeader({ data, org, address, despatchDetails, tab = "sales" }) {
     return str.charAt(0).toUpperCase() + str.slice(1);
   }
 
-  console.log(despatchDetails);
 
   let enableBillToShipTo;
 
@@ -43,7 +58,7 @@ function PdfHeader({ data, org, address, despatchDetails, tab = "sales" }) {
       <div>
         <div className="bg-gray-500 h-2 w-full mt-1"></div>
         <div className="flex items-center justify-between bg-gray-300 px-3 py-1">
-          <div className="text-xs md:text-sm">Invoice #: {pdfNumber}</div>
+          <div className="text-xs md:text-sm">No : {pdfNumber}</div>
           <div className="text-xs md:text-sm">
             Date: {new Date().toDateString()}
           </div>

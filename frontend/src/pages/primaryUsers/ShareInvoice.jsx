@@ -10,6 +10,7 @@ import numberToWords from "number-to-words";
 import { Link } from "react-router-dom";
 import QRCode from "react-qr-code";
 import SaleOrderPdf from "../../components/common/SaleOrderPdf";
+import { useSelector } from "react-redux";
 
 
 function ShareInvoice() {
@@ -22,6 +23,13 @@ function ShareInvoice() {
   const [bank, setBank] = useState([]);
 
   const { id } = useParams();
+
+  const {printTitle} = useSelector(
+    (state) => state.setSelectedOrganization.selectedOrg
+  );
+
+ 
+  
 
   const contentToPrint = useRef(null);
 
@@ -174,6 +182,7 @@ function ShareInvoice() {
         </div>
 
         <SaleOrderPdf
+        printTitle={printTitle }
           contentToPrint={contentToPrint}
           data={data}
           org={org}

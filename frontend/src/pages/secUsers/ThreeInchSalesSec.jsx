@@ -57,7 +57,6 @@ function ThreeInchSalesSec() {
     getTransactionDetails();
   }, [id]);
 
-  console.log(data);
 
   //  console.log(org?.configurations[0]?.terms);
 
@@ -141,6 +140,7 @@ function ThreeInchSalesSec() {
           bank={bank}
           additinalCharge={additinalCharge}
           inWords={inWords}
+          tab="sales"
         />
       </div> 
     

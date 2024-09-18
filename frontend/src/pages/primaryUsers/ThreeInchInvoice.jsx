@@ -9,6 +9,7 @@ import numberToWords from "number-to-words";
 import { Link } from "react-router-dom";
 import SalesThreeInchPdf from "../../components/common/SalesThreeInchPdf";
 import Sidebar from "../../components/homePage/Sidebar";
+import { useSelector } from "react-redux";
 
 function ThreeInchInvoice() {
   const [data, setData] = useState([]);
@@ -22,6 +23,11 @@ function ThreeInchInvoice() {
   const { id } = useParams();
 
   const contentToPrint = useRef(null);
+  
+  const {printTitle} = useSelector(
+    (state) => state.setSelectedOrganization.selectedOrg
+  );
+
 
   useEffect(() => {
     const getTransactionDetails = async () => {
@@ -56,10 +62,6 @@ function ThreeInchInvoice() {
 
     getTransactionDetails();
   }, [id]);
-
-  console.log(data);
-
-  //  console.log(org?.configurations[0]?.terms);
 
   useEffect(() => {
     if (data && data.items) {
@@ -134,8 +136,10 @@ function ThreeInchInvoice() {
 
     <div className="  ">
       <SalesThreeInchPdf
+        printTitle={printTitle}
         contentToPrint={contentToPrint}
         data={data}
+        voucherNumber={data?.orderNumber}
         org={org}
         subTotal={subTotal}
         bank={bank}

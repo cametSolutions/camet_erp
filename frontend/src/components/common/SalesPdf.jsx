@@ -13,7 +13,28 @@ function SalesPdf({
   subTotal,
   additinalCharge,
   userType,
+  tab,
 }) {
+  let title = "";
+
+  switch (tab) {
+    case "sales":
+      title = "Tax Invoice";
+      break;
+
+    case "purchase":
+      title = "Purchase Invoice";
+      break;
+
+    case "stockTransfer":
+      title = "Stock Transfer";
+      break;
+
+    default:
+      title = "Tax Invoice";
+      break;
+  }
+
   const primarySelectedOrg = useSelector(
     (state) => state.setSelectedOrganization.selectedOrg
   );
@@ -21,9 +42,9 @@ function SalesPdf({
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
 
-  const selectedOrganization = 
+  const selectedOrganization =
     userType === "primaryUser" ? primarySelectedOrg : secondarySelectedOrg;
- 
+
   const calculateDiscountAmntOFNoBAtch = (el) => {
     if (!el || !el.GodownList || !el.GodownList[0]) {
       console.error("Invalid input data");
@@ -68,8 +89,6 @@ function SalesPdf({
     }, 0);
   };
 
-
-
   const party = data?.party;
   const despatchDetails = data?.despatchDetails;
 
@@ -112,7 +131,6 @@ function SalesPdf({
     }
   }
 
-
   return (
     <div>
       {/* <style dangerouslySetInnerHTML={{ __html: `
@@ -132,7 +150,7 @@ function SalesPdf({
           <div className="pdf-page">
             <div className="flex">
               <div className="font-bold text-sm md:text-xl mb-2 mt-6">
-                Tax Invoice
+              {title}
               </div>
             </div>
             <PdfHeader
@@ -140,6 +158,7 @@ function SalesPdf({
               org={org}
               address={address}
               despatchDetails={despatchDetails}
+              tab={tab}
             />
             <table className="w-full text-left bg-slate-200">
               <thead
@@ -205,7 +224,7 @@ function SalesPdf({
                             )?.toFixed(2)}`}
                           </td>
                           <td className="pt-2 pr-1 text-black text-right font-bold">
-                             {el?.total}
+                            {el?.total}
                           </td>
                         </tr>
                         {el.hasGodownOrBatch &&
@@ -280,10 +299,10 @@ function SalesPdf({
                   <td className="text-right pr-1 text-black font-bold text-[9px]"></td>
                   <td className="text-right pr-1 text-black font-bold text-[9px]"></td>
                   <td className="text-right pr-1 text-black font-bold text-[9px]">
-                   {calculateTotalTax()}
+                    {calculateTotalTax()}
                   </td>
                   <td className="text-right pr-1 text-black font-bold text-[9px]">
-                     {subTotal}
+                    {subTotal}
                   </td>
                 </tr>
               </tfoot>

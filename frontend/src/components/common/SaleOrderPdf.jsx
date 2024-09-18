@@ -1,5 +1,4 @@
 /* eslint-disable react/prop-types */
-import QRCode from "react-qr-code";
 import PdfHeader from "../pdfComponents/PdfHeader";
 import PdfFooter from "../pdfComponents/PdfFooter";
 import { useSelector } from "react-redux";
@@ -13,6 +12,7 @@ function SaleOrderPdf({
   subTotal,
   additinalCharge,
   userType,
+  printTitle,
 }) {
   const party = data?.party;
   const despatchDetails = data?.despatchDetails;
@@ -46,7 +46,6 @@ function SaleOrderPdf({
     }, 0);
   };
 
-  console.log(calculateTotalQunatity());
 
   let address;
 
@@ -95,7 +94,7 @@ function SaleOrderPdf({
       >
         <div className="flex ">
           <div className="font-bold text-sm md:text-xl mb-2 mt-6">
-            QUOTATION
+            {printTitle || "Quotation"}
           </div>
         </div>
 

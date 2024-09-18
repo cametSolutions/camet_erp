@@ -151,6 +151,7 @@ function ShareVanSale() {
           subTotal={subTotal}
           additinalCharge={additinalCharge}
           inWords={inWords}
+          tab="vanSale"
         />
       </div>
     </div>

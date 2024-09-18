@@ -130,7 +130,7 @@ function ShareSales() {
             <Link to={`/pUsers/salesDetails/${id}`}>
               <IoIosArrowRoundBack className="text-3xl" />
             </Link>
-            <p>Share Your Order</p>
+            <p>Share Your Sale</p>
           </div>
           <div>
             <MdPrint
@@ -151,6 +151,7 @@ function ShareSales() {
           additinalCharge={additinalCharge}
           inWords={inWords}
           userType="primaryUser"
+          tab="sales"
         />
       </div>
     </div>

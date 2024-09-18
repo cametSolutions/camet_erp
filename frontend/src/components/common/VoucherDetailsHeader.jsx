@@ -16,13 +16,14 @@ function VoucherDetailsHeader({
   tab,
 }) {
   const [refresh, setRefresh] = useState(false);
-
-
   const navigate = useNavigate();
 
   const reFetch = () => {
     reFetchParent(!refresh);
   };
+
+  const showButtons = !(tab === "stockTransfer" && user === "primary");
+
   return (
     <div>
       <div className="bg-white p-4 mt-3 flex justify-between items-center">
@@ -35,38 +36,40 @@ function VoucherDetailsHeader({
           </p>
         </div>
 
-        <div className="hidden md:block">
-          <div className="  flex justify-center p-4 gap-12 text-lg text-violet-500 mr-4">
-            <CancelButton
-              id={data._id}
-              tab={tab}
-              isCancelled={data?.isCancelled}
-              reFetch={reFetch}
-            />
-            <div
-              onClick={() => navigate(editLink)}
-              className={` ${
-                data?.isCancelled && "pointer-events-none opacity-60"
-              } flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer`}
-            >
-              <FaEdit className="text-blue-500" />
-              <p className="text-black font-bold text-sm">Edit</p>
-            </div>
+        {showButtons && (
+          <div className="hidden md:block">
+            <div className="flex justify-center p-4 gap-12 text-lg text-violet-500 mr-4">
+              <CancelButton
+                id={data._id}
+                tab={tab}
+                isCancelled={data?.isCancelled}
+                reFetch={reFetch}
+              />
+              <div
+                onClick={() => navigate(editLink)}
+                className={`${
+                  data?.isCancelled && "pointer-events-none opacity-60"
+                } flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110 cursor-pointer`}
+              >
+                <FaEdit className="text-blue-500" />
+                <p className="text-black font-bold text-sm">Edit</p>
+              </div>
 
-            {tab !== "stockTransfer" && (
-              <SwallFireForPdf data={data} tab={tab} user={user} />
-            )}
+              {tab !== "stockTransfer" && (
+                <SwallFireForPdf data={data} tab={tab} user={user} />
+              )}
 
-            <div
-              className={` ${
-                data?.isCancelled && "pointer-events-none opacity-60"
-              } flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer`}
-            >
-              <MdTextsms className="text-green-500" />
-              <p className="text-black font-bold text-sm">Sms</p>
+              <div
+                className={`${
+                  data?.isCancelled && "pointer-events-none opacity-60"
+                } flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110 cursor-pointer`}
+              >
+                <MdTextsms className="text-green-500" />
+                <p className="text-black font-bold text-sm">Sms</p>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

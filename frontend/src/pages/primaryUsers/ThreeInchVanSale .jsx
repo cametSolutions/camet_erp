@@ -121,7 +121,7 @@ function ThreeInchVanSale () {
     <div >
     <div className=" nonPrintable-content bg-[#012a4a]   sticky top-0 p-3 px-5 text-white text-lg font-bold flex items-center gap-3  shadow-lg justify-between">
       <div className="flex gap-2 ">
-        <Link to={`/pUsers/salesDetails/${id}`}>
+        <Link to={`/pUsers/vanSaleDetails/${id}`}>
           <IoIosArrowRoundBack className="text-3xl" />
         </Link>
         <p>Share Your Order</p>
@@ -145,6 +145,8 @@ function ThreeInchVanSale () {
         bank={bank}
         additinalCharge={additinalCharge}
         inWords={inWords}
+        tab="vanSale"
+
       />
     </div> 
   
