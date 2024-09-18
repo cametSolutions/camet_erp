@@ -3,6 +3,7 @@
 import { IoIosArrowRoundBack, IoMdArrowDown } from "react-icons/io";
 import SearchBar from "../../common/SearchBar";
 import { HashLoader } from "react-spinners";
+import { formatAmount } from "../../../../../backend/helpers/helper";
 
 function PartyList({
   backHandler,
@@ -65,7 +66,7 @@ function PartyList({
                   <p className="font-medium text-gray-500 text-md mr-3 flex  items-center gap-2">
                     {" "}
                     <IoMdArrowDown color="green" />
-                    {el?.totalOutstanding}
+                    {formatAmount(el?.totalOutstanding)}
                   </p>
                 </section>
               )}

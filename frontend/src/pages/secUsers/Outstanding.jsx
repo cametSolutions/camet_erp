@@ -10,6 +10,7 @@ import { FaWhatsapp } from "react-icons/fa";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import SearchBar from "../../components/common/SearchBar";
 import { useNavigate } from "react-router-dom";
+import { formatAmount } from "../../../../backend/helpers/helper";
 
 
 
@@ -28,9 +29,9 @@ function Outstanding() {
 
 
 
-  function formatAmount(amount) {
-    return amount.toLocaleString("en-IN", { maximumFractionDigits: 2 });
-  }
+  // function formatAmount(amount) {
+  //   return amount.toLocaleString("en-IN", { maximumFractionDigits: 2 });
+  // }
 
   const selectedOrgFromRedux = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg

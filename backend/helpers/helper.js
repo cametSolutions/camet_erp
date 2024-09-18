@@ -6,6 +6,12 @@ export const  truncateToNDecimals=(num, n)=> {
   return parseFloat(parts.join("."));
 }
 
+///formatting amount with comma
+
+export const  formatAmount=(amount) =>{
+  return amount.toLocaleString("en-IN", { maximumFractionDigits: 2 });
+}
+
 
 /////helper for transactions
 
