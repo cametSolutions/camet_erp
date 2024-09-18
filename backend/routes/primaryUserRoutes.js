@@ -16,13 +16,13 @@ import { registerPrimaryUser,login,addOrganizations,
   deleteAdditionalCharge,EditAditionalCharge,addconfigurations,
   createSale,saveSalesNumber,getSalesDetails,fetchGodownsAndPriceLevels,fetchAdditionalDetails,
   addSecondaryConfigurations,findPrimaryUserGodowns,findPrimaryUserGodownsSelf,
-  godownwiseProducts,godownwiseProductsSelf,fetchAdditionalCharges,getPurchaseDetails,addProductSubDetails,
+  godownwiseProducts,godownwiseProductsSelf,getPurchaseDetails,addProductSubDetails,
   getProductSubDetails,deleteProductSubDetails,editProductSubDetails,getAllSubDetails,fetchConfigurationCurrentNumber} from '../controllers/primaryUserController.js';
 
 
   import { cancelPurchase } from '../controllers/purchaseController.js';
 
-import {addProduct,editProduct,getCreditNoteDetails,transactions} from "../controllers/commonController.js";
+import {addProduct,editProduct,getCreditNoteDetails,transactions,fetchAdditionalCharges} from "../controllers/commonController.js";
 import { singleUpload } from '../multer/multer.js';
 import { primaryIsBlocked } from '../middlewares/isBlocked.js';
 import { companyAuthentication } from '../middlewares/authCompany.js';

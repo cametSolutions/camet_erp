@@ -2462,22 +2462,7 @@ export const godownwiseProductsSelf = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
-export const fetchAdditionalCharges = async (req, res) => {
-  try {
-    const cmp_id = req.params.cmp_id;
-    const pUser = req.owner.toString();
 
-    const aditionalDetails = await AdditionalChargesModel.find({
-      cmp_id: cmp_id,
-      Primary_user_id: pUser,
-    });
-
-    res.json(aditionalDetails);
-  } catch (error) {
-    console.error("Error fetching godownwise products:", error);
-    res.status(500).json({ error: "Internal Server Error" });
-  }
-};
 export const findGodownsNames = async (req, res) => {
   const cmp_id = req.params.cmp_id;
   const selectedUser = req.sUserId;

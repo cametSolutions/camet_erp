@@ -25,23 +25,23 @@ function AddChargesList() {
   const type = useSelector(
     (state) => state.setSelectedOrganization.selectedOrg.type
   );
-  console.log(type);
 
   const dispatch = useDispatch();
 
   const orgId = org._id;
 
+
   useEffect(() => {
     const fetchAdditionalCharges = async () => {
       try {
-        const res = await api.get(
-          `/api/pUsers/getSingleOrganization/${orgId}`,
-          {
-            withCredentials: true,
-          }
-        );
-
-        setAdditional(res?.data?.organizationData?.additionalCharges);
+        const res = await api.get(`/api/pUsers/additionalcharges/${orgId}`, {
+          withCredentials: true,
+        });
+        if (type === "self") {
+          setAdditional(res?.data?.organizationData?.additionalCharges);
+        } else {
+          setAdditional(res?.data);
+        }
 
         // console.log(res.data.organizationData);
       } catch (error) {
@@ -51,8 +51,6 @@ function AddChargesList() {
     fetchAdditionalCharges();
     dispatch(removeAll());
   }, [refresh]);
-
-  console.log(additional);
 
   const { handleToggleSidebar } = useSidebar();
 
@@ -93,7 +91,6 @@ function AddChargesList() {
       }
     }
   };
-  console.log(org);
 
   return (
     <section className=" flex-1 antialiased  text-gray-600   ">

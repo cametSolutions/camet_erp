@@ -12,7 +12,7 @@ import {login,getSecUserData,fetchOutstandingTotal,
     addAditionalCharge,EditAditionalCharge,addconfigurations,createSale,
     getSalesDetails,saveSalesNumber,fetchAdditionalDetails,
     fetchConfigurationNumber,findSecondaryUserGodowns,findPrimaryUserGodownsSelf,
-    godownwiseProducts,godownwiseProductsSelf,fetchAdditionalCharges,
+    godownwiseProducts,godownwiseProductsSelf,
     findGodownsNames,getPurchaseDetails,editSale,getAllSubDetails,
     fetchGodowns,createStockTransfer,editStockTransfer,cancelSalesOrder,cancelSale,
     cancelStockTransfer} from "../controllers/secondaryUserController.js"
@@ -20,7 +20,7 @@ import {login,getSecUserData,fetchOutstandingTotal,
 import { createPurchase,editPurchase,cancelPurchase } from '../controllers/purchaseController.js';
 import { createCreditNote,cancelCreditNote ,editCreditNote} from '../controllers/creditNoteController.js';
 
-    import { getStockTransferDetails,addProduct ,editProduct,getCreditNoteDetails,transactions} from '../controllers/commonController.js';
+    import { getStockTransferDetails,addProduct ,editProduct,getCreditNoteDetails,transactions,fetchAdditionalCharges} from '../controllers/commonController.js';
 import { authSecondary } from '../middlewares/authSecUsers.js';
 import { secondaryIsBlocked } from '../middlewares/isBlocked.js';
 import { companyAuthentication } from '../middlewares/authCompany.js';

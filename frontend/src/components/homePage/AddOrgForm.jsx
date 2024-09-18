@@ -175,16 +175,16 @@ function AddOrgForm({ onSubmit, orgData = {} }) {
       return;
     }
 
-    if (flat.length > 30) {
-      toast.error("Place must be at most 30 characters");
+    if (flat.length > 120) {
+      toast.error("Place must be at most 120 characters");
       return;
     }
-    if (road.length > 30) {
-      toast.error("Place must be at most 30 characters");
+    if (road.length > 120) {
+      toast.error("Place must be at most 120 characters");
       return;
     }
-    if (landmark.length > 30) {
-      toast.error("Place must be at most 30 characters");
+    if (landmark.length > 120) {
+      toast.error("Place must be at most 120 characters");
       return;
     }
 
@@ -278,25 +278,7 @@ function AddOrgForm({ onSubmit, orgData = {} }) {
                 />
               </div>
             </div>
-            {/* <div className="w-full lg:w-6/12 px-4">
-                      <div className="relative w-full mb-3">
-                        <label
-                          className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
-                          htmlFor="grid-password"
-                        >
-                          Place
-                        </label>
-                        <input
-                          type="text"
-                          className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                          onChange={(e) => {
-                            setPlace(e.target.value);
-                          }}
-                          value={place}
-                          placeholder="Add your place"
-                        />
-                      </div>
-                    </div> */}
+      
             <div className="w-full lg:w-6/12 px-4">
               <div className="relative w-full mb-3">
                 <label
@@ -440,7 +422,6 @@ function AddOrgForm({ onSubmit, orgData = {} }) {
                   className="border-0 px-3 mr-12 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                   onChange={(e) => {
                     setCurrency(e.target.value);
-                    setState("");
                   }}
                   value={currency}
                 >
@@ -467,7 +448,6 @@ function AddOrgForm({ onSubmit, orgData = {} }) {
                   className="border-0 px-3 mr-12 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                   onChange={(e) => {
                     setCurrencyName(e.target.value);
-                    setState("");
                   }}
                   value={currencyName}
                 >

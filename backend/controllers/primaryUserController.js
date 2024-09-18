@@ -30,7 +30,6 @@ import stockTransferModel from "../models/stockTransferModel.js";
 import creditNoteModel from "../models/creditNoteModel.js";
 import debitNoteModel from "../models/debitNoteModel.js";
 
-
 // @desc Register Primary user
 // route POST/api/pUsers/register
 
@@ -87,7 +86,6 @@ export const login = async (req, res) => {
   //email === email or mobile
   const { email, password } = req.body;
 
-
   try {
     let primaryUser;
     // Check if the provided email looks like an email address
@@ -98,7 +96,6 @@ export const login = async (req, res) => {
       // If it's not an email address, assume it's a mobile number and find the user by mobile number
       primaryUser = await PrimaryUser.findOne({ mobile: email });
     }
-
 
     if (primaryUser.isApproved === false) {
       return res.status(401).json({ message: "User approval is pending" });
@@ -135,7 +132,7 @@ export const login = async (req, res) => {
     });
   } catch (error) {
     console.log(error);
-    
+
     return res.status(500).json({ status: false, message: "Failed to login!" });
   }
 };
@@ -155,7 +152,7 @@ export const primaryUserLogout = async (req, res) => {
     });
   } catch (error) {
     console.log(error);
-    
+
     return res.status(500).json({ status: false, message: "Failed to login!" });
   }
 };
@@ -178,7 +175,7 @@ export const getPrimaryUserData = async (req, res) => {
     }
   } catch (error) {
     console.log(error);
-    
+
     return res
       .status(500)
       .json({ status: false, message: "internal sever error" });
@@ -212,7 +209,7 @@ export const addOrganizations = async (req, res) => {
     industry,
     printTitle,
     currency,
-    currencyName
+    currencyName,
   } = req.body;
 
   const owner = req.pUserId;
@@ -242,7 +239,7 @@ export const addOrganizations = async (req, res) => {
       industry,
       printTitle,
       currency,
-      currencyName
+      currencyName,
     });
 
     if (organization) {
@@ -281,7 +278,7 @@ export const getOrganizations = async (req, res) => {
     }
   } catch (error) {
     console.log(error);
-    
+
     return res
       .status(500)
       .json({ success: false, message: "Internal server error, try again!" });
@@ -309,7 +306,7 @@ export const getSingleOrganization = async (req, res) => {
     }
   } catch (error) {
     console.log(error);
-    
+
     return res
       .status(500)
       .json({ success: false, message: "Internal server error, try again!" });
@@ -410,7 +407,7 @@ export const fetchSecondaryUsers = async (req, res) => {
     }
   } catch (error) {
     console.log(error);
-    
+
     return res
       .status(500)
       .json({ success: false, message: "Internal server error, try again!" });
@@ -451,7 +448,7 @@ export const fetchOutstandingTotal = async (req, res) => {
     }
   } catch (error) {
     console.log(error);
-    
+
     return res
       .status(500)
       .json({ success: false, message: "Internal server error, try again!" });
@@ -485,7 +482,7 @@ export const fetchOutstandingDetails = async (req, res) => {
     }
   } catch (error) {
     console.log(error);
-    
+
     return res
       .status(500)
       .json({ success: false, message: "Internal server error, try again!" });
@@ -514,7 +511,6 @@ export const confirmCollection = async (req, res) => {
     enteredAmount,
     mobile_no,
   } = collectionDetails;
-
 
   try {
     const outstandingData = await TallyData.find({
@@ -561,7 +557,6 @@ export const confirmCollection = async (req, res) => {
       });
     } else {
       console.log("No matching documents found for the given criteria");
-      
     }
   } catch (error) {
     console.error("Error updating documents:", error);
@@ -683,7 +678,6 @@ export const confirmCollection = async (req, res) => {
 //       },
 //     ]);
 
-
 //     const combined = [
 //       ...transactions,
 //       ...invoices,
@@ -704,7 +698,7 @@ export const confirmCollection = async (req, res) => {
 //     }
 //   } catch (error) {
 //     console.log(error);
-    
+
 //     return res.status(500).json({
 //       status: false,
 //       message: "Internal server error",
@@ -729,11 +723,9 @@ export const cancelTransaction = async (req, res) => {
           currentAmount: {
             $sum: ["$billData.settledAmount", "$billData.remainingAmount"],
           },
-
         },
       },
     ]);
-
 
     for (const { billNo, currentAmount } of transactions) {
       await TallyData.updateOne(
@@ -741,7 +733,6 @@ export const cancelTransaction = async (req, res) => {
         { $set: { bill_pending_amt: currentAmount } }
       );
       console.log(`Updated bill_pending_amt for ${billNo}`);
-      
     }
 
     await TransactionModel.updateOne(
@@ -783,7 +774,7 @@ export const fetchBanks = async (req, res) => {
     }
   } catch (error) {
     console.log(error);
-    
+
     return res
       .status(500)
       .json({ status: false, message: "Internal server error" });
@@ -796,7 +787,7 @@ export const fetchBanks = async (req, res) => {
 export const bankList = async (req, res) => {
   const userId = req.pUserId;
   const cmp_id = req.params.cmp_id;
- 
+
   try {
     const bankData = await BankDetails.aggregate([
       {
@@ -815,7 +806,6 @@ export const bankList = async (req, res) => {
     ]);
 
     // console.log(bankData);
-    
 
     if (bankData.length > 0) {
       return res
@@ -826,7 +816,7 @@ export const bankList = async (req, res) => {
     }
   } catch (error) {
     console.log(error);
-    
+
     return res
       .status(500)
       .json({ status: false, message: "Internal server error" });
@@ -874,11 +864,11 @@ export const sendOtp = async (req, res) => {
     transporter.sendMail(mailOptions, function (error, info) {
       if (error) {
         console.log(error);
-        
+
         return res.status(500).json({ error: "Error sending email" });
       } else {
         // console.log("Email Sent:" + info.response);
-        
+
         return res
           .status(200)
           .json({ message: "OTP sent successfully", data: otp });
@@ -886,7 +876,7 @@ export const sendOtp = async (req, res) => {
     });
   } catch (error) {
     console.log(error);
-    
+
     return res.status(500).json({ error: "Internal server error" });
   }
 };
@@ -990,7 +980,7 @@ export const addParty = async (req, res) => {
       creditLimit,
       openingBalanceType,
       openingBalanceAmount,
-      party_master_id // Check if provided
+      party_master_id, // Check if provided
     } = req.body;
 
     // Create a new party document with either the provided party_master_id or MongoDB generated _id
@@ -1009,7 +999,7 @@ export const addParty = async (req, res) => {
       creditLimit,
       openingBalanceType,
       openingBalanceAmount,
-      party_master_id: party_master_id || undefined // Allow Mongoose to assign _id if not provided
+      party_master_id: party_master_id || undefined, // Allow Mongoose to assign _id if not provided
     });
 
     const result = await party.save();
@@ -1038,7 +1028,6 @@ export const addParty = async (req, res) => {
       .json({ success: false, message: "Internal server error, try again!" });
   }
 };
-
 
 // @desc adding new Hsn
 // route POst/api/pUsers/addHsn
@@ -1103,7 +1092,6 @@ export const addDataToOrg = async (req, res) => {
   try {
     const orgId = req.params.cmp_id;
 
-
     const org = await OragnizationModel.findById(orgId);
     if (org) {
       const fieldToUpdate = Object.keys(req.body)[0];
@@ -1142,8 +1130,6 @@ export const editDataInOrg = async (req, res) => {
     const fieldToUpdate = Object.keys(req.body)[0];
     const newData = req.body[fieldToUpdate];
     const index = parseInt(req.body.index);
-
- 
 
     const org = await OragnizationModel.findById(orgId);
     if (!org) {
@@ -1218,7 +1204,7 @@ export const fetchHsn = async (req, res) => {
     }
   } catch (error) {
     console.log(error);
-    
+
     return res
       .status(500)
       .json({ status: false, message: "Internal server error" });
@@ -1248,7 +1234,7 @@ export const fetchFilters = async (req, res) => {
     }
   } catch (error) {
     console.log(error);
-    
+
     return res
       .status(500)
       .json({ status: false, message: "Internal server error" });
@@ -1287,7 +1273,6 @@ export const fetchFilters = async (req, res) => {
 
 //     // Fetch HSN details
 //     const hsnDetails = await HsnModel.findById(hsn_code);
-
 
 //     // Extract required fields from HSN details
 //     let cgst, sgst, igst, cess, addl_cess, hsn_id;
@@ -1332,9 +1317,8 @@ export const fetchFilters = async (req, res) => {
 //       hsn_id,
 //     };
 
-
 //     console.log("data to save in add product ",dataToSave);
-    
+
 //     // Save the product
 //     const newProduct = await productModel.create(dataToSave);
 
@@ -1372,7 +1356,6 @@ export const getProducts = async (req, res) => {
     // ]);
 
     // console.log(products);
-    
 
     if (products && products.length > 0) {
       // Add the check for GodownList
@@ -1396,7 +1379,7 @@ export const getProducts = async (req, res) => {
     }
   } catch (error) {
     console.log(error);
-    
+
     return res
       .status(500)
       .json({ success: false, message: "Internal server error, try again!" });
@@ -1517,7 +1500,6 @@ export const editProduct = async (req, res) => {
       addl_cess,
     };
 
-
     const updateProduct = await productModel.findOneAndUpdate(
       { _id: productId },
       dataToSave,
@@ -1605,7 +1587,6 @@ export const getSinglePartyDetails = async (req, res) => {
 export const editParty = async (req, res) => {
   const party_id = req.params.id;
 
-
   try {
     const updateParty = await PartyModel.findOneAndUpdate(
       { _id: party_id },
@@ -1638,7 +1619,6 @@ export const createInvoice = async (req, res) => {
       lastAmount,
       orderNumber,
     } = req.body;
-    
 
     // Manually fetch the last invoice to get the serial number
     const lastInvoice = await invoiceModel.findOne(
@@ -1692,7 +1672,6 @@ export const createInvoice = async (req, res) => {
 
         const taxAmt = (parseFloat(value) * parseFloat(taxPercentage)) / 100;
         // console.log(taxAmt);
-        
 
         return {
           ...charge,
@@ -1797,7 +1776,7 @@ export const invoiceList = async (req, res) => {
       Primary_user_id: userId,
       cmp_id: cmp_id,
     });
-    
+
     if (invoiceList) {
       res
         .status(200)
@@ -1817,13 +1796,11 @@ export const invoiceList = async (req, res) => {
 
 export const deleteHsn = async (req, res) => {
   const hsnId = req.params.id;
-  
+
   try {
     const newHsnId = new mongoose.Types.ObjectId(hsnId);
 
     const attachedProduct = await productModel.find({ hsn_id: newHsnId });
-
-    
 
     if (attachedProduct.length > 0) {
       return res.status(404).json({
@@ -1857,12 +1834,10 @@ export const deleteHsn = async (req, res) => {
 // route get/api/pUsers/getSinglePartyDetails
 
 export const getSingleHsn = async (req, res) => {
-  
   const id = req.params.hsnId;
   try {
     const hsn = await HsnModel.findById(id);
 
-    
     if (hsn) {
       return res.status(200).json({ success: true, data: hsn });
     } else {
@@ -1882,8 +1857,6 @@ export const getSingleHsn = async (req, res) => {
 
 export const editHsn = async (req, res) => {
   const hsnId = req.params.hsnId;
-
-  
 
   try {
     const updateHsn = await HsnModel.findOneAndUpdate(
@@ -1972,8 +1945,6 @@ export const getBankDetails = async (req, res) => {
 
 export const editBank = async (req, res) => {
   const bank_id = req.params.id;
-
-  
 
   try {
     const updateParty = await bankModel.findOneAndUpdate(
@@ -2101,7 +2072,7 @@ export const getInvoiceDetails = async (req, res) => {
 export const editInvoice = async (req, res) => {
   const Primary_user_id = req.pUserId;
   const invoiceId = req.params.id;
-  
+
   try {
     const {
       orgId,
@@ -2112,9 +2083,6 @@ export const editInvoice = async (req, res) => {
       lastAmount,
       orderNumber,
     } = req.body;
-    
-
-    
 
     // Calculate updated items
     const updatedItems = items.map((item) => {
@@ -2155,7 +2123,6 @@ export const editInvoice = async (req, res) => {
         const { value, taxPercentage } = charge;
 
         const taxAmt = (parseFloat(value) * parseFloat(taxPercentage)) / 100;
-        
 
         return {
           ...charge,
@@ -2242,17 +2209,15 @@ export const deleteAdditionalCharge = async (req, res) => {
     const addlId = new mongoose.Types.ObjectId(id);
 
     // console.log(addlId);
-    
+
     const cmp_id = req.params.cmp_id;
     const org = await OragnizationModel.findById(cmp_id);
     // console.log("org", org);
-    
 
     const indexToDelete = org.additionalCharges.findIndex((item) =>
       item._id.equals(addlId)
     );
     // console.log("indexToDelete", indexToDelete);
-    
 
     if (indexToDelete !== -1) {
       org.additionalCharges.splice(indexToDelete, 1);
@@ -2286,15 +2251,12 @@ export const EditAditionalCharge = async (req, res) => {
     const id = req.params.id;
     const addlId = new mongoose.Types.ObjectId(id);
 
-    
     const cmp_id = req.params.cmp_id;
     const org = await OragnizationModel.findById(cmp_id);
-    
 
     const indexToUpdate = org.additionalCharges.findIndex((item) =>
       item._id.equals(addlId)
     );
-    
 
     if (indexToUpdate !== -1) {
       // Assuming req.body contains the updated fields for the additional charge
@@ -2428,14 +2390,13 @@ export const createSale = async (req, res) => {
 
       // Calculate the new balance stock
       const productBalanceStock = truncateToNDecimals(product.balance_stock, 3);
-      
+
       const itemCount = truncateToNDecimals(item.count, 3);
       const newBalanceStock = truncateToNDecimals(
         productBalanceStock - itemCount,
         3
       );
       // console.log("newBalanceStock",newBalanceStock);
-      
 
       // Prepare product update operation
       productUpdates.push({
@@ -2538,7 +2499,6 @@ export const createSale = async (req, res) => {
         const { value, taxPercentage } = charge;
 
         const taxAmt = (parseFloat(value) * parseFloat(taxPercentage)) / 100;
-        
 
         return {
           ...charge,
@@ -2593,7 +2553,6 @@ export const createSale = async (req, res) => {
       { upsert: true, new: true }
     );
 
-
     return res.status(200).json({
       success: true,
       message: "Sale created successfully",
@@ -2619,8 +2578,6 @@ export const getSalesDetails = async (req, res) => {
   const vanSaleQuery = req.query.vanSale;
 
   const isVanSale = vanSaleQuery === "true";
-
-  
 
   let model;
   if (isVanSale) {
@@ -2697,8 +2654,6 @@ export const fetchGodownsAndPriceLevels = async (req, res) => {
       },
       { $match: { _id: { $ne: null } } },
     ]);
-
-    
 
     const godownsWithPriceLevels = godownsResult.map((item) => ({
       id: item._id,
@@ -2825,8 +2780,6 @@ export const addSecondaryConfigurations = async (req, res) => {
     } = req.body;
     let { selectedGodowns } = req.body;
 
-    
-
     if (selectedGodowns.every((godown) => godown === null)) {
       selectedGodowns = [];
     }
@@ -2836,11 +2789,10 @@ export const addSecondaryConfigurations = async (req, res) => {
     const NewreceiptNumber = receiptConfiguration.currentNumber || 0;
     const NewvanSalesNumber = vanSaleConfiguration.currentNumber || 0;
     const NewpurchaseNumber = purchaseConfiguration.currentNumber || 0;
-    const NewstockTransferNumber = stockTransferConfiguration.currentNumber || 0;
+    const NewstockTransferNumber =
+      stockTransferConfiguration.currentNumber || 0;
     const NewcreditNoteNumber = creditNoteConfiguration.currentNumber || 0;
     const NewdebitNoteNumber = debitNoteConfiguration.currentNumber || 0;
-
-
 
     const dataToAdd = {
       organization: cmp_id,
@@ -2857,8 +2809,6 @@ export const addSecondaryConfigurations = async (req, res) => {
       selectedVanSaleGodowns,
       vanSale,
     };
-
-    
 
     const secUser = await SecondaryUser.findById(secondary_user_id);
 
@@ -2888,8 +2838,7 @@ export const addSecondaryConfigurations = async (req, res) => {
         vanSalesNumber: company.vanSalesNumber,
         stockTransferNumber: company.stockTransferNumber,
         creditNoteNumber: company.creditNoteNumber,
-        debitNoteNumber: company.debitNoteNumber
-        
+        debitNoteNumber: company.debitNoteNumber,
       };
     } else {
       const existingConfiguration = secUser.configurations[existingConfigIndex];
@@ -2902,8 +2851,7 @@ export const addSecondaryConfigurations = async (req, res) => {
         vanSalesNumber: existingConfiguration.vanSalesNumber,
         stockTransferNumber: existingConfiguration.stockTransferNumber,
         creditNoteNumber: existingConfiguration.creditNoteNumber,
-        debitNoteNumber: existingConfiguration.debitNoteNumber
-
+        debitNoteNumber: existingConfiguration.debitNoteNumber,
       };
     }
 
@@ -2913,11 +2861,11 @@ export const addSecondaryConfigurations = async (req, res) => {
       purchaseNumber: existingConfig.purchaseNumber !== NewpurchaseNumber,
       receiptNumber: existingConfig.receiptNumber !== NewreceiptNumber,
       vanSalesNumber: existingConfig.vanSalesNumber !== NewvanSalesNumber,
-      stockTransferNumber: existingConfig.stockTransferNumber !== NewstockTransferNumber,
+      stockTransferNumber:
+        existingConfig.stockTransferNumber !== NewstockTransferNumber,
       creditNoteNumber: existingConfig.creditNoteNumber !== NewcreditNoteNumber,
       debitNoteNumber: existingConfig.debitNoteNumber !== NewdebitNoteNumber,
     };
-
 
     const checkForNumberExistence = async (
       model,
@@ -2925,7 +2873,6 @@ export const addSecondaryConfigurations = async (req, res) => {
       newValue,
       cmp_id
     ) => {
-      
       const centralNumber = parseInt(newValue, 10);
       const regex = new RegExp(
         `^(${centralNumber}|.*-(0*${centralNumber})-.*)$`
@@ -2935,7 +2882,6 @@ export const addSecondaryConfigurations = async (req, res) => {
         cmp_id: cmp_id,
       });
 
-      
       return docs.length > 0;
     };
 
@@ -2947,13 +2893,10 @@ export const addSecondaryConfigurations = async (req, res) => {
         cmp_id
       );
 
-      
       if (salesExists) {
-        return res
-          .status(400)
-          .json({
-            message: `Sales is added with this number ${NewsalesNumber}`,
-          });
+        return res.status(400).json({
+          message: `Sales is added with this number ${NewsalesNumber}`,
+        });
       }
     }
 
@@ -2964,14 +2907,11 @@ export const addSecondaryConfigurations = async (req, res) => {
         NeworderNumber,
         cmp_id
       );
-      
 
       if (orderExists) {
-        return res
-          .status(400)
-          .json({
-            message: `Order is added with this number ${NeworderNumber}`,
-          });
+        return res.status(400).json({
+          message: `Order is added with this number ${NeworderNumber}`,
+        });
       }
     }
 
@@ -2983,11 +2923,9 @@ export const addSecondaryConfigurations = async (req, res) => {
         cmp_id
       );
       if (purchaseExists) {
-        return res
-          .status(400)
-          .json({
-            message: `Purchase is added with this number ${NewpurchaseNumber}`,
-          });
+        return res.status(400).json({
+          message: `Purchase is added with this number ${NewpurchaseNumber}`,
+        });
       }
     }
 
@@ -3006,11 +2944,9 @@ export const addSecondaryConfigurations = async (req, res) => {
         cmp_id
       );
       if (vanSalesExists) {
-        return res
-          .status(400)
-          .json({
-            message: `Van Sales is added with this number ${NewvanSalesNumber}`,
-          });
+        return res.status(400).json({
+          message: `Van Sales is added with this number ${NewvanSalesNumber}`,
+        });
       }
     }
     if (changes.stockTransferNumber) {
@@ -3021,11 +2957,9 @@ export const addSecondaryConfigurations = async (req, res) => {
         cmp_id
       );
       if (stockTransferExists) {
-        return res
-          .status(400)
-          .json({
-            message: `Stock Transfer is added with this number ${NewstockTransferNumber}`,
-          });
+        return res.status(400).json({
+          message: `Stock Transfer is added with this number ${NewstockTransferNumber}`,
+        });
       }
     }
 
@@ -3037,11 +2971,9 @@ export const addSecondaryConfigurations = async (req, res) => {
         cmp_id
       );
       if (creditNoteExists) {
-        return res
-          .status(400)
-          .json({
-            message: `Credit Note is added with this number ${NewcreditNoteNumber}`,
-          });
+        return res.status(400).json({
+          message: `Credit Note is added with this number ${NewcreditNoteNumber}`,
+        });
       }
     }
 
@@ -3053,17 +2985,13 @@ export const addSecondaryConfigurations = async (req, res) => {
         cmp_id
       );
       if (debitNoteExists) {
-        return res
-          .status(400)
-          .json({
-            message: `Debit Note is added with this number ${NewdebitNoteNumber}`,
-          });
+        return res.status(400).json({
+          message: `Debit Note is added with this number ${NewdebitNoteNumber}`,
+        });
       }
     }
 
     if (existingConfigIndex !== -1) {
-
-      
       // Configuration already exists
       const existingConfig = secUser.configurations[existingConfigIndex];
 
@@ -3078,7 +3006,7 @@ export const addSecondaryConfigurations = async (req, res) => {
         vanSalesNumber: NewvanSalesNumber,
         stockTransferNumber: NewstockTransferNumber,
         creditNoteNumber: NewcreditNoteNumber,
-        debitNoteNumber:NewdebitNoteNumber
+        debitNoteNumber: NewdebitNoteNumber,
       };
     } else {
       // Configuration does not exist, create new
@@ -3091,14 +3019,12 @@ export const addSecondaryConfigurations = async (req, res) => {
         vanSalesNumber: NewvanSalesNumber,
         stockTransferNumber: NewstockTransferNumber,
         creditNoteNumber: NewcreditNoteNumber,
-        debitNoteNumber:NewdebitNoteNumber
-
+        debitNoteNumber: NewdebitNoteNumber,
       };
       secUser.configurations.push(newConfiguration);
     }
 
     // console.log("secUser.configurations", secUser.configurations);
-    
 
     const result = await secUser.save();
 
@@ -3143,7 +3069,7 @@ export const findPrimaryUserGodowns = async (req, res) => {
       },
       { $match: { _id: { $ne: null } } },
     ]);
-    
+
     if (godownsResult) {
       res.json({
         message: "additional details fetched",
@@ -3157,10 +3083,10 @@ export const findPrimaryUserGodowns = async (req, res) => {
 export const findPrimaryUserGodownsSelf = async (req, res) => {
   const cmp_id = req.params.cmp_id;
   const pUser = req.pUserId;
-  
+
   try {
     const godowns = await Organization.find({ _id: cmp_id, owner: pUser });
-    
+
     if (godowns) {
       res.json({
         message: "additional details fetched",
@@ -3175,7 +3101,7 @@ export const godownwiseProducts = async (req, res) => {
   try {
     const cmp_id = req.params.cmp_id;
     const godown_id = req.params.godown_id;
-    
+
     const puser_id = req.pUserId; // Assuming req.pUserId contains the user ID
 
     const products = await productModel.aggregate([
@@ -3208,7 +3134,7 @@ export const godownwiseProducts = async (req, res) => {
       },
     ]);
     // console.log(products)
-    
+
     res.json(products);
   } catch (error) {
     console.error("Error fetching godownwise products:", error);
@@ -3220,7 +3146,7 @@ export const godownwiseProductsSelf = async (req, res) => {
   try {
     const cmp_id = req.params.cmp_id;
     const godown = req.params.godown_name;
-    
+
     const puser_id = req.pUserId; // Assuming req.pUserId contains the user ID
 
     const products = await productModel.aggregate([
@@ -3253,39 +3179,20 @@ export const godownwiseProductsSelf = async (req, res) => {
       },
     ]);
     // console.log(products)
-    
+
     res.json(products);
   } catch (error) {
     console.error("Error fetching godownwise products:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
-export const fetchAdditionalCharges = async (req, res) => {
-  try {
-    const cmp_id = req.params.cmp_id;
-    const pUser = req.pUserId;
-    
 
-    const aditionalDetails = await AdditionalChargesModel.find({
-      cmp_id: cmp_id,
-      Primary_user_id: pUser,
-    });
-
-    
-    res.json(aditionalDetails);
-  } catch (error) {
-    console.error("Error fetching godownwise products:", error);
-    res.status(500).json({ error: "Internal Server Error" });
-  }
-};
 
 // @desc toget the details of transaction or purchase
 // route get/api/sUsers/getPurchaseDetails
 
 export const getPurchaseDetails = async (req, res) => {
   const purchaseId = req.params.id;
-
-  
 
   try {
     const purchaseDetails = await purchaseModel.findById(purchaseId);
@@ -3364,19 +3271,17 @@ export const addProductSubDetails = async (req, res) => {
           });
           const savedDefaultGodown = await defaultGodown.save();
 
-            // Update all products with the default godown
-           const update= await productModel.updateMany(
-              { cmp_id: orgId },
-              {
-                $set: {
-                  "GodownList.$[].godown": "Default Godown",
-                  "GodownList.$[].defaultGodown": true,
-                  "GodownList.$[].godown_id": savedDefaultGodown._id
-                }
-              }
-            );
-
-            
+          // Update all products with the default godown
+          const update = await productModel.updateMany(
+            { cmp_id: orgId },
+            {
+              $set: {
+                "GodownList.$[].godown": "Default Godown",
+                "GodownList.$[].defaultGodown": true,
+                "GodownList.$[].godown_id": savedDefaultGodown._id,
+              },
+            }
+          );
         }
         break;
       case "pricelevel":
@@ -3407,7 +3312,6 @@ export const addProductSubDetails = async (req, res) => {
 // route get/api/pUsers/getProductSubDetails
 
 export const getProductSubDetails = async (req, res) => {
-  
   try {
     const { orgId } = req.params;
     const { type } = req.query; // 'type' can be 'brand', 'category', 'subcategory', 'godown', or 'pricelevel'
@@ -3572,7 +3476,6 @@ export const getAllSubDetails = async (req, res) => {
 
     if (!cmp_id || !Primary_user_id) {
       console.log(
-        
         "cmp_id and Primary_user_id are required in getAllSubDetails "
       );
       return;
@@ -3583,7 +3486,9 @@ export const getAllSubDetails = async (req, res) => {
         Brand.find({ cmp_id, Primary_user_id }).select("_id brand"),
         Category.find({ cmp_id, Primary_user_id }).select("_id category"),
         Subcategory.find({ cmp_id, Primary_user_id }).select("_id subcategory"),
-        Godown.find({ cmp_id, Primary_user_id }).select("_id godown  defaultGodown"),
+        Godown.find({ cmp_id, Primary_user_id }).select(
+          "_id godown  defaultGodown"
+        ),
         PriceLevel.find({ cmp_id, Primary_user_id }).select("_id pricelevel"),
       ]);
 
@@ -3594,7 +3499,11 @@ export const getAllSubDetails = async (req, res) => {
         _id: s._id,
         name: s.subcategory,
       })),
-      godowns: godowns.map((g) => ({ _id: g._id, name: g.godown,defaultGodown:g.defaultGodown })),
+      godowns: godowns.map((g) => ({
+        _id: g._id,
+        name: g.godown,
+        defaultGodown: g.defaultGodown,
+      })),
       priceLevels: priceLevels.map((p) => ({ _id: p._id, name: p.pricelevel })),
     };
 
@@ -3618,7 +3527,6 @@ export const fetchConfigurationCurrentNumber = async (req, res) => {
 
   if (!cmp_id || !secondary_user_id) {
     console.log(
-      
       "cmp_id and secondary_user_id are required in fetchConfigurationCurrentNumber "
     );
     return res
@@ -3642,7 +3550,6 @@ export const fetchConfigurationCurrentNumber = async (req, res) => {
     }
 
     // console.log("configuration", configuration);
-    
 
     const {
       orderNumber,
@@ -3654,9 +3561,8 @@ export const fetchConfigurationCurrentNumber = async (req, res) => {
       creditNoteNumber,
       debitNoteNumber,
     } = configuration;
-    
+
     // console.log("creditNoteNumber", creditNoteNumber);
-    
 
     return res.status(200).json({
       message: "Configuration numbers retrieved successfully",

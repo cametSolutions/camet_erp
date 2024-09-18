@@ -27,7 +27,6 @@ function AddItemTile({
   urlToAddItem,
   urlToEditItem,
 }) {
-  console.log(urlToAddItem);
   return (
     <div>
       {items.length == 0 && (
@@ -89,14 +88,18 @@ function AddItemTile({
                         {el?.GodownList.reduce((acc, curr) => {
                           if (el?.hasGodownOrBatch) {
                             if (curr?.added) {
-                              return (acc = acc + (curr?.individualTotal || 0));
+                              return (acc += Number(
+                                curr.individualTotal.toFixed(2)
+                              ));
                             } else {
                               return acc;
                             }
                           } else {
-                            return (acc = acc + (curr?.individualTotal || 0));
+                            return (acc += Number(
+                              curr.individualTotal.toFixed(2)
+                            ));
                           }
-                        }, 0)}
+                        }, 0).toFixed(2)}
                       </p>
                     </div>
                     <div className="flex gap-1 text-xs mt-1">
@@ -402,7 +405,6 @@ function AddItemTile({
               )
             )}
           </>
-        
         </>
       )}
     </div>

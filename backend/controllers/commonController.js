@@ -7,8 +7,11 @@ import TransactionModel from "../models/TransactionModel.js";
 import invoiceModel from "../models/invoiceModel.js";
 import vanSaleModel from "../models/vanSaleModel.js";
 import purchaseModel from "../models/purchaseModel.js";
+import Oragnization from "../models/OragnizationModel.js";
+import AdditionalChargesModel from "../models/additionalChargesModel.js";
 import { aggregateTransactions } from "../helpers/helper.js";
 import { startOfDay, endOfDay } from "date-fns";
+
 
 // @desc to  get stock transfer details
 // route get/api/sUsers/getStockTransferDetails;
@@ -297,3 +300,33 @@ export const transactions = async (req, res) => {
     });
   }
 };
+
+
+// @desc to  get additional charges
+// route get/api/sUsers/additionalCharges
+
+export const fetchAdditionalCharges = async (req, res) => {
+  try {
+    const cmp_id = req.params.cmp_id;
+    const pUser = req.pUserId || req.owner;
+
+    const company = await Oragnization.findById(cmp_id);
+    const type = company.type;
+    let aditionalDetails;
+
+    if (type === "self") {
+      aditionalDetails = company?.additionalCharges;
+    } else {
+      aditionalDetails = await AdditionalChargesModel.find({
+        cmp_id: cmp_id,
+        Primary_user_id: pUser,
+      });
+    }
+
+    res.json(aditionalDetails);
+  } catch (error) {
+    console.error("Error fetching godownwise products:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
