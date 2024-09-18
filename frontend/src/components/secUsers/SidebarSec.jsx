@@ -1,6 +1,6 @@
 /* eslint-disable react/prop-types */
 /* eslint-disable react/no-unknown-property */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import api from "../../api/api";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
@@ -78,30 +78,31 @@ function SidebarSec({ TAB, showBar }) {
 
 
 
-  useEffect(() => {
-    const getUserData = async () => {
-      try {
-        const res = await api.get("/api/sUsers/getSecUserData", {
-          withCredentials: true,
-        });
-        setUserData(res?.data?.data?.userData);
-        setCompanies(res?.data?.data?.userData.organization);
-
-        if (prevOrg == "" || prevOrg == null) {
-          setOrg(res.data.data.userData.organization[0]);
-          dispatch(
-            setSecSelectedOrganization(res.data.data.userData.organization[0])
-          );
-        } else {
-          25;
-          setOrg(prevOrg);
-        }
-      } catch (error) {
-        console.log(error);
+  const getUserData = useCallback(async () => {
+    try {
+      const res = await api.get("/api/sUsers/getSecUserData", {
+        withCredentials: true,
+      });
+      setUserData(res?.data?.data?.userData);
+      setCompanies(res?.data?.data?.userData.organization);
+      
+      if (!prevOrg) {
+        setOrg(res.data.data.userData.organization[0]);
+        dispatch(setSecSelectedOrganization(res.data.data.userData.organization[0]));
+      } else {
+        setOrg(prevOrg);
       }
-    };
-    getUserData();
-  }, []);
+    } catch (error) {
+      console.log(error);
+    }
+  }, [prevOrg, dispatch]);
+  
+  useEffect(() => {
+    if (!userData || !userData.name) { // only make the API call if data is not already present
+      getUserData();
+    }
+  }, [getUserData, userData]);
+  
 
   useEffect(() => {
     if (window.innerWidth < 768) {
@@ -109,11 +110,11 @@ function SidebarSec({ TAB, showBar }) {
     }
   }, [showBar]);
 
-  useEffect(() => {
-    if (window.innerWidth < 768) {
-      setShowSidebar(false);
-    }
-  }, []);
+  // useEffect(() => {
+  //   if (window.innerWidth < 768) {
+  //     setShowSidebar(false);
+  //   }
+  // }, []);
 
   const handleSidebarItemClick = (newTab) => {
     if (window.innerWidth < 768) {

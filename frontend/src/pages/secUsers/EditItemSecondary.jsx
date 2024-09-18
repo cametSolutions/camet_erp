@@ -26,11 +26,9 @@ function EditItemSecondary() {
 
   const ItemsFromRedux = useSelector((state) => state.invoiceSecondary.items);
   const selectedItem = ItemsFromRedux.filter((el) => el._id === id);
-  console.log(selectedItem);
   const selectedPriceLevel = useSelector(
     (state) => state.invoiceSecondary.selectedPriceLevel
   );
-  console.log(selectedPriceLevel);
 
   useEffect(() => {
     
@@ -39,7 +37,6 @@ function EditItemSecondary() {
       //   (item) => item.pricelevel === selectedPriceLevel
       // )?.pricerate;
 
-      console.log(selectedItem[0]);
 
       setNewPrice(selectedItem[0]?.selectedPriceRate || 0);
       setQuantity(selectedItem[0]?.count || 1);
@@ -300,7 +297,7 @@ function EditItemSecondary() {
                       <label className="leading-loose">Tax Rate</label>
                       <input
                         disabled
-                        value={` GST @ ${igst} %`}
+                        value={` Tax @ ${igst} %`}
                         type="text"
                         className="px-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm border-gray-300 rounded-md focus:outline-none text-gray-600"
                         placeholder="Event title"

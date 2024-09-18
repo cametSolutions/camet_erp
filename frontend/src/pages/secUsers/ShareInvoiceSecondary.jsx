@@ -8,6 +8,7 @@ import { MdPrint } from "react-icons/md";
 import numberToWords from "number-to-words";
 import { Link } from "react-router-dom";
 import SaleOrderPdf from "../../components/common/SaleOrderPdf";
+import { useSelector } from "react-redux";
 
 function ShareInvoiceSecondary() {
   const [data, setData] = useState([]);
@@ -55,7 +56,6 @@ function ShareInvoiceSecondary() {
     getTransactionDetails();
   }, [id]);
 
-  console.log(data);
 
   useEffect(() => {
     if (data && data.items) {
@@ -102,6 +102,15 @@ function ShareInvoiceSecondary() {
       setInWords(mergedWord);
     }
   }, [data]);
+
+  const {printTitle} = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg
+  );
+
+  
+
+
+
 
   // if (totalAmount) {
 
@@ -192,6 +201,7 @@ function ShareInvoiceSecondary() {
         </div>
 
         <SaleOrderPdf
+          printTitle={printTitle }
           contentToPrint={contentToPrint}
           data={data}
           org={org}

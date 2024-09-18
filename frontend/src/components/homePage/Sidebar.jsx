@@ -1,6 +1,6 @@
 /* eslint-disable react/prop-types */
 /* eslint-disable react/no-unknown-property */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import api from "../../api/api";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
@@ -207,19 +207,25 @@ function Sidebar({ TAB, showBar }) {
     fetchOrganizations();
   }, [selectedOrg]);
 
-  useEffect(() => {
-    const getUserData = async () => {
-      try {
-        const res = await api.get("/api/pUsers/getPrimaryUserData", {
-          withCredentials: true,
-        });
-        setUserData(res.data.data.userData);
-      } catch (error) {
-        console.log(error);
-      }
-    };
-    getUserData();
+
+  const  getUserData =useCallback( async () => {
+    try {
+      const res = await api.get("/api/pUsers/getPrimaryUserData", {
+        withCredentials: true,
+      });
+      setUserData(res.data.data.userData);
+    } catch (error) {
+      console.log(error);
+    }
   }, []);
+
+  useEffect(() => {
+    if (!userData || !userData.userName) { // only make the API call if data is not already present
+      getUserData();
+    }
+  }, [getUserData, userData]);
+
+
 
   useEffect(() => {
     if (window.innerWidth < 768) {
@@ -227,11 +233,6 @@ function Sidebar({ TAB, showBar }) {
     }
   }, [showBar]);
 
-  useEffect(() => {
-    if (window.innerWidth < 768) {
-      setShowSidebar(false);
-    }
-  }, []);
 
   useEffect(() => {
     if (showSidebar) {

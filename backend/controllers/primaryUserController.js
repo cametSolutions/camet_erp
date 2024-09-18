@@ -210,6 +210,7 @@ export const addOrganizations = async (req, res) => {
     type,
     batchEnabled,
     industry,
+    printTitle,
     currency,
     currencyName
   } = req.body;
@@ -239,6 +240,7 @@ export const addOrganizations = async (req, res) => {
       type,
       batchEnabled,
       industry,
+      printTitle,
       currency,
       currencyName
     });

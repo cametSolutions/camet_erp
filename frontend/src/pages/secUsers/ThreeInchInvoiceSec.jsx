@@ -9,6 +9,7 @@ import numberToWords from "number-to-words";
 import { Link } from "react-router-dom";
 import SidebarSec from "../../components/secUsers/SidebarSec";
 import SalesThreeInchPdf from "../../components/common/SalesThreeInchPdf";
+import { useSelector } from "react-redux";
 
 function ThreeInchInvoiceSec() {
   const [data, setData] = useState([]);
@@ -20,6 +21,10 @@ function ThreeInchInvoiceSec() {
   const [bank, setBank] = useState([]);
 
   const { id } = useParams();
+
+  const { printTitle } = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg
+  );
 
   const contentToPrint = useRef(null);
 
@@ -56,8 +61,6 @@ function ThreeInchInvoiceSec() {
 
     getTransactionDetails();
   }, [id]);
-
-  console.log(data);
 
   //  console.log(org?.configurations[0]?.terms);
 
@@ -106,8 +109,6 @@ function ThreeInchInvoiceSec() {
     }
   }, [data]);
 
-
-
   const handlePrint = useReactToPrint({
     documentTitle: `Sale Order ${data?.salesNumber}`,
     onBeforePrint: () => console.log("before printing..."),
@@ -116,40 +117,39 @@ function ThreeInchInvoiceSec() {
   });
 
   return (
- 
-    <div >
-    <div className=" nonPrintable-content bg-[#012a4a]   sticky top-0 p-3 px-5 text-white text-lg font-bold flex items-center gap-3  shadow-lg justify-between">
-      <div className="flex gap-2 ">
-        <Link to={`/sUsers/InvoiceDetails/${id}`}>
-          <IoIosArrowRoundBack className="text-3xl" />
-        </Link>
-        <p>Share Your Order</p>
+    <div>
+      <div className=" nonPrintable-content bg-[#012a4a]   sticky top-0 p-3 px-5 text-white text-lg font-bold flex items-center gap-3  shadow-lg justify-between">
+        <div className="flex gap-2 ">
+          <Link to={`/sUsers/InvoiceDetails/${id}`}>
+            <IoIosArrowRoundBack className="text-3xl" />
+          </Link>
+          <p>Share Your Order</p>
+        </div>
+        <div>
+          <MdPrint
+            onClick={() => {
+              handlePrint(null, () => contentToPrint.current);
+            }}
+            className="text-xl cursor-pointer "
+          />
+        </div>
       </div>
-      <div>
-        <MdPrint
-          onClick={() => {
-            handlePrint(null, () => contentToPrint.current);
-          }}
-          className="text-xl cursor-pointer "
+
+      <div className="  ">
+        <SalesThreeInchPdf
+          printTitle={printTitle}
+          voucherNumber={data?.orderNumber}
+          contentToPrint={contentToPrint}
+          data={data}
+          org={org}
+          subTotal={subTotal}
+          bank={bank}
+          additinalCharge={additinalCharge}
+          inWords={inWords}
+          userType="secondaryUser"
         />
       </div>
     </div>
-
-    <div className="  ">
-      <SalesThreeInchPdf
-        contentToPrint={contentToPrint}
-        data={data}
-        org={org}
-        subTotal={subTotal}
-        bank={bank}
-        additinalCharge={additinalCharge}
-        inWords={inWords}
-        userType="secondaryUser"
-
-      />
-    </div> 
-  
-  </div>
   );
 }
 

@@ -175,7 +175,7 @@ function ShareSalesSecondary() {
             <Link to={`/sUsers/salesDetails/${id}`}>
               <IoIosArrowRoundBack className="text-3xl" />
             </Link>
-            <p>Share Your Order</p>
+            <p>Share Your Sale</p>
           </div>
           <div>
             <MdPrint
@@ -196,6 +196,8 @@ function ShareSalesSecondary() {
           additinalCharge={additinalCharge}
           inWords={inWords}
           userType="secondaryUser"
+          tab="sales"
+          
         />
       </div>
     </div>

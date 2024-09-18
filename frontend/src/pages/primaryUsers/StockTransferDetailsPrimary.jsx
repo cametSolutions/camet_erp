@@ -74,7 +74,9 @@ function StockTransferDetailsPrimary() {
         editLink={`/pUsers/editStockTransfer/${data?._id}`}
         user={"primary"}
         number={data?.stockTransferNumber}
-        tab={"primary"}
+        tab={"stockTransfer"}
+
+
       />
 
 

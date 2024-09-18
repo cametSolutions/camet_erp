@@ -4,9 +4,8 @@ import SwallFireForPdf from "./SwallFireForPdf";
 import { FaEdit } from "react-icons/fa";
 import CancelButton from "./CancelButton";
 import dayjs from "dayjs";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { IoMdShareAlt } from "react-icons/io";
 
 function VoucherDetailsHeader({
   data,
@@ -17,13 +16,13 @@ function VoucherDetailsHeader({
   tab,
 }) {
   const [refresh, setRefresh] = useState(false);
-
   const navigate = useNavigate();
 
   const reFetch = () => {
     reFetchParent(!refresh);
   };
 
+  const showButtons = !(tab === "stockTransfer" && user === "primary");
 
   return (
     <div>
@@ -37,59 +36,40 @@ function VoucherDetailsHeader({
           </p>
         </div>
 
-        <div className="hidden md:block">
-          <div className="  flex justify-center p-4 gap-12 text-lg text-violet-500 mr-4">
-            {user === "secondary" && (
-              <>
-                <CancelButton
-                  id={data._id}
-                  tab={tab}
-                  isCancelled={data?.isCancelled}
-                  reFetch={reFetch}
-                />
-                <div
-                  onClick={() => navigate(editLink)}
-                  className={` ${
-                    data?.isCancelled && "pointer-events-none opacity-60"
-                  } flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer`}
-                >
-                  <FaEdit className="text-blue-500" />
-                  <p className="text-black font-bold text-sm">Edit</p>
-                </div>
-              </>
-            )}
-
-            {tab !== "stockTransfer" && tab !== "purchase" && (
-              <SwallFireForPdf data={data} tab={tab} user={user} />
-            )}
-
-            {tab === "purchase" && (
-              <Link
-                to={`/${
-                  user == "primary" ? "pUsers" : "sUsers"
-                }/sharePurchase/${data._id}`}
+        {showButtons && (
+          <div className="hidden md:block">
+            <div className="flex justify-center p-4 gap-12 text-lg text-violet-500 mr-4">
+              <CancelButton
+                id={data._id}
+                tab={tab}
+                isCancelled={data?.isCancelled}
+                reFetch={reFetch}
+              />
+              <div
+                onClick={() => navigate(editLink)}
+                className={`${
+                  data?.isCancelled && "pointer-events-none opacity-60"
+                } flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110 cursor-pointer`}
               >
-                <div
-                  className={` ${
-                    data?.isCancelled && "pointer-events-none opacity-60"
-                  } flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer`}
-                >
-                  <IoMdShareAlt />
-                  <p className="text-black font-bold text-sm">Share</p>
-                </div>
-              </Link>
-            )}
+                <FaEdit className="text-blue-500" />
+                <p className="text-black font-bold text-sm">Edit</p>
+              </div>
 
-            <div
-              className={` ${
-                data?.isCancelled && "pointer-events-none opacity-60"
-              } flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer`}
-            >
-              <MdTextsms className="text-green-500" />
-              <p className="text-black font-bold text-sm">Sms</p>
+              {tab !== "stockTransfer" && (
+                <SwallFireForPdf data={data} tab={tab} user={user} />
+              )}
+
+              <div
+                className={`${
+                  data?.isCancelled && "pointer-events-none opacity-60"
+                } flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110 cursor-pointer`}
+              >
+                <MdTextsms className="text-green-500" />
+                <p className="text-black font-bold text-sm">Sms</p>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

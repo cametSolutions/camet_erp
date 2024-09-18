@@ -10,7 +10,44 @@ function SalesThreeInchPdf({
   additinalCharge,
   inWords,
   userType,
+  printTitle,
+  voucherNumber,
+  tab
 }) {
+
+  let title = "";
+  let pdfNumber;
+
+  switch (tab) {
+    case "sales":
+      title = "Tax Invoice";
+      pdfNumber = data?.salesNumber;
+
+      break;
+    case "vanSale":
+      title = "Tax Invoice";
+      pdfNumber = data?.salesNumber;
+
+      break;
+
+    case "purchase":
+      title = "Purchase Invoice";
+      pdfNumber = data?.purchaseNumber;
+
+      break;
+
+    case "stockTransfer":
+      title = "Stock Transfer";
+      pdfNumber = data?.stockTransferNumber;
+
+      break;
+
+    default:
+      title = "Tax Invoice";
+      pdfNumber = ""; 
+      
+      break;
+  }
 
   //used to fetch organization data form redux
   const primarySelectedOrg = useSelector(
@@ -61,7 +98,6 @@ function SalesThreeInchPdf({
     }, 0); // Initialize the accumulator with 0
   };
 
-  console.log(data);
   const party = data?.party;
   let address;
 
@@ -111,12 +147,12 @@ function SalesThreeInchPdf({
     >
       <div className=" print-container  max-w-3xl mx-auto  md:block w-full ">
         <div className="flex justify-center ">
-          <div className="font-bold text-md  mt-6">INVOICE</div>
+          <div className="font-bold text-md  mt-6">{printTitle || title}</div>
         </div>
         <div>
           <div className="flex items-center justify-between flex-col leading-4   font-bold">
             <div className="text-[12px]  tracking-wide ">
-              Invoice #:{data?.salesNumber}{" "}
+              No: {voucherNumber || pdfNumber}{" "}
             </div>
             <div className="text-[12px] tracking-wide">
               Date:{new Date().toDateString()}{" "}
@@ -159,7 +195,7 @@ function SalesThreeInchPdf({
               {
                 org?.gstNum && (
                   <div className="text-black font-semibold  text-[12px]">
-                   Gst No: {org?.gstNum}
+                   Tax No: {org?.gstNum}
                   </div>
                 )
               }
@@ -185,7 +221,7 @@ function SalesThreeInchPdf({
           <p className="text-black text-[12px] font-semibold">
             {[address?.billToAddress]
               .filter((item) => item != null && item !== "" && item !== "null")
-              .join(", ") || "Address not available"}
+              .join(", ") || ""}
           </p>
         </div>
 

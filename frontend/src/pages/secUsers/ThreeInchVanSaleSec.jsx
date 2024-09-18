@@ -146,6 +146,7 @@ function ThreeInchVanSaleSec() {
         bank={bank}
         additinalCharge={additinalCharge}
         inWords={inWords}
+        tab="vanSale"
       />
     </div> 
   

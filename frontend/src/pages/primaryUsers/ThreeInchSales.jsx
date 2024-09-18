@@ -56,7 +56,6 @@ function ThreeInchSales() {
     getTransactionDetails();
   }, [id]);
 
-  console.log(data);
 
   //  console.log(org?.configurations[0]?.terms);
 
@@ -137,6 +136,8 @@ function ThreeInchSales() {
           additinalCharge={additinalCharge}
           inWords={inWords}
           userType="primaryUser"
+          tab="sales"
+
         />
 
 
