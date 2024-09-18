@@ -120,7 +120,6 @@ function AddItemSecondary() {
           }
           setRefresh(!refresh);
         } else {
-          console.log(productData);
           setItem(productData);
           if (productData.length > 0) {
             fetchFilters();
@@ -148,33 +147,35 @@ function AddItemSecondary() {
   //////////////////////////////fetchFilters////////////////////////////////
 
   useEffect(() => {
-  const fetchFilters = async () => {
-    try {
-      const res = await api.get(`/api/sUsers/fetchAdditionalDetails/${cpm_id}`, {
-        withCredentials: true,
-      });
-      // }
+    const fetchFilters = async () => {
+      try {
+        const res = await api.get(
+          `/api/sUsers/fetchAdditionalDetails/${cpm_id}`,
+          {
+            withCredentials: true,
+          }
+        );
+        // }
 
-      const { priceLevels, brands, categories, subcategories } = res.data;
+        const { priceLevels, brands, categories, subcategories } = res.data;
 
-      // setBrands(brands);
-      // setCategories(categories);
-      // setSubCategories(subcategories);
+        // setBrands(brands);
+        // setCategories(categories);
+        // setSubCategories(subcategories);
 
-      setPriceLevels(priceLevels);
-      if (priceLevelFromRedux == "") {
-        console.log("haii");
-        const defaultPriceLevel = priceLevels[0];
-        // const defaultPriceLevel = ""
-        setSelectedPriceLevel(defaultPriceLevel);
-        dispatch(setPriceLevel(defaultPriceLevel));
-        // addSelectedRate(defaultPriceLevel);
+        setPriceLevels(priceLevels);
+        if (priceLevelFromRedux == "") {
+          const defaultPriceLevel = priceLevels[0];
+          // const defaultPriceLevel = ""
+          setSelectedPriceLevel(defaultPriceLevel);
+          dispatch(setPriceLevel(defaultPriceLevel));
+          // addSelectedRate(defaultPriceLevel);
+        }
+      } catch (error) {
+        console.log(error);
       }
-    } catch (error) {
-      console.log(error);
-    }
-  };
-  fetchFilters();
+    };
+    fetchFilters();
   }, [orgId, type]);
 
   ///////////////////////////setSelectedPriceLevel fom redux///////////////////////////////////
@@ -183,12 +184,6 @@ function AddItemSecondary() {
     setSelectedPriceLevel(priceLevelFromRedux);
   }, []);
 
-  ///////////////////////////sdo persisting of products///////////////////////////////////
-
-  //////////////////////////////orgId////////////////////////////////
-
-
-  console.log(type);
   /////////////////////////scroll////////////////////////////
 
   useEffect(() => {
@@ -258,7 +253,11 @@ function AddItemSecondary() {
       setItem(updatedItems);
       setRefresh(!refresh);
       dispatch(addItem(itemToUpdate));
-      if (selectedPriceLevel === "" || selectedPriceLevel === undefined || priceLevels.length === 0) {
+      if (
+        selectedPriceLevel === "" ||
+        selectedPriceLevel === undefined ||
+        priceLevels.length === 0
+      ) {
         navigate(`/sUsers/editItem/${_id}`);
       }
     }
@@ -298,14 +297,7 @@ function AddItemSecondary() {
   //////////////////////////////////////////addSelectedRate initially not in redux/////////////////////////////////////////////
 
   const addSelectedRate = (pricelevel) => {
-    console.log(pricelevel);
-    console.log("haii");
-    console.log(item);
-    // if (item?.length > 0) {
-    console.log("haii");
-
     const updatedItems = filteredItems.map((item) => {
-      // console.log(item);
       const priceRate =
         item?.Priceleveles?.find((item) => item.pricelevel === pricelevel)
           ?.pricerate || 0;
@@ -319,22 +311,16 @@ function AddItemSecondary() {
       };
     });
 
-    console.log(updatedItems.map((item) => item.selectedPriceRate));
-
     setItem(updatedItems);
     // }
   };
 
   useEffect(() => {
-    console.log(selectedPriceLevel);
     if (selectedPriceLevel) {
-      console.log(selectedPriceLevel);
-
       addSelectedRate(selectedPriceLevel);
     }
   }, [selectedPriceLevel, refresh]);
 
-  console.log(item.map((item) => item.selectedPriceRate));
 
   ///////////////////////////handleTotalChangeWithPriceLevel and add price rate ///////////////////////////////////
 
@@ -367,7 +353,6 @@ function AddItemSecondary() {
     setItem(updatedItems);
   };
 
-  console.log(item);
 
   ///////////////////////////handleIncrement///////////////////////////////////
 
@@ -481,7 +466,6 @@ function AddItemSecondary() {
     // }
   };
 
-  console.log(item);
 
   ///////////////////////////react window ///////////////////////////////////
 

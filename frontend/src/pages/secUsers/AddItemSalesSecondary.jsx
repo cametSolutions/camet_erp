@@ -280,7 +280,6 @@ function AddItemSalesSecondary() {
 
         
         const { priceLevels, brands, categories, subcategories } = res.data;
-        console.log(priceLevels);
 
         // setBrands(brands);
         // setCategories(categories);
