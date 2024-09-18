@@ -1046,6 +1046,7 @@ function AddItemVanSaleSecondary() {
         {el?.isExpanded && (
           <div className=" bg-white">
             <ProductDetails
+            tab="Sales"
               heights={heights}
               handleIncrement={handleIncrement}
               handleDecrement={handleDecrement}

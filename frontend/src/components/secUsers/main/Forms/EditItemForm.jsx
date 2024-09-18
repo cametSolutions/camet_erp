@@ -361,7 +361,7 @@ function EditItemForm({ submitHandler,ItemsFromRedux ,from}) {
                       <label className="leading-loose">Tax Rate</label>
                       <input
                         disabled
-                        value={` GST @ ${igst} %`}
+                        value={` Tax @ ${igst} %`}
                         type="text"
                         className="px-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm border-gray-300 rounded-md focus:outline-none text-gray-600"
                         placeholder="Event title"

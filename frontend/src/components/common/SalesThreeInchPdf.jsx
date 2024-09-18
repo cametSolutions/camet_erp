@@ -195,7 +195,7 @@ function SalesThreeInchPdf({
               {
                 org?.gstNum && (
                   <div className="text-black font-semibold  text-[12px]">
-                   Gst No: {org?.gstNum}
+                   Tax No: {org?.gstNum}
                   </div>
                 )
               }
@@ -221,7 +221,7 @@ function SalesThreeInchPdf({
           <p className="text-black text-[12px] font-semibold">
             {[address?.billToAddress]
               .filter((item) => item != null && item !== "" && item !== "null")
-              .join(", ") || "Address not available"}
+              .join(", ") || ""}
           </p>
         </div>
 
