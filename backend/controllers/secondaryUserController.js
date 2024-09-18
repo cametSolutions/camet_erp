@@ -597,7 +597,6 @@ export const PartyList = async (req, res) => {
     const vanSaleConfig = configuration?.vanSale || false;
 
     let partyListWithOutstanding = partyList;
-    if (outstanding === "true") {
       const partyOutstandingData = await TallyData.aggregate([
         {
           $match: {
@@ -632,10 +631,6 @@ export const PartyList = async (req, res) => {
           latestBillDate: outstandingData?.latestBillDate || null,
         };
       });
-    } else {
-      // If not outstanding, convert to object without adding outstanding fields
-      partyListWithOutstanding = partyList.map((party) => party.toObject());
-    }
 
     res.status(200).json({
       message: "Parties fetched",
