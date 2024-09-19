@@ -232,6 +232,12 @@ function Sidebar({ TAB, showBar }) {
       setShowSidebar(!showSidebar);
     }
   }, [showBar]);
+  
+  useEffect(() => {
+    if (window.innerWidth < 768) {
+      setShowSidebar(false);
+    }
+  }, []);
 
   useEffect(() => {
     if (window.innerWidth < 768) {

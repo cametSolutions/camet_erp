@@ -249,11 +249,11 @@ export const updateSalesNumber = async (
       await secondaryUser.save();
     } else {
       if (configuration && configuration.salesConfiguration) {
-        const allFieldsFilled = Object.entries(configuration.salesConfiguration)
-          .filter(([key]) => key !== "startingNumber")
-          .every(([_, value]) => value !== "");
+        // const allFieldsFilled = Object.entries(configuration.salesConfiguration)
+        //   .filter(([key]) => key !== "startingNumber")
+        //   .every(([_, value]) => value !== "");
 
-        if (allFieldsFilled) {
+        // if (allFieldsFilled) {
           salesNumber = (configuration.salesNumber || 0) + 1;
 
           console.log("salesNumber",salesNumber);
@@ -271,13 +271,15 @@ export const updateSalesNumber = async (
           );
           secondaryUser.configurations = updatedConfiguration;
           await secondaryUser.save();
-        } else {
-          await OrganizationModel.findByIdAndUpdate(
-            orgId,
-            { $inc: { salesNumber: 1 } },
-            { new: true }
-          );
-        }
+        // } 
+        
+        // else {
+        //   await OrganizationModel.findByIdAndUpdate(
+        //     orgId,
+        //     { $inc: { salesNumber: 1 } },
+        //     { new: true }
+        //   );
+        // }
       } else {
         await OrganizationModel.findByIdAndUpdate(
           orgId,

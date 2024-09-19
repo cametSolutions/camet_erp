@@ -1032,15 +1032,20 @@ export const createInvoice = async (req, res) => {
       (config) => config.organization.toString() === orgId
     );
 
+    // if (configuration) {
+    //   if (
+    //     configuration.salesOrderConfiguration &&
+    //     Object.entries(configuration.salesOrderConfiguration)
+    //       .filter(([key]) => key !== "startingNumber")
+    //       .every(([_, value]) => value !== "")
+    //   ) {
+    //     orderConfig = true;
+    //   }
+    // }
+
     if (configuration) {
-      if (
-        configuration.salesOrderConfiguration &&
-        Object.entries(configuration.salesOrderConfiguration)
-          .filter(([key]) => key !== "startingNumber")
-          .every(([_, value]) => value !== "")
-      ) {
+    
         orderConfig = true;
-      }
     }
 
     if (orderConfig === true) {

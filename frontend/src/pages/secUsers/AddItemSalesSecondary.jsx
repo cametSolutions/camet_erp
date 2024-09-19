@@ -340,7 +340,6 @@ function AddItemSalesSecondary() {
             (priceLevelItem) => priceLevelItem.pricelevel === pricelevel
           )?.pricerate || 0;
 
-          console.log(priceRate);
           
 
         const reduxItem = itemsFromRedux.find((p) => p._id === item._id);
@@ -736,8 +735,7 @@ function AddItemSalesSecondary() {
     }
 
     // Log the updated items for debugging
-    console.log(updatedItems.length);
-    console.log(updatedItems);
+
 
     // Update state with the new items array
     setItem(updatedItems);
