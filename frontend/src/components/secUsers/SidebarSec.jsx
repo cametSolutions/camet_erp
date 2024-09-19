@@ -110,11 +110,11 @@ function SidebarSec({ TAB, showBar }) {
     }
   }, [showBar]);
 
-  // useEffect(() => {
-  //   if (window.innerWidth < 768) {
-  //     setShowSidebar(false);
-  //   }
-  // }, []);
+  useEffect(() => {
+    if (window.innerWidth < 768) {
+      setShowSidebar(false);
+    }
+  }, []);
 
   const handleSidebarItemClick = (newTab) => {
     if (window.innerWidth < 768) {

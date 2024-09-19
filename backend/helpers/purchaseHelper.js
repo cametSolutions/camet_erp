@@ -1,3 +1,4 @@
+import OragnizationModel from "../models/OragnizationModel.js";
 import productModel from "../models/productModel.js";
 import purchaseModel from "../models/purchaseModel.js";
 import { truncateToNDecimals } from "./helper.js";
@@ -274,17 +275,20 @@ export const updatePurchaseNumber = async (orgId, secondaryUser) => {
       (config) => config.organization.toString() === orgId
     );
 
+    // if (configuration) {
+    //   if (
+    //     configuration.purchaseConfiguration &&
+    //     Object.entries(configuration.purchaseConfiguration)
+    //       .filter(([key]) => key !== "startingNumber")
+    //       .every(([_, value]) => value !== "")
+    //   ) {
+    //     purchaseConfig = true;
+    //   }
+    // }
     if (configuration) {
-      if (
-        configuration.purchaseConfiguration &&
-        Object.entries(configuration.purchaseConfiguration)
-          .filter(([key]) => key !== "startingNumber")
-          .every(([_, value]) => value !== "")
-      ) {
-        purchaseConfig = true;
-      }
-    }
+      purchaseConfig = true;
 
+    }
     if (purchaseConfig === true) {
       const updatedConfiguration = secondaryUser.configurations.map(
         (config) => {
