@@ -17,14 +17,7 @@ import {
 } from "../../../slices/salesSecondary";
 import { Decimal } from "decimal.js";
 import AdditemOfSale from "../../components/secUsers/main/AdditemOfSale";
-// import { HashLoader } from "react-spinners";
-// import { VariableSizeList as List } from "react-window";
-// import SearchBar from "../../components/common/SearchBar";
-// import ProductDetails from "../../components/common/ProductDetails";
-// import { IoIosArrowDown } from "react-icons/io";
-// import { IoIosArrowUp } from "react-icons/io";
-// import { IoIosArrowRoundBack } from "react-icons/io";
-// import { MdOutlineQrCodeScanner } from "react-icons/md";
+
 
 function AddItemSalesSecondary() {
   const [item, setItem] = useState([]);
@@ -475,7 +468,6 @@ function AddItemSalesSecondary() {
 
   ///////////////////////////handleAddClick///////////////////////////////////
 
-console.log();
 
 
 
