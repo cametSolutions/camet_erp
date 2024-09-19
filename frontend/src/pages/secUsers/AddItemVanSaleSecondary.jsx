@@ -801,7 +801,7 @@ function AddItemVanSaleSecondary() {
   }, [heights]);
 
   const getItemSize = (index) => {
-    const product = item[index];
+    const product = filteredItems[index];
     const isExpanded = product?.isExpanded || false;
     const baseHeight = isExpanded ? heights[index] || 250 : 220; // Base height for unexpanded and expanded items
     const extraHeight = isExpanded ? 230 : 0; // Extra height for expanded items

@@ -18,7 +18,6 @@ import {
 import { Decimal } from "decimal.js";
 import AdditemOfSale from "../../components/secUsers/main/AdditemOfSale";
 
-
 function AddItemSalesSecondary() {
   const [item, setItem] = useState([]);
   const [selectedPriceLevel, setSelectedPriceLevel] = useState("");
@@ -37,6 +36,8 @@ function AddItemSalesSecondary() {
 
   // const [godownname, setGodownname] = useState("");
   const [heights, setHeights] = useState({});
+
+  const [expandedItems, setExpandedItems] = useState({});
 
   ///////////////////////////cpm_id///////////////////////////////////
 
@@ -74,10 +75,13 @@ function AddItemSalesSecondary() {
 
   // ///////////////////////////Godown name///////////////////////////////////
 
-  const searchData = (data) => {
+  const searchData = useCallback((data) => {
     setSearch(data);
-  };
 
+    if (listRef.current) {
+      listRef.current.resetAfterIndex(0);
+    }
+  }, []);
   ///////////////////////////fetchProducts///////////////////////////////////
 
   useEffect(() => {
@@ -207,11 +211,6 @@ function AddItemSalesSecondary() {
     setSelectedPriceLevel(priceLevelFromRedux);
   }, []);
 
-
-
-  
-  
-
   /////////////////////////scroll////////////////////////////
 
   useEffect(() => {
@@ -252,26 +251,19 @@ function AddItemSalesSecondary() {
       }
 
       if (type === "self") {
-
         const { brands, categories, subcategories, priceLevels } =
           res.data.data;
         // setBrands(brands);
         // setCategories(categories);
         // setSubCategories(subcategories);
         setPriceLevels(priceLevels);
-      
-
 
         if (priceLevelFromRedux == "") {
-
           const defaultPriceLevel = priceLevels[0];
           setSelectedPriceLevel(defaultPriceLevel);
           dispatch(setPriceLevel(defaultPriceLevel));
         }
       } else {
-        
-
-        
         const { priceLevels, brands, categories, subcategories } = res.data;
 
         // setBrands(brands);
@@ -314,8 +306,6 @@ function AddItemSalesSecondary() {
     });
   };
 
-  
-
   ///////////////////////////filter items call ///////////////////////////////////
 
   const filteredItems = useMemo(() => {
@@ -328,8 +318,6 @@ function AddItemSalesSecondary() {
     );
   }, [item, selectedBrand, selectedCategory, selectedSubCategory, search]);
 
-
-
   //////////////////////////////////////////addSelectedRate initially not in redux/////////////////////////////////////////////
 
   const addSelectedRate = (pricelevel) => {
@@ -339,8 +327,6 @@ function AddItemSalesSecondary() {
           item?.Priceleveles?.find(
             (priceLevelItem) => priceLevelItem.pricelevel === pricelevel
           )?.pricerate || 0;
-
-          
 
         const reduxItem = itemsFromRedux.find((p) => p._id === item._id);
         // const reduxRate = reduxItem?.selectedPriceRate || null;
@@ -368,10 +354,9 @@ function AddItemSalesSecondary() {
     }
   };
 
-
   useEffect(() => {
     addSelectedRate(selectedPriceLevel);
-  }, [selectedPriceLevel, refresh,]);
+  }, [selectedPriceLevel, refresh]);
 
   ///////////////////////////calculateTotal///////////////////////////////////
 
@@ -466,9 +451,6 @@ function AddItemSalesSecondary() {
   };
 
   ///////////////////////////handleAddClick///////////////////////////////////
-
-
-
 
   const handleAddClick = (_id, idx) => {
     const updatedItems = item.map((item) => {
@@ -718,10 +700,6 @@ function AddItemSalesSecondary() {
     navigate(-1);
   };
 
-
-
-
-
   /////////////////////expansion panel////////////////////
 
   const handleExpansion = (id) => {
@@ -736,14 +714,12 @@ function AddItemSalesSecondary() {
 
     // Log the updated items for debugging
 
-
     // Update state with the new items array
     setItem(updatedItems);
 
     // Optionally update refresh state or other operations
     // setRefresh((prevRefresh) => !prevRefresh);
   };
-
 
   useEffect(() => {
     if (listRef.current) {
@@ -752,8 +728,10 @@ function AddItemSalesSecondary() {
   }, [heights]);
 
   const getItemSize = (index) => {
-    const product = item[index];
+    const product = filteredItems[index];
+
     const isExpanded = product?.isExpanded || false;
+
     const baseHeight = isExpanded ? heights[index] || 250 : 220; // Base height for unexpanded and expanded items
     const extraHeight = isExpanded ? 230 : 0; // Extra height for expanded items
 
@@ -773,12 +751,11 @@ function AddItemSalesSecondary() {
     });
   }, []);
 
-  
-
+  console.log(heights);
 
   return (
     <AdditemOfSale
-    tab={"Sales"}
+      tab={"Sales"}
       filteredItems={filteredItems}
       handleDecrement={handleDecrement}
       listRef={listRef}
