@@ -24,6 +24,35 @@ import { FixedSizeList as List } from "react-window";
 import { Decimal } from "decimal.js";
 import SearchBar from "../../components/common/SearchBar";
 
+// Helper functions
+const calculateTotal = (item, selectedPriceLevel, situation = "normal") => {
+  let priceRate = situation === "priceLevelChange"
+    ? item.Priceleveles.find(level => level.pricelevel === selectedPriceLevel)?.pricerate || 0
+    : item.selectedPriceRate || 0;
+
+  let subtotal = priceRate * item?.count;
+  let discountedSubtotal = subtotal;
+
+  if (item.discount) {
+    discountedSubtotal -= item.discount;
+  } else if (item.discountPercentage) {
+    discountedSubtotal -= (subtotal * item.discountPercentage) / 100;
+  }
+
+  const gstAmount = (discountedSubtotal * (item.newGst || item.igst || 0)) / 100;
+  return discountedSubtotal + gstAmount;
+};
+
+const filterItems = (items, brand, category, subCategory, searchTerm) => {
+  return items.filter(item => 
+    (!brand || item.brand === brand) &&
+    (!category || item.category === category) &&
+    (!subCategory || item.sub_category === subCategory) &&
+    (!searchTerm || item.product_name.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
+};
+
+
 function AddItemSecondary() {
   const [item, setItem] = useState([]);
   const [selectedPriceLevel, setSelectedPriceLevel] = useState("");
@@ -115,12 +144,15 @@ function AddItemSecondary() {
           console.log(updatedItems);
 
           setItem(updatedItems);
+          setRefresh(!refresh);
           if (updatedItems.length > 0) {
             fetchFilters();
           }
           setRefresh(!refresh);
         } else {
           setItem(productData);
+          setRefresh(!refresh);
+
           if (productData.length > 0) {
             fetchFilters();
           }
@@ -168,7 +200,8 @@ function AddItemSecondary() {
           const defaultPriceLevel = priceLevels[0];
           // const defaultPriceLevel = ""
           setSelectedPriceLevel(defaultPriceLevel);
-          dispatch(setPriceLevel(defaultPriceLevel));
+          dispatch(defaultPriceLevel);
+
           // addSelectedRate(defaultPriceLevel);
         }
       } catch (error) {
@@ -199,27 +232,27 @@ function AddItemSecondary() {
 
   ///////////////////////////filter items///////////////////////////////////
 
-  const filterItems = (items, brand, category, subCategory, searchTerm) => {
-    return items.filter((item) => {
-      // Check if the item matches the brand filter
-      const brandMatch = !brand || item.brand === brand;
+  // const filterItems = (items, brand, category, subCategory, searchTerm) => {
+  //   return items.filter((item) => {
+  //     // Check if the item matches the brand filter
+  //     const brandMatch = !brand || item.brand === brand;
 
-      // Check if the item matches the category filter
-      const categoryMatch = !category || item.category === category;
+  //     // Check if the item matches the category filter
+  //     const categoryMatch = !category || item.category === category;
 
-      // Check if the item matches the subcategory filter
-      const subCategoryMatch =
-        !subCategory || item.sub_category === subCategory;
+  //     // Check if the item matches the subcategory filter
+  //     const subCategoryMatch =
+  //       !subCategory || item.sub_category === subCategory;
 
-      // Check if the item matches the search term
-      const searchMatch =
-        !searchTerm ||
-        item.product_name.toLowerCase().includes(searchTerm.toLowerCase());
+  //     // Check if the item matches the search term
+  //     const searchMatch =
+  //       !searchTerm ||
+  //       item.product_name.toLowerCase().includes(searchTerm.toLowerCase());
 
-      // Return true if all conditions are met
-      return brandMatch && categoryMatch && subCategoryMatch && searchMatch;
-    });
-  };
+  //     // Return true if all conditions are met
+  //     return brandMatch && categoryMatch && subCategoryMatch && searchMatch;
+  //   });
+  // };
 
   ///////////////////////////filter items call ///////////////////////////////////
 
@@ -232,6 +265,38 @@ function AddItemSecondary() {
       search
     );
   }, [item, selectedBrand, selectedCategory, selectedSubCategory, search]);
+
+  //////////////////////////////////////////addSelectedRate initially not in redux/////////////////////////////////////////////
+
+  const addSelectedRate = (pricelevel) => {
+    if (filteredItems.length > 0) {
+      const updatedItems = filteredItems.map((item) => {
+        const priceRate =
+          item?.Priceleveles?.find((item) => item.pricelevel === pricelevel)
+            ?.pricerate || 0;
+
+        // console.log(priceRate);
+
+        const reduxItem = itemsFromRedux.find((p) => p._id === item._id);
+        const reduxRate = reduxItem?.selectedPriceRate || null;
+
+        return {
+          ...item,
+          selectedPriceRate: reduxRate ?? priceRate,
+        };
+      });
+
+
+      setItem(updatedItems);
+    }
+  };
+
+
+  useEffect(() => {
+    if (selectedPriceLevel && (item.length > 0 || filteredItems.length > 0)) {
+      addSelectedRate(selectedPriceLevel);
+    }
+  }, [selectedPriceLevel, refresh]);
 
   ///////////////////////////handleAddClick///////////////////////////////////
 
@@ -265,62 +330,34 @@ function AddItemSecondary() {
 
   ///////////////////////////calculateTotal///////////////////////////////////
 
-  const calculateTotal = (item, selectedPriceLevel, situation = "normal") => {
-    //add default value for selectedPriceLevel
-    let priceRate;
-    if (situation === "priceLevelChange") {
-      priceRate =
-        item.Priceleveles.find(
-          (level) => level.pricelevel === selectedPriceLevel
-        )?.pricerate || 0;
-    } else {
-      priceRate = item.selectedPriceRate || 0;
-    }
+  // const calculateTotal = (item, selectedPriceLevel, situation = "normal") => {
+  //   //add default value for selectedPriceLevel
+  //   let priceRate;
+  //   if (situation === "priceLevelChange") {
+  //     priceRate =
+  //       item.Priceleveles.find(
+  //         (level) => level.pricelevel === selectedPriceLevel
+  //       )?.pricerate || 0;
+  //   } else {
+  //     priceRate = item.selectedPriceRate || 0;
+  //   }
 
-    let subtotal = priceRate * item?.count;
-    let discountedSubtotal = subtotal;
+  //   let subtotal = priceRate * item?.count;
+  //   let discountedSubtotal = subtotal;
 
-    if (item.discount !== 0 && item.discount !== undefined) {
-      discountedSubtotal -= item.discount;
-    } else if (
-      item.discountPercentage !== 0 &&
-      item.discountPercentage !== undefined
-    ) {
-      discountedSubtotal -= (subtotal * item.discountPercentage) / 100;
-    }
+  //   if (item.discount !== 0 && item.discount !== undefined) {
+  //     discountedSubtotal -= item.discount;
+  //   } else if (
+  //     item.discountPercentage !== 0 &&
+  //     item.discountPercentage !== undefined
+  //   ) {
+  //     discountedSubtotal -= (subtotal * item.discountPercentage) / 100;
+  //   }
 
-    const gstAmount =
-      (discountedSubtotal * (item.newGst || item.igst || 0)) / 100;
-    return discountedSubtotal + gstAmount;
-  };
-
-  //////////////////////////////////////////addSelectedRate initially not in redux/////////////////////////////////////////////
-
-  const addSelectedRate = (pricelevel) => {
-    const updatedItems = filteredItems.map((item) => {
-      const priceRate =
-        item?.Priceleveles?.find((item) => item.pricelevel === pricelevel)
-          ?.pricerate || 0;
-
-      const reduxItem = itemsFromRedux.find((p) => p._id === item._id);
-      const reduxRate = reduxItem?.selectedPriceRate || null;
-
-      return {
-        ...item,
-        selectedPriceRate: reduxRate ?? priceRate,
-      };
-    });
-
-    setItem(updatedItems);
-    // }
-  };
-
-  useEffect(() => {
-    if (selectedPriceLevel) {
-      addSelectedRate(selectedPriceLevel);
-    }
-  }, [selectedPriceLevel, refresh]);
-
+  //   const gstAmount =
+  //     (discountedSubtotal * (item.newGst || item.igst || 0)) / 100;
+  //   return discountedSubtotal + gstAmount;
+  // };
 
   ///////////////////////////handleTotalChangeWithPriceLevel and add price rate ///////////////////////////////////
 
@@ -352,7 +389,6 @@ function AddItemSecondary() {
 
     setItem(updatedItems);
   };
-
 
   ///////////////////////////handleIncrement///////////////////////////////////
 
@@ -424,7 +460,7 @@ function AddItemSecondary() {
     setSelectedPriceLevel(selectedValue);
     dispatch(setPriceLevel(selectedValue));
     handleTotalChangeWithPriceLevel(selectedValue);
-    // addSelectedRate(selectedValue);
+    addSelectedRate(selectedValue);
   };
 
   /////////////////////////// calculateHeight ///////////////////////////////////
@@ -459,13 +495,7 @@ function AddItemSecondary() {
 
   const backHandler = () => {
     navigate(-1);
-    // if (location?.state?.from === "editInvoice") {
-    //   navigate(`/sUsers/editInvoice/${location.state.id}`);
-    // } else {
-    //   navigate("/sUsers/invoice");
-    // }
   };
-
 
   ///////////////////////////react window ///////////////////////////////////
 
