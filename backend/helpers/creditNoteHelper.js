@@ -231,14 +231,16 @@ export const updateCreditNoteNumber = async (orgId, secondaryUser) => {
     );
 
     if (configuration) {
-      if (
-        configuration.creditNoteConfiguration &&
-        Object.entries(configuration.creditNoteConfiguration)
-          .filter(([key]) => key !== "startingNumber")
-          .every(([_, value]) => value !== "")
-      ) {
-        creditNoteConfig = true;
-      }
+      // if (
+      //   configuration.creditNoteConfiguration &&
+      //   Object.entries(configuration.creditNoteConfiguration)
+      //     .filter(([key]) => key !== "startingNumber")
+      //     .every(([_, value]) => value !== "")
+      // ) {
+      //   creditNoteConfig = true;
+      // }
+      creditNoteConfig = true;
+
     }
 
     if (creditNoteConfig === true) {
