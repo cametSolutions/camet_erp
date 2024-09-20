@@ -12,7 +12,7 @@ import debitNoteModel from "../models/debitNoteModel.js";
 import secondaryUserModel from "../models/secondaryUserModel.js";
 
 // @desc create credit note
-// route GET/api/sUsers/createCreditNote
+// route GET/api/sUsers/createDebitNote
 export const createDebitNote = async (req, res) => {
   try {
     const {
@@ -39,7 +39,7 @@ export const createDebitNote = async (req, res) => {
 
     if (NumberExistence) {
       return res.status(400).json({
-        message: "Credit Note with the same number already exists",
+        message: "Debit Note with the same number already exists",
       });
     }
 
@@ -77,44 +77,44 @@ export const createDebitNote = async (req, res) => {
     res.status(201).json({
       success: true,
       data: result,
-      message: "Credit Note created successfully",
+      message: "Debit Note created successfully",
     });
   } catch (error) {
     console.error(error);
     res.status(500).json({
       success: false,
-      message: "An error occurred while creating the Credit",
+      message: "An error occurred while creating the Debit",
       error: error.message,
     });
   }
 };
 
 // @desc cancel credit note
-// route GET/api/sUsers/cancelCreditNote
+// route GET/api/sUsers/cancelDebitNote
 
-export const cancelCreditNote = async (req, res) => {
+export const cancelDebitNote = async (req, res) => {
   try {
   const creditNoteId = req.params.id; // Assuming saleId is passed in the URL parameters
-  const existingCreditNote = await debitNoteModel.findById(creditNoteId);
-  if (!existingCreditNote) {
+  const existingDebitNote = await debitNoteModel.findById(creditNoteId);
+  if (!existingDebitNote) {
     return res
       .status(404)
       .json({ success: false, message: "Purchase not found" });
   }
 
   // Revert existing stock updates
-  await revertDebitNoteStockUpdates(existingCreditNote.items);
+  await revertDebitNoteStockUpdates(existingDebitNote.items);
 
   // flagging is cancelled true
 
-  existingCreditNote.isCancelled = true;
+  existingDebitNote.isCancelled = true;
 
-  const cancelledPurchase=await existingCreditNote.save();
+  const cancelledDebitNote=await existingDebitNote.save();
 
   res.status(200).json({
     success: true,
     message: "purchase canceled successfully",
-    data:cancelledPurchase
+    data:cancelledDebitNote
   });
 } catch (error) {
   console.error(error);
@@ -128,10 +128,10 @@ export const cancelCreditNote = async (req, res) => {
 
 
 // @desc edit credit note
-// route GET/api/sUsers/editCreditNote
+// route GET/api/sUsers/editDebitNote
 
 
-export const editCreditNote = async (req, res) => {
+export const editDebitNote = async (req, res) => {
   try {
     const creditNoteId = req.params.id; // Assuming saleId is passed in the URL parameters
     const {
@@ -147,15 +147,15 @@ export const editCreditNote = async (req, res) => {
       selectedDate,
     } = req.body;
     // Fetch existing Purchase
-    const existingCreditNote = await debitNoteModel.findById(creditNoteId);
-    if (!existingCreditNote) {
+    const existingDebitNote = await debitNoteModel.findById(creditNoteId);
+    if (!existingDebitNote) {
       return res
         .status(404)
         .json({ success: false, message: "Purchase not found" });
     }
 
     // Revert existing stock updates
-    await revertDebitNoteStockUpdates(existingCreditNote.items);
+    await revertDebitNoteStockUpdates(existingDebitNote.items);
     // Process new sale items and update stock
     const updatedItems = await processDebitNoteItems(
       items,
@@ -168,7 +168,7 @@ export const editCreditNote = async (req, res) => {
     const updateData = {
       selectedGodownId: "",
       selectedGodownName: "",
-      serialNumber: existingCreditNote.serialNumber, // Keep existing serial number
+      serialNumber: existingDebitNote.serialNumber, // Keep existing serial number
       cmp_id: orgId,
       partyAccount: party?.partyName,
       party,

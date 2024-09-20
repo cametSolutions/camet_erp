@@ -378,7 +378,7 @@ export const revertDebitNoteStockUpdates = async (items) => {
       const itemCount = parseFloat(item.count);
       const productBalanceStock = parseFloat(product.balance_stock);
       const newBalanceStock = truncateToNDecimals(
-        productBalanceStock - itemCount, // Revert stock by adding back
+        productBalanceStock + itemCount, // Revert stock by adding back
         3
       );
 

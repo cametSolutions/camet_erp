@@ -13,13 +13,14 @@ const DashboardTransaction = ({ filteredData, userType, from }) => {
 
   const typeColors = useMemo(
     () => ({
-      Receipt: "bg-red-500",
+      "Receipt": "bg-red-500",
       "Tax Invoice": "bg-blue-500",
-      Purchase: "bg-green-500",
+      "Purchase": "bg-green-500",
       "Van Sale": "bg-teal-500",
       "Stock Transfer": "bg-purple-500",
       "Credit Note": "bg-pink-500",
-      default: "bg-gray-800",
+      "Debit Note": "bg-yellow-500",
+      "default": "bg-[#227c9d]",
     }),
     []
   );
@@ -34,6 +35,7 @@ const DashboardTransaction = ({ filteredData, userType, from }) => {
         Purchase: `${baseRoute}/purchaseDetails/${id}`,
         "Stock Transfer": `${baseRoute}/stockTransferDetails/${id}`,
         "Credit Note": `${baseRoute}/creditDetails/${id}`,
+        "Debit Note": `${baseRoute}/debitDetails/${id}`,
         default: `${baseRoute}/InvoiceDetails/${id}`,
       };
       return routes[type] || routes.default;

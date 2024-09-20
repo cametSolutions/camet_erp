@@ -24,7 +24,7 @@ import { createCreditNote,cancelCreditNote ,editCreditNote} from '../controllers
 import { authSecondary } from '../middlewares/authSecUsers.js';
 import { secondaryIsBlocked } from '../middlewares/isBlocked.js';
 import { companyAuthentication } from '../middlewares/authCompany.js';
-import { createDebitNote } from '../controllers/debitNoteController.js';
+import { cancelDebitNote, createDebitNote } from '../controllers/debitNoteController.js';
 
 
 router.post('/login',login)
@@ -103,7 +103,7 @@ router.post('/editCreditNote/:id',authSecondary,secondaryIsBlocked,editCreditNot
 ///debit not routes
 router.post('/createDebitNote',authSecondary,secondaryIsBlocked,createDebitNote)
 router.get('/getDebitNoteDetails/:id',authSecondary,secondaryIsBlocked,getDebitNoteDetails)
-// router.post('/cancelCreditNote/:id',authSecondary,secondaryIsBlocked,cancelCreditNote)
+router.post('/cancelDebitNote/:id',authSecondary,secondaryIsBlocked,cancelDebitNote)
 // router.post('/editCreditNote/:id',authSecondary,secondaryIsBlocked,editCreditNote)
 
 

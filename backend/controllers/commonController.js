@@ -275,6 +275,8 @@ export const transactions = async (req, res) => {
       aggregateTransactions(purchaseModel, matchCriteria, "Purchase"),
       aggregateTransactions(stockTransferModel, matchCriteria, "Stock Transfer"),
       aggregateTransactions(creditNoteModel, matchCriteria, "Credit Note"),
+      aggregateTransactions(debitNoteModel, matchCriteria, "Debit Note"),
+
     ];
 
     const results = await Promise.all(transactionPromises);
