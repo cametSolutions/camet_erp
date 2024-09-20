@@ -30,6 +30,24 @@ function SalesPdf({
       title = "Stock Transfer";
       break;
 
+    case "salesOrder":
+      title = "Sales Order";
+      break;
+
+    case "vanSale":
+      title = "Tax Invoice";
+      break;
+
+    case "creditNote":
+      title = "Credit Note";
+      break;
+
+    case "debitNote":
+      title = "Debit Note";
+      break;
+
+      
+
     default:
       title = "Tax Invoice";
       break;

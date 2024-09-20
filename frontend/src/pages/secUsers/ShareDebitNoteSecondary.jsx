@@ -9,7 +9,7 @@ import numberToWords from "number-to-words";
 import { Link } from "react-router-dom";
 import SalesPdf from "../../components/common/SalesPdf";
 
-function ShareCreditNoteSecondary() {
+function ShareDebitNoteSecondary() {
   const [data, setData] = useState([]);
   const [org, setOrg] = useState([]);
   const [subTotal, setSubTotal] = useState("");
@@ -25,7 +25,7 @@ function ShareCreditNoteSecondary() {
     const getTransactionDetails = async () => {
       try {
         // Fetch invoice details
-        const res = await api.get(`/api/sUsers/getCreditNoteDetails/${id}`, {
+        const res = await api.get(`/api/sUsers/getDebitNoteDetails/${id}`, {
           withCredentials: true,
         });
 
@@ -160,6 +160,9 @@ function ShareCreditNoteSecondary() {
     onAfterPrint: () => console.log("after printing..."),
     removeAfterPrint: true,
   });
+
+  console.log(data);
+  
   
 
 
@@ -194,11 +197,11 @@ function ShareCreditNoteSecondary() {
           additinalCharge={additinalCharge}
           inWords={inWords}
           userType="secondaryUser"
-          tab="creditNote"
+          tab="debitNote"
         />
       </div>
     </div>
   );
 }
 
-export default ShareCreditNoteSecondary;
+export default ShareDebitNoteSecondary;

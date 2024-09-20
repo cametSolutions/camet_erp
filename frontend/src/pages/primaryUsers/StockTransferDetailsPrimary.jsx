@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import api from "../../api/api";
 import { toast } from "react-toastify";
-import { FaEdit } from "react-icons/fa";
 import { useLocation, useNavigate } from "react-router-dom";
 import SalesProductDetails from "../../components/common/SalesProductDetails";
 import VoucherDetailsHeader from "../../components/common/VoucherDetailsHeader";
@@ -91,13 +90,7 @@ function StockTransferDetailsPrimary() {
 
       <div className=" block md:hidden z-0 ">
         <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 flex justify-center p-4 gap-12 text-lg text-violet-500  ">
-          <div
-            onClick={() => navigate(`/pUsers/editStockTransfer/${data._id}`)}
-            className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer"
-          >
-            <FaEdit className="text-blue-500" />
-            <p className="text-black font-bold text-sm">Edit</p>
-          </div>
+       
 
           <div className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer">
             <MdTextsms className="text-green-500" />

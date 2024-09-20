@@ -10,8 +10,7 @@ function SwallFireForPdf({ data, tab = "sales", user }) {
     Swal.fire({
       title: "Which format would you like?",
       html: "<p>Choose between:</p>",
-      showDenyButton: tab=="CreditNote" ? false : true,
-      showCancelButton: true,
+      showDenyButton: tab === "CreditNote" || tab === "DebitNote" ? false : true,      showCancelButton: true,
       confirmButtonText: "Tax Invoice",
       denyButtonText: `POS format`,
       customClass: {
@@ -30,6 +29,9 @@ function SwallFireForPdf({ data, tab = "sales", user }) {
         }
         else if (tab === "CreditNote") {
           navigate(`/${selectedUser}/shareCreditNote/${data._id}`);
+        }
+        else if (tab === "DebitNote") {
+          navigate(`/${selectedUser}/shareDebitNote/${data._id}`);
         }
          else {
           navigate(`/${selectedUser}/shareSales/${data._id}`);

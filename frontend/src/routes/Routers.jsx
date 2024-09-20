@@ -160,6 +160,9 @@ import BillToDebitNote from '../pages/secUsers/BillToDebitNote'
 import AddItemDebitNote from '../pages/secUsers/AddItemDebitNote'
 import EditItemDebitNote from '../pages/secUsers/EditItemDebitNote'
 import DebitNoteDetailsSecondary from '../pages/secUsers/DebitNoteDetailsSecondary'
+import EditDebitNote from '../pages/secUsers/EditDebitNote'
+import ShareDebitNoteSecondary from '../pages/secUsers/ShareDebitNoteSecondary'
+import DebitNoteDetailsPrimary from '../pages/primaryUsers/DebitNoteDetailsPrimary'
 
 const Routers = () => {
   return (
@@ -224,6 +227,9 @@ const Routers = () => {
 
          {/* creditNote */}
         <Route path='/pUsers/creditDetails/:id' element={<ProtectedPriRoute><CreditNoteDetailsPrimary/></ProtectedPriRoute>}></Route>
+        <Route path='/pUsers/shareCreditNote/:id' element={<ProtectedPriRoute><ShareCreditNotePrimary/></ProtectedPriRoute>}></Route> 
+         {/* debitNote */}
+        <Route path='/pUsers/debitDetails/:id' element={<ProtectedPriRoute><DebitNoteDetailsPrimary/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/shareCreditNote/:id' element={<ProtectedPriRoute><ShareCreditNotePrimary/></ProtectedPriRoute>}></Route> 
 
 
@@ -333,8 +339,8 @@ const Routers = () => {
         <Route path='/sUsers/addItemDebitNote' element={<ProtectedSecRoute><AddItemDebitNote/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/editItemDebitNote/:id/:godownName/:index' element={<ProtectedSecRoute><EditItemDebitNote/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/debitDetails/:id' element={<ProtectedSecRoute><DebitNoteDetailsSecondary/></ProtectedSecRoute>}></Route>
-        <Route path='/sUsers/editCreditNote/:id' element={<ProtectedSecRoute><EditCreditNote/></ProtectedSecRoute>}></Route>
-        <Route path='/sUsers/shareCreditNote/:id' element={<ProtectedSecRoute><ShareCreditNoteSecondary/></ProtectedSecRoute>}></Route> 
+        <Route path='/sUsers/editDebitNote/:id' element={<ProtectedSecRoute><EditDebitNote/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/shareDebitNote/:id' element={<ProtectedSecRoute><ShareDebitNoteSecondary/></ProtectedSecRoute>}></Route> 
 
 
 

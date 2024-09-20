@@ -1,12 +1,9 @@
 /* eslint-disable react/prop-types */
 
 function PdfHeader({ data, org, address, despatchDetails, tab = "sales" }) {
-
   // console.log(tab);
-  
 
   let pdfNumber;
-    
 
   switch (tab) {
     case "sales ":
@@ -25,6 +22,13 @@ function PdfHeader({ data, org, address, despatchDetails, tab = "sales" }) {
       pdfNumber = data?.purchaseNumber;
       break;
 
+    case "creditNote":
+      pdfNumber = data?.creditNoteNumber;
+      break;
+
+    case "debitNote":
+      pdfNumber = data?.debitNoteNumber;
+      break;
 
     case "stockTransfer":
       pdfNumber = data?.stockTransferNumber;
@@ -37,7 +41,6 @@ function PdfHeader({ data, org, address, despatchDetails, tab = "sales" }) {
   function capitalizeFirstLetter(str) {
     return str.charAt(0).toUpperCase() + str.slice(1);
   }
-
 
   let enableBillToShipTo;
 
@@ -97,7 +100,7 @@ function PdfHeader({ data, org, address, despatchDetails, tab = "sales" }) {
         <div className="">
           {org?.pan && (
             <div className="text-gray-500 mb-0.5 md:text-xs text-[9px]">
-             Pan: {org?.pan && org?.pan}
+              Pan: {org?.pan && org?.pan}
             </div>
           )}
           <div className="text-gray-500 mb-0.5 md:text-xs text-[9px]">
@@ -166,26 +169,27 @@ function PdfHeader({ data, org, address, despatchDetails, tab = "sales" }) {
         <table className="m details-table md:w-1/2 w-full divide-y divide-gray-200">
           <tbody>
             {despatchDetails &&
-              Object?.entries(despatchDetails)?.filter(([key]) =>key!=='title') 
-              .map(([key, value]) => {
-                if (value) {
-                  return (
-                    <tr key={key} className="flex justify-between">
-                      <td className="text-gray-500 mb-0.5 text-[11px]">
-                        {displayTitles[key] ||
-                          capitalizeFirstLetter(
-                            key?.split(/(?=[A-Z])/).join(" ")
-                          )}
-                        :
-                      </td>
-                      <td className="text-gray-500 mb-0.5 text-[11px]">
-                        {value}
-                      </td>
-                    </tr>
-                  );
-                }
-                return null;
-              })}
+              Object?.entries(despatchDetails)
+                ?.filter(([key]) => key !== "title")
+                .map(([key, value]) => {
+                  if (value) {
+                    return (
+                      <tr key={key} className="flex justify-between">
+                        <td className="text-gray-500 mb-0.5 text-[11px]">
+                          {displayTitles[key] ||
+                            capitalizeFirstLetter(
+                              key?.split(/(?=[A-Z])/).join(" ")
+                            )}
+                          :
+                        </td>
+                        <td className="text-gray-500 mb-0.5 text-[11px]">
+                          {value}
+                        </td>
+                      </tr>
+                    );
+                  }
+                  return null;
+                })}
           </tbody>
         </table>
       </div>

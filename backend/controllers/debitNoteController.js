@@ -94,8 +94,8 @@ export const createDebitNote = async (req, res) => {
 
 export const cancelDebitNote = async (req, res) => {
   try {
-  const creditNoteId = req.params.id; // Assuming saleId is passed in the URL parameters
-  const existingDebitNote = await debitNoteModel.findById(creditNoteId);
+  const debitNoteId = req.params.id; // Assuming saleId is passed in the URL parameters
+  const existingDebitNote = await debitNoteModel.findById(debitNoteId);
   if (!existingDebitNote) {
     return res
       .status(404)
@@ -127,13 +127,13 @@ export const cancelDebitNote = async (req, res) => {
 };
 
 
-// @desc edit credit note
+// @desc edit debit note
 // route GET/api/sUsers/editDebitNote
 
 
 export const editDebitNote = async (req, res) => {
   try {
-    const creditNoteId = req.params.id; // Assuming saleId is passed in the URL parameters
+    const debitNoteId = req.params.id; // Assuming saleId is passed in the URL parameters
     const {
       selectedGodownId,
       selectedGodownName,
@@ -147,7 +147,7 @@ export const editDebitNote = async (req, res) => {
       selectedDate,
     } = req.body;
     // Fetch existing Purchase
-    const existingDebitNote = await debitNoteModel.findById(creditNoteId);
+    const existingDebitNote = await debitNoteModel.findById(debitNoteId);
     if (!existingDebitNote) {
       return res
         .status(404)
@@ -182,7 +182,7 @@ export const editDebitNote = async (req, res) => {
       createdAt: new Date(selectedDate),
     };
 
-    await debitNoteModel.findByIdAndUpdate(creditNoteId, updateData, {
+    await debitNoteModel.findByIdAndUpdate(debitNoteId, updateData, {
       new: true,
     });
 

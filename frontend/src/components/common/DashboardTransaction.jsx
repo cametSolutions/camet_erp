@@ -19,7 +19,7 @@ const DashboardTransaction = ({ filteredData, userType, from }) => {
       "Van Sale": "bg-teal-500",
       "Stock Transfer": "bg-purple-500",
       "Credit Note": "bg-pink-500",
-      "Debit Note": "bg-yellow-500",
+      "Debit Note": "bg-[#3b429f]",
       "default": "bg-[#227c9d]",
     }),
     []

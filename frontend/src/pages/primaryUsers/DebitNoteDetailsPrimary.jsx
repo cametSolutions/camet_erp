@@ -1,30 +1,29 @@
 import { MdOutlineArrowBack } from "react-icons/md";
-import Sidebar from "../../components/homePage/Sidebar";
 
-import { IoMdShareAlt } from "react-icons/io";
 import { MdTextsms } from "react-icons/md";
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import api from "../../api/api";
 import { toast } from "react-toastify";
-import dayjs from "dayjs";
 import { useLocation, useNavigate } from "react-router-dom";
-import SalesOrderProductDetails from "../../components/common/SalesOrderProductDetails";
+import SalesProductDetails from "../../components/common/SalesProductDetails";
 import SwallFireForPdf from "../../components/common/SwallFireForPdf";
+import VoucherDetailsHeader from "../../components/common/VoucherDetailsHeader";
 
-
-function InvoiceDetails() {
+function DebitNoteDetailsPrimary() {
   const [data, setData] = useState("");
+  const [refresh, setRefresh] = useState(false);
+
 
   const { id } = useParams();
-  console.log(id);
   const location = useLocation();
   const navigate = useNavigate();
 
   useEffect(() => {
     const getTransactionDetails = async () => {
       try {
-        const res = await api.get(`/api/pUsers/getInvoiceDetails/${id}`, {
+        const res = await api.get(`/api/pUsers/getDebitNoteDetails/${id}`, {
+          params:{vanSale:false},
           withCredentials: true,
         });
         setData(res.data.data);
@@ -34,9 +33,15 @@ function InvoiceDetails() {
       }
     };
     getTransactionDetails();
-  }, []);
+  }, [refresh,id]);
 
-  console.log(data);
+  const reFetch=()=>{
+
+    
+    setRefresh(!refresh)
+  }
+
+
   const backHandler = () => {
     if (location?.state?.from === "dashboard") {
       navigate("/pUsers/dashboard");
@@ -46,19 +51,21 @@ function InvoiceDetails() {
   };
 
 
+
+
   return (
-    <div className="">
      
-      <div className="bg-[rgb(244,246,254)]  relative  pb-[70px] md:pb-0 ">
+
+      <div className="bg-[rgb(244,246,254)] flex-1  relative  pb-[70px] md:pb-0 ">
         {/* headinh section  */}
-        <div className="flex bg-[#012a4a] items-center justify-between sticky top-0 z-20">
+        <div className="flex bg-[#012a4a] items-center justify-between sticky top-0 z-10">
           <div className="flex items-center gap-3  text-white text-md p-4 ">
             <MdOutlineArrowBack
               onClick={backHandler}
               className="text-2xl cursor-pointer"
             />
 
-            <h3 className="font-bold">Order Details</h3>
+            <h3 className="font-bold">Credit Note Details</h3>
           </div>
           {/* <div className="text-white mr-4 bg-pink-700 p-0 px-2 rounded-md text-center transition-all duration-150 transform hover:scale-105">
             <button>Cancel</button>
@@ -66,35 +73,29 @@ function InvoiceDetails() {
         </div>
         {/* headinh section  */}
 
-        {/* payment details */}
-        <div className="bg-white p-4 mt-3 flex justify-between items-center">
-          <div className=" ">
-            <p className="text-sm text-violet-500 font-semibold ">
-              ID #{data?.orderNumber}
-            </p>
-            <p className="text-xs font-medium text-gray-500 mt-1 ">
-              {dayjs(data.createdAt).format("DD/MM/YYYY")}
-            </p>
-          </div>
-
-          <div className="hidden md:block z-10">
-            <div className="  flex justify-center p-4 gap-12 text-lg text-violet-500 mr-4">
-             
-            <SwallFireForPdf data={data} tab={"salesOrder"} user={"primary"} />
-
-              <div className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer">
-                <MdTextsms className="text-green-500" />
-                <p className="text-black font-bold text-sm">Sms</p>
-              </div>
-            </div>
-          </div>
-        </div>
-  
+        <VoucherDetailsHeader
+        data={data}
+        reFetchParent={reFetch}
+        editLink={`/pUsers/editCreditNote/${data?._id}`}
+        user={"primary"}
+        number={data?.debitNoteNumber}
+        tab={"DebitNote"}
+      />
+      
+        {/* party details */}
 
         <div className="bg-white mt-2 p-4  ">
           <div className="flex justify-between text-sm mb-2">
             <h2 className="font-semibold text-sm  text-gray-500">PARTY NAME</h2>
-           
+            {/* <div className="flex items-center gap-2 text-green-500">
+              <p className="text-black">
+                Current Balance :{" "}
+                <span className="text-green-500 font-bold">
+                ₹{(data.totalBillAmount - data.enteredAmount).toFixed(2)}
+                </span>
+              </p>
+              <FaArrowDown />
+            </div> */}
           </div>
           <hr />
           <hr />
@@ -111,18 +112,23 @@ function InvoiceDetails() {
         {/* party details */}
         {/* party Total Mount */}
 
-        <SalesOrderProductDetails
+        <SalesProductDetails
           data={data}
           items={data?.items}
           priceLevel={data?.priceLevel}
           additionalCharges={data?.additionalCharges}
         />
+
+
+        
+
         {/* payment method */}
 
-        <div className=" block md:hidden ">
+        <div className=" block md:hidden z-0 ">
           <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 flex justify-center p-4 gap-12 text-lg text-violet-500  ">
-        
-                        <SwallFireForPdf data={data} tab={"salesOrder"} user={"primary"} />
+     
+            {/* <Link to={`/pUsers/shareSales/${data._id}`}> */}
+            <SwallFireForPdf data={data} tab="CreditNote" />
 
             <div className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer">
               <MdTextsms className="text-green-500" />
@@ -131,8 +137,7 @@ function InvoiceDetails() {
           </div>
         </div>
       </div>
-    </div>
   );
 }
 
-export default InvoiceDetails;
+export default DebitNoteDetailsPrimary;

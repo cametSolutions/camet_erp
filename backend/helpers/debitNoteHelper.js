@@ -129,7 +129,7 @@ export const handleDebitNoteStockUpdates = async (items) => {
       product.GodownList = product.GodownList.map((godown) => {
         const currentGodownStock = Number(godown.balance_stock) || 0;
         const newGodownStock = truncateToNDecimals(
-          currentGodownStock = itemCount,
+          currentGodownStock - itemCount,
           3
         );
         return { ...godown, balance_stock: newGodownStock };

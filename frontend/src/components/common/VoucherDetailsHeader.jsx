@@ -22,7 +22,10 @@ function VoucherDetailsHeader({
     reFetchParent(!refresh);
   };
 
-  const showButtons = !(tab === "stockTransfer" && user === "primary");
+  // Define when to show buttons or just the share button
+  const showAllButtons = user === "secondary";
+  const showShareButtonOnly = user === "primary" && tab !== "stockTransfer";
+  // const hideButtons = user === "primary" && tab === "stockTransfer";
 
   return (
     <div>
@@ -36,37 +39,45 @@ function VoucherDetailsHeader({
           </p>
         </div>
 
-        {showButtons && (
+        {(showAllButtons || showShareButtonOnly) && (
           <div className="hidden md:block">
             <div className="flex justify-center p-4 gap-12 text-lg text-violet-500 mr-4">
-              <CancelButton
-                id={data._id}
-                tab={tab}
-                isCancelled={data?.isCancelled}
-                reFetch={reFetch}
-              />
-              <div
-                onClick={() => navigate(editLink)}
-                className={`${
-                  data?.isCancelled && "pointer-events-none opacity-60"
-                } flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110 cursor-pointer`}
-              >
-                <FaEdit className="text-blue-500" />
-                <p className="text-black font-bold text-sm">Edit</p>
-              </div>
+              {showAllButtons && (
+                <>
+                  <CancelButton
+                    id={data._id}
+                    tab={tab}
+                    isCancelled={data?.isCancelled}
+                    reFetch={reFetch}
+                  />
+                  <div
+                    onClick={() => navigate(editLink)}
+                    className={`${
+                      data?.isCancelled && "pointer-events-none opacity-60"
+                    } flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110 cursor-pointer`}
+                  >
+                    <FaEdit className="text-blue-500" />
+                    <p className="text-black font-bold text-sm">Edit</p>
+                  </div>
 
-              {tab !== "stockTransfer" && (
+                  {tab !== "stockTransfer" && (
+                    <SwallFireForPdf data={data} tab={tab} user={user} />
+                  )}
+
+                  <div
+                    className={`${
+                      data?.isCancelled && "pointer-events-none opacity-60"
+                    } flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110 cursor-pointer`}
+                  >
+                    <MdTextsms className="text-green-500" />
+                    <p className="text-black font-bold text-sm">Sms</p>
+                  </div>
+                </>
+              )}
+              {/* Show only the share button for primary users and non-stockTransfer tab */}
+              {showShareButtonOnly && (
                 <SwallFireForPdf data={data} tab={tab} user={user} />
               )}
-
-              <div
-                className={`${
-                  data?.isCancelled && "pointer-events-none opacity-60"
-                } flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110 cursor-pointer`}
-              >
-                <MdTextsms className="text-green-500" />
-                <p className="text-black font-bold text-sm">Sms</p>
-              </div>
             </div>
           </div>
         )}
