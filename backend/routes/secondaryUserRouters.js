@@ -20,10 +20,11 @@ import {login,getSecUserData,fetchOutstandingTotal,
 import { createPurchase,editPurchase,cancelPurchase } from '../controllers/purchaseController.js';
 import { createCreditNote,cancelCreditNote ,editCreditNote} from '../controllers/creditNoteController.js';
 
-    import { getStockTransferDetails,addProduct ,editProduct,getCreditNoteDetails,transactions,fetchAdditionalCharges} from '../controllers/commonController.js';
+    import { getStockTransferDetails,addProduct ,editProduct,getCreditNoteDetails,transactions,fetchAdditionalCharges, getDebitNoteDetails} from '../controllers/commonController.js';
 import { authSecondary } from '../middlewares/authSecUsers.js';
 import { secondaryIsBlocked } from '../middlewares/isBlocked.js';
 import { companyAuthentication } from '../middlewares/authCompany.js';
+import { createDebitNote } from '../controllers/debitNoteController.js';
 
 
 router.post('/login',login)
@@ -99,6 +100,11 @@ router.post('/createCreditNote',authSecondary,secondaryIsBlocked,createCreditNot
 router.get('/getCreditNoteDetails/:id',authSecondary,secondaryIsBlocked,getCreditNoteDetails)
 router.post('/cancelCreditNote/:id',authSecondary,secondaryIsBlocked,cancelCreditNote)
 router.post('/editCreditNote/:id',authSecondary,secondaryIsBlocked,editCreditNote)
+///debit not routes
+router.post('/createDebitNote',authSecondary,secondaryIsBlocked,createDebitNote)
+router.get('/getDebitNoteDetails/:id',authSecondary,secondaryIsBlocked,getDebitNoteDetails)
+// router.post('/cancelCreditNote/:id',authSecondary,secondaryIsBlocked,cancelCreditNote)
+// router.post('/editCreditNote/:id',authSecondary,secondaryIsBlocked,editCreditNote)
 
 
 

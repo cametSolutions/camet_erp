@@ -175,9 +175,9 @@ function AddItemSecondary() {
       ).data;
 
       setPriceLevels(priceLevels);
-      setBrands(brands);
-      setCategories(categories);
-      setSubCategories(subcategories);
+      // setBrands(brands);
+      // setCategories(categories);
+      // setSubCategories(subcategories);
 
       if (priceLevelFromRedux === "") {
         const defaultPriceLevel = priceLevels[0];

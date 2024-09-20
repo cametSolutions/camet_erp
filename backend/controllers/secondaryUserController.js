@@ -2213,6 +2213,7 @@ export const fetchConfigurationNumber = async (req, res) => {
         vanSale: configuration.vanSaleConfiguration,
         stockTransfer: configuration.stockTransferConfiguration,
         creditNote: configuration.creditNoteConfiguration,
+        debitNote: configuration.debitNoteConfiguration,
       };
 
       return configs[title] || null;
@@ -2228,6 +2229,7 @@ export const fetchConfigurationNumber = async (req, res) => {
           stockTransfer: configuration.stockTransferNumber,
           receipt: configuration.receiptNumber,
           creditNote: configuration.creditNoteNumber,
+          debitNote: configuration.debitNoteNumber,
         };
         return numbers[title] || null;
       } else {
@@ -2240,6 +2242,7 @@ export const fetchConfigurationNumber = async (req, res) => {
           receipt: company.receiptNumber,
           creditNote: company.creditNoteNumber,
           debitNote: company.debitNoteNumber,
+          
         };
 
         return companyNumbers[title] || null;

@@ -3,6 +3,7 @@ import productModel from "../models/productModel.js";
 import salesModel from "../models/salesModel.js";
 import stockTransferModel from "../models/stockTransferModel.js";
 import creditNoteModel from "../models/creditNoteModel.js";
+import debitNoteModel from "../models/debitNoteModel.js";
 import TransactionModel from "../models/TransactionModel.js";
 import invoiceModel from "../models/invoiceModel.js";
 import vanSaleModel from "../models/vanSaleModel.js";
@@ -326,6 +327,26 @@ export const fetchAdditionalCharges = async (req, res) => {
     res.json(aditionalDetails);
   } catch (error) {
     console.error("Error fetching godownwise products:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+// @desc to  get details of debit note
+// route get/api/sUsers/getCreditNoteDetails
+export const getDebitNoteDetails = async (req, res) => {
+  try {
+    const id = req.params.id;
+
+    const details = await debitNoteModel.findById(id);
+    if (details) {
+      res
+        .status(200)
+        .json({ message: "Debit Note Details fetched", data: details });
+    } else {
+      res.status(404).json({ error: "Debit Note Details not found" });
+    }
+  } catch (error) {
+    console.error("Error in getting Debit Note:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };

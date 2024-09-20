@@ -7,13 +7,14 @@ import prSettlementDataReducer from "../slices/prSettlementDataSlice";
 import adminDataReducer from "../slices/adminData";
 import invoice from "../slices/invoice";
 import invoiceSecondary from "../slices/invoiceSecondary";
-import sales from '../slices/sales'
-import purchase from '../slices/purchase'
-import salesSecondary from '../slices/salesSecondary'
+import sales from "../slices/sales";
+import purchase from "../slices/purchase";
+import salesSecondary from "../slices/salesSecondary";
 import stockTransferSecondary from "../slices/stockTransferSecondary";
 import receipt from "../slices/receipt";
 import payment from "../slices/payment";
 import creditNote from "../slices/creditNote";
+import debitNote from "../slices/debitNote";
 
 export const store = configureStore({
   reducer: {
@@ -25,13 +26,13 @@ export const store = configureStore({
     adminData: adminDataReducer,
     invoice: invoice,
     invoiceSecondary: invoiceSecondary,
-    sales:sales,
-    salesSecondary:salesSecondary,
-    purchase:purchase,
-    stockTransferSecondary:stockTransferSecondary,
-    receipt:receipt,
-    payment:payment,
-    creditNote:creditNote
-    
+    sales: sales,
+    salesSecondary: salesSecondary,
+    purchase: purchase,
+    stockTransferSecondary: stockTransferSecondary,
+    receipt: receipt,
+    payment: payment,
+    creditNote: creditNote,
+    debitNote: debitNote,
   },
 });

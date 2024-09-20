@@ -74,8 +74,8 @@ const purchaseTiles = [
   {
     title: "Debit Note",
     icon: debitNote,
-    to: "/sUsers/creditnote",
-    active: false,
+    to: "/sUsers/debitNote",
+    active: true,
     subtitle: "Adjust and manage account debits",
   },
 

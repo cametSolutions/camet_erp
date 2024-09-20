@@ -7,6 +7,7 @@ import { addDespatchDetails as addInSales } from "../../../slices/salesSecondary
 import { addDespatchDetails as addInOrder } from "../../../slices/invoiceSecondary";
 import { addDespatchDetails as addInPurchase } from "../../../slices/purchase";
 import { addDespatchDetails as addInCreditNote } from "../../../slices/creditNote";
+import { addDespatchDetails as addInDebitNote } from "../../../slices/debitNote";
 import { useDispatch, useSelector } from "react-redux";
 import api from "../../api/api";
 
@@ -18,6 +19,8 @@ function DespatchDetails({ tab }) {
       ? state.purchase.despatchDetails
       : tab === "creditNote"
       ? state.creditNote.despatchDetails
+      : tab === "debitNote"
+      ? state.debitNote.despatchDetails
       : state.invoiceSecondary.despatchDetails
   );
 
@@ -83,6 +86,10 @@ function DespatchDetails({ tab }) {
           break;
         case "creditNote":
           selectedDispatch = addInCreditNote;
+          break;
+
+        case "debitNote":
+          selectedDispatch = addInDebitNote;
           break;
 
         default:
