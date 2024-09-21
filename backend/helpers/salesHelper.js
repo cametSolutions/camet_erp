@@ -6,12 +6,110 @@ import OrganizationModel from "../models/OragnizationModel.js";
 import { truncateToNDecimals } from "./helper.js";
 import { login } from "../controllers/secondaryUserController.js";
 
-export const handleSaleStockUpdates = async (items, revert = false) => {
+
+export const checkForNumberExistence = async (
+  model,
+  fieldName,
+  newValue,
+  cmp_id,
+  session
+) => {
+  try {
+    // const centralNumber = parseInt(newValue, 10);
+    // const regex = new RegExp(`^(${centralNumber}|.*-(0*${centralNumber})-.*)$`);
+    const docs = await model.find({
+      [fieldName]: newValue,
+      cmp_id: cmp_id,
+    }).session(session)
+
+    console.log(docs.map((el) => el[fieldName]));
+    return docs.length > 0;
+  } catch (error) {
+    console.log("Error checking for number existence:", error);
+    throw error;
+  }
+};
+
+export const updateSalesNumber = async (
+  orgId,
+  vanSaleQuery,
+  secondaryUser,
+  configuration,
+  session
+) => {
+  try {
+    let salesNumber = 1;
+
+    if (vanSaleQuery === "true") {
+      // Increment vanSalesNumber for secondaryUser
+      const updatedConfiguration = secondaryUser.configurations.map(
+        (config) => {
+          if (config.organization.toString() === orgId) {
+            return {
+              ...config,
+              vanSalesNumber: (config.vanSalesNumber || 0) + 1,
+            };
+          }
+          return config;
+        }
+      );
+      secondaryUser.configurations = updatedConfiguration;
+      await secondaryUser.save({ session });
+    } else {
+      if (configuration && configuration.salesConfiguration) {
+        // const allFieldsFilled = Object.entries(configuration.salesConfiguration)
+        //   .filter(([key]) => key !== "startingNumber")
+        //   .every(([_, value]) => value !== "");
+
+        // if (allFieldsFilled) {
+          salesNumber = (configuration.salesNumber || 0) + 1;
+
+          console.log("salesNumber",salesNumber);
+          
+          const updatedConfiguration = secondaryUser.configurations.map(
+            (config) => {
+              if (config.organization.toString() === orgId) {
+                return {
+                  ...config,
+                  salesNumber: salesNumber,
+                };
+              }
+              return config;
+            }
+          );
+          secondaryUser.configurations = updatedConfiguration;
+          await secondaryUser.save({ session });
+        // } 
+        
+        // else {
+        //   await OrganizationModel.findByIdAndUpdate(
+        //     orgId,
+        //     { $inc: { salesNumber: 1 } },
+        //     { new: true }
+        //   );
+        // }
+      } else {
+        await OrganizationModel.findByIdAndUpdate(
+          orgId,
+          { $inc: { salesNumber: 1 } },
+          { new: true, session } // Use session here
+        );
+      }
+    }
+
+    return salesNumber;
+  } catch (error) {
+    console.error("Error updateSalesNumber sale stock updates:", error);
+    throw error;
+  }
+};
+
+export const handleSaleStockUpdates = async (items, revert = false,session) => {
   const productUpdates = [];
   const godownUpdates = [];
 
   for (const item of items) {
-    const product = await productModel.findOne({ _id: item._id });
+    const product = await productModel.findOne({ _id: item._id }).session(session);
     if (!product) {
       throw new Error(`Product not found for item ID: ${item._id}`);
     }
@@ -131,8 +229,8 @@ export const handleSaleStockUpdates = async (items, revert = false) => {
     }
   }
 
-  await productModel.bulkWrite(productUpdates);
-  await productModel.bulkWrite(godownUpdates);
+  await productModel.bulkWrite(productUpdates,{session});
+  await productModel.bulkWrite(godownUpdates,{session});
 };
 
 export const processSaleItems = (items) => {
@@ -167,7 +265,8 @@ export const createSaleRecord = async (
   req,
   salesNumber,
   updatedItems,
-  updateAdditionalCharge
+  updateAdditionalCharge,
+  session 
 ) => {
   try {
     const {
@@ -188,7 +287,7 @@ export const createSaleRecord = async (
     const lastSale = await model.findOne(
       {},
       {},
-      { sort: { serialNumber: -1 } }
+      { sort: { serialNumber: -1 }, session }
     );
     let newSerialNumber = 1;
 
@@ -214,7 +313,7 @@ export const createSaleRecord = async (
       createdAt: new Date(selectedDate),
     });
 
-    const result = await sales.save();
+    const result = await sales.save({ session });
 
     return result;
   } catch (error) {
@@ -223,78 +322,7 @@ export const createSaleRecord = async (
   }
 };
 
-export const updateSalesNumber = async (
-  orgId,
-  vanSaleQuery,
-  secondaryUser,
-  configuration
-) => {
-  try {
-    let salesNumber = 1;
 
-    if (vanSaleQuery === "true") {
-      // Increment vanSalesNumber for secondaryUser
-      const updatedConfiguration = secondaryUser.configurations.map(
-        (config) => {
-          if (config.organization.toString() === orgId) {
-            return {
-              ...config,
-              vanSalesNumber: (config.vanSalesNumber || 0) + 1,
-            };
-          }
-          return config;
-        }
-      );
-      secondaryUser.configurations = updatedConfiguration;
-      await secondaryUser.save();
-    } else {
-      if (configuration && configuration.salesConfiguration) {
-        // const allFieldsFilled = Object.entries(configuration.salesConfiguration)
-        //   .filter(([key]) => key !== "startingNumber")
-        //   .every(([_, value]) => value !== "");
-
-        // if (allFieldsFilled) {
-          salesNumber = (configuration.salesNumber || 0) + 1;
-
-          console.log("salesNumber",salesNumber);
-          
-          const updatedConfiguration = secondaryUser.configurations.map(
-            (config) => {
-              if (config.organization.toString() === orgId) {
-                return {
-                  ...config,
-                  salesNumber: salesNumber,
-                };
-              }
-              return config;
-            }
-          );
-          secondaryUser.configurations = updatedConfiguration;
-          await secondaryUser.save();
-        // } 
-        
-        // else {
-        //   await OrganizationModel.findByIdAndUpdate(
-        //     orgId,
-        //     { $inc: { salesNumber: 1 } },
-        //     { new: true }
-        //   );
-        // }
-      } else {
-        await OrganizationModel.findByIdAndUpdate(
-          orgId,
-          { $inc: { salesNumber: 1 } },
-          { new: true }
-        );
-      }
-    }
-
-    return salesNumber;
-  } catch (error) {
-    console.error("Error updateSalesNumber sale stock updates:", error);
-    throw error;
-  }
-};
 
 export const updateTallyData = async (
   orgId,
@@ -302,7 +330,8 @@ export const updateTallyData = async (
   Primary_user_id,
   party,
   lastAmount,
-  secondaryMobile
+  secondaryMobile,
+  session
 ) => {
   try {
     const billData = {
@@ -317,6 +346,7 @@ export const updateTallyData = async (
         mobile_no: party?.mobileNumber,
         party_name: party?.partyName,
         user_id: secondaryMobile || "null",
+        source: "sale",
       };
 
     const tallyUpdate=await TallyData.findOneAndUpdate(
@@ -327,7 +357,7 @@ export const updateTallyData = async (
         party_id: party?.party_master_id,
       },
       billData,
-      { upsert: true, new: true }
+      { upsert: true, new: true,session }
     );
 
     console.log("tallyUpdate",tallyUpdate);

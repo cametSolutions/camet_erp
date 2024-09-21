@@ -1926,98 +1926,98 @@ export const addconfigurations = async (req, res) => {
   }
 };
 
-export const createSale = async (req, res) => {
-  try {
-    const {
-      selectedGodownId,
-      selectedGodownName,
-      orgId,
-      party,
-      items,
-      despatchDetails,
-      priceLevelFromRedux,
-      additionalChargesFromRedux,
-      lastAmount,
-      salesNumber,
-      selectedDate,
-    } = req.body;
+// export const createSale = async (req, res) => {
+//   try {
+//     const {
+//       selectedGodownId,
+//       selectedGodownName,
+//       orgId,
+//       party,
+//       items,
+//       despatchDetails,
+//       priceLevelFromRedux,
+//       additionalChargesFromRedux,
+//       lastAmount,
+//       salesNumber,
+//       selectedDate,
+//     } = req.body;
 
-    const Secondary_user_id = req.sUserId;
+//     const Secondary_user_id = req.sUserId;
 
-    const NumberExistence = await checkForNumberExistence(
-      req.query.vanSale === "true" ? vanSaleModel : salesModel,
-      "salesNumber",
-      salesNumber,
-      req.body.orgId
-    );
+//     const NumberExistence = await checkForNumberExistence(
+//       req.query.vanSale === "true" ? vanSaleModel : salesModel,
+//       "salesNumber",
+//       salesNumber,
+//       req.body.orgId
+//     );
 
-    if (NumberExistence) {
-      return res.status(400).json({
-        message: "Sales with the same number already exists",
-      });
-    }
+//     if (NumberExistence) {
+//       return res.status(400).json({
+//         message: "Sales with the same number already exists",
+//       });
+//     }
 
-    const secondaryUser = await SecondaryUser.findById(Secondary_user_id);
-    const secondaryMobile = secondaryUser?.mobile;
+//     const secondaryUser = await SecondaryUser.findById(Secondary_user_id);
+//     const secondaryMobile = secondaryUser?.mobile;
 
-    if (!secondaryUser) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Secondary user not found" });
-    }
+//     if (!secondaryUser) {
+//       return res
+//         .status(404)
+//         .json({ success: false, message: "Secondary user not found" });
+//     }
 
-    const configuration = secondaryUser.configurations.find(
-      (config) => config.organization.toString() === orgId
-    );
+//     const configuration = secondaryUser.configurations.find(
+//       (config) => config.organization.toString() === orgId
+//     );
 
-    // const vanSaleConfig = configuration?.vanSale;
+//     // const vanSaleConfig = configuration?.vanSale;
 
-    const updatedSalesNumber = await updateSalesNumber(
-      orgId,
-      req.query.vanSale,
-      secondaryUser,
-      configuration
-    );
-    const updatedItems = processSaleItems(items);
-    await handleSaleStockUpdates(items);
+//     const updatedSalesNumber = await updateSalesNumber(
+//       orgId,
+//       req.query.vanSale,
+//       secondaryUser,
+//       configuration
+//     );
+//     const updatedItems = processSaleItems(items);
+//     await handleSaleStockUpdates(items);
 
-    const updateAdditionalCharge = additionalChargesFromRedux.map((charge) => {
-      const { value, taxPercentage } = charge;
-      const taxAmt = parseFloat(
-        ((parseFloat(value) * parseFloat(taxPercentage)) / 100).toFixed(2)
-      );
-      return { ...charge, taxAmt };
-    });
+//     const updateAdditionalCharge = additionalChargesFromRedux.map((charge) => {
+//       const { value, taxPercentage } = charge;
+//       const taxAmt = parseFloat(
+//         ((parseFloat(value) * parseFloat(taxPercentage)) / 100).toFixed(2)
+//       );
+//       return { ...charge, taxAmt };
+//     });
 
-    const result = await createSaleRecord(
-      req,
-      salesNumber,
-      updatedItems,
-      updateAdditionalCharge
-    );
-    await updateTallyData(
-      orgId,
-      salesNumber,
-      req.owner,
-      party,
-      lastAmount,
-      secondaryMobile
-    );
+//     const result = await createSaleRecord(
+//       req,
+//       salesNumber,
+//       updatedItems,
+//       updateAdditionalCharge
+//     );
+//     await updateTallyData(
+//       orgId,
+//       salesNumber,
+//       req.owner,
+//       party,
+//       lastAmount,
+//       secondaryMobile
+//     );
 
-    res.status(201).json({
-      success: true,
-      data: result,
-      message: "Sale created successfully",
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({
-      success: false,
-      message: "An error occurred while creating the sale.",
-      error: error.message,
-    });
-  }
-};
+//     res.status(201).json({
+//       success: true,
+//       data: result,
+//       message: "Sale created successfully",
+//     });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({
+//       success: false,
+//       message: "An error occurred while creating the sale.",
+//       error: error.message,
+//     });
+//   }
+// };
 
 // @desc toget the details of transaction or sale
 // route get/api/sUsers/getSalesDetails

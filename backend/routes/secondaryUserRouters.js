@@ -9,7 +9,7 @@ import {login,getSecUserData,fetchOutstandingTotal,
     addDataToOrg,editDataInOrg,deleteDataInOrg,
     productDetails,deleteProduct,saveOrderNumber,
     getInvoiceDetails,editInvoice,fetchFilters,deleteAdditionalCharge,
-    addAditionalCharge,EditAditionalCharge,addconfigurations,createSale,
+    addAditionalCharge,EditAditionalCharge,addconfigurations,
     getSalesDetails,saveSalesNumber,fetchAdditionalDetails,
     fetchConfigurationNumber,findSecondaryUserGodowns,findPrimaryUserGodownsSelf,
     godownwiseProducts,godownwiseProductsSelf,
@@ -19,6 +19,7 @@ import {login,getSecUserData,fetchOutstandingTotal,
  
 import { createPurchase,editPurchase,cancelPurchase } from '../controllers/purchaseController.js';
 import { createCreditNote,cancelCreditNote ,editCreditNote} from '../controllers/creditNoteController.js';
+import {createSale} from '../controllers/saleController.js';
 
     import { getStockTransferDetails,addProduct ,editProduct,getCreditNoteDetails,transactions,fetchAdditionalCharges, getDebitNoteDetails} from '../controllers/commonController.js';
 import { authSecondary } from '../middlewares/authSecUsers.js';
