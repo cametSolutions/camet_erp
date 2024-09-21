@@ -163,6 +163,7 @@ import DebitNoteDetailsSecondary from '../pages/secUsers/DebitNoteDetailsSeconda
 import EditDebitNote from '../pages/secUsers/EditDebitNote'
 import ShareDebitNoteSecondary from '../pages/secUsers/ShareDebitNoteSecondary'
 import DebitNoteDetailsPrimary from '../pages/primaryUsers/DebitNoteDetailsPrimary'
+import ShareDebitNotePrimary from '../pages/primaryUsers/ShareDebitNotePrimary'
 
 const Routers = () => {
   return (
@@ -230,7 +231,7 @@ const Routers = () => {
         <Route path='/pUsers/shareCreditNote/:id' element={<ProtectedPriRoute><ShareCreditNotePrimary/></ProtectedPriRoute>}></Route> 
          {/* debitNote */}
         <Route path='/pUsers/debitDetails/:id' element={<ProtectedPriRoute><DebitNoteDetailsPrimary/></ProtectedPriRoute>}></Route>
-        <Route path='/pUsers/shareCreditNote/:id' element={<ProtectedPriRoute><ShareCreditNotePrimary/></ProtectedPriRoute>}></Route> 
+        <Route path='/pUsers/shareDebitNote/:id' element={<ProtectedPriRoute><ShareDebitNotePrimary/></ProtectedPriRoute>}></Route> 
 
 
 

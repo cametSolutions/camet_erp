@@ -197,6 +197,20 @@ function SidebarSec({ TAB, showBar }) {
           </div>
         </div>
 
+        {/* <div className="flex justify-center mb-12">
+          <button class="shadow__btn">ERP</button>
+        </div> */}
+{/* 
+        <div className="flex justify-center ">
+          <img
+            className="w-auto h-12"
+            src="https://merakiui.com/images/full-logo.svg"
+            alt=""
+          />
+
+          <h1>ERP</h1>
+        </div> */}
+
         {/* <a href="#" className="mx-auto">
           <img
             className="w-auto h-6 sm:h-7"
