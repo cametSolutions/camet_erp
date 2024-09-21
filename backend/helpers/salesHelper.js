@@ -368,13 +368,13 @@ export const updateTallyData = async (
   }
 };
 
-export const revertSaleStockUpdates = async (items) => {
+export const revertSaleStockUpdates = async (items, session) => {
   try {
     const productUpdates = [];
     const godownUpdates = [];
 
     for (const item of items) {
-      const product = await productModel.findOne({ _id: item._id });
+      const product = await productModel.findOne({ _id: item._id }).session(session); // Use the session passed as parameter
       if (!product) {
         throw new Error(`Product not found for item ID: ${item._id}`);
       }
@@ -398,7 +398,6 @@ export const revertSaleStockUpdates = async (items) => {
       if (item.hasGodownOrBatch) {
         for (const godown of item.GodownList) {
           if (godown.batch && !godown?.godown_id) {
-            // Case: Batch only or Godown with Batch
             const godownIndex = product.GodownList.findIndex(
               (g) => g.batch === godown.batch
             );
@@ -427,7 +426,6 @@ export const revertSaleStockUpdates = async (items) => {
               }
             }
           } else if (godown.godown_id && godown.batch) {
-            // Case: Godown with Batch
             const godownIndex = product.GodownList.findIndex(
               (g) =>
                 g.batch === godown.batch && g.godown_id === godown.godown_id
@@ -441,10 +439,6 @@ export const revertSaleStockUpdates = async (items) => {
                   currentGodownStock + godown.count, // Revert stock by adding back
                   3
                 );
-
-
-                console.log("newGodownStock", newGodownStock);
-                
 
                 // Prepare godown update operation
                 godownUpdates.push({
@@ -466,7 +460,6 @@ export const revertSaleStockUpdates = async (items) => {
               }
             }
           } else if (godown.godown_id && !godown?.batch) {
-            // Case: Godown only
             const godownIndex = product.GodownList.findIndex(
               (g) => g.godown_id === godown.godown_id
             );
@@ -497,7 +490,6 @@ export const revertSaleStockUpdates = async (items) => {
           }
         }
       } else {
-        // Case: No Godown
         product.GodownList = product.GodownList.map((godown) => {
           const currentGodownStock = Number(godown.balance_stock) || 0;
           const newGodownStock = truncateToNDecimals(
@@ -520,11 +512,13 @@ export const revertSaleStockUpdates = async (items) => {
       }
     }
 
-    // Execute bulk operations to revert stock changes
-    await productModel.bulkWrite(productUpdates);
-    await productModel.bulkWrite(godownUpdates);
+    // Execute bulk operations to revert stock changes using the session
+    await productModel.bulkWrite(productUpdates, { session });
+    await productModel.bulkWrite(godownUpdates, { session });
+
   } catch (error) {
     console.error("Error reverting sale stock updates:", error);
     throw error;
   }
 };
+

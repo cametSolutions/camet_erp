@@ -6,10 +6,12 @@ import {
   updateSalesNumber,
   updateTallyData,
   checkForNumberExistence,
+  revertSaleStockUpdates,
 } from "../helpers/salesHelper.js";
 import secondaryUserModel from "../models/secondaryUserModel.js";
 import salesModel from "../models/salesModel.js";
 import vanSaleModel from "../models/vanSaleModel.js";
+import TallyData from "../models/TallyData.js";
 
 /**
  * @desc To createSale
@@ -120,3 +122,129 @@ export const createSale = async (req, res) => {
     session.endSession(); // Ensure session is ended
   }
 };
+
+/**
+ * @desc To editSale
+ * @route POST /api/sUsers/editSale
+ * @access Public
+ */
+
+const MAX_RETRIES = 3;
+const RETRY_DELAY_MS = 1000;
+
+export const editSale = async (req, res) => {
+  const saleId = req.params.id;
+  const {
+    selectedGodownId,
+    selectedGodownName,
+    orgId,
+    party,
+    items,
+    despatchDetails,
+    priceLevelFromRedux,
+    additionalChargesFromRedux,
+    lastAmount,
+    salesNumber,
+    selectedDate,
+  } = req.body;
+
+  const vanSaleQuery = req.query.vanSale;
+  const isVanSale = vanSaleQuery === "true";
+  const model = isVanSale ? vanSaleModel : salesModel;
+
+  let retries = 0;
+  while (retries < MAX_RETRIES) {
+    const session = await mongoose.startSession();
+    try {
+      session.startTransaction();
+
+      const existingSale = await model.findById(saleId).session(session);
+      if (!existingSale) {
+        await session.abortTransaction();
+        session.endSession();
+        return res.status(404).json({ success: false, message: "Sale not found" });
+      }
+
+      await revertSaleStockUpdates(existingSale.items, session);
+
+      const updatedItems = processSaleItems(items, priceLevelFromRedux, additionalChargesFromRedux);
+      await handleSaleStockUpdates(updatedItems, false, session);
+
+      const updateData = {
+        selectedGodownId: selectedGodownId || existingSale.selectedGodownId,
+        selectedGodownName: selectedGodownName ? selectedGodownName[0] : existingSale.selectedGodownName,
+        serialNumber: existingSale.serialNumber,
+        cmp_id: orgId,
+        partyAccount: party?.partyName,
+        party,
+        despatchDetails,
+        items: updatedItems,
+        priceLevel: priceLevelFromRedux,
+        additionalCharges: additionalChargesFromRedux,
+        finalAmount: lastAmount,
+        Primary_user_id: req.owner,
+        Secondary_user_id: req.secondaryUserId,
+        salesNumber: salesNumber,
+        createdAt: new Date(selectedDate),
+      };
+
+      await model.findByIdAndUpdate(saleId, updateData, { new: true, session });
+
+      const newBillValue = Number(lastAmount);
+      const oldBillValue = Number(existingSale.finalAmount);
+      const diffBillValue = newBillValue - oldBillValue;
+
+      const matchedOutStanding = await TallyData.findOne({
+        party_id: party?.party_master_id,
+        cmp_id: orgId,
+        bill_no: salesNumber,
+      }).session(session);
+
+      if (matchedOutStanding) {
+        const newOutstanding = Number(matchedOutStanding?.bill_pending_amt) + diffBillValue;
+
+        // console.log("newOutstanding",newOutstanding);
+        
+       const outStandingUpdateResult = await TallyData.updateOne(
+          {
+            party_id: party?.party_master_id,
+            cmp_id: orgId,
+            bill_no: salesNumber,
+          },
+          { $set: { bill_pending_amt: newOutstanding, bill_amount: newBillValue } },
+          { new: true,session }
+        );
+      }
+
+      await session.commitTransaction();
+      session.endSession();
+      return res.status(200).json({
+        success: true,
+        message: "Sale edited successfully",
+        // outStandingUpdateResult
+      });
+    } catch (error) {
+      await session.abortTransaction();
+      session.endSession();
+
+      if (error.code === 112 && retries < MAX_RETRIES - 1) {
+        console.log(`Retrying transaction (attempt ${retries + 1})...`);
+        retries++;
+        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
+      } else {
+        console.error("Error editing sale:", error);
+        return res.status(500).json({
+          success: false,
+          message: "An error occurred while editing the sale.",
+          error: error.message,
+        });
+      }
+    }
+  }
+
+  return res.status(500).json({
+    success: false,
+    message: "Failed to edit sale after multiple attempts.",
+  });
+};
+  
