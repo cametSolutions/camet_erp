@@ -3182,53 +3182,6 @@ export const cancelSalesOrder = async (req, res) => {
   }
 };
 
-// @desc to cancel sales
-// route delete/api/sUsers/cancelSales;
-
-export const cancelSale = async (req, res) => {
-  const saleId = req.params.id; // ID of the sale to cancel
-  const vanSaleQuery = req.query.vanSale;
-
-  // console.log("vanSaleQuery", vanSaleQuery);
-  // console.log("saleId", saleId);
-
-  try {
-    // Find the sale to cancel
-    const sale = await (vanSaleQuery === "true"
-      ? vanSaleModel
-      : salesModel
-    ).findById(saleId);
-    if (!sale) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Sale not found" });
-    }
-
-    console.log(sale);
-
-    // Revert stock updates
-    await revertSaleStockUpdates(sale.items);
-
-    // update Sale status
-    sale.isCancelled = true;
-    await (vanSaleQuery === "true"
-      ? vanSaleModel
-      : salesModel
-    ).findByIdAndUpdate(saleId, sale);
-
-    res.status(200).json({
-      success: true,
-      message: "Sale canceled and stock reverted successfully",
-    });
-  } catch (error) {
-    console.error("Error in canceling sale:", error);
-    res.status(500).json({
-      success: false,
-      message: "An error occurred while canceling the sale.",
-      error: error.message,
-    });
-  }
-};
 
 // @desc to cancel stock tranfer
 // route post/api/sUsers/cancelstockTransfer;

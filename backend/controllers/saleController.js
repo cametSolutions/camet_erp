@@ -247,4 +247,68 @@ export const editSale = async (req, res) => {
     message: "Failed to edit sale after multiple attempts.",
   });
 };
+
+
+/**
+ * @desc To cancel sale
+ * @route POST /api/sUsers/cancelSale
+ * @access Public
+ */
+
+
+export const cancelSale = async (req, res) => {
+  const saleId = req.params.id; // ID of the sale to cancel
+  const vanSaleQuery = req.query.vanSale;
+
+  const session = await mongoose.startSession(); // Start the session
+
+  try {
+    session.startTransaction(); // Begin a transaction
+
+    // Find the sale to cancel
+    const sale = await (vanSaleQuery === "true"
+      ? vanSaleModel
+      : salesModel
+    ).findById(saleId).session(session); // Use the session in the query
+
+    if (!sale) {
+      await session.abortTransaction(); // Rollback transaction if sale not found
+      session.endSession(); // End the session
+      return res
+        .status(404)
+        .json({ success: false, message: "Sale not found" });
+    }
+
+    // Revert stock updates
+    await revertSaleStockUpdates(sale.items, session); // Ensure stock updates use session
+
+    // Update sale status
+    sale.isCancelled = true;
+    await (vanSaleQuery === "true"
+      ? vanSaleModel
+      : salesModel
+    ).findByIdAndUpdate(saleId, sale, { session }); // Use the session in the update
+
+    // Commit the transaction
+    await session.commitTransaction();
+    session.endSession(); // End the session
+
+    res.status(200).json({
+      success: true,
+      message: "Sale canceled and stock reverted successfully",
+    });
+  } catch (error) {
+    // Rollback the transaction if something goes wrong
+    await session.abortTransaction();
+    session.endSession(); // End the session
+    console.error("Error in canceling sale:", error);
+    res.status(500).json({
+      success: false,
+      message: "An error occurred while canceling the sale.",
+      error: error.message,
+    });
+  }
+};
+
+
   

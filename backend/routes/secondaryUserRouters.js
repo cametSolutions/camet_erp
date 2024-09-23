@@ -14,12 +14,12 @@ import {login,getSecUserData,fetchOutstandingTotal,
     fetchConfigurationNumber,findSecondaryUserGodowns,findPrimaryUserGodownsSelf,
     godownwiseProducts,godownwiseProductsSelf,
     findGodownsNames,getPurchaseDetails,getAllSubDetails,
-    fetchGodowns,createStockTransfer,editStockTransfer,cancelSalesOrder,cancelSale,
+    fetchGodowns,createStockTransfer,editStockTransfer,cancelSalesOrder,
     cancelStockTransfer} from "../controllers/secondaryUserController.js"
  
 import { createPurchase,editPurchase,cancelPurchase } from '../controllers/purchaseController.js';
 import { createCreditNote,cancelCreditNote ,editCreditNote} from '../controllers/creditNoteController.js';
-import {createSale,editSale} from '../controllers/saleController.js';
+import {createSale,editSale,cancelSale,} from '../controllers/saleController.js';
 
     import { getStockTransferDetails,addProduct ,editProduct,getCreditNoteDetails,transactions,fetchAdditionalCharges, getDebitNoteDetails} from '../controllers/commonController.js';
 import { authSecondary } from '../middlewares/authSecUsers.js';
