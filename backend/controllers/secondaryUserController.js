@@ -576,7 +576,10 @@ export const getTransactionDetails = async (req, res) => {
 export const PartyList = async (req, res) => {
   const { cmp_id } = req.params;
   const { owner: Primary_user_id, sUserId: secUserId } = req;
-  const { outstanding } = req.query;
+  const { outstanding ,voucher } = req.query;
+
+  // console.log("voucher", voucher);
+  
 
   try {
     // Fetch parties and secondary user concurrently
@@ -597,11 +600,25 @@ export const PartyList = async (req, res) => {
     const vanSaleConfig = configuration?.vanSale || false;
 
     let partyListWithOutstanding = partyList;
+
+     // Determine the source values to match based on the voucher type
+     let sourceMatch = {};
+     if (voucher === "receipt") {
+       sourceMatch = { source: { $in: ["sale", "debitNote"] } };
+     } else if (voucher === "payment") {
+       sourceMatch = { source: { $in: ["purchase", "creditNote"] } };
+     }
+
+    //  console.log("sourceMatch", sourceMatch);
+     
+
+
       const partyOutstandingData = await TallyData.aggregate([
         {
           $match: {
             cmp_id,
             Primary_user_id: String(Primary_user_id),
+            ...sourceMatch,
           },
         },
         {

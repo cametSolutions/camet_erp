@@ -1,139 +1,34 @@
-import { FaChevronDown } from "react-icons/fa";
-import { IoIosArrowRoundBack } from "react-icons/io";
-import { useEffect, useState } from "react";
-import { toast } from "react-toastify";
+/* eslint-disable react/prop-types */
 import dayjs from "dayjs";
-import { useParams } from "react-router-dom";
-import { useNavigate } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
-import {
-  addSettlementData,
-  addOutstandings,
-  setTotalBillAmount,
-} from "../../../slices/payment";
-import CallIcon from "../../components/common/CallIcon";
-import { MdPeopleAlt } from "react-icons/md";
-import useFetch from "../../customHook/useFetch";
+import React from "react";
+import { IoIosArrowRoundBack } from "react-icons/io";
 import { BarLoader } from "react-spinners";
+import { MdPeopleAlt } from "react-icons/md";
+import CallIcon from "../../common/CallIcon";
+import { FaChevronDown } from "react-icons/fa";
 
-function OutstandingListOfPayment() {
-  ///company Id
-  const cmp_id = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg._id
-  );
-  ///from receipt redux
-  const {
-    enteredAmount: enteredAmountRedux,
-    outstandings,
-    totalBillAmount,
-  } = useSelector((state) => state.receipt);
-
-  const [data, setData] = useState(outstandings);
-  const [total, setTotal] = useState(totalBillAmount);
-
-  const [enteredAmount, setEnteredAmount] = useState(() => {
-    const storedAmount = enteredAmountRedux || 0;
-
-    // Convert to a valid number or default to 0
-    const parsedAmount = parseFloat(storedAmount);
-    const validAmount = !isNaN(parsedAmount) ? parsedAmount : 0;
-
-    return validAmount;
-  });
-
-  function formatAmount(amount) {
-    // Use toLocaleString to add commas to the number
-    return amount.toLocaleString("en-IN", { maximumFractionDigits: 2 });
-  }
-
-  const dispatch = useDispatch();
-  const navigate = useNavigate();
-
-  const { party_id } = useParams();
-
-  const {
-    data: receiptData,
-    loading,
-    error,
-    refreshHook,
-  } = useFetch(
-    `/api/sUsers/fetchOutstandingDetails/${party_id}/${cmp_id}?voucher=payment`
-  );
-
-  useEffect(() => {
-    if (receiptData) {
-      setData(receiptData.outstandings);
-      setTotal(receiptData.totalOutstandingAmount);
-      dispatch(addOutstandings(receiptData.outstandings));
-      dispatch(setTotalBillAmount(receiptData.totalOutstandingAmount));
-    }
-  }, [receiptData]);
-
-  const handleAmountChange = (event) => {
-    const amount = parseFloat(event.target.value) || 0;
-    if (amount > total) {
-      toast.error("You can't enter an amount greater than total amount");
-      return;
-    }
-    setEnteredAmount(amount);
-  };
-  let remainingAmount = enteredAmount;
-
-  const handleNextClick = () => {
-    console.log(enteredAmount);
-
-    if (enteredAmount == null || enteredAmount <= 0) {
-      toast.error("Enter an amount");
-      return;
-    }
-
-    const results = [];
-    let remainingAmount = enteredAmount;
-
-    data.forEach((el) => {
-      const billAmount = parseFloat(el.bill_pending_amt) || 0;
-      const settledAmount = Math.min(billAmount, remainingAmount);
-
-      // Check if settledAmount is greater than zero before including it in results
-      if (settledAmount > 0) {
-        const remainingBillAmount = Math.max(0, billAmount - settledAmount);
-
-        remainingAmount -= settledAmount;
-
-        const resultObject = {
-          billNo: el.bill_no,
-          settledAmount,
-          remainingAmount: remainingBillAmount,
-        };
-
-        results.push(resultObject);
-      }
-    });
-
-    const settlementData = {
-      // party_id: data[0]?.party_id,
-      // party_name: data[0]?.party_name,
-      totalBillAmount: parseFloat(total),
-      enteredAmount: enteredAmount,
-      // cmp_id: data[0]?.cmp_id,
-      billData: results,
-    };
-
-    dispatch(addSettlementData(settlementData));
-    navigate("/sUsers/paymentPurchase");
-  };
-
+function OutstandingLIst({
+  loading,
+  data,
+  navigate,
+  total,
+  handleAmountChange,
+  enteredAmount,
+  handleNextClick,
+  remainingAmount,
+  formatAmount,
+}) {
   return (
     <>
       <div className="sticky  top-0 z-10 w-full shadow-lg  flex flex-col rounded-[3px] gap-1">
         {/* receive payment */}
 
-        <div className=" flex flex-col rounded-[3px]   bg-white ">
-          <div className="bg-[#012a4a] shadow-lg px-4 py-4 pb-3 flex justify-between items-center   ">
+        <div className=" flex flex-col rounded-[3px]  bg-white ">
+          <div className="bg-[#012a4a] shadow-lg px-4 py-4  flex justify-between items-center   ">
             <div className="flex items-center gap-2">
               <IoIosArrowRoundBack
                 onClick={() => {
-                  navigate("/sUsers/outstanding");
+                  navigate("/sUsers/receipt");
                 }}
                 className="text-3xl text-white cursor-pointer"
               />
@@ -146,7 +41,6 @@ function OutstandingListOfPayment() {
             </p>
           </div>
 
-
           {loading && (
             <BarLoader
               height={6}
@@ -155,7 +49,6 @@ function OutstandingListOfPayment() {
               speedMultiplier={0}
             />
           )}
-
 
           {/* party details */}
           <div className="  px-4 py-2 flex justify-between   ">
@@ -286,4 +179,4 @@ function OutstandingListOfPayment() {
   );
 }
 
-export default OutstandingListOfPayment;
+export default OutstandingLIst;

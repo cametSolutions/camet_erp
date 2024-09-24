@@ -26,7 +26,7 @@ const salesTiles = [
     subtitle: "Record sales transactions",
   },
   {
-    title: "Payment In",
+    title: "Receipt",
     icon: paymentIn,
     to: "/sUsers/receipt ",
     active: true,
@@ -65,7 +65,7 @@ const purchaseTiles = [
     subtitle: "Track and document your purchases",
   },
   {
-    title: "Payment Out",
+    title: "Payment",
     icon: paymentout,
     to: "/sUsers/paymentPurchase",
     active: true,

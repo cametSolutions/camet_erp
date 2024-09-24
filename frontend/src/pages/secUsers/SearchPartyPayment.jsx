@@ -26,7 +26,7 @@ function SearchPartyPayment() {
     const fetchParties = async () => {
       try {
         const res = await api.get(
-          `/api/sUsers/PartyList/${cpm_id}?outstanding=true`,
+          `/api/sUsers/PartyList/${cpm_id}?outstanding=true&voucher=payment`,
           {
             withCredentials: true,
           }
