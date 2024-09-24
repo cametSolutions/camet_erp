@@ -31,6 +31,7 @@ function OutstandingListOfReceipt() {
 
   const [data, setData] = useState(outstandings);
   const [total, setTotal] = useState(totalBillAmount);
+  const [advanceAmount, setAdvanceAmount] = useState(0);
   // const loading=true;
 
   const [enteredAmount, setEnteredAmount] = useState(() => {
@@ -74,11 +75,19 @@ function OutstandingListOfReceipt() {
   const handleAmountChange = (event) => {
     const amount = parseFloat(event.target.value) || 0;
     if (amount > total) {
-      toast.error("You can't enter an amount greater than total amount");
-      return;
+      setAdvanceAmount(amount - total);
+    }else{
+      setAdvanceAmount(0);
     }
     setEnteredAmount(amount);
+   
   };
+
+  console.log(advanceAmount);
+  
+
+
+
   let remainingAmount = enteredAmount;
 
   const handleNextClick = () => {
@@ -137,6 +146,7 @@ function OutstandingListOfReceipt() {
         handleNextClick,
         remainingAmount,
         formatAmount,
+        advanceAmount
       }}
     />
   );

@@ -9,7 +9,11 @@ import { toast } from "react-toastify";
 function AddAmountTile({ tab, party }) {
   const navigate = useNavigate();
 
-  const {totalBillAmount, enteredAmount } = useSelector((state) => state.receipt);
+  const { totalBillAmount, enteredAmount } = useSelector(
+    (state) => state.receipt
+  );
+
+  const isRemaining = totalBillAmount - enteredAmount > 0 ? true : false;
 
   const handleNavigate = () => {
     if (Object.keys(party).length === 0) {
@@ -58,13 +62,19 @@ function AddAmountTile({ tab, party }) {
             </div>
           </div>
           <section className="flex justify-between mt-3 ">
-
-            <p onClick={handleNavigate} className="text-violet-500  cursor-pointer text-xs md:text-md font-bold flex items-center gap-1">
-            <IoMdAdd className="text-xl" />
-             Add More Bills
+            <p
+              onClick={handleNavigate}
+              className="text-violet-500  cursor-pointer text-xs md:text-md font-bold flex items-center gap-1"
+            >
+              <IoMdAdd className="text-xl" />
+              Add More Bills
             </p>
             <p className="text-xs md:text-md font-semibold mr-1">
-              Remaining Amount : <span className="text-red-500"> ₹ {totalBillAmount-enteredAmount}</span>
+              {isRemaining ? "Remaining Amount" : "Advance Amount"} :{" "}
+              <span className="text-red-500">
+                {" "}
+                ₹ {Math.abs(totalBillAmount - enteredAmount)}
+              </span>
             </p>
           </section>
         </div>

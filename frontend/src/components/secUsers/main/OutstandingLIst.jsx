@@ -6,6 +6,8 @@ import { BarLoader } from "react-spinners";
 import { MdPeopleAlt } from "react-icons/md";
 import CallIcon from "../../common/CallIcon";
 import { FaChevronDown } from "react-icons/fa";
+import { IoAlertCircle } from "react-icons/io5";
+import { camelToNormalCase } from "../../../../utils/camelCaseToNormalCase";
 
 function OutstandingLIst({
   loading,
@@ -17,7 +19,10 @@ function OutstandingLIst({
   handleNextClick,
   remainingAmount,
   formatAmount,
+  advanceAmount,
 }) {
+
+  
   return (
     <>
       <div className="sticky  top-0 z-10 w-full shadow-lg  flex flex-col rounded-[3px] gap-1">
@@ -107,13 +112,24 @@ function OutstandingLIst({
           <hr className="h-[1px] my-0 bg-gray-300 border-0" />
 
           <div
-            className="bg-white px-4 py-2 pb-3  rounded-md flex gap-2"
+            className="bg-white px-4 py-2 pb-3  rounded-md flex gap-2 justify-between flex-wrap"
             style={{ boxShadow: "0px -4px 115px rgba(244,246,254 0.1)" }}
           >
-            <p className="text-[11px] font-bold">
-              # Pending Bills ({data.length})
-            </p>
-            <FaChevronDown />
+            <div className=" flex gap-2 items-center">
+              <p className="text-[11px] font-bold">
+                # Pending Bills ({data.length})
+              </p>
+
+              <FaChevronDown />
+            </div>
+            {advanceAmount > 0 && (
+              <p className="text-[11px] text-gray-600 font-bold">
+                # Advance Amount :{" "}
+                <span className="text-violet-500">
+                  ₹ {Number(advanceAmount.toFixed(2))}
+                </span>
+              </p>
+            )}
           </div>
         </div>
       </div>
@@ -128,23 +144,26 @@ function OutstandingLIst({
           return (
             <div
               key={index}
-              className=" h-[100px]  rounded-md shadow-xl border border-gray-100  flex justify-between px-4  transition-all duration-150 transform hover:translate-x-1 ease-in-out overflow-y-auto "
+              className=" h-[110px]  rounded-md shadow-xl border border-gray-300  flex justify-between px-4   transition-all duration-150 transform hover:translate-x-1 ease-in-out overflow-y-auto "
             >
-              <div className=" h-full px-2 py-8 lg:p-6 w-[200px] md:w-[180px] lg:w-[300px] flex justify-center items-start relative flex-col ">
+              <div className=" h-full px-2 py-8 lg:p-6 w-[200px] md:w-[180px] lg:w-[300px]    relative ">
                 <div className="flex items-center gap-2">
                   <input
                     type="checkbox"
                     checked={settledAmount > 0 || remainingBillAmount == 0}
                     className="w-7 h-7"
                   />
-                  <div className="flex flex-col gap-1 ml-2">
+                  <div className="flex flex-col items-start gap-1 ml-2">
                     <p className="font-bold text-gray-700 text-[12px]">
                       #{el.bill_no}
                     </p>
-                    <pc className="text-xs font-semibold text-violet-600">
+                    <p className="text-xs font-semibold text-violet-600">
                       {/* {el.bill_date} */}
                       {dayjs(el.bill_date).format("DD/MM/YYYY")}
-                    </pc>
+                    </p>
+                    <p className="text-xs font-semibold text-gray-500">
+                      #{camelToNormalCase(el?.source)}
+                    </p>
                   </div>
                 </div>
               </div>
