@@ -1,7 +1,6 @@
 import { FaChevronDown } from "react-icons/fa";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import { useEffect, useState } from "react";
-import api from "../../api/api";
 import { toast } from "react-toastify";
 import dayjs from "dayjs";
 import { useParams } from "react-router-dom";
@@ -14,6 +13,8 @@ import {
 } from "../../../slices/receipt";
 import CallIcon from "../../components/common/CallIcon";
 import { MdPeopleAlt } from "react-icons/md";
+import useFetch from "../../customHook/useFetch";
+import { BarLoader } from "react-spinners";
 
 function OutstandingListOfReceipt() {
   ///company Id
@@ -29,6 +30,7 @@ function OutstandingListOfReceipt() {
 
   const [data, setData] = useState(outstandings);
   const [total, setTotal] = useState(totalBillAmount);
+  // const loading=true;
 
   const [enteredAmount, setEnteredAmount] = useState(() => {
     const storedAmount = enteredAmountRedux || 0;
@@ -50,36 +52,23 @@ function OutstandingListOfReceipt() {
 
   const { party_id } = useParams();
 
-  console.log(party_id);
-  
+  const {
+    data: receiptData,
+    loading,
+    error,
+    refreshHook,
+  } = useFetch(
+    `/api/sUsers/fetchOutstandingDetails/${party_id}/${cmp_id}?voucher=receipt`
+  );
 
   useEffect(() => {
-    const fetchOutstandingDetails = async () => {
-      try {
-        let endpoint;
-        endpoint = `/api/sUsers/fetchOutstandingDetails/${party_id}/${cmp_id}`;
-
-        const res = await api.get(endpoint, {
-          withCredentials: true,
-        });
-
-        const { outstandings, totalOutstandingAmount } = res.data;
-
-        setData(outstandings);
-
-        setTotal(totalOutstandingAmount);
-        dispatch(addOutstandings(outstandings));
-        dispatch(setTotalBillAmount(totalOutstandingAmount));
-      } catch (error) {
-        console.log(error);
-        toast.error(error.response.data.message);
-      }
-    };
-
-    fetchOutstandingDetails();
-    // if (outstandings.length == 0 && totalBillAmount == 0) {
-    // }
-  }, [party_id, cmp_id]);
+    if (receiptData) {
+      setData(receiptData.outstandings);
+      setTotal(receiptData.totalOutstandingAmount);
+      dispatch(addOutstandings(receiptData.outstandings));
+      dispatch(setTotalBillAmount(receiptData.totalOutstandingAmount));
+    }
+  }, [receiptData]);
 
   const handleAmountChange = (event) => {
     const amount = parseFloat(event.target.value) || 0;
@@ -140,8 +129,8 @@ function OutstandingListOfReceipt() {
       <div className="sticky  top-0 z-10 w-full shadow-lg  flex flex-col rounded-[3px] gap-1">
         {/* receive payment */}
 
-        <div className=" flex flex-col rounded-[3px] gap-1  bg-white ">
-          <div className="bg-[#012a4a] shadow-lg px-4 py-4 pb-3 flex justify-between items-center   ">
+        <div className=" flex flex-col rounded-[3px]  bg-white ">
+          <div className="bg-[#012a4a] shadow-lg px-4 py-4  flex justify-between items-center   ">
             <div className="flex items-center gap-2">
               <IoIosArrowRoundBack
                 onClick={() => {
@@ -157,6 +146,15 @@ function OutstandingListOfReceipt() {
               {dayjs(new Date()).format("DD/MM/YYYY")}
             </p>
           </div>
+
+          {loading && (
+            <BarLoader
+              height={6}
+              color="#3688da"
+              width={"100%"}
+              speedMultiplier={0}
+            />
+          )}
 
           {/* party details */}
           <div className="  px-4 py-2 flex justify-between   ">

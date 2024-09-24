@@ -1,7 +1,7 @@
 import express from 'express'
 const router = express.Router();
 import {login,getSecUserData,fetchOutstandingTotal,
-    fetchOutstandingDetails,confirmCollection,logout,
+    confirmCollection,logout,
     cancelTransaction,fetchBanks,sendOtp,
     submitOtp,resetPassword,getTransactionDetails,PartyList,addParty,getProducts,
     createInvoice,invoiceList,getSinglePartyDetails,editParty,
@@ -25,6 +25,7 @@ import { getStockTransferDetails,addProduct ,editProduct,getCreditNoteDetails,tr
 import { authSecondary } from '../middlewares/authSecUsers.js';
 import { secondaryIsBlocked } from '../middlewares/isBlocked.js';
 import { companyAuthentication } from '../middlewares/authCompany.js';
+import { fetchOutstandingDetails } from '../controllers/receiptController.js';
 
 
 router.post('/login',login)
