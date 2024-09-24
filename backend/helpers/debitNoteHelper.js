@@ -2,6 +2,7 @@ import productModel from "../models/productModel.js";
 import debitNoteModel from "../models/debitNoteModel.js";
 import { truncateToNDecimals } from "./helper.js";
 import OragnizationModel from "../models/OragnizationModel.js";
+import TallyData from "../models/TallyData.js";
 
 ///////////////////////// for stock update ////////////////////////////////
 export const handleDebitNoteStockUpdates = async (items,session) => {
@@ -263,116 +264,15 @@ export const createDebitNoteRecord = async (
   }
 };
 
-// Helper function to revert stock changes
-// export const revertPurchaseStockUpdates = async (items) => {
-//   const productUpdates = [];
-//   const godownUpdates = [];
+/// Revert stock updates
 
-//   for (const item of items) {
-//     const product = await productModel.findOne({ _id: item._id });
-//     if (!product) {
-//       throw new Error(`Product not found for item ID: ${item._id}`);
-//     }
-
-//     const itemCount = parseFloat(item.count);
-//     const productBalanceStock = parseFloat(product.balance_stock);
-//     const newBalanceStock = truncateToNDecimals(productBalanceStock - itemCount, 3);
-
-//     console.log("productBalanceStock", productBalanceStock);
-//     console.log("newBalanceStock", newBalanceStock);
-
-//     productUpdates.push({
-//       updateOne: {
-//         filter: { _id: product._id },
-//         update: { $set: { balance_stock: newBalanceStock } },
-//       },
-//     });
-
-//     if (item.hasGodownOrBatch) {
-//       // Process godown and batch updates
-//       console.log("has godown or batch");
-
-//       for (const godown of item.GodownList) {
-//         const godownCount = parseFloat(godown.count);
-
-//         if (godown.batch && !godown.godown_id) {
-//           console.log("only have batch");
-//           const godownIndex = product.GodownList.findIndex(
-//             (g) => g.batch === godown.batch
-//           );
-
-//           if (godownIndex !== -1) {
-//             const currentGodownStock = product.GodownList[godownIndex].balance_stock || 0;
-//             const newGodownStock = truncateToNDecimals(currentGodownStock - godownCount, 3);
-
-//             console.log("currentGodownStock", currentGodownStock);
-//             console.log("newGodownStock", newGodownStock);
-
-//             godownUpdates.push({
-//               updateOne: {
-//                 filter: { _id: product._id, "GodownList.batch": godown.batch },
-//                 update: {
-//                   $set: { "GodownList.$.balance_stock": newGodownStock },
-//                 },
-//               },
-//             });
-//           }
-//         } else if (godown.godown_id && godown.batch) {
-//           console.log("have both godown and batch");
-
-//           console.log("godown count",godown.godown, godownCount);
-
-//           godownUpdates.push({
-//             updateOne: {
-//               filter: { _id: product._id },
-//               update: {
-//                 $inc: { "GodownList.$[elem].balance_stock": -godownCount },
-//               },
-//               arrayFilters: [
-//                 {
-//                   "elem.godown_id": godown.godown_id,
-//                   "elem.batch": godown.batch,
-//                 },
-//               ],
-//             },
-//           });
-//         } else if (godown.godown_id && !godown?.batch) {
-//           console.log("only have godown");
-//           godownUpdates.push({
-//             updateOne: {
-//               filter: {
-//                 _id: product._id,
-//                 "GodownList.godown_id": godown.godown_id,
-//               },
-//               update: {
-//                 $inc: { "GodownList.$.balance_stock": -godownCount },
-//               },
-//             },
-//           });
-//         }
-//       }
-//     } else {
-
-//       godownUpdates.push({
-//         updateOne: {
-//           filter: { _id: product._id },
-//           update: { $inc: { "GodownList.$[].balance_stock": -itemCount } },
-//         },
-//       });
-//     }
-//   }
-
-//   // await productModel.bulkWrite(productUpdates);
-//   // await productModel.bulkWrite(godownUpdates);
-// };
-
-export const revertDebitNoteStockUpdates = async (items) => {
+export const revertDebitNoteStockUpdates = async (items,session) => {
   try {
     const productUpdates = [];
     const godownUpdates = [];
 
     for (const item of items) {
-      const product = await productModel.findOne({ _id: item._id });
+      const product = await productModel.findOne({ _id: item._id }).session(session);
       if (!product) {
         throw new Error(`Product not found for item ID: ${item._id}`);
       }
@@ -517,10 +417,55 @@ export const revertDebitNoteStockUpdates = async (items) => {
     }
 
     // Execute bulk operations to revert stock changes
-    await productModel.bulkWrite(productUpdates);
-    await productModel.bulkWrite(godownUpdates);
+    await productModel.bulkWrite(productUpdates,{session});
+    await productModel.bulkWrite(godownUpdates,{session});
   } catch (error) {
     console.error("Error reverting sale stock updates:", error);
+    throw error;
+  }
+};
+
+///
+export const  updateTallyData = async (
+  orgId,
+  debitNoteNumber,
+  Primary_user_id,
+  party,
+  lastAmount,
+  secondaryMobile,
+  session
+) => {
+  try {
+    const billData = {
+        Primary_user_id,
+        bill_no: debitNoteNumber,
+        cmp_id: orgId,
+        party_id: party?.party_master_id,
+        bill_amount: lastAmount,
+        bill_date: new Date(),
+        bill_pending_amt: lastAmount,
+        email: party?.emailID,
+        mobile_no: party?.mobileNumber,
+        party_name: party?.partyName,
+        user_id: secondaryMobile || "null",
+        source: "debitNote",
+      };
+
+    const tallyUpdate=await TallyData.findOneAndUpdate(
+      {
+        cmp_id: orgId,
+        bill_no: debitNoteNumber,
+        Primary_user_id: Primary_user_id,
+        party_id: party?.party_master_id,
+      },
+      billData,
+      { upsert: true, new: true,session }
+    );
+
+    console.log("tallyUpdate",tallyUpdate);
+    
+  } catch (error) {
+    console.error("Error updateTallyData sale stock updates:", error);
     throw error;
   }
 };

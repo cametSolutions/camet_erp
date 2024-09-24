@@ -4,6 +4,7 @@ import {
   handleDebitNoteStockUpdates,
   revertDebitNoteStockUpdates,
   updateDebitNoteNumber,
+  updateTallyData,
 } from "../helpers/debitNoteHelper.js";
 import { processSaleItems as processDebitNoteItems } from "../helpers/salesHelper.js";
 
@@ -11,6 +12,7 @@ import { checkForNumberExistence } from "../helpers/secondaryHelper.js";
 import debitNoteModel from "../models/debitNoteModel.js";
 import secondaryUserModel from "../models/secondaryUserModel.js";
 import mongoose from "mongoose";
+import TallyData from "../models/TallyData.js";
 
 // @desc create credit note
 // route GET/api/sUsers/createDebitNote
@@ -84,6 +86,16 @@ export const createDebitNote = async (req, res) => {
       session // Pass session
     );
 
+    await updateTallyData(
+      orgId,
+      debitNoteNumber,
+      req.owner,
+      party,
+      lastAmount,
+      secondaryMobile,
+      session // Pass session if needed
+    );
+
     await session.commitTransaction();
     session.endSession();
 
@@ -109,9 +121,13 @@ export const createDebitNote = async (req, res) => {
 // route GET/api/sUsers/cancelDebitNote
 
 export const cancelDebitNote = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
   try {
     const debitNoteId = req.params.id; // Assuming saleId is passed in the URL parameters
-    const existingDebitNote = await debitNoteModel.findById(debitNoteId);
+    const existingDebitNote = await debitNoteModel
+      .findById(debitNoteId)
+      .session(session);
     if (!existingDebitNote) {
       return res
         .status(404)
@@ -119,13 +135,15 @@ export const cancelDebitNote = async (req, res) => {
     }
 
     // Revert existing stock updates
-    await revertDebitNoteStockUpdates(existingDebitNote.items);
+    await revertDebitNoteStockUpdates(existingDebitNote.items, session);
 
     // flagging is cancelled true
 
     existingDebitNote.isCancelled = true;
 
-    const cancelledDebitNote = await existingDebitNote.save();
+    const cancelledDebitNote = await existingDebitNote.save({ session });
+
+    await session.commitTransaction();
 
     res.status(200).json({
       success: true,
@@ -133,12 +151,15 @@ export const cancelDebitNote = async (req, res) => {
       data: cancelledDebitNote,
     });
   } catch (error) {
+    await session.abortTransaction();
     console.error(error);
     res.status(500).json({
       success: false,
       message: "An error occurred while editing the sale.",
       error: error.message,
     });
+  } finally {
+    await session.endSession();
   }
 };
 
@@ -146,8 +167,11 @@ export const cancelDebitNote = async (req, res) => {
 // route GET/api/sUsers/editDebitNote
 
 export const editDebitNote = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
-    const debitNoteId = req.params.id; // Assuming saleId is passed in the URL parameters
+    const debitNoteId = req.params.id;
     const {
       selectedGodownId,
       selectedGodownName,
@@ -160,29 +184,31 @@ export const editDebitNote = async (req, res) => {
       debitNoteNumber,
       selectedDate,
     } = req.body;
-    // Fetch existing Purchase
-    const existingDebitNote = await debitNoteModel.findById(debitNoteId);
+
+    const existingDebitNote = await debitNoteModel
+      .findById(debitNoteId)
+      .session(session);
     if (!existingDebitNote) {
+      await session.abortTransaction();
+      session.endSession();
       return res
         .status(404)
-        .json({ success: false, message: "Purchase not found" });
+        .json({ success: false, message: "Debit Note not found" });
     }
 
-    // Revert existing stock updates
-    await revertDebitNoteStockUpdates(existingDebitNote.items);
-    // Process new sale items and update stock
+    await revertDebitNoteStockUpdates(existingDebitNote.items, session);
+
     const updatedItems = await processDebitNoteItems(
       items,
       additionalChargesFromRedux
     );
 
-    await handleDebitNoteStockUpdates(updatedItems);
+    await handleDebitNoteStockUpdates(updatedItems, session);
 
-    // Update existing sale record
     const updateData = {
-      selectedGodownId: "",
-      selectedGodownName: "",
-      serialNumber: existingDebitNote.serialNumber, // Keep existing serial number
+      selectedGodownId: selectedGodownId ?? "",
+      selectedGodownName: selectedGodownName ? selectedGodownName[0] : "",
+      serialNumber: existingDebitNote.serialNumber,
       cmp_id: orgId,
       partyAccount: party?.partyName,
       party,
@@ -198,50 +224,54 @@ export const editDebitNote = async (req, res) => {
 
     await debitNoteModel.findByIdAndUpdate(debitNoteId, updateData, {
       new: true,
+      session,
     });
 
-    //     ///////////////////////////////////// for reflecting the rate change in outstanding  ////////////////////////////////////
+    //// edit outstanding
 
-    // const newBillValue = Number(lastAmount);
-    // const oldBillValue = Number(existingSale.finalAmount);
-    // const diffBillValue = newBillValue - oldBillValue;
+    const newBillValue = Number(lastAmount);
+    const oldBillValue = Number(existingDebitNote.finalAmount);
+    const diffBillValue = newBillValue - oldBillValue;
 
-    // const matchedOutStanding = await TallyData.findOne({
-    //   party_id: party?.party_master_id,
-    //   cmp_id: orgId,
-    //   bill_no: salesNumber,
-    // });
+    const matchedOutStanding = await TallyData.findOne({
+      party_id: party?.party_master_id,
+      cmp_id: orgId,
+      bill_no: debitNoteNumber,
+    }).session(session);
 
-    // if (matchedOutStanding) {
-    //   // console.log("editSale: matched outstanding found");
-    //   const newOutstanding =
-    //     Number(matchedOutStanding?.bill_pending_amt) + diffBillValue;
+    if (matchedOutStanding) {
+      const newOutstanding = Number(matchedOutStanding?.bill_pending_amt) + diffBillValue;
 
-    //   // console.log("editSale: new outstanding calculated", newOutstanding);
-    //   await TallyData.updateOne(
-    //     {
-    //       party_id: party?.party_master_id,
-    //       cmp_id: orgId,
-    //       bill_no: salesNumber,
-    //     },
-    //     { $set: { bill_pending_amt: newOutstanding } }
-    //   );
+      // console.log("newOutstanding",newOutstanding);
+      
+     const outStandingUpdateResult = await TallyData.updateOne(
+        {
+          party_id: party?.party_master_id,
+          cmp_id: orgId,
+          bill_no: debitNoteNumber,
+        },
+        { $set: { bill_pending_amt: newOutstanding, bill_amount: newBillValue } },
+        { new: true,session }
+      );
+    }
 
-    //   // console.log("editSale: outstanding updated");
-    // } else {
-    //   console.log("editSale: matched outstanding not found");
-    // }
+
+    await session.commitTransaction();
+    session.endSession();
 
     res.status(200).json({
       success: true,
-      message: "purchase edited successfully",
+      message: "Debit Note edited successfully",
     });
   } catch (error) {
+    await session.abortTransaction();
     console.error(error);
     res.status(500).json({
       success: false,
-      message: "An error occurred while editing the sale.",
+      message: "An error occurred while editing the Debit Note.",
       error: error.message,
     });
+  } finally {
+    await session.endSession();
   }
 };

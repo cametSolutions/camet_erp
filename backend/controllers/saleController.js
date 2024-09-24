@@ -103,7 +103,8 @@ export const createSale = async (req, res) => {
       party,
       lastAmount,
       secondaryMobile,
-      session // Pass session if needed
+      
+      session 
     );
 
     await session.commitTransaction();
