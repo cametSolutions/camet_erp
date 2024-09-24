@@ -19,7 +19,7 @@ function AddOrgForm({ onSubmit, orgData = {} }) {
   const [state, setState] = useState("");
   const [country, setCountry] = useState("India");
   const [mobile, setMobile] = useState("");
-  const [gst, setGst] = useState("");
+  const [gstNum, setGstNum] = useState("");
   const [email, setEmail] = useState("");
   const [flat, setFlat] = useState("");
   const [road, setRoad] = useState("");
@@ -97,7 +97,7 @@ function AddOrgForm({ onSubmit, orgData = {} }) {
       setUsername(username);
       setPassword(password);
       setPin(pin);
-      setGst(gstNum);
+      setGstNum(gstNum);
       setCountry(country);
       setLogo(logo);
       setState(state);
@@ -131,7 +131,7 @@ function AddOrgForm({ onSubmit, orgData = {} }) {
   const submitHandler = async () => {
     if (
       !name.trim() ||
-      // (gst && !gst.trim()) ||
+      // (gstNum && !gstNum.trim()) ||
       !email.trim() ||
       !state ||
       !country ||
@@ -197,7 +197,7 @@ function AddOrgForm({ onSubmit, orgData = {} }) {
 
     const gstRegex = /^[0-9A-Za-z]{15}$/;
 
-    if (gst && !gstRegex.test(gst) && country === "India") {
+    if (gstNum && !gstRegex.test(gstNum) && country === "India") {
       toast.error("Invalid GST number");
       return;
     }
@@ -220,6 +220,9 @@ function AddOrgForm({ onSubmit, orgData = {} }) {
       return;
     }
 
+    console.log(gstNum);
+    
+
     const formData = {
       name,
       // place,
@@ -227,7 +230,7 @@ function AddOrgForm({ onSubmit, orgData = {} }) {
       state,
       country,
       email,
-      gst,
+      gstNum,
       mobile,
       logo,
       flat,
@@ -247,7 +250,7 @@ function AddOrgForm({ onSubmit, orgData = {} }) {
       printTitle,
     };
 
-    // console.log(formData);
+    console.log(formData);
     onSubmit(formData);
   };
 
@@ -347,7 +350,7 @@ function AddOrgForm({ onSubmit, orgData = {} }) {
                       countries.find((c) => c.countryName === e.target.value)
                         ?.currencyName
                     );
-                    setState("");
+                    // setState("");
                   }}
                   value={country}
                 >
@@ -422,6 +425,7 @@ function AddOrgForm({ onSubmit, orgData = {} }) {
                   className="border-0 px-3 mr-12 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                   onChange={(e) => {
                     setCurrency(e.target.value);
+                    // setState("");
                   }}
                   value={currency}
                 >
@@ -448,6 +452,7 @@ function AddOrgForm({ onSubmit, orgData = {} }) {
                   className="border-0 px-3 mr-12 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                   onChange={(e) => {
                     setCurrencyName(e.target.value);
+                    // setState("");
                   }}
                   value={currencyName}
                 >
@@ -639,9 +644,9 @@ function AddOrgForm({ onSubmit, orgData = {} }) {
                   type=""
                   className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                   onChange={(e) => {
-                    setGst(e.target.value);
+                    setGstNum(e.target.value);
                   }}
-                  value={gst}
+                  value={gstNum}
                   placeholder={country == "India" ? "GST No" : "VAT No"}
                 />
               </div>
