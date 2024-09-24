@@ -651,7 +651,9 @@ export const checkForNumberExistence = async (
   model,
   fieldName,
   newValue,
-  cmp_id
+  cmp_id,
+  session
+
 ) => {
   try {
     // const centralNumber = parseInt(newValue, 10);
@@ -659,7 +661,7 @@ export const checkForNumberExistence = async (
     const docs = await model.find({
       [fieldName]: newValue,
       cmp_id: cmp_id,
-    });
+    }).session(session);
 
     console.log(docs.map((el) => el[fieldName]));
     return docs.length > 0;

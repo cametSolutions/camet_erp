@@ -4,12 +4,12 @@ import { truncateToNDecimals } from "./helper.js";
 import OragnizationModel from "../models/OragnizationModel.js";
 
 ///////////////////////// for stock update ////////////////////////////////
-export const handleDebitNoteStockUpdates = async (items) => {
+export const handleDebitNoteStockUpdates = async (items,session) => {
   const productUpdates = [];
   const godownUpdates = [];
 
   for (const item of items) {
-    const product = await productModel.findOne({ _id: item._id });
+    const product = await productModel.findOne({ _id: item._id }).session(session);
     if (!product) {
       throw new Error(`Product not found for item ID: ${item._id}`);
     }
@@ -134,7 +134,7 @@ export const handleDebitNoteStockUpdates = async (items) => {
         );
         return { ...godown, balance_stock: newGodownStock };
       });
-
+ 
       godownUpdates.push({
         updateOne: {
           filter: { _id: product._id },
@@ -147,17 +147,19 @@ export const handleDebitNoteStockUpdates = async (items) => {
   //   console.log("godownUpdates", godownUpdates);
   //   console.log("productUpdates", productUpdates);
 
-  await productModel.bulkWrite(productUpdates);
-  await productModel.bulkWrite(godownUpdates);
+  await productModel.bulkWrite(productUpdates,{session});
+  await productModel.bulkWrite(godownUpdates,{session});
 };
 // Helper function to create purchase record
 export const createDebitNoteRecord = async (
   req,
  debitNoteNumber,
   updatedItems,
-  updateAdditionalCharge
+  updateAdditionalCharge,
+  session 
 ) => {
   try {
+
     const {
       selectedGodownId,
       selectedGodownName,
@@ -183,7 +185,7 @@ export const createDebitNoteRecord = async (
     const lastPurchase = await model.findOne(
       {},
       {},
-      { sort: { serialNumber: -1 } }
+      { sort: { serialNumber: -1 }, session }
     );
     let newSerialNumber = 1;
 
@@ -210,7 +212,7 @@ export const createDebitNoteRecord = async (
       createdAt: new Date(selectedDate) ? new Date(selectedDate) : new Date(),
     });
 
-    const result = await debit.save();
+    const result = await debit.save({ session });
 
     return result;
   } catch (error) {
@@ -221,7 +223,7 @@ export const createDebitNoteRecord = async (
 
 // update purchase number
 
-export const updateDebitNoteNumber = async (orgId, secondaryUser) => {
+  export const updateDebitNoteNumber = async (orgId, secondaryUser, session) => {
   try {
     let debitNoteConfig = false;
 
@@ -247,12 +249,12 @@ export const updateDebitNoteNumber = async (orgId, secondaryUser) => {
         }
       );
       secondaryUser.configurations = updatedConfiguration;
-      await secondaryUser.save();
+      await secondaryUser.save({session});
     } else {
       await OragnizationModel.findByIdAndUpdate(
         orgId,
         { $inc: { debitNoteNumber: 1 } },
-        { new: true }
+        { new: true ,session}
       );
     }
   } catch (error) {

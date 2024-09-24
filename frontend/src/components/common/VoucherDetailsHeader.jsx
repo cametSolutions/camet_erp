@@ -27,6 +27,8 @@ function VoucherDetailsHeader({
   const showShareButtonOnly = user === "primary" && tab !== "stockTransfer";
   // const hideButtons = user === "primary" && tab === "stockTransfer";
 
+  
+
   return (
     <div>
       <div className="bg-white p-4 mt-3 flex justify-between items-center">

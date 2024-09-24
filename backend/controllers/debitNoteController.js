@@ -3,30 +3,31 @@ import {
   createDebitNoteRecord,
   handleDebitNoteStockUpdates,
   revertDebitNoteStockUpdates,
-  updateDebitNoteNumber
+  updateDebitNoteNumber,
 } from "../helpers/debitNoteHelper.js";
 import { processSaleItems as processDebitNoteItems } from "../helpers/salesHelper.js";
 
 import { checkForNumberExistence } from "../helpers/secondaryHelper.js";
 import debitNoteModel from "../models/debitNoteModel.js";
 import secondaryUserModel from "../models/secondaryUserModel.js";
+import mongoose from "mongoose";
 
 // @desc create credit note
 // route GET/api/sUsers/createDebitNote
 export const createDebitNote = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
     const {
-      selectedGodownId,
-      selectedGodownName,
-      orgId,
       party,
+      orgId,
       items,
-      despatchDetails,
       additionalChargesFromRedux,
       lastAmount,
       debitNoteNumber,
-      selectedDate,
     } = req.body;
+    // debitNoteNumber,
 
     const Secondary_user_id = req.sUserId;
 
@@ -34,29 +35,37 @@ export const createDebitNote = async (req, res) => {
       debitNoteModel,
       "debitNoteNumber",
       debitNoteNumber,
-      req.body.orgId
+      req.body.orgId,
+      session
     );
 
     if (NumberExistence) {
+      await session.abortTransaction();
+      session.endSession();
       return res.status(400).json({
         message: "Debit Note with the same number already exists",
       });
     }
 
-    const secondaryUser = await secondaryUserModel.findById(Secondary_user_id);
+    const secondaryUser = await secondaryUserModel
+      .findById(Secondary_user_id)
+      .session(session);
     const secondaryMobile = secondaryUser?.mobile;
 
     if (!secondaryUser) {
+      await session.abortTransaction();
+      session.endSession();
       return res
         .status(404)
         .json({ success: false, message: "Secondary user not found" });
     }
 
-    await handleDebitNoteStockUpdates(items);
-    const updatedItems = await   processDebitNoteItems(items);
+    await handleDebitNoteStockUpdates(items, session);
+    const updatedItems = await processDebitNoteItems(items);
     const updateDebitNoteVoucherNumber = await updateDebitNoteNumber(
       orgId,
-      secondaryUser
+      secondaryUser,
+      session
     );
 
     const updateAdditionalCharge = additionalChargesFromRedux.map((charge) => {
@@ -71,8 +80,12 @@ export const createDebitNote = async (req, res) => {
       req,
       debitNoteNumber,
       updatedItems,
-      updateAdditionalCharge
+      updateAdditionalCharge,
+      session // Pass session
     );
+
+    await session.commitTransaction();
+    session.endSession();
 
     res.status(201).json({
       success: true,
@@ -80,12 +93,15 @@ export const createDebitNote = async (req, res) => {
       message: "Debit Note created successfully",
     });
   } catch (error) {
+    await session.abortTransaction();
     console.error(error);
     res.status(500).json({
       success: false,
       message: "An error occurred while creating the Debit",
       error: error.message,
     });
+  } finally {
+    await session.endSession();
   }
 };
 
@@ -94,42 +110,40 @@ export const createDebitNote = async (req, res) => {
 
 export const cancelDebitNote = async (req, res) => {
   try {
-  const debitNoteId = req.params.id; // Assuming saleId is passed in the URL parameters
-  const existingDebitNote = await debitNoteModel.findById(debitNoteId);
-  if (!existingDebitNote) {
-    return res
-      .status(404)
-      .json({ success: false, message: "Purchase not found" });
+    const debitNoteId = req.params.id; // Assuming saleId is passed in the URL parameters
+    const existingDebitNote = await debitNoteModel.findById(debitNoteId);
+    if (!existingDebitNote) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Purchase not found" });
+    }
+
+    // Revert existing stock updates
+    await revertDebitNoteStockUpdates(existingDebitNote.items);
+
+    // flagging is cancelled true
+
+    existingDebitNote.isCancelled = true;
+
+    const cancelledDebitNote = await existingDebitNote.save();
+
+    res.status(200).json({
+      success: true,
+      message: "purchase canceled successfully",
+      data: cancelledDebitNote,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: "An error occurred while editing the sale.",
+      error: error.message,
+    });
   }
-
-  // Revert existing stock updates
-  await revertDebitNoteStockUpdates(existingDebitNote.items);
-
-  // flagging is cancelled true
-
-  existingDebitNote.isCancelled = true;
-
-  const cancelledDebitNote=await existingDebitNote.save();
-
-  res.status(200).json({
-    success: true,
-    message: "purchase canceled successfully",
-    data:cancelledDebitNote
-  });
-} catch (error) {
-  console.error(error);
-  res.status(500).json({
-    success: false,
-    message: "An error occurred while editing the sale.",
-    error: error.message,
-  });
-}
 };
-
 
 // @desc edit debit note
 // route GET/api/sUsers/editDebitNote
-
 
 export const editDebitNote = async (req, res) => {
   try {
@@ -231,4 +245,3 @@ export const editDebitNote = async (req, res) => {
     });
   }
 };
-

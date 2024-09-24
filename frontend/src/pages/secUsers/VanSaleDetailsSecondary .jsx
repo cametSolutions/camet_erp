@@ -10,13 +10,13 @@ import { useLocation, useNavigate } from "react-router-dom";
 import SalesProductDetails from "../../components/common/SalesProductDetails";
 import SwallFireForPdf from "../../components/common/SwallFireForPdf";
 import VoucherDetailsHeader from "../../components/common/VoucherDetailsHeader";
+import CancelButton from "../../components/common/CancelButton";
 
 function VanSaleDetailsSecondary() {
   const [data, setData] = useState("");
   const [refresh, setRefresh] = useState(false);
 
   const { id } = useParams();
-  console.log(id);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -34,13 +34,12 @@ function VanSaleDetailsSecondary() {
       }
     };
     getTransactionDetails();
-  }, [refresh,id]);
+  }, [refresh, id]);
 
   const reFetch = () => {
     setRefresh(!refresh);
   };
 
-  console.log(data);
   const backHandler = () => {
     if (location?.state?.from === "dashboard") {
       navigate("/sUsers/dashboard");
@@ -48,8 +47,6 @@ function VanSaleDetailsSecondary() {
       navigate("/sUsers/transaction");
     }
   };
-
-  console.log(data.items);
 
   return (
     <div className="bg-[rgb(244,246,254)] flex-1  relative  pb-[70px] md:pb-0 ">
@@ -69,8 +66,6 @@ function VanSaleDetailsSecondary() {
       </div>
       {/* headinh section  */}
 
-      
-
       <VoucherDetailsHeader
         data={data}
         reFetchParent={reFetch}
@@ -85,7 +80,6 @@ function VanSaleDetailsSecondary() {
       <div className="bg-white mt-2 p-4  ">
         <div className="flex justify-between text-sm mb-2">
           <h2 className="font-semibold text-sm  text-gray-500">PARTY NAME</h2>
-         
         </div>
         <hr />
         <hr />
@@ -112,7 +106,17 @@ function VanSaleDetailsSecondary() {
       {/* payment method */}
 
       <div className=" block md:hidden z-0 ">
-        <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 flex justify-center p-4 gap-12 text-lg text-violet-500  ">
+        <div
+          className={`   ${
+            data?.isCancelled && "pointer-events-none opacity-60"
+          } fixed bottom-0 left-1/2 transform -translate-x-1/2 flex justify-center p-4 gap-12 text-lg text-violet-500   `}
+        >
+          <CancelButton
+            id={data._id}
+            tab="vanSale"
+            isCancelled={data?.isCancelled}
+            reFetch={reFetch}
+          />
           <div
             onClick={() => navigate(`/sUsers/editVanSale/${data._id}`)}
             className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer"
@@ -120,6 +124,7 @@ function VanSaleDetailsSecondary() {
             <FaEdit className="text-blue-500" />
             <p className="text-black font-bold text-sm">Edit</p>
           </div>
+
           {/* <Link to={`/sUsers/shareSales/${data._id}`}> */}
           <SwallFireForPdf data={data} tab="vanSale" />
 

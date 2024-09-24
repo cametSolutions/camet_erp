@@ -20,6 +20,8 @@ import TallyData from "../models/TallyData.js";
  */
 
 export const createSale = async (req, res) => {
+
+  
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
