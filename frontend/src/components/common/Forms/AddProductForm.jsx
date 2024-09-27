@@ -352,7 +352,7 @@ function AddProductForm({
     }
 
     const getLocation = () => {
-      const orginalStock = originalGodownList[0].balance_stock;
+      const orginalStock = originalGodownList[0]?.balance_stock;
 
       const noLocation = [{ balance_stock: 0 }];
 

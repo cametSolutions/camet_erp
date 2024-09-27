@@ -11,6 +11,13 @@ import {
   addNote,
   addIsNoteOpen,
 } from "../../../../slices/receipt";
+import {
+  addPaymentMethod as addPaymentMethodForPayment,
+  addChequeDate as addChequeDateForPayment,
+  addChequeNumber as addChequeNumberForPayment,
+  addNote as addNoteForPayment,
+  addIsNoteOpen as addIsNoteOpenForPayment,
+} from "../../../../slices/payment";
 import { useDispatch } from "react-redux";
 import { useSelector } from "react-redux";
 import { PiBankBold } from "react-icons/pi";
@@ -19,6 +26,7 @@ import "react-datepicker/dist/react-datepicker.css";
 import debounce from "lodash/debounce";
 
 function PaymentModeTile({ tab }) {
+  const selectedRedux = tab === "receipt" ? "receipt" : "payment";
   ///////////////  PaymentModeTile   ////////////////
   const paymentMethods = [
     { name: "Cash", bank: false },
@@ -30,7 +38,7 @@ function PaymentModeTile({ tab }) {
     paymentDetails,
     note: noteFromRedux,
     isNoteOpen: isNoteOpenFromRedux,
-  } = useSelector((state) => state.receipt);
+  } = useSelector((state) => state[selectedRedux]);
 
   const chequeDateFromRedux = paymentDetails?.chequeDate || "";
   const chequeNumberFromRedux = paymentDetails?.chequeNumber || "";
@@ -51,8 +59,11 @@ function PaymentModeTile({ tab }) {
   const debouncedDispatchChequeNumber = useCallback(
     debounce((number) => {
       console.log("kaSDALK");
-
-      dispatch(addChequeNumber(number));
+      if (tab === "payment") {
+        dispatch(addChequeNumberForPayment(number));
+      } else {
+        dispatch(addChequeNumber(number));
+      }
     }, 500), // Adjust debounce time as needed
     [dispatch]
   );
@@ -75,11 +86,10 @@ function PaymentModeTile({ tab }) {
     const value = e.target.value;
     setChequeNumber(value);
 
-    if (selectedPaymentMethod?.name === "Cheque" ) {
+    if (selectedPaymentMethod?.name === "Cheque") {
       debouncedDispatchChequeNumber(value);
     }
   };
-
 
   const handleChequeDateChange = (date) => {
     setChequeDate(date);

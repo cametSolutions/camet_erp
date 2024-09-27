@@ -1,8 +1,6 @@
-import { FaChevronDown } from "react-icons/fa";
-import { IoIosArrowRoundBack } from "react-icons/io";
+
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
-import dayjs from "dayjs";
 import { useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
@@ -11,10 +9,8 @@ import {
   addOutstandings,
   setTotalBillAmount,
 } from "../../../slices/receipt";
-import CallIcon from "../../components/common/CallIcon";
-import { MdPeopleAlt } from "react-icons/md";
+
 import useFetch from "../../customHook/useFetch";
-import { BarLoader } from "react-spinners";
 import OutstandingLIst from "../../components/secUsers/main/OutstandingLIst";
 
 function OutstandingListOfReceipt() {
@@ -83,8 +79,6 @@ function OutstandingListOfReceipt() {
    
   };
 
-  console.log(advanceAmount);
-  
 
 
 

@@ -124,7 +124,7 @@ function PurchasePayment() {
       />
 
       <AddAmountTile party={party}  tab="purchase" />
-      <PaymentModeTile tab="receipt" />
+      <PaymentModeTile tab="purchase" />
     </div>
   );
 }

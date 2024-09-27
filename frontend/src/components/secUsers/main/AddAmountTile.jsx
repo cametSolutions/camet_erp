@@ -9,8 +9,10 @@ import { toast } from "react-toastify";
 function AddAmountTile({ tab, party }) {
   const navigate = useNavigate();
 
+  const selectedRedux=tab==="receipt"?"receipt":"payment"
+
   const { totalBillAmount, enteredAmount } = useSelector(
-    (state) => state.receipt
+    (state) => state[selectedRedux]
   );
 
   const isRemaining = totalBillAmount - enteredAmount > 0 ? true : false;

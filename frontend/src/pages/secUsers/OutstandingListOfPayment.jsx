@@ -22,14 +22,15 @@ function OutstandingListOfPayment() {
     enteredAmount: enteredAmountRedux,
     outstandings,
     totalBillAmount,
-  } = useSelector((state) => state.receipt);
+  } = useSelector((state) => state.payment);
 
   const [data, setData] = useState(outstandings);
   const [total, setTotal] = useState(totalBillAmount);
+  const [advanceAmount, setAdvanceAmount] = useState(0);
+
 
   const [enteredAmount, setEnteredAmount] = useState(() => {
     const storedAmount = enteredAmountRedux || 0;
-
     // Convert to a valid number or default to 0
     const parsedAmount = parseFloat(storedAmount);
     const validAmount = !isNaN(parsedAmount) ? parsedAmount : 0;
@@ -68,10 +69,12 @@ function OutstandingListOfPayment() {
   const handleAmountChange = (event) => {
     const amount = parseFloat(event.target.value) || 0;
     if (amount > total) {
-      toast.error("You can't enter an amount greater than total amount");
-      return;
+      setAdvanceAmount(amount - total);
+    }else{
+      setAdvanceAmount(0);
     }
     setEnteredAmount(amount);
+   
   };
   let remainingAmount = enteredAmount;
 
@@ -132,6 +135,7 @@ function OutstandingListOfPayment() {
         handleNextClick,
         remainingAmount,
         formatAmount,
+        advanceAmount,
         tab:"payment"
         
       }}
