@@ -14,23 +14,29 @@ import {
 import AddPartyTile from "../../components/secUsers/main/AddPartyTile";
 import AddAmountTile from "../../components/secUsers/main/AddAmountTile";
 import PaymentModeTile from "../../components/secUsers/main/PaymentModeTile";
+import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 
 function Receipt() {
   // ////////////////dispatch
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   // ///////////////////  redux details /////////////////////
-  const orgId = useSelector(
+  const cmp_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
   const {
     receiptNumber: receiptNumberRedux,
     date: dateRedux,
-    outStandings,
     party,
-    finalAmount,
+    billData,
+    totalBillAmount,
     enteredAmount,
+    advanceAmount,
+    remainingAmount,
     paymentMethod,
     paymentDetails,
+    note,
   } = useSelector((state) => state.receipt);
 
   const [receiptNumber, setReceiptNumber] = useState("");
@@ -42,7 +48,7 @@ function Receipt() {
       const fetchConfigurationNumber = async () => {
         try {
           const res = await api.get(
-            `/api/sUsers/fetchConfigurationNumber/${orgId}/receipt`,
+            `/api/sUsers/fetchConfigurationNumber/${cmp_id}/receipt`,
 
             {
               withCredentials: true,
@@ -94,6 +100,121 @@ function Receipt() {
     }
   }, []);
 
+  const submitHandler = async () => {
+    // Form data
+    const formData = {
+      cmp_id,
+      receiptNumber,
+      date: selectedDate,
+      party,
+      billData,
+      totalBillAmount,
+      enteredAmount,
+      advanceAmount,
+      remainingAmount,
+      paymentMethod,
+      paymentDetails,
+      note,
+    };
+
+    if (formData?.paymentMethod === "Online") {
+      formData.paymentDetails = {
+        ...formData.paymentDetails,
+        chequeDate: null,
+        chequeNumber: null,
+      };
+    }
+    if (formData?.paymentMethod === "Cash") {
+
+      formData.paymentDetails = {
+        ...formData.paymentDetails,
+        bank_ledname: null,
+        bank_name: null,
+        _id: null,
+        chequeDate: null,
+        chequeNumber: null,
+      };
+    }
+
+    // console.log(formData);
+
+    // Validation
+    if (!formData.receiptNumber) {
+      return toast.error("Receipt number is required.");
+    }
+
+    if (!formData.party || !formData.party._id) {
+      return toast.error("Party selection is required.");
+    }
+
+    if (!formData.enteredAmount) {
+      return toast.error(" Amount is required.");
+    }
+
+    if (!formData.paymentMethod) {
+      return toast.error("Payment method is required.");
+    }
+    if (
+      (formData.paymentMethod === "Cheque" ||
+        formData.paymentMethod === "Online") &&
+      !formData.paymentDetails
+    ) {
+      return toast.error(
+        "Payment details are required for cheque or online payments."
+      );
+    }
+
+    if (formData.paymentMethod === "Cheque") {
+      if (!formData.paymentDetails.chequeDate) {
+        return toast.error("Cheque date is required.");
+      }
+      if (!formData.paymentDetails.chequeNumber) {
+        return toast.error("Cheque number is required.");
+      }
+      if (
+        !formData.paymentDetails.bank_ledname ||
+        !formData.paymentDetails.bank_name ||
+        !formData.paymentDetails._id
+      ) {
+        return toast.error("Bank details are required.");
+      }
+    }
+
+    if (formData.paymentMethod === "Online") {
+      if (
+        !formData.paymentDetails.bank_ledname ||
+        !formData.paymentDetails.bank_name ||
+        !formData.paymentDetails._id
+      ) {
+        return toast.error("Bank details are required.");
+      }
+    }
+
+
+    // If validation passes, proceed with the form submission
+    try {
+      const res = await api.post(
+        `/api/sUsers/createReceipt`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+          withCredentials: true,
+        }
+      );
+
+      console.log(res.data);
+      toast.success(res.data.message);
+
+      navigate(`/sUsers/receipt/details/${res?.data?.receipt._id}`);
+      dispatch(removeAll());
+    } catch (error) {
+      toast.error(error.response?.data?.message || "An error occurred.");
+      console.log(error);
+    }
+  };
+
   return (
     <div>
       <header className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex  items-center gap-2 sticky top-0 z-50  ">
@@ -110,7 +231,7 @@ function Receipt() {
         setSelectedDate={setSelectedDate}
         dispatch={dispatch}
         changeDate={changeDate}
-        // submitHandler={submitHandler}
+        submitHandler={submitHandler}
         removeAll={removeAll}
         tab="add"
       />
@@ -123,7 +244,7 @@ function Receipt() {
         linkBillTo=""
       />
 
-      <AddAmountTile party={party}  tab="receipt" />
+      <AddAmountTile party={party} tab="receipt" />
       <PaymentModeTile tab="receipt" />
     </div>
   );

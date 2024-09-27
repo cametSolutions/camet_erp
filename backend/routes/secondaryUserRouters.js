@@ -21,11 +21,11 @@ import { createPurchase,editPurchase,cancelPurchase } from '../controllers/purch
 import { createCreditNote,cancelCreditNote ,editCreditNote} from '../controllers/creditNoteController.js';
 import {createSale,editSale,cancelSale,} from '../controllers/saleController.js';
 import { cancelDebitNote, createDebitNote, editDebitNote } from '../controllers/debitNoteController.js';
-import { getStockTransferDetails,addProduct ,editProduct,getCreditNoteDetails,transactions,fetchAdditionalCharges, getDebitNoteDetails} from '../controllers/commonController.js';
+import { getStockTransferDetails,addProduct ,editProduct,getCreditNoteDetails,transactions,fetchAdditionalCharges, getDebitNoteDetails,getReceiptDetails} from '../controllers/commonController.js';
 import { authSecondary } from '../middlewares/authSecUsers.js';
 import { secondaryIsBlocked } from '../middlewares/isBlocked.js';
 import { companyAuthentication } from '../middlewares/authCompany.js';
-import { fetchOutstandingDetails } from '../controllers/receiptController.js';
+import { fetchOutstandingDetails,createReceipt } from '../controllers/receiptController.js';
 
 
 router.post('/login',login)
@@ -106,6 +106,10 @@ router.post('/createDebitNote',authSecondary,secondaryIsBlocked,createDebitNote)
 router.get('/getDebitNoteDetails/:id',authSecondary,secondaryIsBlocked,getDebitNoteDetails)
 router.post('/cancelDebitNote/:id',authSecondary,secondaryIsBlocked,cancelDebitNote)
 router.post('/editDebitNote/:id',authSecondary,secondaryIsBlocked,editDebitNote)
+///receipt routes
+router.post('/createReceipt',authSecondary,secondaryIsBlocked,createReceipt)
+router.get('/getReceiptDetails/:id',authSecondary,secondaryIsBlocked,getReceiptDetails)
+
 
 
 

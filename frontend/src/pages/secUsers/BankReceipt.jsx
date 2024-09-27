@@ -16,6 +16,8 @@ function BankReceipt() {
   const navigate = useNavigate();
 
   const bankSubmitHandler = (data) => {
+    // console.log(data);
+    
     dispatch(addPaymentDetails(data));
     navigate("/sUsers/receipt");
   };

@@ -19,8 +19,7 @@ import "react-datepicker/dist/react-datepicker.css";
 import debounce from "lodash/debounce";
 
 function PaymentModeTile({ tab }) {
-
-  ///////////////  PaymentModeTile   //////////////// 
+  ///////////////  PaymentModeTile   ////////////////
   const paymentMethods = [
     { name: "Cash", bank: false },
     { name: "Cheque", bank: true },
@@ -29,11 +28,13 @@ function PaymentModeTile({ tab }) {
   const {
     paymentMethod: selectedPaymentMethodFromRedux,
     paymentDetails,
-    chequeDate: chequeDateFromRedux,
-    chequeNumber: chequeNumberFromRedux,
     note: noteFromRedux,
     isNoteOpen: isNoteOpenFromRedux,
   } = useSelector((state) => state.receipt);
+
+  const chequeDateFromRedux = paymentDetails?.chequeDate || "";
+  const chequeNumberFromRedux = paymentDetails?.chequeNumber || "";
+
   const matchedMethod = paymentMethods.find(
     (method) => method.name === selectedPaymentMethodFromRedux
   );
@@ -74,12 +75,11 @@ function PaymentModeTile({ tab }) {
     const value = e.target.value;
     setChequeNumber(value);
 
-    if (selectedPaymentMethod?.name === "Cheque" && value.length >= 6) {
-      console.log(value);
-
+    if (selectedPaymentMethod?.name === "Cheque" ) {
       debouncedDispatchChequeNumber(value);
     }
   };
+
 
   const handleChequeDateChange = (date) => {
     setChequeDate(date);
@@ -120,7 +120,7 @@ function PaymentModeTile({ tab }) {
 
       {selectedPaymentMethod?.bank && (
         <>
-          {Object.keys(paymentDetails).length > 0 ? (
+          {paymentDetails._id ? (
             <>
               <div className="flex justify-between items-center p-4  ">
                 <div className="flex items-center gap-4 cursor-pointer">

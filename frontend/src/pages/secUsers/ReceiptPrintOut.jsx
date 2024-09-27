@@ -1,4 +1,4 @@
-import React,{useRef,useEffect,useState} from 'react'
+import {useRef,useEffect,useState} from 'react'
 import { useLocation } from 'react-router-dom'
 import ReceiptPrintOutForm from '../../components/common/ReceiptPrintOutForm'
 import { useSelector} from 'react-redux'
@@ -63,7 +63,7 @@ function ReceiptPrintOut() {
     <>
     <div className=" nonPrintable-content bg-[#012a4a]   sticky top-0 p-3 px-5 text-white text-lg font-bold flex items-center gap-3  shadow-lg justify-between">
         <div className="flex gap-2 ">
-          <Link to={`/sUsers/receiptDetails/${receiptData._id}`}>
+          <Link to={`/sUsers/receipt/details/${receiptData._id}`}>
             <IoIosArrowRoundBack className="text-3xl" />
           </Link>
           <p>Share Your Order</p>
@@ -77,7 +77,7 @@ function ReceiptPrintOut() {
           />
         </div>
       </div>
-    <ReceiptPrintOutForm receiptData={receiptData} org={companyData} contentToPrint={contentToPrint} inWords={inWords} />
+    <ReceiptPrintOutForm title="Receipt" voucherNumber={receiptData.receiptNumber} receiptData={receiptData} org={companyData} contentToPrint={contentToPrint} inWords={inWords} />
     </>
   )
 }

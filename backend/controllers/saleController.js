@@ -20,8 +20,6 @@ import TallyData from "../models/TallyData.js";
  */
 
 export const createSale = async (req, res) => {
-
-  
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
@@ -31,7 +29,7 @@ export const createSale = async (req, res) => {
       additionalChargesFromRedux,
       salesNumber,
       party,
-      lastAmount
+      lastAmount,
     } = req.body;
 
     const Secondary_user_id = req.sUserId;
@@ -103,8 +101,8 @@ export const createSale = async (req, res) => {
       party,
       lastAmount,
       secondaryMobile,
-      
-      session 
+
+      session
     );
 
     await session.commitTransaction();
@@ -165,17 +163,25 @@ export const editSale = async (req, res) => {
       if (!existingSale) {
         await session.abortTransaction();
         session.endSession();
-        return res.status(404).json({ success: false, message: "Sale not found" });
+        return res
+          .status(404)
+          .json({ success: false, message: "Sale not found" });
       }
 
       await revertSaleStockUpdates(existingSale.items, session);
 
-      const updatedItems = processSaleItems(items, priceLevelFromRedux, additionalChargesFromRedux);
+      const updatedItems = processSaleItems(
+        items,
+        priceLevelFromRedux,
+        additionalChargesFromRedux
+      );
       await handleSaleStockUpdates(updatedItems, false, session);
 
       const updateData = {
         selectedGodownId: selectedGodownId || existingSale.selectedGodownId,
-        selectedGodownName: selectedGodownName ? selectedGodownName[0] : existingSale.selectedGodownName,
+        selectedGodownName: selectedGodownName
+          ? selectedGodownName[0]
+          : existingSale.selectedGodownName,
         serialNumber: existingSale.serialNumber,
         cmp_id: orgId,
         partyAccount: party?.partyName,
@@ -204,18 +210,24 @@ export const editSale = async (req, res) => {
       }).session(session);
 
       if (matchedOutStanding) {
-        const newOutstanding = Number(matchedOutStanding?.bill_pending_amt) + diffBillValue;
+        const newOutstanding =
+          Number(matchedOutStanding?.bill_pending_amt) + diffBillValue;
 
         // console.log("newOutstanding",newOutstanding);
-        
-       const outStandingUpdateResult = await TallyData.updateOne(
+
+        const outStandingUpdateResult = await TallyData.updateOne(
           {
             party_id: party?.party_master_id,
             cmp_id: orgId,
             bill_no: salesNumber,
           },
-          { $set: { bill_pending_amt: newOutstanding, bill_amount: newBillValue } },
-          { new: true,session }
+          {
+            $set: {
+              bill_pending_amt: newOutstanding,
+              bill_amount: newBillValue,
+            },
+          },
+          { new: true, session }
         );
       }
 
@@ -233,7 +245,7 @@ export const editSale = async (req, res) => {
       if (error.code === 112 && retries < MAX_RETRIES - 1) {
         console.log(`Retrying transaction (attempt ${retries + 1})...`);
         retries++;
-        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
+        await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
       } else {
         console.error("Error editing sale:", error);
         return res.status(500).json({
@@ -251,13 +263,11 @@ export const editSale = async (req, res) => {
   });
 };
 
-
 /**
  * @desc To cancel sale
  * @route POST /api/sUsers/cancelSale
  * @access Public
  */
-
 
 export const cancelSale = async (req, res) => {
   const saleId = req.params.id; // ID of the sale to cancel
@@ -269,10 +279,9 @@ export const cancelSale = async (req, res) => {
     session.startTransaction(); // Begin a transaction
 
     // Find the sale to cancel
-    const sale = await (vanSaleQuery === "true"
-      ? vanSaleModel
-      : salesModel
-    ).findById(saleId).session(session); // Use the session in the query
+    const sale = await (vanSaleQuery === "true" ? vanSaleModel : salesModel)
+      .findById(saleId)
+      .session(session); // Use the session in the query
 
     if (!sale) {
       await session.abortTransaction(); // Rollback transaction if sale not found
@@ -312,6 +321,3 @@ export const cancelSale = async (req, res) => {
     });
   }
 };
-
-
-  

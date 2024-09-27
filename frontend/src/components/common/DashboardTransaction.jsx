@@ -29,7 +29,7 @@ const DashboardTransaction = ({ filteredData, userType, from }) => {
     () => (type, id) => {
       const baseRoute = `/${userType === "primary" ? "pUsers" : "sUsers"}`;
       const routes = {
-        Receipt: `${baseRoute}/receiptDetails/${id}`,
+        Receipt: `${baseRoute}/receipt/details/${id}`,
         "Tax Invoice": `${baseRoute}/salesDetails/${id}`,
         "Van Sale": `${baseRoute}/vanSaleDetails/${id}`,
         Purchase: `${baseRoute}/purchaseDetails/${id}`,
@@ -64,7 +64,7 @@ const DashboardTransaction = ({ filteredData, userType, from }) => {
         <div
           key={_id || index}
           onClick={() => handleTransactionClick(type, _id)}
-          className="bg-white cursor-pointer rounded-md shadow-lg border border-gray-100 flex flex-col justify-between px-4 transition-all duration-150 transform hover:scale-105 ease-in-out"
+          className="bg-white cursor-pointer rounded-md shadow-lg border border-gray-100 flex flex-col justify-between px-4 transition-all duration-150 transform hover:translate-x-1 ease-in-out"
         >
           <div className="flex justify-start text-xs mt-2">
             <div

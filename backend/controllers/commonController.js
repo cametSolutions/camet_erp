@@ -12,6 +12,7 @@ import Oragnization from "../models/OragnizationModel.js";
 import AdditionalChargesModel from "../models/additionalChargesModel.js";
 import { aggregateTransactions } from "../helpers/helper.js";
 import { startOfDay, endOfDay } from "date-fns";
+import receiptModel from "../models/receiptModel.js";
 
 
 // @desc to  get stock transfer details
@@ -260,13 +261,14 @@ export const transactions = async (req, res) => {
     const matchCriteria = {
       ...dateFilter,
       cmp_id: cmp_id,
-      $or: [{ agentId: userId }, { Secondary_user_id: userId }],
+      Secondary_user_id: userId
+      // $or: [{ agentId: userId }, { Secondary_user_id: userId }],
     };
 
     const transactionPromises = [
       aggregateTransactions(
-        TransactionModel,
-        { ...matchCriteria, agentId: userId },
+        receiptModel,
+        { ...matchCriteria, Secondary_user_id: userId },
         "Receipt"
       ),
       aggregateTransactions(invoiceModel, matchCriteria, "Sale Order"),
@@ -276,6 +278,7 @@ export const transactions = async (req, res) => {
       aggregateTransactions(stockTransferModel, matchCriteria, "Stock Transfer"),
       aggregateTransactions(creditNoteModel, matchCriteria, "Credit Note"),
       aggregateTransactions(debitNoteModel, matchCriteria, "Debit Note"),
+      // aggregateTransactions(receiptModel, matchCriteria, "Receipt"),
 
     ];
 
@@ -352,4 +355,34 @@ export const getDebitNoteDetails = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
+
+/**
+ * @desc  get receipt details
+ * @route GET/api/sUsers/getReceiptDetails
+ * @access Public
+ */
+
+export const getReceiptDetails = async (req, res) => {
+  const receiptNumber = req.params.id;
+  try {
+    const receipt = await receiptModel.findById(receiptNumber);
+    if (receipt) {
+      return res.status(200).json({
+        receipt: receipt,
+        message: "receipt details fetched",
+      });
+    } else {
+      return res
+        .status(404)
+        .json({ success: false, message: "Receipt not found" });
+    }
+  } catch (error) {
+    console.error(error);
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error, try again!" });
+  }
+};
+
 

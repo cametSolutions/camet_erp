@@ -20,7 +20,7 @@ export const aggregateTransactions = (model, matchCriteria, type) => {
     { $match: matchCriteria },
     {
       $project: {
-        party_name: type === 'Receipt' ? '$party_name' : '$party.partyName',
+        party_name: '$party.partyName',
         type: type,
         enteredAmount: type === 'Receipt' ? '$enteredAmount' : '$finalAmount',
         createdAt: 1,

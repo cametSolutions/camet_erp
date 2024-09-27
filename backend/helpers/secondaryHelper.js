@@ -671,12 +671,15 @@ export const checkForNumberExistence = async (
   }
 };
 
-export const getNewSerialNumber = async (model, serialNumber) => {
+export const getNewSerialNumber = async (model, serialNumber, session) => {
   try {
     const lastDocument = await model.findOne(
       {},
       {},
-      { sort: { [serialNumber]: -1 } }
+      {
+        sort: { [serialNumber]: -1 },
+        session: session  // Adding session to the query
+      }
     );
 
     let newSerialNumber = 1;
@@ -694,6 +697,7 @@ export const getNewSerialNumber = async (model, serialNumber) => {
     throw new Error("Error calculating new serial number");
   }
 };
+
 
 ////////////////////////////// revertBalanceStockOfSalesOrder ///////////////////////////////////////////
 

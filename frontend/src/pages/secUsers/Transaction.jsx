@@ -55,16 +55,19 @@ const initialEndDate = localStorage.getItem("SecondaryTransactionEndDate")
     fetchTransactions();
   }, []);
 
-
   const filterOutstanding = (data) => {
     return data?.filter((item) => {
       const searchFilter = item.party_name
         ?.toLowerCase()
         .includes(search.toLowerCase());
 
-      const createdAtDate = new Date(item.createdAt);
+      const createdAtDate = new Date(item.createdAt).setHours(0, 0, 0, 0);
       const adjustedStartDate = new Date(startDate).setHours(0, 0, 0, 0);
       const adjustedEndDate = new Date(endDate).setHours(23, 59, 59, 999);
+
+
+      console.log(createdAtDate, adjustedStartDate, adjustedEndDate);
+      
 
       const dateFilterCondition =
         (!startDate || createdAtDate >= adjustedStartDate) &&
@@ -77,7 +80,7 @@ const initialEndDate = localStorage.getItem("SecondaryTransactionEndDate")
       return searchFilter && dateFilterCondition;
     });
   };
-
+  
   const finalData = filterOutstanding(data);
 
   const calulateTotal = () => {
@@ -105,6 +108,8 @@ const initialEndDate = localStorage.getItem("SecondaryTransactionEndDate")
   useEffect(() => {
     calulateTotal();
   }, [finalData]);
+
+  
 
 
 
