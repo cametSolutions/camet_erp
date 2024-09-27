@@ -215,21 +215,21 @@ function ConfigureSecondaryUser() {
       return;
     }
 
-    // try {
-    //   const res = await api.post(
-    //     `/api/pUsers/addSecondaryConfigurations/${id}/${userId}`,
-    //     formData,
-    //     {
-    //       headers: { "Content-Type": "application/json" },
-    //       withCredentials: true,
-    //     }
-    //   );
-    //   toast.success(res.data.message);
-    //   navigate(`/pUsers/editUser/${userId}`);
-    // } catch (error) {
-    //   toast.error(error.response?.data?.message || "An error occurred");
-    //   console.error(error);
-    // }
+    try {
+      const res = await api.post(
+        `/api/pUsers/addSecondaryConfigurations/${id}/${userId}`,
+        formData,
+        {
+          headers: { "Content-Type": "application/json" },
+          withCredentials: true,
+        }
+      );
+      toast.success(res.data.message);
+      navigate(`/pUsers/editUser/${userId}`);
+    } catch (error) {
+      toast.error(error.response?.data?.message || "An error occurred");
+      console.error(error);
+    }
   };
 
 

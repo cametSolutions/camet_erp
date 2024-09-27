@@ -29,6 +29,7 @@ import vanSaleModel from "../models/vanSaleModel.js";
 import stockTransferModel from "../models/stockTransferModel.js";
 import creditNoteModel from "../models/creditNoteModel.js";
 import debitNoteModel from "../models/debitNoteModel.js";
+import paymentModel from "../models/paymentModel.js";
 
 // @desc Register Primary user
 // route POST/api/pUsers/register
@@ -2770,6 +2771,7 @@ export const addSecondaryConfigurations = async (req, res) => {
       salesConfiguration,
       salesOrderConfiguration,
       receiptConfiguration,
+      paymentConfiguration,
       vanSaleConfiguration,
       stockTransferConfiguration,
       creditNoteConfiguration,
@@ -2793,6 +2795,7 @@ export const addSecondaryConfigurations = async (req, res) => {
       stockTransferConfiguration.currentNumber || 0;
     const NewcreditNoteNumber = creditNoteConfiguration.currentNumber || 0;
     const NewdebitNoteNumber = debitNoteConfiguration.currentNumber || 0;
+    const NewPaymentNumber = paymentConfiguration.currentNumber || 0;
 
     const dataToAdd = {
       organization: cmp_id,
@@ -2801,6 +2804,7 @@ export const addSecondaryConfigurations = async (req, res) => {
       salesConfiguration,
       salesOrderConfiguration,
       receiptConfiguration,
+      paymentConfiguration,
       purchaseConfiguration,
       stockTransferConfiguration,
       creditNoteConfiguration,
@@ -2835,6 +2839,7 @@ export const addSecondaryConfigurations = async (req, res) => {
         salesNumber: company.salesNumber,
         purchaseNumber: company.purchaseNumber,
         receiptNumber: company.receiptNumber,
+        paymentNumber: company.paymentNumber,
         vanSalesNumber: company.vanSalesNumber,
         stockTransferNumber: company.stockTransferNumber,
         creditNoteNumber: company.creditNoteNumber,
@@ -2848,6 +2853,7 @@ export const addSecondaryConfigurations = async (req, res) => {
         salesNumber: existingConfiguration.salesNumber,
         purchaseNumber: existingConfiguration.purchaseNumber,
         receiptNumber: existingConfiguration.receiptNumber,
+        paymentNumber: existingConfiguration.paymentNumber,
         vanSalesNumber: existingConfiguration.vanSalesNumber,
         stockTransferNumber: existingConfiguration.stockTransferNumber,
         creditNoteNumber: existingConfiguration.creditNoteNumber,
@@ -2860,6 +2866,7 @@ export const addSecondaryConfigurations = async (req, res) => {
       salesNumber: existingConfig.salesNumber !== NewsalesNumber,
       purchaseNumber: existingConfig.purchaseNumber !== NewpurchaseNumber,
       receiptNumber: existingConfig.receiptNumber !== NewreceiptNumber,
+      paymentNumber: existingConfig.paymentNumber !== NewPaymentNumber,
       vanSalesNumber: existingConfig.vanSalesNumber !== NewvanSalesNumber,
       stockTransferNumber:
         existingConfig.stockTransferNumber !== NewstockTransferNumber,
@@ -2929,12 +2936,26 @@ export const addSecondaryConfigurations = async (req, res) => {
       }
     }
 
-    // if (changes.receiptNumber) {
-    //   const receiptExists = await checkForNumberExistence(ReceiptModel, 'receiptNumber', NewreceiptNumber);
-    //   if (receiptExists) {
-    //     return res.status(400).json({ message: `Receipt is added with this number ${NewreceiptNumber}` });
-    //   }
-    // }
+    if (changes.receiptNumber) {
+      const receiptExists = await checkForNumberExistence(ReceiptModel, 'receiptNumber', NewreceiptNumber);
+      if (receiptExists) {
+        return res.status(400).json({ message: `Receipt is added with this number ${NewreceiptNumber}` });
+      }
+    }
+
+    if (changes.paymentNumber) {
+      const paymentExists = await checkForNumberExistence(
+        paymentModel,
+        "paymentNumber",
+        NewPaymentNumber,
+        cmp_id
+      );
+      if (paymentExists) {
+        return res.status(400).json({
+          message: `Payment is added with this number ${NewPaymentNumber}`,
+        });
+      }
+    }
 
     if (changes.vanSalesNumber) {
       const vanSalesExists = await checkForNumberExistence(
@@ -3003,6 +3024,7 @@ export const addSecondaryConfigurations = async (req, res) => {
         salesNumber: NewsalesNumber,
         purchaseNumber: NewpurchaseNumber,
         receiptNumber: NewreceiptNumber,
+        paymentNumber: NewPaymentNumber,
         vanSalesNumber: NewvanSalesNumber,
         stockTransferNumber: NewstockTransferNumber,
         creditNoteNumber: NewcreditNoteNumber,
@@ -3016,6 +3038,7 @@ export const addSecondaryConfigurations = async (req, res) => {
         salesNumber: NewsalesNumber,
         purchaseNumber: NewpurchaseNumber,
         receiptNumber: NewreceiptNumber,
+        paymentNumber: NewPaymentNumber,
         vanSalesNumber: NewvanSalesNumber,
         stockTransferNumber: NewstockTransferNumber,
         creditNoteNumber: NewcreditNoteNumber,
@@ -3556,6 +3579,7 @@ export const fetchConfigurationCurrentNumber = async (req, res) => {
       salesNumber,
       purchaseNumber,
       receiptNumber,
+      paymentNumber,
       vanSalesNumber,
       stockTransferNumber,
       creditNoteNumber,
@@ -3566,11 +3590,12 @@ export const fetchConfigurationCurrentNumber = async (req, res) => {
 
     return res.status(200).json({
       message: "Configuration numbers retrieved successfully",
-      orderNumber,
+      salesOrderNumber:orderNumber,
       salesNumber,
       purchaseNumber,
       receiptNumber,
-      vanSalesNumber,
+      paymentNumber,
+      vanSaleNumber:vanSalesNumber,
       stockTransferNumber,
       creditNoteNumber,
       debitNoteNumber,
