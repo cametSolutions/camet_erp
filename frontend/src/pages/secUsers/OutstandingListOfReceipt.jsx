@@ -146,7 +146,9 @@ function OutstandingListOfReceipt() {
         handleNextClick,
         remainingAmount,
         formatAmount,
-        advanceAmount
+        advanceAmount,
+        tab:"receipt"
+
       }}
     />
   );

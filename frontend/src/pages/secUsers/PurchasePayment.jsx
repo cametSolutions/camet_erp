@@ -6,7 +6,7 @@ import api from "../../api/api";
 import HeaderTile from "../../components/secUsers/main/HeaderTile";
 import { useDispatch } from "react-redux";
 import {
-  addReceiptNumber,
+  addPaymentNumber,
   changeDate,
   removeAll,
   removeParty,
@@ -23,7 +23,7 @@ function PurchasePayment() {
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
   const {
-    receiptNumber: receiptNumberRedux,
+    paymentNumber: paymentNumberFromRedux,
     date: dateRedux,
     outStandings,
     party,
@@ -31,18 +31,18 @@ function PurchasePayment() {
     enteredAmount,
     paymentMethod,
     paymentDetails,
-  } = useSelector((state) => state.receipt);
+  } = useSelector((state) => state.payment);
 
   const [receiptNumber, setReceiptNumber] = useState("");
   const [selectedDate, setSelectedDate] = useState(dateRedux);
 
   // ////////////for fetching configuration number
   useEffect(() => {
-    if (receiptNumberRedux === "") {
+    if (paymentNumberFromRedux === "") {
       const fetchConfigurationNumber = async () => {
         try {
           const res = await api.get(
-            `/api/sUsers/fetchConfigurationNumber/${orgId}/receipt`,
+            `/api/sUsers/fetchConfigurationNumber/${orgId}/payment`,
 
             {
               withCredentials: true,
@@ -79,10 +79,10 @@ function PurchasePayment() {
               .join("-");
             // console.log(finalOrderNumber);
             setReceiptNumber(finalOrderNumber);
-            dispatch(addReceiptNumber(finalOrderNumber));
+            dispatch(addPaymentNumber(finalOrderNumber));
           } else {
             setReceiptNumber(receiptNumber);
-            dispatch(addReceiptNumber(receiptNumber));
+            dispatch(addPaymentNumber(receiptNumber));
           }
         } catch (error) {
           console.log(error);
@@ -90,7 +90,7 @@ function PurchasePayment() {
       };
       fetchConfigurationNumber();
     } else {
-      setReceiptNumber(receiptNumberRedux);
+      setReceiptNumber(paymentNumberFromRedux);
     }
   }, []);
 

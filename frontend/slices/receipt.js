@@ -19,8 +19,6 @@ const initialState = {
     chequeDate: new Date().toISOString(),
   },
   bankList: [],
-  // chequeNumber: "",
-  // chequeDate: new Date().toISOString(),
   note: "",
   isNoteOpen: false,
 };

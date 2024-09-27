@@ -22,15 +22,13 @@ function ReceiptDetailsComponent({
     <div className="flex ">
       <div className="bg-[rgb(244,246,254)] flex-1 h-screen  relative ">
         {/* headinh section  */}
-        <div className="flex bg-[#012a4a] items-center justify-between">
-          <div className="flex items-center gap-3  text-white text-md p-4 ">
-            <MdOutlineArrowBack
-              onClick={backHandler}
-              className="text-2xl cursor-pointer"
-            />
+        <div className="flex items-center gap-3  text-white text-md p-4  bg-[#012a4a] sticky top-0 z-10">
+          <MdOutlineArrowBack
+            onClick={backHandler}
+            className="text-2xl cursor-pointer"
+          />
 
-            <h3 className="font-bold">{title}</h3>
-          </div>
+          <h3 className="font-bold">{title}</h3>
         </div>
         {/* headinh section  */}
 

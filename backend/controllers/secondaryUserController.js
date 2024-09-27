@@ -58,6 +58,7 @@ import {
 } from "../helpers/salesHelper.js";
 import stockTransferModel from "../models/stockTransferModel.js";
 import creditNoteModel from "../models/creditNoteModel.js";
+import payment from "../../frontend/slices/payment.js";
 
 // @desc Login secondary user
 // route POST/api/sUsers/login
@@ -2227,6 +2228,7 @@ export const fetchConfigurationNumber = async (req, res) => {
         salesOrder: configuration.salesOrderConfiguration,
         purchase: configuration.purchaseConfiguration,
         receipt: configuration.receiptConfiguration,
+        payment: configuration.paymentConfiguration,
         vanSale: configuration.vanSaleConfiguration,
         stockTransfer: configuration.stockTransferConfiguration,
         creditNote: configuration.creditNoteConfiguration,
@@ -2245,6 +2247,7 @@ export const fetchConfigurationNumber = async (req, res) => {
           vanSale: configuration.vanSalesNumber,
           stockTransfer: configuration.stockTransferNumber,
           receipt: configuration.receiptNumber,
+          payment: configuration.paymentNumber,
           creditNote: configuration.creditNoteNumber,
           debitNote: configuration.debitNoteNumber,
         };
@@ -2257,6 +2260,7 @@ export const fetchConfigurationNumber = async (req, res) => {
           vanSale: company.vanSalesNumber,
           stockTransfer: company.stockTransferNumber,
           receipt: company.receiptNumber,
+          payment: company.paymentNumber,
           creditNote: company.creditNoteNumber,
           debitNote: company.debitNoteNumber,
           

@@ -1,28 +1,35 @@
 import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
-  receiptNumber: "",
+  paymentNumber: "",
   date: new Date().toISOString(),
   outstandings: [],
   billData: [],
   party: {},
   totalBillAmount: 0,
   enteredAmount: 0,
+  advanceAmount: 0,
+  remainingAmount: 0,
   paymentMethod: "",
-  paymentDetails: {},
+  paymentDetails: {
+    _id:null,
+    bank_name: null,
+    bank_ledname:null,
+    chequeNumber: "",
+    chequeDate: new Date().toISOString(),
+  },
   bankList: [],
-  chequeNumber: "",
-  chequeDate: new Date().toISOString(),
+
   note: "",
   isNoteOpen: false,
 };
 
 export const paymentSlice = createSlice({
-  name: "salesSecondary",
+  name: "payment",
   initialState,
   reducers: {
-    addReceiptNumber: (state, action) => {
-      state.receiptNumber = action.payload;
+    addPaymentNumber: (state, action) => {
+      state.paymentNumber = action.payload;
     },
     changeDate: (state, action) => {
       state.date = action.payload;
@@ -32,9 +39,11 @@ export const paymentSlice = createSlice({
     },
     removeParty: (state) => {
       state.party = {};
+      state.enteredAmount = 0;
     },
     addParty: (state, action) => {
       state.party = action.payload;
+      state.enteredAmount = 0;
     },
     addSettlementData: (state, action) => {
       const { billData, totalBillAmount, enteredAmount } = action.payload;
@@ -42,6 +51,15 @@ export const paymentSlice = createSlice({
       state.billData = billData;
       state.totalBillAmount = totalBillAmount;
       state.enteredAmount = enteredAmount;
+
+      if(enteredAmount>totalBillAmount){
+        state.advanceAmount = enteredAmount - totalBillAmount;
+        state.remainingAmount = 0;
+      }else{
+        state.advanceAmount = 0;
+        state.remainingAmount = totalBillAmount - enteredAmount
+      }
+
     },
     addOutstandings: (state, action) => {
       state.outstandings = action.payload;
@@ -50,7 +68,16 @@ export const paymentSlice = createSlice({
       state.totalBillAmount = action.payload;
     },
     addPaymentDetails: (state, action) => {
-      state.paymentDetails = action.payload;
+      const { _id, bank_ledname, bank_name } = action.payload;
+
+      console.log(state.paymentDetails);
+    
+      state.paymentDetails={
+        ...state.paymentDetails,
+        _id,
+        bank_ledname,
+        bank_name
+      }
     },
     addPaymentMethod: (state, action) => {
       state.paymentMethod = action.payload;
@@ -59,10 +86,14 @@ export const paymentSlice = createSlice({
       state.bankList = action.payload;
     },
     addChequeNumber: (state, action) => {
-      state.chequeNumber = action.payload;
+      // state.chequeNumber = action.payload;
+
+      state.paymentDetails.chequeNumber = action.payload;
     },
     addChequeDate: (state, action) => {
-      state.chequeDate = action.payload;
+      // state.chequeDate = action.payload;
+
+      state.paymentDetails.chequeDate = action.payload;
     },
 
     addNote: (state, action) => {
@@ -77,7 +108,7 @@ export const paymentSlice = createSlice({
 
 // Action creators are generated for each case reducer function
 export const {
-  addReceiptNumber,
+  addPaymentNumber,
   changeDate,
   removeAll,
   removeParty,
@@ -91,7 +122,7 @@ export const {
   addNote,
   addChequeNumber,
   addChequeDate,
-  addIsNoteOpen
+  addIsNoteOpen,
 } = paymentSlice.actions;
 
 export default paymentSlice.reducer;

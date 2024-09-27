@@ -20,6 +20,7 @@ function OutstandingLIst({
   remainingAmount,
   formatAmount,
   advanceAmount,
+  tab
 }) {
 
   
@@ -33,7 +34,7 @@ function OutstandingLIst({
             <div className="flex items-center gap-2">
               <IoIosArrowRoundBack
                 onClick={() => {
-                  navigate("/sUsers/receipt");
+                  navigate(`/sUsers/${tab==="receipt"?"receipt":"paymentPurchase" }`);
                 }}
                 className="text-3xl text-white cursor-pointer"
               />
