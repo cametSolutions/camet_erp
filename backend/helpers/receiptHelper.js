@@ -61,14 +61,12 @@ export const updateTallyData = async (billData, cmp_id, session) => {
     billData.map((bill) => [bill.billNo, bill.remainingAmount])
   );
 
-
   // Fetch the outstanding bills from TallyData for this company
 
   const outstandingData = await TallyData.find({
     cmp_id,
     bill_no: { $in: Array.from(billAmountMap.keys()) },
   }).session(session);
-
 
   if (outstandingData.length === 0) {
     return;
@@ -90,50 +88,63 @@ export const updateTallyData = async (billData, cmp_id, session) => {
   await TallyData.bulkWrite(bulkUpdateOperations, { session });
 };
 
+
+/**
+ * Creates a new outstanding record for a given party with the advance amount.
+ * @param {String} cmp_id - id of the organization
+ * @param {String} receiptNumber - receipt number for this outstanding record
+ * @param {String} Primary_user_id - id of the primary user
+ * @param {Object} party - party object with partyName, mobileNumber and emailID
+ * @param {String} secondaryMobile - secondary user mobile number
+ * @param {Number} advanceAmount - advance amount for this outstanding record
+ */
+
 export const createOutstandingWithAdvanceAmount = async (
-    cmp_id,
-    receiptNumber,
-    Primary_user_id,
-    party,
-    secondaryMobile,
-    advanceAmount,
-    session
+  cmp_id,
+  receiptNumber,
+  Primary_user_id,
+  party,
+  secondaryMobile,
+  advanceAmount,
+  session
 ) => {
+  try {
+    const billData = {
+      Primary_user_id,
+      bill_no: receiptNumber,
+      cmp_id,
+      party_id: party?.party_master_id,
+      bill_amount: advanceAmount,
+      bill_date: new Date(),
+      bill_pending_amt: advanceAmount,
+      email: party?.emailID,
+      mobile_no: party?.mobileNumber,
+      party_name: party?.partyName,
+      user_id: secondaryMobile || "null",
+      source: "advanceReceipt",
+    };
 
-    try {
-        const billData = {
-            Primary_user_id,
-            bill_no: receiptNumber,
-            cmp_id,
-            party_id: party?.party_master_id,
-            bill_amount: advanceAmount,
-            bill_date: new Date(),
-            bill_pending_amt: advanceAmount,
-            email: party?.emailID,
-            mobile_no: party?.mobileNumber,
-            party_name: party?.partyName,
-            user_id: secondaryMobile || "null",
-            source: "advanceReceipt",
-          };
-    
-        const tallyUpdate=await TallyData.findOneAndUpdate(
-          {
-            cmp_id: cmp_id,
-            bill_no: receiptNumber,
-            Primary_user_id: Primary_user_id,
-            party_id: party?.party_master_id,
-          },
-          billData,
-          { upsert: true, new: true,session }
-        );
-    
-        console.log("tallyUpdate",tallyUpdate);
-        
-      } catch (error) {
-        console.error("Error updateTallyData sale stock updates:", error);
-        throw error;
-      }
+    const tallyUpdate = await TallyData.findOneAndUpdate(
+      {
+        cmp_id: cmp_id,
+        bill_no: receiptNumber,
+        Primary_user_id: Primary_user_id,
+        party_id: party?.party_master_id,
+      },
+      billData,
+      { upsert: true, new: true, session }
+    );
 
-
-
+    console.log("tallyUpdate", tallyUpdate);
+  } catch (error) {
+    console.error("Error updateTallyData sale stock updates:", error);
+    throw error;
+  }
 };
+
+
+
+
+
+
+

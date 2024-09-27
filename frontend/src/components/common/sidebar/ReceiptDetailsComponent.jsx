@@ -182,21 +182,23 @@ function ReceiptDetailsComponent({
 
         {/* Note */}
 
-        <div className="bg-white mt-2 p-4  ">
-          <div className=" text-sm mb-2">
-            <h2 className="font-bold  text-gray-500 md:text-md text-sm">
-              Note
-            </h2>
+        {data?.note && (
+          <div className="bg-white mt-2 p-4  ">
+            <div className=" text-sm mb-2">
+              <h2 className="font-bold  text-gray-500 md:text-md text-sm">
+                Note
+              </h2>
+            </div>
+            <hr />
+            <hr />
+            <hr />
+            <div className="mt-2">
+              <p className="font-semibold md:text-md text-sm text-gray-500 ">
+                {data?.note}
+              </p>
+            </div>
           </div>
-          <hr />
-          <hr />
-          <hr />
-          <div className="mt-2">
-            <p className="font-semibold md:text-md text-sm text-gray-500 ">
-              {data?.note}
-            </p>
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );
