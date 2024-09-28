@@ -154,7 +154,8 @@ export const createReceipt = async (req, res) => {
           party,
           secondaryUser.mobileNumber,
           advanceAmount,
-          session
+          session,
+          "advanceReceipt"
         );
     }
 

@@ -14,10 +14,14 @@ import {
 import AddPartyTile from "../../components/secUsers/main/AddPartyTile";
 import AddAmountTile from "../../components/secUsers/main/AddAmountTile";
 import PaymentModeTile from "../../components/secUsers/main/PaymentModeTile";
+import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 
 function PurchasePayment() {
   // ////////////////dispatch
   const dispatch = useDispatch();
+
+  const navigate = useNavigate();
   // ///////////////////  redux details /////////////////////
   const orgId = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
@@ -25,15 +29,18 @@ function PurchasePayment() {
   const {
     paymentNumber: paymentNumberFromRedux,
     date: dateRedux,
-    outStandings,
     party,
-    finalAmount,
+    billData,
+    totalBillAmount,
     enteredAmount,
+    advanceAmount,
+    remainingAmount,
     paymentMethod,
     paymentDetails,
+    note,
   } = useSelector((state) => state.payment);
 
-  const [receiptNumber, setReceiptNumber] = useState("");
+  const [paymentNumber, setpaymentNumber] = useState("");
   const [selectedDate, setSelectedDate] = useState(dateRedux);
 
   // ////////////for fetching configuration number
@@ -52,7 +59,7 @@ function PurchasePayment() {
           // console.log(res.data);
           if (res.data.message === "default") {
             const { configurationNumber } = res.data;
-            setReceiptNumber(configurationNumber);
+            setpaymentNumber(configurationNumber);
             return;
           }
 
@@ -78,11 +85,11 @@ function PurchasePayment() {
               .filter(Boolean)
               .join("-");
             // console.log(finalOrderNumber);
-            setReceiptNumber(finalOrderNumber);
+            setpaymentNumber(finalOrderNumber);
             dispatch(addPaymentNumber(finalOrderNumber));
           } else {
-            setReceiptNumber(receiptNumber);
-            dispatch(addPaymentNumber(receiptNumber));
+            setpaymentNumber(paymentNumber);
+            dispatch(addPaymentNumber(paymentNumber));
           }
         } catch (error) {
           console.log(error);
@@ -90,9 +97,129 @@ function PurchasePayment() {
       };
       fetchConfigurationNumber();
     } else {
-      setReceiptNumber(paymentNumberFromRedux);
+      setpaymentNumber(paymentNumberFromRedux);
     }
   }, []);
+
+  /// submit handler
+  const submitHandler = async () => {
+    // Form data
+    const formData = {
+      cmp_id : orgId,
+      paymentNumber:paymentNumberFromRedux,
+      date: selectedDate,
+      party,
+      billData,
+      totalBillAmount,
+      enteredAmount,
+      advanceAmount,
+      remainingAmount,
+      paymentMethod,
+      paymentDetails,
+      note,
+    };
+
+    if (formData?.paymentMethod === "Online") {
+      formData.paymentDetails = {
+        ...formData.paymentDetails,
+        chequeDate: null,
+        chequeNumber: null,
+      };
+    }
+    if (formData?.paymentMethod === "Cash") {
+
+      formData.paymentDetails = {
+        ...formData.paymentDetails,
+        bank_ledname: null,
+        bank_name: null,
+        _id: null,
+        chequeDate: null,
+        chequeNumber: null,
+      };
+    }
+
+    // console.log(formData);
+
+    // Validation
+    if (!formData.paymentNumber) {
+      return toast.error("Receipt number is required.");
+    }
+
+    if (!formData.party || !formData.party._id) {
+      return toast.error("Party selection is required.");
+    }
+
+    if (!formData.enteredAmount) {
+      return toast.error(" Amount is required.");
+    }
+
+    if (!formData.paymentMethod) {
+      return toast.error("Payment method is required.");
+    }
+    if (
+      (formData.paymentMethod === "Cheque" ||
+        formData.paymentMethod === "Online") &&
+      !formData.paymentDetails
+    ) {
+      return toast.error(
+        "Payment details are required for cheque or online payments."
+      );
+    }
+
+    if (formData.paymentMethod === "Cheque") {
+      if (!formData.paymentDetails.chequeDate) {
+        return toast.error("Cheque date is required.");
+      }
+      if (!formData.paymentDetails.chequeNumber) {
+        return toast.error("Cheque number is required.");
+      }
+      if (
+        !formData.paymentDetails.bank_ledname ||
+        !formData.paymentDetails.bank_name ||
+        !formData.paymentDetails._id
+      ) {
+        return toast.error("Bank details are required.");
+      }
+    }
+
+    if (formData.paymentMethod === "Online") {
+      if (
+        !formData.paymentDetails.bank_ledname ||
+        !formData.paymentDetails.bank_name ||
+        !formData.paymentDetails._id
+      ) {
+        return toast.error("Bank details are required.");
+      }
+    }
+
+    console.log(formData);
+    
+
+
+    // If validation passes, proceed with the form submission
+    try {
+      const res = await api.post(
+        `/api/sUsers/createPayment`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+          withCredentials: true,
+        }
+      );
+
+      console.log(res.data);
+      toast.success(res.data.message);
+
+      // navigate(`/sUsers/receipt/details/${res?.data?.receipt._id}`);
+      dispatch(removeAll());
+    } catch (error) {
+      toast.error(error.response?.data?.message || "An error occurred.");
+      console.log(error);
+    }
+  };
+
 
   return (
     <div>
@@ -105,12 +232,12 @@ function PurchasePayment() {
 
       <HeaderTile
         title={"Payment"}
-        number={receiptNumber}
+        number={paymentNumber}
         selectedDate={selectedDate}
         setSelectedDate={setSelectedDate}
         dispatch={dispatch}
         changeDate={changeDate}
-        // submitHandler={submitHandler}
+        submitHandler={submitHandler}
         removeAll={removeAll}
         tab="add"
       />

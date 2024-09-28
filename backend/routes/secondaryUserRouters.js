@@ -26,6 +26,7 @@ import { authSecondary } from '../middlewares/authSecUsers.js';
 import { secondaryIsBlocked } from '../middlewares/isBlocked.js';
 import { companyAuthentication } from '../middlewares/authCompany.js';
 import { fetchOutstandingDetails,createReceipt } from '../controllers/receiptController.js';
+import { createPayment } from '../controllers/paymentController.js';
 
 
 router.post('/login',login)
@@ -109,6 +110,9 @@ router.post('/editDebitNote/:id',authSecondary,secondaryIsBlocked,editDebitNote)
 ///receipt routes
 router.post('/createReceipt',authSecondary,secondaryIsBlocked,createReceipt)
 router.get('/getReceiptDetails/:id',authSecondary,secondaryIsBlocked,getReceiptDetails)
+///payment routes
+router.post('/createPayment',authSecondary,secondaryIsBlocked,createPayment)
+// router.get('/getReceiptDetails/:id',authSecondary,secondaryIsBlocked,getReceiptDetails)
 
 
 
