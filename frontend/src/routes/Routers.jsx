@@ -164,6 +164,7 @@ import DebitNoteDetailsPrimary from '../pages/primaryUsers/DebitNoteDetailsPrima
 import ShareDebitNotePrimary from '../pages/primaryUsers/ShareDebitNotePrimary'
 import OutstandingListOfPayment from '../pages/secUsers/OutstandingListOfPayment'
 import ReceiptDetailsOfSale from '../pages/secUsers/ReceiptDetails'
+import BankPayment from '../pages/secUsers/BankPayment'
 
 const Routers = () => {
   return (
@@ -322,7 +323,7 @@ const Routers = () => {
         <Route path='/sUsers/paymentPurchase' element={<ProtectedSecRoute><PurchasePayment/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/searchPartyPurchasePayment' element={<ProtectedSecRoute><SearchPartyPayment/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/purchase/addAmount/:party_id' element={<ProtectedSecRoute><OutstandingListOfPayment/></ProtectedSecRoute>}></Route>
-        <Route path='/sUsers/purchase/bankList' element={<ProtectedSecRoute><BankReceipt/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/payment/bankList' element={<ProtectedSecRoute><BankPayment/></ProtectedSecRoute>}></Route>
 
          {/* creditNote */}
         <Route path='/sUsers/creditNote' element={<ProtectedSecRoute><CreditNote/></ProtectedSecRoute>}></Route>

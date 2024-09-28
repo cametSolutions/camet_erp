@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 /* eslint-disable react/jsx-key */
 
 import { useCallback, useState } from "react";
@@ -70,14 +71,22 @@ function PaymentModeTile({ tab }) {
 
   const debouncedDispatchChequeDate = useCallback(
     debounce((date) => {
-      dispatch(addChequeDate(date.toISOString()));
+      if (tab === "payment") {
+        dispatch(addChequeDateForPayment(date.toISOString()));
+      } else {
+        dispatch(addChequeDate(date.toISOString()));
+      }
     }, 500), // Adjust debounce time as needed
     [dispatch]
   );
 
   const debouncedDispatchNote = useCallback(
     debounce((note) => {
-      dispatch(addNote(note));
+      if (tab === "payment") {
+        dispatch(addNoteForPayment(note));
+      } else {
+        dispatch(addNote(note));
+      }
     }, 500), // Adjust debounce time as needed
     [dispatch]
   );
@@ -113,7 +122,7 @@ function PaymentModeTile({ tab }) {
             <button
               onClick={() => {
                 setSelectedPaymentMethod(method);
-                dispatch(addPaymentMethod(method?.name));
+                dispatch(tab === "receipt" ? addPaymentMethod(method.name) : addPaymentMethodForPayment(method.name));
               }}
               key={index}
               className={` ${
@@ -207,7 +216,7 @@ function PaymentModeTile({ tab }) {
         <p
           onClick={() => {
             setIsNoteOpen(!isNoteOpen);
-            dispatch(addIsNoteOpen(!isNoteOpen));
+            dispatch(tab === "receipt" ? addNote(note) : addNoteForPayment(note));
           }}
           className="flex items-center cursor-pointer  gap-3  text-violet-500 text-xs md:text-md  font-bold "
         >
