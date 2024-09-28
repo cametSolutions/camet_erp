@@ -162,8 +162,11 @@ function VanSaleSecondary() {
         console.log(godownData);
         setGodownname(godownData?.godownName || "");
         setGodownId(godownData?.godownId || "");
-        if (godownData?.godownName === "" || godownData?.godownId == "") {
-          toast.error(" Van sale godown is not configured")
+
+        console.log(godownData?.godownName, godownData?.godownId);
+        
+        if (!godownData?.godownName || !godownData?.godownId) {
+          toast.error("Van sale godown is not configured");
           navigate(-1);
         }
       } catch (error) {
