@@ -249,7 +249,6 @@ function VanSaleSecondary() {
     dispatch(addAdditionalCharges({ index, row: newRows[index] }));
   };
 
-  console.log(rows);
 
   const handleRateChange = (index, value) => {
     const newRows = [...rows];

@@ -1,28 +1,9 @@
-import React, { useState, useEffect } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
-import { IoIosArrowRoundBack } from "react-icons/io";
-import { toast } from "react-toastify";
+import { useEffect, useState } from "react";
 import api from "../../api/api";
-
-const INITIAL_CONFIG = {
-  prefixDetails: "",
-  suffixDetails: "",
-  widthOfNumericalPart: "",
-  currentNumber: "",
-};
-
-const CONFIGURATIONS = [
-  "sales",
-  "salesOrder",
-  "receipt",
-  "purchase",
-  "vanSale",
-  "stockTransfer",
-  "creditNote",
-  "debitNote",
-  "payment",
-  // "haioio"
-];
+import { toast } from "react-toastify";
+import { Link } from "react-router-dom";
+import { IoIosArrowRoundBack } from "react-icons/io";
+import { useParams, useNavigate } from "react-router-dom";
 
 function ConfigureSecondaryUser() {
   const [godowns, setGodowns] = useState([]);
@@ -30,74 +11,185 @@ function ConfigureSecondaryUser() {
   const [selectedPriceLevels, setSelectedPriceLevels] = useState([]);
   const [selectedGodowns, setSelectedGodowns] = useState([]);
   const [selectedVanSaleGodowns, setSelectedVanSaleGodowns] = useState([]);
+  const [vanSaleGodownName, setVanSaleGodownName] = useState("");
   const [selectedConfig, setSelectedConfig] = useState("sales");
   const [vanSale, setVanSale] = useState(false);
-  const [configs, setConfigs] = useState(
-    Object.fromEntries(CONFIGURATIONS.map(config => [config, INITIAL_CONFIG]))
-  );
+
+  const initialConfig = [
+    {
+      prefixDetails: "",
+      suffixDetails: "",
+      widthOfNumericalPart: "",
+      currentNumber: "",
+    },
+  ];
+
+  const [sales, setSales] = useState(initialConfig);
+  const [salesOrder, setSalesOrder] = useState(initialConfig);
+  const [receipt, setReceipt] = useState(initialConfig);
+  const [payment, setPayment] = useState(initialConfig);
+
+  const [purchase, setPurchase] = useState(initialConfig);
+  const [vanSaleConfig, setVanSaleConfig] = useState(initialConfig);
+  const [stockTransfer, setStockTransfer] = useState(initialConfig);
+  const [creditNote, setCreditNote] = useState(initialConfig);
+  const [debitNote, setDebitNote] = useState(initialConfig);
 
   const { id, userId, cmp_name } = useParams();
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchGodowns = async () => {
       try {
-        const [godownsAndPriceLevels, configurationNumbers, userDetails] = await Promise.all([
-          api.get(`/api/pUsers/fetchGodownsAndPriceLevels/${id}`, { withCredentials: true }),
-          api.get(`/api/pUsers/fetchConfigurationCurrentNumber/${id}/${userId}`, { withCredentials: true }),
-          api.get(`/api/pUsers/getSecUserDetails/${userId}`, { withCredentials: true })
-        ]);
-
-        setGodowns(godownsAndPriceLevels.data.data.godowns);
-        setPriceLevels(godownsAndPriceLevels.data.data.priceLevels);
-
-        const numbers = configurationNumbers.data;
-        // console.log(numbers);
-        
-        setConfigs(prev => 
-          Object.fromEntries(
-            Object.entries(prev).map(([key, value]) => [
-              key,
-              { ...value, currentNumber: numbers[`${key}Number`] || "" }
-            ])
-          )
+        const res = await api.get(
+          `/api/pUsers/fetchGodownsAndPriceLevels/${id}`,
+          {
+            withCredentials: true,
+          }
         );
 
-        const userConfig = userDetails.data.data.configurations.find(item => item.organization === id) || {};
-        if (userConfig) {
-          setSelectedGodowns(userConfig.selectedGodowns || []);
-          setSelectedPriceLevels(userConfig.selectedPriceLevels || []);
-          setVanSale(userConfig.vanSale || false);
-          setSelectedVanSaleGodowns(userConfig.selectedVanSaleGodowns || []);
-          
-          CONFIGURATIONS.forEach(config => {
-            if (userConfig[`${config}Configuration`]) {
-              setConfigs(prev => ({
-                ...prev,
-                [config]: userConfig[`${config}Configuration`]
-              }));
-            }
-          });
-        }
+        setGodowns(res.data.data.godowns);
+        setPriceLevels(res.data.data.priceLevels);
+        setVanSaleGodownName(res.data.data.godowns[0]?.godown);
       } catch (error) {
-        console.error(error);
-        toast.error("Error fetching data");
+        console.log(error);
+        toast.error(error.response.data.message);
       }
     };
 
-    console.log(configs);
-    
+    const fetchConfigurationNumber = async () => {
+      try {
+        const res = await api.get(
+          `/api/pUsers/fetchConfigurationCurrentNumber/${id}/${userId}`,
+          {
+            withCredentials: true,
+          }
+        );
 
-    fetchData();
-  }, [id, userId]);
+        const {
+          orderNumber,
+          salesNumber,
+          purchaseNumber,
+          receiptNumber,
+          paymentNumber,
+          vanSalesNumber,
+          stockTransferNumber,
+          creditNoteNumber,
+          debitNoteNumber,
+        } = res.data;
 
-  const handleConfigSelection = (e) => setSelectedConfig(e.target.value);
+        const updateConfig = (setter, number) => {
+          if (number) {
+            setter((prev) => [{
+              ...prev[0],
+              currentNumber: number,
+            }]);
+          }
+        };
 
-  const updateConfig = (field, value) => {
-    setConfigs(prev => ({
-      ...prev,
-      [selectedConfig]: { ...prev[selectedConfig], [field]: value }
-    }));
+        updateConfig(setSales, salesNumber);
+        updateConfig(setSalesOrder, orderNumber);
+        updateConfig(setPurchase, purchaseNumber);
+        updateConfig(setReceipt, receiptNumber);
+        updateConfig(setPayment, paymentNumber);
+        updateConfig(setVanSaleConfig, vanSalesNumber);
+        updateConfig(setStockTransfer, stockTransferNumber);
+        updateConfig(setCreditNote, creditNoteNumber);
+        updateConfig(setDebitNote, debitNoteNumber);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+
+    fetchConfigurationNumber();
+    fetchGodowns();
+  }, []);
+
+  useEffect(() => {
+    const fetchSingleUser = async () => {
+      try {
+        const res = await api.get(`/api/pUsers/getSecUserDetails/${userId}`, {
+          withCredentials: true,
+        });
+        const fullConfigurations = res?.data?.data?.configurations;
+        const configurations = new Array(fullConfigurations.find((item) => item.organization === id)) || [];
+
+        if (configurations?.length > 0) {
+          const {
+            selectedGodowns,
+            selectedPriceLevels,
+            salesOrderConfiguration,
+            salesConfiguration,
+            receiptConfiguration,
+            paymentConfiguration,
+            vanSaleConfiguration,
+            purchaseConfiguration,
+            selectedVanSaleGodowns,
+            stockTransferConfiguration,
+            creditNoteConfiguration,
+            debitNoteConfiguration,
+            vanSale,
+          } = configurations[0];
+
+          setSelectedGodowns(selectedGodowns || []);
+          setSelectedPriceLevels(selectedPriceLevels || []);
+          setSalesOrder(salesOrderConfiguration ? [salesOrderConfiguration] : initialConfig);
+          setSales(salesConfiguration ? [salesConfiguration] : initialConfig);
+          setReceipt(receiptConfiguration ? [receiptConfiguration] : initialConfig);
+          setPayment(paymentConfiguration ? [paymentConfiguration] : initialConfig);
+          setVanSale(vanSale || false);
+          setPurchase(purchaseConfiguration ? [purchaseConfiguration] : initialConfig);
+          setVanSaleConfig(vanSaleConfiguration ? [vanSaleConfiguration] : initialConfig);
+          setSelectedVanSaleGodowns(selectedVanSaleGodowns?.length > 0 ? [selectedVanSaleGodowns[0]] : []);
+          setStockTransfer(stockTransferConfiguration ? [stockTransferConfiguration] : initialConfig);
+          setCreditNote(creditNoteConfiguration ? [creditNoteConfiguration] : initialConfig);
+          setDebitNote(debitNoteConfiguration ? [debitNoteConfiguration] : initialConfig);
+        }
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    fetchSingleUser();
+  }, []);
+
+  const handleConfigSelection = (e) => {
+    setSelectedConfig(e.target.value);
+  };
+
+  const updateConfig = (section, field, value) => {
+    const updateFunction = {
+      sales: setSales,
+      salesOrder: setSalesOrder,
+      receipt: setReceipt,
+      payment: setPayment,
+      purchase: setPurchase,
+      vanSale: setVanSaleConfig,
+      stockTransfer: setStockTransfer,
+      creditNote: setCreditNote,
+      debitNote: setDebitNote,
+    }[section];
+
+    if (updateFunction) {
+      updateFunction((prev) => [{...prev[0], [field]: value}]);
+    } else {
+      console.error("Invalid section");
+    }
+  };
+
+  const getConfigValue = (section, field) => {
+    const config = {
+      sales,
+      salesOrder,
+      receipt,
+      payment,
+      purchase,
+      vanSale: vanSaleConfig,
+      stockTransfer,
+      creditNote,
+      debitNote,
+    }[section];
+
+    return config ? config[0][field] : "";
   };
 
   const handleCheckboxChange = (type, value, checked) => {
@@ -116,99 +208,129 @@ function ConfigureSecondaryUser() {
     }
   };
 
-
   const formatFieldName = (fieldName) => {
-    // Split the camelCase field name into words
     const words = fieldName.split(/(?=[A-Z])/);
-    // Capitalize the first word and join all words with spaces
-    return words.map((word, index) => 
-      index === 0 ? word.charAt(0).toUpperCase() + word.slice(1) : word.toLowerCase()
-    ).join(' ');
+    return words
+      .map((word, index) =>
+        index === 0
+          ? word.charAt(0).toUpperCase() + word.slice(1)
+          : word.toLowerCase()
+      )
+      .join(" ");
   };
 
   const validateConfiguration = (config, configName) => {
-    const mandatoryFields = ['currentNumber'];
-    const optionalFields = ['prefixDetails', 'suffixDetails', 'widthOfNumericalPart'];
+    const mandatoryFields = ["currentNumber"];
+    const optionalFields = [
+      "prefixDetails",
+      "suffixDetails",
+      "widthOfNumericalPart",
+    ];
     const allFields = [...mandatoryFields, ...optionalFields];
-    
+
     let errors = [];
     let hasOptionalFields = false;
-  
-    // Check mandatory fields
+
     for (let field of mandatoryFields) {
       if (!config[field]) {
         errors.push(`${configName}: ${formatFieldName(field)} is required`);
       }
     }
-  
-    // Check if any optional field is filled
+
     for (let field of optionalFields) {
       if (config[field]) {
         hasOptionalFields = true;
         break;
       }
     }
-  
-    // If any optional field is filled, all should be filled
+
     if (hasOptionalFields) {
       for (let field of optionalFields) {
         if (!config[field]) {
-          errors.push(`${configName}: ${formatFieldName(field)} is required when any optional field is filled`);
+          errors.push(
+            `${configName}: ${formatFieldName(
+              field
+            )} is required when any optional field is filled`
+          );
         }
       }
     }
-  
-  // Check for alphanumeric values and forward slash (not at the beginning)
-  const alphanumericWithSlashRegex = /^[a-zA-Z0-9][a-zA-Z0-9/]*$/;
-  for (let field of allFields) {
-    if (config[field] && !alphanumericWithSlashRegex.test(config[field])) {
-      errors.push(`${configName}: ${formatFieldName(field)} must start with and can only contain alphanumeric characters and forward slashes`);
-    }
-  }
 
-    // Check widthOfNumericalPart
-    if (config.widthOfNumericalPart && Number(config.widthOfNumericalPart) > 6) {
-      errors.push(`${configName}: Width of numerical part must be less than or equal to 6`);
+    const alphanumericWithSlashRegex = /^[a-zA-Z0-9][a-zA-Z0-9/]*$/;
+    for (let field of allFields) {
+      if (config[field] && !alphanumericWithSlashRegex.test(config[field])) {
+        errors.push(
+          `${configName}: ${formatFieldName(
+            field
+          )} must start with and can only contain alphanumeric characters and forward slashes`
+        );
+      }
     }
 
-    if (configName === 'VanSale' && errors.length === 0) {
+    if (
+      config.widthOfNumericalPart &&
+      Number(config.widthOfNumericalPart) > 6
+    ) {
+      errors.push(
+        `${configName}: Width of numerical part must be less than or equal to 6`
+      );
+    }
 
-      console.log("jhdfasjkh");
-      
-      if (mandatoryFields.every(field => config[field]) &&
-          optionalFields.every(field => config[field])) {
-        
+    if (configName === "Van Sale" && errors.length === 0) {
+      if (
+        mandatoryFields.every((field) => config[field]) &&
+        optionalFields.every((field) => config[field])
+      ) {
         if (selectedVanSaleGodowns.length === 0) {
-          errors.push('Van Sale: At least one Van Sale Godown must be selected');
+          errors.push(
+            "Van Sale: At least one Van Sale Godown must be selected"
+          );
         }
       }
     }
-  
+
     return errors;
   };
-  
 
   const submitHandler = async () => {
     let formData = {
       selectedGodowns,
       selectedPriceLevels,
-      vanSale,
+      salesConfiguration: sales[0],
+      salesOrderConfiguration: salesOrder[0],
+      receiptConfiguration: receipt[0],
+      paymentConfiguration: payment[0],
+      purchaseConfiguration: purchase[0],
+      stockTransferConfiguration: stockTransfer[0],
+      creditNoteConfiguration: creditNote[0],
+      debitNoteConfiguration: debitNote[0],
       selectedVanSaleGodowns,
-      ...Object.fromEntries(
-        CONFIGURATIONS.map(config => [`${config}Configuration`, configs[config]])
-      )
+      vanSaleConfiguration: {
+        ...vanSaleConfig[0],
+        vanSaleGodownName:
+          godowns?.find((el) => el?.id == selectedVanSaleGodowns[0])
+            ?.godown || "",
+      },
+      vanSale: vanSale,
     };
 
+    let allErrors = [];
 
+    const configurations = [
+      { config: formData.salesConfiguration, name: "Sales" },
+      { config: formData.salesOrderConfiguration, name: "Sales Order" },
+      { config: formData.receiptConfiguration, name: "Receipt" },
+      { config: formData.paymentConfiguration, name: "Payment" },
+      { config: formData.purchaseConfiguration, name: "Purchase" },
+      { config: formData.stockTransferConfiguration, name: "Stock Transfer" },
+      { config: formData.vanSaleConfiguration, name: "Van Sale" },
+      { config: formData.creditNoteConfiguration, name: "Credit Note" },
+      { config: formData.debitNoteConfiguration, name: "Debit Note" },
+    ];
 
-    
-
-    let allErrors = CONFIGURATIONS.flatMap(config => 
-
-      // console.log(configs[config]);
-
-      validateConfiguration(configs[config], config.charAt(0).toUpperCase() + config.slice(1))
-    );
+    configurations.forEach(({ config, name }) => {
+      allErrors = allErrors.concat(validateConfiguration(config, name));
+    });
 
     if (allErrors.length > 0) {
       toast.error(allErrors[0]);
@@ -220,37 +342,36 @@ function ConfigureSecondaryUser() {
         `/api/pUsers/addSecondaryConfigurations/${id}/${userId}`,
         formData,
         {
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+          },
           withCredentials: true,
         }
       );
       toast.success(res.data.message);
       navigate(`/pUsers/editUser/${userId}`);
     } catch (error) {
-      toast.error(error.response?.data?.message || "An error occurred");
-      console.error(error);
+      toast.error(error.response.data.message);
+      console.log(error);
     }
   };
 
-
-  
-
   return (
-    <div className="flex-1">
-      <div className="bg-[#201450] text-white mb-2 p-3 flex items-center gap-3 sticky top-0 z-20 text-lg">
+    <div className="flex-1   ">
+      <div className="  bg-[#201450] text-white mb-2 p-3 flex items-center gap-3 sticky top-0 z-20 text-lg   ">
         <Link to={`/pUsers/editUser/${userId}`}>
-          <IoIosArrowRoundBack className="text-3xl text-white cursor-pointer" />
+          <IoIosArrowRoundBack className="text-3xl text-white cursor-pointer " />
         </Link>
-        <p>Configure Users</p>
+        <p> Configure Users </p>
       </div>
-      <section className="h-screen px-3 md:px-7">
-        <div className="flex-auto lg:px-10 py-10 pt-0 shadow-lg">
+      <section className="  h-screen  px-3 md:px-7">
+        <div className="flex-auto  lg:px-10 py-10 pt-0 shadow-lg  ">
           <form>
-            <div className="flex flex-col md:flex-row md:items-center my-10">
-              <div className="w-auto px-4">
+            <div className="flex flex-col  md:flex-row md:items-center my-10 ">
+              <div className="w-auto px-4  ">
                 <button
                   type="button"
-                  className="text-sm font-semibold bg-violet-500 p-0.5 text-white rounded-sm px-3"
+                  className="text-sm font-semibold    bg-violet-500 p-0.5 text-white rounded-sm px-3"
                 >
                   {cmp_name}
                 </button>
@@ -272,127 +393,281 @@ function ConfigureSecondaryUser() {
                     onChange={handleConfigSelection}
                     value={selectedConfig}
                   >
-                    {CONFIGURATIONS.map(config => (
-                      <option key={config} value={config}>
-                        {config.charAt(0).toUpperCase() + config.slice(1)}
-                      </option>
-                    ))}
+                    <option value="sales">Sales</option>
+                    <option value="salesOrder">Sales Order</option>
+                    <option value="purchase">Purchase</option>
+                    <option value="creditNote">Credit Note</option>
+                    <option value="debitNote">Debit Note</option>
+                    <option value="payment">Payment</option>
+                    <option value="receipt">Receipt</option>
+                    <option value="stockTransfer">Stock Transfer</option>
+                    <option value="vanSale">VanSale</option>
                   </select>
                 </div>
               </div>
             </div>
 
             <h6 className="text-blueGray-400 text-sm mb-6 font-bold uppercase px-4 mt-5">
-              {selectedConfig.charAt(0).toUpperCase() + selectedConfig.slice(1)} Configuration
+              {selectedConfig.charAt(0).toUpperCase() + selectedConfig.slice(1)}{" "}
+              Configuration
             </h6>
             <div className="flex flex-wrap">
-              {["prefixDetails", "suffixDetails", "widthOfNumericalPart", "currentNumber"].map((field) => (
-                <div key={field} className="w-full lg:w-6/12 px-4">
-                  <div className="relative w-full mb-3">
-                    <label
-                      className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
-                      htmlFor={field}
-                    >
-                      {field}
-                    </label>
-                    <input
-                      type={field === "widthOfNumericalPart" || field === "currentNumber" ? "number" : "text"}
-                      id={field}
-                      className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                      onChange={(e) => updateConfig(field, e.target.value)}
-                      value={configs[selectedConfig][field]}
-                      placeholder={field}
-                    />
-                  </div>
+              <div className="w-full lg:w-6/12 px-4">
+                <div className="relative w-full mb-3">
+                  <label
+                    className={`  
+                       block uppercase text-blueGray-600 text-xs font-bold mb-2`}
+                    htmlFor="prefixDetails"
+                  >
+                    prefixDetails
+                  </label>
+                  <input
+                    type="text"
+                    id="prefixDetails"
+                    className={`   border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150`}
+                    onChange={(e) =>
+                      updateConfig(
+                        selectedConfig,
+                        "prefixDetails",
+                        e.target.value
+                      )
+                    }
+                    value={getConfigValue(selectedConfig, "prefixDetails")}
+                    placeholder="prefixDetails"
+                  />
                 </div>
-              ))}
+              </div>
+              <div className="w-full lg:w-6/12 px-4">
+                <div className="relative w-full mb-3">
+                  <label
+                    className={`   block uppercase text-blueGray-600 text-xs font-bold mb-2`}
+                    htmlFor="suffixDetails"
+                  >
+                    suffixDetails
+                  </label>
+                  <input
+                    type="text"
+                    id="suffixDetails"
+                    className={`    border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150`}
+                    onChange={(e) =>
+                      updateConfig(
+                        selectedConfig,
+                        "suffixDetails",
+                        e.target.value
+                      )
+                    }
+                    value={getConfigValue(selectedConfig, "suffixDetails")}
+                    placeholder="suffixDetails"
+                  />
+                </div>
+              </div>
+              {/* <div className="w-full lg:w-6/12 px-4">
+                <div className="relative w-full mb-3">
+                  <label
+                    className={`   block uppercase text-blueGray-600 text-xs font-bold mb-2`}
+                    htmlFor="startingNumber"
+                  >
+                    Starting Number
+                  </label>
+                  <input
+                    disabled
+                    type="number"
+                    id="startingNumber"
+                    className={`   border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150`}
+                    // onChange={(e) =>
+                    //   updateConfig(
+                    //     selectedConfig,
+                    //     "startingNumber",
+                    //     e.target.value
+                    //   )
+                    // }
+                    value={1}
+                    placeholder="Starting Number"
+                  />
+                </div>
+              </div> */}
+              {/* New input field for the width of the numerical part */}
+              <div className="w-full lg:w-6/12 px-4">
+                <div className="relative w-full mb-3">
+                  <label
+                    className={`    block uppercase text-blueGray-600 text-xs font-bold mb-2`}
+                    htmlFor="widthOfNumericalPart"
+                  >
+                    Width of Numerical Part
+                  </label>
+                  <input
+                    type="number"
+                    id="widthOfNumericalPart"
+                    className={`    border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150`}
+                    onChange={(e) =>
+                      updateConfig(
+                        selectedConfig,
+                        "widthOfNumericalPart",
+                        e.target.value
+                      )
+                    }
+                    value={getConfigValue(
+                      selectedConfig,
+                      "widthOfNumericalPart"
+                    )}
+                    placeholder="Width of Numerical Part"
+                  />
+                </div>
+              </div>
+
+              <div className="w-full lg:w-6/12 px-4">
+                <div className="relative w-full mb-3">
+                  <label
+                    className={`    block uppercase text-blueGray-600 text-xs font-bold mb-2`}
+                    htmlFor="widthOfNumericalPart"
+                  >
+                    Current Number
+                  </label>
+                  <input
+                    type="number"
+                    id="currentNumber"
+                    className={`     border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150`}
+                    onChange={(e) =>
+                      updateConfig(
+                        selectedConfig,
+                        "currentNumber",
+                        e.target.value
+                      )
+                    }
+                    value={getConfigValue(selectedConfig, "currentNumber")}
+                    placeholder="Current Number"
+                  />
+                </div>
+              </div>
             </div>
 
-            {selectedConfig !== "receipt" && selectedConfig !== "stockTransfer" && (
-              <section className="px-4">
-                <hr className="mt-5 border-b-1 border-blueGray-300" />
-                <h6 className="text-blueGray-400 text-sm mb-6 font-bold uppercase mt-10">
-                  Price Levels and Locations
-                </h6>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  <div className="lg:col-span-1">
-                    <h6 className="text-blueGray-400 text-sm mb-4 font-bold uppercase">
-                      Price Levels
-                    </h6>
-                    <div className="space-y-2">
-                      {priceLevels?.length > 0 ? (
-                        priceLevels?.map((item, index) => (
-                          <div key={index} className="flex items-center">
-                            <input
-                              type="checkbox"
-                              id={`priceLevelCheckbox${index}`}
-                              value={item?.priceLevel}
-                              checked={selectedPriceLevels.includes(item?.priceLevel)}
-                              onChange={(e) =>
-                                handleCheckboxChange(
-                                  "priceLevel",
-                                  e.target.value,
-                                  e.target.checked
-                                )
-                              }
-                              className="mr-2"
-                            />
-                            <label
-                              htmlFor={`priceLevelCheckbox${index}`}
-                              className="text-blueGray-600"
-                            >
-                              {item?.priceLevel}
-                            </label>
-                          </div>
-                        ))
-                      ) : (
-                        <p className="text-blueGray-600">No Price Levels added</p>
-                      )}
+            {(selectedConfig !== "receipt" && selectedConfig !== "payment") &&
+              selectedConfig !== "stockTransfer" && (
+                <section className="px-4">
+                  <hr className="mt-5 border-b-1 border-blueGray-300" />
+                  <h6 className="text-blueGray-400 text-sm mb-6 font-bold uppercase mt-10">
+                    Price Levels and Locations
+                  </h6>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4  ">
+                    <div className="lg:col-span-1">
+                      <h6 className="text-blueGray-400 text-sm mb-4 font-bold uppercase  ">
+                        Price Levels
+                      </h6>
+                      <div className="space-y-2">
+                        {priceLevels?.length > 0 ? (
+                          priceLevels?.map((item, index) => (
+                            <div key={index} className="flex items-center">
+                              <input
+                                type="checkbox"
+                                id={`priceLevelCheckbox${index}`}
+                                value={item?.priceLevel}
+                                checked={selectedPriceLevels.includes(
+                                  item?.priceLevel
+                                )}
+                                onChange={(e) =>
+                                  handleCheckboxChange(
+                                    "priceLevel",
+                                    e.target.value,
+                                    e.target.checked
+                                  )
+                                }
+                                className="mr-2"
+                              />
+                              <label
+                                htmlFor={`priceLevelCheckbox${index}`}
+                                className="text-blueGray-600"
+                              >
+                                {item?.priceLevel}
+                              </label>
+                            </div>
+                          ))
+                        ) : (
+                          <p className="text-blueGray-600">
+                            No Price Levels added
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    {/* {type !== "self" && ( */}
+                    <div className="lg:col-span-1">
+                      <h6 className="text-blueGray-400 text-sm mb-4 font-bold uppercase">
+                        {selectedConfig === "vanSale"
+                          ? "Van sale Locations"
+                          : "Locations"}
+                      </h6>
+                      <div
+                        className={` 
+                       
+                         space-y-2 `}
+                      >
+                        {selectedConfig === "vanSale" ? (
+                          godowns?.length > 0 ? (
+                            godowns?.map((item, index) => (
+                              <div key={index} className="flex items-center">
+                                <input
+                                  type="checkbox"
+                                  id={`godownCheckbox${index}`}
+                                  value={item?.id}
+                                  checked={selectedVanSaleGodowns.includes(
+                                    item?.id
+                                  )}
+                                  onChange={(e) =>
+                                    handleCheckboxChange(
+                                      "vanSaleGodown",
+                                      e.target.value,
+                                      e.target.checked
+                                    )
+                                  }
+                                  className="mr-2"
+                                />
+                                <label
+                                  htmlFor={`godownCheckbox${index}`}
+                                  className="text-blueGray-600"
+                                >
+                                  {item?.godown}
+                                </label>
+                              </div>
+                            ))
+                          ) : (
+                            <p className="text-blueGray-600">
+                              No Godowns added
+                            </p>
+                          )
+                        ) : godowns?.length > 0 ? (
+                          godowns?.map((item, index) => (
+                            <div key={index} className="flex items-center">
+                              <input
+                                type="checkbox"
+                                id={`godownCheckbox${index}`}
+                                value={item?.id}
+                                checked={selectedGodowns.includes(item?.id)}
+                                onChange={(e) =>
+                                  handleCheckboxChange(
+                                    "godown",
+                                    e.target.value,
+                                    e.target.checked
+                                  )
+                                }
+                                className="mr-2"
+                              />
+                              <label
+                                htmlFor={`godownCheckbox${index}`}
+                                className="text-blueGray-600"
+                              >
+                                {item?.godown}
+                              </label>
+                            </div>
+                          ))
+                        ) : (
+                          <p className="text-blueGray-600">No Godowns added</p>
+                        )}
+                      </div>
                     </div>
                   </div>
-                  <div className="lg:col-span-1">
-                    <h6 className="text-blueGray-400 text-sm mb-4 font-bold uppercase">
-                      {selectedConfig === "vanSale" ? "Van sale Locations" : "Locations"}
-                    </h6>
-                    <div className="space-y-2">
-                      {godowns?.length > 0 ? (
-                        godowns?.map((item, index) => (
-                          <div key={index} className="flex items-center">
-                            <input
-                              type="checkbox"
-                              id={`godownCheckbox${index}`}
-                              value={item?.id}
-                              checked={
-                                selectedConfig === "vanSale"
-                                  ? selectedVanSaleGodowns.includes(item?.id)
-                                  : selectedGodowns.includes(item?.id)
-                              }
-                              onChange={(e) =>
-                                handleCheckboxChange(
-                                  selectedConfig === "vanSale" ? "vanSaleGodown" : "godown",
-                                  e.target.value,
-                                  e.target.checked
-                                )
-                              }
-                              className="mr-2"
-                            />
-                            <label
-                              htmlFor={`godownCheckbox${index}`}
-                              className="text-blueGray-600"
-                            >
-                              {item?.godown}
-                            </label>
-                          </div>
-                        ))
-                      ) : (
-                        <p className="text-blueGray-600">No Godowns added</p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-                <hr className="mt-5 border-b-1 border-blueGray-300" />
-              </section>
-            )}
+
+                  <hr className="mt-5 border-b-1 border-blueGray-300" />
+                </section>
+              )}
           </form>
           <button
             className="bg-pink-500 mt-10 ml-4 w-20 text-white active:bg-pink-600 font-bold uppercase text-xs px-4 py-2 rounded shadow hover:shadow-md outline-none focus:outline-none mr-1 ease-linear transition-all duration-150 transform hover:scale-105"

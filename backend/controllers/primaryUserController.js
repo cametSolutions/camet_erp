@@ -30,6 +30,8 @@ import stockTransferModel from "../models/stockTransferModel.js";
 import creditNoteModel from "../models/creditNoteModel.js";
 import debitNoteModel from "../models/debitNoteModel.js";
 import paymentModel from "../models/paymentModel.js";
+import ReceiptModel from "../models/receiptModel.js";
+
 
 // @desc Register Primary user
 // route POST/api/pUsers/register
