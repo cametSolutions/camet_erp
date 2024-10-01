@@ -9,7 +9,7 @@ function PdfHeader({ data, org, address, despatchDetails, tab = "sales" }) {
     
 
   switch (tab) {
-    case "sales ":
+    case "sales":
       pdfNumber = data?.salesNumber;
       break;
 
