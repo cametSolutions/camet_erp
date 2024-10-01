@@ -15,7 +15,7 @@ function AddAmountTile({ tab, party }) {
     (state) => state[selectedRedux]
   );
 
-  const isRemaining = totalBillAmount - enteredAmount > 0 ? true : false;
+  const isRemaining = totalBillAmount - enteredAmount >= 0 ? true : false;
 
   const handleNavigate = () => {
     if (Object.keys(party).length === 0) {
@@ -40,7 +40,7 @@ function AddAmountTile({ tab, party }) {
           >
             <div className="flex justify-center gap-2   hover_scale items-center  ">
               <IoMdAdd className="text-2xl" />
-              <p className="text-md font-semibold">Add Amount</p>
+              <p className="text-md font-semibold">Add Amounttt</p>
             </div>
           </div>
         </>
