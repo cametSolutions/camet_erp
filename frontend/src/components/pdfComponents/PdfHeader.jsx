@@ -6,7 +6,7 @@ function PdfHeader({ data, org, address, despatchDetails, tab = "sales" }) {
   let pdfNumber;
 
   switch (tab) {
-    case "sales ":
+    case "sales":
       pdfNumber = data?.salesNumber;
       break;
 

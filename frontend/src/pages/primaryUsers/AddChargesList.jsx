@@ -65,7 +65,7 @@ function AddChargesList() {
       confirmButtonText: "Yes, do it!",
       cancelButtonText: "Cancel it",
     });
-    if (confirmResult.isConfirmed) {
+    if (confirmResult?.isConfirmed) {
       try {
         const res = await api.delete(
           `/api/pUsers/deleteAdditionalCharge/${id}/${orgId}`,
@@ -152,8 +152,8 @@ function AddChargesList() {
                   </tr>
                 </thead>
                 <tbody className="text-sm leading-[40px] divide-y divide-gray-100 ">
-                  {additional.length > 0 ? (
-                    additional.map((item, index) => (
+                  {additional?.length > 0 ? (
+                    additional?.map((item, index) => (
                       <tr key={index}>
                         {/* <td className="p-2 whitespace-nowrap">
                             <div className="text-left"> {item.place}</div>

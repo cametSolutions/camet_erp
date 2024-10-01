@@ -131,7 +131,7 @@ function AddProductForm({
         setSubcategory(subcategories);
 
         setGodown(godowns);
-        const defaultGodown = godowns.find((g) => g.defaultGodown === true);
+        const defaultGodown = godowns.find((g) => g?.defaultGodown === true);
         // console.log(defaultGodown);
         if (defaultGodown) {
           setLocationRows([
@@ -175,7 +175,7 @@ function AddProductForm({
 
   const handleAddRow = () => {
     const lastRow = rows[rows.length - 1];
-    if (!lastRow.pricelevel || !lastRow.pricerate) {
+    if (!lastRow?.pricelevel || !lastRow?.pricerate) {
       toast.error("Add Level name and Rate");
       return;
     }
@@ -184,7 +184,7 @@ function AddProductForm({
 
   const handleDeleteRow = (id) => {
     if (rows.length > 1) {
-      setRows(rows.filter((row) => row.id !== id));
+      setRows(rows.filter((row) => row?.id !== id));
     } else {
       setRows([{ _id: "", pricelevel: "", pricerate: "" }]);
     }
@@ -211,7 +211,7 @@ function AddProductForm({
 
   const handleAddLocationRow = () => {
     const lastRow = locationRows[locationRows.length - 1];
-    if (!lastRow.godown || lastRow.balance_stock < 0) {
+    if (!lastRow?.godown || lastRow?.balance_stock < 0) {
       toast.error("Add Location  and Stock");
       return;
     }
@@ -221,7 +221,7 @@ function AddProductForm({
 
   const handleDeleteLocationRow = (id) => {
     const isDefaultGodown = locationRows.find(
-      (d) => d.godown_id === id
+      (d) => d?.godown_id === id
     )?.defaultGodown;
 
     console.log(isDefaultGodown);
@@ -237,7 +237,7 @@ function AddProductForm({
     }
 
     if (locationRows.length > 1) {
-      setLocationRows(locationRows.filter((row) => row.godown_id !== id));
+      setLocationRows(locationRows.filter((row) => row?.godown_id !== id));
     } else {
       setLocationRows([{ godown_id: "", godown: "", balance_stock: "" }]);
     }
@@ -262,10 +262,10 @@ function AddProductForm({
     if (
       !product_name.trim() ||
       !unit ||
-      hsn_code.length === 0 ||
-      !balance_stock
+      hsn_code.length === 0 
+    
     ) {
-      toast.error("Name, Unit, Balance stock and HSN must be filled");
+      toast.error("Name, Unit, and HSN must be filled");
       return;
     }
 
@@ -299,7 +299,10 @@ function AddProductForm({
 
     isError = false;
 
-    if (locationRows[0].godown !== "" || locationRows[0].balance_stock !== "") {
+    console.log(locationRows);
+    
+
+    if (locationRows[0]?.godown !== "" || locationRows[0]?.balance_stock !== "") {
       locationRows.map((el) => {
         if (el?.balance_stock === "") {
           toast.error("stock must be filled");
@@ -321,7 +324,6 @@ function AddProductForm({
 
     let locations;
 
-    console.log(locationRows);
 
     const godownListFirstItem = locationRows[0];
     if (
@@ -420,8 +422,8 @@ function AddProductForm({
       cmp_id: orgId,
       product_name,
       product_code,
-      balance_stock,
-      brand: selectedBrand,
+      balance_stock : balance_stock || 0,
+      brand: selectedBrand, 
       category: selectedCategory,
       sub_category: selectedSubcategory,
       unit,
@@ -598,8 +600,8 @@ function AddProductForm({
                       className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                     >
                       <option value="">Select Hsn</option>
-                      {hsn.length > 0 ? (
-                        hsn.map((el, index) => (
+                      {hsn?.length > 0 ? (
+                        hsn?.map((el, index) => (
                           <option key={index} value={el?._id}>
                             {el?.hsn}
                           </option>
@@ -700,9 +702,9 @@ function AddProductForm({
                     className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                   >
                     <option value="">Select a Brand</option>
-                    {brand.map((el, index) => (
-                      <option key={index} value={el._id}>
-                        {el.name}
+                    {brand?.map((el, index) => (
+                      <option key={index} value={el?._id}>
+                        {el?.name}
                       </option>
                     ))}
                   </select>
@@ -838,7 +840,7 @@ function AddProductForm({
                           >
                             {/* Options for dropdown */}
                             <option value="">Select Level</option>
-                            {priceLevel.map((el) => (
+                            {priceLevel?.map((el) => (
                               <option key={el?._id} value={el?._id}>
                                 {el?.name}
                               </option>
@@ -897,7 +899,7 @@ function AddProductForm({
                       <tr key={row?.id} className="border-b bg-[#EFF6FF] ">
                         <td className="px-4 py-2">
                           <select
-                            disabled={row.defaultGodown}
+                            disabled={row?.defaultGodown}
                             value={row?.godown_id}
                             onChange={(e) =>
                               handleLocationChange(index, e?.target?.value)

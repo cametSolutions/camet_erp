@@ -97,9 +97,12 @@ function OrderConfigurationsSecondary() {
     setTermsInput(value);
 
     // Split the input into terms based on the character limit
-    const terms = value.match(/.{1,200}/g) || [];
+    const terms = value.match(/.{1,1000}/g) || [];
     setTermsList(terms);
   };
+
+  console.log(termsList);
+  
 
   const updateDespatchDetails = (newDetails) => {
     setDespatchDetails(newDetails);
