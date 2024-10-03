@@ -129,6 +129,8 @@ export const cancelDebitNote = async (req, res) => {
       .findById(debitNoteId)
       .session(session);
     if (!existingDebitNote) {
+      await session.abortTransaction();
+      session.endSession();
       return res
         .status(404)
         .json({ success: false, message: "Purchase not found" });

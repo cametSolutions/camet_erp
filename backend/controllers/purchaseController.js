@@ -237,36 +237,69 @@ export const editPurchase = async (req, res) => {
 // @desc cancel purchase
 // route GET/api/sUsers/cancelpurchase
 
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 1000; // 1 second
+
 export const cancelPurchase = async (req, res) => {
-  try {
-    const purchaseId = req.params.id; // Assuming saleId is passed in the URL parameters
-    const existingPurchase = await purchaseModel.findById(purchaseId);
-    if (!existingPurchase) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Purchase not found" });
+  let retryCount = 0;
+  
+  while (retryCount < MAX_RETRIES) {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    
+    try {
+      const purchaseId = req.params.id;
+      const existingPurchase = await purchaseModel
+        .findById(purchaseId)
+        .session(session);
+        
+      if (!existingPurchase) {
+        await session.abortTransaction();
+        session.endSession();
+        return res
+          .status(404)
+          .json({ success: false, message: "Purchase not found" });
+      }
+
+      // Revert existing stock updates
+      await revertPurchaseStockUpdates(existingPurchase.items, session);
+
+      existingPurchase.isCancelled = true;
+      const cancelledPurchase = await existingPurchase.save({ session });
+
+      await session.commitTransaction();
+      session.endSession();
+
+      return res.status(200).json({
+        success: true,
+        message: "Purchase canceled successfully",
+        data: cancelledPurchase,
+      });
+      
+    } catch (error) {
+      await session.abortTransaction();
+      session.endSession();
+
+      if (error.errorLabels && error.errorLabels.includes('TransientTransactionError')) {
+        retryCount++;
+        if (retryCount < MAX_RETRIES) {
+          console.log(`Retrying transaction attempt ${retryCount + 1} of ${MAX_RETRIES}`);
+          await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+          continue;
+        }
+      }
+      
+      console.error("Error canceling purchase:", error);
+      return res.status(500).json({
+        success: false,
+        message: "An error occurred while canceling the purchase.",
+        error: error.message,
+      });
     }
-
-    // Revert existing stock updates
-    await revertPurchaseStockUpdates(existingPurchase.items);
-
-    // flagging is cancelled true
-
-    existingPurchase.isCancelled = true;
-
-    const cancelledPurchase = await existingPurchase.save();
-
-    res.status(200).json({
-      success: true,
-      message: "purchase canceled successfully",
-      data: cancelledPurchase,
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({
-      success: false,
-      message: "An error occurred while editing the sale.",
-      error: error.message,
-    });
   }
+
+  return res.status(500).json({
+    success: false,
+    message: "Failed to cancel purchase after multiple retries",
+  });
 };
