@@ -16,7 +16,7 @@ const DashboardTransaction = ({ filteredData, userType, from }) => {
       "Receipt": "bg-red-500",
       "Payment": "bg-[#5e548e]",
       "Tax Invoice": "bg-blue-500",
-      "Purchase": "bg-green-500",
+      "Purchase": "bg-[#2d6a4f]",
       "Van Sale": "bg-teal-500",
       "Stock Transfer": "bg-purple-500",
       "Credit Note": "bg-pink-500",

@@ -1,9 +1,11 @@
+import mongoose from "mongoose";
 import { truncateToNDecimals } from "../helpers/helper.js";
 import {
   createPurchaseRecord,
   handlePurchaseStockUpdates,
   updatePurchaseNumber,
   revertPurchaseStockUpdates,
+  updateTallyData,
 } from "../helpers/purchaseHelper.js";
 import { processSaleItems as processPurchaseItems } from "../helpers/salesHelper.js";
 import { checkForNumberExistence } from "../helpers/secondaryHelper.js";
@@ -13,6 +15,8 @@ import secondaryUserModel from "../models/secondaryUserModel.js";
 // @desc create purchase
 // route GET/api/sUsers/createPurchase
 export const createPurchase = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
   try {
     const {
       selectedGodownId,
@@ -33,29 +37,37 @@ export const createPurchase = async (req, res) => {
       purchaseModel,
       "purchaseNumber",
       purchaseNumber,
-      req.body.orgId
+      req.body.orgId,
+      session
     );
 
     if (NumberExistence) {
+      await session.abortTransaction();
+      session.endSession();
       return res.status(400).json({
-        message: "Purchase with the same number already exists",
+        message: "Purchase  with the same number already exists",
       });
     }
 
-    const secondaryUser = await secondaryUserModel.findById(Secondary_user_id);
+    const secondaryUser = await secondaryUserModel
+      .findById(Secondary_user_id)
+      .session(session);
     const secondaryMobile = secondaryUser?.mobile;
 
     if (!secondaryUser) {
+      await session.abortTransaction();
+      session.endSession();
       return res
         .status(404)
         .json({ success: false, message: "Secondary user not found" });
     }
 
-    await handlePurchaseStockUpdates(items);
+    await handlePurchaseStockUpdates(items, session);
     const updatedItems = await processPurchaseItems(items);
     const updatedPurchaseNumber = await updatePurchaseNumber(
       orgId,
-      secondaryUser
+      secondaryUser,
+      session
     );
 
     const updateAdditionalCharge = additionalChargesFromRedux.map((charge) => {
@@ -70,8 +82,22 @@ export const createPurchase = async (req, res) => {
       req,
       purchaseNumber,
       updatedItems,
-      updateAdditionalCharge
+      updateAdditionalCharge,
+      session
     );
+
+    await updateTallyData(
+      orgId,
+      purchaseNumber,
+      req.owner,
+      party,
+      lastAmount,
+      secondaryMobile,
+      session // Pass session if needed
+    );
+
+    await session.commitTransaction();
+    session.endSession();
 
     res.status(201).json({
       success: true,
@@ -80,11 +106,15 @@ export const createPurchase = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
+    await session.abortTransaction();
+
     res.status(500).json({
       success: false,
       message: "An error occurred while creating the purchase.",
       error: error.message,
     });
+  } finally {
+    await session.endSession();
   }
 };
 
@@ -196,7 +226,7 @@ export const editPurchase = async (req, res) => {
 // route GET/api/sUsers/cancelpurchase
 
 export const cancelPurchase = async (req, res) => {
-    try {
+  try {
     const purchaseId = req.params.id; // Assuming saleId is passed in the URL parameters
     const existingPurchase = await purchaseModel.findById(purchaseId);
     if (!existingPurchase) {
@@ -212,12 +242,12 @@ export const cancelPurchase = async (req, res) => {
 
     existingPurchase.isCancelled = true;
 
-    const cancelledPurchase=await existingPurchase.save();
+    const cancelledPurchase = await existingPurchase.save();
 
     res.status(200).json({
       success: true,
       message: "purchase canceled successfully",
-      data:cancelledPurchase
+      data: cancelledPurchase,
     });
   } catch (error) {
     console.error(error);

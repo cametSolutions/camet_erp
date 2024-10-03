@@ -425,7 +425,7 @@ export const revertDebitNoteStockUpdates = async (items,session) => {
   }
 };
 
-///
+/// Update Tally Data
 export const  updateTallyData = async (
   orgId,
   debitNoteNumber,
