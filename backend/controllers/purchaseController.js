@@ -242,17 +242,17 @@ const RETRY_DELAY = 1000; // 1 second
 
 export const cancelPurchase = async (req, res) => {
   let retryCount = 0;
-  
+
   while (retryCount < MAX_RETRIES) {
     const session = await mongoose.startSession();
     session.startTransaction();
-    
+
     try {
       const purchaseId = req.params.id;
       const existingPurchase = await purchaseModel
         .findById(purchaseId)
         .session(session);
-        
+
       if (!existingPurchase) {
         await session.abortTransaction();
         session.endSession();
@@ -275,20 +275,24 @@ export const cancelPurchase = async (req, res) => {
         message: "Purchase canceled successfully",
         data: cancelledPurchase,
       });
-      
     } catch (error) {
       await session.abortTransaction();
       session.endSession();
 
-      if (error.errorLabels && error.errorLabels.includes('TransientTransactionError')) {
+      if (
+        error.errorLabels &&
+        error.errorLabels.includes("TransientTransactionError")
+      ) {
         retryCount++;
         if (retryCount < MAX_RETRIES) {
-          console.log(`Retrying transaction attempt ${retryCount + 1} of ${MAX_RETRIES}`);
-          await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+          console.log(
+            `Retrying transaction attempt ${retryCount + 1} of ${MAX_RETRIES}`
+          );
+          await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY));
           continue;
         }
       }
-      
+
       console.error("Error canceling purchase:", error);
       return res.status(500).json({
         success: false,

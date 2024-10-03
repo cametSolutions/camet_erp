@@ -2,14 +2,15 @@ import productModel from "../models/productModel.js";
 import creditNoteModel from "../models/creditNoteModel.js";
 import { truncateToNDecimals } from "./helper.js";
 import OragnizationModel from "../models/OragnizationModel.js";
+import TallyData from "../models/TallyData.js";
 
 ///////////////////////// for stock update ////////////////////////////////
-export const handleCreditNoteStockUpdates = async (items) => {
+export const handleCreditNoteStockUpdates = async (items,session) => {
   const productUpdates = [];
   const godownUpdates = [];
 
   for (const item of items) {
-    const product = await productModel.findOne({ _id: item._id });
+    const product = await productModel.findOne({ _id: item._id }).session(session);
     if (!product) {
       throw new Error(`Product not found for item ID: ${item._id}`);
     }
@@ -147,15 +148,16 @@ export const handleCreditNoteStockUpdates = async (items) => {
   //   console.log("godownUpdates", godownUpdates);
   //   console.log("productUpdates", productUpdates);
 
-  await productModel.bulkWrite(productUpdates);
-  await productModel.bulkWrite(godownUpdates);
+  await productModel.bulkWrite(productUpdates , { session });
+  await productModel.bulkWrite(godownUpdates , { session });
 };
 // Helper function to create purchase record
 export const createCreditNoteRecord = async (
   req,
   creditNoteNumber,
   updatedItems,
-  updateAdditionalCharge
+  updateAdditionalCharge,
+  session
 ) => {
   try {
     const {
@@ -183,7 +185,7 @@ export const createCreditNoteRecord = async (
     const lastPurchase = await model.findOne(
       {},
       {},
-      { sort: { serialNumber: -1 } }
+      { sort: { serialNumber: -1 },session }
     );
     let newSerialNumber = 1;
 
@@ -211,7 +213,7 @@ export const createCreditNoteRecord = async (
       createdAt: new Date(selectedDate) ? new Date(selectedDate) : new Date(),
     });
 
-    const result = await purchase.save();
+    const result = await purchase.save({ session });
 
     return result;
   } catch (error) {
@@ -222,7 +224,7 @@ export const createCreditNoteRecord = async (
 
 // update purchase number
 
-export const updateCreditNoteNumber = async (orgId, secondaryUser) => {
+export const updateCreditNoteNumber = async (orgId, secondaryUser,session) => {
   try {
     let creditNoteConfig = false;
 
@@ -231,14 +233,6 @@ export const updateCreditNoteNumber = async (orgId, secondaryUser) => {
     );
 
     if (configuration) {
-      // if (
-      //   configuration.creditNoteConfiguration &&
-      //   Object.entries(configuration.creditNoteConfiguration)
-      //     .filter(([key]) => key !== "startingNumber")
-      //     .every(([_, value]) => value !== "")
-      // ) {
-      //   creditNoteConfig = true;
-      // }
       creditNoteConfig = true;
 
     }
@@ -256,12 +250,12 @@ export const updateCreditNoteNumber = async (orgId, secondaryUser) => {
         }
       );
       secondaryUser.configurations = updatedConfiguration;
-      await secondaryUser.save();
+      await secondaryUser.save({  session });
     } else {
       await OragnizationModel.findByIdAndUpdate(
         orgId,
         { $inc: { creditNoteNumber: 1 } },
-        { new: true }
+        { new: true , session }
       );
     }
   } catch (error) {
@@ -270,116 +264,14 @@ export const updateCreditNoteNumber = async (orgId, secondaryUser) => {
   }
 };
 
-// Helper function to revert stock changes
-// export const revertPurchaseStockUpdates = async (items) => {
-//   const productUpdates = [];
-//   const godownUpdates = [];
 
-//   for (const item of items) {
-//     const product = await productModel.findOne({ _id: item._id });
-//     if (!product) {
-//       throw new Error(`Product not found for item ID: ${item._id}`);
-//     }
-
-//     const itemCount = parseFloat(item.count);
-//     const productBalanceStock = parseFloat(product.balance_stock);
-//     const newBalanceStock = truncateToNDecimals(productBalanceStock - itemCount, 3);
-
-//     console.log("productBalanceStock", productBalanceStock);
-//     console.log("newBalanceStock", newBalanceStock);
-
-//     productUpdates.push({
-//       updateOne: {
-//         filter: { _id: product._id },
-//         update: { $set: { balance_stock: newBalanceStock } },
-//       },
-//     });
-
-//     if (item.hasGodownOrBatch) {
-//       // Process godown and batch updates
-//       console.log("has godown or batch");
-
-//       for (const godown of item.GodownList) {
-//         const godownCount = parseFloat(godown.count);
-
-//         if (godown.batch && !godown.godown_id) {
-//           console.log("only have batch");
-//           const godownIndex = product.GodownList.findIndex(
-//             (g) => g.batch === godown.batch
-//           );
-
-//           if (godownIndex !== -1) {
-//             const currentGodownStock = product.GodownList[godownIndex].balance_stock || 0;
-//             const newGodownStock = truncateToNDecimals(currentGodownStock - godownCount, 3);
-
-//             console.log("currentGodownStock", currentGodownStock);
-//             console.log("newGodownStock", newGodownStock);
-
-//             godownUpdates.push({
-//               updateOne: {
-//                 filter: { _id: product._id, "GodownList.batch": godown.batch },
-//                 update: {
-//                   $set: { "GodownList.$.balance_stock": newGodownStock },
-//                 },
-//               },
-//             });
-//           }
-//         } else if (godown.godown_id && godown.batch) {
-//           console.log("have both godown and batch");
-
-//           console.log("godown count",godown.godown, godownCount);
-
-//           godownUpdates.push({
-//             updateOne: {
-//               filter: { _id: product._id },
-//               update: {
-//                 $inc: { "GodownList.$[elem].balance_stock": -godownCount },
-//               },
-//               arrayFilters: [
-//                 {
-//                   "elem.godown_id": godown.godown_id,
-//                   "elem.batch": godown.batch,
-//                 },
-//               ],
-//             },
-//           });
-//         } else if (godown.godown_id && !godown?.batch) {
-//           console.log("only have godown");
-//           godownUpdates.push({
-//             updateOne: {
-//               filter: {
-//                 _id: product._id,
-//                 "GodownList.godown_id": godown.godown_id,
-//               },
-//               update: {
-//                 $inc: { "GodownList.$.balance_stock": -godownCount },
-//               },
-//             },
-//           });
-//         }
-//       }
-//     } else {
-
-//       godownUpdates.push({
-//         updateOne: {
-//           filter: { _id: product._id },
-//           update: { $inc: { "GodownList.$[].balance_stock": -itemCount } },
-//         },
-//       });
-//     }
-//   }
-
-//   // await productModel.bulkWrite(productUpdates);
-//   // await productModel.bulkWrite(godownUpdates);
-// };
-
-export const revertCreditNoteStockUpdates = async (items) => {
+export const revertCreditNoteStockUpdates = async (items,session) => {
   try {
     const productUpdates = [];
     const godownUpdates = [];
 
     for (const item of items) {
-      const product = await productModel.findOne({ _id: item._id });
+      const product = await productModel.findOne({ _id: item._id }).session(session);
       if (!product) {
         throw new Error(`Product not found for item ID: ${item._id}`);
       }
@@ -524,10 +416,60 @@ export const revertCreditNoteStockUpdates = async (items) => {
     }
 
     // Execute bulk operations to revert stock changes
-    await productModel.bulkWrite(productUpdates);
-    await productModel.bulkWrite(godownUpdates);
+    await productModel.bulkWrite(productUpdates , {session});
+    await productModel.bulkWrite(godownUpdates , {session});
   } catch (error) {
     console.error("Error reverting sale stock updates:", error);
     throw error;
   }
 };
+
+
+
+/// Update Tally Data
+export const  updateTallyData = async (
+  orgId,
+  creditNoteNumber,
+  Primary_user_id,
+  party,
+  lastAmount,
+  secondaryMobile,
+  session
+) => {
+  try {
+
+    // throw new Error("Not Implemented");
+    const billData = {
+        Primary_user_id,
+        bill_no: creditNoteNumber,
+        cmp_id: orgId,
+        party_id: party?.party_master_id,
+        bill_amount: lastAmount,
+        bill_date: new Date(),
+        bill_pending_amt: lastAmount,
+        email: party?.emailID,
+        mobile_no: party?.mobileNumber,
+        party_name: party?.partyName,
+        user_id: secondaryMobile || "null",
+        source: "creditNote",
+      };
+
+    const tallyUpdate=await TallyData.findOneAndUpdate(
+      {
+        cmp_id: orgId,
+        bill_no: creditNoteNumber,
+        Primary_user_id: Primary_user_id,
+        party_id: party?.party_master_id,
+      },
+      billData,
+      { upsert: true, new: true,session }
+    );
+
+    console.log("tallyUpdate",tallyUpdate);
+    
+  } catch (error) {
+    console.error("Error updateTallyData sale stock updates:", error);
+    throw error;
+  }
+};
+

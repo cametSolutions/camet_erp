@@ -3,17 +3,21 @@ import {
   createCreditNoteRecord,
   handleCreditNoteStockUpdates,
   updateCreditNoteNumber,
-  revertCreditNoteStockUpdates
+  revertCreditNoteStockUpdates,
+  updateTallyData,
 } from "../helpers/creditNoteHelper.js";
 import { processSaleItems as processCreditNoteItems } from "../helpers/salesHelper.js";
 
 import { checkForNumberExistence } from "../helpers/secondaryHelper.js";
 import creditNoteModel from "../models/creditNoteModel.js";
 import secondaryUserModel from "../models/secondaryUserModel.js";
+import mongoose from "mongoose";
 
 // @desc create credit note
 // route GET/api/sUsers/createCreditNote
 export const createCreditNote = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
   try {
     const {
       selectedGodownId,
@@ -34,29 +38,37 @@ export const createCreditNote = async (req, res) => {
       creditNoteModel,
       "creditNoteNumber",
       creditNoteNumber,
-      req.body.orgId
+      req.body.orgId,
+      session
     );
 
     if (NumberExistence) {
+      await session.abortTransaction();
+      session.endSession();
       return res.status(400).json({
         message: "Credit Note with the same number already exists",
       });
     }
 
-    const secondaryUser = await secondaryUserModel.findById(Secondary_user_id);
+    const secondaryUser = await secondaryUserModel
+      .findById(Secondary_user_id)
+      .session(session);
     const secondaryMobile = secondaryUser?.mobile;
 
     if (!secondaryUser) {
+      await session.abortTransaction();
+      session.endSession();
       return res
         .status(404)
         .json({ success: false, message: "Secondary user not found" });
     }
 
-    await handleCreditNoteStockUpdates(items);
-    const updatedItems = await   processCreditNoteItems(items);
+    await handleCreditNoteStockUpdates(items, session);
+    const updatedItems = await processCreditNoteItems(items);
     const updatedCreditNoteNumber = await updateCreditNoteNumber(
       orgId,
-      secondaryUser
+      secondaryUser,
+      session
     );
 
     const updateAdditionalCharge = additionalChargesFromRedux.map((charge) => {
@@ -71,8 +83,22 @@ export const createCreditNote = async (req, res) => {
       req,
       creditNoteNumber,
       updatedItems,
-      updateAdditionalCharge
+      updateAdditionalCharge,
+      session
     );
+
+    await updateTallyData(
+      orgId,
+      creditNoteNumber,
+      req.owner,
+      party,
+      lastAmount,
+      secondaryMobile,
+      session // Pass session if needed
+    );
+
+    await session.commitTransaction();
+    session.endSession();
 
     res.status(201).json({
       success: true,
@@ -81,11 +107,14 @@ export const createCreditNote = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
+    await session.abortTransaction();
     res.status(500).json({
       success: false,
       message: "An error occurred while creating the Credit",
       error: error.message,
     });
+  } finally {
+    await session.endSession();
   }
 };
 
@@ -94,44 +123,44 @@ export const createCreditNote = async (req, res) => {
 
 export const cancelCreditNote = async (req, res) => {
   try {
-  const creditNoteId = req.params.id; // Assuming saleId is passed in the URL parameters
-  const existingCreditNote = await creditNoteModel.findById(creditNoteId);
-  if (!existingCreditNote) {
-    return res
-      .status(404)
-      .json({ success: false, message: "Purchase not found" });
+    const creditNoteId = req.params.id; // Assuming saleId is passed in the URL parameters
+    const existingCreditNote = await creditNoteModel.findById(creditNoteId);
+    if (!existingCreditNote) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Purchase not found" });
+    }
+
+    // Revert existing stock updates
+    await revertCreditNoteStockUpdates(existingCreditNote.items);
+
+    // flagging is cancelled true
+
+    existingCreditNote.isCancelled = true;
+
+    const cancelledPurchase = await existingCreditNote.save();
+
+    res.status(200).json({
+      success: true,
+      message: "purchase canceled successfully",
+      data: cancelledPurchase,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: "An error occurred while editing the sale.",
+      error: error.message,
+    });
   }
-
-  // Revert existing stock updates
-  await revertCreditNoteStockUpdates(existingCreditNote.items);
-
-  // flagging is cancelled true
-
-  existingCreditNote.isCancelled = true;
-
-  const cancelledPurchase=await existingCreditNote.save();
-
-  res.status(200).json({
-    success: true,
-    message: "purchase canceled successfully",
-    data:cancelledPurchase
-  });
-} catch (error) {
-  console.error(error);
-  res.status(500).json({
-    success: false,
-    message: "An error occurred while editing the sale.",
-    error: error.message,
-  });
-}
 };
-
 
 // @desc edit credit note
 // route GET/api/sUsers/editCreditNote
 
-
 export const editCreditNote = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
   try {
     const creditNoteId = req.params.id; // Assuming saleId is passed in the URL parameters
     const {
@@ -147,22 +176,26 @@ export const editCreditNote = async (req, res) => {
       selectedDate,
     } = req.body;
     // Fetch existing Purchase
-    const existingCreditNote = await creditNoteModel.findById(creditNoteId);
+    const existingCreditNote = await creditNoteModel
+      .findById(creditNoteId)
+      .session(session);
     if (!existingCreditNote) {
+      await session.abortTransaction();
+      session.endSession();
       return res
         .status(404)
         .json({ success: false, message: "Purchase not found" });
     }
 
     // Revert existing stock updates
-    await revertCreditNoteStockUpdates(existingCreditNote.items);
+    await revertCreditNoteStockUpdates(existingCreditNote.items, session);
     // Process new sale items and update stock
     const updatedItems = await processCreditNoteItems(
       items,
       additionalChargesFromRedux
     );
 
-    await handleCreditNoteStockUpdates(updatedItems);
+    await handleCreditNoteStockUpdates(updatedItems, session);
 
     // Update existing sale record
     const updateData = {
@@ -184,51 +217,56 @@ export const editCreditNote = async (req, res) => {
 
     await creditNoteModel.findByIdAndUpdate(creditNoteId, updateData, {
       new: true,
+      session,
     });
 
-    //     ///////////////////////////////////// for reflecting the rate change in outstanding  ////////////////////////////////////
+    //// edit outstanding
 
-    // const newBillValue = Number(lastAmount);
-    // const oldBillValue = Number(existingSale.finalAmount);
-    // const diffBillValue = newBillValue - oldBillValue;
+    const newBillValue = Number(lastAmount);
+    const oldBillValue = Number(existingCreditNote.finalAmount);
+    const diffBillValue = newBillValue - oldBillValue;
 
-    // const matchedOutStanding = await TallyData.findOne({
-    //   party_id: party?.party_master_id,
-    //   cmp_id: orgId,
-    //   bill_no: salesNumber,
-    // });
+    const matchedOutStanding = await TallyData.findOne({
+      party_id: party?.party_master_id,
+      cmp_id: orgId,
+      bill_no: creditNoteNumber,
+    }).session(session);
 
-    // if (matchedOutStanding) {
-    //   // console.log("editSale: matched outstanding found");
-    //   const newOutstanding =
-    //     Number(matchedOutStanding?.bill_pending_amt) + diffBillValue;
+    if (matchedOutStanding) {
+      const newOutstanding =
+        Number(matchedOutStanding?.bill_pending_amt) + diffBillValue;
 
-    //   // console.log("editSale: new outstanding calculated", newOutstanding);
-    //   await TallyData.updateOne(
-    //     {
-    //       party_id: party?.party_master_id,
-    //       cmp_id: orgId,
-    //       bill_no: salesNumber,
-    //     },
-    //     { $set: { bill_pending_amt: newOutstanding } }
-    //   );
+      // console.log("newOutstanding",newOutstanding);
 
-    //   // console.log("editSale: outstanding updated");
-    // } else {
-    //   console.log("editSale: matched outstanding not found");
-    // }
+      const outStandingUpdateResult = await TallyData.updateOne(
+        {
+          party_id: party?.party_master_id,
+          cmp_id: orgId,
+          bill_no: creditNoteNumber,
+        },
+        {
+          $set: { bill_pending_amt: newOutstanding, bill_amount: newBillValue },
+        },
+        { new: true, session }
+      );
+    }
 
+    await session.commitTransaction();
+    session.endSession();
     res.status(200).json({
       success: true,
       message: "purchase edited successfully",
     });
   } catch (error) {
+    await session.abortTransaction();
+
     console.error(error);
     res.status(500).json({
       success: false,
       message: "An error occurred while editing the sale.",
       error: error.message,
     });
+  } finally {
+    await session.endSession();
   }
 };
-
