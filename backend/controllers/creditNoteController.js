@@ -12,6 +12,7 @@ import { checkForNumberExistence } from "../helpers/secondaryHelper.js";
 import creditNoteModel from "../models/creditNoteModel.js";
 import secondaryUserModel from "../models/secondaryUserModel.js";
 import mongoose from "mongoose";
+import TallyData from "../models/TallyData.js";
 
 // @desc create credit note
 // route GET/api/sUsers/createCreditNote
@@ -121,38 +122,75 @@ export const createCreditNote = async (req, res) => {
 // @desc cancel credit note
 // route GET/api/sUsers/cancelCreditNote
 
-export const cancelCreditNote = async (req, res) => {
-  try {
-    const creditNoteId = req.params.id; // Assuming saleId is passed in the URL parameters
-    const existingCreditNote = await creditNoteModel.findById(creditNoteId);
-    if (!existingCreditNote) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Purchase not found" });
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 1000; // 1 second
+
+ export const cancelCreditNote = async (req, res) => {
+  let retryCount = 0;
+
+  while (retryCount < MAX_RETRIES) {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+      const creditNoteId = req.params.id;
+      const existingCreditNote = await creditNoteModel
+        .findById(creditNoteId)
+        .session(session);
+
+      if (!existingCreditNote) {
+        await session.abortTransaction();
+        session.endSession();
+        return res
+          .status(404)
+          .json({ success: false, message: "Credit note not found" });
+      }
+
+      // Revert existing stock updates
+      await revertCreditNoteStockUpdates(existingCreditNote.items, session);
+
+      existingCreditNote.isCancelled = true;
+      const cancelledCreditNote = await existingCreditNote.save({ session });
+
+      await session.commitTransaction();
+      session.endSession();
+
+      return res.status(200).json({
+        success: true,
+        message: "Credit note canceled successfully",
+        data: cancelledCreditNote,
+      });
+    } catch (error) {
+      await session.abortTransaction();
+      session.endSession();
+
+      if (
+        error.errorLabels &&
+        error.errorLabels.includes("TransientTransactionError")
+      ) {
+        retryCount++;
+        if (retryCount < MAX_RETRIES) {
+          console.log(
+            `Retrying transaction attempt ${retryCount + 1} of ${MAX_RETRIES}`
+          );
+          await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY));
+          continue;
+        }
+      }
+
+      console.error("Error canceling credit note:", error);
+      return res.status(500).json({
+        success: false,
+        message: "An error occurred while canceling the credit note.",
+        error: error.message,
+      });
     }
-
-    // Revert existing stock updates
-    await revertCreditNoteStockUpdates(existingCreditNote.items);
-
-    // flagging is cancelled true
-
-    existingCreditNote.isCancelled = true;
-
-    const cancelledPurchase = await existingCreditNote.save();
-
-    res.status(200).json({
-      success: true,
-      message: "purchase canceled successfully",
-      data: cancelledPurchase,
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({
-      success: false,
-      message: "An error occurred while editing the sale.",
-      error: error.message,
-    });
   }
+
+  return res.status(500).json({
+    success: false,
+    message: "Failed to cancel credit note after multiple retries",
+  });
 };
 
 // @desc edit credit note
