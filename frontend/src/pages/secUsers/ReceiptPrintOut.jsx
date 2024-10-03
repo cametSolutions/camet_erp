@@ -62,7 +62,7 @@ function ReceiptPrintOut() {
     <>
     <div className=" nonPrintable-content bg-[#012a4a]   sticky top-0 p-3 px-5 text-white text-lg font-bold flex items-center gap-3  shadow-lg justify-between">
         <div className="flex gap-2 ">
-          <Link to={`/sUsers/receipt/details/${receiptData._id}`}>
+          <Link to={-1}>
             <IoIosArrowRoundBack className="text-3xl" />
           </Link>
           <p>Share Your Order</p>

@@ -15,12 +15,12 @@ function ReceiptDetailsComponent({
   handleCancel,
   title,
   voucherNumber,
-  to
+  to,
+  isPrimary = false,
 }) {
   const navigate = useNavigate();
 
-  console.log("to",to);
-  
+  console.log("to", to);
 
   return (
     <div className="flex ">
@@ -47,18 +47,20 @@ function ReceiptDetailsComponent({
             </p>
           </div>
           <div className="w-full flex justify-center bottom-0 absolute md:flex md:justify-end p-4 md:relative  gap-14 md:text-md text-violet-500 md:mr-14 bg-white ">
-            <div
-              onClick={() => handleCancel(data._id)}
-              disabled={data.isCancelled}
-              className={`flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110 cursor-pointer ${
-                data.isCancelled ? "opacity-50 pointer-events-none" : ""
-              }`}
-            >
-              <FcCancel className="text-violet-500" />
-              <p className="text-black font-bold text-sm">
-                {data.isCancelled ? "Cancelled" : "Cancel"}
-              </p>
-            </div>
+            {!isPrimary && (
+              <div
+                onClick={() => handleCancel(data._id)}
+                disabled={data.isCancelled}
+                className={`flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110 cursor-pointer ${
+                  data.isCancelled ? "opacity-50 pointer-events-none" : ""
+                }`}
+              >
+                <FcCancel className="text-violet-500" />
+                <p className="text-black font-bold text-sm">
+                  {data.isCancelled ? "Cancelled" : "Cancel"}
+                </p>
+              </div>
+            )}
             <div
               className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer
           "

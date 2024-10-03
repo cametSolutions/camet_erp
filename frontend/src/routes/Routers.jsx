@@ -168,6 +168,7 @@ import BankPayment from '../pages/secUsers/BankPayment'
 import PaymtentDetails from '../pages/secUsers/PaymtentDetails'
 import PaymentPrintOut from '../pages/secUsers/PaymentPrintOut'
 import PaymtentDetailsPrimary from '../pages/primaryUsers/PaymtentDetailsPrimary'
+import ReceiptDetailsPrimary from '../pages/primaryUsers/ReceiptDetailsPrimary'
 
 const Routers = () => {
   return (
@@ -239,8 +240,9 @@ const Routers = () => {
          {/* payment */}
          <Route path='/pUsers/payment/details/:id' element={<ProtectedPriRoute><PaymtentDetailsPrimary/></ProtectedPriRoute>}></Route>
          <Route path='/pUsers/paymentPrintOut' element={<ProtectedPriRoute><PaymentPrintOut/></ProtectedPriRoute>}></Route>
-
-
+          {/* receipt */}
+          <Route path='/pUsers/receipt/details/:id' element={<ProtectedSecRoute><ReceiptDetailsPrimary/></ProtectedSecRoute>}></Route>
+          <Route path='/pUsers/receiptPrintOut' element={<ProtectedSecRoute><ReceiptPrintOut/></ProtectedSecRoute>}></Route>
 
 
 
