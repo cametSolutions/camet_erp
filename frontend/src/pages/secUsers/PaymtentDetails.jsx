@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unknown-property */
 
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
@@ -5,9 +6,9 @@ import api from "../../api/api";
 import Swal from "sweetalert2";
 import { useNavigate,useLocation} from "react-router-dom";
 import useFetch from "../../customHook/useFetch";
-import ReceiptDetailsComponent from "../../components/common/sidebar/ReceiptDetailsComponent";
+import PaymentDetailsComponent  from "../../components/common/sidebar/ReceiptDetailsComponent";
 
-function ReceiptDetails() {
+function PaymtentDetails() {
   const [data, setData] = useState("");
   const [refresh, setRefresh] = useState(false);
 
@@ -16,12 +17,12 @@ function ReceiptDetails() {
   const navigate = useNavigate();
 
   const { data: transactionDetails } = useFetch(
-    `/api/sUsers/getReceiptDetails/${id}`
+    `/api/sUsers/getPaymentDetails/${id}`
   );
 
   useEffect(() => {
     if (transactionDetails) {
-      setData(transactionDetails.receipt);
+      setData(transactionDetails.payment);
     }
   }, [transactionDetails]);
 
@@ -74,16 +75,15 @@ function ReceiptDetails() {
 
 
   return (
-    <ReceiptDetailsComponent
+    <PaymentDetailsComponent
       backHandler={backHandler}
       data={data}
       handleCancel={handleCancel}
-      title="Receipt Details"
-      voucherNumber={data.receiptNumber}
-      to="/sUsers/receiptPrintOut"
-
+      title="Payment Details"
+      voucherNumber={data.paymentNumber}
+      to="/sUsers/paymentPrintOut"
     />
   );
 }
 
-export default ReceiptDetails;
+export default PaymtentDetails;

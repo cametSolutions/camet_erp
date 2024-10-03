@@ -14,6 +14,7 @@ const DashboardTransaction = ({ filteredData, userType, from }) => {
   const typeColors = useMemo(
     () => ({
       "Receipt": "bg-red-500",
+      "Payment": "bg-[#5e548e]",
       "Tax Invoice": "bg-blue-500",
       "Purchase": "bg-green-500",
       "Van Sale": "bg-teal-500",
@@ -30,6 +31,7 @@ const DashboardTransaction = ({ filteredData, userType, from }) => {
       const baseRoute = `/${userType === "primary" ? "pUsers" : "sUsers"}`;
       const routes = {
         Receipt: `${baseRoute}/receipt/details/${id}`,
+        Payment: `${baseRoute}/payment/details/${id}`,
         "Tax Invoice": `${baseRoute}/salesDetails/${id}`,
         "Van Sale": `${baseRoute}/vanSaleDetails/${id}`,
         Purchase: `${baseRoute}/purchaseDetails/${id}`,

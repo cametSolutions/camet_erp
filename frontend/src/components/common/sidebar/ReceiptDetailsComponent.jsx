@@ -15,6 +15,7 @@ function ReceiptDetailsComponent({
   handleCancel,
   title,
   voucherNumber,
+  to
 }) {
   const navigate = useNavigate();
 
@@ -59,7 +60,7 @@ function ReceiptDetailsComponent({
               className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer
           "
               onClick={() => {
-                navigate("/sUsers/receiptPrintOut", {
+                navigate(to, {
                   state: {
                     receiptData: data,
                   },

@@ -13,6 +13,8 @@ import AdditionalChargesModel from "../models/additionalChargesModel.js";
 import { aggregateTransactions } from "../helpers/helper.js";
 import { startOfDay, endOfDay } from "date-fns";
 import receiptModel from "../models/receiptModel.js";
+import paymentModel from "../models/paymentModel.js";
+import payment from "../../frontend/slices/payment.js";
 
 
 // @desc to  get stock transfer details
@@ -271,6 +273,11 @@ export const transactions = async (req, res) => {
         { ...matchCriteria, Secondary_user_id: userId },
         "Receipt"
       ),
+      aggregateTransactions(
+        paymentModel,
+        { ...matchCriteria, Secondary_user_id: userId },
+        "Payment"
+      ),
       aggregateTransactions(invoiceModel, matchCriteria, "Sale Order"),
       aggregateTransactions(salesModel, matchCriteria, "Tax Invoice"),
       aggregateTransactions(vanSaleModel, matchCriteria, "Van Sale"),
@@ -376,6 +383,36 @@ export const getReceiptDetails = async (req, res) => {
       return res
         .status(404)
         .json({ success: false, message: "Receipt not found" });
+    }
+  } catch (error) {
+    console.error(error);
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error, try again!" });
+  }
+};
+
+
+
+/**
+ * @desc  get payment details
+ * @route GET/api/sUsers/getPaymentDetails
+ * @access Public
+ */
+
+export const getPaymentDetails = async (req, res) => {
+  const paymentId = req.params.id;
+  try {
+    const payment = await paymentModel.findById(paymentId);
+    if (payment) {
+      return res.status(200).json({
+        payment: payment,
+        message: "payment details fetched",
+      });
+    } else {
+      return res
+        .status(404)
+        .json({ success: false, message: "payment not found" });
     }
   } catch (error) {
     console.error(error);

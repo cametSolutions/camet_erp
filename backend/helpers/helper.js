@@ -22,9 +22,9 @@ export const aggregateTransactions = (model, matchCriteria, type) => {
       $project: {
         party_name: '$party.partyName',
         type: type,
-        enteredAmount: type === 'Receipt' ? '$enteredAmount' : '$finalAmount',
+        enteredAmount: (type === 'Receipt' || type==="Payment") ? '$enteredAmount' : '$finalAmount',
         createdAt: 1,
-        itemsLength: type === 'Receipt' ? undefined : { $size: '$items' },
+        itemsLength: (type === 'Receipt' || type==="Payment") ? undefined : { $size: '$items' },
         isCancelled: 1,
       },
     },
