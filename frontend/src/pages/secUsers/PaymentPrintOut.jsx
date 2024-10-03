@@ -1,19 +1,20 @@
-import {useRef,useEffect,useState} from 'react'
-import { useLocation } from 'react-router-dom'
-import ReceiptPrintOutForm from '../../components/common/ReceiptPrintOutForm'
-import { useSelector} from 'react-redux'
+import { useRef, useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
+import ReceiptPrintOutForm from "../../components/common/ReceiptPrintOutForm";
+import { useSelector } from "react-redux";
 import { useReactToPrint } from "react-to-print";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import { MdPrint } from "react-icons/md";
-import { Link } from 'react-router-dom';
+import { Link } from "react-router-dom";
 import numberToWords from "number-to-words";
 
 function PaymentPrintOut() {
   const contentToPrint = useRef(null);
-  const companyData=useSelector(state=>state.secSelectedOrganization.secSelectedOrg)
-  const location=useLocation()
-  const receiptData = location.state.receiptData
-
+  const companyData = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg
+  );
+  const location = useLocation();
+  const receiptData = location.state.receiptData;
 
   // ///since we are using same receipt page as component it is named it as receiptData
 
@@ -34,9 +35,8 @@ function PaymentPrintOut() {
         .reduce((acc, curr) => acc + parseFloat(curr?.settledAmount), 0)
         .toFixed(2);
 
-        console.log(subTotal);
+      console.log(subTotal);
       setSubTotal(subTotal);
-
 
       const finalAmount = receiptData.enteredAmount;
       console.log(finalAmount);
@@ -52,9 +52,7 @@ function PaymentPrintOut() {
 
       console.log(decimalWords);
 
-      const mergedWord = [
-        ...integerWords,
-      ].join("");
+      const mergedWord = [...integerWords].join("");
 
       setInWords(mergedWord);
     }
@@ -62,9 +60,9 @@ function PaymentPrintOut() {
 
   return (
     <>
-    <div className=" nonPrintable-content bg-[#012a4a]   sticky top-0 p-3 px-5 text-white text-lg font-bold flex items-center gap-3  shadow-lg justify-between">
+      <div className=" nonPrintable-content bg-[#012a4a]   sticky top-0 p-3 px-5 text-white text-lg font-bold flex items-center gap-3  shadow-lg justify-between">
         <div className="flex gap-2 ">
-          <Link to={`/sUsers/payment/details/${receiptData._id}`}>
+          <Link to={-1}>
             <IoIosArrowRoundBack className="text-3xl" />
           </Link>
           <p>Share Your Order</p>
@@ -78,9 +76,16 @@ function PaymentPrintOut() {
           />
         </div>
       </div>
-    <ReceiptPrintOutForm title="Payment" voucherNumber={receiptData.paymentNumber} receiptData={receiptData} org={companyData} contentToPrint={contentToPrint} inWords={inWords} />
+      <ReceiptPrintOutForm
+        title="Payment"
+        voucherNumber={receiptData.paymentNumber}
+        receiptData={receiptData}
+        org={companyData}
+        contentToPrint={contentToPrint}
+        inWords={inWords}
+      />
     </>
-  )
+  );
 }
 
-export default PaymentPrintOut
+export default PaymentPrintOut;

@@ -22,7 +22,7 @@ import { registerPrimaryUser,login,addOrganizations,
 
   import { cancelPurchase } from '../controllers/purchaseController.js';
 
-import {addProduct,editProduct,getCreditNoteDetails,transactions,fetchAdditionalCharges, getDebitNoteDetails} from "../controllers/commonController.js";
+import {addProduct,editProduct,getCreditNoteDetails,transactions,fetchAdditionalCharges, getDebitNoteDetails,getPaymentDetails} from "../controllers/commonController.js";
 import { singleUpload } from '../multer/multer.js';
 import { primaryIsBlocked } from '../middlewares/isBlocked.js';
 import { companyAuthentication } from '../middlewares/authCompany.js';
@@ -107,8 +107,10 @@ router.post("/cancelpurchase/:id",authPrimary,primaryIsBlocked,cancelPurchase)
 
 ////credit note
 router.get('/getCreditNoteDetails/:id',authPrimary,primaryIsBlocked,getCreditNoteDetails)
-////credit note
+////debit note
 router.get('/getDebitNoteDetails/:id',authPrimary,primaryIsBlocked,getDebitNoteDetails)
+////payment
+router.get('/getPaymentDetails/:id',authPrimary,primaryIsBlocked,getPaymentDetails)
 
 
 

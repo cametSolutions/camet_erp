@@ -19,6 +19,9 @@ function ReceiptDetailsComponent({
 }) {
   const navigate = useNavigate();
 
+  console.log("to",to);
+  
+
   return (
     <div className="flex ">
       <div className="bg-[rgb(244,246,254)] flex-1 h-screen  relative ">

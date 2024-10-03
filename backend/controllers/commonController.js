@@ -16,7 +16,6 @@ import receiptModel from "../models/receiptModel.js";
 import paymentModel from "../models/paymentModel.js";
 import payment from "../../frontend/slices/payment.js";
 
-
 // @desc to  get stock transfer details
 // route get/api/sUsers/getStockTransferDetails;
 export const getStockTransferDetails = async (req, res) => {
@@ -260,33 +259,36 @@ export const transactions = async (req, res) => {
           }
         : {};
 
+    // Conditionally include `Secondary_user_id` only if it exists
     const matchCriteria = {
       ...dateFilter,
       cmp_id: cmp_id,
-      Secondary_user_id: userId
-      // $or: [{ agentId: userId }, { Secondary_user_id: userId }],
+      ...(userId ? { Secondary_user_id: userId } : {}), // If `userId` exists, match with `Secondary_user_id`
     };
 
     const transactionPromises = [
       aggregateTransactions(
         receiptModel,
-        { ...matchCriteria, Secondary_user_id: userId },
+        { ...matchCriteria, ...(userId ? { Secondary_user_id: userId } : {}) }, // Conditionally add Secondary_user_id
         "Receipt"
       ),
       aggregateTransactions(
         paymentModel,
-        { ...matchCriteria, Secondary_user_id: userId },
+        { ...matchCriteria, ...(userId ? { Secondary_user_id: userId } : {}) }, // Conditionally add Secondary_user_id
         "Payment"
       ),
       aggregateTransactions(invoiceModel, matchCriteria, "Sale Order"),
       aggregateTransactions(salesModel, matchCriteria, "Tax Invoice"),
       aggregateTransactions(vanSaleModel, matchCriteria, "Van Sale"),
       aggregateTransactions(purchaseModel, matchCriteria, "Purchase"),
-      aggregateTransactions(stockTransferModel, matchCriteria, "Stock Transfer"),
+      aggregateTransactions(
+        stockTransferModel,
+        matchCriteria,
+        "Stock Transfer"
+      ),
       aggregateTransactions(creditNoteModel, matchCriteria, "Credit Note"),
       aggregateTransactions(debitNoteModel, matchCriteria, "Debit Note"),
       // aggregateTransactions(receiptModel, matchCriteria, "Receipt"),
-
     ];
 
     const results = await Promise.all(transactionPromises);
@@ -313,7 +315,6 @@ export const transactions = async (req, res) => {
     });
   }
 };
-
 
 // @desc to  get additional charges
 // route get/api/sUsers/additionalCharges
@@ -363,7 +364,6 @@ export const getDebitNoteDetails = async (req, res) => {
   }
 };
 
-
 /**
  * @desc  get receipt details
  * @route GET/api/sUsers/getReceiptDetails
@@ -392,8 +392,6 @@ export const getReceiptDetails = async (req, res) => {
   }
 };
 
-
-
 /**
  * @desc  get payment details
  * @route GET/api/sUsers/getPaymentDetails
@@ -421,5 +419,3 @@ export const getPaymentDetails = async (req, res) => {
       .json({ success: false, message: "Internal server error, try again!" });
   }
 };
-
-
