@@ -35,7 +35,7 @@ function EditPurchase() {
 
 
   const [additional, setAdditional] = useState(false);
-  const [purchaseNumber, setSalesNumber] = useState("");
+  const [purchaseNumber, setPurchaseNumber] = useState("");
   const date = useSelector((state) => state.purchase.date);
   const [selectedDate, setSelectedDate] = useState(date);
 
@@ -160,7 +160,7 @@ function EditPurchase() {
         // dispatch(setFinalAmount(finalAmount));
 
         if (purchaseNumber) {
-          setSalesNumber(purchaseNumber);
+          setPurchaseNumber(purchaseNumber);
         }
 
         if (
@@ -584,7 +584,7 @@ function EditPurchase() {
               className="fixed bottom-0 text-white bg-violet-700  w-full  p-2 py-4 flex items-center justify-center gap-2 hover_scale cursor-pointer "
             >
               <IoIosAddCircle className="text-2xl" />
-              <p>Edit Sale</p>
+              <p>Edit Purchase</p>
             </button>
           </div>
         </div>

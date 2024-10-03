@@ -11,6 +11,7 @@ import { processSaleItems as processPurchaseItems } from "../helpers/salesHelper
 import { checkForNumberExistence } from "../helpers/secondaryHelper.js";
 import purchaseModel from "../models/purchaseModel.js";
 import secondaryUserModel from "../models/secondaryUserModel.js";
+import TallyData from "../models/TallyData.js";
 
 // @desc create purchase
 // route GET/api/sUsers/createPurchase
@@ -122,6 +123,8 @@ export const createPurchase = async (req, res) => {
 // route GET/api/sUsers/editPurchase
 
 export const editPurchase = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
   try {
     const purchaseId = req.params.id; // Assuming saleId is passed in the URL parameters
     const {
@@ -137,22 +140,26 @@ export const editPurchase = async (req, res) => {
       selectedDate,
     } = req.body;
     // Fetch existing Purchase
-    const existingPurchase = await purchaseModel.findById(purchaseId);
+    const existingPurchase = await purchaseModel
+      .findById(purchaseId)
+      .session(session);
     if (!existingPurchase) {
+      await session.abortTransaction();
+      session.endSession();
       return res
         .status(404)
         .json({ success: false, message: "Purchase not found" });
     }
 
     // Revert existing stock updates
-    await revertPurchaseStockUpdates(existingPurchase.items);
+    await revertPurchaseStockUpdates(existingPurchase.items, session);
     // Process new sale items and update stock
     const updatedItems = processPurchaseItems(
       items,
       additionalChargesFromRedux
     );
 
-    await handlePurchaseStockUpdates(updatedItems);
+    await handlePurchaseStockUpdates(updatedItems, session);
 
     // Update existing sale record
     const updateData = {
@@ -174,51 +181,56 @@ export const editPurchase = async (req, res) => {
 
     await purchaseModel.findByIdAndUpdate(purchaseId, updateData, {
       new: true,
+      session,
     });
 
-    //     ///////////////////////////////////// for reflecting the rate change in outstanding  ////////////////////////////////////
+    //// edit outstanding
 
-    // const newBillValue = Number(lastAmount);
-    // const oldBillValue = Number(existingSale.finalAmount);
-    // const diffBillValue = newBillValue - oldBillValue;
+    const newBillValue = Number(lastAmount);
+    const oldBillValue = Number(existingPurchase.finalAmount);
+    const diffBillValue = newBillValue - oldBillValue;
 
-    // const matchedOutStanding = await TallyData.findOne({
-    //   party_id: party?.party_master_id,
-    //   cmp_id: orgId,
-    //   bill_no: salesNumber,
-    // });
+    const matchedOutStanding = await TallyData.findOne({
+      party_id: party?.party_master_id,
+      cmp_id: orgId,
+      bill_no: purchaseNumber,
+    }).session(session);
 
-    // if (matchedOutStanding) {
-    //   // console.log("editSale: matched outstanding found");
-    //   const newOutstanding =
-    //     Number(matchedOutStanding?.bill_pending_amt) + diffBillValue;
+    if (matchedOutStanding) {
+      const newOutstanding =
+        Number(matchedOutStanding?.bill_pending_amt) + diffBillValue;
 
-    //   // console.log("editSale: new outstanding calculated", newOutstanding);
-    //   await TallyData.updateOne(
-    //     {
-    //       party_id: party?.party_master_id,
-    //       cmp_id: orgId,
-    //       bill_no: salesNumber,
-    //     },
-    //     { $set: { bill_pending_amt: newOutstanding } }
-    //   );
+      // console.log("newOutstanding",newOutstanding);
 
-    //   // console.log("editSale: outstanding updated");
-    // } else {
-    //   console.log("editSale: matched outstanding not found");
-    // }
-
+      const outStandingUpdateResult = await TallyData.updateOne(
+        {
+          party_id: party?.party_master_id,
+          cmp_id: orgId,
+          bill_no: purchaseNumber,
+        },
+        {
+          $set: { bill_pending_amt: newOutstanding, bill_amount: newBillValue },
+        },
+        { new: true, session }
+      );
+    }
+    await session.commitTransaction();
+    session.endSession();
     res.status(200).json({
       success: true,
       message: "purchase edited successfully",
     });
   } catch (error) {
+    await session.abortTransaction();
+
     console.error(error);
     res.status(500).json({
       success: false,
       message: "An error occurred while editing the sale.",
       error: error.message,
     });
+  } finally {
+    await session.endSession();
   }
 };
 
