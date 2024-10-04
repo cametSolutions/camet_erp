@@ -1,5 +1,29 @@
 {
-    "cSpell.words": [
-        "godownorbatch"
-    ]
+   "restoreTerminals.terminals": [
+    
+    {
+      "splitTerminals": [
+        {
+          "name": "git",
+          "commands": ["cd .", "git status"]
+        }
+      ]
+    },
+    {
+      "splitTerminals": [
+        {
+          "name": "Client",
+          "commands": ["cd frontend", "npm run dev"]
+        }
+      ]
+    },
+    {
+      "splitTerminals": [
+        {
+          "name": "Server",
+          "commands": ["cd backend", "npm start"]
+        }
+      ]
+    }
+  ]
 }

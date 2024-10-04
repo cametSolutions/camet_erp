@@ -3,18 +3,17 @@ const router = express.Router();
 import {login,getSecUserData,fetchOutstandingTotal,
     confirmCollection,logout,
     cancelTransaction,fetchBanks,sendOtp,
-    submitOtp,resetPassword,getTransactionDetails,PartyList,addParty,getProducts,
-    createInvoice,invoiceList,getSinglePartyDetails,editParty,
+    submitOtp,resetPassword,getTransactionDetails,PartyList,addParty,getProducts,invoiceList,getSinglePartyDetails,editParty,
     deleteParty,getSingleOrganization,fetchHsn,
     addDataToOrg,editDataInOrg,deleteDataInOrg,
     productDetails,deleteProduct,saveOrderNumber,
-    getInvoiceDetails,editInvoice,fetchFilters,deleteAdditionalCharge,
+    getInvoiceDetails,fetchFilters,deleteAdditionalCharge,
     addAditionalCharge,EditAditionalCharge,addconfigurations,
     getSalesDetails,saveSalesNumber,fetchAdditionalDetails,
     fetchConfigurationNumber,findSecondaryUserGodowns,findPrimaryUserGodownsSelf,
     godownwiseProducts,godownwiseProductsSelf,
     findGodownsNames,getPurchaseDetails,getAllSubDetails,
-    fetchGodowns,createStockTransfer,editStockTransfer,cancelSalesOrder,
+    fetchGodowns,createStockTransfer,editStockTransfer,
     cancelStockTransfer} from "../controllers/secondaryUserController.js"
  
 import { createPurchase,editPurchase,cancelPurchase } from '../controllers/purchaseController.js';
@@ -27,6 +26,7 @@ import { secondaryIsBlocked } from '../middlewares/isBlocked.js';
 import { companyAuthentication } from '../middlewares/authCompany.js';
 import { fetchOutstandingDetails,createReceipt } from '../controllers/receiptController.js';
 import { createPayment } from '../controllers/paymentController.js';
+import { createInvoice,editInvoice,cancelSalesOrder } from '../controllers/saleOrderController.js';
 
 
 router.post('/login',login)
