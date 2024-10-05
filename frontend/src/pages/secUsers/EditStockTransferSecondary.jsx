@@ -232,7 +232,7 @@ function EditStockTransferSecondary() {
           subTotal={subTotal}
           type="stockTransfer"
           urlToAddItem="/sUsers/addItemStockTransfer"
-          urlToEditItem="/sUsers/editItemSales"
+          urlToEditItem="/sUsers/editItemstockTransfer"
         />
 
         <div className="flex justify-between bg-white mt-2 p-3">

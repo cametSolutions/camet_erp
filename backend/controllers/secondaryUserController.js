@@ -2308,69 +2308,69 @@ export const createStockTransfer = async (req, res) => {
 // @desc to edit stock transfer
 // route post/api/sUsers/editStockTransfer;
 
-export const editStockTransfer = async (req, res) => {
-  try {
-    const transferId = req.params.id;
-    const {
-      // ID of the stock transfer to be edited
-      selectedDate,
-      orgId,
-      selectedGodown,
-      selectedGodownId,
-      items,
-      lastAmount,
-    } = req.body;
+// export const editStockTransfer = async (req, res) => {
+//   try {
+//     const transferId = req.params.id;
+//     const {
+//       // ID of the stock transfer to be edited
+//       selectedDate,
+//       orgId,
+//       selectedGodown,
+//       selectedGodownId,
+//       items,
+//       lastAmount,
+//     } = req.body;
 
-    // Find the existing stock transfer document by ID
-    const existingTransfer = await stockTransferModel.findById(transferId);
-    if (!existingTransfer) {
-      return res.status(404).json({
-        error: "Stock transfer not found",
-      });
-    }
+//     // Find the existing stock transfer document by ID
+//     const existingTransfer = await stockTransferModel.findById(transferId);
+//     if (!existingTransfer) {
+//       return res.status(404).json({
+//         error: "Stock transfer not found",
+//       });
+//     }
 
-    // Revert the stock levels affected by the existing transfer
-    await revertStockTransfer(existingTransfer);
-    // Process the stock transfer with the new data
-    const transferData = {
-      selectedDate,
-      orgId,
-      selectedGodown,
-      selectedGodownId,
-      items,
-      lastAmount,
-      req,
-    };
+//     // Revert the stock levels affected by the existing transfer
+//     await revertStockTransfer(existingTransfer);
+//     // Process the stock transfer with the new data
+//     const transferData = {
+//       selectedDate,
+//       orgId,
+//       selectedGodown,
+//       selectedGodownId,
+//       items,
+//       lastAmount,
+//       req,
+//     };
 
-    const updatedProducts = await processStockTransfer(transferData);
+//     const updatedProducts = await processStockTransfer(transferData);
 
-    // Update the existing stock transfer document with new data
-    existingTransfer.selectedDate = selectedDate;
-    existingTransfer.orgId = orgId;
-    existingTransfer.selectedGodown = selectedGodown;
-    existingTransfer.selectedGodownId = selectedGodownId;
-    existingTransfer.items = items;
-    existingTransfer.lastAmount = lastAmount;
-    existingTransfer.updatedAt = new Date();
+//     // Update the existing stock transfer document with new data
+//     existingTransfer.selectedDate = selectedDate;
+//     existingTransfer.orgId = orgId;
+//     existingTransfer.selectedGodown = selectedGodown;
+//     existingTransfer.selectedGodownId = selectedGodownId;
+//     existingTransfer.items = items;
+//     existingTransfer.lastAmount = lastAmount;
+//     existingTransfer.updatedAt = new Date();
 
-    await stockTransferModel.findByIdAndUpdate(
-      existingTransfer._id,
-      existingTransfer
-    );
+//     await stockTransferModel.findByIdAndUpdate(
+//       existingTransfer._id,
+//       existingTransfer
+//     );
 
-    res.status(200).json({
-      message: "Stock transfer updated successfully",
-      data: existingTransfer,
-      updatedProducts,
-    });
-  } catch (error) {
-    console.error("Error in editing stock transfer:", error);
-    res.status(500).json({
-      error: "Internal Server Error",
-      details: error.message,
-    });
-  }
-};
+//     res.status(200).json({
+//       message: "Stock transfer updated successfully",
+//       data: existingTransfer,
+//       updatedProducts,
+//     });
+//   } catch (error) {
+//     console.error("Error in editing stock transfer:", error);
+//     res.status(500).json({
+//       error: "Internal Server Error",
+//       details: error.message,
+//     });
+//   }
+// };
 
 
 

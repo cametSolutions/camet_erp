@@ -13,8 +13,8 @@ import {login,getSecUserData,fetchOutstandingTotal,
     fetchConfigurationNumber,findSecondaryUserGodowns,findPrimaryUserGodownsSelf,
     godownwiseProducts,godownwiseProductsSelf,
     findGodownsNames,getPurchaseDetails,getAllSubDetails,
-    fetchGodowns,editStockTransfer,
-    cancelStockTransfer} from "../controllers/secondaryUserController.js"
+    fetchGodowns,
+   } from "../controllers/secondaryUserController.js"
  
 import { createPurchase,editPurchase,cancelPurchase } from '../controllers/purchaseController.js';
 import { createCreditNote,cancelCreditNote ,editCreditNote} from '../controllers/creditNoteController.js';
@@ -27,7 +27,7 @@ import { companyAuthentication } from '../middlewares/authCompany.js';
 import { fetchOutstandingDetails,createReceipt } from '../controllers/receiptController.js';
 import { createPayment } from '../controllers/paymentController.js';
 import { createInvoice,editInvoice,cancelSalesOrder } from '../controllers/saleOrderController.js';
-import { createStockTransfer } from '../controllers/stockTransferController.js';
+import { createStockTransfer,editStockTransfer, cancelStockTransfer } from '../controllers/stockTransferController.js';
 
 
 router.post('/login',login)
@@ -90,7 +90,6 @@ router.get("/getStockTransferDetails/:id",authSecondary,secondaryIsBlocked,getSt
 router.post("/editStockTransfer/:id",authSecondary,secondaryIsBlocked,editStockTransfer)
 router.post("/cancelSalesOrder/:id",authSecondary,secondaryIsBlocked,cancelSalesOrder)
 router.post("/cancelSales/:id",authSecondary,secondaryIsBlocked,cancelSale)
-router.post("/cancelstockTransfer/:id",authSecondary,secondaryIsBlocked,cancelStockTransfer)
 router.post("/cancelstockTransfer/:id",authSecondary,secondaryIsBlocked,cancelStockTransfer)
 
 

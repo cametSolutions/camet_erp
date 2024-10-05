@@ -91,14 +91,14 @@ function AddItemTile({
                           if (el?.hasGodownOrBatch) {
                             if (curr?.added) {
                               return (acc += Number(
-                                curr.individualTotal?.toFixed(2)
+                                curr.individualTotal?.toFixed(2) || 0
                               ));
                             } else {
                               return acc;
                             }
                           } else {
                             return (acc += Number(
-                              curr.individualTotal.toFixed(2)
+                              curr.individualTotal.toFixed(2) || 0
                             ));
                           }
                         }, 0).toFixed(2)}
