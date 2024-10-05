@@ -77,6 +77,7 @@ export const invoiceSliceSecondary = createSlice({
       const igst = action.payload?.igst || 0;
       const discount = action.payload?.discount || 0;
       const count = action.payload?.count || 0;
+      const taxInclusive = action.payload?.taxInclusive || false;
 
       const discountPercentage = action.payload?.discountPercentage || 0;
       const newTotal = action.payload?.total.toFixed(2) || 0;
@@ -87,6 +88,7 @@ export const invoiceSliceSecondary = createSlice({
         state.items[indexToUpdate].discount = discount;
         state.items[indexToUpdate].igst = igst;
         state.items[indexToUpdate].count = count;
+        state.items[indexToUpdate].taxInclusive = taxInclusive;
         state.items[indexToUpdate].discountPercentage = discountPercentage;
       }
     },

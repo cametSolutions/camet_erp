@@ -7,6 +7,8 @@ import { IoReorderThreeSharp } from "react-icons/io5";
 
 import { useSidebar } from "../../layout/Layout";
 import ConfigurationForm from "../../components/common/Forms/ConfigurationForm";
+import { setSecSelectedOrganization } from "../../../slices/secSelectedOrgSlice";
+import { useDispatch } from "react-redux";
 
 function OrderConfigurationsSecondary() {
   const [bank, setBank] = useState("");
@@ -15,6 +17,7 @@ function OrderConfigurationsSecondary() {
   const [termsInput, setTermsInput] = useState("");
   const [termsList, setTermsList] = useState([]);
   const [enableBillToShipTo, setEnableBillToShipTo] = useState(true);
+  const [taxInclusive, setTaxInclusive] = useState(false);
   const [tab, setTab] = useState("terms");
   const [despatchDetails, setDespatchDetails] = useState({
     challanNo: "",
@@ -31,7 +34,7 @@ function OrderConfigurationsSecondary() {
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
   const { handleToggleSidebar } = useSidebar();
-
+  const dispatch = useDispatch();
 
   useEffect(() => {
     const getSingleOrganization = async () => {
@@ -44,14 +47,15 @@ function OrderConfigurationsSecondary() {
         );
         const company = res?.data?.organizationData;
         setCompany(company);
-        console.log(res?.data?.organizationData);
 
         if (company && company.configurations.length > 0) {
-          console.log(company.configurations);
-
-          const { bank, terms, enableBillToShipTo, despatchDetails } =
-            company.configurations[0];
-          console.log(despatchDetails);
+          const {
+            bank,
+            terms,
+            enableBillToShipTo,
+            despatchDetails,
+            taxInclusive,
+          } = company.configurations[0];
 
           if (despatchDetails) {
             setDespatchDetails(despatchDetails);
@@ -59,6 +63,10 @@ function OrderConfigurationsSecondary() {
 
           if (bank) {
             setSelectedBank(bank._id);
+          }
+
+          if (taxInclusive) {
+            setTaxInclusive(taxInclusive);
           }
           setEnableBillToShipTo(enableBillToShipTo);
           if (terms) {
@@ -83,7 +91,6 @@ function OrderConfigurationsSecondary() {
           withCredentials: true,
         });
 
-        console.log(res.data);
         setBank(res.data.data);
       } catch (error) {
         console.log(error);
@@ -100,9 +107,6 @@ function OrderConfigurationsSecondary() {
     const terms = value.match(/.{1,1000}/g) || [];
     setTermsList(terms);
   };
-
-  console.log(termsList);
-  
 
   const updateDespatchDetails = (newDetails) => {
     setDespatchDetails(newDetails);
@@ -146,6 +150,7 @@ function OrderConfigurationsSecondary() {
       termsList,
       enableBillToShipTo,
       despatchDetails,
+      taxInclusive,
     };
 
     console.log(formData);
@@ -164,6 +169,7 @@ function OrderConfigurationsSecondary() {
 
       console.log(res.data);
       toast.success(res.data.message);
+      dispatch(setSecSelectedOrganization(res.data.data));
       navigate("/sUsers/dashboard");
     } catch (error) {
       toast.error(error.response.data.message);
@@ -196,6 +202,8 @@ function OrderConfigurationsSecondary() {
         despatchDetails={despatchDetails}
         updateDespatchDetails={updateDespatchDetails}
         termsList={termsList}
+        taxInclusive={taxInclusive}
+        setTaxInclusive={setTaxInclusive}
       />
     </div>
   );

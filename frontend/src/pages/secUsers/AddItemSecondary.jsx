@@ -26,6 +26,8 @@ import SearchBar from "../../components/common/SearchBar";
 
 // Helper functions
 const calculateTotal = (item, selectedPriceLevel, situation = "normal") => {
+
+  
   let priceRate =
     situation === "priceLevelChange"
       ? item.Priceleveles.find(
@@ -42,8 +44,8 @@ const calculateTotal = (item, selectedPriceLevel, situation = "normal") => {
     discountedSubtotal -= (subtotal * item.discountPercentage) / 100;
   }
 
-  const gstAmount =
-    (discountedSubtotal * (item.newGst || item.igst || 0)) / 100;
+  const gstAmount =item?.taxInclusive? 0:(discountedSubtotal * (item.newGst || item.igst || 0)) / 100
+   
   return discountedSubtotal + gstAmount;
 };
 
@@ -128,7 +130,6 @@ function AddItemSecondary() {
             }
           });
 
-          console.log(updatedItems);
 
           setItem(updatedItems);
           setRefresh(!refresh);
@@ -293,7 +294,6 @@ function AddItemSecondary() {
         const newPriceRate = item?.Priceleveles.find(
           (item) => item.pricelevel === pricelevel
         )?.pricerate;
-        console.log(newPriceRate);
         dispatch(
           addPriceRate({ _id: item._id, selectedPriceRate: newPriceRate })
         );
@@ -317,7 +317,6 @@ function AddItemSecondary() {
 
     const currentItem = { ...updatedItems[index] };
 
-    console.log(currentItem.count);
 
     if (!currentItem.count) {
       currentItem.count = 1;

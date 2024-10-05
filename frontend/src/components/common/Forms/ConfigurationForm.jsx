@@ -15,7 +15,9 @@ function ConfigurationForm({
   termsInput,
   despatchDetails,
   updateDespatchDetails,
-  termsList
+  termsList,
+  setTaxInclusive,
+  taxInclusive
 }) {
   return (
     <div>
@@ -75,27 +77,49 @@ function ConfigurationForm({
                   </div>
                 </div>
 
-                <div className="flex items-center  mt-5 px-4 gap-3">
-                  <label
-                    className="block uppercase text-blueGray-600 text-xs font-bold "
-                    htmlFor="termsInput"
-                  >
-                    Enable / Ship To
-                  </label>
-                  <div className="flex items-center mr-4">
-                    <input
-                      type="checkbox"
-                      id="valueCheckbox"
-                      className="form-checkbox h-5 w-5 text-indigo-600 transition duration-150 ease-in-out"
-                      checked={enableBillToShipTo === true}
-                      onChange={() => {
-                        setEnableBillToShipTo(!enableBillToShipTo);
-                      }}
-                    />
+                <div>
+                  <div className="flex items-center  mt-5 px-4 gap-3">
+                    <label
+                      className="block uppercase text-blueGray-600 text-xs font-bold "
+                      htmlFor="termsInput"
+                    >
+                      Enable / Ship To
+                    </label>
+                    <div className="flex items-center mr-4">
+                      <input
+                        type="checkbox"
+                        id="valueCheckbox"
+                        className="form-checkbox h-5 w-5 text-indigo-600 transition duration-150 ease-in-out"
+                        checked={enableBillToShipTo === true}
+                        onChange={() => {
+                          setEnableBillToShipTo(!enableBillToShipTo);
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex items-center  mt-5 px-4 gap-3">
+                    <label
+                      className="block uppercase text-blueGray-600 text-xs font-bold "
+                      htmlFor="termsInput"
+                    >
+                     Tax Inclusive
+                    </label>
+                    <div className="flex items-center ml-4">
+                      <input
+                        type="checkbox"
+                        id="valueCheckbox"
+                        className="form-checkbox h-5 w-5 text-indigo-600 transition duration-150 ease-in-out"
+                        checked={taxInclusive === true}
+                        onChange={() => {
+                          setTaxInclusive(!taxInclusive);
+                        }}
+                      />
+                    </div>
                   </div>
                 </div>
+
                 {/* Terms and Conditions */}
-                <div className="w-full lg:w-12/12 px-4 ">
+                <div className="w-full lg:w-12/12 px-4 mt-5 " >
                   <div className="relative w-full mb-3">
                     {/* <label
                       className="block uppercase text-blueGray-600 text-xs font-bold mb-2"

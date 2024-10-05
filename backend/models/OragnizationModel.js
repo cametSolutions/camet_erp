@@ -60,7 +60,8 @@ const organizationSchema = new mongoose.Schema(
         bank: { type: mongoose.Schema.Types.ObjectId, ref: "BankDetails" },
         terms: { type: Array },
         enableBillToShipTo: { type: Boolean, default: true   },
-        despatchDetails:{type:Object}
+        despatchDetails:{type:Object},
+        taxInclusive: { type: Boolean, default: false },
       },
     ],
   },
