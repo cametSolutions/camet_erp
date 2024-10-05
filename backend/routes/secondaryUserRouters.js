@@ -13,7 +13,7 @@ import {login,getSecUserData,fetchOutstandingTotal,
     fetchConfigurationNumber,findSecondaryUserGodowns,findPrimaryUserGodownsSelf,
     godownwiseProducts,godownwiseProductsSelf,
     findGodownsNames,getPurchaseDetails,getAllSubDetails,
-    fetchGodowns,createStockTransfer,editStockTransfer,
+    fetchGodowns,editStockTransfer,
     cancelStockTransfer} from "../controllers/secondaryUserController.js"
  
 import { createPurchase,editPurchase,cancelPurchase } from '../controllers/purchaseController.js';
@@ -27,6 +27,7 @@ import { companyAuthentication } from '../middlewares/authCompany.js';
 import { fetchOutstandingDetails,createReceipt } from '../controllers/receiptController.js';
 import { createPayment } from '../controllers/paymentController.js';
 import { createInvoice,editInvoice,cancelSalesOrder } from '../controllers/saleOrderController.js';
+import { createStockTransfer } from '../controllers/stockTransferController.js';
 
 
 router.post('/login',login)
