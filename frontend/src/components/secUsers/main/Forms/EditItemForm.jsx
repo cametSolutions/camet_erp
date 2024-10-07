@@ -3,10 +3,14 @@
 import { useEffect, useState } from "react";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import { MdModeEditOutline } from "react-icons/md";
-import { useSelector } from "react-redux";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
-function EditItemForm({ submitHandler,ItemsFromRedux ,from}) {
+function EditItemForm({
+  submitHandler,
+  ItemsFromRedux,
+  from,
+  taxInclusive = false,
+}) {
   const [item, setItem] = useState([]);
   const [newPrice, setNewPrice] = useState("");
   const [quantity, setQuantity] = useState("");
@@ -19,11 +23,11 @@ function EditItemForm({ submitHandler,ItemsFromRedux ,from}) {
   const [totalAmount, setTotalAmount] = useState(0);
   const [discountAmount, setDiscountAmount] = useState(0); // State for discount amount
   const [discountPercentage, setDiscountPercentage] = useState(0);
+  const [isTaxInclusive, setIsTaxInclusive] = useState(false);
 
   const { id, index } = useParams();
-  
-  const navigate = useNavigate();
 
+  const navigate = useNavigate();
 
   const selectedItem = ItemsFromRedux.filter((el) => el._id === id);
 
@@ -68,6 +72,8 @@ function EditItemForm({ submitHandler,ItemsFromRedux ,from}) {
     }
     setUnit(selectedItem[0]?.unit);
     setIgst(selectedItem[0]?.igst);
+    setIsTaxInclusive(selectedItem[0]?.isTaxInclusive);
+
     // }
   }, []);
 
@@ -97,15 +103,13 @@ function EditItemForm({ submitHandler,ItemsFromRedux ,from}) {
     let totalAmount = taxExclusivePrice - calculatedDiscountAmount;
 
     // Apply tax if present
-    if (igst !== "") {
+    if (igst !== "" && !isTaxInclusive) {
       const taxAmount = (parseFloat(igst) / 100) * totalAmount;
       totalAmount += taxAmount;
     }
 
     setTotalAmount(totalAmount);
   }, [selectedItem, quantity, discount]);
-
- 
 
   const handleBackClick = () => {
     navigate(-1);
@@ -134,8 +138,10 @@ function EditItemForm({ submitHandler,ItemsFromRedux ,from}) {
       selectedItem,
       discountAmount,
       discountPercentage,
+      
       type,
       igst,
+      isTaxInclusive
     );
   };
 
@@ -186,6 +192,26 @@ function EditItemForm({ submitHandler,ItemsFromRedux ,from}) {
                         placeholder="0"
                       />
                     </div>
+
+                    {taxInclusive && (
+                      <div className="flex items-center gap-3 ml-1 ">
+                        <input
+                          type="checkbox"
+                          id="valueCheckbox"
+                          className="form-checkbox h-5 w-5 text-indigo-600 transition duration-150 ease-in-out"
+                          checked={isTaxInclusive === true}
+                          onChange={() => {
+                            setIsTaxInclusive(!isTaxInclusive);
+                          }}
+                        />
+                        <label
+                          className="block uppercase text-blueGray-600 text-xs font-bold "
+                          htmlFor="termsInput"
+                        >
+                          Tax Inclusive
+                        </label>
+                      </div>
+                    )}
 
                     <div className="flex items-center space-x-4">
                       <div className="flex flex-col">

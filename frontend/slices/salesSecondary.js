@@ -92,7 +92,8 @@ export const salesSecondarySlice = createSlice({
       const discountPercentage = action.payload?.discountPercentage || 0;
       const newTotal = action.payload?.total.toFixed(2) || 0;
       const godownList = action.payload?.GodownList;
-      console.log(godownList);
+      const isTaxInclusive = action.payload?.isTaxInclusive || false;
+
 
       const indexToUpdate = state.items.findIndex((el) => el._id === id);
       if (indexToUpdate !== -1) {
@@ -102,6 +103,8 @@ export const salesSecondarySlice = createSlice({
         state.items[indexToUpdate].discountPercentage = discountPercentage;
         state.items[indexToUpdate].count = count;
         state.items[indexToUpdate].GodownList = godownList;
+        state.items[indexToUpdate].isTaxInclusive = isTaxInclusive;
+
       }
     },
 

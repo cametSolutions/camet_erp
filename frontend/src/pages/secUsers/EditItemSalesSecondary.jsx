@@ -16,7 +16,7 @@ function EditItemSalesSecondary() {
   const dispatch = useDispatch();
   const navigate=useNavigate();
 
-  const submitHandler = (item, index, quantity, newPrice, totalAmount, selectedItem,discountAmount,discountPercentage, type,igst) => {
+  const submitHandler = (item, index, quantity, newPrice, totalAmount, selectedItem,discountAmount,discountPercentage, type,igst,isTaxInclusive) => {
     console.log(item);
     const newItem = structuredClone(item);
 
@@ -61,7 +61,6 @@ function EditItemSalesSecondary() {
         }, 0)
       );
 
-      console.log(newItem.count);
       newItem.total = Number(
         newGodownList
           .reduce(
@@ -70,13 +69,15 @@ function EditItemSalesSecondary() {
           )
           .toFixed(2)
       );
-      console.log(newItem.total);
-      console.log(newItem);
+
+      newItem.isTaxInclusive = isTaxInclusive;
     } else {
       // newItem.total = Number(totalAmount.toFixed(2));
       newItem.GodownList[0].individualTotal = Number(totalAmount.toFixed(2));
       newItem.total = Number(totalAmount.toFixed(2));
       newItem.count = quantity || 0;
+      newItem.isTaxInclusive = isTaxInclusive;
+
       const godownList = [...newItem.GodownList];
       console.log(godownList);
       godownList[0].selectedPriceRate = Number(newPrice) || 0;
@@ -104,7 +105,7 @@ function EditItemSalesSecondary() {
   
 
   return (
-<EditItemForm submitHandler={submitHandler} ItemsFromRedux={ItemsFromRedux} from="sales"/>
+<EditItemForm submitHandler={submitHandler} ItemsFromRedux={ItemsFromRedux} from="sales"  taxInclusive={true}/>
   );
 }
 

@@ -395,7 +395,9 @@ function AddItemSalesSecondary() {
             (individualSubtotal * godownOrBatch.discountPercentage) / 100;
         }
 
-        const gstAmount = (discountedSubtotal * (item.igst || 0)) / 100;
+        const gstAmount = item?.isTaxInclusive
+          ? 0
+          : (discountedSubtotal * (item.igst || 0)) / 100;
 
         subtotal += discountedSubtotal + gstAmount;
 
@@ -426,8 +428,9 @@ function AddItemSalesSecondary() {
           (individualSubtotal * item.discountPercentage) / 100;
       }
 
-      const gstAmount =
-        (discountedSubtotal * (item.newGst || item.igst || 0)) / 100;
+      const gstAmount = item?.isTaxInclusive
+        ? 0
+        : (discountedSubtotal * (item.newGst || item.igst || 0)) / 100;
 
       subtotal += discountedSubtotal + gstAmount;
 
