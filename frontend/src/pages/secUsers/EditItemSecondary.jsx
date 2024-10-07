@@ -32,6 +32,14 @@ function EditItemSecondary() {
     (state) => state.invoiceSecondary.selectedPriceLevel
   );
 
+
+  const isTaxInclusive = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg.configurations[0].taxInclusive
+  );
+
+
+  
+
   useEffect(() => {
     setItem(selectedItem[0]);
     // const price = selectedItem[0].Priceleveles.find(
@@ -85,7 +93,7 @@ function EditItemSecondary() {
     let totalAmount = taxExclusivePrice - calculatedDiscountAmount;
 
     // Apply tax if present
-    if (igst !== "") {
+    if (igst !== "" && !isTaxInclusive) {
       const taxAmount = (parseFloat(igst) / 100) * totalAmount;
       totalAmount += taxAmount;
     }
@@ -210,25 +218,7 @@ function EditItemSecondary() {
                     />
                   </div>
 
-                  <div className="flex items-center   ml-2">
-                    <div className="flex items-center mr-4">
-                      <input
-                        type="checkbox"
-                        id="valueCheckbox"
-                        className="form-checkbox h-5 w-5 text-indigo-600 transition duration-150 ease-in-out"
-                        // checked={batchEnabled === true}
-                        // onChange={() => {
-                        //   setBatchEnabled(!batchEnabled);
-                        // }}
-                      />
-                      <label
-                        htmlFor="valueCheckbox"
-                        className="ml-2 text-gray-700"
-                      >
-                        Tax Inclusive
-                      </label>
-                    </div>
-                  </div>
+                
 
                   <div className="flex items-center space-x-4">
                     <div className="flex flex-col">

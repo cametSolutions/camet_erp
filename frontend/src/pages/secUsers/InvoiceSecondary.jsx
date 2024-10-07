@@ -41,8 +41,13 @@ function InvoiceSecondary() {
   const type = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg.type
   );
+
+  
+  const isTaxInclusive = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg.configurations[0].taxInclusive
+  );
+
   const date = useSelector((state) => state.invoiceSecondary.date);
-  console.log(date);
   const [selectedDate, setSelectedDate] = useState(new Date());
 
   const [subTotal, setSubTotal] = useState(0);
@@ -75,7 +80,7 @@ function InvoiceSecondary() {
         const res = await api.get(`/api/sUsers/additionalcharges/${cmp_id}`, {
           withCredentials: true,
         });
-        console.log(res.data);
+        // console.log(res.data);
         setAdditionalChragesFromCompany(res.data);
       } catch (error) {
         console.log(error);
@@ -97,7 +102,6 @@ function InvoiceSecondary() {
           }
         );
 
-        console.log(res.data.organizationData);
         if (type == "self") {
           setAdditionalChragesFromCompany(
             res.data.organizationData.additionalCharges
@@ -122,7 +126,7 @@ function InvoiceSecondary() {
           }
         );
 
-        console.log(res.data);
+        // console.log(res.data);
         if (res.data.message === "default") {
           const { configurationNumber } = res.data;
           setOrderNumber(configurationNumber);
@@ -130,24 +134,18 @@ function InvoiceSecondary() {
         }
 
         const { configDetails, configurationNumber } = res.data;
-        console.log(configDetails);
-        console.log(configurationNumber);
+ 
 
         if (configDetails) {
           const { widthOfNumericalPart, prefixDetails, suffixDetails } =
             configDetails;
           const newOrderNumber = configurationNumber.toString();
-          console.log(newOrderNumber);
-          console.log(widthOfNumericalPart);
-          console.log(prefixDetails);
-          console.log(suffixDetails);
+     ;
 
           const padedNumber = newOrderNumber.padStart(widthOfNumericalPart, 0);
-          console.log(padedNumber);
           const finalOrderNumber = [prefixDetails, padedNumber, suffixDetails]
             .filter(Boolean)
             .join("-");
-          console.log(finalOrderNumber);
           setOrderNumber(finalOrderNumber);
         }
       } catch (error) {
@@ -185,7 +183,6 @@ function InvoiceSecondary() {
 
   const handleAddRow = () => {
     const hasEmptyValue = rows.some((row) => row.value === "");
-    console.log(hasEmptyValue);
     if (hasEmptyValue) {
       toast.error("Please add a value.");
       return;
@@ -209,7 +206,6 @@ function InvoiceSecondary() {
     const selectedOption = additionalChragesFromCompany.find(
       (option) => option._id === id
     );
-    console.log(selectedOption);
 
     const newRows = [...rows];
     newRows[index] = {
@@ -220,7 +216,6 @@ function InvoiceSecondary() {
       _id: selectedOption?._id,
       finalValue: "",
     };
-    console.log(newRows);
     setRows(newRows);
 
     dispatch(addAdditionalCharges({ index, row: newRows[index] }));
@@ -264,7 +259,6 @@ function InvoiceSecondary() {
     const subTotal = items.reduce((acc, curr) => {
       return (acc = acc + (parseFloat(curr.total) || 0));
     }, 0);
-    console.log(subTotal);
     setSubTotal(subTotal);
   }, [items]);
 
@@ -287,7 +281,6 @@ function InvoiceSecondary() {
   const navigate = useNavigate();
 
   const handleAddItem = () => {
-    console.log(Object.keys(party).length);
     if (Object.keys(party).length === 0) {
       toast.error("Select a party first");
       return;
@@ -302,38 +295,31 @@ function InvoiceSecondary() {
   };
 
   const submitHandler = async () => {
-    console.log("haii");
     if (Object.keys(party).length == 0) {
-      console.log("haii");
 
       toast.error("Add a party first");
       return;
     }
     if (items.length == 0) {
-      console.log("haii");
 
       toast.error("Add at least an item");
       return;
     }
 
     if (additional) {
-      console.log("haii");
 
       const hasEmptyValue = rows.some((row) => row.value === "");
       if (hasEmptyValue) {
-        console.log("haii");
 
         toast.error("Please add a value.");
         return;
       }
       const hasNagetiveValue = rows.some((row) => parseFloat(row.value) < 0);
       if (hasNagetiveValue) {
-        console.log("haii");
 
         toast.error("Please add a positive value");
         return;
       }
-      console.log("haii");
     }
 
     const lastAmount = totalAmount.toFixed(2);
@@ -350,6 +336,7 @@ function InvoiceSecondary() {
       orderNumber,
       despatchDetails,
       selectedDate,
+      isTaxInclusive
     };
 
     console.log(formData);
@@ -362,7 +349,7 @@ function InvoiceSecondary() {
         withCredentials: true,
       });
 
-      console.log(res.data);
+      // console.log(res.data);
       toast.success(res.data.message);
 
       navigate(`/sUsers/InvoiceDetails/${res.data.data._id}`);

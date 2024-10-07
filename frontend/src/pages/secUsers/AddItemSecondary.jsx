@@ -24,6 +24,44 @@ import { FixedSizeList as List } from "react-window";
 import { Decimal } from "decimal.js";
 import SearchBar from "../../components/common/SearchBar";
 
+
+function AddItemSecondary() {
+  const [item, setItem] = useState([]);
+  const [selectedPriceLevel, setSelectedPriceLevel] = useState("");
+  const [refresh, setRefresh] = useState(false);
+  const [brands, setBrands] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [subCategories, setSubCategories] = useState([]);
+  const [selectedBrand, setSelectedBrand] = useState("");
+  const [selectedCategory, setseleCtedCategory] = useState("");
+  const [selectedSubCategory, setSelectedSubCategory] = useState("");
+  const [search, setSearch] = useState("");
+  const [priceLevels, setPriceLevels] = useState([]);
+  const [loader, setLoader] = useState(false);
+  const [listHeight, setListHeight] = useState(0);
+  const [scrollPosition, setScrollPosition] = useState(0);
+  
+
+  // Redux hooks
+  const dispatch = useDispatch();
+  const {
+    secSelectedOrganization: {
+      secSelectedOrg: { _id: cpm_id, type,configurations },
+    },
+    invoiceSecondary: {
+      items: itemsFromRedux,
+      selectedPriceLevel: priceLevelFromRedux = "",
+      brand: brandFromRedux = "",
+      category: categoryFromRedux = "",
+      subcategory: subCategoryFromRedux = "",
+      products: allProductsFromRedux = "",
+    },
+  } = useSelector((state) => state);
+
+const isTaxInclusive= configurations[0].taxInclusive
+
+
+
 // Helper functions
 const calculateTotal = (item, selectedPriceLevel, situation = "normal") => {
 
@@ -44,7 +82,7 @@ const calculateTotal = (item, selectedPriceLevel, situation = "normal") => {
     discountedSubtotal -= (subtotal * item.discountPercentage) / 100;
   }
 
-  const gstAmount =item?.taxInclusive? 0:(discountedSubtotal * (item.newGst || item.igst || 0)) / 100
+  const gstAmount =isTaxInclusive? 0:(discountedSubtotal * (item.newGst || item.igst || 0)) / 100
    
   return discountedSubtotal + gstAmount;
 };
@@ -60,37 +98,10 @@ const filterItems = (items, brand, category, subCategory, searchTerm) => {
   );
 };
 
-function AddItemSecondary() {
-  const [item, setItem] = useState([]);
-  const [selectedPriceLevel, setSelectedPriceLevel] = useState("");
-  const [refresh, setRefresh] = useState(false);
-  const [brands, setBrands] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [subCategories, setSubCategories] = useState([]);
-  const [selectedBrand, setSelectedBrand] = useState("");
-  const [selectedCategory, setseleCtedCategory] = useState("");
-  const [selectedSubCategory, setSelectedSubCategory] = useState("");
-  const [search, setSearch] = useState("");
-  const [priceLevels, setPriceLevels] = useState([]);
-  const [loader, setLoader] = useState(false);
-  const [listHeight, setListHeight] = useState(0);
-  const [scrollPosition, setScrollPosition] = useState(0);
+// Helper closee
 
-  // Redux hooks
-  const dispatch = useDispatch();
-  const {
-    secSelectedOrganization: {
-      secSelectedOrg: { _id: cpm_id, type },
-    },
-    invoiceSecondary: {
-      items: itemsFromRedux,
-      selectedPriceLevel: priceLevelFromRedux = "",
-      brand: brandFromRedux = "",
-      category: categoryFromRedux = "",
-      subcategory: subCategoryFromRedux = "",
-      products: allProductsFromRedux = "",
-    },
-  } = useSelector((state) => state);
+
+  
 
   // Other hooks
   const navigate = useNavigate();

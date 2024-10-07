@@ -65,7 +65,7 @@ export const invoiceSliceSecondary = createSlice({
     addPriceRate: (state, action) => {
       const id = action.payload._id;
       const selectedPriceRate = action.payload?.selectedPriceRate || 0;
-      console.log(selectedPriceRate);
+      // console.log(selectedPriceRate);
       const indexToUpdate = state.items.findIndex((el) => el._id == id);
       if (indexToUpdate !== -1) {
         state.items[indexToUpdate].selectedPriceRate = selectedPriceRate;

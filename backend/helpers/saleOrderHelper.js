@@ -16,7 +16,8 @@ export const fetchLastInvoice = async (model, session) => {
 export const updateItemStockAndCalculatePrice = async (
   item,
   priceLevelFromRedux,
-  session
+  session,
+  isTaxInclusive
 ) => {
   const selectedPriceLevel = item.Priceleveles.find(
     (priceLevel) => priceLevel.pricelevel === priceLevelFromRedux

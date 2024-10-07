@@ -34,6 +34,7 @@ export const createInvoice = async (req, res) => {
       orderNumber,
       despatchDetails,
       selectedDate,
+      isTaxInclusive
     } = req.body;
 
     const numberExistence = await checkForNumberExistence(
@@ -55,7 +56,7 @@ export const createInvoice = async (req, res) => {
 
     const updatedItems = await Promise.all(
       items.map((item) =>
-        updateItemStockAndCalculatePrice(item, priceLevelFromRedux, session)
+        updateItemStockAndCalculatePrice(item, priceLevelFromRedux, session,isTaxInclusive)
       )
     );
 
@@ -95,14 +96,14 @@ export const createInvoice = async (req, res) => {
 
     await updateSecondaryUserConfiguration(secondaryUser, orgId, session);
 
-    await session.commitTransaction();
-    session.endSession();
+    // await session.commitTransaction();
+    // session.endSession();
 
-    return res.status(200).json({
-      success: true,
-      message: "Sale order created successfully",
-      data: result,
-    });
+    // return res.status(200).json({
+    //   success: true,
+    //   message: "Sale order created successfully",
+    //   data: result,
+    // });
   } catch (error) {
     await session.abortTransaction();
     session.endSession();

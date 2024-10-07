@@ -744,6 +744,10 @@ export const getProducts = async (req, res) => {
 
   try {
     const secUser = await SecondaryUser.findById(Secondary_user_id);
+    const company=await OragnizationModel.findById(cmp_id);
+    const isTaxInclusive=company.configurations[0].taxInclusive || false; 
+
+
 
     if (!secUser) {
       return res.status(404).json({ message: "Secondary user not found" });
@@ -843,6 +847,14 @@ export const getProducts = async (req, res) => {
       },
     };
 
+
+     // New stage to add isTaxInclusive to each product
+     const addTaxInclusiveStage = {
+      $addFields: {
+        isTaxInclusive: isTaxInclusive,
+      },
+    };
+
     // Add a new stage to filter out products with empty GodownList
     const filterEmptyGodownListStage = {
       $match: {
@@ -879,6 +891,7 @@ export const getProducts = async (req, res) => {
       projectStage,
       addFieldsStage,
       filterEmptyGodownListStage,
+      addTaxInclusiveStage, 
     ];
 
     const products = await productModel.aggregate(aggregationPipeline);
