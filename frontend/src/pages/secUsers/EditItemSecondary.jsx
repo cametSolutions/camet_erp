@@ -23,6 +23,7 @@ function EditItemSecondary() {
   const [totalAmount, setTotalAmount] = useState(0);
   const [discountAmount, setDiscountAmount] = useState(0); // State for discount amount
   const [discountPercentage, setDiscountPercentage] = useState(0);
+  const [isTaxInclusive, setIsTaxInclusive] = useState(false);
   const { id } = useParams();
   const navigate = useNavigate();
 
@@ -33,42 +34,35 @@ function EditItemSecondary() {
   );
 
 
-  const isTaxInclusive = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg.configurations[0].taxInclusive
-  );
 
 
-  
+
 
   useEffect(() => {
     setItem(selectedItem[0]);
-    // const price = selectedItem[0].Priceleveles.find(
-    //   (item) => item.pricelevel === selectedPriceLevel
-    // )?.pricerate;
-
     setNewPrice(selectedItem[0]?.selectedPriceRate || 0);
     setQuantity(selectedItem[0]?.count || 1);
     setUnit(selectedItem[0]?.unit);
     setIgst(selectedItem[0]?.igst);
 
-    if (selectedItem[0].discountPercentage > 0) {
-      setDiscount(selectedItem[0].discountPercentage);
+    setIsTaxInclusive(selectedItem[0]?.isTaxInclusive);
+
+    if (selectedItem[0]?.discountPercentage > 0) {
+      setDiscount(selectedItem[0]?.discountPercentage);
       setType("percentage");
-    } else if (selectedItem[0].discount > 0) {
-      setDiscount(selectedItem[0].discount);
+    } else if (selectedItem[0]?.discount > 0) {
+      setDiscount(selectedItem[0]?.discount);
       setType("amount");
     } else if (
-      selectedItem[0].discountPercentage == 0 &&
-      selectedItem[0].discount == 0
+      selectedItem[0]?.discountPercentage == 0 &&
+      selectedItem[0]?.discount == 0
     ) {
       setDiscount("");
     }
-  }, []);
+  }, [selectedItem[0]]);
 
   useEffect(() => {
-    console.log(parseFloat(newPrice));
     const taxExclusivePrice = parseFloat(newPrice) * quantity || 0;
-    console.log(taxExclusivePrice);
     setTaxExclusivePrice(taxExclusivePrice);
     // Calculate the discount amount and percentage
     let calculatedDiscountAmount = 0;
@@ -108,6 +102,7 @@ function EditItemSecondary() {
 
     newItem.total = totalAmount;
     newItem.count = Number(quantity) || 0;
+    newItem.isTaxInclusive = isTaxInclusive;
 
     newItem.newGst = igst;
     if (type === "amount") {
@@ -120,7 +115,6 @@ function EditItemSecondary() {
     }
 
     dispatch(changeIgstAndDiscount(newItem));
-    console.log(newPrice);
     dispatch(addPriceRate({ selectedPriceRate: Number(newPrice), _id: id }));
 
     // navigate("/sUsers/addItem");
@@ -129,30 +123,6 @@ function EditItemSecondary() {
 
   const handleBackClick = () => {
     navigate(-1);
-    // console.log(location.state);
-
-    // if (location?.state?.id && location?.state?.from =="addItem") {
-    //   console.log("haii");
-    //   navigate("/sUsers/addItem", {
-    //     state: { from: "editInvoice", id: location.state.id },
-    //   });
-    // } else if (location.state.from === "invoice") {
-    //   console.log("haii");
-
-    //   navigate("/sUsers/invoice");
-    // } else if (location?.state?.from === "addItem") {
-    //   console.log("haii");
-
-    //   navigate("/sUsers/addItem");
-    // } else if (location?.state?.from === "editInvoice") {
-    //   console.log("haii");
-
-    //   navigate(`/sUsers/editInvoice/${location.state.id}`);
-    // } else {
-    //   console.log("haii");
-
-    //   navigate("/sUsers/addItem");
-    // }
   };
 
   const changeQuantity = (quantity) => {
@@ -218,7 +188,23 @@ function EditItemSecondary() {
                     />
                   </div>
 
-                
+                  <div className="flex items-center gap-3 ml-1 ">
+                    <input
+                      type="checkbox"
+                      id="valueCheckbox"
+                      className="form-checkbox h-5 w-5 text-indigo-600 transition duration-150 ease-in-out"
+                      checked={isTaxInclusive === true}
+                      onChange={() => {
+                        setIsTaxInclusive(!isTaxInclusive);
+                      }}
+                    />
+                    <label
+                      className="block uppercase text-blueGray-600 text-xs font-bold "
+                      htmlFor="termsInput"
+                    >
+                      Tax Inclusive
+                    </label>
+                  </div>
 
                   <div className="flex items-center space-x-4">
                     <div className="flex flex-col">

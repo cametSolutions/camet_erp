@@ -40,6 +40,7 @@ function AddItemSecondary() {
   const [loader, setLoader] = useState(false);
   const [listHeight, setListHeight] = useState(0);
   const [scrollPosition, setScrollPosition] = useState(0);
+
   
 
   // Redux hooks
@@ -82,7 +83,7 @@ const calculateTotal = (item, selectedPriceLevel, situation = "normal") => {
     discountedSubtotal -= (subtotal * item.discountPercentage) / 100;
   }
 
-  const gstAmount =isTaxInclusive? 0:(discountedSubtotal * (item.newGst || item.igst || 0)) / 100
+  const gstAmount =item?.isTaxInclusive? 0:(discountedSubtotal * (item.newGst || item.igst || 0)) / 100
    
   return discountedSubtotal + gstAmount;
 };

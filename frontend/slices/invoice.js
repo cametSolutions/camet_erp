@@ -77,6 +77,7 @@ export const invoiceSlice = createSlice({
       const discount = action.payload?.discount || 0;
       const discountPercentage = action.payload?.discountPercentage || 0;
       const newTotal = action.payload?.total.toFixed(2) || 0;
+      const isTaxInclusive = action.payload?.isTaxInclusive || false;
 
       const indexToUpdate = state.items.findIndex((el) => el._id === id);
       if (indexToUpdate !== -1) {
@@ -85,6 +86,7 @@ export const invoiceSlice = createSlice({
         state.items[indexToUpdate].igst = igst;
         state.items[indexToUpdate].discountPercentage = discountPercentage;
         state.items[indexToUpdate].count = count;
+        state.items[indexToUpdate].isTaxInclusive = isTaxInclusive;
       }
     },
 
