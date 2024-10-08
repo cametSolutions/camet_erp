@@ -43,9 +43,16 @@ const Layout = ({ children }) => {
   };
   return (
     <SidebarContext.Provider value={{ showSidebar, handleToggleSidebar }}>
-      <div className="flex h-screen">
+      <div
+        //  style={{
+        //   scrollbarWidth: "thin",
+        //   scrollbarColor: "transparent transparent",
+        // }}
+       className="flex h-screen">
         {renderSidebar()}
-        <main className="flex-1 h-screen overflow-y-scroll">
+        <main
+       
+         className="flex-1 h-screen overflow-y-scroll">
           {children}
           <Outlet />
         </main>

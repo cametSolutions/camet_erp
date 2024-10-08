@@ -262,7 +262,7 @@ export const processSaleItems = (items) => {
       sgstAmt = 0,
       igstAmt = 0;
 
-    // console.log("isTaxInclusive", isTaxInclusive);
+    console.log("isTaxInclusive", isTaxInclusive);
 
     if (!isTaxInclusive) {
       // If price is tax-inclusive, calculate base price
@@ -274,9 +274,9 @@ export const processSaleItems = (items) => {
       sgstAmt = Number(((basePrice *sgstNumber) / 100).toFixed(2));
       igstAmt = Number(((basePrice * igstNumber) / 100).toFixed(2));
 
-      // console.log(
-      //   `  totalPrice:${totalPrice} cgstAmt: ${cgstAmt} sgstAmt: ${sgstAmt} igstAmt: ${igstAmt}`
-      // );
+      console.log(
+        `  totalPrice:${totalPrice} cgstAmt: ${cgstAmt} sgstAmt: ${sgstAmt} igstAmt: ${igstAmt}`
+      );
 
     } else {
       // console.log("igstNumber", igstNumber);
@@ -286,9 +286,9 @@ export const processSaleItems = (items) => {
       cgstAmt = Number(((basePrice * cgstNumber) / 100).toFixed(2));
       sgstAmt = Number(((basePrice *sgstNumber) / 100).toFixed(2));
       igstAmt = Number(((basePrice * igstNumber) / 100).toFixed(2));
-      // console.log(
-      //   ` totalPrice: ${totalPrice}  cgstAmt: ${cgstAmt} sgstAmt: ${sgstAmt} igstAmt: ${igstAmt}`
-      // );
+      console.log(
+        ` totalPrice: ${totalPrice}  cgstAmt: ${cgstAmt} sgstAmt: ${sgstAmt} igstAmt: ${igstAmt}`
+      );
     }
 
     return {

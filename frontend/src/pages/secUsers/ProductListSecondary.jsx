@@ -248,10 +248,10 @@ function ProductListSecondary() {
         </div>
       ) : products.length > 0 ? (
         <div
-          style={{
-            scrollbarWidth: "thin",
-            // scrollbarColor: "transparent transparent",
-          }}
+          // style={{
+          //   scrollbarWidth: "thin",
+          //   // scrollbarColor: "transparent transparent",
+          // }}
         >
           <List
             className=""

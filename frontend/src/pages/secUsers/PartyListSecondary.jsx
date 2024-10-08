@@ -111,7 +111,9 @@ function PartyListSecondary() {
   };
 
   return (
-    <div className=" bg-slate-50 ">
+    <div
+  
+     className=" bg-slate-50 ">
       <div className="sticky top-0 z-20">
         <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3  flex justify-between items-center  ">
           <div className="flex items-center justify-center gap-2">

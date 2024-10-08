@@ -515,7 +515,6 @@ export const  updateTallyData = async (
       { upsert: true, new: true,session }
     );
 
-    console.log("tallyUpdate",tallyUpdate);
     
   } catch (error) {
     console.error("Error updateTallyData sale stock updates:", error);
