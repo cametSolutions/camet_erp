@@ -6,7 +6,6 @@ import OrganizationModel from "../models/OragnizationModel.js";
 import { truncateToNDecimals } from "./helper.js";
 import { login } from "../controllers/secondaryUserController.js";
 
-
 export const checkForNumberExistence = async (
   model,
   fieldName,
@@ -17,10 +16,12 @@ export const checkForNumberExistence = async (
   try {
     // const centralNumber = parseInt(newValue, 10);
     // const regex = new RegExp(`^(${centralNumber}|.*-(0*${centralNumber})-.*)$`);
-    const docs = await model.find({
-      [fieldName]: newValue,
-      cmp_id: cmp_id,
-    }).session(session)
+    const docs = await model
+      .find({
+        [fieldName]: newValue,
+        cmp_id: cmp_id,
+      })
+      .session(session);
 
     console.log(docs.map((el) => el[fieldName]));
     return docs.length > 0;
@@ -62,25 +63,25 @@ export const updateSalesNumber = async (
         //   .every(([_, value]) => value !== "");
 
         // if (allFieldsFilled) {
-          salesNumber = (configuration.salesNumber || 0) + 1;
+        salesNumber = (configuration.salesNumber || 0) + 1;
 
-          console.log("salesNumber",salesNumber);
-          
-          const updatedConfiguration = secondaryUser.configurations.map(
-            (config) => {
-              if (config.organization.toString() === orgId) {
-                return {
-                  ...config,
-                  salesNumber: salesNumber,
-                };
-              }
-              return config;
+        console.log("salesNumber", salesNumber);
+
+        const updatedConfiguration = secondaryUser.configurations.map(
+          (config) => {
+            if (config.organization.toString() === orgId) {
+              return {
+                ...config,
+                salesNumber: salesNumber,
+              };
             }
-          );
-          secondaryUser.configurations = updatedConfiguration;
-          await secondaryUser.save({ session });
-        // } 
-        
+            return config;
+          }
+        );
+        secondaryUser.configurations = updatedConfiguration;
+        await secondaryUser.save({ session });
+        // }
+
         // else {
         //   await OrganizationModel.findByIdAndUpdate(
         //     orgId,
@@ -104,12 +105,18 @@ export const updateSalesNumber = async (
   }
 };
 
-export const handleSaleStockUpdates = async (items, revert = false,session) => {
+export const handleSaleStockUpdates = async (
+  items,
+  revert = false,
+  session
+) => {
   const productUpdates = [];
   const godownUpdates = [];
 
   for (const item of items) {
-    const product = await productModel.findOne({ _id: item._id }).session(session);
+    const product = await productModel
+      .findOne({ _id: item._id })
+      .session(session);
     if (!product) {
       throw new Error(`Product not found for item ID: ${item._id}`);
     }
@@ -229,8 +236,8 @@ export const handleSaleStockUpdates = async (items, revert = false,session) => {
     }
   }
 
-  await productModel.bulkWrite(productUpdates,{session});
-  await productModel.bulkWrite(godownUpdates,{session});
+  await productModel.bulkWrite(productUpdates, { session });
+  await productModel.bulkWrite(godownUpdates, { session });
 };
 
 export const processSaleItems = (items) => {
@@ -246,10 +253,43 @@ export const processSaleItems = (items) => {
       totalPrice -= discountAmount;
     }
 
-    const { cgst, sgst, igst } = item;
-    const cgstAmt = parseFloat(((totalPrice * cgst) / 100).toFixed(2));
-    const sgstAmt = parseFloat(((totalPrice * sgst) / 100).toFixed(2));
-    const igstAmt = parseFloat(((totalPrice * igst) / 100).toFixed(2));
+    const { cgst = 0, sgst = 0, igst = 0, isTaxInclusive = false } = item; // Default tax rates to 0 if not provided
+    const cgstNumber = Number(cgst);
+    const sgstNumber = Number(sgst);
+    const igstNumber = Number(igst);
+    let basePrice = totalPrice;
+    let cgstAmt = 0,
+      sgstAmt = 0,
+      igstAmt = 0;
+
+    // console.log("isTaxInclusive", isTaxInclusive);
+
+    if (!isTaxInclusive) {
+      // If price is tax-inclusive, calculate base price
+      const totalTaxPercentage = igstNumber / 100;
+      basePrice = totalPrice / (1 + totalTaxPercentage); // Reverse calculation to get base price
+
+      // Calculate the tax amounts
+      cgstAmt = Number(((basePrice * cgstNumber) / 100).toFixed(2));
+      sgstAmt = Number(((basePrice *sgstNumber) / 100).toFixed(2));
+      igstAmt = Number(((basePrice * igstNumber) / 100).toFixed(2));
+
+      // console.log(
+      //   `  totalPrice:${totalPrice} cgstAmt: ${cgstAmt} sgstAmt: ${sgstAmt} igstAmt: ${igstAmt}`
+      // );
+      
+    } else {
+      // console.log("igstNumber", igstNumber);
+
+      const basePrice = (totalPrice * 100) / (100 + igstNumber);
+      // If price is tax-exclusive, calculate taxes based on total price
+      cgstAmt = Number(((basePrice * cgstNumber) / 100).toFixed(2));
+      sgstAmt = Number(((basePrice *sgstNumber) / 100).toFixed(2));
+      igstAmt = Number(((basePrice * igstNumber) / 100).toFixed(2));
+      // console.log(
+      //   ` totalPrice: ${totalPrice}  cgstAmt: ${cgstAmt} sgstAmt: ${sgstAmt} igstAmt: ${igstAmt}`
+      // );
+    }
 
     return {
       ...item,
@@ -266,7 +306,7 @@ export const createSaleRecord = async (
   salesNumber,
   updatedItems,
   updateAdditionalCharge,
-  session 
+  session
 ) => {
   try {
     const {
@@ -322,8 +362,6 @@ export const createSaleRecord = async (
   }
 };
 
-
-
 export const updateTallyData = async (
   orgId,
   salesNumber,
@@ -335,21 +373,21 @@ export const updateTallyData = async (
 ) => {
   try {
     const billData = {
-        Primary_user_id,
-        bill_no: salesNumber,
-        cmp_id: orgId,
-        party_id: party?.party_master_id,
-        bill_amount: lastAmount,
-        bill_date: new Date(),
-        bill_pending_amt: lastAmount,
-        email: party?.emailID,
-        mobile_no: party?.mobileNumber,
-        party_name: party?.partyName,
-        user_id: secondaryMobile || "null",
-        source: "sale",
-      };
+      Primary_user_id,
+      bill_no: salesNumber,
+      cmp_id: orgId,
+      party_id: party?.party_master_id,
+      bill_amount: lastAmount,
+      bill_date: new Date(),
+      bill_pending_amt: lastAmount,
+      email: party?.emailID,
+      mobile_no: party?.mobileNumber,
+      party_name: party?.partyName,
+      user_id: secondaryMobile || "null",
+      source: "sale",
+    };
 
-    const tallyUpdate=await TallyData.findOneAndUpdate(
+    const tallyUpdate = await TallyData.findOneAndUpdate(
       {
         cmp_id: orgId,
         bill_no: salesNumber,
@@ -357,11 +395,10 @@ export const updateTallyData = async (
         party_id: party?.party_master_id,
       },
       billData,
-      { upsert: true, new: true,session }
+      { upsert: true, new: true, session }
     );
 
-    console.log("tallyUpdate",tallyUpdate);
-    
+    // console.log("tallyUpdate",tallyUpdate);
   } catch (error) {
     console.error("Error updateTallyData sale stock updates:", error);
     throw error;
@@ -374,7 +411,9 @@ export const revertSaleStockUpdates = async (items, session) => {
     const godownUpdates = [];
 
     for (const item of items) {
-      const product = await productModel.findOne({ _id: item._id }).session(session); // Use the session passed as parameter
+      const product = await productModel
+        .findOne({ _id: item._id })
+        .session(session); // Use the session passed as parameter
       if (!product) {
         throw new Error(`Product not found for item ID: ${item._id}`);
       }
@@ -515,10 +554,8 @@ export const revertSaleStockUpdates = async (items, session) => {
     // Execute bulk operations to revert stock changes using the session
     await productModel.bulkWrite(productUpdates, { session });
     await productModel.bulkWrite(godownUpdates, { session });
-
   } catch (error) {
     console.error("Error reverting sale stock updates:", error);
     throw error;
   }
 };
-

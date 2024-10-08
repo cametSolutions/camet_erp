@@ -39,14 +39,11 @@ function EditItemForm({
     if (selectedItem[0]?.hasGodownOrBatch) {
       setNewPrice(selectedGodown?.selectedPriceRate || 0);
 
-      console.log("haii");
       setQuantity(selectedGodown?.count || 1);
       if (selectedGodown?.discountPercentage > 0) {
         setDiscount(selectedGodown?.discountPercentage);
-        setType("percentage");
       } else if (selectedGodown?.discount > 0) {
         setDiscount(selectedGodown?.discount);
-        setType("amount");
       } else if (
         selectedGodown?.discountPercentage == 0 &&
         selectedGodown?.discount == 0
@@ -59,10 +56,8 @@ function EditItemForm({
       setQuantity(selectedItem[0]?.count || 1);
       if (selectedItem[0]?.discountPercentage > 0) {
         setDiscount(selectedItem[0]?.discountPercentage);
-        setType("percentage");
       } else if (selectedItem[0]?.discount > 0) {
         setDiscount(selectedItem[0]?.discount);
-        setType("amount");
       } else if (
         selectedItem[0]?.discountPercentage == 0 &&
         selectedItem[0]?.discount == 0
@@ -75,7 +70,7 @@ function EditItemForm({
     setIsTaxInclusive(selectedItem[0]?.isTaxInclusive);
 
     // }
-  }, []);
+  }, [selectedItem[0]]);
 
   useEffect(() => {
     const taxExclusivePrice = parseFloat(newPrice) * Number(quantity) || 0;

@@ -1,4 +1,4 @@
-import { createSlice } from "@reduxjs/toolkit"; 
+import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
   // selectedGodownName:"",
@@ -94,7 +94,6 @@ export const salesSecondarySlice = createSlice({
       const godownList = action.payload?.GodownList;
       const isTaxInclusive = action.payload?.isTaxInclusive || false;
 
-
       const indexToUpdate = state.items.findIndex((el) => el._id === id);
       if (indexToUpdate !== -1) {
         state.items[indexToUpdate].total = newTotal;
@@ -104,7 +103,6 @@ export const salesSecondarySlice = createSlice({
         state.items[indexToUpdate].count = count;
         state.items[indexToUpdate].GodownList = godownList;
         state.items[indexToUpdate].isTaxInclusive = isTaxInclusive;
-
       }
     },
 
@@ -184,8 +182,6 @@ export const salesSecondarySlice = createSlice({
       }
     },
 
- 
-
     removeGodownOrBatch: (state, action) => {
       const id = action.payload.id;
       const idx = action.payload.idx;
@@ -197,7 +193,6 @@ export const salesSecondarySlice = createSlice({
         currentItem.GodownList[idx].count = 0;
         currentItem.GodownList[idx].count = 0;
         currentItem.GodownList[idx].individualTotal = 0;
-
 
         const newCount = currentItem.GodownList.reduce((acc, curr) => {
           if (curr.added) {
@@ -242,6 +237,40 @@ export const salesSecondarySlice = createSlice({
     changeDate: (state, action) => {
       state.date = action.payload;
     },
+
+    changeTaxInclusive: (state, action) => {
+      const id = action.payload;
+
+      // const isTaxInclusive = action.payload?.isTaxInclusive || false;
+      const indexToUpdate = state.items.findIndex((el) => el._id === id);
+
+      if (indexToUpdate !== -1) {
+        const item = state.items[indexToUpdate];
+
+        // item.isTaxInclusive = isTaxInclusive;
+
+        item.GodownList.forEach((godown) => {
+          if (godown.added) {
+            if (item.isTaxInclusive) {
+              godown.individualTotal = godown.selectedPriceRate * godown.count;
+            } else {
+              const taxAmount =
+                (parseFloat(item?.igst) / 100) *
+                (godown.selectedPriceRate * godown.count);
+              godown.individualTotal =
+                godown.selectedPriceRate * godown.count + taxAmount;
+            }
+          }
+        });
+        item.total = item.GodownList.reduce((acc, curr) => {
+          if (curr.added) {
+            return acc + curr.individualTotal;
+          } else {
+            return acc;
+          }
+        },0);
+      }
+    },
   },
 });
 
@@ -280,7 +309,8 @@ export const {
   addPriceRate,
   addNewAddress,
   addDespatchDetails,
-  changeDate
+  changeDate,
+  changeTaxInclusive,
 } = salesSecondarySlice.actions;
 
 export default salesSecondarySlice.reducer;

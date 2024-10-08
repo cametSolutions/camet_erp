@@ -2,7 +2,7 @@
 
 import { useNavigate } from "react-router-dom";
 import {  useDispatch, useSelector } from "react-redux";
-import { updateItem } from "../../../slices/salesSecondary";
+import { updateItem ,changeTaxInclusive} from "../../../slices/salesSecondary";
 import EditItemForm from "../../components/secUsers/main/Forms/EditItemForm";
 
 function EditItemSalesSecondary() {
@@ -11,19 +11,15 @@ function EditItemSalesSecondary() {
     return state.salesSecondary.items
   })
 
-  console.log(ItemsFromRedux);
   
   const dispatch = useDispatch();
   const navigate=useNavigate();
 
   const submitHandler = (item, index, quantity, newPrice, totalAmount, selectedItem,discountAmount,discountPercentage, type,igst,isTaxInclusive) => {
-    console.log(item);
     const newItem = structuredClone(item);
 
-    console.log(newPrice); // Deep copy to avoid mutation
 
     if (selectedItem[0]?.hasGodownOrBatch) {
-      console.log("haii");
       const newGodownList = newItem.GodownList.map((godown, idx) => {
         if (idx == index) {
           console.log(godown);
@@ -51,11 +47,8 @@ function EditItemSalesSecondary() {
       newItem.count = Number(
         newGodownList?.reduce((acc, curr) => {
           if (curr.added === true) {
-            console.log("haii");
             return acc + curr.count;
           } else {
-            console.log("haii");
-
             return acc;
           }
         }, 0)
@@ -98,6 +91,7 @@ function EditItemSalesSecondary() {
     //   dispatch(updateItemStockTransfer(newItem));
     // } else {
       dispatch(updateItem(newItem));
+      dispatch(changeTaxInclusive(selectedItem[0]?._id))
      
     // }
     navigate(-1);

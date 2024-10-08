@@ -274,7 +274,11 @@ function AddItemSalesSecondary() {
         if (priceLevelFromRedux == "") {
           const defaultPriceLevel = priceLevels[0];
           setSelectedPriceLevel(defaultPriceLevel);
-          dispatch(setSelectedPriceLevel(defaultPriceLevel));
+
+          // console.log("defaultPriceLevel", defaultPriceLevel);
+          
+          dispatch(setPriceLevel(defaultPriceLevel));
+
         }
       }
     } catch (error) {
@@ -754,7 +758,6 @@ function AddItemSalesSecondary() {
     });
   }, []);
 
-  console.log(heights);
 
   return (
     <AdditemOfSale
