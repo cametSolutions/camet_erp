@@ -734,11 +734,6 @@ export const getProducts = async (req, res) => {
   const Secondary_user_id = req.sUserId;
   const cmp_id = req.params.cmp_id;
   const taxInclusive = req.query.taxInclusive === "true";
-
-
-  // console.log("taxInclusive", taxInclusive);
-  
-
   const vanSaleQuery = req.query.vanSale;
   const isVanSale = vanSaleQuery === "true";
 
@@ -889,7 +884,7 @@ export const getProducts = async (req, res) => {
     ];
 
     // Conditionally add taxInclusive stage
-    if (taxInclusive) {
+    if (taxInclusive && isTaxInclusive) {
       const addTaxInclusiveStage = {
         $addFields: {
           isTaxInclusive: isTaxInclusive,

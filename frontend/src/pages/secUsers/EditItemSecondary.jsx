@@ -34,9 +34,8 @@ function EditItemSecondary() {
   );
 
 
-
-
-
+  // console.log("isTaxInclusive", isTaxInclusive);
+  
 
   useEffect(() => {
     setItem(selectedItem[0]);
@@ -188,23 +187,27 @@ function EditItemSecondary() {
                     />
                   </div>
 
-                  <div className="flex items-center gap-3 ml-1 ">
-                    <input
-                      type="checkbox"
-                      id="valueCheckbox"
-                      className="form-checkbox h-5 w-5 text-indigo-600 transition duration-150 ease-in-out"
-                      checked={isTaxInclusive === true}
-                      onChange={() => {
-                        setIsTaxInclusive(!isTaxInclusive);
-                      }}
-                    />
-                    <label
-                      className="block uppercase text-blueGray-600 text-xs font-bold "
-                      htmlFor="termsInput"
-                    >
-                      Tax Inclusive
-                    </label>
-                  </div>
+                  {}
+
+                  {isTaxInclusive !== null && isTaxInclusive !== undefined && (
+                    <div className="flex items-center gap-3 ml-1 ">
+                      <input
+                        type="checkbox"
+                        id="valueCheckbox"
+                        className="form-checkbox h-5 w-5 text-indigo-600 transition duration-150 ease-in-out"
+                        checked={isTaxInclusive === true}
+                        onChange={() => {
+                          setIsTaxInclusive(!isTaxInclusive);
+                        }}
+                      />
+                      <label
+                        className="block uppercase text-blueGray-600 text-xs font-bold"
+                        htmlFor="valueCheckbox"
+                      >
+                        Tax Inclusive
+                      </label>
+                    </div>
+                  )}
 
                   <div className="flex items-center space-x-4">
                     <div className="flex flex-col">

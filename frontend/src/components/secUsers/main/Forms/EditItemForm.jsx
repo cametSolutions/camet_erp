@@ -188,7 +188,7 @@ function EditItemForm({
                       />
                     </div>
 
-                    {taxInclusive && (
+                    {taxInclusive &&  isTaxInclusive !== null && isTaxInclusive !== undefined && (
                       <div className="flex items-center gap-3 ml-1 ">
                         <input
                           type="checkbox"
