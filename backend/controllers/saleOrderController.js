@@ -19,113 +19,100 @@ import mongoose from "mongoose";
 export const createInvoice = async (req, res) => {
   const Secondary_user_id = req.sUserId;
   const owner = req.owner.toString();
-  const maxRetries = 5; // Maximum number of retries
+  const maxRetries = 5;
   let attempts = 0;
 
-  while (attempts < maxRetries) {
-    const session = await mongoose.startSession();
-    session.startTransaction();
+  const session = await mongoose.startSession(); // Start session outside the retry loop
 
-    try {
-      const {
-        orgId,
-        party,
-        items,
-        priceLevelFromRedux,
-        additionalChargesFromRedux,
-        lastAmount,
-        orderNumber,
-        despatchDetails,
-        selectedDate,
-      } = req.body;
+  try {
+    while (attempts < maxRetries) {
+      session.startTransaction(); // Start transaction inside the loop
 
-      const numberExistence = await checkForNumberExistence(
-        invoiceModel,
-        "orderNumber",
-        orderNumber,
-        orgId,
-        session
-      );
+      try {
+        const {
+          orgId,
+          party,
+          items,
+          priceLevelFromRedux,
+          additionalChargesFromRedux,
+          lastAmount,
+          orderNumber,
+          despatchDetails,
+          selectedDate,
+        } = req.body;
 
-      if (numberExistence) {
+        const numberExistence = await checkForNumberExistence(
+          invoiceModel,
+          "orderNumber",
+          orderNumber,
+          orgId,
+          session
+        );
+
+        if (numberExistence) {
+          await session.abortTransaction();
+          return res.status(400).json({ message: "SaleOrder with the same number already exists" });
+        }
+
+        const newSerialNumber = await fetchLastInvoice(invoiceModel, session);
+        const updatedItems = await Promise.all(
+          items.map((item) => updateItemStockAndCalculatePrice(item, priceLevelFromRedux, session))
+        );
+
+        const updateAdditionalCharge =
+          additionalChargesFromRedux.length > 0
+            ? calculateAdditionalCharges(additionalChargesFromRedux)
+            : [];
+
+        const invoice = new invoiceModel({
+          serialNumber: newSerialNumber,
+          cmp_id: orgId,
+          partyAccount: party?.partyName,
+          party,
+          items: updatedItems,
+          priceLevel: priceLevelFromRedux,
+          additionalCharges: updateAdditionalCharge,
+          finalAmount: lastAmount,
+          Primary_user_id: owner,
+          Secondary_user_id,
+          orderNumber,
+          despatchDetails,
+          createdAt: selectedDate,
+        });
+
+        const result = await invoice.save({ session });
+        const secondaryUser = await secondaryUserModel.findById(Secondary_user_id).session(session);
+
+        if (!secondaryUser) {
+          await session.abortTransaction();
+          return res.status(404).json({ message: "Secondary user not found" });
+        }
+
+        await updateSecondaryUserConfiguration(secondaryUser, orgId, session);
+
+        await session.commitTransaction();
+        return res.status(200).json({ message: "Sale order created successfully", data: result });
+      } catch (error) {
         await session.abortTransaction();
-        session.endSession();
-        return res.status(400).json({ message: "SaleOrder with the same number already exists" });
+        if (error.code === 112) { // Write conflict error code
+          attempts++;
+          console.warn(`Retrying transaction, attempt ${attempts}...`);
+          await delay(500); // Adding a small delay before retry
+          continue; // Retry the transaction
+        }
+        throw error;
       }
-
-      const newSerialNumber = await fetchLastInvoice(invoiceModel, session);
-
-      const updatedItems = await Promise.all(
-        items.map((item) =>
-          updateItemStockAndCalculatePrice(item, priceLevelFromRedux, session)
-        )
-      );
-
-      const updateAdditionalCharge =
-        additionalChargesFromRedux.length > 0
-          ? calculateAdditionalCharges(additionalChargesFromRedux)
-          : [];
-
-      const invoice = new invoiceModel({
-        serialNumber: newSerialNumber,
-        cmp_id: orgId,
-        partyAccount: party?.partyName,
-        party,
-        items: updatedItems,
-        priceLevel: priceLevelFromRedux,
-        additionalCharges: updateAdditionalCharge,
-        finalAmount: lastAmount,
-        Primary_user_id: owner,
-        Secondary_user_id,
-        orderNumber,
-        despatchDetails,
-        createdAt: selectedDate,
-      });
-
-      const result = await invoice.save({ session });
-
-      const secondaryUser = await secondaryUserModel
-        .findById(Secondary_user_id)
-        .session(session);
-
-      if (!secondaryUser) {
-        await session.abortTransaction();
-        session.endSession();
-        return res.status(404).json({ success: false, message: "Secondary user not found" });
-      }
-
-      await updateSecondaryUserConfiguration(secondaryUser, orgId, session);
-
-      await session.commitTransaction();
-      session.endSession();
-
-      return res.status(200).json({
-        success: true,
-        message: "Sale order created successfully",
-        data: result,
-      });
-    } catch (error) {
-      await session.abortTransaction();
-      session.endSession();
-      if (error.code === 112) { // Write conflict error code
-        attempts++;
-        console.warn(`Retrying transaction, attempt ${attempts}...`);
-        continue; // Retry the transaction
-      }
-      console.error(error);
-      return res.status(500).json({
-        success: false,
-        message: "Internal server error, try again!",
-        error: error.message,
-      });
     }
-  }
 
-  return res.status(500).json({ 
-    success: false, 
-    message: "Transaction failed after multiple attempts" 
-  });
+    throw new Error("Transaction failed after multiple attempts");
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Internal server error", error: error.message });
+  } finally {
+    await session.endSession();
+  }
 };
+
 
 /**
  * @desc  edit sale order

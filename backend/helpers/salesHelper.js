@@ -257,7 +257,7 @@ export const processSaleItems = (items) => {
     const cgstNumber = Number(cgst);
     const sgstNumber = Number(sgst);
     const igstNumber = Number(igst);
-    let basePrice = totalPrice;
+    let basePrice = 0;
     let cgstAmt = 0,
       sgstAmt = 0,
       igstAmt = 0;
@@ -277,7 +277,7 @@ export const processSaleItems = (items) => {
       // console.log(
       //   `  totalPrice:${totalPrice} cgstAmt: ${cgstAmt} sgstAmt: ${sgstAmt} igstAmt: ${igstAmt}`
       // );
-      
+
     } else {
       // console.log("igstNumber", igstNumber);
 

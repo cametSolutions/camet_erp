@@ -52,39 +52,36 @@ export const updateItemStockAndCalculatePrice = async (
 
   
 
-  // Calculate taxes
 
    // Calculate taxes
-   const { cgst = 0, sgst = 0, igst = 0 ,isTaxInclusive=false} = item; // Default tax rates to 0 if not provided
+   const { cgst = 0, sgst = 0, igst = 0 ,isTaxInclusive=false} = item; 
    let basePrice = totalPrice;
    let cgstAmt = 0, sgstAmt = 0, igstAmt = 0;
 
-  //  console.log("isTaxInclusive",isTaxInclusive);
    
  
    if (isTaxInclusive) {
-     // If price is tax-inclusive, calculate base price
      const totalTaxPercentage = (igst ) / 100;
-     basePrice = totalPrice / (1 + totalTaxPercentage); // Reverse calculation to get base price
+     basePrice = totalPrice / (1 + totalTaxPercentage); 
  
      // Calculate the tax amounts
      cgstAmt = (basePrice * cgst) / 100;
      sgstAmt = (basePrice * sgst) / 100;
      igstAmt = (basePrice * igst) / 100;
    } else {
-     // If price is tax-exclusive, calculate taxes based on total price
      cgstAmt = (totalPrice * cgst) / 100;
      sgstAmt = (totalPrice * sgst) / 100;
      igstAmt = (totalPrice * igst) / 100;
    }
+
+
+      // console.log(
+      //   `  totalPrice:${totalPrice} cgstAmt: ${cgstAmt} sgstAmt: ${sgstAmt} igstAmt: ${igstAmt}`
+      // );
+   
  
 
-  // console.log(cgst,sgst,igst);
-  // console.log("totl price",totalPrice);
 
-  // const cgstAmt = (totalPrice * cgst) / 100;
-  // const sgstAmt = (totalPrice * sgst) / 100;
-  // const igstAmt = (totalPrice * igst) / 100;
 
   return {
     ...item,
