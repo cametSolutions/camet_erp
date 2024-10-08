@@ -76,7 +76,7 @@ function PartyListComponent({ filteredParty, type, deleteHandler,user="secondary
     <div
       style={{
         scrollbarWidth: "thin",
-        scrollbarColor: "transparent transparent",
+        scrollbarColor: " transparent",
       }}
     >
       <List

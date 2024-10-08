@@ -197,7 +197,7 @@ function ProductListSecondary() {
 
   return (
     <div className="flex-1 bg-slate-50  ">
-      <div className="sticky top-0 z-20 h-[117px]">
+      <div className="sticky top-0 z-20 ">
         <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3  flex justify-between items-center  ">
           <div className="flex items-center justify-center gap-2">
             <IoReorderThreeSharp
@@ -250,7 +250,7 @@ function ProductListSecondary() {
         <div
           style={{
             scrollbarWidth: "thin",
-            scrollbarColor: "transparent transparent",
+            // scrollbarColor: "transparent transparent",
           }}
         >
           <List
@@ -258,7 +258,7 @@ function ProductListSecondary() {
             height={listHeight} // Specify the height of your list
             itemCount={filteredProducts.length} // Specify the total number of items
             itemSize={165} // Specify the height of each item
-            width="100%" // Specify the width of your list
+            // width="100%" // Specify the width of your list
           >
             {Row}
           </List>
