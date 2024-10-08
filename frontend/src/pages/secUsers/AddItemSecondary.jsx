@@ -118,7 +118,7 @@ const filterItems = (items, brand, category, subCategory, searchTerm) => {
 
       try {
         if (allProductsFromRedux.length === 0) {
-          const res = await api.get(`/api/sUsers/getProducts/${cpm_id}`, {
+          const res = await api.get(`/api/sUsers/getProducts/${cpm_id}?taxInclusive=${true}`, {
             withCredentials: true,
           });
 

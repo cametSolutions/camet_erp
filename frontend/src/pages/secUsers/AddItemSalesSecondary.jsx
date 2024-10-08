@@ -92,7 +92,7 @@ function AddItemSalesSecondary() {
       try {
         if (allProductsFromRedux.length === 0) {
           const res = await api.get(`/api/sUsers/getProducts/${cpm_id}`, {
-            params: { vanSale: false },
+            params: { vanSale: false, taxInclusive: true },
             withCredentials: true,
           });
           productData = res.data.productData;
