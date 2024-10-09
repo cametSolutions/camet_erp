@@ -731,6 +731,8 @@ export const addParty = async (req, res) => {
 // route get/api/pUsers/
 
 export const getProducts = async (req, res) => {
+
+  // console.log("get prodtctys functyion")
   const Secondary_user_id = req.sUserId;
   const cmp_id = req.params.cmp_id;
   const taxInclusive = req.query.taxInclusive === "true";
@@ -745,7 +747,7 @@ export const getProducts = async (req, res) => {
   try {
     const secUser = await SecondaryUser.findById(Secondary_user_id);
     const company = await OragnizationModel.findById(cmp_id);
-    const isTaxInclusive = company.configurations[0].taxInclusive || false;
+    const isTaxInclusive = company.configurations[0]?.taxInclusive || false;
 
     if (!secUser) {
       return res.status(404).json({ message: "Secondary user not found" });
