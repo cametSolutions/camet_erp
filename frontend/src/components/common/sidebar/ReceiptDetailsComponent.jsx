@@ -62,8 +62,9 @@ function ReceiptDetailsComponent({
               </div>
             )}
             <div
-              className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer
-          "
+             className={`flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110 cursor-pointer ${
+              data.isCancelled ? "opacity-50 pointer-events-none" : ""
+            }`}
               onClick={() => {
                 navigate(to, {
                   state: {

@@ -10,6 +10,8 @@ import {
   createOutstandingWithAdvanceAmount,
   updateReceiptNumber,
   updateTallyData,
+  revertTallyUpdates,
+  deleteAdvanceReceipt
 } from "../helpers/receiptHelper.js";
 
 /**
@@ -186,9 +188,12 @@ export const createReceipt = async (req, res) => {
 
 
 export const cancelReceipt = async (req, res) => {
-  const { receiptId } = req.params; // Assuming the receipt ID is passed as a URL parameter
+
+  console.log("canceling receipt");
+  
+  const { receiptId,cmp_id } = req.params; // Assuming the receipt ID is passed as a URL parameter
   const Primary_user_id = req.owner.toString();
-  const cmp_id = req.body.cmp_id; // Or from req.body if available
+  // const cmp_id = req.body.cmp_id; // Or from req.body if available
 
   const session = await mongoose.startSession();
   session.startTransaction();

@@ -40,7 +40,7 @@ function AddAmountTile({ tab, party }) {
           >
             <div className="flex justify-center gap-2   hover_scale items-center  ">
               <IoMdAdd className="text-2xl" />
-              <p className="text-md font-semibold">Add Amounttt</p>
+              <p className="text-md font-semibold">Add Amount</p>
             </div>
           </div>
         </>

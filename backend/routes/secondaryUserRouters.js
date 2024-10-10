@@ -24,7 +24,7 @@ import { getStockTransferDetails,addProduct ,editProduct,getCreditNoteDetails,tr
 import { authSecondary } from '../middlewares/authSecUsers.js';
 import { secondaryIsBlocked } from '../middlewares/isBlocked.js';
 import { companyAuthentication } from '../middlewares/authCompany.js';
-import { fetchOutstandingDetails,createReceipt } from '../controllers/receiptController.js';
+import { fetchOutstandingDetails,createReceipt,cancelReceipt } from '../controllers/receiptController.js';
 import { createPayment } from '../controllers/paymentController.js';
 import { createInvoice,editInvoice,cancelSalesOrder } from '../controllers/saleOrderController.js';
 import { createStockTransfer,editStockTransfer, cancelStockTransfer } from '../controllers/stockTransferController.js';
@@ -110,6 +110,8 @@ router.post('/editDebitNote/:id',authSecondary,secondaryIsBlocked,editDebitNote)
 ///receipt routes
 router.post('/createReceipt',authSecondary,secondaryIsBlocked,createReceipt)
 router.get('/getReceiptDetails/:id',authSecondary,secondaryIsBlocked,getReceiptDetails)
+router.post('/cancelReceipt/:receiptId/:cmp_id',authSecondary,secondaryIsBlocked,cancelReceipt)
+
 ///payment routes
 router.post('/createPayment',authSecondary,secondaryIsBlocked,createPayment)
 router.get('/getPaymentDetails/:id',authSecondary,secondaryIsBlocked,getPaymentDetails)

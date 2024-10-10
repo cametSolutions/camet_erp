@@ -6,6 +6,7 @@ import Swal from "sweetalert2";
 import { useNavigate,useLocation} from "react-router-dom";
 import useFetch from "../../customHook/useFetch";
 import ReceiptDetailsComponent from "../../components/common/sidebar/ReceiptDetailsComponent";
+import { useSelector } from "react-redux";
 
 function ReceiptDetails() {
   const [data, setData] = useState("");
@@ -15,7 +16,11 @@ function ReceiptDetails() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const { data: transactionDetails } = useFetch(
+  const cmp_id = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg._id
+  );
+
+  const { data: transactionDetails,refreshHook  } = useFetch(
     `/api/sUsers/getReceiptDetails/${id}`
   );
 
@@ -39,7 +44,7 @@ function ReceiptDetails() {
     if (confirmed.isConfirmed) {
       try {
         const res = await api.post(
-          `/api/sUsers/cancelTransaction/${id}`,
+          `/api/sUsers/cancelReceipt/${id}/${cmp_id}`,
           {},
           {
             withCredentials: true,
@@ -52,7 +57,7 @@ function ReceiptDetails() {
           text: res.data.message,
         });
 
-        setRefresh(!refresh);
+        refreshHook();
       } catch (error) {
         await Swal.fire({
           icon: "error",
