@@ -12,9 +12,9 @@ const initialState = {
   remainingAmount: 0,
   paymentMethod: "",
   paymentDetails: {
-    _id:null,
+    _id: null,
     bank_name: null,
-    bank_ledname:null,
+    bank_ledname: null,
     chequeNumber: "",
     chequeDate: new Date().toISOString(),
   },
@@ -51,14 +51,13 @@ export const receiptSlice = createSlice({
       state.totalBillAmount = totalBillAmount;
       state.enteredAmount = enteredAmount;
 
-      if(enteredAmount>totalBillAmount){
+      if (enteredAmount > totalBillAmount) {
         state.advanceAmount = enteredAmount - totalBillAmount;
         state.remainingAmount = 0;
-      }else{
+      } else {
         state.advanceAmount = 0;
-        state.remainingAmount = totalBillAmount - enteredAmount
+        state.remainingAmount = totalBillAmount - enteredAmount;
       }
-
     },
     addOutstandings: (state, action) => {
       state.outstandings = action.payload;
@@ -70,13 +69,13 @@ export const receiptSlice = createSlice({
       const { _id, bank_ledname, bank_name } = action.payload;
 
       console.log(state.paymentDetails);
-    
-      state.paymentDetails={
+
+      state.paymentDetails = {
         ...state.paymentDetails,
         _id,
         bank_ledname,
-        bank_name
-      }
+        bank_name,
+      };
     },
     addPaymentMethod: (state, action) => {
       state.paymentMethod = action.payload;

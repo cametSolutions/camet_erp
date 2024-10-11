@@ -86,6 +86,7 @@ function ReceiptDetails() {
       title="Receipt Details"
       voucherNumber={data.receiptNumber}
       to="/sUsers/receiptPrintOut"
+      editTo= "/sUsers/editReceipt"
 
     />
   );

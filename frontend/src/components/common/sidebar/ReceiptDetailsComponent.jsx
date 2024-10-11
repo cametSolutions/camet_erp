@@ -8,6 +8,7 @@ import { PiBankBold } from "react-icons/pi";
 import { MdOutlinePayment } from "react-icons/md";
 import { PiNote } from "react-icons/pi";
 import { BsCalendar2DateFill } from "react-icons/bs";
+import { FaEdit } from "react-icons/fa";
 
 function ReceiptDetailsComponent({
   backHandler,
@@ -17,10 +18,10 @@ function ReceiptDetailsComponent({
   voucherNumber,
   to,
   isPrimary = false,
+  editTo
 }) {
   const navigate = useNavigate();
 
-  console.log("to", to);
 
   return (
     <div className="flex ">
@@ -61,10 +62,23 @@ function ReceiptDetailsComponent({
                 </p>
               </div>
             )}
+
+            {!isPrimary && (
+              <div
+                onClick={() => navigate(`${editTo}/${data._id}`)}
+                disabled={data.isCancelled}
+                className={`flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110 cursor-pointer ${
+                  data.isCancelled ? "opacity-50 pointer-events-none" : ""
+                }`}
+              >
+                <FaEdit className="text-blue-500" />
+                <p className="text-black font-bold text-sm">Edit</p>
+              </div>
+            )}
             <div
-             className={`flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110 cursor-pointer ${
-              data.isCancelled ? "opacity-50 pointer-events-none" : ""
-            }`}
+              className={`flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110 cursor-pointer ${
+                data.isCancelled ? "opacity-50 pointer-events-none" : ""
+              }`}
               onClick={() => {
                 navigate(to, {
                   state: {
@@ -77,6 +91,7 @@ function ReceiptDetailsComponent({
 
               <p className="text-black font-bold text-sm">Share</p>
             </div>
+
             <div className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer">
               <MdTextsms className="text-green-500" />
               <p className="text-black font-bold text-sm">Sms</p>

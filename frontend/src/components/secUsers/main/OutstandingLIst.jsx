@@ -1,12 +1,10 @@
 /* eslint-disable react/prop-types */
 import dayjs from "dayjs";
-import React from "react";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import { BarLoader } from "react-spinners";
 import { MdPeopleAlt } from "react-icons/md";
 import CallIcon from "../../common/CallIcon";
 import { FaChevronDown } from "react-icons/fa";
-import { IoAlertCircle } from "react-icons/io5";
 import { camelToNormalCase } from "../../../../utils/camelCaseToNormalCase";
 
 function OutstandingLIst({
@@ -151,6 +149,9 @@ function OutstandingLIst({
                 <div className="flex items-center gap-2">
                   <input
                     type="checkbox"
+                    onChange={() => {
+                      // Handle change here
+                    }}
                     checked={settledAmount > 0 || remainingBillAmount == 0}
                     className="w-7 h-7"
                   />

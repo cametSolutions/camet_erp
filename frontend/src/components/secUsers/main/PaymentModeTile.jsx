@@ -112,7 +112,7 @@ function PaymentModeTile({ tab }) {
 
   return (
     <div className="  py-3  mt-3 shadow-lg  ">
-      <head className="flex justify-between items-center bg-white px-3 py-3">
+      <div className="flex justify-between items-center bg-white px-3 py-3">
         <div className="flex items-center mb-2 gap-2 ">
           <p className="font-bold uppercase text-xs"> Payment Mode</p>
           <span className="text-red-500 font-bold"> *</span>
@@ -134,7 +134,7 @@ function PaymentModeTile({ tab }) {
             </button>
           ))}
         </div>
-      </head>
+      </div>
       <hr className="" />
 
       {selectedPaymentMethod?.bank && (
