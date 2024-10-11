@@ -7,10 +7,12 @@ import mongoose from "mongoose";
 import secondaryUserModel from "../models/secondaryUserModel.js";
 import {
   createOutstandingWithAdvanceAmount,
+  revertTallyUpdates,
   updateTallyData,
 } from "../helpers/receiptHelper.js";
 
 import {
+  deleteAdvancePayment,
   updatePaymentNumber,
   } from "../helpers/paymentHelper.js";
 import paymentModel from "../models/paymentModel.js";
@@ -45,7 +47,7 @@ export const createPayment = async (req, res) => {
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
-    // Check if receipt number already exists
+    // Check if payment number already exists
     const NumberExistence = await checkForNumberExistence(
       paymentModel,
       "paymentNumber",
@@ -72,7 +74,7 @@ export const createPayment = async (req, res) => {
         .json({ success: false, message: "Secondary user not found" });
     }
 
-    ////for updating voucher number of receipt
+    ////for updating voucher number of payment
     const updatedpaymentNumber = await updatePaymentNumber(
       cmp_id,
       secondaryUser,
@@ -82,8 +84,8 @@ export const createPayment = async (req, res) => {
     // Use the helper function to update TallyData
     await updateTallyData(billData, cmp_id, session);
 
-    // Create the new receipt
-    const newReceipt = new paymentModel({
+    // Create the new payment
+    const newPayment = new paymentModel({
       date,
       paymentNumber,
       serialNumber,
@@ -101,14 +103,14 @@ export const createPayment = async (req, res) => {
       Secondary_user_id,
     });
 
-    // Save the receipt in the transaction session
-    const savedReceipt = await newReceipt.save({ session });
+    // Save the payment in the transaction session
+    const savedPayment = await newPayment.save({ session });
 
-    if (advanceAmount > 0 && savedReceipt) {
+    if (advanceAmount > 0 && savedPayment) {
       const outstandingWithAdvanceAmount =
         await createOutstandingWithAdvanceAmount(
           cmp_id,
-          savedReceipt.paymentNumber,
+          savedPayment.paymentNumber,
           Primary_user_id,
           party,
           secondaryUser.mobileNumber,
@@ -123,83 +125,77 @@ export const createPayment = async (req, res) => {
     session.endSession();
 
     res.status(200).json({
-      message: "Receipt created successfully",
-      receipt: savedReceipt,
+      message: "Payment created successfully",
+      payment: savedPayment,
     });
   } catch (error) {
     // Abort the transaction in case of an error
     await session.abortTransaction();
     session.endSession();
 
-    console.error("Error creating receipt:", error);
+    console.error("Error creating payment:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
 
-// /**
-//  * @desc  cancel receipt
-//  * @route PUT/api/sUsers/cancelReceipt
-//  * @access Public
-//  */
+/**
+ * @desc  cancel payment
+ * @route PUT/api/sUsers/cancelPayment
+ * @access Public
+ */
 
-// export const cancelReceipt = async (req, res) => {
-//   const { receiptId } = req.params; // Assuming the receipt ID is passed as a URL parameter
-//   const Primary_user_id = req.owner.toString();
-//   const cmp_id = req.body.cmp_id; // Or from req.body if available
 
-//   const session = await mongoose.startSession();
-//   session.startTransaction();
+export const cancelPayment = async (req, res) => {
 
-//   try {
-//     // Find the receipt to be canceled
-//     const receipt = await paymentModel.findById(receiptId).session(session);
+  
+  const { paymentId,cmp_id } = req.params; // Assuming the payment ID is passed as a URL parameter
+  const Primary_user_id = req.owner.toString();
+  // const cmp_id = req.body.cmp_id; // Or from req.body if available
 
-//     if (!receipt) {
-//       await session.abortTransaction();
-//       session.endSession();
-//       return res
-//         .status(404)
-//         .json({ success: false, message: "Receipt not found" });
-//     }
+  const session = await mongoose.startSession();
+  session.startTransaction();
 
-//     if (receipt.isCancelled) {
-//       await session.abortTransaction();
-//       session.endSession();
-//       return res
-//         .status(400)
-//         .json({ success: false, message: "Receipt is already cancelled" });
-//     }
+  try {
+    // Find the payment to be canceled
+    const payment = await paymentModel.findById(paymentId).session(session);
 
-//     // Revert tally updates
-//     await revertTallyUpdates(receipt.billData, cmp_id, session);
+    if (!payment) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(404).json({ success: false, message: "Payment not found" });
+    }
 
-//     // Delete advance receipt, if any
-//     if (receipt.advanceAmount > 0) {
-//       await deleteAdvanceReceipt(
-//         receipt.paymentNumber,
-//         cmp_id,
-//         Primary_user_id,
-//         session
-//       );
-//     }
+    if (payment.isCancelled) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(400).json({ success: false, message: "Payment is already cancelled" });
+    }
 
-//     // Mark the receipt as cancelled
-//     receipt.isCancelled = true;
-//     await receipt.save({ session });
+    // Revert tally updates
+    await revertTallyUpdates(payment.billData, cmp_id, session);
 
-//     // Commit the transaction
-//     await session.commitTransaction();
-//     session.endSession();
+    // Delete advance payment, if any
+    if (payment.advanceAmount > 0) {
+      await deleteAdvancePayment(payment.paymentNumber, cmp_id, Primary_user_id, session);
+    }
 
-//     res.status(200).json({
-//       success: true,
-//       message: "Receipt cancelled successfully",
-//     });
-//   } catch (error) {
-//     await session.abortTransaction();
-//     session.endSession();
+    // Mark the payment as cancelled
+    payment.isCancelled = true;
+    await payment.save({ session });
 
-//     console.error("Error cancelling receipt:", error);
-//     res.status(500).json({ error: "Internal Server Error" });
-//   }
-// };
+    // Commit the transaction
+    await session.commitTransaction();
+    session.endSession();
+
+    res.status(200).json({
+      success: true,
+      message: "payment cancelled successfully",
+    });
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+
+    console.error("Error cancelling payment:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};

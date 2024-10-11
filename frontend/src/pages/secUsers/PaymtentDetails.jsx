@@ -4,19 +4,23 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import api from "../../api/api";
 import Swal from "sweetalert2";
-import { useNavigate,useLocation} from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import useFetch from "../../customHook/useFetch";
-import PaymentDetailsComponent  from "../../components/common/sidebar/ReceiptDetailsComponent";
+import PaymentDetailsComponent from "../../components/common/sidebar/ReceiptDetailsComponent";
+import { useSelector } from "react-redux";
 
 function PaymtentDetails() {
   const [data, setData] = useState("");
-  const [refresh, setRefresh] = useState(false);
 
   const { id } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
 
-  const { data: transactionDetails } = useFetch(
+  const cmp_id = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg._id
+  );
+
+  const { data: transactionDetails, refreshHook } = useFetch(
     `/api/sUsers/getPaymentDetails/${id}`
   );
 
@@ -40,7 +44,7 @@ function PaymtentDetails() {
     if (confirmed.isConfirmed) {
       try {
         const res = await api.post(
-          `/api/sUsers/cancelTransaction/${id}`,
+          `/api/sUsers/cancelPayment/${id}/${cmp_id}`,
           {},
           {
             withCredentials: true,
@@ -53,7 +57,7 @@ function PaymtentDetails() {
           text: res.data.message,
         });
 
-        setRefresh(!refresh);
+        refreshHook();
       } catch (error) {
         await Swal.fire({
           icon: "error",
@@ -64,7 +68,6 @@ function PaymtentDetails() {
     }
   };
 
-
   const backHandler = () => {
     if (location?.state?.from === "dashboard") {
       navigate("/sUsers/dashboard");
@@ -72,7 +75,6 @@ function PaymtentDetails() {
       navigate("/sUsers/transaction");
     }
   };
-
 
   return (
     <PaymentDetailsComponent

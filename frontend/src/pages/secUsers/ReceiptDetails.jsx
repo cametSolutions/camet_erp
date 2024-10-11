@@ -16,9 +16,9 @@ function ReceiptDetails() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const cmp_id = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg._id
-  );
+    const cmp_id = useSelector(
+      (state) => state.secSelectedOrganization.secSelectedOrg._id
+    );
 
   const { data: transactionDetails,refreshHook  } = useFetch(
     `/api/sUsers/getReceiptDetails/${id}`

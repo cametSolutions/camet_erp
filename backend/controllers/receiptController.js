@@ -189,7 +189,6 @@ export const createReceipt = async (req, res) => {
 
 export const cancelReceipt = async (req, res) => {
 
-  console.log("canceling receipt");
   
   const { receiptId,cmp_id } = req.params; // Assuming the receipt ID is passed as a URL parameter
   const Primary_user_id = req.owner.toString();

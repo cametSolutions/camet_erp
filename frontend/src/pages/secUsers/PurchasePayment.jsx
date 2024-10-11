@@ -212,7 +212,7 @@ function PurchasePayment() {
       console.log(res.data);
       toast.success(res.data.message);
 
-      // navigate(`/sUsers/receipt/details/${res?.data?.receipt._id}`);
+      navigate(`/sUsers/payment/details/${res?.data?.payment._id}`);
       dispatch(removeAll());
     } catch (error) {
       toast.error(error.response?.data?.message || "An error occurred.");

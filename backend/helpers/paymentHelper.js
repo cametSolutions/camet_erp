@@ -49,6 +49,42 @@ export const updatePaymentNumber = async (orgId, secondaryUser, session) => {
 };
 
 
+/**
+ * Deletes the advance receipt entry from TallyData if it exists
+ * @param {String} paymentNumber - receipt number for the advance receipt
+ * @param {String} cmp_id - id of the organization
+ * @param {String} Primary_user_id - id of the primary user
+ * @param {Object} session - mongoose session
+ */
+
+
+export const deleteAdvancePayment = async (paymentNumber, cmp_id, Primary_user_id, session) => {
+
+  // console.log(paymentNumber, cmp_id, Primary_user_id, session);
+  
+  try {
+    // Find and delete the advance receipt entry in TallyData
+    const deletedAdvancePayment = await TallyData.findOneAndDelete({
+      cmp_id,
+      bill_no: paymentNumber,
+      Primary_user_id,
+      source: "advancePayment"
+    }).session(session);
+
+    if (!deletedAdvancePayment) {
+      console.log(`No advance payment found for payment number: ${paymentNumber}`);
+      return;
+    }
+
+    console.log(`Advance receipt deleted for receipt number: ${paymentNumber}`);
+  } catch (error) {
+    console.error("Error in deleteAdvanceReceipt:", error);
+    throw error;
+  }
+};
+
+
+
 
 
 
