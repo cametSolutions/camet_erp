@@ -246,6 +246,7 @@ export const salesSecondarySlice = createSlice({
 
       if (indexToUpdate !== -1) {
         const item = state.items[indexToUpdate];
+        console.log("Item:", JSON.parse(JSON.stringify(item)));
 
         // item.isTaxInclusive = isTaxInclusive;
 
@@ -262,13 +263,13 @@ export const salesSecondarySlice = createSlice({
             }
           }
         });
+
+
         item.total = item.GodownList.reduce((acc, curr) => {
-          if (curr.added) {
-            return acc + curr.individualTotal;
-          } else {
-            return acc;
-          }
-        },0);
+          const individualTotal = parseFloat(curr?.individualTotal) || 0;
+          return acc + individualTotal;
+        }, 0);
+
       }
     },
   },

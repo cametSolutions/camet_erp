@@ -284,6 +284,9 @@ function SalesSecondary() {
       return (acc = acc + (parseFloat(curr.total) || 0));
     }, 0);
     setSubTotal(subTotal);
+
+    console.log ("subTotal", subTotal);
+   
   }, [items]);
 
   const additionalChargesTotal = useMemo(() => {
@@ -298,7 +301,7 @@ function SalesSecondary() {
     }, 0);
   }, [rows]);
 
-  console.log(additionalChargesTotal);
+  // console.log("additionalChargesTotal", additionalChargesTotal);
   const totalAmountNotRounded =
     parseFloat(subTotal) + additionalChargesTotal || parseFloat(subTotal);
   const totalAmount = Math.round(totalAmountNotRounded);

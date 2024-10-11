@@ -20,7 +20,6 @@ function SearchPartySalesSecondary() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  console.log(parties);
 
   const cpm_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
@@ -58,7 +57,6 @@ function SearchPartySalesSecondary() {
   
   };
 
-  console.log(parties);
   useEffect(() => {
     if (search === "") {
       setFilteredParties(parties);
