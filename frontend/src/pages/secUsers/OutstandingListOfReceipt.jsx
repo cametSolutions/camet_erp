@@ -8,9 +8,14 @@ import {
   addOutstandings,
   setTotalBillAmount,
 } from "../../../slices/receipt";
-
 import useFetch from "../../customHook/useFetch";
 import OutstandingLIst from "../../components/secUsers/main/OutstandingLIst";
+
+///format the amount
+function formatAmount(amount) {
+  // Use toLocaleString to add commas to the number
+  return amount.toLocaleString("en-IN", { maximumFractionDigits: 2 });
+}
 
 function OutstandingListOfReceipt() {
   ///company Id
@@ -27,35 +32,22 @@ function OutstandingListOfReceipt() {
   const [data, setData] = useState(outstandings);
   const [total, setTotal] = useState(totalBillAmount);
   const [advanceAmount, setAdvanceAmount] = useState(0);
-  // const loading=true;
-
   const [enteredAmount, setEnteredAmount] = useState(() => {
     const storedAmount = enteredAmountRedux || 0;
-
     // Convert to a valid number or default to 0
     const parsedAmount = parseFloat(storedAmount);
     const validAmount = !isNaN(parsedAmount) ? parsedAmount : 0;
-
     return validAmount;
   });
 
-  function formatAmount(amount) {
-    // Use toLocaleString to add commas to the number
-    return amount.toLocaleString("en-IN", { maximumFractionDigits: 2 });
-  }
-
   const dispatch = useDispatch();
   const navigate = useNavigate();
-
   const { party_id } = useParams();
 
-  const {
-    data: receiptData,
-    loading,
-    error,
-    refreshHook,
-  } = useFetch(
-    `/api/sUsers/fetchOutstandingDetails/${party_id}/${cmp_id}?voucher=receipt`
+
+  ////find the outstanding with latest remaining amount
+  const { data: receiptData, loading } = useFetch(outstandings.length===0 &&
+    `/api/sUsers/fetchOutstandingDetails/${party_id}/${cmp_id}?voucher=receipt`,
   );
 
   useEffect(() => {
@@ -64,6 +56,10 @@ function OutstandingListOfReceipt() {
       setTotal(receiptData.totalOutstandingAmount);
       dispatch(addOutstandings(receiptData.outstandings));
       dispatch(setTotalBillAmount(receiptData.totalOutstandingAmount));
+    }else{
+      ////use from redux
+      setData(outstandings);
+      setTotal(totalBillAmount);
     }
   }, [receiptData]);
 
@@ -76,8 +72,6 @@ function OutstandingListOfReceipt() {
     }
     setEnteredAmount(amount);
   };
-
-  console.log("data", data);
 
   let remainingAmount = enteredAmount;
 

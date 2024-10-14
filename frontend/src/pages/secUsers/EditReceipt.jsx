@@ -62,7 +62,8 @@ function EditReceipt() {
     `/api/sUsers/getReceiptDetails/${id}`
   );
 
-  console.log("receiptDetails", receiptDetails);
+  // console.log("receiptDetails", receiptDetails);
+  
 
   useEffect(() => {
     if (receiptDetails) {
