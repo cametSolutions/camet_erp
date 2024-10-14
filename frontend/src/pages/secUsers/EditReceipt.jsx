@@ -12,7 +12,7 @@ import {
   removeParty,
   addParty,
   addSettlementData,
-  // addOutstandings,
+  addOutstandings,
   setTotalBillAmount,
   addPaymentDetails,
   addPaymentMethod,
@@ -20,6 +20,7 @@ import {
   addNote,
   addChequeNumber,
   addChequeDate,
+  addReceiptId,
   // addIsNoteOpen,
 } from "../../../slices/receipt";
 import AddPartyTile from "../../components/secUsers/main/AddPartyTile";
@@ -42,15 +43,17 @@ function EditReceipt() {
   const {
     receiptNumber: receiptNumberRedux,
     date: dateRedux,
-    party,
-    billData,
-    totalBillAmount,
-    enteredAmount,
-    advanceAmount,
-    remainingAmount,
-    paymentMethod,
-    paymentDetails,
-    note,
+    party: partyRedux,
+    billData: billDataRedux,
+    totalBillAmount: totalBillAmountRedux,
+    paymentMethod: paymentMethodRedux,
+    paymentDetails: paymentDetailsRedux,
+    note: noteRedux,
+    _id: _idRedux,
+    outstandings: outstandingsRedux,
+    // enteredAmount : enteredAmountRedux,
+    // advanceAmount : advanceAmountRedux,
+    // remainingAmount : remainingAmountRedux,
   } = useSelector((state) => state.receipt);
 
   const [receiptNumber, setReceiptNumber] = useState("");
@@ -59,11 +62,10 @@ function EditReceipt() {
   /////fetch receipt details
 
   const { data: receiptDetails } = useFetch(
-    `/api/sUsers/getReceiptDetails/${id}`
+    outstandingsRedux.length == 0 && `/api/sUsers/getReceiptDetails/${id}`
   );
 
-  // console.log("receiptDetails", receiptDetails);
-  
+  console.log("paymentDetailsRedux", paymentDetailsRedux);
 
   useEffect(() => {
     if (receiptDetails) {
@@ -80,47 +82,60 @@ function EditReceipt() {
           paymentMethod,
           paymentDetails,
           note,
+          outstandings,
         } = receiptDetails.receipt;
 
+        if (id && !_idRedux) {
+          dispatch(addReceiptId(id));
+        }
 
-        if (receiptNumber) {
+        if (receiptNumber && !receiptNumberRedux) {
           setReceiptNumber(receiptNumber);
-
           dispatch(addReceiptNumber(receiptNumber));
         }
 
         if (createdAt) {
-          setSelectedDate(createdAt);
-          dispatch(changeDate(createdAt));
+          setSelectedDate(new Date(createdAt));
+          dispatch(changeDate(new Date(createdAt).toISOString()));
+        } else {
+          console.log("date not changed");
+
+          setSelectedDate(dateRedux);
         }
-        if (createdAt) {
-          dispatch(changeDate(createdAt));
-        }
-        if (party) {
+
+        if (party && Object.keys(partyRedux) == 0) {
           dispatch(addParty(party));
         }
-        if (billData) {
-          dispatch(addSettlementData({ billData, totalBillAmount, enteredAmount }));
+        if (billData && billDataRedux.length == 0) {
+          dispatch(
+            addSettlementData({ billData, totalBillAmount, enteredAmount })
+          );
         }
-        if (totalBillAmount) {
+        if (totalBillAmount && !totalBillAmountRedux) {
           dispatch(setTotalBillAmount(totalBillAmount));
         }
         if (paymentDetails) {
           dispatch(addPaymentDetails(paymentDetails));
         }
-        if (paymentMethod) {
+        if (paymentMethod && paymentMethodRedux === "") {
           dispatch(addPaymentMethod(paymentMethod));
         }
-        if (note) {
+        if (note && noteRedux === "") {
           dispatch(addNote(note));
         }
-        if (paymentDetails?.chequeNumber) {
+        if (
+          paymentDetails?.chequeNumber &&
+          paymentDetailsRedux.chequeNumber === ""
+        ) {
           dispatch(addChequeNumber(paymentDetails.chequeNumber));
         }
         if (paymentDetails?.chequeDate) {
           dispatch(addChequeDate(paymentDetails.chequeDate));
         }
 
+        if (outstandings && outstandingsRedux.length == 0) {
+          dispatch(addOutstandings(outstandings));
+        }
       }
     }
   }, [receiptDetails]);
@@ -304,7 +319,7 @@ function EditReceipt() {
 
       <HeaderTile
         title={"Receipt"}
-        number={receiptNumber}
+        number={receiptNumberRedux}
         selectedDate={selectedDate}
         setSelectedDate={setSelectedDate}
         dispatch={dispatch}
@@ -315,14 +330,14 @@ function EditReceipt() {
       />
 
       <AddPartyTile
-        party={party}
+        party={partyRedux}
         dispatch={dispatch}
         removeParty={removeParty}
         link="/sUsers/searchPartyReceipt"
         linkBillTo=""
       />
 
-      <AddAmountTile party={party} tab="receipt" />
+      <AddAmountTile party={partyRedux} tab="receipt" process="edit" />
       <PaymentModeTile tab="receipt" />
     </div>
   );

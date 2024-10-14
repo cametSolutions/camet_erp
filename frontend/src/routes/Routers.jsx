@@ -170,6 +170,7 @@ import PaymentPrintOut from '../pages/secUsers/PaymentPrintOut'
 import PaymtentDetailsPrimary from '../pages/primaryUsers/PaymtentDetailsPrimary'
 import ReceiptDetailsPrimary from '../pages/primaryUsers/ReceiptDetailsPrimary'
 import EditReceipt from '../pages/secUsers/EditReceipt'
+import OutstandingListOfReceiptForEdit from '../pages/secUsers/OutstandingListOfReceiptForEdit'
 
 const Routers = () => {
   return (
@@ -328,6 +329,7 @@ const Routers = () => {
         <Route path='/sUsers/receipt/details/:id' element={<ProtectedSecRoute><ReceiptDetailsOfSale/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/receiptPrintOut' element={<ProtectedSecRoute><ReceiptPrintOut/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/editReceipt/:id' element={<ProtectedSecRoute><EditReceipt/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/receipt/edit/addAmount/:party_id' element={<ProtectedSecRoute><OutstandingListOfReceiptForEdit/></ProtectedSecRoute>}></Route>
 
 
         {/* payment */}

@@ -17,7 +17,7 @@ function formatAmount(amount) {
   return amount.toLocaleString("en-IN", { maximumFractionDigits: 2 });
 }
 
-function OutstandingListOfReceipt() {
+function OutstandingListOfReceiptForEdit() {
   ///company Id
   const cmp_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
@@ -27,7 +27,12 @@ function OutstandingListOfReceipt() {
     enteredAmount: enteredAmountRedux,
     outstandings,
     totalBillAmount,
+    billData,
+    _id,
   } = useSelector((state) => state.receipt);
+
+  // console.log("billData", billData);
+  // console.log("outstandings", outstandings);
 
   const [data, setData] = useState(outstandings);
   const [total, setTotal] = useState(totalBillAmount);
@@ -44,32 +49,67 @@ function OutstandingListOfReceipt() {
   const navigate = useNavigate();
   const { party_id } = useParams();
 
-
   ////find the outstanding with latest remaining amount
-  const { data: receiptData, loading } = useFetch(outstandings.length===0 &&
-    `/api/sUsers/fetchOutstandingDetails/${party_id}/${cmp_id}?voucher=receipt`,
+  const { data: receiptData, loading } = useFetch(
+
+      `/api/sUsers/fetchOutstandingDetails/${party_id}/${cmp_id}?voucher=receipt`
   );
+
+
+
+  const modifyOutstandings = (outstandings, billData, receiptData) => {
+
+    
+
+    console.log("outstandings", outstandings);
+    console.log("receiptData", receiptData);
+    
+    // Create a map of bill numbers to settled amounts from billData
+    const billSettlements = new Map(billData.map(bill => [bill.billNo, bill.settledAmount]));
+
+    console.log("billSettlements", billSettlements);
+    
+
+    // Create a map of bill numbers to pending amounts from receiptData
+    const receiptPendingAmounts = new Map(receiptData.outstandings.map(bill => [bill.bill_no, bill.bill_pending_amt]));
+
+    console.log("receiptPendingAmounts", receiptPendingAmounts);
+
+    // Modify the outstandings array
+    return receiptData?.outstandings.map(outstanding => {
+      const billNo = outstanding.bill_no;
+      const settledAmount = billSettlements.get(billNo) || 0;
+      const receiptPendingAmount = receiptPendingAmounts.get(billNo) || 0;
+
+      return {
+        ...outstanding,
+        bill_pending_amt: (receiptPendingAmount ) + settledAmount
+      };
+    });
+  };
+
+
+
+
+
+
+
+
+  /// to get out standing with are in the time of edit with new (latest) pending amount
+  //we need to alter remaining amount as bill_pending_amt=current bill_pending_amt + settledAmount
 
   useEffect(() => {
     if (receiptData) {
-      setData(receiptData.outstandings);
-      setTotal(receiptData.totalOutstandingAmount);
-      dispatch(addOutstandings(receiptData.outstandings));
-      dispatch(setTotalBillAmount(receiptData.totalOutstandingAmount));
-    }else{
-      ////use from redux
-      setData(outstandings);
+      const modifiedOutstandings = modifyOutstandings(outstandings, billData, receiptData);
+      setData(modifiedOutstandings);
+
+      const totalBillAmount = modifiedOutstandings.reduce(
+        (acc, cur) => acc + parseFloat(cur.bill_pending_amt),
+        0
+      );
       setTotal(totalBillAmount);
     }
   }, [receiptData]);
-
-
-
-
-
-
-
-  
 
   const handleAmountChange = (event) => {
     const amount = parseFloat(event.target.value) || 0;
@@ -123,8 +163,12 @@ function OutstandingListOfReceipt() {
       billData: results,
     };
 
+
+    console.log("settlementData", settlementData);
+    
+
     dispatch(addSettlementData(settlementData));
-    navigate("/sUsers/receipt");
+    navigate(`/sUsers/editReceipt/${_id}`);
   };
 
   return (
@@ -146,4 +190,4 @@ function OutstandingListOfReceipt() {
   );
 }
 
-export default OutstandingListOfReceipt;
+export default OutstandingListOfReceiptForEdit;

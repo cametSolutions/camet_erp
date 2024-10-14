@@ -6,7 +6,7 @@ import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 
-function AddAmountTile({ tab, party }) {
+function AddAmountTile({ tab, party,process="add" }) {
   const navigate = useNavigate();
 
   const selectedRedux=tab==="receipt"?"receipt":"payment"
@@ -21,8 +21,10 @@ function AddAmountTile({ tab, party }) {
     if (Object.keys(party).length === 0) {
       toast.error("Select a party first");
       return;
-    } else {
+    } else if(process=="add") {
       navigate(`/sUsers/${tab}/addAmount/${party.party_master_id}`);
+    }else if(process=="edit"){
+      navigate(`/sUsers/${tab}/edit/addAmount/${party.party_master_id}`);
     }
   };
 

@@ -1,7 +1,7 @@
 /* eslint-disable react/prop-types */
 /* eslint-disable react/jsx-key */
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { IoAddOutline } from "react-icons/io5";
 import { MdKeyboardArrowRight } from "react-icons/md";
 import { Link } from "react-router-dom";
@@ -40,6 +40,7 @@ function PaymentModeTile({ tab }) {
     note: noteFromRedux,
     isNoteOpen: isNoteOpenFromRedux,
   } = useSelector((state) => state[selectedRedux]);
+  
 
   const chequeDateFromRedux = paymentDetails?.chequeDate || "";
   const chequeNumberFromRedux = paymentDetails?.chequeNumber || "";
@@ -57,6 +58,29 @@ function PaymentModeTile({ tab }) {
   const [isNoteOpen, setIsNoteOpen] = useState(isNoteOpenFromRedux);
   const [note, setNote] = useState(noteFromRedux);
 
+/// to ensure data is visible in the ui
+  useEffect(() => {
+    if (selectedPaymentMethodFromRedux) {
+      const matchedMethod = paymentMethods.find(
+        (method) => method.name === selectedPaymentMethodFromRedux
+      );
+      setSelectedPaymentMethod(matchedMethod);
+    }
+
+    if (paymentDetails?.chequeDate) {
+      setChequeDate(new Date(paymentDetails.chequeDate));
+    }
+
+    if (paymentDetails?.chequeNumber) {
+      setChequeNumber(paymentDetails.chequeNumber);
+    }
+
+    setIsNoteOpen(isNoteOpenFromRedux);
+    setNote(noteFromRedux);
+
+  }, [selectedPaymentMethodFromRedux, paymentDetails, noteFromRedux, isNoteOpenFromRedux]);
+
+/// debounced functions
   const debouncedDispatchChequeNumber = useCallback(
     debounce((number) => {
       console.log("kaSDALK");
