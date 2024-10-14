@@ -37,6 +37,7 @@ function Receipt() {
     paymentMethod,
     paymentDetails,
     note,
+    outstandings
   } = useSelector((state) => state.receipt);
 
   const [receiptNumber, setReceiptNumber] = useState("");
@@ -115,6 +116,7 @@ function Receipt() {
       paymentMethod,
       paymentDetails,
       note,
+      outstandings
     };
 
     if (formData?.paymentMethod === "Online") {
@@ -136,7 +138,6 @@ function Receipt() {
       };
     }
 
-    // console.log(formData);
 
     // Validation
     if (!formData.receiptNumber) {
@@ -191,7 +192,10 @@ function Receipt() {
     }
 
 
-    // If validation passes, proceed with the form submission
+    console.log("formDataddd", formData);
+
+
+    // // If validation passes, proceed with the form submission
     try {
       const res = await api.post(
         `/api/sUsers/createReceipt`,

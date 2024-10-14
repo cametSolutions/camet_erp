@@ -37,7 +37,7 @@ export const fetchOutstandingDetails = async (req, res) => {
       cmp_id: cmp_id,
       bill_pending_amt: { $gt: 0 },
       ...sourceMatch,
-    }).sort({ bill_date: 1 });
+    }).sort({ bill_date: 1 }).select("bill_no bill_date bill_pending_amt source");
     if (outstandings) {
       return res.status(200).json({
         totalOutstandingAmount: outstandings.reduce(
@@ -80,7 +80,10 @@ export const createReceipt = async (req, res) => {
     paymentMethod,
     paymentDetails,
     note,
+    outstandings
   } = req.body;
+
+  
 
   const Primary_user_id = req.owner.toString();
   const Secondary_user_id = req.sUserId;
@@ -142,7 +145,11 @@ export const createReceipt = async (req, res) => {
       note,
       Primary_user_id,
       Secondary_user_id,
+      outstandings,
     });
+
+
+    
 
     // Save the receipt in the transaction session
     const savedReceipt = await newReceipt.save({ session });

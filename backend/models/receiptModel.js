@@ -16,6 +16,7 @@ const receiptSchema = new mongoose.Schema(
     paymentMethod: { type: String, required: true },
     paymentDetails: { type: Object, required: true },
     note: { type: String },
+    outstandings: { type: Array, required: true },
     isCancelled: { type: Boolean, default: false },
     createdAt: {
       type: Date,

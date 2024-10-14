@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { useParams } from "react-router-dom";
@@ -72,15 +71,13 @@ function OutstandingListOfReceipt() {
     const amount = parseFloat(event.target.value) || 0;
     if (amount > total) {
       setAdvanceAmount(amount - total);
-    }else{
+    } else {
       setAdvanceAmount(0);
     }
     setEnteredAmount(amount);
-   
   };
 
-
-
+  console.log("data", data);
 
   let remainingAmount = enteredAmount;
 
@@ -141,8 +138,7 @@ function OutstandingListOfReceipt() {
         remainingAmount,
         formatAmount,
         advanceAmount,
-        tab:"receipt"
-
+        tab: "receipt",
       }}
     />
   );
