@@ -51,12 +51,12 @@ function EditReceipt() {
     note: noteRedux,
     _id: _idRedux,
     outstandings: outstandingsRedux,
-    // enteredAmount : enteredAmountRedux,
-    // advanceAmount : advanceAmountRedux,
-    // remainingAmount : remainingAmountRedux,
+    modifiedOutstandings: modifiedOutstandingsRedux,
+    enteredAmount : enteredAmountRedux,
+    advanceAmount : advanceAmountRedux,
+    remainingAmount : remainingAmountRedux,
   } = useSelector((state) => state.receipt);
 
-  const [receiptNumber, setReceiptNumber] = useState("");
   const [selectedDate, setSelectedDate] = useState(dateRedux);
 
   /////fetch receipt details
@@ -77,8 +77,8 @@ function EditReceipt() {
           billData,
           totalBillAmount,
           enteredAmount,
-          advanceAmount,
-          remainingAmount,
+          // advanceAmount,
+          // remainingAmount,
           paymentMethod,
           paymentDetails,
           note,
@@ -90,7 +90,6 @@ function EditReceipt() {
         }
 
         if (receiptNumber && !receiptNumberRedux) {
-          setReceiptNumber(receiptNumber);
           dispatch(addReceiptNumber(receiptNumber));
         }
 
@@ -140,79 +139,24 @@ function EditReceipt() {
     }
   }, [receiptDetails]);
 
-  // ////////////for fetching configuration number
-  // useEffect(() => {
-  //   if (receiptNumberRedux === "") {
-  //     const fetchConfigurationNumber = async () => {
-  //       try {
-  //         const res = await api.get(
-  //           `/api/sUsers/fetchConfigurationNumber/${cmp_id}/receipt`,
-
-  //           {
-  //             withCredentials: true,
-  //           }
-  //         );
-
-  //         // console.log(res.data);
-  //         if (res.data.message === "default") {
-  //           const { configurationNumber } = res.data;
-  //           setReceiptNumber(configurationNumber);
-  //           return;
-  //         }
-
-  //         const { configDetails, configurationNumber } = res.data;
-  //         // console.log(configDetails);
-  //         // console.log(configurationNumber);
-
-  //         if (configDetails) {
-  //           const { widthOfNumericalPart, prefixDetails, suffixDetails } =
-  //             configDetails;
-  //           const newOrderNumber = configurationNumber.toString();
-  //           // console.log(newOrderNumber);
-  //           // console.log(widthOfNumericalPart);
-  //           // console.log(prefixDetails);
-  //           // console.log(suffixDetails);
-
-  //           const padedNumber = newOrderNumber.padStart(
-  //             widthOfNumericalPart,
-  //             0
-  //           );
-  //           // console.log(padedNumber);
-  //           const finalOrderNumber = [prefixDetails, padedNumber, suffixDetails]
-  //             .filter(Boolean)
-  //             .join("-");
-  //           // console.log(finalOrderNumber);
-  //           setReceiptNumber(finalOrderNumber);
-  //           dispatch(addReceiptNumber(finalOrderNumber));
-  //         } else {
-  //           setReceiptNumber(receiptNumber);
-  //           dispatch(addReceiptNumber(receiptNumber));
-  //         }
-  //       } catch (error) {
-  //         console.log(error);
-  //       }
-  //     };
-  //     fetchConfigurationNumber();
-  //   } else {
-  //     setReceiptNumber(receiptNumberRedux);
-  //   }
-  // }, []);
+  
 
   const submitHandler = async () => {
     // Form data
     const formData = {
       cmp_id,
-      receiptNumber,
-      date: selectedDate,
-      party,
-      billData,
-      totalBillAmount,
-      enteredAmount,
-      advanceAmount,
-      remainingAmount,
-      paymentMethod,
-      paymentDetails,
-      note,
+      receiptNumber: receiptNumberRedux,
+      date: dateRedux,
+      party: partyRedux,
+      billData: billDataRedux,
+      totalBillAmount: totalBillAmountRedux,
+      enteredAmount : enteredAmountRedux,
+      advanceAmount : advanceAmountRedux,
+      remainingAmount : remainingAmountRedux,
+      paymentMethod: paymentMethodRedux,
+      paymentDetails: paymentDetailsRedux,
+      outstandings: modifiedOutstandingsRedux,
+      note: noteRedux,
     };
 
     if (formData?.paymentMethod === "Online") {
@@ -287,9 +231,12 @@ function EditReceipt() {
       }
     }
 
+    // console.log("formData", formData);
+    
+
     // If validation passes, proceed with the form submission
     try {
-      const res = await api.post(`/api/sUsers/createReceipt`, formData, {
+      const res = await api.put(`/api/sUsers/editReceipt/${id}`, formData, {
         headers: {
           "Content-Type": "application/json",
         },

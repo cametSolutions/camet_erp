@@ -1,32 +1,14 @@
 import { IoIosArrowRoundBack } from "react-icons/io";
 import { Link } from "react-router-dom";
 import VoucherSection from "../../components/secUsers/vouchers/VoucherSection";
-
-import { removeAll } from "../../../slices/invoiceSecondary";
-import { removeAllSales } from "../../../slices/salesSecondary";
-import { removeAll as removeAllStock } from "../../../slices/stockTransferSecondary";
-import { removeAll as removeAllPurchase } from "../../../slices/purchase";
-import { removeAll as removeAllCredit } from "../../../slices/creditNote";
-import { removeAll as removeAllPayment } from "../../../slices/payment";
-import { removeAll as removeAllReceipt } from "../../../slices/receipt";
-import { useEffect } from "react";
-import { useDispatch } from "react-redux";
+import RemoveReduxData from "../../components/secUsers/removeReduxData";
 
 function SelectVouchers() {
-  const dispatch = useDispatch();
 
-  useEffect(() => {
-    dispatch(removeAll());
-    dispatch(removeAllSales());
-    dispatch(removeAllStock());
-    dispatch(removeAllPurchase());
-    dispatch(removeAllCredit());
-    dispatch(removeAllPayment());
-    dispatch(removeAllReceipt());
-  }, []);
-
+  
   return (
     <div>
+      <RemoveReduxData/>
       <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex  items-center gap-2 sticky top-0 z-50  ">
         <Link to="/sUsers/dashboard">
           <IoIosArrowRoundBack className="text-3xl text-white cursor-pointer " />

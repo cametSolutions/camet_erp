@@ -13,6 +13,7 @@ import {
   revertTallyUpdates,
   deleteAdvanceReceipt
 } from "../helpers/receiptHelper.js";
+import { login } from "./secondaryUserController.js";
 
 /**
  * @desc  get outstanding data from tally
@@ -37,14 +38,13 @@ export const fetchOutstandingDetails = async (req, res) => {
       cmp_id: cmp_id,
       bill_pending_amt: { $gt: 0 },
       ...sourceMatch,
-    }).sort({ bill_date: 1 }).select("bill_no bill_date bill_pending_amt source");
+    }).sort({ bill_date: 1 }).select("bill_no bill_date bill_pending_amt source bill_date");
     if (outstandings) {
       return res.status(200).json({
         totalOutstandingAmount: outstandings.reduce(
           (total, out) => total + out.bill_pending_amt,
           0
         ),
-
         outstandings: outstandings,
         message: "outstandings fetched",
       });
@@ -130,7 +130,7 @@ export const createReceipt = async (req, res) => {
 
     // Create the new receipt
     const newReceipt = new ReceiptModel({
-      date,
+      createdAt: new Date(date),
       receiptNumber,
       serialNumber,
       cmp_id,
@@ -248,4 +248,124 @@ export const cancelReceipt = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
+
+export const editReceipt = async (req, res) => {
+  const receiptId=req.params.receiptId
+  const Primary_user_id = req.owner.toString();
+  const Secondary_user_id = req.sUserId;
+
+  const {
+    date,
+    receiptNumber,
+    cmp_id,
+    party,
+    billData,
+    totalBillAmount,
+    enteredAmount,
+    advanceAmount,
+    remainingAmount,
+    paymentMethod,
+    paymentDetails,
+    note,
+    outstandings
+  } = req.body;
+
+  const session=await mongoose.startSession();
+  session.startTransaction();
+  try {
+
+    const receipt=await ReceiptModel.findById(receiptId).session(session);
+
+    if (!receipt) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(404).json({ success: false, message: "Receipt not found" });
+    }
+
+    if (receipt.isCancelled) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(400).json({ success: false, message: "Receipt is already cancelled" });
+    }
+
+
+    const secondaryUser = await secondaryUserModel
+    .findById(Secondary_user_id)
+    .session(session);
+
+  if (!secondaryUser) {
+    await session.abortTransaction();
+    session.endSession();
+    return res
+      .status(404)
+      .json({ success: false, message: "Secondary user not found" });
+  }
+
+
+    // Revert tally updates
+    await revertTallyUpdates(receipt.billData, cmp_id, session);
+
+     // Delete advance receipt, if any
+     if (receipt.advanceAmount > 0) {
+      await deleteAdvanceReceipt(receipt.receiptNumber, cmp_id, Primary_user_id, session);
+    }
+
+      // Use the helper function to update TallyData
+      await updateTallyData(billData, cmp_id, session);
+
+      ///update the existing receipt
+      receipt.date = date;
+      receipt.receiptNumber = receiptNumber;
+      receipt.cmp_id = cmp_id;
+      receipt.party = party;
+      receipt.billData = billData;
+      receipt.totalBillAmount = totalBillAmount;
+      receipt.enteredAmount = enteredAmount;
+      receipt.advanceAmount = advanceAmount;
+      receipt.remainingAmount = remainingAmount;
+      receipt.paymentMethod = paymentMethod;
+      receipt.paymentDetails = paymentDetails;
+      receipt.note = note;
+      receipt.outstandings = outstandings;
+
+      const savedReceipt=await receipt.save({ session, new: true });
+
+
+      if (advanceAmount > 0) {
+        const outstandingWithAdvanceAmount =
+          await createOutstandingWithAdvanceAmount(
+            cmp_id,
+            savedReceipt.receiptNumber,
+            Primary_user_id,
+            party,
+            secondaryUser.mobileNumber,
+            advanceAmount,
+            session,
+            "advanceReceipt"
+          );
+      }
+  
+
+
+      // console.log(receipt);
+      
+      await session.commitTransaction();
+      session.endSession();
+
+      res.status(200).json({
+        success: true,
+        message: "Receipt updated successfully",
+        receipt: receipt
+      });
+    
+    
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    console.error("Error editing receipt:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+    
+  }
+}
 

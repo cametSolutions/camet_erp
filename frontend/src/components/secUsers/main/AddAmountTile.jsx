@@ -58,6 +58,7 @@ function AddAmountTile({ tab, party,process="add" }) {
             <div class="relative flex  items-center">
               <span class="absolute left-3 text-gray-600 text-sm">₹</span>
               <input
+              readOnly
                 type="text"
                 value={enteredAmount}
                 placeholder="12,500"

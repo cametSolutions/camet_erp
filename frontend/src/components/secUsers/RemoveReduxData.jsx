@@ -1,0 +1,32 @@
+import { removeAll } from "../../../slices/invoiceSecondary";
+import { removeAllSales } from "../../../slices/salesSecondary";
+import { removeAll as removeAllStock } from "../../../slices/stockTransferSecondary";
+import { removeAll as removeAllPurchase } from "../../../slices/purchase";
+import { removeAll as removeAllCredit } from "../../../slices/creditNote";
+import { removeAll as removeAllPayment } from "../../../slices/payment";
+import { removeAll as removeAllReceipt } from "../../../slices/receipt";
+import { useDispatch } from "react-redux";
+import { useEffect } from "react";
+
+function RemoveReduxData() {
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    // Dispatch all the remove actions when the component mounts
+    dispatch(removeAll());
+    dispatch(removeAllSales());
+    dispatch(removeAllStock());
+    dispatch(removeAllPurchase());
+    dispatch(removeAllCredit());
+    dispatch(removeAllPayment());
+    dispatch(removeAllReceipt());
+  }, [dispatch]); // Adding dispatch to the dependency array
+
+  return (
+    <div>
+      
+    </div>
+  );
+}
+
+export default RemoveReduxData;

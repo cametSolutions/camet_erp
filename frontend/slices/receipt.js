@@ -1,10 +1,11 @@
 import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
-  _id:"",
+  _id: "",
   receiptNumber: "",
   date: new Date().toISOString(),
   outstandings: [],
+  modifiedOutstandings: [], ////used in the case of edit
   billData: [],
   party: {},
   totalBillAmount: 0,
@@ -33,7 +34,6 @@ export const receiptSlice = createSlice({
     },
     changeDate: (state, action) => {
       state.date = new Date(action.payload).toISOString();
-    
     },
     removeAll: (state) => {
       Object.assign(state, initialState);
@@ -106,6 +106,9 @@ export const receiptSlice = createSlice({
     addReceiptId: (state, action) => {
       state._id = action.payload;
     },
+    setModifiedOutstandings: (state, action) => {
+      state.modifiedOutstandings = action.payload;
+    },
   },
 });
 
@@ -126,7 +129,8 @@ export const {
   addChequeNumber,
   addChequeDate,
   addIsNoteOpen,
-  addReceiptId
+  addReceiptId,
+  setModifiedOutstandings 
 } = receiptSlice.actions;
 
 export default receiptSlice.reducer;

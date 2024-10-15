@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useSidebar } from "../../layout/Layout";
 import DashBoard from "../../components/common/DashBoard";
+import RemoveReduxData from "../../components/secUsers/removeReduxData";
 
 function Dashboard() {
   const [data, setData] = useState([]);
@@ -25,9 +26,12 @@ function Dashboard() {
     if (org) {
       const fetchTransactions = async () => {
         try {
-          const res = await api.get(`/api/sUsers/transactions/${org._id}?todayOnly=true`, {
-            withCredentials: true,
-          });
+          const res = await api.get(
+            `/api/sUsers/transactions/${org._id}?todayOnly=true`,
+            {
+              withCredentials: true,
+            }
+          );
 
           setData(res.data.data.combined);
 
@@ -68,15 +72,18 @@ function Dashboard() {
   };
 
   return (
-    <DashBoard
-      handleToggleSidebar={handleToggleSidebar}
-      filteredData={filteredData}
-      org={org}
-      receiptTotal={receiptTotal}
-      handleLinkClick={handleLinkClick}
-      type="secondary"
-      from="dashboard"
-    />
+    <div>
+      <RemoveReduxData />
+      <DashBoard
+        handleToggleSidebar={handleToggleSidebar}
+        filteredData={filteredData}
+        org={org}
+        receiptTotal={receiptTotal}
+        handleLinkClick={handleLinkClick}
+        type="secondary"
+        from="dashboard"
+      />
+    </div>
   );
 }
 

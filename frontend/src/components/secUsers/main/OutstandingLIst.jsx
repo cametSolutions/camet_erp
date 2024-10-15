@@ -32,7 +32,8 @@ function OutstandingLIst({
             <div className="flex items-center gap-2">
               <IoIosArrowRoundBack
                 onClick={() => {
-                  navigate(`/sUsers/${tab==="receipt"?"receipt":"paymentPurchase" }`);
+                  navigate(-1);
+                  // navigate(`/sUsers/${tab==="receipt"?"receipt":"paymentPurchase" }`);
                 }}
                 className="text-3xl text-white cursor-pointer"
               />

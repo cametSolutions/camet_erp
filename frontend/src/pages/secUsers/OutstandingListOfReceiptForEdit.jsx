@@ -5,8 +5,10 @@ import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import {
   addSettlementData,
-  addOutstandings,
+  setModifiedOutstandings,
   setTotalBillAmount,
+  // addOutstandings,
+  // setTotalBillAmount,
 } from "../../../slices/receipt";
 import useFetch from "../../customHook/useFetch";
 import OutstandingLIst from "../../components/secUsers/main/OutstandingLIst";
@@ -29,6 +31,7 @@ function OutstandingListOfReceiptForEdit() {
     totalBillAmount,
     billData,
     _id,
+    modifiedOutstandings : modifiedOutstandingsRedux,
   } = useSelector((state) => state.receipt);
 
   // console.log("billData", billData);
@@ -51,63 +54,75 @@ function OutstandingListOfReceiptForEdit() {
 
   ////find the outstanding with latest remaining amount
   const { data: receiptData, loading } = useFetch(
-
+    modifiedOutstandingsRedux.length === 0 &&
       `/api/sUsers/fetchOutstandingDetails/${party_id}/${cmp_id}?voucher=receipt`
   );
 
-
-
   const modifyOutstandings = (outstandings, billData, receiptData) => {
-
-    
-
-    console.log("outstandings", outstandings);
-    console.log("receiptData", receiptData);
-    
     // Create a map of bill numbers to settled amounts from billData
     const billSettlements = new Map(billData.map(bill => [bill.billNo, bill.settledAmount]));
-
-    console.log("billSettlements", billSettlements);
-    
-
+  
     // Create a map of bill numbers to pending amounts from receiptData
     const receiptPendingAmounts = new Map(receiptData.outstandings.map(bill => [bill.bill_no, bill.bill_pending_amt]));
-
-    console.log("receiptPendingAmounts", receiptPendingAmounts);
-
-    // Modify the outstandings array
-    return receiptData?.outstandings.map(outstanding => {
+  
+    // Combine outstandings and receiptData.outstandings, overwriting by bill_no
+    const combinedMap = new Map();
+  
+    // Add all entries from receiptData.outstandings to the map
+    receiptData.outstandings.forEach(bill => {
+      combinedMap.set(bill.bill_no, { ...bill });
+    });
+  
+    // Add or overwrite entries from outstandings to the map
+    outstandings.forEach(bill => {
+      combinedMap.set(bill.bill_no, { ...bill, ...combinedMap.get(bill.bill_no) });
+    });
+  
+    // Convert the map back to an array and modify the pending amounts
+    const combinedArray = Array.from(combinedMap.values()).map(outstanding => {
       const billNo = outstanding.bill_no;
       const settledAmount = billSettlements.get(billNo) || 0;
       const receiptPendingAmount = receiptPendingAmounts.get(billNo) || 0;
-
+  
       return {
         ...outstanding,
-        bill_pending_amt: (receiptPendingAmount ) + settledAmount
+        bill_pending_amt: receiptPendingAmount + settledAmount
       };
     });
+  
+    // Sort the combined array by bill_date
+    const sortedArray = combinedArray.sort((a, b) => {
+      const dateA = new Date(a.bill_date);
+      const dateB = new Date(b.bill_date);
+      return dateA - dateB; // Ascending order
+    });
+  
+    return sortedArray;
   };
-
-
-
-
-
-
-
+  
 
   /// to get out standing with are in the time of edit with new (latest) pending amount
   //we need to alter remaining amount as bill_pending_amt=current bill_pending_amt + settledAmount
 
   useEffect(() => {
-    if (receiptData) {
-      const modifiedOutstandings = modifyOutstandings(outstandings, billData, receiptData);
+    if (receiptData && modifiedOutstandingsRedux.length === 0) {
+      const modifiedOutstandings = modifyOutstandings(
+        outstandings,
+        billData,
+        receiptData
+      );
+
       setData(modifiedOutstandings);
+      dispatch(setModifiedOutstandings(modifiedOutstandings));
 
       const totalBillAmount = modifiedOutstandings.reduce(
         (acc, cur) => acc + parseFloat(cur.bill_pending_amt),
         0
       );
       setTotal(totalBillAmount);
+      dispatch(setTotalBillAmount(totalBillAmount));
+    }else{
+      setData(modifiedOutstandingsRedux);
     }
   }, [receiptData]);
 
@@ -163,9 +178,7 @@ function OutstandingListOfReceiptForEdit() {
       billData: results,
     };
 
-
-    console.log("settlementData", settlementData);
-    
+    // console.log("settlementData", settlementData);
 
     dispatch(addSettlementData(settlementData));
     navigate(`/sUsers/editReceipt/${_id}`);
@@ -185,6 +198,7 @@ function OutstandingListOfReceiptForEdit() {
         formatAmount,
         advanceAmount,
         tab: "receipt",
+        
       }}
     />
   );
