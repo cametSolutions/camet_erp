@@ -7,7 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useSidebar } from "../../layout/Layout";
 import DashBoard from "../../components/common/DashBoard";
-import RemoveReduxData from "../../components/secUsers/removeReduxData";
+import RemoveReduxData from "../../components/secUsers/RemoveReduxData";
 
 function Dashboard() {
   const [data, setData] = useState([]);
