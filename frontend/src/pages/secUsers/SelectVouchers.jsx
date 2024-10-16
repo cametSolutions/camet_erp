@@ -1,7 +1,7 @@
 import { IoIosArrowRoundBack } from "react-icons/io";
 import { Link } from "react-router-dom";
 import VoucherSection from "../../components/secUsers/vouchers/VoucherSection";
-import RemoveReduxData from "../../components/secUsers/removeReduxData";
+import RemoveReduxData from "../../components/secUsers/RemoveReduxData";
 
 function SelectVouchers() {
 
