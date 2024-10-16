@@ -7,6 +7,7 @@ import api from "../../api/api";
 import Swal from "sweetalert2";
 import { useSelector } from "react-redux";
 import Pagination from "../../components/common/Pagination";
+import { useLocation } from "react-router-dom";
 
 const ProductSubDetailsForm = ({ tab }) => {
   const [value, setValue] = useState("");
@@ -24,6 +25,20 @@ const ProductSubDetailsForm = ({ tab }) => {
     (state) => state.setSelectedOrganization.selectedOrg._id
   );
 
+  const location = useLocation();
+
+  let user;
+  if (location?.pathname?.startsWith("/pUsers")) {
+    user = "pUsers";
+  }else{
+    user = "sUsers";
+  }
+
+  console.log("user", user);
+  
+
+
+
   useEffect(() => {
     getSubDetails();
     setValue("");
@@ -38,7 +53,7 @@ const ProductSubDetailsForm = ({ tab }) => {
   const getSubDetails = async (data) => {
     try {
       const res = await api.get(
-        `/api/pUsers/getProductSubDetails/${orgId}?type=${tab}`,
+        `/api/${user}/getProductSubDetails/${orgId}?type=${tab}`,
         {
           withCredentials: true,
         }
@@ -70,7 +85,7 @@ const ProductSubDetailsForm = ({ tab }) => {
 
     try {
       const res = await api.post(
-        `/api/pUsers/addProductSubDetails/${orgId}`,
+        `/api/${user}/addProductSubDetails/${orgId}`,
         formData,
         {
           withCredentials: true,
@@ -114,7 +129,7 @@ const ProductSubDetailsForm = ({ tab }) => {
       // If the user confirms the deletion
       if (result.isConfirmed) {
         const res = await api.delete(
-          `/api/pUsers/deleteProductSubDetails/${orgId}/${id}?type=${tab}`,
+          `/api/${user}/deleteProductSubDetails/${orgId}/${id}?type=${tab}`,
           {
             withCredentials: true,
           }
@@ -167,7 +182,7 @@ const ProductSubDetailsForm = ({ tab }) => {
     };
     try {
       const res = await api.put(
-        `/api/pUsers/editProductSubDetails/${orgId}/${id}?type=${tab}`,
+        `/api/${user}/editProductSubDetails/${orgId}/${id}?type=${tab}`,
         formData,
         {
           withCredentials: true,

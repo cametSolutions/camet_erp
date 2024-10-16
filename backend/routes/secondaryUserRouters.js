@@ -20,7 +20,7 @@ import { createPurchase,editPurchase,cancelPurchase } from '../controllers/purch
 import { createCreditNote,cancelCreditNote ,editCreditNote} from '../controllers/creditNoteController.js';
 import {createSale,editSale,cancelSale,} from '../controllers/saleController.js';
 import { cancelDebitNote, createDebitNote, editDebitNote } from '../controllers/debitNoteController.js';
-import { getStockTransferDetails,addProduct ,editProduct,getCreditNoteDetails,transactions,fetchAdditionalCharges, getDebitNoteDetails,getReceiptDetails,getPaymentDetails} from '../controllers/commonController.js';
+import { getStockTransferDetails,addProduct ,editProduct,getCreditNoteDetails,transactions,fetchAdditionalCharges, getDebitNoteDetails,getReceiptDetails,getPaymentDetails,getProductSubDetails,deleteProductSubDetails,editProductSubDetails,addProductSubDetails} from '../controllers/commonController.js';
 import { authSecondary } from '../middlewares/authSecUsers.js';
 import { secondaryIsBlocked } from '../middlewares/isBlocked.js';
 import { companyAuthentication } from '../middlewares/authCompany.js';
@@ -118,6 +118,12 @@ router.post('/createPayment',authSecondary,secondaryIsBlocked,createPayment)
 router.get('/getPaymentDetails/:id',authSecondary,secondaryIsBlocked,getPaymentDetails)
 router.post('/cancelPayment/:paymentId/:cmp_id',authSecondary,secondaryIsBlocked,cancelPayment)
 
+
+/// sub details (brand, category, subcategory, godown, pricelevel)
+router.post("/addProductSubDetails/:orgId",authSecondary,secondaryIsBlocked,addProductSubDetails)
+router.get("/getProductSubDetails/:orgId",authSecondary,secondaryIsBlocked,getProductSubDetails)
+router.delete("/deleteProductSubDetails/:orgId/:id",authSecondary,secondaryIsBlocked,deleteProductSubDetails)
+router.put("/editProductSubDetails/:orgId/:id",authSecondary,secondaryIsBlocked,editProductSubDetails)
 
 
 
