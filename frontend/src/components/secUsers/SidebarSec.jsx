@@ -13,9 +13,14 @@ import { Link } from "react-router-dom";
 import { IoReorderThreeSharp } from "react-icons/io5";
 import { MdDashboard } from "react-icons/md";
 import { TiUserAdd } from "react-icons/ti";
-import { MdOutlineProductionQuantityLimits } from "react-icons/md";
 import { RingLoader } from "react-spinners";
 import { IoMdSettings } from "react-icons/io";
+import { IoIosArrowDown, IoIosArrowUp, IoIosPricetags } from "react-icons/io";
+import { RiBox3Fill } from "react-icons/ri";
+import { TbBrandAppgallery, TbCategory2 } from "react-icons/tb";
+import { BiSolidCategoryAlt } from "react-icons/bi";
+import { HiBuildingStorefront } from "react-icons/hi2";
+import { MdOutlineInventory } from "react-icons/md";
 
 import { removeAll } from "../../../slices/invoiceSecondary";
 import { removeAllSales } from "../../../slices/salesSecondary";
@@ -30,8 +35,14 @@ function SidebarSec({ TAB, showBar }) {
   const [org, setOrg] = useState("");
   const [loader, setLoader] = useState(false);
   const [companies, setCompanies] = useState([]);
+  const [expandedSections, setExpandedSections] = useState({
+    inventory: false,
+  });
 
   const selectedTab = localStorage.getItem("selectedSecondatSidebarTab");
+  const [selectedSubTab, setSelectedSubTab] = useState(
+    localStorage.getItem("selectedSubTab") || ""
+  );
 
   const [tab, setTab] = useState(selectedTab);
   const navigate = useNavigate();
@@ -58,10 +69,48 @@ function SidebarSec({ TAB, showBar }) {
         label: "Customers",
       },
       {
-        to: "/sUsers/productList",
-        label: "Products",
-        icon: <MdOutlineProductionQuantityLimits />,
-        tab: "product",
+        to: "#",
+        icon: <MdOutlineInventory />,
+        label: "Inventory",
+        onClick: () => toggleSection("inventory"),
+        subItems: [
+          {
+            to: "/sUsers/productList",
+            label: "Products",
+            icon: <RiBox3Fill />,
+            tab: "product",
+          },
+          {
+            to: "/sUsers/brand",
+            label: "Brand",
+            icon: <TbBrandAppgallery />,
+            tab: "brand",
+          },
+          {
+            to: "/sUsers/category",
+            label: "Category",
+            icon: <BiSolidCategoryAlt />,
+            tab: "category",
+          },
+          {
+            to: "/sUsers/subcategory",
+            label: "Sub Category",
+            icon: <TbCategory2 />,
+            tab: "subcategory",
+          },
+          {
+            to: "/sUsers/godown",
+            label: "Godown",
+            icon: <HiBuildingStorefront />,
+            tab: "godown",
+          },
+          {
+            to: "/sUsers/pricelevel",
+            label: "Price Level",
+            icon: <IoIosPricetags />,
+            tab: "pricelevel",
+          },
+        ],
       },
       {
         to: "/sUsers/OrderConfigurations",
@@ -99,7 +148,6 @@ function SidebarSec({ TAB, showBar }) {
 
   useEffect(() => {
     if (!userData || !userData.name) {
-      // only make the API call if data is not already present
       getUserData();
     }
   }, [getUserData, userData]);
@@ -116,23 +164,28 @@ function SidebarSec({ TAB, showBar }) {
     }
   }, []);
 
+  const toggleSection = (section) => {
+    setExpandedSections((prevSections) => ({
+      ...prevSections,
+      [section]: !prevSections[section],
+    }));
+  };
+
   const handleSidebarItemClick = (newTab) => {
     if (window.innerWidth < 768) {
       setShowSidebar(false);
     }
 
     setTab(newTab);
-    localStorage.setItem("selectedPrimarySidebarTab", newTab);
+    localStorage.setItem("selectedSecondatSidebarTab", newTab);
     dispatch(removeAll());
     dispatch(removeAllSales());
     dispatch(removeAllStock());
     dispatch(removeAllPurchase());
     dispatch(removeAllCredit());
-    // for removing date from local storage which is saved for transaction
 
     localStorage.removeItem("SecondaryTransactionEndDate");
     localStorage.removeItem("SecondaryTransactionStartDate");
-    // onTabChange(newTab);
   };
 
   const handleLogout = async () => {
@@ -171,30 +224,30 @@ function SidebarSec({ TAB, showBar }) {
   return (
     <div className="nonPrintable-content">
       {loader && (
-        <div className=" absolute top-0 w-screen h-screen z-50  flex justify-center items-center bg-black/[0.5]">
+        <div className="absolute top-0 w-screen h-screen z-50 flex justify-center items-center bg-black/[0.5]">
           <RingLoader color="#1c14a0" />
         </div>
       )}
 
       <aside
-        className={` ${
+        className={`${
           showSidebar
-            ? "z-50 absolute h-[125vh] transform translate-x-0 "
-            : "-translate-x-full md:translate-x-0  z-50 absolute md:relative "
-        } transition-transform duration-500 ease-in-out flex flex-col w-64 h-screen  px-4 py-8  bg-gray-900 border-r rtl:border-r-0 rtl:border-l dark:bg-gray-900 dark:border-gray-700   
-          
-        overflow-y-auto`}
+            ? "z-50 absolute h-[125vh] transform translate-x-0"
+            : "-translate-x-full md:translate-x-0 z-50 absolute md:relative"
+        } transition-transform duration-500 ease-in-out flex flex-col w-64 h-screen px-4 py-8 bg-gray-900 border-r rtl:border-r-0 rtl:border-l dark:bg-gray-900 dark:border-gray-700 overflow-y-auto`}
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
+        {/* Keep existing header/profile section */}
         <div className="w-full relative">
           <div
             onClick={handleSidebarItemClick}
-            className="text-white text-3xl absolute right-0 top-[-20px]  md:hidden  "
+            className="text-white text-3xl absolute right-0 top-[-20px] md:hidden"
           >
             <IoReorderThreeSharp />
           </div>
         </div>
 
+        {/* Keep existing profile section */}
         <div className="flex flex-col items-center mt-6 -mx-2">
           <img
             className="object-cover w-24 h-24 mx-2 rounded-full"
@@ -281,33 +334,66 @@ function SidebarSec({ TAB, showBar }) {
         </div>
 
         <div className="">
-          <div className="flex flex-col justify-between flex-1 mt-6  ">
+          <div className="flex flex-col justify-between flex-1 mt-6">
             <nav>
               {navItems.map((item, index) => (
                 <div key={index}>
                   <Link to={item.to}>
                     <span
                       onClick={() => {
-                        // setSelectedTab(item.tab);
                         handleSidebarItemClick(item.tab);
                         if (item.onClick) item.onClick();
                       }}
                       className={`
-
                         ${
                           tab === item.tab
                             ? "bg-gray-800 text-white"
                             : "text-gray-400 hover:bg-gray-800 hover:text-white"
                         }
-                       
-                       text-gray-400 flex items-center px-4 py-2 mt-5 transition-colors duration-300 transform rounded-lg`}
+                        flex items-center px-4 py-2 mt-5 transition-colors duration-300 transform rounded-lg`}
                     >
                       <div className="flex items-center">
                         {item.icon}
                         <span className="mx-4 font-medium">{item.label}</span>
                       </div>
+                      {item.subItems && (
+                        <div className="flex items-center justify-between w-full cursor-pointer ml-6">
+                          {expandedSections.inventory ? (
+                            <IoIosArrowUp />
+                          ) : (
+                            <IoIosArrowDown />
+                          )}
+                        </div>
+                      )}
                     </span>
                   </Link>
+                  {item.subItems && expandedSections.inventory && (
+                    <ul className="mt-2 space-y-2">
+                      {item.subItems.map((subItem, subIndex) => (
+                        <li
+                          key={subIndex}
+                          className={`${
+                            selectedSubTab === subItem.tab
+                              ? "text-white"
+                              : "text-gray-400"
+                          } hover:text-white ml-4 rounded-md mt-5 px-4 py-2 flex items-center gap-4 text-sm font-medium`}
+                        >
+                          <Link
+                            className="flex items-center gap-3 mb-3"
+                            to={subItem.to}
+                            onClick={() => {
+                              handleSidebarItemClick(subItem.tab);
+                              setTab(item.tab);
+                              setSelectedSubTab(subItem.tab);
+                            }}
+                          >
+                            {subItem.icon}
+                            <span>{subItem.label}</span>
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
               ))}
             </nav>
