@@ -19,6 +19,7 @@ import { Category } from "../models/subDetails.js";
 import { Subcategory } from "../models/subDetails.js";
 import { Godown } from "../models/subDetails.js";
 import { PriceLevel } from "../models/subDetails.js";
+import mongoose from "mongoose";
 // @desc to  get stock transfer details
 // route get/api/sUsers/getStockTransferDetails;
 export const getStockTransferDetails = async (req, res) => {
@@ -423,7 +424,6 @@ export const getPaymentDetails = async (req, res) => {
   }
 };
 
-
 /**
  * @desc  adding subDetails of product such as brand category subcategory etc
  * @route POST/api/pUsers/addProductSubDetails
@@ -524,7 +524,6 @@ export const addProductSubDetails = async (req, res) => {
       .json({ message: "An error occurred while adding the sub-detail" });
   }
 };
-
 
 /**
  * @desc  get subDetails of product such as brand category subcategory etc
@@ -692,3 +691,155 @@ export const editProductSubDetails = async (req, res) => {
       .json({ message: "An error occurred while updating the sub-detail" });
   }
 };
+
+// @desc adding new Hsn
+// route POst/api/pUsers/addHsn
+export const addHsn = async (req, res) => {
+  const Primary_user_id = req.pUserId || req.owner;
+  try {
+    const {
+      cpm_id,
+      hsn,
+      description,
+      tab,
+      taxabilityType,
+      igstRate,
+      cgstRate,
+      sgstUtgstRate,
+      onValue,
+      onQuantity,
+      isRevisedChargeApplicable,
+      rows,
+    } = req.body;
+
+    const hsnCreation = new hsnModel({
+      cpm_id,
+      Primary_user_id,
+      hsn,
+      description,
+      tab,
+      taxabilityType,
+      igstRate,
+      cgstRate,
+      sgstUtgstRate,
+      onValue,
+      onQuantity,
+      isRevisedChargeApplicable,
+      rows,
+    });
+
+    const result = await hsnCreation.save();
+
+    if (result) {
+      return res.status(200).json({
+        success: true,
+        message: "Hsn added successfully",
+      });
+    } else {
+      return res.status(400).json({
+        success: false,
+        message: "Hsn adding failed",
+      });
+    }
+  } catch (error) {
+    console.error(error);
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error, try again!" });
+  }
+};
+
+// @desc  getting a single hsn detail for edit
+// route get/api/pUsers/getSinglePartyDetails
+
+export const getSingleHsn = async (req, res) => {
+  const id = req.params.hsnId;
+  try {
+    const hsn = await hsnModel.findById(id);
+
+    if (hsn) {
+      return res.status(200).json({ success: true, data: hsn });
+    } else {
+      return res.status(404).json({ success: false, message: "HSN not found" });
+    }
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error, try again!",
+    });
+  }
+};
+
+// @desc  editHsn details
+// route get/api/pUsers/editHsn
+
+export const editHsn = async (req, res) => {
+  const hsnId = req.params.hsnId;
+  const Primary_user_id = req.pUserId || req.owner;
+  req.body.Primary_user_id = Primary_user_id.toString();
+
+
+
+  
+  
+
+  try {
+    const updateHsn = await hsnModel.findOneAndUpdate(
+      { _id: hsnId },
+      req.body,
+      { new: true }
+    );
+
+    
+    res.status(200).json({
+      success: true,
+      message: "HSN updated successfully",
+      data: updateHsn,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
+};
+
+
+// @desc delete hsn
+// route get/api/pUsers/deleteProduct
+
+export const deleteHsn = async (req, res) => {
+  const hsnId = req.params.id;
+
+  try {
+    const newHsnId = new mongoose.Types.ObjectId(hsnId);
+
+    const attachedProduct = await productModel.find({ hsn_id: newHsnId });
+
+    if (attachedProduct.length > 0) {
+      return res.status(404).json({
+        success: false,
+        message: `HSN is linked with product ${attachedProduct[0].product_name}`,
+      });
+    } else {
+      const deletedHsn = await hsnModel.findByIdAndDelete(hsnId);
+      if (deletedHsn) {
+        return res.status(200).json({
+          success: true,
+          message: "HSN deleted successfully",
+        });
+      } else {
+        return res.status(404).json({
+          success: false,
+          message: "HSN not found",
+        });
+      }
+    }
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error, try again!",
+    });
+  }
+};
+

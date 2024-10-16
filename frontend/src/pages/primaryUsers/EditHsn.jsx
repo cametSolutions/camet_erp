@@ -7,6 +7,8 @@ import api from "../../api/api";
 import { useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import HsnForm from "../../components/common/Forms/HsnForm";
+import { useLocation } from "react-router-dom";
+
 
 // import "./hsn.css";
 
@@ -21,7 +23,6 @@ function EditHsn() {
   const [onValue, setOnValue] = useState("");
   const [onQuantity, setOnQuantity] = useState("");
   const [cpm_id, setCmp_id] = useState("");
-  const [Primary_user_id, setPrimary_user_id] = useState("");
   const [isRevisedChargeApplicable, setIsRevisedChargeApplicable] =
     useState(false);
   const [hsnData, setHsnData] = useState([]);
@@ -40,11 +41,13 @@ function EditHsn() {
 
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+
 
   useEffect(() => {
     const fetchSingleOrganization = async () => {
       try {
-        const res = await api.get(`/api/pUsers/getSingleHsn/${id}`, {
+        const res = await api.get(`/api/${user}/getSingleHsn/${id}`, {
           withCredentials: true,
         });
 
@@ -191,14 +194,26 @@ function EditHsn() {
     setIsRevisedChargeApplicable(e.target.checked);
   };
 
-  const companyId = useSelector(
-    (state) => state.setSelectedOrganization.selectedOrg._id
+  let companyId;
+  const companyIdPrimary = useSelector(
+    (state) => state?.setSelectedOrganization?.selectedOrg?._id
   );
-  const user = JSON.parse(localStorage.getItem("pUserData"));
-  const userId = user._id;
+  const companyIdSecondary = useSelector(
+    (state) => state?.secSelectedOrganization?.secSelectedOrg._id
+  );
+
+  let user;
+
+  if (location?.pathname?.startsWith("/pUsers")) {
+    user = "pUsers";
+    companyId = companyIdPrimary;
+  } else {
+    user = "sUsers";
+    companyId = companyIdSecondary;
+  }
+
   useEffect(() => {
     setCmp_id(companyId);
-    setPrimary_user_id(userId);
   }, []);
 
   const submitHandler = async () => {
@@ -280,7 +295,6 @@ function EditHsn() {
     if (tab == "onValue") {
       formData = {
         cpm_id,
-        Primary_user_id,
         hsn,
         description,
         tab,
@@ -295,7 +309,6 @@ function EditHsn() {
     } else {
       formData = {
         cpm_id,
-        Primary_user_id,
         hsn,
         description,
         tab,
@@ -309,14 +322,14 @@ function EditHsn() {
     //     console.log(formData);
 
     try {
-      const res = await api.post(`/api/pUsers/editHsn/${id}`, formData, {
+      const res = await api.post(`/api/${user}/editHsn/${id}`, formData, {
         headers: {
           "Content-Type": "application/json",
         },
         withCredentials: true,
       });
       toast.success(res.data.message);
-      navigate("/pUsers/hsnList");
+      navigate(`/${user}/hsnList`);
     } catch (error) {
       toast.error(error.response.data.message);
       console.log(error);

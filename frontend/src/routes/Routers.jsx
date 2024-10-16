@@ -373,7 +373,8 @@ const Routers = () => {
       {/* hsn */}
         {/* we are using the same page of primary to avoid page repetition */}
       <Route path='/sUsers/hsnList' element={<ProtectedSecRoute><HsnList/></ProtectedSecRoute>}></Route>
-      <Route path='/pUsers/hsn' element={<ProtectedPriRoute><Hsn/></ProtectedPriRoute>}></Route>
+      <Route path='/sUsers/hsn' element={<ProtectedSecRoute><Hsn/></ProtectedSecRoute>}></Route>
+      <Route path='/sUsers/editHsn/:id' element={<ProtectedSecRoute><EditHsn/></ProtectedSecRoute>}></Route>
 
 
 

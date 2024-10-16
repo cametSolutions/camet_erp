@@ -1794,89 +1794,8 @@ export const invoiceList = async (req, res) => {
   }
 };
 
-// @desc delete hsn
-// route get/api/pUsers/deleteProduct
 
-export const deleteHsn = async (req, res) => {
-  const hsnId = req.params.id;
 
-  try {
-    const newHsnId = new mongoose.Types.ObjectId(hsnId);
-
-    const attachedProduct = await productModel.find({ hsn_id: newHsnId });
-
-    if (attachedProduct.length > 0) {
-      return res.status(404).json({
-        success: false,
-        message: `HSN is linked with product ${attachedProduct[0].product_name}`,
-      });
-    } else {
-      const deletedHsn = await HsnModel.findByIdAndDelete(hsnId);
-      if (deletedHsn) {
-        return res.status(200).json({
-          success: true,
-          message: "HSN deleted successfully",
-        });
-      } else {
-        return res.status(404).json({
-          success: false,
-          message: "HSN not found",
-        });
-      }
-    }
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({
-      success: false,
-      message: "Internal server error, try again!",
-    });
-  }
-};
-
-// @desc  getting a single hsn detail for edit
-// route get/api/pUsers/getSinglePartyDetails
-
-export const getSingleHsn = async (req, res) => {
-  const id = req.params.hsnId;
-  try {
-    const hsn = await HsnModel.findById(id);
-
-    if (hsn) {
-      return res.status(200).json({ success: true, data: hsn });
-    } else {
-      return res.status(404).json({ success: false, message: "HSN not found" });
-    }
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({
-      success: false,
-      message: "Internal server error, try again!",
-    });
-  }
-};
-
-// @desc  editHsn details
-// route get/api/pUsers/editHsn
-
-export const editHsn = async (req, res) => {
-  const hsnId = req.params.hsnId;
-
-  try {
-    const updateHsn = await HsnModel.findOneAndUpdate(
-      { _id: hsnId },
-      req.body,
-      { new: true }
-    );
-    res.status(200).json({
-      success: true,
-      message: "HSN updated successfully",
-      data: updateHsn,
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false, message: "Internal Server Error" });
-  }
-};
 
 // @desc  editHsn details
 // route get/api/pUsers/addBank

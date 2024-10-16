@@ -20,7 +20,7 @@ import { createPurchase,editPurchase,cancelPurchase } from '../controllers/purch
 import { createCreditNote,cancelCreditNote ,editCreditNote} from '../controllers/creditNoteController.js';
 import {createSale,editSale,cancelSale,} from '../controllers/saleController.js';
 import { cancelDebitNote, createDebitNote, editDebitNote } from '../controllers/debitNoteController.js';
-import { getStockTransferDetails,addProduct ,editProduct,getCreditNoteDetails,transactions,fetchAdditionalCharges, getDebitNoteDetails,getReceiptDetails,getPaymentDetails,getProductSubDetails,deleteProductSubDetails,editProductSubDetails,addProductSubDetails} from '../controllers/commonController.js';
+import { getStockTransferDetails,addProduct ,editProduct,getCreditNoteDetails,transactions,fetchAdditionalCharges, getDebitNoteDetails,getReceiptDetails,getPaymentDetails,getProductSubDetails,deleteProductSubDetails,editProductSubDetails,addProductSubDetails,addHsn,getSingleHsn,editHsn,deleteHsn} from '../controllers/commonController.js';
 import { authSecondary } from '../middlewares/authSecUsers.js';
 import { secondaryIsBlocked } from '../middlewares/isBlocked.js';
 import { companyAuthentication } from '../middlewares/authCompany.js';
@@ -124,6 +124,12 @@ router.post("/addProductSubDetails/:orgId",authSecondary,secondaryIsBlocked,addP
 router.get("/getProductSubDetails/:orgId",authSecondary,secondaryIsBlocked,getProductSubDetails)
 router.delete("/deleteProductSubDetails/:orgId/:id",authSecondary,secondaryIsBlocked,deleteProductSubDetails)
 router.put("/editProductSubDetails/:orgId/:id",authSecondary,secondaryIsBlocked,editProductSubDetails)
+
+///hsn routes
+router.post('/addHsn',authSecondary,secondaryIsBlocked,addHsn)
+router.get('/getSingleHsn/:hsnId',authSecondary,secondaryIsBlocked,getSingleHsn)
+router.post('/editHsn/:hsnId',authSecondary,secondaryIsBlocked,editHsn)
+router.delete('/deleteHsn/:id',authSecondary,secondaryIsBlocked,deleteHsn)
 
 
 

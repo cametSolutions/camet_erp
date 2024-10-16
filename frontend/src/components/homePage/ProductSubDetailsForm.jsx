@@ -27,10 +27,10 @@ const ProductSubDetailsForm = ({ tab }) => {
 
 // Call useSelector hooks unconditionally
 const selectedOrgId = useSelector(
-  (state) => state.setSelectedOrganization.selectedOrg._id
+  (state) => state?.setSelectedOrganization?.selectedOrg?._id
 );
 const secSelectedOrgId = useSelector(
-  (state) => state.secSelectedOrganization.secSelectedOrg._id
+  (state) => state?.secSelectedOrganization?.secSelectedOrg?._id
 );
 
 let user;

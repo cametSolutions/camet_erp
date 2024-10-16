@@ -7,11 +7,11 @@ import { registerPrimaryUser,login,addOrganizations,
   fetchOutstandingTotal,fetchOutstandingDetails,confirmCollection,
   cancelTransaction,fetchBanks,bankList,
   sendOtp,submitOtp,resetPassword,getTransactionDetails,getSingleOrganization,
-  editOrg,addParty,addHsn,addDataToOrg,editDataInOrg,deleteDataInOrg,
+  editOrg,addParty,addDataToOrg,editDataInOrg,deleteDataInOrg,
   fetchHsn,getProducts,deleteProduct,productDetails
   ,PartyList,deleteParty,getSinglePartyDetails,editParty,
-  fetchFilters,createInvoice,addBulkProducts,invoiceList,deleteHsn,
-  getSingleHsn,editHsn,addBank,getBankDetails,editBank,getSecUserDetails,
+  fetchFilters,createInvoice,addBulkProducts,invoiceList,
+ addBank,getBankDetails,editBank,getSecUserDetails,
   editSecUSer,saveOrderNumber,getInvoiceDetails,editInvoice,addAditionalCharge,
   deleteAdditionalCharge,EditAditionalCharge,addconfigurations,
   createSale,saveSalesNumber,getSalesDetails,fetchGodownsAndPriceLevels,fetchAdditionalDetails,
@@ -23,7 +23,7 @@ import { registerPrimaryUser,login,addOrganizations,
   import { cancelPurchase } from '../controllers/purchaseController.js';
 
 import {addProduct,editProduct,getCreditNoteDetails,transactions,fetchAdditionalCharges, getDebitNoteDetails,
-  getReceiptDetails,getPaymentDetails,getProductSubDetails,deleteProductSubDetails,editProductSubDetails,addProductSubDetails} from "../controllers/commonController.js";
+  getReceiptDetails,getPaymentDetails,getProductSubDetails,deleteProductSubDetails,editProductSubDetails,addProductSubDetails,addHsn,getSingleHsn,editHsn,deleteHsn} from "../controllers/commonController.js";
 import { singleUpload } from '../multer/multer.js';
 import { primaryIsBlocked } from '../middlewares/isBlocked.js';
 import { companyAuthentication } from '../middlewares/authCompany.js';

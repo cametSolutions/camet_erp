@@ -5,6 +5,7 @@ import { toast } from "react-toastify";
 import api from "../../api/api";
 import { useNavigate } from "react-router-dom";
 import HsnForm from "../../components/common/Forms/HsnForm";
+import { useLocation } from "react-router-dom";
 
 // import "./hsn.css";
 
@@ -19,10 +20,10 @@ function Hsn() {
   const [onValue, setOnValue] = useState("");
   const [onQuantity, setOnQuantity] = useState("");
   const [cpm_id, setCmp_id] = useState("");
-  const [Primary_user_id, setPrimary_user_id] = useState("");
   const [isRevisedChargeApplicable, setIsRevisedChargeApplicable] =
     useState(false);
-const navigate=useNavigate()
+  const navigate = useNavigate();
+  const location = useLocation();
 
   //   table    ///////////////////////////
 
@@ -38,13 +39,11 @@ const navigate=useNavigate()
       basedOnQuantity: "",
     },
   ]);
-  console.log(rows);
 
   const handleAddRow = () => {
     let hasEmptyField = false;
 
-    rows.forEach((row, ) => {
-    
+    rows.forEach((row) => {
       if (row.taxabilityType === "") {
         // toast.error("Select taxability type");
         hasEmptyField = true; // Set the flag to true to indicate an error
@@ -131,14 +130,26 @@ const navigate=useNavigate()
     setIsRevisedChargeApplicable(e.target.checked);
   };
 
-  const companyId = useSelector(
-    (state) => state.setSelectedOrganization.selectedOrg._id
+  let companyId;
+  const companyIdPrimary = useSelector(
+    (state) => state?.setSelectedOrganization?.selectedOrg?._id
   );
-  const user = JSON.parse(localStorage.getItem("pUserData"));
-  const userId = user._id;
+  const companyIdSecondary = useSelector(
+    (state) => state?.secSelectedOrganization?.secSelectedOrg._id
+  );
+
+  let user;
+
+  if (location?.pathname?.startsWith("/pUsers")) {
+    user = "pUsers";
+    companyId = companyIdPrimary;
+  } else {
+    user = "sUsers";
+    companyId = companyIdSecondary;
+  }
+
   useEffect(() => {
     setCmp_id(companyId);
-    setPrimary_user_id(userId);
   }, []);
 
   const submitHandler = async () => {
@@ -187,8 +198,6 @@ const navigate=useNavigate()
           }
         }
       } else {
-       
-
         const lastRow = rows[rows.length - 1];
 
         if (lastRow.taxabilityType === "") {
@@ -222,7 +231,6 @@ const navigate=useNavigate()
     if (tab == "onValue") {
       formData = {
         cpm_id,
-        Primary_user_id,
         hsn,
         description,
         tab,
@@ -237,7 +245,6 @@ const navigate=useNavigate()
     } else {
       formData = {
         cpm_id,
-        Primary_user_id,
         hsn,
         description,
         tab,
@@ -246,62 +253,57 @@ const navigate=useNavigate()
       };
     }
 
-
     //     console.log(formData);
 
     try {
-      const res = await api.post("/api/pUsers/addHsn", formData, {
+      const res = await api.post(`/api/${user}/addHsn`, formData, {
         headers: {
           "Content-Type": "application/json",
         },
         withCredentials: true,
       });
       toast.success(res.data.message);
-      navigate("/pUsers/hsnList")
-      
+      navigate(`/${user}/hsnList`);
+
       // Resetting individual state variables
-  
     } catch (error) {
       toast.error(error.response.data.message);
       console.log(error);
     }
   };
 
- 
   return (
-     
     <HsnForm
-    navigate={navigate}
-    hsn={hsn}
-    setHsn={setHsn}
-    description={description}
-    setDescription={setDescription}
-    tab={tab}
-    setTab={setTab}
-    taxabilityType={taxabilityType}
-    setTaxabilityType={setTaxabilityType}
-    igstRate={igstRate}
-    setIgstRate={setIgstRate}
-    cgstRate={cgstRate}
-    setCgstRate={setCgstRate}
-    sgstUtgstRate={sgstUtgstRate}
-    setSgstUtgstRate={setSgstUtgstRate}
-    onValue={onValue}
-    setOnValue={setOnValue}
-    onQuantity={onQuantity}
-    setOnQuantity={setOnQuantity}
-    isRevisedChargeApplicable={isRevisedChargeApplicable}
-    rows={rows}
-    handleDeleteRow={handleDeleteRow}
-    handleAddRow={handleAddRow}
-    submitHandler={submitHandler}
-    checkedValue={checkedValue}
-    handleChangeCheck={handleChangeCheck}
-    handleRevisedChargeChange={handleRevisedChargeChange}
-    isExemptOrNilRatedOrNonGST={isExemptOrNilRatedOrNonGST}
-    handleChange={handleChange}
-  />
-  
+      navigate={navigate}
+      hsn={hsn}
+      setHsn={setHsn}
+      description={description}
+      setDescription={setDescription}
+      tab={tab}
+      setTab={setTab}
+      taxabilityType={taxabilityType}
+      setTaxabilityType={setTaxabilityType}
+      igstRate={igstRate}
+      setIgstRate={setIgstRate}
+      cgstRate={cgstRate}
+      setCgstRate={setCgstRate}
+      sgstUtgstRate={sgstUtgstRate}
+      setSgstUtgstRate={setSgstUtgstRate}
+      onValue={onValue}
+      setOnValue={setOnValue}
+      onQuantity={onQuantity}
+      setOnQuantity={setOnQuantity}
+      isRevisedChargeApplicable={isRevisedChargeApplicable}
+      rows={rows}
+      handleDeleteRow={handleDeleteRow}
+      handleAddRow={handleAddRow}
+      submitHandler={submitHandler}
+      checkedValue={checkedValue}
+      handleChangeCheck={handleChangeCheck}
+      handleRevisedChargeChange={handleRevisedChargeChange}
+      isExemptOrNilRatedOrNonGST={isExemptOrNilRatedOrNonGST}
+      handleChange={handleChange}
+    />
   );
 }
 
