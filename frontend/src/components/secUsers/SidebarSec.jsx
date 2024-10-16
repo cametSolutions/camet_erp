@@ -68,7 +68,11 @@ function SidebarSec({ TAB, showBar }) {
         icon: <TiUserAdd />,
         label: "Customers",
       },
-      {
+    ];
+  
+    // Show "Inventory" only if org.type is "self"
+    if (org.type === "self") {
+      additionalTabs.push({
         to: "#",
         icon: <MdOutlineInventory />,
         label: "Inventory",
@@ -111,19 +115,33 @@ function SidebarSec({ TAB, showBar }) {
             tab: "pricelevel",
           },
         ],
-      },
-      {
-        to: "/sUsers/OrderConfigurations",
-        tab: "terms",
-        icon: <IoMdSettings />,
-        label: "Settings",
-      },
-    ];
+      });
+    }else{
 
-    additionalTabs.map((item) => {
-      return navItems.push(item);
+      additionalTabs.push(
+        {
+          to: "/sUsers/productList",
+          label: "Products",
+          icon: <RiBox3Fill />,
+          tab: "product",
+        }
+      )
+    }
+  
+    additionalTabs.push({
+      to: "/sUsers/OrderConfigurations",
+      tab: "terms",
+      icon: <IoMdSettings />,
+      label: "Settings",
+    });
+  
+    additionalTabs.forEach((item) => {
+      navItems.push(item);
     });
   }
+  
+
+  
 
   const getUserData = useCallback(async () => {
     try {

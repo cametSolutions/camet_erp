@@ -100,6 +100,8 @@ function Sidebar({ TAB, showBar }) {
       });
     }
 
+    if (selectedOrg.type === "self") {
+
     navItems.push({
       to: "#",
       // tab: "product",
@@ -145,6 +147,20 @@ function Sidebar({ TAB, showBar }) {
         },
       ],
     });
+
+  }else{
+
+
+    // if it is self no need to show inventory but  to show the products only
+
+    navItems.push(  {
+      to: "/pUsers/productList",
+      label: "Products",
+      icon: <RiBox3Fill />,
+      tab: "product",
+    });
+
+  }
 
     navItems.push(
       {
