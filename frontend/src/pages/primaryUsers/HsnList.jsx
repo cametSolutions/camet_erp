@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import api from "../../api/api";
 import Pagination from "../../components/common/Pagination";
-import Sidebar from "../../components/homePage/Sidebar";
 import {  IoReorderThreeSharp } from "react-icons/io5";
 import { FaEdit } from "react-icons/fa";
 import { Link } from "react-router-dom";
@@ -11,8 +10,8 @@ import Swal from "sweetalert2";
 import { removeAll } from "../../../slices/invoice";
 import { removeAllSales } from "../../../slices/sales";
 import { useSidebar } from "../../layout/Layout";
-
 import { useDispatch } from "react-redux";
+import { useLocation } from "react-router-dom";
 
 function HsnList() {
   const [hsn, setHsn] = useState([]);
@@ -21,16 +20,37 @@ function HsnList() {
   const [showSidebar, setShowSidebar] = useState(false);
   const [refresh, setRefresh] = useState(false);
 
-  const org = useSelector((state) => state.setSelectedOrganization.selectedOrg);
-  
-  const dispatch=useDispatch()
+  //primary organization id
+  const orgPrimary = useSelector((state) => state.setSelectedOrganization.selectedOrg);
+  ///secondary organization id
+  const orgSecondary = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg
+  );
 
-  const orgId = org._id;
+  const dispatch=useDispatch()
+  const location = useLocation();
+  let user;
+  let orgId;
+  let org;
+  
+  if (location?.pathname?.startsWith("/pUsers")) {
+    user = "pUsers";
+    orgId = orgPrimary._id;
+    org = orgPrimary;
+  } else {
+    user = "sUsers";
+    orgId = orgSecondary._id;
+    org = orgSecondary;
+  }
+  
+
+
+
 
   useEffect(() => {
     const fetchHsn = async () => {
       try {
-        const res = await api.get(`/api/pUsers/fetchHsn/${orgId}`, {
+        const res = await api.get(`/api/${user}/fetchHsn/${orgId}`, {
           withCredentials: true,
         });
 
@@ -64,7 +84,7 @@ function HsnList() {
     if (confirmResult.isConfirmed) {
       try {
         const res = await api.delete(
-          `/api/pUsers/deleteHsn/${hsnId}`,
+          `/api/${user}/deleteHsn/${hsnId}`,
 
           {
             withCredentials: true,
@@ -102,7 +122,7 @@ function HsnList() {
 
           <div className="flex items-center justify-between w-full">
             <p>HSN</p>
-            <Link to={"/pUsers/hsn"}>
+            <Link to={`/${user}/hsn`}>
               <button className="flex gap-2 bg-green-500 px-2 py-1 rounded-md text-sm  hover:scale-105 duration-100 ease-in-out hover:bg-green-600 mr-3">
                 Add HSN
               </button>
@@ -116,7 +136,7 @@ function HsnList() {
               <div className="flex justify-between items-center">
                 <h2 className="font-semibold ">HSN</h2>
                 {org.type === "self" && (
-                  <Link to={"/pUsers/hsn"}>
+                  <Link to={`/${user}/hsn`}>
                     <button className="flex gap-2 bg-green-500 px-2 py-1 rounded-md text-sm  hover:scale-105 duration-100 ease-in-out hover:bg-green-600">
                       Add HSN
                     </button>
@@ -172,7 +192,7 @@ function HsnList() {
                           <td className="p-2 whitespace-nowrap">
                               <div className={` ${org.type !== "self" && "pointer-events-none opacity-55"} text-center cursor-pointer`}>
                                 {" "}
-                            <Link to={`/pUsers/editHsn/${item._id}`}>
+                            <Link to={`/${user}/editHsn/${item._id}`}>
                                 <FaEdit />
                             </Link>
                               </div>

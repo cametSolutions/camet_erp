@@ -19,7 +19,7 @@ import { IoIosArrowDown, IoIosArrowUp, IoIosPricetags } from "react-icons/io";
 import { RiBox3Fill } from "react-icons/ri";
 import { TbBrandAppgallery, TbCategory2 } from "react-icons/tb";
 import { BiSolidCategoryAlt } from "react-icons/bi";
-import { HiBuildingStorefront } from "react-icons/hi2";
+import { HiBuildingStorefront, HiDocumentText } from "react-icons/hi2";
 import { MdOutlineInventory } from "react-icons/md";
 
 import { removeAll } from "../../../slices/invoiceSecondary";
@@ -69,7 +69,16 @@ function SidebarSec({ TAB, showBar }) {
         label: "Customers",
       },
     ];
-  
+
+    if (org.type === "self") {
+      additionalTabs.push({
+        to: "/sUsers/hsnList",
+        tab: "hsn",
+        icon: <HiDocumentText />,
+        label: "Tax classification",
+      });
+    }
+
     // Show "Inventory" only if org.type is "self"
     if (org.type === "self") {
       additionalTabs.push({
@@ -116,32 +125,25 @@ function SidebarSec({ TAB, showBar }) {
           },
         ],
       });
-    }else{
-
-      additionalTabs.push(
-        {
-          to: "/sUsers/productList",
-          label: "Products",
-          icon: <RiBox3Fill />,
-          tab: "product",
-        }
-      )
+    } else {
+      additionalTabs.push({
+        to: "/sUsers/productList",
+        label: "Products",
+        icon: <RiBox3Fill />,
+        tab: "product",
+      });
     }
-  
     additionalTabs.push({
       to: "/sUsers/OrderConfigurations",
       tab: "terms",
       icon: <IoMdSettings />,
       label: "Settings",
     });
-  
+
     additionalTabs.forEach((item) => {
       navItems.push(item);
     });
   }
-  
-
-  
 
   const getUserData = useCallback(async () => {
     try {

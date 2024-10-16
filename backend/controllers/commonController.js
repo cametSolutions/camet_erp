@@ -424,8 +424,11 @@ export const getPaymentDetails = async (req, res) => {
 };
 
 
-// @desc adding subDetails of product such as brand category subcategory etc
-// route post/api/pUsers/addProductSubDetails
+/**
+ * @desc  adding subDetails of product such as brand category subcategory etc
+ * @route POST/api/pUsers/addProductSubDetails
+ * @access public
+ */
 
 export const addProductSubDetails = async (req, res) => {
   try {
@@ -442,7 +445,7 @@ export const addProductSubDetails = async (req, res) => {
         dataToSave = {
           brand: subDetails[key],
           cmp_id: orgId,
-          Primary_user_id: req.pUserId,
+          Primary_user_id: req.pUserId || req.owner,
         };
         break;
       case "category":
@@ -450,7 +453,7 @@ export const addProductSubDetails = async (req, res) => {
         dataToSave = {
           category: subDetails[key],
           cmp_id: orgId,
-          Primary_user_id: req.pUserId,
+          Primary_user_id: req.pUserId || req.owner,
         };
         break;
       case "subcategory":
@@ -459,7 +462,7 @@ export const addProductSubDetails = async (req, res) => {
           subcategory: subDetails[key],
           categoryId: subDetails.categoryId,
           cmp_id: orgId,
-          Primary_user_id: req.pUserId,
+          Primary_user_id: req.pUserId || req.owner,
         };
         break;
       case "godown":
@@ -468,7 +471,7 @@ export const addProductSubDetails = async (req, res) => {
           godown: subDetails[key],
           address: subDetails.address,
           cmp_id: orgId,
-          Primary_user_id: req.pUserId,
+          Primary_user_id: req.pUserId || req.owner,
           defaultGodown: false,
         };
 
@@ -480,7 +483,7 @@ export const addProductSubDetails = async (req, res) => {
             godown: "Default Godown",
             address: "Default Address",
             cmp_id: orgId,
-            Primary_user_id: req.pUserId,
+            Primary_user_id: req.pUserId || req.owner,
             defaultGodown: true,
           });
           const savedDefaultGodown = await defaultGodown.save();
@@ -523,8 +526,11 @@ export const addProductSubDetails = async (req, res) => {
 };
 
 
-// @desc get subDetails of product such as brand category subcategory etc
-// route get/api/pUsers/getProductSubDetails
+/**
+ * @desc  get subDetails of product such as brand category subcategory etc
+ * @route GET/api/pUsers/getProductSubDetails
+ * @access Public
+ */
 
 export const getProductSubDetails = async (req, res) => {
   try {
@@ -581,8 +587,11 @@ export const getProductSubDetails = async (req, res) => {
   }
 };
 
-// @des  delete subDetails of product such as brand category subcategory etc
-// route delete/api/pUsers/deleteProductSubDetails
+/**
+ * @desc  delete subDetails of product such as brand category subcategory etc
+ * @route DELETE/api/pUsers/deleteProductSubDetails
+ * @access Public
+ */
 export const deleteProductSubDetails = async (req, res) => {
   try {
     const { orgId, id } = req.params;
@@ -627,8 +636,11 @@ export const deleteProductSubDetails = async (req, res) => {
   }
 };
 
-// @des  edit  subDetails of product such as brand category subcategory etc
-// route put/api/pUsers/deleteProductSubDetails
+/**
+ * @desc  edit subDetails of product such as brand category subcategory etc
+ * @route PUT/api/pUsers/editProductSubDetails
+ * @access Public
+ */
 export const editProductSubDetails = async (req, res) => {
   try {
     const { orgId, id } = req.params;

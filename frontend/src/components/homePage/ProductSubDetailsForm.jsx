@@ -21,20 +21,30 @@ const ProductSubDetailsForm = ({ tab }) => {
     enabled: false,
   });
 
-  const orgId = useSelector(
-    (state) => state.setSelectedOrganization.selectedOrg._id
-  );
+
 
   const location = useLocation();
 
-  let user;
-  if (location?.pathname?.startsWith("/pUsers")) {
-    user = "pUsers";
-  }else{
-    user = "sUsers";
-  }
+// Call useSelector hooks unconditionally
+const selectedOrgId = useSelector(
+  (state) => state.setSelectedOrganization.selectedOrg._id
+);
+const secSelectedOrgId = useSelector(
+  (state) => state.secSelectedOrganization.secSelectedOrg._id
+);
 
-  console.log("user", user);
+let user;
+let orgId;
+
+if (location?.pathname?.startsWith("/pUsers")) {
+  user = "pUsers";
+  orgId = selectedOrgId;
+} else {
+  user = "sUsers";
+  orgId = secSelectedOrgId;
+}
+
+  
   
 
 

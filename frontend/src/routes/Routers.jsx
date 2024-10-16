@@ -363,12 +363,18 @@ const Routers = () => {
 
         {/* inventory secondary */}
         {/* we are using the same page of primary to avoid page repetition */}
-
         <Route path='/sUsers/brand' element={<ProtectedSecRoute><AddBrand/></ProtectedSecRoute>}></Route> 
         <Route path='/sUsers/category' element={<ProtectedSecRoute><AddCategory/></ProtectedSecRoute>}></Route> 
         <Route path='/sUsers/subcategory' element={<ProtectedSecRoute><AddSubCategory/></ProtectedSecRoute>}></Route> 
         <Route path='/sUsers/godown' element={<ProtectedSecRoute><AddGodown/></ProtectedSecRoute>}></Route> 
         <Route path='/sUsers/pricelevel' element={<ProtectedSecRoute><AddPriceLevel/></ProtectedSecRoute>}></Route>
+
+
+      {/* hsn */}
+        {/* we are using the same page of primary to avoid page repetition */}
+      <Route path='/sUsers/hsnList' element={<ProtectedSecRoute><HsnList/></ProtectedSecRoute>}></Route>
+      <Route path='/pUsers/hsn' element={<ProtectedPriRoute><Hsn/></ProtectedPriRoute>}></Route>
+
 
 
         {/* errorPage */}
