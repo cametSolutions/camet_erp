@@ -20,7 +20,7 @@ function PrimaryUsers() {
   const [showSecUSers, setShowSecUSers] = useState(false);
   const [filteredSecUsers, setFilteredSecUsers] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [postPerPage, setPostPerPage] = useState(5);
+  const [postPerPage, setPostPerPage] = useState(25);
   const [option, setOption] = useState("");
   const [loading, setLoading] = useState(false);
 

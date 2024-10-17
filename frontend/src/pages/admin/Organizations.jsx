@@ -11,7 +11,7 @@ function Organisation() {
   const [searchQuery, setSearchQuery] = useState("");
 
   const [currentPage, setCurrentPage] = useState(1);
-  const [postPerPage, setPostPerPage] = useState(6);
+  const [postPerPage, setPostPerPage] = useState(25);
   const [refresh, setRefresh] = useState(false);
 
 

@@ -15,7 +15,7 @@ function SecUsersListAdminBlocked() {
   const [selectedPrimary, setSelectedPrimary] = useState("");
   const [refresh, setRefresh] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [postPerPage, setPostPerPage] = useState(6);
+  const [postPerPage, setPostPerPage] = useState(25);
 
   useEffect(() => {
     const fetchOrganizations = async () => {
