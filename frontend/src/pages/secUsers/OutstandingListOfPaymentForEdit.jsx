@@ -90,12 +90,16 @@ function OutstandingListOfPaymentForEdit() {
       };
     });
   
-    // Sort the combined array by bill_date
-    const sortedArray = combinedArray.sort((a, b) => {
-      const dateA = new Date(a.bill_date);
-      const dateB = new Date(b.bill_date);
-      return dateA - dateB; // Ascending order
-    });
+   // Filter out any entries with bill_pending_amt of 0
+   const filteredArray = combinedArray.filter(outstanding => outstanding.bill_pending_amt !== 0);
+
+   // Sort the filtered array by bill_date
+   const sortedArray = filteredArray.sort((a, b) => {
+     const dateA = new Date(a.bill_date);
+     const dateB = new Date(b.bill_date);
+     return dateA - dateB; // Ascending order
+   });
+ 
   
     return sortedArray;
   };

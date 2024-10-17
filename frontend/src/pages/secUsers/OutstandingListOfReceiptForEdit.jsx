@@ -31,7 +31,7 @@ function OutstandingListOfReceiptForEdit() {
     totalBillAmount,
     billData,
     _id,
-    modifiedOutstandings : modifiedOutstandingsRedux,
+    modifiedOutstandings: modifiedOutstandingsRedux,
   } = useSelector((state) => state.receipt);
 
   // console.log("billData", billData);
@@ -60,46 +60,62 @@ function OutstandingListOfReceiptForEdit() {
 
   const modifyOutstandings = (outstandings, billData, receiptData) => {
     // Create a map of bill numbers to settled amounts from billData
-    const billSettlements = new Map(billData.map(bill => [bill.billNo, bill.settledAmount]));
-  
+    const billSettlements = new Map(
+      billData.map((bill) => [bill.billNo, bill.settledAmount])
+    );
+
     // Create a map of bill numbers to pending amounts from receiptData
-    const receiptPendingAmounts = new Map(receiptData.outstandings.map(bill => [bill.bill_no, bill.bill_pending_amt]));
-  
+    const receiptPendingAmounts = new Map(
+      receiptData.outstandings.map((bill) => [
+        bill.bill_no,
+        bill.bill_pending_amt,
+      ])
+    );
+
     // Combine outstandings and receiptData.outstandings, overwriting by bill_no
     const combinedMap = new Map();
-  
+
     // Add all entries from receiptData.outstandings to the map
-    receiptData.outstandings.forEach(bill => {
+    receiptData.outstandings.forEach((bill) => {
       combinedMap.set(bill.bill_no, { ...bill });
     });
-  
+
     // Add or overwrite entries from outstandings to the map
-    outstandings.forEach(bill => {
-      combinedMap.set(bill.bill_no, { ...bill, ...combinedMap.get(bill.bill_no) });
+    outstandings.forEach((bill) => {
+      combinedMap.set(bill.bill_no, {
+        ...bill,
+        ...combinedMap.get(bill.bill_no),
+      });
     });
-  
+
     // Convert the map back to an array and modify the pending amounts
-    const combinedArray = Array.from(combinedMap.values()).map(outstanding => {
-      const billNo = outstanding.bill_no;
-      const settledAmount = billSettlements.get(billNo) || 0;
-      const receiptPendingAmount = receiptPendingAmounts.get(billNo) || 0;
-  
-      return {
-        ...outstanding,
-        bill_pending_amt: receiptPendingAmount + settledAmount
-      };
-    });
-  
-    // Sort the combined array by bill_date
-    const sortedArray = combinedArray.sort((a, b) => {
+    const combinedArray = Array.from(combinedMap.values()).map(
+      (outstanding) => {
+        const billNo = outstanding.bill_no;
+        const settledAmount = billSettlements.get(billNo) || 0;
+        const receiptPendingAmount = receiptPendingAmounts.get(billNo) || 0;
+
+        return {
+          ...outstanding,
+          bill_pending_amt: receiptPendingAmount + settledAmount,
+        };
+      }
+    );
+
+    // Filter out any entries with bill_pending_amt of 0
+    const filteredArray = combinedArray.filter(
+      (outstanding) => outstanding.bill_pending_amt !== 0
+    );
+
+    // Sort the filtered array by bill_date
+    const sortedArray = filteredArray.sort((a, b) => {
       const dateA = new Date(a.bill_date);
       const dateB = new Date(b.bill_date);
       return dateA - dateB; // Ascending order
     });
-  
+
     return sortedArray;
   };
-  
 
   /// to get out standing with are in the time of edit with new (latest) pending amount
   //we need to alter remaining amount as bill_pending_amt=current bill_pending_amt + settledAmount
@@ -121,7 +137,7 @@ function OutstandingListOfReceiptForEdit() {
       );
       setTotal(totalBillAmount);
       dispatch(setTotalBillAmount(totalBillAmount));
-    }else{
+    } else {
       setData(modifiedOutstandingsRedux);
     }
   }, [receiptData]);
@@ -198,7 +214,6 @@ function OutstandingListOfReceiptForEdit() {
         formatAmount,
         advanceAmount,
         tab: "receipt",
-        
       }}
     />
   );
