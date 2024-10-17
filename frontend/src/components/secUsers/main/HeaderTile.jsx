@@ -39,7 +39,7 @@ function HeaderTile({
         </div>
         <div className="  ">
           <div className="  flex gap-5 items-center ">
-            <div className="hidden md:block">
+            <div className="hidden sm:block">
               <button
                 onClick={submitHandler}
                 className=" bottom-0 text-white bg-violet-700  w-full rounded-md  p-2 flex items-center justify-center gap-2 hover_scale cursor-pointer "

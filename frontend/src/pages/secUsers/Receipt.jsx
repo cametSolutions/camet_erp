@@ -16,6 +16,7 @@ import AddAmountTile from "../../components/secUsers/main/AddAmountTile";
 import PaymentModeTile from "../../components/secUsers/main/PaymentModeTile";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
+import ReceiptButton from "../../components/secUsers/main/Forms/ReceiptButton";
 
 function Receipt() {
   // ////////////////dispatch
@@ -37,7 +38,7 @@ function Receipt() {
     paymentMethod,
     paymentDetails,
     note,
-    outstandings
+    outstandings,
   } = useSelector((state) => state.receipt);
 
   const [receiptNumber, setReceiptNumber] = useState("");
@@ -116,7 +117,7 @@ function Receipt() {
       paymentMethod,
       paymentDetails,
       note,
-      outstandings
+      outstandings,
     };
 
     if (formData?.paymentMethod === "Online") {
@@ -127,7 +128,6 @@ function Receipt() {
       };
     }
     if (formData?.paymentMethod === "Cash") {
-
       formData.paymentDetails = {
         ...formData.paymentDetails,
         bank_ledname: null,
@@ -137,7 +137,6 @@ function Receipt() {
         chequeNumber: null,
       };
     }
-
 
     // Validation
     if (!formData.receiptNumber) {
@@ -191,22 +190,16 @@ function Receipt() {
       }
     }
 
-
     console.log("formDataddd", formData);
-
 
     // // If validation passes, proceed with the form submission
     try {
-      const res = await api.post(
-        `/api/sUsers/createReceipt`,
-        formData,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-          withCredentials: true,
-        }
-      );
+      const res = await api.post(`/api/sUsers/createReceipt`, formData, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        withCredentials: true,
+      });
 
       console.log(res.data);
       toast.success(res.data.message);
@@ -220,7 +213,7 @@ function Receipt() {
   };
 
   return (
-    <div>
+    <div className="min-h-screen relative">
       <header className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex  items-center gap-2 sticky top-0 z-50  ">
         <Link to={"/sUsers/selectVouchers"}>
           <IoIosArrowRoundBack className="text-3xl text-white cursor-pointer" />
@@ -250,6 +243,8 @@ function Receipt() {
 
       <AddAmountTile party={party} tab="receipt" />
       <PaymentModeTile tab="receipt" />
+
+      <ReceiptButton submitHandler={submitHandler} text="Generate Receipt" />
     </div>
   );
 }

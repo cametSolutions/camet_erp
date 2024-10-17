@@ -16,6 +16,7 @@ import AddAmountTile from "../../components/secUsers/main/AddAmountTile";
 import PaymentModeTile from "../../components/secUsers/main/PaymentModeTile";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
+import ReceiptButton from "../../components/secUsers/main/Forms/ReceiptButton";
 
 function PurchasePayment() {
   // ////////////////dispatch
@@ -254,6 +255,8 @@ function PurchasePayment() {
 
       <AddAmountTile party={party}  tab="purchase" />
       <PaymentModeTile tab="payment" />
+      <ReceiptButton submitHandler={submitHandler} text="Generate Payment" />
+
     </div>
   );
 }

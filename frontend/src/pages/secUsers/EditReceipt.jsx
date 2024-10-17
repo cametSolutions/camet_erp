@@ -30,6 +30,7 @@ import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import useFetch from "../../customHook/useFetch";
 import { useParams } from "react-router-dom";
+import ReceiptButton from "../../components/secUsers/main/Forms/ReceiptButton";
 
 function EditReceipt() {
   const { id } = useParams();
@@ -286,6 +287,8 @@ function EditReceipt() {
 
       <AddAmountTile party={partyRedux} tab="receipt" process="edit" />
       <PaymentModeTile tab="receipt" />
+      <ReceiptButton submitHandler={submitHandler} text="Edit Receipt" />
+
     </div>
   );
 }

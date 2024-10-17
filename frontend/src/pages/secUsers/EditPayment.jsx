@@ -30,6 +30,7 @@ import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import useFetch from "../../customHook/useFetch";
 import { useParams } from "react-router-dom";
+import ReceiptButton from "../../components/secUsers/main/Forms/ReceiptButton";
 
 function EditPayment() {
   const { id } = useParams();
@@ -52,9 +53,9 @@ function EditPayment() {
     _id: _idRedux,
     outstandings: outstandingsRedux,
     modifiedOutstandings: modifiedOutstandingsRedux,
-    enteredAmount : enteredAmountRedux,
-    advanceAmount : advanceAmountRedux,
-    remainingAmount : remainingAmountRedux,
+    enteredAmount: enteredAmountRedux,
+    advanceAmount: advanceAmountRedux,
+    remainingAmount: remainingAmountRedux,
   } = useSelector((state) => state.payment);
 
   const [selectedDate, setSelectedDate] = useState(dateRedux);
@@ -69,75 +70,73 @@ function EditPayment() {
 
   useEffect(() => {
     if (paymentDetailsOfPurchase) {
-        const {
-          paymentNumber,
-          createdAt,
-          party,
-          billData,
-          totalBillAmount,
-          enteredAmount,
-          // advanceAmount,
-          // remainingAmount,
-          paymentMethod,
-          paymentDetails,
-          note,
-          outstandings,
-        } = paymentDetailsOfPurchase.payment;
+      const {
+        paymentNumber,
+        createdAt,
+        party,
+        billData,
+        totalBillAmount,
+        enteredAmount,
+        // advanceAmount,
+        // remainingAmount,
+        paymentMethod,
+        paymentDetails,
+        note,
+        outstandings,
+      } = paymentDetailsOfPurchase.payment;
 
-        if (id && !_idRedux) {
-          dispatch(addReceiptId(id));
-        }
+      if (id && !_idRedux) {
+        dispatch(addReceiptId(id));
+      }
 
-        if (paymentNumber && !paymentNumberRedux) {
-          dispatch(addPaymentNumber(paymentNumber));
-        }
+      if (paymentNumber && !paymentNumberRedux) {
+        dispatch(addPaymentNumber(paymentNumber));
+      }
 
-        if (createdAt) {
-          setSelectedDate(new Date(createdAt));
-          dispatch(changeDate(new Date(createdAt).toISOString()));
-        } else {
-          console.log("date not changed");
+      if (createdAt) {
+        setSelectedDate(new Date(createdAt));
+        dispatch(changeDate(new Date(createdAt).toISOString()));
+      } else {
+        console.log("date not changed");
 
-          setSelectedDate(dateRedux);
-        }
+        setSelectedDate(dateRedux);
+      }
 
-        if (party && Object.keys(partyRedux) == 0) {
-          dispatch(addParty(party));
-        }
-        if (billData && billDataRedux.length == 0) {
-          dispatch(
-            addSettlementData({ billData, totalBillAmount, enteredAmount })
-          );
-        }
-        if (totalBillAmount && !totalBillAmountRedux) {
-          dispatch(setTotalBillAmount(totalBillAmount));
-        }
-        if (paymentDetails) {
-          dispatch(addPaymentDetails(paymentDetails));
-        }
-        if (paymentMethod && paymentMethodRedux === "") {
-          dispatch(addPaymentMethod(paymentMethod));
-        }
-        if (note && noteRedux === "") {
-          dispatch(addNote(note));
-        }
-        if (
-          paymentDetails?.chequeNumber &&
-          paymentDetailsRedux.chequeNumber === ""
-        ) {
-          dispatch(addChequeNumber(paymentDetails.chequeNumber));
-        }
-        if (paymentDetails?.chequeDate) {
-          dispatch(addChequeDate(paymentDetails.chequeDate));
-        }
+      if (party && Object.keys(partyRedux) == 0) {
+        dispatch(addParty(party));
+      }
+      if (billData && billDataRedux.length == 0) {
+        dispatch(
+          addSettlementData({ billData, totalBillAmount, enteredAmount })
+        );
+      }
+      if (totalBillAmount && !totalBillAmountRedux) {
+        dispatch(setTotalBillAmount(totalBillAmount));
+      }
+      if (paymentDetails) {
+        dispatch(addPaymentDetails(paymentDetails));
+      }
+      if (paymentMethod && paymentMethodRedux === "") {
+        dispatch(addPaymentMethod(paymentMethod));
+      }
+      if (note && noteRedux === "") {
+        dispatch(addNote(note));
+      }
+      if (
+        paymentDetails?.chequeNumber &&
+        paymentDetailsRedux.chequeNumber === ""
+      ) {
+        dispatch(addChequeNumber(paymentDetails.chequeNumber));
+      }
+      if (paymentDetails?.chequeDate) {
+        dispatch(addChequeDate(paymentDetails.chequeDate));
+      }
 
-        if (outstandings && outstandingsRedux.length == 0) {
-          dispatch(addOutstandings(outstandings));
-        }
+      if (outstandings && outstandingsRedux.length == 0) {
+        dispatch(addOutstandings(outstandings));
+      }
     }
   }, [paymentDetailsOfPurchase]);
-
-  
 
   const submitHandler = async () => {
     // Form data
@@ -148,9 +147,9 @@ function EditPayment() {
       party: partyRedux,
       billData: billDataRedux,
       totalBillAmount: totalBillAmountRedux,
-      enteredAmount : enteredAmountRedux,
-      advanceAmount : advanceAmountRedux,
-      remainingAmount : remainingAmountRedux,
+      enteredAmount: enteredAmountRedux,
+      advanceAmount: advanceAmountRedux,
+      remainingAmount: remainingAmountRedux,
       paymentMethod: paymentMethodRedux,
       paymentDetails: paymentDetailsRedux,
       outstandings: modifiedOutstandingsRedux,
@@ -230,7 +229,6 @@ function EditPayment() {
     }
 
     // console.log("formData", formData);
-    
 
     // If validation passes, proceed with the form submission
     try {
@@ -284,6 +282,7 @@ function EditPayment() {
 
       <AddAmountTile party={partyRedux} tab="payment" process="edit" />
       <PaymentModeTile tab="payment" />
+      <ReceiptButton submitHandler={submitHandler} text="Edit Payment" />
     </div>
   );
 }
