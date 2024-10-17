@@ -38,6 +38,8 @@ function PurchasePayment() {
     paymentMethod,
     paymentDetails,
     note,
+    outstandings
+    
   } = useSelector((state) => state.payment);
 
   const [paymentNumber, setpaymentNumber] = useState("");
@@ -117,6 +119,7 @@ function PurchasePayment() {
       paymentMethod,
       paymentDetails,
       note,
+      outstandings
     };
 
     if (formData?.paymentMethod === "Online") {
@@ -138,7 +141,6 @@ function PurchasePayment() {
       };
     }
 
-    // console.log(formData);
 
     // Validation
     if (!formData.paymentNumber) {
@@ -192,7 +194,7 @@ function PurchasePayment() {
       }
     }
 
-    console.log(formData);
+    // console.log(formData);
     
 
 

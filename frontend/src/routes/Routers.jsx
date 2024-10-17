@@ -171,6 +171,8 @@ import PaymtentDetailsPrimary from '../pages/primaryUsers/PaymtentDetailsPrimary
 import ReceiptDetailsPrimary from '../pages/primaryUsers/ReceiptDetailsPrimary'
 import EditReceipt from '../pages/secUsers/EditReceipt'
 import OutstandingListOfReceiptForEdit from '../pages/secUsers/OutstandingListOfReceiptForEdit'
+import EditPayment from '../pages/secUsers/EditPayment'
+import OutstandingListOfPaymentForEdit from '../pages/secUsers/OutstandingListOfPaymentForEdit'
 
 const Routers = () => {
   return (
@@ -339,6 +341,8 @@ const Routers = () => {
         <Route path='/sUsers/payment/bankList' element={<ProtectedSecRoute><BankPayment/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/payment/details/:id' element={<ProtectedSecRoute><PaymtentDetails/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/paymentPrintOut' element={<ProtectedSecRoute><PaymentPrintOut/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/editPayment/:id' element={<ProtectedSecRoute><EditPayment/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/payment/edit/addAmount/:party_id' element={<ProtectedSecRoute><OutstandingListOfPaymentForEdit/></ProtectedSecRoute>}></Route>
 
 
          {/* creditNote */}

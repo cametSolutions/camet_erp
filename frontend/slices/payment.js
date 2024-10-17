@@ -1,9 +1,12 @@
 import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
+  _id: "",
   paymentNumber: "",
   date: new Date().toISOString(),
   outstandings: [],
+  modifiedOutstandings: [], ////used in the case of edit
+
   billData: [],
   party: {},
   totalBillAmount: 0,
@@ -12,9 +15,9 @@ const initialState = {
   remainingAmount: 0,
   paymentMethod: "",
   paymentDetails: {
-    _id:null,
+    _id: null,
     bank_name: null,
-    bank_ledname:null,
+    bank_ledname: null,
     chequeNumber: "",
     chequeDate: new Date().toISOString(),
   },
@@ -52,14 +55,13 @@ export const paymentSlice = createSlice({
       state.totalBillAmount = totalBillAmount;
       state.enteredAmount = enteredAmount;
 
-      if(enteredAmount>totalBillAmount){
+      if (enteredAmount > totalBillAmount) {
         state.advanceAmount = enteredAmount - totalBillAmount;
         state.remainingAmount = 0;
-      }else{
+      } else {
         state.advanceAmount = 0;
-        state.remainingAmount = totalBillAmount - enteredAmount
+        state.remainingAmount = totalBillAmount - enteredAmount;
       }
-
     },
     addOutstandings: (state, action) => {
       state.outstandings = action.payload;
@@ -71,13 +73,13 @@ export const paymentSlice = createSlice({
       const { _id, bank_ledname, bank_name } = action.payload;
 
       console.log(state.paymentDetails);
-    
-      state.paymentDetails={
+
+      state.paymentDetails = {
         ...state.paymentDetails,
         _id,
         bank_ledname,
-        bank_name
-      }
+        bank_name,
+      };
     },
     addPaymentMethod: (state, action) => {
       state.paymentMethod = action.payload;
@@ -103,6 +105,13 @@ export const paymentSlice = createSlice({
     addIsNoteOpen: (state, action) => {
       state.isNoteOpen = action.payload;
     },
+
+    addReceiptId: (state, action) => {
+      state._id = action.payload;
+    },
+    setModifiedOutstandings: (state, action) => {
+      state.modifiedOutstandings = action.payload;
+    },
   },
 });
 
@@ -123,6 +132,8 @@ export const {
   addChequeNumber,
   addChequeDate,
   addIsNoteOpen,
+  addReceiptId,
+  setModifiedOutstandings,
 } = paymentSlice.actions;
 
 export default paymentSlice.reducer;

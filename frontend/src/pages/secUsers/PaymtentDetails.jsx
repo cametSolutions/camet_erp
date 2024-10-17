@@ -84,6 +84,7 @@ function PaymtentDetails() {
       title="Payment Details"
       voucherNumber={data.paymentNumber}
       to="/sUsers/paymentPrintOut"
+      editTo="/sUsers/editPayment"
     />
   );
 }

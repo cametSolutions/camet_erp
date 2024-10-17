@@ -25,7 +25,7 @@ import { authSecondary } from '../middlewares/authSecUsers.js';
 import { secondaryIsBlocked } from '../middlewares/isBlocked.js';
 import { companyAuthentication } from '../middlewares/authCompany.js';
 import { fetchOutstandingDetails,createReceipt,cancelReceipt,editReceipt } from '../controllers/receiptController.js';
-import { createPayment,cancelPayment } from '../controllers/paymentController.js';
+import { createPayment,cancelPayment, editPayment } from '../controllers/paymentController.js';
 import { createInvoice,editInvoice,cancelSalesOrder } from '../controllers/saleOrderController.js';
 import { createStockTransfer,editStockTransfer, cancelStockTransfer } from '../controllers/stockTransferController.js';
 
@@ -117,6 +117,8 @@ router.put('/editReceipt/:receiptId',authSecondary,secondaryIsBlocked,editReceip
 router.post('/createPayment',authSecondary,secondaryIsBlocked,createPayment)
 router.get('/getPaymentDetails/:id',authSecondary,secondaryIsBlocked,getPaymentDetails)
 router.post('/cancelPayment/:paymentId/:cmp_id',authSecondary,secondaryIsBlocked,cancelPayment)
+router.put('/editPayment/:paymentId',authSecondary,secondaryIsBlocked,editPayment)
+
 
 
 /// sub details (brand, category, subcategory, godown, pricelevel)

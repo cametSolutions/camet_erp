@@ -128,4 +128,4 @@ const DashboardTransaction = ({ filteredData, userType, from }) => {
   );
 };
 
-export default React.memo(DashboardTransaction);
+  export default React.memo(DashboardTransaction);
