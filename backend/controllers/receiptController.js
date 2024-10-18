@@ -126,7 +126,7 @@ export const createReceipt = async (req, res) => {
     );
 
     // Use the helper function to update TallyData
-    await updateTallyData(billData, cmp_id, session);
+    await updateTallyData(billData, cmp_id, session,receiptNumber);
 
     // Create the new receipt
     const newReceipt = new ReceiptModel({
@@ -221,7 +221,7 @@ export const cancelReceipt = async (req, res) => {
     }
 
     // Revert tally updates
-    await revertTallyUpdates(receipt.billData, cmp_id, session);
+    await revertTallyUpdates(receipt.billData, cmp_id, session,receipt.receiptNumber);
 
     // Delete advance receipt, if any
     if (receipt.advanceAmount > 0) {
@@ -304,7 +304,7 @@ export const editReceipt = async (req, res) => {
 
 
     // Revert tally updates
-    await revertTallyUpdates(receipt.billData, cmp_id, session);
+    await revertTallyUpdates(receipt.billData, cmp_id, session,receiptNumber);
 
      // Delete advance receipt, if any
      if (receipt.advanceAmount > 0) {
@@ -312,7 +312,7 @@ export const editReceipt = async (req, res) => {
     }
 
       // Use the helper function to update TallyData
-      await updateTallyData(billData, cmp_id, session);
+      await updateTallyData(billData, cmp_id, session,receiptNumber);
 
       ///update the existing receipt
       receipt.date = date;

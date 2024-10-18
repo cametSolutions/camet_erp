@@ -55,14 +55,13 @@ export const updateReceiptNumber = async (orgId, secondaryUser, session) => {
  * @param {Object} session - mongoose session
  */
 
-export const updateTallyData = async (billData, cmp_id, session) => {
-  // Create a lookup map for billNo to remainingAmount from billData
+export const updateTallyData = async (billData, cmp_id, session, receiptNumber) => {
+  // Create a lookup map for billNo to remainingAmount and settledAmount from billData
   const billAmountMap = new Map(
-    billData.map((bill) => [bill.billNo, bill.remainingAmount])
+    billData.map((bill) => [bill.billNo, { remainingAmount: bill.remainingAmount, settledAmount: bill.settledAmount }])
   );
 
   // Fetch the outstanding bills from TallyData for this company
-
   const outstandingData = await TallyData.find({
     cmp_id,
     bill_no: { $in: Array.from(billAmountMap.keys()) },
@@ -73,20 +72,34 @@ export const updateTallyData = async (billData, cmp_id, session) => {
   }
 
   // Prepare bulk update operations for TallyData
-  const bulkUpdateOperations = outstandingData.map((doc) => ({
-    updateOne: {
-      filter: { _id: doc._id },
-      update: {
-        $set: {
-          bill_pending_amt: billAmountMap.get(doc.bill_no), // Update pending amount
+  const bulkUpdateOperations = outstandingData.map((doc) => {
+    const { remainingAmount, settledAmount } = billAmountMap.get(doc.bill_no); // Get the remaining and settled amount
+
+    return {
+      updateOne: {
+        filter: { _id: doc._id },
+        update: {
+          $set: {
+            bill_pending_amt: remainingAmount, // Update remaining amount (pending amount)
+          },
+          $push: {
+            appliedReceipts: {
+              receiptNumber,  // Add the receipt number
+              settledAmount,  // Add the settled amount directly from billData
+              date: new Date(),  // Optional: Timestamp when this receipt was applied
+            },
+          },
         },
       },
-    },
-  }));
+    };
+  });
 
   // Execute the bulk update in TallyData
   await TallyData.bulkWrite(bulkUpdateOperations, { session });
 };
+
+
+
 
 
 /**
@@ -152,7 +165,9 @@ export const createOutstandingWithAdvanceAmount = async (
  */
 
 
-export const revertTallyUpdates = async (billData, cmp_id, session) => {
+export const revertTallyUpdates = async (billData, cmp_id, session,receiptNumber) => {
+
+  
   try {
     if (!billData || billData.length === 0) {
       console.log("No bill data to revert");
@@ -179,11 +194,17 @@ export const revertTallyUpdates = async (billData, cmp_id, session) => {
     }
 
     // Process updates one at a time instead of bulk
-    for (const doc of tallyDataToRevert) {
+     // Process updates one at a time instead of bulk
+     for (const doc of tallyDataToRevert) {
       const settledAmount = billSettledAmountMap.get(doc.bill_no);
       await TallyData.updateOne(
         { _id: doc._id },
-        { $inc: { bill_pending_amt: settledAmount } }
+        {
+          $inc: { bill_pending_amt: settledAmount },
+          $pull: {
+            appliedReceipts: { receiptNumber: receiptNumber }
+          }
+        }
       ).session(session);
     }
 

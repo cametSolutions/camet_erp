@@ -17,12 +17,10 @@ const tallySchema = new mongoose.Schema({
     group_name: { type: String },
     user_id:{type:String},
     source: { type: String },
+    appliedReceipts: { type: Array,default:[] },
   });
   
 
-
-
-  
   // Create a Mongoose model based on the schema
   export default mongoose.model("Tally", tallySchema);
   
