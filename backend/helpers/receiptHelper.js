@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import receipt from "../../frontend/slices/receipt.js";
 import OragnizationModel from "../models/OragnizationModel.js";
 import TallyData from "../models/TallyData.js";
@@ -55,7 +56,7 @@ export const updateReceiptNumber = async (orgId, secondaryUser, session) => {
  * @param {Object} session - mongoose session
  */
 
-export const updateTallyData = async (billData, cmp_id, session, receiptNumber) => {
+export const updateTallyData = async (billData, cmp_id, session, receiptNumber,_id) => {
   // Create a lookup map for billNo to remainingAmount and settledAmount from billData
   const billAmountMap = new Map(
     billData.map((bill) => [bill.billNo, { remainingAmount: bill.remainingAmount, settledAmount: bill.settledAmount }])
@@ -84,6 +85,7 @@ export const updateTallyData = async (billData, cmp_id, session, receiptNumber) 
           },
           $push: {
             appliedReceipts: {
+              _id,  // Add the _id of the receipt
               receiptNumber,  // Add the receipt number
               settledAmount,  // Add the settled amount directly from billData
               date: new Date(),  // Optional: Timestamp when this receipt was applied
@@ -97,9 +99,6 @@ export const updateTallyData = async (billData, cmp_id, session, receiptNumber) 
   // Execute the bulk update in TallyData
   await TallyData.bulkWrite(bulkUpdateOperations, { session });
 };
-
-
-
 
 
 /**
@@ -165,7 +164,8 @@ export const createOutstandingWithAdvanceAmount = async (
  */
 
 
-export const revertTallyUpdates = async (billData, cmp_id, session,receiptNumber) => {
+export const revertTallyUpdates = async (billData, cmp_id, session,_id) => {
+  const receiptId= new mongoose.Types.ObjectId(_id)
 
   
   try {
@@ -202,7 +202,7 @@ export const revertTallyUpdates = async (billData, cmp_id, session,receiptNumber
         {
           $inc: { bill_pending_amt: settledAmount },
           $pull: {
-            appliedReceipts: { receiptNumber: receiptNumber }
+            appliedReceipts: { _id: receiptId },
           }
         }
       ).session(session);

@@ -160,6 +160,7 @@ export const editSale = async (req, res) => {
       session.startTransaction();
 
       const existingSale = await model.findById(saleId).session(session);
+
       if (!existingSale) {
         await session.abortTransaction();
         session.endSession();
@@ -167,6 +168,11 @@ export const editSale = async (req, res) => {
           .status(404)
           .json({ success: false, message: "Sale not found" });
       }
+
+
+     
+
+
 
       await revertSaleStockUpdates(existingSale.items, session);
 
@@ -203,6 +209,9 @@ export const editSale = async (req, res) => {
       const oldBillValue = Number(existingSale.finalAmount);
       const diffBillValue = newBillValue - oldBillValue;
 
+      console.log("diffBillValue", diffBillValue);
+      
+
       const matchedOutStanding = await TallyData.findOne({
         party_id: party?.party_master_id,
         cmp_id: orgId,
@@ -231,13 +240,13 @@ export const editSale = async (req, res) => {
         );
       }
 
-      await session.commitTransaction();
-      session.endSession();
-      return res.status(200).json({
-        success: true,
-        message: "Sale edited successfully",
-        // outStandingUpdateResult
-      });
+      // await session.commitTransaction();
+      // session.endSession();
+      // return res.status(200).json({
+      //   success: true,
+      //   message: "Sale edited successfully",
+      //   // outStandingUpdateResult
+      // });
     } catch (error) {
       await session.abortTransaction();
       session.endSession();
