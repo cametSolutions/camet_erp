@@ -67,12 +67,12 @@ function ConfigureSecondaryUser() {
         );
 
         const {
-          orderNumber,
+          salesOrderNumber,
           salesNumber,
           purchaseNumber,
           receiptNumber,
           paymentNumber,
-          vanSalesNumber,
+          vanSaleNumber,
           stockTransferNumber,
           creditNoteNumber,
           debitNoteNumber,
@@ -88,11 +88,11 @@ function ConfigureSecondaryUser() {
         };
 
         updateConfig(setSales, salesNumber);
-        updateConfig(setSalesOrder, orderNumber);
+        updateConfig(setSalesOrder, salesOrderNumber);
         updateConfig(setPurchase, purchaseNumber);
         updateConfig(setReceipt, receiptNumber);
         updateConfig(setPayment, paymentNumber);
-        updateConfig(setVanSaleConfig, vanSalesNumber);
+        updateConfig(setVanSaleConfig, vanSaleNumber);
         updateConfig(setStockTransfer, stockTransferNumber);
         updateConfig(setCreditNote, creditNoteNumber);
         updateConfig(setDebitNote, debitNoteNumber);
