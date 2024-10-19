@@ -164,9 +164,7 @@ export const createOutstandingWithAdvanceAmount = async (
  */
 
 
-export const revertTallyUpdates = async (billData, cmp_id, session,_id) => {
-  const receiptId= new mongoose.Types.ObjectId(_id)
-
+export const revertTallyUpdates = async (billData, cmp_id, session,receiptId) => {
   
   try {
     if (!billData || billData.length === 0) {

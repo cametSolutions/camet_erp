@@ -254,21 +254,30 @@ function SidebarSec({ TAB, showBar }) {
           showSidebar
             ? "z-50 absolute h-[125vh] transform translate-x-0"
             : "-translate-x-full md:translate-x-0 z-50 absolute md:relative"
-        } transition-transform duration-500 ease-in-out flex flex-col w-64 h-screen px-4 py-8 bg-gray-900 border-r rtl:border-r-0 rtl:border-l dark:bg-gray-900 dark:border-gray-700 overflow-y-auto`}
+        } transition-transform duration-500 ease-in-out flex flex-col w-64 h-screen px-4 py-2 bg-gray-900 border-r rtl:border-r-0 rtl:border-l dark:bg-gray-900 dark:border-gray-700 overflow-y-auto`}
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
         {/* Keep existing header/profile section */}
-        <div className="w-full relative">
+        <div className="w-full relative  py-4  flex items-center justify-between">
+          <div className="flex gap-7 px-4 items-center">
+
+          <img className="h-7" src="https://cdn-icons-png.flaticon.com/128/3097/3097023.png" alt="" />
+          <h1 className="text-white text-md font-bold">CAMET ERP</h1>
+          </div>
+
           <div
             onClick={handleSidebarItemClick}
-            className="text-white text-3xl absolute right-0 top-[-20px] md:hidden"
+            className="text-white text-3xl  md:hidden cursor-pointer"
           >
             <IoReorderThreeSharp />
           </div>
         </div>
+          <hr className=" border border-gray-800" />
+
+        {/* <hr /> */}
 
         {/* Keep existing profile section */}
-        <div className="flex flex-col items-center mt-6 -mx-2">
+        <div className="flex flex-col items-center mt-6 -mx-2 ">
           <img
             className="object-cover w-24 h-24 mx-2 rounded-full"
             src={

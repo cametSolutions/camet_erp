@@ -1639,37 +1639,6 @@ export const addconfigurations = async (req, res) => {
   }
 };
 
-// @desc toget the details of transaction or sale
-// route get/api/sUsers/getSalesDetails
-
-export const getSalesDetails = async (req, res) => {
-  const saleId = req.params.id;
-  const vanSaleQuery = req.query.vanSale;
-
-  const isVanSale = vanSaleQuery === "true";
-
-  let model;
-  if (isVanSale) {
-    model = vanSaleModel;
-  } else {
-    model = salesModel;
-  }
-
-  try {
-    const saleDetails = await model.findById(saleId);
-
-    if (saleDetails) {
-      res
-        .status(200)
-        .json({ message: "Sales details fetched", data: saleDetails });
-    } else {
-      res.status(404).json({ error: "Sale not found" });
-    }
-  } catch (error) {
-    console.error("Error fetching sale details:", error);
-    res.status(500).json({ error: "Internal Server Error" });
-  }
-};
 
 // @desc   saveSalesNumber
 // route post/api/sUsers/saveSalesNumber/cmp_id

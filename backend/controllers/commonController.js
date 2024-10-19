@@ -14,12 +14,67 @@ import { aggregateTransactions } from "../helpers/helper.js";
 import { startOfDay, endOfDay } from "date-fns";
 import receiptModel from "../models/receiptModel.js";
 import paymentModel from "../models/paymentModel.js";
+import OutstandingModel from "../models/TallyData.js";
 import { Brand } from "../models/subDetails.js";
 import { Category } from "../models/subDetails.js";
 import { Subcategory } from "../models/subDetails.js";
 import { Godown } from "../models/subDetails.js";
 import { PriceLevel } from "../models/subDetails.js";
 import mongoose from "mongoose";
+
+// @desc toget the details of transaction or sale
+// route get/api/sUsers/getSalesDetails
+
+export const getSalesDetails = async (req, res) => {
+  const saleId = req.params.id;
+  const vanSaleQuery = req.query.vanSale;
+
+  const isVanSale = vanSaleQuery === "true";
+
+  let model;
+  if (isVanSale) {
+    model = vanSaleModel;
+  } else {
+    model = salesModel;
+  }
+
+  try {
+    const saleDetails = await model.findById(saleId);
+
+    ////find the outstanding of the sale
+    const outstandingOfSale = await OutstandingModel.findOne(
+      { bill_no: saleDetails.salesNumber, cmp_id: saleDetails.cmp_id,Primary_user_id:saleDetails.Primary_user_id },
+    );
+
+    let isEditable = true;
+
+    if (outstandingOfSale) {
+
+      console.log("outstandingOfSale",outstandingOfSale);
+      
+      isEditable =
+        outstandingOfSale?.appliedReceipts?.length == 0 ? true : false;
+    }
+
+    const saleDetailsObj = saleDetails.toObject();
+    saleDetailsObj.isEditable = isEditable;
+
+
+    
+
+    if (saleDetails) {
+      res
+        .status(200)
+        .json({ message: "Sales details fetched", data: saleDetailsObj });
+    } else {
+      res.status(404).json({ error: "Sale not found" });
+    }
+  } catch (error) {
+    console.error("Error fetching sale details:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
 // @desc to  get stock transfer details
 // route get/api/sUsers/getStockTransferDetails;
 export const getStockTransferDetails = async (req, res) => {
@@ -779,11 +834,6 @@ export const editHsn = async (req, res) => {
   const Primary_user_id = req.pUserId || req.owner;
   req.body.Primary_user_id = Primary_user_id.toString();
 
-
-
-  
-  
-
   try {
     const updateHsn = await hsnModel.findOneAndUpdate(
       { _id: hsnId },
@@ -791,7 +841,6 @@ export const editHsn = async (req, res) => {
       { new: true }
     );
 
-    
     res.status(200).json({
       success: true,
       message: "HSN updated successfully",
@@ -802,7 +851,6 @@ export const editHsn = async (req, res) => {
     res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
-
 
 // @desc delete hsn
 // route get/api/pUsers/deleteProduct
@@ -842,4 +890,3 @@ export const deleteHsn = async (req, res) => {
     });
   }
 };
-

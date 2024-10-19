@@ -22,12 +22,20 @@ function VoucherDetailsHeader({
     reFetchParent(!refresh);
   };
 
+  const handleNavigate = () => {
+    if (data?.isEditable === false) {
+      alert(
+        "You can't edit this voucher since it has been used to generate receipts or payments"
+      );
+      return;
+    }
+    navigate(editLink);
+  };
+
   // Define when to show buttons or just the share button
   const showAllButtons = user === "secondary";
   const showShareButtonOnly = user === "primary" && tab !== "stockTransfer";
   // const hideButtons = user === "primary" && tab === "stockTransfer";
-
-  
 
   return (
     <div>
@@ -52,8 +60,9 @@ function VoucherDetailsHeader({
                     isCancelled={data?.isCancelled}
                     reFetch={reFetch}
                   />
+
                   <div
-                    onClick={() => navigate(editLink)}
+                    onClick={() => handleNavigate(editLink)}
                     className={`${
                       data?.isCancelled && "pointer-events-none opacity-60"
                     } flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110 cursor-pointer`}

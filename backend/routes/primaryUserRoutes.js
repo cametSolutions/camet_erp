@@ -14,7 +14,7 @@ import { registerPrimaryUser,login,addOrganizations,
  addBank,getBankDetails,editBank,getSecUserDetails,
   editSecUSer,saveOrderNumber,getInvoiceDetails,editInvoice,addAditionalCharge,
   deleteAdditionalCharge,EditAditionalCharge,addconfigurations,
-  createSale,saveSalesNumber,getSalesDetails,fetchGodownsAndPriceLevels,fetchAdditionalDetails,
+  createSale,saveSalesNumber,fetchGodownsAndPriceLevels,fetchAdditionalDetails,
   addSecondaryConfigurations,findPrimaryUserGodowns,findPrimaryUserGodownsSelf,
   godownwiseProducts,godownwiseProductsSelf,getPurchaseDetails,
   getAllSubDetails,fetchConfigurationCurrentNumber} from '../controllers/primaryUserController.js';
@@ -23,7 +23,7 @@ import { registerPrimaryUser,login,addOrganizations,
   import { cancelPurchase } from '../controllers/purchaseController.js';
 
 import {addProduct,editProduct,getCreditNoteDetails,transactions,fetchAdditionalCharges, getDebitNoteDetails,
-  getReceiptDetails,getPaymentDetails,getProductSubDetails,deleteProductSubDetails,editProductSubDetails,addProductSubDetails,addHsn,getSingleHsn,editHsn,deleteHsn} from "../controllers/commonController.js";
+  getReceiptDetails,getPaymentDetails,getProductSubDetails,deleteProductSubDetails,editProductSubDetails,addProductSubDetails,addHsn,getSingleHsn,editHsn,deleteHsn,getSalesDetails} from "../controllers/commonController.js";
 import { singleUpload } from '../multer/multer.js';
 import { primaryIsBlocked } from '../middlewares/isBlocked.js';
 import { companyAuthentication } from '../middlewares/authCompany.js';
