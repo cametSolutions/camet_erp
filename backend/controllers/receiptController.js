@@ -13,7 +13,6 @@ import {
   revertTallyUpdates,
   deleteAdvanceReceipt
 } from "../helpers/receiptHelper.js";
-import { login } from "./secondaryUserController.js";
 
 /**
  * @desc  get outstanding data from tally
