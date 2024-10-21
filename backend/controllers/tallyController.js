@@ -4,6 +4,7 @@ import BankDetailsModel from "../models/bankModel.js";
 import partyModel from "../models/partyModel.js";
 import productModel from "../models/productModel.js";
 import AdditionalCharges from "../models/additionalChargesModel.js";
+import receipt from "../models/receiptModel.js";
 import { fetchData } from "../helpers/tallyHelper.js";
 
 export const saveDataFromTally = async (req, res) => {
@@ -358,5 +359,15 @@ export const getStockTransfers = async (req, res) => {
   const cmp_id = req.params.cmp_id;
   const serialNumber = req.params.SNo;
   return fetchData('stockTransfers', cmp_id, serialNumber, res);
+};
+export const giveReceipts = async (req, res) => {
+  const cmp_id = req.params.cmp_id;
+  const serialNumber = req.params.SNo;
+  return fetchData('receipt', cmp_id, serialNumber, res);
+};
+export const givePayments = async (req, res) => {
+  const cmp_id = req.params.cmp_id;
+  const serialNumber = req.params.SNo;
+  return fetchData('payment', cmp_id, serialNumber, res);
 };
 
