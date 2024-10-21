@@ -365,4 +365,9 @@ export const giveReceipts = async (req, res) => {
   const serialNumber = req.params.SNo;
   return fetchData('receipt', cmp_id, serialNumber, res);
 };
+export const givePayments = async (req, res) => {
+  const cmp_id = req.params.cmp_id;
+  const serialNumber = req.params.SNo;
+  return fetchData('payment', cmp_id, serialNumber, res);
+};
 

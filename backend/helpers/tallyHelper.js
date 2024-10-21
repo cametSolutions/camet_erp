@@ -1,5 +1,6 @@
 import invoiceModel from "../models/invoiceModel.js";
 import receiptModel from "../models/receiptModel.js";
+import paymentModel from "../models/paymentModel.js";
 import salesModel from "../models/salesModel.js";
 import stockTransferModel from "../models/stockTransferModel.js";
 import TransactionModel from "../models/TransactionModel.js";
@@ -26,6 +27,9 @@ export const fetchData = async (type, cmp_id, serialNumber, res) => {
     case "receipt":
       model = receiptModel;
       break;
+    case "payment":
+      model = paymentModel;
+      break;
     default:
       return res.status(400).json({ message: "Invalid type parameter" });
   }
@@ -40,7 +44,7 @@ export const fetchData = async (type, cmp_id, serialNumber, res) => {
 
     if (data.length > 0) {
       // If the type is "receipt", move billData inside the party object
-      if (type === "receipt") {
+      if (type === "receipt" || type === "payment") {
         data.forEach((receipt) => {
           // Move billData to party
           receipt.party.billData = receipt.billData;
