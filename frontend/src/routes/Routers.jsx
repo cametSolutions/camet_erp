@@ -173,6 +173,7 @@ import EditReceipt from '../pages/secUsers/EditReceipt'
 import OutstandingListOfReceiptForEdit from '../pages/secUsers/OutstandingListOfReceiptForEdit'
 import EditPayment from '../pages/secUsers/EditPayment'
 import OutstandingListOfPaymentForEdit from '../pages/secUsers/OutstandingListOfPaymentForEdit'
+import Reports from '../pages/secUsers/Reports'
 
 const Routers = () => {
   return (
@@ -385,6 +386,12 @@ const Routers = () => {
         {/* errorPage */}
         <Route path='/errorPage' element={<ErrorPage />} />
         <Route path='/serverError' element={<ServerError />} />
+
+        {/* report */}
+        <Route path='/sUsers/reports' element={<ProtectedSecRoute><Reports/></ProtectedSecRoute>}></Route>
+
+
+
 
     
     </Routes>

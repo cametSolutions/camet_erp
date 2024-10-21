@@ -13,6 +13,8 @@ import debitNote from "../../../assets/images/debitNote.png";
 import expense from "../../../assets/images/expense.png";
 import vanSale from "../../../assets/images/vanSale.png";
 import stockTransfer from "../../../assets/images/stockTransfer.png";
+import Daybook from "../../../assets/images/Daybook.png";
+import statement from "../../../assets/images/statement.png";
 
 import paymentIn from "../../../assets/images/paymentIn.png";
 import { IoAlertCircle } from "react-icons/io5";
@@ -107,6 +109,27 @@ const others = [
   // Commented out tiles can be uncommented if needed
 ];
 
+
+const popular = [
+  {
+    title: "Day Book",
+    icon: Daybook,
+    to: "/sUsers/transaction",
+    active: true,
+    subtitle: "Efficiently log and monitor all your transactions",
+  },
+  {
+    title: "Party Statement (Ledger)",
+    icon: statement,
+    to: "/sUsers/vanSale",
+    active: false,
+    subtitle: "Keep tabs on transactions per party",
+  },
+
+
+  // Commented out tiles can be uncommented if needed
+];
+
 const VoucherCards = ({ tab }) => {
   const [selectedTab, setSelectedTab] = useState(null);
 
@@ -115,7 +138,11 @@ const VoucherCards = ({ tab }) => {
       setSelectedTab(salesTiles);
     } else if (tab === "purchase") {
       setSelectedTab(purchaseTiles);
-    } else {
+    } 
+    else if (tab === "popular") {
+      setSelectedTab(popular);
+    } 
+    else {
       setSelectedTab(others);
     }
     // Add more conditions here if you have other tabs
@@ -136,7 +163,7 @@ const VoucherCards = ({ tab }) => {
       </aside>
       <main className="">
         <h1 className="text-gray-700 md:text-lg font-medium">{item.title}</h1>
-        <p className="text-sm md:text-md text-gray-500">{item.subtitle}</p>
+        <p className="text-sm md:text-md text-gray-500 mt-1">{item.subtitle}</p>
       </main>
     </div>
   );
