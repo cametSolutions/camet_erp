@@ -258,14 +258,30 @@ function SidebarSec({ TAB, showBar }) {
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
         {/* Keep existing header/profile section */}
-        <div className="w-full relative">
+        <div className="w-full relative  flex items-center justify-between">
+          <div className="flex gap-3 px-4 items-center">
+            <img
+              className="h-9"
+              src="https://cdn-icons-png.flaticon.com/128/3097/3097023.png"
+              alt=""
+            />
+
+            <div className="flex flex-col">
+              <h1 className="text-white text-md font-bold">CAMET ERP</h1>
+              <p className="text-[8px] text-gray-300"> Camet IT Solutions</p>
+            </div>
+          </div>
+
           <div
             onClick={handleSidebarItemClick}
-            className="text-white text-3xl absolute right-0 top-[-20px] md:hidden"
+            className="text-white text-3xl  md:hidden cursor-pointer"
           >
             <IoReorderThreeSharp />
           </div>
         </div>
+        <hr className=" border border-gray-800 mt-4" />
+
+        {/* <hr /> */}
 
         {/* Keep existing profile section */}
         <div className="flex flex-col items-center mt-6 -mx-2">
@@ -352,6 +368,9 @@ function SidebarSec({ TAB, showBar }) {
             </button>
           </div>
         </div>
+
+        {/* <hr className=" border border-gray-800 mt-4" /> */}
+
 
         <div className="">
           <div className="flex flex-col justify-between flex-1 mt-6">
