@@ -42,24 +42,21 @@ export const getSalesDetails = async (req, res) => {
     const saleDetails = await model.findById(saleId);
 
     ////find the outstanding of the sale
-    const outstandingOfSale = await OutstandingModel.findOne(
-      { bill_no: saleDetails.salesNumber, cmp_id: saleDetails.cmp_id,Primary_user_id:saleDetails.Primary_user_id },
-    );
+    const outstandingOfSale = await OutstandingModel.findOne({
+      bill_no: saleDetails.salesNumber,
+      cmp_id: saleDetails.cmp_id,
+      Primary_user_id: saleDetails.Primary_user_id,
+    });
 
     let isEditable = true;
 
     if (outstandingOfSale) {
-
-      
       isEditable =
         outstandingOfSale?.appliedReceipts?.length == 0 ? true : false;
     }
 
     const saleDetailsObj = saleDetails.toObject();
     saleDetailsObj.isEditable = isEditable;
-
-
-    
 
     if (saleDetails) {
       res
@@ -887,5 +884,46 @@ export const deleteHsn = async (req, res) => {
       success: false,
       message: "Internal server error, try again!",
     });
+  }
+};
+
+// @desc toget the details of transaction or purchase
+// route get/api/sUsers/getPurchaseDetails
+
+export const getPurchaseDetails = async (req, res) => {
+  const purchaseId = req.params.id;
+
+  try {
+    const purchaseDetails = await purchaseModel.findById(purchaseId).lean();
+
+    if (!purchaseDetails) {
+      return res.status(404).json({ error: "Purchase not found" });
+    }
+
+    ////find the outstanding of the sale
+    const outstandingOfPurchase = await OutstandingModel.findOne({
+      bill_no: purchaseDetails.purchaseNumber,
+      cmp_id: purchaseDetails.cmp_id,
+      Primary_user_id: purchaseDetails.Primary_user_id,
+    });
+    let isEditable = true;
+
+    if (outstandingOfPurchase) {
+      isEditable =
+      outstandingOfPurchase?.appliedPayments?.length == 0 ? true : false;
+    }
+
+    purchaseDetails.isEditable = isEditable;
+
+    if (purchaseDetails) {
+      res
+        .status(200)
+        .json({ message: "purchaseDetails  fetched", data: purchaseDetails });
+    } else {
+      res.status(404).json({ error: "Purchase not found" });
+    }
+  } catch (error) {
+    console.error("Error fetching purchase details:", error);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 };

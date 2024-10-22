@@ -12,7 +12,7 @@ import {login,getSecUserData,fetchOutstandingTotal,
     ,saveSalesNumber,fetchAdditionalDetails,
     fetchConfigurationNumber,findSecondaryUserGodowns,findPrimaryUserGodownsSelf,
     godownwiseProducts,godownwiseProductsSelf,
-    findGodownsNames,getPurchaseDetails,getAllSubDetails,
+    findGodownsNames,getAllSubDetails,
     fetchGodowns,
    } from "../controllers/secondaryUserController.js"
  
@@ -20,7 +20,7 @@ import { createPurchase,editPurchase,cancelPurchase } from '../controllers/purch
 import { createCreditNote,cancelCreditNote ,editCreditNote} from '../controllers/creditNoteController.js';
 import {createSale,editSale,cancelSale,} from '../controllers/saleController.js';
 import { cancelDebitNote, createDebitNote, editDebitNote } from '../controllers/debitNoteController.js';
-import { getStockTransferDetails,addProduct ,editProduct,getCreditNoteDetails,transactions,fetchAdditionalCharges, getDebitNoteDetails,getReceiptDetails,getPaymentDetails,getProductSubDetails,deleteProductSubDetails,editProductSubDetails,addProductSubDetails,addHsn,getSingleHsn,editHsn,deleteHsn,getSalesDetails} from '../controllers/commonController.js';
+import { getStockTransferDetails,addProduct ,editProduct,getCreditNoteDetails,transactions,fetchAdditionalCharges, getDebitNoteDetails,getReceiptDetails,getPaymentDetails,getProductSubDetails,deleteProductSubDetails,editProductSubDetails,addProductSubDetails,addHsn,getSingleHsn,editHsn,deleteHsn,getSalesDetails,getPurchaseDetails} from '../controllers/commonController.js';
 import { authSecondary } from '../middlewares/authSecUsers.js';
 import { secondaryIsBlocked } from '../middlewares/isBlocked.js';
 import { companyAuthentication } from '../middlewares/authCompany.js';

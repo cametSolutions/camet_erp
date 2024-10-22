@@ -10,7 +10,6 @@ import VoucherDetailsHeader from "../../components/common/VoucherDetailsHeader";
 import SalesProductDetails from "../../components/common/SalesProductDetails";
 import CancelButton from "../../components/common/CancelButton";
 import { FaEdit } from "react-icons/fa";
-import SwallFireForPdf from "../../components/common/SwallFireForPdf";
 import { IoMdShareAlt } from "react-icons/io";
 
 function PurchaseDetailsSecondary() {
@@ -46,6 +45,16 @@ function PurchaseDetailsSecondary() {
     } else {
       navigate("/sUsers/transaction");
     }
+  };
+
+  const handleEdit = async () => {
+    if (data?.isEditable === false) {
+      alert(
+        "You can't edit this voucher since it has been used to generate receipts or payments"
+      );
+      return;
+    }
+    navigate(`/sUsers/editPurchase/${data?._id}`);
   };
 
   return (
@@ -124,7 +133,7 @@ function PurchaseDetailsSecondary() {
           />
 
           <div
-            onClick={() => navigate(`/sUsers/editPurchase/${data._id}`)}
+            onClick={handleEdit}
             className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer"
           >
             <FaEdit className="text-blue-500" />

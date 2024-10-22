@@ -7,13 +7,15 @@ import mongoose from "mongoose";
 import secondaryUserModel from "../models/secondaryUserModel.js";
 import {
   createOutstandingWithAdvanceAmount,
-  revertTallyUpdates,
-  updateTallyData,
 } from "../helpers/receiptHelper.js";
 
 import {
   deleteAdvancePayment,
   updatePaymentNumber,
+  updateTallyData,
+  revertTallyUpdates,
+
+
 } from "../helpers/paymentHelper.js";
 import paymentModel from "../models/paymentModel.js";
 
@@ -80,8 +82,7 @@ export const createPayment = async (req, res) => {
       session
     );
 
-    // Use the helper function to update TallyData
-    await updateTallyData(billData, cmp_id, session);
+ 
 
     // Create the new payment
     const newPayment = new paymentModel({
@@ -104,7 +105,10 @@ export const createPayment = async (req, res) => {
     });
 
     // Save the payment in the transaction session
-    const savedPayment = await newPayment.save({ session });
+    const savedPayment = await newPayment.save({ session , new: true });
+
+       // Use the helper function to update TallyData
+       await updateTallyData(billData, cmp_id, session,paymentNumber,savedPayment._id.toString());
 
     if (advanceAmount > 0 && savedPayment) {
       const outstandingWithAdvanceAmount =
@@ -274,7 +278,7 @@ export const editPayment = async (req, res) => {
     }
 
     // Use the helper function to update TallyData
-    await updateTallyData(billData, cmp_id, session);
+    await updateTallyData(billData, cmp_id, session, paymentNumber,payment._id.toString());
 
     ///update the existing payment
     payment.date = date;

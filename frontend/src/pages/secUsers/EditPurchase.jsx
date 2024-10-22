@@ -509,7 +509,7 @@ function EditPurchase() {
             className="block md:hidden text-white text-3xl"
           /> */}
           <Link to={-1}>
-            <IoIosArrowRoundBack className="text-3xl text-white cursor-pointer md:hidden" />
+            <IoIosArrowRoundBack className="text-3xl text-white cursor-pointer " />
           </Link>
           <p className="text-white text-lg   font-bold ">Purchase Edit</p>
         </div>

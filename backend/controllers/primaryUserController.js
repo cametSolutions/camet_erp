@@ -3101,31 +3101,6 @@ export const godownwiseProductsSelf = async (req, res) => {
 };
 
 
-// @desc toget the details of transaction or purchase
-// route get/api/sUsers/getPurchaseDetails
-
-export const getPurchaseDetails = async (req, res) => {
-  const purchaseId = req.params.id;
-
-  try {
-    const purchaseDetails = await purchaseModel.findById(purchaseId);
-
-    if (purchaseDetails) {
-      res
-        .status(200)
-        .json({ message: "purchaseDetails  fetched", data: purchaseDetails });
-    } else {
-      res.status(404).json({ error: "Purchase not found" });
-    }
-  } catch (error) {
-    console.error("Error fetching purchase details:", error);
-    res.status(500).json({ error: "Internal Server Error" });
-  }
-};
-
-
-
-
 // @desc get ** all ** subDetails of product such as brand category subcategory etc
 // route get/api/pUsers/getProductSubDetails
 
