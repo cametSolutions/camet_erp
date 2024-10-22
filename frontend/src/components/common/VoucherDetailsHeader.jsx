@@ -59,6 +59,7 @@ function VoucherDetailsHeader({
                     tab={tab}
                     isCancelled={data?.isCancelled}
                     reFetch={reFetch}
+                    isEditable={data?.isEditable}
                   />
 
                   <div

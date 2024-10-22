@@ -50,7 +50,6 @@ export const getSalesDetails = async (req, res) => {
 
     if (outstandingOfSale) {
 
-      console.log("outstandingOfSale",outstandingOfSale);
       
       isEditable =
         outstandingOfSale?.appliedReceipts?.length == 0 ? true : false;

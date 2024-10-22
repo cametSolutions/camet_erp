@@ -57,6 +57,8 @@ export const updateReceiptNumber = async (orgId, secondaryUser, session) => {
  */
 
 export const updateTallyData = async (billData, cmp_id, session, receiptNumber,_id) => {
+
+  // const ObjectId = new mongoose.Types.ObjectId(_id);
   // Create a lookup map for billNo to remainingAmount and settledAmount from billData
   const billAmountMap = new Map(
     billData.map((bill) => [bill.billNo, { remainingAmount: bill.remainingAmount, settledAmount: bill.settledAmount }])
@@ -165,6 +167,10 @@ export const createOutstandingWithAdvanceAmount = async (
 
 
 export const revertTallyUpdates = async (billData, cmp_id, session,receiptId) => {
+
+  // const receiptIdObj = new mongoose.Types.ObjectId(receiptId);
+  // console.log("receiptId", receiptIdObj);  
+  
   
   try {
     if (!billData || billData.length === 0) {

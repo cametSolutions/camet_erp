@@ -6,7 +6,7 @@ import api from "../../api/api";
 import { toast } from "react-toastify";
 import { useState } from "react";
 
-function CancelButton({ id, tab, isCancelled, reFetch, vanSale = false }) {
+function CancelButton({ id, tab, isCancelled, reFetch, vanSale = false,isEditable }) {
   const [refresh, setRefresh] = useState(false);
 
   if (tab === "vanSale") {
@@ -17,6 +17,11 @@ function CancelButton({ id, tab, isCancelled, reFetch, vanSale = false }) {
 
 
   const handleCancel = () => {
+
+    if (!isEditable) {
+      window.alert("You can't cancel this voucher since it has been used to generate receipts or payments");
+      return;
+    }
     Swal.fire({
       title: "Are you sure?",
       text: "You won't be able to revert this!",

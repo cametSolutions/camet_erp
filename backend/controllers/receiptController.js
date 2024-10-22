@@ -153,7 +153,7 @@ export const createReceipt = async (req, res) => {
     const savedReceipt = await newReceipt.save({ session });
 
       // Use the helper function to update TallyData
-      await updateTallyData(billData, cmp_id, session,receiptNumber,savedReceipt._id);
+      await updateTallyData(billData, cmp_id, session,receiptNumber,savedReceipt._id.toString());
 
     if (advanceAmount > 0 && savedReceipt) {
       const outstandingWithAdvanceAmount =
@@ -209,6 +209,9 @@ export const cancelReceipt = async (req, res) => {
     // Find the receipt to be canceled
     const receipt = await ReceiptModel.findById(receiptId).session(session);
 
+    console.log("receipt", receipt._id);
+    
+
     if (!receipt) {
       await session.abortTransaction();
       session.endSession();
@@ -222,7 +225,7 @@ export const cancelReceipt = async (req, res) => {
     }
 
     // Revert tally updates
-    await revertTallyUpdates(receipt.billData, cmp_id, session,receiptId);
+    await revertTallyUpdates(receipt.billData, cmp_id, session,receiptId.toString());
 
     // Delete advance receipt, if any
     if (receipt.advanceAmount > 0) {
@@ -305,7 +308,7 @@ export const editReceipt = async (req, res) => {
 
 
     // Revert tally updates
-    await revertTallyUpdates(receipt.billData, cmp_id, session,receiptId);
+    await revertTallyUpdates(receipt.billData, cmp_id, session,receiptId.toString());
 
      // Delete advance receipt, if any
      if (receipt.advanceAmount > 0) {
