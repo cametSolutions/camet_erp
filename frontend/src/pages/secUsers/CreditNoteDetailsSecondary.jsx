@@ -51,6 +51,15 @@ function CreditNoteDetailsSecondary() {
       navigate("/sUsers/transaction");
     }
   };
+  const handleEdit = () => {
+    if (data?.isEditable === false) {
+      alert(
+        "You can't edit this voucher since it has been used to generate receipts or payments"
+      );
+      return;
+    }
+    navigate(`/sUsers/editCreditNote/${data._id}`)
+  };
 
 
 
@@ -128,10 +137,12 @@ function CreditNoteDetailsSecondary() {
 
         <div className=" block md:hidden z-0 ">
           <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 flex justify-center p-4 gap-12 text-lg text-violet-500  ">
-          <CancelButton id={data._id} tab="CreditNote"  isCancelled={data?.isCancelled} reFetch={reFetch}/>
+            
+            <CancelButton id={data._id} tab="CreditNote"  isCancelled={data?.isCancelled} reFetch={reFetch}  isEditable={data?.isEditable}  />
      
             <div
-              onClick={() => navigate(`/sUsers/editCreditNote/${data._id}`)}
+             onClick={handleEdit}
+              // onClick={() => navigate(`/sUsers/editCreditNote/${data._id}`)}
               className={` ${data?.isCancelled?"pointer-events-none opacity-60" :""}  flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer`}
             >
               <FaEdit className ={`text-blue-500      `} />

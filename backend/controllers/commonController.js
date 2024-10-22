@@ -39,7 +39,7 @@ export const getSalesDetails = async (req, res) => {
   }
 
   try {
-    const saleDetails = await model.findById(saleId);
+    const saleDetails = await model.findById(saleId).lean();
 
     ////find the outstanding of the sale
     const outstandingOfSale = await OutstandingModel.findOne({
@@ -55,13 +55,12 @@ export const getSalesDetails = async (req, res) => {
         outstandingOfSale?.appliedReceipts?.length == 0 ? true : false;
     }
 
-    const saleDetailsObj = saleDetails.toObject();
-    saleDetailsObj.isEditable = isEditable;
+    saleDetails.isEditable = isEditable;
 
     if (saleDetails) {
       res
         .status(200)
-        .json({ message: "Sales details fetched", data: saleDetailsObj });
+        .json({ message: "Sales details fetched", data: saleDetails });
     } else {
       res.status(404).json({ error: "Sale not found" });
     }
@@ -281,8 +280,25 @@ export const getCreditNoteDetails = async (req, res) => {
   try {
     const id = req.params.id;
 
-    const details = await creditNoteModel.findById(id);
+    const details = await creditNoteModel.findById(id).lean();
+
     if (details) {
+      ////find the outstanding of the sale
+      const outstandingOfCreditNote = await OutstandingModel.findOne({
+        bill_no: details.creditNoteNumber,
+        cmp_id: details.cmp_id,
+        Primary_user_id: details.Primary_user_id,
+      });
+
+      let isEditable = true;
+
+      if (outstandingOfCreditNote) {
+        isEditable =
+          outstandingOfCreditNote?.appliedPayments?.length == 0 ? true : false;
+      }
+
+      details.isEditable = isEditable;
+
       res
         .status(200)
         .json({ message: "Credit Note Details fetched", data: details });
@@ -405,8 +421,23 @@ export const getDebitNoteDetails = async (req, res) => {
   try {
     const id = req.params.id;
 
-    const details = await debitNoteModel.findById(id);
+    const details = await debitNoteModel.findById(id).lean();
     if (details) {
+      ////find the outstanding of the sale
+      const outstandingOfCreditNote = await OutstandingModel.findOne({
+        bill_no: details.debitNoteNumber,
+        cmp_id: details.cmp_id,
+        Primary_user_id: details.Primary_user_id,
+      });
+
+      let isEditable = true;
+
+      if (outstandingOfCreditNote) {
+        isEditable =
+          outstandingOfCreditNote?.appliedReceipts?.length == 0 ? true : false;
+      }
+
+      details.isEditable = isEditable;
       res
         .status(200)
         .json({ message: "Debit Note Details fetched", data: details });
@@ -910,7 +941,7 @@ export const getPurchaseDetails = async (req, res) => {
 
     if (outstandingOfPurchase) {
       isEditable =
-      outstandingOfPurchase?.appliedPayments?.length == 0 ? true : false;
+        outstandingOfPurchase?.appliedPayments?.length == 0 ? true : false;
     }
 
     purchaseDetails.isEditable = isEditable;

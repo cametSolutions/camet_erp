@@ -133,6 +133,7 @@ function SalesDetailsSecondary() {
             tab="Sales"
             isCancelled={data?.isCancelled}
             reFetch={reFetch}
+            isEditable={data?.isEditable}
           />
 
           <div
