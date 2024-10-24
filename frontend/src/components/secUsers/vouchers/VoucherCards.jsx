@@ -15,8 +15,12 @@ import vanSale from "../../../assets/images/vanSale.png";
 import stockTransfer from "../../../assets/images/stockTransfer.png";
 import Daybook from "../../../assets/images/Daybook.png";
 import statement from "../../../assets/images/statement.png";
-
 import paymentIn from "../../../assets/images/paymentIn.png";
+import salesSummary from "../../../assets/images/Untitled Project.jpg";
+import oderSummary from "../../../assets/images/oderSummary.png";
+import reciptAandPayments from "../../../assets/images/reciptsandpayments.png";
+import bank from "../../../assets/images/bank.png";
+
 import { IoAlertCircle } from "react-icons/io5";
 
 const salesTiles = [
@@ -111,6 +115,14 @@ const others = [
 
 
 const popular = [
+
+  {
+    title: "Party Statement (Ledger)",
+    icon: statement,
+    to: "/sUsers/vanSale",
+    active: false,
+    subtitle: "Keep tabs on transactions per party",
+  },
   {
     title: "Day Book",
     icon: Daybook,
@@ -119,8 +131,29 @@ const popular = [
     subtitle: "Efficiently log and monitor all your transactions",
   },
   {
-    title: "Party Statement (Ledger)",
-    icon: statement,
+    title: "Sales Summary",
+    icon: salesSummary,
+    to: "/sUsers/vanSale",
+    active: false,
+    subtitle: "Keep tabs on transactions per party",
+  },
+  {
+    title: "Order Summary",
+    icon: oderSummary,
+    to: "/sUsers/vanSale",
+    active: false,
+    subtitle: "Keep tabs on transactions per party",
+  },
+  {
+    title: "Receipt and Payments",
+    icon: reciptAandPayments,
+    to: "/sUsers/vanSale",
+    active: false,
+    subtitle: "Keep tabs on transactions per party",
+  },
+  {
+    title: "Cash or Bank",
+    icon: bank,
     to: "/sUsers/vanSale",
     active: false,
     subtitle: "Keep tabs on transactions per party",
