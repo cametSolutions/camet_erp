@@ -44,7 +44,7 @@ function InvoiceSecondary() {
 
   
   const isTaxInclusive = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg.configurations[0].taxInclusive
+    (state) => state.secSelectedOrganization?.secSelectedOrg?.configurations[0]?.taxInclusive
   );
 
   const date = useSelector((state) => state.invoiceSecondary.date);
