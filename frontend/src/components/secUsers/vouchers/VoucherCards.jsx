@@ -119,8 +119,8 @@ const popular = [
   {
     title: "Party Statement (Ledger)",
     icon: statement,
-    to: "/sUsers/vanSale",
-    active: false,
+    to: "/sUsers/partyStatement/partyList",
+    active: true,
     subtitle: "Keep tabs on transactions per party",
   },
   {

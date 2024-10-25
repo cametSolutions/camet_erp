@@ -5,7 +5,6 @@ import api from "../../api/api";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
 
 import DatePicker from "react-datepicker";
 
@@ -66,7 +65,6 @@ const initialEndDate = localStorage.getItem("SecondaryTransactionEndDate")
       const adjustedEndDate = new Date(endDate).setHours(23, 59, 59, 999);
 
 
-      console.log(createdAtDate, adjustedStartDate, adjustedEndDate);
       
 
       const dateFilterCondition =
@@ -150,9 +148,9 @@ const initialEndDate = localStorage.getItem("SecondaryTransactionEndDate")
                     >
                       <path
                         stroke="currentColor"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
                         d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"
                       />
                     </svg>

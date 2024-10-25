@@ -11,7 +11,7 @@ import purchaseModel from "../models/purchaseModel.js";
 import Oragnization from "../models/OragnizationModel.js";
 import AdditionalChargesModel from "../models/additionalChargesModel.js";
 import { aggregateTransactions } from "../helpers/helper.js";
-import { startOfDay, endOfDay } from "date-fns";
+import { startOfDay, endOfDay ,parseISO } from "date-fns";
 import receiptModel from "../models/receiptModel.js";
 import paymentModel from "../models/paymentModel.js";
 import { Brand } from "../models/subDetails.js";
@@ -247,51 +247,66 @@ export const getCreditNoteDetails = async (req, res) => {
 // @desc to  get transactions
 // route get/api/sUsers/transactions
 
+
 export const transactions = async (req, res) => {
   const userId = req.sUserId;
   const cmp_id = req.params.cmp_id;
-  const { todayOnly } = req.query;
+  const { todayOnly, startOfDayParam, endOfDayParam ,party_id} = req.query; // Added parameters
 
   try {
-    const dateFilter =
-      todayOnly === "true"
-        ? {
-            createdAt: {
-              $gte: startOfDay(new Date()),
-              $lte: endOfDay(new Date()),
-            },
-          }
-        : {};
+    // Initialize dateFilter based on provided parameters
+    let dateFilter = {};
+
+    if (startOfDayParam && endOfDayParam) {
+      // If startOfDay and endOfDay are provided, use them
+      const startDate = parseISO(startOfDayParam);
+      const endDate = parseISO(endOfDayParam);
+
+      dateFilter = {
+        createdAt: {
+          $gte: startOfDay(startDate),
+          $lte: endOfDay(endDate),
+        },
+      };
+    } else if (todayOnly === "true") {
+      // Otherwise, check for todayOnly
+      dateFilter = {
+        createdAt: {
+          $gte: startOfDay(new Date()),
+          $lte: endOfDay(new Date()),
+        },
+      };
+    }else{
+      dateFilter = {}
+    }
 
     // Conditionally include `Secondary_user_id` only if it exists
     const matchCriteria = {
       ...dateFilter,
       cmp_id: cmp_id,
       ...(userId ? { Secondary_user_id: userId } : {}), // If `userId` exists, match with `Secondary_user_id`
+      ...(party_id ? { 'party._id': party_id } : {}), // If `party_id` exists, match with `_id` in the party object
+
     };
 
     const transactionPromises = [
       aggregateTransactions(
         receiptModel,
-        { ...matchCriteria, ...(userId ? { Secondary_user_id: userId } : {}) }, // Conditionally add Secondary_user_id
-        "Receipt"
+        { ...matchCriteria, ...(userId ? { Secondary_user_id: userId } : {}) },
+        "Receipt","receiptNumber"
       ),
       aggregateTransactions(
         paymentModel,
-        { ...matchCriteria, ...(userId ? { Secondary_user_id: userId } : {}) }, // Conditionally add Secondary_user_id
-        "Payment"
+        { ...matchCriteria, ...(userId ? { Secondary_user_id: userId } : {}) },
+        "Payment","paymentNumber"
       ),
-      aggregateTransactions(invoiceModel, matchCriteria, "Sale Order"),
-      aggregateTransactions(salesModel, matchCriteria, "Tax Invoice"),
-      aggregateTransactions(vanSaleModel, matchCriteria, "Van Sale"),
-      aggregateTransactions(purchaseModel, matchCriteria, "Purchase"),
-      aggregateTransactions(
-        stockTransferModel,
-        matchCriteria,
-        "Stock Transfer"
-      ),
-      aggregateTransactions(creditNoteModel, matchCriteria, "Credit Note"),
-      aggregateTransactions(debitNoteModel, matchCriteria, "Debit Note"),
+      aggregateTransactions(invoiceModel, matchCriteria, "Sale Order","orderNumber"),
+      aggregateTransactions(salesModel, matchCriteria, "Tax Invoice","salesNumber"),
+      aggregateTransactions(vanSaleModel, matchCriteria, "Van Sale","salesNumber"),
+      aggregateTransactions(purchaseModel, matchCriteria, "Purchase","purchaseNumber"),
+      aggregateTransactions(stockTransferModel, matchCriteria, "Stock Transfer","stockTransferNumber"),
+      aggregateTransactions(creditNoteModel, matchCriteria, "Credit Note","creditNoteNumber"),
+      aggregateTransactions(debitNoteModel, matchCriteria, "Debit Note","debitNoteNumber"),
       // aggregateTransactions(receiptModel, matchCriteria, "Receipt"),
     ];
 
@@ -319,6 +334,7 @@ export const transactions = async (req, res) => {
     });
   }
 };
+
 
 // @desc to  get additional charges
 // route get/api/sUsers/additionalCharges

@@ -15,11 +15,12 @@ export const  formatAmount=(amount) =>{
 
 /////helper for transactions
 
-export const aggregateTransactions = (model, matchCriteria, type) => {
+export const aggregateTransactions = (model, matchCriteria, type,voucherNumber) => {
   return model.aggregate([
     { $match: matchCriteria },
     {
       $project: {
+      voucherNumber: `$${voucherNumber}`,
         party_name: '$party.partyName',
         type: type,
         enteredAmount: (type === 'Receipt' || type==="Payment") ? '$enteredAmount' : '$finalAmount',
