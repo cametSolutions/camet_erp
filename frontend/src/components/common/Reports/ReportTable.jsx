@@ -1,83 +1,57 @@
-const ReportTable = () => {
-  const transactions = [
-    {
-      id: 6,
-      date: "21 Oct 2024",
-      type: "Sales Invoice",
-      description: "Balance: ₹ 140",
-      debit: 440,
-      credit: 0,
+/* eslint-disable no-unsafe-optional-chaining */
+/* eslint-disable react/prop-types */
+const ReportTable = ({ data, loading }) => {
+  // Calculate total debit and credit amounts
+  const { totalDebit, totalCredit } = data?.reduce(
+    (totals, transaction) => {
+      if (["Debit Note", "Tax Invoice", "Payment"].includes(transaction.type)) {
+        totals.totalDebit += Number(transaction.enteredAmount);
+      } else if (
+        ["Purchase", "Receipt", "Credit Note"].includes(transaction.type)
+      ) {
+        totals.totalCredit += Number(transaction.enteredAmount);
+      }
+      return totals;
     },
-    {
-      id: 7,
-      date: "21 Oct 2024",
-      type: "Sales Invoice",
-      description: "Balance: ₹ 580",
-      debit: 440,
-      credit: 0,
-    },
-    {
-      id: 1,
-      date: "21 Oct 2024",
-      type: "Purchase Invoice",
-      description: "Balance: ₹ -370",
-      debit: 0,
-      credit: 950,
-    },
-    {
-      id: 14,
-      date: "21 Oct 2024",
-      type: "Receive Payment In",
-      description: "Balance: ₹ -820",
-      paymentMode: "Cash",
-      debit: 0,
-      credit: 450,
-    },
-    {
-      id: 1,
-      date: "21 Oct 2024",
-      type: "Record Payment Out",
-      description: "Balance: ₹ -420",
-      paymentMode: "Cash",
-      debit: 400,
-      credit: 0,
-    },
-  ];
+    { totalDebit: 0, totalCredit: 0 }
+  );
 
   return (
     <div className="w-full overflow-x-auto px-3 py-4">
       <table className="w-full border-collapse">
         <thead>
-          <tr className="border-b  bg-slate-100 ">
-            <th className="py-6 px-6 text-left text-gray-400 text-sm  ">
+          <tr className="border-b bg-slate-100">
+            <th className="py-6 px-6 text-left text-gray-400 text-sm">
               Transactions
             </th>
-            <th className="py-6 px-6 text-right text-gray-400 text-sm ">
+            <th className="py-6 px-6 text-right text-gray-400 text-sm">
               Debit
             </th>
-            <th className="py-6 px-6 text-right text-gray-400 text-sm ">
+            <th className="py-6 px-6 text-right text-gray-400 text-sm">
               Credit
             </th>
           </tr>
         </thead>
         <tbody>
-          {transactions.map((transaction) => (
+          {data?.map((transaction) => (
             <tr
-              key={`${transaction.type}-${transaction.id}`}
-              className="border-b shadow-md cursor-pointer  "
+              key={transaction._id}
+              className="border-b shadow-md cursor-pointer"
             >
               <td className="py-6 px-6 font-bold">
                 <div className="space-y-1">
-                  <div className="text-[9px]  text-violet-400">
-                    {transaction.date} |{" "}
-                    <span className="">#{transaction.id}</span>
+                  <div className="text-[10px]  flex gap-1 flex-col">
+                    <span>#{transaction?.voucherNumber}</span>
+                    <span className="text-violet-400">
+                      {" "}
+                      {new Date(transaction?.createdAt).toLocaleDateString(
+                        "en-IN"
+                      )}{" "}
+                    </span>
                   </div>
                   <div className="font-bold text-[13px] text-gray-500">
                     {transaction.type}
                   </div>
-                  {/* <div className="text-xs text-gray-500">
-                    {transaction.description}
-                  </div> */}
                   {transaction.paymentMode && (
                     <div className="text-[11px] text-gray-400">
                       Payment Mode:{" "}
@@ -89,27 +63,54 @@ const ReportTable = () => {
                 </div>
               </td>
               <td className="py-6 px-6 text-right text-[11px] font-bold">
-                {transaction.debit > 0 ? (
-                  <span className="text-red-500">₹ {transaction.debit}</span>
+                {["Debit Note", "Tax Invoice", "Payment"].includes(
+                  transaction.type
+                ) ? (
+                  <span className="text-red-500">
+                    ₹ {transaction.enteredAmount}
+                  </span>
                 ) : (
-                  <span>₹ {transaction.debit}</span>
+                  "₹ 0"
                 )}
               </td>
               <td className="py-6 px-6 text-right text-[11px] font-bold">
-                {transaction.credit > 0 ? (
-                  <span className="text-green-500">₹ {transaction.credit}</span>
+                {["Purchase", "Receipt", "Credit Note"].includes(
+                  transaction.type
+                ) ? (
+                  <span className="text-green-500">
+                    ₹ {transaction.enteredAmount}
+                  </span>
                 ) : (
-                  <span>₹ {transaction.credit}</span>
+                  "₹ 0"
                 )}
               </td>
             </tr>
           ))}
         </tbody>
+
+        {/* Closing balance row */}
+        {!loading && data?.length > 0 && (
+          <tfoot>
+            <tr className="bg-slate-200">
+              <td className="py-5 px-4 text-left font-bold text-xs text-gray-700">
+                Closing Balance
+              </td>
+              <td className="py-5 px-6 text-right font-bold text-xs text-gray-500">
+                {totalDebit > totalCredit && "₹ " + totalDebit}
+              </td>
+              <td className="py-5 px-6 text-right font-bold text-xs text-gray-500">
+                {totalCredit > totalDebit && "₹ " + totalCredit}
+              </td>
+            </tr>
+          </tfoot>
+        )}
       </table>
 
-      <div className="w-full py-5 px-4 rounded-sm text-xs font-bold bg-slate-200 text-gray-700  mt-6 ">
-        Closing Balance
-      </div>
+      {!loading && data?.length === 0 && (
+        <div className="w-full py-5 px-4 rounded-sm text-xs font-bold text-gray-700 mt-6 flex justify-center">
+          OOps. No Transactions Found !!
+        </div>
+      )}
     </div>
   );
 };

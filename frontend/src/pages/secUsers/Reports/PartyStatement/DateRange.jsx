@@ -15,13 +15,15 @@ import {
 } from "date-fns";
 import { BsFillCalendar2DateFill } from "react-icons/bs";
 import TitleDiv from "../../../../components/common/TitleDiv";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { addDate } from "../../../../../slices/date";
 import { useNavigate } from "react-router-dom";
 
 const DateRange = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { title } = useSelector((state) => state.date);
+
 
   const submitHandler = (rangeName, start, end) => {
     dispatch(
@@ -118,7 +120,7 @@ const DateRange = () => {
           return (
             <div
               key={rangeName}
-              className={`flex justify-between  cursor-pointer shadow-md  p-6 hover:shadow-xl rounded-md hover:bg-violet-300 text-gray-500 hover:text-white `}
+              className={`${title === rangeName ? "bg-violet-300 text-white" : ""}    flex justify-between  cursor-pointer shadow-md  p-6 hover:shadow-xl rounded-md hover:bg-violet-300 text-gray-500 hover:text-white `}
               // onClick={() =>{ setSelectedRange(rangeName);setRangeDates({startDate:start,endDate:end})}}
               onClick={() => {
                 submitHandler(rangeName, start, end);

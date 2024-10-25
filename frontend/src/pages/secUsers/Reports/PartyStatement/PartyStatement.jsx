@@ -6,10 +6,10 @@ import { useLocation } from "react-router-dom";
 import useFetch from "../../../../customHook/useFetch";
 import { useEffect, useState } from "react";
 import ReportTable from "../../../../components/common/Reports/ReportTable";
+import BarLoader from "react-spinners/BarLoader";
 
 function PartyStatement() {
-
-  const[reports,setReports] = useState([])
+  const [reports, setReports] = useState([]);
 
   const { start, end, title } = useSelector((state) => state.date);
   const cmp_id = useSelector(
@@ -23,14 +23,13 @@ function PartyStatement() {
     `/api/sUsers/transactions/${cmp_id}?party_id=${party_id}&startOfDayParam=${start}&endOfDayParam=${end}`
   );
 
+  console.log("reports", reports);
 
   useEffect(() => {
     if (data) {
-      setReports(data);
+      setReports(data?.data?.combined);
     }
   }, [data]);
-
-  
 
   console.log(location);
   return (
@@ -45,9 +44,14 @@ function PartyStatement() {
         <PartyTile partyName={location?.state?.partyName} />
       </section>
 
+      {loading && (
+        <section className="w-full">
+          <BarLoader color="#9900ff" width="100%" />
+        </section>
+      )}
 
       <section>
-        <ReportTable  />
+        <ReportTable data={reports} loading={loading} />
       </section>
     </div>
   );

@@ -27,8 +27,40 @@ export const aggregateTransactions = (model, matchCriteria, type,voucherNumber) 
         createdAt: 1,
         itemsLength: (type === 'Receipt' || type==="Payment") ? undefined : { $size: '$items' },
         isCancelled: 1,
+        paymentMethod: 1,
       },
     },
+  ]);
+};
+
+
+export const calculateOpeningBalance = async (model, type, openingBalanceCriteria) => {
+  return model.aggregate([
+    { $match: openingBalanceCriteria },
+    {
+      $group: {
+        _id: null,
+        debitTotal: {
+          $sum: {
+            $cond: [
+              { $in: [type, ["Debit Note", "Tax Invoice", "Payment","Van Sale"]] },
+              { $toDouble: "$enteredAmount" },
+              0
+            ],
+          },
+        },
+        creditTotal: {
+          $sum: {
+            $cond: [
+              { $in: [type, ["Purchase", "Receipt", "Credit Note"]] },
+              { $toDouble: "$enteredAmount" },
+              0
+            ],
+          },
+        },
+      },
+    },
+    { $project: { _id: 0, debitTotal: 1, creditTotal: 1 } },
   ]);
 };
 
