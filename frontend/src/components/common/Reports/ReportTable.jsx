@@ -16,14 +16,25 @@ const ReportTable = ({ data, loading, openingBalances }) => {
     { totalDebit: 0, totalCredit: 0 }
   );
 
+  // console.log("totalDebit :",totalDebit, "totalCredit :",totalCredit);
+  
+
   const closingDebit = totalDebit + (openingBalances?.debitBalance || 0);
   const closingCredit = totalCredit + (openingBalances?.creditBalance || 0);
+
+  const closingBalance = Math.abs(closingDebit - closingCredit);
+
+  // console.log("closingDebit :",closingDebit, "closingCredit :",closingCredit);
+  // console.log("closingBalance :",closingBalance);
+  
+  
+
 
   return (
     <div className="w-full overflow-x-auto px-3 py-4">
       <table className="w-full border-collapse">
         <thead>
-          <tr className="border-b bg-slate-100">
+          <tr className="border-b bg-slate-200">
             <th className="py-6 px-6 text-left text-gray-400 text-sm">
               Transactions
             </th>
@@ -37,7 +48,7 @@ const ReportTable = ({ data, loading, openingBalances }) => {
         </thead>
         <tbody>
           {/* Opening Balance Row */}
-          <tr className="bg-slate-200 w-full">
+          <tr className="bg-slate-100 w-full">
             <td className="py-3 px-4 text-left font-bold text-xs text-gray-700">
               Opening Balance
             </td>
@@ -109,15 +120,15 @@ const ReportTable = ({ data, loading, openingBalances }) => {
         {/* Closing balance row */}
         {!loading && data?.length > 0 && (
           <tfoot>
-            <tr className="bg-slate-200">
+            <tr className="bg-slate-100">
               <td className="py-3 px-4 text-left font-bold text-xs text-gray-700">
                 Closing Balance
               </td>
               <td className="py-3 px-6 text-right font-bold text-xs text-gray-500">
-                {closingDebit > closingCredit && "₹ " + closingDebit}
+                {totalDebit > totalCredit && "₹ " + closingBalance}
               </td>
               <td className="py-3 px-6 text-right font-bold text-xs text-gray-500">
-                {closingCredit > closingDebit && "₹ " + closingCredit}
+                {totalCredit > totalDebit && "₹ " + closingBalance}
               </td>
             </tr>
           </tfoot>

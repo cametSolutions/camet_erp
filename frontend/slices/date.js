@@ -16,10 +16,13 @@ export const dateSlice = createSlice({
         (state.start = action.payload.start),
         (state.end = action.payload.end);
     },
+    removeAll: (state) => {
+      Object.assign(state, initialState);
+    },
   },
 });
 
 // Action creators are generated for each case reducer function
-export const { addDate } = dateSlice.actions;
+export const { addDate ,removeAll} = dateSlice.actions;
 
 export default dateSlice.reducer;

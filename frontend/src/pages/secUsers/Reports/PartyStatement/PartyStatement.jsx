@@ -56,8 +56,8 @@ function PartyStatement() {
     creditBalance: balanceData?.data?.totalCreditOpening || 0
   }), [balanceData]);
 
-  console.log("balanceData",balanceData);
-  console.log("openingBalances",openingBalances);
+  // console.log("balanceData",balanceData);
+  // console.log("openingBalances",openingBalances);
   
 
   // Loading state
