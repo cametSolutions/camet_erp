@@ -120,7 +120,7 @@ const DateRange = () => {
           return (
             <div
               key={rangeName}
-              className={`${title === rangeName ? "bg-violet-300 text-white" : ""}    flex justify-between  cursor-pointer shadow-md  p-6 hover:shadow-xl rounded-md hover:bg-violet-300 text-gray-500 hover:text-white `}
+              className={`${title === rangeName ? "bg-slate-300 " : ""}    flex justify-between  cursor-pointer shadow-md  p-6 hover:shadow-xl rounded-md hover:bg-slate-300 text-gray-500  `}
               // onClick={() =>{ setSelectedRange(rangeName);setRangeDates({startDate:start,endDate:end})}}
               onClick={() => {
                 submitHandler(rangeName, start, end);

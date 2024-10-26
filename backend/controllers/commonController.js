@@ -10,8 +10,11 @@ import vanSaleModel from "../models/vanSaleModel.js";
 import purchaseModel from "../models/purchaseModel.js";
 import Oragnization from "../models/OragnizationModel.js";
 import AdditionalChargesModel from "../models/additionalChargesModel.js";
-import { aggregateTransactions } from "../helpers/helper.js";
-import { startOfDay, endOfDay ,parseISO } from "date-fns";
+import {
+  aggregateTransactions,
+  aggregateOpeningBalance,
+} from "../helpers/helper.js";
+import { startOfDay, endOfDay, parseISO } from "date-fns";
 import receiptModel from "../models/receiptModel.js";
 import paymentModel from "../models/paymentModel.js";
 import { Brand } from "../models/subDetails.js";
@@ -247,11 +250,10 @@ export const getCreditNoteDetails = async (req, res) => {
 // @desc to  get transactions
 // route get/api/sUsers/transactions
 
-
 export const transactions = async (req, res) => {
   const userId = req.sUserId;
   const cmp_id = req.params.cmp_id;
-  const { todayOnly, startOfDayParam, endOfDayParam ,party_id} = req.query; // Added parameters
+  const { todayOnly, startOfDayParam, endOfDayParam, party_id } = req.query; // Added parameters
 
   try {
     // Initialize dateFilter based on provided parameters
@@ -276,8 +278,8 @@ export const transactions = async (req, res) => {
           $lte: endOfDay(new Date()),
         },
       };
-    }else{
-      dateFilter = {}
+    } else {
+      dateFilter = {};
     }
 
     // Conditionally include `Secondary_user_id` only if it exists
@@ -285,28 +287,64 @@ export const transactions = async (req, res) => {
       ...dateFilter,
       cmp_id: cmp_id,
       ...(userId ? { Secondary_user_id: userId } : {}), // If `userId` exists, match with `Secondary_user_id`
-      ...(party_id ? { 'party._id': party_id } : {}), // If `party_id` exists, match with `_id` in the party object
-
+      ...(party_id ? { "party._id": party_id } : {}), // If `party_id` exists, match with `_id` in the party object
     };
 
     const transactionPromises = [
       aggregateTransactions(
         receiptModel,
         { ...matchCriteria, ...(userId ? { Secondary_user_id: userId } : {}) },
-        "Receipt","receiptNumber"
+        "Receipt",
+        "receiptNumber"
       ),
       aggregateTransactions(
         paymentModel,
         { ...matchCriteria, ...(userId ? { Secondary_user_id: userId } : {}) },
-        "Payment","paymentNumber"
+        "Payment",
+        "paymentNumber"
       ),
-      aggregateTransactions(invoiceModel, matchCriteria, "Sale Order","orderNumber"),
-      aggregateTransactions(salesModel, matchCriteria, "Tax Invoice","salesNumber"),
-      aggregateTransactions(vanSaleModel, matchCriteria, "Van Sale","salesNumber"),
-      aggregateTransactions(purchaseModel, matchCriteria, "Purchase","purchaseNumber"),
-      aggregateTransactions(stockTransferModel, matchCriteria, "Stock Transfer","stockTransferNumber"),
-      aggregateTransactions(creditNoteModel, matchCriteria, "Credit Note","creditNoteNumber"),
-      aggregateTransactions(debitNoteModel, matchCriteria, "Debit Note","debitNoteNumber"),
+      aggregateTransactions(
+        invoiceModel,
+        matchCriteria,
+        "Sale Order",
+        "orderNumber"
+      ),
+      aggregateTransactions(
+        salesModel,
+        matchCriteria,
+        "Tax Invoice",
+        "salesNumber"
+      ),
+      aggregateTransactions(
+        vanSaleModel,
+        matchCriteria,
+        "Van Sale",
+        "salesNumber"
+      ),
+      aggregateTransactions(
+        purchaseModel,
+        matchCriteria,
+        "Purchase",
+        "purchaseNumber"
+      ),
+      aggregateTransactions(
+        stockTransferModel,
+        matchCriteria,
+        "Stock Transfer",
+        "stockTransferNumber"
+      ),
+      aggregateTransactions(
+        creditNoteModel,
+        matchCriteria,
+        "Credit Note",
+        "creditNoteNumber"
+      ),
+      aggregateTransactions(
+        debitNoteModel,
+        matchCriteria,
+        "Debit Note",
+        "debitNoteNumber"
+      ),
       // aggregateTransactions(receiptModel, matchCriteria, "Receipt"),
     ];
 
@@ -334,7 +372,6 @@ export const transactions = async (req, res) => {
     });
   }
 };
-
 
 // @desc to  get additional charges
 // route get/api/sUsers/additionalCharges
@@ -795,11 +832,6 @@ export const editHsn = async (req, res) => {
   const Primary_user_id = req.pUserId || req.owner;
   req.body.Primary_user_id = Primary_user_id.toString();
 
-
-
-  
-  
-
   try {
     const updateHsn = await hsnModel.findOneAndUpdate(
       { _id: hsnId },
@@ -807,7 +839,6 @@ export const editHsn = async (req, res) => {
       { new: true }
     );
 
-    
     res.status(200).json({
       success: true,
       message: "HSN updated successfully",
@@ -818,7 +849,6 @@ export const editHsn = async (req, res) => {
     res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
-
 
 // @desc delete hsn
 // route get/api/pUsers/deleteProduct
@@ -859,3 +889,67 @@ export const deleteHsn = async (req, res) => {
   }
 };
 
+/**
+ * @desc   To calculate opening balances
+ * @route  Get /api/sUsers/getOpeningBalances
+ * @access Public
+ */
+export const getOpeningBalances = async (req,res) => {
+  try {
+    const userId = req.sUserId;
+    const cmp_id = req.params.cmp_id;
+    const {startOfDayParam, party_id } = req.query;
+    const startDate = parseISO(startOfDayParam) || new Date();
+
+
+    const openingBalanceDateFilter = {
+      createdAt: {
+        $lt: startOfDay(startDate),
+      },
+    };
+
+    const openingBalanceMatchCriteria = {
+      ...openingBalanceDateFilter,
+      cmp_id: cmp_id,
+      ...(userId ? { Secondary_user_id: userId } : {}),
+      ...(party_id ? { 'party._id': party_id } : {}),
+    };
+
+
+   // Calculate opening balances
+   const openingBalancePromises = [
+    // Debit opening balances
+    aggregateOpeningBalance(debitNoteModel, openingBalanceMatchCriteria, "Debit Note"),
+    aggregateOpeningBalance(salesModel, openingBalanceMatchCriteria, "Tax Invoice"),
+    aggregateOpeningBalance(paymentModel, openingBalanceMatchCriteria, "Payment"),
+    aggregateOpeningBalance(vanSaleModel, openingBalanceMatchCriteria, "Van Sale"),
+    // Credit opening balances
+    aggregateOpeningBalance(purchaseModel, openingBalanceMatchCriteria, "Purchase"),
+    aggregateOpeningBalance(receiptModel, openingBalanceMatchCriteria, "Receipt"),
+    aggregateOpeningBalance(creditNoteModel, openingBalanceMatchCriteria, "Credit Note"),
+  ];
+
+
+    const openingBalances = await Promise.all(openingBalancePromises);
+
+    // Calculate total opening balances
+    const totalDebitOpening = openingBalances.slice(0, 4).reduce((sum, amount) => sum + amount, 0);
+    const totalCreditOpening = openingBalances.slice(4, 7).reduce((sum, amount) => sum + amount, 0);
+    const netOpeningBalance = totalDebitOpening - totalCreditOpening;
+
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        totalDebitOpening,
+        totalCreditOpening,
+        netOpeningBalance,
+      },
+    });
+
+ 
+  } catch (error) {
+    console.error("Error calculating opening balances:", error);
+    throw error;
+  }
+};

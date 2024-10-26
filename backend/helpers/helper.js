@@ -1,31 +1,40 @@
-
-export const  truncateToNDecimals=(num, n)=> {
+export const truncateToNDecimals = (num, n) => {
   const parts = num.toString().split(".");
   if (parts.length === 1) return num; // No decimal part
   parts[1] = parts[1].substring(0, n); // Truncate the decimal part
   return parseFloat(parts.join("."));
-}
+};
 
 ///formatting amount with comma
 
-export const  formatAmount=(amount) =>{
+export const formatAmount = (amount) => {
   return amount.toLocaleString("en-IN", { maximumFractionDigits: 2 });
-}
-
+};
 
 /////helper for transactions
 
-export const aggregateTransactions = (model, matchCriteria, type,voucherNumber) => {
+export const aggregateTransactions = (
+  model,
+  matchCriteria,
+  type,
+  voucherNumber
+) => {
   return model.aggregate([
     { $match: matchCriteria },
     {
       $project: {
-      voucherNumber: `$${voucherNumber}`,
-        party_name: '$party.partyName',
+        voucherNumber: `$${voucherNumber}`,
+        party_name: "$party.partyName",
         type: type,
-        enteredAmount: (type === 'Receipt' || type==="Payment") ? '$enteredAmount' : '$finalAmount',
+        enteredAmount:
+          type === "Receipt" || type === "Payment"
+            ? "$enteredAmount"
+            : "$finalAmount",
         createdAt: 1,
-        itemsLength: (type === 'Receipt' || type==="Payment") ? undefined : { $size: '$items' },
+        itemsLength:
+          type === "Receipt" || type === "Payment"
+            ? undefined
+            : { $size: "$items" },
         isCancelled: 1,
         paymentMethod: 1,
       },
@@ -33,34 +42,32 @@ export const aggregateTransactions = (model, matchCriteria, type,voucherNumber) 
   ]);
 };
 
+// Function to aggregate opening balance with proper string-to-number conversion
+export const aggregateOpeningBalance = async (model, matchCriteria, transactionType) => {
+  try {
+    const amountField = transactionType === "Receipt" || transactionType === "Payment" ? "enteredAmount" : "finalAmount";
 
-export const calculateOpeningBalance = async (model, type, openingBalanceCriteria) => {
-  return model.aggregate([
-    { $match: openingBalanceCriteria },
-    {
-      $group: {
-        _id: null,
-        debitTotal: {
-          $sum: {
-            $cond: [
-              { $in: [type, ["Debit Note", "Tax Invoice", "Payment","Van Sale"]] },
-              { $toDouble: "$enteredAmount" },
-              0
-            ],
-          },
-        },
-        creditTotal: {
-          $sum: {
-            $cond: [
-              { $in: [type, ["Purchase", "Receipt", "Credit Note"]] },
-              { $toDouble: "$enteredAmount" },
-              0
-            ],
+    const result = await model.aggregate([
+      { $match: matchCriteria },
+      {
+        $addFields: {
+          numericAmount: {
+            $toDouble: { $ifNull: [`$${amountField}`, 0] }
           },
         },
       },
-    },
-    { $project: { _id: 0, debitTotal: 1, creditTotal: 1 } },
-  ]);
+      {
+        $group: {
+          _id: null,
+          total: { $sum: "$numericAmount" },
+        },
+      },
+    ]);
+
+    return result.length > 0 ? result[0].total : 0;
+  } catch (error) {
+    console.error(`Error calculating opening balance for ${transactionType}:`, error);
+    return 0;
+  }
 };
 

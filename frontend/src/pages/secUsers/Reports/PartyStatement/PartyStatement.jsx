@@ -1,60 +1,96 @@
 import { useSelector } from "react-redux";
+import { useLocation } from "react-router-dom";
+import React, { useMemo } from "react";
+import { BarLoader } from "react-spinners";
+
 import PartyTile from "../../../../components/common/Reports/PartyTile";
 import SelectDate from "../../../../components/common/SelectDate";
 import TitleDiv from "../../../../components/common/TitleDiv";
-import { useLocation } from "react-router-dom";
-import useFetch from "../../../../customHook/useFetch";
-import { useEffect, useState } from "react";
 import ReportTable from "../../../../components/common/Reports/ReportTable";
-import BarLoader from "react-spinners/BarLoader";
+import useFetch from "../../../../customHook/useFetch";
 
 function PartyStatement() {
-  const [reports, setReports] = useState([]);
-
-  const { start, end, title } = useSelector((state) => state.date);
+  const location = useLocation();
+  const { start, end } = useSelector((state) => state.date);
   const cmp_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
-  const location = useLocation();
 
+  // Extract party_id once
   const party_id = location?.state?._id;
+  const partyName = location?.state?.partyName;
 
-  const { data, loading, error } = useFetch(
-    `/api/sUsers/transactions/${cmp_id}?party_id=${party_id}&startOfDayParam=${start}&endOfDayParam=${end}`
+  // Memoize API URLs
+  const transactionsUrl = useMemo(() => 
+    `/api/sUsers/transactions/${cmp_id}?party_id=${party_id}&startOfDayParam=${start}&endOfDayParam=${end}`,
+    [cmp_id, party_id, start, end]
   );
 
-  console.log("reports", reports);
+  const balanceUrl = useMemo(() => 
+    `/api/sUsers/getOpeningBalances/${cmp_id}?party_id=${party_id}&startOfDayParam=${start}`,
+    [cmp_id, party_id, start]
+  );
 
-  useEffect(() => {
-    if (data) {
-      setReports(data?.data?.combined);
-    }
-  }, [data]);
+  // Fetch data using custom hook
+  const { 
+    data: transactionData, 
+    loading: transactionLoading 
+  } = useFetch(transactionsUrl);
 
-  console.log(location);
+  const { 
+    data: balanceData, 
+    loading: balanceLoading 
+  } = useFetch(balanceUrl);
+
+  
+
+  // Memoize the combined data
+  const reports = useMemo(() => 
+    transactionData?.data?.combined || [],
+    [transactionData]
+  );
+
+  // Memoize the opening balances
+  const openingBalances = useMemo(() => ({
+    debitBalance: balanceData?.data?.totalDebitOpening || 0,
+    creditBalance: balanceData?.data?.totalCreditOpening || 0
+  }), [balanceData]);
+
+  console.log("balanceData",balanceData);
+  console.log("openingBalances",openingBalances);
+  
+
+  // Loading state
+  const isLoading = transactionLoading || balanceLoading;
+
   return (
     <div className="flex flex-1 flex-col">
-      <TitleDiv title="Party Statement  " />
+      <TitleDiv title="Party Statement" />
 
-      <section className="shadow-lg ">
+      <section className="shadow-lg">
         <SelectDate />
       </section>
 
       <section>
-        <PartyTile partyName={location?.state?.partyName} />
+        <PartyTile partyName={partyName} />
       </section>
 
-      {loading && (
+      {isLoading && (
         <section className="w-full">
           <BarLoader color="#9900ff" width="100%" />
         </section>
       )}
 
       <section>
-        <ReportTable data={reports} loading={loading} />
+        <ReportTable 
+          data={reports} 
+          loading={isLoading}
+          openingBalances={openingBalances} 
+        />
       </section>
     </div>
   );
 }
 
-export default PartyStatement;
+// Memoize the entire component
+export default React.memo(PartyStatement);
