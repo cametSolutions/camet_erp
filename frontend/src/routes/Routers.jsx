@@ -173,6 +173,9 @@ import EditReceipt from '../pages/secUsers/EditReceipt'
 import OutstandingListOfReceiptForEdit from '../pages/secUsers/OutstandingListOfReceiptForEdit'
 import EditPayment from '../pages/secUsers/EditPayment'
 import OutstandingListOfPaymentForEdit from '../pages/secUsers/OutstandingListOfPaymentForEdit'
+import Reports from '../pages/secUsers/Reports'
+import PartyStatement from '../pages/secUsers/Reports/PartyStatement/PartyStatement'
+import DateRange from '../pages/secUsers/Reports/PartyStatement/DateRange'
 
 const Routers = () => {
   return (
@@ -385,6 +388,19 @@ const Routers = () => {
         {/* errorPage */}
         <Route path='/errorPage' element={<ErrorPage />} />
         <Route path='/serverError' element={<ServerError />} />
+
+        {/* report */}
+        <Route path='/sUsers/reports' element={<ProtectedSecRoute><Reports/></ProtectedSecRoute>}></Route>
+
+        {/* party statement  */}
+
+        {/* we are using the same page of party list of sales to avoid page repetition */}
+        <Route path='/sUsers/partyStatement/partyList' element={<ProtectedSecRoute><SearchPartySalesSecondary/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/partyStatement' element={<ProtectedSecRoute><PartyStatement/></ProtectedSecRoute>}></Route>
+        <Route path='/sUers/dateRange' element={<ProtectedSecRoute><DateRange/></ProtectedSecRoute>}></Route>
+
+
+
 
     
     </Routes>

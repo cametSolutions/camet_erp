@@ -258,11 +258,18 @@ function SidebarSec({ TAB, showBar }) {
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
         {/* Keep existing header/profile section */}
-        <div className="w-full relative  py-4  flex items-center justify-between">
-          <div className="flex gap-7 px-4 items-center">
+        <div className="w-full relative  flex items-center justify-between py-2">
+          <div className="flex gap-3 px-4 items-center">
+            <img
+              className="h-9"
+              src="https://cdn-icons-png.flaticon.com/128/3097/3097023.png"
+              alt=""
+            />
 
-          <img className="h-7" src="https://cdn-icons-png.flaticon.com/128/3097/3097023.png" alt="" />
-          <h1 className="text-white text-md font-bold">CAMET ERP</h1>
+            <div className="flex flex-col">
+              <h1 className="text-white text-md font-bold">CAMET ERP</h1>
+              <p className="text-[8px] text-gray-300"> Camet IT Solutions</p>
+            </div>
           </div>
 
           <div
@@ -272,7 +279,7 @@ function SidebarSec({ TAB, showBar }) {
             <IoReorderThreeSharp />
           </div>
         </div>
-          <hr className=" border border-gray-800" />
+        <hr className=" border border-gray-800  mt-1" />
 
         {/* <hr /> */}
 
@@ -361,6 +368,9 @@ function SidebarSec({ TAB, showBar }) {
             </button>
           </div>
         </div>
+
+        {/* <hr className=" border border-gray-800 mt-4" /> */}
+
 
         <div className="">
           <div className="flex flex-col justify-between flex-1 mt-6">

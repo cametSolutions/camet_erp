@@ -5,6 +5,7 @@ import transactionImg from "../../assets/images/transactions.png";
 import stockreRister from "../../assets/images/stockregister.png";
 import vouchers from "../../assets/images/voucher.png";
 import outStanding from "../../assets/images/outstanding.png";
+import reportImg from "../../assets/images/reports.png";
 
 const DashboardCards = ({ userType, receiptTotal, handleLinkClick }) => {
   const cardData = {
@@ -23,10 +24,10 @@ const DashboardCards = ({ userType, receiptTotal, handleLinkClick }) => {
     ],
     secondary: [
       {
-        icon: transactionImg,
+        icon: reportImg,
         title: `₹${receiptTotal.toFixed(2)}`,
-        subtitle: "Transactions",
-        link: "/sUsers/transaction",
+        subtitle: "Reports",
+        link: "/sUsers/reports",
       },
       {
         icon: outStanding,
@@ -76,11 +77,11 @@ const DashboardCards = ({ userType, receiptTotal, handleLinkClick }) => {
                 <img src={card.icon} alt={card.title} className="" />
               </div>
               <div className="mx-2 md:mx-5">
-                {card.title && (
+                {/* {card.title && (
                   <h4 className="sm:text-md md:text-lg font-semibold text-gray-700">
                     {card.title}
                   </h4>
-                )}
+                )} */}
                 <div className="text-gray-500 text-[15px]">{card.subtitle}</div>
               </div>
             </div>

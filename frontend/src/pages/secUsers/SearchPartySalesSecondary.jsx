@@ -5,7 +5,7 @@ import { useSelector } from "react-redux";
 import api from "../../api/api";
 import { useDispatch } from "react-redux";
 import { addParty } from "../../../slices/salesSecondary";
-
+import { useLocation } from "react-router-dom";
 
 import PartyList from "../../components/secUsers/main/PartyList";
 
@@ -19,6 +19,7 @@ function SearchPartySalesSecondary() {
 
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const location = useLocation();
 
 
   const cpm_id = useSelector(
@@ -47,14 +48,18 @@ function SearchPartySalesSecondary() {
   }, [cpm_id]);
 
   const selectHandler = (el) => {
-    dispatch(addParty(el));
-    navigate(-1);
-
+    if (location.pathname === "/sUsers/partyStatement/partyList") {
+      console.log(el);
+      
+      navigate("/sUsers/partyStatement", { state: el });
+    } else {
+      dispatch(addParty(el));
+      navigate(-1);
+    }
   };
 
   const backHandler = () => {
     navigate(-1);
-  
   };
 
   useEffect(() => {
