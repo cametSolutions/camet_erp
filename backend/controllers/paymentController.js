@@ -120,7 +120,8 @@ export const createPayment = async (req, res) => {
           secondaryUser.mobileNumber,
           advanceAmount,
           session,
-          "advancePayment"
+          "advancePayment",
+          "Dr"
         );
     }
 
@@ -307,7 +308,8 @@ export const editPayment = async (req, res) => {
           secondaryUser.mobileNumber,
           advanceAmount,
           session,
-          "advancePayment"
+          "advancePayment",
+          "Dr"
         );
     }
 

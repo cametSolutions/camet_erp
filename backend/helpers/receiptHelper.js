@@ -119,7 +119,8 @@ export const createOutstandingWithAdvanceAmount = async (
   secondaryMobile,
   advanceAmount,
   session,
-  sourceName
+  sourceName,
+  classification
 ) => {
   try {
     const billData = {
@@ -134,7 +135,8 @@ export const createOutstandingWithAdvanceAmount = async (
       mobile_no: party?.mobileNumber,
       party_name: party?.partyName,
       user_id: secondaryMobile || "null",
-      source: sourceName
+      source: sourceName,
+      classification: classification,
     };
 
     const tallyUpdate = await TallyData.findOneAndUpdate(

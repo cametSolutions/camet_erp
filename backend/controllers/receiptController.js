@@ -11,7 +11,7 @@ import {
   updateReceiptNumber,
   updateTallyData,
   revertTallyUpdates,
-  deleteAdvanceReceipt
+  deleteAdvanceReceipt,
 } from "../helpers/receiptHelper.js";
 
 /**
@@ -37,7 +37,9 @@ export const fetchOutstandingDetails = async (req, res) => {
       cmp_id: cmp_id,
       bill_pending_amt: { $gt: 0 },
       ...sourceMatch,
-    }).sort({ bill_date: 1 }).select("bill_no bill_date bill_pending_amt source bill_date");
+    })
+      .sort({ bill_date: 1 })
+      .select("bill_no bill_date bill_pending_amt source bill_date");
     if (outstandings) {
       return res.status(200).json({
         totalOutstandingAmount: outstandings.reduce(
@@ -79,10 +81,8 @@ export const createReceipt = async (req, res) => {
     paymentMethod,
     paymentDetails,
     note,
-    outstandings
+    outstandings,
   } = req.body;
-
-  
 
   const Primary_user_id = req.owner.toString();
   const Secondary_user_id = req.sUserId;
@@ -124,8 +124,6 @@ export const createReceipt = async (req, res) => {
       session
     );
 
-  
-
     // Create the new receipt
     const newReceipt = new ReceiptModel({
       createdAt: new Date(date),
@@ -146,14 +144,17 @@ export const createReceipt = async (req, res) => {
       outstandings,
     });
 
-
-    
-
     // Save the receipt in the transaction session
     const savedReceipt = await newReceipt.save({ session });
 
-      // Use the helper function to update TallyData
-      await updateTallyData(billData, cmp_id, session,receiptNumber,savedReceipt._id.toString());
+    // Use the helper function to update TallyData
+    await updateTallyData(
+      billData,
+      cmp_id,
+      session,
+      receiptNumber,
+      savedReceipt._id.toString()
+    );
 
     if (advanceAmount > 0 && savedReceipt) {
       const outstandingWithAdvanceAmount =
@@ -165,7 +166,8 @@ export const createReceipt = async (req, res) => {
           secondaryUser.mobileNumber,
           advanceAmount,
           session,
-          "advanceReceipt"
+          "advanceReceipt",
+          "Cr"
         );
     }
 
@@ -187,18 +189,14 @@ export const createReceipt = async (req, res) => {
   }
 };
 
-
 /**
  * @desc  cancel receipt
  * @route PUT/api/sUsers/cancelReceipt
  * @access Public
  */
 
-
 export const cancelReceipt = async (req, res) => {
-
-  
-  const { receiptId,cmp_id } = req.params; // Assuming the receipt ID is passed as a URL parameter
+  const { receiptId, cmp_id } = req.params; // Assuming the receipt ID is passed as a URL parameter
   const Primary_user_id = req.owner.toString();
   // const cmp_id = req.body.cmp_id; // Or from req.body if available
 
@@ -210,26 +208,39 @@ export const cancelReceipt = async (req, res) => {
     const receipt = await ReceiptModel.findById(receiptId).session(session);
 
     console.log("receipt", receipt._id);
-    
 
     if (!receipt) {
       await session.abortTransaction();
       session.endSession();
-      return res.status(404).json({ success: false, message: "Receipt not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Receipt not found" });
     }
 
     if (receipt.isCancelled) {
       await session.abortTransaction();
       session.endSession();
-      return res.status(400).json({ success: false, message: "Receipt is already cancelled" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Receipt is already cancelled" });
     }
 
     // Revert tally updates
-    await revertTallyUpdates(receipt.billData, cmp_id, session,receiptId.toString());
+    await revertTallyUpdates(
+      receipt.billData,
+      cmp_id,
+      session,
+      receiptId.toString()
+    );
 
     // Delete advance receipt, if any
     if (receipt.advanceAmount > 0) {
-      await deleteAdvanceReceipt(receipt.receiptNumber, cmp_id, Primary_user_id, session);
+      await deleteAdvanceReceipt(
+        receipt.receiptNumber,
+        cmp_id,
+        Primary_user_id,
+        session
+      );
     }
 
     // Mark the receipt as cancelled
@@ -253,9 +264,8 @@ export const cancelReceipt = async (req, res) => {
   }
 };
 
-
 export const editReceipt = async (req, res) => {
-  const receiptId=req.params.receiptId
+  const receiptId = req.params.receiptId;
   const Primary_user_id = req.owner.toString();
   const Secondary_user_id = req.sUserId;
 
@@ -272,104 +282,109 @@ export const editReceipt = async (req, res) => {
     paymentMethod,
     paymentDetails,
     note,
-    outstandings
+    outstandings,
   } = req.body;
 
-  const session=await mongoose.startSession();
+  const session = await mongoose.startSession();
   session.startTransaction();
   try {
-
-    const receipt=await ReceiptModel.findById(receiptId).session(session);
+    const receipt = await ReceiptModel.findById(receiptId).session(session);
 
     if (!receipt) {
       await session.abortTransaction();
       session.endSession();
-      return res.status(404).json({ success: false, message: "Receipt not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Receipt not found" });
     }
 
     if (receipt.isCancelled) {
       await session.abortTransaction();
       session.endSession();
-      return res.status(400).json({ success: false, message: "Receipt is already cancelled" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Receipt is already cancelled" });
     }
-
 
     const secondaryUser = await secondaryUserModel
-    .findById(Secondary_user_id)
-    .session(session);
+      .findById(Secondary_user_id)
+      .session(session);
 
-  if (!secondaryUser) {
-    await session.abortTransaction();
-    session.endSession();
-    return res
-      .status(404)
-      .json({ success: false, message: "Secondary user not found" });
-  }
-
-
-    // Revert tally updates
-    await revertTallyUpdates(receipt.billData, cmp_id, session,receiptId.toString());
-
-     // Delete advance receipt, if any
-     if (receipt.advanceAmount > 0) {
-      await deleteAdvanceReceipt(receipt.receiptNumber, cmp_id, Primary_user_id, session);
+    if (!secondaryUser) {
+      await session.abortTransaction();
+      session.endSession();
+      return res
+        .status(404)
+        .json({ success: false, message: "Secondary user not found" });
     }
 
-      // Use the helper function to update TallyData
-      await updateTallyData(billData, cmp_id, session,receiptNumber,receiptId);
+    // Revert tally updates
+    await revertTallyUpdates(
+      receipt.billData,
+      cmp_id,
+      session,
+      receiptId.toString()
+    );
 
-      ///update the existing receipt
-      receipt.date = date;
-      receipt.receiptNumber = receiptNumber;
-      receipt.cmp_id = cmp_id;
-      receipt.party = party;
-      receipt.billData = billData;
-      receipt.totalBillAmount = totalBillAmount;
-      receipt.enteredAmount = enteredAmount;
-      receipt.advanceAmount = advanceAmount;
-      receipt.remainingAmount = remainingAmount;
-      receipt.paymentMethod = paymentMethod;
-      receipt.paymentDetails = paymentDetails;
-      receipt.note = note;
-      receipt.outstandings = outstandings;
+    // Delete advance receipt, if any
+    if (receipt.advanceAmount > 0) {
+      await deleteAdvanceReceipt(
+        receipt.receiptNumber,
+        cmp_id,
+        Primary_user_id,
+        session
+      );
+    }
 
-      const savedReceipt=await receipt.save({ session, new: true });
+    // Use the helper function to update TallyData
+    await updateTallyData(billData, cmp_id, session, receiptNumber, receiptId);
 
+    ///update the existing receipt
+    receipt.date = date;
+    receipt.receiptNumber = receiptNumber;
+    receipt.cmp_id = cmp_id;
+    receipt.party = party;
+    receipt.billData = billData;
+    receipt.totalBillAmount = totalBillAmount;
+    receipt.enteredAmount = enteredAmount;
+    receipt.advanceAmount = advanceAmount;
+    receipt.remainingAmount = remainingAmount;
+    receipt.paymentMethod = paymentMethod;
+    receipt.paymentDetails = paymentDetails;
+    receipt.note = note;
+    receipt.outstandings = outstandings;
 
-      if (advanceAmount > 0) {
-        const outstandingWithAdvanceAmount =
-          await createOutstandingWithAdvanceAmount(
-            cmp_id,
-            savedReceipt.receiptNumber,
-            Primary_user_id,
-            party,
-            secondaryUser.mobileNumber,
-            advanceAmount,
-            session,
-            "advanceReceipt"
-          );
-      }
-  
+    const savedReceipt = await receipt.save({ session, new: true });
 
+    if (advanceAmount > 0) {
+      const outstandingWithAdvanceAmount =
+        await createOutstandingWithAdvanceAmount(
+          cmp_id,
+          savedReceipt.receiptNumber,
+          Primary_user_id,
+          party,
+          secondaryUser.mobileNumber,
+          advanceAmount,
+          session,
+          "advanceReceipt",
+          "Cr"
+        );
+    }
 
-      // console.log(receipt);
-      
-      await session.commitTransaction();
-      session.endSession();
+    // console.log(receipt);
 
-      res.status(200).json({
-        success: true,
-        message: "Receipt updated successfully",
-        receipt: receipt
-      });
-    
-    
+    await session.commitTransaction();
+    session.endSession();
+
+    res.status(200).json({
+      success: true,
+      message: "Receipt updated successfully",
+      receipt: receipt,
+    });
   } catch (error) {
     await session.abortTransaction();
     session.endSession();
     console.error("Error editing receipt:", error);
     res.status(500).json({ error: "Internal Server Error" });
-    
   }
-}
-
+};

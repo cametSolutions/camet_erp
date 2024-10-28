@@ -17,6 +17,7 @@ const tallySchema = new mongoose.Schema({
     group_name: { type: String },
     user_id:{type:String},
     source: { type: String },
+    classification:{type:String},
     appliedReceipts: { type: Array,default:[] },
     appliedPayments: { type: Array,default:[] },
     createdBy: { type: String ,default:""},  ///if an outstanding is createdBy any vouchers are tagged here

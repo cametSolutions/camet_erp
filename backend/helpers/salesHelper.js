@@ -385,6 +385,7 @@ export const updateTallyData = async (
       party_name: party?.partyName,
       user_id: secondaryMobile || "null",
       source: "sale",
+      classification: "Dr",
     };
 
     const tallyUpdate = await TallyData.findOneAndUpdate(
