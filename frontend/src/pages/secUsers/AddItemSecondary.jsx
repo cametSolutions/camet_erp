@@ -78,12 +78,12 @@ const calculateTotal = (item, selectedPriceLevel, situation = "normal") => {
   let discountedSubtotal = subtotal;
 
   if (item.discount) {
-    discountedSubtotal -= item.discount;
-  } else if (item.discountPercentage) {
-    discountedSubtotal -= (subtotal * item.discountPercentage) / 100;
+    discountedSubtotal -= item?.discount;
+  } else if (item?.discountPercentage) {
+    discountedSubtotal -= (subtotal * item?.discountPercentage) / 100;
   }
 
-  const gstAmount =item?.isTaxInclusive? 0:(discountedSubtotal * (item.newGst || item.igst || 0)) / 100
+  const gstAmount =item?.isTaxInclusive? 0:(discountedSubtotal * (item?.newGst || item?.igst || 0)) / 100
    
   return discountedSubtotal + gstAmount;
 };
