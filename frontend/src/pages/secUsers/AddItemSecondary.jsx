@@ -59,7 +59,6 @@ function AddItemSecondary() {
     },
   } = useSelector((state) => state);
 
-const isTaxInclusive= configurations[0]?.taxInclusive
 
 
 
