@@ -27,9 +27,9 @@ export const fetchOutstandingDetails = async (req, res) => {
 
   let sourceMatch = {};
   if (voucher === "receipt") {
-    sourceMatch = { source: { $in: ["sale", "debitNote"] } };
+    sourceMatch = { classification: "Dr" };
   } else if (voucher === "payment") {
-    sourceMatch = { source: { $in: ["purchase", "creditNote"] } };
+    sourceMatch = {classification: "Cr" };
   }
   try {
     const outstandings = await TallyData.find({

@@ -48,6 +48,16 @@ function VanSaleDetailsSecondary() {
     }
   };
 
+  const handleEdit = () => {
+    if (data?.isEditable === false) {
+      alert(
+        "You can't edit this voucher since it has been used to generate receipts or payments"
+      );
+      return;
+    }
+    navigate(`/sUsers/editVanSale/${data._id}`);
+  };
+
   return (
     <div className="bg-[rgb(244,246,254)] flex-1  relative  pb-[70px] md:pb-0 ">
       {/* headinh section  */}
@@ -118,7 +128,8 @@ function VanSaleDetailsSecondary() {
             reFetch={reFetch}
           />
           <div
-            onClick={() => navigate(`/sUsers/editVanSale/${data._id}`)}
+            onClick={handleEdit}
+            // onClick={() => navigate(`/sUsers/editVanSale/${data._id}`)}
             className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer"
           >
             <FaEdit className="text-blue-500" />
