@@ -59,7 +59,6 @@ function AddItemSecondary() {
     },
   } = useSelector((state) => state);
 
-const isTaxInclusive= configurations[0]?.taxInclusive
 
 
 
@@ -83,7 +82,7 @@ const calculateTotal = (item, selectedPriceLevel, situation = "normal") => {
     discountedSubtotal -= (subtotal * item.discountPercentage) / 100;
   }
 
-  const gstAmount =item?.isTaxInclusive? 0:(discountedSubtotal * (item.newGst || item.igst || 0)) / 100
+  const gstAmount =item?.isTaxInclusive ? 0:(discountedSubtotal * (item.newGst || item.igst || 0)) / 100
    
   return discountedSubtotal + gstAmount;
 };
