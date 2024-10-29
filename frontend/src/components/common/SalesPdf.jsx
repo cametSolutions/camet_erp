@@ -46,8 +46,6 @@ function SalesPdf({
       title = "Debit Note";
       break;
 
-      
-
     default:
       title = "Tax Invoice";
       break;
@@ -168,7 +166,7 @@ function SalesPdf({
           <div className="pdf-page">
             <div className="flex">
               <div className="font-bold text-sm md:text-xl mb-2 mt-6">
-              {title}
+                {title}
               </div>
             </div>
             <PdfHeader
@@ -214,7 +212,8 @@ function SalesPdf({
                             {el.product_name}
                             <br />
                             <p className="text-gray-400 font-normal mt-1">
-                              HSN: {el?.hsn_code} ({el.igst}%)
+                              {el?.hsn_code !== " Not Found" &&
+                                `HSN: ${el?.hsn_code} (${el?.igst}%)`}
                             </p>
                           </td>
                           <td className="pt-2 text-black text-right pr-2 font-bold">
@@ -247,8 +246,6 @@ function SalesPdf({
                         </tr>
                         {el.hasGodownOrBatch &&
                           el.GodownList.map((godownOrBatch, idx) => {
-
-                            
                             const rate = godownOrBatch?.selectedPriceRate || 0;
                             const taxAmt =
                               Number(
@@ -262,13 +259,9 @@ function SalesPdf({
                             const finalAmt =
                               Number(godownOrBatch?.individualTotal) || 0;
 
-                            
-
-                              
-
-                            const discountAmount =
-                            (  (rate * count) + (taxAmt - Number(finalAmt)) || 0).toFixed(2);
-
+                            const discountAmount = (
+                              rate * count + (taxAmt - Number(finalAmt)) || 0
+                            ).toFixed(2);
 
                             return godownOrBatch.added &&
                               godownOrBatch.batch ? (

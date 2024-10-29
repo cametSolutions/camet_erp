@@ -24,8 +24,8 @@ function SaleOrderPdf({
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
 
-  const selectedOrganization = 
-  userType === "primaryUser" ? primarySelectedOrg : secondarySelectedOrg;
+  const selectedOrganization =
+    userType === "primaryUser" ? primarySelectedOrg : secondarySelectedOrg;
 
   const calculateTotalTax = () => {
     const individualTax = data?.items?.map(
@@ -45,7 +45,6 @@ function SaleOrderPdf({
       return acc + curr?.count;
     }, 0);
   };
-
 
   let address;
 
@@ -104,7 +103,6 @@ function SaleOrderPdf({
           address={address}
           despatchDetails={despatchDetails}
           tab={"salesOrder"}
-
         />
 
         {/* <hr className="border-t-2 border-black mb-0.5" /> */}
@@ -152,15 +150,16 @@ function SaleOrderPdf({
 
                     <td className="py-4 text-black pr-2">
                       {el.product_name} <br />
-                      <p className="text-gray-400 mt-1">
-                        HSN: {el?.hsn_code} ({el.igst}%)
+                      <p className="text-gray-400 font-normal mt-1">
+                        {el?.hsn_code !== " Not Found" &&
+                          `HSN: ${el?.hsn_code} (${el?.igst}%)`}
                       </p>
                     </td>
                     <td className="py-4 text-black text-right pr-2">
                       {count} {el?.unit}
                     </td>
                     <td className="py-4 text-black text-right pr-2 text-nowrap">
-                       {rate}
+                      {rate}
                     </td>
                     <td className="py-4 text-black text-right pr-2 ">
                       {discountAmount > 0
@@ -191,24 +190,23 @@ function SaleOrderPdf({
               <td className="text-right pr-1 text-black font-bold text-[9px]"></td>
               <td className="text-right pr-1 text-black font-bold text-[9px]"></td>
               <td className="text-right pr-1 text-black font-bold text-[9px]">
-                 {calculateTotalTax()}
+                {calculateTotalTax()}
               </td>
               <td className="text-right pr-1 text-black font-bold text-[9px]">
-                 {subTotal}
+                {subTotal}
               </td>
             </tr>
           </tfoot>
         </table>
-        
 
         <PdfFooter
-              bank={bank}
-              org={org}
-              data={data}
-              additinalCharge={additinalCharge}
-              inWords={inWords}
-              selectedOrganization={selectedOrganization}
-            />
+          bank={bank}
+          org={org}
+          data={data}
+          additinalCharge={additinalCharge}
+          inWords={inWords}
+          selectedOrganization={selectedOrganization}
+        />
       </div>
     </div>
   );

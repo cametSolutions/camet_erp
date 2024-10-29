@@ -277,9 +277,10 @@ function ThreeInchPurchasePrimary() {
                     >
                       <td className="py-2 text-black pr-2">
                         {el.product_name} <br />
-                        <p className="text-gray-400 mt-1">
-                          HSN: {el?.hsn_code} ({el.igst}%)
-                        </p>
+                        <p className="text-gray-400 font-normal mt-1">
+                              {el?.hsn_code !== " Not Found" &&
+                                `HSN: ${el?.hsn_code} (${el?.igst}%)`}
+                            </p>
                       </td>
                       <td className="py-2 text-black text-right pr-2">
                         {el?.count} {el?.unit}
