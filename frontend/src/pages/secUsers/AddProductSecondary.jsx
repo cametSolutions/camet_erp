@@ -50,7 +50,7 @@ function AddProductSecondary() {
       });
 
       toast.success(res.data.message);
-      navigate("/sUsers/productList");
+      navigate(-1);
     } catch (error) {
       toast.error(error.response.data.message);
       console.log(error);

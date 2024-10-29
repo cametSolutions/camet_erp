@@ -795,6 +795,7 @@ function AddItemSalesSecondary() {
       handleExpansion={handleExpansion}
       handleIncrement={handleIncrement}
       handleAddClick={handleAddClick}
+      addAllProducts={addAllProducts}
     />
   );
 }

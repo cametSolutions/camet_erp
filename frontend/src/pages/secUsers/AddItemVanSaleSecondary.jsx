@@ -25,6 +25,7 @@ import SearchBar from "../../components/common/SearchBar";
 import ProductDetails from "../../components/common/ProductDetails";
 import { IoIosArrowDown } from "react-icons/io";
 import { IoIosArrowUp } from "react-icons/io";
+import Filter from "../../components/secUsers/Filter";
 
 function AddItemVanSaleSecondary() {
   const [item, setItem] = useState([]);
@@ -1131,70 +1132,14 @@ function AddItemVanSaleSecondary() {
             </div>
           </div>
 
-          <div
-            className="bg-white text-sm font-semibold py-0 pb-1 px-2 flex items-center justify-evenly z-20 w-full gap-2  "
-            style={{ position: "relative", zIndex: "20" }}
-          >
-            <div className="w-4/12">
-              <select
-                value={selectedBrand}
-                onChange={(e) => {
-                  setSelectedBrand(e.target.value);
-                  dispatch(setBrandInRedux(e.target.value));
-                }}
-                className="full form-select block border-none  py-1.5 text-sm md:text-base font-normal text-gray-700 bg-white bg-clip-padding bg-no-repeat border rounded transition ease-in-out m-0 focus:ring-0 focus:border-none"
-              >
-                <option value="">Brands</option>
-                {brands.length > 0 &&
-                  brands.map((brand, index) => (
-                    <option key={index} value={brand}>
-                      {brand}
-                    </option>
-                  ))}
-              </select>
-            </div>
 
-            <div className="w-4/12">
-              <select
-                value={selectedCategory}
-                onChange={(e) => {
-                  setseleCtedCategory(e.target.value);
-                  dispatch(setCategoryInRedux(e.target.value));
-                }}
-                className="w-full   form-select block border-none  py-1.5 text-sm md:text-base font-normal text-gray-700 bg-white bg-clip-padding bg-no-repeat border rounded transition ease-in-out m-0 focus:ring-0 focus:border-none"
-              >
-                <option value="">Categories</option>
-                {categories.map((category, index) => (
-                  <option key={index} value={category}>
-                    {category}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="w-4/12">
-              <select
-                value={selectedSubCategory}
-                onChange={(e) => {
-                  setSelectedSubCategory(e.target.value);
-                  dispatch(setSubCategoryInRedux(e.target.value));
-                }}
-                className=" w-full  form-select block  py-1.5 text-sm md:text-base font-normal text-gray-700 bg-white bg-clip-padding bg-no-repeat border  border-none rounded transition ease-in-out m-0 focus:ring-0 focus:border-none "
-              >
-                <option value="">Subcategories</option>
-                {subCategories.map((el, index) => (
-                  <option key={index} value={el}>
-                    {el}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-          <div type="button" className="flex  px-4 bg-white ">
+          <Filter addAllProducts={addAllProducts} godownName={godownname} />
+       
+          {/* <div type="button" className="flex  px-4 bg-white ">
             <p className="text-xs  p-0.5 px-1 text-black font-bold opacity-60 mb-2  ">
               {godownname}
             </p>
-          </div>
+          </div> */}
         </div>
 
         {loader ? (
