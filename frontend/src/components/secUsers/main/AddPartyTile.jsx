@@ -4,8 +4,14 @@ import { IoPerson } from "react-icons/io5";
 import { MdOutlineClose } from "react-icons/md";
 import { PiAddressBookFill } from "react-icons/pi";
 import { Link } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 
 function AddPartyTile({ party, dispatch, removeParty, link, linkBillTo }) {
+  const location = useLocation();
+
+  
+
+  
   return (
     <div>
       <div className="bg-white  py-3 px-4 pb-3 drop-shadow-lg mt-2 md:mt-3 text-xs md:text-base ">
@@ -18,7 +24,7 @@ function AddPartyTile({ party, dispatch, removeParty, link, linkBillTo }) {
           {Object.keys(party).length !== 0 && (
             <div className="flex  items-center">
               <div>
-                <Link to={link}>
+                <Link to={link} >
                   <p className="text-violet-500 p-1 px-3  text-xs border border-1 border-gray-300 rounded-2xl cursor-pointer">
                     Change
                   </p>
@@ -40,7 +46,7 @@ function AddPartyTile({ party, dispatch, removeParty, link, linkBillTo }) {
 
         {Object.keys(party).length === 0 ? (
           <div className="mt-3 p-6 border border-gray-300 h-10 rounded-md flex  cursor-pointer justify-center   items-center font-medium text-violet-500">
-            <Link to={link}>
+            <Link to={link} state={{ parentPath: location.pathname }}>
               <div className="flex justify-center gap-2 hover_scale text-base ">
                 <IoMdAdd className="text-2xl" />
                 <p>Add Party Name</p>

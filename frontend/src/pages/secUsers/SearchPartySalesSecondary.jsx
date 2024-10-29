@@ -5,8 +5,6 @@ import { useSelector } from "react-redux";
 import api from "../../api/api";
 import { useDispatch } from "react-redux";
 import { addParty } from "../../../slices/salesSecondary";
-
-
 import PartyList from "../../components/secUsers/main/PartyList";
 
 // import { MdCancel } from "react-icons/md";
@@ -19,6 +17,9 @@ function SearchPartySalesSecondary() {
 
   const navigate = useNavigate();
   const dispatch = useDispatch();
+
+ 
+  
 
 
   const cpm_id = useSelector(
