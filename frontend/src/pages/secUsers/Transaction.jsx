@@ -1,5 +1,5 @@
 /* eslint-disable react/no-unknown-property */
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import api from "../../api/api";
 
 import { IoIosArrowRoundBack } from "react-icons/io";
@@ -11,8 +11,33 @@ import "react-datepicker/dist/react-datepicker.css";
 import SelectDate from "../../components/common/SelectDate";
 import VoucherTypeFilter from "../../components/common/Reports/VoucherTypeFilter";
 import useFetch from "../../customHook/useFetch";
+import TransactionTable from "../../components/common/List/TranscationTable";
+import TitleDiv from "../../components/common/TitleDiv";
 
 function Transaction() {
+  const stickyRef = useRef(null);
+  const [height, setHeight] = useState(0);
+
+  useEffect(() => {
+    const calculateHeight = () => {
+      if (stickyRef.current) {
+        const elementHeight = stickyRef.current.getBoundingClientRect().height;
+        setHeight(elementHeight);
+      }
+    };
+
+    // Calculate initial height
+    calculateHeight();
+
+    // Recalculate on window resize
+    window.addEventListener("resize", calculateHeight);
+
+    // Cleanup
+    return () => window.removeEventListener("resize", calculateHeight);
+  }, []);
+
+  console.log("height", height);
+
   const org = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
@@ -21,82 +46,24 @@ function Transaction() {
     (state) => state?.voucherType?.selectedVoucher
   );
 
-  const transactionsUrl = useMemo(() => 
-    `/api/sUsers/transactions/${org?._id}?startOfDayParam=${start}&endOfDayParam=${end}&selectedVoucher=${selectedVoucher?.value}`,
-    [org?._id,  start, end,selectedVoucher]
+  const transactionsUrl = useMemo(
+    () =>
+      `/api/sUsers/transactions/${org?._id}?startOfDayParam=${start}&endOfDayParam=${end}&selectedVoucher=${selectedVoucher?.value}`,
+    [org?._id, start, end, selectedVoucher]
   );
 
-    // Fetch data using custom hook
-    const { 
-      data: transactionData, 
-      loading: transactionLoading 
-    } = useFetch(transactionsUrl);
-
-  // const filterOutstanding = (data) => {
-  //   return data?.filter((item) => {
-  //     const searchFilter = item.party_name
-  //       ?.toLowerCase()
-  //       .includes(search.toLowerCase());
-
-  //     const createdAtDate = new Date(item.createdAt).setHours(0, 0, 0, 0);
-  //     const adjustedStartDate = new Date(startDate).setHours(0, 0, 0, 0);
-  //     const adjustedEndDate = new Date(endDate).setHours(23, 59, 59, 999);
-
-  //     const dateFilterCondition =
-  //       (!startDate || createdAtDate >= adjustedStartDate) &&
-  //       (!endDate || createdAtDate <= adjustedEndDate) &&
-  //       (startDate && endDate
-  //         ? createdAtDate >= adjustedStartDate &&
-  //           createdAtDate <= adjustedEndDate
-  //         : true);
-
-  //     return searchFilter && dateFilterCondition;
-  //   });
-  // };
-
-  // const finalData = filterOutstanding(data);
-
-  // const calulateTotal = () => {
-  //   if (finalData && finalData.length > 0) {
-  //     let total = 0;
-  //     try {
-  //       total = finalData.reduce((acc, curr) => {
-  //         const enteredAmount = curr?.enteredAmount;
-  //         if (
-  //           typeof enteredAmount === "number" ||
-  //           typeof enteredAmount === "string"
-  //         ) {
-  //           return acc + parseFloat(enteredAmount);
-  //         }
-  //         return acc;
-  //       }, 0);
-  //     } catch (error) {
-  //       console.error("Error when calculating total:", error);
-  //     }
-  //     setTotal(total);
-  //   }
-  // };
-
-  // useEffect(() => {
-  //   calulateTotal();
-  // }, [finalData]);
+  // Fetch data using custom hook
+  const { data: transactionData, loading: transactionLoading } =
+    useFetch(transactionsUrl);
 
   return (
     <div className="flex-1">
       <div className=" flex-1   ">
-        <div className="sticky top-0 flex flex-col z-30 bg-white">
-          <div className="bg-white"></div>
-          <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex items-center gap-2  ">
-            {/* <IoReorderThreeSharp
-              onClick={handleToggleSidebar}
-              className="block md:hidden text-white text-3xl"
-            /> */}
-            <Link to={-1}>
-              <IoIosArrowRoundBack className="text-3xl text-white cursor-pointer " />
-            </Link>
-
-            <p className="text-white text-lg   font-bold  ">Daybook</p>
-          </div>
+        <div
+          ref={stickyRef}
+          className="sticky top-0 flex flex-col z-30 bg-white"
+        >
+          <TitleDiv title="Daybook" />
 
           {/* <div className=" mt-0 shadow-lg p-2 md:p-0">
               <form>
@@ -183,14 +150,19 @@ function Transaction() {
           <section className="shadow-lg">
             <VoucherTypeFilter />
           </section>
+        <table className="w-full border-collapse mt-2  ">
+          <thead className={`sticky top-${height + 100} bg-white z-10`}>
+            <tr className="bg-gray-100 text-gray-500 text-xs">
+              <th className="text-left p-3 border-b w-1/2">Transaction</th>
+              <th className="text-right p-3 border-b w-1/4">Amount</th>
+              <th className="text-right p-3 border-b w-1/4">Money In/Out</th>
+            </tr>
+          </thead>
+        </table>
         </div>
 
-        {/* <DashboardTransaction
-          filteredData={finalData}
-          userType="secondary"
-          startDate={startDate}
-          endDate={endDate}
-        /> */}
+
+        <TransactionTable height={height} />
       </div>
     </div>
   );
