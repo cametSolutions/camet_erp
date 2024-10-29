@@ -320,17 +320,14 @@ export const getCreditNoteDetails = async (req, res) => {
 export const transactions = async (req, res) => {
   const userId = req.sUserId;
   const cmp_id = req.params.cmp_id;
-  const { todayOnly, startOfDayParam, endOfDayParam, party_id } = req.query; // Added parameters
+  const { todayOnly, startOfDayParam, endOfDayParam, party_id, selectedVoucher } = req.query;
 
   try {
     // Initialize dateFilter based on provided parameters
     let dateFilter = {};
-
     if (startOfDayParam && endOfDayParam) {
-      // If startOfDay and endOfDay are provided, use them
       const startDate = parseISO(startOfDayParam);
       const endDate = parseISO(endOfDayParam);
-
       dateFilter = {
         createdAt: {
           $gte: startOfDay(startDate),
@@ -338,92 +335,73 @@ export const transactions = async (req, res) => {
         },
       };
     } else if (todayOnly === "true") {
-      // Otherwise, check for todayOnly
       dateFilter = {
         createdAt: {
           $gte: startOfDay(new Date()),
           $lte: endOfDay(new Date()),
         },
       };
-    } else {
-      dateFilter = {};
     }
 
-    // Conditionally include `Secondary_user_id` only if it exists
     const matchCriteria = {
       ...dateFilter,
       cmp_id: cmp_id,
-      ...(userId ? { Secondary_user_id: userId } : {}), // If `userId` exists, match with `Secondary_user_id`
-      ...(party_id ? { "party._id": party_id } : {}), // If `party_id` exists, match with `_id` in the party object
+      ...(userId ? { Secondary_user_id: userId } : {}),
+      ...(party_id ? { "party._id": party_id } : {}),
     };
 
-    const transactionPromises = [
+    // Define voucher type mappings
+    const voucherTypeMap = {
+      sale: [{ model: salesModel, type: "Tax Invoice", numberField: "salesNumber" }],
+      saleOrder: [{ model: invoiceModel, type: "Sale Order", numberField: "orderNumber" }],
+      vanSale: [{ model: vanSaleModel, type: "Van Sale", numberField: "salesNumber" }],
+      purchase: [{ model: purchaseModel, type: "Purchase", numberField: "purchaseNumber" }],
+      debitNote: [{ model: debitNoteModel, type: "Debit Note", numberField: "debitNoteNumber" }],
+      creditNote: [{ model: creditNoteModel, type: "Credit Note", numberField: "creditNoteNumber" }],
+      receipt: [{ model: receiptModel, type: "Receipt", numberField: "receiptNumber" }],
+      payment: [{ model: paymentModel, type: "Payment", numberField: "paymentNumber" }],
+      stockTransfer: [{ model: stockTransferModel, type: "Stock Transfer", numberField: "stockTransferNumber" }],
+      all: [
+        { model: salesModel, type: "Tax Invoice", numberField: "salesNumber" },
+        { model: invoiceModel, type: "Sale Order", numberField: "orderNumber" },
+        { model: vanSaleModel, type: "Van Sale", numberField: "salesNumber" },
+        { model: purchaseModel, type: "Purchase", numberField: "purchaseNumber" },
+        { model: debitNoteModel, type: "Debit Note", numberField: "debitNoteNumber" },
+        { model: creditNoteModel, type: "Credit Note", numberField: "creditNoteNumber" },
+        { model: receiptModel, type: "Receipt", numberField: "receiptNumber" },
+        { model: paymentModel, type: "Payment", numberField: "paymentNumber" },
+        { model: stockTransferModel, type: "Stock Transfer", numberField: "stockTransferNumber" }
+      ]
+    };
+
+    // Get the appropriate models to query based on selectedVoucher
+    const modelsToQuery = selectedVoucher ? voucherTypeMap[selectedVoucher] : voucherTypeMap.all;
+
+    if (!modelsToQuery) {
+      return res.status(400).json({
+        status: false,
+        message: "Invalid voucher type selected"
+      });
+    }
+
+    // Create transaction promises based on selected voucher type
+    const transactionPromises = modelsToQuery.map(({ model, type, numberField }) =>
       aggregateTransactions(
-        receiptModel,
+        model,
         { ...matchCriteria, ...(userId ? { Secondary_user_id: userId } : {}) },
-        "Receipt",
-        "receiptNumber"
-      ),
-      aggregateTransactions(
-        paymentModel,
-        { ...matchCriteria, ...(userId ? { Secondary_user_id: userId } : {}) },
-        "Payment",
-        "paymentNumber"
-      ),
-      aggregateTransactions(
-        invoiceModel,
-        matchCriteria,
-        "Sale Order",
-        "orderNumber"
-      ),
-      aggregateTransactions(
-        salesModel,
-        matchCriteria,
-        "Tax Invoice",
-        "salesNumber"
-      ),
-      aggregateTransactions(
-        vanSaleModel,
-        matchCriteria,
-        "Van Sale",
-        "salesNumber"
-      ),
-      aggregateTransactions(
-        purchaseModel,
-        matchCriteria,
-        "Purchase",
-        "purchaseNumber"
-      ),
-      aggregateTransactions(
-        stockTransferModel,
-        matchCriteria,
-        "Stock Transfer",
-        "stockTransferNumber"
-      ),
-      aggregateTransactions(
-        creditNoteModel,
-        matchCriteria,
-        "Credit Note",
-        "creditNoteNumber"
-      ),
-      aggregateTransactions(
-        debitNoteModel,
-        matchCriteria,
-        "Debit Note",
-        "debitNoteNumber"
-      ),
-      // aggregateTransactions(receiptModel, matchCriteria, "Receipt"),
-    ];
+        type,
+        numberField
+      )
+    );
 
     const results = await Promise.all(transactionPromises);
-
     const combined = results
       .flat()
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
     if (combined.length > 0) {
       return res.status(200).json({
-        message: `Transactions fetched${
+        message: `${selectedVoucher === 'all' ? 'All transactions' : `${voucherTypeMap[selectedVoucher]?.[0]?.type} transactions`} fetched${
           todayOnly === "true" ? " for today" : ""
         }`,
         data: { combined },

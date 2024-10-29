@@ -176,6 +176,7 @@ import OutstandingListOfPaymentForEdit from '../pages/secUsers/OutstandingListOf
 import Reports from '../pages/secUsers/Reports'
 import PartyStatement from '../pages/secUsers/Reports/PartyStatement/PartyStatement'
 import DateRange from '../pages/secUsers/Reports/PartyStatement/DateRange'
+import VouchersList from '../components/common/Reports/VouchersList'
 
 const Routers = () => {
   return (
@@ -397,9 +398,11 @@ const Routers = () => {
         {/* we are using the same page of party list of sales to avoid page repetition */}
         <Route path='/sUsers/partyStatement/partyList' element={<ProtectedSecRoute><SearchPartySalesSecondary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/partyStatement' element={<ProtectedSecRoute><PartyStatement/></ProtectedSecRoute>}></Route>
-        <Route path='/sUers/dateRange' element={<ProtectedSecRoute><DateRange/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/dateRange' element={<ProtectedSecRoute><DateRange/></ProtectedSecRoute>}></Route>
 
+        {/* Daybook  */}
 
+        <Route path='/sUsers/vouchersLIst' element={<ProtectedSecRoute><VouchersList/></ProtectedSecRoute>}></Route>
 
 
     

@@ -15,7 +15,7 @@ function SelectDate() {
         </p>
       </div>
       <div className="">
-        <Link to="/sUers/dateRange">
+        <Link to="/sUsers/dateRange">
           <p className="text-violet-500 p-1 px-3  text-xs border border-1 border-gray-300 rounded-2xl cursor-pointer">
             Change
           </p>

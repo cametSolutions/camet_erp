@@ -16,6 +16,7 @@ import payment from "../slices/payment";
 import creditNote from "../slices/creditNote";
 import debitNote from "../slices/debitNote";
 import date from "../slices/date";
+import voucherType from "../slices/voucherType";
 
 export const store = configureStore({
   reducer: {
@@ -36,5 +37,6 @@ export const store = configureStore({
     creditNote: creditNote,
     debitNote: debitNote,
     date: date,
+    voucherType: voucherType,
   },
 });

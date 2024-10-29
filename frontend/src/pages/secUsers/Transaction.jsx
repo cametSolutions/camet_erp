@@ -1,135 +1,104 @@
 /* eslint-disable react/no-unknown-property */
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import api from "../../api/api";
 
 import { IoIosArrowRoundBack } from "react-icons/io";
 import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
 
-import DatePicker from "react-datepicker";
-
 import "react-datepicker/dist/react-datepicker.css";
 
-import { AiFillCaretRight } from "react-icons/ai";
-import DashboardTransaction from "../../components/common/DashboardTransaction";
+import SelectDate from "../../components/common/SelectDate";
+import VoucherTypeFilter from "../../components/common/Reports/VoucherTypeFilter";
+import useFetch from "../../customHook/useFetch";
 
 function Transaction() {
-
-  const initialStartDate = localStorage.getItem("SecondaryTransactionStartDate")
-  ? new Date(localStorage.getItem("SecondaryTransactionStartDate"))
-  : new Date();
-
-const initialEndDate = localStorage.getItem("SecondaryTransactionEndDate")
-  ? new Date(localStorage.getItem("SecondaryTransactionEndDate"))
-  : new Date();
-
-  
-  
-  const [data, setData] = useState([initialStartDate]);
-  const [search, setSearch] = useState("");
-  const [startDate, setStartDate] = useState(initialStartDate);
-  const [endDate, setEndDate] = useState(initialEndDate);
-  const [total, setTotal] = useState(0);
-
   const org = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
+  const { start, end } = useSelector((state) => state.date);
+  const selectedVoucher = useSelector(
+    (state) => state?.voucherType?.selectedVoucher
+  );
 
+  const transactionsUrl = useMemo(() => 
+    `/api/sUsers/transactions/${org?._id}?startOfDayParam=${start}&endOfDayParam=${end}&selectedVoucher=${selectedVoucher?.value}`,
+    [org?._id,  start, end,selectedVoucher]
+  );
 
-  useEffect(() => {
-    const fetchTransactions = async () => {
-      try {
-        const res = await api.get(`/api/sUsers/transactions/${org._id}`, {
-          withCredentials: true,
-        });
+    // Fetch data using custom hook
+    const { 
+      data: transactionData, 
+      loading: transactionLoading 
+    } = useFetch(transactionsUrl);
 
+  // const filterOutstanding = (data) => {
+  //   return data?.filter((item) => {
+  //     const searchFilter = item.party_name
+  //       ?.toLowerCase()
+  //       .includes(search.toLowerCase());
 
-        setData(res.data.data.combined);
+  //     const createdAtDate = new Date(item.createdAt).setHours(0, 0, 0, 0);
+  //     const adjustedStartDate = new Date(startDate).setHours(0, 0, 0, 0);
+  //     const adjustedEndDate = new Date(endDate).setHours(23, 59, 59, 999);
 
-        // dispatch(addData(res.data.outstandingData));
-      } catch (error) {
-        console.log(error);
-      }
-    };
-    fetchTransactions();
-  }, []);
+  //     const dateFilterCondition =
+  //       (!startDate || createdAtDate >= adjustedStartDate) &&
+  //       (!endDate || createdAtDate <= adjustedEndDate) &&
+  //       (startDate && endDate
+  //         ? createdAtDate >= adjustedStartDate &&
+  //           createdAtDate <= adjustedEndDate
+  //         : true);
 
-  const filterOutstanding = (data) => {
-    return data?.filter((item) => {
-      const searchFilter = item.party_name
-        ?.toLowerCase()
-        .includes(search.toLowerCase());
+  //     return searchFilter && dateFilterCondition;
+  //   });
+  // };
 
-      const createdAtDate = new Date(item.createdAt).setHours(0, 0, 0, 0);
-      const adjustedStartDate = new Date(startDate).setHours(0, 0, 0, 0);
-      const adjustedEndDate = new Date(endDate).setHours(23, 59, 59, 999);
+  // const finalData = filterOutstanding(data);
 
+  // const calulateTotal = () => {
+  //   if (finalData && finalData.length > 0) {
+  //     let total = 0;
+  //     try {
+  //       total = finalData.reduce((acc, curr) => {
+  //         const enteredAmount = curr?.enteredAmount;
+  //         if (
+  //           typeof enteredAmount === "number" ||
+  //           typeof enteredAmount === "string"
+  //         ) {
+  //           return acc + parseFloat(enteredAmount);
+  //         }
+  //         return acc;
+  //       }, 0);
+  //     } catch (error) {
+  //       console.error("Error when calculating total:", error);
+  //     }
+  //     setTotal(total);
+  //   }
+  // };
 
-      
-
-      const dateFilterCondition =
-        (!startDate || createdAtDate >= adjustedStartDate) &&
-        (!endDate || createdAtDate <= adjustedEndDate) &&
-        (startDate && endDate
-          ? createdAtDate >= adjustedStartDate &&
-            createdAtDate <= adjustedEndDate
-          : true);
-
-      return searchFilter && dateFilterCondition;
-    });
-  };
-  
-  const finalData = filterOutstanding(data);
-
-  const calulateTotal = () => {
-    if (finalData && finalData.length > 0) {
-      let total = 0;
-      try {
-        total = finalData.reduce((acc, curr) => {
-          const enteredAmount = curr?.enteredAmount;
-          if (
-            typeof enteredAmount === "number" ||
-            typeof enteredAmount === "string"
-          ) {
-            return acc + parseFloat(enteredAmount);
-          }
-          return acc;
-        }, 0);
-      } catch (error) {
-        console.error("Error when calculating total:", error);
-      }
-      console.log(total);
-      setTotal(total);
-    }
-  };
-
-  useEffect(() => {
-    calulateTotal();
-  }, [finalData]);
-
-  
-
-
-
+  // useEffect(() => {
+  //   calulateTotal();
+  // }, [finalData]);
 
   return (
-     
-      <div className="flex-1">
-        <div className=" flex-1   ">
-          <div className="sticky top-0 flex flex-col z-30 bg-white">
-            <div className="bg-white"></div>
-            <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex items-center gap-2  ">
-              {/* <IoReorderThreeSharp
+    <div className="flex-1">
+      <div className=" flex-1   ">
+        <div className="sticky top-0 flex flex-col z-30 bg-white">
+          <div className="bg-white"></div>
+          <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex items-center gap-2  ">
+            {/* <IoReorderThreeSharp
               onClick={handleToggleSidebar}
               className="block md:hidden text-white text-3xl"
             /> */}
-              <Link to={-1}>
-                <IoIosArrowRoundBack className="text-3xl text-white cursor-pointer " />
-              </Link>
+            <Link to={-1}>
+              <IoIosArrowRoundBack className="text-3xl text-white cursor-pointer " />
+            </Link>
 
-              <p className="text-white text-lg   font-bold  ">Transactions</p>
-            </div>
-            <div className=" mt-0 shadow-lg p-2 md:p-0">
+            <p className="text-white text-lg   font-bold  ">Daybook</p>
+          </div>
+
+          {/* <div className=" mt-0 shadow-lg p-2 md:p-0">
               <form>
                 <label
                   for="default-search"
@@ -205,12 +174,25 @@ const initialEndDate = localStorage.getItem("SecondaryTransactionEndDate")
                   </div>
                 </div>
               </form>
-            </div>
-          </div>
+            </div> */}
 
-      <DashboardTransaction filteredData={finalData} userType="secondary" startDate={startDate} endDate={endDate}/>
+          <section className="shadow-lg">
+            <SelectDate />
+          </section>
+
+          <section className="shadow-lg">
+            <VoucherTypeFilter />
+          </section>
         </div>
+
+        {/* <DashboardTransaction
+          filteredData={finalData}
+          userType="secondary"
+          startDate={startDate}
+          endDate={endDate}
+        /> */}
       </div>
+    </div>
   );
 }
 
