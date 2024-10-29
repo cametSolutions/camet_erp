@@ -100,7 +100,7 @@ function ThreeInchPurchasePrimary() {
       const mergedWord = [
         ...integerWords,
         // " Rupees",
-        // ...decimalWords,
+        ...decimalWords,
         // "Paisa",
       ].join("");
 

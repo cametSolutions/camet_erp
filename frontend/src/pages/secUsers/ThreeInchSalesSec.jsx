@@ -97,7 +97,7 @@ function ThreeInchSalesSec() {
       const mergedWord = [
         ...integerWords,
         // " Rupees",
-        // ...decimalWords,
+        ...decimalWords,
         // "Paisa",
       ].join("");
 

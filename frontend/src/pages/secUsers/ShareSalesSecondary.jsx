@@ -83,15 +83,15 @@ function ShareSalesSecondary() {
       const [integerPart, decimalPart] = data.finalAmount.toString().split(".");
       const integerWords = numberToWords.toWords(parseInt(integerPart, 10));
       console.log(integerWords);
-      // const decimalWords = decimalPart
-      //   ? ` and ${numberToWords.toWords(parseInt(decimalPart, 10))} `
-      //   : " and Zero";
-      // console.log(decimalWords);
+      const decimalWords = decimalPart
+        ? ` and ${numberToWords.toWords(parseInt(decimalPart, 10))} `
+        : " and Zero";
+      console.log(decimalWords);
 
       const mergedWord = [
         ...integerWords,
         // " Rupees",
-        // ...decimalWords,
+        ...decimalWords,
         // "Paisa",
       ].join("");
 

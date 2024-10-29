@@ -95,7 +95,7 @@ function ShareInvoiceSecondary() {
       const mergedWord = [
         ...integerWords,
         // " Rupees",
-        // ...decimalWords,
+        ...decimalWords,
         // "Paisa",
       ].join("");
 
