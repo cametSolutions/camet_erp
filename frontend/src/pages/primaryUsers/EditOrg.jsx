@@ -7,18 +7,27 @@ import AddOrgForm from "../../components/homePage/AddOrgForm.jsx";
 import { useSidebar } from "../../layout/Layout";
 import { useDispatch } from "react-redux";
 import { setSelectedOrganization } from "../../../slices/PrimarySelectedOrgSlice.jsx";
+import { setSecSelectedOrganization } from "../../../slices/secSelectedOrgSlice.js";
+
 import { useSelector } from "react-redux";
 
 const EditOrg = () => {
  const selectedOrganization = useSelector(
-    (state) => state.setSelectedOrganization.selectedOrg
+    (state) => state?.setSelectedOrganization?.selectedOrg
   );
+  // const selectedOrganizationSecondary = useSelector(
+  //   (state) => state.secSelectedOrganization?.secSelectedOrg?._id
+  // );
+
+
+  // console.log("sec", selectedOrganizationSecondary);
+  
   
   const dispatch = useDispatch();
   const [orgData, setOrgData] = useState({});
 
 
-  const [showInputs, setShowInputs] = useState(false);
+  // const [showInputs, setShowInputs] = useState(false);
 
 
   const { id } = useParams();
@@ -31,9 +40,9 @@ const EditOrg = () => {
           withCredentials: true,
         });
         setOrgData(res.data.organizationData);
-        if (senderId.length > 0) {
-          setShowInputs(true);
-        }
+        // if (senderId.length > 0) {
+        //   setShowInputs(true);
+        // }
       } catch (error) {
         console.log(error);
         toast.error(error.response.data.message);
@@ -64,13 +73,16 @@ const EditOrg = () => {
         },
         withCredentials: true,
       });
-      console.log(res.data.data._id)
-      if(res.data.data._id === selectedOrganization._id){
+
+      
+      if  ( selectedOrganization && res.data.data._id === selectedOrganization._id){
         dispatch(setSelectedOrganization(res.data.data))
       } 
-      
+
       toast.success(res.data.message);
+
       navigate("/pUsers/organizationList");
+
     } catch (error) {
       toast.error(error.response.data.message);
       console.log(error);

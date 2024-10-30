@@ -1,20 +1,24 @@
 /* eslint-disable react/prop-types */
-import React from "react";
+import React, { useEffect, useState } from "react";
 import PdfHeader from "../pdfComponents/PdfHeader";
 import PdfFooter from "../pdfComponents/PdfFooter";
 import { useSelector } from "react-redux";
+import numberToWords from "number-to-words";
 
 function SalesPdf({
   data,
   org,
   contentToPrint,
   bank,
-  inWords,
-  subTotal,
-  additinalCharge,
+  // inWords,
+  // subTotal,
+  // additinalCharge,
   userType,
   tab,
 }) {
+  const [subTotal, setSubTotal] = useState("");
+  const [additinalCharge, setAdditinalCharge] = useState("");
+  const [inWords, setInWords] = useState("");
   let title = "";
 
   switch (tab) {
@@ -104,6 +108,46 @@ function SalesPdf({
       return acc + curr?.count;
     }, 0);
   };
+
+  useEffect(() => {
+    if (data && data.items) {
+      const subTotal = data.items
+        .reduce((acc, curr) => acc + parseFloat(curr?.total), 0)
+        .toFixed(2);
+      setSubTotal(subTotal);
+
+      const addiTionalCharge = data?.additionalCharges
+        ?.reduce((acc, curr) => {
+          let value = curr?.finalValue === "" ? 0 : parseFloat(curr.finalValue);
+          if (curr?.action === "add") {
+            return acc + value;
+          } else if (curr?.action === "sub") {
+            return acc - value;
+          }
+          return acc;
+        }, 0)
+
+        ?.toFixed(2);
+      setAdditinalCharge(addiTionalCharge);
+
+      const [integerPart, decimalPart] = data.finalAmount.toString().split(".");
+      const integerWords = numberToWords.toWords(parseInt(integerPart, 10));
+      const decimalWords = decimalPart
+        ? ` and ${numberToWords.toWords(parseInt(decimalPart, 10))} `
+        : " and Zero";
+      // console.log(decimalWords);
+      console.log(selectedOrganization?.currencyName);
+
+      const mergedWord = [
+        ...(integerWords + " "),
+        (selectedOrganization?.currencyName ?? "") + " ",
+        ...decimalWords,
+        (selectedOrganization?.subunit ?? "") + " ",
+      ].join("");
+
+      setInWords(mergedWord);
+    }
+  }, [data]);
 
   const party = data?.party;
   const despatchDetails = data?.despatchDetails;
@@ -232,7 +276,13 @@ function SalesPdf({
                           </td>
 
                           <td className="pt-2 text-black text-right pr-2">
-                            {` ${calculateDiscountAmntOFNoBAtch(el)}`}
+                            {el.GodownList &&
+                            el.GodownList.length > 0 &&
+                            el.GodownList.every(
+                              (godown) => godown.godown_id && !godown.batch
+                            )
+                              ? ` ${calculateDiscountAmntOFNoBAtch(el)}`
+                              : "0.00"}
                           </td>
                           <td className="pt-2 text-black text-right pr-2 font-bold">
                             {`  ${(

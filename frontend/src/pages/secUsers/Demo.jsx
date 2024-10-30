@@ -1,321 +1,869 @@
+/* eslint-disable no-unused-vars */
 /* eslint-disable react/prop-types */
-/* eslint-disable react/no-unknown-property */
-import { useState, useEffect, useCallback } from "react";
-import api from "../../api/api";
+import { useState, useEffect } from "react";
+import uploadImageToCloudinary from "../../../utils/uploadCloudinary.js";
 import { toast } from "react-toastify";
-import { useNavigate } from "react-router-dom";
-import { useSelector, useDispatch } from "react-redux";
+import api from "../../api/api.js";
+import { HashLoader } from "react-spinners";
+import { industries } from "../../../constants/industries.js";
+import { statesData } from "../../../constants/states.js";
 import {
-  setSecSelectedOrganization,
-  removeSecSelectedOrg,
-} from "../../../slices/secSelectedOrgSlice";
-import { Link } from "react-router-dom";
-import { IoReorderThreeSharp } from "react-icons/io5";
-import { MdDashboard } from "react-icons/md";
-import { TiUserAdd } from "react-icons/ti";
-import { MdOutlineProductionQuantityLimits } from "react-icons/md";
-import { RingLoader } from "react-spinners";
-import { IoMdSettings } from "react-icons/io";
+  countries,
+  currencyNames,
+  currencies,
+} from "../../../constants/countries.js";
 
-import { removeAll } from "../../../slices/invoiceSecondary";
-import { removeAllSales } from "../../../slices/salesSecondary";
-import { removeAll as removeAllStock } from "../../../slices/stockTransferSecondary";
-import { removeAll as removeAllPurchase } from "../../../slices/purchase";
-import { removeAll as removeAllCredit } from "../../../slices/creditNote";
-
-function SidebarSec({ TAB, showBar }) {
-  const [showSidebar, setShowSidebar] = useState(false);
-  const [userData, setUserData] = useState({});
-  const [dropdown, setDropdown] = useState(false);
-  const [org, setOrg] = useState("");
+function Demo({ onSubmit, orgData = {} }) {
+  const [name, setName] = useState("");
+  const [pin, setPin] = useState("");
+  const [state, setState] = useState("");
+  const [country, setCountry] = useState("India");
+  const [mobile, setMobile] = useState("");
+  const [gstNum, setGstNum] = useState("");
+  const [email, setEmail] = useState("");
+  const [flat, setFlat] = useState("");
+  const [road, setRoad] = useState("");
+  const [landmark, setLandmark] = useState("");
+  const [logo, setLogo] = useState("");
   const [loader, setLoader] = useState(false);
-  const [companies, setCompanies] = useState([]);
+  const [showInputs, setShowInputs] = useState(false);
+  const [senderId, setSenderId] = useState("");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [userData, setUserData] = useState("");
+  const [website, setWebsite] = useState("");
+  const [pan, setPan] = useState("");
+  const [financialYear, setFinancialYear] = useState("");
+  const [type, setType] = useState("self");
+  const [batchEnabled, setBatchEnabled] = useState(false);
+  const [industry, setIndustry] = useState("");
+  const [currencyName, setCurrencyName] = useState("");
+  const [currency, setCurrency] = useState("");
+  const [printTitle, setPrintTitle] = useState("");
 
-  const selectedTab = localStorage.getItem("selectedSecondatSidebarTab");
-
-  const [tab, setTab] = useState(selectedTab);
-  const navigate = useNavigate();
-  const dispatch = useDispatch();
-  const prevOrg = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg
-  );
-
-  const navItems = [
-    {
-      to: "/sUsers/dashboard",
-      tab: "dash",
-      icon: <MdDashboard />,
-      label: "Dashboard",
-    },
-  ];
-
-  if (companies && companies.length > 0 && org.isApproved === true) {
-    const additionalTabs = [
-      {
-        to: "/sUsers/partyList",
-        tab: "addParty",
-        icon: <TiUserAdd />,
-        label: "Customers",
-      },
-      {
-        to: "/sUsers/productList",
-        label: "Products",
-        icon: <MdOutlineProductionQuantityLimits />,
-        tab: "product",
-      },
-      {
-        to: "/sUsers/OrderConfigurations",
-        tab: "terms",
-        icon: <IoMdSettings />,
-        label: "Settings",
-      },
-    ];
-
-    additionalTabs.map((item) => {
-      return navItems.push(item);
-    });
-  }
-
-  const getUserData = useCallback(async () => {
-    try {
-      const res = await api.get("/api/sUsers/getSecUserData", {
-        withCredentials: true,
-      });
-      setUserData(res?.data?.data?.userData);
-      setCompanies(res?.data?.data?.userData.organization);
-
-      if (!prevOrg) {
-        setOrg(res.data.data.userData.organization[0]);
-        dispatch(
-          setSecSelectedOrganization(res.data.data.userData.organization[0])
-        );
-      } else {
-        setOrg(prevOrg);
+  useEffect(() => {
+    const getUserData = async () => {
+      try {
+        const res = await api.get("/api/pUsers/getPrimaryUserData", {
+          withCredentials: true,
+        });
+        setUserData(res.data.data.userData);
+      } catch (error) {
+        console.log(error);
       }
-    } catch (error) {
-      console.log(error);
-    }
-  }, [prevOrg, dispatch]);
-
-  useEffect(() => {
-    if (!userData || !userData.name) {
-      // only make the API call if data is not already present
-      getUserData();
-    }
-  }, [getUserData, userData]);
-
-  useEffect(() => {
-    if (window.innerWidth < 768) {
-      setShowSidebar(!showSidebar);
-    }
-  }, [showBar]);
-
-  useEffect(() => {
-    if (window.innerWidth < 768) {
-      setShowSidebar(false);
-    }
+    };
+    getUserData();
   }, []);
 
-  const handleSidebarItemClick = (newTab) => {
-    if (window.innerWidth < 768) {
-      setShowSidebar(false);
+  console.log(orgData);
+  console.log("sdfkslfskfslkfdj");
+
+
+  useEffect(() => {
+    if (Object.keys(orgData).length > 0) {
+      const {
+        name,
+        flat,
+        road,
+        landmark,
+        email,
+        mobile,
+        senderId,
+        username,
+        password,
+        pin,
+        gstNum,
+        country,
+        logo,
+        state,
+        website,
+        type,
+        pan,
+        financialYear,
+        batchEnabled,
+        industry,
+        currency,
+        currencyName,
+        printTitle,
+      } = orgData;
+
+      setName(name);
+      setFlat(flat);
+      setRoad(road);
+      setLandmark(landmark);
+      setEmail(email);
+      setMobile(mobile);
+      setSenderId(senderId);
+      setUsername(username);
+      setPassword(password);
+      setPin(pin);
+      setGstNum(gstNum);
+      setCountry(country);
+      setLogo(logo);
+      setState(state);
+      setWebsite(website);
+      setType(type);
+      setPan(pan);
+      setFinancialYear(financialYear);
+      setBatchEnabled(batchEnabled);
+      setIndustry(industry);
+      setCurrency(currency);
+      setCurrencyName(currencyName);
+      setPrintTitle(printTitle);
     }
+  }, [orgData]);
 
-    setTab(newTab);
-    localStorage.setItem("selectedPrimarySidebarTab", newTab);
-    dispatch(removeAll());
-    dispatch(removeAllSales());
-    dispatch(removeAllStock());
-    dispatch(removeAllPurchase());
-    dispatch(removeAllCredit());
-    // for removing date from local storage which is saved for transaction
-
-    localStorage.removeItem("SecondaryTransactionEndDate");
-    localStorage.removeItem("SecondaryTransactionStartDate");
-    // onTabChange(newTab);
+  const handleCheckboxChange = () => {
+    setShowInputs(!showInputs);
   };
 
-  const handleLogout = async () => {
-    try {
-      const res = await api.post(
-        "/api/sUsers/logout",
-        {},
-        {
-          withCredentials: true,
-        }
-      );
-      toast.success(res.data.message);
-      localStorage.removeItem("sUserData");
-      dispatch(removeSecSelectedOrg());
-      navigate("/sUsers/login");
-    } catch (error) {
-      console.error(error);
-      toast.error(error.response.data.message);
-    }
-  };
-
-  const handleDropDownchange = (el) => {
-    setDropdown(!dropdown);
-    if (window.innerWidth <= 640) {
-      setShowSidebar(!showSidebar);
-    }
+  const handleFileInputChange = async (e) => {
+    const file = e.target.files[0];
+    console.log(file);
     setLoader(true);
-    setTimeout(() => {
-      setOrg(el);
-      dispatch(setSecSelectedOrganization(el));
-      navigate("/sUsers/dashboard");
-      setLoader(false);
-    }, 1000);
+    const data = await uploadImageToCloudinary(file);
+
+    setLoader(false);
+
+    setLogo(data.url);
+  };
+
+  const submitHandler = async () => {
+    if (
+      !name.trim() ||
+      // (gstNum && !gstNum.trim()) ||
+      !email.trim() ||
+      !state ||
+      !country ||
+      !flat.trim() ||
+      !road.trim() ||
+      !industry ||
+      // (website && !website.trim()) ||
+      !financialYear.trim() ||
+      !landmark.trim() ||
+      !pin ||
+      !mobile
+    ) {
+      toast.error("All fields must be filled");
+      return;
+    }
+
+    if (showInputs) {
+      if (!senderId.trim() || !username.trim() || !password.trim()) {
+        toast.error("SenderId, Username, and Password must be filled");
+        return;
+      }
+    }
+
+    if (currency.trim() === "" || currencyName.trim() === "") {
+      toast.error("Currency and Currency Name must be filled");
+      return;
+    }
+
+    if (name.length > 60) {
+      toast.error("Name must be at most 30 characters");
+      return;
+    }
+
+    if (!/^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/.test(email)) {
+      toast.error("Invalid email address");
+      return;
+    }
+
+    if (!/^\d{10}$/.test(mobile) && country === "India") {
+      toast.error("Mobile number must be 10 digits");
+      return;
+    }
+
+    if (flat.length > 120) {
+      toast.error("Place must be at most 120 characters");
+      return;
+    }
+    if (road.length > 120) {
+      toast.error("Place must be at most 120 characters");
+      return;
+    }
+    if (landmark.length > 120) {
+      toast.error("Place must be at most 120 characters");
+      return;
+    }
+
+    // / Additional PIN code validation
+    const isPinValid = /^\d{6}$/.test(pin);
+    if (!isPinValid && country === "India") {
+      toast.error("Please enter a valid 6-digit PIN code");
+      return;
+    }
+
+    const gstRegex = /^[0-9A-Za-z]{15}$/;
+
+    if (gstNum && !gstRegex.test(gstNum) && country === "India") {
+      toast.error("Invalid GST number");
+      return;
+    }
+
+    if (pan && !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(pan) && country === "India") {
+      toast.error("Invalid PAN number");
+      return;
+    }
+    if (
+      website &&
+      !/^((https?|ftp):\/\/)?(www\.)?[\w-]+\.[a-zA-Z]{2,}(\/\S*)?$/.test(
+        website
+      )
+    ) {
+      toast.error("Invalid website URL");
+      return;
+    }
+    if (printTitle && printTitle.length > 30) {
+      toast.error("Print Title must be at most 30 characters");
+      return;
+    }
+
+    console.log(gstNum);
+    
+
+    const formData = {
+      name,
+      // place,
+      pin,
+      state,
+      country,
+      email,
+      gstNum,
+      mobile,
+      logo,
+      flat,
+      road,
+      landmark,
+      senderId,
+      username,
+      password,
+      website,
+      pan,
+      financialYear,
+      type,
+      batchEnabled,
+      industry,
+      currency,
+      currencyName,
+      printTitle,
+    };
+
+    console.log(formData);
+    onSubmit(formData);
   };
 
   return (
-    <div className="nonPrintable-content">
-      {loader && (
-        <div className=" absolute top-0 w-screen h-screen z-50  flex justify-center items-center bg-black/[0.5]">
-          <RingLoader color="#1c14a0" />
-        </div>
-      )}
-
-      <aside
-        className={` ${
-          showSidebar
-            ? "z-50 absolute h-[125vh] transform translate-x-0 "
-            : "-translate-x-full md:translate-x-0  z-50 absolute md:relative "
-        } transition-transform duration-500 ease-in-out flex flex-col w-64 h-screen  px-4 py-8  bg-gray-900 border-r rtl:border-r-0 rtl:border-l dark:bg-gray-900 dark:border-gray-700   
-          
-        overflow-y-auto`}
-        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-      >
-        <div className="w-full relative">
-          <div
-            onClick={handleSidebarItemClick}
-            className="text-white text-3xl absolute right-0 top-[-20px]  md:hidden  "
-          >
-            <IoReorderThreeSharp />
-          </div>
-        </div>
-
-        <div className="flex flex-col items-center mt-6 -mx-2">
-          <img
-            className="object-cover w-24 h-24 mx-2 rounded-full"
-            src={
-              org?.logo ||
-              "https://i.pinimg.com/736x/8b/16/7a/8b167af653c2399dd93b952a48740620.jpg"
-            }
-            alt="avatar"
-          />
-          <h4 className="mx-2 mt-2 font-medium text-white">{userData.name}</h4>
-          <p className="mx-2 mt-1 text-sm font-medium text-white">
-            {userData.email}
-          </p>
-
-          <button
-            onClick={() => {
-              setDropdown(!dropdown);
-            }}
-            id="dropdownDefaultButton"
-            data-dropdown-toggle="dropdown"
-            className="text-white mt-6 bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
-            type="button"
-          >
-            {org?.name || "No company added"}{" "}
-            <svg
-              className="w-2.5 h-2.5 ms-3"
-              aria-hidden="true"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 10 6"
-            >
-              <path
-                stroke="currentColor"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="m1 1 4 4 4-4"
-              />
-            </svg>
-          </button>
-
-          {dropdown && (
-            <div
-              className="relative flex justify-center
-              "
-            >
-              <div
-                id="dropdown"
-                className="z-10 absolute mt-2   bg-gray-700 divide-y divide-gray-100 rounded-lg shadow w-44 dark:bg-gray-700"
-              >
-                <ul
-                  className="py-2 text-sm text-gray-200"
-                  aria-labelledby="dropdownDefaultButton"
+    <div>
+      <div className="flex-auto px-4 lg:px-10 py-10 pt-0">
+        <form encType="multipart/form-data">
+          <h6 className="text-blueGray-400 text-sm mt-3 mb-6 font-bold uppercase">
+            Company Information
+          </h6>
+          <div className="flex flex-wrap">
+            <div className="w-full lg:w-6/12 px-4">
+              <div className="relative w-full mb-3">
+                <label
+                  className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
+                  htmlFor="grid-password"
                 >
-                  {userData &&
-                    userData?.organization?.map((el, index) => (
-                      <li key={index}>
-                        <a
-                          // onClick={()=>{setDropdown(!dropdown);setOrg(el)}}
-                          onClick={() => handleDropDownchange(el)}
-                          href="#"
-                          className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
-                        >
-                          {el.name}
-                        </a>
-                      </li>
-                    ))}
-                </ul>
+                  Name
+                </label>
+                <input
+                  type="text"
+                  className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                  onChange={(e) => {
+                    setName(e.target.value);
+                  }}
+                  value={name}
+                  placeholder="Organization name"
+                />
               </div>
             </div>
+      
+            <div className="w-full lg:w-6/12 px-4">
+              <div className="relative w-full mb-3">
+                <label
+                  className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
+                  htmlFor="grid-password"
+                >
+                  Organization Email
+                </label>
+                <input
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                  }}
+                  value={email}
+                  type="text"
+                  placeholder="abc@gmail.com"
+                  className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                />
+              </div>
+            </div>
+            <div className="w-full lg:w-6/12 px-4">
+              <div className="relative w-full mb-3">
+                <label
+                  className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
+                  htmlFor="grid-password"
+                >
+                  Official Mobile no.
+                </label>
+                <input
+                  onChange={(e) => {
+                    setMobile(e.target.value);
+                  }}
+                  value={mobile}
+                  type="number"
+                  placeholder="Mobile number"
+                  className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* address */}
+
+          <hr className="mt-6 border-b-1 border-blueGray-300" />
+          <h6 className="text-blueGray-400 text-sm mt-3 mb-6 font-bold uppercase">
+            Address
+          </h6>
+          <div className="flex flex-wrap">
+            {/* <div className="w-full lg:w-12/12 px-4"></div> */}
+            <div className="w-full lg:w-6/12 px-4">
+              <div className="relative w-full mb-3">
+                <label
+                  className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
+                  htmlFor="grid-password"
+                >
+                  Country
+                </label>
+                <select
+                  className="border-0 px-3 mr-12 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                  onChange={(e) => {
+                    setCountry(e.target.value);
+                    setCurrency(
+                      countries.find((c) => c.countryName === e.target.value)
+                        ?.currency
+                    );
+                    setCurrencyName(
+                      countries.find((c) => c.countryName === e.target.value)
+                        ?.currencyName
+                    );
+                    // setState("");
+                  }}
+                  value={country}
+                >
+                  {countries.map((country) => (
+                    <option
+                      value={country?.countryName}
+                      key={country?.countryName}
+                    >
+                      {country?.countryName} ({country?.currency})
+                    </option>
+                  ))}
+
+                  {/* Add more options as needed */}
+                </select>
+              </div>
+            </div>
+            {country === "India" ? (
+              <div className="w-full lg:w-6/12 px-4">
+                <div className="relative w-full mb-3">
+                  <label
+                    className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
+                    htmlFor="grid-password"
+                  >
+                    State
+                  </label>
+                  <select
+                    className="border-0 px-2 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                    onChange={(e) => {
+                      setState(e.target.value);
+                    }}
+                    value={state}
+                  >
+                    <option value="" disabled>
+                      Select a state
+                    </option>
+                    {statesData.map((indianState) => (
+                      <option key={indianState} value={indianState?.stateName}>
+                        {indianState?.stateName}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            ) : (
+              <div className="w-full lg:w-6/12 px-4">
+                <div className="relative w-full mb-3">
+                  <label
+                    className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
+                    htmlFor="grid-password"
+                  >
+                    State
+                  </label>
+                  <input
+                    className="border-0 px-2 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                    onChange={(e) => {
+                      setState(e.target.value);
+                    }}
+                    value={state}
+                  ></input>
+                </div>
+              </div>
+            )}
+            <div className="w-full lg:w-6/12 px-4">
+              <div className="relative w-full mb-3">
+                <label
+                  className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
+                  htmlFor="grid-password"
+                >
+                  Currency
+                </label>
+                <select
+                  className="border-0 px-3 mr-12 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                  onChange={(e) => {
+                    setCurrency(e.target.value);
+                    // setState("");
+                  }}
+                  value={currency}
+                >
+                  <option value="">Select currency</option>
+                  {currencies.map((currency) => (
+                    <option value={currency} key={currency}>
+                      {currency}
+                    </option>
+                  ))}
+
+                  {/* Add more options as needed */}
+                </select>
+              </div>
+            </div>
+            <div className="w-full lg:w-6/12 px-4">
+              <div className="relative w-full mb-3">
+                <label
+                  className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
+                  htmlFor="grid-password"
+                >
+                  Currency Name
+                </label>
+                <select
+                  className="border-0 px-3 mr-12 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                  onChange={(e) => {
+                    setCurrencyName(e.target.value);
+                    // setState("");
+                  }}
+                  value={currencyName}
+                >
+                  <option value="">Select currency name</option>
+                  {currencyNames.map((name) => (
+                    <option value={name} key={name}>
+                      {name}
+                    </option>
+                  ))}
+
+                  {/* Add more options as needed */}
+                </select>
+              </div>
+            </div>
+            <div className="w-full lg:w-6/12 px-4">
+              <div className="relative w-full mb-3">
+                <label
+                  className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
+                  htmlFor="grid-password"
+                >
+                  House/Flat/Block.No
+                </label>
+                <input
+                  type=""
+                  className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                  onChange={(e) => {
+                    setFlat(e.target.value);
+                  }}
+                  value={flat}
+                  placeholder="House/Flat/Block.No"
+                />
+              </div>
+            </div>
+            <div className="w-full lg:w-6/12 px-4">
+              <div className="relative w-full mb-3">
+                <label
+                  className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
+                  htmlFor="grid-password"
+                >
+                  Apartment/Road/Area
+                </label>
+                <input
+                  type=""
+                  className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                  onChange={(e) => {
+                    setRoad(e.target.value);
+                  }}
+                  value={road}
+                  placeholder="Apartment/Road/Area"
+                />
+              </div>
+            </div>
+            <div className="w-full lg:w-6/12 px-4">
+              <div className="relative w-full mb-3">
+                <label
+                  className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
+                  htmlFor="grid-password"
+                >
+                  Landmark
+                </label>
+                <input
+                  type=""
+                  className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                  onChange={(e) => {
+                    setLandmark(e.target.value);
+                  }}
+                  value={landmark}
+                  placeholder=" Landmark"
+                />
+              </div>
+            </div>
+
+            <div className="w-full lg:w-6/12 px-4">
+              <div className="relative w-full mb-3">
+                <label
+                  className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
+                  htmlFor="grid-password"
+                >
+                  Pin
+                </label>
+
+                <input
+                  type={country == "India" ? "number" : "text"}
+                  className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                  onChange={(e) => {
+                    setPin(e.target.value);
+                  }}
+                  value={pin}
+                  placeholder="Postal Code"
+                />
+              </div>
+            </div>
+          </div>
+          {/* address */}
+
+          {userData.sms && (
+            <>
+              <hr className="mt-6 border-b-1 border-blueGray-300" />
+              <h6 className="text-blueGray-400 text-sm mt-3 mb-6 font-bold uppercase flex gap-4 items-center">
+                SMS Service
+                <input
+                  onChange={handleCheckboxChange}
+                  type="checkbox"
+                  name=""
+                  id=""
+                  style={{ transform: "scale(1.2)" }}
+                />
+              </h6>
+              {showInputs && (
+                <div className="flex flex-wrap">
+                  <div className="w-full lg:w-12/12 px-4"></div>
+                  <div className="w-full lg:w-6/12 px-4">
+                    <div className="relative w-full mb-3">
+                      <label
+                        className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
+                        htmlFor="grid-password"
+                      >
+                        sender id
+                      </label>
+                      <input
+                        type=""
+                        className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                        onChange={(e) => {
+                          setSenderId(e.target.value);
+                        }}
+                        value={senderId}
+                        placeholder="Sender Id"
+                      />
+                    </div>
+                  </div>
+                  <div className="w-full lg:w-6/12 px-4">
+                    <div className="relative w-full mb-3">
+                      <label
+                        className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
+                        htmlFor="grid-password"
+                      >
+                        user name
+                      </label>
+                      <input
+                        type=""
+                        className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                        onChange={(e) => {
+                          setUsername(e.target.value);
+                        }}
+                        value={username}
+                        placeholder="User Name"
+                      />
+                    </div>
+                  </div>
+                  <div className="w-full lg:w-6/12 px-4">
+                    <div className="relative w-full mb-3">
+                      <label
+                        className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
+                        htmlFor="grid-password"
+                      >
+                        password
+                      </label>
+                      <input
+                        type=""
+                        className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                        onChange={(e) => {
+                          setPassword(e.target.value);
+                        }}
+                        value={password}
+                        placeholder="Password"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
           )}
 
-          <div>
-            <button onClick={handleLogout} className="Btn">
-              <div className="sign">
-                <svg viewBox="0 0 512 512">
-                  <path d="M377.9 105.9L500.7 228.7c7.2 7.2 11.3 17.1 11.3 27.3s-4.1 20.1-11.3 27.3L377.9 406.1c-6.4 6.4-15 9.9-24 9.9c-18.7 0-33.9-15.2-33.9-33.9l0-62.1-128 0c-17.7 0-32-14.3-32-32l0-64c0-17.7 14.3-32 32-32l128 0 0-62.1c0-18.7 15.2-33.9 33.9-33.9c9 0 17.6 3.6 24 9.9zM160 96L96 96c-17.7 0-32 14.3-32 32l0 256c0 17.7 14.3 32 32 32l64 0c17.7 0 32 14.3 32 32s-14.3 32-32 32l-64 0c-53 0-96-43-96-96L0 128C0 75 43 32 96 32l64 0c17.7 0 32 14.3 32 32s-14.3 32-32 32z"></path>
-                </svg>
+          <hr className="mt-6 border-b-1 border-blueGray-300" />
+          <h6 className="text-blueGray-400 text-sm mt-3 mb-6 font-bold uppercase">
+            Other Information
+          </h6>
+          <div className="flex flex-wrap">
+            <div className="w-full lg:w-12/12 px-4"></div>
+            <div className="w-full lg:w-6/12 px-4">
+              <div className="relative w-full mb-3">
+                <label
+                  className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
+                  htmlFor="grid-password"
+                >
+                  {country == "India" ? "GST No" : "VAT No"}
+                </label>
+                <input
+                  type=""
+                  className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                  onChange={(e) => {
+                    setGstNum(e.target.value);
+                  }}
+                  value={gstNum}
+                  placeholder={country == "India" ? "GST No" : "VAT No"}
+                />
               </div>
+            </div>
 
-              <div className="text">Logout</div>
-            </button>
+            <div className="w-full lg:w-6/12 px-4">
+              <div className="relative w-full mb-3">
+                <label
+                  className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
+                  htmlFor="grid-password"
+                >
+                  website
+                </label>
+                <input
+                  type=""
+                  className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                  onChange={(e) => {
+                    setWebsite(e.target.value);
+                  }}
+                  value={website}
+                  placeholder="Website"
+                />
+              </div>
+            </div>
+
+            <div className="w-full lg:w-6/12 px-4">
+              <div className="relative w-full mb-3">
+                <label
+                  className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
+                  htmlFor="grid-password"
+                >
+                  Pan
+                </label>
+                <input
+                  type=""
+                  className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                  onChange={(e) => {
+                    setPan(e.target.value);
+                  }}
+                  value={pan}
+                  placeholder="Pan No"
+                />
+              </div>
+            </div>
+
+            <div className="w-full lg:w-6/12 px-4">
+              <div className="relative w-full mb-3">
+                <label
+                  className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
+                  htmlFor="financial-year-select"
+                >
+                  Financial Year
+                </label>
+                <select
+                  id="financial-year-select"
+                  className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                  onChange={(e) => {
+                    setFinancialYear(e.target.value);
+                  }}
+                  value={financialYear}
+                >
+                  <option value="">Select Financial Year</option>
+                  {Array.from({ length: 11 }, (_, index) => {
+                    const startYear = 2020 + index;
+                    const endYear = startYear + 1;
+                    return (
+                      <option key={index} value={`${startYear}-${endYear}`}>
+                        {startYear}-{endYear}
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+            </div>
+            <div className="w-full lg:w-6/12 px-4">
+              <div className="relative w-full mb-3">
+                <label
+                  className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
+                  htmlFor="grid-password"
+                >
+                  Industries
+                </label>
+                <select
+                  className="border-0 px-2 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                  onChange={(e) => {
+                    setIndustry(e.target.value);
+                  }}
+                  value={industry}
+                >
+                  <option value="" disabled>
+                    Select an Industry
+                  </option>
+                  {industries.map((el) => (
+                    <option key={el} value={el?.code}>
+                      {el?.industry}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="w-full lg:w-6/12 px-4">
+              <div className="relative w-full mb-3">
+                <label
+                  className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
+                  htmlFor="grid-password"
+                >
+                  Print Title
+                </label>
+                <input
+                  type="text"
+                  className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                  onChange={(e) => {
+                    setPrintTitle(e.target.value);
+                  }}
+                  value={printTitle}
+                  placeholder="Print Title"
+                />
+              </div>
+            </div>
+
+            <div className=" w-full flex items-center  mt-8 px-4">
+              <div className="flex items-center mr-4">
+                <input
+                  type="checkbox"
+                  id="valueCheckbox"
+                  className="form-checkbox h-5 w-5 text-indigo-600 transition duration-150 ease-in-out"
+                  checked={type === "self"}
+                  onChange={() => {
+                    setType("self");
+                  }}
+                />
+                <label htmlFor="valueCheckbox" className="ml-2 text-gray-700">
+                  Self
+                </label>
+              </div>
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="itemRateCheckbox"
+                  className="form-checkbox h-5 w-5 text-indigo-600 transition duration-150 ease-in-out"
+                  checked={type === "integrated"}
+                  onChange={() => {
+                    setType("integrated");
+                  }}
+                />
+                <label
+                  htmlFor="itemRateCheckbox"
+                  className="ml-2 text-gray-700"
+                >
+                  Integrated
+                </label>
+              </div>
+            </div>
           </div>
-        </div>
-
-        <div className="">
-          <div className="flex flex-col justify-between flex-1 mt-6  ">
-            <nav>
-              {navItems.map((item, index) => (
-                <div key={index}>
-                  <Link to={item.to}>
-                    <span
-                      onClick={() => {
-                        // setSelectedTab(item.tab);
-                        handleSidebarItemClick(item.tab);
-                        if (item.onClick) item.onClick();
-                      }}
-                      className={`
-
-                        ${
-                          tab === item.tab
-                            ? "bg-gray-800 text-white"
-                            : "text-gray-400 hover:bg-gray-800 hover:text-white"
-                        }
-                       
-                       text-gray-400 flex items-center px-4 py-2 mt-5 transition-colors duration-300 transform rounded-lg`}
-                    >
-                      <div className="flex items-center">
-                        {item.icon}
-                        <span className="mx-4 font-medium">{item.label}</span>
-                      </div>
-                    </span>
-                  </Link>
-                </div>
-              ))}
-            </nav>
+          <div className="flex items-center  mt-8 px-4">
+            <div className="flex items-center mr-4">
+              <input
+                type="checkbox"
+                id="valueCheckbox"
+                className="form-checkbox h-5 w-5 text-indigo-600 transition duration-150 ease-in-out"
+                checked={batchEnabled === true}
+                onChange={() => {
+                  setBatchEnabled(!batchEnabled);
+                }}
+              />
+              <label htmlFor="valueCheckbox" className="ml-2 text-gray-700">
+                Batch Enabled
+              </label>
+            </div>
           </div>
-        </div>
-      </aside>
+          <div className="flex items-center  gap-0 mt-12 m-4 relative ">
+            {logo && !loader && (
+              <label htmlFor="photoInput" className="cursor-pointer">
+                <figure className="absolute top-3 z-10  w-[80px] h-[80px] rounded-full border-2 border-solid border-primaryColor flex items-center justify-center">
+                  <img
+                    src={logo}
+                    alt=""
+                    className="w-full h-full object-cover rounded-full"
+                  />
+                </figure>
+              </label>
+            )}
+
+            {loader && (
+              <figure className=" absolute top-3 z-20  w-[80px] h-[80px] rounded-full border-2 border-solid border-primaryColor flex items-center justify-center bg-white ">
+                <HashLoader color="#6056ec" size={30} speedMultiplier={1.6} />
+              </figure>
+            )}
+
+            <div className="  mt-3  relative w-[80px] h-[80px] flex   rounded-full border  ">
+              <span className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                LOGO
+              </span>
+              <input
+                type="file"
+                name="photo"
+                id="photoInput"
+                onChange={(e) => {
+                  handleFileInputChange(e);
+                }}
+                accept=".jpg,.png"
+                className="absolute top-0 left-0 h-full opacity-0 cursor-pointer"
+              />
+            </div>
+          </div>
+          <button
+            className="bg-pink-500 mt-4 ml-4 w-20 text-white active:bg-pink-600 font-bold uppercase text-xs px-4 py-2 rounded shadow hover:shadow-md outline-none focus:outline-none mr-1 ease-linear transition-all duration-150 transform hover:scale-105"
+            type="button"
+            onClick={submitHandler}
+          >
+            Update
+          </button>
+        </form>
+      </div>
     </div>
   );
 }
 
-export default SidebarSec;
+export default Demo;

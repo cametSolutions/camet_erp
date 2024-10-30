@@ -43,7 +43,7 @@ import PartyList from '../pages/primaryUsers/PartyList'
 import EditParty from '../pages/primaryUsers/EditParty'
 
 
-import Demo from '../pages/primaryUsers/Demo'
+import Demo from '../pages/secUsers/Demo'
 import RetailersList from '../pages/primaryUsers/RetailersList'
 import HsnList from '../pages/primaryUsers/HsnList'
 import EditHsn from '../pages/primaryUsers/EditHsn'

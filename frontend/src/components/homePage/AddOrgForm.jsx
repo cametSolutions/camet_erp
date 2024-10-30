@@ -9,10 +9,9 @@ import { industries } from "../../../constants/industries.js";
 import { statesData } from "../../../constants/states.js";
 import {
   countries,
-  currencyNames,
-  currencies,
 } from "../../../constants/countries.js";
-
+import { set } from "mongoose";
+// 
 function AddOrgForm({ onSubmit, orgData = {} }) {
   const [name, setName] = useState("");
   const [pin, setPin] = useState("");
@@ -37,9 +36,11 @@ function AddOrgForm({ onSubmit, orgData = {} }) {
   const [type, setType] = useState("self");
   const [batchEnabled, setBatchEnabled] = useState(false);
   const [industry, setIndustry] = useState("");
-  const [currencyName, setCurrencyName] = useState("");
-  const [currency, setCurrency] = useState("");
+  const [currencyName, setCurrencyName] = useState("Rupee");
+  const [currency, setCurrency] = useState("INR");
+  const [symbol, setSymbol] = useState("₹");
   const [printTitle, setPrintTitle] = useState("");
+  const [subunit, setSubunit] = useState("Paisa");
 
   useEffect(() => {
     const getUserData = async () => {
@@ -55,8 +56,6 @@ function AddOrgForm({ onSubmit, orgData = {} }) {
     getUserData();
   }, []);
 
-  console.log(orgData);
-  console.log("sdfkslfskfslkfdj");
 
 
   useEffect(() => {
@@ -85,6 +84,8 @@ function AddOrgForm({ onSubmit, orgData = {} }) {
         currency,
         currencyName,
         printTitle,
+        subunit,
+        symbol
       } = orgData;
 
       setName(name);
@@ -109,6 +110,8 @@ function AddOrgForm({ onSubmit, orgData = {} }) {
       setIndustry(industry);
       setCurrency(currency);
       setCurrencyName(currencyName);
+      setSubunit(subunit);
+      setSymbol(symbol);
       setPrintTitle(printTitle);
     }
   }, [orgData]);
@@ -119,7 +122,6 @@ function AddOrgForm({ onSubmit, orgData = {} }) {
 
   const handleFileInputChange = async (e) => {
     const file = e.target.files[0];
-    console.log(file);
     setLoader(true);
     const data = await uploadImageToCloudinary(file);
 
@@ -220,7 +222,6 @@ function AddOrgForm({ onSubmit, orgData = {} }) {
       return;
     }
 
-    console.log(gstNum);
     
 
     const formData = {
@@ -247,11 +248,14 @@ function AddOrgForm({ onSubmit, orgData = {} }) {
       industry,
       currency,
       currencyName,
+      symbol,
+      subunit,
       printTitle,
     };
 
-    console.log(formData);
+    // console.log(formData);
     onSubmit(formData);
+
   };
 
   return (
@@ -342,15 +346,12 @@ function AddOrgForm({ onSubmit, orgData = {} }) {
                   className="border-0 px-3 mr-12 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                   onChange={(e) => {
                     setCountry(e.target.value);
-                    setCurrency(
-                      countries.find((c) => c.countryName === e.target.value)
-                        ?.currency
-                    );
-                    setCurrencyName(
-                      countries.find((c) => c.countryName === e.target.value)
-                        ?.currencyName
-                    );
-                    // setState("");
+                   setCurrency(countries.find((country) => country.countryName === e.target.value)?.currency); 
+                   setCurrencyName(countries.find((country) => country.countryName === e.target.value)?.currencyName);
+                   setSymbol(countries.find((country) => country.countryName === e.target.value)?.symbol);
+                   setSubunit(countries.find((country) => country.countryName === e.target.value)?.subunit);
+                   setState("");
+
                   }}
                   value={country}
                 >
@@ -387,7 +388,7 @@ function AddOrgForm({ onSubmit, orgData = {} }) {
                       Select a state
                     </option>
                     {statesData.map((indianState) => (
-                      <option key={indianState} value={indianState?.stateName}>
+                      <option key={indianState?.stateName} value={indianState?.stateName}>
                         {indianState?.stateName}
                       </option>
                     ))}
@@ -421,23 +422,24 @@ function AddOrgForm({ onSubmit, orgData = {} }) {
                 >
                   Currency
                 </label>
-                <select
+                <input
+                disabled
                   className="border-0 px-3 mr-12 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                  onChange={(e) => {
-                    setCurrency(e.target.value);
-                    // setState("");
-                  }}
+                  // onChange={(e) => {
+                  //   setCurrency(e.target.value);
+                  //   // setState("");
+                  // }}
                   value={currency}
                 >
-                  <option value="">Select currency</option>
-                  {currencies.map((currency) => (
+                  {/* <option value="">Select currency</option> */}
+                  {/* {currencies.map((currency) => (
                     <option value={currency} key={currency}>
                       {currency}
                     </option>
-                  ))}
+                  ))} */}
 
                   {/* Add more options as needed */}
-                </select>
+                </input>
               </div>
             </div>
             <div className="w-full lg:w-6/12 px-4">
@@ -448,7 +450,9 @@ function AddOrgForm({ onSubmit, orgData = {} }) {
                 >
                   Currency Name
                 </label>
-                <select
+                <input
+                disabled
+
                   className="border-0 px-3 mr-12 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                   onChange={(e) => {
                     setCurrencyName(e.target.value);
@@ -456,15 +460,25 @@ function AddOrgForm({ onSubmit, orgData = {} }) {
                   }}
                   value={currencyName}
                 >
-                  <option value="">Select currency name</option>
-                  {currencyNames.map((name) => (
-                    <option value={name} key={name}>
-                      {name}
-                    </option>
-                  ))}
+                </input>
+              </div>
+            </div>
+            <div className="w-full lg:w-6/12 px-4">
+              <div className="relative w-full mb-3">
+                <label
+                  className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
+                  htmlFor="grid-password"
+                >
+                 Symbol
+                </label>
+                <input
+                disabled
 
-                  {/* Add more options as needed */}
-                </select>
+                  className="border-0 px-3 mr-12 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                  
+                  value={symbol}
+                >
+                </input>
               </div>
             </div>
             <div className="w-full lg:w-6/12 px-4">
@@ -740,7 +754,7 @@ function AddOrgForm({ onSubmit, orgData = {} }) {
                     Select an Industry
                   </option>
                   {industries.map((el) => (
-                    <option key={el} value={el?.code}>
+                    <option key={el?.code} value={el?.code}>
                       {el?.industry}
                     </option>
                   ))}

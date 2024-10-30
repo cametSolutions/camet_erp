@@ -88,17 +88,24 @@ function Sidebar({ TAB, showBar }) {
         tab: "addParty",
         icon: <TiUserAdd />,
         label: "Customers",
-      }
-    );
+      },
 
-    if (selectedOrg.type === "self") {
-      navItems.push({
+      {
         to: "/pUsers/hsnList",
         tab: "hsn",
         icon: <HiDocumentText />,
         label: "Tax classification",
-      });
-    }
+      }
+    );
+
+    // if (selectedOrg.type === "self") {
+    //   navItems.push({
+    //     to: "/pUsers/hsnList",
+    //     tab: "hsn",
+    //     icon: <HiDocumentText />,
+    //     label: "Tax classification",
+    //   });
+    // }
 
     if (selectedOrg.type === "self") {
 

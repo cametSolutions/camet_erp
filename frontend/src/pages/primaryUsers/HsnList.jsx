@@ -17,7 +17,6 @@ function HsnList() {
   const [hsn, setHsn] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [postPerPage, setPostPerPage] = useState(6);
-  const [showSidebar, setShowSidebar] = useState(false);
   const [refresh, setRefresh] = useState(false);
 
   //primary organization id
@@ -107,8 +106,7 @@ function HsnList() {
       }
     }
   };
-  console.log(hsn);
-  console.log(org);
+
 
   return (
      
@@ -135,13 +133,13 @@ function HsnList() {
             <header className=" hidden md:block px-5 py-4 border-b border-gray-100 bg bg-[#261b56] text-white">
               <div className="flex justify-between items-center">
                 <h2 className="font-semibold ">HSN</h2>
-                {org.type === "self" && (
+                {/* {org.type === "self" && ( */}
                   <Link to={`/${user}/hsn`}>
                     <button className="flex gap-2 bg-green-500 px-2 py-1 rounded-md text-sm  hover:scale-105 duration-100 ease-in-out hover:bg-green-600">
                       Add HSN
                     </button>
                   </Link>
-                )}
+                {/* )} */}
               </div>
             </header>
             <div className="p-3">
@@ -190,7 +188,7 @@ function HsnList() {
                               </div>
                             </td> */}
                           <td className="p-2 whitespace-nowrap">
-                              <div className={` ${org.type !== "self" && "pointer-events-none opacity-55"} text-center cursor-pointer`}>
+                              <div className={` text-center cursor-pointer`}>
                                 {" "}
                             <Link to={`/${user}/editHsn/${item._id}`}>
                                 <FaEdit />
@@ -204,7 +202,7 @@ function HsnList() {
                               onClick={() => {
                                 handleDelete(item._id);
                               }}
-                              className={` ${org.type !== "self" && "pointer-events-none opacity-55"} text-center cursor-pointer`}
+                              className={` text-center cursor-pointer`}
                             >
                               {" "}
                               <MdDelete />

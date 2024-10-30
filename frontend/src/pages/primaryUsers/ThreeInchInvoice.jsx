@@ -5,19 +5,18 @@ import api from "../../api/api";
 import { useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import { MdPrint } from "react-icons/md";
-import numberToWords from "number-to-words";
+// import numberToWords from "number-to-words";
 import { Link } from "react-router-dom";
 import SalesThreeInchPdf from "../../components/common/SalesThreeInchPdf";
-import Sidebar from "../../components/homePage/Sidebar";
+// import Sidebar from "../../components/homePage/Sidebar";
 import { useSelector } from "react-redux";
 
 function ThreeInchInvoice() {
   const [data, setData] = useState([]);
   const [org, setOrg] = useState([]);
-  const [subTotal, setSubTotal] = useState("");
-  const [additinalCharge, setAdditinalCharge] = useState("");
-  const [finalAmount, setFinalAmount] = useState("");
-  const [inWords, setInWords] = useState("");
+  // const [subTotal, setSubTotal] = useState("");
+  // const [additinalCharge, setAdditinalCharge] = useState("");
+  // const [inWords, setInWords] = useState("");
   const [bank, setBank] = useState([]);
 
   const { id } = useParams();
@@ -63,50 +62,50 @@ function ThreeInchInvoice() {
     getTransactionDetails();
   }, [id]);
 
-  useEffect(() => {
-    if (data && data.items) {
-      const subTotal = data.items
-        .reduce((acc, curr) => acc + parseFloat(curr?.total), 0)
-        .toFixed(2);
-      setSubTotal(subTotal);
+  // useEffect(() => {
+  //   if (data && data.items) {
+  //     const subTotal = data.items
+  //       .reduce((acc, curr) => acc + parseFloat(curr?.total), 0)
+  //       .toFixed(2);
+  //     setSubTotal(subTotal);
 
-      const addiTionalCharge = data?.additionalCharges
-        ?.reduce((acc, curr) => {
-          let value = curr?.finalValue === "" ? 0 : parseFloat(curr.finalValue);
-          if (curr?.action === "add") {
-            return acc + value;
-          } else if (curr?.action === "sub") {
-            return acc - value;
-          }
-          return acc;
-        }, 0)
+  //     const addiTionalCharge = data?.additionalCharges
+  //       ?.reduce((acc, curr) => {
+  //         let value = curr?.finalValue === "" ? 0 : parseFloat(curr.finalValue);
+  //         if (curr?.action === "add") {
+  //           return acc + value;
+  //         } else if (curr?.action === "sub") {
+  //           return acc - value;
+  //         }
+  //         return acc;
+  //       }, 0)
 
-        ?.toFixed(2);
-      setAdditinalCharge(addiTionalCharge);
+  //       ?.toFixed(2);
+  //     setAdditinalCharge(addiTionalCharge);
 
-      const finalAmount = data.finalAmount;
-      console.log(finalAmount);
+  //     const finalAmount = data.finalAmount;
+  //     console.log(finalAmount);
 
-      setFinalAmount(finalAmount);
+  //     setFinalAmount(finalAmount);
 
-      const [integerPart, decimalPart] = finalAmount.toString().split(".");
-      const integerWords = numberToWords.toWords(parseInt(integerPart, 10));
-      console.log(integerWords);
-      const decimalWords = decimalPart
-        ? ` and ${numberToWords.toWords(parseInt(decimalPart, 10))} `
-        : " and Zero";
-      console.log(decimalWords);
+  //     const [integerPart, decimalPart] = finalAmount.toString().split(".");
+  //     const integerWords = numberToWords.toWords(parseInt(integerPart, 10));
+  //     console.log(integerWords);
+  //     const decimalWords = decimalPart
+  //       ? ` and ${numberToWords.toWords(parseInt(decimalPart, 10))} `
+  //       : " and Zero";
+  //     console.log(decimalWords);
 
-      const mergedWord = [
-        ...integerWords,
-        // " Rupees",
-        ...decimalWords,
-        // "Paisa",
-      ].join("");
+  //     const mergedWord = [
+  //       ...integerWords,
+  //       // " Rupees",
+  //       ...decimalWords,
+  //       // "Paisa",
+  //     ].join("");
 
-      setInWords(mergedWord);
-    }
-  }, [data]);
+  //     setInWords(mergedWord);
+  //   }
+  // }, [data]);
 
   const handlePrint = useReactToPrint({
     documentTitle: `Sale Order ${data?.salesNumber}`,
@@ -141,10 +140,10 @@ function ThreeInchInvoice() {
         data={data}
         voucherNumber={data?.orderNumber}
         org={org}
-        subTotal={subTotal}
+        // subTotal={subTotal}
         bank={bank}
-        additinalCharge={additinalCharge}
-        inWords={inWords}
+        // additinalCharge={additinalCharge}
+        // inWords={inWords}
         userType="primaryUser"
       />
     </div> 

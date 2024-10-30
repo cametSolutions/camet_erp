@@ -5,17 +5,17 @@ import api from "../../api/api";
 import { useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import { MdPrint } from "react-icons/md";
-import numberToWords from "number-to-words";
+// import numberToWords from "number-to-words";
 import { Link } from "react-router-dom";
 import SalesThreeInchPdf from "../../components/common/SalesThreeInchPdf";
 
 function ThreeInchSales() {
   const [data, setData] = useState([]);
   const [org, setOrg] = useState([]);
-  const [subTotal, setSubTotal] = useState("");
-  const [additinalCharge, setAdditinalCharge] = useState("");
-  const [finalAmount, setFinalAmount] = useState("");
-  const [inWords, setInWords] = useState("");
+  // const [subTotal, setSubTotal] = useState("");
+  // const [additinalCharge, setAdditinalCharge] = useState("");
+  // const [finalAmount, setFinalAmount] = useState("");
+  // const [inWords, setInWords] = useState("");
   const [bank, setBank] = useState([]);
 
   const { id } = useParams();
@@ -59,48 +59,48 @@ function ThreeInchSales() {
 
   //  console.log(org?.configurations[0]?.terms);
 
-  useEffect(() => {
-    if (data && data.items) {
-      const subTotal = data.items
-        .reduce((acc, curr) => acc + parseFloat(curr?.total), 0)
-        .toFixed(2);
-      setSubTotal(subTotal);
+  // useEffect(() => {
+  //   if (data && data.items) {
+  //     const subTotal = data.items
+  //       .reduce((acc, curr) => acc + parseFloat(curr?.total), 0)
+  //       .toFixed(2);
+  //     setSubTotal(subTotal);
 
-      const addiTionalCharge = data?.additionalCharges
-        ?.reduce((acc, curr) => {
-          let value = curr?.finalValue === "" ? 0 : parseFloat(curr.finalValue);
-          if (curr?.action === "add") {
-            return acc + value;
-          } else if (curr?.action === "sub") {
-            return acc - value;
-          }
-          return acc;
-        }, 0)
+  //     const addiTionalCharge = data?.additionalCharges
+  //       ?.reduce((acc, curr) => {
+  //         let value = curr?.finalValue === "" ? 0 : parseFloat(curr.finalValue);
+  //         if (curr?.action === "add") {
+  //           return acc + value;
+  //         } else if (curr?.action === "sub") {
+  //           return acc - value;
+  //         }
+  //         return acc;
+  //       }, 0)
 
-        ?.toFixed(2);
-      setAdditinalCharge(addiTionalCharge);
+  //       ?.toFixed(2);
+  //     setAdditinalCharge(addiTionalCharge);
 
-      const finalAmount = data.finalAmount;
-      console.log(finalAmount);
+  //     const finalAmount = data.finalAmount;
+  //     console.log(finalAmount);
 
-      setFinalAmount(finalAmount);
+  //     setFinalAmount(finalAmount);
 
-      const [integerPart, decimalPart] = finalAmount.toString().split(".");
-      const integerWords = numberToWords.toWords(parseInt(integerPart, 10));
-      console.log(integerWords);
-      const decimalWords = decimalPart
-        ? ` and ${numberToWords.toWords(parseInt(decimalPart, 10))} `
-        : " and Zero";
-      console.log(decimalWords);
+  //     const [integerPart, decimalPart] = finalAmount.toString().split(".");
+  //     const integerWords = numberToWords.toWords(parseInt(integerPart, 10));
+  //     console.log(integerWords);
+  //     const decimalWords = decimalPart
+  //       ? ` and ${numberToWords.toWords(parseInt(decimalPart, 10))} `
+  //       : " and Zero";
+  //     console.log(decimalWords);
 
-      const mergedWord = [
-        ...integerWords,
-        ...decimalWords,
-      ].join("");
+  //     const mergedWord = [
+  //       ...integerWords,
+  //       ...decimalWords,
+  //     ].join("");
 
-      setInWords(mergedWord);
-    }
-  }, [data]);
+  //     setInWords(mergedWord);
+  //   }
+  // }, [data]);
 
   const handlePrint = useReactToPrint({
     documentTitle: `Sale Order ${data.orderNumber}`,
@@ -132,10 +132,10 @@ function ThreeInchSales() {
           contentToPrint={contentToPrint}
           data={data}
           org={org}
-          subTotal={subTotal}
+          // subTotal={subTotal}
           bank={bank}
-          additinalCharge={additinalCharge}
-          inWords={inWords}
+          // additinalCharge={additinalCharge}
+          // inWords={inWords}
           userType="primaryUser"
           tab="sales"
 
