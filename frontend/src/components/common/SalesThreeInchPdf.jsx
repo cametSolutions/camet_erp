@@ -1,19 +1,25 @@
 /* eslint-disable react/prop-types */
-import QRCode from "react-qr-code";
+import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
+import numberToWords from "number-to-words";
+
 
 function SalesThreeInchPdf({
   contentToPrint,
   data,
   org,
-  subTotal,
-  additinalCharge,
-  inWords,
+  // subTotal,
+  // additinalCharge,
+  // inWords,
   userType,
   printTitle,
   voucherNumber,
   tab
 }) {
+
+  const [subTotal, setSubTotal] = useState("");
+  const [additinalCharge, setAdditinalCharge] = useState("");
+  const [inWords, setInWords] = useState("");
 
   let title = "";
   let pdfNumber;
@@ -59,6 +65,52 @@ function SalesThreeInchPdf({
 
   const selectedOrganization = 
     userType === "primaryUser" ? primarySelectedOrg : secondarySelectedOrg;
+
+
+    useEffect(() => {
+      if (data && data.items) {
+        const subTotal = data.items
+          .reduce((acc, curr) => acc + parseFloat(curr?.total), 0)
+          .toFixed(2);
+        setSubTotal(subTotal);
+  
+        const addiTionalCharge = data?.additionalCharges
+          ?.reduce((acc, curr) => {
+            let value = curr?.finalValue === "" ? 0 : parseFloat(curr.finalValue);
+            if (curr?.action === "add") {
+              return acc + value;
+            } else if (curr?.action === "sub") {
+              return acc - value;
+            }
+            return acc;
+          }, 0)
+  
+          ?.toFixed(2);
+        setAdditinalCharge(addiTionalCharge);
+  
+        const finalAmount = data.finalAmount;
+        console.log(finalAmount);
+  
+  
+        const [integerPart, decimalPart] = finalAmount.toString().split(".");
+        const integerWords = numberToWords.toWords(parseInt(integerPart, 10));
+        console.log(integerWords);
+        const decimalWords = decimalPart
+          ? ` and ${numberToWords.toWords(parseInt(decimalPart, 10))} `
+          : " and Zero";
+        console.log(decimalWords);
+  
+ 
+        const mergedWord = [
+          ...integerWords + " ",
+          (selectedOrganization?.currencyName ?? "") + " ",
+          ...decimalWords,
+          (selectedOrganization?.subunit ?? "") + " ",
+      ].join("");
+  
+        setInWords(mergedWord);
+      }
+    }, [data]);
 
 
     
@@ -387,7 +439,7 @@ function SalesThreeInchPdf({
               <div className="text-black font-bold text-[12px] flex flex-col justify-end text-right mt-1">
                 <p className="text-nowrap">Total Amount(in words)</p>
                 <div className="text-black full font-bold text-[12px] text-nowrap uppercase mt-1   ">
-                  <p className="whitespace-normal">{inWords} {selectedOrganization?.currencyName}</p>
+                  <p className="whitespace-normal">{inWords} </p>
                 </div>
               </div>
             </div>

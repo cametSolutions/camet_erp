@@ -2,18 +2,20 @@
 import PdfHeader from "../pdfComponents/PdfHeader";
 import PdfFooter from "../pdfComponents/PdfFooter";
 import { useSelector } from "react-redux";
+import { useEffect, useState } from "react";
+import numberToWords from "number-to-words";
 
 function SaleOrderPdf({
   data,
   org,
   contentToPrint,
   bank,
-  inWords,
-  subTotal,
-  additinalCharge,
   userType,
   printTitle,
 }) {
+  const [subTotal, setSubTotal] = useState("");
+  const [additinalCharge, setAdditinalCharge] = useState("");
+  const [inWords, setInWords] = useState("");
   const party = data?.party;
   const despatchDetails = data?.despatchDetails;
 
@@ -26,6 +28,48 @@ function SaleOrderPdf({
 
   const selectedOrganization =
     userType === "primaryUser" ? primarySelectedOrg : secondarySelectedOrg;
+
+  useEffect(() => {
+    if (data && data.items) {
+      const subTotal = data.items
+        .reduce((acc, curr) => acc + parseFloat(curr?.total), 0)
+        .toFixed(2);
+      setSubTotal(subTotal);
+
+      const addiTionalCharge = data?.additionalCharges
+        ?.reduce((acc, curr) => {
+          let value = curr?.finalValue === "" ? 0 : parseFloat(curr.finalValue);
+          if (curr?.action === "add") {
+            return acc + value;
+          } else if (curr?.action === "sub") {
+            return acc - value;
+          }
+          return acc;
+        }, 0)
+
+        ?.toFixed(2);
+      setAdditinalCharge(addiTionalCharge);
+
+      const finalAmount = data.finalAmount;
+
+      const [integerPart, decimalPart] = finalAmount.toString().split(".");
+      const integerWords = numberToWords.toWords(parseInt(integerPart, 10));
+      console.log(integerWords);
+      const decimalWords = decimalPart
+        ? ` and ${numberToWords.toWords(parseInt(decimalPart, 10))} `
+        : " and Zero";
+      console.log(decimalWords);
+
+      const mergedWord = [
+        ...(integerWords + " "),
+        (selectedOrganization?.currencyName ?? "") + " ",
+        ...decimalWords,
+        (selectedOrganization?.subunit ?? "") + " ",
+      ].join("");
+
+      setInWords(mergedWord);
+    }
+  }, [data]);
 
   const calculateTotalTax = () => {
     const individualTax = data?.items?.map(

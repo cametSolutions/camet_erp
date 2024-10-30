@@ -88,7 +88,7 @@ function PdfFooter({bank,org,data,additinalCharge,inWords,selectedOrganization})
                   <div className="text-gray-700 font-bold text-[10px] flex flex-col justify-end text-right mt-1">
                     <p className="text-nowrap">Total Amount(in words)</p>
                     <div className="text-gray-700 full font-bold text-[7.5px] text-nowrap uppercase mt-1">
-                      <p className="whitespace-normal"> {inWords} {selectedOrganization?.currencyName }</p>
+                      <p className="whitespace-normal"> {inWords}   </p>
                     </div>
                   </div>
                 </div>

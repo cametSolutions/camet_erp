@@ -11,8 +11,7 @@ function AddPartySecondary() {
   const location = useLocation();
 
   const from = location.state?.from;
-  console.log("from ", from);
-  console.log("location ", location);
+
 
   const companyId = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
@@ -51,7 +50,7 @@ function AddPartySecondary() {
         <p>Add Party Details </p>
       </div>
 
-      <AddPartyForm submitHandler={submitHandler} />
+      <AddPartyForm submitHandler={submitHandler}   userType ="secondary"/>
     </div>
   );
 }

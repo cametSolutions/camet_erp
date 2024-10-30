@@ -68,16 +68,22 @@ function SidebarSec({ TAB, showBar }) {
         icon: <TiUserAdd />,
         label: "Customers",
       },
-    ];
-
-    if (org.type === "self") {
-      additionalTabs.push({
+      {
         to: "/sUsers/hsnList",
         tab: "hsn",
         icon: <HiDocumentText />,
         label: "Tax classification",
-      });
-    }
+      }
+    ];
+
+    // if (org.type === "self") {
+    //   additionalTabs.push({
+    //     to: "/sUsers/hsnList",
+    //     tab: "hsn",
+    //     icon: <HiDocumentText />,
+    //     label: "Tax classification",
+    //   });
+    // }
 
     // Show "Inventory" only if org.type is "self"
     if (org.type === "self") {

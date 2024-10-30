@@ -1,20 +1,26 @@
 /* eslint-disable react/prop-types */
-import React from "react";
+import React, { useEffect, useState } from "react";
 import PdfHeader from "../pdfComponents/PdfHeader";
 import PdfFooter from "../pdfComponents/PdfFooter";
 import { useSelector } from "react-redux";
+import numberToWords from "number-to-words";
+
 
 function SalesPdf({
   data,
   org,
   contentToPrint,
   bank,
-  inWords,
-  subTotal,
-  additinalCharge,
+  // inWords,
+  // subTotal,
+  // additinalCharge,
   userType,
   tab,
 }) {
+
+  const [subTotal, setSubTotal] = useState("");
+  const [additinalCharge, setAdditinalCharge] = useState("");
+  const [inWords, setInWords] = useState("");
   let title = "";
 
   switch (tab) {
@@ -61,6 +67,9 @@ function SalesPdf({
   const selectedOrganization =
     userType === "primaryUser" ? primarySelectedOrg : secondarySelectedOrg;
 
+
+    
+
   const calculateDiscountAmntOFNoBAtch = (el) => {
     if (!el || !el.GodownList || !el.GodownList[0]) {
       console.error("Invalid input data");
@@ -104,6 +113,50 @@ function SalesPdf({
       return acc + curr?.count;
     }, 0);
   };
+
+
+  useEffect(() => {
+    if (data && data.items) {
+      const subTotal = data.items
+        .reduce((acc, curr) => acc + parseFloat(curr?.total), 0)
+        .toFixed(2);
+      setSubTotal(subTotal);
+
+      const addiTionalCharge = data?.additionalCharges
+        ?.reduce((acc, curr) => {
+          let value = curr?.finalValue === "" ? 0 : parseFloat(curr.finalValue);
+          if (curr?.action === "add") {
+            return acc + value;
+          } else if (curr?.action === "sub") {
+            return acc - value;
+          }
+          return acc;
+        }, 0)
+
+        ?.toFixed(2);
+      setAdditinalCharge(addiTionalCharge);
+
+      const [integerPart, decimalPart] = data.finalAmount.toString().split(".");
+      const integerWords = numberToWords.toWords(parseInt(integerPart, 10));
+      const decimalWords = decimalPart
+        ? ` and ${numberToWords.toWords(parseInt(decimalPart, 10))} `
+        : " and Zero";
+      // console.log(decimalWords);
+      console.log(selectedOrganization?.currencyName);
+      
+
+      const mergedWord = [
+        ...integerWords + " ",
+        (selectedOrganization?.currencyName ?? "") + " ",
+        ...decimalWords,
+        (selectedOrganization?.subunit ?? "") + " ",
+    ].join("");
+    
+    
+
+      setInWords(mergedWord);
+    }
+  }, [data]);
 
   const party = data?.party;
   const despatchDetails = data?.despatchDetails;

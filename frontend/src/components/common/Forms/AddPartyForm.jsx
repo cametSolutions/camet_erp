@@ -4,7 +4,7 @@ import { accountGroups02 } from "../../../../constants/accountGroups";
 import { toast } from "react-toastify";
 import { useSelector } from "react-redux";
 
-function AddPartyForm({ submitHandler, partyDetails = {} }) {
+function AddPartyForm({ submitHandler, partyDetails = {}, userType }) {
   const [tab, setTab] = useState("business");
   const [accountGroup, setAccountGroup] = useState("");
   const [partyName, setPartyName] = useState("");
@@ -18,20 +18,22 @@ function AddPartyForm({ submitHandler, partyDetails = {} }) {
   const [creditLimit, setCreditLimit] = useState("");
   const [openingBalanceType, setOpeningBalanceType] = useState("");
   const [openingBalanceAmount, setOpeningBalanceAmount] = useState("");
-  // const [cpm_id, setCmp_id] = useState("");
-  // const [Secondary_user_id, setSecondary_user_id] = useState("");
 
-  // const companytId = useSelector(
-  //   (state) => state.secSelectedOrganization.secSelectedOrg._id
-  // );
+  const primarySelectedOrg = useSelector(
+    (state) => state.setSelectedOrganization.selectedOrg
+  );
+  const secondarySelectedOrg = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg
+  );
 
-  console.log(partyDetails);
+  const selectedOrganization =
+    userType === "primaryUser" ? primarySelectedOrg : secondarySelectedOrg;
 
-  // const user = JSON.parse(localStorage.getItem("sUserData"));
-  // const userId = user._id;
+  console.log("selectedOrganization", selectedOrganization);
+
   useEffect(() => {
     // setCmp_id(companytId);
-    if (Object.entries(partyDetails)?.length>0) {
+    if (Object.entries(partyDetails)?.length > 0) {
       const {
         accountGroup,
         partyName,
@@ -61,9 +63,6 @@ function AddPartyForm({ submitHandler, partyDetails = {} }) {
       setCreditLimit(creditLimit);
     }
   }, [partyDetails]);
-
-  console.log(accountGroup);
-  
 
   const submitForm = async () => {
     let accGroupValidation = false;
@@ -108,10 +107,21 @@ function AddPartyForm({ submitHandler, partyDetails = {} }) {
       return;
     }
 
-    if (mobileNumber && !/^\d{10}$/.test(mobileNumber)) {
+    if (!mobileNumber) {
+      toast.error("Mobile number is required");
+      return;
+    }
+    
+    if (selectedOrganization?.country === "India" && !/^\d{10}$/.test(mobileNumber)) {
       toast.error("Mobile number must be 10 digits");
       return;
     }
+
+    
+    // if (mobileNumber && !/^\d{10}$/.test(mobileNumber)) {
+    //   toast.error("Mobile number must be 10 digits");
+    //   return;
+    // }
 
     const gstRegex = /^[0-9A-Za-z]{15}$/;
 
