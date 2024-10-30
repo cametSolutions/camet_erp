@@ -213,6 +213,8 @@ export const addOrganizations = async (req, res) => {
     printTitle,
     currency,
     currencyName,
+    symbol,
+    subunit
   } = req.body;
 
   const owner = req.pUserId;
@@ -243,6 +245,8 @@ export const addOrganizations = async (req, res) => {
       printTitle,
       currency,
       currencyName,
+      symbol,
+      subunit
     });
 
     if (organization) {

@@ -90,8 +90,8 @@ function EditItemSalesSecondary() {
     // if (selectedRedux === "stockTransferSecondary") {
     //   dispatch(updateItemStockTransfer(newItem));
     // } else {
-      dispatch(updateItem(newItem));
       dispatch(changeTaxInclusive(selectedItem[0]?._id))
+      dispatch(updateItem(newItem));
      
     // }
     navigate(-1);
