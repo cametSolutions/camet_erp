@@ -5,7 +5,6 @@ import PdfFooter from "../pdfComponents/PdfFooter";
 import { useSelector } from "react-redux";
 import numberToWords from "number-to-words";
 
-
 function SalesPdf({
   data,
   org,
@@ -17,7 +16,6 @@ function SalesPdf({
   userType,
   tab,
 }) {
-
   const [subTotal, setSubTotal] = useState("");
   const [additinalCharge, setAdditinalCharge] = useState("");
   const [inWords, setInWords] = useState("");
@@ -67,9 +65,6 @@ function SalesPdf({
   const selectedOrganization =
     userType === "primaryUser" ? primarySelectedOrg : secondarySelectedOrg;
 
-
-    
-
   const calculateDiscountAmntOFNoBAtch = (el) => {
     if (!el || !el.GodownList || !el.GodownList[0]) {
       console.error("Invalid input data");
@@ -114,7 +109,6 @@ function SalesPdf({
     }, 0);
   };
 
-
   useEffect(() => {
     if (data && data.items) {
       const subTotal = data.items
@@ -143,16 +137,13 @@ function SalesPdf({
         : " and Zero";
       // console.log(decimalWords);
       console.log(selectedOrganization?.currencyName);
-      
 
       const mergedWord = [
-        ...integerWords + " ",
+        ...(integerWords + " "),
         (selectedOrganization?.currencyName ?? "") + " ",
         ...decimalWords,
         (selectedOrganization?.subunit ?? "") + " ",
-    ].join("");
-    
-    
+      ].join("");
 
       setInWords(mergedWord);
     }
@@ -285,7 +276,13 @@ function SalesPdf({
                           </td>
 
                           <td className="pt-2 text-black text-right pr-2">
-                            {` ${calculateDiscountAmntOFNoBAtch(el)}`}
+                            {el.GodownList &&
+                            el.GodownList.length > 0 &&
+                            el.GodownList.every(
+                              (godown) => godown.godown_id && !godown.batch
+                            )
+                              ? ` ${calculateDiscountAmntOFNoBAtch(el)}`
+                              : "0.00"}
                           </td>
                           <td className="pt-2 text-black text-right pr-2 font-bold">
                             {`  ${(

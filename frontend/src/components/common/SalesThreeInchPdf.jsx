@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import numberToWords from "number-to-words";
 
-
 function SalesThreeInchPdf({
   contentToPrint,
   data,
@@ -14,9 +13,8 @@ function SalesThreeInchPdf({
   userType,
   printTitle,
   voucherNumber,
-  tab
+  tab,
 }) {
-
   const [subTotal, setSubTotal] = useState("");
   const [additinalCharge, setAdditinalCharge] = useState("");
   const [inWords, setInWords] = useState("");
@@ -50,8 +48,8 @@ function SalesThreeInchPdf({
 
     default:
       title = "Tax Invoice";
-      pdfNumber = ""; 
-      
+      pdfNumber = "";
+
       break;
   }
 
@@ -63,57 +61,51 @@ function SalesThreeInchPdf({
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
 
-  const selectedOrganization = 
+  const selectedOrganization =
     userType === "primaryUser" ? primarySelectedOrg : secondarySelectedOrg;
 
+  useEffect(() => {
+    if (data && data.items) {
+      const subTotal = data.items
+        .reduce((acc, curr) => acc + parseFloat(curr?.total), 0)
+        .toFixed(2);
+      setSubTotal(subTotal);
 
-    useEffect(() => {
-      if (data && data.items) {
-        const subTotal = data.items
-          .reduce((acc, curr) => acc + parseFloat(curr?.total), 0)
-          .toFixed(2);
-        setSubTotal(subTotal);
-  
-        const addiTionalCharge = data?.additionalCharges
-          ?.reduce((acc, curr) => {
-            let value = curr?.finalValue === "" ? 0 : parseFloat(curr.finalValue);
-            if (curr?.action === "add") {
-              return acc + value;
-            } else if (curr?.action === "sub") {
-              return acc - value;
-            }
-            return acc;
-          }, 0)
-  
-          ?.toFixed(2);
-        setAdditinalCharge(addiTionalCharge);
-  
-        const finalAmount = data.finalAmount;
-        console.log(finalAmount);
-  
-  
-        const [integerPart, decimalPart] = finalAmount.toString().split(".");
-        const integerWords = numberToWords.toWords(parseInt(integerPart, 10));
-        console.log(integerWords);
-        const decimalWords = decimalPart
-          ? ` and ${numberToWords.toWords(parseInt(decimalPart, 10))} `
-          : " and Zero";
-        console.log(decimalWords);
-  
- 
-        const mergedWord = [
-          ...integerWords + " ",
-          (selectedOrganization?.currencyName ?? "") + " ",
-          ...decimalWords,
-          (selectedOrganization?.subunit ?? "") + " ",
+      const addiTionalCharge = data?.additionalCharges
+        ?.reduce((acc, curr) => {
+          let value = curr?.finalValue === "" ? 0 : parseFloat(curr.finalValue);
+          if (curr?.action === "add") {
+            return acc + value;
+          } else if (curr?.action === "sub") {
+            return acc - value;
+          }
+          return acc;
+        }, 0)
+
+        ?.toFixed(2);
+      setAdditinalCharge(addiTionalCharge);
+
+      const finalAmount = data.finalAmount;
+      console.log(finalAmount);
+
+      const [integerPart, decimalPart] = finalAmount.toString().split(".");
+      const integerWords = numberToWords.toWords(parseInt(integerPart, 10));
+      console.log(integerWords);
+      const decimalWords = decimalPart
+        ? ` and ${numberToWords.toWords(parseInt(decimalPart, 10))} `
+        : " and Zero";
+      console.log(decimalWords);
+
+      const mergedWord = [
+        ...(integerWords + " "),
+        (selectedOrganization?.currencyName ?? "") + " ",
+        ...decimalWords,
+        (selectedOrganization?.subunit ?? "") + " ",
       ].join("");
-  
-        setInWords(mergedWord);
-      }
-    }, [data]);
 
-
-    
+      setInWords(mergedWord);
+    }
+  }, [data]);
 
   const calculateTotalTax = () => {
     const individualTax = data?.items?.map(
@@ -236,31 +228,23 @@ function SalesThreeInchPdf({
                 {org?.email}
               </div>
 
-              {
-                org?.website && (
-                  <div className="text-black font-semibold  text-[12px]">
-                    Website: {org?.website}
-                  </div>
-                )
-              }
+              {org?.website && (
+                <div className="text-black font-semibold  text-[12px]">
+                  Website: {org?.website}
+                </div>
+              )}
 
-              {
-                org?.gstNum && (
-                  <div className="text-black font-semibold  text-[12px]">
-                   Tax No: {org?.gstNum}
-                  </div>
-                )
-              }
-            
-             
-              {
-                org?.pan && (
-                  <div className="text-black font-semibold   text-[12px]">
+              {org?.gstNum && (
+                <div className="text-black font-semibold  text-[12px]">
+                  Tax No: {org?.gstNum}
+                </div>
+              )}
+
+              {org?.pan && (
+                <div className="text-black font-semibold   text-[12px]">
                   Pan No: {org?.pan}
                 </div>
-                )
-              }
-           
+              )}
             </div>
           </div>
         </div>
@@ -378,33 +362,43 @@ function SalesThreeInchPdf({
 
           <div className=" mt-1  ">
             <div className="  flex flex-col items-end ">
-              <div className="flex flex-col items-end text-[12px] text-black font-bold gap-1">
-                <p className={calculateTotalTax() > 0 ? "" : "hidden"}>
-                  CGST : {(calculateTotalTax() / 2).toFixed(2)}
-                </p>
-                <p className={calculateTotalTax() > 0 ? "" : "hidden"}>
-                  SGST : {(calculateTotalTax() / 2).toFixed(2)}
-                </p>
+              {selectedOrganization?.country === "India" ? (
+                <div className="flex flex-col items-end text-[12px] text-black font-bold gap-1">
+                  <p className={calculateTotalTax() > 0 ? "" : "hidden"}>
+                    CGST : {(calculateTotalTax() / 2).toFixed(2)}
+                  </p>
+                  <p className={calculateTotalTax() > 0 ? "" : "hidden"}>
+                    SGST : {(calculateTotalTax() / 2).toFixed(2)}
+                  </p>
 
-                <p className={calculateCess() > 0 ? "" : "hidden"}>
-                  CESS : {calculateCess()}
-                </p>
-                <p className={calculateAddCess() > 0 ? "" : "hidden"}>
-                  ADD.CESS : {calculateAddCess()}
-                </p>
-                <p className={calculateStateTax() > 0 ? "" : "hidden"}>
-                  STATE TAX : {calculateStateTax()}
-                </p>
-              </div>
+                  <p className={calculateCess() > 0 ? "" : "hidden"}>
+                    CESS : {calculateCess()}
+                  </p>
+                  <p className={calculateAddCess() > 0 ? "" : "hidden"}>
+                    ADD.CESS : {calculateAddCess()}
+                  </p>
+                  <p className={calculateStateTax() > 0 ? "" : "hidden"}>
+                    STATE TAX : {calculateStateTax()}
+                  </p>
+                </div>
+              ) : (
+                <div className="flex flex-col items-end text-[12px] text-black font-bold gap-1">
+                  <p className={calculateTotalTax() > 0 ? "" : "hidden"}>
+                    VAT : {Number(calculateTotalTax()).toFixed(2)}
+                  </p>
+                </div>
+              )}
 
-              <div className="flex items-center mt-1 mb-1">
-                <div className="text-black mr-2 font-bold text-[12px] ">
-                  Add on charges:
+              {additinalCharge > 0 && (
+                <div className="flex items-center mt-1 mb-1">
+                  <div className="text-black mr-2 font-bold text-[12px] ">
+                    Add on charges:
+                  </div>
+                  <div className="text-black font-bold text-[12px]">
+                    {additinalCharge}
+                  </div>
                 </div>
-                <div className="text-black font-bold text-[12px]">
-                  {additinalCharge}
-                </div>
-              </div>
+              )}
             </div>
             {data?.additionalCharges?.map((el, index) => (
               <>
@@ -427,7 +421,9 @@ function SalesThreeInchPdf({
               <div className="w-3/4"></div>
 
               <div className="  text-black  font-extrabold text-[11px] flex justify-end   ">
-                <p className="text-nowrap border-y-2 py-1">NET AMOUNT :&nbsp; </p>
+                <p className="text-nowrap border-y-2 py-1">
+                  NET AMOUNT :&nbsp;{" "}
+                </p>
                 <div className="text-black  font-bold text-[11px] text-nowrap  border-y-2 py-1    ">
                   {selectedOrganization?.currency} {data?.finalAmount}
                 </div>
@@ -437,9 +433,9 @@ function SalesThreeInchPdf({
               <div className="w-2/4"></div>
 
               <div className="text-black font-bold text-[12px] flex flex-col justify-end text-right mt-1">
-                <p className="text-nowrap">Total Amount(in words)</p>
-                <div className="text-black full font-bold text-[12px] text-nowrap uppercase mt-1   ">
-                  <p className="whitespace-normal">{inWords} </p>
+                <p className="text-nowrap">Total Amount (in words)</p>
+                <div className="text-black full font-bold text-[9px] text-nowrap uppercase mt-1   ">
+                  <p className="whitespace-normal -">{inWords} </p>
                 </div>
               </div>
             </div>
