@@ -253,15 +253,15 @@ function SalesPdf({
                         <tr className={`text-[9px] bg-white  `}>
                           <td className="w-2  ">{index + 1}</td>
                           <td className="pt-2  text-black pr-2 font-bold ">
-                            {el.product_name}
+                            {el.product_name}   {el?.igst && (<span className="text-gray-400 ">({el?.igst}%)</span>)} 
                             <br />
-                            <p className="text-gray-400 font-normal mt-1">
+                            {/* <p className="text-gray-400 font-normal mt-1">
                               {el?.hsn_code !== " Not Found" &&
                                 `HSN: ${el?.hsn_code} (${el?.igst}%)`}
-                            </p>
+                            </p> */}
                           </td>
                           <td className="pt-2 text-black text-right pr-2 font-bold">
-                            {el?.count} {el?.unit}
+                            {el?.count} {el?.unit.split("-")[0]}
                           </td>
 
                           <td className="pt-2 text-black text-right pr-2 text-nowrap">
