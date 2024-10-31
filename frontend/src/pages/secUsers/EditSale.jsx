@@ -254,25 +254,8 @@ function EditSale() {
     fetchSingleOrganization();
   }, [refreshCmp, orgId]);
 
-  useEffect(() => {
-    const fetchGodownname = async () => {
-      try {
-        const godown = await api.get(`/api/sUsers/godownsName/${cmp_id}`, {
-          withCredentials: true,
-        });
-        console.log(godown);
-        setGodownname(godown.data || "");
-      } catch (error) {
-        console.log(error);
-        toast.error(error.message);
-      }
-    };
-    fetchGodownname();
-  }, []);
 
-  console.log(salesNumber);
 
-  console.log(rows);
 
   useEffect(() => {
     if (additionalChargesFromRedux.length > 0) {
