@@ -42,27 +42,60 @@ export const fetchData = async (type, cmp_id, serialNumber, res) => {
       })
       .lean();
 
-    if (data.length > 0) {
-      // If the type is "receipt", move billData inside the party object
-      if (type === "receipt" || type === "payment") {
-        data.forEach((receipt) => {
-          // Move billData to party
-          receipt.party.billData = receipt.billData;
+    if (data.length === 0) {
+      return res.status(404).json({ message: `${type} not found` });
+    }
 
-          // Remove billData from the root
-          delete receipt.billData;
-        });
-      }
-
-      // console.log("Data fetched:", data[0]);
-
+    // For receipt and payment, return full data without processing
+    if (type === "receipt" || type === "payment") {
+      data.forEach((doc) => {
+        doc.party.billData = doc.billData;
+        delete doc.billData;
+      });
       return res.status(200).json({
         message: `${type} fetched`,
         data: data,
       });
-    } else {
-      return res.status(404).json({ message: `${type} not found` });
     }
+
+    // For other document types, process GodownList and Priceleveles
+    const processedData = data.map(document => {
+      // Skip processing if no items array
+      if (!Array.isArray(document.items)) {
+        return document;
+      }
+
+      return {
+        ...document,
+        items: document.items.map(item => {
+          const processedItem = { ...item };
+
+          // Filter Priceleveles array to match document's priceLevel
+          if (Array.isArray(item.Priceleveles) && document.priceLevel) {
+            processedItem.Priceleveles = item.Priceleveles.filter(
+              price => price.pricelevel === document.priceLevel
+            );
+          }
+
+          // Process GodownList if it exists
+          if (Array.isArray(item.GodownList)) {
+            if (item.hasGodownOrBatch === true) {
+              processedItem.GodownList = item.GodownList.filter(
+                godown => godown.added === true
+              );
+            }
+          }
+
+          return processedItem;
+        })
+      };
+    });
+
+    return res.status(200).json({
+      message: `${type} fetched`,
+      data: processedData,
+    });
+
   } catch (error) {
     console.error(error);
     return res.status(500).json({
