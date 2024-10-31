@@ -193,14 +193,14 @@ function SaleOrderPdf({
                     <td className="w-2  ">{index + 1}</td>
 
                     <td className="py-4 text-black pr-2">
-                      {el.product_name} <br />
-                      <p className="text-gray-400 font-normal mt-1">
+                      {el.product_name}  {el?.igst && (<span className="text-gray-400 ">({el?.igst}%)</span>)}  <br />
+                      {/* <p className="text-gray-400 font-normal mt-1">
                         {el?.hsn_code !== " Not Found" &&
                           `HSN: ${el?.hsn_code} (${el?.igst}%)`}
-                      </p>
+                      </p> */}
                     </td>
                     <td className="py-4 text-black text-right pr-2">
-                      {count} {el?.unit}
+                      {count} {el?.unit?.split("-")[0]}
                     </td>
                     <td className="py-4 text-black text-right pr-2 text-nowrap">
                       {rate}
