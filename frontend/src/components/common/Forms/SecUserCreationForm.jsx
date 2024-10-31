@@ -8,6 +8,7 @@ import { IoIosArrowRoundBack } from "react-icons/io";
 import api from "../../../api/api";
 import { useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
+import { IoIosSettings } from "react-icons/io";
 
 function SecUserCreationForm({ submitHandler, tab = "add" }) {
   const [organizations, setOrganizations] = useState([]);
@@ -291,33 +292,48 @@ function SecUserCreationForm({ submitHandler, tab = "add" }) {
                         Companies
                       </label>
                       <div className="space-y-2">
-                        {organizations.length > 0 ? (
-                          organizations.map((item, index) => (
-                            <div key={index} className="flex items-center">
-                              <input
-                                type="checkbox"
-                                id={`organizationCheckbox${index}`}
-                                value={item._id}
-                                checked={selectedOrg.includes(item._id)}
-                                onChange={(e) =>
-                                  handleCheckboxChange(e.target.value)
-                                }
-                                className="mr-2"
-                              />
-                              <label
-                                htmlFor={`organizationCheckbox${index}`}
-                                className="text-blueGray-600"
-                              >
-                                {item.name}
-                              </label>
-                            </div>
-                          ))
-                        ) : (
-                          <p className="text-blueGray-600">
-                            No Companies added
-                          </p>
-                        )}
-                      </div>
+                          {organizations.length > 0 ? (
+                            organizations.map((item, index) => (
+                              <div key={index} className="flex justify-between">
+                                {/* <button type="button" className="bg-purple-500 p-1.5 py-1 text-white mr-2 rounded-md text-xs">Configure</button> */}
+                                <div className="flex items-center">
+                                  <input
+                                    type="checkbox"
+                                    id={`organizationCheckbox${index}`}
+                                    value={item._id}
+                                    checked={selectedOrg.includes(item._id)}
+                                    onChange={(e) =>
+                                      handleCheckboxChange(e.target.value)
+                                    }
+                                    className="mr-2"
+                                  />
+                                  <label
+                                    htmlFor={`organizationCheckbox${index}`}
+                                    className="text-blueGray-600"
+                                  >
+                                    {item.name}
+                                  </label>
+                                </div>
+                                {/* <button
+                                  type="button"
+                                  className="bg-purple-400 p-1.5 py-1 text-white mr-2 rounded-md text-xs"
+                                >
+                                  Configure
+                                </button> */}
+
+                                {selectedOrg.includes(item._id) && tab=="edit" && (
+                                  <Link to={`/pUsers/configureSecondaryUser/${item._id}/${id}/${item.name}`}>
+                                  <IoIosSettings className="cursor-pointer" />
+                                </Link>
+                                )}
+                              </div>
+                            ))
+                          ) : (
+                            <p className="text-blueGray-600">
+                              No organization added
+                            </p>
+                          )}
+                        </div>
                     </div>
                   </div>
                 </form>
