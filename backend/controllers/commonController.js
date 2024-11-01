@@ -323,6 +323,7 @@ export const transactions = async (req, res) => {
   const { todayOnly, startOfDayParam, endOfDayParam, party_id, selectedVoucher } = req.query;
 
   try {
+
     // Initialize dateFilter based on provided parameters
     let dateFilter = {};
     if (startOfDayParam && endOfDayParam) {

@@ -14,10 +14,14 @@ export const voucherType = createSlice({
     setSelectedVoucher: (state, action) => {
       state.selectedVoucher = action.payload;
     },
+
+    removeAll: (state) => {
+      Object.assign(state, initialState);
+    },
   },
 });
 
 // Action creators are generated for each case reducer function
-export const { setSelectedVoucher } = voucherType.actions;
+export const { setSelectedVoucher,removeAll } = voucherType.actions;
 
 export default voucherType.reducer;

@@ -1,9 +1,5 @@
 /* eslint-disable react/no-unknown-property */
-import { useEffect, useMemo, useRef, useState } from "react";
-import api from "../../api/api";
-
-import { IoIosArrowRoundBack } from "react-icons/io";
-import { Link } from "react-router-dom";
+import { useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 
 import "react-datepicker/dist/react-datepicker.css";
@@ -13,31 +9,10 @@ import VoucherTypeFilter from "../../components/common/Reports/VoucherTypeFilter
 import useFetch from "../../customHook/useFetch";
 import TransactionTable from "../../components/common/List/TranscationTable";
 import TitleDiv from "../../components/common/TitleDiv";
+import { BarLoader } from "react-spinners";
 
 function Transaction() {
-  const stickyRef = useRef(null);
-  const [height, setHeight] = useState(0);
-
-  useEffect(() => {
-    const calculateHeight = () => {
-      if (stickyRef.current) {
-        const elementHeight = stickyRef.current.getBoundingClientRect().height;
-        setHeight(elementHeight);
-      }
-    };
-
-    // Calculate initial height
-    calculateHeight();
-
-    // Recalculate on window resize
-    window.addEventListener("resize", calculateHeight);
-
-    // Cleanup
-    return () => window.removeEventListener("resize", calculateHeight);
-  }, []);
-
-  console.log("height", height);
-
+  const [netCashInHands, setNetCashInHands] = useState(0);
   const org = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
@@ -56,13 +31,16 @@ function Transaction() {
   const { data: transactionData, loading: transactionLoading } =
     useFetch(transactionsUrl);
 
+  console.log("transcationLoading", transactionLoading);
+
+  const getDifference = (difference) => {
+    setNetCashInHands(difference);
+  };
+
   return (
     <div className="flex-1">
       <div className=" flex-1   ">
-        <div
-          ref={stickyRef}
-          className="sticky top-0 flex flex-col z-30 bg-white"
-        >
+        <div className="sticky top-0 flex flex-col z-30 bg-white">
           <TitleDiv title="Daybook" />
 
           {/* <div className=" mt-0 shadow-lg p-2 md:p-0">
@@ -150,19 +128,36 @@ function Transaction() {
           <section className="shadow-lg">
             <VoucherTypeFilter />
           </section>
-        <table className="w-full border-collapse mt-2  ">
-          <thead className={`sticky top-${height + 100} bg-white z-10`}>
-            <tr className="bg-gray-100 text-gray-500 text-xs">
-              <th className="text-left p-3 border-b w-1/2">Transaction</th>
-              <th className="text-right p-3 border-b w-1/4">Amount</th>
-              <th className="text-right p-3 border-b w-1/4">Money In/Out</th>
-            </tr>
-          </thead>
-        </table>
+
+          <section className="shadow-lg p-3 text-xs font-bold text-gray-500">
+            <p>
+              Net Cash In Hand :{" "}
+              {transactionLoading ? "Loading..." : netCashInHands || 0}
+            </p>
+          </section>
+
+          {transactionLoading && (
+            <section className="w-full">
+              <BarLoader color="#9900ff" width="100%" />
+            </section>
+          )}
+
+          <table className="w-full border-collapse mt-2  ">
+            <thead className={`sticky top-0 bg-white z-10`}>
+              <tr className="bg-gray-100 text-gray-500 text-xs">
+                <th className="text-left p-3 border-b w-1/2">Transaction</th>
+                <th className="text-right p-3 border-b w-1/4">Amount</th>
+                <th className="text-right p-3 border-b w-1/4">Money In/Out</th>
+              </tr>
+            </thead>
+          </table>
         </div>
 
-
-        <TransactionTable height={height} />
+        <TransactionTable
+          transactionData={transactionData?.data?.combined}
+          getDifference={getDifference}
+          loading={transactionLoading}
+        />
       </div>
     </div>
   );

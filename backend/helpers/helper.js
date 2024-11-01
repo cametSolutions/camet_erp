@@ -26,6 +26,7 @@ export const aggregateTransactions = (
         voucherNumber: `$${voucherNumber}`,
         party_name: "$party.partyName",
         accountGroup: "$party.accountGroup",
+        accountGroup: "$party.accountGroup",
         type: type,
         enteredAmount:
           type === "Receipt" || type === "Payment"

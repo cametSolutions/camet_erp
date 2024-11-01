@@ -6,6 +6,7 @@ import { removeAll as removeAllCredit } from "../../../slices/creditNote";
 import { removeAll as removeAllPayment } from "../../../slices/payment";
 import { removeAll as removeAllReceipt } from "../../../slices/receipt";
 import { removeAll as removeAllDate } from "../../../slices/date";
+import { removeAll as removeAllVoucherType } from "../../../slices/voucherType";
 import { useDispatch } from "react-redux";
 import { useEffect } from "react";
 
@@ -22,6 +23,7 @@ function RemoveReduxData() {
     dispatch(removeAllPayment());
     dispatch(removeAllReceipt());
     dispatch(removeAllDate());
+    dispatch(removeAllVoucherType());
   }, [dispatch]); // Adding dispatch to the dependency array
 
   return (

@@ -1,110 +1,122 @@
-import React from "react";
+/* eslint-disable react/prop-types */
+import { useEffect } from "react";
 
-const TransactionTable = ({height}) => {
-  const transactions = [
-    {
-      id: "6",
-      date: "21 Oct 2024",
-      name: "RBY",
-      type: "Sales Invoice",
-      amount: 440,
-      moneyInOut: 0,
-    },
-    {
-      id: "7",
-      date: "21 Oct 2024",
-      name: "RBY",
-      type: "Sales Invoice",
-      amount: 440,
-      moneyInOut: 0,
-    },
-    {
-      id: "8",
-      date: "21 Oct 2024",
-      name: "Riyas",
-      type: "Sales Invoice",
-      amount: 660,
-      moneyInOut: 0,
-    },
-    {
-      id: "9",
-      date: "21 Oct 2024",
-      name: "Cash Sale",
-      type: "Sales Invoice",
-      amount: 250,
-      moneyInOut: 250,
-    },
-    {
-      id: "1",
-      date: "21 Oct 2024",
-      name: "RBY",
-      type: "Purchase Invoice",
-      amount: 950,
-      moneyInOut: 0,
-    },
-    {
-      id: "14",
-      date: "21 Oct 2024",
-      name: "RBY",
-      type: "Receive Payment In",
-      amount: 450,
-      moneyInOut: 450,
-    },
-    {
-      id: "1",
-      date: "21 Oct 2024",
-      name: "RBY",
-      type: "",
-      amount: 400,
-      moneyInOut: 400,
-    },
-  ];
+const TransactionTable = ({ transactionData, getDifference, loading }) => {
+
+  console.log("TransactionTable: ", transactionData);
+  
+
+
+  // Helper function to determine transaction type and color
+  const getTransactionDisplay = (transaction) => {
+    const { type, accountGroup, paymentMethod, enteredAmount } = transaction;
+
+    // Check if it's a debit (green) transaction
+    const isDebitTransaction =
+      (["Tax Invoice", "Debit Note"].includes(type) &&
+        accountGroup === "Cash-in-Hand") ||
+      (type === "Receipt" && paymentMethod === "Cash");
+
+    // Check if it's a credit (red) transaction
+    const isCreditTransaction =
+      (["Purchase", "Credit Note"].includes(type) &&
+        accountGroup === "Cash-in-Hand") ||
+      (type === "Payment" && paymentMethod === "Cash");
+
+    // Return appropriate display object
+    if (isDebitTransaction) {
+      return {
+        amount: enteredAmount,
+        color: "text-green-500",
+        type: "debit",
+      };
+    } else if (isCreditTransaction) {
+      return {
+        amount: enteredAmount,
+        color: "text-red-500",
+        type: "credit",
+      };
+    }
+    // else if (accountGroup === "Bank Accounts") {
+    //   return {
+    //     amount: enteredAmount,
+    //     color: "text-gray-500",
+    //     type: "bank"
+    //   };
+    // }
+
+    return null;
+  };
+
+  useEffect(() => {
+    const totals = transactionData?.reduce(
+      (acc, transaction) => {
+        const display = getTransactionDisplay(transaction);
+        const amount = Number(transaction.enteredAmount) || 0;
+
+        if (display?.type === "debit") {
+          acc.debitSum += amount;
+        } else if (display?.type === "credit") {
+          acc.creditSum += amount;
+        }
+
+        return acc;
+      },
+      { debitSum: 0, creditSum: 0 }
+    );
+
+    getDifference(totals?.debitSum - totals?.creditSum);
+
+
+  }, [transactionData]);
 
   return (
-    <div className="w-full mx-auto   ">
+    <div className="w-full mx-auto">
       <div className="relative">
-        {/* Fixed Header */}
-    
-
-        {/* Scrollable Body */}
         <div className="text-xs p-2">
           <table className="w-full border-collapse">
             <tbody>
-              {transactions.map((transaction) => (
-                <tr
-                  key={`${transaction.date}-${transaction.id}`}
-                  className="border-b hover:bg-gray-50   "
-                >
-                  <td className="p-3 w-1/2">
-                    <div className="font-bold text-[0.7rem]  text-gray-500">
-                      #{transaction.id}
-                    </div>
-                    <div className="font-bold text-[0.7rem] mb-2 text-violet-400">
-                      {transaction.date}
-                    </div>
-                    <div className="font-semibold">{transaction.name}</div>
-                    <div className="text-gray-500 text-[0.7rem]  font-bold mt-2">
-                      {transaction.type}
-                    </div>
-                  </td>
-                  <td className="p-3 text-right w-1/4">
-                    <span>₹ {transaction.amount}</span>
-                  </td>
-                  <td className="p-3 text-right w-1/4">
-                    <span
-                      className={
-                        transaction.moneyInOut > 0 ? "text-green-600" : ""
-                      }
-                    >
-                      {transaction.moneyInOut > 0
-                        ? `₹ ${transaction.moneyInOut}`
-                        : "₹ 0"}
-                    </span>
-                  </td>
-                </tr>
-              ))}
+              {transactionData?.map((transaction) => {
+                const display = getTransactionDisplay(transaction);
+
+                return (
+                  <tr
+                    key={transaction?._id}
+                    className="border-b hover:bg-gray-50"
+                  >
+                    <td className="p-3 w-1/2">
+                      <div className="font-bold text-[0.7rem] text-gray-500">
+                        #{transaction?.voucherNumber}
+                      </div>
+                      <div className="font-bold text-[0.7rem] mb-2 mt-1 text-violet-400">
+                        {new Date(transaction?.createdAt).toLocaleDateString()}
+                      </div>
+                      <div className="font-bold text-gray-700 mt-3">
+                        {transaction?.party_name}
+                      </div>
+                      <div className="text-gray-500 text-[0.7rem] font-bold mt-2">
+                        {transaction?.type}
+                      </div>
+                    </td>
+                    <td className="p-3 font-bold text-gray-500 text-right w-1/4">
+                      {transaction?.enteredAmount}
+                    </td>
+                    <td className="p-3 font-bold text-right w-1/4">
+                      {display && (
+                        <span className={display.color}>{display.amount}</span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
+
+          {!loading && (transactionData?.length === 0 || !transactionData) && (
+            <div className="w-full py-5 px-4 rounded-sm text-xs font-bold text-gray-700 mt-6 flex justify-center">
+              OOps. No Transactions Found !!
+            </div>
+          )}
         </div>
       </div>
     </div>
