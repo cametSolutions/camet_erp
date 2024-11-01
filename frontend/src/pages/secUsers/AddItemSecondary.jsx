@@ -23,6 +23,7 @@ import { HashLoader } from "react-spinners";
 import { FixedSizeList as List } from "react-window";
 import { Decimal } from "decimal.js";
 import SearchBar from "../../components/common/SearchBar";
+import Filter from "../../components/secUsers/Filter";
 
 
 function AddItemSecondary() {
@@ -605,7 +606,7 @@ const filterItems = (items, brand, category, subCategory, searchTerm) => {
             </div>
           </div>
 
-          <div
+          {/* <div
             className="bg-white text-sm font-semibold py-0 px-2 flex items-center justify-evenly z-20 w-full gap-2  "
             style={{ position: "relative", zIndex: "20" }}
           >
@@ -663,7 +664,9 @@ const filterItems = (items, brand, category, subCategory, searchTerm) => {
                 ))}
               </select>
             </div>
-          </div>
+          </div> */}
+          <Filter addAllProducts={addAllProducts}/>
+
         </div>
 
         {loader ? (

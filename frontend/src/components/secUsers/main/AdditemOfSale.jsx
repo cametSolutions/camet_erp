@@ -11,6 +11,7 @@ import { HashLoader } from "react-spinners";
 import { VariableSizeList as List } from "react-window";
 import { IoAddCircleSharp } from "react-icons/io5";
 import { useMemo } from "react";
+import Filter from "../Filter";
 
 /* eslint-disable react/prop-types */
 function AdditemOfSale({
@@ -48,6 +49,8 @@ function AdditemOfSale({
   handleExpansion,
   handleIncrement,
   handleAddClick,
+  addAllProducts
+  
 }) {
   const navigate = useNavigate();
 
@@ -381,7 +384,7 @@ function AdditemOfSale({
             </div>
           </div>
 
-          <div
+          {/* <div
             className="bg-white text-sm font-semibold py-0 pb-1 px-2 flex items-center justify-evenly z-20 w-full gap-2  "
             style={{ position: "relative", zIndex: "20" }}
           >
@@ -439,7 +442,9 @@ function AdditemOfSale({
                 ))}
               </select>
             </div>
-          </div>
+          </div> */}
+
+          <Filter addAllProducts={addAllProducts}/>
         </div>
 
         {loader ? (

@@ -66,7 +66,7 @@ function EditPartySecondary() {
         </Link>
         <p>Edit Party Details </p>
       </div>
-      <AddPartyForm submitHandler={submitHandler} partyDetails={partyDetails} />
+      <AddPartyForm submitHandler={submitHandler} partyDetails={partyDetails }  userType ="secondary" />
     </div>
   );
 }

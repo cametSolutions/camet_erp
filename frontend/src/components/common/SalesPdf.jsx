@@ -1,20 +1,24 @@
 /* eslint-disable react/prop-types */
-import React from "react";
+import React, { useEffect, useState } from "react";
 import PdfHeader from "../pdfComponents/PdfHeader";
 import PdfFooter from "../pdfComponents/PdfFooter";
 import { useSelector } from "react-redux";
+import numberToWords from "number-to-words";
 
 function SalesPdf({
   data,
   org,
   contentToPrint,
   bank,
-  inWords,
-  subTotal,
-  additinalCharge,
+  // inWords,
+  // subTotal,
+  // additinalCharge,
   userType,
   tab,
 }) {
+  const [subTotal, setSubTotal] = useState("");
+  const [additinalCharge, setAdditinalCharge] = useState("");
+  const [inWords, setInWords] = useState("");
   let title = "";
 
   switch (tab) {
@@ -45,8 +49,6 @@ function SalesPdf({
     case "debitNote":
       title = "Debit Note";
       break;
-
-      
 
     default:
       title = "Tax Invoice";
@@ -106,6 +108,46 @@ function SalesPdf({
       return acc + curr?.count;
     }, 0);
   };
+
+  useEffect(() => {
+    if (data && data.items) {
+      const subTotal = data.items
+        .reduce((acc, curr) => acc + parseFloat(curr?.total), 0)
+        .toFixed(2);
+      setSubTotal(subTotal);
+
+      const addiTionalCharge = data?.additionalCharges
+        ?.reduce((acc, curr) => {
+          let value = curr?.finalValue === "" ? 0 : parseFloat(curr.finalValue);
+          if (curr?.action === "add") {
+            return acc + value;
+          } else if (curr?.action === "sub") {
+            return acc - value;
+          }
+          return acc;
+        }, 0)
+
+        ?.toFixed(2);
+      setAdditinalCharge(addiTionalCharge);
+
+      const [integerPart, decimalPart] = data.finalAmount.toString().split(".");
+      const integerWords = numberToWords.toWords(parseInt(integerPart, 10));
+      const decimalWords = decimalPart
+        ? ` and ${numberToWords.toWords(parseInt(decimalPart, 10))} `
+        : " and Zero";
+      // console.log(decimalWords);
+      console.log(selectedOrganization?.currencyName);
+
+      const mergedWord = [
+        ...(integerWords + " "),
+        (selectedOrganization?.currencyName ?? "") + " ",
+        ...decimalWords,
+        (selectedOrganization?.subunit ?? "") + " ",
+      ].join("");
+
+      setInWords(mergedWord);
+    }
+  }, [data]);
 
   const party = data?.party;
   const despatchDetails = data?.despatchDetails;
@@ -168,7 +210,7 @@ function SalesPdf({
           <div className="pdf-page">
             <div className="flex">
               <div className="font-bold text-sm md:text-xl mb-2 mt-6">
-              {title}
+                {title}
               </div>
             </div>
             <PdfHeader
@@ -211,14 +253,15 @@ function SalesPdf({
                         <tr className={`text-[9px] bg-white  `}>
                           <td className="w-2  ">{index + 1}</td>
                           <td className="pt-2  text-black pr-2 font-bold ">
-                            {el.product_name}
+                            {el.product_name}   {el?.igst && (<span className="text-gray-400 ">({el?.igst}%)</span>)} 
                             <br />
-                            <p className="text-gray-400 font-normal mt-1">
-                              HSN: {el?.hsn_code} ({el.igst}%)
-                            </p>
+                            {/* <p className="text-gray-400 font-normal mt-1">
+                              {el?.hsn_code !== " Not Found" &&
+                                `HSN: ${el?.hsn_code} (${el?.igst}%)`}
+                            </p> */}
                           </td>
                           <td className="pt-2 text-black text-right pr-2 font-bold">
-                            {el?.count} {el?.unit}
+                            {el?.count} {el?.unit.split("-")[0]}
                           </td>
 
                           <td className="pt-2 text-black text-right pr-2 text-nowrap">
@@ -233,7 +276,13 @@ function SalesPdf({
                           </td>
 
                           <td className="pt-2 text-black text-right pr-2">
-                            {` ${calculateDiscountAmntOFNoBAtch(el)}`}
+                            {el.GodownList &&
+                            el.GodownList.length > 0 &&
+                            el.GodownList.every(
+                              (godown) => godown.godown_id && !godown.batch
+                            )
+                              ? ` ${calculateDiscountAmntOFNoBAtch(el)}`
+                              : "0.00"}
                           </td>
                           <td className="pt-2 text-black text-right pr-2 font-bold">
                             {`  ${(
@@ -247,8 +296,6 @@ function SalesPdf({
                         </tr>
                         {el.hasGodownOrBatch &&
                           el.GodownList.map((godownOrBatch, idx) => {
-
-                            
                             const rate = godownOrBatch?.selectedPriceRate || 0;
                             const taxAmt =
                               Number(
@@ -262,13 +309,9 @@ function SalesPdf({
                             const finalAmt =
                               Number(godownOrBatch?.individualTotal) || 0;
 
-                            
-
-                              
-
-                            const discountAmount =
-                            (  (rate * count) + (taxAmt - Number(finalAmt)) || 0).toFixed(2);
-
+                            const discountAmount = (
+                              rate * count + (taxAmt - Number(finalAmt)) || 0
+                            ).toFixed(2);
 
                             return godownOrBatch.added &&
                               godownOrBatch.batch ? (

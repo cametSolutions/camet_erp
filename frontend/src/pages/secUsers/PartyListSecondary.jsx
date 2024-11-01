@@ -9,7 +9,6 @@ import Swal from "sweetalert2";
 import { Link } from "react-router-dom";
 import { HashLoader } from "react-spinners";
 import { IoIosAddCircle } from "react-icons/io";
-import { useDispatch } from "react-redux";
 
 import SearchBar from "../../components/common/SearchBar";
 import { useSidebar } from "../../layout/Layout";
@@ -28,7 +27,6 @@ function PartyListSecondary() {
   const type = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg.type
   );
-  const dispatch = useDispatch();
 
   const searchData = (data) => {
     setSearch(data);
@@ -124,14 +122,14 @@ function PartyListSecondary() {
             <p className="text-white text-lg   font-bold ">Your Customers</p>
           </div>
           <div>
-            {type === "self" && (
+            {/* {type === "self" && ( */}
               <Link to={"/sUsers/addParty"}>
                 <button className="flex items-center gap-2 text-white bg-[#40679E] px-2 py-1 rounded-md text-sm  hover:scale-105 duration-100 ease-in-out ">
                   <IoIosAddCircle className="text-xl" />
                   Add Customers
                 </button>
               </Link>
-            )}
+            {/* )} */}
           </div>
         </div>
 

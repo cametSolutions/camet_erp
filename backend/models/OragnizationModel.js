@@ -46,6 +46,8 @@ const organizationSchema = new mongoose.Schema(
     salesNumberDetails: { type: Object },
     currency: { type: String },
     currencyName: { type: String },
+    subunit: { type: String },
+    symbol: { type: String },
     additionalCharges: [
       {
         name: { type: String, required: true },

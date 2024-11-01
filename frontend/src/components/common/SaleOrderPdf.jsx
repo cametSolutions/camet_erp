@@ -2,18 +2,20 @@
 import PdfHeader from "../pdfComponents/PdfHeader";
 import PdfFooter from "../pdfComponents/PdfFooter";
 import { useSelector } from "react-redux";
+import { useEffect, useState } from "react";
+import numberToWords from "number-to-words";
 
 function SaleOrderPdf({
   data,
   org,
   contentToPrint,
   bank,
-  inWords,
-  subTotal,
-  additinalCharge,
   userType,
   printTitle,
 }) {
+  const [subTotal, setSubTotal] = useState("");
+  const [additinalCharge, setAdditinalCharge] = useState("");
+  const [inWords, setInWords] = useState("");
   const party = data?.party;
   const despatchDetails = data?.despatchDetails;
 
@@ -24,8 +26,50 @@ function SaleOrderPdf({
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
 
-  const selectedOrganization = 
-  userType === "primaryUser" ? primarySelectedOrg : secondarySelectedOrg;
+  const selectedOrganization =
+    userType === "primaryUser" ? primarySelectedOrg : secondarySelectedOrg;
+
+  useEffect(() => {
+    if (data && data.items) {
+      const subTotal = data.items
+        .reduce((acc, curr) => acc + parseFloat(curr?.total), 0)
+        .toFixed(2);
+      setSubTotal(subTotal);
+
+      const addiTionalCharge = data?.additionalCharges
+        ?.reduce((acc, curr) => {
+          let value = curr?.finalValue === "" ? 0 : parseFloat(curr.finalValue);
+          if (curr?.action === "add") {
+            return acc + value;
+          } else if (curr?.action === "sub") {
+            return acc - value;
+          }
+          return acc;
+        }, 0)
+
+        ?.toFixed(2);
+      setAdditinalCharge(addiTionalCharge);
+
+      const finalAmount = data.finalAmount;
+
+      const [integerPart, decimalPart] = finalAmount.toString().split(".");
+      const integerWords = numberToWords.toWords(parseInt(integerPart, 10));
+      console.log(integerWords);
+      const decimalWords = decimalPart
+        ? ` and ${numberToWords.toWords(parseInt(decimalPart, 10))} `
+        : " and Zero";
+      console.log(decimalWords);
+
+      const mergedWord = [
+        ...(integerWords + " "),
+        (selectedOrganization?.currencyName ?? "") + " ",
+        ...decimalWords,
+        (selectedOrganization?.subunit ?? "") + " ",
+      ].join("");
+
+      setInWords(mergedWord);
+    }
+  }, [data]);
 
   const calculateTotalTax = () => {
     const individualTax = data?.items?.map(
@@ -45,7 +89,6 @@ function SaleOrderPdf({
       return acc + curr?.count;
     }, 0);
   };
-
 
   let address;
 
@@ -104,7 +147,6 @@ function SaleOrderPdf({
           address={address}
           despatchDetails={despatchDetails}
           tab={"salesOrder"}
-
         />
 
         {/* <hr className="border-t-2 border-black mb-0.5" /> */}
@@ -151,16 +193,17 @@ function SaleOrderPdf({
                     <td className="w-2  ">{index + 1}</td>
 
                     <td className="py-4 text-black pr-2">
-                      {el.product_name} <br />
-                      <p className="text-gray-400 mt-1">
-                        HSN: {el?.hsn_code} ({el.igst}%)
-                      </p>
+                      {el.product_name}  {el?.igst && (<span className="text-gray-400 ">({el?.igst}%)</span>)}  <br />
+                      {/* <p className="text-gray-400 font-normal mt-1">
+                        {el?.hsn_code !== " Not Found" &&
+                          `HSN: ${el?.hsn_code} (${el?.igst}%)`}
+                      </p> */}
                     </td>
                     <td className="py-4 text-black text-right pr-2">
-                      {count} {el?.unit}
+                      {count} {el?.unit?.split("-")[0]}
                     </td>
                     <td className="py-4 text-black text-right pr-2 text-nowrap">
-                       {rate}
+                      {rate}
                     </td>
                     <td className="py-4 text-black text-right pr-2 ">
                       {discountAmount > 0
@@ -191,24 +234,23 @@ function SaleOrderPdf({
               <td className="text-right pr-1 text-black font-bold text-[9px]"></td>
               <td className="text-right pr-1 text-black font-bold text-[9px]"></td>
               <td className="text-right pr-1 text-black font-bold text-[9px]">
-                 {calculateTotalTax()}
+                {calculateTotalTax()}
               </td>
               <td className="text-right pr-1 text-black font-bold text-[9px]">
-                 {subTotal}
+                {subTotal}
               </td>
             </tr>
           </tfoot>
         </table>
-        
 
         <PdfFooter
-              bank={bank}
-              org={org}
-              data={data}
-              additinalCharge={additinalCharge}
-              inWords={inWords}
-              selectedOrganization={selectedOrganization}
-            />
+          bank={bank}
+          org={org}
+          data={data}
+          additinalCharge={additinalCharge}
+          inWords={inWords}
+          selectedOrganization={selectedOrganization}
+        />
       </div>
     </div>
   );

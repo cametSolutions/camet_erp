@@ -51,7 +51,7 @@ function AddProductForm({
   const [originalGodownList, setOriginalGodownList] = useState([]);
 
   useEffect(() => {
-    if (Object.keys(productData).length > 0) {
+    if (Object.keys(productData)?.length > 0) {
       const {
         product_name,
         product_code,
@@ -83,7 +83,7 @@ function AddProductForm({
       setSelectedBrand(brand);
       setSelectedCategory(category);
       setSelectedSubcategory(sub_category);
-      if (Priceleveles.length > 0) {
+      if (Priceleveles?.length > 0) {
         setRows(Priceleveles);
       } else {
         setRows(() => [
@@ -93,7 +93,7 @@ function AddProductForm({
       }
 
       if (
-        GodownList.length === 1 &&
+        GodownList?.length === 1 &&
         !GodownList[0]?.hasOwnProperty("godown_id")
       ) {
         setLocationRows([{ godown: "", balance_stock: "" }]);
@@ -174,7 +174,7 @@ function AddProductForm({
   };
 
   const handleAddRow = () => {
-    const lastRow = rows[rows.length - 1];
+    const lastRow = rows[rows?.length - 1];
     if (!lastRow?.pricelevel || !lastRow?.pricerate) {
       toast.error("Add Level name and Rate");
       return;
@@ -183,7 +183,7 @@ function AddProductForm({
   };
 
   const handleDeleteRow = (id) => {
-    if (rows.length > 1) {
+    if (rows?.length > 1) {
       setRows(rows.filter((row) => row?.id !== id));
     } else {
       setRows([{ _id: "", pricelevel: "", pricerate: "" }]);
@@ -210,7 +210,7 @@ function AddProductForm({
   ///////////// location table ///////////////////
 
   const handleAddLocationRow = () => {
-    const lastRow = locationRows[locationRows.length - 1];
+    const lastRow = locationRows[locationRows?.length - 1];
     if (!lastRow?.godown || lastRow?.balance_stock < 0) {
       toast.error("Add Location  and Stock");
       return;
@@ -236,7 +236,7 @@ function AddProductForm({
       return;
     }
 
-    if (locationRows.length > 1) {
+    if (locationRows?.length > 1) {
       setLocationRows(locationRows.filter((row) => row?.godown_id !== id));
     } else {
       setLocationRows([{ godown_id: "", godown: "", balance_stock: "" }]);
@@ -262,7 +262,7 @@ function AddProductForm({
     if (
       !product_name.trim() ||
       !unit ||
-      hsn_code.length === 0 
+      hsn_code?.length === 0 
     
     ) {
       toast.error("Name, Unit, and HSN must be filled");

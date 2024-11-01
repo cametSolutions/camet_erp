@@ -45,7 +45,7 @@ function AddParty() {
         <p>Add Customers Details </p>
       </div>
 
-      <AddPartyForm submitHandler={submitHandler} />
+      <AddPartyForm submitHandler={submitHandler}  userType = "primaryUser" />
     </div>
   );
 }

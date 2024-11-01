@@ -6,7 +6,7 @@ function SelectDate() {
   const { start, end, title } = useSelector((state) => state.date);
 
   return (
-    <div className="flex justify-between  items-center p-3 ">
+    <div className="flex justify-between  items-center p-3 bg-white  ">
       <div className="flex justify-evenly items-center gap-3 text-xs">
         <BsCalendarDateFill />
         <p className="font-semibold text-gray-500 ">{title}</p>

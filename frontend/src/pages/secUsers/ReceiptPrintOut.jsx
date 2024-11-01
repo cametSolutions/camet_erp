@@ -52,6 +52,7 @@ function ReceiptPrintOut() {
 
       const mergedWord = [
         ...integerWords,
+        ...decimalWords
       ].join("");
 
       setInWords(mergedWord);

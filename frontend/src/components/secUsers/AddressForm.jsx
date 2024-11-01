@@ -2,16 +2,13 @@
 /* eslint-disable react/prop-types */
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
 
 function AddressForm({ getFormData, newBillToShipTo, partyDetails }) {
   const navigate = useNavigate();
 
  
 
-  console.log(partyDetails);
-  console.log(newBillToShipTo);
-  console.log(Object.keys(partyDetails).length);
+
 
   useEffect(() => {
     if (Object.keys(newBillToShipTo).length > 0) {
@@ -50,7 +47,6 @@ function AddressForm({ getFormData, newBillToShipTo, partyDetails }) {
       });
     } else {
       if (partyDetails && Object.keys(partyDetails).length === 0) {
-        console.log("haii");
         navigate(-1);
       }
       if (partyDetails && Object.keys(partyDetails).length > 0) {

@@ -52,7 +52,7 @@ function PaymentPrintOut() {
 
       console.log(decimalWords);
 
-      const mergedWord = [...integerWords].join("");
+      const mergedWord = [...integerWords,...decimalWords].join("");
 
       setInWords(mergedWord);
     }

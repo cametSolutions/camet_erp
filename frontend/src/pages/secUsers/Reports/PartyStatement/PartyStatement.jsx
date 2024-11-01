@@ -21,71 +21,88 @@ function PartyStatement() {
   const partyName = location?.state?.partyName;
 
   // Memoize API URLs
-  const transactionsUrl = useMemo(() => 
-    `/api/sUsers/transactions/${cmp_id}?party_id=${party_id}&startOfDayParam=${start}&endOfDayParam=${end}`,
+  const transactionsUrl = useMemo(
+    () =>
+      `/api/sUsers/transactions/${cmp_id}?party_id=${party_id}&startOfDayParam=${start}&endOfDayParam=${end}`,
     [cmp_id, party_id, start, end]
   );
 
-  const balanceUrl = useMemo(() => 
-    `/api/sUsers/getOpeningBalances/${cmp_id}?party_id=${party_id}&startOfDayParam=${start}`,
+  const balanceUrl = useMemo(
+    () =>
+      `/api/sUsers/getOpeningBalances/${cmp_id}?party_id=${party_id}&startOfDayParam=${start}`,
     [cmp_id, party_id, start]
   );
 
   // Fetch data using custom hook
-  const { 
-    data: transactionData, 
-    loading: transactionLoading 
-  } = useFetch(transactionsUrl);
+  const { data: transactionData, loading: transactionLoading } =
+    useFetch(transactionsUrl);
 
-  const { 
-    data: balanceData, 
-    loading: balanceLoading 
-  } = useFetch(balanceUrl);
-
-  
+  const { data: balanceData, loading: balanceLoading } = useFetch(balanceUrl);
 
   // Memoize the combined data
-  const reports = useMemo(() => 
-    transactionData?.data?.combined || [],
+  const reports = useMemo(
+    () => transactionData?.data?.combined || [],
     [transactionData]
   );
 
   // Memoize the opening balances
-  const openingBalances = useMemo(() => ({
-    debitBalance: balanceData?.data?.totalDebitOpening || 0,
-    creditBalance: balanceData?.data?.totalCreditOpening || 0
-  }), [balanceData]);
+  const openingBalances = useMemo(
+    () => ({
+      debitBalance: balanceData?.data?.totalDebitOpening || 0,
+      creditBalance: balanceData?.data?.totalCreditOpening || 0,
+    }),
+    [balanceData]
+  );
 
   // console.log("balanceData",balanceData);
   // console.log("openingBalances",openingBalances);
-  
 
   // Loading state
   const isLoading = transactionLoading || balanceLoading;
 
   return (
-    <div className="flex flex-1 flex-col">
-      <TitleDiv title="Party Statement" />
+    <div className="flex flex-1 flex-col ">
+      <div className="sticky top-0 z-50 ">
+        <TitleDiv title="Party Statement  " />
 
-      <section className="shadow-lg">
-        <SelectDate />
-      </section>
-
-      <section>
-        <PartyTile partyName={partyName} />
-      </section>
-
-      {isLoading && (
-        <section className="w-full">
-          <BarLoader color="#9900ff" width="100%" />
+        <section className="shadow-lg border-b ">
+          <SelectDate />
         </section>
-      )}
 
+        <section>
+          <PartyTile partyName={partyName} />
+        </section>
+
+        {isLoading && (
+          <section className="w-full">
+            <BarLoader color="#9900ff" width="100%" />
+          </section>
+        )}
       <section>
-        <ReportTable 
-          data={reports} 
+        <table className="w-full">
+          <thead>
+            <tr className="border-b bg-slate-200">
+              <th className="py-3 px-6 text-left text-gray-400 text-sm">
+                Transactions
+              </th>
+              <th className="py-3 px-6 text-right text-gray-400 text-sm">
+                Debit
+              </th>
+              <th className="py-3 px-6 text-right text-gray-400 text-sm">
+                Credit
+              </th>
+            </tr>
+          </thead>
+        </table>
+      </section>
+      </div>
+
+
+      <section className="z-10">
+        <ReportTable
+          data={reports}
           loading={isLoading}
-          openingBalances={openingBalances} 
+          openingBalances={openingBalances}
         />
       </section>
     </div>

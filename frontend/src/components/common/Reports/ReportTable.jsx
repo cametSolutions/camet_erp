@@ -31,9 +31,9 @@ const ReportTable = ({ data, loading, openingBalances }) => {
 
 
   return (
-    <div className="w-full overflow-x-auto px-3 py-4">
+    <div className="w-full overflow-x-auto px-3 py-4 ">
       <table className="w-full border-collapse">
-        <thead>
+        {/* <thead>
           <tr className="border-b bg-slate-200">
             <th className="py-6 px-6 text-left text-gray-400 text-sm">
               Transactions
@@ -45,8 +45,8 @@ const ReportTable = ({ data, loading, openingBalances }) => {
               Credit
             </th>
           </tr>
-        </thead>
-        <tbody>
+        </thead> */}
+        <tbody className="">
           {/* Opening Balance Row */}
           <tr className="bg-slate-100 w-full">
             <td className="py-3 px-4 text-left font-bold text-xs text-gray-700">
