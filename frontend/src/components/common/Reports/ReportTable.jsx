@@ -14,7 +14,7 @@ const ReportTable = ({ data, loading, openingBalances }) => {
       return totals;
     },
     { totalDebit: 0, totalCredit: 0 }
-  );
+ );
 
   // console.log("totalDebit :",totalDebit, "totalCredit :",totalCredit);
   
@@ -47,20 +47,7 @@ const ReportTable = ({ data, loading, openingBalances }) => {
           </tr>
         </thead> */}
         <tbody className="">
-          {/* Opening Balance Row */}
-          <tr className="bg-slate-100 w-full">
-            <td className="py-3 px-4 text-left font-bold text-xs text-gray-700">
-              Opening Balance
-            </td>
-            <td className="py-3 px-6 text-right font-bold text-xs text-gray-500">
-              {openingBalances?.debitBalance > openingBalances?.creditBalance &&
-                `₹ ${openingBalances?.debitBalance}`}
-            </td>
-            <td className="py-3 px-6 text-right font-bold text-xs text-gray-500">
-              {openingBalances?.creditBalance > openingBalances?.debitBalance &&
-                `₹ ${openingBalances?.creditBalance}`}
-            </td>
-          </tr>
+         
 
           {/* Transaction Rows */}
           {data?.map((transaction) => (

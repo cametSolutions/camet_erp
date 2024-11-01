@@ -78,25 +78,44 @@ function PartyStatement() {
             <BarLoader color="#9900ff" width="100%" />
           </section>
         )}
-      <section>
-        <table className="w-full">
-          <thead>
-            <tr className="border-b bg-slate-200">
-              <th className="py-3 px-6 text-left text-gray-400 text-sm">
-                Transactions
-              </th>
-              <th className="py-3 px-6 text-right text-gray-400 text-sm">
-                Debit
-              </th>
-              <th className="py-3 px-6 text-right text-gray-400 text-sm">
-                Credit
-              </th>
-            </tr>
-          </thead>
-        </table>
-      </section>
-      </div>
+        <section>
+          <table className="w-full">
+            <thead>
+              <tr className="border-b bg-slate-200">
+                <th className="py-3 px-6 text-left text-gray-400 text-sm">
+                  Transactions
+                </th>
+                <th className="py-3 px-6 text-right text-gray-400 text-sm">
+                  Debit
+                </th>
+                <th className="py-3 px-6 text-right text-gray-400 text-sm">
+                  Credit
+                </th>
+              </tr>
+            </thead>
+          </table>
+        </section>
 
+        <section>
+          <table className="w-full">
+            <tr className="bg-slate-100 w-full">
+              <td className="p-3 px-6 text-left font-bold text-xs text-gray-700">
+                Opening Balance
+              </td>
+              <td className="py-3 px-6 text-right font-bold text-xs text-gray-500">
+                {openingBalances?.debitBalance >
+                  openingBalances?.creditBalance &&
+                  `₹ ${openingBalances?.debitBalance}`}
+              </td>
+              <td className="py-3 px-6 text-right font-bold text-xs text-gray-500">
+                {openingBalances?.creditBalance >
+                  openingBalances?.debitBalance &&
+                  `₹ ${openingBalances?.creditBalance}`}
+              </td>
+            </tr>
+          </table>
+        </section>
+      </div>
 
       <section className="z-10">
         <ReportTable
