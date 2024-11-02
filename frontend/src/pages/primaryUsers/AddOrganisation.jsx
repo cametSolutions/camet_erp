@@ -14,7 +14,7 @@ const AddOrganisation = () => {
     console.log(formData);
 
     try {
-      const res = await api.post("/api/pUsers/", formData, {
+      const res = await api.post("/api/pUsers/addOrganizations", formData, {
         headers: {
           "Content-Type": "application/json",
         },
