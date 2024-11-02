@@ -391,11 +391,15 @@ export const transactions = async (req, res) => {
         model,
         { ...matchCriteria, ...(userId ? { Secondary_user_id: userId } : {}) },
         type,
-        numberField
+        numberField,
+
       )
     );
 
     const results = await Promise.all(transactionPromises);
+
+    console.log("results", results);
+    
     const combined = results
       .flat()
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
