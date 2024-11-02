@@ -2,7 +2,7 @@
 /* eslint-disable react/prop-types */
 
 import transactionImg from "../../assets/images/transactions.png";
-import stockreRister from "../../assets/images/files.png";
+import stockreRister from "../../assets/images/clipboard.png";
 import vouchers from "../../assets/images/application.png";
 import outStanding from "../../assets/images/outstanding.png";
 import reportImg from "../../assets/images/reports.png";
