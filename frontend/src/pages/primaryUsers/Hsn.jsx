@@ -135,7 +135,7 @@ function Hsn() {
     (state) => state?.setSelectedOrganization?.selectedOrg?._id
   );
   const companyIdSecondary = useSelector(
-    (state) => state?.secSelectedOrganization?.secSelectedOrg._id
+    (state) => state?.secSelectedOrganization?.secSelectedOrg?._id
   );
 
   let user;
