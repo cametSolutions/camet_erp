@@ -4,10 +4,9 @@
 /* eslint-disable react/display-name */
 import React, { useMemo } from "react";
 import dayjs from "dayjs";
-import { IoArrowRedoOutline } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
 import { GiCancel } from "react-icons/gi";
-import { FaUserShield } from "react-icons/fa";
+import cancelSeal from "../../assets/images/cancelled.png"
 
 const DashboardTransaction = ({ filteredData, userType, from }) => {
   const navigate = useNavigate();
@@ -57,7 +56,7 @@ const DashboardTransaction = ({ filteredData, userType, from }) => {
         type,
         _id,
         party_name,
-        billNo,
+        // billNo,
         createdAt,
         enteredAmount,
         isCancelled,
@@ -101,7 +100,7 @@ const DashboardTransaction = ({ filteredData, userType, from }) => {
             <div className="h-full p-2 lg:px-6  lg:py-3 w-[150px] md:w-[180px] lg:w-[300px] flex justify-center items-end relative flex-col">
               <div className="flex-col">
                 <p className="font-bold text-sm text-gray-500">
-                  ₹{enteredAmount}
+                  ₹{enteredAmount || 0}
                 </p>
               </div>
             </div>
@@ -111,12 +110,13 @@ const DashboardTransaction = ({ filteredData, userType, from }) => {
             <div className="flex items-center justify-between w-full gap-2 text-md text-violet-500">
               <div className="flex items-center gap-2">
                 <p className="font-bold  md:font-semibold text-xs text-left  text-gray-500 flex ">
-                  Created by : {secondaryUserName}
+                  Created by : {secondaryUserName || ""}
                 </p>
               </div>
               {isCancelled && (
                 <div className="flex text-gray-500  items-center gap-1 text-xs   font-semibold">
                   <GiCancel color="red " className="" />
+                  {/* <img src={cancelSeal} alt="" /> */}
                   <p>Cancelled</p>
                 </div>
               )}

@@ -71,7 +71,7 @@ const DashboardCards = ({ userType, receiptTotal, handleLinkClick }) => {
                     {card.title}
                   </h4>
                 )} */}
-                <div className="text-gray-500 text-[15px]">{card.subtitle}</div>
+                <div className="text-gray-500 text-[15px]">{card?.subtitle}</div>
               </div>
             </div>
           </div>
