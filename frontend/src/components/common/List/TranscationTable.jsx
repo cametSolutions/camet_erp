@@ -1,11 +1,23 @@
 /* eslint-disable react/prop-types */
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 
-const TransactionTable = ({ transactionData, getDifference, loading }) => {
+const TransactionTable = ({
+  transactionData,
+  getDifference,
+  loading,
+  // userType,
+}) => {
+  const location = useLocation();
+  const navigate = useNavigate();
 
-  console.log("TransactionTable: ", transactionData);
-  
-
+  console.log("location", location.pathname);
+  let userType;
+  if (location.pathname.startsWith("/pUsers")) {
+    userType = "primaryUser";
+  } else if (location.pathname.startsWith("/sUsers")) {
+    userType = "secondaryUser";
+  }
 
   // Helper function to determine transaction type and color
   const getTransactionDisplay = (transaction) => {
@@ -66,9 +78,31 @@ const TransactionTable = ({ transactionData, getDifference, loading }) => {
     );
 
     getDifference(totals?.debitSum - totals?.creditSum);
-
-
   }, [transactionData]);
+
+  const getNavigationPath = useMemo(
+    () => (type, id) => {
+      const baseRoute = `/${userType === "primary" ? "pUsers" : "sUsers"}`;
+      const routes = {
+        Receipt: `${baseRoute}/receipt/details/${id}`,
+        Payment: `${baseRoute}/payment/details/${id}`,
+        "Tax Invoice": `${baseRoute}/salesDetails/${id}`,
+        "Van Sale": `${baseRoute}/vanSaleDetails/${id}`,
+        Purchase: `${baseRoute}/purchaseDetails/${id}`,
+        "Stock Transfer": `${baseRoute}/stockTransferDetails/${id}`,
+        "Credit Note": `${baseRoute}/creditDetails/${id}`,
+        "Debit Note": `${baseRoute}/debitDetails/${id}`,
+        default: `${baseRoute}/InvoiceDetails/${id}`,
+      };
+      return routes[type] || routes.default;
+    },
+    [userType]
+  );
+
+  const handleTransactionClick = (type, id) => {
+    const path = getNavigationPath(type, id);
+    navigate(path, { state: { from: location?.pathname } });
+  };
 
   return (
     <div className="w-full mx-auto">
@@ -81,8 +115,14 @@ const TransactionTable = ({ transactionData, getDifference, loading }) => {
 
                 return (
                   <tr
+                    onClick={() =>
+                      handleTransactionClick(
+                        transaction?.type,
+                        transaction?._id
+                      )
+                    }
                     key={transaction?._id}
-                    className="border-b hover:bg-gray-50"
+                    className="border-b hover:bg-gray-50 cursor-pointer"
                   >
                     <td className="p-3 w-1/2">
                       <div className="font-bold text-[0.7rem] text-gray-500">
