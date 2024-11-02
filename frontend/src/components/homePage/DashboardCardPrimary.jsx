@@ -39,18 +39,7 @@ const DashboardCards = ({ userType, receiptTotal, handleLinkClick }) => {
         subtitle: "Stock Register",
         link: "/sUsers/Inventory",
       },
-      // {
-      //   icon: <RiContactsFill />,
-      //   bgColor: "bg-[#9b5de5]",
-      //   subtitle: "Contacts",
-      //   link: "/sUsers/contacts",
-      // },
-      // {
-      //   icon: <BiTransfer />,
-      //   bgColor: "bg-[#134074]",
-      //   subtitle: "Stock Transfer",
-      //   link: "/sUsers/stockTransfer",
-      // },
+ 
       {
         icon: vouchers,
         subtitle: "Vouchers",
@@ -82,7 +71,7 @@ const DashboardCards = ({ userType, receiptTotal, handleLinkClick }) => {
                     {card.title}
                   </h4>
                 )} */}
-                <div className="text-gray-500 text-[15px]">{card.subtitle}</div>
+                <div className="text-gray-500 text-[15px]">{card?.subtitle}</div>
               </div>
             </div>
           </div>

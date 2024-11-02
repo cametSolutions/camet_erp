@@ -4,24 +4,24 @@
 /* eslint-disable react/display-name */
 import React, { useMemo } from "react";
 import dayjs from "dayjs";
-import { IoArrowRedoOutline } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
 import { GiCancel } from "react-icons/gi";
+import cancelSeal from "../../assets/images/cancelled.png"
 
 const DashboardTransaction = ({ filteredData, userType, from }) => {
   const navigate = useNavigate();
 
   const typeColors = useMemo(
     () => ({
-      "Receipt": "bg-red-500",
-      "Payment": "bg-[#5e548e]",
+      Receipt: "bg-red-500",
+      Payment: "bg-[#5e548e]",
       "Tax Invoice": "bg-blue-500",
-      "Purchase": "bg-[#2d6a4f]",
+      Purchase: "bg-[#2d6a4f]",
       "Van Sale": "bg-teal-500",
       "Stock Transfer": "bg-purple-500",
       "Credit Note": "bg-pink-500",
       "Debit Note": "bg-[#3b429f]",
-      "default": "bg-[#227c9d]",
+      default: "bg-[#227c9d]",
     }),
     []
   );
@@ -56,10 +56,12 @@ const DashboardTransaction = ({ filteredData, userType, from }) => {
         type,
         _id,
         party_name,
-        billNo,
+        // billNo,
         createdAt,
         enteredAmount,
         isCancelled,
+        voucherNumber,
+        secondaryUserName,
       } = transaction;
 
       return (
@@ -68,47 +70,54 @@ const DashboardTransaction = ({ filteredData, userType, from }) => {
           onClick={() => handleTransactionClick(type, _id)}
           className="bg-white cursor-pointer rounded-md shadow-lg border border-gray-100 flex flex-col justify-between px-4 transition-all duration-150 transform hover:translate-x-1 ease-in-out"
         >
-          <div className="flex justify-start text-xs mt-2">
+          <div className="flex justify-start text-xs mt-2 px-2 ">
             <div
               className={`${
                 typeColors[type] || typeColors.default
               } flex items-center text-white px-2 rounded-sm`}
             >
-              <p className="p-1 rounded-lg px-3 font-semibold">{type}</p>
+              <p className="p-1 rounded-lg  font-semibold text-[10px]">
+                {type}
+              </p>
             </div>
           </div>
 
-          <div className="flex justify-between">
-            <div className="h-full px-2 py-4 lg:p-6 w-[150px] md:w-[180px] lg:w-[300px] flex justify-center items-start relative flex-col">
-              <p className="font-bold md:font-semibold text-[11.3px] md:text-[15px] text-left mb-3">
-                {party_name}
+          <div className="flex justify-between items-center">
+            <div className=" px-2 py-4 lg:px-6  lg:py-3  w-[150px] md:w-[180px] lg:w-[300px] flex justify-center items-start relative flex-col">
+              <p className="font-bold md:font-semibold text-[11.3px] md:text-[12px] text-left text-violet-500">
+                # {voucherNumber}
               </p>
-              <p className="font-bold md:font-semibold text-[11.3px] md:text-[15px] text-left text-violet-500">
-                {billNo}
-              </p>
-              <p className="text-gray-400 text-sm">
+              <p className="text-gray-400 text-[10px] font-bold">
                 {dayjs(createdAt).format("DD/MM/YYYY")}
               </p>
+              <p className="font-bold mt-3 md:font-semibold text-[11.3px] md:text-[15px] text-left ">
+                {party_name}
+              </p>
+              {/* <p className="font-bold  md:font-semibold text-xs text-left  text-gray-500 mt-2">
+                Settled by : {secondaryUserName}
+              </p> */}
             </div>
-            <div className="h-full p-2 lg:p-6 w-[150px] md:w-[180px] lg:w-[300px] flex justify-center items-end relative flex-col">
+            <div className="h-full p-2 lg:px-6  lg:py-3 w-[150px] md:w-[180px] lg:w-[300px] flex justify-center items-end relative flex-col">
               <div className="flex-col">
-                <p className="font-semibold text-green-600">₹{enteredAmount}</p>
+                <p className="font-bold text-sm text-gray-500">
+                  ₹{enteredAmount || 0}
+                </p>
               </div>
             </div>
           </div>
-          <hr />
-          <div className="flex justify-between p-4">
+          <hr className="mx-[-16px]" />
+          <div className="flex justify-between flex-wrap px-6 py-3 bg-gray-100 mx-[-16px] items-center ">
             <div className="flex items-center justify-between w-full gap-2 text-md text-violet-500">
               <div className="flex items-center gap-2">
-                <IoArrowRedoOutline />
-                <p>Send Receipt</p>
+                <p className="font-bold  md:font-semibold text-xs text-left  text-gray-500 flex ">
+                  Created by : {secondaryUserName || ""}
+                </p>
               </div>
               {isCancelled && (
-                <div className="flex text-gray-500  items-center gap-1 text-xs md:text-sm  font-semibold">
-                    <GiCancel  color="red " className="mt-1"/>
-                  <p>
-                  Cancelled
-                  </p>
+                <div className="flex text-gray-500  items-center gap-1 text-xs   font-semibold">
+                  <GiCancel color="red " className="" />
+                  {/* <img src={cancelSeal} alt="" /> */}
+                  <p>Cancelled</p>
                 </div>
               )}
             </div>
@@ -128,4 +137,4 @@ const DashboardTransaction = ({ filteredData, userType, from }) => {
   );
 };
 
-  export default React.memo(DashboardTransaction);
+export default React.memo(DashboardTransaction);

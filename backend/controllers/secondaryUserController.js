@@ -236,7 +236,7 @@ export const confirmCollection = async (req, res) => {
     enteredAmount,
   } = collectionDetails;
 
-  console.log("collectionDetails.billData", collectionDetails.billData);
+  // console.log("collectionDetails.billData", collectionDetails.billData);
 
   try {
     // Create a lookup map for billNo to remainingAmount
@@ -605,9 +605,9 @@ export const PartyList = async (req, res) => {
      // Determine the source values to match based on the voucher type
      let sourceMatch = {};
      if (voucher === "receipt") {
-       sourceMatch = { source: { $in: ["sale", "debitNote"] } };
+       sourceMatch =  { classification: "Dr" };
      } else if (voucher === "payment") {
-       sourceMatch = { source: { $in: ["purchase", "creditNote"] } };
+       sourceMatch =  { classification: "Cr" };
      }
 
     //  console.log("sourceMatch", sourceMatch);
@@ -633,11 +633,15 @@ export const PartyList = async (req, res) => {
           $project: {
             _id: 0,
             party_id: "$_id",
+            partyName: 1,
             totalOutstanding: 1,
             latestBillDate: 1,
           },
         },
       ]);
+
+      // console.log("partyOutstandingData", partyOutstandingData);
+      
 
       partyListWithOutstanding = partyList.map((party) => {
         const outstandingData = partyOutstandingData.find(

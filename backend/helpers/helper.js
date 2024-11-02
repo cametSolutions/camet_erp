@@ -13,6 +13,8 @@ export const formatAmount = (amount) => {
 
 /////helper for transactions
 
+import mongoose from 'mongoose';
+
 export const aggregateTransactions = (
   model,
   matchCriteria,
@@ -22,27 +24,45 @@ export const aggregateTransactions = (
   return model.aggregate([
     { $match: matchCriteria },
     {
+      $addFields: {
+        Secondary_user_idObj: { $toObjectId: '$Secondary_user_id' } // convert to ObjectId
+      }
+    },
+    {
+      $lookup: {
+        from: 'secondaryusers', // collection to join with
+        localField: 'Secondary_user_idObj', // converted ObjectId field
+        foreignField: '_id', // ObjectId field in SecondaryUser collection
+        as: 'secondaryUser', // output array field for joined documents
+        pipeline: [
+          { $project: { name: 1, _id: 0 } } // include only the name field
+        ]
+      },
+    },
+    { $unwind: { path: '$secondaryUser', preserveNullAndEmptyArrays: true } },
+    {
       $project: {
         voucherNumber: `$${voucherNumber}`,
-        party_name: "$party.partyName",
-        accountGroup: "$party.accountGroup",
-        accountGroup: "$party.accountGroup",
+        party_name: '$party.partyName',
+        accountGroup: '$party.accountGroup',
         type: type,
         enteredAmount:
-          type === "Receipt" || type === "Payment"
-            ? "$enteredAmount"
-            : "$finalAmount",
+          type === 'Receipt' || type === 'Payment'
+            ? '$enteredAmount'
+            : '$finalAmount',
         createdAt: 1,
-        itemsLength:
-          type === "Receipt" || type === "Payment"
-            ? undefined
-            : { $size: "$items" },
+        // itemsLength:
+        //   type === 'Receipt' || type === 'Payment'
+        //     ? undefined
+        //     : { $size: '$items' },
         isCancelled: 1,
         paymentMethod: 1,
+        secondaryUserName: '$secondaryUser.name', // only name from SecondaryUser
       },
     },
   ]);
 };
+
 
 // Function to aggregate opening balance with proper string-to-number conversion
 export const aggregateOpeningBalance = async (model, matchCriteria, transactionType) => {
