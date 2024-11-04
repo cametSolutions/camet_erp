@@ -178,7 +178,7 @@ import PartyStatement from '../pages/secUsers/Reports/PartyStatement/PartyStatem
 import DateRange from '../components/Filters/DateRange'
 import VouchersList from '../components/common/Reports/VouchersList'
 import SalesSummary from '../pages/secUsers/Reports/salesSummary/SalesSummary'
-import PartyFilterList from '../components/Filters/party/partyFilterList'
+import PartyFilterList from '../components/Filters/party/PartyFilterList'
 import StatusFilterList from '../components/Filters/status/StatusFilterList'
 
 const Routers = () => {
