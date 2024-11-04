@@ -94,34 +94,14 @@ function AddPartyForm({ submitHandler, partyDetails = {}, userType }) {
       );
       return;
     }
-    // if (mobileNumber === "") {
-    //   toast.error("All fields are required");
-    //   return;
-    // }
 
-    if (
-      emailID &&
-      !/^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/.test(emailID)
-    ) {
-      toast.error("Invalid email address");
-      return;
-    }
 
-    if (!mobileNumber) {
-      toast.error("Mobile number is required");
-      return;
-    }
     
     if (selectedOrganization?.country === "India" && !/^\d{10}$/.test(mobileNumber)) {
       toast.error("Mobile number must be 10 digits");
       return;
     }
 
-    
-    // if (mobileNumber && !/^\d{10}$/.test(mobileNumber)) {
-    //   toast.error("Mobile number must be 10 digits");
-    //   return;
-    // }
 
     const gstRegex = /^[0-9A-Za-z]{15}$/;
 
