@@ -6,9 +6,10 @@ import {
   IoMdArrowDown,
 } from "react-icons/io";
 import SearchBar from "../../common/SearchBar";
-import { HashLoader } from "react-spinners";
+import { BarLoader } from "react-spinners";
+
 import { formatAmount } from "../../../../../backend/helpers/helper";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 function PartyList({
   backHandler,
@@ -16,94 +17,90 @@ function PartyList({
   loading,
   filteredParties,
   selectHandler,
+  filter = false
 }) {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // console.log("location ", location);
-  
-  const clickHandler = ()=>{
-    navigate("/sUsers/addParty",{state:{from:location.pathname}});
-  }
+  const clickHandler = () => {
+    navigate("/sUsers/addParty", { state: { from: location.pathname } });
+  };
 
   return (
     <div className=" bg-slate-50 flex-1 ">
       <div className="sticky top-0 z-20">
-        <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3  flex justify-between items-center  ">
+        <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex justify-between items-center">
           <div className="flex items-center justify-center gap-2">
             <IoIosArrowRoundBack
               onClick={backHandler}
-              className="text-3xl text-white cursor-pointer "
+              className="text-3xl text-white cursor-pointer"
             />
-            <p className="text-white text-lg   font-bold ">Your Customers</p>
+            <p className="text-white text-lg font-bold">Your Customers</p>
           </div>
           <div>
-            <div
-              onClick={() => {
-                clickHandler(null);
-              }}
+            <button
+              onClick={clickHandler}
+              className="flex items-center gap-2 text-white bg-[#40679E] px-2 py-1 rounded-md text-xs hover:scale-105 duration-100 ease-in-out"
             >
-              <button className="flex items-center gap-2 text-white bg-[#40679E] px-2 py-1 rounded-md text-xs  hover:scale-105 duration-100 ease-in-out ">
-                <IoIosAddCircle className="text-xl" />
-                Add Customers
-              </button>
-            </div>
+              <IoIosAddCircle className="text-xl" />
+              Add Customers
+            </button>
           </div>
         </div>
 
-        {/* invoiec date */}
-        <div className=" p-4  bg-white drop-shadow-lg">
-          <div className="flex justify-between  items-center"></div>
-          <div className=" md:w-1/2 ">
-            {/* search bar */}
-            <div className="relative  ">
-              <SearchBar onType={searchData} />
-            </div>
-
-            {/* search bar */}
+        {/* Search Bar */}
+        <div className="p-4 bg-white drop-shadow-lg">
+          <div className="md:w-1/2">
+            <SearchBar onType={searchData} />
           </div>
         </div>
       </div>
 
-      {/* adding party */}
-
+      {/* Party List */}
       {loading ? (
         // Show loader while data is being fetched
-        <div className=" flex justify-center items-center h-screen">
-          <figure className="  w-[60px] h-[60px] rounded-full border-2 border-solid border-primaryColor flex items-center justify-center ">
-            <HashLoader color="#6056ec" size={30} speedMultiplier={1.6} />
-          </figure>
-        </div>
-      ) : filteredParties?.length > 0 ? (
-        // Show party list if parties are available
-        filteredParties?.map((el, index) => (
-          <div
-            onClick={() => {
-              selectHandler(el);
-            }}
-            key={index}
-            className="bg-white p-4 pb-6 drop-shadow-lg mt-4 flex justify-between mx-2 rounded-sm cursor-pointer hover:bg-slate-100"
-          >
-            <section className="">
-              <p className="font-bold">{el?.partyName}</p>
-              <p className="font-medium text-gray-500 text-sm">Customer</p>
-            </section>
-            {el?.totalOutstanding && el?.totalOutstanding > 0 && (
-              <section>
-                <p className="font-medium text-gray-500 text-md mr-3 flex  items-center gap-2">
-                  {" "}
-                  <IoMdArrowDown color="green" />
-                  {formatAmount(el?.totalOutstanding)}
-                </p>
-              </section>
-            )}
-          </div>
-        ))
+        <section className="w-full">
+          <BarLoader color="#9900ff" width="100%" />
+        </section>
       ) : (
-        // Show message if no parties are available
-        <div className="font-bold flex justify-center items-center mt-12 text-gray-500">
-          No Parties !!!
-        </div>
+        <>
+          {filter && (
+            <div
+              onClick={() => selectHandler({})}
+              className="bg-white p-4 pb-6 drop-shadow-lg mt-4 flex justify-between mx-2 rounded-sm cursor-pointer hover:bg-slate-100"
+            >
+              <p className="font-bold">All</p>
+            </div>
+          )}
+          {filteredParties?.length > 0 ? (
+            // Show party list if parties are available
+            filteredParties.map((el, index) => (
+              <div
+                onClick={() => selectHandler(el)}
+                key={index}
+                className="bg-white p-4 pb-6 drop-shadow-lg mt-4 flex justify-between mx-2 rounded-sm cursor-pointer hover:bg-slate-100"
+              >
+                <section>
+                  <p className="font-bold">{el?.partyName}</p>
+                  <p className="font-medium text-gray-500 text-sm">Customer</p>
+                </section>
+                {el?.totalOutstanding && el?.totalOutstanding > 0 && (
+                  <section>
+                    <p className="font-medium text-gray-500 text-md mr-3 flex items-center gap-2">
+                      <IoMdArrowDown color="green" />
+                      {formatAmount(el?.totalOutstanding)}
+                    </p>
+                  </section>
+                )}
+              </div>
+            ))
+          ) : (
+            // Show message if no parties are available
+            <div className="font-bold flex justify-center items-center mt-12 text-gray-500">
+              No Parties !!!
+            </div>
+          )}
+        </>
       )}
     </div>
   );

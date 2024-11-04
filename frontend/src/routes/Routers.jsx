@@ -175,8 +175,11 @@ import EditPayment from '../pages/secUsers/EditPayment'
 import OutstandingListOfPaymentForEdit from '../pages/secUsers/OutstandingListOfPaymentForEdit'
 import Reports from '../pages/secUsers/Reports'
 import PartyStatement from '../pages/secUsers/Reports/PartyStatement/PartyStatement'
-import DateRange from '../pages/secUsers/Reports/PartyStatement/DateRange'
+import DateRange from '../components/Filters/DateRange'
 import VouchersList from '../components/common/Reports/VouchersList'
+import SalesSummary from '../pages/secUsers/Reports/salesSummary/SalesSummary'
+import PartyFilterList from '../components/Filters/party/partyFilterList'
+import StatusFilterList from '../components/Filters/status/StatusFilterList'
 
 const Routers = () => {
   return (
@@ -386,9 +389,6 @@ const Routers = () => {
 
 
 
-        {/* errorPage */}
-        <Route path='/errorPage' element={<ErrorPage />} />
-        <Route path='/serverError' element={<ServerError />} />
 
         {/* report */}
         <Route path='/sUsers/reports' element={<ProtectedSecRoute><Reports/></ProtectedSecRoute>}></Route>
@@ -398,12 +398,23 @@ const Routers = () => {
         {/* we are using the same page of party list of sales to avoid page repetition */}
         <Route path='/sUsers/partyStatement/partyList' element={<ProtectedSecRoute><SearchPartySalesSecondary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/partyStatement' element={<ProtectedSecRoute><PartyStatement/></ProtectedSecRoute>}></Route>
+
+
+        {/* sales summary */}
+        <Route path='/sUsers/salesSummary' element={<ProtectedSecRoute><SalesSummary/></ProtectedSecRoute>}></Route>
+
+        
+
+        {/* filters */}
         <Route path='/sUsers/dateRange' element={<ProtectedSecRoute><DateRange/></ProtectedSecRoute>}></Route>
-
-        {/* Daybook  */}
-
         <Route path='/sUsers/vouchersLIst' element={<ProtectedSecRoute><VouchersList/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/partyFilterList' element={<ProtectedSecRoute><PartyFilterList/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/statusFilterList' element={<ProtectedSecRoute><StatusFilterList/></ProtectedSecRoute>}></Route>
 
+
+        {/* errorPage */}
+        <Route path='/errorPage' element={<ErrorPage />} />
+        <Route path='/serverError' element={<ServerError />} />
 
     
     </Routes>

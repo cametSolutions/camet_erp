@@ -5,8 +5,10 @@ import { removeAll as removeAllPurchase } from "../../../slices/purchase";
 import { removeAll as removeAllCredit } from "../../../slices/creditNote";
 import { removeAll as removeAllPayment } from "../../../slices/payment";
 import { removeAll as removeAllReceipt } from "../../../slices/receipt";
-import { removeAll as removeAllDate } from "../../../slices/date";
-import { removeAll as removeAllVoucherType } from "../../../slices/voucherType";
+import { removeAll as removeAllDate } from "../../../slices/filterSlices/date";
+import { removeAll as removeAllVoucherType } from "../../../slices/filterSlices/voucherType";
+import { removeAll as removeAllParty } from "../../../slices/filterSlices/partyFIlter";
+import { removeAll as removeAllStatus } from "../../../slices/filterSlices/statusFilter";
 import { useDispatch } from "react-redux";
 import { useEffect } from "react";
 
@@ -24,6 +26,8 @@ function RemoveReduxData() {
     dispatch(removeAllReceipt());
     dispatch(removeAllDate());
     dispatch(removeAllVoucherType());
+    dispatch(removeAllParty());
+    dispatch(removeAllStatus());
   }, [dispatch]); // Adding dispatch to the dependency array
 
   return (

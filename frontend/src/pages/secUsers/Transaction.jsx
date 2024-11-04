@@ -4,8 +4,8 @@ import { useSelector } from "react-redux";
 
 import "react-datepicker/dist/react-datepicker.css";
 
-import SelectDate from "../../components/common/SelectDate";
-import VoucherTypeFilter from "../../components/common/Reports/VoucherTypeFilter";
+import SelectDate from    "../../components/Filters/SelectDate"
+import VoucherTypeFilter from "../../components/Filters/VoucherTypeFilter";
 import useFetch from "../../customHook/useFetch";
 import TransactionTable from "../../components/common/List/TranscationTable";
 import TitleDiv from "../../components/common/TitleDiv";

@@ -61,7 +61,7 @@ const DashboardCards = ({ userType, receiptTotal, handleLinkClick }) => {
           className="flex flex-wrap  "
         >
           <div className="w-full  cursor-pointer ">
-            <div className="flex items-center   px-2 py-4  shadow-md rounded-md bg-slate-50  hover:shadow-lg transition-all duration-300 ease-in-out transform hover:-translate-y-1">
+            <div className="flex items-center   px-2 py-4  shadow-md rounded-md bg-slate-50  hover:shadow-lg transition-all duration-300 ease-in-out transform hover:-translate-y-0.5">
               <div className="bg-white p-1.5 rounded-lg flex justify-center items-center w-12 h-12 md:w-14 md:h-14 shadow-lg">
                 <img src={card.icon} alt={card.title} className="" />
               </div>
