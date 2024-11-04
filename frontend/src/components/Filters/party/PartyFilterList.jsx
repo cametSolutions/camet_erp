@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { useLocation } from "react-router-dom";
 import PartyList from "../../secUsers/main/PartyList";
-import FindUserAndCompany from "../FindUserandCompany";
+import FindUserAndCompany from "../FindUserAndCompany";
 import useFetch from "../../../../src/customHook/useFetch";
 import { setSelectedParty } from "../../../../slices/filterSlices/partyFIlter";
 

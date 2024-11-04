@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import TitleDiv from "../../../../components/common/TitleDiv";
-import FindUserAndCompany from "../../../../components/Filters/FindUserandCompany";
+import FindUserAndCompany from "../../../../components/Filters/FindUserAndCompany";
 import PartyFilter from "../../../../components/Filters/party/PartyFilter";
 import SelectDate from "../../../../components/Filters/SelectDate";
 import StatusFilter from "../../../../components/Filters/status/StatusFilter";
