@@ -1,4 +1,3 @@
-import { useState } from "react";
 import {
   format,
   startOfToday,
@@ -14,10 +13,10 @@ import {
   endOfYear,
 } from "date-fns";
 import { BsFillCalendar2DateFill } from "react-icons/bs";
-import TitleDiv from "../../../../components/common/TitleDiv";
 import { useDispatch, useSelector } from "react-redux";
-import { addDate } from "../../../../../slices/date";
+import { addDate } from '../../../slices/filterSlices/date';
 import { useNavigate } from "react-router-dom";
+import TitleDiv from "../common/TitleDiv";
 
 const DateRange = () => {
   const dispatch = useDispatch();

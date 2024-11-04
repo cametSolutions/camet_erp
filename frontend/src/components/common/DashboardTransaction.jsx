@@ -68,7 +68,7 @@ const DashboardTransaction = ({ filteredData, userType, from }) => {
         <div
           key={_id || index}
           onClick={() => handleTransactionClick(type, _id)}
-          className="bg-white cursor-pointer rounded-md shadow-lg border border-gray-100 flex flex-col justify-between px-4 transition-all duration-150 transform hover:translate-x-1 ease-in-out"
+          className="bg-white cursor-pointer rounded-md shadow-lg border border-gray-100 flex flex-col justify-between px-4 transition-all duration-150 transform hover:translate-x-[2px] ease-in-out"
         >
           <div className="flex justify-start text-xs mt-2 px-2 ">
             <div

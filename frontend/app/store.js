@@ -15,8 +15,10 @@ import receipt from "../slices/receipt";
 import payment from "../slices/payment";
 import creditNote from "../slices/creditNote";
 import debitNote from "../slices/debitNote";
-import date from "../slices/date";
-import voucherType from "../slices/voucherType";
+import date from "../slices/filterSlices/date";
+import voucherType from "../slices/filterSlices/voucherType";
+import partyFilter from "../slices/filterSlices/partyFIlter";
+import statusFilter from "../slices/filterSlices/statusFilter";
 
 export const store = configureStore({
   reducer: {
@@ -38,5 +40,7 @@ export const store = configureStore({
     debitNote: debitNote,
     date: date,
     voucherType: voucherType,
+    partyFilter: partyFilter,
+    statusFilter: statusFilter,
   },
 });

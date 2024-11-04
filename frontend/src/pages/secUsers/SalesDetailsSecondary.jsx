@@ -43,11 +43,12 @@ function SalesDetailsSecondary() {
 
   console.log(data);
   const backHandler = () => {
-    if (location?.state?.from === "dashboard") {
-      navigate("/sUsers/dashboard");
-    } else {
-      navigate("/sUsers/transaction");
-    }
+    navigate(-1)
+    // if (location?.state?.from === "dashboard") {
+    //   navigate("/sUsers/dashboard");
+    // } else {
+    //   navigate("/sUsers/transaction");
+    // }
   };
 
   const handleEdit = () => {
