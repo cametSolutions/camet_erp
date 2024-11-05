@@ -180,6 +180,7 @@ import VouchersList from '../components/common/Reports/VouchersList'
 import SalesSummary from '../pages/secUsers/Reports/salesSummary/SalesSummary'
 import PartyFilterList from '../components/Filters/party/partyFilterList'
 import StatusFilterList from '../components/Filters/status/StatusFilterList'
+import OrderSummary from '../pages/secUsers/Reports/orderSummary/OrderSummary'
 
 const Routers = () => {
   return (
@@ -402,6 +403,8 @@ const Routers = () => {
 
         {/* sales summary */}
         <Route path='/sUsers/salesSummary' element={<ProtectedSecRoute><SalesSummary/></ProtectedSecRoute>}></Route>
+        {/* order summary */}
+        <Route path='/sUsers/orderSummary' element={<ProtectedSecRoute><OrderSummary/></ProtectedSecRoute>}></Route>
 
         
 

@@ -140,8 +140,8 @@ const popular = [
   {
     title: "Order Summary",
     icon: oderSummary,
-    to: "/sUsers/vanSale",
-    active: false,
+    to: "/sUsers/orderSummary",
+    active: true,
     subtitle: "Keep tabs on transactions per party",
   },
   {

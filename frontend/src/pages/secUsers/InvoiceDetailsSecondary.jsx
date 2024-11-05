@@ -43,7 +43,7 @@ function InvoiceDetailsSecondary() {
     if (location?.state?.from === "dashboard") {
       navigate("/sUsers/dashboard");
     } else {
-      navigate("/sUsers/transaction");
+      navigate(-1);
     }
   };
   return (
