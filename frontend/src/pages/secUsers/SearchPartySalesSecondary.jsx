@@ -4,8 +4,9 @@ import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import api from "../../api/api";
 import { useDispatch } from "react-redux";
-import { addParty } from "../../../slices/salesSecondary";
+import {  addParty } from "../../../slices/salesSecondary";
 import PartyList from "../../components/secUsers/main/PartyList";
+import { addAllParties } from "../../../slices/partySlice";
 
 // import { MdCancel } from "react-icons/md";
 
@@ -38,6 +39,7 @@ function SearchPartySalesSecondary() {
         });
 
         setParties(res.data.partyList);
+        dispatch(addAllParties(res.data.partyList));
         setLoading(false);
       } catch (error) {
         console.log(error);
