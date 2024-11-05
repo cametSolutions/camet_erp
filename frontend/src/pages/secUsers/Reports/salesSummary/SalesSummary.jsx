@@ -9,6 +9,8 @@ import useFetch from "../../../../customHook/useFetch";
 import DashboardTransaction from "../../../../components/common/DashboardTransaction";
 import { BarLoader } from "react-spinners";
 import { useLocation } from "react-router-dom";
+import { MdDoNotDisturbOnTotalSilence } from "react-icons/md";
+
 
 function SalesSummary() {
   const [userAndCompanyData, setUserAndCompanyData] = useState(null);
@@ -18,7 +20,6 @@ function SalesSummary() {
   const { _id: partyID } = useSelector(
     (state) => state.partyFilter.selectedParty
   );
-
 
   const transactionsUrl = useMemo(() => {
     if (userAndCompanyData && start && end) {
@@ -45,7 +46,7 @@ function SalesSummary() {
       <div className="sticky top-0 z-50">
         <FindUserAndCompany getUserAndCompany={handleUserAndCompanyData} />
 
-        <TitleDiv title="Sales Summary" from={"/sUsers/reports"}  />
+        <TitleDiv title="Sales Summary" from={"/sUsers/reports"} />
 
         <section className="shadow-lg border-b">
           <SelectDate />
@@ -62,7 +63,13 @@ function SalesSummary() {
         )}
 
         {!transactionLoading && !transactionError && (
-          <section>
+          <section className="flex flex-col">
+            <div className="bg-white p-3">
+              <p className="text-gray-500 font-bold text-xs flex items-center gap-1">
+              <MdDoNotDisturbOnTotalSilence className="inline-block" />   Total Sales Amount :{" "}
+             {transactionData?.data?.totalTransactionAmount || 0}
+              </p>
+            </div>
             <table className="w-full">
               <thead>
                 <tr className="border-b bg-slate-100">
@@ -79,14 +86,13 @@ function SalesSummary() {
         )}
       </div>
 
-      {
-        !transactionLoading && transactionError && (
-          <section>
-            <p className="text-gray-500 text-center font-bold  mt-20">Oops!.. No data found</p>
-          </section>
-        )
-      }
-
+      {!transactionLoading && transactionError && (
+        <section>
+          <p className="text-gray-500 text-center font-bold  mt-20">
+            Oops!.. No data found
+          </p>
+        </section>
+      )}
 
       <section>
         <DashboardTransaction

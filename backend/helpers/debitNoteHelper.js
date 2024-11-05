@@ -22,9 +22,9 @@ export const handleDebitNoteStockUpdates = async (items,session) => {
       3
     );
 
-    console.log("itemCount: ", itemCount);
-    console.log("productBalanceStock: ", productBalanceStock);
-    console.log("newBalanceStock: ", newBalanceStock);
+    // console.log("itemCount: ", itemCount);
+    // console.log("productBalanceStock: ", productBalanceStock);
+    // console.log("newBalanceStock: ", newBalanceStock);
 
     productUpdates.push({
       updateOne: {

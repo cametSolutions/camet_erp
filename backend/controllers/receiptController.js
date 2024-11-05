@@ -207,7 +207,6 @@ export const cancelReceipt = async (req, res) => {
     // Find the receipt to be canceled
     const receipt = await ReceiptModel.findById(receiptId).session(session);
 
-    console.log("receipt", receipt._id);
 
     if (!receipt) {
       await session.abortTransaction();

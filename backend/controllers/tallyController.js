@@ -9,7 +9,6 @@ import { fetchData } from "../helpers/tallyHelper.js";
 
 export const saveDataFromTally = async (req, res) => {
   try {
-    console.log("body", req.body);
     const dataToSave = await req.body.data;
     console.log("dataToSave", dataToSave);
     const { Primary_user_id, cmp_id } = dataToSave[0];
@@ -76,7 +75,6 @@ export const addBankData = async (req, res) => {
         client_code,
       } = bankDetail;
 
-      console.log(bankDetail);
 
       // Check if the same data already exists
       const existingData = await BankDetailsModel.findOne({
