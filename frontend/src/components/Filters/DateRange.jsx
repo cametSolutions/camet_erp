@@ -11,24 +11,53 @@ import {
   subMonths,
   startOfYear,
   endOfYear,
+  parseISO,
 } from "date-fns";
 import { BsFillCalendar2DateFill } from "react-icons/bs";
 import { useDispatch, useSelector } from "react-redux";
-import { addDate } from '../../../slices/filterSlices/date';
+import { addDate } from "../../../slices/filterSlices/date";
 import { useNavigate } from "react-router-dom";
 import TitleDiv from "../common/TitleDiv";
+import { useState } from "react";
 
 const DateRange = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { title } = useSelector((state) => state.date);
-
+  const [showCustomPicker, setShowCustomPicker] = useState(false);
+  const [customStartDate, setCustomStartDate] = useState("");
+  const [customEndDate, setCustomEndDate] = useState("");
 
   const submitHandler = (rangeName, start, end) => {
     dispatch(
       addDate({ rangeName, start: start.toISOString(), end: end.toISOString() })
     );
     navigate(-1);
+  };
+
+  const handleCustomDateSubmit = () => {
+    if (customStartDate && customEndDate) {
+      const startDate = parseISO(customStartDate);
+      const endDate = parseISO(customEndDate);
+
+      // Ensure end date is not before start date
+      if (endDate < startDate) {
+        alert("End date cannot be before start date");
+        return;
+      }
+
+      submitHandler(
+        "Custom Date",
+        startDate,
+        endDate
+      );
+    }
+  };
+
+  // Format date string to display format
+  const formatDisplayDate = (dateString) => {
+    if (!dateString) return "";
+    return format(parseISO(dateString), "dd-MMM-yyyy");
   };
 
   // Function to get the start and end dates for each range
@@ -75,12 +104,12 @@ const DateRange = () => {
         endDate = endOfQuarter(subMonths(new Date(), 3));
         break;
       case "Current Financial Year":
-        startDate = new Date(new Date().getFullYear(), 3, 1); // Starting from April 1st
-        endDate = new Date(new Date().getFullYear() + 1, 2, 31); // Ending on March 31st next year
+        startDate = new Date(new Date().getFullYear(), 3, 1);
+        endDate = new Date(new Date().getFullYear() + 1, 2, 31);
         break;
       case "Previous Financial Year":
-        startDate = new Date(new Date().getFullYear() - 1, 3, 1); // Last year April 1st
-        endDate = new Date(new Date().getFullYear(), 2, 31); // Ending on March 31st this year
+        startDate = new Date(new Date().getFullYear() - 1, 3, 1);
+        endDate = new Date(new Date().getFullYear(), 2, 31);
         break;
       case "Last Year":
         startDate = startOfYear(subMonths(new Date(), 12));
@@ -113,27 +142,101 @@ const DateRange = () => {
     <div className="flex-col">
       <TitleDiv title="Date Range" />
       <div className="flex flex-col px-3 py-2 gap-2">
+        {/* Custom Date Range Picker */}
+        <div
+          className={`${
+            title?.includes(" to ") ? "bg-slate-300 " : ""
+          } flex flex-col cursor-pointer shadow-md p-6 hover:shadow-xl rounded-md hover:bg-slate-300 text-gray-500`}
+          onClick={() => setShowCustomPicker(!showCustomPicker)}
+        >
+          <div className="flex justify-between items-center">
+            <span className="font-bold text-[10px] md:text-xs flex items-center gap-3">
+              <BsFillCalendar2DateFill className="text-xs" /> Custom Range
+            </span>
+            {!showCustomPicker && title?.includes(" to ") && (
+              <span className="font-bold text-[9px] md:text-xs">{title}</span>
+            )}
+          </div>
+
+          {showCustomPicker && (
+            <div
+              className="mt-4 flex flex-col gap-3"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex gap-2 items-center">
+                <div className="flex-1 relative">
+                  <div className="relative flex items-center">
+                    <input
+                      type="date"
+                      value={customStartDate}
+                      onChange={(e) => setCustomStartDate(e.target.value)}
+                      className="absolute inset-0 opacity-0 cursor-pointer w-full"
+                    />
+                    <div className="w-full p-2 rounded border text-sm flex items-center gap-2 bg-white">
+                      <BsFillCalendar2DateFill className="text-gray-500 min-w-[16px]" />
+                      <span className="text-gray-700">
+                        {customStartDate
+                          ? formatDisplayDate(customStartDate)
+                          : "Select date"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex-1 relative">
+                  <div className="relative flex items-center">
+                    <input
+                      type="date"
+                      value={customEndDate}
+                      onChange={(e) => setCustomEndDate(e.target.value)}
+                      className="absolute inset-0 opacity-0 cursor-pointer w-full"
+                    />
+                    <div className="w-full p-2 rounded border text-sm flex items-center gap-2 bg-white">
+                      <BsFillCalendar2DateFill className="text-gray-500 min-w-[16px]" />
+                      <span className="text-gray-700">
+                        {customEndDate
+                          ? formatDisplayDate(customEndDate)
+                          : "Select date"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={handleCustomDateSubmit}
+                disabled={!customStartDate || !customEndDate}
+                className={`px-4 py-2 rounded text-sm text-white ${
+                  !customStartDate || !customEndDate
+                    ? "bg-gray-400 cursor-not-allowed"
+                    : "bg-blue-500 hover:bg-blue-600"
+                }`}
+              >
+                Apply Custom Range
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Predefined Ranges */}
         {ranges.map((rangeName) => {
           const { start, end } = getRangeDates(rangeName);
 
           return (
             <div
               key={rangeName}
-              className={`${title === rangeName ? "bg-slate-300 " : ""}    flex justify-between  cursor-pointer shadow-md  p-6 hover:shadow-xl rounded-md hover:bg-slate-300 text-gray-500  `}
-              // onClick={() =>{ setSelectedRange(rangeName);setRangeDates({startDate:start,endDate:end})}}
+              className={`${
+                title === rangeName ? "bg-slate-300 " : ""
+              } flex justify-between cursor-pointer shadow-md p-6 hover:shadow-xl rounded-md hover:bg-slate-300 text-gray-500`}
               onClick={() => {
                 submitHandler(rangeName, start, end);
               }}
             >
               <span className="font-bold text-[10px] md:text-xs flex items-center gap-3">
-                {" "}
-                <BsFillCalendar2DateFill className="  text-xs " /> {rangeName}
+                <BsFillCalendar2DateFill className="text-xs" /> {rangeName}
               </span>
-              <span className="font-bold text-[9px] md:text-xs ">
-                <span className="font-bold text-[9px] md:text-xs">
-                  {format(start, "dd-MMM-yyyy")}
-                  {rangeName !== "Today" && ` - ${format(end, "dd-MMM-yyyy")}`}
-                </span>
+              <span className="font-bold text-[9px] md:text-xs">
+                {format(start, "dd-MMM-yyyy")}
+                {rangeName !== "Today" && ` - ${format(end, "dd-MMM-yyyy")}`}
               </span>
             </div>
           );
