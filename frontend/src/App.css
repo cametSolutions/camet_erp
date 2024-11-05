@@ -294,3 +294,9 @@ input[type="date"]:hover {
     margin: 0;
   }
 }
+
+.no-focus-box{
+box-shadow: none !important;
+border-color: #b6b6b6 !important;
+
+}

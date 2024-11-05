@@ -15,6 +15,7 @@ import receipt from "../slices/receipt";
 import payment from "../slices/payment";
 import creditNote from "../slices/creditNote";
 import debitNote from "../slices/debitNote";
+import partySlice from "../slices/partySlice";
 
 export const store = configureStore({
   reducer: {
@@ -34,5 +35,6 @@ export const store = configureStore({
     payment: payment,
     creditNote: creditNote,
     debitNote: debitNote,
+    partySlice,
   },
 });
