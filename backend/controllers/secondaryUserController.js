@@ -586,7 +586,7 @@ export const PartyList = async (req, res) => {
     // Fetch parties and secondary user concurrently
     const [partyList, secUser] = await Promise.all([
       PartyModel.find({ cmp_id, Primary_user_id }).select(
-        "_id partyName party_master_id billingAddress shippingAddress mobileNumber gstNo emailID"
+        "_id partyName party_master_id billingAddress shippingAddress mobileNumber gstNo emailID pin country state"
       ),
       SecondaryUser.findById(secUserId),
     ]);
@@ -680,6 +680,10 @@ export const addParty = async (req, res) => {
       creditLimit,
       openingBalanceType,
       openingBalanceAmount,
+      country,
+      state,
+      pin,
+    
     } = req.body;
 
     const Secondary_user_id = req?.sUserId;
@@ -703,6 +707,10 @@ export const addParty = async (req, res) => {
       creditLimit,
       openingBalanceType,
       openingBalanceAmount,
+      country,
+      state,
+      pin,
+    
     });
 
     const result = await party.save();

@@ -12,10 +12,14 @@ export const partySlice = createSlice({
 
       state.allParties = action.payload;
     },
+
+    removeAll: (state) => {
+      Object.assign(state, initialState);
+    },
   },
 });
 
 // Action creators are generated for each case reducer function
-export const { addAllParties} = partySlice.actions;
+export const { addAllParties,removeAll} = partySlice.actions;
 
 export default partySlice.reducer;

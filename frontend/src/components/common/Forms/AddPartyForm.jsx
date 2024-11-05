@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import { accountGroups02 } from "../../../../constants/accountGroups";
 import { toast } from "react-toastify";
 import { useSelector } from "react-redux";
+import { statesData } from "../../../../constants/states.js";
+import { countries } from "../../../../constants/countries.js";
 
 function AddPartyForm({ submitHandler, partyDetails = {}, userType }) {
   const [tab, setTab] = useState("business");
@@ -18,6 +20,9 @@ function AddPartyForm({ submitHandler, partyDetails = {}, userType }) {
   const [creditLimit, setCreditLimit] = useState("");
   const [openingBalanceType, setOpeningBalanceType] = useState("");
   const [openingBalanceAmount, setOpeningBalanceAmount] = useState("");
+  const [country, setCountry] = useState("India");
+  const [state, setState] = useState("");
+  const [pin, setPin] = useState("");
 
   const primarySelectedOrg = useSelector(
     (state) => state.setSelectedOrganization.selectedOrg
@@ -29,7 +34,6 @@ function AddPartyForm({ submitHandler, partyDetails = {}, userType }) {
   const selectedOrganization =
     userType === "primaryUser" ? primarySelectedOrg : secondarySelectedOrg;
 
-  console.log("selectedOrganization", selectedOrganization);
 
   useEffect(() => {
     // setCmp_id(companytId);
@@ -47,6 +51,9 @@ function AddPartyForm({ submitHandler, partyDetails = {}, userType }) {
         creditLimit,
         openingBalanceType,
         openingBalanceAmount,
+        country,
+        state,
+        pin,
       } = partyDetails;
 
       setAccountGroup(accountGroup);
@@ -61,6 +68,10 @@ function AddPartyForm({ submitHandler, partyDetails = {}, userType }) {
       setOpeningBalanceAmount(openingBalanceAmount);
       setOpeningBalanceType(openingBalanceType);
       setCreditLimit(creditLimit);
+      setCountry(country);
+      setState(state);
+      setPin(pin);
+
     }
   }, [partyDetails]);
 
@@ -111,13 +122,15 @@ function AddPartyForm({ submitHandler, partyDetails = {}, userType }) {
       toast.error("Mobile number is required");
       return;
     }
-    
-    if (selectedOrganization?.country === "India" && !/^\d{10}$/.test(mobileNumber)) {
+
+    if (
+      selectedOrganization?.country === "India" &&
+      !/^\d{10}$/.test(mobileNumber)
+    ) {
       toast.error("Mobile number must be 10 digits");
       return;
     }
 
-    
     // if (mobileNumber && !/^\d{10}$/.test(mobileNumber)) {
     //   toast.error("Mobile number must be 10 digits");
     //   return;
@@ -135,6 +148,25 @@ function AddPartyForm({ submitHandler, partyDetails = {}, userType }) {
       return;
     }
 
+
+    // if(!pin){
+    //   toast.error("Pin is required");
+    //   return;
+    // }
+  
+
+    // if (pin && country === "India" && !/^\d{6}$/.test(pin)) {
+    //   toast.error("Invalid PIN number");
+    //   return;
+    // }
+
+    // if(state === "") {
+    //   toast.error("State is required");
+    //   return;
+    // }
+
+
+
     const formData = {
       // cpm_id,
       // Secondary_user_id,
@@ -150,9 +182,11 @@ function AddPartyForm({ submitHandler, partyDetails = {}, userType }) {
       creditLimit,
       openingBalanceType,
       openingBalanceAmount,
+      country,
+      state,
+      pin,
     };
 
-    console.log(formData);
     submitHandler(formData);
   };
 
@@ -257,27 +291,107 @@ function AddPartyForm({ submitHandler, partyDetails = {}, userType }) {
                   </div>
                 </div>
 
-                <div className="flex justify-center ">
-                  <div className="mt-[50px]  border-b border-solid border-[#0066ff43]  ">
-                    <button
-                      type="button"
-                      onClick={() => setTab("business")}
-                      className={` ${
-                        tab === "business" &&
-                        "border-b border-solid border-black"
-                      } py-2 px-5 mr-10  text-[16px] leading-7 text-headingColor font-semibold `}
-                    >
-                      Business Info
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setTab("credit")}
-                      className={` ${
-                        tab === "credit" && "border-b border-solid border-black"
-                      } py-2 px-5  text-[16px] leading-7 text-headingColor font-semibold `}
-                    >
-                      Credit Info
-                    </button>
+                <div className="flex flex-wrap">
+                  {/* <div className="w-full lg:w-12/12 px-4"></div> */}
+                  <div className="w-full lg:w-6/12 px-4">
+                    <div className="relative w-full mb-3">
+                      <label
+                        className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
+                        htmlFor="grid-password"
+                      >
+                        Country
+                      </label>
+                      <select
+                        className="border-0 px-3 mr-12 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                        onChange={(e) => {
+                          setCountry(e.target.value);
+                         
+                          setState("");
+                        }}
+                        value={country}
+                      >
+                        {countries.map((country) => (
+                          <option
+                            value={country?.countryName}
+                            key={country?.countryName}
+                          >
+                            {country?.countryName} ({country?.currency})
+                          </option>
+                        ))}
+
+                        {/* Add more options as needed */}
+                      </select>
+                    </div>
+                  </div>
+                  {country === "India" ? (
+                    <div className="w-full lg:w-6/12 px-4">
+                      <div className="relative w-full mb-3">
+                        <label
+                          className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
+                          htmlFor="grid-password"
+                        >
+                          State
+                        </label>
+                        <select
+                          className="border-0 px-2 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                          onChange={(e) => {
+                            setState(e.target.value);
+                          }}
+                          value={state}
+                        >
+                          <option value="" disabled>
+                            Select a state
+                          </option>
+                          {statesData.map((indianState) => (
+                            <option
+                              key={indianState?.stateName}
+                              value={indianState?.stateName}
+                            >
+                              {indianState?.stateName}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="w-full lg:w-6/12 px-4">
+                      <div className="relative w-full mb-3">
+                        <label
+                          className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
+                          htmlFor="grid-password"
+                        >
+                          State
+                        </label>
+                        <input
+                          className="border-0 px-2 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                          onChange={(e) => {
+                            setState(e.target.value);
+                          }}
+                          value={state}
+                        ></input>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="w-full lg:w-6/12 px-4">
+                    <div className="relative w-full mb-3">
+                      <label
+                        className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
+                        htmlFor="grid-password"
+                      >
+                        Pin
+                      </label>
+
+                      <input
+                        type={country == "India" ? "number" : "text"}
+                        className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                        onChange={(e) => {
+                          setPin(e.target.value);
+                        }}
+                        value={pin}
+                        placeholder="Postal Code"
+                      />
+                    </div>
                   </div>
                 </div>
 
@@ -329,7 +443,7 @@ function AddPartyForm({ submitHandler, partyDetails = {}, userType }) {
                           value={billingAddress}
                           onChange={(e) => setBillingAddress(e.target.value)}
                           type="text"
-                          placeholder={`street address\nState\nPin Code\nCity`}
+                          placeholder={`street address\nCity`}
                           className="border-0 h-32 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                         />
                       </div>
@@ -345,7 +459,7 @@ function AddPartyForm({ submitHandler, partyDetails = {}, userType }) {
                         <textarea
                           value={shippingAddress}
                           onChange={(e) => setShippingAddress(e.target.value)}
-                          placeholder={`street address\nState\nPin Code\nCity`}
+                          placeholder={`street address\nCity`}
                           className="border-0  h-32 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                         />
                       </div>

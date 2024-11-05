@@ -988,6 +988,10 @@ export const addParty = async (req, res) => {
       openingBalanceType,
       openingBalanceAmount,
       party_master_id, // Check if provided
+      country,
+      state,
+      pin,
+    
     } = req.body;
 
     // Create a new party document with either the provided party_master_id or MongoDB generated _id
@@ -1006,6 +1010,10 @@ export const addParty = async (req, res) => {
       creditLimit,
       openingBalanceType,
       openingBalanceAmount,
+      country,
+      state,
+      pin,
+    
       party_master_id: party_master_id || undefined, // Allow Mongoose to assign _id if not provided
     });
 
