@@ -2,14 +2,14 @@
 /* eslint-disable react/prop-types */
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
+import { FaLocationDot } from "react-icons/fa6";
+import Select from "react-select"; // Import React Select
 
 function AddressForm({ getFormData, newBillToShipTo, partyDetails }) {
+  const partyList = useSelector((state) => state?.partySlice?.allParties);
+
   const navigate = useNavigate();
-
- 
-
-
-
   useEffect(() => {
     if (Object.keys(newBillToShipTo).length > 0) {
       const {
@@ -27,6 +27,8 @@ function AddressForm({ getFormData, newBillToShipTo, partyDetails }) {
         shipToMobile,
         shipToEmail,
         shipToSupply,
+        billToParty,
+        shipToParty,
       } = newBillToShipTo;
       setFormData({
         ...formData,
@@ -44,6 +46,8 @@ function AddressForm({ getFormData, newBillToShipTo, partyDetails }) {
         shipToMobile,
         shipToEmail,
         shipToSupply,
+        billToParty,
+        shipToParty,
       });
     } else {
       if (partyDetails && Object.keys(partyDetails).length === 0) {
@@ -56,26 +60,27 @@ function AddressForm({ getFormData, newBillToShipTo, partyDetails }) {
           emailID,
           state_reference,
           mobileNumber,
-          pincode,
+          pin,
           billingAddress,
           shippingAddress,
+          state
         } = partyDetails;
         setFormData({
           ...formData,
           billToName: partyName,
           billToAddress: billingAddress,
-          billToPin: pincode,
+          billToPin: pin,
           billToGst: gstNo,
           billToMobile: mobileNumber,
           billToEmail: emailID,
-          billToSupply: state_reference,
+          billToSupply: state,
           shipToName: partyName,
           shipToAddress: shippingAddress,
-          shipToPin: pincode,
+          shipToPin: pin,
           shipToGst: gstNo,
           shipToMobile: mobileNumber,
           shipToEmail: emailID,
-          shipToSupply: state_reference,
+          shipToSupply: state,
         });
       }
     }
@@ -96,6 +101,8 @@ function AddressForm({ getFormData, newBillToShipTo, partyDetails }) {
     shipToMobile: "",
     shipToEmail: "",
     shipToSupply: "",
+    billToParty: "",
+    shipToParty: "",
   });
 
   const handleInputChange = (e) => {
@@ -106,9 +113,57 @@ function AddressForm({ getFormData, newBillToShipTo, partyDetails }) {
     });
   };
 
+  const handleSelectChange = (selectedOption, actionMeta) => {
+
+    
+    const commonData = {
+      ...formData,
+      [actionMeta.name]: selectedOption,
+    };
+
+    const selectedParty = partyList.find(
+      (party) => party._id === selectedOption.value
+    );
+    if (selectedParty) {
+      if (actionMeta.name === "billToParty") {
+        setFormData({
+          ...commonData,
+
+          // billToParty: selectedParty._id,
+          billToName: selectedParty.partyName,
+          billToAddress: selectedParty.billingAddress,
+          billToPin: selectedParty.pincode,
+          billToGst: selectedParty.gstNo,
+          billToMobile: selectedParty.mobileNumber,
+          billToEmail: selectedParty.emailID,
+          billToSupply: selectedParty.state_reference,
+        });
+      } else {
+        setFormData({
+          ...commonData,
+
+          // shipToParty: selectedParty._id,
+          shipToName: selectedParty.partyName,
+          shipToAddress: selectedParty.shippingAddress,
+          shipToPin: selectedParty.pincode,
+          shipToGst: selectedParty.gstNo,
+          shipToMobile: selectedParty.mobileNumber,
+          shipToEmail: selectedParty.emailID,
+          shipToSupply: selectedParty.state_reference,
+        });
+      }
+    }
+ 
+  };
+
+
+  const partyOptions = partyList?.map((party) => ({
+    value: party._id,
+    label: party.partyName,
+  }));
+
   const handleSubmit = () => {
     // Handle form submission, e.g., save to database
-    console.log("Form Data:", formData);
     const {
       billToName,
       billToAddress,
@@ -124,6 +179,8 @@ function AddressForm({ getFormData, newBillToShipTo, partyDetails }) {
       shipToMobile,
       shipToEmail,
       shipToSupply,
+      billToParty,
+      shipToParty,
     } = formData;
     const requiredFields = [
       { value: billToName, message: "Bill To Name is required" },
@@ -141,85 +198,51 @@ function AddressForm({ getFormData, newBillToShipTo, partyDetails }) {
       { value: shipToEmail, message: "Ship To Email is required" },
       { value: shipToSupply, message: "Ship To Supply is required" },
     ];
-  
+
     for (const field of requiredFields) {
-      if (field.value === null ) { 
+      if (field.value === null) {
         setFormData((prev) => ({
           ...prev,
           field: "",
-      }));
-      
+        }));
+
         return;
       }
     }
-  
-    // const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
-    // const mobileRegex = /^\d{10}$/;
-    // const gstRegex = /^[0-9A-Za-z]{15}$/;
-    // const pinRegex = /^\d{6}$/;
-  
-    // const validations = [
-    //   { value: billToEmail, regex: emailRegex, message: "Invalid Bill To Email" },
-    //   { value: shipToEmail, regex: emailRegex, message: "Invalid Ship To Email" },
-    //   { value: billToMobile, regex: mobileRegex, message: "Bill To Mobile must be 10 digits" },
-    //   { value: shipToMobile, regex: mobileRegex, message: "Ship To Mobile must be 10 digits" },
-    //   { value: billToGst, regex: gstRegex, message: "Invalid Bill To GST" },
-    //   { value: shipToGst, regex: gstRegex, message: "Invalid Ship To GST" },
-    //   { value: billToPin, regex: pinRegex, message: "Invalid Bill To Pin" },
-    //   { value: shipToPin, regex: pinRegex, message: "Invalid Ship To Pin" },
-    // ];
-  
-    // for (const validation of validations) {
-    //   if (!validation.regex.test(validation.value)) {
-    //     toast.error(validation.message);
-    //     return;
-    //   }
-    // }
+
+
     getFormData(formData);
   };
 
+
   return (
-    <div className="px-3">
-      <div className="flex h-screen bg-gray-100">
-        <div className="m-auto ">
-          <div className="mt-5 bg-white rounded-t-lg shadow">
+    <div className="md:px-6">
+      <div className="flex    gap-6 ">
+        <div className="w-full  ">
+          <div className="mt-5 bg-gray-50 rounded-t-lg shadow p-3 sm:p-6">
             <div className="flex">
-              <div className="flex-1 py-5 pl-5 overflow-hidden">
-                <svg
-                  className="inline align-text-top"
-                  height="24px"
-                  viewBox="0 0 24 24"
-                  width="24px"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="#000000"
-                >
-                  <g>
-                    <path
-                      d="m4.88889,2.07407l14.22222,0l0,20l-14.22222,0l0,-20z"
-                      fill="none"
-                      id="svg_1"
-                      stroke="null"
-                    ></path>
-                    <path
-                      d="m7.07935,0.05664c-3.87,0 -7,3.13 -7,7c0,5.25 7,13 7,13s7,-7.75 7,-13c0,-3.87 -3.13,-7 -7,-7zm-5,7c0,-2.76 2.24,-5 5,-5s5,2.24 5,5c0,2.88 -2.88,7.19 -5,9.88c-2.08,-2.67 -5,-7.03 -5,-9.88z"
-                      id="svg_2"
-                    ></path>
-                    <circle
-                      cx="7.04807"
-                      cy="6.97256"
-                      r="2.5"
-                      id="svg_3"
-                    ></circle>
-                  </g>
-                </svg>
-                <h1 className="inline text-2xl font-semibold leading-none">
+              <div className="flex gap-2 items-center py-5 pl-5 overflow-hidden">
+                <FaLocationDot className="w-6 h-6 text-red-800" />
+                <h1 className="inline text-2xl text-blue-400 font-bold  leading-none">
                   Bill To
                 </h1>
               </div>
             </div>
+
             <div className="px-5 pb-5">
+              <label className="block text-sm font-medium text-gray-700 ">
+                Select Party
+              </label>
+              <Select
+                name="billToParty"
+                value={formData.billToParty}
+                options={partyOptions}
+                onChange={handleSelectChange}
+                placeholder="Select a party"
+                className="mt-2 mb-3 no-focus-box border-0 border-b"
+              />
               <label
-                htmlFor="billToName"
+                htmlFor="billToParty"
                 className="block text-sm font-medium text-gray-700"
               >
                 Name
@@ -230,8 +253,9 @@ function AddressForm({ getFormData, newBillToShipTo, partyDetails }) {
                 value={formData.billToName}
                 onChange={handleInputChange}
                 placeholder="Name"
-                className="text-black placeholder-gray-600 w-full px-4 py-2.5 mt-2 text-base transition duration-500 ease-in-out transform border-transparent rounded-lg bg-gray-200 focus:border-blueGray-500 focus:bg-white dark:focus:bg-gray-800 focus:outline-none focus:shadow-outline focus:ring-2 ring-offset-current ring-offset-2 ring-gray-400"
+                className="text-black placeholder-gray-600 w-full px-2 py-2.5 mt-2 text-base transition duration-500 ease-in-out transform border-b border-gray-400 rounded-none outline-none focus:border-b-black "
               />
+
               <label
                 htmlFor="billToAddress"
                 className="block text-sm font-medium text-gray-700 mt-4"
@@ -244,10 +268,10 @@ function AddressForm({ getFormData, newBillToShipTo, partyDetails }) {
                 value={formData.billToAddress}
                 onChange={handleInputChange}
                 placeholder="Address"
-                className="text-black placeholder-gray-600 w-full px-4 py-5 mt-2 text-base transition duration-500 ease-in-out transform border-transparent rounded-lg bg-gray-200 focus:border-blueGray-500 focus:bg-white dark:focus:bg-gray-800 focus:outline-none focus:shadow-outline focus:ring-2 ring-offset-current ring-offset-2 ring-gray-400"
+                className="text-black no-focus-box placeholder-gray-600 w-full px-2 py-2.5 mt-2 text-base border-0 border-b border-gray-400 focus:border-b-black "
               />
-              <div className="flex">
-                <div className="flex-grow w-2/4 pr-2">
+              <div className="flex flex-col sm:flex-row gap-2">
+                <div className=" w-full sm:w-2/4  pr-2">
                   <label
                     htmlFor="billToPin"
                     className="block text-sm font-medium text-gray-700 mt-4"
@@ -258,14 +282,13 @@ function AddressForm({ getFormData, newBillToShipTo, partyDetails }) {
                     id="billToPin"
                     name="billToPin"
                     type="number"
-
                     value={formData.billToPin}
                     onChange={handleInputChange}
                     placeholder="Pin"
-                    className="text-black input-number placeholder-gray-600 w-full px-4 py-2.5 mt-2 text-base transition duration-500 ease-in-out transform border-transparent rounded-lg bg-gray-200 focus:border-blueGray-500 focus:bg-white dark:focus:bg-gray-800 focus:outline-none focus:shadow-outline focus:ring-2 ring-offset-current ring-offset-2 ring-gray-400"
+                    className="text-black placeholder-gray-600 w-full px-2 py-2.5 mt-2 text-base transition duration-500 ease-in-out transform border-0 border-b   no-focus-box border-gray-400 rounded-none outline-none focus:border-b-black "
                   />
                 </div>
-                <div className="flex-grow">
+                <div className="flex-grow w-full sm:w-2/4">
                   <label
                     htmlFor="billToGst"
                     className="block text-sm font-medium text-gray-700 mt-4"
@@ -278,12 +301,12 @@ function AddressForm({ getFormData, newBillToShipTo, partyDetails }) {
                     value={formData.billToGst}
                     onChange={handleInputChange}
                     placeholder="Gst No."
-                    className="text-black placeholder-gray-600 w-full px-4 py-2.5 mt-2 text-base transition duration-500 ease-in-out transform border-transparent rounded-lg bg-gray-200 focus:border-blueGray-500 focus:bg-white dark:focus:bg-gray-800 focus:outline-none focus:shadow-outline focus:ring-2 ring-offset-current ring-offset-2 ring-gray-400"
+                    className="text-black placeholder-gray-600 w-full px-2 py-2.5 mt-2 text-base transition duration-500 ease-in-out transform  no-focus-box   border-0 border-b outline-none "
                   />
                 </div>
               </div>
-              <div className="flex">
-                <div className="flex-grow w-2/4 pr-2">
+              <div className="flex flex-col sm:flex-row gap-2">
+                <div className=" w-full sm:w-2/4 pr-2">
                   <label
                     htmlFor="billToMobile"
                     className="block text-sm font-medium text-gray-700 mt-4"
@@ -297,10 +320,10 @@ function AddressForm({ getFormData, newBillToShipTo, partyDetails }) {
                     onChange={handleInputChange}
                     placeholder="Mobile"
                     type="number"
-                    className="text-black input-number placeholder-gray-600 w-full px-4 py-2.5 mt-2 text-base transition duration-500 ease-in-out transform border-transparent rounded-lg bg-gray-200 focus:border-blueGray-500 focus:bg-white dark:focus:bg-gray-800 focus:outline-none focus:shadow-outline focus:ring-2 ring-offset-current ring-offset-2 ring-gray-400"
+                    className="text-black input-number placeholder-gray-600 w-full px-2 py-2.5 mt-2 text-base no-focus-box border-0 border-b  outline-none "
                   />
                 </div>
-                <div className="flex-grow">
+                <div className="w-full sm:w-2/4">
                   <label
                     htmlFor="billToEmail"
                     className="block text-sm font-medium text-gray-700 mt-4"
@@ -313,7 +336,7 @@ function AddressForm({ getFormData, newBillToShipTo, partyDetails }) {
                     value={formData.billToEmail}
                     onChange={handleInputChange}
                     placeholder="Email"
-                    className="text-black placeholder-gray-600 w-full px-4 py-2.5 mt-2 text-base transition duration-500 ease-in-out transform border-transparent rounded-lg bg-gray-200 focus:border-blueGray-500 focus:bg-white dark:focus:bg-gray-800 focus:outline-none focus:shadow-outline focus:ring-2 ring-offset-current ring-offset-2 ring-gray-400"
+                    className="text-black placeholder-gray-600 w-full px-2 py-2.5 mt-2 text-base no-focus-box border-0 border-b  outline-none"
                   />
                 </div>
               </div>
@@ -329,49 +352,34 @@ function AddressForm({ getFormData, newBillToShipTo, partyDetails }) {
                 value={formData.billToSupply}
                 onChange={handleInputChange}
                 placeholder="Place Of Supply"
-                className="text-black placeholder-gray-600 w-full px-4 py-2.5 mt-2 text-base transition duration-500 ease-in-out transform border-transparent rounded-lg bg-gray-200 focus:border-blueGray-500 focus:bg-white dark:focus:bg-gray-800 focus:outline-none focus:shadow-outline focus:ring-2 ring-offset-current ring-offset-2 ring-gray-400"
+                className="text-black placeholder-gray-600 w-full px-2 py-2.5 mt-2 text-base no-focus-box border-0 border-b  outline-none"
               />
             </div>
           </div>
 
-          <div className=" bg-white rounded-b-lg shadow">
+          <div className=" mt-6 bg-gray-50 rounded-b-lg shadow p-3 sm:p-6">
             <div className="flex">
-              <div className="flex-1 py-5 pl-5 overflow-hidden">
-                <svg
-                  className="inline align-text-top"
-                  height="24px"
-                  viewBox="0 0 24 24"
-                  width="24px"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="#000000"
-                >
-                  <g>
-                    <path
-                      d="m4.88889,2.07407l14.22222,0l0,20l-14.22222,0l0,-20z"
-                      fill="none"
-                      id="svg_1"
-                      stroke="null"
-                    ></path>
-                    <path
-                      d="m7.07935,0.05664c-3.87,0 -7,3.13 -7,7c0,5.25 7,13 7,13s7,-7.75 7,-13c0,-3.87 -3.13,-7 -7,-7zm-5,7c0,-2.76 2.24,-5 5,-5s5,2.24 5,5c0,2.88 -2.88,7.19 -5,9.88c-2.08,-2.67 -5,-7.03 -5,-9.88z"
-                      id="svg_2"
-                    ></path>
-                    <circle
-                      cx="7.04807"
-                      cy="6.97256"
-                      r="2.5"
-                      id="svg_3"
-                    ></circle>
-                  </g>
-                </svg>
-                <h1 className="inline text-2xl font-semibold leading-none">
+              <div className="flex gap-2 items-center py-5 pl-5 overflow-hidden  ">
+                <FaLocationDot className="w-6 h-6 text-red-800" />
+                <h1 className="inline text-2xl text-blue-400 font-bold  leading-none">
                   Ship To
                 </h1>
               </div>
             </div>
             <div className="px-5 pb-5">
+              <label className="block text-sm font-medium text-gray-700 ">
+                Select Party
+              </label>
+              <Select
+                name="shipToParty"
+                value={formData.shipToParty}
+                options={partyOptions}
+                onChange={handleSelectChange}
+                placeholder="Select a party"
+                className="mt-2 mb-3 no-focus-box border-0 border-b"
+              />
               <label
-                htmlFor="shipToName"
+                htmlFor="shipToParty"
                 className="block text-sm font-medium text-gray-700"
               >
                 Name
@@ -382,7 +390,7 @@ function AddressForm({ getFormData, newBillToShipTo, partyDetails }) {
                 value={formData.shipToName}
                 onChange={handleInputChange}
                 placeholder="Name"
-                className="text-black placeholder-gray-600 w-full px-4 py-2.5 mt-2 text-base transition duration-500 ease-in-out transform border-transparent rounded-lg bg-gray-200 focus:border-blueGray-500 focus:bg-white dark:focus:bg-gray-800 focus:outline-none focus:shadow-outline focus:ring-2 ring-offset-current ring-offset-2 ring-gray-400"
+                className="text-black placeholder-gray-600 w-full px-2 py-2.5 mt-2 text-base no-focus-box border-0 border-b  outline-none"
               />
               <label
                 htmlFor="shipToAddress"
@@ -396,10 +404,10 @@ function AddressForm({ getFormData, newBillToShipTo, partyDetails }) {
                 value={formData.shipToAddress}
                 onChange={handleInputChange}
                 placeholder="Address"
-                className="text-black placeholder-gray-600 w-full px-4 py-5 mt-2 text-base transition duration-500 ease-in-out transform border-transparent rounded-lg bg-gray-200 focus:border-blueGray-500 focus:bg-white dark:focus:bg-gray-800 focus:outline-none focus:shadow-outline focus:ring-2 ring-offset-current ring-offset-2 ring-gray-400"
+                className="text-black placeholder-gray-600 w-full px-2 py-5 mt-2 text-base no-focus-box border-0 border-b  outline-none"
               />
-              <div className="flex">
-                <div className="flex-grow w-2/4 pr-2">
+              <div className="flex flex-col sm:flex-row gap-2">
+                <div className="  w-full sm:w-2/4 pr-2">
                   <label
                     htmlFor="shipToPin"
                     className="block text-sm font-medium text-gray-700 mt-4"
@@ -413,10 +421,10 @@ function AddressForm({ getFormData, newBillToShipTo, partyDetails }) {
                     value={formData.shipToPin}
                     onChange={handleInputChange}
                     placeholder="Pin"
-                    className="text-black input-number placeholder-gray-600 w-full px-4 py-2.5 mt-2 text-base transition duration-500 ease-in-out transform border-transparent rounded-lg bg-gray-200 focus:border-blueGray-500 focus:bg-white dark:focus:bg-gray-800 focus:outline-none focus:shadow-outline focus:ring-2 ring-offset-current ring-offset-2 ring-gray-400"
+                    className="text-black input-number placeholder-gray-600 w-full px-2 py-2.5 mt-2 text-base no-focus-box border-0 border-b  outline-none"
                   />
                 </div>
-                <div className="flex-grow">
+                <div className=" w-full sm:w-2/4">
                   <label
                     htmlFor="shipToGst"
                     className="block text-sm font-medium text-gray-700 mt-4"
@@ -429,12 +437,12 @@ function AddressForm({ getFormData, newBillToShipTo, partyDetails }) {
                     value={formData.shipToGst}
                     onChange={handleInputChange}
                     placeholder="Gst No."
-                    className="text-black placeholder-gray-600 w-full px-4 py-2.5 mt-2 text-base transition duration-500 ease-in-out transform border-transparent rounded-lg bg-gray-200 focus:border-blueGray-500 focus:bg-white dark:focus:bg-gray-800 focus:outline-none focus:shadow-outline focus:ring-2 ring-offset-current ring-offset-2 ring-gray-400"
+                    className="text-black placeholder-gray-600 w-full px-2 py-2.5 mt-2 text-base no-focus-box border-0 border-b  outline-none"
                   />
                 </div>
               </div>
-              <div className="flex">
-                <div className="flex-grow w-2/4 pr-2">
+              <div className="flex flex-col sm:flex-row gap-2">
+                <div className=" w-full sm:w-2/4 pr-2">
                   <label
                     htmlFor="shipToMobile"
                     className="block text-sm font-medium text-gray-700 mt-4"
@@ -445,14 +453,13 @@ function AddressForm({ getFormData, newBillToShipTo, partyDetails }) {
                     id="shipToMobile"
                     name="shipToMobile"
                     type="number"
-
                     value={formData.shipToMobile}
                     onChange={handleInputChange}
                     placeholder="Mobile"
-                    className="input-number input-number text-black placeholder-gray-600 w-full px-4 py-2.5 mt-2 text-base transition duration-500 ease-in-out transform border-transparent rounded-lg bg-gray-200 focus:border-blueGray-500 focus:bg-white dark:focus:bg-gray-800 focus:outline-none focus:shadow-outline focus:ring-2 ring-offset-current ring-offset-2 ring-gray-400"
+                    className="input-number input-number text-black placeholder-gray-600 w-full px-2 py-2.5 mt-2 text-base no-focus-box border-0 border-b  outline-none"
                   />
                 </div>
-                <div className="flex-grow">
+                <div className="w-full sm:w-2/4 pr-2">
                   <label
                     htmlFor="shipToEmail"
                     className="block text-sm font-medium text-gray-700 mt-4"
@@ -465,7 +472,7 @@ function AddressForm({ getFormData, newBillToShipTo, partyDetails }) {
                     value={formData.shipToEmail}
                     onChange={handleInputChange}
                     placeholder="Email"
-                    className="text-black placeholder-gray-600 w-full px-4 py-2.5 mt-2 text-base transition duration-500 ease-in-out transform border-transparent rounded-lg bg-gray-200 focus:border-blueGray-500 focus:bg-white dark:focus:bg-gray-800 focus:outline-none focus:shadow-outline focus:ring-2 ring-offset-current ring-offset-2 ring-gray-400"
+                    className="text-black placeholder-gray-600 w-full px-2 py-2.5 mt-2 text-base no-focus-box border-0 border-b  outline-none"
                   />
                 </div>
               </div>
@@ -481,15 +488,15 @@ function AddressForm({ getFormData, newBillToShipTo, partyDetails }) {
                 value={formData.shipToSupply}
                 onChange={handleInputChange}
                 placeholder="Place Of Supply"
-                className="text-black placeholder-gray-600 w-full px-4 py-2.5 mt-2 text-base transition duration-500 ease-in-out transform border-transparent rounded-lg bg-gray-200 focus:border-blueGray-500 focus:bg-white dark:focus:bg-gray-800 focus:outline-none focus:shadow-outline focus:ring-2 ring-offset-current ring-offset-2 ring-gray-400"
+                className="text-black placeholder-gray-600 w-full px-2 py-2.5 mt-2 text-base no-focus-box border-0 border-b  outline-none"
               />
 
-              <div className="pt-4 flex items-center space-x-4">
+              <div className="pt-4 flex items-center space-x-4 mt-10">
                 <button
                   onClick={() => {
                     navigate(-1);
                   }}
-                  className="flex justify-center items-center w-full text-gray-900 px-4 py-3 rounded-md focus:outline-none"
+                  className="flex justify-center items-center w-full text-gray-900 px-2 py-3 rounded-md focus:outline-none "
                 >
                   <svg
                     className="w-6 h-6 mr-3"
@@ -509,7 +516,7 @@ function AddressForm({ getFormData, newBillToShipTo, partyDetails }) {
                 </button>
                 <button
                   onClick={handleSubmit}
-                  className="bg-violet-500 flex justify-center items-center w-full text-white px-4 py-3 rounded-md focus:outline-none"
+                  className="bg-pink-500 flex justify-center items-center w-full text-white px-2 py-3 rounded-md focus:outline-none"
                 >
                   Save
                 </button>
