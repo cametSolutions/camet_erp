@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import TitleDiv from "../../../../components/common/TitleDiv";
-import FindUserAndCompany from "../../../../components/Filters/FindUserAndCompany";
+import FindUserAndCompany from "../../../../components/Filters/FindUserandCompany";
 import PartyFilter from "../../../../components/Filters/party/PartyFilter";
 import SelectDate from "../../../../components/Filters/SelectDate";
 import StatusFilter from "../../../../components/Filters/status/StatusFilter";
@@ -12,7 +12,7 @@ import { BarLoader } from "react-spinners";
 import { MdDoNotDisturbOnTotalSilence } from "react-icons/md";
 
 
-function SalesSummary() {
+function OrderSummary() {
   const [userAndCompanyData, setUserAndCompanyData] = useState(null);
   // const location = useLocation();
 
@@ -27,7 +27,7 @@ function SalesSummary() {
         userAndCompanyData?.org?._id
       }?party_id=${
         partyID ?? ""
-      }&startOfDayParam=${start}&endOfDayParam=${end}&selectedVoucher=sale`;
+      }&startOfDayParam=${start}&endOfDayParam=${end}&selectedVoucher=saleOrder`;
     }
     return null; // Or return an empty string if preferred
   }, [userAndCompanyData, start, end, partyID]);
@@ -46,7 +46,7 @@ function SalesSummary() {
       <div className="sticky top-0 z-50">
         <FindUserAndCompany getUserAndCompany={handleUserAndCompanyData} />
 
-        <TitleDiv title="Sales Summary" from={"/sUsers/reports"} />
+        <TitleDiv title="Order Summary" from={"/sUsers/reports"} />
 
         <section className="shadow-lg border-b">
           <SelectDate />
@@ -98,11 +98,11 @@ function SalesSummary() {
         <DashboardTransaction
           filteredData={transactionData?.data?.combined}
           userType={userAndCompanyData?.userType}
-          from="/sUsers/reports/salesSummary"
+          from="/sUsers/reports/orderSummary"
         />
       </section>
     </div>
   );
 }
 
-export default SalesSummary;
+export default OrderSummary;

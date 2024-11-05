@@ -19,6 +19,7 @@ import date from "../slices/filterSlices/date";
 import voucherType from "../slices/filterSlices/voucherType";
 import partyFilter from "../slices/filterSlices/partyFIlter";
 import statusFilter from "../slices/filterSlices/statusFilter";
+import partySlice from "../slices/partySlice";
 
 export const store = configureStore({
   reducer: {
@@ -42,5 +43,6 @@ export const store = configureStore({
     voucherType: voucherType,
     partyFilter: partyFilter,
     statusFilter: statusFilter,
+    partySlice,
   },
 });

@@ -115,52 +115,48 @@ const others = [
 
 
 const popular = [
-
   {
     title: "Party Statement (Ledger)",
     icon: statement,
     to: "/sUsers/partyStatement/partyList",
     active: true,
-    subtitle: "Keep tabs on transactions per party",
+    subtitle: "Track party-wise balances and history",
   },
   {
     title: "Day Book",
     icon: Daybook,
     to: "/sUsers/transaction",
     active: true,
-    subtitle: "Efficiently log and monitor all your transactions",
+    subtitle: "Daily transaction records and entries",
   },
   {
     title: "Sales Summary",
     icon: salesSummary,
     to: "/sUsers/salesSummary",
     active: true,
-    subtitle: "Keep tabs on transactions per party",
+    subtitle: "Overview of sales performance",
   },
   {
     title: "Order Summary",
     icon: oderSummary,
-    to: "/sUsers/vanSale",
-    active: false,
-    subtitle: "Keep tabs on transactions per party",
+    to: "/sUsers/orderSummary",
+    active: true,
+    subtitle: "Track and manage order status",
   },
   {
     title: "Receipt and Payments",
     icon: reciptAandPayments,
     to: "/sUsers/vanSale",
     active: false,
-    subtitle: "Keep tabs on transactions per party",
+    subtitle: "Monitor cash flow and payments",
   },
   {
     title: "Cash or Bank",
     icon: bank,
     to: "/sUsers/vanSale",
     active: false,
-    subtitle: "Keep tabs on transactions per party",
+    subtitle: "Manage cash and bank transactions",
   },
-
-
-  // Commented out tiles can be uncommented if needed
 ];
 
 const VoucherCards = ({ tab }) => {

@@ -398,18 +398,23 @@ export const transactions = async (req, res) => {
 
     const results = await Promise.all(transactionPromises);
 
-    console.log("results", results);
     
     const combined = results
       .flat()
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+      const totalTransactionAmount = combined.reduce((sum, transaction) => {
+        // Convert to number and handle potential null/undefined values
+        const amount = Number(transaction.enteredAmount) || 0;
+        return sum + amount;
+      }, 0);
 
     if (combined.length > 0) {
       return res.status(200).json({
         message: `${selectedVoucher === 'all' ? 'All transactions' : `${voucherTypeMap[selectedVoucher]?.[0]?.type} transactions`} fetched${
           todayOnly === "true" ? " for today" : ""
         }`,
-        data: { combined },
+        data: { combined, totalTransactionAmount },
       });
     } else {
       return res.status(404).json({ message: "Transactions not found" });

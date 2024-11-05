@@ -44,6 +44,9 @@ export const salesSecondarySlice = createSlice({
     addAllProducts: (state, action) => {
       state.products = action.payload;
     },
+   
+
+
     removeItem: (state, action) => {
       const id = action.payload._id;
       const index = state.items.findIndex((el) => el._id === id);

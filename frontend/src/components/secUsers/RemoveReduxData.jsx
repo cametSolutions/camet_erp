@@ -9,6 +9,7 @@ import { removeAll as removeAllDate } from "../../../slices/filterSlices/date";
 import { removeAll as removeAllVoucherType } from "../../../slices/filterSlices/voucherType";
 import { removeAll as removeAllParty } from "../../../slices/filterSlices/partyFIlter";
 import { removeAll as removeAllStatus } from "../../../slices/filterSlices/statusFilter";
+import { removeAll as removeAllParties } from "../../../slices/partySlice";
 import { useDispatch } from "react-redux";
 import { useEffect } from "react";
 
@@ -28,6 +29,7 @@ function RemoveReduxData() {
     dispatch(removeAllVoucherType());
     dispatch(removeAllParty());
     dispatch(removeAllStatus());
+    dispatch(removeAllParties());
   }, [dispatch]); // Adding dispatch to the dependency array
 
   return (
