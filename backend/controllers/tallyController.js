@@ -1,6 +1,8 @@
 import TallyData from "../models/TallyData.js";
 import TransactionModel from "../models/TransactionModel.js";
 import BankDetailsModel from "../models/bankModel.js";
+import CashModel from "../models/cashModel.js";
+
 import partyModel from "../models/partyModel.js";
 import productModel from "../models/productModel.js";
 import AdditionalCharges from "../models/additionalChargesModel.js";
@@ -135,6 +137,63 @@ export const addBankData = async (req, res) => {
     });
   }
 };
+export const addCashData = async (req, res) => {
+  try {
+    const cashDetailsArray = req.body.cashdetails;
+
+    const { Primary_user_id, cmp_id } = cashDetailsArray[0];
+
+    await CashModel.deleteMany({ Primary_user_id, cmp_id });
+
+    // Loop through each bank detail in the array
+    for (const cashDetails of cashDetailsArray) {
+      const {
+        cmp_id,
+        Primary_user_id,
+        cash_ledname,
+        cash_id,
+        cash_grpname
+      } = cashDetails;
+
+
+      // Check if the same data already exists
+      const existingData = await CashModel.findOne({
+        cmp_id,
+        Primary_user_id,
+        cash_id,
+      });
+
+      if (existingData) {
+        // If data exists, update the existing document
+        const updatedData = await CashModel.findOneAndUpdate(
+          {
+            cmp_id,
+            Primary_user_id,
+            cash_id,
+          },
+          cashDetails,
+          { new: true }
+        );
+
+        // console.log('Bank data updated:', updatedData);
+      } else {
+        // If data doesn't exist, create a new document
+        const newCashData = await CashModel.create(cashDetails);
+
+      }
+    }
+
+    return res.status(200).json({
+      message: "Cash data added/updated successfully",
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      status: false,
+      message: "Internal server error",
+    });
+  }
+};
 
 // @desc for saving products to tally
 // route GET/api/tally/giveTransaction
@@ -160,7 +219,7 @@ export const saveProductsFromTally = async (req, res) => {
               product_master_id,
             });
 
-            
+
 
             if (existingProduct) {
             // console.log("existingProduct", existingProduct.product_name)
@@ -368,4 +427,3 @@ export const givePayments = async (req, res) => {
   const serialNumber = req.params.SNo;
   return fetchData('payment', cmp_id, serialNumber, res);
 };
-

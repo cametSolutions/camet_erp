@@ -1,12 +1,13 @@
 import express from "express";
 import { saveDataFromTally,giveTransaction,addBankData ,
-    saveProductsFromTally,savePartyFromTally,
+    saveProductsFromTally,savePartyFromTally,addCashData,
     saveAdditionalChargesFromTally,giveInvoice,giveSales,giveVanSales,getStockTransfers,giveReceipts,givePayments} from "../controllers/tallyController.js";
 
 const router =express.Router();
 
 router.post('/master/os',saveDataFromTally)
 router.post('/master/bank',addBankData)
+router.post('/master/cash',addCashData)
 router.post('/master/item',saveProductsFromTally)
 router.post('/master/party',savePartyFromTally)
 router.post('/master/addCharges',saveAdditionalChargesFromTally)
