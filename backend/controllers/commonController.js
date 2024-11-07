@@ -398,7 +398,7 @@ export const transactions = async (req, res) => {
 
     const results = await Promise.all(transactionPromises);
 
-    
+
     const combined = results
       .flat()
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
@@ -1059,9 +1059,10 @@ export const getOpeningBalances = async (req,res) => {
       },
     });
 
- 
+
   } catch (error) {
     console.error("Error calculating opening balances:", error);
     throw error;
   }
 };
+

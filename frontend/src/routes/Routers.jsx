@@ -181,6 +181,7 @@ import SalesSummary from '../pages/secUsers/Reports/salesSummary/SalesSummary'
 import PartyFilterList from '../components/Filters/party/PartyFilterList'
 import StatusFilterList from '../components/Filters/status/StatusFilterList'
 import OrderSummary from '../pages/secUsers/Reports/orderSummary/OrderSummary'
+import PaymentSplitting from '../components/secUsers/main/paymentSplitting/PaymentSplitting'
 
 const Routers = () => {
   return (
@@ -297,6 +298,7 @@ const Routers = () => {
         <Route path='/sUsers/shareSalesThreeInch/:id' element={<ProtectedSecRoute><ThreeInchSalesSec/></ProtectedSecRoute>}></Route> 
         <Route path='/sUsers/shareVanSaleThreeInch/:id' element={<ProtectedSecRoute><ThreeInchVanSaleSec/></ProtectedSecRoute>}></Route> 
         <Route path='/sUsers/contacts' element={<ProtectedSecRoute><Contacts/></ProtectedSecRoute>}></Route> 
+        <Route path='/sUsers/sales/paymentSplitting' element={<ProtectedSecRoute><PaymentSplitting/></ProtectedSecRoute>}></Route> 
        
        
        {/* purchase */}

@@ -27,6 +27,8 @@ import DespatchDetails from "../../components/secUsers/DespatchDetails";
 import HeaderTile from "../../components/secUsers/main/HeaderTile";
 import AddPartyTile from "../../components/secUsers/main/AddPartyTile";
 import AddItemTile from "../../components/secUsers/main/AddItemTile";
+import PaymentSplittingIcon from "../../components/secUsers/main/paymentSplitting/PaymentSplittingIcon";
+
 function SalesSecondary() {
   const [additional, setAdditional] = useState(false);
   // const [godownname, setGodownname] = useState("");
@@ -475,6 +477,9 @@ function SalesSecondary() {
           urlToAddItem="/sUsers/addItemSales"
           urlToEditItem="/sUsers/editItemSales"
         />
+
+
+        <PaymentSplittingIcon totalAmount={totalAmount} voucherType="sale" />
 
         <div className="flex justify-between bg-white mt-2 p-3">
           <p className="font-bold text-lg">Total Amount</p>
