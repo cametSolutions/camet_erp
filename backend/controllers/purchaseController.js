@@ -267,6 +267,7 @@ export const cancelPurchase = async (req, res) => {
       existingPurchase.isCancelled = true;
       const cancelledPurchase = await existingPurchase.save({ session });
 
+   
       await session.commitTransaction();
       session.endSession();
 

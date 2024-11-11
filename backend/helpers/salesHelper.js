@@ -5,6 +5,10 @@ import vanSaleModel from "../models/vanSaleModel.js";
 import OrganizationModel from "../models/OragnizationModel.js";
 import { truncateToNDecimals } from "./helper.js";
 import { login } from "../controllers/secondaryUserController.js";
+import cashModel from "../models/cashModel.js";
+import bankModel from "../models/bankModel.js";
+import partyModel from "../models/partyModel.js";
+import mongoose from "mongoose";
 
 export const checkForNumberExistence = async (
   model,
@@ -271,20 +275,19 @@ export const processSaleItems = (items) => {
 
       // Calculate the tax amounts
       cgstAmt = Number(((basePrice * cgstNumber) / 100).toFixed(2));
-      sgstAmt = Number(((basePrice *sgstNumber) / 100).toFixed(2));
+      sgstAmt = Number(((basePrice * sgstNumber) / 100).toFixed(2));
       igstAmt = Number(((basePrice * igstNumber) / 100).toFixed(2));
 
       console.log(
         `  totalPrice:${totalPrice} cgstAmt: ${cgstAmt} sgstAmt: ${sgstAmt} igstAmt: ${igstAmt}`
       );
-
     } else {
       // console.log("igstNumber", igstNumber);
 
       const basePrice = (totalPrice * 100) / (100 + igstNumber);
       // If price is tax-exclusive, calculate taxes based on total price
       cgstAmt = Number(((basePrice * cgstNumber) / 100).toFixed(2));
-      sgstAmt = Number(((basePrice *sgstNumber) / 100).toFixed(2));
+      sgstAmt = Number(((basePrice * sgstNumber) / 100).toFixed(2));
       igstAmt = Number(((basePrice * igstNumber) / 100).toFixed(2));
       console.log(
         ` totalPrice: ${totalPrice}  cgstAmt: ${cgstAmt} sgstAmt: ${sgstAmt} igstAmt: ${igstAmt}`
@@ -306,7 +309,7 @@ export const createSaleRecord = async (
   salesNumber,
   updatedItems,
   updateAdditionalCharge,
-  
+
   session
 ) => {
   try {
@@ -375,7 +378,6 @@ export const updateTallyData = async (
   session,
   valueToUpdateInTally
 ) => {
-
   console.log(lastAmount, "lastAmount");
 
   try {
@@ -386,7 +388,7 @@ export const updateTallyData = async (
       party_id: party?.party_master_id,
       bill_amount: Number(lastAmount),
       bill_date: new Date(),
-      bill_pending_amt:Number(valueToUpdateInTally),
+      bill_pending_amt: Number(valueToUpdateInTally),
       email: party?.emailID,
       mobile_no: party?.mobileNumber,
       party_name: party?.partyName,
@@ -564,6 +566,176 @@ export const revertSaleStockUpdates = async (items, session) => {
     await productModel.bulkWrite(godownUpdates, { session });
   } catch (error) {
     console.error("Error reverting sale stock updates:", error);
+    throw error;
+  }
+};
+
+export const savePaymentSplittingDataInSources = async (
+  paymentSplittingData,
+  salesNumber,
+  saleId,
+  orgId,
+  Primary_user_id,
+  secondaryMobile,
+  session
+) => {
+  try {
+    if (!paymentSplittingData?.splittingData?.length) {
+      throw new Error("Invalid payment splitting data");
+    }
+
+    const updates = await Promise.all(
+      paymentSplittingData.splittingData.map(async (item) => {
+        const mode = item.mode;
+        let selectedModel =
+          mode === "cash"
+            ? cashModel
+            : mode === "online" || mode === "cheque"
+            ? bankModel
+            : null;
+
+        // Handle credit mode
+        if (mode === "credit") {
+          const party = await partyModel.findById(
+            new mongoose.Types.ObjectId(item.sourceId)
+          );
+
+          if (!party) {
+            throw new Error("Invalid party");
+          }
+
+          await updateTallyData(
+            orgId,
+            salesNumber,
+            Primary_user_id,
+            party,
+            item.amount,
+            secondaryMobile,
+            session,
+            item.amount
+          );
+
+          // Return early for credit mode
+          return null;
+        }
+
+        // Only proceed with settlement update for non-credit modes
+        if (!selectedModel) {
+          throw new Error(`Invalid payment mode: ${mode}`);
+        }
+
+        const settlementData = {
+          sales_number: salesNumber,
+          sale_id: saleId,
+          amount: item.amount,
+          created_at: new Date(),
+          payment_mode: mode,
+        };
+
+        const query = {
+          cmp_id: orgId,
+          ...(mode === "cash"
+            ? { cash_id: item.sourceId }
+            : { bank_id: item.sourceId }),
+        };
+
+        const update = {
+          $push: {
+            settlements: settlementData,
+          },
+        };
+
+        const options = {
+          upsert: true,
+          new: true,
+          session,
+        };
+
+        const updatedSource = await selectedModel.findOneAndUpdate(
+          query,
+          update,
+          options
+        );
+        console.log(updatedSource);
+        return updatedSource;
+
+        
+      })
+    );
+
+    // Filter out null values (from credit mode) from updates array
+    return updates.filter(Boolean);
+
+  } catch (error) {
+    console.error("Error in savePaymentSplittingDataInSources:", error);
+    throw error;
+  }
+};
+
+
+export const revertPaymentSplittingDataInSources = async (
+  paymentSplittingData,
+  salesNumber,
+  saleId,
+  orgId,
+  session
+) => {
+  try {
+    if (!paymentSplittingData?.splittingData?.length) {
+      throw new Error("Invalid payment splitting data");
+    }
+
+    const updates = await Promise.all(
+      paymentSplittingData.splittingData.map(async (item) => {
+        const mode = item.mode;
+        let selectedModel =
+          mode === "cash"
+            ? cashModel
+            : mode === "online" || mode === "cheque"
+            ? bankModel
+            : null;
+
+        // If it's credit or invalid mode, skip this iteration
+        if (!selectedModel) {
+          return null;
+        }
+
+        const query = {
+          cmp_id: orgId,
+          ...(mode === "cash"
+            ? { cash_id: item.sourceId }
+            : { bank_id: item.sourceId }),
+          "settlements.sales_number": salesNumber,
+          "settlements.sale_id": saleId
+        };
+
+        const update = {
+          $pull: {
+            settlements: {
+              sales_number: salesNumber,
+              sale_id: saleId
+            }
+          }
+        };
+
+        const options = {
+          new: true,
+          session
+        };
+
+        const updatedSource = await selectedModel.findOneAndUpdate(
+          query,
+          update,
+          options
+        );
+        return updatedSource;
+      })
+    );
+
+    return updates.filter(Boolean);
+
+  } catch (error) {
+    console.error("Error in revertPaymentSplittingDataInSources:", error);
     throw error;
   }
 };

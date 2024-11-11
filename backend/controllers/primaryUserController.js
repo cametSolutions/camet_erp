@@ -880,7 +880,7 @@ export const addParty = async (req, res) => {
 
     // If party_master_id is not provided, use the MongoDB generated _id
     if (!party_master_id) {
-      result.party_master_id = result._id;
+      result.party_master_id = result._id.toString();
       await result.save(); // Save the updated party with party_master_id set to _id
     }
 

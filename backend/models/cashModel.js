@@ -14,6 +14,8 @@ const cashSchema = new mongoose.Schema({
   },
   cash_id: { type: Number, required: true },
   cash_grpname: { type: String },
+  settlements:{type:Array,default:[]},
+
 });
 
 export default mongoose.model("Cash", cashSchema);

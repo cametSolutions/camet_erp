@@ -15,6 +15,7 @@ const BankDetailsSchema = new mongoose.Schema({
   upi_id: { type: String },
   bsr_code: { type: String },
   client_code: { type: String, default: null },
+  settlements:{type:Array,default:[]},
 });
 
 

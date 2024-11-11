@@ -7,6 +7,7 @@ import {
   updateTallyData,
   checkForNumberExistence,
   revertSaleStockUpdates,
+  savePaymentSplittingDataInSources,
 } from "../helpers/salesHelper.js";
 import secondaryUserModel from "../models/secondaryUserModel.js";
 import salesModel from "../models/salesModel.js";
@@ -104,8 +105,6 @@ export const createSale = async (req, res) => {
     }
 
     console.log(valueToUpdateInTally, "valueToUpdateInTally");
-    
-
     await updateTallyData(
       orgId,
       salesNumber,
@@ -116,6 +115,13 @@ export const createSale = async (req, res) => {
       session,
       valueToUpdateInTally
     );
+
+
+    ////save payment splitting data in bank or cash model also
+
+    if(Object.keys(paymentSplittingData).length > 0) {
+      await savePaymentSplittingDataInSources(paymentSplittingData, salesNumber, result._id,orgId, req.owner,secondaryMobile,session);
+     }
 
     await session.commitTransaction();
     res.status(201).json({
@@ -252,13 +258,13 @@ export const editSale = async (req, res) => {
         );
       }
 
-      // await session.commitTransaction();
-      // session.endSession();
-      // return res.status(200).json({
-      //   success: true,
-      //   message: "Sale edited successfully",
-      //   // outStandingUpdateResult
-      // });
+      await session.commitTransaction();
+      session.endSession();
+      return res.status(200).json({
+        success: true,
+        message: "Sale edited successfully",
+        // outStandingUpdateResult
+      });
     } catch (error) {
       await session.abortTransaction();
       session.endSession();
@@ -315,12 +321,21 @@ export const cancelSale = async (req, res) => {
     // Revert stock updates
     await revertSaleStockUpdates(sale.items, session); // Ensure stock updates use session
 
+
     // Update sale status
     sale.isCancelled = true;
     await (vanSaleQuery === "true"
       ? vanSaleModel
       : salesModel
     ).findByIdAndUpdate(saleId, sale, { session }); // Use the session in the update
+
+    //     ///delete tally data of voucher
+
+    // await TallyData.findOneAndDelete({
+    //   bill_no: sale.salesNumber,
+    //   cmp_id: sale.cmp_id,
+    // }, { session });
+
 
     // Commit the transaction
     await session.commitTransaction();

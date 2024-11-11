@@ -689,6 +689,7 @@ export const addParty = async (req, res) => {
       country,
       state,
       pin,
+      party_master_id, // Check if provided
     
     } = req.body;
 
@@ -716,10 +717,17 @@ export const addParty = async (req, res) => {
       country,
       state,
       pin,
+      party_master_id: party_master_id || undefined, // Allow Mongoose to assign _id if not provided
     
     });
 
     const result = await party.save();
+
+      // If party_master_id is not provided, use the MongoDB generated _id
+      if (!party_master_id) {
+        result.party_master_id = result._id.toString();
+        await result.save(); // Save the updated party with party_master_id set to _id
+      }
 
     if (result) {
       return res.status(200).json({
