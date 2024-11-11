@@ -14,6 +14,7 @@ import {login,getSecUserData,fetchOutstandingTotal,
     godownwiseProducts,godownwiseProductsSelf,
     findGodownsNames,getAllSubDetails,
     fetchGodowns,
+    getBankAndCashSources
    } from "../controllers/secondaryUserController.js"
  
 import { createPurchase,editPurchase,cancelPurchase } from '../controllers/purchaseController.js';
@@ -136,6 +137,11 @@ router.delete('/deleteHsn/:id',authSecondary,secondaryIsBlocked,deleteHsn)
 
 // reports
 router.get('/getOpeningBalances/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,getOpeningBalances)
+
+///payment splitting
+
+router.get('/getBankAndCashSources/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,getBankAndCashSources)
+
 
 
 

@@ -22,6 +22,7 @@ const salesSchema = new mongoose.Schema(
     },
     additionalCharges: { type: Array, required: true },
     finalAmount: { type: String, required: true },
+    paymentSplittingData: { type: Object },
     isCancelled: { type: Boolean, default: false },
 
     batchHeights: { type: Object },

@@ -40,7 +40,6 @@ function SalesSecondary() {
   const date = useSelector((state) => state.salesSecondary.date);
   const [selectedDate, setSelectedDate] = useState(new Date());
 
-
   const additionalChargesFromRedux = useSelector(
     (state) => state.salesSecondary.additionalCharges
   );
@@ -55,6 +54,10 @@ function SalesSecondary() {
   );
   const despatchDetails = useSelector(
     (state) => state.salesSecondary.despatchDetails
+  );
+
+  const paymentSplittingReduxData = useSelector(
+    (state) => state?.paymentSplitting?.paymentSplittingData
   );
 
   useEffect(() => {
@@ -154,26 +157,9 @@ function SalesSecondary() {
     };
 
     // console.log(salesNumber);
-    
 
     fetchConfigurationNumber();
   }, []);
-
-  // useEffect(() => {
-  //   const fetchGodownname = async () => {
-  //     try {
-  //       const godown = await api.get(`/api/sUsers/godownsName/${cmp_id}`, {
-  //         withCredentials: true,
-  //       });
-  //       console.log(godown);
-  //       setGodownname(godown.data || "");
-  //     } catch (error) {
-  //       console.log(error);
-  //       toast.error(error.message);
-  //     }
-  //   };
-  //   fetchGodownname();
-  // }, []);
 
   const [rows, setRows] = useState(
     additionalChargesFromRedux.length > 0
@@ -288,7 +274,6 @@ function SalesSecondary() {
     setSubTotal(subTotal);
 
     // console.log ("subTotal", subTotal);
-   
   }, [items]);
 
   const additionalChargesTotal = useMemo(() => {
@@ -307,6 +292,8 @@ function SalesSecondary() {
   const totalAmountNotRounded =
     parseFloat(subTotal) + additionalChargesTotal || parseFloat(subTotal);
   const totalAmount = Math.round(totalAmountNotRounded);
+
+  // console.log("totalAmount", totalAmount);
 
   // console.log(totalAmount);
 
@@ -335,6 +322,14 @@ function SalesSecondary() {
     ]);
   };
 
+
+  const getPaymentSplittingData = (data) => {
+
+    console.log("akjls",data);
+    
+
+  }
+
   const submitHandler = async () => {
     // console.log("haii");
     if (Object.keys(party).length == 0) {
@@ -355,13 +350,11 @@ function SalesSecondary() {
 
       const hasEmptyValue = rows.some((row) => row.value === "");
       if (hasEmptyValue) {
-
         toast.error("Please add a value.");
         return;
       }
       const hasNagetiveValue = rows.some((row) => parseFloat(row.value) < 0);
       if (hasNagetiveValue) {
-
         toast.error("Please add a positive value");
         return;
       }
@@ -384,7 +377,14 @@ function SalesSecondary() {
       selectedDate,
     };
 
-    // console.log(formData);
+    if(Object.keys(paymentSplittingReduxData).length !== 0){
+      formData.paymentSplittingData = paymentSplittingReduxData;
+      // formData.balanceAmount=paymentSplittingReduxData?.balanceAmount;
+    }else{
+      formData.paymentSplittingData={};
+    }
+
+    console.log(formData);
 
     try {
       const res = await api.post(
@@ -408,6 +408,7 @@ function SalesSecondary() {
       console.log(error);
     }
   };
+
 
   // console.log(items);
 
@@ -478,16 +479,19 @@ function SalesSecondary() {
           urlToEditItem="/sUsers/editItemSales"
         />
 
-
-        <PaymentSplittingIcon totalAmount={totalAmount} voucherType="sale" />
-
-        <div className="flex justify-between bg-white mt-2 p-3">
-          <p className="font-bold text-lg">Total Amount</p>
+    
+        <div className="flex justify-between items-center bg-white mt-2 p-3">
+          <p className="font-bold text-md">Total Amount</p>
           <div className="flex flex-col items-center">
-            <p className="font-bold text-lg">₹ {totalAmount.toFixed(2) ?? 0}</p>
+            <p className="font-bold text-md">₹ {totalAmount.toFixed(2) ?? 0}</p>
             <p className="text-[9px] text-gray-400">(rounded)</p>
           </div>
         </div>
+
+        {items.length > 0 && totalAmount > 0 && (
+          <PaymentSplittingIcon totalAmount={totalAmount} party={party}   voucherType="sale"  />
+        )}
+
 
         <div className=" md:hidden ">
           <div className="flex justify-center overflow-hidden w-full">

@@ -59,6 +59,8 @@ import {
 import stockTransferModel from "../models/stockTransferModel.js";
 import creditNoteModel from "../models/creditNoteModel.js";
 import payment from "../../frontend/slices/payment.js";
+import bankModel from "../models/bankModel.js";
+import cashModel from "../models/cashModel.js";
 
 // @desc Login secondary user
 // route POST/api/sUsers/login
@@ -586,7 +588,7 @@ export const PartyList = async (req, res) => {
     // Fetch parties and secondary user concurrently
     const [partyList, secUser] = await Promise.all([
       PartyModel.find({ cmp_id, Primary_user_id }).select(
-        "_id partyName party_master_id billingAddress shippingAddress mobileNumber gstNo emailID pin country state"
+        "_id partyName party_master_id billingAddress shippingAddress mobileNumber gstNo emailID pin country state accountGroup"
       ),
       SecondaryUser.findById(secUserId),
     ]);
@@ -2390,3 +2392,50 @@ export const cancelStockTransfer = async (req, res) => {
     });
   }
 };
+
+
+/**
+ * @desc   To get bank and cash details
+ * @route  Get /api/sUsers/getBankAndCashSources/:cmp_id
+ * @access Public
+ */
+
+
+
+export const getBankAndCashSources = async (req, res) => {
+  const cmp_id = req.params.cmp_id;
+
+
+  try {
+    // Run both queries in parallel with filters for non-null and non-"null" fields
+    const [banks, cashs] = await Promise.all([
+      bankModel.find({
+        cmp_id,
+        bank_ledname: { $nin: [null, "null"] },
+        bank_id: { $exists: true },
+        bank_name: { $nin: [null, "null"] }
+      }).select({ bank_ledname: 1, bank_id: 1, bank_name: 1 }),
+
+      cashModel.find({
+        cmp_id,
+        cash_ledname: { $nin: [null, "null"] },
+        cash_id: { $exists: true }
+      }).select({ cash_ledname: 1, cash_id: 1 })
+    ]);
+
+    // Return fetched data with a consistent structure
+    res.status(200).json({
+      message: "Bank and Cash fetched",
+      data: { banks, cashs },
+    });
+
+  } catch (error) {
+
+ console.log("Error in getting bank and cash sources:", error);
+    res.status(500).json({
+      error: "Internal Server Error",
+      details: error.message,
+    });
+  }
+};
+

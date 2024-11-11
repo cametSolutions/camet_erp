@@ -20,6 +20,7 @@ import voucherType from "../slices/filterSlices/voucherType";
 import partyFilter from "../slices/filterSlices/partyFIlter";
 import statusFilter from "../slices/filterSlices/statusFilter";
 import partySlice from "../slices/partySlice";
+import paymentSplitting from "../slices/filterSlices/paymentSplitting/paymentSplitting"
 
 export const store = configureStore({
   reducer: {
@@ -44,5 +45,6 @@ export const store = configureStore({
     partyFilter: partyFilter,
     statusFilter: statusFilter,
     partySlice,
+    paymentSplitting,
   },
 });

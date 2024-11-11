@@ -30,6 +30,7 @@ export const createSale = async (req, res) => {
       salesNumber,
       party,
       lastAmount,
+      paymentSplittingData,
     } = req.body;
 
     const Secondary_user_id = req.sUserId;
@@ -94,6 +95,17 @@ export const createSale = async (req, res) => {
       session // Pass session
     );
 
+    let valueToUpdateInTally = 0;
+
+    if(Object.keys(paymentSplittingData).length > 0) {
+      valueToUpdateInTally = paymentSplittingData?.balanceAmount;
+    }else{
+      valueToUpdateInTally= lastAmount;
+    }
+
+    console.log(valueToUpdateInTally, "valueToUpdateInTally");
+    
+
     await updateTallyData(
       orgId,
       salesNumber,
@@ -101,8 +113,8 @@ export const createSale = async (req, res) => {
       party,
       lastAmount,
       secondaryMobile,
-
-      session
+      session,
+      valueToUpdateInTally
     );
 
     await session.commitTransaction();

@@ -306,6 +306,7 @@ export const createSaleRecord = async (
   salesNumber,
   updatedItems,
   updateAdditionalCharge,
+  
   session
 ) => {
   try {
@@ -317,6 +318,7 @@ export const createSaleRecord = async (
       despatchDetails,
       lastAmount,
       selectedDate,
+      paymentSplittingData,
     } = req.body;
 
     const Primary_user_id = req.owner;
@@ -351,6 +353,7 @@ export const createSaleRecord = async (
       Secondary_user_id,
       salesNumber,
       createdAt: new Date(selectedDate),
+      paymentSplittingData,
     });
 
     const result = await sales.save({ session });
@@ -369,17 +372,21 @@ export const updateTallyData = async (
   party,
   lastAmount,
   secondaryMobile,
-  session
+  session,
+  valueToUpdateInTally
 ) => {
+
+  console.log(lastAmount, "lastAmount");
+
   try {
     const billData = {
       Primary_user_id,
       bill_no: salesNumber,
       cmp_id: orgId,
       party_id: party?.party_master_id,
-      bill_amount: lastAmount,
+      bill_amount: Number(lastAmount),
       bill_date: new Date(),
-      bill_pending_amt: lastAmount,
+      bill_pending_amt:Number(valueToUpdateInTally),
       email: party?.emailID,
       mobile_no: party?.mobileNumber,
       party_name: party?.partyName,

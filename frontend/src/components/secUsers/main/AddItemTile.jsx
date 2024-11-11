@@ -54,15 +54,15 @@ function AddItemTile({
         <>
           <div>
             <div className="flex justify-between mt-2 bg-white p-3 px-4 w-full  ">
-              <div className="flex  items-center gap-3 font-bold">
-                <IoIosArrowDown className="font-bold" />
-                <p>Items ({items.length})</p>
+              <div className="flex  items-center gap-1 font-bold">
+                <IoIosArrowDown className="font-bold text-xs sm:text-lg" />
+                <p  className="text-xs sm:text-md">Items ({items.length})</p>
               </div>
 
               <Link to={urlToAddItem}>
                 <div className=" flex items-center gap-2 font-bold text-violet-500">
-                  <IoMdAdd className="text-2xl" />
-                  <p>Add Item</p>
+                  <IoMdAdd className="text-lg sm:text-2xl" />
+                  <p className="text-xs sm:text-md"  >Add Item</p>
                 </div>
               </Link>
             </div>
@@ -70,7 +70,7 @@ function AddItemTile({
               <>
                 <div
                   key={index}
-                  className="py-3 mt-0 px-3 md:px-6 bg-white flex items-center gap-1.5 md:gap-4"
+                  className="py-3 mt-0 px-5 md:px-6 bg-white flex items-center gap-1.5 md:gap-4"
                 >
                   {!el?.hasGodownOrBatch && (
                     <div
@@ -83,8 +83,8 @@ function AddItemTile({
                     </div>
                   )}
                   <div className="flex-1">
-                    <div className="flex justify-between font-bold text-xs gap-10">
-                      <p>{el.product_name}</p>
+                    <div className="flex justify-between font-bold text-xs gap-10 ">
+                      <p className="text-[10px] sm:text-xs">{el.product_name}</p>
                       <p className="text-nowrap">
                         ₹{" "}
                         {el?.GodownList.reduce((acc, curr) => {
@@ -273,8 +273,8 @@ function AddItemTile({
               <div className="container mx-auto mt-2 bg-white p-4 text-xs">
                 <div className="flex  items-center justify-between  font-bold  text-[13px]">
                   <div className="flex  items-center gap-3">
-                    <IoIosArrowDown className="font-bold text-[15px]" />
-                    <p className="text-blue-800">Additional Charges</p>
+                    <IoIosArrowDown className="font-bold text-lg sm:text-xl" />
+                    <p className="text-blue-800 text-xs sm:text-base">Additional Charges</p>
                   </div>
                   <button
                     onClick={cancelHandler}
@@ -400,8 +400,8 @@ function AddItemTile({
                     }}
                     className="flex items-center"
                   >
-                    <IoMdAdd className="text-2xl" />
-                    <p>Additional Charges </p>
+                    <IoMdAdd className="text-lg sm:text-xl" />
+                    <p className="text-xs sm:text-base">Additional Charges </p>
                   </div>
                 </div>
               )

@@ -24,6 +24,7 @@ import { Subcategory } from "../models/subDetails.js";
 import { Godown } from "../models/subDetails.js";
 import { PriceLevel } from "../models/subDetails.js";
 import mongoose from "mongoose";
+import cashModel from "../models/cashModel.js";
 
 // @desc toget the details of transaction or sale
 // route get/api/sUsers/getSalesDetails
@@ -320,10 +321,15 @@ export const getCreditNoteDetails = async (req, res) => {
 export const transactions = async (req, res) => {
   const userId = req.sUserId;
   const cmp_id = req.params.cmp_id;
-  const { todayOnly, startOfDayParam, endOfDayParam, party_id, selectedVoucher } = req.query;
+  const {
+    todayOnly,
+    startOfDayParam,
+    endOfDayParam,
+    party_id,
+    selectedVoucher,
+  } = req.query;
 
   try {
-
     // Initialize dateFilter based on provided parameters
     let dateFilter = {};
     if (startOfDayParam && endOfDayParam) {
@@ -353,67 +359,123 @@ export const transactions = async (req, res) => {
 
     // Define voucher type mappings
     const voucherTypeMap = {
-      sale: [{ model: salesModel, type: "Tax Invoice", numberField: "salesNumber" }],
-      saleOrder: [{ model: invoiceModel, type: "Sale Order", numberField: "orderNumber" }],
-      vanSale: [{ model: vanSaleModel, type: "Van Sale", numberField: "salesNumber" }],
-      purchase: [{ model: purchaseModel, type: "Purchase", numberField: "purchaseNumber" }],
-      debitNote: [{ model: debitNoteModel, type: "Debit Note", numberField: "debitNoteNumber" }],
-      creditNote: [{ model: creditNoteModel, type: "Credit Note", numberField: "creditNoteNumber" }],
-      receipt: [{ model: receiptModel, type: "Receipt", numberField: "receiptNumber" }],
-      payment: [{ model: paymentModel, type: "Payment", numberField: "paymentNumber" }],
-      stockTransfer: [{ model: stockTransferModel, type: "Stock Transfer", numberField: "stockTransferNumber" }],
+      sale: [
+        { model: salesModel, type: "Tax Invoice", numberField: "salesNumber" },
+      ],
+      saleOrder: [
+        { model: invoiceModel, type: "Sale Order", numberField: "orderNumber" },
+      ],
+      vanSale: [
+        { model: vanSaleModel, type: "Van Sale", numberField: "salesNumber" },
+      ],
+      purchase: [
+        {
+          model: purchaseModel,
+          type: "Purchase",
+          numberField: "purchaseNumber",
+        },
+      ],
+      debitNote: [
+        {
+          model: debitNoteModel,
+          type: "Debit Note",
+          numberField: "debitNoteNumber",
+        },
+      ],
+      creditNote: [
+        {
+          model: creditNoteModel,
+          type: "Credit Note",
+          numberField: "creditNoteNumber",
+        },
+      ],
+      receipt: [
+        { model: receiptModel, type: "Receipt", numberField: "receiptNumber" },
+      ],
+      payment: [
+        { model: paymentModel, type: "Payment", numberField: "paymentNumber" },
+      ],
+      stockTransfer: [
+        {
+          model: stockTransferModel,
+          type: "Stock Transfer",
+          numberField: "stockTransferNumber",
+        },
+      ],
       all: [
         { model: salesModel, type: "Tax Invoice", numberField: "salesNumber" },
         { model: invoiceModel, type: "Sale Order", numberField: "orderNumber" },
         { model: vanSaleModel, type: "Van Sale", numberField: "salesNumber" },
-        { model: purchaseModel, type: "Purchase", numberField: "purchaseNumber" },
-        { model: debitNoteModel, type: "Debit Note", numberField: "debitNoteNumber" },
-        { model: creditNoteModel, type: "Credit Note", numberField: "creditNoteNumber" },
+        {
+          model: purchaseModel,
+          type: "Purchase",
+          numberField: "purchaseNumber",
+        },
+        {
+          model: debitNoteModel,
+          type: "Debit Note",
+          numberField: "debitNoteNumber",
+        },
+        {
+          model: creditNoteModel,
+          type: "Credit Note",
+          numberField: "creditNoteNumber",
+        },
         { model: receiptModel, type: "Receipt", numberField: "receiptNumber" },
         { model: paymentModel, type: "Payment", numberField: "paymentNumber" },
-        { model: stockTransferModel, type: "Stock Transfer", numberField: "stockTransferNumber" }
-      ]
+        {
+          model: stockTransferModel,
+          type: "Stock Transfer",
+          numberField: "stockTransferNumber",
+        },
+      ],
     };
 
     // Get the appropriate models to query based on selectedVoucher
-    const modelsToQuery = selectedVoucher ? voucherTypeMap[selectedVoucher] : voucherTypeMap.all;
+    const modelsToQuery = selectedVoucher
+      ? voucherTypeMap[selectedVoucher]
+      : voucherTypeMap.all;
 
     if (!modelsToQuery) {
       return res.status(400).json({
         status: false,
-        message: "Invalid voucher type selected"
+        message: "Invalid voucher type selected",
       });
     }
 
     // Create transaction promises based on selected voucher type
-    const transactionPromises = modelsToQuery.map(({ model, type, numberField }) =>
-      aggregateTransactions(
-        model,
-        { ...matchCriteria, ...(userId ? { Secondary_user_id: userId } : {}) },
-        type,
-        numberField,
-
-      )
+    const transactionPromises = modelsToQuery.map(
+      ({ model, type, numberField }) =>
+        aggregateTransactions(
+          model,
+          {
+            ...matchCriteria,
+            ...(userId ? { Secondary_user_id: userId } : {}),
+          },
+          type,
+          numberField
+        )
     );
 
     const results = await Promise.all(transactionPromises);
-
 
     const combined = results
       .flat()
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-      const totalTransactionAmount = combined.reduce((sum, transaction) => {
-        // Convert to number and handle potential null/undefined values
-        const amount = Number(transaction.enteredAmount) || 0;
-        return sum + amount;
-      }, 0);
+    const totalTransactionAmount = combined.reduce((sum, transaction) => {
+      // Convert to number and handle potential null/undefined values
+      const amount = Number(transaction.enteredAmount) || 0;
+      return sum + amount;
+    }, 0);
 
     if (combined.length > 0) {
       return res.status(200).json({
-        message: `${selectedVoucher === 'all' ? 'All transactions' : `${voucherTypeMap[selectedVoucher]?.[0]?.type} transactions`} fetched${
-          todayOnly === "true" ? " for today" : ""
-        }`,
+        message: `${
+          selectedVoucher === "all"
+            ? "All transactions"
+            : `${voucherTypeMap[selectedVoucher]?.[0]?.type} transactions`
+        } fetched${todayOnly === "true" ? " for today" : ""}`,
         data: { combined, totalTransactionAmount },
       });
     } else {
@@ -997,22 +1059,19 @@ export const getPurchaseDetails = async (req, res) => {
   } catch (error) {
     console.error("Error fetching purchase details:", error);
     res.status(500).json({ error: "Internal Server Error" });
-
   }
-
-}
+};
 /**
  * @desc   To calculate opening balances
  * @route  Get /api/sUsers/getOpeningBalances
  * @access Public
  */
-export const getOpeningBalances = async (req,res) => {
+export const getOpeningBalances = async (req, res) => {
   try {
     const userId = req.sUserId;
     const cmp_id = req.params.cmp_id;
-    const {startOfDayParam, party_id } = req.query;
+    const { startOfDayParam, party_id } = req.query;
     const startDate = parseISO(startOfDayParam) || new Date();
-
 
     const openingBalanceDateFilter = {
       createdAt: {
@@ -1024,31 +1083,60 @@ export const getOpeningBalances = async (req,res) => {
       ...openingBalanceDateFilter,
       cmp_id: cmp_id,
       ...(userId ? { Secondary_user_id: userId } : {}),
-      ...(party_id ? { 'party._id': party_id } : {}),
+      ...(party_id ? { "party._id": party_id } : {}),
     };
 
-
-   // Calculate opening balances
-   const openingBalancePromises = [
-    // Debit opening balances
-    aggregateOpeningBalance(debitNoteModel, openingBalanceMatchCriteria, "Debit Note"),
-    aggregateOpeningBalance(salesModel, openingBalanceMatchCriteria, "Tax Invoice"),
-    aggregateOpeningBalance(paymentModel, openingBalanceMatchCriteria, "Payment"),
-    aggregateOpeningBalance(vanSaleModel, openingBalanceMatchCriteria, "Van Sale"),
-    // Credit opening balances
-    aggregateOpeningBalance(purchaseModel, openingBalanceMatchCriteria, "Purchase"),
-    aggregateOpeningBalance(receiptModel, openingBalanceMatchCriteria, "Receipt"),
-    aggregateOpeningBalance(creditNoteModel, openingBalanceMatchCriteria, "Credit Note"),
-  ];
-
+    // Calculate opening balances
+    const openingBalancePromises = [
+      // Debit opening balances
+      aggregateOpeningBalance(
+        debitNoteModel,
+        openingBalanceMatchCriteria,
+        "Debit Note"
+      ),
+      aggregateOpeningBalance(
+        salesModel,
+        openingBalanceMatchCriteria,
+        "Tax Invoice"
+      ),
+      aggregateOpeningBalance(
+        paymentModel,
+        openingBalanceMatchCriteria,
+        "Payment"
+      ),
+      aggregateOpeningBalance(
+        vanSaleModel,
+        openingBalanceMatchCriteria,
+        "Van Sale"
+      ),
+      // Credit opening balances
+      aggregateOpeningBalance(
+        purchaseModel,
+        openingBalanceMatchCriteria,
+        "Purchase"
+      ),
+      aggregateOpeningBalance(
+        receiptModel,
+        openingBalanceMatchCriteria,
+        "Receipt"
+      ),
+      aggregateOpeningBalance(
+        creditNoteModel,
+        openingBalanceMatchCriteria,
+        "Credit Note"
+      ),
+    ];
 
     const openingBalances = await Promise.all(openingBalancePromises);
 
     // Calculate total opening balances
-    const totalDebitOpening = openingBalances.slice(0, 4).reduce((sum, amount) => sum + amount, 0);
-    const totalCreditOpening = openingBalances.slice(4, 7).reduce((sum, amount) => sum + amount, 0);
+    const totalDebitOpening = openingBalances
+      .slice(0, 4)
+      .reduce((sum, amount) => sum + amount, 0);
+    const totalCreditOpening = openingBalances
+      .slice(4, 7)
+      .reduce((sum, amount) => sum + amount, 0);
     const netOpeningBalance = totalDebitOpening - totalCreditOpening;
-
 
     return res.status(200).json({
       success: true,
@@ -1058,11 +1146,10 @@ export const getOpeningBalances = async (req,res) => {
         netOpeningBalance,
       },
     });
-
-
   } catch (error) {
     console.error("Error calculating opening balances:", error);
     throw error;
   }
 };
+
 

@@ -2,7 +2,7 @@ import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
   party: {},
-  
+
   items: [],
   selectedPriceLevel: "",
   additionalCharges: [],
@@ -11,7 +11,7 @@ const initialState = {
   brand: "",
   category: "",
   subcategory: "",
-  id:""
+  id: "",
 };
 
 export const salesSlice = createSlice({
@@ -63,10 +63,11 @@ export const salesSlice = createSlice({
       const discount = action.payload?.discount || 0;
       const discountPercentage = action.payload?.discountPercentage || 0;
       const newTotal = action.payload?.total.toFixed(2) || 0;
-      const godownList =action.payload?.GodownList;
+      const godownList = action.payload?.GodownList;
 
       const indexToUpdate = state.items.findIndex((el) => el._id === id);
-      if (indexToUpdate !== -1) {godownList
+      if (indexToUpdate !== -1) {
+        godownList;
         state.items[indexToUpdate].total = newTotal;
         state.items[indexToUpdate].discount = discount;
         state.items[indexToUpdate].igst = igst;
@@ -109,27 +110,28 @@ export const salesSlice = createSlice({
     setSubCategoryInRedux: (state, action) => {
       state.subcategory = action.payload;
     },
-    setParty:(state,action)=>{
-      state.party=action.payload
+    setParty: (state, action) => {
+      state.party = action.payload;
     },
-    setItem:(state,action)=>{
-      state.items=action.payload
+    setItem: (state, action) => {
+      state.items = action.payload;
     },
-    setSelectedPriceLevel:(state,action)=>{
-      state.selectedPriceLevel=action.payload
+    setSelectedPriceLevel: (state, action) => {
+      state.selectedPriceLevel = action.payload;
     },
-    setAdditionalCharges:(state,action)=>{
-      state.additionalCharges=action.payload
+    setAdditionalCharges: (state, action) => {
+      state.additionalCharges = action.payload;
     },
-    setFinalAmount:(state,action)=>{
-      state.finalAmount=action.payload
+    setFinalAmount: (state, action) => {
+      state.finalAmount = action.payload;
     },
-    
-    saveId:(state,action)=>{
-      state.id=action.payload
+
+    saveId: (state, action) => {
+      state.id = action.payload;
     },
-    
   },
+
+
 });
 
 // Action creators are generated for each case reducer function
@@ -157,7 +159,7 @@ export const {
   setFinalAmount,
   setAdditionalCharges,
   saveId,
-  changeGodownCount
+  changeGodownCount,
 } = salesSlice.actions;
 
 export default salesSlice.reducer;
