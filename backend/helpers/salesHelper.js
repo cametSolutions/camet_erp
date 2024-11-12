@@ -376,7 +376,8 @@ export const updateTallyData = async (
   lastAmount,
   secondaryMobile,
   session,
-  valueToUpdateInTally
+  valueToUpdateInTally,
+  createdBy=""
 ) => {
   console.log(lastAmount, "lastAmount");
 
@@ -395,6 +396,7 @@ export const updateTallyData = async (
       user_id: secondaryMobile || "null",
       source: "sale",
       classification: "Dr",
+      createdBy
     };
 
     const tallyUpdate = await TallyData.findOneAndUpdate(
@@ -612,7 +614,8 @@ export const savePaymentSplittingDataInSources = async (
             item.amount,
             secondaryMobile,
             session,
-            item.amount
+            item.amount,
+            "paymentSplitting"
           );
 
           // Return early for credit mode

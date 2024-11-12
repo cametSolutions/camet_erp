@@ -10,6 +10,7 @@ import { removeAll as removeAllVoucherType } from "../../../slices/filterSlices/
 import { removeAll as removeAllParty } from "../../../slices/filterSlices/partyFIlter";
 import { removeAll as removeAllStatus } from "../../../slices/filterSlices/statusFilter";
 import { removeAll as removeAllParties } from "../../../slices/partySlice";
+import { removeAll as removeAllPaymentSplitting } from "../../../slices/filterSlices/paymentSplitting/paymentSplitting";
 import { useDispatch } from "react-redux";
 import { useEffect } from "react";
 
@@ -30,6 +31,7 @@ function RemoveReduxData() {
     dispatch(removeAllParty());
     dispatch(removeAllStatus());
     dispatch(removeAllParties());
+    dispatch(removeAllPaymentSplitting());
   }, [dispatch]); // Adding dispatch to the dependency array
 
   return (

@@ -2,6 +2,7 @@ import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
   paymentSplittingData:{},
+  initial:true //// for edit sale case/checking data is added in the first api call
 };
 
 export const paymentSplitting = createSlice({
@@ -10,6 +11,7 @@ export const paymentSplitting = createSlice({
   reducers: {
     addPaymentSplittingData: (state, action) => {
       state.paymentSplittingData = action.payload;
+      state.initial=false
     },
     removeAll: (state) => {
       Object.assign(state, initialState);
@@ -21,26 +23,26 @@ export const paymentSplitting = createSlice({
     builder
       .addCase("salesSecondary/updateItem", (state) => {
         // Reset payment splitting when final amount changes
-        Object.assign(state, initialState);
+        state.paymentSplittingData = {};
       })
       .addCase("salesSecondary/addAdditionalCharges", (state) => {
         // Reset payment splitting when new item is added
-        Object.assign(state, initialState);
+        state.paymentSplittingData = {};
       })
       .addCase("salesSecondary/AddFinalAmount", (state) => {
-        Object.assign(state, initialState);
+        state.paymentSplittingData = {};
       })
       .addCase("salesSecondary/removeAdditionalCharge", (state) => {
-        Object.assign(state, initialState);
+        state.paymentSplittingData = {};
       })
       .addCase("salesSecondary/setFinalAmount", (state) => {
-        Object.assign(state, initialState);
+        state.paymentSplittingData = {};
       })
       .addCase("salesSecondary/deleteRow", (state) => {
-        Object.assign(state, initialState);
+        state.paymentSplittingData = {};
       })
       .addCase("salesSecondary/removeGodownOrBatch", (state) => {
-        Object.assign(state, initialState);
+        state.paymentSplittingData = {};
       });
   },
 });

@@ -1,10 +1,7 @@
 /* eslint-disable react/no-unescaped-entities */
 import { useEffect, useState, useMemo } from "react";
-import { IoMdAdd } from "react-icons/io";
 import { Link } from "react-router-dom";
-import { IoPerson } from "react-icons/io5";
 import { useSelector } from "react-redux";
-import { MdOutlineClose } from "react-icons/md";
 import {
   removeParty,
   addAdditionalCharges,
@@ -23,35 +20,25 @@ import {
   changeDate,
 } from "../../../slices/salesSecondary";
 import { useDispatch } from "react-redux";
-import { IoIosArrowDown } from "react-icons/io";
-import { MdCancel } from "react-icons/md";
-import { FiMinus } from "react-icons/fi";
+
 import { toast } from "react-toastify";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../../api/api";
 import { IoIosAddCircle } from "react-icons/io";
-import { MdPlaylistAdd } from "react-icons/md";
 import { IoIosArrowRoundBack } from "react-icons/io";
-import { Button, Label, Modal, TextInput } from "flowbite-react";
-import { PiAddressBookFill } from "react-icons/pi";
+
 import DespatchDetails from "../../components/secUsers/DespatchDetails";
 import HeaderTile from "../../components/secUsers/main/HeaderTile";
 import AddPartyTile from "../../components/secUsers/main/AddPartyTile";
 import AddItemTile from "../../components/secUsers/main/AddItemTile";
+import { addPaymentSplittingData } from "../../../slices/filterSlices/paymentSplitting/paymentSplitting";
+import PaymentSplittingIcon from "../../components/secUsers/main/paymentSplitting/PaymentSplittingIcon";
 
 function EditSale() {
   ////////////////////////////////state//////////////////////////////////////////////////////
 
-  const [openModal, setOpenModal] = useState(false);
-  const [modalInputs, setModalInputs] = useState({
-    startingNumber: "1",
-    widthOfNumericalPart: "",
-    prefixDetails: "",
-    suffixDetails: "",
-  });
+
   const [additional, setAdditional] = useState(false);
-  const [godownname, setGodownname] = useState("");
-  const [refreshCmp, setrefreshCmp] = useState(false);
   const [salesNumber, setSalesNumber] = useState("");
   const date = useSelector((state) => state.salesSecondary.date);
   const [selectedDate, setSelectedDate] = useState(date);
@@ -96,6 +83,11 @@ function EditSale() {
   const salesDetailsFromRedux = useSelector((state) => state.salesSecondary);
   console.log(salesDetailsFromRedux);
 
+  const {paymentSplittingData:paymentSplittingReduxData,initial:paymentSplittingInitial} = useSelector(state => state?.paymentSplitting);
+
+console.log("paymentSplittingReduxData",paymentSplittingReduxData,"paymentSplittingInitial",paymentSplittingInitial);
+
+
   const {
     party: partyFromRedux,
     items: itemsFromRedux,
@@ -129,9 +121,10 @@ function EditSale() {
           salesNumber,
           despatchDetails,
           createdAt,
+          paymentSplittingData
         } = res.data.data;
 
-        console.log(createdAt);
+        console.log("paymentSplittingData",paymentSplittingData);
 
         // // additionalCharges: [ { option: 'option 1', value: '95', action: 'add' } ],
         if (Object.keys(partyFromRedux) == 0) {
@@ -143,8 +136,8 @@ function EditSale() {
         if (itemsFromRedux.length == 0) {
           dispatch(setItem(items));
         }
-        if (finalAmount) {
-          dispatch(setFinalAmount(finalAmountFromRedux));
+        if (finalAmountFromRedux =="") {
+          dispatch(setFinalAmount(finalAmount));
         }
 
         if (!dateFromRedux) {
@@ -157,6 +150,10 @@ function EditSale() {
         }
         if (additionalChargesFromRedux.length == 0) {
           dispatch(setAdditionalCharges(additionalCharges));
+        }
+
+        if(Object.keys(paymentSplittingReduxData).length == 0 && paymentSplittingInitial===true){
+          dispatch(addPaymentSplittingData(paymentSplittingData));
         }
 
         // dispatch(setFinalAmount(finalAmount));
@@ -252,7 +249,7 @@ function EditSale() {
     };
 
     fetchSingleOrganization();
-  }, [refreshCmp, orgId]);
+  }, [orgId]);
 
 
 
@@ -446,6 +443,13 @@ function EditSale() {
       selectedDate: dateFromRedux || new Date(),
     };
 
+    if(Object.keys(paymentSplittingReduxData).length !== 0){
+      formData.paymentSplittingData = paymentSplittingReduxData;
+      // formData.balanceAmount=paymentSplittingReduxData?.balanceAmount;
+    }else{
+      formData.paymentSplittingData={};
+    }
+
     console.log(formData);
 
     try {
@@ -473,34 +477,7 @@ function EditSale() {
     }
   };
 
-  function onCloseModal() {
-    setOpenModal(false);
-    // setEmail('');
-  }
 
-  const saveSalesNumber = async () => {
-    try {
-      const res = await api.post(
-        `/api/sUsers/saveSalesNumber/${orgId}`,
-        modalInputs,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-          withCredentials: true,
-        }
-      );
-
-      toast(res.data.message);
-      setOpenModal(false);
-      setrefreshCmp(!refreshCmp);
-
-      console.log(res);
-    } catch (error) {
-      console.log(error);
-      toast.error(error.response.data.message);
-    }
-  };
 
   return (
     <div className="">
@@ -517,6 +494,7 @@ function EditSale() {
         </div>
 
         {/* invoiec date */}
+        
         <HeaderTile
           title={"Sale"}
           number={salesNumber}
@@ -576,6 +554,13 @@ function EditSale() {
             <p className="text-[9px] text-gray-400">(rounded)</p>
           </div>
         </div>
+
+
+        {items.length > 0 && totalAmount > 0 && (
+          <PaymentSplittingIcon totalAmount={totalAmount} party={party}   voucherType="sale"  />
+        )}
+
+
 
         <div className=" md:hidden ">
           <div className="flex justify-center overflow-hidden w-full">

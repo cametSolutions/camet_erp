@@ -8,6 +8,7 @@ import useFetch from "../../../../customHook/useFetch";
 import { BarLoader } from "react-spinners";
 import { addPaymentSplittingData } from "../../../../../slices/filterSlices/paymentSplitting/paymentSplitting";
 import { useDispatch } from "react-redux";
+import { addAllParties } from "../../../../../slices/partySlice";
 
 const CashOption = ({ cash }) => (
   <option value={cash.cash_id}>{cash.cash_ledname}</option>
@@ -31,11 +32,16 @@ const PaymentSplitting = () => {
   );
   const parties = useSelector((state) => state?.partySlice?.allParties) || [];
   const subTotal = location.state.totalAmount;
-  const paymentSplittingReduxData = useSelector(state => state?.paymentSplitting?.paymentSplittingData);
+  const paymentSplittingReduxData = useSelector(
+    (state) => state?.paymentSplitting?.paymentSplittingData
+  );
 
   const [balanceAmount, setBalanceAmount] = useState(0);
   const [banks, setBanks] = useState([]);
   const [cash, setCash] = useState([]);
+  const [loadingMain, setLoadingMain] = useState(false);
+
+  // const [parties, setParties] = useState("");
 
   const initialPayments = [
     {
@@ -70,17 +76,26 @@ const PaymentSplitting = () => {
 
   const [payments, setPayments] = useState(initialPayments);
 
-  useEffect(() => {
-    if (parties.length === 0) {
-      navigate(location?.state?.from,{replace:true});
-    }
-  }, [parties]);
+  // useEffect(() => {
+  //   if (parties.length === 0) {
+  //     navigate(location?.state?.from, { replace: true });
+  //   }
+  // }, [parties]);
+
+  
 
   const fetchUrl = useMemo(() => {
     return cmp_id ? `/api/sUsers/getBankAndCashSources/${cmp_id}` : null;
   }, [cmp_id]);
 
+  const fetchUrlPartyList = useMemo(() => {
+    return cmp_id && parties.length === 0 ? `/api/sUsers/PartyList/${cmp_id}` : null;
+  }, [cmp_id,parties]);
+
   const { data = [], loading } = useFetch(fetchUrl);
+  const { data: partyData = [], partyLoading } = useFetch(fetchUrlPartyList);
+
+  const isLoading = loading || partyLoading;
 
   useEffect(() => {
     if (data) {
@@ -89,13 +104,23 @@ const PaymentSplitting = () => {
     }
   }, [data]);
 
+  useEffect(() => {
+    if (partyData &&parties.length === 0) {
+      console.log(partyData);
+
+      dispatch(addAllParties(partyData.partyList));
+    }
+  }, [partyData]);
+
+
+
   // Update payments from Redux data
   useEffect(() => {
     if (Object.keys(paymentSplittingReduxData).length > 0) {
       const savedData = paymentSplittingReduxData.splittingData;
-      
-      const updatedPayments = initialPayments.map(payment => {
-        const savedPayment = savedData.find(sp => sp.mode === payment.mode);
+
+      const updatedPayments = initialPayments.map((payment) => {
+        const savedPayment = savedData.find((sp) => sp.mode === payment.mode);
         if (savedPayment) {
           return {
             ...payment,
@@ -108,9 +133,12 @@ const PaymentSplitting = () => {
       });
 
       setPayments(updatedPayments);
-      
+
       // Update balance amount
-      const totalPaid = savedData.reduce((sum, payment) => sum + Number(payment.amount), 0);
+      const totalPaid = savedData.reduce(
+        (sum, payment) => sum + Number(payment.amount),
+        0
+      );
       setBalanceAmount(subTotal - totalPaid);
     }
   }, [paymentSplittingReduxData]);
@@ -182,7 +210,7 @@ const PaymentSplitting = () => {
     };
 
     dispatch(addPaymentSplittingData(finalData));
-    navigate(location?.state?.from,{replace:true});
+    navigate(location?.state?.from, { replace: true });
   };
 
   // Mobile payment card component
@@ -226,18 +254,25 @@ const PaymentSplitting = () => {
     </div>
   );
 
+
+  
+
   return (
     <>
       <div className="sticky top-0 z-50">
         <TitleDiv title="Payment Splitting" from={location?.state?.from} />
-        {loading && (
+        {isLoading && (
           <section className="w-full">
             <BarLoader color="#9900ff" width="100%" className="mt-[0.5px]" />
           </section>
         )}
       </div>
 
-      <div className={`${loading ? "opacity-50 pointer-events-none" : ""} p-0 py-3 sm:p-6 sm:mt-2 mx-4 sm:mx-5 shadow-lg bg-slate-50`}>
+      <div
+        className={`${
+          isLoading ? "opacity-50 pointer-events-none" : ""
+        } p-0 py-3 sm:p-6 sm:mt-2 mx-4 sm:mx-5 shadow-lg bg-slate-50`}
+      >
         <div className="bg-white rounded-lg shadow-lg mb-6">
           <div className="">
             {/* Desktop view */}
@@ -252,11 +287,16 @@ const PaymentSplitting = () => {
                 </thead>
                 <tbody className="mt-4">
                   {payments.map((payment, index) => (
-                    <tr key={payment.mode} className="border-b hover:bg-gray-50">
+                    <tr
+                      key={payment.mode}
+                      className="border-b hover:bg-gray-50"
+                    >
                       <td className="p-5 py-6">
                         <div className="flex items-center gap-4 text-gray-700">
                           <FaRegCircleDot className="h-3 w-3" />
-                          <span className="font-bold text-sm">{payment.title}</span>
+                          <span className="font-bold text-sm">
+                            {payment.title}
+                          </span>
                         </div>
                       </td>
                       <td className="p-3">
@@ -276,11 +316,20 @@ const PaymentSplitting = () => {
                           </option>
                           {paymentOptions[payment.mode]?.map((option) => {
                             if (payment.mode === "cash") {
-                              return <CashOption key={option._id} cash={option} />;
-                            } else if (payment.mode === "online" || payment.mode === "cheque") {
-                              return <BankOption key={option._id} bank={option} />;
+                              return (
+                                <CashOption key={option._id} cash={option} />
+                              );
+                            } else if (
+                              payment.mode === "online" ||
+                              payment.mode === "cheque"
+                            ) {
+                              return (
+                                <BankOption key={option._id} bank={option} />
+                              );
                             } else {
-                              return <PartyOption key={option._id} party={option} />;
+                              return (
+                                <PartyOption key={option._id} party={option} />
+                              );
                             }
                           })}
                         </select>
@@ -290,7 +339,9 @@ const PaymentSplitting = () => {
                           type="number"
                           placeholder="Enter amount"
                           value={payment.amount}
-                          onChange={(e) => handleAmountChange(index, e.target.value)}
+                          onChange={(e) =>
+                            handleAmountChange(index, e.target.value)
+                          }
                           className="w-full p-2 text-sm border-b outline-none border-0 no-focus-box"
                         />
                       </td>
@@ -303,7 +354,11 @@ const PaymentSplitting = () => {
             {/* Mobile view */}
             <div className="sm:hidden p-2">
               {payments.map((payment, index) => (
-                <PaymentCard key={payment.mode} payment={payment} index={index} />
+                <PaymentCard
+                  key={payment.mode}
+                  payment={payment}
+                  index={index}
+                />
               ))}
             </div>
 

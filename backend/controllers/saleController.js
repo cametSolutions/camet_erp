@@ -113,7 +113,8 @@ export const createSale = async (req, res) => {
       lastAmount,
       secondaryMobile,
       session,
-      valueToUpdateInTally
+      valueToUpdateInTally,
+      "sale"
     );
 
 
@@ -165,6 +166,7 @@ export const editSale = async (req, res) => {
     lastAmount,
     salesNumber,
     selectedDate,
+    paymentSplittingData={}
   } = req.body;
 
   const vanSaleQuery = req.query.vanSale;
@@ -186,11 +188,6 @@ export const editSale = async (req, res) => {
           .status(404)
           .json({ success: false, message: "Sale not found" });
       }
-
-
-     
-
-
 
       await revertSaleStockUpdates(existingSale.items, session);
 
@@ -219,14 +216,33 @@ export const editSale = async (req, res) => {
         Secondary_user_id: req.secondaryUserId,
         salesNumber: salesNumber,
         createdAt: new Date(selectedDate),
+        paymentSplittingData
       };
 
       await model.findByIdAndUpdate(saleId, updateData, { new: true, session });
 
-      const newBillValue = Number(lastAmount);
-      const oldBillValue = Number(existingSale.finalAmount);
-      const diffBillValue = newBillValue - oldBillValue;
+      let oldBillBalance ;
 
+      if(existingSale?.paymentSplittingData){
+        oldBillBalance = existingSale?.paymentSplittingData?.balanceAmount;
+      }else{
+        oldBillBalance = lastAmount;
+      }
+      let newBillBalance ;
+
+      if(Object.keys(paymentSplittingData).length > 0){
+        newBillBalance = paymentSplittingData?.balanceAmount;
+      }else{
+        newBillBalance = lastAmount;
+      }
+
+
+      // const newBillValue = Number(lastAmount);
+      // const oldBillValue = Number(existingSale.finalAmount);
+      const diffBillValue = Number(newBillBalance) - Number(oldBillBalance);
+
+      console.log("oldBillBalance", oldBillBalance);
+      console.log("newBillBalance", newBillBalance);
       console.log("diffBillValue", diffBillValue);
       
 
@@ -251,7 +267,7 @@ export const editSale = async (req, res) => {
           {
             $set: {
               bill_pending_amt: newOutstanding,
-              bill_amount: newBillValue,
+              bill_amount: lastAmount,
             },
           },
           { new: true, session }
