@@ -114,9 +114,6 @@ export const handleSaleStockUpdates = async (
   revert = false,
   session
 ) => {
-  const productUpdates = [];
-  const godownUpdates = [];
-
   for (const item of items) {
     const product = await productModel
       .findOne({ _id: item._id })
@@ -133,12 +130,12 @@ export const handleSaleStockUpdates = async (
       3
     );
 
-    productUpdates.push({
-      updateOne: {
-        filter: { _id: product._id },
-        update: { $set: { balance_stock: newBalanceStock } },
-      },
-    });
+    // Update product balance stock
+    await productModel.updateOne(
+      { _id: product._id },
+      { $set: { balance_stock: newBalanceStock } },
+      { session }
+    );
 
     if (item.hasGodownOrBatch) {
       for (const godown of item.GodownList) {
@@ -157,14 +154,13 @@ export const handleSaleStockUpdates = async (
               3
             );
 
-            godownUpdates.push({
-              updateOne: {
-                filter: { _id: product._id, "GodownList.batch": godown.batch },
-                update: {
-                  $set: { "GodownList.$.balance_stock": newGodownStock },
-                },
+            await productModel.updateOne(
+              { _id: product._id, "GodownList.batch": godown.batch },
+              {
+                $set: { "GodownList.$.balance_stock": newGodownStock }
               },
-            });
+              { session }
+            );
           }
         } else if (godown.godown_id && godown.batch) {
           const godownIndex = product.GodownList.findIndex(
@@ -179,20 +175,21 @@ export const handleSaleStockUpdates = async (
               3
             );
 
-            godownUpdates.push({
-              updateOne: {
-                filter: { _id: product._id },
-                update: {
-                  $set: { "GodownList.$[elem].balance_stock": newGodownStock },
-                },
+            await productModel.updateOne(
+              { _id: product._id },
+              {
+                $set: { "GodownList.$[elem].balance_stock": newGodownStock }
+              },
+              {
                 arrayFilters: [
                   {
                     "elem.godown_id": godown.godown_id,
-                    "elem.batch": godown.batch,
-                  },
+                    "elem.batch": godown.batch
+                  }
                 ],
-              },
-            });
+                session
+              }
+            );
           }
         } else if (godown.godown_id && !godown?.batch) {
           const godownIndex = product.GodownList.findIndex(
@@ -207,17 +204,13 @@ export const handleSaleStockUpdates = async (
               3
             );
 
-            godownUpdates.push({
-              updateOne: {
-                filter: {
-                  _id: product._id,
-                  "GodownList.godown_id": godown.godown_id,
-                },
-                update: {
-                  $set: { "GodownList.$.balance_stock": newGodownStock },
-                },
+            await productModel.updateOne(
+              { _id: product._id, "GodownList.godown_id": godown.godown_id },
+              {
+                $set: { "GodownList.$.balance_stock": newGodownStock }
               },
-            });
+              { session }
+            );
           }
         }
       }
@@ -231,17 +224,13 @@ export const handleSaleStockUpdates = async (
         return { ...godown, balance_stock: newGodownStock };
       });
 
-      godownUpdates.push({
-        updateOne: {
-          filter: { _id: product._id },
-          update: { $set: { GodownList: product.GodownList } },
-        },
-      });
+      await productModel.updateOne(
+        { _id: product._id },
+        { $set: { GodownList: product.GodownList } },
+        { session }
+      );
     }
   }
-
-  await productModel.bulkWrite(productUpdates, { session });
-  await productModel.bulkWrite(godownUpdates, { session });
 };
 
 export const processSaleItems = (items) => {
@@ -419,13 +408,11 @@ export const updateTallyData = async (
 
 export const revertSaleStockUpdates = async (items, session) => {
   try {
-    const productUpdates = [];
-    const godownUpdates = [];
-
     for (const item of items) {
       const product = await productModel
         .findOne({ _id: item._id })
-        .session(session); // Use the session passed as parameter
+        .session(session);
+        
       if (!product) {
         throw new Error(`Product not found for item ID: ${item._id}`);
       }
@@ -433,17 +420,16 @@ export const revertSaleStockUpdates = async (items, session) => {
       const itemCount = parseFloat(item.count);
       const productBalanceStock = parseFloat(product.balance_stock);
       const newBalanceStock = truncateToNDecimals(
-        productBalanceStock + itemCount, // Revert stock by adding back
+        productBalanceStock + itemCount,
         3
       );
 
-      // Prepare product update operation
-      productUpdates.push({
-        updateOne: {
-          filter: { _id: product._id },
-          update: { $set: { balance_stock: newBalanceStock } },
-        },
-      });
+      // Update product balance stock
+      await productModel.updateOne(
+        { _id: product._id },
+        { $set: { balance_stock: newBalanceStock } },
+        { session }
+      );
 
       // Revert godown and batch updates
       if (item.hasGodownOrBatch) {
@@ -453,90 +439,71 @@ export const revertSaleStockUpdates = async (items, session) => {
               (g) => g.batch === godown.batch
             );
 
-            if (godownIndex !== -1) {
-              if (godown.count && godown.count > 0) {
-                const currentGodownStock =
-                  product.GodownList[godownIndex].balance_stock || 0;
-                const newGodownStock = truncateToNDecimals(
-                  currentGodownStock + godown.count, // Revert stock by adding back
-                  3
-                );
+            if (godownIndex !== -1 && godown.count && godown.count > 0) {
+              const currentGodownStock =
+                product.GodownList[godownIndex].balance_stock || 0;
+              const newGodownStock = truncateToNDecimals(
+                currentGodownStock + godown.count,
+                3
+              );
 
-                // Prepare godown update operation
-                godownUpdates.push({
-                  updateOne: {
-                    filter: {
-                      _id: product._id,
-                      "GodownList.batch": godown.batch,
-                    },
-                    update: {
-                      $set: { "GodownList.$.balance_stock": newGodownStock },
-                    },
-                  },
-                });
-              }
+              await productModel.updateOne(
+                { _id: product._id, "GodownList.batch": godown.batch },
+                {
+                  $set: { "GodownList.$.balance_stock": newGodownStock }
+                },
+                { session }
+              );
             }
           } else if (godown.godown_id && godown.batch) {
             const godownIndex = product.GodownList.findIndex(
-              (g) =>
-                g.batch === godown.batch && g.godown_id === godown.godown_id
+              (g) => g.batch === godown.batch && g.godown_id === godown.godown_id
             );
 
-            if (godownIndex !== -1) {
-              if (godown.count && godown.count > 0) {
-                const currentGodownStock =
-                  product.GodownList[godownIndex].balance_stock || 0;
-                const newGodownStock = truncateToNDecimals(
-                  currentGodownStock + godown.count, // Revert stock by adding back
-                  3
-                );
+            if (godownIndex !== -1 && godown.count && godown.count > 0) {
+              const currentGodownStock =
+                product.GodownList[godownIndex].balance_stock || 0;
+              const newGodownStock = truncateToNDecimals(
+                currentGodownStock + godown.count,
+                3
+              );
 
-                // Prepare godown update operation
-                godownUpdates.push({
-                  updateOne: {
-                    filter: { _id: product._id },
-                    update: {
-                      $set: {
-                        "GodownList.$[elem].balance_stock": newGodownStock,
-                      },
-                    },
-                    arrayFilters: [
-                      {
-                        "elem.godown_id": godown.godown_id,
-                        "elem.batch": godown.batch,
-                      },
-                    ],
-                  },
-                });
-              }
+              await productModel.updateOne(
+                { _id: product._id },
+                {
+                  $set: { "GodownList.$[elem].balance_stock": newGodownStock }
+                },
+                {
+                  arrayFilters: [
+                    {
+                      "elem.godown_id": godown.godown_id,
+                      "elem.batch": godown.batch
+                    }
+                  ],
+                  session
+                }
+              );
             }
           } else if (godown.godown_id && !godown?.batch) {
             const godownIndex = product.GodownList.findIndex(
               (g) => g.godown_id === godown.godown_id
             );
 
-            if (godownIndex !== -1) {
-              if (godown.count && godown.count > 0) {
-                const currentGodownStock =
-                  product.GodownList[godownIndex].balance_stock || 0;
-                const newGodownStock = truncateToNDecimals(
-                  currentGodownStock + godown.count, // Revert stock by adding back
-                  3
-                );
+            if (godownIndex !== -1 && godown.count && godown.count > 0) {
+              const currentGodownStock =
+                product.GodownList[godownIndex].balance_stock || 0;
+              const newGodownStock = truncateToNDecimals(
+                currentGodownStock + godown.count,
+                3
+              );
 
-                // Prepare godown update operation
-                godownUpdates.push({
-                  updateOne: {
-                    filter: {
-                      _id: product._id,
-                      "GodownList.godown_id": godown.godown_id,
-                    },
-                    update: {
-                      $set: { "GodownList.$.balance_stock": newGodownStock },
-                    },
-                  },
-                });
-              }
+              await productModel.updateOne(
+                { _id: product._id, "GodownList.godown_id": godown.godown_id },
+                {
+                  $set: { "GodownList.$.balance_stock": newGodownStock }
+                },
+                { session }
+              );
             }
           }
         }
@@ -544,28 +511,22 @@ export const revertSaleStockUpdates = async (items, session) => {
         product.GodownList = product.GodownList.map((godown) => {
           const currentGodownStock = Number(godown.balance_stock) || 0;
           const newGodownStock = truncateToNDecimals(
-            currentGodownStock + Number(item.count), // Revert stock by adding back
+            currentGodownStock + Number(item.count),
             3
           );
           return {
             ...godown,
-            balance_stock: newGodownStock,
+            balance_stock: newGodownStock
           };
         });
 
-        // Prepare godown update operation
-        godownUpdates.push({
-          updateOne: {
-            filter: { _id: product._id },
-            update: { $set: { GodownList: product.GodownList } },
-          },
-        });
+        await productModel.updateOne(
+          { _id: product._id },
+          { $set: { GodownList: product.GodownList } },
+          { session }
+        );
       }
     }
-
-    // Execute bulk operations to revert stock changes using the session
-    await productModel.bulkWrite(productUpdates, { session });
-    await productModel.bulkWrite(godownUpdates, { session });
   } catch (error) {
     console.error("Error reverting sale stock updates:", error);
     throw error;
@@ -699,19 +660,32 @@ export const revertPaymentSplittingDataInSources = async (
             : null;
 
         if (mode === "credit") {
+
+      
+console.log("cmp_id",orgId);
+console.log("bill_no",salesNumber);
+console.log("party_id", item?.sourceId);
+
+
+          
           // Delete tally data for credit mode
           // Find the specific record first
           const tallyRecord = await TallyData.findOne({
             cmp_id: orgId,
             bill_no: salesNumber,
-            party_id: item.sourceId,
+            party_id: item?.sourceId,
             createdBy: "paymentSplitting",
-            amount: item.amount  // Adding amount to be more specific
+         
           }).session(session);
+
+          console.log("tallyRecord",tallyRecord);
+          
+
+          
 
           if (tallyRecord) {
             await TallyData.deleteOne(
-              { _id: tallyRecord._id },  // Delete by specific _id
+              { _id: new mongoose.Types.ObjectId(tallyRecord._id) }, // Delete by specific _id
               { session }
             );
           }

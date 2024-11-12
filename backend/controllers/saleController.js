@@ -157,7 +157,7 @@ export const createSale = async (req, res) => {
  * @access Public
  */
 
-const MAX_RETRIES = 3;
+const MAX_RETRIES = 5;
 const RETRY_DELAY_MS = 1000;
 
 export const editSale = async (req, res) => {
@@ -177,29 +177,28 @@ export const editSale = async (req, res) => {
     paymentSplittingData = {},
   } = req.body;
 
-  const vanSaleQuery = req.query.vanSale;
-  const isVanSale = vanSaleQuery === "true";
+  const isVanSale = req.query.vanSale === "true";
   const model = isVanSale ? vanSaleModel : salesModel;
 
   let retries = 0;
+
   while (retries < MAX_RETRIES) {
     const session = await mongoose.startSession();
+    session.startTransaction();
+
     try {
-      session.startTransaction();
-
       const existingSale = await model.findById(saleId).session(session);
-      const secondaryUser = await secondaryUserModel
-        .findById(req.sUserId)
-        .session(session);
-      const secondaryMobile = secondaryUser?.mobile;
-
       if (!existingSale) {
         await session.abortTransaction();
-        session.endSession();
         return res
           .status(404)
           .json({ success: false, message: "Sale not found" });
       }
+
+      const secondaryUser = await secondaryUserModel
+        .findById(req.sUserId)
+        .session(session);
+      const secondaryMobile = secondaryUser?.mobile;
 
       await revertSaleStockUpdates(existingSale.items, session);
 
@@ -265,10 +264,7 @@ export const editSale = async (req, res) => {
       if (matchedOutStanding) {
         const newOutstanding =
           Number(matchedOutStanding?.bill_pending_amt) + diffBillValue;
-
-        // console.log("newOutstanding",newOutstanding);
-
-        const outStandingUpdateResult = await TallyData.updateOne(
+        await TallyData.updateOne(
           {
             party_id: party?.party_master_id,
             cmp_id: orgId,
@@ -280,14 +276,21 @@ export const editSale = async (req, res) => {
               bill_amount: lastAmount,
             },
           },
-          { new: true, session }
+          { session }
         );
       }
 
-      /// update if payment splitting data have credit party out standing
-
       if (paymentSplittingData?.splittingData?.length > 0) {
-        const creditItem = paymentSplittingData?.splittingData?.find(
+
+        await revertPaymentSplittingDataInSources(
+          existingSale?.paymentSplittingData,
+          salesNumber,
+          saleId,
+          orgId,
+          session
+        );
+
+        const creditItem = paymentSplittingData.splittingData.find(
           (item) => item.mode === "credit"
         );
         if (creditItem) {
@@ -295,56 +298,31 @@ export const editSale = async (req, res) => {
             existingSale.paymentSplittingData?.splittingData?.find(
               (item) => item.mode === "credit"
             )?.amount || 0;
-          const newCreditAmount = paymentSplittingData?.splittingData?.find(
-            (item) => item.mode === "credit"
-          )?.amount;
-
+          const newCreditAmount = creditItem.amount;
           const diffCreditAmount =
             Number(newCreditAmount) - Number(oldCreditAmount);
-          console.log("oldCreditAmount", oldCreditAmount);
-          console.log("newCreditAmount", newCreditAmount);
-          console.log("diffCreditAmount", diffCreditAmount);
 
-          console.log(orgId, "orgId");
-          console.log(salesNumber, "salesNumber");
-
-          
+           
 
           const matchedOutStandingOfCredit = await TallyData.findOne({
-            // party_id: creditItem?.sourceId,
             cmp_id: orgId,
             bill_no: salesNumber,
             createdBy: "paymentSplitting",
           }).session(session);
 
-          console.log("matchedOutStandingOfCredit", matchedOutStandingOfCredit);
-
           if (matchedOutStandingOfCredit) {
             const newOutstanding =
-              Number(matchedOutStandingOfCredit?.bill_pending_amt) +
+              Number(matchedOutStandingOfCredit.bill_pending_amt) +
               diffCreditAmount;
 
-            // console.log("newOutstanding", newOutstanding);
+         
 
-            await revertPaymentSplittingDataInSources(
-              existingSale?.paymentSplittingData,
-              salesNumber,
-              saleId,
-              orgId,
-              session
-            );
-
-            // Update the credit amount in paymentSplittingData
             paymentSplittingData.splittingData =
-              paymentSplittingData.splittingData.map((item) => {
-                if (item.mode === "credit") {
-                  return {
-                    ...item,
-                    amount: newOutstanding,
-                  };
-                }
-                return item;
-              });
+              paymentSplittingData.splittingData.map((item) =>
+                item.mode === "credit"
+                  ? { ...item, amount: newOutstanding }
+                  : item
+              );
 
             await savePaymentSplittingDataInSources(
               paymentSplittingData,
@@ -355,53 +333,41 @@ export const editSale = async (req, res) => {
               secondaryMobile,
               session
             );
-
-            // const outStandingUpdateResult = await TallyData.updateOne(
-            //   {
-            //     party_id:creditItem?.sourceId,
-            //     cmp_id: orgId,
-            //     bill_no: salesNumber,
-            //     createdBy: "paymentSplitting",
-            //   },
-            //   {
-            //     $set: {
-            //       bill_pending_amt: newOutstanding,
-            //       bill_amount: newCreditAmount,
-            //     },
-            //   },
-            //   { new: true, session }
-            // );
-
-            // console.log("outStandingUpdateResult", outStandingUpdateResult);
+          } else {
+            await savePaymentSplittingDataInSources(
+              paymentSplittingData,
+              salesNumber,
+              saleId,
+              orgId,
+              req.owner,
+              secondaryMobile,
+              session
+            );
           }
-        } else {
-          return;
         }
       }
 
       await session.commitTransaction();
-      session.endSession();
-      return res.status(200).json({
-        success: true,
-        message: "Sale edited successfully",
-        // outStandingUpdateResult
-      });
+      return res
+        .status(200)
+        .json({ success: true, message: "Sale edited successfully" });
     } catch (error) {
       await session.abortTransaction();
-      session.endSession();
+      console.error("Error editing sale:", error);
 
       if (error.code === 112 && retries < MAX_RETRIES - 1) {
-        console.log(`Retrying transaction (attempt ${retries + 1})...`);
         retries++;
         await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
+        console.log(`Retrying transaction (attempt ${retries})...`);
       } else {
-        console.error("Error editing sale:", error);
         return res.status(500).json({
           success: false,
           message: "An error occurred while editing the sale.",
           error: error.message,
         });
       }
+    } finally {
+      session.endSession();
     }
   }
 
