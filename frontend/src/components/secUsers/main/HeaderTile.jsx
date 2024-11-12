@@ -1,5 +1,7 @@
 /* eslint-disable react/prop-types */
 import { IoIosAddCircle } from "react-icons/io";
+import { BarLoader } from "react-spinners";
+
 function HeaderTile({
   title,
   number,
@@ -13,6 +15,9 @@ function HeaderTile({
 }) {
   return (
     <div>
+          {/* <section className="w-full">
+              <BarLoader color="#9900ff" width="100%" />
+            </section> */}
       <div className="flex justify-between  p-4 bg-white drop-shadow-lg items-center text-xs md:text-base ">
         <div className=" flex flex-col gap-1 justify-center">
             <p className="text-md font-semibold text-violet-400">

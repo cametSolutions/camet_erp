@@ -10,7 +10,7 @@ function PaymentSplittingIcon({ totalAmount, party}) {
 
   const paymentSplittingReduxData = useSelector(
     (state) => state?.paymentSplitting?.paymentSplittingData
-  );
+  ) || {};
 
 
   // console.log("paymentSplittingReduxData", paymentSplittingReduxData);

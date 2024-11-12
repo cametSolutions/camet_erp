@@ -19,7 +19,6 @@ function SalesDetailsSecondary() {
   const [refresh, setRefresh] = useState(false);
 
   const { id } = useParams();
-  console.log(id);
   const navigate = useNavigate();
   const dispatch = useDispatch();
 

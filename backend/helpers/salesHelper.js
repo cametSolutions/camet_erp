@@ -677,7 +677,7 @@ export const savePaymentSplittingDataInSources = async (
 
 
 export const revertPaymentSplittingDataInSources = async (
-  paymentSplittingData,
+  paymentSplittingData = {},
   salesNumber,
   saleId,
   orgId,
@@ -685,7 +685,7 @@ export const revertPaymentSplittingDataInSources = async (
 ) => {
   try {
     if (!paymentSplittingData?.splittingData?.length) {
-      throw new Error("Invalid payment splitting data");
+    return
     }
 
     const updates = await Promise.all(
@@ -698,7 +698,26 @@ export const revertPaymentSplittingDataInSources = async (
             ? bankModel
             : null;
 
-        // If it's credit or invalid mode, skip this iteration
+        if (mode === "credit") {
+          // Delete tally data for credit mode
+          // Find the specific record first
+          const tallyRecord = await TallyData.findOne({
+            cmp_id: orgId,
+            bill_no: salesNumber,
+            party_id: item.sourceId,
+            createdBy: "paymentSplitting",
+            amount: item.amount  // Adding amount to be more specific
+          }).session(session);
+
+          if (tallyRecord) {
+            await TallyData.deleteOne(
+              { _id: tallyRecord._id },  // Delete by specific _id
+              { session }
+            );
+          }
+          return null;
+        }
+
         if (!selectedModel) {
           return null;
         }
@@ -708,8 +727,8 @@ export const revertPaymentSplittingDataInSources = async (
           ...(mode === "cash"
             ? { cash_id: item.sourceId }
             : { bank_id: item.sourceId }),
-          "settlements.sales_number": salesNumber,
-          "settlements.sale_id": saleId
+          // "settlements.sales_number": salesNumber,
+          // "settlements.sale_id": saleId
         };
 
         const update = {

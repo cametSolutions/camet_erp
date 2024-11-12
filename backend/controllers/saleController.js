@@ -8,6 +8,7 @@ import {
   checkForNumberExistence,
   revertSaleStockUpdates,
   savePaymentSplittingDataInSources,
+  revertPaymentSplittingDataInSources,
 } from "../helpers/salesHelper.js";
 import secondaryUserModel from "../models/secondaryUserModel.js";
 import salesModel from "../models/salesModel.js";
@@ -98,10 +99,10 @@ export const createSale = async (req, res) => {
 
     let valueToUpdateInTally = 0;
 
-    if(Object.keys(paymentSplittingData).length > 0) {
+    if (Object.keys(paymentSplittingData).length > 0) {
       valueToUpdateInTally = paymentSplittingData?.balanceAmount;
-    }else{
-      valueToUpdateInTally= lastAmount;
+    } else {
+      valueToUpdateInTally = lastAmount;
     }
 
     console.log(valueToUpdateInTally, "valueToUpdateInTally");
@@ -117,12 +118,19 @@ export const createSale = async (req, res) => {
       "sale"
     );
 
-
     ////save payment splitting data in bank or cash model also
 
-    if(Object.keys(paymentSplittingData).length > 0) {
-      await savePaymentSplittingDataInSources(paymentSplittingData, salesNumber, result._id,orgId, req.owner,secondaryMobile,session);
-     }
+    if (Object.keys(paymentSplittingData).length > 0) {
+      await savePaymentSplittingDataInSources(
+        paymentSplittingData,
+        salesNumber,
+        result._id,
+        orgId,
+        req.owner,
+        secondaryMobile,
+        session
+      );
+    }
 
     await session.commitTransaction();
     res.status(201).json({
@@ -166,7 +174,7 @@ export const editSale = async (req, res) => {
     lastAmount,
     salesNumber,
     selectedDate,
-    paymentSplittingData={}
+    paymentSplittingData = {},
   } = req.body;
 
   const vanSaleQuery = req.query.vanSale;
@@ -180,6 +188,10 @@ export const editSale = async (req, res) => {
       session.startTransaction();
 
       const existingSale = await model.findById(saleId).session(session);
+      const secondaryUser = await secondaryUserModel
+        .findById(req.sUserId)
+        .session(session);
+      const secondaryMobile = secondaryUser?.mobile;
 
       if (!existingSale) {
         await session.abortTransaction();
@@ -216,35 +228,33 @@ export const editSale = async (req, res) => {
         Secondary_user_id: req.secondaryUserId,
         salesNumber: salesNumber,
         createdAt: new Date(selectedDate),
-        paymentSplittingData
+        paymentSplittingData,
       };
 
       await model.findByIdAndUpdate(saleId, updateData, { new: true, session });
 
-      let oldBillBalance ;
+      let oldBillBalance;
 
-      if(existingSale?.paymentSplittingData){
+      if (existingSale?.paymentSplittingData) {
         oldBillBalance = existingSale?.paymentSplittingData?.balanceAmount;
-      }else{
+      } else {
         oldBillBalance = lastAmount;
       }
-      let newBillBalance ;
+      let newBillBalance;
 
-      if(Object.keys(paymentSplittingData).length > 0){
+      if (Object.keys(paymentSplittingData).length > 0) {
         newBillBalance = paymentSplittingData?.balanceAmount;
-      }else{
+      } else {
         newBillBalance = lastAmount;
       }
-
 
       // const newBillValue = Number(lastAmount);
       // const oldBillValue = Number(existingSale.finalAmount);
       const diffBillValue = Number(newBillBalance) - Number(oldBillBalance);
 
-      console.log("oldBillBalance", oldBillBalance);
-      console.log("newBillBalance", newBillBalance);
-      console.log("diffBillValue", diffBillValue);
-      
+      // console.log("oldBillBalance", oldBillBalance);
+      // console.log("newBillBalance", newBillBalance);
+      // console.log("diffBillValue", diffBillValue);
 
       const matchedOutStanding = await TallyData.findOne({
         party_id: party?.party_master_id,
@@ -272,6 +282,101 @@ export const editSale = async (req, res) => {
           },
           { new: true, session }
         );
+      }
+
+      /// update if payment splitting data have credit party out standing
+
+      if (paymentSplittingData?.splittingData?.length > 0) {
+        const creditItem = paymentSplittingData?.splittingData?.find(
+          (item) => item.mode === "credit"
+        );
+        if (creditItem) {
+          const oldCreditAmount =
+            existingSale.paymentSplittingData?.splittingData?.find(
+              (item) => item.mode === "credit"
+            )?.amount || 0;
+          const newCreditAmount = paymentSplittingData?.splittingData?.find(
+            (item) => item.mode === "credit"
+          )?.amount;
+
+          const diffCreditAmount =
+            Number(newCreditAmount) - Number(oldCreditAmount);
+          console.log("oldCreditAmount", oldCreditAmount);
+          console.log("newCreditAmount", newCreditAmount);
+          console.log("diffCreditAmount", diffCreditAmount);
+
+          console.log(orgId, "orgId");
+          console.log(salesNumber, "salesNumber");
+
+          
+
+          const matchedOutStandingOfCredit = await TallyData.findOne({
+            // party_id: creditItem?.sourceId,
+            cmp_id: orgId,
+            bill_no: salesNumber,
+            createdBy: "paymentSplitting",
+          }).session(session);
+
+          console.log("matchedOutStandingOfCredit", matchedOutStandingOfCredit);
+
+          if (matchedOutStandingOfCredit) {
+            const newOutstanding =
+              Number(matchedOutStandingOfCredit?.bill_pending_amt) +
+              diffCreditAmount;
+
+            // console.log("newOutstanding", newOutstanding);
+
+            await revertPaymentSplittingDataInSources(
+              existingSale?.paymentSplittingData,
+              salesNumber,
+              saleId,
+              orgId,
+              session
+            );
+
+            // Update the credit amount in paymentSplittingData
+            paymentSplittingData.splittingData =
+              paymentSplittingData.splittingData.map((item) => {
+                if (item.mode === "credit") {
+                  return {
+                    ...item,
+                    amount: newOutstanding,
+                  };
+                }
+                return item;
+              });
+
+            await savePaymentSplittingDataInSources(
+              paymentSplittingData,
+              salesNumber,
+              saleId,
+              orgId,
+              req.owner,
+              secondaryMobile,
+              session
+            );
+
+            // const outStandingUpdateResult = await TallyData.updateOne(
+            //   {
+            //     party_id:creditItem?.sourceId,
+            //     cmp_id: orgId,
+            //     bill_no: salesNumber,
+            //     createdBy: "paymentSplitting",
+            //   },
+            //   {
+            //     $set: {
+            //       bill_pending_amt: newOutstanding,
+            //       bill_amount: newCreditAmount,
+            //     },
+            //   },
+            //   { new: true, session }
+            // );
+
+            // console.log("outStandingUpdateResult", outStandingUpdateResult);
+          }
+        } else {
+          return;
+        }
       }
 
       await session.commitTransaction();
@@ -337,7 +442,6 @@ export const cancelSale = async (req, res) => {
     // Revert stock updates
     await revertSaleStockUpdates(sale.items, session); // Ensure stock updates use session
 
-
     // Update sale status
     sale.isCancelled = true;
     await (vanSaleQuery === "true"
@@ -351,7 +455,6 @@ export const cancelSale = async (req, res) => {
     //   bill_no: sale.salesNumber,
     //   cmp_id: sale.cmp_id,
     // }, { session });
-
 
     // Commit the transaction
     await session.commitTransaction();

@@ -34,12 +34,11 @@ const PaymentSplitting = () => {
   const subTotal = location.state.totalAmount;
   const paymentSplittingReduxData = useSelector(
     (state) => state?.paymentSplitting?.paymentSplittingData
-  );
+  ) || {};
 
   const [balanceAmount, setBalanceAmount] = useState(0);
   const [banks, setBanks] = useState([]);
   const [cash, setCash] = useState([]);
-  const [loadingMain, setLoadingMain] = useState(false);
 
   // const [parties, setParties] = useState("");
 

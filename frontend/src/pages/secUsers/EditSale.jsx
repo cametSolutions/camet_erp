@@ -81,11 +81,11 @@ function EditSale() {
   );
 
   const salesDetailsFromRedux = useSelector((state) => state.salesSecondary);
-  console.log(salesDetailsFromRedux);
+  // console.log(salesDetailsFromRedux);
 
   const {paymentSplittingData:paymentSplittingReduxData,initial:paymentSplittingInitial} = useSelector(state => state?.paymentSplitting);
 
-console.log("paymentSplittingReduxData",paymentSplittingReduxData,"paymentSplittingInitial",paymentSplittingInitial);
+// console.log("paymentSplittingReduxData",paymentSplittingReduxData,"paymentSplittingInitial",paymentSplittingInitial);
 
 
   const {
@@ -429,7 +429,7 @@ console.log("paymentSplittingReduxData",paymentSplittingReduxData,"paymentSplitt
 
     const lastAmount = totalAmount.toFixed(2);
 
-    dispatch(AddFinalAmount(lastAmount));
+    // dispatch(AddFinalAmount(lastAmount));
 
     const formData = {
       party,
