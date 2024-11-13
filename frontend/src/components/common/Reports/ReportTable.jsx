@@ -5,11 +5,11 @@ const ReportTable = ({ data, loading, openingBalances }) => {
   const { totalDebit, totalCredit } = data?.reduce(
     (totals, transaction) => {
       if (["Debit Note", "Tax Invoice", "Payment"].includes(transaction?.type)) {
-        totals.totalDebit += Number(transaction?.enteredAmount);
+        totals.totalDebit += Number(transaction?.balanceAmount);
       } else if (
         ["Purchase", "Receipt", "Credit Note"].includes(transaction?.type)
       ) {
-        totals.totalCredit += Number(transaction?.enteredAmount);
+        totals.totalCredit += Number(transaction?.balanceAmount);
       }
       return totals;
     },
@@ -35,13 +35,13 @@ const ReportTable = ({ data, loading, openingBalances }) => {
       <table className="w-full border-collapse">
         {/* <thead>
           <tr className="border-b bg-slate-200">
-            <th className="py-6 px-6 text-left text-gray-400 text-sm">
+            <th className="py-6 px-3 text-left text-gray-400 text-sm">
               Transactions
             </th>
-            <th className="py-6 px-6 text-right text-gray-400 text-sm">
+            <th className="py-6 px-3 text-right text-gray-400 text-sm">
               Debit
             </th>
-            <th className="py-6 px-6 text-right text-gray-400 text-sm">
+            <th className="py-6 px-3 text-right text-gray-400 text-sm">
               Credit
             </th>
           </tr>
@@ -55,7 +55,7 @@ const ReportTable = ({ data, loading, openingBalances }) => {
               key={transaction._id}
               className="border-b shadow-md cursor-pointer"
             >
-              <td className="py-6 px-6 font-bold">
+              <td className="py-6 px-3 font-bold w-1/3">
                 <div className="space-y-1">
                   <div className="text-[10px]  flex gap-1 flex-col">
                     <span className="text-gray-400">#{transaction?.voucherNumber}</span>
@@ -78,23 +78,23 @@ const ReportTable = ({ data, loading, openingBalances }) => {
                   )}
                 </div>
               </td>
-              <td className="py-6 px-6 text-right text-[11px] font-bold">
+              <td className="py-6 px-3 text-right text-[11px] font-bold w-1/3">
                 {["Debit Note", "Tax Invoice", "Payment"].includes(
                   transaction.type
                 ) ? (
                   <span className="text-red-500">
-                    ₹ {transaction?.enteredAmount}
+                    ₹ {transaction?.balanceAmount}
                   </span>
                 ) : (
                   "₹ 0"
                 )}
               </td>
-              <td className="py-6 px-6 text-right text-[11px] font-bold">
+              <td className="py-6 px-3 text-right text-[11px] font-bold w-1/3">
                 {["Purchase", "Receipt", "Credit Note"].includes(
                   transaction.type
                 ) ? (
                   <span className="text-green-500">
-                    ₹ {transaction?.enteredAmount}
+                    ₹ {transaction?.balanceAmount}
                   </span>
                 ) : (
                   "₹ 0"
@@ -111,10 +111,10 @@ const ReportTable = ({ data, loading, openingBalances }) => {
               <td className="py-3 px-4 text-left font-bold text-xs text-gray-700">
                 Closing Balance
               </td>
-              <td className="py-3 px-6 text-right font-bold text-xs text-gray-500">
+              <td className="py-3 px-3 text-right font-bold text-xs text-gray-500">
                 {totalDebit > totalCredit && "₹ " + closingBalance}
               </td>
-              <td className="py-3 px-6 text-right font-bold text-xs text-gray-500">
+              <td className="py-3 px-3 text-right font-bold text-xs text-gray-500">
                 {totalCredit > totalDebit && "₹ " + closingBalance}
               </td>
             </tr>

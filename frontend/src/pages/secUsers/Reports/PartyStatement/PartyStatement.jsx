@@ -83,13 +83,13 @@ function PartyStatement() {
           <table className="w-full">
             <thead>
               <tr className="border-b bg-slate-200">
-                <th className="py-3 px-6 text-left text-gray-400 text-sm">
+                <th className="py-3 px-6 w-1/3 text-left text-gray-400 text-sm">
                   Transactions
                 </th>
-                <th className="py-3 px-6 text-right text-gray-400 text-sm">
+                <th className="py-3 px-6 w-1/3 text-right text-gray-400 text-sm">
                   Debit
                 </th>
-                <th className="py-3 px-6 text-right text-gray-400 text-sm">
+                <th className="py-3 px-6 w-1/3 text-right text-gray-400 text-sm">
                   Credit
                 </th>
               </tr>
@@ -100,15 +100,15 @@ function PartyStatement() {
         <section>
           <table className="w-full">
             <tr className="bg-slate-100 w-full">
-              <td className="p-3 px-6 text-left font-bold text-xs text-gray-700">
+              <td className="p-3 px-6  w-1/3 text-left font-bold text-xs text-gray-700">
                 Opening Balance
               </td>
-              <td className="py-3 px-6 text-right font-bold text-xs text-gray-500">
+              <td className="py-3 px-6 w-1/3 text-right font-bold text-xs text-gray-500">
                 {openingBalances?.debitBalance >
                   openingBalances?.creditBalance &&
                   `₹ ${openingBalances?.debitBalance}`}
               </td>
-              <td className="py-3 px-6 text-right font-bold text-xs text-gray-500">
+              <td className="py-3 px-6 w-1/3 text-right font-bold text-xs text-gray-500">
                 {openingBalances?.creditBalance >
                   openingBalances?.debitBalance &&
                   `₹ ${openingBalances?.creditBalance}`}

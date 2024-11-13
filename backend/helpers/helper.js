@@ -13,7 +13,7 @@ export const formatAmount = (amount) => {
 
 /////helper for transactions
 
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 export const aggregateTransactions = (
   model,
@@ -25,31 +25,31 @@ export const aggregateTransactions = (
     { $match: matchCriteria },
     {
       $addFields: {
-        Secondary_user_idObj: { $toObjectId: '$Secondary_user_id' } // convert to ObjectId
-      }
+        Secondary_user_idObj: { $toObjectId: "$Secondary_user_id" }, // convert to ObjectId
+      },
     },
     {
       $lookup: {
-        from: 'secondaryusers', // collection to join with
-        localField: 'Secondary_user_idObj', // converted ObjectId field
-        foreignField: '_id', // ObjectId field in SecondaryUser collection
-        as: 'secondaryUser', // output array field for joined documents
+        from: "secondaryusers", // collection to join with
+        localField: "Secondary_user_idObj", // converted ObjectId field
+        foreignField: "_id", // ObjectId field in SecondaryUser collection
+        as: "secondaryUser", // output array field for joined documents
         pipeline: [
-          { $project: { name: 1, _id: 0 } } // include only the name field
-        ]
+          { $project: { name: 1, _id: 0 } }, // include only the name field
+        ],
       },
     },
-    { $unwind: { path: '$secondaryUser', preserveNullAndEmptyArrays: true } },
+    { $unwind: { path: "$secondaryUser", preserveNullAndEmptyArrays: true } },
     {
       $project: {
         voucherNumber: `$${voucherNumber}`,
-        party_name: '$party.partyName',
-        accountGroup: '$party.accountGroup',
+        party_name: "$party.partyName",
+        accountGroup: "$party.accountGroup",
         type: type,
         enteredAmount:
-          type === 'Receipt' || type === 'Payment'
-            ? '$enteredAmount'
-            : '$finalAmount',
+          type === "Receipt" || type === "Payment"
+            ? "$enteredAmount"
+            : "$finalAmount",
         createdAt: 1,
         // itemsLength:
         //   type === 'Receipt' || type === 'Payment'
@@ -57,24 +57,40 @@ export const aggregateTransactions = (
         //     : { $size: '$items' },
         isCancelled: 1,
         paymentMethod: 1,
-        secondaryUserName: '$secondaryUser.name', // only name from SecondaryUser
+        secondaryUserName: "$secondaryUser.name", // only name from SecondaryUser
+        balanceAmount: {
+          $toString: {
+            $ifNull: [
+              '$paymentSplittingData.balanceAmount',
+              type === 'Receipt' || type === 'Payment'
+                ? '$enteredAmount'
+                : '$finalAmount'
+            ]
+          }
+        }
       },
     },
   ]);
 };
 
-
 // Function to aggregate opening balance with proper string-to-number conversion
-export const aggregateOpeningBalance = async (model, matchCriteria, transactionType) => {
+export const aggregateOpeningBalance = async (
+  model,
+  matchCriteria,
+  transactionType
+) => {
   try {
-    const amountField = transactionType === "Receipt" || transactionType === "Payment" ? "enteredAmount" : "finalAmount";
+    const amountField =
+      transactionType === "Receipt" || transactionType === "Payment"
+        ? "enteredAmount"
+        : "finalAmount";
 
     const result = await model.aggregate([
       { $match: matchCriteria },
       {
         $addFields: {
           numericAmount: {
-            $toDouble: { $ifNull: [`$${amountField}`, 0] }
+            $toDouble: { $ifNull: [`$${amountField}`, 0] },
           },
         },
       },
@@ -88,8 +104,10 @@ export const aggregateOpeningBalance = async (model, matchCriteria, transactionT
 
     return result.length > 0 ? result[0].total : 0;
   } catch (error) {
-    console.error(`Error calculating opening balance for ${transactionType}:`, error);
+    console.error(
+      `Error calculating opening balance for ${transactionType}:`,
+      error
+    );
     return 0;
   }
 };
-
