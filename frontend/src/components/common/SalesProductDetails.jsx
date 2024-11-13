@@ -5,6 +5,7 @@ function SalesProductDetails({
   data,
   items,
   additionalCharges,
+  paymentSplittingData = {},
   // tab = "sales",
 }) {
   return (
@@ -38,9 +39,27 @@ function SalesProductDetails({
               ).toFixed(2)}
             </p>
           ) : (
-            <p>₹{" "}0</p>
+            <p>₹ 0</p>
           )}
         </div>
+
+        {paymentSplittingData?.totalSettledAmount &&
+          paymentSplittingData?.balanceAmount && (
+            <>
+              <div className="flex items-center justify-between mt-2 text-sm ">
+                <p className="font-semibold text-gray-500">Payment Mode</p>
+                <p className="font-semibold">
+                  ₹ {paymentSplittingData?.totalSettledAmount}
+                </p>
+              </div>
+              <div className="flex items-center justify-between mt-2 text-sm ">
+                <p className="font-semibold text-gray-500">Balance Amount</p>
+                <p className="font-semibold">
+                  ₹ {paymentSplittingData?.balanceAmount}
+                </p>
+              </div>
+            </>
+          )}
       </div>
 
       {items?.length > 0 && (

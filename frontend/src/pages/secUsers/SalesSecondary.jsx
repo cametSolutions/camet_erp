@@ -322,13 +322,9 @@ function SalesSecondary() {
     ]);
   };
 
-
   const getPaymentSplittingData = (data) => {
-
-    console.log("akjls",data);
-    
-
-  }
+    console.log("akjls", data);
+  };
 
   const submitHandler = async () => {
     // console.log("haii");
@@ -377,11 +373,11 @@ function SalesSecondary() {
       selectedDate,
     };
 
-    if(Object.keys(paymentSplittingReduxData).length !== 0){
+    if (Object.keys(paymentSplittingReduxData).length !== 0) {
       formData.paymentSplittingData = paymentSplittingReduxData;
       // formData.balanceAmount=paymentSplittingReduxData?.balanceAmount;
-    }else{
-      formData.paymentSplittingData={};
+    } else {
+      formData.paymentSplittingData = {};
     }
 
     console.log(formData);
@@ -408,7 +404,6 @@ function SalesSecondary() {
       console.log(error);
     }
   };
-
 
   // console.log(items);
 
@@ -479,7 +474,6 @@ function SalesSecondary() {
           urlToEditItem="/sUsers/editItemSales"
         />
 
-    
         <div className="flex justify-between items-center bg-white mt-2 p-3">
           <p className="font-bold text-md">Total Amount</p>
           <div className="flex flex-col items-center">
@@ -489,15 +483,18 @@ function SalesSecondary() {
         </div>
 
         {items.length > 0 && totalAmount > 0 && (
-          <PaymentSplittingIcon totalAmount={totalAmount} party={party}   voucherType="sale"  />
+          <PaymentSplittingIcon
+            totalAmount={totalAmount}
+            party={party}
+            voucherType="sale"
+          />
         )}
 
-
-        <div className=" md:hidden ">
+        <div className=" md:hidden   ">
           <div className="flex justify-center overflow-hidden w-full">
             <button
               onClick={submitHandler}
-              className="fixed bottom-0 text-white bg-violet-700  w-full  p-2 py-4 flex items-center justify-center gap-2 hover_scale cursor-pointer "
+              className=" sm:hidden  fixed bottom-0 left-0 shadow-lg z-50 text-white bg-violet-700  w-full  p-2 py-4 flex items-center justify-center gap-2 hover_scale cursor-pointer "
             >
               <IoIosAddCircle className="text-2xl" />
               <p>Generate Sale</p>

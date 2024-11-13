@@ -13,6 +13,7 @@ import CancelButton from "../../components/common/CancelButton";
 import VoucherDetailsHeader from "../../components/common/VoucherDetailsHeader";
 import { useDispatch } from "react-redux";
 import { removeAll } from "../../../slices/filterSlices/paymentSplitting/paymentSplitting";
+import PaymentSplittingDetails from "../../components/secUsers/main/paymentSplitting/PaymentSplittingDetails";
 
 function SalesDetailsSecondary() {
   const [data, setData] = useState("");
@@ -122,7 +123,14 @@ function SalesDetailsSecondary() {
         items={data?.items}
         priceLevel={data?.priceLevel}
         additionalCharges={data?.additionalCharges}
+        paymentSplittingData={data?.paymentSplittingData}
       />
+
+      {
+        data?.paymentSplittingData &&     data?.paymentSplittingData?.splittingData.length >0 &&  (
+          <PaymentSplittingDetails  data={data?.paymentSplittingData}/>
+        )
+      }
 
       {/* payment method */}
 

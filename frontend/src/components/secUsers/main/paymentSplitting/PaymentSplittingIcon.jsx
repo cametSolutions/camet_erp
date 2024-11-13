@@ -18,7 +18,7 @@ function PaymentSplittingIcon({ totalAmount, party}) {
   const getTitle=(mode)=>{
     switch(mode){
       case "cash":
-        return "Cash";
+        return "Cash";  
       case "online":
         return "NEFT/Upi";
       case "cheque":
@@ -39,7 +39,7 @@ function PaymentSplittingIcon({ totalAmount, party}) {
   return (
     <div className="">
       {Object.keys(paymentSplittingReduxData).length > 0 ? (
-        <div className="flex flex-col bg-white shadow-lg p-3 mt-3  ">
+        <div className="flex flex-col bg-white shadow-lg p-3 my-3 ">
           <div className="flex justify-between items-center ">
             <section className="flex items-center gap-1">
               <IoIosArrowDown className="font-bold text-xs sm:text-lg" />
@@ -74,7 +74,7 @@ function PaymentSplittingIcon({ totalAmount, party}) {
           </div>
           <hr />
 
-          <div className="flex justify-between  items-center py-3  ">
+          <div className="flex justify-between  items-center py-3 ">
            <p className="font-bold text-md ">Balance  Amount</p>
            <p className="font-bold text-md "> ₹  {paymentSplittingReduxData?.balanceAmount}</p>
           </div>
@@ -84,7 +84,7 @@ function PaymentSplittingIcon({ totalAmount, party}) {
       ) : (
         <div
           onClick={handleClick}
-          className="flex items-center gap-1  justify-end px-4 mt-4 text-violet-500 font-semibold cursor-pointer mb-4"
+          className="flex items-center gap-1  justify-end px-4  text-violet-500 font-semibold cursor-pointer pt-3 pb-36  md:pb-7 "
         >
           <IoMdAdd size={22} />
           <p>Receive Amount </p>

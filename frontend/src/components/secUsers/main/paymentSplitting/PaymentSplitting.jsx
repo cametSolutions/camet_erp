@@ -259,7 +259,7 @@ const PaymentSplitting = () => {
   return (
     <>
       <div className="sticky top-0 z-50">
-        <TitleDiv title="Payment Splitting" from={location?.state?.from} />
+        <TitleDiv title="Payment Mode" from={location?.state?.from} />
         {isLoading && (
           <section className="w-full">
             <BarLoader color="#9900ff" width="100%" className="mt-[0.5px]" />
