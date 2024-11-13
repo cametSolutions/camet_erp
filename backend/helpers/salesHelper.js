@@ -27,7 +27,7 @@ export const checkForNumberExistence = async (
       })
       .session(session);
 
-    console.log(docs.map((el) => el[fieldName]));
+    // console.log(docs.map((el) => el[fieldName]));
     return docs.length > 0;
   } catch (error) {
     console.log("Error checking for number existence:", error);
@@ -69,7 +69,7 @@ export const updateSalesNumber = async (
         // if (allFieldsFilled) {
         salesNumber = (configuration.salesNumber || 0) + 1;
 
-        console.log("salesNumber", salesNumber);
+        // console.log("salesNumber", salesNumber);
 
         const updatedConfiguration = secondaryUser.configurations.map(
           (config) => {
@@ -157,7 +157,7 @@ export const handleSaleStockUpdates = async (
             await productModel.updateOne(
               { _id: product._id, "GodownList.batch": godown.batch },
               {
-                $set: { "GodownList.$.balance_stock": newGodownStock }
+                $set: { "GodownList.$.balance_stock": newGodownStock },
               },
               { session }
             );
@@ -178,16 +178,16 @@ export const handleSaleStockUpdates = async (
             await productModel.updateOne(
               { _id: product._id },
               {
-                $set: { "GodownList.$[elem].balance_stock": newGodownStock }
+                $set: { "GodownList.$[elem].balance_stock": newGodownStock },
               },
               {
                 arrayFilters: [
                   {
                     "elem.godown_id": godown.godown_id,
-                    "elem.batch": godown.batch
-                  }
+                    "elem.batch": godown.batch,
+                  },
                 ],
-                session
+                session,
               }
             );
           }
@@ -207,7 +207,7 @@ export const handleSaleStockUpdates = async (
             await productModel.updateOne(
               { _id: product._id, "GodownList.godown_id": godown.godown_id },
               {
-                $set: { "GodownList.$.balance_stock": newGodownStock }
+                $set: { "GodownList.$.balance_stock": newGodownStock },
               },
               { session }
             );
@@ -255,7 +255,7 @@ export const processSaleItems = (items) => {
       sgstAmt = 0,
       igstAmt = 0;
 
-    console.log("isTaxInclusive", isTaxInclusive);
+    // console.log("isTaxInclusive", isTaxInclusive);
 
     if (!isTaxInclusive) {
       // If price is tax-inclusive, calculate base price
@@ -267,9 +267,9 @@ export const processSaleItems = (items) => {
       sgstAmt = Number(((basePrice * sgstNumber) / 100).toFixed(2));
       igstAmt = Number(((basePrice * igstNumber) / 100).toFixed(2));
 
-      console.log(
-        `  totalPrice:${totalPrice} cgstAmt: ${cgstAmt} sgstAmt: ${sgstAmt} igstAmt: ${igstAmt}`
-      );
+      // console.log(
+      //   `  totalPrice:${totalPrice} cgstAmt: ${cgstAmt} sgstAmt: ${sgstAmt} igstAmt: ${igstAmt}`
+      // );
     } else {
       // console.log("igstNumber", igstNumber);
 
@@ -278,9 +278,9 @@ export const processSaleItems = (items) => {
       cgstAmt = Number(((basePrice * cgstNumber) / 100).toFixed(2));
       sgstAmt = Number(((basePrice * sgstNumber) / 100).toFixed(2));
       igstAmt = Number(((basePrice * igstNumber) / 100).toFixed(2));
-      console.log(
-        ` totalPrice: ${totalPrice}  cgstAmt: ${cgstAmt} sgstAmt: ${sgstAmt} igstAmt: ${igstAmt}`
-      );
+      // console.log(
+      //   ` totalPrice: ${totalPrice}  cgstAmt: ${cgstAmt} sgstAmt: ${sgstAmt} igstAmt: ${igstAmt}`
+      // );
     }
 
     return {
@@ -366,9 +366,9 @@ export const updateTallyData = async (
   secondaryMobile,
   session,
   valueToUpdateInTally,
-  createdBy=""
+  createdBy = ""
 ) => {
-  console.log(lastAmount, "lastAmount");
+  // console.log(lastAmount, "lastAmount");
 
   try {
     const billData = {
@@ -385,7 +385,7 @@ export const updateTallyData = async (
       user_id: secondaryMobile || "null",
       source: "sale",
       classification: "Dr",
-      createdBy
+      createdBy,
     };
 
     const tallyUpdate = await TallyData.findOneAndUpdate(
@@ -412,7 +412,7 @@ export const revertSaleStockUpdates = async (items, session) => {
       const product = await productModel
         .findOne({ _id: item._id })
         .session(session);
-        
+
       if (!product) {
         throw new Error(`Product not found for item ID: ${item._id}`);
       }
@@ -450,14 +450,15 @@ export const revertSaleStockUpdates = async (items, session) => {
               await productModel.updateOne(
                 { _id: product._id, "GodownList.batch": godown.batch },
                 {
-                  $set: { "GodownList.$.balance_stock": newGodownStock }
+                  $set: { "GodownList.$.balance_stock": newGodownStock },
                 },
                 { session }
               );
             }
           } else if (godown.godown_id && godown.batch) {
             const godownIndex = product.GodownList.findIndex(
-              (g) => g.batch === godown.batch && g.godown_id === godown.godown_id
+              (g) =>
+                g.batch === godown.batch && g.godown_id === godown.godown_id
             );
 
             if (godownIndex !== -1 && godown.count && godown.count > 0) {
@@ -471,16 +472,16 @@ export const revertSaleStockUpdates = async (items, session) => {
               await productModel.updateOne(
                 { _id: product._id },
                 {
-                  $set: { "GodownList.$[elem].balance_stock": newGodownStock }
+                  $set: { "GodownList.$[elem].balance_stock": newGodownStock },
                 },
                 {
                   arrayFilters: [
                     {
                       "elem.godown_id": godown.godown_id,
-                      "elem.batch": godown.batch
-                    }
+                      "elem.batch": godown.batch,
+                    },
                   ],
-                  session
+                  session,
                 }
               );
             }
@@ -500,7 +501,7 @@ export const revertSaleStockUpdates = async (items, session) => {
               await productModel.updateOne(
                 { _id: product._id, "GodownList.godown_id": godown.godown_id },
                 {
-                  $set: { "GodownList.$.balance_stock": newGodownStock }
+                  $set: { "GodownList.$.balance_stock": newGodownStock },
                 },
                 { session }
               );
@@ -516,7 +517,7 @@ export const revertSaleStockUpdates = async (items, session) => {
           );
           return {
             ...godown,
-            balance_stock: newGodownStock
+            balance_stock: newGodownStock,
           };
         });
 
@@ -559,9 +560,13 @@ export const savePaymentSplittingDataInSources = async (
 
         // Handle credit mode
         if (mode === "credit") {
-          const party = await partyModel.findById(
-            new mongoose.Types.ObjectId(item.sourceId)
-          );
+          const party = await partyModel.findOne({
+            party_master_id: item.sourceId,
+            cmp_id: orgId,
+          });
+
+          // console.log("party", party);
+          
 
           if (!party) {
             throw new Error("Invalid party");
@@ -590,7 +595,7 @@ export const savePaymentSplittingDataInSources = async (
 
         const settlementData = {
           sales_number: salesNumber,
-          sale_id: saleId,
+          sale_id: saleId.toString(),
           amount: item.amount,
           created_at: new Date(),
           payment_mode: mode,
@@ -620,22 +625,17 @@ export const savePaymentSplittingDataInSources = async (
           update,
           options
         );
-        console.log(updatedSource);
         return updatedSource;
-
-        
       })
     );
 
     // Filter out null values (from credit mode) from updates array
     return updates.filter(Boolean);
-
   } catch (error) {
     console.error("Error in savePaymentSplittingDataInSources:", error);
     throw error;
   }
 };
-
 
 export const revertPaymentSplittingDataInSources = async (
   paymentSplittingData = {},
@@ -646,7 +646,7 @@ export const revertPaymentSplittingDataInSources = async (
 ) => {
   try {
     if (!paymentSplittingData?.splittingData?.length) {
-    return
+      return;
     }
 
     const updates = await Promise.all(
@@ -660,14 +660,10 @@ export const revertPaymentSplittingDataInSources = async (
             : null;
 
         if (mode === "credit") {
+          // console.log("cmp_id", orgId);
+          // console.log("bill_no", salesNumber);
+          // console.log("party_id", item?.sourceId);
 
-      
-console.log("cmp_id",orgId);
-console.log("bill_no",salesNumber);
-console.log("party_id", item?.sourceId);
-
-
-          
           // Delete tally data for credit mode
           // Find the specific record first
           const tallyRecord = await TallyData.findOne({
@@ -675,17 +671,13 @@ console.log("party_id", item?.sourceId);
             bill_no: salesNumber,
             party_id: item?.sourceId,
             createdBy: "paymentSplitting",
-         
           }).session(session);
 
-          console.log("tallyRecord",tallyRecord);
-          
-
-          
+          // console.log("tallyRecord", tallyRecord);
 
           if (tallyRecord) {
             await TallyData.deleteOne(
-              { _id: new mongoose.Types.ObjectId(tallyRecord._id) }, // Delete by specific _id
+              { _id: new mongoose.Types.ObjectId(tallyRecord._id) },
               { session }
             );
           }
@@ -701,35 +693,46 @@ console.log("party_id", item?.sourceId);
           ...(mode === "cash"
             ? { cash_id: item.sourceId }
             : { bank_id: item.sourceId }),
-          // "settlements.sales_number": salesNumber,
-          // "settlements.sale_id": saleId
         };
 
-        const update = {
+        // First, pull the specified settlements
+        const pullUpdate = {
           $pull: {
             settlements: {
               sales_number: salesNumber,
-              sale_id: saleId
-            }
-          }
+              sale_id: saleId,
+            },
+          },
         };
 
         const options = {
           new: true,
-          session
+          session,
         };
 
         const updatedSource = await selectedModel.findOneAndUpdate(
           query,
-          update,
+          pullUpdate,
           options
         );
+
+        // If settlements array is empty after pulling, remove it completely
+        if (updatedSource && (!updatedSource.settlements || updatedSource.settlements.length === 0)) {
+          await selectedModel.findOneAndUpdate(
+            query,
+            { $unset: { settlements: "" } },
+            options
+          );
+          
+          // Fetch the final state after removing the empty array
+          return await selectedModel.findOne(query).session(session);
+        }
+
         return updatedSource;
       })
     );
 
     return updates.filter(Boolean);
-
   } catch (error) {
     console.error("Error in revertPaymentSplittingDataInSources:", error);
     throw error;

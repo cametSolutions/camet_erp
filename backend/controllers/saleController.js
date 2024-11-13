@@ -232,8 +232,11 @@ export const editSale = async (req, res) => {
 
       await model.findByIdAndUpdate(saleId, updateData, { new: true, session });
 
-      let oldBillBalance;
+      ///updating the existing outstanding record by calculating the difference in bill value
 
+      ///considering the bill balance if payment is splitted
+
+      let oldBillBalance;
       if (existingSale?.paymentSplittingData) {
         oldBillBalance = existingSale?.paymentSplittingData?.balanceAmount;
       } else {
@@ -247,19 +250,15 @@ export const editSale = async (req, res) => {
         newBillBalance = lastAmount;
       }
 
-      // const newBillValue = Number(lastAmount);
-      // const oldBillValue = Number(existingSale.finalAmount);
+      ///finding the difference in bill value
       const diffBillValue = Number(newBillBalance) - Number(oldBillBalance);
-
-      // console.log("oldBillBalance", oldBillBalance);
-      // console.log("newBillBalance", newBillBalance);
-      // console.log("diffBillValue", diffBillValue);
-
       const matchedOutStanding = await TallyData.findOne({
         party_id: party?.party_master_id,
         cmp_id: orgId,
         bill_no: salesNumber,
       }).session(session);
+
+      ///updating the existing outstanding record
 
       if (matchedOutStanding) {
         const newOutstanding =
@@ -280,8 +279,12 @@ export const editSale = async (req, res) => {
         );
       }
 
-      if (paymentSplittingData?.splittingData?.length > 0) {
 
+
+      //// updating the payment splitting data
+      ///first reverting the existing payment splitting data if it exists
+
+      if (existingSale?.paymentSplittingData?.splittingData) {
         await revertPaymentSplittingDataInSources(
           existingSale?.paymentSplittingData,
           salesNumber,
@@ -289,11 +292,17 @@ export const editSale = async (req, res) => {
           orgId,
           session
         );
+      }
 
+      //// recreating new the payment splitting data 
+
+      if (paymentSplittingData?.splittingData?.length > 0) {
         const creditItem = paymentSplittingData.splittingData.find(
           (item) => item.mode === "credit"
         );
         if (creditItem) {
+          console.log("creditItem", creditItem);
+
           const oldCreditAmount =
             existingSale.paymentSplittingData?.splittingData?.find(
               (item) => item.mode === "credit"
@@ -301,8 +310,6 @@ export const editSale = async (req, res) => {
           const newCreditAmount = creditItem.amount;
           const diffCreditAmount =
             Number(newCreditAmount) - Number(oldCreditAmount);
-
-           
 
           const matchedOutStandingOfCredit = await TallyData.findOne({
             cmp_id: orgId,
@@ -314,8 +321,6 @@ export const editSale = async (req, res) => {
             const newOutstanding =
               Number(matchedOutStandingOfCredit.bill_pending_amt) +
               diffCreditAmount;
-
-         
 
             paymentSplittingData.splittingData =
               paymentSplittingData.splittingData.map((item) =>
@@ -344,6 +349,16 @@ export const editSale = async (req, res) => {
               session
             );
           }
+        } else {
+          await savePaymentSplittingDataInSources(
+            paymentSplittingData,
+            salesNumber,
+            saleId,
+            orgId,
+            req.owner,
+            secondaryMobile,
+            session
+          );
         }
       }
 

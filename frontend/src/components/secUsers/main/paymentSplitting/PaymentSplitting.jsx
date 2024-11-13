@@ -19,7 +19,7 @@ const BankOption = ({ bank }) => (
 );
 
 const PartyOption = ({ party }) => (
-  <option value={party?._id}>{party?.partyName}</option>
+  <option value={party?.party_master_id}>{party?.partyName}</option>
 );
 
 const PaymentSplitting = () => {
