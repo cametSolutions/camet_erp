@@ -360,6 +360,7 @@ export const createSaleRecord = async (
 export const updateTallyData = async (
   orgId,
   salesNumber,
+  billId,
   Primary_user_id,
   party,
   lastAmount,
@@ -368,12 +369,13 @@ export const updateTallyData = async (
   valueToUpdateInTally,
   createdBy = ""
 ) => {
-  // console.log(lastAmount, "lastAmount");
+  console.log(billId, "billId");
 
   try {
     const billData = {
       Primary_user_id,
       bill_no: salesNumber,
+      billId:billId.toString(),
       cmp_id: orgId,
       party_id: party?.party_master_id,
       bill_amount: Number(lastAmount),

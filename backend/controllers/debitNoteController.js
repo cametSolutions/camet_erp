@@ -89,6 +89,7 @@ export const createDebitNote = async (req, res) => {
     await updateTallyData(
       orgId,
       debitNoteNumber,
+      result._id,
       req.owner,
       party,
       lastAmount,

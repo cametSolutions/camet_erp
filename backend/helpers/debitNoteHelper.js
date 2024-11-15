@@ -429,6 +429,7 @@ export const revertDebitNoteStockUpdates = async (items,session) => {
 export const  updateTallyData = async (
   orgId,
   debitNoteNumber,
+  billId, 
   Primary_user_id,
   party,
   lastAmount,
@@ -439,6 +440,7 @@ export const  updateTallyData = async (
     const billData = {
         Primary_user_id,
         bill_no: debitNoteNumber,
+        billId:billId.toString(),
         cmp_id: orgId,
         party_id: party?.party_master_id,
         bill_amount: lastAmount,

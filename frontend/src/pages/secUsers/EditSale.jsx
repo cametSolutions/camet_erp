@@ -443,7 +443,7 @@ function EditSale() {
       selectedDate: dateFromRedux || new Date(),
     };
 
-    if(Object.keys(paymentSplittingReduxData).length !== 0){
+    if( paymentSplittingReduxData && Object.keys(paymentSplittingReduxData).length !== 0){
       formData.paymentSplittingData = paymentSplittingReduxData;
       // formData.balanceAmount=paymentSplittingReduxData?.balanceAmount;
     }else{

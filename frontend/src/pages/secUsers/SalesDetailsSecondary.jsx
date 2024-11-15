@@ -127,7 +127,7 @@ function SalesDetailsSecondary() {
       />
 
       {
-        data?.paymentSplittingData &&     data?.paymentSplittingData?.splittingData.length >0 &&  (
+        data?.paymentSplittingData &&     data?.paymentSplittingData?.splittingData?.length >0 &&   (
           <PaymentSplittingDetails  data={data?.paymentSplittingData}/>
         )
       }
