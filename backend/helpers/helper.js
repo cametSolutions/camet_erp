@@ -15,27 +15,22 @@ export const formatAmount = (amount) => {
 
 import mongoose from "mongoose";
 
-export const aggregateTransactions = (
-  model,
-  matchCriteria,
-  type,
-  voucherNumber
-) => {
+export const aggregateTransactions = (model, matchCriteria, type, voucherNumber) => {
   return model.aggregate([
     { $match: matchCriteria },
     {
       $addFields: {
-        Secondary_user_idObj: { $toObjectId: "$Secondary_user_id" }, // convert to ObjectId
+        Secondary_user_idObj: { $toObjectId: "$Secondary_user_id" },
       },
     },
     {
       $lookup: {
-        from: "secondaryusers", // collection to join with
-        localField: "Secondary_user_idObj", // converted ObjectId field
-        foreignField: "_id", // ObjectId field in SecondaryUser collection
-        as: "secondaryUser", // output array field for joined documents
+        from: "secondaryusers",
+        localField: "Secondary_user_idObj",
+        foreignField: "_id",
+        as: "secondaryUser",
         pipeline: [
-          { $project: { name: 1, _id: 0 } }, // include only the name field
+          { $project: { name: 1, _id: 0 } },
         ],
       },
     },
@@ -51,13 +46,9 @@ export const aggregateTransactions = (
             ? "$enteredAmount"
             : "$finalAmount",
         createdAt: 1,
-        // itemsLength:
-        //   type === 'Receipt' || type === 'Payment'
-        //     ? undefined
-        //     : { $size: '$items' },
         isCancelled: 1,
         paymentMethod: 1,
-        secondaryUserName: "$secondaryUser.name", // only name from SecondaryUser
+        secondaryUserName: "$secondaryUser.name",
         balanceAmount: {
           $toString: {
             $ifNull: [
@@ -66,6 +57,35 @@ export const aggregateTransactions = (
                 ? '$enteredAmount'
                 : '$finalAmount'
             ]
+          }
+        },
+        // cashTotal: {
+        //   $toString: {
+        //     $ifNull: [
+        //       '$paymentSplittingData.cashTotal',
+        //       "0"
+        //     ]
+        //   }
+        // },
+        cashTotal: {
+          $toString: {
+            $cond: {
+              if: { $ifNull: ['$paymentSplittingData.cashTotal', false] },
+              then: '$paymentSplittingData.cashTotal',
+              else: {
+                $cond: {
+                  if: { $eq: ['$party.accountGroup', 'Cash-in-Hand'] },
+                  then: {
+                    $cond: {
+                      if: { $or: [{ $eq: [type, 'Receipt'] }, { $eq: [type, 'Payment'] }] },
+                      then: '$enteredAmount',
+                      else: '$finalAmount'
+                    }
+                  },
+                  else: '0'
+                }
+              }
+            }
           }
         }
       },
