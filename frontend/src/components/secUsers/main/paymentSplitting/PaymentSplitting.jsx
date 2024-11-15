@@ -13,7 +13,7 @@ import { addPaymentSplittingData } from "../../../../../slices/filterSlices/paym
 // Reusable amount input component for both mobile and desktop
 const AmountInput = ({ value, onChange, placeholder = "Enter amount" }) => {
   const inputRef = useRef(null);
-  
+
   const handleChange = (e) => {
     onChange(e.target.value);
     // Maintain focus after value change
@@ -48,7 +48,13 @@ const PartyOption = ({ party }) => (
   <option value={party?.party_master_id}>{party?.partyName}</option>
 );
 
-const PaymentCard = ({ payment, index, handleAmountChange, handleBankChange, paymentOptions }) => (
+const PaymentCard = ({
+  payment,
+  index,
+  handleAmountChange,
+  handleBankChange,
+  paymentOptions,
+}) => (
   <div className="bg-white rounded-lg shadow-sm border mb-2 p-3">
     <div className="flex items-center gap-2 text-gray-700 mb-2">
       <FaRegCircleDot className="h-3 w-3" />
@@ -193,7 +199,7 @@ const PaymentSplitting = () => {
       );
       setBalanceAmount(subTotal - totalPaid);
     }
-  }, [paymentSplittingReduxData, initialPayments, subTotal]);
+  }, [paymentSplittingReduxData]);
 
   const paymentOptions = {
     cash: cash,
@@ -202,27 +208,30 @@ const PaymentSplitting = () => {
     credit: parties.filter((party) => party._id !== selectedPartyId),
   };
 
-  const handleAmountChange = useCallback((index, value) => {
-    setPayments(prevPayments => {
-      const newPayments = [...prevPayments];
-      newPayments[index] = {
-        ...newPayments[index],
-        amount: value
-      };
+  const handleAmountChange = useCallback(
+    (index, value) => {
+      setPayments((prevPayments) => {
+        const newPayments = [...prevPayments];
+        newPayments[index] = {
+          ...newPayments[index],
+          amount: value,
+        };
 
-      const total = newPayments.reduce((sum, payment) => {
-        return sum + (Number(payment.amount) || 0);
-      }, 0);
+        const total = newPayments.reduce((sum, payment) => {
+          return sum + (Number(payment.amount) || 0);
+        }, 0);
 
-      if (total > subTotal) {
-        window.alert("Total amount cannot be greater than the subtotal");
-        return prevPayments;
-      }
+        if (total > subTotal) {
+          window.alert("Total amount cannot be greater than the subtotal");
+          return prevPayments;
+        }
 
-      setBalanceAmount(subTotal - total);
-      return newPayments;
-    });
-  }, [subTotal]);
+        setBalanceAmount(subTotal - total);
+        return newPayments;
+      });
+    },
+    [subTotal]
+  );
 
   const handleBankChange = (index, id, name) => {
     const newPayments = [...payments];
@@ -259,8 +268,6 @@ const PaymentSplitting = () => {
         sourceName: payment.paymentSourceName,
       }));
 
- 
-
     const amounts = paymentData?.reduce((acc, payment) => {
       acc[`${payment.mode}Amount`] =
         (acc[`${payment.mode}Amount`] || 0) + payment.amount;
@@ -271,35 +278,31 @@ const PaymentSplitting = () => {
 
     let cashTotal = 0;
     let bankTotal = 0;
-    if(selectedPartyAccountGroup === "Cash-in-Hand"){
-      cashTotal=balanceAmount
-    }else if(selectedPartyAccountGroup === "Bank Accounts"){
-      bankTotal=balanceAmount
+    if (selectedPartyAccountGroup === "Cash-in-Hand") {
+      cashTotal = balanceAmount;
+    } else if (selectedPartyAccountGroup === "Bank Accounts") {
+      bankTotal = balanceAmount;
     }
     console.log("cashTotal:", cashTotal, "bankTotal:", bankTotal);
 
-    cashTotal+= amounts?.cashAmount;
-    bankTotal+= (amounts?.onlineAmount || 0) + (amounts?.chequeAmount || 0);
-
-
-    
-    
-
+    cashTotal += amounts?.cashAmount || 0;
+    bankTotal += (amounts?.onlineAmount || 0) + (amounts?.chequeAmount || 0);
 
     // console.log("cashTotal:", cashTotal, "bankTotal:", bankTotal);
+    let finalData = {};
 
-
-    const finalData = {
-      splittingData: paymentData,
-      totalSettledAmount: subTotal - balanceAmount,
-      balanceAmount: balanceAmount,
-      subTotal: subTotal,
-      cashTotal: cashTotal,
-      bankTotal: bankTotal
-    };
+    if (paymentData.length > 0) {
+      finalData = {
+        splittingData: paymentData,
+        totalSettledAmount: subTotal - balanceAmount,
+        balanceAmount: balanceAmount,
+        subTotal: subTotal,
+        cashTotal: cashTotal,
+        bankTotal: bankTotal,
+      };
+    }
 
     console.log(cashTotal, bankTotal);
-    
 
     dispatch(addPaymentSplittingData(finalData));
     navigate(location?.state?.from, { replace: true });
@@ -316,7 +319,11 @@ const PaymentSplitting = () => {
         )}
       </div>
 
-      <div className={`${isLoading ? "opacity-50 pointer-events-none" : ""} p-0 py-3 sm:p-6 sm:mt-2 mx-4 sm:mx-5 shadow-lg bg-slate-50`}>
+      <div
+        className={`${
+          isLoading ? "opacity-50 pointer-events-none" : ""
+        } p-0 py-3 sm:p-6 sm:mt-2 mx-4 sm:mx-5 shadow-lg bg-slate-50`}
+      >
         <div className="bg-white rounded-lg shadow-lg mb-6">
           <div className="">
             {/* Desktop view */}
@@ -331,11 +338,16 @@ const PaymentSplitting = () => {
                 </thead>
                 <tbody className="mt-4">
                   {payments.map((payment, index) => (
-                    <tr key={payment.mode} className="border-b hover:bg-gray-50">
+                    <tr
+                      key={payment.mode}
+                      className="border-b hover:bg-gray-50"
+                    >
                       <td className="p-5 py-6">
                         <div className="flex items-center gap-4 text-gray-700">
                           <FaRegCircleDot className="h-3 w-3" />
-                          <span className="font-bold text-sm">{payment.title}</span>
+                          <span className="font-bold text-sm">
+                            {payment.title}
+                          </span>
                         </div>
                       </td>
                       <td className="p-3">
@@ -355,11 +367,20 @@ const PaymentSplitting = () => {
                           </option>
                           {paymentOptions[payment.mode]?.map((option) => {
                             if (payment.mode === "cash") {
-                              return <CashOption key={option._id} cash={option} />;
-                            } else if (payment.mode === "online" || payment.mode === "cheque") {
-                              return <BankOption key={option._id} bank={option} />;
+                              return (
+                                <CashOption key={option._id} cash={option} />
+                              );
+                            } else if (
+                              payment.mode === "online" ||
+                              payment.mode === "cheque"
+                            ) {
+                              return (
+                                <BankOption key={option._id} bank={option} />
+                              );
                             } else {
-                              return <PartyOption key={option._id} party={option} />;
+                              return (
+                                <PartyOption key={option._id} party={option} />
+                              );
                             }
                           })}
                         </select>
@@ -413,6 +434,7 @@ const PaymentSplitting = () => {
             Save
           </button>
           <button
+            onClick={() => navigate(location?.state?.from, { replace: true })}
             className="w-20 text-black active:bg-pink-600 font-bold uppercase text-xs px-4 py-2 rounded shadow hover:shadow-md outline-none focus:outline-none mr-1 ease-linear transition-all duration-150 transform hover:scale-105"
             type="button"
           >
