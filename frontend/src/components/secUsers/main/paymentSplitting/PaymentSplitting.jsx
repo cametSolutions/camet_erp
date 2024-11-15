@@ -161,6 +161,12 @@ const PaymentSplitting = () => {
   const isLoading = loading || partyLoading;
 
   useEffect(() => {
+    if (!selectedPartyId) {
+      navigate(location?.state?.from, { replace: true });
+    }
+  }, []);
+
+  useEffect(() => {
     if (data) {
       setBanks(data.data.banks);
       setCash(data.data.cashs);
