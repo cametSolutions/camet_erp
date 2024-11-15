@@ -1,14 +1,40 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable react/prop-types */
 import { useLocation, useNavigate } from "react-router-dom";
 import TitleDiv from "../../../../components/common/TitleDiv";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef, useCallback } from "react";
 import { FaRegCircleDot } from "react-icons/fa6";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import useFetch from "../../../../customHook/useFetch";
 import { BarLoader } from "react-spinners";
-import { addPaymentSplittingData } from "../../../../../slices/filterSlices/paymentSplitting/paymentSplitting";
-import { useDispatch } from "react-redux";
 import { addAllParties } from "../../../../../slices/partySlice";
+import { addPaymentSplittingData } from "../../../../../slices/filterSlices/paymentSplitting/paymentSplitting";
+
+// Reusable amount input component for both mobile and desktop
+const AmountInput = ({ value, onChange, placeholder = "Enter amount" }) => {
+  const inputRef = useRef(null);
+  
+  const handleChange = (e) => {
+    onChange(e.target.value);
+    // Maintain focus after value change
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  };
+
+  return (
+    <input
+      ref={inputRef}
+      type="number"
+      inputMode="numeric"
+      pattern="[0-9]*"
+      placeholder={placeholder}
+      value={value}
+      onChange={handleChange}
+      className="w-full p-2 text-sm border-b border-0 no-focus-box outline-none"
+    />
+  );
+};
 
 const CashOption = ({ cash }) => (
   <option value={cash.cash_id}>{cash.cash_ledname}</option>
@@ -22,6 +48,43 @@ const PartyOption = ({ party }) => (
   <option value={party?.party_master_id}>{party?.partyName}</option>
 );
 
+const PaymentCard = ({ payment, index, handleAmountChange, handleBankChange, paymentOptions }) => (
+  <div className="bg-white rounded-lg shadow-sm border mb-2 p-3">
+    <div className="flex items-center gap-2 text-gray-700 mb-2">
+      <FaRegCircleDot className="h-3 w-3" />
+      <span className="capitalize font-bold text-xs">{payment.title}</span>
+    </div>
+    <select
+      value={payment.paymentSourceId}
+      onChange={(e) =>
+        handleBankChange(
+          index,
+          e.target.value,
+          e.target.options[e.target.selectedIndex].text
+        )
+      }
+      className="w-full p-2 mb-2 text-sm border-b border-0 no-focus-box"
+    >
+      <option value="" className="text-xs">
+        Select source
+      </option>
+      {paymentOptions[payment.mode]?.map((option) => {
+        if (payment.mode === "cash") {
+          return <CashOption key={option._id} cash={option} />;
+        } else if (payment.mode === "online" || payment.mode === "cheque") {
+          return <BankOption key={option._id} bank={option} />;
+        } else {
+          return <PartyOption key={option._id} party={option} />;
+        }
+      })}
+    </select>
+    <AmountInput
+      value={payment.amount}
+      onChange={(value) => handleAmountChange(index, value)}
+    />
+  </div>
+);
+
 const PaymentSplitting = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -31,16 +94,17 @@ const PaymentSplitting = () => {
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
   const parties = useSelector((state) => state?.partySlice?.allParties) || [];
-  const subTotal = location.state.totalAmount;
-  const paymentSplittingReduxData = useSelector(
-    (state) => state?.paymentSplitting?.paymentSplittingData
-  ) || {};
 
-  const [balanceAmount, setBalanceAmount] = useState(0);
+  const { _id: selectedPartyId, accountGroup: selectedPartyAccountGroup } =
+    useSelector((state) => state?.salesSecondary?.party);
+
+  const subTotal = location?.state?.totalAmount;
+  const paymentSplittingReduxData =
+    useSelector((state) => state?.paymentSplitting?.paymentSplittingData) || {};
+
+  const [balanceAmount, setBalanceAmount] = useState(subTotal);
   const [banks, setBanks] = useState([]);
   const [cash, setCash] = useState([]);
-
-  // const [parties, setParties] = useState("");
 
   const initialPayments = [
     {
@@ -75,21 +139,15 @@ const PaymentSplitting = () => {
 
   const [payments, setPayments] = useState(initialPayments);
 
-  // useEffect(() => {
-  //   if (parties.length === 0) {
-  //     navigate(location?.state?.from, { replace: true });
-  //   }
-  // }, [parties]);
-
-  
-
   const fetchUrl = useMemo(() => {
     return cmp_id ? `/api/sUsers/getBankAndCashSources/${cmp_id}` : null;
   }, [cmp_id]);
 
   const fetchUrlPartyList = useMemo(() => {
-    return cmp_id && parties.length === 0 ? `/api/sUsers/PartyList/${cmp_id}` : null;
-  }, [cmp_id,parties]);
+    return cmp_id && parties.length === 0
+      ? `/api/sUsers/PartyList/${cmp_id}`
+      : null;
+  }, [cmp_id, parties]);
 
   const { data = [], loading } = useFetch(fetchUrl);
   const { data: partyData = [], partyLoading } = useFetch(fetchUrlPartyList);
@@ -104,16 +162,12 @@ const PaymentSplitting = () => {
   }, [data]);
 
   useEffect(() => {
-    if (partyData &&parties.length === 0) {
+    if (partyData && parties.length === 0) {
       console.log(partyData);
-
       dispatch(addAllParties(partyData.partyList));
     }
-  }, [partyData]);
+  }, [partyData, dispatch, parties.length]);
 
-
-
-  // Update payments from Redux data
   useEffect(() => {
     if (Object.keys(paymentSplittingReduxData).length > 0) {
       const savedData = paymentSplittingReduxData.splittingData;
@@ -133,38 +187,42 @@ const PaymentSplitting = () => {
 
       setPayments(updatedPayments);
 
-      // Update balance amount
       const totalPaid = savedData.reduce(
         (sum, payment) => sum + Number(payment.amount),
         0
       );
       setBalanceAmount(subTotal - totalPaid);
     }
-  }, [paymentSplittingReduxData]);
+  }, [paymentSplittingReduxData, initialPayments, subTotal]);
 
   const paymentOptions = {
     cash: cash,
     online: banks,
     cheque: banks,
-    credit: parties,
+    credit: parties.filter((party) => party._id !== selectedPartyId),
   };
 
-  const handleAmountChange = (index, value) => {
-    const newPayments = [...payments];
-    newPayments[index].amount = value;
+  const handleAmountChange = useCallback((index, value) => {
+    setPayments(prevPayments => {
+      const newPayments = [...prevPayments];
+      newPayments[index] = {
+        ...newPayments[index],
+        amount: value
+      };
 
-    const total = newPayments.reduce((sum, payment) => {
-      return sum + (Number(payment.amount) || 0);
-    }, 0);
+      const total = newPayments.reduce((sum, payment) => {
+        return sum + (Number(payment.amount) || 0);
+      }, 0);
 
-    if (total > subTotal) {
-      window.alert("Total amount cannot be greater than the subtotal");
-      return;
-    }
+      if (total > subTotal) {
+        window.alert("Total amount cannot be greater than the subtotal");
+        return prevPayments;
+      }
 
-    setPayments(newPayments);
-    setBalanceAmount(subTotal - total);
-  };
+      setBalanceAmount(subTotal - total);
+      return newPayments;
+    });
+  }, [subTotal]);
 
   const handleBankChange = (index, id, name) => {
     const newPayments = [...payments];
@@ -201,60 +259,51 @@ const PaymentSplitting = () => {
         sourceName: payment.paymentSourceName,
       }));
 
+ 
+
+    const amounts = paymentData?.reduce((acc, payment) => {
+      acc[`${payment.mode}Amount`] =
+        (acc[`${payment.mode}Amount`] || 0) + payment.amount;
+      return acc;
+    }, {});
+
+    console.log("Amounts:", amounts);
+
+    let cashTotal = 0;
+    let bankTotal = 0;
+    if(selectedPartyAccountGroup === "Cash-in-Hand"){
+      cashTotal=balanceAmount
+    }else if(selectedPartyAccountGroup === "Bank Accounts"){
+      bankTotal=balanceAmount
+    }
+    console.log("cashTotal:", cashTotal, "bankTotal:", bankTotal);
+
+    cashTotal+= amounts?.cashAmount;
+    bankTotal+= (amounts?.onlineAmount || 0) + (amounts?.chequeAmount || 0);
+
+
+    
+    
+
+
+    // console.log("cashTotal:", cashTotal, "bankTotal:", bankTotal);
+
+
     const finalData = {
       splittingData: paymentData,
       totalSettledAmount: subTotal - balanceAmount,
       balanceAmount: balanceAmount,
       subTotal: subTotal,
+      cashTotal: cashTotal,
+      bankTotal: bankTotal
     };
+
+    console.log(cashTotal, bankTotal);
+    
 
     dispatch(addPaymentSplittingData(finalData));
     navigate(location?.state?.from, { replace: true });
   };
-
-  // Mobile payment card component
-  const PaymentCard = ({ payment, index }) => (
-    <div className="bg-white rounded-lg shadow-sm border mb-2 p-3">
-      <div className="flex items-center gap-2 text-gray-700 mb-2">
-        <FaRegCircleDot className="h-3 w-3" />
-        <span className="capitalize font-bold text-xs">{payment.title}</span>
-      </div>
-      <select
-        value={payment.paymentSourceId}
-        onChange={(e) =>
-          handleBankChange(
-            index,
-            e.target.value,
-            e.target.options[e.target.selectedIndex].text
-          )
-        }
-        className="w-full p-2 mb-2 text-sm border-b border-0 no-focus-box"
-      >
-        <option value="" className="text-xs">
-          Select source
-        </option>
-        {paymentOptions[payment.mode]?.map((option) => {
-          if (payment.mode === "cash") {
-            return <CashOption key={option._id} cash={option} />;
-          } else if (payment.mode === "online" || payment.mode === "cheque") {
-            return <BankOption key={option._id} bank={option} />;
-          } else {
-            return <PartyOption key={option._id} party={option} />;
-          }
-        })}
-      </select>
-      <input
-        type="number"
-        placeholder="Enter amount"
-        value={payment.amount}
-        onChange={(e) => handleAmountChange(index, e.target.value)}
-        className="w-full p-2 text-sm border-b border-0 no-focus-box"
-      />
-    </div>
-  );
-
-
-  
 
   return (
     <>
@@ -267,11 +316,7 @@ const PaymentSplitting = () => {
         )}
       </div>
 
-      <div
-        className={`${
-          isLoading ? "opacity-50 pointer-events-none" : ""
-        } p-0 py-3 sm:p-6 sm:mt-2 mx-4 sm:mx-5 shadow-lg bg-slate-50`}
-      >
+      <div className={`${isLoading ? "opacity-50 pointer-events-none" : ""} p-0 py-3 sm:p-6 sm:mt-2 mx-4 sm:mx-5 shadow-lg bg-slate-50`}>
         <div className="bg-white rounded-lg shadow-lg mb-6">
           <div className="">
             {/* Desktop view */}
@@ -286,16 +331,11 @@ const PaymentSplitting = () => {
                 </thead>
                 <tbody className="mt-4">
                   {payments.map((payment, index) => (
-                    <tr
-                      key={payment.mode}
-                      className="border-b hover:bg-gray-50"
-                    >
+                    <tr key={payment.mode} className="border-b hover:bg-gray-50">
                       <td className="p-5 py-6">
                         <div className="flex items-center gap-4 text-gray-700">
                           <FaRegCircleDot className="h-3 w-3" />
-                          <span className="font-bold text-sm">
-                            {payment.title}
-                          </span>
+                          <span className="font-bold text-sm">{payment.title}</span>
                         </div>
                       </td>
                       <td className="p-3">
@@ -315,33 +355,19 @@ const PaymentSplitting = () => {
                           </option>
                           {paymentOptions[payment.mode]?.map((option) => {
                             if (payment.mode === "cash") {
-                              return (
-                                <CashOption key={option._id} cash={option} />
-                              );
-                            } else if (
-                              payment.mode === "online" ||
-                              payment.mode === "cheque"
-                            ) {
-                              return (
-                                <BankOption key={option._id} bank={option} />
-                              );
+                              return <CashOption key={option._id} cash={option} />;
+                            } else if (payment.mode === "online" || payment.mode === "cheque") {
+                              return <BankOption key={option._id} bank={option} />;
                             } else {
-                              return (
-                                <PartyOption key={option._id} party={option} />
-                              );
+                              return <PartyOption key={option._id} party={option} />;
                             }
                           })}
                         </select>
                       </td>
                       <td className="p-3">
-                        <input
-                          type="number"
-                          placeholder="Enter amount"
+                        <AmountInput
                           value={payment.amount}
-                          onChange={(e) =>
-                            handleAmountChange(index, e.target.value)
-                          }
-                          className="w-full p-2 text-sm border-b outline-none border-0 no-focus-box"
+                          onChange={(value) => handleAmountChange(index, value)}
                         />
                       </td>
                     </tr>
@@ -357,6 +383,9 @@ const PaymentSplitting = () => {
                   key={payment.mode}
                   payment={payment}
                   index={index}
+                  handleAmountChange={handleAmountChange}
+                  handleBankChange={handleBankChange}
+                  paymentOptions={paymentOptions}
                 />
               ))}
             </div>
