@@ -427,19 +427,19 @@ const PaymentSplitting = () => {
 
         <div className="flex gap-4">
           <button
-            className="bg-pink-500 w-20 text-white active:bg-pink-600 font-bold uppercase text-xs px-4 py-2 rounded shadow hover:shadow-md outline-none focus:outline-none mr-1 ease-linear transition-all duration-150 transform hover:scale-105"
+            className="bg-pink-500  w-full sm:w-20 text-white active:bg-pink-600 font-bold uppercase text-xs px-4 py-2 rounded shadow hover:shadow-md outline-none focus:outline-none mr-1 ease-linear transition-all duration-150 transform hover:scale-105"
             type="button"
             onClick={submitHandler}
           >
             Save
           </button>
-          <button
+          {/* <button
             onClick={() => navigate(location?.state?.from, { replace: true })}
             className="w-20 text-black active:bg-pink-600 font-bold uppercase text-xs px-4 py-2 rounded shadow hover:shadow-md outline-none focus:outline-none mr-1 ease-linear transition-all duration-150 transform hover:scale-105"
             type="button"
           >
             Cancel
-          </button>
+          </button> */}
         </div>
       </div>
     </>
