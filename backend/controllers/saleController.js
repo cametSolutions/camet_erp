@@ -99,16 +99,17 @@ export const createSale = async (req, res) => {
 
     let valueToUpdateInTally = 0;
 
-    if (Object.keys(paymentSplittingData).length > 0) {
+    if ( paymentSplittingData && Object.keys(paymentSplittingData).length > 0) {
       valueToUpdateInTally = paymentSplittingData?.balanceAmount;
     } else {
       valueToUpdateInTally = lastAmount;
     }
 
-    console.log(valueToUpdateInTally, "valueToUpdateInTally");
+    // console.log(valueToUpdateInTally, "valueToUpdateInTally");
     await updateTallyData(
       orgId,
       salesNumber,
+      result._id,
       req.owner,
       party,
       lastAmount,
@@ -120,7 +121,7 @@ export const createSale = async (req, res) => {
 
     ////save payment splitting data in bank or cash model also
 
-    if (Object.keys(paymentSplittingData).length > 0) {
+    if ( paymentSplittingData && Object.keys(paymentSplittingData).length > 0) {
       await savePaymentSplittingDataInSources(
         paymentSplittingData,
         salesNumber,
@@ -237,14 +238,14 @@ export const editSale = async (req, res) => {
       ///considering the bill balance if payment is splitted
 
       let oldBillBalance;
-      if (existingSale?.paymentSplittingData) {
-        oldBillBalance = existingSale?.paymentSplittingData?.balanceAmount;
+      if ( existingSale?.paymentSplittingData && Object.keys(existingSale?.paymentSplittingData).length > 0) {
+        oldBillBalanexistingSalece = existingSale?.paymentSplittingData?.balanceAmount;
       } else {
-        oldBillBalance = lastAmount;
+        oldBillBalance =existingSale?.finalAmount || 0;
       }
       let newBillBalance;
 
-      if (Object.keys(paymentSplittingData).length > 0) {
+      if ( paymentSplittingData && Object.keys(paymentSplittingData).length > 0) {
         newBillBalance = paymentSplittingData?.balanceAmount;
       } else {
         newBillBalance = lastAmount;
@@ -252,17 +253,28 @@ export const editSale = async (req, res) => {
 
       ///finding the difference in bill value
       const diffBillValue = Number(newBillBalance) - Number(oldBillBalance);
+      // console.log("oldBillBalance", oldBillBalance);
+      // console.log("newBillBalance", newBillBalance);
+      // console.log("diffBillValue", diffBillValue);
+
       const matchedOutStanding = await TallyData.findOne({
         party_id: party?.party_master_id,
         cmp_id: orgId,
         bill_no: salesNumber,
       }).session(session);
 
+      // console.log("matchedOutStanding", matchedOutStanding);
+      
+
       ///updating the existing outstanding record
 
       if (matchedOutStanding) {
         const newOutstanding =
-          Number(matchedOutStanding?.bill_pending_amt) + diffBillValue;
+          Number(matchedOutStanding?.bill_pending_amt || 0) + diffBillValue;
+
+
+          // console.log("newOutstanding", newOutstanding);
+          
         await TallyData.updateOne(
           {
             party_id: party?.party_master_id,
@@ -271,7 +283,7 @@ export const editSale = async (req, res) => {
           },
           {
             $set: {
-              bill_pending_amt: newOutstanding,
+              bill_pending_amt: newOutstanding || 0,
               bill_amount: lastAmount,
             },
           },
@@ -301,7 +313,7 @@ export const editSale = async (req, res) => {
           (item) => item.mode === "credit"
         );
         if (creditItem) {
-          console.log("creditItem", creditItem);
+          // console.log("creditItem", creditItem);
 
           const oldCreditAmount =
             existingSale.paymentSplittingData?.splittingData?.find(
@@ -319,7 +331,7 @@ export const editSale = async (req, res) => {
 
           if (matchedOutStandingOfCredit) {
             const newOutstanding =
-              Number(matchedOutStandingOfCredit.bill_pending_amt) +
+              Number(matchedOutStandingOfCredit.bill_pending_amt || 0) +
               diffCreditAmount;
 
             paymentSplittingData.splittingData =
@@ -362,10 +374,10 @@ export const editSale = async (req, res) => {
         }
       }
 
-      await session.commitTransaction();
-      return res
-        .status(200)
-        .json({ success: true, message: "Sale edited successfully" });
+        await session.commitTransaction();
+        return res
+          .status(200)
+          .json({ success: true, message: "Sale edited successfully" });
     } catch (error) {
       await session.abortTransaction();
       console.error("Error editing sale:", error);

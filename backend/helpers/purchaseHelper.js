@@ -482,6 +482,7 @@ export const revertPurchaseStockUpdates = async (items,session) => {
 export const  updateTallyData = async (
   orgId,
   purchaseNumber,
+  billId,
   Primary_user_id,
   party,
   lastAmount,
@@ -492,6 +493,7 @@ export const  updateTallyData = async (
     const billData = {
         Primary_user_id,
         bill_no: purchaseNumber,
+        billId:billId.toString(),
         cmp_id: orgId,
         party_id: party?.party_master_id,
         bill_amount: lastAmount,

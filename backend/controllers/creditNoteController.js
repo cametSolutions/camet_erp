@@ -91,6 +91,7 @@ export const createCreditNote = async (req, res) => {
     await updateTallyData(
       orgId,
       creditNoteNumber,
+      result._id,
       req.owner,
       party,
       lastAmount,

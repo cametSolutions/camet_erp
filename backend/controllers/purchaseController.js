@@ -90,6 +90,7 @@ export const createPurchase = async (req, res) => {
     await updateTallyData(
       orgId,
       purchaseNumber,
+      result._id,
       req.owner,
       party,
       lastAmount,
