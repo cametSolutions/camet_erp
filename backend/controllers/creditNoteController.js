@@ -150,6 +150,18 @@ const RETRY_DELAY = 1000; // 1 second
       // Revert existing stock updates
       await revertCreditNoteStockUpdates(existingCreditNote.items, session);
 
+      const cancelOutstanding = await TallyData.findOneAndUpdate(
+        {
+          bill_no: existingCreditNote?.creditNoteNumber,
+          billId: creditNoteId?.toString(),
+        },
+        {
+          $set: {
+            isCancelled: true,
+          },
+        }
+      ).session(session);
+
       existingCreditNote.isCancelled = true;
       const cancelledCreditNote = await existingCreditNote.save({ session });
 

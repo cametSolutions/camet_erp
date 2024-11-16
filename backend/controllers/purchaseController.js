@@ -267,6 +267,19 @@ export const cancelPurchase = async (req, res) => {
       // Revert existing stock updates
       await revertPurchaseStockUpdates(existingPurchase.items, session);
 
+
+      const cancelOutstanding = await TallyData.findOneAndUpdate(
+        {
+          bill_no: existingPurchase?.purchaseNumber,
+          billId: purchaseId?.toString(),
+        },
+        {
+          $set: {
+            isCancelled: true,
+          },
+        }
+      ).session(session);
+
       existingPurchase.isCancelled = true;
       const cancelledPurchase = await existingPurchase.save({ session });
 

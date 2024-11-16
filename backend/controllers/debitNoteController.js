@@ -140,6 +140,18 @@ export const cancelDebitNote = async (req, res) => {
     // Revert existing stock updates
     await revertDebitNoteStockUpdates(existingDebitNote.items, session);
 
+    const cancelOutstanding = await TallyData.findOneAndUpdate(
+      {
+        bill_no: existingDebitNote?.debitNoteNumber,
+        billId: debitNoteId?.toString(),
+      },
+      {
+        $set: {
+          isCancelled: true,
+        },
+      }
+    ).session(session);
+
     // flagging is cancelled true
 
     existingDebitNote.isCancelled = true;

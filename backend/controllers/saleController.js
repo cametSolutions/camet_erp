@@ -448,12 +448,19 @@ export const cancelSale = async (req, res) => {
       : salesModel
     ).findByIdAndUpdate(saleId, sale, { session }); // Use the session in the update
 
-    //     ///delete tally data of voucher
+    /// cancel outstanding
 
-    // await TallyData.findOneAndDelete({
-    //   bill_no: sale.salesNumber,
-    //   cmp_id: sale.cmp_id,
-    // }, { session });
+    const cancelOutstanding = await TallyData.findOneAndUpdate(
+      {
+        bill_no: sale?.salesNumber,
+        billId: saleId.toString(),
+      },
+      {
+        $set: {
+          isCancelled: true,
+        },
+      }
+    ).session(session);
 
     // Commit the transaction
     await session.commitTransaction();

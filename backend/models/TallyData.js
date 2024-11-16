@@ -22,6 +22,12 @@ const tallySchema = new mongoose.Schema({
     appliedReceipts: { type: Array,default:[] },
     appliedPayments: { type: Array,default:[] },
     createdBy: { type: String ,default:""},  ///if an outstanding is createdBy any vouchers are tagged here
+    isCancelled: { type: Boolean, default: false },
+    createdAt: {
+      type: Date,
+      default: Date.now,
+      immutable: false, // This allows the field to be updated
+    },
   });
   
 
