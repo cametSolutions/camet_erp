@@ -23,7 +23,8 @@ import { registerPrimaryUser,login,addOrganizations,
   import { cancelPurchase } from '../controllers/purchaseController.js';
 
 import {addProduct,editProduct,getCreditNoteDetails,transactions,fetchAdditionalCharges, getDebitNoteDetails,
-  getReceiptDetails,getPaymentDetails,getProductSubDetails,deleteProductSubDetails,editProductSubDetails,addProductSubDetails,addHsn,getSingleHsn,editHsn,deleteHsn,getSalesDetails,getPurchaseDetails,} from "../controllers/commonController.js";
+  getReceiptDetails,getPaymentDetails,getProductSubDetails,deleteProductSubDetails,editProductSubDetails,addProductSubDetails,addHsn,getSingleHsn,editHsn,deleteHsn,getSalesDetails,getPurchaseDetails,
+  updateMissingBillIds,} from "../controllers/commonController.js";
 import { singleUpload } from '../multer/multer.js';
 import { primaryIsBlocked } from '../middlewares/isBlocked.js';
 import { companyAuthentication } from '../middlewares/authCompany.js';
@@ -115,6 +116,10 @@ router.get('/getPaymentDetails/:id',authPrimary,primaryIsBlocked,getPaymentDetai
 ////receipt
 router.get('/getReceiptDetails/:id',authPrimary,primaryIsBlocked,getReceiptDetails)
 
+
+///additional
+
+router.put('/updateMissingBillIds',authPrimary,primaryIsBlocked,updateMissingBillIds)
 
 
 
