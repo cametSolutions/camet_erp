@@ -140,6 +140,18 @@ export const cancelDebitNote = async (req, res) => {
     // Revert existing stock updates
     await revertDebitNoteStockUpdates(existingDebitNote.items, session);
 
+    const cancelOutstanding = await TallyData.findOneAndUpdate(
+      {
+        bill_no: existingDebitNote?.debitNoteNumber,
+        billId: debitNoteId?.toString(),
+      },
+      {
+        $set: {
+          isCancelled: true,
+        },
+      }
+    ).session(session);
+
     // flagging is cancelled true
 
     existingDebitNote.isCancelled = true;
@@ -240,24 +252,28 @@ export const editDebitNote = async (req, res) => {
       party_id: party?.party_master_id,
       cmp_id: orgId,
       bill_no: debitNoteNumber,
+      billId: existingDebitNote._id.toString(),
     }).session(session);
 
     if (matchedOutStanding) {
-      const newOutstanding = Number(matchedOutStanding?.bill_pending_amt) + diffBillValue;
+      const newOutstanding =
+        Number(matchedOutStanding?.bill_pending_amt) + diffBillValue;
 
       // console.log("newOutstanding",newOutstanding);
-      
-     const outStandingUpdateResult = await TallyData.updateOne(
+
+      const outStandingUpdateResult = await TallyData.updateOne(
         {
           party_id: party?.party_master_id,
           cmp_id: orgId,
           bill_no: debitNoteNumber,
+          billId: existingDebitNote._id.toString(),
         },
-        { $set: { bill_pending_amt: newOutstanding, bill_amount: newBillValue } },
-        { new: true,session }
+        {
+          $set: { bill_pending_amt: newOutstanding, bill_amount: newBillValue },
+        },
+        { new: true, session }
       );
     }
-
 
     await session.commitTransaction();
     session.endSession();

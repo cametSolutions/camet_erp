@@ -1,6 +1,6 @@
 /* eslint-disable react/prop-types */
 import { IoIosAddCircle } from "react-icons/io";
-import { BarLoader } from "react-spinners";
+import CustomBarLoader from "../../common/CustomBarLoader";
 
 function HeaderTile({
   title,
@@ -12,18 +12,21 @@ function HeaderTile({
   submitHandler,
   removeAll,
   tab,
+  loading,
 }) {
   return (
     <div>
-          {/* <section className="w-full">
-              <BarLoader color="#9900ff" width="100%" />
-            </section> */}
+      {loading && (
+        <section className="w-full">
+          <CustomBarLoader color="#9900ff" width="100%" />
+        </section>
+      )}
+
       <div className="flex justify-between  p-4 bg-white drop-shadow-lg items-center text-xs md:text-base ">
         <div className=" flex flex-col gap-1 justify-center">
-            <p className="text-md font-semibold text-violet-400">
-              {title} #{number}
-            </p>
-          
+          <p className="text-md font-semibold text-violet-400">
+            {title} #{number}
+          </p>
 
           <div className="flex items-center">
             <p className="font-semibold   text-gray-500 text-xs md:text-base">
@@ -47,7 +50,7 @@ function HeaderTile({
             <div className="hidden sm:block">
               <button
                 onClick={submitHandler}
-                className=" bottom-0 text-white bg-violet-700  w-full rounded-md  p-2 flex items-center justify-center gap-2 hover_scale cursor-pointer "
+                className= {` ${loading && "pointer-events-none opacity-80"} bottom-0 text-white bg-violet-700  w-full rounded-md  p-2 flex items-center justify-center gap-2 hover_scale cursor-pointer `}
               >
                 <IoIosAddCircle className="text-2xl" />
                 {title === "Stock Transfer" ? (

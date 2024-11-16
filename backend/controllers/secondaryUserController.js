@@ -621,6 +621,7 @@ export const PartyList = async (req, res) => {
           $match: {
             cmp_id,
             Primary_user_id: String(Primary_user_id),
+            isCancelled: false,
             ...sourceMatch,
           },
         },

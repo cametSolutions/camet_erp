@@ -101,6 +101,7 @@ function OutstandingListOfPayment() {
 
         const resultObject = {
           billNo: el.bill_no,
+          billId: el.billId,
           settledAmount,
           remainingAmount: remainingBillAmount,
         };

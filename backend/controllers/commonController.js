@@ -25,6 +25,7 @@ import { Godown } from "../models/subDetails.js";
 import { PriceLevel } from "../models/subDetails.js";
 import mongoose from "mongoose";
 import cashModel from "../models/cashModel.js";
+import TallyData from "../models/TallyData.js";
 
 // @desc toget the details of transaction or sale
 // route get/api/sUsers/getSalesDetails
@@ -47,7 +48,9 @@ export const getSalesDetails = async (req, res) => {
 
     ////find the outstanding of the sale
     const outstandingOfSale = await OutstandingModel.findOne({
+      billId: saleDetails._id.toString(),
       bill_no: saleDetails.salesNumber,
+      billId: saleDetails._id.toString(),
       cmp_id: saleDetails.cmp_id,
       Primary_user_id: saleDetails.Primary_user_id,
     });
@@ -289,6 +292,7 @@ export const getCreditNoteDetails = async (req, res) => {
     if (details) {
       ////find the outstanding of the sale
       const outstandingOfCreditNote = await OutstandingModel.findOne({
+        billId: details._id.toString(),
         bill_no: details.creditNoteNumber,
         cmp_id: details.cmp_id,
         Primary_user_id: details.Primary_user_id,
@@ -528,6 +532,7 @@ export const getDebitNoteDetails = async (req, res) => {
     if (details) {
       ////find the outstanding of the sale
       const outstandingOfCreditNote = await OutstandingModel.findOne({
+        billId: details._id.toString(),
         bill_no: details.debitNoteNumber,
         cmp_id: details.cmp_id,
         Primary_user_id: details.Primary_user_id,
@@ -1036,6 +1041,7 @@ export const getPurchaseDetails = async (req, res) => {
 
     ////find the outstanding of the sale
     const outstandingOfPurchase = await OutstandingModel.findOne({
+      billId: purchaseDetails._id.toString(),
       bill_no: purchaseDetails.purchaseNumber,
       cmp_id: purchaseDetails.cmp_id,
       Primary_user_id: purchaseDetails.Primary_user_id,
@@ -1152,4 +1158,175 @@ export const getOpeningBalances = async (req, res) => {
   }
 };
 
+// Update all missing billIds
+export const updateMissingBillIds = async (req, res) => {
+  try {
+    const startTime = Date.now();
+    const results = {
+      total: 0,
+      updated: 0,
+      failed: 0,
+      notFound: 0,
+      errors: [],
+    };
 
+    // Get all outstanding documents without billId
+    const outstandingDocs = await TallyData.find({
+      billId: { $exists: false },
+      // cmp_id: "66b870a95387e8f388f9af6c"
+    });
+    results.total = outstandingDocs.length;
+
+    // console.log("Total documents to process:", outstandingDocs.length);
+
+    // Create a map for model lookup with corresponding bill number fields
+    const modelConfig = {
+      sale: {
+        models: [
+          {
+            model: salesModel,
+            billField: 'salesNumber',
+            type: 'Regular Sale'
+          },
+          {
+            model: vanSaleModel,
+            billField: 'salesNumber',
+            type: 'Van Sale'
+          }
+        ]
+      },
+   
+      creditnote: {
+        models: [{
+          model: creditNoteModel,
+          billField: 'creditNoteNumber',
+          type: 'Credit Note'
+        }]
+      },
+      purchase: {
+        models: [{
+          model: purchaseModel,
+          billField: 'purchaseNumber',
+          type: 'Purchase'
+        }]
+      },
+   
+      debitnote: {
+        models: [{
+          model: debitNoteModel,
+          billField: 'debitNoteNumber',
+          type: 'Debit Note'
+        }]
+      }
+    };
+
+    // Process each document
+    for (const doc of outstandingDocs) {
+      try {
+        const sourceType = doc.source?.toLowerCase()?.trim();
+
+        // console.log(`Processing document with bill_no: ${doc.bill_no}, source: ${sourceType}`);
+
+        const config = modelConfig[sourceType];
+
+        if (!config || !config.models?.length) {
+          // console.log(`Invalid source type: ${sourceType}`);
+          results.failed++;
+          results.errors.push({
+            bill_no: doc.bill_no,
+            error: `Invalid source type: ${doc.source}`,
+            source: doc.source
+          });
+          continue;
+        }
+
+        let sourceDoc = null;
+        let matchedModel = null;
+
+        // Try each model in the config until we find a match
+        for (const modelConfig of config.models) {
+          const query = {
+            [modelConfig.billField]: doc.bill_no,
+            cmp_id: doc.cmp_id
+          };
+
+          // console.log(`Searching in ${modelConfig.type} with query:`, query);
+
+          const foundDoc = await modelConfig.model.findOne(query);
+          if (foundDoc) {
+            sourceDoc = foundDoc;
+            matchedModel = modelConfig;
+            break;
+          }
+        }
+
+        if (sourceDoc && sourceDoc._id) {
+          await TallyData.updateOne(
+            { _id: doc._id },
+            {
+              $set: {
+                billId: sourceDoc._id,
+                updatedAt: new Date(),
+                lastModifiedBy: "system",
+                documentType: matchedModel.type // Adding document type for reference
+              },
+            }
+          );
+          console.log(`Updated document ${doc._id} with billId ${sourceDoc._id} (${matchedModel.type})`);
+          results.updated++;
+        } else {
+          console.log(`No matching document found for bill_no: ${doc.bill_no}`);
+          results.notFound++;
+          results.errors.push({
+            bill_no: doc.bill_no,
+            source: doc.source,
+            error: `Document not found in any of the relevant collections`,
+            searchedIn: config.models.map(m => m.type)
+          });
+        }
+      } catch (error) {
+        console.error(`Error processing document ${doc.bill_no}:`, error);
+        results.failed++;
+        results.errors.push({
+          bill_no: doc.bill_no,
+          error: error.message,
+          stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        });
+      }
+    }
+
+    // Calculate execution time
+    const executionTime = (Date.now() - startTime) / 1000;
+
+    // Return detailed response
+    return res.status(200).json({
+      success: true,
+      executionTime: `${executionTime} seconds`,
+      results: {
+        ...results,
+        errors: results.errors.slice(0, 10), // Limit error list to first 10
+      },
+      message: "Bill ID update process completed",
+      summary: {
+        processed: results.total,
+        updated: results.updated,
+        notFound: results.notFound,
+        failed: results.failed,
+        successRate: `${((results.updated / results.total) * 100).toFixed(2)}%`
+      }
+    });
+
+  } catch (error) {
+    console.error("Error in updateMissingBillIds:", error);
+    return res.status(500).json({
+      success: false,
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+      message: "Failed to update bill IDs",
+    });
+  }
+};
+
+
+
+// Get update status

@@ -195,6 +195,7 @@ export const editPurchase = async (req, res) => {
       party_id: party?.party_master_id,
       cmp_id: orgId,
       bill_no: purchaseNumber,
+      billId: existingPurchase._id,
     }).session(session);
 
     if (matchedOutStanding) {
@@ -208,6 +209,7 @@ export const editPurchase = async (req, res) => {
           party_id: party?.party_master_id,
           cmp_id: orgId,
           bill_no: purchaseNumber,
+          billId: existingPurchase._id,
         },
         {
           $set: { bill_pending_amt: newOutstanding, bill_amount: newBillValue },
@@ -265,10 +267,22 @@ export const cancelPurchase = async (req, res) => {
       // Revert existing stock updates
       await revertPurchaseStockUpdates(existingPurchase.items, session);
 
+
+      const cancelOutstanding = await TallyData.findOneAndUpdate(
+        {
+          bill_no: existingPurchase?.purchaseNumber,
+          billId: purchaseId?.toString(),
+        },
+        {
+          $set: {
+            isCancelled: true,
+          },
+        }
+      ).session(session);
+
       existingPurchase.isCancelled = true;
       const cancelledPurchase = await existingPurchase.save({ session });
 
-   
       await session.commitTransaction();
       session.endSession();
 

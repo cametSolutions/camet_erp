@@ -150,6 +150,18 @@ const RETRY_DELAY = 1000; // 1 second
       // Revert existing stock updates
       await revertCreditNoteStockUpdates(existingCreditNote.items, session);
 
+      const cancelOutstanding = await TallyData.findOneAndUpdate(
+        {
+          bill_no: existingCreditNote?.creditNoteNumber,
+          billId: creditNoteId?.toString(),
+        },
+        {
+          $set: {
+            isCancelled: true,
+          },
+        }
+      ).session(session);
+
       existingCreditNote.isCancelled = true;
       const cancelledCreditNote = await existingCreditNote.save({ session });
 
@@ -269,6 +281,7 @@ export const editCreditNote = async (req, res) => {
       party_id: party?.party_master_id,
       cmp_id: orgId,
       bill_no: creditNoteNumber,
+      billId: existingCreditNote._id.toString(),
     }).session(session);
 
     if (matchedOutStanding) {
@@ -282,6 +295,7 @@ export const editCreditNote = async (req, res) => {
           party_id: party?.party_master_id,
           cmp_id: orgId,
           bill_no: creditNoteNumber,
+          billId: existingCreditNote._id.toString(),
         },
         {
           $set: { bill_pending_amt: newOutstanding, bill_amount: newBillValue },
