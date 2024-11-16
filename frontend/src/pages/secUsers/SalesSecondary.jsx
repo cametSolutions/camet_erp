@@ -31,9 +31,8 @@ import PaymentSplittingIcon from "../../components/secUsers/main/paymentSplittin
 
 function SalesSecondary() {
   const [additional, setAdditional] = useState(false);
-  // const [godownname, setGodownname] = useState("");
-
   const [salesNumber, setSalesNumber] = useState("");
+  const [loading, setLoading] = useState(false);
   const [additionalChragesFromCompany, setAdditionalChragesFromCompany] =
     useState([]);
 
@@ -322,36 +321,39 @@ function SalesSecondary() {
     ]);
   };
 
-  const getPaymentSplittingData = (data) => {
-    console.log("akjls", data);
-  };
 
   const submitHandler = async () => {
+    setLoading(true);
     // console.log("haii");
     if (Object.keys(party).length == 0) {
       // console.log("haii");
 
       toast.error("Add a party first");
+      setLoading(false);
       return;
     }
     if (items.length == 0) {
       // console.log("haii");
 
       toast.error("Add at least an item");
+      setLoading(false);
+
       return;
     }
 
     if (additional) {
-      ("haii");
 
       const hasEmptyValue = rows.some((row) => row.value === "");
       if (hasEmptyValue) {
         toast.error("Please add a value.");
+        setLoading(false);
         return;
       }
       const hasNagetiveValue = rows.some((row) => parseFloat(row.value) < 0);
       if (hasNagetiveValue) {
         toast.error("Please add a positive value");
+        setLoading(false);
+
         return;
       }
     }
@@ -402,6 +404,8 @@ function SalesSecondary() {
     } catch (error) {
       toast.error(error.response.data.message);
       console.log(error);
+    }finally{
+      setLoading(false);
     }
   };
 
@@ -432,6 +436,7 @@ function SalesSecondary() {
           submitHandler={submitHandler}
           removeAll={removeAll}
           tab="add"
+          loading={loading}
         />
 
         {/* adding party */}

@@ -262,9 +262,9 @@ function SidebarSec({ TAB, showBar }) {
         }   transition-transform  duration-500 ease-in-out flex flex-col w-64 h-screen p-1   bg-gray-900   overflow-y-auto `}
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
-        <aside className="border px-5 border-gray-600  pb-6 ">
+        <aside className="border-2 border-gray-700  pb-6 ">
           {/* Keep existing header/profile section */}
-          <div className="w-full relative  flex items-center justify-between py-5">
+          <div className="w-full relative  flex items-center justify-between py-5 bg-[#19222d] px-5 ">
             <div className="flex gap-3 px-4 items-center">
               <img
                 className="h-9"
@@ -290,7 +290,7 @@ function SidebarSec({ TAB, showBar }) {
           {/* <hr /> */}
 
           {/* Keep existing profile section */}
-          <div className="flex flex-col items-center  -mx-5 mt-1  bg-[#19222d] p-4 py-6 rounded-sm ">
+          <div className="flex flex-col items-center  mt-1  bg-[#19222d] p-4 py-6 rounded-sm ">
             <div className="flex items-center justify-center h-26 w-26 rounded-full bg-blue-500 p-0.5">
               <div className="flex items-center justify-center h-25 w-25 rounded-full bg-black p-1">
                 <img
@@ -381,10 +381,9 @@ function SidebarSec({ TAB, showBar }) {
             </div>
           </div>
 
-          <hr className=" border border-gray-800 mt-1" />
+          <hr className=" border border-gray-800 mt-1 " />
 
-          <div className="">
-            <div className="flex flex-col justify-between flex-1 mt-3">
+            <div className="flex flex-col justify-between flex-1 mt-3 px-5">
               <nav>
                 {navItems.map((item, index) => (
                   <div key={index}>
@@ -448,7 +447,6 @@ function SidebarSec({ TAB, showBar }) {
                 ))}
               </nav>
             </div>
-          </div>
 
 
         </aside>
