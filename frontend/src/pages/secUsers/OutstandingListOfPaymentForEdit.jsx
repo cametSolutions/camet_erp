@@ -60,29 +60,29 @@ function OutstandingListOfPaymentForEdit() {
 
   const modifyOutstandings = (outstandings, billData, paymentData) => {
     // Create a map of bill numbers to settled amounts from billData
-    const billSettlements = new Map(billData.map(bill => [bill.billNo, bill.settledAmount]));
+    const billSettlements = new Map(billData.map(bill => [bill.billId, bill.settledAmount]));
   
     // Create a map of bill numbers to pending amounts from paymentData
-    const receiptPendingAmounts = new Map(paymentData.outstandings.map(bill => [bill.bill_no, bill.bill_pending_amt]));
+    const receiptPendingAmounts = new Map(paymentData.outstandings.map(bill => [bill.billId, bill.bill_pending_amt]));
   
     // Combine outstandings and paymentData.outstandings, overwriting by bill_no
     const combinedMap = new Map();
   
     // Add all entries from paymentData.outstandings to the map
     paymentData.outstandings.forEach(bill => {
-      combinedMap.set(bill.bill_no, { ...bill });
+      combinedMap.set(bill.billId, { ...bill });
     });
   
     // Add or overwrite entries from outstandings to the map
     outstandings.forEach(bill => {
-      combinedMap.set(bill.bill_no, { ...bill, ...combinedMap.get(bill.bill_no) });
+      combinedMap.set(bill.billId, { ...bill, ...combinedMap.get(bill.billId) });
     });
   
     // Convert the map back to an array and modify the pending amounts
     const combinedArray = Array.from(combinedMap.values()).map(outstanding => {
-      const billNo = outstanding.bill_no;
-      const settledAmount = billSettlements.get(billNo) || 0;
-      const receiptPendingAmount = receiptPendingAmounts.get(billNo) || 0;
+      const billId = outstanding.billId;
+      const settledAmount = billSettlements.get(billId) || 0;
+      const receiptPendingAmount = receiptPendingAmounts.get(billId) || 0;
   
       return {
         ...outstanding,
@@ -165,6 +165,7 @@ function OutstandingListOfPaymentForEdit() {
 
         const resultObject = {
           billNo: el.bill_no,
+          billId: el.billId,
           settledAmount,
           remainingAmount: remainingBillAmount,
         };

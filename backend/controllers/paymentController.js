@@ -5,17 +5,13 @@ import {
 import TallyData from "../models/TallyData.js";
 import mongoose from "mongoose";
 import secondaryUserModel from "../models/secondaryUserModel.js";
-import {
-  createOutstandingWithAdvanceAmount,
-} from "../helpers/receiptHelper.js";
+import { createOutstandingWithAdvanceAmount } from "../helpers/receiptHelper.js";
 
 import {
   deleteAdvancePayment,
   updatePaymentNumber,
   updateTallyData,
   revertTallyUpdates,
-
-
 } from "../helpers/paymentHelper.js";
 import paymentModel from "../models/paymentModel.js";
 
@@ -82,8 +78,6 @@ export const createPayment = async (req, res) => {
       session
     );
 
- 
-
     // Create the new payment
     const newPayment = new paymentModel({
       createdAt: new Date(date),
@@ -105,10 +99,16 @@ export const createPayment = async (req, res) => {
     });
 
     // Save the payment in the transaction session
-    const savedPayment = await newPayment.save({ session , new: true });
+    const savedPayment = await newPayment.save({ session, new: true });
 
-       // Use the helper function to update TallyData
-       await updateTallyData(billData, cmp_id, session,paymentNumber,savedPayment._id.toString());
+    // Use the helper function to update TallyData
+    await updateTallyData(
+      billData,
+      cmp_id,
+      session,
+      paymentNumber,
+      savedPayment._id.toString()
+    );
 
     if (advanceAmount > 0 && savedPayment) {
       const outstandingWithAdvanceAmount =
@@ -184,6 +184,7 @@ export const cancelPayment = async (req, res) => {
     if (payment.advanceAmount > 0) {
       await deleteAdvancePayment(
         payment.paymentNumber,
+        payment._id.toString(),
         cmp_id,
         Primary_user_id,
         session
@@ -279,7 +280,13 @@ export const editPayment = async (req, res) => {
     }
 
     // Use the helper function to update TallyData
-    await updateTallyData(billData, cmp_id, session, paymentNumber,payment._id.toString());
+    await updateTallyData(
+      billData,
+      cmp_id,
+      session,
+      paymentNumber,
+      payment._id.toString()
+    );
 
     ///update the existing payment
     payment.date = date;

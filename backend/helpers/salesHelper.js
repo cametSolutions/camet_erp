@@ -394,6 +394,7 @@ export const updateTallyData = async (
       {
         cmp_id: orgId,
         bill_no: salesNumber,
+        billId:billId.toString(),
         Primary_user_id: Primary_user_id,
         party_id: party?.party_master_id,
       },

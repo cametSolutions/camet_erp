@@ -58,16 +58,20 @@ function OutstandingListOfReceiptForEdit() {
       `/api/sUsers/fetchOutstandingDetails/${party_id}/${cmp_id}?voucher=receipt`
   );
 
+  console.log(billData, "billData");
+  console.log(receiptData, "receiptData");
+  
+
   const modifyOutstandings = (outstandings, billData, receiptData) => {
     // Create a map of bill numbers to settled amounts from billData
     const billSettlements = new Map(
-      billData.map((bill) => [bill.billNo, bill.settledAmount])
+      billData.map((bill) => [bill.billId, bill.settledAmount])
     );
 
     // Create a map of bill numbers to pending amounts from receiptData
     const receiptPendingAmounts = new Map(
       receiptData.outstandings.map((bill) => [
-        bill.bill_no,
+        bill.billId,
         bill.bill_pending_amt,
       ])
     );
@@ -77,23 +81,23 @@ function OutstandingListOfReceiptForEdit() {
 
     // Add all entries from receiptData.outstandings to the map
     receiptData.outstandings.forEach((bill) => {
-      combinedMap.set(bill.bill_no, { ...bill });
+      combinedMap.set(bill.billId, { ...bill });
     });
 
     // Add or overwrite entries from outstandings to the map
     outstandings.forEach((bill) => {
-      combinedMap.set(bill.bill_no, {
+      combinedMap.set(bill.billId, {
         ...bill,
-        ...combinedMap.get(bill.bill_no),
+        ...combinedMap.get(bill.billId),
       });
     });
 
     // Convert the map back to an array and modify the pending amounts
     const combinedArray = Array.from(combinedMap.values()).map(
       (outstanding) => {
-        const billNo = outstanding.bill_no;
-        const settledAmount = billSettlements.get(billNo) || 0;
-        const receiptPendingAmount = receiptPendingAmounts.get(billNo) || 0;
+        const billId = outstanding.billId;
+        const settledAmount = billSettlements.get(billId) || 0;
+        const receiptPendingAmount = receiptPendingAmounts.get(billId) || 0;
 
         return {
           ...outstanding,
@@ -177,6 +181,7 @@ function OutstandingListOfReceiptForEdit() {
 
         const resultObject = {
           billNo: el.bill_no,
+          billId: el.billId,
           settledAmount,
           remainingAmount: remainingBillAmount,
         };

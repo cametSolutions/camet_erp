@@ -29,7 +29,7 @@ export const fetchOutstandingDetails = async (req, res) => {
   if (voucher === "receipt") {
     sourceMatch = { classification: "Dr" };
   } else if (voucher === "payment") {
-    sourceMatch = {classification: "Cr" };
+    sourceMatch = { classification: "Cr" };
   }
   try {
     const outstandings = await TallyData.find({
@@ -39,7 +39,7 @@ export const fetchOutstandingDetails = async (req, res) => {
       ...sourceMatch,
     })
       .sort({ bill_date: 1 })
-      .select("bill_no bill_date bill_pending_amt source bill_date");
+      .select("bill_no billId bill_date bill_pending_amt source bill_date");
     if (outstandings) {
       return res.status(200).json({
         totalOutstandingAmount: outstandings.reduce(
@@ -161,6 +161,8 @@ export const createReceipt = async (req, res) => {
         await createOutstandingWithAdvanceAmount(
           cmp_id,
           savedReceipt.receiptNumber,
+          savedReceipt._id.toString(),
+
           Primary_user_id,
           party,
           secondaryUser.mobileNumber,
@@ -207,7 +209,6 @@ export const cancelReceipt = async (req, res) => {
     // Find the receipt to be canceled
     const receipt = await ReceiptModel.findById(receiptId).session(session);
 
-
     if (!receipt) {
       await session.abortTransaction();
       session.endSession();
@@ -236,6 +237,7 @@ export const cancelReceipt = async (req, res) => {
     if (receipt.advanceAmount > 0) {
       await deleteAdvanceReceipt(
         receipt.receiptNumber,
+        receipt._Id.toString(),
         cmp_id,
         Primary_user_id,
         session

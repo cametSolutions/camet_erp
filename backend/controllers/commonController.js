@@ -48,6 +48,7 @@ export const getSalesDetails = async (req, res) => {
 
     ////find the outstanding of the sale
     const outstandingOfSale = await OutstandingModel.findOne({
+      billId: saleDetails._id.toString(),
       bill_no: saleDetails.salesNumber,
       billId: saleDetails._id.toString(),
       cmp_id: saleDetails.cmp_id,
@@ -291,6 +292,7 @@ export const getCreditNoteDetails = async (req, res) => {
     if (details) {
       ////find the outstanding of the sale
       const outstandingOfCreditNote = await OutstandingModel.findOne({
+        billId: details._id.toString(),
         bill_no: details.creditNoteNumber,
         cmp_id: details.cmp_id,
         Primary_user_id: details.Primary_user_id,
@@ -530,6 +532,7 @@ export const getDebitNoteDetails = async (req, res) => {
     if (details) {
       ////find the outstanding of the sale
       const outstandingOfCreditNote = await OutstandingModel.findOne({
+        billId: details._id.toString(),
         bill_no: details.debitNoteNumber,
         cmp_id: details.cmp_id,
         Primary_user_id: details.Primary_user_id,
@@ -1038,6 +1041,7 @@ export const getPurchaseDetails = async (req, res) => {
 
     ////find the outstanding of the sale
     const outstandingOfPurchase = await OutstandingModel.findOne({
+      billId: purchaseDetails._id.toString(),
       bill_no: purchaseDetails.purchaseNumber,
       cmp_id: purchaseDetails.cmp_id,
       Primary_user_id: purchaseDetails.Primary_user_id,

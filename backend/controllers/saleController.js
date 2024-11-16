@@ -99,7 +99,7 @@ export const createSale = async (req, res) => {
 
     let valueToUpdateInTally = 0;
 
-    if ( paymentSplittingData && Object.keys(paymentSplittingData).length > 0) {
+    if (paymentSplittingData && Object.keys(paymentSplittingData).length > 0) {
       valueToUpdateInTally = paymentSplittingData?.balanceAmount;
     } else {
       valueToUpdateInTally = lastAmount;
@@ -121,7 +121,7 @@ export const createSale = async (req, res) => {
 
     ////save payment splitting data in bank or cash model also
 
-    if ( paymentSplittingData && Object.keys(paymentSplittingData).length > 0) {
+    if (paymentSplittingData && Object.keys(paymentSplittingData).length > 0) {
       await savePaymentSplittingDataInSources(
         paymentSplittingData,
         salesNumber,
@@ -238,14 +238,21 @@ export const editSale = async (req, res) => {
       ///considering the bill balance if payment is splitted
 
       let oldBillBalance;
-      if ( existingSale?.paymentSplittingData && Object.keys(existingSale?.paymentSplittingData).length > 0) {
-        oldBillBalanexistingSalece = existingSale?.paymentSplittingData?.balanceAmount;
+      if (
+        existingSale?.paymentSplittingData &&
+        Object.keys(existingSale?.paymentSplittingData).length > 0
+      ) {
+        oldBillBalanexistingSalece =
+          existingSale?.paymentSplittingData?.balanceAmount;
       } else {
-        oldBillBalance =existingSale?.finalAmount || 0;
+        oldBillBalance = existingSale?.finalAmount || 0;
       }
       let newBillBalance;
 
-      if ( paymentSplittingData && Object.keys(paymentSplittingData).length > 0) {
+      if (
+        paymentSplittingData &&
+        Object.keys(paymentSplittingData).length > 0
+      ) {
         newBillBalance = paymentSplittingData?.balanceAmount;
       } else {
         newBillBalance = lastAmount;
@@ -261,10 +268,10 @@ export const editSale = async (req, res) => {
         party_id: party?.party_master_id,
         cmp_id: orgId,
         bill_no: salesNumber,
+        billId: existingSale?._id.toString(),
       }).session(session);
 
       // console.log("matchedOutStanding", matchedOutStanding);
-      
 
       ///updating the existing outstanding record
 
@@ -272,14 +279,14 @@ export const editSale = async (req, res) => {
         const newOutstanding =
           Number(matchedOutStanding?.bill_pending_amt || 0) + diffBillValue;
 
+        // console.log("newOutstanding", newOutstanding);
 
-          // console.log("newOutstanding", newOutstanding);
-          
         await TallyData.updateOne(
           {
             party_id: party?.party_master_id,
             cmp_id: orgId,
             bill_no: salesNumber,
+            billId: existingSale?._id.toString(),
           },
           {
             $set: {
@@ -290,8 +297,6 @@ export const editSale = async (req, res) => {
           { session }
         );
       }
-
-
 
       //// updating the payment splitting data
       ///first reverting the existing payment splitting data if it exists
@@ -306,7 +311,7 @@ export const editSale = async (req, res) => {
         );
       }
 
-      //// recreating new the payment splitting data 
+      //// recreating new the payment splitting data
 
       if (paymentSplittingData?.splittingData?.length > 0) {
         const creditItem = paymentSplittingData.splittingData.find(
@@ -326,6 +331,7 @@ export const editSale = async (req, res) => {
           const matchedOutStandingOfCredit = await TallyData.findOne({
             cmp_id: orgId,
             bill_no: salesNumber,
+            billId: existingSale?._id.toString(),
             createdBy: "paymentSplitting",
           }).session(session);
 
@@ -374,10 +380,10 @@ export const editSale = async (req, res) => {
         }
       }
 
-        await session.commitTransaction();
-        return res
-          .status(200)
-          .json({ success: true, message: "Sale edited successfully" });
+      await session.commitTransaction();
+      return res
+        .status(200)
+        .json({ success: true, message: "Sale edited successfully" });
     } catch (error) {
       await session.abortTransaction();
       console.error("Error editing sale:", error);
