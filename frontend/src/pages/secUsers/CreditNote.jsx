@@ -392,13 +392,7 @@ function CreditNote() {
   return (
     <div className="mb-14 sm:mb-0">
       <div className="flex-1 bg-slate-100 h -screen ">
-        {/* <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex  items-center gap-2 sticky top-0 z-50  ">
-  
-          <Link to={"/sUsers/selectVouchers"}>
-            <IoIosArrowRoundBack className="text-3xl text-white cursor-pointer" />
-          </Link>
-          <p className="text-white text-lg   font-bold ">Credit Note</p>
-        </div> */}
+     
 
         <TitleDiv
           title="Credit Note"
