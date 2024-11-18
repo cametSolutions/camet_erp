@@ -13,7 +13,6 @@ import { useDispatch } from "react-redux";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import api from "../../api/api";
-import { IoIosAddCircle } from "react-icons/io";
 import {
   removeAll,
   removeAdditionalCharge,
@@ -21,13 +20,14 @@ import {
   removeGodownOrBatch,
   changeDate,
 } from "../../../slices/salesSecondary";
-import { IoIosArrowRoundBack } from "react-icons/io";
 
 import DespatchDetails from "../../components/secUsers/DespatchDetails";
 import HeaderTile from "../../components/secUsers/main/HeaderTile";
 import AddPartyTile from "../../components/secUsers/main/AddPartyTile";
 import AddItemTile from "../../components/secUsers/main/AddItemTile";
 import PaymentSplittingIcon from "../../components/secUsers/main/paymentSplitting/PaymentSplittingIcon";
+import FooterButton from "../../components/secUsers/main/FooterButton";
+import TitleDiv from "../../components/common/TitleDiv";
 
 function SalesSecondary() {
   const [additional, setAdditional] = useState(false);
@@ -321,7 +321,6 @@ function SalesSecondary() {
     ]);
   };
 
-
   const submitHandler = async () => {
     setLoading(true);
     // console.log("haii");
@@ -342,7 +341,6 @@ function SalesSecondary() {
     }
 
     if (additional) {
-
       const hasEmptyValue = rows.some((row) => row.value === "");
       if (hasEmptyValue) {
         toast.error("Please add a value.");
@@ -404,7 +402,7 @@ function SalesSecondary() {
     } catch (error) {
       toast.error(error.response.data.message);
       console.log(error);
-    }finally{
+    } finally {
       setLoading(false);
     }
   };
@@ -412,18 +410,21 @@ function SalesSecondary() {
   // console.log(items);
 
   return (
-    <div className="">
+    <div className="mb-14 sm:mb-0">
       <div className="flex-1 bg-slate-100 h -screen ">
-        <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex  items-center gap-2 sticky top-0 z-50  ">
-          {/* <IoReorderThreeSharp
-            onClick={handleToggleSidebar}
-            className="block md:hidden text-white text-3xl"
-          /> */}
+        {/* <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex  items-center gap-2 sticky top-0 z-50  ">
+      
           <Link to={"/sUsers/selectVouchers"}>
             <IoIosArrowRoundBack className="text-3xl text-white cursor-pointer" />
           </Link>
           <p className="text-white text-lg   font-bold ">Sales</p>
-        </div>
+        </div> */}
+
+        <TitleDiv
+          title="Sales"
+          from={`/sUsers/selectVouchers`}
+          loading={loading}
+        />
 
         {/* invoiec date */}
         <HeaderTile
@@ -436,7 +437,7 @@ function SalesSecondary() {
           submitHandler={submitHandler}
           removeAll={removeAll}
           tab="add"
-          loading={loading}
+          // loading={loading}
         />
 
         {/* adding party */}
@@ -495,7 +496,7 @@ function SalesSecondary() {
           />
         )}
 
-        <div className=" md:hidden   ">
+        {/* <div className=" md:hidden   ">
           <div className="flex justify-center overflow-hidden w-full">
             <button
               onClick={submitHandler}
@@ -505,7 +506,14 @@ function SalesSecondary() {
               <p>Generate Sale</p>
             </button>
           </div>
-        </div>
+        </div> */}
+
+        <FooterButton
+          submitHandler={submitHandler}
+          tab="add"
+          title="Sale"
+          loading={loading}
+        />
       </div>
     </div>
   );

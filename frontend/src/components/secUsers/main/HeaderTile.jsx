@@ -16,11 +16,11 @@ function HeaderTile({
 }) {
   return (
     <div>
-      {loading && (
+      {/* {loading && (
         <section className="w-full">
           <CustomBarLoader color="#9900ff" width="100%" />
         </section>
-      )}
+      )} */}
 
       <div className="flex justify-between  p-4 bg-white drop-shadow-lg items-center text-xs md:text-base ">
         <div className=" flex flex-col gap-1 justify-center">
