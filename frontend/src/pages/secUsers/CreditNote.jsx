@@ -29,7 +29,8 @@ import AddPartyTile from "../../components/secUsers/main/AddPartyTile";
 import AddItemTile from "../../components/secUsers/main/AddItemTile";
 function CreditNote() {
   const [additional, setAdditional] = useState(false);
-  // const [godownname, setGodownname] = useState("");
+  const [loading, setLoading] = useState(false);
+
 
   const [creditNoteNumber, setcreditNoteNumber] = useState("");
   const [additionalChragesFromCompany, setAdditionalChragesFromCompany] =

@@ -1,6 +1,5 @@
 /* eslint-disable react/no-unescaped-entities */
 import { useEffect, useState, useMemo } from "react";
-import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
 import {
   removeParty,
@@ -23,7 +22,6 @@ import { useDispatch } from "react-redux";
 import { toast } from "react-toastify";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../../api/api";
-import { IoIosAddCircle } from "react-icons/io";
 
 import DespatchDetails from "../../components/secUsers/DespatchDetails";
 import HeaderTile from "../../components/secUsers/main/HeaderTile";
@@ -499,80 +497,81 @@ function EditSale() {
           loading={submitLoading || loading}
         />
 
-        {!loading && (
-          <>
-            <HeaderTile
-              title={"Sale"}
-              number={salesNumber}
-              selectedDate={selectedDate}
-              setSelectedDate={setSelectedDate}
-              dispatch={dispatch}
-              changeDate={changeDate}
-              submitHandler={submitHandler}
-              removeAll={removeAll}
-              tab="edit"
-              // loading={submitLoading}
-            />
+        {/* {!loading && ( */}
 
-            <AddPartyTile
-              party={party}
-              dispatch={dispatch}
-              removeParty={removeParty}
-              link="/sUsers/searchPartySales"
-              linkBillTo="/sUsers/billToSales"
-            />
-            <DespatchDetails tab={"sale"} />
+        <div className={`${loading ? "pointer-events-none opacity-70" : ""}`}>
+          <HeaderTile
+            title={"Sale"}
+            number={salesNumber}
+            selectedDate={selectedDate}
+            setSelectedDate={setSelectedDate}
+            dispatch={dispatch}
+            changeDate={changeDate}
+            submitHandler={submitHandler}
+            removeAll={removeAll}
+            tab="edit"
+            // loading={submitLoading}
+          />
 
-            <AddItemTile
-              items={items}
-              handleAddItem={handleAddItem}
-              dispatch={dispatch}
-              removeItem={removeItem}
-              removeGodownOrBatch={removeGodownOrBatch}
-              navigate={navigate}
-              godownname={""}
-              subTotal={subTotal}
-              type="sale"
-              additional={additional}
-              cancelHandler={cancelHandler}
-              rows={rows}
-              handleDeleteRow={handleDeleteRow}
-              handleLevelChange={handleLevelChange}
-              additionalChragesFromCompany={additionalChragesFromCompany}
-              actionChange={actionChange}
-              handleRateChange={handleRateChange}
-              handleAddRow={handleAddRow}
-              setAdditional={setAdditional}
-              urlToAddItem="/sUsers/addItemSales"
-              urlToEditItem="/sUsers/editItemSales"
-            />
+          <AddPartyTile
+            party={party}
+            dispatch={dispatch}
+            removeParty={removeParty}
+            link="/sUsers/searchPartySales"
+            linkBillTo="/sUsers/billToSales"
+          />
+          <DespatchDetails tab={"sale"} />
 
-            <div className="flex justify-between bg-white mt-2 p-3">
-              <p className="font-bold text-lg">Total Amount</p>
-              <div className="flex flex-col items-center">
-                <p className="font-bold text-lg">
-                  ₹ {totalAmount.toFixed(2) ?? 0}
-                </p>
-                <p className="text-[9px] text-gray-400">(rounded)</p>
-              </div>
+          <AddItemTile
+            items={items}
+            handleAddItem={handleAddItem}
+            dispatch={dispatch}
+            removeItem={removeItem}
+            removeGodownOrBatch={removeGodownOrBatch}
+            navigate={navigate}
+            godownname={""}
+            subTotal={subTotal}
+            type="sale"
+            additional={additional}
+            cancelHandler={cancelHandler}
+            rows={rows}
+            handleDeleteRow={handleDeleteRow}
+            handleLevelChange={handleLevelChange}
+            additionalChragesFromCompany={additionalChragesFromCompany}
+            actionChange={actionChange}
+            handleRateChange={handleRateChange}
+            handleAddRow={handleAddRow}
+            setAdditional={setAdditional}
+            urlToAddItem="/sUsers/addItemSales"
+            urlToEditItem="/sUsers/editItemSales"
+          />
+
+          <div className="flex justify-between bg-white mt-2 p-3">
+            <p className="font-bold text-lg">Total Amount</p>
+            <div className="flex flex-col items-center">
+              <p className="font-bold text-lg">
+                ₹ {totalAmount.toFixed(2) ?? 0}
+              </p>
+              <p className="text-[9px] text-gray-400">(rounded)</p>
             </div>
+          </div>
 
-            {items.length > 0 && totalAmount > 0 && (
-              <PaymentSplittingIcon
-                totalAmount={totalAmount}
-                party={party}
-                voucherType="sale"
-              />
-            )}
-
-            <FooterButton
-              submitHandler={submitHandler}
-              tab="edit"
-              title="Sale"
-              loading={submitLoading}
+          {items.length > 0 && totalAmount > 0 && (
+            <PaymentSplittingIcon
+              totalAmount={totalAmount}
+              party={party}
+              voucherType="sale"
             />
-          </>
-        )}
+          )}
+
+          <FooterButton
+            submitHandler={submitHandler}
+            tab="edit"
+            title="Sale"
+            loading={submitLoading}
+          />
+        </div>
+        {/* )} */}
 
         {/* adding items */}
       </div>
