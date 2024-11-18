@@ -453,6 +453,7 @@ function SalesSecondary() {
               submitHandler={submitHandler}
               removeAll={removeAll}
               tab="add"
+              loading={submitLoading}
             />
             {/* adding party */}
 

@@ -405,10 +405,14 @@ function EditSale() {
     // e.preventDefault();
     if (Object.keys(party).length == 0) {
       toast.error("Add a party first");
+      setSubmitLoading(false);
+
       return;
     }
     if (items.length == 0) {
       toast.error("Add at least an item");
+      setSubmitLoading(false);
+
       return;
     }
 
@@ -416,11 +420,15 @@ function EditSale() {
       const hasEmptyValue = rows.some((row) => row.value === "");
       if (hasEmptyValue) {
         toast.error("Please add a value.");
+        setSubmitLoading(false);
+
         return;
       }
       const hasNagetiveValue = rows.some((row) => parseFloat(row.value) < 0);
       if (hasNagetiveValue) {
         toast.error("Please add a positive value");
+        setSubmitLoading(false);
+
         return;
       }
     }
@@ -510,7 +518,7 @@ function EditSale() {
             submitHandler={submitHandler}
             removeAll={removeAll}
             tab="edit"
-            // loading={submitLoading}
+            loading={submitLoading}
           />
 
           <AddPartyTile
