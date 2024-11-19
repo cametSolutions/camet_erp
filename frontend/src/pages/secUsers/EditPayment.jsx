@@ -31,6 +31,8 @@ import { useNavigate } from "react-router-dom";
 import useFetch from "../../customHook/useFetch";
 import { useParams } from "react-router-dom";
 import ReceiptButton from "../../components/secUsers/main/Forms/ReceiptButton";
+import TitleDiv from "../../components/common/TitleDiv";
+import FooterButton from "../../components/secUsers/main/FooterButton";
 
 function EditPayment() {
   const { id } = useParams();
@@ -59,10 +61,11 @@ function EditPayment() {
   } = useSelector((state) => state.payment);
 
   const [selectedDate, setSelectedDate] = useState(dateRedux);
+  const [submitLoading, setSubmitLoading] = useState(false);
 
   /////fetch receipt details
 
-  const { data: paymentDetailsOfPurchase } = useFetch(
+  const { data: paymentDetailsOfPurchase, loading } = useFetch(
     outstandingsRedux.length == 0 && `/api/sUsers/getPaymentDetails/${id}`
   );
 
@@ -139,6 +142,7 @@ function EditPayment() {
   }, [paymentDetailsOfPurchase]);
 
   const submitHandler = async () => {
+    setSubmitLoading(true);
     // Form data
     const formData = {
       cmp_id,
@@ -157,8 +161,8 @@ function EditPayment() {
     };
 
     if (formData?.paymentMethod === "Online") {
-      formData.paymentDetailsOfPurchase = {
-        ...formData.paymentDetailsOfPurchase,
+      formData.paymentDetails = {
+        ...formData.paymentDetails,
         chequeDate: null,
         chequeNumber: null,
       };
@@ -174,22 +178,27 @@ function EditPayment() {
       };
     }
 
-    // console.log(formData);
-
     // Validation
     if (!formData.paymentNumber) {
+      setSubmitLoading(false);
       return toast.error("Receipt number is required.");
     }
 
     if (!formData.party || !formData.party._id) {
+      setSubmitLoading(false);
+
       return toast.error("Party selection is required.");
     }
 
     if (!formData.enteredAmount) {
+      setSubmitLoading(false);
+
       return toast.error(" Amount is required.");
     }
 
     if (!formData.paymentMethod) {
+      setSubmitLoading(false);
+
       return toast.error("Payment method is required.");
     }
     if (
@@ -197,6 +206,8 @@ function EditPayment() {
         formData.paymentMethod === "Online") &&
       !formData.paymentDetails
     ) {
+      setSubmitLoading(false);
+
       return toast.error(
         "Payment details are required for cheque or online payments."
       );
@@ -204,9 +215,13 @@ function EditPayment() {
 
     if (formData.paymentMethod === "Cheque") {
       if (!formData.paymentDetails.chequeDate) {
+        setSubmitLoading(false);
+
         return toast.error("Cheque date is required.");
       }
       if (!formData.paymentDetails.chequeNumber) {
+        setSubmitLoading(false);
+
         return toast.error("Cheque number is required.");
       }
       if (
@@ -214,6 +229,8 @@ function EditPayment() {
         !formData.paymentDetails.bank_name ||
         !formData.paymentDetails._id
       ) {
+        setSubmitLoading(false);
+
         return toast.error("Bank details are required.");
       }
     }
@@ -224,6 +241,8 @@ function EditPayment() {
         !formData.paymentDetails.bank_name ||
         !formData.paymentDetails._id
       ) {
+        setSubmitLoading(false);
+
         return toast.error("Bank details are required.");
       }
     }
@@ -247,19 +266,19 @@ function EditPayment() {
     } catch (error) {
       toast.error(error.response?.data?.message || "An error occurred.");
       console.log(error);
+    }finally{
+      setSubmitLoading(false);
     }
   };
 
   return (
     // <div>jhdfgk</div>
     <div>
-      <header className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex  items-center gap-2 sticky top-0 z-50  ">
-        <Link to={"/sUsers/selectVouchers"}>
-          <IoIosArrowRoundBack className="text-3xl text-white cursor-pointer" />
-        </Link>
-        <p className="text-white text-lg   font-bold ">Edit Payment</p>
-      </header>
-
+      <TitleDiv
+        title="Edit Payment"
+        from={`/sUsers/selectVouchers`}
+        loading={loading || submitLoading}
+      />
       <HeaderTile
         title={"Payment"}
         number={paymentNumberRedux}
@@ -270,8 +289,8 @@ function EditPayment() {
         submitHandler={submitHandler}
         removeAll={removeAll}
         tab="edit"
+        loading={submitLoading}
       />
-
       <AddPartyTile
         party={partyRedux}
         dispatch={dispatch}
@@ -279,10 +298,14 @@ function EditPayment() {
         link="/sUsers/searchPartyPayment"
         linkBillTo=""
       />
-
       <AddAmountTile party={partyRedux} tab="payment" process="edit" />
       <PaymentModeTile tab="payment" />
-      <ReceiptButton submitHandler={submitHandler} text="Edit Payment" />
+      <FooterButton
+        submitHandler={submitHandler}
+        tab="edit"
+        title="Payment"
+        loading={submitLoading || loading}
+      />{" "}
     </div>
   );
 }

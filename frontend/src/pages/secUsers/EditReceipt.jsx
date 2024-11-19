@@ -31,6 +31,8 @@ import { useNavigate } from "react-router-dom";
 import useFetch from "../../customHook/useFetch";
 import { useParams } from "react-router-dom";
 import ReceiptButton from "../../components/secUsers/main/Forms/ReceiptButton";
+import TitleDiv from "../../components/common/TitleDiv";
+import FooterButton from "../../components/secUsers/main/FooterButton";
 
 function EditReceipt() {
   const { id } = useParams();
@@ -53,16 +55,17 @@ function EditReceipt() {
     _id: _idRedux,
     outstandings: outstandingsRedux,
     modifiedOutstandings: modifiedOutstandingsRedux,
-    enteredAmount : enteredAmountRedux,
-    advanceAmount : advanceAmountRedux,
-    remainingAmount : remainingAmountRedux,
+    enteredAmount: enteredAmountRedux,
+    advanceAmount: advanceAmountRedux,
+    remainingAmount: remainingAmountRedux,
   } = useSelector((state) => state.receipt);
 
   const [selectedDate, setSelectedDate] = useState(dateRedux);
+  const [submitLoading, setSubmitLoading] = useState(false);
 
   /////fetch receipt details
 
-  const { data: receiptDetails } = useFetch(
+  const { data: receiptDetails, loading } = useFetch(
     outstandingsRedux.length == 0 && `/api/sUsers/getReceiptDetails/${id}`
   );
 
@@ -140,9 +143,8 @@ function EditReceipt() {
     }
   }, [receiptDetails]);
 
-  
-
   const submitHandler = async () => {
+    setSubmitLoading(true);
     // Form data
     const formData = {
       cmp_id,
@@ -151,9 +153,9 @@ function EditReceipt() {
       party: partyRedux,
       billData: billDataRedux,
       totalBillAmount: totalBillAmountRedux,
-      enteredAmount : enteredAmountRedux,
-      advanceAmount : advanceAmountRedux,
-      remainingAmount : remainingAmountRedux,
+      enteredAmount: enteredAmountRedux,
+      advanceAmount: advanceAmountRedux,
+      remainingAmount: remainingAmountRedux,
       paymentMethod: paymentMethodRedux,
       paymentDetails: paymentDetailsRedux,
       outstandings: modifiedOutstandingsRedux,
@@ -182,18 +184,22 @@ function EditReceipt() {
 
     // Validation
     if (!formData.receiptNumber) {
+      setSubmitLoading(false);
       return toast.error("Receipt number is required.");
     }
 
     if (!formData.party || !formData.party._id) {
+      setSubmitLoading(false);
       return toast.error("Party selection is required.");
     }
 
     if (!formData.enteredAmount) {
+      setSubmitLoading(false);
       return toast.error(" Amount is required.");
     }
 
     if (!formData.paymentMethod) {
+      setSubmitLoading(false);
       return toast.error("Payment method is required.");
     }
     if (
@@ -201,6 +207,7 @@ function EditReceipt() {
         formData.paymentMethod === "Online") &&
       !formData.paymentDetails
     ) {
+      setSubmitLoading(false);
       return toast.error(
         "Payment details are required for cheque or online payments."
       );
@@ -208,9 +215,11 @@ function EditReceipt() {
 
     if (formData.paymentMethod === "Cheque") {
       if (!formData.paymentDetails.chequeDate) {
+        setSubmitLoading(false);
         return toast.error("Cheque date is required.");
       }
       if (!formData.paymentDetails.chequeNumber) {
+        setSubmitLoading(false);
         return toast.error("Cheque number is required.");
       }
       if (
@@ -218,6 +227,7 @@ function EditReceipt() {
         !formData.paymentDetails.bank_name ||
         !formData.paymentDetails._id
       ) {
+        setSubmitLoading(false);
         return toast.error("Bank details are required.");
       }
     }
@@ -228,12 +238,12 @@ function EditReceipt() {
         !formData.paymentDetails.bank_name ||
         !formData.paymentDetails._id
       ) {
+        setSubmitLoading(false);
         return toast.error("Bank details are required.");
       }
     }
 
     // console.log("formData", formData);
-    
 
     // If validation passes, proceed with the form submission
     try {
@@ -252,43 +262,43 @@ function EditReceipt() {
     } catch (error) {
       toast.error(error.response?.data?.message || "An error occurred.");
       console.log(error);
+    } finally {
+      setSubmitLoading(false);
     }
   };
 
   return (
     // <div>jhdfgk</div>
     <div>
-      <header className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex  items-center gap-2 sticky top-0 z-50  ">
-        <Link to={"/sUsers/selectVouchers"}>
-          <IoIosArrowRoundBack className="text-3xl text-white cursor-pointer" />
-        </Link>
-        <p className="text-white text-lg   font-bold ">Receipt</p>
-      </header>
-
-      <HeaderTile
-        title={"Receipt"}
-        number={receiptNumberRedux}
-        selectedDate={selectedDate}
-        setSelectedDate={setSelectedDate}
-        dispatch={dispatch}
-        changeDate={changeDate}
-        submitHandler={submitHandler}
-        removeAll={removeAll}
-        tab="edit"
-      />
-
-      <AddPartyTile
-        party={partyRedux}
-        dispatch={dispatch}
-        removeParty={removeParty}
-        link="/sUsers/searchPartyReceipt"
-        linkBillTo=""
-      />
-
-      <AddAmountTile party={partyRedux} tab="receipt" process="edit" />
-      <PaymentModeTile tab="receipt" />
-      <ReceiptButton submitHandler={submitHandler} text="Edit Receipt" />
-
+      <TitleDiv title="Receipt" loading={loading || submitLoading} />
+      <div className={`${loading ? "pointer-events-none opacity-70" : ""}`}>
+        <HeaderTile
+          title={"Receipt"}
+          number={receiptNumberRedux}
+          selectedDate={selectedDate}
+          setSelectedDate={setSelectedDate}
+          dispatch={dispatch}
+          changeDate={changeDate}
+          submitHandler={submitHandler}
+          removeAll={removeAll}
+          tab="edit"
+        />
+        <AddPartyTile
+          party={partyRedux}
+          dispatch={dispatch}
+          removeParty={removeParty}
+          link="/sUsers/searchPartyReceipt"
+          linkBillTo=""
+        />
+        <AddAmountTile party={partyRedux} tab="receipt" process="edit" />
+        <PaymentModeTile tab="receipt" />
+        <FooterButton
+          submitHandler={submitHandler}
+          tab="edit"
+          title="Receipt"
+          loading={submitLoading || loading}
+        />{" "}
+      </div>
     </div>
   );
 }

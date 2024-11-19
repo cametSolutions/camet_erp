@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
-import { IoIosArrowRoundBack } from "react-icons/io";
 import { useSelector } from "react-redux";
-import { Link } from "react-router-dom";
 import api from "../../api/api";
 import HeaderTile from "../../components/secUsers/main/HeaderTile";
 import { useDispatch } from "react-redux";
@@ -16,7 +14,8 @@ import AddAmountTile from "../../components/secUsers/main/AddAmountTile";
 import PaymentModeTile from "../../components/secUsers/main/PaymentModeTile";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
-import ReceiptButton from "../../components/secUsers/main/Forms/ReceiptButton";
+import TitleDiv from "../../components/common/TitleDiv";
+import FooterButton from "../../components/secUsers/main/FooterButton";
 
 function PurchasePayment() {
   // ////////////////dispatch
@@ -39,17 +38,19 @@ function PurchasePayment() {
     paymentMethod,
     paymentDetails,
     note,
-    outstandings
-    
+    outstandings,
   } = useSelector((state) => state.payment);
 
   const [paymentNumber, setpaymentNumber] = useState("");
   const [selectedDate, setSelectedDate] = useState(dateRedux);
-
+  const [loading, setLoading] = useState(false);
+  const [submitLoading, setSubmitLoading] = useState(false);
   // ////////////for fetching configuration number
   useEffect(() => {
     if (paymentNumberFromRedux === "") {
       const fetchConfigurationNumber = async () => {
+        setLoading(true);
+
         try {
           const res = await api.get(
             `/api/sUsers/fetchConfigurationNumber/${orgId}/payment`,
@@ -67,17 +68,11 @@ function PurchasePayment() {
           }
 
           const { configDetails, configurationNumber } = res.data;
-          // console.log(configDetails);
-          // console.log(configurationNumber);
 
           if (configDetails) {
             const { widthOfNumericalPart, prefixDetails, suffixDetails } =
               configDetails;
             const newOrderNumber = configurationNumber.toString();
-            // console.log(newOrderNumber);
-            // console.log(widthOfNumericalPart);
-            // console.log(prefixDetails);
-            // console.log(suffixDetails);
 
             const padedNumber = newOrderNumber.padStart(
               widthOfNumericalPart,
@@ -96,6 +91,8 @@ function PurchasePayment() {
           }
         } catch (error) {
           console.log(error);
+        } finally {
+          setLoading(false);
         }
       };
       fetchConfigurationNumber();
@@ -106,10 +103,12 @@ function PurchasePayment() {
 
   /// submit handler
   const submitHandler = async () => {
+    setSubmitLoading(true);
+
     // Form data
     const formData = {
-      cmp_id : orgId,
-      paymentNumber:paymentNumberFromRedux,
+      cmp_id: orgId,
+      paymentNumber: paymentNumberFromRedux,
       date: selectedDate,
       party,
       billData,
@@ -120,7 +119,7 @@ function PurchasePayment() {
       paymentMethod,
       paymentDetails,
       note,
-      outstandings
+      outstandings,
     };
 
     if (formData?.paymentMethod === "Online") {
@@ -131,7 +130,6 @@ function PurchasePayment() {
       };
     }
     if (formData?.paymentMethod === "Cash") {
-
       formData.paymentDetails = {
         ...formData.paymentDetails,
         bank_ledname: null,
@@ -142,21 +140,27 @@ function PurchasePayment() {
       };
     }
 
-
     // Validation
     if (!formData.paymentNumber) {
+      setSubmitLoading(false);
       return toast.error("Receipt number is required.");
     }
 
     if (!formData.party || !formData.party._id) {
+      setSubmitLoading(false);
+
       return toast.error("Party selection is required.");
     }
 
     if (!formData.enteredAmount) {
+      setSubmitLoading(false);
+
       return toast.error(" Amount is required.");
     }
 
     if (!formData.paymentMethod) {
+      setSubmitLoading(false);
+
       return toast.error("Payment method is required.");
     }
     if (
@@ -164,6 +168,8 @@ function PurchasePayment() {
         formData.paymentMethod === "Online") &&
       !formData.paymentDetails
     ) {
+      setSubmitLoading(false);
+
       return toast.error(
         "Payment details are required for cheque or online payments."
       );
@@ -171,9 +177,13 @@ function PurchasePayment() {
 
     if (formData.paymentMethod === "Cheque") {
       if (!formData.paymentDetails.chequeDate) {
+        setSubmitLoading(false);
+
         return toast.error("Cheque date is required.");
       }
       if (!formData.paymentDetails.chequeNumber) {
+        setSubmitLoading(false);
+
         return toast.error("Cheque number is required.");
       }
       if (
@@ -181,6 +191,8 @@ function PurchasePayment() {
         !formData.paymentDetails.bank_name ||
         !formData.paymentDetails._id
       ) {
+        setSubmitLoading(false);
+
         return toast.error("Bank details are required.");
       }
     }
@@ -191,26 +203,22 @@ function PurchasePayment() {
         !formData.paymentDetails.bank_name ||
         !formData.paymentDetails._id
       ) {
+        setSubmitLoading(false);
+
         return toast.error("Bank details are required.");
       }
     }
 
     // console.log(formData);
-    
-
 
     // If validation passes, proceed with the form submission
     try {
-      const res = await api.post(
-        `/api/sUsers/createPayment`,
-        formData,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-          withCredentials: true,
-        }
-      );
+      const res = await api.post(`/api/sUsers/createPayment`, formData, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        withCredentials: true,
+      });
 
       console.log(res.data);
       toast.success(res.data.message);
@@ -220,43 +228,48 @@ function PurchasePayment() {
     } catch (error) {
       toast.error(error.response?.data?.message || "An error occurred.");
       console.log(error);
+    } finally {
+      setSubmitLoading(false);
     }
   };
 
-
   return (
-    <div>
-      <header className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex  items-center gap-2 sticky top-0 z-50  ">
-        <Link to={"/sUsers/selectVouchers"}>
-          <IoIosArrowRoundBack className="text-3xl text-white cursor-pointer" />
-        </Link>
-        <p className="text-white text-lg   font-bold ">Payment</p>
-      </header>
-
-      <HeaderTile
-        title={"Payment"}
-        number={paymentNumber}
-        selectedDate={selectedDate}
-        setSelectedDate={setSelectedDate}
-        dispatch={dispatch}
-        changeDate={changeDate}
-        submitHandler={submitHandler}
-        removeAll={removeAll}
-        tab="add"
+    <div className="min-h-screen relative mb-10 sm:mb-0">
+      <TitleDiv
+        title="Payment"
+        from={`/sUsers/selectVouchers`}
+        loading={loading || submitLoading}
       />
 
-      <AddPartyTile
-        party={party}
-        dispatch={dispatch}
-        removeParty={removeParty}
-        link="/sUsers/searchPartyPurchasePayment"
-        linkBillTo=""
-      />
-
-      <AddAmountTile party={party}  tab="purchase" />
-      <PaymentModeTile tab="payment" />
-      <ReceiptButton submitHandler={submitHandler} text="Generate Payment" />
-
+      <div className={`${loading ? "pointer-events-none opacity-70" : ""}`}>
+        <HeaderTile
+          title={"Payment"}
+          number={paymentNumber}
+          selectedDate={selectedDate}
+          setSelectedDate={setSelectedDate}
+          dispatch={dispatch}
+          changeDate={changeDate}
+          submitHandler={submitHandler}
+          removeAll={removeAll}
+          loading={submitLoading }
+          tab="add"
+        />
+        <AddPartyTile
+          party={party}
+          dispatch={dispatch}
+          removeParty={removeParty}
+          link="/sUsers/searchPartyPurchasePayment"
+          linkBillTo=""
+        />
+        <AddAmountTile party={party} tab="purchase" />
+        <PaymentModeTile tab="payment" />
+        <FooterButton
+          submitHandler={submitHandler}
+          tab="add"
+          title="Payment"
+          loading={submitLoading || loading}
+        />{" "}
+      </div>
     </div>
   );
 }

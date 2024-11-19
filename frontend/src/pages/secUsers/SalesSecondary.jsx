@@ -1,6 +1,5 @@
 /* eslint-disable react/no-unescaped-entities */
 import { useEffect, useState, useMemo } from "react";
-import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
 import {
   removeParty,
@@ -13,7 +12,6 @@ import { useDispatch } from "react-redux";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import api from "../../api/api";
-import { IoIosAddCircle } from "react-icons/io";
 import {
   removeAll,
   removeAdditionalCharge,
@@ -21,18 +19,21 @@ import {
   removeGodownOrBatch,
   changeDate,
 } from "../../../slices/salesSecondary";
-import { IoIosArrowRoundBack } from "react-icons/io";
 
 import DespatchDetails from "../../components/secUsers/DespatchDetails";
 import HeaderTile from "../../components/secUsers/main/HeaderTile";
 import AddPartyTile from "../../components/secUsers/main/AddPartyTile";
 import AddItemTile from "../../components/secUsers/main/AddItemTile";
 import PaymentSplittingIcon from "../../components/secUsers/main/paymentSplitting/PaymentSplittingIcon";
+import FooterButton from "../../components/secUsers/main/FooterButton";
+import TitleDiv from "../../components/common/TitleDiv";
 
 function SalesSecondary() {
   const [additional, setAdditional] = useState(false);
   const [salesNumber, setSalesNumber] = useState("");
+  const [dataLoading, setDataLoading] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [submitLoading, setSubmitLoading] = useState(false);
   const [additionalChragesFromCompany, setAdditionalChragesFromCompany] =
     useState([]);
 
@@ -59,8 +60,15 @@ function SalesSecondary() {
     (state) => state?.paymentSplitting?.paymentSplittingData
   );
 
+  ////dataLoading////
+  // Helper function to manage dataLoading state
+  const incrementLoading = () => setDataLoading((prev) => prev + 1);
+  const decrementLoading = () => setDataLoading((prev) => prev - 1);
+
   useEffect(() => {
     const getAdditionalChargesIntegrated = async () => {
+      incrementLoading();
+
       try {
         const res = await api.get(`/api/sUsers/additionalcharges/${cmp_id}`, {
           withCredentials: true,
@@ -70,6 +78,8 @@ function SalesSecondary() {
       } catch (error) {
         console.log(error);
         toast.error(error.response.data.message);
+      } finally {
+        decrementLoading();
       }
     };
     if (type != "self") {
@@ -86,6 +96,7 @@ function SalesSecondary() {
 
   useEffect(() => {
     const fetchSingleOrganization = async () => {
+      incrementLoading();
       try {
         const res = await api.get(
           `/api/sUsers/getSingleOrganization/${orgId}`,
@@ -103,6 +114,8 @@ function SalesSecondary() {
         }
       } catch (error) {
         console.log(error);
+      } finally {
+        decrementLoading();
       }
     };
 
@@ -111,6 +124,7 @@ function SalesSecondary() {
 
   useEffect(() => {
     const fetchConfigurationNumber = async () => {
+      incrementLoading();
       try {
         const res = await api.get(
           `/api/sUsers/fetchConfigurationNumber/${orgId}/sales`,
@@ -152,6 +166,8 @@ function SalesSecondary() {
         }
       } catch (error) {
         console.log(error);
+      } finally {
+        decrementLoading();
       }
     };
 
@@ -321,38 +337,36 @@ function SalesSecondary() {
     ]);
   };
 
-
   const submitHandler = async () => {
-    setLoading(true);
+    setSubmitLoading(true);
     // console.log("haii");
     if (Object.keys(party).length == 0) {
       // console.log("haii");
 
       toast.error("Add a party first");
-      setLoading(false);
+      setSubmitLoading(false);
       return;
     }
     if (items.length == 0) {
       // console.log("haii");
 
       toast.error("Add at least an item");
-      setLoading(false);
+      setSubmitLoading(false);
 
       return;
     }
 
     if (additional) {
-
       const hasEmptyValue = rows.some((row) => row.value === "");
       if (hasEmptyValue) {
         toast.error("Please add a value.");
-        setLoading(false);
+        setSubmitLoading(false);
         return;
       }
       const hasNagetiveValue = rows.some((row) => parseFloat(row.value) < 0);
       if (hasNagetiveValue) {
         toast.error("Please add a positive value");
-        setLoading(false);
+        setSubmitLoading(false);
 
         return;
       }
@@ -404,108 +418,108 @@ function SalesSecondary() {
     } catch (error) {
       toast.error(error.response.data.message);
       console.log(error);
-    }finally{
-      setLoading(false);
+    } finally {
+      setSubmitLoading(false);
     }
   };
 
-  // console.log(items);
+  useEffect(() => {
+    if (dataLoading > 0) {
+      setLoading(true);
+    } else {
+      setLoading(false);
+    }
+  }, [dataLoading]);
 
   return (
-    <div className="">
+    <div className="mb-14 sm:mb-0">
       <div className="flex-1 bg-slate-100 h -screen ">
-        <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex  items-center gap-2 sticky top-0 z-50  ">
-          {/* <IoReorderThreeSharp
-            onClick={handleToggleSidebar}
-            className="block md:hidden text-white text-3xl"
-          /> */}
-          <Link to={"/sUsers/selectVouchers"}>
-            <IoIosArrowRoundBack className="text-3xl text-white cursor-pointer" />
-          </Link>
-          <p className="text-white text-lg   font-bold ">Sales</p>
-        </div>
-
-        {/* invoiec date */}
-        <HeaderTile
-          title={"Sale"}
-          number={salesNumber}
-          selectedDate={selectedDate}
-          setSelectedDate={setSelectedDate}
-          dispatch={dispatch}
-          changeDate={changeDate}
-          submitHandler={submitHandler}
-          removeAll={removeAll}
-          tab="add"
-          loading={loading}
+        <TitleDiv
+          title="Sales"
+          from={`/sUsers/selectVouchers`}
+          loading={loading || submitLoading}
         />
 
-        {/* adding party */}
+          <div className={`${loading ? "pointer-events-none opacity-70" : ""}`}>
+            {/* invoiec date */}
 
-        <AddPartyTile
-          party={party}
-          dispatch={dispatch}
-          removeParty={removeParty}
-          link="/sUsers/searchPartySales"
-          linkBillTo="/sUsers/billToSales"
-        />
+            <HeaderTile
+              title={"Sale"}
+              number={salesNumber}
+              selectedDate={selectedDate}
+              setSelectedDate={setSelectedDate}
+              dispatch={dispatch}
+              changeDate={changeDate}
+              submitHandler={submitHandler}
+              removeAll={removeAll}
+              tab="add"
+              loading={submitLoading}
+            />
+            {/* adding party */}
 
-        {/* Despatch details */}
+            <AddPartyTile
+              party={party}
+              dispatch={dispatch}
+              removeParty={removeParty}
+              link="/sUsers/searchPartySales"
+              linkBillTo="/sUsers/billToSales"
+            />
 
-        <DespatchDetails tab={"sale"} />
+            {/* Despatch details */}
 
-        {/* adding items */}
+            <DespatchDetails tab={"sale"} />
 
-        <AddItemTile
-          items={items}
-          handleAddItem={handleAddItem}
-          dispatch={dispatch}
-          removeItem={removeItem}
-          removeGodownOrBatch={removeGodownOrBatch}
-          navigate={navigate}
-          godownname={""}
-          subTotal={subTotal}
-          type="sale"
-          additional={additional}
-          cancelHandler={cancelHandler}
-          rows={rows}
-          handleDeleteRow={handleDeleteRow}
-          handleLevelChange={handleLevelChange}
-          additionalChragesFromCompany={additionalChragesFromCompany}
-          actionChange={actionChange}
-          handleRateChange={handleRateChange}
-          handleAddRow={handleAddRow}
-          setAdditional={setAdditional}
-          urlToAddItem="/sUsers/addItemSales"
-          urlToEditItem="/sUsers/editItemSales"
-        />
+            {/* adding items */}
 
-        <div className="flex justify-between items-center bg-white mt-2 p-3">
-          <p className="font-bold text-md">Total Amount</p>
-          <div className="flex flex-col items-center">
-            <p className="font-bold text-md">₹ {totalAmount.toFixed(2) ?? 0}</p>
-            <p className="text-[9px] text-gray-400">(rounded)</p>
+            <AddItemTile
+              items={items}
+              handleAddItem={handleAddItem}
+              dispatch={dispatch}
+              removeItem={removeItem}
+              removeGodownOrBatch={removeGodownOrBatch}
+              navigate={navigate}
+              godownname={""}
+              subTotal={subTotal}
+              type="sale"
+              additional={additional}
+              cancelHandler={cancelHandler}
+              rows={rows}
+              handleDeleteRow={handleDeleteRow}
+              handleLevelChange={handleLevelChange}
+              additionalChragesFromCompany={additionalChragesFromCompany}
+              actionChange={actionChange}
+              handleRateChange={handleRateChange}
+              handleAddRow={handleAddRow}
+              setAdditional={setAdditional}
+              urlToAddItem="/sUsers/addItemSales"
+              urlToEditItem="/sUsers/editItemSales"
+            />
+
+            <div className="flex justify-between items-center bg-white mt-2 p-3">
+              <p className="font-bold text-md">Total Amount</p>
+              <div className="flex flex-col items-center">
+                <p className="font-bold text-md">
+                  ₹ {totalAmount.toFixed(2) ?? 0}
+                </p>
+                <p className="text-[9px] text-gray-400">(rounded)</p>
+              </div>
+            </div>
+
+            {items.length > 0 && totalAmount > 0 && (
+              <PaymentSplittingIcon
+                totalAmount={totalAmount}
+                party={party}
+                voucherType="sale"
+              />
+            )}
+
+            <FooterButton
+              submitHandler={submitHandler}
+              tab="add"
+              title="Sale"
+              loading={submitLoading || loading}
+            />
           </div>
-        </div>
-
-        {items.length > 0 && totalAmount > 0 && (
-          <PaymentSplittingIcon
-            totalAmount={totalAmount}
-            party={party}
-            voucherType="sale"
-          />
-        )}
-
-        <div className=" md:hidden   ">
-          <div className="flex justify-center overflow-hidden w-full">
-            <button
-              onClick={submitHandler}
-              className=" sm:hidden  fixed bottom-0 left-0 shadow-lg z-50 text-white bg-violet-700  w-full  p-2 py-4 flex items-center justify-center gap-2 hover_scale cursor-pointer "
-            >
-              <IoIosAddCircle className="text-2xl" />
-              <p>Generate Sale</p>
-            </button>
-          </div>
-        </div>
       </div>
     </div>
   );

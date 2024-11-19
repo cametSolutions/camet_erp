@@ -1,6 +1,5 @@
 /* eslint-disable react/no-unescaped-entities */
 import { useEffect, useState, useMemo } from "react";
-import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
 import {
   removeParty,
@@ -13,7 +12,6 @@ import { useDispatch } from "react-redux";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import api from "../../api/api";
-import { IoIosAddCircle } from "react-icons/io";
 import {
   removeAll,
   removeAdditionalCharge,
@@ -21,23 +19,24 @@ import {
   removeGodownOrBatch,
   changeDate,
 } from "../../../slices/debitNote";
-import { IoIosArrowRoundBack } from "react-icons/io";
 
 import DespatchDetails from "../../components/secUsers/DespatchDetails";
 import HeaderTile from "../../components/secUsers/main/HeaderTile";
 import AddPartyTile from "../../components/secUsers/main/AddPartyTile";
 import AddItemTile from "../../components/secUsers/main/AddItemTile";
+import TitleDiv from "../../components/common/TitleDiv";
+import FooterButton from "../../components/secUsers/main/FooterButton";
 function DebitNote() {
   const [additional, setAdditional] = useState(false);
-  // const [godownname, setGodownname] = useState("");
-
+  const [dataLoading, setDataLoading] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [submitLoading, setSubmitLoading] = useState(false);
   const [debitNoteNumber, setDebitNoteNumber] = useState("");
   const [additionalChragesFromCompany, setAdditionalChragesFromCompany] =
     useState([]);
 
   const date = useSelector((state) => state.debitNote.date);
   const [selectedDate, setSelectedDate] = useState(new Date());
-
 
   const additionalChargesFromRedux = useSelector(
     (state) => state.debitNote.additionalCharges
@@ -55,8 +54,14 @@ function DebitNote() {
     (state) => state.debitNote.despatchDetails
   );
 
+  ////dataLoading////
+  // Helper function to manage dataLoading state
+  const incrementLoading = () => setDataLoading((prev) => prev + 1);
+  const decrementLoading = () => setDataLoading((prev) => prev - 1);
+
   useEffect(() => {
     const getAdditionalChargesIntegrated = async () => {
+      incrementLoading();
       try {
         const res = await api.get(`/api/sUsers/additionalcharges/${cmp_id}`, {
           withCredentials: true,
@@ -65,6 +70,8 @@ function DebitNote() {
       } catch (error) {
         console.log(error);
         toast.error(error.response.data.message);
+      } finally {
+        decrementLoading();
       }
     };
     if (type != "self") {
@@ -81,6 +88,7 @@ function DebitNote() {
 
   useEffect(() => {
     const fetchSingleOrganization = async () => {
+      incrementLoading();
       try {
         const res = await api.get(
           `/api/sUsers/getSingleOrganization/${orgId}`,
@@ -97,6 +105,8 @@ function DebitNote() {
         }
       } catch (error) {
         console.log(error);
+      } finally {
+        decrementLoading();
       }
     };
 
@@ -105,6 +115,7 @@ function DebitNote() {
 
   useEffect(() => {
     const fetchConfigurationNumber = async () => {
+      incrementLoading();
       try {
         const res = await api.get(
           `/api/sUsers/fetchConfigurationNumber/${orgId}/debitNote`,
@@ -121,7 +132,6 @@ function DebitNote() {
         }
 
         const { configDetails, configurationNumber } = res.data;
-      
 
         if (configDetails) {
           const { widthOfNumericalPart, prefixDetails, suffixDetails } =
@@ -142,12 +152,12 @@ function DebitNote() {
         }
       } catch (error) {
         console.log(error);
+      } finally {
+        decrementLoading();
       }
     };
     fetchConfigurationNumber();
   }, []);
-
-
 
   const [rows, setRows] = useState(
     additionalChargesFromRedux.length > 0
@@ -275,7 +285,6 @@ function DebitNote() {
     parseFloat(subTotal) + additionalChargesTotal || parseFloat(subTotal);
   const totalAmount = Math.round(totalAmountNotRounded);
 
-
   const navigate = useNavigate();
 
   const handleAddItem = () => {
@@ -301,29 +310,34 @@ function DebitNote() {
   };
 
   const submitHandler = async () => {
+    setSubmitLoading(true);
     if (Object.keys(party).length == 0) {
-
       toast.error("Add a party first");
+      setSubmitLoading(false);
+      setSubmitLoading(false);
+
       return;
     }
     if (items.length == 0) {
-
       toast.error("Add at least an item");
+      setSubmitLoading(false);
+
       return;
     }
 
     if (additional) {
-
       const hasEmptyValue = rows.some((row) => row.value === "");
       if (hasEmptyValue) {
-
         toast.error("Please add a value.");
+        setSubmitLoading(false);
+
         return;
       }
       const hasNagetiveValue = rows.some((row) => parseFloat(row.value) < 0);
       if (hasNagetiveValue) {
-
         toast.error("Please add a positive value");
+        setSubmitLoading(false);
+
         return;
       }
     }
@@ -344,18 +358,13 @@ function DebitNote() {
       selectedDate,
     };
 
-
     try {
-      const res = await api.post(
-        `/api/sUsers/createDebitNote`,
-        formData,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-          withCredentials: true,
-        }
-      );
+      const res = await api.post(`/api/sUsers/createDebitNote`, formData, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        withCredentials: true,
+      });
 
       toast.success(res.data.message);
 
@@ -364,92 +373,100 @@ function DebitNote() {
     } catch (error) {
       toast.error(error.response.data.message);
       console.log(error);
+    } finally {
+      setSubmitLoading(false);
     }
   };
 
+  useEffect(() => {
+    if (dataLoading > 0) {
+      setLoading(true);
+    } else {
+      setLoading(false);
+    }
+  }, [dataLoading]);
 
   return (
-    <div className="">
+    <div className="mb-14 sm:mb-0">
       <div className="flex-1 bg-slate-100 h -screen ">
-        <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex  items-center gap-2 sticky top-0 z-50  ">
-  
-          <Link to={"/sUsers/selectVouchers"}>
-            <IoIosArrowRoundBack className="text-3xl text-white cursor-pointer" />
-          </Link>
-          <p className="text-white text-lg   font-bold ">Debit Note</p>
-        </div>
-
-        {/* invoiec date */}
-        <HeaderTile
-          title={"Debit"}
-          number={debitNoteNumber}
-          selectedDate={selectedDate}
-          setSelectedDate={setSelectedDate}
-          dispatch={dispatch}
-          changeDate={changeDate}
-          submitHandler={submitHandler}
-          removeAll={removeAll}
-          tab="add"
+   
+        <TitleDiv
+          title="Debit Note"
+          from={`/sUsers/selectVouchers`}
+          loading={loading || submitLoading}
         />
 
-        {/* adding party */}
+        <div className={`${loading ? "pointer-events-none opacity-70" : ""}`}>
+          {/* invoiec date */}
+          <HeaderTile
+            title={"Debit"}
+            number={debitNoteNumber}
+            selectedDate={selectedDate}
+            setSelectedDate={setSelectedDate}
+            dispatch={dispatch}
+            changeDate={changeDate}
+            submitHandler={submitHandler}
+            removeAll={removeAll}
+            tab="add"
+            loading={submitLoading}
+          />
 
-        <AddPartyTile
-          party={party}
-          dispatch={dispatch}
-          removeParty={removeParty}
-          link="/sUsers/searchPartyDebitNote"
-          linkBillTo="/sUsers/billToDebitNote"
-        />
+          {/* adding party */}
 
-        {/* Despatch details */}
+          <AddPartyTile
+            party={party}
+            dispatch={dispatch}
+            removeParty={removeParty}
+            link="/sUsers/searchPartyDebitNote"
+            linkBillTo="/sUsers/billToDebitNote"
+          />
 
-        <DespatchDetails tab={"debitNote"} />
+          {/* Despatch details */}
 
-        {/* adding items */}
+          <DespatchDetails tab={"debitNote"} />
 
-        <AddItemTile
-          items={items}
-          handleAddItem={handleAddItem}
-          dispatch={dispatch}
-          removeItem={removeItem}
-          removeGodownOrBatch={removeGodownOrBatch}
-          navigate={navigate}
-          godownname={""}
-          subTotal={subTotal}
-          type="debitNote"
-          additional={additional}
-          cancelHandler={cancelHandler}
-          rows={rows}
-          handleDeleteRow={handleDeleteRow}
-          handleLevelChange={handleLevelChange}
-          additionalChragesFromCompany={additionalChragesFromCompany}
-          actionChange={actionChange}
-          handleRateChange={handleRateChange}
-          handleAddRow={handleAddRow}
-          setAdditional={setAdditional}
-          urlToAddItem="/sUsers/addItemDebitNote"
-          urlToEditItem="/sUsers/editItemDebitNote"
-        />
+          {/* adding items */}
 
-        <div className="flex justify-between bg-white mt-2 p-3">
-          <p className="font-bold text-lg">Total Amount</p>
-          <div className="flex flex-col items-center">
-            <p className="font-bold text-lg">₹ {totalAmount.toFixed(2) ?? 0}</p>
-            <p className="text-[9px] text-gray-400">(rounded)</p>
+          <AddItemTile
+            items={items}
+            handleAddItem={handleAddItem}
+            dispatch={dispatch}
+            removeItem={removeItem}
+            removeGodownOrBatch={removeGodownOrBatch}
+            navigate={navigate}
+            godownname={""}
+            subTotal={subTotal}
+            type="debitNote"
+            additional={additional}
+            cancelHandler={cancelHandler}
+            rows={rows}
+            handleDeleteRow={handleDeleteRow}
+            handleLevelChange={handleLevelChange}
+            additionalChragesFromCompany={additionalChragesFromCompany}
+            actionChange={actionChange}
+            handleRateChange={handleRateChange}
+            handleAddRow={handleAddRow}
+            setAdditional={setAdditional}
+            urlToAddItem="/sUsers/addItemDebitNote"
+            urlToEditItem="/sUsers/editItemDebitNote"
+          />
+
+          <div className="flex justify-between bg-white mt-2 p-3">
+            <p className="font-bold text-lg">Total Amount</p>
+            <div className="flex flex-col items-center">
+              <p className="font-bold text-lg">
+                ₹ {totalAmount.toFixed(2) ?? 0}
+              </p>
+              <p className="text-[9px] text-gray-400">(rounded)</p>
+            </div>
           </div>
-        </div>
 
-        <div className=" md:hidden ">
-          <div className="flex justify-center overflow-hidden w-full">
-            <button
-              onClick={submitHandler}
-              className="fixed bottom-0 text-white bg-violet-700  w-full  p-2 py-4 flex items-center justify-center gap-2 hover_scale cursor-pointer "
-            >
-              <IoIosAddCircle className="text-2xl" />
-              <p>Generate Debit</p>
-            </button>
-          </div>
+          <FooterButton
+            submitHandler={submitHandler}
+            tab="add"
+            title="Debit"
+            loading={submitLoading || loading}
+          />
         </div>
       </div>
     </div>

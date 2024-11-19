@@ -1,7 +1,9 @@
 import express from "express";
 import { saveDataFromTally,giveTransaction,addBankData ,
     saveProductsFromTally,savePartyFromTally,addCashData,
-    saveAdditionalChargesFromTally,giveInvoice,giveSales,giveVanSales,getStockTransfers,giveReceipts,givePayments} from "../controllers/tallyController.js";
+    saveAdditionalChargesFromTally,giveInvoice,giveSales,giveVanSales,getStockTransfers,giveReceipts,givePayments,
+    updateStock,
+    updatePriceLevels} from "../controllers/tallyController.js";
 
 const router =express.Router();
 
@@ -9,6 +11,9 @@ router.post('/master/os',saveDataFromTally)
 router.post('/master/bank',addBankData)
 router.post('/master/cash',addCashData)
 router.post('/master/item',saveProductsFromTally)
+router.post('/master/item/base',saveProductsFromTally)
+router.post('/master/item/updateStock',updateStock)
+router.post('/master/item/updatePriceLevels',updatePriceLevels)
 router.post('/master/party',savePartyFromTally)
 router.post('/master/addCharges',saveAdditionalChargesFromTally)
 

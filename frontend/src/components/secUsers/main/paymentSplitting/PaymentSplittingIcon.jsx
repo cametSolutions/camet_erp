@@ -84,7 +84,7 @@ function PaymentSplittingIcon({ totalAmount, party}) {
       ) : (
         <div
           onClick={handleClick}
-          className="flex items-center gap-1  justify-end px-4  text-violet-500 font-semibold cursor-pointer pt-3 pb-36  md:pb-7 "
+          className="flex items-center gap-1  justify-end px-4  text-violet-500 font-semibold cursor-pointer pt-3   md:pb-7 "
         >
           <IoMdAdd size={22} />
           <p>Receive Amount </p>

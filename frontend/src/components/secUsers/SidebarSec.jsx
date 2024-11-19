@@ -383,72 +383,70 @@ function SidebarSec({ TAB, showBar }) {
 
           <hr className=" border border-gray-800 mt-1 " />
 
-            <div className="flex flex-col justify-between flex-1 mt-3 px-5">
-              <nav>
-                {navItems.map((item, index) => (
-                  <div key={index}>
-                    <Link to={item.to}>
-                      <span
-                        onClick={() => {
-                          handleSidebarItemClick(item.tab);
-                          if (item.onClick) item.onClick();
-                        }}
-                        className={`
+          <div className="flex flex-col justify-between flex-1 mt-3 px-5">
+            <nav>
+              {navItems.map((item, index) => (
+                <div key={index}>
+                  <Link to={item.to}>
+                    <span
+                      onClick={() => {
+                        handleSidebarItemClick(item.tab);
+                        if (item.onClick) item.onClick();
+                      }}
+                      className={`
                         ${
                           tab === item.tab
                             ? "bg-gray-800 text-white"
                             : "text-gray-400 hover:bg-gray-800 hover:text-white"
                         }
-                        flex items-center px-4 py-2 mt-5 transition-colors duration-300 transform rounded-lg`}
-                      >
-                        <div className="flex items-center">
-                          {item.icon}
-                          <span className="mx-4 font-medium">{item.label}</span>
+                        flex items-center px-4 py-2 mt-5 transition-colors duration-300 transform rounded-md`}
+                    >
+                      <div className="flex items-center">
+                        {item.icon}
+                        <span className="mx-4 font-medium">{item.label}</span>
+                      </div>
+                      {item.subItems && (
+                        <div className="flex items-center justify-between w-full cursor-pointer ml-6">
+                          {expandedSections.inventory ? (
+                            <IoIosArrowUp />
+                          ) : (
+                            <IoIosArrowDown />
+                          )}
                         </div>
-                        {item.subItems && (
-                          <div className="flex items-center justify-between w-full cursor-pointer ml-6">
-                            {expandedSections.inventory ? (
-                              <IoIosArrowUp />
-                            ) : (
-                              <IoIosArrowDown />
-                            )}
-                          </div>
-                        )}
-                      </span>
-                    </Link>
-                    {item.subItems && expandedSections.inventory && (
-                      <ul className="mt-2 space-y-2">
-                        {item.subItems.map((subItem, subIndex) => (
-                          <li
-                            key={subIndex}
-                            className={`${
-                              selectedSubTab === subItem.tab
-                                ? "text-white"
-                                : "text-gray-400"
-                            } hover:text-white ml-4 rounded-md mt-5 px-4 py-2 flex items-center gap-4 text-sm font-medium`}
+                      )}
+                    </span>
+                  </Link>
+                  {item.subItems && expandedSections.inventory && (
+                    <ul className="mt-2 space-y-2">
+                      {item.subItems.map((subItem, subIndex) => (
+                        <li
+                          key={subIndex}
+                          className={`${
+                            selectedSubTab === subItem.tab
+                              ? "text-white"
+                              : "text-gray-400"
+                          } hover:text-white ml-4 rounded-md mt-5 px-4 py-2 flex items-center gap-4 text-sm font-medium`}
+                        >
+                          <Link
+                            className="flex items-center gap-3 mb-3"
+                            to={subItem.to}
+                            onClick={() => {
+                              handleSidebarItemClick(subItem.tab);
+                              setTab(item.tab);
+                              setSelectedSubTab(subItem.tab);
+                            }}
                           >
-                            <Link
-                              className="flex items-center gap-3 mb-3"
-                              to={subItem.to}
-                              onClick={() => {
-                                handleSidebarItemClick(subItem.tab);
-                                setTab(item.tab);
-                                setSelectedSubTab(subItem.tab);
-                              }}
-                            >
-                              {subItem.icon}
-                              <span>{subItem.label}</span>
-                            </Link>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                ))}
-              </nav>
-            </div>
-
-
+                            {subItem.icon}
+                            <span>{subItem.label}</span>
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              ))}
+            </nav>
+          </div>
         </aside>
       </div>
     </div>

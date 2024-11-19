@@ -2,14 +2,12 @@
 /* eslint-disable no-undef */
 import { IoIosArrowRoundBack } from "react-icons/io";
 import { useNavigate } from "react-router-dom";
+import CustomBarLoader from "./CustomBarLoader";
 
-function TitleDiv({ title, from="" }) {
+function TitleDiv({ title, from = "", loading = false }) {
   const navigate = useNavigate();
 
   const handleNavigate = () => {
-
-    console.log("from", from);  
-    
     if (from) {
       navigate(from);
     } else {
@@ -26,7 +24,10 @@ function TitleDiv({ title, from="" }) {
           />
           <p className="font-bold"> {title}</p>
         </div>
+
       </div>
+
+      {loading && <CustomBarLoader  />}
     </div>
   );
 }
