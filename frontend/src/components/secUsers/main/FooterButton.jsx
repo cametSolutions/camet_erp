@@ -1,5 +1,4 @@
 /* eslint-disable react/prop-types */
-import React from 'react'
 import { IoIosAddCircle } from 'react-icons/io'
 
 function FooterButton({submitHandler,tab,title,loading}) {

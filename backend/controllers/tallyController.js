@@ -8,11 +8,12 @@ import productModel from "../models/productModel.js";
 import AdditionalCharges from "../models/additionalChargesModel.js";
 import receipt from "../models/receiptModel.js";
 import { fetchData } from "../helpers/tallyHelper.js";
+import mongoose from "mongoose";
 
 export const saveDataFromTally = async (req, res) => {
   try {
     const dataToSave = await req.body.data;
-    console.log("dataToSave", dataToSave);
+    // console.log("dataToSave", dataToSave);
     const { Primary_user_id, cmp_id } = dataToSave[0];
 
     await TallyData.deleteMany({ Primary_user_id, cmp_id });
@@ -44,7 +45,7 @@ export const saveDataFromTally = async (req, res) => {
       })
     );
 
-    res.status(201).json({ message: "Data saved successfully", savedData });
+    res.status(201).json({ message: "data saved successfully", savedData });
   } catch (error) {
     console.error("Error:", error);
     res.status(500).json({ error: "Internal server error" });
@@ -76,7 +77,6 @@ export const addBankData = async (req, res) => {
         bsr_code,
         client_code,
       } = bankDetail;
-
 
       // Check if the same data already exists
       const existingData = await BankDetailsModel.findOne({
@@ -137,6 +137,7 @@ export const addBankData = async (req, res) => {
     });
   }
 };
+
 export const addCashData = async (req, res) => {
   try {
     const cashDetailsArray = req.body.cashdetails;
@@ -147,14 +148,8 @@ export const addCashData = async (req, res) => {
 
     // Loop through each bank detail in the array
     for (const cashDetails of cashDetailsArray) {
-      const {
-        cmp_id,
-        Primary_user_id,
-        cash_ledname,
-        cash_id,
-        cash_grpname
-      } = cashDetails;
-
+      const { cmp_id, Primary_user_id, cash_ledname, cash_id, cash_grpname } =
+        cashDetails;
 
       // Check if the same data already exists
       const existingData = await CashModel.findOne({
@@ -179,7 +174,6 @@ export const addCashData = async (req, res) => {
       } else {
         // If data doesn't exist, create a new document
         const newCashData = await CashModel.create(cashDetails);
-
       }
     }
 
@@ -219,10 +213,8 @@ export const saveProductsFromTally = async (req, res) => {
               product_master_id,
             });
 
-
-
             if (existingProduct) {
-            // console.log("existingProduct", existingProduct.product_name)
+              // console.log("existingProduct", existingProduct.product_name)
 
               // Update the existing product
               savedProduct = await productModel.findOneAndUpdate(
@@ -245,7 +237,10 @@ export const saveProductsFromTally = async (req, res) => {
 
           return savedProduct;
         } catch (error) {
-          console.error(`Error saving product with product_master_id ${product_master_id}:`, error);
+          console.error(
+            `Error saving product with product_master_id ${product_master_id}:`,
+            error
+          );
           return null; // Return null if there is an error to continue processing other products
         }
       })
@@ -254,10 +249,302 @@ export const saveProductsFromTally = async (req, res) => {
     // Filter out any null values from the savedProducts array
     const successfulSaves = savedProducts.filter((product) => product !== null);
 
-    res.status(201).json({ message: "Products saved successfully", savedProducts: successfulSaves });
+    res.status(201).json({
+      message: "Products saved successfully",
+      savedProducts: successfulSaves,
+    });
   } catch (error) {
     console.error("Error:", error);
     res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+// @desc for updating stocks of product
+// route GET/api/tally/master/item/updateStock
+
+export const updateStock = async (req, res) => {
+  try {
+    // Validate request body
+    if (
+      !req.body?.data?.ItemGodowndetails ||
+      !Array.isArray(req.body.data.ItemGodowndetails)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid request format. ItemGodowndetails array is required",
+      });
+    }
+
+    if (req.body.data.ItemGodowndetails.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "ItemGodowndetails array is empty",
+      });
+    }
+
+    const groupedGodowns = req.body.data.ItemGodowndetails.reduce(
+      (acc, item) => {
+        if (!item.product_master_id) {
+          throw new Error("product_master_id is required for each item");
+        }
+
+        const productId = item.product_master_id.toString();
+
+        if (!acc[productId]) {
+          acc[productId] = {
+            godowns: [],
+            product_name: item.product_name, // Store product name
+          };
+        }
+
+        acc[productId].godowns.push({
+          godown: item.godown,
+          godown_id: item.godown_id,
+          batch: item.batch,
+          mfgdt: item.mfgdt,
+          expdt: item.expdt,
+          balance_stock: item.balance_stock,
+          batchEnabled: item.batchEnabled,
+        });
+
+        return acc;
+      },
+      {}
+    );
+
+    // console.log("groupedGodowns", groupedGodowns);
+    
+
+    if (Object.keys(groupedGodowns).length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No valid products found to update",
+      });
+    }
+
+    // Create bulk write operations (overwrite always)
+    const bulkOps = Object.entries(groupedGodowns).map(
+      ([productMasterId, data]) => ({
+        updateOne: {
+          filter: {
+            product_master_id: productMasterId.toString(),
+            cmp_id: req.body.data.ItemGodowndetails[0].cmp_id,
+            Primary_user_id: new mongoose.Types.ObjectId(
+              req.body.data.ItemGodowndetails[0].Primary_user_id
+            ),
+          },
+          update: {
+            $set: {
+              GodownList: data.godowns,
+              // godownCount: data.godowns.reduce(
+              //   (sum, g) => sum + (parseInt(g.balance_stock) || 0),
+              //   0
+              // ),
+            },
+          },
+          upsert: true, // Ensure the record is created if it doesn't exist
+        },
+      })
+    );
+
+    // Execute bulk write operation
+    const result = await productModel.bulkWrite(bulkOps);
+
+    // console.log(result);
+    // console.log("groupedGodowns", Object.keys(groupedGodowns).length);
+
+    // Fetch updated products details
+    const updatedProducts = await productModel.find(
+      {
+        product_master_id: {
+          $in: Object.keys(groupedGodowns),
+        },
+      },
+      {
+        product_name: 1,
+        product_master_id: 1,
+        // godownCount: 1
+      }
+    );
+
+    // console.log("updatedProducts", updatedProducts);
+    
+
+    // Create a summary of modifications
+    const modificationSummary = updatedProducts.map((product) => ({
+      product_id: product.product_master_id,
+      product_name: product.product_name || groupedGodowns[product.product_master_id]?.product_name || "Unknown", // Fallback for missing product_name
+      // updated_godown_count: product.godownCount,
+      // godowns: groupedGodowns[product.product_master_id.toString()]?.godowns || []
+    }));
+
+    return res.status(200).json({
+      success: true,
+      message: `Successfully processed ${result.matchedCount} products.`,
+      modifiedProducts: modificationSummary,
+      bulkWriteResult: result,
+    });
+  } catch (error) {
+    console.error("Error in updateStock:", error);
+
+    if (error.name === "ValidationError") {
+      return res.status(400).json({
+        success: false,
+        message: "Validation error",
+        error: error.message,
+      });
+    }
+
+    if (error.name === "MongoError" || error.name === "MongoServerError") {
+      return res.status(503).json({
+        success: false,
+        message: "Database error",
+        error: error.message,
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: "An error occurred while updating stock",
+      error: error.message,
+    });
+  }
+};
+
+// @desc for updating priceLevels of product
+// route GET/api/tally/master/item/updatePriceLevels
+
+export const updatePriceLevels = async (req, res) => {
+  try {
+    // Validate request body
+    if (
+      !req.body?.data?.Priceleveles ||
+      !Array.isArray(req.body.data.Priceleveles)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid request format. Priceleveles array is required",
+      });
+    }
+
+    if (req.body.data.Priceleveles.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Priceleveles array is empty",
+      });
+    }
+
+    // Group Priceleveles by product_master_id
+    const groupedPriceLevels = req.body.data.Priceleveles.reduce(
+      (acc, item) => {
+        if (!item.product_master_id) {
+          throw new Error("product_master_id is required for each price level");
+        }
+
+        const productId = item.product_master_id.toString();
+
+        if (!acc[productId]) {
+          acc[productId] = [];
+        }
+
+        acc[productId].push({
+          pricelevel: item.pricelevel,
+          pricerate: item.pricerate,
+          priceDisc: item.priceDisc,
+          applicabledt: item.applicabledt,
+        });
+
+        return acc;
+      },
+      {}
+    );
+
+    // Validate if there are products to update
+    if (Object.keys(groupedPriceLevels).length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No valid price levels found to update",
+      });
+    }
+
+    // Create bulk write operations (overwrite always)
+    const bulkOps = Object.entries(groupedPriceLevels).map(
+      ([productMasterId, priceLevels]) => ({
+        updateOne: {
+          filter: {
+            product_master_id: productMasterId,
+            cmp_id: req.body.data.Priceleveles[0].cmp_id,
+            Primary_user_id: new mongoose.Types.ObjectId(
+              req.body.data.Priceleveles[0].Primary_user_id
+            ),
+          },
+          update: {
+            $set: {
+              Priceleveles: priceLevels,
+            },
+          },
+          upsert: true, // Create the document if it doesn't exist
+        },
+      })
+    );
+
+    // Execute bulk write operation
+    const result = await productModel.bulkWrite(bulkOps);
+
+    // Fetch updated products for response
+    const updatedProducts = await productModel.find(
+      {
+        product_master_id: {
+          $in: Object.keys(groupedPriceLevels),
+        },
+      },
+      {
+        product_name: 1,
+        product_master_id: 1,
+        // Priceleveles: 1,
+      }
+    );
+
+    // Log updated products
+    // console.log("Updated Products:", updatedProducts);
+
+    // Create a summary of modifications
+    const modificationSummary = updatedProducts.map((product) => ({
+      product_id: product.product_master_id,
+      product_name: product.product_name || "Unknown",
+      // priceLevels: product.Priceleveles || [],
+    }));
+
+    return res.status(200).json({
+      success: true,
+      message: `Successfully processed ${result.matchedCount} products.`,
+      modifiedProducts: modificationSummary,
+      bulkWriteResult: result,
+    });
+  } catch (error) {
+    console.error("Error in updatePriceLevels:", error);
+
+    if (error.name === "ValidationError") {
+      return res.status(400).json({
+        success: false,
+        message: "Validation error",
+        error: error.message,
+      });
+    }
+
+    if (error.name === "MongoError" || error.name === "MongoServerError") {
+      return res.status(503).json({
+        success: false,
+        message: "Database error",
+        error: error.message,
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: "An error occurred while updating price levels",
+      error: error.message,
+    });
   }
 };
 
@@ -291,7 +578,7 @@ export const savePartyFromTally = async (req, res) => {
           Primary_user_id: party.Primary_user_id,
         });
 
-        console.log("existingParty", existingParty);
+        // console.log("existingParty", existingParty);
 
         // If the product doesn't exist, create a new one; otherwise, update it
         if (!existingParty) {
@@ -376,13 +663,12 @@ export const saveAdditionalChargesFromTally = async (req, res) => {
   }
 };
 
-
 // // @desc for giving invoices to tally
 // // route GET/api/tally/giveInvoice
 export const giveInvoice = async (req, res) => {
   const cmp_id = req.params.cmp_id;
   const serialNumber = req.params.SNo;
-  return fetchData('invoices', cmp_id, serialNumber, res);
+  return fetchData("invoices", cmp_id, serialNumber, res);
 };
 
 // // @desc for giving sales to tally
@@ -391,7 +677,7 @@ export const giveInvoice = async (req, res) => {
 export const giveSales = async (req, res) => {
   const cmp_id = req.params.cmp_id;
   const serialNumber = req.params.SNo;
-  return fetchData('sales', cmp_id, serialNumber, res);
+  return fetchData("sales", cmp_id, serialNumber, res);
 };
 
 // // @desc for giving van sales to tally
@@ -400,7 +686,7 @@ export const giveSales = async (req, res) => {
 export const giveVanSales = async (req, res) => {
   const cmp_id = req.params.cmp_id;
   const serialNumber = req.params.SNo;
-  return fetchData('vanSales', cmp_id, serialNumber, res);
+  return fetchData("vanSales", cmp_id, serialNumber, res);
 };
 
 // @desc for giving transactions to tally
@@ -408,22 +694,22 @@ export const giveVanSales = async (req, res) => {
 export const giveTransaction = async (req, res) => {
   const cmp_id = req.params.cmp_id;
   const serialNumber = req.params.SNo;
-  return fetchData('transactions', cmp_id, serialNumber, res);
+  return fetchData("transactions", cmp_id, serialNumber, res);
 };
 // @desc for giving stock transactions to tally
 // route GET/api/tally/getStockTransfers
 export const getStockTransfers = async (req, res) => {
   const cmp_id = req.params.cmp_id;
   const serialNumber = req.params.SNo;
-  return fetchData('stockTransfers', cmp_id, serialNumber, res);
+  return fetchData("stockTransfers", cmp_id, serialNumber, res);
 };
 export const giveReceipts = async (req, res) => {
   const cmp_id = req.params.cmp_id;
   const serialNumber = req.params.SNo;
-  return fetchData('receipt', cmp_id, serialNumber, res);
+  return fetchData("receipt", cmp_id, serialNumber, res);
 };
 export const givePayments = async (req, res) => {
   const cmp_id = req.params.cmp_id;
   const serialNumber = req.params.SNo;
-  return fetchData('payment', cmp_id, serialNumber, res);
+  return fetchData("payment", cmp_id, serialNumber, res);
 };
