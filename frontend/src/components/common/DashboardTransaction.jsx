@@ -6,7 +6,7 @@ import React, { useMemo } from "react";
 import dayjs from "dayjs";
 import { useNavigate } from "react-router-dom";
 import { GiCancel } from "react-icons/gi";
-import cancelSeal from "../../assets/images/cancelled.png"
+import cancelSeal from "../../assets/images/cancelled.png";
 
 const DashboardTransaction = ({ filteredData, userType, from }) => {
   const navigate = useNavigate();
@@ -70,41 +70,52 @@ const DashboardTransaction = ({ filteredData, userType, from }) => {
           onClick={() => handleTransactionClick(type, _id)}
           className="bg-white cursor-pointer rounded-md shadow-lg border border-gray-100 flex flex-col justify-between px-4 transition-all duration-150 transform hover:translate-x-[2px] ease-in-out"
         >
-          <div className="flex justify-start text-xs mt-2 px-2 ">
-            <div
-              className={`${
-                typeColors[type] || typeColors.default
-              } flex items-center text-white px-2 rounded-sm`}
-            >
-              <p className="p-1 rounded-lg  font-semibold text-[10px]">
-                {type}
+          <div className="flex w-full items-center">
+            <div className="w-3/4">
+              {/*  */}
+              <div className=" text-xs mt-2 px-2  lg:px-6 ">
+                <p className="font-bold md:font-semibold text-[11.3px] md:text-[12px] text-left text-violet-500">
+                  # {voucherNumber}
+                </p>
+              </div>
+              {/* party */}
+
+              <div className=" text-xs  px-2  lg:px-6 ">
+                <p className="font-bold mt-2 md:font-semibold text-[11.3px] md:text-[15px] text-left ">
+                  {party_name}
+                </p>
+              </div>
+
+              {/* date/type */}
+
+              <div className="flex justify-between  items-center mb-2">
+                <div className=" px-2 py-2 lg:px-6  lg:py-1  w-[150px] md:w-[180px] lg:w-[300px] flex justify-center items-start relative flex-col">
+                  <section className="flex gap-1  items-center">
+                    <p className="text-gray-400 text-[10px] font-bold">
+                      {dayjs(createdAt).format("DD/MM/YYYY")}
+                    </p>
+
+                    <div
+                      // className={`${
+                      //   typeColors[type] || typeColors.default
+                      // } flex items-center text-white px-2 rounded-sm`}
+                      className="flex items-center  rounded-sm"
+                    >
+                      <p className="p-1 rounded-lg  font-bold text-[10px] text-gray-600">
+                        <span className="mr-1">/</span> {type}
+                      </p>
+                    </div>
+                  </section>
+                </div>
+              </div>
+            </div>
+            <div className="flex-1">
+              <p className="font-bold text-sm text-gray-500">
+                ₹{enteredAmount || 0}
               </p>
             </div>
           </div>
 
-          <div className="flex justify-between items-center">
-            <div className=" px-2 py-4 lg:px-6  lg:py-3  w-[150px] md:w-[180px] lg:w-[300px] flex justify-center items-start relative flex-col">
-              <p className="font-bold md:font-semibold text-[11.3px] md:text-[12px] text-left text-violet-500">
-                # {voucherNumber}
-              </p>
-              <p className="text-gray-400 text-[10px] font-bold">
-                {dayjs(createdAt).format("DD/MM/YYYY")}
-              </p>
-              <p className="font-bold mt-3 md:font-semibold text-[11.3px] md:text-[15px] text-left ">
-                {party_name}
-              </p>
-              {/* <p className="font-bold  md:font-semibold text-xs text-left  text-gray-500 mt-2">
-                Settled by : {secondaryUserName}
-              </p> */}
-            </div>
-            <div className="h-full p-2 lg:px-6  lg:py-3 w-[150px] md:w-[180px] lg:w-[300px] flex justify-center items-end relative flex-col">
-              <div className="flex-col">
-                <p className="font-bold text-sm text-gray-500">
-                  ₹{enteredAmount || 0}
-                </p>
-              </div>
-            </div>
-          </div>
           <hr className="mx-[-16px]" />
           <div className="flex justify-between flex-wrap px-6 py-3 bg-gray-100 mx-[-16px] items-center ">
             <div className="flex items-center justify-between w-full gap-2 text-md text-violet-500">

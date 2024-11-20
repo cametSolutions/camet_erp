@@ -153,8 +153,8 @@ const popular = [
   {
     title: "Cash or Bank",
     icon: bank,
-    to: "/sUsers/vanSale",
-    active: false,
+    to: "/sUsers/balancePage",
+    active: true,
     subtitle: "Manage cash and bank transactions",
   },
 ];
