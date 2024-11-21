@@ -629,7 +629,7 @@ export const PartyList = async (req, res) => {
           $group: {
             _id: "$party_id",
             totalOutstanding: { $sum: "$bill_pending_amt" },
-            latestBillDate: { $max: "$bill_date" },
+            // latestBillDate: { $max: "$bill_date" },
           },
         },
         {
@@ -638,7 +638,7 @@ export const PartyList = async (req, res) => {
             party_id: "$_id",
             partyName: 1,
             totalOutstanding: 1,
-            latestBillDate: 1,
+            // latestBillDate: 1,
           },
         },
       ]);

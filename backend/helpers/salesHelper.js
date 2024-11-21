@@ -369,13 +369,12 @@ export const updateTallyData = async (
   valueToUpdateInTally,
   createdBy = ""
 ) => {
-  console.log(billId, "billId");
 
   try {
     const billData = {
-      Primary_user_id,
+      Primary_user_id : Primary_user_id,  
       bill_no: salesNumber,
-      billId:billId.toString(),
+      billId: billId.toString(),
       cmp_id: orgId,
       party_id: party?.party_master_id,
       bill_amount: Number(lastAmount),
@@ -394,11 +393,11 @@ export const updateTallyData = async (
       {
         cmp_id: orgId,
         bill_no: salesNumber,
-        billId:billId.toString(),
+        billId: billId.toString(),
         Primary_user_id: Primary_user_id,
         party_id: party?.party_master_id,
       },
-      billData,
+      { $set: billData },
       { upsert: true, new: true, session }
     );
 
@@ -569,7 +568,6 @@ export const savePaymentSplittingDataInSources = async (
           });
 
           // console.log("party", party);
-          
 
           if (!party) {
             throw new Error("Invalid party");
@@ -578,6 +576,7 @@ export const savePaymentSplittingDataInSources = async (
           await updateTallyData(
             orgId,
             salesNumber,
+            saleId.toString(),
             Primary_user_id,
             party,
             item.amount,
@@ -586,6 +585,9 @@ export const savePaymentSplittingDataInSources = async (
             item.amount,
             "paymentSplitting"
           );
+
+
+          
 
           // Return early for credit mode
           return null;
@@ -720,13 +722,16 @@ export const revertPaymentSplittingDataInSources = async (
         );
 
         // If settlements array is empty after pulling, remove it completely
-        if (updatedSource && (!updatedSource.settlements || updatedSource.settlements.length === 0)) {
+        if (
+          updatedSource &&
+          (!updatedSource.settlements || updatedSource.settlements.length === 0)
+        ) {
           await selectedModel.findOneAndUpdate(
             query,
             { $unset: { settlements: "" } },
             options
           );
-          
+
           // Fetch the final state after removing the empty array
           return await selectedModel.findOne(query).session(session);
         }
@@ -739,5 +744,83 @@ export const revertPaymentSplittingDataInSources = async (
   } catch (error) {
     console.error("Error in revertPaymentSplittingDataInSources:", error);
     throw error;
+  }
+};
+
+export const updateOutstandingBalance = async ({
+  existingVoucher,
+  newVoucherData,
+  orgId,
+  voucherNumber,
+  party,
+  session,
+  createdBy,
+  transactionType,
+  secondaryMobile
+}) => {
+  // Calculate old bill balance
+  let oldBillBalance;
+  if (
+    existingVoucher?.paymentSplittingData &&
+    Object.keys(existingVoucher?.paymentSplittingData).length > 0
+  ) {
+    oldBillBalance = existingVoucher?.paymentSplittingData?.balanceAmount;
+  } else {
+    oldBillBalance = existingVoucher?.finalAmount || 0;
+  }
+
+  // Calculate new bill balance
+  
+  let newBillBalance;
+  if (
+    newVoucherData?.paymentSplittingData &&
+    Object.keys(newVoucherData?.paymentSplittingData).length > 0
+  ) {
+    newBillBalance = newVoucherData?.paymentSplittingData?.balanceAmount;
+  } else {
+    newBillBalance = newVoucherData?.lastAmount || 0;
+  }
+
+  // Calculate difference in bill value
+  const diffBillValue = Number(newBillBalance) - Number(oldBillBalance);
+
+  // Find existing outstanding record
+  const matchedOutStanding = await TallyData.findOne({
+    party_id: existingVoucher?.party?.party_master_id,
+    cmp_id: orgId,
+    bill_no: voucherNumber,
+    billId: existingVoucher?._id.toString(),
+  }).session(session);
+
+  // Calculate value to update in tally
+  const valueToUpdateInTally =
+    Number(
+      matchedOutStanding?.bill_pending_amt ||
+        Number(newVoucherData?.lastAmount || 0)
+    ) + diffBillValue || 0;
+
+  // Delete existing outstanding record
+  if (matchedOutStanding?._id) {
+    await TallyData.findByIdAndDelete(matchedOutStanding._id).session(session);
+  }
+
+  // Create new outstanding record if applicable
+  let updatedTallyData = null;
+  if (
+    party.accountGroup === "Sundry Debtors" ||
+    party.accountGroup === "Sundry Creditors"
+  ) {
+    updatedTallyData = await updateTallyData(
+      orgId,
+      voucherNumber,
+      existingVoucher._id,
+      createdBy,
+      party,
+      newVoucherData?.lastAmount,
+      secondaryMobile,
+      session,
+      valueToUpdateInTally,
+      transactionType
+    );
   }
 };
