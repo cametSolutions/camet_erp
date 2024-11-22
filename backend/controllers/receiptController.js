@@ -13,6 +13,7 @@ import {
   revertTallyUpdates,
   deleteAdvanceReceipt,
   saveSettlementData,
+  revertSettlementData,
 } from "../helpers/receiptHelper.js";
 
 /**
@@ -247,6 +248,16 @@ export const cancelReceipt = async (req, res) => {
       receiptId.toString()
     );
 
+    /// save settlement data in cash or bank collection
+    await revertSettlementData(
+      receipt?.paymentMethod,
+      receipt?.paymentDetails,
+      receipt?.receiptNumber,
+      receiptId,
+      cmp_id,
+      session
+    );
+
     // Delete advance receipt, if any
     if (receipt.advanceAmount > 0) {
       await deleteAdvanceReceipt(
@@ -341,6 +352,16 @@ export const editReceipt = async (req, res) => {
       receiptId.toString()
     );
 
+    /// revert settlement data in cash or bank collection
+    await revertSettlementData(
+      receipt?.paymentMethod,
+      receipt?.paymentDetails,
+      receipt?.receiptNumber,
+      receiptId,
+      cmp_id,
+      session
+    );
+
     // Delete advance receipt, if any
     if (receipt.advanceAmount > 0) {
       await deleteAdvanceReceipt(
@@ -353,6 +374,8 @@ export const editReceipt = async (req, res) => {
 
     // Use the helper function to update TallyData
     await updateTallyData(billData, cmp_id, session, receiptNumber, receiptId);
+
+  
 
     ///update the existing receipt
     receipt.date = date;
@@ -370,6 +393,19 @@ export const editReceipt = async (req, res) => {
     receipt.outstandings = outstandings;
 
     const savedReceipt = await receipt.save({ session, new: true });
+
+
+      /// save settlement data in cash or bank collection
+      await saveSettlementData(
+        paymentMethod,
+        paymentDetails,
+        receiptNumber,
+        savedReceipt._id.toString(),
+        enteredAmount,
+        cmp_id,
+        "receipt",
+        session
+      );
 
     if (advanceAmount > 0) {
       const outstandingWithAdvanceAmount =

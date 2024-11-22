@@ -349,3 +349,71 @@ export const saveSettlementData = async (
     throw error;
   }
 };
+
+
+//// revert save settlement data
+
+export const revertSettlementData = async (
+  paymentMethod,
+  paymentDetails,
+  voucherNumber,
+  voucherId,
+  orgId,
+  session
+) => {
+  try {
+    if (!paymentDetails._id || !paymentMethod) {
+      throw new Error("Invalid paymentDetails");
+    }
+    let model = null;
+    switch (paymentMethod) {
+      case "Online":
+        model = bankModel;
+        break;
+      case "Cash":
+        model = cashModel;
+        break;
+      case "Cheque":
+        model = bankModel;
+        break;
+      default:
+        throw new Error("Invalid paymentMethod");
+    }
+
+    if (model) {
+  
+
+      const query = {
+        cmp_id: orgId,
+        ...(paymentMethod === "Cash"
+          ? { _id: new mongoose.Types.ObjectId(paymentDetails._id) }
+          : { _id: new mongoose.Types.ObjectId(paymentDetails._id) }),
+      };
+
+      // First, pull the specified settlements
+      const pullUpdate = {
+        $pull: {
+          settlements: {
+            voucherNumber: voucherNumber,
+            voucherId: voucherId.toString(),
+          },
+        },
+      };
+
+
+      const options = {
+        new: true,
+        session,
+      };
+
+      const updatedSource = await model.findOneAndUpdate(
+        query,
+        pullUpdate,
+        options
+      );
+    }
+  } catch (error) {
+    console.error("Error in save settlement data:", error);
+    throw error;
+  }
+};

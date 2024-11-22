@@ -136,6 +136,7 @@ export const createSale = async (req, res) => {
         orgId,
         req.owner,
         secondaryMobile,
+        "sale",
         session
       );
     }
@@ -315,6 +316,7 @@ export const editSale = async (req, res) => {
               orgId,
               req.owner,
               secondaryMobile,
+              "sale",
               session
             );
           } else {
@@ -325,6 +327,7 @@ export const editSale = async (req, res) => {
               orgId,
               req.owner,
               secondaryMobile,
+              "sale",
               session
             );
           }
@@ -336,6 +339,7 @@ export const editSale = async (req, res) => {
             orgId,
             req.owner,
             secondaryMobile,
+            "sale",
             session
           );
         }
@@ -422,6 +426,19 @@ export const cancelSale = async (req, res) => {
         },
       }
     ).session(session);
+
+    //// revert payment splitting data in sources
+
+    if (sale?.paymentSplittingData?.splittingData) {
+      await revertPaymentSplittingDataInSources(
+        sale?.paymentSplittingData || {},
+        sale?.salesNumber,
+        sale?._id.toString(),
+        sale?.cmp_id,
+        session
+      );
+    }
+
 
     // Commit the transaction
     await session.commitTransaction();
