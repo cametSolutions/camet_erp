@@ -5,7 +5,11 @@ import {
 import TallyData from "../models/TallyData.js";
 import mongoose from "mongoose";
 import secondaryUserModel from "../models/secondaryUserModel.js";
-import { createOutstandingWithAdvanceAmount } from "../helpers/receiptHelper.js";
+import {
+  createOutstandingWithAdvanceAmount,
+  saveSettlementData,
+  revertSettlementData,
+} from "../helpers/receiptHelper.js";
 
 import {
   deleteAdvancePayment,
@@ -101,6 +105,18 @@ export const createPayment = async (req, res) => {
     // Save the payment in the transaction session
     const savedPayment = await newPayment.save({ session, new: true });
 
+    /// save settlement data in cash or bank collection
+    await saveSettlementData(
+      paymentMethod,
+      paymentDetails,
+      paymentNumber,
+      savedPayment._id.toString(),
+      enteredAmount,
+      cmp_id,
+      "payment",
+      session
+    );
+
     // Use the helper function to update TallyData
     await updateTallyData(
       billData,
@@ -179,6 +195,17 @@ export const cancelPayment = async (req, res) => {
 
     // Revert tally updates
     await revertTallyUpdates(payment.billData, cmp_id, session);
+
+
+     /// save settlement data in cash or bank collection
+     await revertSettlementData(
+      payment?.paymentMethod,
+      payment?.paymentDetails,
+      payment?.paymentNumber,
+      payment?._id.toString(),
+      cmp_id,
+      session
+    );
 
     // Delete advance payment, if any
     if (payment.advanceAmount > 0) {
@@ -269,6 +296,18 @@ export const editPayment = async (req, res) => {
     // Revert tally updates
     await revertTallyUpdates(payment.billData, cmp_id, session);
 
+
+     /// save settlement data in cash or bank collection
+     await revertSettlementData(
+      payment?.paymentMethod,
+      payment?.paymentDetails,
+      payment?.paymentNumber,
+      payment?._id.toString(),
+      cmp_id,
+      session
+    );
+
+
     // Delete advance payment, if any
     if (payment.advanceAmount > 0) {
       await deleteAdvancePayment(
@@ -304,6 +343,18 @@ export const editPayment = async (req, res) => {
     payment.outstandings = outstandings;
 
     const savedPayment = await payment.save({ session, new: true });
+
+    /// save settlement data in cash or bank collection
+    await saveSettlementData(
+      paymentMethod,
+      paymentDetails,
+      paymentNumber,
+      savedPayment._id.toString(),
+      enteredAmount,
+      cmp_id,
+      "payment",
+      session
+    );
 
     if (advanceAmount > 0) {
       const outstandingWithAdvanceAmount =
