@@ -12,6 +12,7 @@ import {
   updateTallyData,
   revertTallyUpdates,
   deleteAdvanceReceipt,
+  saveSettlementData,
 } from "../helpers/receiptHelper.js";
 
 /**
@@ -147,6 +148,18 @@ export const createReceipt = async (req, res) => {
 
     // Save the receipt in the transaction session
     const savedReceipt = await newReceipt.save({ session });
+
+    /// save settlement data in cash or bank collection
+    await saveSettlementData(
+      paymentMethod,
+      paymentDetails,
+      receiptNumber,
+      savedReceipt._id.toString(),
+      enteredAmount,
+      cmp_id,
+      "receipt",
+      session
+    );
 
     // Use the helper function to update TallyData
     await updateTallyData(

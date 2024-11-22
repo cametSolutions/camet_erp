@@ -2,6 +2,8 @@ import mongoose from "mongoose";
 import receipt from "../../frontend/slices/receipt.js";
 import OragnizationModel from "../models/OragnizationModel.js";
 import TallyData from "../models/TallyData.js";
+import cashModel from "../models/cashModel.js";
+import bankModel from "../models/bankModel.js";
 
 /**
  * Updates the receiptNumber for a given secondary user
@@ -56,10 +58,22 @@ export const updateReceiptNumber = async (orgId, secondaryUser, session) => {
  * @param {Object} session - mongoose session
  */
 
-export const updateTallyData = async (billData, cmp_id, session, receiptNumber,_id) => {
+export const updateTallyData = async (
+  billData,
+  cmp_id,
+  session,
+  receiptNumber,
+  _id
+) => {
   // Create a lookup map for billNo to remainingAmount and settledAmount from billData
   const billAmountMap = new Map(
-    billData.map((bill) => [bill.billId, { remainingAmount: bill.remainingAmount, settledAmount: bill.settledAmount }])
+    billData.map((bill) => [
+      bill.billId,
+      {
+        remainingAmount: bill.remainingAmount,
+        settledAmount: bill.settledAmount,
+      },
+    ])
   );
 
   // Fetch the outstanding bills from TallyData for this company
@@ -85,10 +99,10 @@ export const updateTallyData = async (billData, cmp_id, session, receiptNumber,_
           },
           $push: {
             appliedReceipts: {
-              _id,  // Add the _id of the receipt
-              receiptNumber,  // Add the receipt number
-              settledAmount,  // Add the settled amount directly from billData
-              date: new Date(),  // Optional: Timestamp when this receipt was applied
+              _id, // Add the _id of the receipt
+              receiptNumber, // Add the receipt number
+              settledAmount, // Add the settled amount directly from billData
+              date: new Date(), // Optional: Timestamp when this receipt was applied
             },
           },
         },
@@ -99,7 +113,6 @@ export const updateTallyData = async (billData, cmp_id, session, receiptNumber,_
   // Execute the bulk update in TallyData
   await TallyData.bulkWrite(bulkUpdateOperations, { session });
 };
-
 
 /**
  * Creates a new outstanding record for a given party with the advance amount.
@@ -127,7 +140,7 @@ export const createOutstandingWithAdvanceAmount = async (
     const billData = {
       Primary_user_id,
       bill_no: voucherNumber,
-      billId:billId.toString(),
+      billId: billId.toString(),
       cmp_id,
       party_id: party?.party_master_id,
       bill_amount: advanceAmount,
@@ -145,7 +158,7 @@ export const createOutstandingWithAdvanceAmount = async (
       {
         cmp_id: cmp_id,
         bill_no: voucherNumber,
-        billId:billId.toString(),
+        billId: billId.toString(),
         Primary_user_id: Primary_user_id,
         party_id: party?.party_master_id,
       },
@@ -160,7 +173,6 @@ export const createOutstandingWithAdvanceAmount = async (
   }
 };
 
-
 /**
  * Reverts the TallyData updates made by addOutstanding and addSettlementData functions.
  * @param {Array} billData - array of bill objects with billNo and settledAmount
@@ -168,13 +180,15 @@ export const createOutstandingWithAdvanceAmount = async (
  * @param {Object} session - mongoose session
  */
 
-
-export const revertTallyUpdates = async (billData, cmp_id, session,receiptId) => {
-
+export const revertTallyUpdates = async (
+  billData,
+  cmp_id,
+  session,
+  receiptId
+) => {
   // const receiptIdObj = new mongoose.Types.ObjectId(receiptId);
-  // console.log("receiptId", receiptIdObj);  
-  
-  
+  // console.log("receiptId", receiptIdObj);
+
   try {
     if (!billData || billData.length === 0) {
       console.log("No bill data to revert");
@@ -184,8 +198,8 @@ export const revertTallyUpdates = async (billData, cmp_id, session,receiptId) =>
     // Create a lookup map for billNo to settled amount from billData
     const billSettledAmountMap = new Map(
       billData.map((bill) => [
-        bill.billId, 
-        bill.settledAmount  // The amount that was settled
+        bill.billId,
+        bill.settledAmount, // The amount that was settled
       ])
     );
 
@@ -201,8 +215,8 @@ export const revertTallyUpdates = async (billData, cmp_id, session,receiptId) =>
     }
 
     // Process updates one at a time instead of bulk
-     // Process updates one at a time instead of bulk
-     for (const doc of tallyDataToRevert) {
+    // Process updates one at a time instead of bulk
+    for (const doc of tallyDataToRevert) {
       const settledAmount = billSettledAmountMap.get(doc.billId);
       await TallyData.updateOne(
         { _id: doc._id },
@@ -210,7 +224,7 @@ export const revertTallyUpdates = async (billData, cmp_id, session,receiptId) =>
           $inc: { bill_pending_amt: settledAmount },
           $pull: {
             appliedReceipts: { _id: receiptId },
-          }
+          },
         }
       ).session(session);
     }
@@ -222,7 +236,6 @@ export const revertTallyUpdates = async (billData, cmp_id, session,receiptId) =>
   }
 };
 
-
 /**
  * Deletes the advance receipt entry from TallyData if it exists
  * @param {String} receiptNumber - receipt number for the advance receipt
@@ -231,23 +244,29 @@ export const revertTallyUpdates = async (billData, cmp_id, session,receiptId) =>
  * @param {Object} session - mongoose session
  */
 
-
-export const deleteAdvanceReceipt = async (receiptNumber,billId, cmp_id, Primary_user_id, session) => {
-
+export const deleteAdvanceReceipt = async (
+  receiptNumber,
+  billId,
+  cmp_id,
+  Primary_user_id,
+  session
+) => {
   // console.log(receiptNumber, cmp_id, Primary_user_id, session);
-  
+
   try {
     // Find and delete the advance receipt entry in TallyData
     const deletedAdvanceReceipt = await TallyData.findOneAndDelete({
       cmp_id,
       bill_no: receiptNumber,
-      billId:billId.toString(),
+      billId: billId.toString(),
       Primary_user_id,
-      source: "advanceReceipt"
+      source: "advanceReceipt",
     }).session(session);
 
     if (!deletedAdvanceReceipt) {
-      console.log(`No advance receipt found for receipt number: ${receiptNumber}`);
+      console.log(
+        `No advance receipt found for receipt number: ${receiptNumber}`
+      );
       return;
     }
 
@@ -258,12 +277,75 @@ export const deleteAdvanceReceipt = async (receiptNumber,billId, cmp_id, Primary
   }
 };
 
+///// save payment details in payment collection
+
+export const saveSettlementData = async (
+  paymentMethod,
+  paymentDetails,
+  voucherNumber,
+  voucherId,
+  amount,
+  orgId,
+  type,
+  session
+) => {
+  try {
+    if (!paymentDetails._id || !paymentMethod) {
+      throw new Error("Invalid paymentDetails");
+    }
+    let model = null;
+    switch (paymentMethod) {
+      case "Online":
+        model = bankModel;
+        break;
+      case "Cash":
+        model = cashModel;
+        break;
+      case "Cheque":
+        model = bankModel;
+        break;
+      default:
+        throw new Error("Invalid paymentMethod");
+    }
+
+    if (model) {
+      const settlementData = {
+        voucherNumber: voucherNumber,
+        voucherId: voucherId.toString(),
+        amount: amount,
+        created_at: new Date(),
+        payment_mode: paymentMethod.toLowerCase(),
+        type: type,
+      };
 
 
+      const query = {
+        cmp_id: orgId,
+        ...(paymentMethod === "Cash"
+          ? { _id: new mongoose.Types.ObjectId(paymentDetails._id) }
+          : { _id: new mongoose.Types.ObjectId(paymentDetails._id) }),
+      };
 
+      const update = {
+        $push: {
+          settlements: settlementData,
+        },
+      };
 
+      const options = {
+        upsert: true,
+        new: true,
+        session,
+      };
 
-
-
-
-
+      const updatedSource = await model.findOneAndUpdate(
+        query,
+        update,
+        options
+      );
+    }
+  } catch (error) {
+    console.error("Error in save settlement data:", error);
+    throw error;
+  }
+};
