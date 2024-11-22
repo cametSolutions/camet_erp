@@ -374,7 +374,7 @@ function SalesSecondary() {
 
     const lastAmount = totalAmount.toFixed(2);
 
-    dispatch(AddFinalAmount(lastAmount));
+    // dispatch(AddFinalAmount(lastAmount));
 
     const formData = {
       party,
@@ -396,7 +396,7 @@ function SalesSecondary() {
       formData.paymentSplittingData = {};
     }
 
-    console.log(formData);
+    // console.log(formData);
 
     try {
       const res = await api.post(

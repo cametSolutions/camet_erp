@@ -6,7 +6,7 @@ import {
   updateDebitNoteNumber,
   updateTallyData,
 } from "../helpers/debitNoteHelper.js";
-import { processSaleItems as processDebitNoteItems } from "../helpers/salesHelper.js";
+import { processSaleItems as processDebitNoteItems, updateOutstandingBalance } from "../helpers/salesHelper.js";
 
 import { checkForNumberExistence } from "../helpers/secondaryHelper.js";
 import debitNoteModel from "../models/debitNoteModel.js";
@@ -86,16 +86,21 @@ export const createDebitNote = async (req, res) => {
       session // Pass session
     );
 
-    await updateTallyData(
-      orgId,
-      debitNoteNumber,
-      result._id,
-      req.owner,
-      party,
-      lastAmount,
-      secondaryMobile,
-      session // Pass session if needed
-    );
+    if (
+      party.accountGroup === "Sundry Debtors" ||
+      party.accountGroup === "Sundry Creditors"
+    ) {
+      await updateTallyData(
+        orgId,
+        debitNoteNumber,
+        result._id,
+        req.owner,
+        party,
+        lastAmount,
+        secondaryMobile,
+        session // Pass session if needed
+      );
+    }
 
     await session.commitTransaction();
     session.endSession();
@@ -244,36 +249,25 @@ export const editDebitNote = async (req, res) => {
 
     //// edit outstanding
 
-    const newBillValue = Number(lastAmount);
-    const oldBillValue = Number(existingDebitNote.finalAmount);
-    const diffBillValue = newBillValue - oldBillValue;
+    const secondaryUser = await secondaryUserModel
+      .findById(req.sUserId)
+      .session(session);
+    const secondaryMobile = secondaryUser?.mobile;
 
-    const matchedOutStanding = await TallyData.findOne({
-      party_id: party?.party_master_id,
-      cmp_id: orgId,
-      bill_no: debitNoteNumber,
-      billId: existingDebitNote._id.toString(),
-    }).session(session);
-
-    if (matchedOutStanding) {
-      const newOutstanding =
-        Number(matchedOutStanding?.bill_pending_amt) + diffBillValue;
-
-      // console.log("newOutstanding",newOutstanding);
-
-      const outStandingUpdateResult = await TallyData.updateOne(
-        {
-          party_id: party?.party_master_id,
-          cmp_id: orgId,
-          bill_no: debitNoteNumber,
-          billId: existingDebitNote._id.toString(),
-        },
-        {
-          $set: { bill_pending_amt: newOutstanding, bill_amount: newBillValue },
-        },
-        { new: true, session }
-      );
-    }
+    const outstandingResult = await updateOutstandingBalance({
+      existingVoucher: existingDebitNote,
+      newVoucherData: {
+        paymentSplittingData :{},
+        lastAmount,
+      },
+      orgId,
+      voucherNumber: debitNoteNumber,
+      party,
+      session,
+      createdBy: req.owner,
+      transactionType: "debitNote",
+      secondaryMobile,
+    });
 
     await session.commitTransaction();
     session.endSession();

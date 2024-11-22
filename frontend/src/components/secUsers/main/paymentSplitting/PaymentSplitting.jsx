@@ -37,15 +37,15 @@ const AmountInput = ({ value, onChange, placeholder = "Enter amount" }) => {
 };
 
 const CashOption = ({ cash }) => (
-  <option value={cash.cash_id}>{cash.cash_ledname}</option>
+  <option value={cash.cash_id}> {cash.cash_ledname} </option>
 );
 
 const BankOption = ({ bank }) => (
-  <option value={bank.bank_id}>{bank.bank_name}</option>
+  <option value={bank.bank_id}> {bank.bank_name} </option>
 );
 
 const PartyOption = ({ party }) => (
-  <option value={party?.party_master_id}>{party?.partyName}</option>
+  <option value={party?.party_master_id}> {party?.partyName} </option>
 );
 
 const PaymentCard = ({
@@ -211,7 +211,12 @@ const PaymentSplitting = () => {
     cash: cash,
     online: banks,
     cheque: banks,
-    credit: parties.filter((party) => party._id !== selectedPartyId),
+    credit: parties.filter(
+      (party) =>
+        party._id !== selectedPartyId &&
+        (party.accountGroup === "Sundry Creditors" ||
+          party.accountGroup === "Sundry Debtors")
+    ),
   };
 
   const handleAmountChange = useCallback(
@@ -439,13 +444,6 @@ const PaymentSplitting = () => {
           >
             Save
           </button>
-          {/* <button
-            onClick={() => navigate(location?.state?.from, { replace: true })}
-            className="w-20 text-black active:bg-pink-600 font-bold uppercase text-xs px-4 py-2 rounded shadow hover:shadow-md outline-none focus:outline-none mr-1 ease-linear transition-all duration-150 transform hover:scale-105"
-            type="button"
-          >
-            Cancel
-          </button> */}
         </div>
       </div>
     </>

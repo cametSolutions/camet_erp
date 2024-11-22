@@ -81,7 +81,7 @@ const DashboardTransaction = ({ filteredData, userType, from }) => {
               {/* party */}
 
               <div className=" text-xs  px-2  lg:px-6 ">
-                <p className="font-bold mt-2 md:font-semibold text-[11.3px] md:text-[15px] text-left ">
+                <p className="font-bold mt-2 text-[11.3px]  text-left text-gray-600 ">
                   {party_name}
                 </p>
               </div>

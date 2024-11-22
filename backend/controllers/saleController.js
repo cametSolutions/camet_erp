@@ -9,6 +9,7 @@ import {
   revertSaleStockUpdates,
   savePaymentSplittingDataInSources,
   revertPaymentSplittingDataInSources,
+  updateOutstandingBalance,
 } from "../helpers/salesHelper.js";
 import secondaryUserModel from "../models/secondaryUserModel.js";
 import salesModel from "../models/salesModel.js";
@@ -22,8 +23,6 @@ import TallyData from "../models/TallyData.js";
  */
 
 export const createSale = async (req, res) => {
-
-
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
@@ -107,19 +106,25 @@ export const createSale = async (req, res) => {
       valueToUpdateInTally = lastAmount;
     }
 
-    // console.log(valueToUpdateInTally, "valueToUpdateInTally");
-    await updateTallyData(
-      orgId,
-      salesNumber,
-      result._id,
-      req.owner,
-      party,
-      lastAmount,
-      secondaryMobile,
-      session,
-      valueToUpdateInTally,
-      "sale"
-    );
+    if (
+      party.accountGroup === "Sundry Debtors" ||
+      party.accountGroup === "Sundry Creditors"
+    ) {
+      const Primary_user_id= req.owner;
+
+      await updateTallyData(
+        orgId,
+        salesNumber,
+        result._id,
+        Primary_user_id,
+        party,
+        lastAmount,
+        secondaryMobile,
+        session,
+        valueToUpdateInTally,
+        "sale"
+      );
+    }
 
     ////save payment splitting data in bank or cash model also
 
@@ -235,70 +240,24 @@ export const editSale = async (req, res) => {
 
       await model.findByIdAndUpdate(saleId, updateData, { new: true, session });
 
-      ///updating the existing outstanding record by calculating the difference in bill value
+      // ///updating the existing outstanding record by calculating the difference in bill value
 
-      ///considering the bill balance if payment is splitted
+    
+      const outstandingResult = await updateOutstandingBalance({
+        existingVoucher: existingSale,
+        newVoucherData: {
+          paymentSplittingData,
+          lastAmount
+        },
+        orgId,
+        voucherNumber: salesNumber,
+        party,
+        session,
+        createdBy: req.owner,
+        transactionType: 'sale',
+        secondaryMobile
+      });
 
-      let oldBillBalance;
-      if (
-        existingSale?.paymentSplittingData &&
-        Object.keys(existingSale?.paymentSplittingData).length > 0
-      ) {
-        oldBillBalanexistingSalece =
-          existingSale?.paymentSplittingData?.balanceAmount;
-      } else {
-        oldBillBalance = existingSale?.finalAmount || 0;
-      }
-      let newBillBalance;
-
-      if (
-        paymentSplittingData &&
-        Object.keys(paymentSplittingData).length > 0
-      ) {
-        newBillBalance = paymentSplittingData?.balanceAmount;
-      } else {
-        newBillBalance = lastAmount;
-      }
-
-      ///finding the difference in bill value
-      const diffBillValue = Number(newBillBalance) - Number(oldBillBalance);
-      // console.log("oldBillBalance", oldBillBalance);
-      // console.log("newBillBalance", newBillBalance);
-      // console.log("diffBillValue", diffBillValue);
-
-      const matchedOutStanding = await TallyData.findOne({
-        party_id: party?.party_master_id,
-        cmp_id: orgId,
-        bill_no: salesNumber,
-        billId: existingSale?._id.toString(),
-      }).session(session);
-
-      // console.log("matchedOutStanding", matchedOutStanding);
-
-      ///updating the existing outstanding record
-
-      if (matchedOutStanding) {
-        const newOutstanding =
-          Number(matchedOutStanding?.bill_pending_amt || 0) + diffBillValue;
-
-        // console.log("newOutstanding", newOutstanding);
-
-        await TallyData.updateOne(
-          {
-            party_id: party?.party_master_id,
-            cmp_id: orgId,
-            bill_no: salesNumber,
-            billId: existingSale?._id.toString(),
-          },
-          {
-            $set: {
-              bill_pending_amt: newOutstanding || 0,
-              bill_amount: lastAmount,
-            },
-          },
-          { session }
-        );
-      }
 
       //// updating the payment splitting data
       ///first reverting the existing payment splitting data if it exists
