@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
-import { IoIosArrowRoundBack } from "react-icons/io";
 import { useSelector } from "react-redux";
-import { Link } from "react-router-dom";
 import api from "../../api/api";
 import HeaderTile from "../../components/secUsers/main/HeaderTile";
 import { useDispatch } from "react-redux";
@@ -14,7 +12,8 @@ import {
   addSettlementData,
   addOutstandings,
   setTotalBillAmount,
-  addPaymentDetails,
+  addBankPaymentDetails,
+  addCashPaymentDetails,
   addPaymentMethod,
   // addAllBankList,
   addNote,
@@ -30,7 +29,6 @@ import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import useFetch from "../../customHook/useFetch";
 import { useParams } from "react-router-dom";
-import ReceiptButton from "../../components/secUsers/main/Forms/ReceiptButton";
 import TitleDiv from "../../components/common/TitleDiv";
 import FooterButton from "../../components/secUsers/main/FooterButton";
 
@@ -69,7 +67,7 @@ function EditReceipt() {
     outstandingsRedux.length == 0 && `/api/sUsers/getReceiptDetails/${id}`
   );
 
-  console.log("paymentDetailsRedux", paymentDetailsRedux);
+  console.log("receiptDetails", receiptDetails);
 
   useEffect(() => {
     if (receiptDetails) {
@@ -117,8 +115,21 @@ function EditReceipt() {
         if (totalBillAmount && !totalBillAmountRedux) {
           dispatch(setTotalBillAmount(totalBillAmount));
         }
-        if (paymentDetails) {
-          dispatch(addPaymentDetails(paymentDetails));
+        // if (paymentDetails) {
+        //   dispatch(addBankPaymentDetails(paymentDetails));
+        // }
+
+        if (paymentMethod && paymentMethodRedux === "" && paymentMethod === "Cash") {
+           if (paymentDetails) {
+          dispatch(addCashPaymentDetails(paymentDetails));
+        }
+
+      }
+        if (paymentMethod && paymentMethodRedux === "" && (paymentMethod === "Online" || paymentMethod === "Cheque")) {
+           if (paymentDetails) {
+          dispatch(addBankPaymentDetails(paymentDetails));
+        }
+          
         }
         if (paymentMethod && paymentMethodRedux === "") {
           dispatch(addPaymentMethod(paymentMethod));
@@ -172,9 +183,9 @@ function EditReceipt() {
     if (formData?.paymentMethod === "Cash") {
       formData.paymentDetails = {
         ...formData.paymentDetails,
+        cash_name: formData.paymentDetails.cash_ledname,
         bank_ledname: null,
         bank_name: null,
-        _id: null,
         chequeDate: null,
         chequeNumber: null,
       };
@@ -240,6 +251,16 @@ function EditReceipt() {
       ) {
         setSubmitLoading(false);
         return toast.error("Bank details are required.");
+      }
+    }
+
+    if (formData.paymentMethod === "Cash") {
+      if (
+        !formData.paymentDetails.cash_ledname ||
+        !formData.paymentDetails._id
+      ) {
+        setSubmitLoading(false);
+        return toast.error("Cash details are required.");
       }
     }
 

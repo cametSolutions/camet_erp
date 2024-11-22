@@ -125,6 +125,8 @@ function Receipt() {
       outstandings,
     };
 
+    console.log();
+
     if (formData?.paymentMethod === "Online") {
       formData.paymentDetails = {
         ...formData.paymentDetails,
@@ -135,9 +137,9 @@ function Receipt() {
     if (formData?.paymentMethod === "Cash") {
       formData.paymentDetails = {
         ...formData.paymentDetails,
+        cash_name: formData.paymentDetails.cash_ledname,
         bank_ledname: null,
         bank_name: null,
-        _id: null,
         chequeDate: null,
         chequeNumber: null,
       };
@@ -203,8 +205,17 @@ function Receipt() {
         return toast.error("Bank details are required.");
       }
     }
+    if (formData.paymentMethod === "Cash") {
+      if (
+        !formData.paymentDetails.cash_ledname ||
+        !formData.paymentDetails._id
+      ) {
+        setSubmitLoading(false);
+        return toast.error("Cash details are required.");
+      }
+    }
 
-    // // If validation passes, proceed with the form submission
+    // If validation passes, proceed with the form submission
     try {
       const res = await api.post(`/api/sUsers/createReceipt`, formData, {
         headers: {

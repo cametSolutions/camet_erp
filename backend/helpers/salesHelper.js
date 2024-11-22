@@ -543,6 +543,7 @@ export const savePaymentSplittingDataInSources = async (
   orgId,
   Primary_user_id,
   secondaryMobile,
+  type,
   session
 ) => {
   try {
@@ -599,11 +600,12 @@ export const savePaymentSplittingDataInSources = async (
         }
 
         const settlementData = {
-          sales_number: salesNumber,
-          sale_id: saleId.toString(),
+          voucherNumber: salesNumber,
+          voucherId: saleId.toString(),
           amount: item.amount,
           created_at: new Date(),
           payment_mode: mode,
+          type:type
         };
 
         const query = {
@@ -704,8 +706,8 @@ export const revertPaymentSplittingDataInSources = async (
         const pullUpdate = {
           $pull: {
             settlements: {
-              sales_number: salesNumber,
-              sale_id: saleId,
+              voucherNumber: salesNumber,
+              voucherId: saleId,
             },
           },
         };

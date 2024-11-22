@@ -21,6 +21,7 @@ const initialState = {
     chequeDate: new Date().toISOString(),
   },
   bankList: [],
+  cashList: [],
   note: "",
   isNoteOpen: false,
 };
@@ -67,16 +68,28 @@ export const receiptSlice = createSlice({
     setTotalBillAmount: (state, action) => {
       state.totalBillAmount = action.payload;
     },
-    addPaymentDetails: (state, action) => {
+    addBankPaymentDetails: (state, action) => {
       const { _id, bank_ledname, bank_name } = action.payload;
 
-      console.log(state.paymentDetails);
+      const chequeDate = state.paymentDetails.chequeDate;
 
       state.paymentDetails = {
-        ...state.paymentDetails,
+        chequeDate,
         _id,
         bank_ledname,
         bank_name,
+      };
+    },
+    addCashPaymentDetails: (state, action) => {
+      const { _id, cash_ledname } = action.payload;
+
+      const chequeDate = state.paymentDetails.chequeDate;
+
+      state.paymentDetails = {
+        // ...state.paymentDetails,
+        chequeDate,
+        _id,
+        cash_ledname,
       };
     },
     addPaymentMethod: (state, action) => {
@@ -84,6 +97,9 @@ export const receiptSlice = createSlice({
     },
     addAllBankList: (state, action) => {
       state.bankList = action.payload;
+    },
+    addAllCashList: (state, action) => {
+      state.cashList = action.payload;
     },
     addChequeNumber: (state, action) => {
       // state.chequeNumber = action.payload;
@@ -122,15 +138,17 @@ export const {
   addSettlementData,
   addOutstandings,
   setTotalBillAmount,
-  addPaymentDetails,
   addPaymentMethod,
   addAllBankList,
+  addAllCashList,
   addNote,
   addChequeNumber,
   addChequeDate,
   addIsNoteOpen,
   addReceiptId,
-  setModifiedOutstandings 
+  setModifiedOutstandings,
+  addBankPaymentDetails,
+  addCashPaymentDetails,
 } = receiptSlice.actions;
 
 export default receiptSlice.reducer;
