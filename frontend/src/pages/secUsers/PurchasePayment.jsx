@@ -132,9 +132,9 @@ function PurchasePayment() {
     if (formData?.paymentMethod === "Cash") {
       formData.paymentDetails = {
         ...formData.paymentDetails,
+        cash_name: formData.paymentDetails.cash_ledname,
         bank_ledname: null,
         bank_name: null,
-        _id: null,
         chequeDate: null,
         chequeNumber: null,
       };

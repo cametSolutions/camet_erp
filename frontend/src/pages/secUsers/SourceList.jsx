@@ -8,6 +8,12 @@ import {
   addBankPaymentDetails,
   addCashPaymentDetails,
 } from "../../../slices/receipt";
+import {
+  addAllBankList as paymentAddAllBankList,
+  addAllCashList as paymentAddAllCashList,
+  addBankPaymentDetails as paymentAddBankPaymentDetails,
+  addCashPaymentDetails as paymentAddCashPaymentDetails,
+} from "../../../slices/payment";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 function SourceList() {
   const [data, setData] = useState([]);
@@ -20,23 +26,39 @@ function SourceList() {
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  // const location = useLocation();
+  const location = useLocation();
   const { source } = useParams();
+
+  let voucher = "";
+
+  if (location.pathname.includes("payment")) {
+    voucher = "payment";
+  } else {
+    voucher = "receipt";
+  }
 
   const sourceSubmitHandler = (data) => {
     if (source === "Cash") {
-      dispatch(addCashPaymentDetails(data));
+      if (voucher === "payment") {
+        dispatch(paymentAddCashPaymentDetails(data));
+      } else {
+        dispatch(addCashPaymentDetails(data));
+      }
     } else {
-      dispatch(addBankPaymentDetails(data));
+      if (voucher === "payment") {
+        dispatch(paymentAddBankPaymentDetails(data));
+      } else {
+        dispatch(addBankPaymentDetails(data));
+      }
     }
-    navigate(-1,{replace:true});
+    navigate(-1, { replace: true });
     // console.log(data);
   };
 
   useEffect(() => {
     const fetchSource = async () => {
       setLoading(true);
-    
+
       try {
         const res = await api.get(
           `api/sUsers/getBankAndCashSources/${cmp_id}`,
@@ -71,7 +93,7 @@ function SourceList() {
         }
       } catch (error) {
         console.log(error);
-      }finally{
+      } finally {
         setLoading(false);
       }
     };

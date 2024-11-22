@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import api from "../../api/api";
 import BankListComponent from "../../components/common/List/SourceListComponent";
-import { addAllBankList, addPaymentDetails } from "../../../slices/payment";
+import { addAllBankList, addBankPaymentDetails } from "../../../slices/payment";
 import { useNavigate } from "react-router-dom";
 function BankPayment() {
   const [banks, setBanks] = useState([]);
