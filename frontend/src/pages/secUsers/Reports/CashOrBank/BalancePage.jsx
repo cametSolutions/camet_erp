@@ -1,14 +1,50 @@
 import TitleDiv from "../../../../components/common/TitleDiv";
 import SelectDate from "../../../../components/Filters/SelectDate";
 import { useNavigate } from "react-router-dom";
+import useFetch from "../../../../customHook/useFetch";
+import { useEffect, useState } from "react";
+import { useSelector } from "react-redux";
 
 const BalancePage = () => {
+  const [data, setData] = useState([]);
   const navigate = useNavigate();
   const balanceDetails = [
-    { label: "Cash In Hand", amount: -1022730, color: "text-red-600",value:"cashInHand" },
-    { label: "Bank Balance", amount: 6755730.47, color: "text-gray-900",value:"bankBalance" },
-    { label: "Bank OD A/c", amount: 0, color: "text-gray-900",value:"bankOd" },
+    {
+      label: "Cash In Hand",
+      amount: -1022730,
+      color: "text-red-600",
+      value: "cashInHand",
+    },
+    {
+      label: "Bank Balance",
+      amount: 6755730.47,
+      color: "text-gray-900",
+      value: "bankBalance",
+    },
+    {
+      label: "Bank OD A/c",
+      amount: 0,
+      color: "text-gray-900",
+      value: "bankOd",
+    },
   ];
+
+
+  const cmp_id = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg._id
+  );
+
+  const {
+    data: sourceData,
+    loading,
+    error,
+  } = useFetch(`/api/sUsers/findSourceDetails/${cmp_id}`);
+
+  useEffect(() => {
+    if (sourceData) {
+      setData(sourceData);
+    }
+  }, [sourceData]);
 
   return (
     <>
@@ -33,8 +69,8 @@ const BalancePage = () => {
             <div className="space-y-1">
               {balanceDetails.map((item, index) => (
                 <div
-                onClick={() => {
-                    navigate("/sUsers/balanceDetails/"+ item?.value);
+                  onClick={() => {
+                    navigate("/sUsers/balanceDetails/" + item?.value);
                   }}
                   key={index}
                   className="hover:-translate-y-[2px] ease-in-out duration-100 hover:bg-slate-50 px-5 "

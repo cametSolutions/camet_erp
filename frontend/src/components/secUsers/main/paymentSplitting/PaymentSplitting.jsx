@@ -37,11 +37,11 @@ const AmountInput = ({ value, onChange, placeholder = "Enter amount" }) => {
 };
 
 const CashOption = ({ cash }) => (
-  <option value={cash.cash_id}> {cash.cash_ledname} </option>
+  <option value={cash._id}> {cash.cash_ledname} </option>
 );
 
 const BankOption = ({ bank }) => (
-  <option value={bank.bank_id}> {bank.bank_name} </option>
+  <option value={bank._id}> {bank.bank_name} </option>
 );
 
 const PartyOption = ({ party }) => (

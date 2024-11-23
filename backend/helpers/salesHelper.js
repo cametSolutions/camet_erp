@@ -610,9 +610,10 @@ export const savePaymentSplittingDataInSources = async (
 
         const query = {
           cmp_id: orgId,
-          ...(mode === "cash"
-            ? { cash_id: item.sourceId }
-            : { bank_id: item.sourceId }),
+          _id: item.sourceId,
+          // ...(mode === "cash"
+          //   ? { _id: item.sourceId }
+          //   : { _id: item.sourceId }),
         };
 
         const update = {
@@ -697,9 +698,10 @@ export const revertPaymentSplittingDataInSources = async (
 
         const query = {
           cmp_id: orgId,
-          ...(mode === "cash"
-            ? { cash_id: item.sourceId }
-            : { bank_id: item.sourceId }),
+          _id: item.sourceId,
+          // ...(mode === "cash"
+          //   ? { cash_id: item.sourceId }
+          //   : { bank_id: item.sourceId }),
         };
 
         // First, pull the specified settlements
