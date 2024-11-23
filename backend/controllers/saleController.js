@@ -10,6 +10,8 @@ import {
   savePaymentSplittingDataInSources,
   revertPaymentSplittingDataInSources,
   updateOutstandingBalance,
+  saveSettlementData,
+  revertSettlementData,
 } from "../helpers/salesHelper.js";
 import secondaryUserModel from "../models/secondaryUserModel.js";
 import salesModel from "../models/salesModel.js";
@@ -98,6 +100,18 @@ export const createSale = async (req, res) => {
       session // Pass session
     );
 
+    ///save settlement data
+    await saveSettlementData(
+      party,
+      orgId,
+      "normal sale",
+      "sale",
+      salesNumber,
+      result._id,
+      lastAmount,
+      session
+    );
+
     let valueToUpdateInTally = 0;
 
     if (paymentSplittingData && Object.keys(paymentSplittingData).length > 0) {
@@ -110,7 +124,7 @@ export const createSale = async (req, res) => {
       party.accountGroup === "Sundry Debtors" ||
       party.accountGroup === "Sundry Creditors"
     ) {
-      const Primary_user_id= req.owner;
+      const Primary_user_id = req.owner;
 
       await updateTallyData(
         orgId,
@@ -241,24 +255,47 @@ export const editSale = async (req, res) => {
 
       await model.findByIdAndUpdate(saleId, updateData, { new: true, session });
 
+      //// update the settlement data ,so delete and recreate the settlement data
+
+      /// revert it
+      await revertSettlementData(
+        existingSale?.party,
+        orgId,
+        existingSale?.salesNumber,
+        existingSale?._id.toString(),
+        session
+      );
+
+      /// recreate the settlement data
+
+      ///save settlement data
+      await saveSettlementData(
+        party,
+        orgId,
+        "normal sale",
+        "sale",
+        existingSale?.salesNumber,
+        saleId,
+        lastAmount,
+        session
+      );
+
       // ///updating the existing outstanding record by calculating the difference in bill value
 
-    
       const outstandingResult = await updateOutstandingBalance({
         existingVoucher: existingSale,
         newVoucherData: {
           paymentSplittingData,
-          lastAmount
+          lastAmount,
         },
         orgId,
         voucherNumber: salesNumber,
         party,
         session,
         createdBy: req.owner,
-        transactionType: 'sale',
-        secondaryMobile
+        transactionType: "sale",
+        secondaryMobile,
       });
-
 
       //// updating the payment splitting data
       ///first reverting the existing payment splitting data if it exists
@@ -427,6 +464,21 @@ export const cancelSale = async (req, res) => {
       }
     ).session(session);
 
+
+
+    //// revert settlement data
+
+    
+      /// revert it
+      await revertSettlementData(
+        sale?.party,
+        sale?.cmp_id,
+        sale?.salesNumber,
+        sale?._id.toString(),
+        session
+      );
+
+
     //// revert payment splitting data in sources
 
     if (sale?.paymentSplittingData?.splittingData) {
@@ -438,7 +490,6 @@ export const cancelSale = async (req, res) => {
         session
       );
     }
-
 
     // Commit the transaction
     await session.commitTransaction();
