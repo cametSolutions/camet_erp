@@ -104,8 +104,9 @@ export const createSale = async (req, res) => {
     await saveSettlementData(
       party,
       orgId,
-      "normal sale",
-      "sale",
+      req.query.vanSale === "true" ? "normal van sale" : "normal sale",
+
+      req.query.vanSale === "true" ? "vanSale" : "sale",
       salesNumber,
       result._id,
       lastAmount,
