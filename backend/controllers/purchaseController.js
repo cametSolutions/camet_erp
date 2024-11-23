@@ -7,7 +7,7 @@ import {
   revertPurchaseStockUpdates,
   updateTallyData,
 } from "../helpers/purchaseHelper.js";
-import { processSaleItems as processPurchaseItems, updateOutstandingBalance } from "../helpers/salesHelper.js";
+import { processSaleItems as processPurchaseItems, revertSettlementData, saveSettlementData, updateOutstandingBalance } from "../helpers/salesHelper.js";
 import { checkForNumberExistence } from "../helpers/secondaryHelper.js";
 import purchaseModel from "../models/purchaseModel.js";
 import secondaryUserModel from "../models/secondaryUserModel.js";
@@ -86,6 +86,20 @@ export const createPurchase = async (req, res) => {
       updateAdditionalCharge,
       session
     );
+
+       ///save settlement data
+       await saveSettlementData(
+        party,
+        orgId,
+        "normal purchase",
+        "purchase",
+        purchaseNumber,
+        result._id,
+        lastAmount,
+        session
+      );
+  
+
 
     if (
       party.accountGroup === "Sundry Debtors" ||
@@ -190,6 +204,34 @@ export const editPurchase = async (req, res) => {
       session,
     });
 
+
+
+    /// edit settlement data
+
+    /// revert it
+    await revertSettlementData(
+      existingPurchase?.party,
+      orgId,
+      existingPurchase?.purchaseNumber,
+      existingPurchase?._id.toString(),
+      session
+    );
+
+    /// recreate the settlement data
+
+    ///save settlement data
+    await saveSettlementData(
+      party,
+      orgId,
+      "normal purchase",
+      "purchase",
+      existingPurchase?.purchaseNumber,
+      purchaseId,
+      lastAmount,
+      session
+    );
+
+
     //// edit outstanding
     const secondaryUser = await secondaryUserModel
       .findById(req.sUserId)
@@ -260,6 +302,17 @@ export const cancelPurchase = async (req, res) => {
 
       // Revert existing stock updates
       await revertPurchaseStockUpdates(existingPurchase.items, session);
+
+         //// revert settlement data
+    /// revert it
+    await revertSettlementData(
+      existingPurchase?.party,
+      existingPurchase?.cmp_id,
+      existingPurchase?.purchaseNumber,
+      existingPurchase?._id.toString(),
+      session
+    );
+
 
       const cancelOutstanding = await TallyData.findOneAndUpdate(
         {

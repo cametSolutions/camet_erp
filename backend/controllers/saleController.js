@@ -464,20 +464,15 @@ export const cancelSale = async (req, res) => {
       }
     ).session(session);
 
-
-
     //// revert settlement data
-
-    
-      /// revert it
-      await revertSettlementData(
-        sale?.party,
-        sale?.cmp_id,
-        sale?.salesNumber,
-        sale?._id.toString(),
-        session
-      );
-
+    /// revert it
+    await revertSettlementData(
+      sale?.party,
+      sale?.cmp_id,
+      sale?.salesNumber,
+      sale?._id.toString(),
+      session
+    );
 
     //// revert payment splitting data in sources
 
