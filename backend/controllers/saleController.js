@@ -100,6 +100,14 @@ export const createSale = async (req, res) => {
       session // Pass session
     );
 
+    let valueToUpdateInTally = 0;
+
+    if (paymentSplittingData && Object.keys(paymentSplittingData).length > 0) {
+      valueToUpdateInTally = paymentSplittingData?.balanceAmount;
+    } else {
+      valueToUpdateInTally = lastAmount;
+    }
+
     ///save settlement data
     await saveSettlementData(
       party,
@@ -109,17 +117,9 @@ export const createSale = async (req, res) => {
       req.query.vanSale === "true" ? "vanSale" : "sale",
       salesNumber,
       result._id,
-      lastAmount,
+      valueToUpdateInTally,
       session
     );
-
-    let valueToUpdateInTally = 0;
-
-    if (paymentSplittingData && Object.keys(paymentSplittingData).length > 0) {
-      valueToUpdateInTally = paymentSplittingData?.balanceAmount;
-    } else {
-      valueToUpdateInTally = lastAmount;
-    }
 
     if (
       party.accountGroup === "Sundry Debtors" ||
@@ -269,6 +269,17 @@ export const editSale = async (req, res) => {
 
       /// recreate the settlement data
 
+      let valueToUpdateInTally = 0;
+
+      if (
+        paymentSplittingData &&
+        Object.keys(paymentSplittingData).length > 0
+      ) {
+        valueToUpdateInTally = paymentSplittingData?.balanceAmount;
+      } else {
+        valueToUpdateInTally = lastAmount;
+      }
+
       ///save settlement data
       await saveSettlementData(
         party,
@@ -277,7 +288,7 @@ export const editSale = async (req, res) => {
         "sale",
         existingSale?.salesNumber,
         saleId,
-        lastAmount,
+        valueToUpdateInTally,
         session
       );
 
