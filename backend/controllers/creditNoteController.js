@@ -8,6 +8,8 @@ import {
 } from "../helpers/creditNoteHelper.js";
 import {
   processSaleItems as processCreditNoteItems,
+  revertSettlementData,
+  saveSettlementData,
   updateOutstandingBalance,
 } from "../helpers/salesHelper.js";
 
@@ -91,6 +93,18 @@ export const createCreditNote = async (req, res) => {
       session
     );
 
+    ///save settlement data
+    await saveSettlementData(
+      party,
+      orgId,
+      "normal credit note",
+      "creditNote",
+      creditNoteNumber,
+      result._id,
+      lastAmount,
+      session
+    );
+
     if (
       party.accountGroup === "Sundry Debtors" ||
       party.accountGroup === "Sundry Creditors"
@@ -157,6 +171,15 @@ export const cancelCreditNote = async (req, res) => {
 
       // Revert existing stock updates
       await revertCreditNoteStockUpdates(existingCreditNote.items, session);
+
+      //// revert settlement data
+      await revertSettlementData(
+        existingCreditNote?.party,
+        existingCreditNote?.cmp_id,
+        existingCreditNote?.creditNoteNumber,
+        existingCreditNote?._id.toString(),
+        session
+      );
 
       const cancelOutstanding = await TallyData.findOneAndUpdate(
         {
@@ -279,6 +302,29 @@ export const editCreditNote = async (req, res) => {
       session,
     });
 
+    /// revert stock updates
+    await revertSettlementData(
+      existingCreditNote?.party,
+      orgId,
+      existingCreditNote?.creditNoteNumber,
+      existingCreditNote?._id.toString(),
+      session
+    );
+
+    /// recreate the settlement data
+
+    ///save settlement data
+    await saveSettlementData(
+      party,
+      orgId,
+      "normal credit note",
+      "creditNote",
+      existingCreditNote?.creditNoteNumber,
+      creditNoteId,
+      lastAmount,
+      session
+    );
+
     //// edit outstanding
 
     // ///updating the existing outstanding record by calculating the difference in bill value
@@ -288,14 +334,11 @@ export const editCreditNote = async (req, res) => {
       .session(session);
     const secondaryMobile = secondaryUser?.mobile;
 
-    
-
     const outstandingResult = await updateOutstandingBalance({
       existingVoucher: existingCreditNote,
       newVoucherData: {
-        paymentSplittingData :{},
+        paymentSplittingData: {},
         lastAmount,
-        
       },
       orgId,
       voucherNumber: creditNoteNumber,
