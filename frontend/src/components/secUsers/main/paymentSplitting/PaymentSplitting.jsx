@@ -101,7 +101,7 @@ const PaymentSplitting = () => {
   );
   const parties = useSelector((state) => state?.partySlice?.allParties) || [];
 
-  const { _id: selectedPartyId, accountGroup: selectedPartyAccountGroup } =
+  const { _id: selectedPartyId, accountGroup: selectedPartyAccountGroup,party_master_id:selectedPartyMasterId } =
     useSelector((state) => state?.salesSecondary?.party);
 
   const subTotal = location?.state?.totalAmount;
@@ -208,7 +208,7 @@ const PaymentSplitting = () => {
   }, [paymentSplittingReduxData]);
 
   const paymentOptions = {
-    cash: cash,
+    cash: cash.filter((cash) => cash.cash_id.toString() !== selectedPartyMasterId),
     online: banks,
     cheque: banks,
     credit: parties.filter(
