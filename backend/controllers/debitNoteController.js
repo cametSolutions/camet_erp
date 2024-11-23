@@ -6,7 +6,12 @@ import {
   updateDebitNoteNumber,
   updateTallyData,
 } from "../helpers/debitNoteHelper.js";
-import { processSaleItems as processDebitNoteItems, updateOutstandingBalance } from "../helpers/salesHelper.js";
+import {
+  processSaleItems as processDebitNoteItems,
+  revertSettlementData,
+  saveSettlementData,
+  updateOutstandingBalance,
+} from "../helpers/salesHelper.js";
 
 import { checkForNumberExistence } from "../helpers/secondaryHelper.js";
 import debitNoteModel from "../models/debitNoteModel.js";
@@ -86,6 +91,18 @@ export const createDebitNote = async (req, res) => {
       session // Pass session
     );
 
+    ///save settlement data
+    await saveSettlementData(
+      party,
+      orgId,
+      "normal debit note",
+      "debitNote",
+      debitNoteNumber,
+      result._id,
+      lastAmount,
+      session
+    );
+
     if (
       party.accountGroup === "Sundry Debtors" ||
       party.accountGroup === "Sundry Creditors"
@@ -144,6 +161,15 @@ export const cancelDebitNote = async (req, res) => {
 
     // Revert existing stock updates
     await revertDebitNoteStockUpdates(existingDebitNote.items, session);
+
+    //// revert settlement data
+    await revertSettlementData(
+      existingDebitNote?.party,
+      existingDebitNote?.cmp_id,
+      existingDebitNote?.debitNoteNumber,
+      existingDebitNote?._id.toString(),
+      session
+    );
 
     const cancelOutstanding = await TallyData.findOneAndUpdate(
       {
@@ -247,6 +273,31 @@ export const editDebitNote = async (req, res) => {
       session,
     });
 
+
+    /// revert settlement data
+    await revertSettlementData(
+      existingDebitNote?.party,
+      orgId,
+      existingDebitNote?.debitNoteNumber,
+      existingDebitNote?._id.toString(),
+      session
+    );
+
+    /// recreate the settlement data
+
+    ///save settlement data
+    await saveSettlementData(
+      party,
+      orgId,
+      "normal debit note",
+      "debitNote",
+      existingDebitNote?.debitNoteNumber,
+      debitNoteId,
+      lastAmount,
+      session
+    );
+
+
     //// edit outstanding
 
     const secondaryUser = await secondaryUserModel
@@ -257,7 +308,7 @@ export const editDebitNote = async (req, res) => {
     const outstandingResult = await updateOutstandingBalance({
       existingVoucher: existingDebitNote,
       newVoucherData: {
-        paymentSplittingData :{},
+        paymentSplittingData: {},
         lastAmount,
       },
       orgId,
