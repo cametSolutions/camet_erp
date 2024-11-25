@@ -346,6 +346,7 @@ function Purchase() {
       orgId,
       purchaseNumber,
       despatchDetails,
+      selectedDate,
     };
 
     // console.log(formData);

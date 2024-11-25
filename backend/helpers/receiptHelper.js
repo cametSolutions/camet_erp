@@ -287,6 +287,8 @@ export const saveSettlementData = async (
   amount,
   orgId,
   type,
+  createdAt,
+  partyName,
   session
 ) => {
   try {
@@ -313,9 +315,10 @@ export const saveSettlementData = async (
         voucherNumber: voucherNumber,
         voucherId: voucherId.toString(),
         amount: amount,
-        created_at: new Date(),
+        created_at: createdAt,
         payment_mode: paymentMethod.toLowerCase(),
         type: type,
+        party: partyName,
       };
 
 
@@ -379,7 +382,7 @@ export const revertSettlementData = async (
       default:
         throw new Error("Invalid paymentMethod");
     }
-
+``
     if (model) {
   
 

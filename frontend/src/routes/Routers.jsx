@@ -184,6 +184,7 @@ import PaymentSplitting from '../components/secUsers/main/paymentSplitting/Payme
 import BalancePage from '../pages/secUsers/Reports/CashOrBank/BalancePage'
 import BalanceDetails from '../pages/secUsers/Reports/CashOrBank/BalanceDetails'
 import SourceList from '../pages/secUsers/SourceList'
+import SourceTransactions from '../pages/secUsers/Reports/CashOrBank/SourceTransactions'
 
 const Routers = () => {
   return (
@@ -414,6 +415,7 @@ const Routers = () => {
          {/* cash or bank */}
          <Route path='/sUsers/balancePage' element={<ProtectedSecRoute><BalancePage/></ProtectedSecRoute>}></Route>
          <Route path='/sUsers/balanceDetails/:accGroup' element={<ProtectedSecRoute><BalanceDetails/></ProtectedSecRoute>}></Route>
+         <Route path='/sUsers/sourceTransactions/:id/:accGroup' element={<ProtectedSecRoute><SourceTransactions/></ProtectedSecRoute>}></Route>
 
 
         {/* filters */}

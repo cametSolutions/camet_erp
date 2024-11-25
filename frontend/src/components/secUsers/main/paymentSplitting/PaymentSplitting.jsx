@@ -37,11 +37,11 @@ const AmountInput = ({ value, onChange, placeholder = "Enter amount" }) => {
 };
 
 const CashOption = ({ cash }) => (
-  <option value={cash.cash_id}> {cash.cash_ledname} </option>
+  <option value={cash._id}> {cash.cash_ledname} </option>
 );
 
 const BankOption = ({ bank }) => (
-  <option value={bank.bank_id}> {bank.bank_name} </option>
+  <option value={bank._id}> {bank.bank_name} </option>
 );
 
 const PartyOption = ({ party }) => (
@@ -101,8 +101,11 @@ const PaymentSplitting = () => {
   );
   const parties = useSelector((state) => state?.partySlice?.allParties) || [];
 
-  const { _id: selectedPartyId, accountGroup: selectedPartyAccountGroup } =
-    useSelector((state) => state?.salesSecondary?.party);
+  const {
+    _id: selectedPartyId,
+    accountGroup: selectedPartyAccountGroup,
+    party_master_id: selectedPartyMasterId,
+  } = useSelector((state) => state?.salesSecondary?.party);
 
   const subTotal = location?.state?.totalAmount;
   const paymentSplittingReduxData =
@@ -208,9 +211,15 @@ const PaymentSplitting = () => {
   }, [paymentSplittingReduxData]);
 
   const paymentOptions = {
-    cash: cash,
-    online: banks,
-    cheque: banks,
+    cash: cash?.filter(
+      (cash) => cash.cash_id.toString() !== selectedPartyMasterId
+    ),
+    online: banks?.filter(
+      (bank) => bank.bank_id.toString() !== selectedPartyMasterId
+    ),
+    cheque: banks?.filter(
+      (bank) => bank.bank_id.toString() !== selectedPartyMasterId
+    ),
     credit: parties.filter(
       (party) =>
         party._id !== selectedPartyId &&

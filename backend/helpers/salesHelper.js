@@ -369,10 +369,9 @@ export const updateTallyData = async (
   valueToUpdateInTally,
   createdBy = ""
 ) => {
-
   try {
     const billData = {
-      Primary_user_id : Primary_user_id,  
+      Primary_user_id: Primary_user_id,
       bill_no: salesNumber,
       billId: billId.toString(),
       cmp_id: orgId,
@@ -544,6 +543,8 @@ export const savePaymentSplittingDataInSources = async (
   Primary_user_id,
   secondaryMobile,
   type,
+  createdAt,
+  partyName,
   session
 ) => {
   try {
@@ -587,9 +588,6 @@ export const savePaymentSplittingDataInSources = async (
             "paymentSplitting"
           );
 
-
-          
-
           // Return early for credit mode
           return null;
         }
@@ -602,17 +600,19 @@ export const savePaymentSplittingDataInSources = async (
         const settlementData = {
           voucherNumber: salesNumber,
           voucherId: saleId.toString(),
+          partyName: partyName,
           amount: item.amount,
-          created_at: new Date(),
+          created_at: createdAt,
           payment_mode: mode,
-          type:type
+          type: type,
         };
 
         const query = {
           cmp_id: orgId,
-          ...(mode === "cash"
-            ? { cash_id: item.sourceId }
-            : { bank_id: item.sourceId }),
+          _id: item.sourceId,
+          // ...(mode === "cash"
+          //   ? { _id: item.sourceId }
+          //   : { _id: item.sourceId }),
         };
 
         const update = {
@@ -697,9 +697,10 @@ export const revertPaymentSplittingDataInSources = async (
 
         const query = {
           cmp_id: orgId,
-          ...(mode === "cash"
-            ? { cash_id: item.sourceId }
-            : { bank_id: item.sourceId }),
+          _id: item.sourceId,
+          // ...(mode === "cash"
+          //   ? { cash_id: item.sourceId }
+          //   : { bank_id: item.sourceId }),
         };
 
         // First, pull the specified settlements
@@ -758,7 +759,7 @@ export const updateOutstandingBalance = async ({
   session,
   createdBy,
   transactionType,
-  secondaryMobile
+  secondaryMobile,
 }) => {
   // Calculate old bill balance
   let oldBillBalance;
@@ -772,7 +773,7 @@ export const updateOutstandingBalance = async ({
   }
 
   // Calculate new bill balance
-  
+
   let newBillBalance;
   if (
     newVoucherData?.paymentSplittingData &&
@@ -824,5 +825,132 @@ export const updateOutstandingBalance = async ({
       valueToUpdateInTally,
       transactionType
     );
+  }
+};
+
+export const saveSettlementData = async (
+party,
+  orgId,
+  paymentMethod,
+  type,
+  voucherNumber,
+  voucherId,
+  amount,
+  createdAt,
+  partyName,
+  session
+) => {
+  try {
+    const accountGroup = party?.accountGroup;
+
+    if (!accountGroup) {
+      throw new Error("Invalid account group");
+    }
+
+    let model;
+    if (accountGroup === "Cash-in-Hand") {
+      model = cashModel;
+    } else if (accountGroup === "Bank Accounts") {
+      model = bankModel;
+    } else {
+      // console.log("Invalid account group so return");
+      return;
+    }
+
+    if (!model) {
+      throw new Error("Invalid model");
+    }
+
+    const query = {
+      cmp_id: orgId,
+      ...(accountGroup === "Cash-in-Hand"
+        ? { cash_id: Number(party?.party_master_id) }
+        : { bank_id: Number(party?.party_master_id) }),
+    };
+
+    const settlementData = {
+      voucherNumber: voucherNumber,
+      voucherId: voucherId.toString(),
+      party: partyName,
+      amount: Number(amount),
+      created_at: createdAt,
+      payment_mode: paymentMethod,
+      type: type,
+    };
+
+    const update = {
+      $push: {
+        settlements: settlementData,
+      },
+    };
+
+    const options = {
+      upsert: true,
+      new: true,
+      session,
+    };
+
+    const updatedSource = await model.findOneAndUpdate(query, update, options);
+  } catch (error) {
+    console.error("Error in saveSettlementData:", error);
+    throw error;
+  }
+};
+
+export const revertSettlementData = async (
+  party,
+  orgId,
+  voucherNumber,
+  voucherId,
+  session
+) => {
+  try {
+    const accountGroup = party?.accountGroup;
+
+    if (!accountGroup) {
+      throw new Error("Invalid account group");
+    }
+
+    let model;
+    if (accountGroup === "Cash-in-Hand") {
+      model = cashModel;
+    } else if (accountGroup === "Bank Accounts") {
+      model = bankModel;
+    }
+
+    if (!model) {
+     return
+    }
+
+    const query = {
+      cmp_id: orgId,
+      ...(accountGroup === "Cash-in-Hand"
+        ? { cash_id: Number(party?.party_master_id) }
+        : { bank_id: Number(party?.party_master_id) }),
+    };
+
+    // First, pull the specified settlements
+    const pullUpdate = {
+      $pull: {
+        settlements: {
+          voucherNumber: voucherNumber,
+          voucherId: voucherId.toString(),
+        },
+      },
+    };
+
+    const options = {
+      new: true,
+      session,
+    };
+
+    const updatedSource = await model.findOneAndUpdate(
+      query,
+      pullUpdate,
+      options
+    );
+  } catch (error) {
+    console.error("Error in revertSettlementData:", error);
+    throw error;
   }
 };

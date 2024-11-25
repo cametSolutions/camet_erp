@@ -1,15 +1,20 @@
 import TitleDiv from "../../../../components/common/TitleDiv";
 import SelectDate from "../../../../components/Filters/SelectDate";
 import { useNavigate, useParams } from "react-router-dom";
+import useFetch from "../../../../customHook/useFetch";
+import { useSelector } from "react-redux";
+import { useEffect, useState } from "react";
 
 const BalanceDetails = () => {
-  const balanceDetails = [
-    { label: "Petty Cash", amount: 1022, color: "text-gray-600" },
-    { label: "Cash", amount: 67557, color: "text-gray-900" },
-    // { label: "Bank OD A/c", amount: 0, color: "text-gray-900" },
-  ];
+  const [balanceDetails, setBalanceDetails] = useState([]);
+  const [grandTotal, setGrandTotal] = useState(0);
+  const cmp_id = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg._id
+  );
+  const { start, end } = useSelector((state) => state.date);
 
   const { accGroup } = useParams();
+  const navigate = useNavigate();
   let colorScheme;
   let title;
 
@@ -30,45 +35,69 @@ const BalanceDetails = () => {
       colorScheme = "gray-900";
   }
 
+  const { data, loading } = useFetch(
+    `/api/sUsers/findSourceDetails/${cmp_id}?accountGroup=${accGroup}&startOfDayParam=${start}&endOfDayParam=${end}`
+  );
+
+  useEffect(() => {
+    if (data?.data) {
+      setBalanceDetails(data?.data);
+      // setBalanceDetails([]);
+      const grandTotal = data?.data?.reduce(
+        (total, item) => total + item.total,
+        0
+      );
+      setGrandTotal(grandTotal || 0);
+    }
+  }, [data]);
+
+
+  const handleClickHandler=(id)=>{
+    navigate(`/sUsers/sourceTransactions/${id}/${accGroup}`);
+  }
+
   return (
     <>
-      <TitleDiv title={title}  />
+      <div className="flex flex-col sticky top-0 z-50">
+        <TitleDiv title={title} loading={loading} />
 
-      <section className="shadow-lg border-b ">
-        <SelectDate />
-      </section>
-
-      <div className="flex flex-col gap-3">
+        <section className="shadow-lg border-b ">
+          <SelectDate />
+        </section>
         {/* Total Balance */}
-        <div 
-        style={{ backgroundColor: colorScheme}}
-        className="text-center  shadow-xl text-white h-48 flex justify-center items-center flex-col">
-          <h2 className="text-3xl sm:text-4xl font-bold">₹ 57,33,000.47</h2>
+        <div
+          style={{ backgroundColor: colorScheme }}
+          className={`   ${
+            loading && "animate-pulse pointer-events-none opacity-80"
+          }  text-center  shadow-xl text-white h-48 flex justify-center items-center flex-col`}
+        >
+          <h2 className="text-3xl sm:text-4xl font-bold">₹{grandTotal}</h2>
           <p className="text-sm mt-4 font-semibold opacity-90">
-            01 APR 24 to 31 MAR 25
+            {new Date(start).toDateString()} - {new Date(end).toDateString()}
           </p>
-          <p className="text-sm mt-4 font-bold opacity-90">
-            {title}
-          </p>
+          <p className="text-sm mt-4 font-bold opacity-90">{title}</p>
         </div>
+      </div>
 
+      <div className="flex flex-col gap-3 z-10">
         {/* Balance Details Card */}
-        <div className="bg-white rounded-lg ">
+        <div className={`   bg-white rounded-lg `}>
           <div className="p-4">
             <div className="space-y-1">
               {balanceDetails.map((item, index) => (
                 <div
+                onClick={() => {
+                  handleClickHandler(item?._id)
+                }}
                   key={index}
                   className="hover:-translate-y-[2px] ease-in-out duration-100 hover:bg-slate-50 px-5 "
                 >
                   <div className="flex justify-between items-center py-2 border-gray-100 my-4 cursor-pointer ">
                     <span className="text-gray-500 font-bold text-sm sm:text-md">
-                      {item.label}
+                      {item.name}
                     </span>
-                    <span
-                      className={`${item.color} text-sm sm:text-md font-bold`}
-                    >
-                      ₹ {item.amount.toLocaleString("en-IN")}
+                    <span className={` text-sm sm:text-md font-bold`}>
+                      ₹ {item.total.toLocaleString("en-IN")}
                     </span>
                   </div>
                   {index < balanceDetails.length - 1 && (
@@ -79,6 +108,12 @@ const BalanceDetails = () => {
             </div>
           </div>
         </div>
+
+        {!loading && balanceDetails.length === 0 && (
+          <div className="flex justify-center items-center ">
+            <h1 className="text-sm font-bold text-gray-600">No Data Found</h1>
+          </div>
+        )}
       </div>
     </>
   );

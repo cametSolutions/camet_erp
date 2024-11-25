@@ -114,6 +114,8 @@ export const createPayment = async (req, res) => {
       enteredAmount,
       cmp_id,
       "payment",
+      savedPayment?.createdAt,
+      savedPayment?.party?.partyName,
       session
     );
 
@@ -131,6 +133,7 @@ export const createPayment = async (req, res) => {
         await createOutstandingWithAdvanceAmount(
           cmp_id,
           savedPayment.paymentNumber,
+          savedPayment._id.toString(),
           Primary_user_id,
           party,
           secondaryUser.mobileNumber,
@@ -353,6 +356,8 @@ export const editPayment = async (req, res) => {
       enteredAmount,
       cmp_id,
       "payment",
+      savedPayment?.createdAt,
+      savedPayment?.party?.partyName,
       session
     );
 
@@ -361,6 +366,7 @@ export const editPayment = async (req, res) => {
         await createOutstandingWithAdvanceAmount(
           cmp_id,
           savedPayment.paymentNumber,
+          savedPayment._id.toString(),
           Primary_user_id,
           party,
           secondaryUser.mobileNumber,

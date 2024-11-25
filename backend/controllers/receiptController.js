@@ -159,6 +159,8 @@ export const createReceipt = async (req, res) => {
       enteredAmount,
       cmp_id,
       "receipt",
+      newReceipt?.createdAt,
+      savedReceipt?.party?.partyName,
       session
     );
 
@@ -404,6 +406,8 @@ export const editReceipt = async (req, res) => {
         enteredAmount,
         cmp_id,
         "receipt",
+        receipt?.createdAt,
+        receipt?.party?.partyName,
         session
       );
 
@@ -412,6 +416,7 @@ export const editReceipt = async (req, res) => {
         await createOutstandingWithAdvanceAmount(
           cmp_id,
           savedReceipt.receiptNumber,
+          savedReceipt._id.toString(),
           Primary_user_id,
           party,
           secondaryUser.mobileNumber,
