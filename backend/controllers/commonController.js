@@ -1354,14 +1354,15 @@ export const findSourceBalance = async (req, res) => {
         $lte: endOfDay(endDate),
       },
     };
-  } else if (todayOnly === "true") {
-    dateFilter = {
-      "settlements.created_at": {
-        $gte: startOfDay(new Date()),
-        $lte: endOfDay(new Date()),
-      },
-    };
   }
+  // else if (todayOnly === "true") {
+  //   dateFilter = {
+  //     "settlements.created_at": {
+  //       $gte: startOfDay(new Date()),
+  //       $lte: endOfDay(new Date()),
+  //     },
+  //   };
+  // }
   try {
     const bankTotal = await bankModel.aggregate([
       {
@@ -1428,3 +1429,247 @@ export const findSourceBalance = async (req, res) => {
     return res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
+export const findSourceDetails = async (req, res) => {
+  const cmp_id = req.params.cmp_id;
+  const { accountGroup, startOfDayParam, endOfDayParam, todayOnly } = req.query;
+
+  // Initialize dateFilter for settlements.created_at
+  let dateFilter = {};
+  if (startOfDayParam && endOfDayParam) {
+    const startDate = parseISO(startOfDayParam);
+    const endDate = parseISO(endOfDayParam);
+    dateFilter = {
+      "settlements.created_at": {
+        $gte: startOfDay(startDate),
+        $lte: endOfDay(endDate),
+      },
+    };
+  } else if (todayOnly === "true") {
+    dateFilter = {
+      "settlements.created_at": {
+        $gte: startOfDay(new Date()),
+        $lte: endOfDay(new Date()),
+      },
+    };
+  }
+
+  try {
+    let model;
+    let nameField;
+
+    switch (accountGroup) {
+      case "cashInHand":
+        model = cashModel;
+        nameField = "cash_ledname";
+        break;
+      case "bankBalance":
+        model = bankModel;
+        nameField = "bank_ledname";
+        break;
+      default:
+        return res.status(400).json({ message: "Invalid account group" });
+    }
+
+    const balanceDetails = await model.aggregate([
+      {
+        $match: {
+          cmp_id: cmp_id, // Only match by company ID initially
+        },
+      },
+      {
+        $project: {
+          name: `$${nameField}`,
+          settlements: {
+            $cond: {
+              if: { $isArray: "$settlements" },
+              then: "$settlements",
+              else: [],
+            },
+          },
+          originalId: "$_id",
+        },
+      },
+      {
+        $unwind: {
+          path: "$settlements",
+          preserveNullAndEmptyArrays: true, // Keep documents even if no settlements
+        },
+      },
+      {
+        $match: {
+          $or: [
+            { settlements: { $exists: false } },
+            { settlements: null },
+            dateFilter,
+          ],
+        },
+      },
+      {
+        $group: {
+          _id: "$originalId",
+          name: { $first: "$name" },
+          settlementTotal: {
+            $sum: {
+              $cond: [
+                { $ifNull: ["$settlements.amount", false] },
+                "$settlements.amount",
+                0,
+              ],
+            },
+          },
+        },
+      },
+      {
+        $sort: { name: 1 }, // Sort by name alphabetically
+      },
+    ]);
+
+    return res.status(200).json({
+      message: "Balance details found successfully",
+      success: true,
+      accountGroup,
+      data: balanceDetails.map((detail) => ({
+        _id: detail._id,
+        name: detail.name,
+        total: detail.settlementTotal || 0, // Ensure zero if no total
+      })),
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      error: "Internal Server Error",
+      details: error.message,
+    });
+  }
+};
+
+export const findSourceTransactions = async (req, res) => {
+  const { cmp_id, id } = req.params;
+  const { startOfDayParam, endOfDayParam, accGroup } = req.query;
+
+  try {
+    let dateFilter = {};
+    if (startOfDayParam && endOfDayParam) {
+      const startDate = parseISO(startOfDayParam);
+      const endDate = parseISO(endOfDayParam);
+      dateFilter = {
+        "settlements.created_at": {
+          $gte: startOfDay(startDate),
+          $lte: endOfDay(endDate),
+        },
+      };
+    }
+
+    let model;
+    switch (accGroup) {
+      case "cashInHand":
+        model = cashModel;
+        break;
+      case "bankBalance":
+        model = bankModel;
+        break;
+      default:
+        return res.status(400).json({ message: "Invalid account group" });
+    }
+
+    const transactions = await model.aggregate([
+      {
+        $match: {
+          _id: new mongoose.Types.ObjectId(id),
+          cmp_id: cmp_id,
+        },
+      },
+      {
+        $project: {
+          settlements: {
+            $cond: {
+              if: { $isArray: "$settlements" },
+              then: "$settlements",
+              else: [],
+            },
+          },
+        },
+      },
+      {
+        $unwind: {
+          path: "$settlements",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $match: dateFilter,
+      },
+      {
+        $group: {
+          _id: null,
+          settlements: { $push: "$settlements" },
+          count: { $sum: 1 },
+          total: { $sum: "$settlements.amount" },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          settlements: {
+            $map: {
+              input: "$settlements",
+              as: "settlement",
+              in: {
+                voucherNumber: "$$settlement.voucherNumber",
+                _id: "$$settlement.voucherId",
+                party_name: "$$settlement.party",
+                enteredAmount: "$$settlement.amount",
+                createdAt: "$$settlement.created_at",
+                payment_mode: "$$settlement.payment_mode",
+                type: {
+                  $switch: {
+                    branches: [
+                      { case: { $eq: ["$$settlement.type", "receipt"] }, then: "Receipt" },
+                      { case: { $eq: ["$$settlement.type", "payment"] }, then: "Payment" },
+                      { case: { $eq: ["$$settlement.type", "sale"] }, then: "Tax Invoice" },
+                      { case: { $eq: ["$$settlement.type", "vanSale"] }, then: "Van Sale" },
+                      { case: { $eq: ["$$settlement.type", "purchase"] }, then: "Purchase" },
+                      { case: { $eq: ["$$settlement.type", "creditNote"] }, then: "Credit Note" },
+                      { case: { $eq: ["$$settlement.type", "debitNote"] }, then: "Debit Note" },
+                    ],
+                    default: "$$settlement.type",
+                  },
+                },
+              },
+            },
+          },
+          count: 1,
+          total: 1,
+        },
+      },
+    ]);
+
+    // Handle case when no settlements are found
+    if (!transactions.length) {
+      return res.status(200).json({
+        message: "No transactions found for the specified period",
+        success: true,
+        data: {
+          settlements: [],
+          total: 0,
+          count: 0,
+        },
+      });
+    }
+
+    return res.status(200).json({
+      message: "Transactions found successfully",
+      success: true,
+      data: transactions[0],
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      error: "Internal Server Error",
+      details: error.message,
+    });
+  }
+};
+
+

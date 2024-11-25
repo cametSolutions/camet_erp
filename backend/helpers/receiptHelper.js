@@ -288,6 +288,7 @@ export const saveSettlementData = async (
   orgId,
   type,
   createdAt,
+  partyName,
   session
 ) => {
   try {
@@ -317,6 +318,7 @@ export const saveSettlementData = async (
         created_at: createdAt,
         payment_mode: paymentMethod.toLowerCase(),
         type: type,
+        party: partyName,
       };
 
 

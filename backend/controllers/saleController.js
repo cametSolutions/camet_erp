@@ -119,6 +119,7 @@ export const createSale = async (req, res) => {
       result._id,
       valueToUpdateInTally,
       result?.createdAt,
+      result?.party?.partyName,
       session
     );
 
@@ -154,6 +155,7 @@ export const createSale = async (req, res) => {
         secondaryMobile,
         "sale",
         result?.createdAt,
+        result?.party?.partyName,
         session
       );
     }
@@ -288,10 +290,11 @@ export const editSale = async (req, res) => {
         orgId,
         "normal sale",
         "sale",
-        existingSale?.salesNumber,
+        updateData?.salesNumber,
         saleId,
         valueToUpdateInTally,
-        existingSale?.createdAt,
+        updateData?.createdAt,
+        updateData?.party?.partyName,
         session
       );
 
@@ -369,7 +372,9 @@ export const editSale = async (req, res) => {
               req.owner,
               secondaryMobile,
               "sale",
-              existingSale?.createdAt,
+              updateData?.createdAt,
+              updateData?.party?.partyName,
+
               session
             );
           } else {
@@ -381,7 +386,8 @@ export const editSale = async (req, res) => {
               req.owner,
               secondaryMobile,
               "sale",
-              existingSale?.createdAt,
+              updateData?.createdAt,
+              updateData?.party?.partyName,
 
               session
             );
@@ -395,7 +401,8 @@ export const editSale = async (req, res) => {
             req.owner,
             secondaryMobile,
             "sale",
-            existingSale?.createdAt,
+            updateData?.createdAt,
+            updateData?.party?.partyName,
 
             session
           );

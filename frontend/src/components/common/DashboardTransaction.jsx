@@ -6,7 +6,6 @@ import React, { useMemo } from "react";
 import dayjs from "dayjs";
 import { useNavigate } from "react-router-dom";
 import { GiCancel } from "react-icons/gi";
-import cancelSeal from "../../assets/images/cancelled.png";
 
 const DashboardTransaction = ({ filteredData, userType, from }) => {
   const navigate = useNavigate();
@@ -61,14 +60,14 @@ const DashboardTransaction = ({ filteredData, userType, from }) => {
         enteredAmount,
         isCancelled,
         voucherNumber,
-        secondaryUserName,
+        secondaryUserName = "",
       } = transaction;
 
       return (
         <div
           key={_id || index}
           onClick={() => handleTransactionClick(type, _id)}
-          className="bg-white cursor-pointer rounded-md shadow-lg border border-gray-100 flex flex-col justify-between px-4 transition-all duration-150 transform hover:translate-x-[2px] ease-in-out"
+          className="bg-white cursor-pointer rounded-sm shadow-lg border border-gray-100 flex flex-col justify-between px-4 transition-all duration-150 transform hover:translate-x-[2px] ease-in-out"
         >
           <div className="flex w-full items-center">
             <div className="w-3/4">
@@ -116,23 +115,26 @@ const DashboardTransaction = ({ filteredData, userType, from }) => {
             </div>
           </div>
 
-          <hr className="mx-[-16px]" />
-          <div className="flex justify-between flex-wrap px-6 py-3 bg-gray-100 mx-[-16px] items-center ">
-            <div className="flex items-center justify-between w-full gap-2 text-md text-violet-500">
-              <div className="flex items-center gap-2">
-                <p className="font-bold  md:font-semibold text-xs text-left  text-gray-500 flex ">
-                  Created by : {secondaryUserName || ""}
-                </p>
-              </div>
-              {isCancelled && (
-                <div className="flex text-gray-500  items-center gap-1 text-xs   font-semibold">
-                  <GiCancel color="red " className="" />
-                  {/* <img src={cancelSeal} alt="" /> */}
-                  <p>Cancelled</p>
+          {secondaryUserName !== "" && (
+            <>
+              <hr className="mx-[-16px]" />
+              <div className="flex justify-between flex-wrap px-6 py-3 bg-gray-100 mx-[-16px] items-center ">
+                <div className="flex items-center justify-between w-full gap-2 text-md text-violet-500">
+                  <div className="flex items-center gap-2">
+                    <p className="font-bold  md:font-semibold text-xs text-left  text-gray-500 flex ">
+                      Created by : {secondaryUserName || ""}
+                    </p>
+                  </div>
+                  {isCancelled && (
+                    <div className="flex text-gray-500  items-center gap-1 text-xs   font-semibold">
+                      <GiCancel color="red " className="" />
+                      <p>Cancelled</p>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          </div>
+              </div>
+            </>
+          )}
         </div>
       );
     },
@@ -142,7 +144,7 @@ const DashboardTransaction = ({ filteredData, userType, from }) => {
   const memoizedData = useMemo(() => filteredData, [filteredData]);
 
   return (
-    <div className="grid grid-cols-1 gap-4 text-center pb-7 mt-5 md:px-2 overflow-hidden">
+    <div className="grid grid-cols-1 gap-4 text-center pb-7 mt-2 md:px-2 overflow-hidden">
       {memoizedData?.map(renderTransaction)}
     </div>
   );

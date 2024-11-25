@@ -544,6 +544,7 @@ export const savePaymentSplittingDataInSources = async (
   secondaryMobile,
   type,
   createdAt,
+  partyName,
   session
 ) => {
   try {
@@ -599,6 +600,7 @@ export const savePaymentSplittingDataInSources = async (
         const settlementData = {
           voucherNumber: salesNumber,
           voucherId: saleId.toString(),
+          partyName: partyName,
           amount: item.amount,
           created_at: createdAt,
           payment_mode: mode,
@@ -827,7 +829,7 @@ export const updateOutstandingBalance = async ({
 };
 
 export const saveSettlementData = async (
-  party,
+party,
   orgId,
   paymentMethod,
   type,
@@ -835,6 +837,7 @@ export const saveSettlementData = async (
   voucherId,
   amount,
   createdAt,
+  partyName,
   session
 ) => {
   try {
@@ -849,10 +852,9 @@ export const saveSettlementData = async (
       model = cashModel;
     } else if (accountGroup === "Bank Accounts") {
       model = bankModel;
-    }else{
-
+    } else {
       // console.log("Invalid account group so return");
-      return
+      return;
     }
 
     if (!model) {
@@ -869,6 +871,7 @@ export const saveSettlementData = async (
     const settlementData = {
       voucherNumber: voucherNumber,
       voucherId: voucherId.toString(),
+      party: partyName,
       amount: Number(amount),
       created_at: createdAt,
       payment_mode: paymentMethod,
@@ -916,7 +919,7 @@ export const revertSettlementData = async (
     }
 
     if (!model) {
-      throw new Error("Invalid model");
+     return
     }
 
     const query = {
@@ -925,7 +928,6 @@ export const revertSettlementData = async (
         ? { cash_id: Number(party?.party_master_id) }
         : { bank_id: Number(party?.party_master_id) }),
     };
-
 
     // First, pull the specified settlements
     const pullUpdate = {
