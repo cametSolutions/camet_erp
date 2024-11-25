@@ -26,6 +26,7 @@ import { PriceLevel } from "../models/subDetails.js";
 import mongoose from "mongoose";
 import cashModel from "../models/cashModel.js";
 import TallyData from "../models/TallyData.js";
+import bankModel from "../models/bankModel.js";
 
 // @desc toget the details of transaction or sale
 // route get/api/sUsers/getSalesDetails
@@ -1185,39 +1186,45 @@ export const updateMissingBillIds = async (req, res) => {
         models: [
           {
             model: salesModel,
-            billField: 'salesNumber',
-            type: 'Regular Sale'
+            billField: "salesNumber",
+            type: "Regular Sale",
           },
           {
             model: vanSaleModel,
-            billField: 'salesNumber',
-            type: 'Van Sale'
-          }
-        ]
+            billField: "salesNumber",
+            type: "Van Sale",
+          },
+        ],
       },
-   
+
       creditnote: {
-        models: [{
-          model: creditNoteModel,
-          billField: 'creditNoteNumber',
-          type: 'Credit Note'
-        }]
+        models: [
+          {
+            model: creditNoteModel,
+            billField: "creditNoteNumber",
+            type: "Credit Note",
+          },
+        ],
       },
       purchase: {
-        models: [{
-          model: purchaseModel,
-          billField: 'purchaseNumber',
-          type: 'Purchase'
-        }]
+        models: [
+          {
+            model: purchaseModel,
+            billField: "purchaseNumber",
+            type: "Purchase",
+          },
+        ],
       },
-   
+
       debitnote: {
-        models: [{
-          model: debitNoteModel,
-          billField: 'debitNoteNumber',
-          type: 'Debit Note'
-        }]
-      }
+        models: [
+          {
+            model: debitNoteModel,
+            billField: "debitNoteNumber",
+            type: "Debit Note",
+          },
+        ],
+      },
     };
 
     // Process each document
@@ -1235,7 +1242,7 @@ export const updateMissingBillIds = async (req, res) => {
           results.errors.push({
             bill_no: doc.bill_no,
             error: `Invalid source type: ${doc.source}`,
-            source: doc.source
+            source: doc.source,
           });
           continue;
         }
@@ -1247,7 +1254,7 @@ export const updateMissingBillIds = async (req, res) => {
         for (const modelConfig of config.models) {
           const query = {
             [modelConfig.billField]: doc.bill_no,
-            cmp_id: doc.cmp_id
+            cmp_id: doc.cmp_id,
           };
 
           // console.log(`Searching in ${modelConfig.type} with query:`, query);
@@ -1268,11 +1275,13 @@ export const updateMissingBillIds = async (req, res) => {
                 billId: sourceDoc._id,
                 updatedAt: new Date(),
                 lastModifiedBy: "system",
-                documentType: matchedModel.type // Adding document type for reference
+                documentType: matchedModel.type, // Adding document type for reference
               },
             }
           );
-          console.log(`Updated document ${doc._id} with billId ${sourceDoc._id} (${matchedModel.type})`);
+          console.log(
+            `Updated document ${doc._id} with billId ${sourceDoc._id} (${matchedModel.type})`
+          );
           results.updated++;
         } else {
           console.log(`No matching document found for bill_no: ${doc.bill_no}`);
@@ -1281,7 +1290,7 @@ export const updateMissingBillIds = async (req, res) => {
             bill_no: doc.bill_no,
             source: doc.source,
             error: `Document not found in any of the relevant collections`,
-            searchedIn: config.models.map(m => m.type)
+            searchedIn: config.models.map((m) => m.type),
           });
         }
       } catch (error) {
@@ -1290,7 +1299,8 @@ export const updateMissingBillIds = async (req, res) => {
         results.errors.push({
           bill_no: doc.bill_no,
           error: error.message,
-          stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+          stack:
+            process.env.NODE_ENV === "development" ? error.stack : undefined,
         });
       }
     }
@@ -1312,24 +1322,109 @@ export const updateMissingBillIds = async (req, res) => {
         updated: results.updated,
         notFound: results.notFound,
         failed: results.failed,
-        successRate: `${((results.updated / results.total) * 100).toFixed(2)}%`
-      }
+        successRate: `${((results.updated / results.total) * 100).toFixed(2)}%`,
+      },
     });
-
   } catch (error) {
     console.error("Error in updateMissingBillIds:", error);
     return res.status(500).json({
       success: false,
       error: error.message,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+      stack: process.env.NODE_ENV === "development" ? error.stack : undefined,
       message: "Failed to update bill IDs",
     });
   }
 };
 
+////find source details
 
-////find source details 
+export const findSourceBalance = async (req, res) => {
+  const cmp_id = req.params.cmp_id;
 
-export const findSourceDetails = async (req, res) => {
-  
-}
+  const { startOfDayParam, endOfDayParam } = req.query;
+
+  // Initialize dateFilter for settlements.created_at
+  let dateFilter = {};
+  if (startOfDayParam && endOfDayParam) {
+    const startDate = parseISO(startOfDayParam);
+    const endDate = parseISO(endOfDayParam);
+    dateFilter = {
+      "settlements.created_at": {
+        $gte: startOfDay(startDate),
+        $lte: endOfDay(endDate),
+      },
+    };
+  } else if (todayOnly === "true") {
+    dateFilter = {
+      "settlements.created_at": {
+        $gte: startOfDay(new Date()),
+        $lte: endOfDay(new Date()),
+      },
+    };
+  }
+  try {
+    const bankTotal = await bankModel.aggregate([
+      {
+        $match: {
+          cmp_id: cmp_id,
+          settlements: { $exists: true, $ne: [] },
+        },
+      },
+      {
+        $unwind: "$settlements",
+      },
+      {
+        $match: dateFilter,
+      },
+      {
+        $group: {
+          _id: null,
+          totalAmount: { $sum: "$settlements.amount" },
+        },
+      },
+    ]);
+
+    // Aggregation pipeline for cash collection
+    const cashTotal = await cashModel.aggregate([
+      {
+        $match: {
+          settlements: { $exists: true, $ne: [] },
+          cmp_id: cmp_id,
+        },
+      },
+      {
+        $unwind: "$settlements",
+      },
+
+      {
+        $match: dateFilter,
+      },
+      {
+        $group: {
+          _id: null,
+          totalAmount: { $sum: "$settlements.amount" },
+        },
+      },
+    ]);
+
+    // console.log("cashTotal", cashTotal);
+
+    // Extract totals or set to 0 if no settlements found
+    const bankSettlementTotal =
+      bankTotal.length > 0 ? bankTotal[0].totalAmount : 0;
+    const cashSettlementTotal =
+      cashTotal.length > 0 ? cashTotal[0].totalAmount : 0;
+    const grandTotal = bankSettlementTotal + cashSettlementTotal;
+
+    return res.status(200).json({
+      message: "Balance found successfully",
+      success: true,
+      bankSettlementTotal,
+      cashSettlementTotal,
+      grandTotal,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+};

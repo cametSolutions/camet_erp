@@ -6,18 +6,17 @@ import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 
 const BalancePage = () => {
-  const [data, setData] = useState([]);
   const navigate = useNavigate();
-  const balanceDetails = [
+  const [balanceDetails, setBalanceDetails] = useState([
     {
       label: "Cash In Hand",
-      amount: -1022730,
-      color: "text-red-600",
+      amount: 0,
+      color: "text-gray-600",
       value: "cashInHand",
     },
     {
       label: "Bank Balance",
-      amount: 6755730.47,
+      amount: 0,
       color: "text-gray-900",
       value: "bankBalance",
     },
@@ -27,37 +26,56 @@ const BalancePage = () => {
       color: "text-gray-900",
       value: "bankOd",
     },
-  ];
-
+    
+  ]);
 
   const cmp_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
+  const { start, end } = useSelector((state) => state.date);
+
 
   const {
     data: sourceData,
     loading,
-    error,
-  } = useFetch(`/api/sUsers/findSourceDetails/${cmp_id}`);
+  } = useFetch(`/api/sUsers/findSourceBalance/${cmp_id}?startOfDayParam=${start}&endOfDayParam=${end}`);
 
   useEffect(() => {
     if (sourceData) {
-      setData(sourceData);
+      setBalanceDetails((prev) => {
+        return [
+          {
+            ...prev[0],
+            amount: sourceData?.cashSettlementTotal,
+          },
+          {
+            ...prev[1],
+            amount: sourceData?.bankSettlementTotal,
+          },
+          {
+            ...prev[2],
+            amount: sourceData?.bankOd || 0,
+          },
+        ];
+      });
     }
   }, [sourceData]);
 
+  console.log("sourceData", sourceData);
+  console.log("balanceDetails", balanceDetails);
+
   return (
     <>
-      <TitleDiv title="Cash / Bank Balance" from="/sUsers/reports" />
+      <TitleDiv title="Cash / Bank Balance" from="/sUsers/reports"  loading={loading}/>
 
       <section className="shadow-lg border-b  ">
         <SelectDate />
       </section>
 
-      <div className="flex flex-col gap-3">
+      <div className={` ${loading && "animate-pulse opacity-70 pointer-events-none"}  flex flex-col gap-3`}>
         {/* Total Balance */}
         <div className="text-center bg-[#219ebc] shadow-xl text-white h-60 flex justify-center items-center flex-col">
-          <h2 className="text-3xl sm:text-4xl font-bold">₹ 57,33,000.47</h2>
+          <h2 className="text-3xl sm:text-4xl font-bold">₹ {sourceData?.grandTotal || 0}</h2>
           <p className="text-sm mt-4 font-semibold opacity-90">
             01 APR 24 to 31 MAR 25
           </p>
@@ -82,7 +100,7 @@ const BalancePage = () => {
                     <span
                       className={`${item.color} text-sm sm:text-md font-bold`}
                     >
-                      ₹ {item.amount.toLocaleString("en-IN")}
+                      ₹ {item.amount}
                     </span>
                   </div>
                   {index < balanceDetails.length - 1 && (

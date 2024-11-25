@@ -543,6 +543,7 @@ export const savePaymentSplittingDataInSources = async (
   Primary_user_id,
   secondaryMobile,
   type,
+  createdAt,
   session
 ) => {
   try {
@@ -599,7 +600,7 @@ export const savePaymentSplittingDataInSources = async (
           voucherNumber: salesNumber,
           voucherId: saleId.toString(),
           amount: item.amount,
-          created_at: new Date(),
+          created_at: createdAt,
           payment_mode: mode,
           type: type,
         };
@@ -833,6 +834,7 @@ export const saveSettlementData = async (
   voucherNumber,
   voucherId,
   amount,
+  createdAt,
   session
 ) => {
   try {
@@ -868,7 +870,7 @@ export const saveSettlementData = async (
       voucherNumber: voucherNumber,
       voucherId: voucherId.toString(),
       amount: Number(amount),
-      created_at: new Date(),
+      created_at: createdAt,
       payment_mode: paymentMethod,
       type: type,
     };

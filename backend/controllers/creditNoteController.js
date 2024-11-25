@@ -102,6 +102,7 @@ export const createCreditNote = async (req, res) => {
       creditNoteNumber,
       result._id,
       lastAmount,
+      result?.createdAt,
       session
     );
 
@@ -322,6 +323,7 @@ export const editCreditNote = async (req, res) => {
       existingCreditNote?.creditNoteNumber,
       creditNoteId,
       lastAmount,
+      existingCreditNote?.createdAt,
       session
     );
 

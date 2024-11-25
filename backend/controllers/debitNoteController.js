@@ -100,6 +100,7 @@ export const createDebitNote = async (req, res) => {
       debitNoteNumber,
       result._id,
       lastAmount,
+      result?.createdAt,
       session
     );
 
@@ -294,6 +295,7 @@ export const editDebitNote = async (req, res) => {
       existingDebitNote?.debitNoteNumber,
       debitNoteId,
       lastAmount,
+      existingDebitNote?.createdAt,
       session
     );
 

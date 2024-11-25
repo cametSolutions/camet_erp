@@ -287,6 +287,7 @@ export const saveSettlementData = async (
   amount,
   orgId,
   type,
+  createdAt,
   session
 ) => {
   try {
@@ -313,7 +314,7 @@ export const saveSettlementData = async (
         voucherNumber: voucherNumber,
         voucherId: voucherId.toString(),
         amount: amount,
-        created_at: new Date(),
+        created_at: createdAt,
         payment_mode: paymentMethod.toLowerCase(),
         type: type,
       };

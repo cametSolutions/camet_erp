@@ -114,6 +114,7 @@ export const createPayment = async (req, res) => {
       enteredAmount,
       cmp_id,
       "payment",
+      savedPayment?.createdAt,
       session
     );
 
@@ -353,6 +354,7 @@ export const editPayment = async (req, res) => {
       enteredAmount,
       cmp_id,
       "payment",
+      savedPayment?.createdAt,
       session
     );
 

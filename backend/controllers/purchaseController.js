@@ -96,6 +96,7 @@ export const createPurchase = async (req, res) => {
         purchaseNumber,
         result._id,
         lastAmount,
+        result?.createdAt,
         session
       );
   
@@ -228,6 +229,7 @@ export const editPurchase = async (req, res) => {
       existingPurchase?.purchaseNumber,
       purchaseId,
       lastAmount,
+      existingPurchase?.createdAt,
       session
     );
 
