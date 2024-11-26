@@ -32,7 +32,7 @@ const AddBank = () => {
     if (process === "edit") {
       const fetchSingleBank = async () => {
         try {
-          const res = await api.get(`/api/pUsers/getBankDetails/${id}`, {
+          const res = await api.get(`/api/sUsers/getBankDetails/${id}`, {
             withCredentials: true,
           });
 
