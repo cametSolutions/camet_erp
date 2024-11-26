@@ -143,6 +143,7 @@ router.get('/findSourceDetails/:cmp_id',authSecondary,secondaryIsBlocked,company
 router.get('/findSourceTransactions/:cmp_id/:id',authSecondary,secondaryIsBlocked,companyAuthentication,findSourceTransactions)
 router.post('/addBank/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,addBank)
 router.put('/editBank/:cmp_id/:bank_id',authSecondary,secondaryIsBlocked,companyAuthentication,editBank)
+router.get('/getBankDetails/:cmp_id/:bank_id',authSecondary,secondaryIsBlocked,companyAuthentication,editBank)
 // router.get('/findSourceTransactions/:cmp_id/:id',authSecondary,secondaryIsBlocked,companyAuthentication,findSourceTransactions)
 
 ///payment splitting

@@ -20,6 +20,9 @@ const AddBank = () => {
   const location = useLocation();
   const { id } = useParams();
 
+  console.log("userAndCompanyData", userAndCompanyData?.org?._id);
+  
+
   useEffect(() => {
     if (location.pathname.includes("editBank")) {
       setProcess("edit");
@@ -32,7 +35,8 @@ const AddBank = () => {
     if (process === "edit") {
       const fetchSingleBank = async () => {
         try {
-          const res = await api.get(`/api/sUsers/getBankDetails/${id}`, {
+          // const res = await api.get(`/api/sUsers/getBankDetails/${id}`, {
+          const res = await api.get( `/api/${userAndCompanyData?.pathUrl}/getBankDetails/${userAndCompanyData?.org?._id}/${id}`, {
             withCredentials: true,
           });
 

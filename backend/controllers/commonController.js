@@ -1766,3 +1766,31 @@ export const editBank = async (req, res) => {
     res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
+
+
+export const getBankDetails = async (req, res) => {
+  try {
+    const bankId = req?.params?.bank_id;
+    if (!bankId) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Bank ID is required" });
+    }
+
+    const bankDetails = await bankModel.findById(bankId);
+
+    if (!bankDetails) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Bank details not found" });
+    }
+
+    return res.status(200).json({ success: true, data: bankDetails });
+  } catch (error) {
+    console.error(`Error fetching bank details: ${error.message}`);
+
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error, try again!" });
+  }
+};
