@@ -20,7 +20,7 @@ function formatAmount(amount) {
 function OutstandingListOfReceipt() {
   ///company Id
   const cmp_id = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg._id
+    (state) => state?.secSelectedOrganization.secSelectedOrg?._id
   );
   ///from receipt redux
   const {
