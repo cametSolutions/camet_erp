@@ -416,6 +416,8 @@ const Routers = () => {
          <Route path='/sUsers/balancePage' element={<ProtectedSecRoute><BalancePage/></ProtectedSecRoute>}></Route>
          <Route path='/sUsers/balanceDetails/:accGroup' element={<ProtectedSecRoute><BalanceDetails/></ProtectedSecRoute>}></Route>
          <Route path='/sUsers/sourceTransactions/:id/:accGroup' element={<ProtectedSecRoute><SourceTransactions/></ProtectedSecRoute>}></Route>
+         <Route path='/sUsers/addBank' element={<ProtectedSecRoute><AddBank/></ProtectedSecRoute>}></Route>
+         <Route path='/sUsers/addCash' element={<ProtectedSecRoute><AddBank/></ProtectedSecRoute>}></Route>
 
 
         {/* filters */}

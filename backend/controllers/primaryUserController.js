@@ -1675,6 +1675,8 @@ export const addBank = async (req, res) => {
   const { acholder_name, ac_no, ifsc, bank_name, branch, upi_id, cmp_id } =
     req.body;
   const Primary_user_id = req.pUserId;
+  
+  
   try {
     const bank = await bankModel.create({
       acholder_name,
