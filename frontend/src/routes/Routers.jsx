@@ -58,7 +58,7 @@ import EditPartySecondary from '../pages/secUsers/EditPartySecondary'
 import AddProductSecondary from '../pages/secUsers/AddProductSecondary'
 import EditProductSecondary from '../pages/secUsers/EditProductSecondary'
 import AddBank from '../pages/primaryUsers/AddBank'
-import EditBank from '../pages/primaryUsers/EditBank'
+// import EditBank from '../pages/primaryUsers/EditBank'
 import EditSecUsers from '../pages/primaryUsers/EditSecUsers'
 import InvoiceDetails from '../pages/primaryUsers/InvoiceDetails'
 import ShareInvoice from '../pages/primaryUsers/ShareInvoice'
@@ -217,7 +217,7 @@ const Routers = () => {
         <Route path='/pUsers/demo' element={<ProtectedPriRoute><Demo/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/hsnList' element={<ProtectedPriRoute><HsnList/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/editHsn/:id' element={<ProtectedPriRoute><EditHsn/></ProtectedPriRoute>}></Route>
-        <Route path='/pUsers/editBank/:id' element={<ProtectedPriRoute><EditBank/></ProtectedPriRoute>}></Route>
+        {/* <Route path='/pUsers/editBank/:id' element={<ProtectedPriRoute><EditBank/></ProtectedPriRoute>}></Route>s */}
         <Route path='/pUsers/editUser/:id' element={<ProtectedPriRoute><EditSecUsers/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/InvoiceDetails/:id' element={<ProtectedPriRoute><InvoiceDetails/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/shareInvoice/:id' element={<ProtectedPriRoute><ShareInvoice/></ProtectedPriRoute>}></Route>
@@ -416,6 +416,9 @@ const Routers = () => {
          <Route path='/sUsers/balancePage' element={<ProtectedSecRoute><BalancePage/></ProtectedSecRoute>}></Route>
          <Route path='/sUsers/balanceDetails/:accGroup' element={<ProtectedSecRoute><BalanceDetails/></ProtectedSecRoute>}></Route>
          <Route path='/sUsers/sourceTransactions/:id/:accGroup' element={<ProtectedSecRoute><SourceTransactions/></ProtectedSecRoute>}></Route>
+         <Route path='/sUsers/addBank' element={<ProtectedSecRoute><AddBank/></ProtectedSecRoute>}></Route>
+         <Route path='/sUsers/editBank/:id' element={<ProtectedSecRoute><AddBank/></ProtectedSecRoute>}></Route>
+         <Route path='/sUsers/addCash' element={<ProtectedSecRoute><AddBank/></ProtectedSecRoute>}></Route>
 
 
         {/* filters */}

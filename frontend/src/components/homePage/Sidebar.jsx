@@ -77,12 +77,12 @@ function Sidebar({ TAB, showBar }) {
         icon: <SlUserFollow />,
         label: "Users",
       },
-      {
-        to: "/pUsers/bankList",
-        tab: "addBank",
-        icon: <PiBankFill />,
-        label: "Banks",
-      },
+      // {
+      //   to: "/pUsers/bankList",
+      //   tab: "addBank",
+      //   icon: <PiBankFill />,
+      //   label: "Banks",
+      // },
       {
         to: "/pUsers/partyList",
         tab: "addParty",

@@ -12,7 +12,7 @@ const cashSchema = new mongoose.Schema({
     ref: "PrimaryUser",
     required: true,
   },
-  cash_id: { type: Number, required: true },
+  cash_id: { type: String, required: true },
   cash_grpname: { type: String },
   settlements:{type:Array,default:[]},
 

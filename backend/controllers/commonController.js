@@ -1625,13 +1625,34 @@ export const findSourceTransactions = async (req, res) => {
                 type: {
                   $switch: {
                     branches: [
-                      { case: { $eq: ["$$settlement.type", "receipt"] }, then: "Receipt" },
-                      { case: { $eq: ["$$settlement.type", "payment"] }, then: "Payment" },
-                      { case: { $eq: ["$$settlement.type", "sale"] }, then: "Tax Invoice" },
-                      { case: { $eq: ["$$settlement.type", "vanSale"] }, then: "Van Sale" },
-                      { case: { $eq: ["$$settlement.type", "purchase"] }, then: "Purchase" },
-                      { case: { $eq: ["$$settlement.type", "creditNote"] }, then: "Credit Note" },
-                      { case: { $eq: ["$$settlement.type", "debitNote"] }, then: "Debit Note" },
+                      {
+                        case: { $eq: ["$$settlement.type", "receipt"] },
+                        then: "Receipt",
+                      },
+                      {
+                        case: { $eq: ["$$settlement.type", "payment"] },
+                        then: "Payment",
+                      },
+                      {
+                        case: { $eq: ["$$settlement.type", "sale"] },
+                        then: "Tax Invoice",
+                      },
+                      {
+                        case: { $eq: ["$$settlement.type", "vanSale"] },
+                        then: "Van Sale",
+                      },
+                      {
+                        case: { $eq: ["$$settlement.type", "purchase"] },
+                        then: "Purchase",
+                      },
+                      {
+                        case: { $eq: ["$$settlement.type", "creditNote"] },
+                        then: "Credit Note",
+                      },
+                      {
+                        case: { $eq: ["$$settlement.type", "debitNote"] },
+                        then: "Debit Note",
+                      },
                     ],
                     default: "$$settlement.type",
                   },
@@ -1672,4 +1693,76 @@ export const findSourceTransactions = async (req, res) => {
   }
 };
 
+/// add bank
 
+export const addBank = async (req, res) => {
+  const { acholder_name, ac_no, ifsc, bank_name, branch, upi_id, cmp_id } =
+    req.body;
+  const Primary_user_id = req.pUserId || req.owner;
+  const bank_ledname=bank_name
+
+  try {
+    const bank = await bankModel({
+      acholder_name,
+      ac_no,
+      ifsc,
+      bank_name,
+      branch,
+      upi_id,
+      cmp_id,
+      Primary_user_id,
+      bank_ledname
+    });
+
+    const result = await bank.save();
+
+      result.bank_id = result._id;
+      await result.save();
+
+    if (result) {
+      return res
+        .status(200)
+        .json({ success: true, message: "Bank added successfully" });
+    } else {
+      return res
+        .status(400)
+        .json({ success: false, message: "Adding bank failed" });
+    }
+  } catch (error) {
+    console.error(error);
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error, try again!" });
+  }
+};
+
+
+// @desc  edit edit bank details
+// route get/api/pUsers/editBank
+
+export const editBank = async (req, res) => {
+  const bank_id = req.params.bank_id;
+
+
+  
+
+  try {
+    const updateParty = await bankModel.findOneAndUpdate(
+      { _id: bank_id },
+      req.body,
+      { new: true }
+    );
+
+    updateParty.bank_id = updateParty._id;
+    updateParty.bank_ledname=updateParty.bank_name;
+    updateParty.save();
+    res.status(200).json({
+      success: true,
+      message: "Bank updated successfully",
+      data: updateParty,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
+};
