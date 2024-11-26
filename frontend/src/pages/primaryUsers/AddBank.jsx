@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 // import Sidebar from "../../components/homePage/Sidebar.jsx";
 import api from "../../api/api.js";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
-import { useSelector } from "react-redux";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import FindUserAndCompany from "../../components/Filters/FindUserAndCompany.jsx";
+import { useLocation, useParams } from "react-router-dom";
 
 const AddBank = () => {
   const [acholderName, setAcholderName] = useState("");
@@ -15,11 +15,51 @@ const AddBank = () => {
   const [branch, setBranch] = useState("");
   const [upiId, setUpiId] = useState("");
   const [userAndCompanyData, setUserAndCompanyData] = useState(null);
+  const [process, setProcess] = useState("add");
+
+  const location = useLocation();
+  const { id } = useParams();
+
+  useEffect(() => {
+    if (location.pathname.includes("editBank")) {
+      setProcess("edit");
+    } else {
+      setProcess("add");
+    }
+  }, [location]);
+
+  useEffect(() => {
+    if (process === "edit") {
+      const fetchSingleBank = async () => {
+        try {
+          const res = await api.get(`/api/pUsers/getBankDetails/${id}`, {
+            withCredentials: true,
+          });
+
+          // Destructure all properties from res.data.data
+          const { acholder_name, ac_no, ifsc, bank_name, branch, upi_id } =
+            res.data.data;
+
+          setAcholderName(acholder_name);
+          setAcNo(ac_no);
+          setIfsc(ifsc);
+          setBankName(bank_name);
+          setBranch(branch);
+          setUpiId(upi_id);
+
+          console.log(res.data.data);
+        } catch (error) {
+          console.log(error);
+        }
+      };
+      fetchSingleBank();
+    }
+  }, [process]);
 
   const navigate = useNavigate();
 
   const submitHandler = async () => {
-    if (!acNo.trim() || !ifsc.trim() || !bankName.trim()) {
+    if (!acNo || !ifsc.trim() || !bankName.trim()) {
       toast.error("Bank Name,Acc No,IFSC Must be filled");
       return;
     }
@@ -35,25 +75,25 @@ const AddBank = () => {
     };
 
     try {
-      const res = await api.post(
-        `/api/${userAndCompanyData?.pathUrl}/addBank`,
-        bankData,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-          withCredentials: true,
-        }
-      );
+      const method = process === "add" ? "POST" : "PUT";
+      const url =
+        process === "add"
+          ? `/api/${userAndCompanyData?.pathUrl}/addBank/${userAndCompanyData?.org?._id}`
+          : `/api/${userAndCompanyData?.pathUrl}/editBank/${userAndCompanyData?.org?._id}/${id}`;
+
+          // console.log("bankData", bankData);
+          
+
+      const res = await api[method.toLowerCase()](url, bankData, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        withCredentials: true,
+      });
 
       toast.success(res.data.message);
-      setAcholderName("");
-      setAcNo("");
-      setIfsc("");
-      setBankName("");
-      setBranch("");
-      setUpiId("");
-      navigate("/pUsers/bankList");
+  
+      navigate(-1, { replace: true });
     } catch (error) {
       toast.error(error.response.data.message);
       console.log(error);
@@ -72,7 +112,7 @@ const AddBank = () => {
         <div className="bg-[#201450] sticky top-0 p-3 z-100 text-white text-lg font-bold flex items-center gap-3 z-20">
           <IoIosArrowRoundBack
             onClick={() => {
-              navigate(-1);
+              navigate(-1, { replace: true });
             }}
             className="text-3xl text-white cursor-pointer"
           />

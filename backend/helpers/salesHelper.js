@@ -864,8 +864,8 @@ party,
     const query = {
       cmp_id: orgId,
       ...(accountGroup === "Cash-in-Hand"
-        ? { cash_id: Number(party?.party_master_id) }
-        : { bank_id: Number(party?.party_master_id) }),
+        ? { cash_id: party?.party_master_id }
+        : { bank_id: party?.party_master_id }),
     };
 
     const settlementData = {
@@ -925,8 +925,8 @@ export const revertSettlementData = async (
     const query = {
       cmp_id: orgId,
       ...(accountGroup === "Cash-in-Hand"
-        ? { cash_id: Number(party?.party_master_id) }
-        : { bank_id: Number(party?.party_master_id) }),
+        ? { cash_id: party?.party_master_id }
+        : { bank_id: party?.party_master_id }),
     };
 
     // First, pull the specified settlements

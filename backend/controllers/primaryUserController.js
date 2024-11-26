@@ -1671,40 +1671,40 @@ export const invoiceList = async (req, res) => {
 // @desc  editHsn details
 // route get/api/pUsers/addBank
 
-export const addBank = async (req, res) => {
-  const { acholder_name, ac_no, ifsc, bank_name, branch, upi_id, cmp_id } =
-    req.body;
-  const Primary_user_id = req.pUserId;
+// export const addBank = async (req, res) => {
+//   const { acholder_name, ac_no, ifsc, bank_name, branch, upi_id, cmp_id } =
+//     req.body;
+//   const Primary_user_id = req.pUserId;
   
   
-  try {
-    const bank = await bankModel.create({
-      acholder_name,
-      ac_no,
-      ifsc,
-      bank_name,
-      branch,
-      upi_id,
-      cmp_id,
-      Primary_user_id,
-    });
+//   try {
+//     const bank = await bankModel.create({
+//       acholder_name,
+//       ac_no,
+//       ifsc,
+//       bank_name,
+//       branch,
+//       upi_id,
+//       cmp_id,
+//       Primary_user_id,
+//     });
 
-    if (bank) {
-      return res
-        .status(200)
-        .json({ success: true, message: "Bank added successfully" });
-    } else {
-      return res
-        .status(400)
-        .json({ success: false, message: "Adding bank failed" });
-    }
-  } catch (error) {
-    console.error(error);
-    return res
-      .status(500)
-      .json({ success: false, message: "Internal server error, try again!" });
-  }
-};
+//     if (bank) {
+//       return res
+//         .status(200)
+//         .json({ success: true, message: "Bank added successfully" });
+//     } else {
+//       return res
+//         .status(400)
+//         .json({ success: false, message: "Adding bank failed" });
+//     }
+//   } catch (error) {
+//     console.error(error);
+//     return res
+//       .status(500)
+//       .json({ success: false, message: "Internal server error, try again!" });
+//   }
+// };
 
 // @desc Get bank details by ID
 // @route GET /api/pUsers/getBankDetails/:id
@@ -1735,28 +1735,28 @@ export const getBankDetails = async (req, res) => {
   }
 };
 
-// @desc  edit edit bank details
-// route get/api/pUsers/editBank
+// // @desc  edit edit bank details
+// // route get/api/pUsers/editBank
 
-export const editBank = async (req, res) => {
-  const bank_id = req.params.id;
+// export const editBank = async (req, res) => {
+//   const bank_id = req.params.id;
 
-  try {
-    const updateParty = await bankModel.findOneAndUpdate(
-      { _id: bank_id },
-      req.body,
-      { new: true }
-    );
-    res.status(200).json({
-      success: true,
-      message: "Bank updated successfully",
-      data: updateParty,
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false, message: "Internal Server Error" });
-  }
-};
+//   try {
+//     const updateParty = await bankModel.findOneAndUpdate(
+//       { _id: bank_id },
+//       req.body,
+//       { new: true }
+//     );
+//     res.status(200).json({
+//       success: true,
+//       message: "Bank updated successfully",
+//       data: updateParty,
+//     });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ success: false, message: "Internal Server Error" });
+//   }
+// };
 
 // @desc Get secuser details by ID
 // @route GET /api/pUsers/getSecUserDetails/:id

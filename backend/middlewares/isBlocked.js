@@ -58,6 +58,6 @@ export const secondaryIsBlocked = async (req, res, next) => {
       next();
     } catch (error) {
       console.error("Error in userIsBlocked middleware:", error);
-      res.status(500).send("Internal Server Error");
+      res.status(500).send("Internal Server Error ||");
     }
   };
