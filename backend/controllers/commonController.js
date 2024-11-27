@@ -1440,17 +1440,13 @@ export const findSourceDetails = async (req, res) => {
     const startDate = parseISO(startOfDayParam);
     const endDate = parseISO(endOfDayParam);
     dateFilter = {
-      "settlements.created_at": {
-        $gte: startOfDay(startDate),
-        $lte: endOfDay(endDate),
-      },
+      $gte: startOfDay(startDate),
+      $lte: endOfDay(endDate),
     };
   } else if (todayOnly === "true") {
     dateFilter = {
-      "settlements.created_at": {
-        $gte: startOfDay(new Date()),
-        $lte: endOfDay(new Date()),
-      },
+      $gte: startOfDay(new Date()),
+      $lte: endOfDay(new Date()),
     };
   }
 
@@ -1474,7 +1470,7 @@ export const findSourceDetails = async (req, res) => {
     const balanceDetails = await model.aggregate([
       {
         $match: {
-          cmp_id: cmp_id, // Only match by company ID initially
+          cmp_id: cmp_id, // Match by company ID initially
         },
       },
       {
@@ -1497,12 +1493,22 @@ export const findSourceDetails = async (req, res) => {
         },
       },
       {
-        $match: {
-          $or: [
-            { settlements: { $exists: false } },
-            { settlements: null },
-            dateFilter,
-          ],
+        $project: {
+          name: 1,
+          originalId: 1,
+          settlement: {
+            $cond: [
+              {
+                $and: [
+                  { $ifNull: ["$settlements", false] },
+                  { $gte: ["$settlements.created_at", dateFilter.$gte || new Date(0)] },
+                  { $lte: ["$settlements.created_at", dateFilter.$lte || new Date()] },
+                ],
+              },
+              "$settlements",
+              null,
+            ],
+          },
         },
       },
       {
@@ -1512,8 +1518,8 @@ export const findSourceDetails = async (req, res) => {
           settlementTotal: {
             $sum: {
               $cond: [
-                { $ifNull: ["$settlements.amount", false] },
-                "$settlements.amount",
+                { $ifNull: ["$settlement.amount", false] },
+                "$settlement.amount",
                 0,
               ],
             },
@@ -1543,6 +1549,7 @@ export const findSourceDetails = async (req, res) => {
     });
   }
 };
+
 
 export const findSourceTransactions = async (req, res) => {
   const { cmp_id, id } = req.params;
@@ -1747,19 +1754,19 @@ export const editBank = async (req, res) => {
   
 
   try {
-    const updateParty = await bankModel.findOneAndUpdate(
+    const udatedBank = await bankModel.findOneAndUpdate(
       { _id: bank_id },
       req.body,
       { new: true }
     );
 
-    updateParty.bank_id = updateParty._id;
-    updateParty.bank_ledname=updateParty.bank_name;
-    updateParty.save();
+    udatedBank.bank_id = udatedBank._id;
+    udatedBank.bank_ledname=udatedBank.bank_name;
+    udatedBank.save();
     res.status(200).json({
       success: true,
       message: "Bank updated successfully",
-      data: updateParty,
+      data: udatedBank,
     });
   } catch (error) {
     console.error(error);
@@ -1794,3 +1801,96 @@ export const getBankDetails = async (req, res) => {
       .json({ success: false, message: "Internal server error, try again!" });
   }
 };
+
+
+/// add bank
+
+export const addCash = async (req, res) => {
+  const { cash_ledname, cash_opening,cmp_id } =
+    req.body;
+  const Primary_user_id = req.pUserId || req.owner;
+
+  try {
+    const cash = await cashModel({
+      cash_ledname,
+      cash_opening,
+      Primary_user_id,
+      cmp_id
+    });
+
+    const result = await cash.save();
+
+      result.cash_id = result._id;
+      await result.save();
+
+    if (result) {
+      return res
+        .status(200)
+        .json({ success: true, message: "Cash added successfully" });
+    } else {
+      return res
+        .status(400)
+        .json({ success: false, message: "Adding Cash failed" });
+    }
+  } catch (error) {
+    console.error(error);
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error, try again!" });
+  }
+};
+
+// gest cash details
+export const getCashDetails = async (req, res) => {
+  try {
+    const cashId = req?.params?.cash_id;
+    if (!cashId) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Cash is required" });
+    }
+
+    const cashDetails = await cashModel.findById(cashId);
+
+    if (!cashDetails) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Bank details not found" });
+    }
+
+    return res.status(200).json({ success: true, data: cashDetails });
+  } catch (error) {
+    console.error(`Error fetching cash details: ${error.message}`);
+
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error, try again!" });
+  }
+};
+
+
+// @desc  edit edit bank details
+// route get/api/pUsers/editBank
+
+export const editCash = async (req, res) => {
+  const cash_id = req.params.cash_id;
+  try {
+    const updatedCash = await cashModel.findOneAndUpdate(
+      { _id: cash_id },
+      req.body,
+      { new: true }
+    );
+
+    updatedCash.cash_id = updatedCash._id;
+    updatedCash.save();
+    res.status(200).json({
+      success: true,
+      message: "Cash updated successfully",
+      data: updatedCash,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
+};
+

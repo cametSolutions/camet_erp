@@ -185,6 +185,7 @@ import BalancePage from '../pages/secUsers/Reports/CashOrBank/BalancePage'
 import BalanceDetails from '../pages/secUsers/Reports/CashOrBank/BalanceDetails'
 import SourceList from '../pages/secUsers/SourceList'
 import SourceTransactions from '../pages/secUsers/Reports/CashOrBank/SourceTransactions'
+import AddCash from '../pages/primaryUsers/AddCash'
 
 const Routers = () => {
   return (
@@ -418,7 +419,8 @@ const Routers = () => {
          <Route path='/sUsers/sourceTransactions/:id/:accGroup' element={<ProtectedSecRoute><SourceTransactions/></ProtectedSecRoute>}></Route>
          <Route path='/sUsers/addBank' element={<ProtectedSecRoute><AddBank/></ProtectedSecRoute>}></Route>
          <Route path='/sUsers/editBank/:id' element={<ProtectedSecRoute><AddBank/></ProtectedSecRoute>}></Route>
-         <Route path='/sUsers/addCash' element={<ProtectedSecRoute><AddBank/></ProtectedSecRoute>}></Route>
+         <Route path='/sUsers/addCash' element={<ProtectedSecRoute><AddCash/></ProtectedSecRoute>}></Route>
+         <Route path='/sUsers/editCash/:id' element={<ProtectedSecRoute><AddCash/></ProtectedSecRoute>}></Route>
 
 
         {/* filters */}
