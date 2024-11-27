@@ -12,6 +12,7 @@ const BankDetailsSchema = new mongoose.Schema({
   swift_code: { type: String },
   bank_name: { type: String, required: true },
   branch: { type: String },
+  bank_opening:{type:Number,default:0}, 
   upi_id: { type: String },
   bsr_code: { type: String },
   client_code: { type: String, default: null },

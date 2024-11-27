@@ -1703,7 +1703,7 @@ export const findSourceTransactions = async (req, res) => {
 /// add bank
 
 export const addBank = async (req, res) => {
-  const { acholder_name, ac_no, ifsc, bank_name, branch, upi_id, cmp_id } =
+  const { acholder_name, ac_no, ifsc, bank_name, branch, upi_id, cmp_id,bank_opening } =
     req.body;
   const Primary_user_id = req.pUserId || req.owner;
   const bank_ledname=bank_name
@@ -1718,7 +1718,8 @@ export const addBank = async (req, res) => {
       upi_id,
       cmp_id,
       Primary_user_id,
-      bank_ledname
+      bank_ledname,
+      bank_opening
     });
 
     const result = await bank.save();

@@ -11,7 +11,7 @@ function TitleDiv({ title, from = "", loading = false }) {
     if (from) {
       navigate(from);
     } else {
-      navigate(-1);
+      navigate(-1,{replace:true});
     }
   };
   return (

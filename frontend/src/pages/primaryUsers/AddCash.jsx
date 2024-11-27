@@ -3,16 +3,16 @@ import { useEffect, useState } from "react";
 import api from "../../api/api.js";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
-import { IoIosArrowRoundBack } from "react-icons/io";
 import FindUserAndCompany from "../../components/Filters/FindUserAndCompany.jsx";
 import { useLocation, useParams } from "react-router-dom";
+import TitleDiv from "../../components/common/TitleDiv.jsx";
 
 const AddCash = () => {
   const [cash_ledname, setCashLedname] = useState("");
   const [cash_opening, setCash_opening] = useState(0);
   const [userAndCompanyData, setUserAndCompanyData] = useState(null);
   const [process, setProcess] = useState("add");
-
+  const [loading, setLoading] = useState(false);
   const location = useLocation();
   const { id } = useParams();
 
@@ -28,6 +28,7 @@ const AddCash = () => {
 
   useEffect(() => {
     if (process === "edit") {
+      setLoading(true);
       const fetchSingleCash = async () => {
         try {
           // const res = await api.get(`/api/sUsers/getBankDetails/${id}`, {
@@ -42,11 +43,13 @@ const AddCash = () => {
           const { cash_ledname, cash_opening } = res.data.data;
 
           setCashLedname(cash_ledname);
-          setCash_opening(cash_opening);
+          setCash_opening(cash_opening || 0);
 
           console.log(res.data.data);
         } catch (error) {
           console.log(error);
+        } finally {
+          setLoading(false);
         }
       };
       fetchSingleCash();
@@ -56,14 +59,16 @@ const AddCash = () => {
   const navigate = useNavigate();
 
   const submitHandler = async () => {
+    setLoading(true);
     if (!cash_ledname.trim()) {
       toast.error("Cash Ledger Name Must be filled");
+      setLoading(false);
       return;
     }
 
     const cashData = {
       cash_ledname,
-      cash_opening :Number(cash_opening) || 0,
+      cash_opening: Number(cash_opening) || 0,
       cmp_id: userAndCompanyData.org._id,
     };
 
@@ -89,6 +94,8 @@ const AddCash = () => {
     } catch (error) {
       toast.error(error.response.data.message);
       console.log(error);
+    }finally{
+      setLoading(false);
     }
   };
 
@@ -101,7 +108,7 @@ const AddCash = () => {
       <FindUserAndCompany getUserAndCompany={handleUserAndCompanyData} />
 
       <section className=" bg-blueGray-50 ">
-        <div className="bg-[#201450] sticky top-0 p-3 z-100 text-white text-lg font-bold flex items-center gap-3 z-20">
+        {/* <div className="bg-[#201450] sticky top-0 p-3 z-100 text-white text-lg font-bold flex items-center gap-3 z-20">
           <IoIosArrowRoundBack
             onClick={() => {
               navigate(-1, { replace: true });
@@ -109,9 +116,14 @@ const AddCash = () => {
             className="text-3xl text-white cursor-pointer"
           />
           <p>Add Cash</p>
-        </div>
+        </div> */}
+        <TitleDiv title="Add Cash " loading={loading} />
 
-        <div className="w-full lg:w-8/12 px-4 mx-auto pb-[30px] mt-5 ">
+        <div
+          className={` ${
+            loading && "opacity-50 pointer-events-none"
+          }  w-full lg:w-8/12 px-4 mx-auto pb-[30px] mt-5`}
+        >
           <div className="relative flex flex-col min-w-0 break-words w-full mb-6 shadow-lg rounded-lg bg-blueGray-100 border-0">
             <div className="rounded-t bg-white mb-0 px-4 py-2"></div>
             <div className="flex-auto px-4 lg:px-10 py-10 pt-0">
