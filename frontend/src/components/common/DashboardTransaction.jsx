@@ -108,7 +108,7 @@ const DashboardTransaction = ({ filteredData, userType, from }) => {
                 </div>
               </div>
             </div>
-            <div className="flex-1">
+            <div className="flex-1  flex justify-end">
               <p className="font-bold text-sm text-gray-500">
                 ₹{enteredAmount || 0}
               </p>
@@ -144,7 +144,7 @@ const DashboardTransaction = ({ filteredData, userType, from }) => {
   const memoizedData = useMemo(() => filteredData, [filteredData]);
 
   return (
-    <div className="grid grid-cols-1 gap-4 text-center pb-7 mt-2 md:px-2 overflow-hidden">
+    <div className="grid grid-cols-1 gap-4 text-center pb-2 mt-2 md:px-2 overflow-hidden">
       {memoizedData?.map(renderTransaction)}
     </div>
   );

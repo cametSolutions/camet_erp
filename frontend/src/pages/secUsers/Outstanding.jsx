@@ -12,22 +12,18 @@ import SearchBar from "../../components/common/SearchBar";
 import { useNavigate } from "react-router-dom";
 import { formatAmount } from "../../../../backend/helpers/helper";
 
-
-
 function Outstanding() {
   const [data, setData] = useState([]);
-
 
   const [search, setSearch] = useState("");
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const currOrg=useSelector((state)=>state.secSelectedOrganization.secSelectedOrg)
-  const secUser=JSON.parse(localStorage.getItem('sUserData'))
+  const currOrg = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg
+  );
+  const secUser = JSON.parse(localStorage.getItem("sUserData"));
   console.log(secUser);
-
-
-
 
   // function formatAmount(amount) {
   //   return amount.toLocaleString("en-IN", { maximumFractionDigits: 2 });
@@ -65,50 +61,48 @@ function Outstanding() {
 
   console.log(data);
 
-  const filterOutstanding = (data,secUser) => {
+  const filterOutstanding = (data, secUser) => {
     return data.filter((item) => {
       const searchFilter = item.party_name
         ?.toLowerCase()
         .includes(search.toLowerCase());
 
-        // const userIdFilter = (item.user_id === String(secUser.mobile)) || (item.user_id === 'null');
+      // const userIdFilter = (item.user_id === String(secUser.mobile)) || (item.user_id === 'null');
 
-      return searchFilter
+      return searchFilter;
     });
   };
 
-  const finalData = filterOutstanding(data,secUser);
+  const finalData = filterOutstanding(data, secUser);
   console.log(finalData);
 
   return (
-
-     
-      <div className="  ">
-        <div className="sticky top-0 flex flex-col z-30 bg-white">
-          <div className="bg-white"></div>
-          <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex  items-center gap-2  ">
+    <div className="  ">
+      <div className="sticky top-0 flex flex-col z-30 bg-white">
+        <div className="bg-white"></div>
+        <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex  items-center gap-2  ">
           <IoIosArrowRoundBack
-              onClick={()=>{navigate("/sUsers/dashboard")}}
-              className="block md:hidden text-white text-3xl"
-            />
-            <p className="text-white text-lg   font-bold ">Outstandings</p>
-          </div>
-          <div className=" mt-0 shadow-lg p-3 md:p-4">
-            <form>
-              <label
-                for="default-search"
-                class="mb-2 text-sm font-medium text-gray-900 sr-only"
-              >
-                Search
-              </label>
-              <SearchBar className="" onType={searchData} />
-
-            </form>
-          </div>
+            onClick={() => {
+              navigate("/sUsers/dashboard");
+            }}
+            className="block md:hidden text-white text-3xl"
+          />
+          <p className="text-white text-lg   font-bold ">Outstandings</p>
         </div>
+        <div className=" mt-0 shadow-lg p-3 md:p-4">
+          <form>
+            <label
+              for="default-search"
+              class="mb-2 text-sm font-medium text-gray-900 sr-only"
+            >
+              Search
+            </label>
+            <SearchBar className="" onType={searchData} />
+          </form>
+        </div>
+      </div>
 
-        {currOrg ? (
-
+      {currOrg ? (
         <div className="grid grid-cols-1 gap-4 mt-6 text-center pb-10  md:px-8   ">
           {finalData.map((el, index) => (
             <Link
@@ -119,9 +113,9 @@ function Outstanding() {
                 // onClick={() => {
                 //   onTabChange("outStandingDetails", el._id, el.totalBillAmount);
                 // }}
-                className="  bg-[#f8ffff] rounded-md shadow-xl border border-gray-100  flex flex-col px-4  transition-all duration-150 transform hover:scale-105 ease-in-out "
+                className="  bg-[#f8ffff] rounded-md shadow-xl border border-gray-100  flex flex-col px-4  transition-all duration-150 transform ease-in-out "
               >
-              <div className="flex justify-between items-center">
+                <div className="flex justify-between items-center">
                   <div className=" h-full px-2 py-8 lg:p-6 w-[150px] md:w-[180px] lg:w-[300px] flex justify-center items-start relative flex-col ">
                     <p className="font-bold md:font-semibold text-[11.3px] md:text-[15px] text-left ">
                       {el.party_name}
@@ -154,16 +148,12 @@ function Outstanding() {
             </Link>
           ))}
         </div>
-        ): (
-
-          <div className="flex justify-center h-screen items-center ">
-            
-            <p className="font-semibold text-lg " >Select an organisation first</p>
-          </div>
-
-        )}
-
-      </div>
+      ) : (
+        <div className="flex justify-center h-screen items-center ">
+          <p className="font-semibold text-lg ">Select an organisation first</p>
+        </div>
+      )}
+    </div>
   );
 }
 

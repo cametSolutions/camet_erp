@@ -1501,8 +1501,18 @@ export const findSourceDetails = async (req, res) => {
               {
                 $and: [
                   { $ifNull: ["$settlements", false] },
-                  { $gte: ["$settlements.created_at", dateFilter.$gte || new Date(0)] },
-                  { $lte: ["$settlements.created_at", dateFilter.$lte || new Date()] },
+                  {
+                    $gte: [
+                      "$settlements.created_at",
+                      dateFilter.$gte || new Date(0),
+                    ],
+                  },
+                  {
+                    $lte: [
+                      "$settlements.created_at",
+                      dateFilter.$lte || new Date(),
+                    ],
+                  },
                 ],
               },
               "$settlements",
@@ -1550,130 +1560,190 @@ export const findSourceDetails = async (req, res) => {
   }
 };
 
-
 export const findSourceTransactions = async (req, res) => {
   const { cmp_id, id } = req.params;
   const { startOfDayParam, endOfDayParam, accGroup } = req.query;
 
   try {
     let dateFilter = {};
+    let openingBalanceFilter = {};
     if (startOfDayParam && endOfDayParam) {
       const startDate = parseISO(startOfDayParam);
       const endDate = parseISO(endOfDayParam);
+
       dateFilter = {
         "settlements.created_at": {
           $gte: startOfDay(startDate),
           $lte: endOfDay(endDate),
         },
       };
+
+      // Filter for opening balance (before start date)
+      openingBalanceFilter = {
+        "settlements.created_at": {
+          $lt: startOfDay(startDate),
+        },
+      };
     }
 
     let model;
+    let openingField;
     switch (accGroup) {
       case "cashInHand":
         model = cashModel;
+        openingField = "cash_opening";
         break;
       case "bankBalance":
         model = bankModel;
+        openingField = "bank_opening";
         break;
       default:
         return res.status(400).json({ message: "Invalid account group" });
     }
 
-    const transactions = await model.aggregate([
-      {
-        $match: {
-          _id: new mongoose.Types.ObjectId(id),
-          cmp_id: cmp_id,
+    const [openingBalanceResult, transactions] = await Promise.all([
+      // First pipeline to calculate opening balance
+      model.aggregate([
+        {
+          $match: {
+            _id: new mongoose.Types.ObjectId(id),
+            cmp_id: cmp_id,
+          },
         },
-      },
-      {
-        $project: {
-          settlements: {
-            $cond: {
-              if: { $isArray: "$settlements" },
-              then: "$settlements",
-              else: [],
+        {
+          $project: {
+            [openingField]: 1, // Include opening field
+            settlements: {
+              $cond: {
+                if: { $isArray: "$settlements" },
+                then: "$settlements",
+                else: [],
+              },
             },
           },
         },
-      },
-      {
-        $unwind: {
-          path: "$settlements",
-          preserveNullAndEmptyArrays: true,
+        {
+          $unwind: {
+            path: "$settlements",
+            preserveNullAndEmptyArrays: true,
+          },
         },
-      },
-      {
-        $match: dateFilter,
-      },
-      {
-        $group: {
-          _id: null,
-          settlements: { $push: "$settlements" },
-          count: { $sum: 1 },
-          total: { $sum: "$settlements.amount" },
+        {
+          $match: openingBalanceFilter,
         },
-      },
-      {
-        $project: {
-          _id: 0,
-          settlements: {
-            $map: {
-              input: "$settlements",
-              as: "settlement",
-              in: {
-                voucherNumber: "$$settlement.voucherNumber",
-                _id: "$$settlement.voucherId",
-                party_name: "$$settlement.party",
-                enteredAmount: "$$settlement.amount",
-                createdAt: "$$settlement.created_at",
-                payment_mode: "$$settlement.payment_mode",
-                type: {
-                  $switch: {
-                    branches: [
-                      {
-                        case: { $eq: ["$$settlement.type", "receipt"] },
-                        then: "Receipt",
-                      },
-                      {
-                        case: { $eq: ["$$settlement.type", "payment"] },
-                        then: "Payment",
-                      },
-                      {
-                        case: { $eq: ["$$settlement.type", "sale"] },
-                        then: "Tax Invoice",
-                      },
-                      {
-                        case: { $eq: ["$$settlement.type", "vanSale"] },
-                        then: "Van Sale",
-                      },
-                      {
-                        case: { $eq: ["$$settlement.type", "purchase"] },
-                        then: "Purchase",
-                      },
-                      {
-                        case: { $eq: ["$$settlement.type", "creditNote"] },
-                        then: "Credit Note",
-                      },
-                      {
-                        case: { $eq: ["$$settlement.type", "debitNote"] },
-                        then: "Debit Note",
-                      },
-                    ],
-                    default: "$$settlement.type",
+        {
+          $group: {
+            _id: null,
+            calculatedOpeningBalance: { $sum: "$settlements.amount" },
+            openingField: { $first: `$${openingField}` }, // Retrieve opening field value
+          },
+        },
+        {
+          $project: {
+            _id: 0,
+            openingBalance: {
+              $add: ["$calculatedOpeningBalance", "$openingField"], // Combine calculated and opening field
+            },
+          },
+        },
+      ]),
+
+      // Second pipeline to get current period transactions
+      model.aggregate([
+        {
+          $match: {
+            _id: new mongoose.Types.ObjectId(id),
+            cmp_id: cmp_id,
+          },
+        },
+        {
+          $project: {
+            settlements: {
+              $cond: {
+                if: { $isArray: "$settlements" },
+                then: "$settlements",
+                else: [],
+              },
+            },
+          },
+        },
+        {
+          $unwind: {
+            path: "$settlements",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
+          $match: dateFilter,
+        },
+        {
+          $group: {
+            _id: null,
+            settlements: { $push: "$settlements" },
+            count: { $sum: 1 },
+            total: { $sum: "$settlements.amount" },
+          },
+        },
+        {
+          $project: {
+            _id: 0,
+            settlements: {
+              $map: {
+                input: "$settlements",
+                as: "settlement",
+                in: {
+                  voucherNumber: "$$settlement.voucherNumber",
+                  _id: "$$settlement.voucherId",
+                  party_name: "$$settlement.party",
+                  enteredAmount: "$$settlement.amount",
+                  createdAt: "$$settlement.created_at",
+                  payment_mode: "$$settlement.payment_mode",
+                  type: {
+                    $switch: {
+                      branches: [
+                        {
+                          case: { $eq: ["$$settlement.type", "receipt"] },
+                          then: "Receipt",
+                        },
+                        {
+                          case: { $eq: ["$$settlement.type", "payment"] },
+                          then: "Payment",
+                        },
+                        {
+                          case: { $eq: ["$$settlement.type", "sale"] },
+                          then: "Tax Invoice",
+                        },
+                        {
+                          case: { $eq: ["$$settlement.type", "vanSale"] },
+                          then: "Van Sale",
+                        },
+                        {
+                          case: { $eq: ["$$settlement.type", "purchase"] },
+                          then: "Purchase",
+                        },
+                        {
+                          case: { $eq: ["$$settlement.type", "creditNote"] },
+                          then: "Credit Note",
+                        },
+                        {
+                          case: { $eq: ["$$settlement.type", "debitNote"] },
+                          then: "Debit Note",
+                        },
+                      ],
+                      default: "$$settlement.type",
+                    },
                   },
                 },
               },
             },
+            count: 1,
+            total: 1,
           },
-          count: 1,
-          total: 1,
         },
-      },
+      ]),
     ]);
 
-    // Handle case when no settlements are found
+    // Handle case when no transactions are found
     if (!transactions.length) {
       return res.status(200).json({
         message: "No transactions found for the specified period",
@@ -1682,6 +1752,7 @@ export const findSourceTransactions = async (req, res) => {
           settlements: [],
           total: 0,
           count: 0,
+          openingBalance: 0,
         },
       });
     }
@@ -1689,7 +1760,10 @@ export const findSourceTransactions = async (req, res) => {
     return res.status(200).json({
       message: "Transactions found successfully",
       success: true,
-      data: transactions[0],
+      data: {
+        ...transactions[0],
+        openingBalance: openingBalanceResult[0]?.openingBalance || 0,
+      },
     });
   } catch (error) {
     console.error(error);
@@ -1703,10 +1777,18 @@ export const findSourceTransactions = async (req, res) => {
 /// add bank
 
 export const addBank = async (req, res) => {
-  const { acholder_name, ac_no, ifsc, bank_name, branch, upi_id, cmp_id,bank_opening } =
-    req.body;
+  const {
+    acholder_name,
+    ac_no,
+    ifsc,
+    bank_name,
+    branch,
+    upi_id,
+    cmp_id,
+    bank_opening,
+  } = req.body;
   const Primary_user_id = req.pUserId || req.owner;
-  const bank_ledname=bank_name
+  const bank_ledname = bank_name;
 
   try {
     const bank = await bankModel({
@@ -1719,13 +1801,13 @@ export const addBank = async (req, res) => {
       cmp_id,
       Primary_user_id,
       bank_ledname,
-      bank_opening
+      bank_opening,
     });
 
     const result = await bank.save();
 
-      result.bank_id = result._id;
-      await result.save();
+    result.bank_id = result._id;
+    await result.save();
 
     if (result) {
       return res
@@ -1744,15 +1826,11 @@ export const addBank = async (req, res) => {
   }
 };
 
-
 // @desc  edit edit bank details
 // route get/api/pUsers/editBank
 
 export const editBank = async (req, res) => {
   const bank_id = req.params.bank_id;
-
-
-  
 
   try {
     const udatedBank = await bankModel.findOneAndUpdate(
@@ -1762,7 +1840,7 @@ export const editBank = async (req, res) => {
     );
 
     udatedBank.bank_id = udatedBank._id;
-    udatedBank.bank_ledname=udatedBank.bank_name;
+    udatedBank.bank_ledname = udatedBank.bank_name;
     udatedBank.save();
     res.status(200).json({
       success: true,
@@ -1774,7 +1852,6 @@ export const editBank = async (req, res) => {
     res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
-
 
 export const getBankDetails = async (req, res) => {
   try {
@@ -1803,12 +1880,10 @@ export const getBankDetails = async (req, res) => {
   }
 };
 
-
 /// add bank
 
 export const addCash = async (req, res) => {
-  const { cash_ledname, cash_opening,cmp_id } =
-    req.body;
+  const { cash_ledname, cash_opening, cmp_id } = req.body;
   const Primary_user_id = req.pUserId || req.owner;
 
   try {
@@ -1816,13 +1891,13 @@ export const addCash = async (req, res) => {
       cash_ledname,
       cash_opening,
       Primary_user_id,
-      cmp_id
+      cmp_id,
     });
 
     const result = await cash.save();
 
-      result.cash_id = result._id;
-      await result.save();
+    result.cash_id = result._id;
+    await result.save();
 
     if (result) {
       return res
@@ -1869,7 +1944,6 @@ export const getCashDetails = async (req, res) => {
   }
 };
 
-
 // @desc  edit edit bank details
 // route get/api/pUsers/editBank
 
@@ -1894,4 +1968,3 @@ export const editCash = async (req, res) => {
     res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
-
