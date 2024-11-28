@@ -5,6 +5,7 @@ const BankDetailsSchema = new mongoose.Schema({
   Primary_user_id: { type: String, required: true },
   bank_ledname: { type: String , required: true },
   bank_grpname: { type: String },
+  bank_childgrpname: { type: String },
   acholder_name: { type: String },
   bank_id: { type: String },
   ac_no: { type: String },

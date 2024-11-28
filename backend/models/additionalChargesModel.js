@@ -7,6 +7,8 @@ const AdditionalChargesSchema = new mongoose.Schema({
   hsn: { type: String },
   taxPercentage: { type: String },
   master_id: { type: String },
+  exp_grpname: { type: String },
+  exp_childgrpname: { type: String },
 });
 
 export default mongoose.model("AdditionalCharges", AdditionalChargesSchema);
