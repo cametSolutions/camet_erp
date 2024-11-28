@@ -14,6 +14,7 @@ const cashSchema = new mongoose.Schema({
   },
   cash_id: { type: String },
   cash_grpname: { type: String },
+  cash_childgrpname: { type: String },
   cash_opening: { type: Number,default:0 },
   settlements:{type:Array,default:[]},
 
