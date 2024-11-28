@@ -29,6 +29,15 @@ import { removeAll as removeAllPurchase } from "../../../slices/purchase";
 import { removeAll as removeAllCredit } from "../../../slices/creditNote";
 import CametHead from "../sidebar/CametHead";
 import ProfileSection from "../sidebar/ProfileSection";
+import { FaHome } from "react-icons/fa";
+import { FaAngleRight } from "react-icons/fa";
+import { MdOutlineSecurity } from "react-icons/md";
+import { LuTimerReset } from "react-icons/lu";
+import { SiHelpscout } from "react-icons/si";
+import { HiInformationCircle } from "react-icons/hi";
+import { GrInfo } from "react-icons/gr";
+import Popover from "../sidebar/Popover";
+
 
 function SidebarSec({ TAB, showBar }) {
   const [showSidebar, setShowSidebar] = useState(false);
@@ -57,19 +66,48 @@ function SidebarSec({ TAB, showBar }) {
     {
       to: "/sUsers/dashboard",
       tab: "dash",
-      icon: <MdDashboard />,
-      label: "Dashboard",
+      icon: <FaHome />,
+      label: "Home",
+    },
+  ];
+
+  const securityItems = [
+    {
+      to: "/sUsers/dashboard",
+      tab: "passcode",
+      icon: <MdOutlineSecurity />,
+      label: "Passcode",
+    },
+    {
+      to: "/sUsers/dashboard",
+      tab: "resetPassword",
+      icon: <LuTimerReset />,
+      label: "Reset Password",
+    },
+  ];
+  const supportItems = [
+    {
+      to: "/sUsers/dashboard",
+      tab: "help",
+      icon: <SiHelpscout />,
+      label: "Help",
+    },
+    {
+      to: "/sUsers/dashboard",
+      tab: "About",
+      icon: <GrInfo />,
+      label: "About",
     },
   ];
 
   if (companies && companies.length > 0 && org.isApproved === true) {
     const additionalTabs = [
-      {
-        to: "/sUsers/partyList",
-        tab: "addParty",
-        icon: <TiUserAdd />,
-        label: "Customers",
-      },
+      // {
+      //   to: "/sUsers/partyList",
+      //   tab: "addParty",
+      //   icon: <TiUserAdd />,
+      //   label: "Customers",
+      // },
       {
         to: "/sUsers/hsnList",
         tab: "hsn",
@@ -95,12 +133,12 @@ function SidebarSec({ TAB, showBar }) {
         label: "Inventory",
         onClick: () => toggleSection("inventory"),
         subItems: [
-          {
-            to: "/sUsers/productList",
-            label: "Products",
-            icon: <RiBox3Fill />,
-            tab: "product",
-          },
+          // {
+          //   to: "/sUsers/productList",
+          //   label: "Products",
+          //   icon: <RiBox3Fill />,
+          //   tab: "product",
+          // },
           {
             to: "/sUsers/brand",
             label: "Brand",
@@ -133,14 +171,15 @@ function SidebarSec({ TAB, showBar }) {
           },
         ],
       });
-    } else {
-      additionalTabs.push({
-        to: "/sUsers/productList",
-        label: "Products",
-        icon: <RiBox3Fill />,
-        tab: "product",
-      });
     }
+    // else {
+    //   additionalTabs.push({
+    //     to: "/sUsers/productList",
+    //     label: "Products",
+    //     icon: <RiBox3Fill />,
+    //     tab: "product",
+    //   });
+    // }
     additionalTabs.push({
       to: "/sUsers/OrderConfigurations",
       tab: "terms",
@@ -249,6 +288,79 @@ function SidebarSec({ TAB, showBar }) {
     }, 1000);
   };
 
+  const SidebarCard = ({
+    item,
+    tab,
+    expandedSections,
+    handleSidebarItemClick,
+  }) => {
+    return (
+      <>
+        <Link to={item.to}>
+          <span
+            onClick={() => {
+              handleSidebarItemClick(item.tab);
+              if (item.onClick) item.onClick();
+            }}
+            className={`
+            ${
+              tab === item.tab
+                ? "bg-gray-800 text-blue-500 border-r-2 border-blue-500 "
+                : "text-gray-400 hover:bg-gray-800 hover:text-white "
+            }
+            flex items-center w-full py-2 mt-3 transition-colors duration-300 transform   text-[13.5px] pl-5 `}
+          >
+            <div className="flex items-center justify-between w-full  ">
+              <div className="flex items-center">
+                {item.icon}
+                <span className="mx-4 font-medium">{item.label}</span>
+              </div>
+              <span className="mx-4 font-medium">
+                <FaAngleRight />
+              </span>
+            </div>
+            {item.subItems && (
+              <div className="flex items-center justify-between w-full cursor-pointer ml-6">
+                {expandedSections.inventory ? (
+                  <IoIosArrowUp />
+                ) : (
+                  <IoIosArrowDown />
+                )}
+              </div>
+            )}
+          </span>
+        </Link>
+        {item.subItems && expandedSections.inventory && (
+          <ul className="mt-2 space-y-2">
+            {item.subItems.map((subItem, subIndex) => (
+              <li
+                key={subIndex}
+                className={`${
+                  selectedSubTab === subItem.tab
+                    ? "text-white"
+                    : "text-gray-400"
+                } hover:text-white ml-4 rounded-md mt-5 px-4 py-2 flex items-center gap-4 text-sm font-medium`}
+              >
+                <Link
+                  className="flex items-center gap-3 mb-3"
+                  to={subItem.to}
+                  onClick={() => {
+                    handleSidebarItemClick(subItem.tab);
+                    setTab(item.tab);
+                    setSelectedSubTab(subItem.tab);
+                  }}
+                >
+                  {subItem.icon}
+                  <span>{subItem.label}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </>
+    );
+  };
+
   return (
     <div className="nonPrintable-content">
       {loader && (
@@ -261,11 +373,13 @@ function SidebarSec({ TAB, showBar }) {
           showSidebar
             ? "z-50 absolute h-[125vh] transform translate-x-0"
             : "-translate-x-full md:translate-x-0 z-50 absolute md:relative"
-        }   transition-transform  duration-500 ease-in-out flex flex-col w-64 h-screen p-1   bg-gray-900   overflow-y-auto `}
+        }   transition-transform  duration-500 ease-in-out flex flex-col w-64 h-screen p-1   bg-[#0b1d34]    overflow-y-auto `}
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
         {/* company head */}
         <CametHead handleSidebarItemClick={handleSidebarItemClick} />
+
+        {/* <Popover/> */}
 
         {/* user profile section */}
 
@@ -278,70 +392,51 @@ function SidebarSec({ TAB, showBar }) {
           handleLogout={handleLogout}
         />
 
-     
+        <div className="flex flex-col  flex-1 mt-9 my-3">
+          <p className="text-sm text-gray-400 px-4">My account</p>
 
-        <hr className=" border border-gray-800 mt-1 " />
-
-        <div className="flex flex-col justify-between flex-1 mt-3 px-5">
+          {/* my accounts */}
           <nav>
             {navItems.map((item, index) => (
               <div key={index}>
-                <Link to={item.to}>
-                  <span
-                    onClick={() => {
-                      handleSidebarItemClick(item.tab);
-                      if (item.onClick) item.onClick();
-                    }}
-                    className={`
-                        ${
-                          tab === item.tab
-                            ? "bg-gray-800 text-white"
-                            : "text-gray-400 hover:bg-gray-800 hover:text-white"
-                        }
-                        flex items-center px-4 py-2 mt-5 transition-colors duration-300 transform rounded-md`}
-                  >
-                    <div className="flex items-center">
-                      {item.icon}
-                      <span className="mx-4 font-medium">{item.label}</span>
-                    </div>
-                    {item.subItems && (
-                      <div className="flex items-center justify-between w-full cursor-pointer ml-6">
-                        {expandedSections.inventory ? (
-                          <IoIosArrowUp />
-                        ) : (
-                          <IoIosArrowDown />
-                        )}
-                      </div>
-                    )}
-                  </span>
-                </Link>
-                {item.subItems && expandedSections.inventory && (
-                  <ul className="mt-2 space-y-2">
-                    {item.subItems.map((subItem, subIndex) => (
-                      <li
-                        key={subIndex}
-                        className={`${
-                          selectedSubTab === subItem.tab
-                            ? "text-white"
-                            : "text-gray-400"
-                        } hover:text-white ml-4 rounded-md mt-5 px-4 py-2 flex items-center gap-4 text-sm font-medium`}
-                      >
-                        <Link
-                          className="flex items-center gap-3 mb-3"
-                          to={subItem.to}
-                          onClick={() => {
-                            handleSidebarItemClick(subItem.tab);
-                            setTab(item.tab);
-                            setSelectedSubTab(subItem.tab);
-                          }}
-                        >
-                          {subItem.icon}
-                          <span>{subItem.label}</span>
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                )}
+                <SidebarCard
+                  item={item}
+                  tab={tab}
+                  expandedSections={expandedSections}
+                  handleSidebarItemClick={handleSidebarItemClick}
+                />
+              </div>
+            ))}
+          </nav>
+
+          {/* security items */}
+          <p className="text-sm text-gray-400 mt-6 px-4">Security</p>
+
+          <nav>
+            {securityItems.map((item, index) => (
+              <div key={index}>
+                <SidebarCard
+                  item={item}
+                  tab={tab}
+                  expandedSections={expandedSections}
+                  handleSidebarItemClick={handleSidebarItemClick}
+                />
+              </div>
+            ))}
+          </nav>
+
+          {/* suport items */}
+          <p className="text-sm text-gray-400 mt-6 px-4">Support</p>
+
+          <nav>
+            {supportItems.map((item, index) => (
+              <div key={index}>
+                <SidebarCard
+                  item={item}
+                  tab={tab}
+                  expandedSections={expandedSections}
+                  handleSidebarItemClick={handleSidebarItemClick}
+                />
               </div>
             ))}
           </nav>
