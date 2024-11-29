@@ -10,13 +10,9 @@ import {
   removeSecSelectedOrg,
 } from "../../../slices/secSelectedOrgSlice";
 import { Link } from "react-router-dom";
-import { IoReorderThreeSharp } from "react-icons/io5";
-import { MdDashboard } from "react-icons/md";
-import { TiUserAdd } from "react-icons/ti";
 import { RingLoader } from "react-spinners";
 import { IoMdSettings } from "react-icons/io";
 import { IoIosArrowDown, IoIosArrowUp, IoIosPricetags } from "react-icons/io";
-import { RiBox3Fill } from "react-icons/ri";
 import { TbBrandAppgallery, TbCategory2 } from "react-icons/tb";
 import { BiSolidCategoryAlt } from "react-icons/bi";
 import { HiBuildingStorefront, HiDocumentText } from "react-icons/hi2";
@@ -34,10 +30,9 @@ import { FaAngleRight } from "react-icons/fa";
 import { MdOutlineSecurity } from "react-icons/md";
 import { LuTimerReset } from "react-icons/lu";
 import { SiHelpscout } from "react-icons/si";
-import { HiInformationCircle } from "react-icons/hi";
 import { GrInfo } from "react-icons/gr";
-import Popover from "../sidebar/Popover";
-
+import { IoMdPower } from "react-icons/io";
+import Swal from "sweetalert2";
 
 function SidebarSec({ TAB, showBar }) {
   const [showSidebar, setShowSidebar] = useState(false);
@@ -98,6 +93,12 @@ function SidebarSec({ TAB, showBar }) {
       icon: <GrInfo />,
       label: "About",
     },
+    {
+      to: "#",
+      tab: "logout",
+      icon: <IoMdPower />,
+      label: "Log Out",
+    },
   ];
 
   if (companies && companies.length > 0 && org.isApproved === true) {
@@ -126,52 +127,52 @@ function SidebarSec({ TAB, showBar }) {
     // }
 
     // Show "Inventory" only if org.type is "self"
-    if (org.type === "self") {
-      additionalTabs.push({
-        to: "#",
-        icon: <MdOutlineInventory />,
-        label: "Inventory",
-        onClick: () => toggleSection("inventory"),
-        subItems: [
-          // {
-          //   to: "/sUsers/productList",
-          //   label: "Products",
-          //   icon: <RiBox3Fill />,
-          //   tab: "product",
-          // },
-          {
-            to: "/sUsers/brand",
-            label: "Brand",
-            icon: <TbBrandAppgallery />,
-            tab: "brand",
-          },
-          {
-            to: "/sUsers/category",
-            label: "Category",
-            icon: <BiSolidCategoryAlt />,
-            tab: "category",
-          },
-          {
-            to: "/sUsers/subcategory",
-            label: "Sub Category",
-            icon: <TbCategory2 />,
-            tab: "subcategory",
-          },
-          {
-            to: "/sUsers/godown",
-            label: "Godown",
-            icon: <HiBuildingStorefront />,
-            tab: "godown",
-          },
-          {
-            to: "/sUsers/pricelevel",
-            label: "Price Level",
-            icon: <IoIosPricetags />,
-            tab: "pricelevel",
-          },
-        ],
-      });
-    }
+    // if (org.type === "self") {
+    //   additionalTabs.push({
+    //     to: "#",
+    //     icon: <MdOutlineInventory />,
+    //     label: "Inventory",
+    //     onClick: () => toggleSection("inventory"),
+    //     subItems: [
+    //       // {
+    //       //   to: "/sUsers/productList",
+    //       //   label: "Products",
+    //       //   icon: <RiBox3Fill />,
+    //       //   tab: "product",
+    //       // },
+    //       {
+    //         to: "/sUsers/brand",
+    //         label: "Brand",
+    //         icon: <TbBrandAppgallery />,
+    //         tab: "brand",
+    //       },
+    //       {
+    //         to: "/sUsers/category",
+    //         label: "Category",
+    //         icon: <BiSolidCategoryAlt />,
+    //         tab: "category",
+    //       },
+    //       {
+    //         to: "/sUsers/subcategory",
+    //         label: "Sub Category",
+    //         icon: <TbCategory2 />,
+    //         tab: "subcategory",
+    //       },
+    //       {
+    //         to: "/sUsers/godown",
+    //         label: "Godown",
+    //         icon: <HiBuildingStorefront />,
+    //         tab: "godown",
+    //       },
+    //       {
+    //         to: "/sUsers/pricelevel",
+    //         label: "Price Level",
+    //         icon: <IoIosPricetags />,
+    //         tab: "pricelevel",
+    //       },
+    //     ],
+    //   });
+    // }
     // else {
     //   additionalTabs.push({
     //     to: "/sUsers/productList",
@@ -256,23 +257,37 @@ function SidebarSec({ TAB, showBar }) {
   };
 
   const handleLogout = async () => {
-    try {
-      const res = await api.post(
-        "/api/sUsers/logout",
-        {},
-        {
-          withCredentials: true,
+    Swal.fire({
+      title: "Are you sure?",
+      text: "You want to logout!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      cancelButtonText: "Cancel",
+      confirmButtonText: "Yes, logout!",
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          const res = await api.post(
+            "/api/sUsers/logout",
+            {},
+            {
+              withCredentials: true,
+            }
+          );
+          toast.success(res.data.message);
+          localStorage.removeItem("sUserData");
+          dispatch(removeSecSelectedOrg());
+          navigate("/sUsers/login");
+        } catch (error) {
+          console.error(error);
+          toast.error(error.response?.data?.message || "An error occurred during logout");
         }
-      );
-      toast.success(res.data.message);
-      localStorage.removeItem("sUserData");
-      dispatch(removeSecSelectedOrg());
-      navigate("/sUsers/login");
-    } catch (error) {
-      console.error(error);
-      toast.error(error.response.data.message);
-    }
+      }
+    });
   };
+  
 
   const handleDropDownchange = (el) => {
     setDropdown(!dropdown);
@@ -299,8 +314,12 @@ function SidebarSec({ TAB, showBar }) {
         <Link to={item.to}>
           <span
             onClick={() => {
-              handleSidebarItemClick(item.tab);
-              if (item.onClick) item.onClick();
+              if (item.tab === "logout") {
+                handleLogout();
+              } else {
+                handleSidebarItemClick(item.tab);
+              }
+              // if (item.onClick) item.onClick();
             }}
             className={`
             ${
@@ -364,7 +383,7 @@ function SidebarSec({ TAB, showBar }) {
   return (
     <div className="nonPrintable-content">
       {loader && (
-        <div className="absolute top-0 w-screen h-screen z-50 flex justify-center items-center bg-[#0C1E36]">
+        <div className="absolute top-0 w-screen h-screen z-50 flex justify-center items-center bg-black/[0.5]">
           <RingLoader color="#1c14a0" />
         </div>
       )}
@@ -377,7 +396,7 @@ function SidebarSec({ TAB, showBar }) {
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
         {/* company head */}
-        <CametHead handleSidebarItemClick={handleSidebarItemClick} />
+        <CametHead handleSidebarItemClick={handleSidebarItemClick}  />
 
         {/* <Popover/> */}
 
@@ -386,8 +405,6 @@ function SidebarSec({ TAB, showBar }) {
         <ProfileSection
           org={org}
           userData={userData}
-          dropdown={dropdown}
-          setDropdown={setDropdown}
           handleDropDownchange={handleDropDownchange}
           handleLogout={handleLogout}
         />
@@ -410,7 +427,7 @@ function SidebarSec({ TAB, showBar }) {
           </nav>
 
           {/* security items */}
-          <p className="text-sm text-gray-400 mt-6 px-4">Security</p>
+          <p className="text-sm text-gray-400 mt-7 px-4">Security</p>
 
           <nav>
             {securityItems.map((item, index) => (
@@ -426,7 +443,7 @@ function SidebarSec({ TAB, showBar }) {
           </nav>
 
           {/* suport items */}
-          <p className="text-sm text-gray-400 mt-6 px-4">Support</p>
+          <p className="text-sm text-gray-400 mt-7 px-4">Support</p>
 
           <nav>
             {supportItems.map((item, index) => (
@@ -440,6 +457,15 @@ function SidebarSec({ TAB, showBar }) {
               </div>
             ))}
           </nav>
+
+          {/* version */}
+          <hr className="mt-4 mb-2 border mx-2 border-gray-700" />
+
+          <div className="flex flex-col items-center px-4 bg-slate-800 py-1 ">
+            <h3 className="text-[10px] text-gray-400  tracking-widest">
+              Version 1.0.0
+            </h3>
+          </div>
         </div>
       </div>
     </div>
