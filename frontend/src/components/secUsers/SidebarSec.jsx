@@ -1,6 +1,6 @@
 /* eslint-disable react/prop-types */
 /* eslint-disable react/no-unknown-property */
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import api from "../../api/api";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
@@ -57,6 +57,20 @@ function SidebarSec({ TAB, showBar }) {
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
 
+  const sidebarRef = useRef(null);
+
+  useEffect(() => {
+  const handleClickOutside = (event) => {
+    if (sidebarRef.current && !sidebarRef.current.contains(event.target)) {
+      setShowSidebar(false);
+    }
+  };
+
+  document.addEventListener("click", handleClickOutside, true);
+  return () => {
+    document.removeEventListener("click", handleClickOutside, true);
+  };
+}, [sidebarRef, setShowSidebar]);
   const navItems = [
     {
       to: "/sUsers/dashboard",
@@ -381,7 +395,9 @@ function SidebarSec({ TAB, showBar }) {
   };
 
   return (
-    <div className="nonPrintable-content">
+    <div 
+    ref={sidebarRef}
+    className="nonPrintable-content">
       {loader && (
         <div className="absolute top-0 w-screen h-screen z-50 flex justify-center items-center bg-black/[0.5]">
           <RingLoader color="#1c14a0" />

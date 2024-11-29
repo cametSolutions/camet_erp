@@ -1,13 +1,12 @@
 /* eslint-disable react/prop-types */
 /* eslint-disable react/no-unknown-property */
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import api from "../../api/api";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
 import { BsFillBuildingsFill } from "react-icons/bs";
 import { SlUserFollow } from "react-icons/sl";
-import { PiBankFill } from "react-icons/pi";
 import { useDispatch, useSelector } from "react-redux";
 import { removeSelectedOrganization } from "../../../slices/PrimarySelectedOrgSlice";
 import { setSelectedOrganization } from "../../../slices/PrimarySelectedOrgSlice";
@@ -39,6 +38,9 @@ function Sidebar({ TAB, showBar }) {
     inventory: false,
   });
 
+  const [initialClick, setInitialClick] = useState(false);
+  const sidebarRef = useRef();
+
   const selectedOrgFromRedux = useSelector(
     (state) => state.setSelectedOrganization.selectedOrg
   );
@@ -49,7 +51,43 @@ function Sidebar({ TAB, showBar }) {
     localStorage.getItem("selectedSubTab") || ""
   );
 
-
+  const handleClickOutside = useCallback((event) => {
+    // Check if the click is outside the sidebar
+    if (sidebarRef.current && !sidebarRef.current.contains(event.target)) {
+      if (!initialClick) {
+        // Completely prevent the default action and stop propagation
+        event.preventDefault();
+        event.stopPropagation();
+        
+        // Close the sidebar
+        setShowSidebar(false);
+        
+        // Mark the first click
+        setInitialClick(true);
+        
+        // Optionally, add a small delay to ensure no other events trigger
+        setTimeout(() => {
+          event.target.blur();
+        }, 0);
+      }
+    }
+  }, [initialClick]);
+  
+  useEffect(() => {
+    if (showSidebar) {
+      // Use capture phase to ensure early interception
+      document.addEventListener("click", handleClickOutside, true);
+      document.addEventListener("mousedown", handleClickOutside, true);
+    } else {
+      document.removeEventListener("click", handleClickOutside, true);
+      document.removeEventListener("mousedown", handleClickOutside, true);
+    }
+  
+    return () => {
+      document.removeEventListener("click", handleClickOutside, true);
+      document.removeEventListener("mousedown", handleClickOutside, true);
+    };
+  }, [showSidebar, handleClickOutside]);
   const navItems = [
     {
       to: "/pUsers/dashboard",
@@ -108,66 +146,61 @@ function Sidebar({ TAB, showBar }) {
     // }
 
     if (selectedOrg.type === "self") {
+      navItems.push({
+        to: "#",
+        // tab: "product",
+        icon: <MdOutlineInventory />,
+        label: "Inventory",
+        onClick: () => toggleSection("inventory"),
+        subItems: [
+          {
+            to: "/pUsers/productList",
+            label: "Products",
+            icon: <RiBox3Fill />,
+            tab: "product",
+          },
+          {
+            to: "/pUsers/brand",
+            label: "Brand",
+            icon: <TbBrandAppgallery />,
+            tab: "brand",
+          },
+          {
+            to: "/pUsers/category",
+            label: "Category",
+            icon: <BiSolidCategoryAlt />,
+            tab: "category",
+          },
+          {
+            to: "/pUsers/subcategory",
+            label: "Sub Category",
+            icon: <TbCategory2 />,
+            tab: "subcategory",
+          },
+          {
+            to: "/pUsers/godown",
+            label: "Godown",
+            icon: <HiBuildingStorefront />,
+            tab: "godown",
+          },
+          {
+            to: "/pUsers/pricelevel",
+            label: "Price Level",
+            icon: <IoIosPricetags />,
+            tab: "pricelevel",
+          },
+        ],
+      });
+    } else {
+      // if it is self no need to show inventory but  to show the products only
 
-    navItems.push({
-      to: "#",
-      // tab: "product",
-      icon: <MdOutlineInventory />,
-      label: "Inventory",
-      onClick: () => toggleSection("inventory"),
-      subItems: [
-        {
-          to: "/pUsers/productList",
-          label: "Products",
-          icon: <RiBox3Fill />,
-          tab: "product",
-        },
-        {
-          to: "/pUsers/brand",
-          label: "Brand",
-          icon: <TbBrandAppgallery />,
-          tab: "brand",
-        },
-        {
-          to: "/pUsers/category",
-          label: "Category",
-          icon: <BiSolidCategoryAlt />,
-          tab: "category",
-        },
-        {
-          to: "/pUsers/subcategory",
-          label: "Sub Category",
-          icon: <TbCategory2 />,
-          tab: "subcategory",
-        },
-        {
-          to: "/pUsers/godown",
-          label: "Godown",
-          icon: <HiBuildingStorefront />,
-          tab: "godown",
-        },
-        {
-          to: "/pUsers/pricelevel",
-          label: "Price Level",
-          icon: <IoIosPricetags />,
-          tab: "pricelevel",
-        },
-      ],
-    });
-
-  }else{
-
-
-    // if it is self no need to show inventory but  to show the products only
-
-    navItems.push(  {
-      to: "/pUsers/productList",
-      label: "Products",
-      icon: <RiBox3Fill />,
-      tab: "product",
-    });
-
-  }
+      navItems.push({
+        to: "/pUsers/productList",
+        label: "Products",
+        icon: <RiBox3Fill />,
+        tab: "product",
+      });
+    }
 
     navItems.push(
       {
@@ -230,8 +263,7 @@ function Sidebar({ TAB, showBar }) {
     fetchOrganizations();
   }, [selectedOrg]);
 
-
-  const  getUserData =useCallback( async () => {
+  const getUserData = useCallback(async () => {
     try {
       const res = await api.get("/api/pUsers/getPrimaryUserData", {
         withCredentials: true,
@@ -243,24 +275,17 @@ function Sidebar({ TAB, showBar }) {
   }, []);
 
   useEffect(() => {
-    if (!userData || !userData.userName) { // only make the API call if data is not already present
+    if (!userData || !userData.userName) {
+      // only make the API call if data is not already present
       getUserData();
     }
   }, [getUserData, userData]);
-
-
 
   useEffect(() => {
     if (window.innerWidth < 768) {
       setShowSidebar(!showSidebar);
     }
   }, [showBar]);
-  
-  useEffect(() => {
-    if (window.innerWidth < 768) {
-      setShowSidebar(false);
-    }
-  }, []);
 
   useEffect(() => {
     if (window.innerWidth < 768) {
@@ -268,6 +293,11 @@ function Sidebar({ TAB, showBar }) {
     }
   }, []);
 
+  useEffect(() => {
+    if (window.innerWidth < 768) {
+      setShowSidebar(false);
+    }
+  }, []);
 
   useEffect(() => {
     if (showSidebar) {
@@ -282,8 +312,8 @@ function Sidebar({ TAB, showBar }) {
       setShowSidebar(!showSidebar);
     }
     localStorage.setItem("selectedPrimarySidebarTab", tab);
-    localStorage.removeItem("PrimaryTransactionEndDate")
-    localStorage.removeItem("PrimaryTransactionStartDate")
+    localStorage.removeItem("PrimaryTransactionEndDate");
+    localStorage.removeItem("PrimaryTransactionStartDate");
   };
 
   const handleLogout = async () => {
@@ -312,18 +342,13 @@ function Sidebar({ TAB, showBar }) {
     }));
   };
 
-
-
   return (
-    <div className="relative">
+    <div ref={sidebarRef} className="relative">
       {loader && (
         <div className=" absolute top-0 w-screen h-screen z-50  flex justify-center items-center bg-black/[0.5]">
           <RingLoader color="#1c14a0" />
         </div>
       )}
-      {/* <div className=" absolute top-0 w-screen h-screen z-50  flex justify-center items-center bg-black/[0.5]">
-        <RingLoader color="#1c14a0" />
-      </div> */}
 
       <aside
         className={` ${
@@ -343,8 +368,6 @@ function Sidebar({ TAB, showBar }) {
             <IoReorderThreeSharp />
           </div>
         </div>
-
-    
 
         <Header
           selectedOrg={selectedOrg}
