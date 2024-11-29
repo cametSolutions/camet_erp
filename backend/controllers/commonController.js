@@ -24,6 +24,9 @@ import { Subcategory } from "../models/subDetails.js";
 import { Godown } from "../models/subDetails.js";
 import { PriceLevel } from "../models/subDetails.js";
 import mongoose from "mongoose";
+import cashModel from "../models/cashModel.js";
+import TallyData from "../models/TallyData.js";
+import bankModel from "../models/bankModel.js";
 
 // @desc toget the details of transaction or sale
 // route get/api/sUsers/getSalesDetails
@@ -46,7 +49,9 @@ export const getSalesDetails = async (req, res) => {
 
     ////find the outstanding of the sale
     const outstandingOfSale = await OutstandingModel.findOne({
+      billId: saleDetails._id.toString(),
       bill_no: saleDetails.salesNumber,
+      billId: saleDetails._id.toString(),
       cmp_id: saleDetails.cmp_id,
       Primary_user_id: saleDetails.Primary_user_id,
     });
@@ -288,6 +293,7 @@ export const getCreditNoteDetails = async (req, res) => {
     if (details) {
       ////find the outstanding of the sale
       const outstandingOfCreditNote = await OutstandingModel.findOne({
+        billId: details._id.toString(),
         bill_no: details.creditNoteNumber,
         cmp_id: details.cmp_id,
         Primary_user_id: details.Primary_user_id,
@@ -320,10 +326,15 @@ export const getCreditNoteDetails = async (req, res) => {
 export const transactions = async (req, res) => {
   const userId = req.sUserId;
   const cmp_id = req.params.cmp_id;
-  const { todayOnly, startOfDayParam, endOfDayParam, party_id, selectedVoucher } = req.query;
+  const {
+    todayOnly,
+    startOfDayParam,
+    endOfDayParam,
+    party_id,
+    selectedVoucher,
+  } = req.query;
 
   try {
-
     // Initialize dateFilter based on provided parameters
     let dateFilter = {};
     if (startOfDayParam && endOfDayParam) {
@@ -353,67 +364,123 @@ export const transactions = async (req, res) => {
 
     // Define voucher type mappings
     const voucherTypeMap = {
-      sale: [{ model: salesModel, type: "Tax Invoice", numberField: "salesNumber" }],
-      saleOrder: [{ model: invoiceModel, type: "Sale Order", numberField: "orderNumber" }],
-      vanSale: [{ model: vanSaleModel, type: "Van Sale", numberField: "salesNumber" }],
-      purchase: [{ model: purchaseModel, type: "Purchase", numberField: "purchaseNumber" }],
-      debitNote: [{ model: debitNoteModel, type: "Debit Note", numberField: "debitNoteNumber" }],
-      creditNote: [{ model: creditNoteModel, type: "Credit Note", numberField: "creditNoteNumber" }],
-      receipt: [{ model: receiptModel, type: "Receipt", numberField: "receiptNumber" }],
-      payment: [{ model: paymentModel, type: "Payment", numberField: "paymentNumber" }],
-      stockTransfer: [{ model: stockTransferModel, type: "Stock Transfer", numberField: "stockTransferNumber" }],
+      sale: [
+        { model: salesModel, type: "Tax Invoice", numberField: "salesNumber" },
+      ],
+      saleOrder: [
+        { model: invoiceModel, type: "Sale Order", numberField: "orderNumber" },
+      ],
+      vanSale: [
+        { model: vanSaleModel, type: "Van Sale", numberField: "salesNumber" },
+      ],
+      purchase: [
+        {
+          model: purchaseModel,
+          type: "Purchase",
+          numberField: "purchaseNumber",
+        },
+      ],
+      debitNote: [
+        {
+          model: debitNoteModel,
+          type: "Debit Note",
+          numberField: "debitNoteNumber",
+        },
+      ],
+      creditNote: [
+        {
+          model: creditNoteModel,
+          type: "Credit Note",
+          numberField: "creditNoteNumber",
+        },
+      ],
+      receipt: [
+        { model: receiptModel, type: "Receipt", numberField: "receiptNumber" },
+      ],
+      payment: [
+        { model: paymentModel, type: "Payment", numberField: "paymentNumber" },
+      ],
+      stockTransfer: [
+        {
+          model: stockTransferModel,
+          type: "Stock Transfer",
+          numberField: "stockTransferNumber",
+        },
+      ],
       all: [
         { model: salesModel, type: "Tax Invoice", numberField: "salesNumber" },
         { model: invoiceModel, type: "Sale Order", numberField: "orderNumber" },
         { model: vanSaleModel, type: "Van Sale", numberField: "salesNumber" },
-        { model: purchaseModel, type: "Purchase", numberField: "purchaseNumber" },
-        { model: debitNoteModel, type: "Debit Note", numberField: "debitNoteNumber" },
-        { model: creditNoteModel, type: "Credit Note", numberField: "creditNoteNumber" },
+        {
+          model: purchaseModel,
+          type: "Purchase",
+          numberField: "purchaseNumber",
+        },
+        {
+          model: debitNoteModel,
+          type: "Debit Note",
+          numberField: "debitNoteNumber",
+        },
+        {
+          model: creditNoteModel,
+          type: "Credit Note",
+          numberField: "creditNoteNumber",
+        },
         { model: receiptModel, type: "Receipt", numberField: "receiptNumber" },
         { model: paymentModel, type: "Payment", numberField: "paymentNumber" },
-        { model: stockTransferModel, type: "Stock Transfer", numberField: "stockTransferNumber" }
-      ]
+        {
+          model: stockTransferModel,
+          type: "Stock Transfer",
+          numberField: "stockTransferNumber",
+        },
+      ],
     };
 
     // Get the appropriate models to query based on selectedVoucher
-    const modelsToQuery = selectedVoucher ? voucherTypeMap[selectedVoucher] : voucherTypeMap.all;
+    const modelsToQuery = selectedVoucher
+      ? voucherTypeMap[selectedVoucher]
+      : voucherTypeMap.all;
 
     if (!modelsToQuery) {
       return res.status(400).json({
         status: false,
-        message: "Invalid voucher type selected"
+        message: "Invalid voucher type selected",
       });
     }
 
     // Create transaction promises based on selected voucher type
-    const transactionPromises = modelsToQuery.map(({ model, type, numberField }) =>
-      aggregateTransactions(
-        model,
-        { ...matchCriteria, ...(userId ? { Secondary_user_id: userId } : {}) },
-        type,
-        numberField,
-
-      )
+    const transactionPromises = modelsToQuery.map(
+      ({ model, type, numberField }) =>
+        aggregateTransactions(
+          model,
+          {
+            ...matchCriteria,
+            ...(userId ? { Secondary_user_id: userId } : {}),
+          },
+          type,
+          numberField
+        )
     );
 
     const results = await Promise.all(transactionPromises);
 
-    
     const combined = results
       .flat()
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-      const totalTransactionAmount = combined.reduce((sum, transaction) => {
-        // Convert to number and handle potential null/undefined values
-        const amount = Number(transaction.enteredAmount) || 0;
-        return sum + amount;
-      }, 0);
+    const totalTransactionAmount = combined.reduce((sum, transaction) => {
+      // Convert to number and handle potential null/undefined values
+      const amount = Number(transaction.enteredAmount) || 0;
+      return sum + amount;
+    }, 0);
 
     if (combined.length > 0) {
       return res.status(200).json({
-        message: `${selectedVoucher === 'all' ? 'All transactions' : `${voucherTypeMap[selectedVoucher]?.[0]?.type} transactions`} fetched${
-          todayOnly === "true" ? " for today" : ""
-        }`,
+        message: `${
+          selectedVoucher === "all"
+            ? "All transactions"
+            : `${voucherTypeMap[selectedVoucher]?.[0]?.type} transactions`
+        } fetched${todayOnly === "true" ? " for today" : ""}`,
         data: { combined, totalTransactionAmount },
       });
     } else {
@@ -466,6 +533,7 @@ export const getDebitNoteDetails = async (req, res) => {
     if (details) {
       ////find the outstanding of the sale
       const outstandingOfCreditNote = await OutstandingModel.findOne({
+        billId: details._id.toString(),
         bill_no: details.debitNoteNumber,
         cmp_id: details.cmp_id,
         Primary_user_id: details.Primary_user_id,
@@ -974,6 +1042,7 @@ export const getPurchaseDetails = async (req, res) => {
 
     ////find the outstanding of the sale
     const outstandingOfPurchase = await OutstandingModel.findOne({
+      billId: purchaseDetails._id.toString(),
       bill_no: purchaseDetails.purchaseNumber,
       cmp_id: purchaseDetails.cmp_id,
       Primary_user_id: purchaseDetails.Primary_user_id,
@@ -997,22 +1066,19 @@ export const getPurchaseDetails = async (req, res) => {
   } catch (error) {
     console.error("Error fetching purchase details:", error);
     res.status(500).json({ error: "Internal Server Error" });
-
   }
-
-}
+};
 /**
  * @desc   To calculate opening balances
  * @route  Get /api/sUsers/getOpeningBalances
  * @access Public
  */
-export const getOpeningBalances = async (req,res) => {
+export const getOpeningBalances = async (req, res) => {
   try {
     const userId = req.sUserId;
     const cmp_id = req.params.cmp_id;
-    const {startOfDayParam, party_id } = req.query;
+    const { startOfDayParam, party_id } = req.query;
     const startDate = parseISO(startOfDayParam) || new Date();
-
 
     const openingBalanceDateFilter = {
       createdAt: {
@@ -1024,31 +1090,60 @@ export const getOpeningBalances = async (req,res) => {
       ...openingBalanceDateFilter,
       cmp_id: cmp_id,
       ...(userId ? { Secondary_user_id: userId } : {}),
-      ...(party_id ? { 'party._id': party_id } : {}),
+      ...(party_id ? { "party._id": party_id } : {}),
     };
 
-
-   // Calculate opening balances
-   const openingBalancePromises = [
-    // Debit opening balances
-    aggregateOpeningBalance(debitNoteModel, openingBalanceMatchCriteria, "Debit Note"),
-    aggregateOpeningBalance(salesModel, openingBalanceMatchCriteria, "Tax Invoice"),
-    aggregateOpeningBalance(paymentModel, openingBalanceMatchCriteria, "Payment"),
-    aggregateOpeningBalance(vanSaleModel, openingBalanceMatchCriteria, "Van Sale"),
-    // Credit opening balances
-    aggregateOpeningBalance(purchaseModel, openingBalanceMatchCriteria, "Purchase"),
-    aggregateOpeningBalance(receiptModel, openingBalanceMatchCriteria, "Receipt"),
-    aggregateOpeningBalance(creditNoteModel, openingBalanceMatchCriteria, "Credit Note"),
-  ];
-
+    // Calculate opening balances
+    const openingBalancePromises = [
+      // Debit opening balances
+      aggregateOpeningBalance(
+        debitNoteModel,
+        openingBalanceMatchCriteria,
+        "Debit Note"
+      ),
+      aggregateOpeningBalance(
+        salesModel,
+        openingBalanceMatchCriteria,
+        "Tax Invoice"
+      ),
+      aggregateOpeningBalance(
+        paymentModel,
+        openingBalanceMatchCriteria,
+        "Payment"
+      ),
+      aggregateOpeningBalance(
+        vanSaleModel,
+        openingBalanceMatchCriteria,
+        "Van Sale"
+      ),
+      // Credit opening balances
+      aggregateOpeningBalance(
+        purchaseModel,
+        openingBalanceMatchCriteria,
+        "Purchase"
+      ),
+      aggregateOpeningBalance(
+        receiptModel,
+        openingBalanceMatchCriteria,
+        "Receipt"
+      ),
+      aggregateOpeningBalance(
+        creditNoteModel,
+        openingBalanceMatchCriteria,
+        "Credit Note"
+      ),
+    ];
 
     const openingBalances = await Promise.all(openingBalancePromises);
 
     // Calculate total opening balances
-    const totalDebitOpening = openingBalances.slice(0, 4).reduce((sum, amount) => sum + amount, 0);
-    const totalCreditOpening = openingBalances.slice(4, 7).reduce((sum, amount) => sum + amount, 0);
+    const totalDebitOpening = openingBalances
+      .slice(0, 4)
+      .reduce((sum, amount) => sum + amount, 0);
+    const totalCreditOpening = openingBalances
+      .slice(4, 7)
+      .reduce((sum, amount) => sum + amount, 0);
     const netOpeningBalance = totalDebitOpening - totalCreditOpening;
-
 
     return res.status(200).json({
       success: true,
@@ -1058,10 +1153,818 @@ export const getOpeningBalances = async (req,res) => {
         netOpeningBalance,
       },
     });
-
- 
   } catch (error) {
     console.error("Error calculating opening balances:", error);
     throw error;
+  }
+};
+
+// Update all missing billIds
+export const updateMissingBillIds = async (req, res) => {
+  try {
+    const startTime = Date.now();
+    const results = {
+      total: 0,
+      updated: 0,
+      failed: 0,
+      notFound: 0,
+      errors: [],
+    };
+
+    // Get all outstanding documents without billId
+    const outstandingDocs = await TallyData.find({
+      billId: { $exists: false },
+      // cmp_id: "66b870a95387e8f388f9af6c"
+    });
+    results.total = outstandingDocs.length;
+
+    // console.log("Total documents to process:", outstandingDocs.length);
+
+    // Create a map for model lookup with corresponding bill number fields
+    const modelConfig = {
+      sale: {
+        models: [
+          {
+            model: salesModel,
+            billField: "salesNumber",
+            type: "Regular Sale",
+          },
+          {
+            model: vanSaleModel,
+            billField: "salesNumber",
+            type: "Van Sale",
+          },
+        ],
+      },
+
+      creditnote: {
+        models: [
+          {
+            model: creditNoteModel,
+            billField: "creditNoteNumber",
+            type: "Credit Note",
+          },
+        ],
+      },
+      purchase: {
+        models: [
+          {
+            model: purchaseModel,
+            billField: "purchaseNumber",
+            type: "Purchase",
+          },
+        ],
+      },
+
+      debitnote: {
+        models: [
+          {
+            model: debitNoteModel,
+            billField: "debitNoteNumber",
+            type: "Debit Note",
+          },
+        ],
+      },
+    };
+
+    // Process each document
+    for (const doc of outstandingDocs) {
+      try {
+        const sourceType = doc.source?.toLowerCase()?.trim();
+
+        // console.log(`Processing document with bill_no: ${doc.bill_no}, source: ${sourceType}`);
+
+        const config = modelConfig[sourceType];
+
+        if (!config || !config.models?.length) {
+          // console.log(`Invalid source type: ${sourceType}`);
+          results.failed++;
+          results.errors.push({
+            bill_no: doc.bill_no,
+            error: `Invalid source type: ${doc.source}`,
+            source: doc.source,
+          });
+          continue;
+        }
+
+        let sourceDoc = null;
+        let matchedModel = null;
+
+        // Try each model in the config until we find a match
+        for (const modelConfig of config.models) {
+          const query = {
+            [modelConfig.billField]: doc.bill_no,
+            cmp_id: doc.cmp_id,
+          };
+
+          // console.log(`Searching in ${modelConfig.type} with query:`, query);
+
+          const foundDoc = await modelConfig.model.findOne(query);
+          if (foundDoc) {
+            sourceDoc = foundDoc;
+            matchedModel = modelConfig;
+            break;
+          }
+        }
+
+        if (sourceDoc && sourceDoc._id) {
+          await TallyData.updateOne(
+            { _id: doc._id },
+            {
+              $set: {
+                billId: sourceDoc._id,
+                updatedAt: new Date(),
+                lastModifiedBy: "system",
+                documentType: matchedModel.type, // Adding document type for reference
+              },
+            }
+          );
+          console.log(
+            `Updated document ${doc._id} with billId ${sourceDoc._id} (${matchedModel.type})`
+          );
+          results.updated++;
+        } else {
+          console.log(`No matching document found for bill_no: ${doc.bill_no}`);
+          results.notFound++;
+          results.errors.push({
+            bill_no: doc.bill_no,
+            source: doc.source,
+            error: `Document not found in any of the relevant collections`,
+            searchedIn: config.models.map((m) => m.type),
+          });
+        }
+      } catch (error) {
+        console.error(`Error processing document ${doc.bill_no}:`, error);
+        results.failed++;
+        results.errors.push({
+          bill_no: doc.bill_no,
+          error: error.message,
+          stack:
+            process.env.NODE_ENV === "development" ? error.stack : undefined,
+        });
+      }
+    }
+
+    // Calculate execution time
+    const executionTime = (Date.now() - startTime) / 1000;
+
+    // Return detailed response
+    return res.status(200).json({
+      success: true,
+      executionTime: `${executionTime} seconds`,
+      results: {
+        ...results,
+        errors: results.errors.slice(0, 10), // Limit error list to first 10
+      },
+      message: "Bill ID update process completed",
+      summary: {
+        processed: results.total,
+        updated: results.updated,
+        notFound: results.notFound,
+        failed: results.failed,
+        successRate: `${((results.updated / results.total) * 100).toFixed(2)}%`,
+      },
+    });
+  } catch (error) {
+    console.error("Error in updateMissingBillIds:", error);
+    return res.status(500).json({
+      success: false,
+      error: error.message,
+      stack: process.env.NODE_ENV === "development" ? error.stack : undefined,
+      message: "Failed to update bill IDs",
+    });
+  }
+};
+
+////find source details
+
+export const findSourceBalance = async (req, res) => {
+  const cmp_id = req.params.cmp_id;
+
+  const { startOfDayParam, endOfDayParam } = req.query;
+
+  // Initialize dateFilter for settlements.created_at
+  let dateFilter = {};
+  if (startOfDayParam && endOfDayParam) {
+    const startDate = parseISO(startOfDayParam);
+    const endDate = parseISO(endOfDayParam);
+    dateFilter = {
+      "settlements.created_at": {
+        $gte: startOfDay(startDate),
+        $lte: endOfDay(endDate),
+      },
+    };
+  }
+  // else if (todayOnly === "true") {
+  //   dateFilter = {
+  //     "settlements.created_at": {
+  //       $gte: startOfDay(new Date()),
+  //       $lte: endOfDay(new Date()),
+  //     },
+  //   };
+  // }
+  try {
+    const bankTotal = await bankModel.aggregate([
+      {
+        $match: {
+          cmp_id: cmp_id,
+          settlements: { $exists: true, $ne: [] },
+        },
+      },
+      {
+        $unwind: "$settlements",
+      },
+      {
+        $match: dateFilter,
+      },
+      {
+        $group: {
+          _id: null,
+          totalAmount: { $sum: "$settlements.amount" },
+        },
+      },
+    ]);
+
+    // Aggregation pipeline for cash collection
+    const cashTotal = await cashModel.aggregate([
+      {
+        $match: {
+          settlements: { $exists: true, $ne: [] },
+          cmp_id: cmp_id,
+        },
+      },
+      {
+        $unwind: "$settlements",
+      },
+
+      {
+        $match: dateFilter,
+      },
+      {
+        $group: {
+          _id: null,
+          totalAmount: { $sum: "$settlements.amount" },
+        },
+      },
+    ]);
+
+    // console.log("cashTotal", cashTotal);
+
+    // Extract totals or set to 0 if no settlements found
+    const bankSettlementTotal =
+      bankTotal.length > 0 ? bankTotal[0].totalAmount : 0;
+    const cashSettlementTotal =
+      cashTotal.length > 0 ? cashTotal[0].totalAmount : 0;
+    const grandTotal = bankSettlementTotal + cashSettlementTotal;
+
+    return res.status(200).json({
+      message: "Balance found successfully",
+      success: true,
+      bankSettlementTotal,
+      cashSettlementTotal,
+      grandTotal,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+export const findSourceDetails = async (req, res) => {
+  const cmp_id = req.params.cmp_id;
+  const { accountGroup, startOfDayParam, endOfDayParam, todayOnly } = req.query;
+
+  // Initialize dateFilter for settlements.created_at
+  let dateFilter = {};
+  if (startOfDayParam && endOfDayParam) {
+    const startDate = parseISO(startOfDayParam);
+    const endDate = parseISO(endOfDayParam);
+    dateFilter = {
+      $gte: startOfDay(startDate),
+      $lte: endOfDay(endDate),
+    };
+  } else if (todayOnly === "true") {
+    dateFilter = {
+      $gte: startOfDay(new Date()),
+      $lte: endOfDay(new Date()),
+    };
+  }
+
+  try {
+    let model;
+    let nameField;
+
+    switch (accountGroup) {
+      case "cashInHand":
+        model = cashModel;
+        nameField = "cash_ledname";
+        break;
+      case "bankBalance":
+        model = bankModel;
+        nameField = "bank_ledname";
+        break;
+      default:
+        return res.status(400).json({ message: "Invalid account group" });
+    }
+
+    const balanceDetails = await model.aggregate([
+      {
+        $match: {
+          cmp_id: cmp_id, // Match by company ID initially
+        },
+      },
+      {
+        $project: {
+          name: `$${nameField}`,
+          settlements: {
+            $cond: {
+              if: { $isArray: "$settlements" },
+              then: "$settlements",
+              else: [],
+            },
+          },
+          originalId: "$_id",
+        },
+      },
+      {
+        $unwind: {
+          path: "$settlements",
+          preserveNullAndEmptyArrays: true, // Keep documents even if no settlements
+        },
+      },
+      {
+        $project: {
+          name: 1,
+          originalId: 1,
+          settlement: {
+            $cond: [
+              {
+                $and: [
+                  { $ifNull: ["$settlements", false] },
+                  {
+                    $gte: [
+                      "$settlements.created_at",
+                      dateFilter.$gte || new Date(0),
+                    ],
+                  },
+                  {
+                    $lte: [
+                      "$settlements.created_at",
+                      dateFilter.$lte || new Date(),
+                    ],
+                  },
+                ],
+              },
+              "$settlements",
+              null,
+            ],
+          },
+        },
+      },
+      {
+        $group: {
+          _id: "$originalId",
+          name: { $first: "$name" },
+          settlementTotal: {
+            $sum: {
+              $cond: [
+                { $ifNull: ["$settlement.amount", false] },
+                "$settlement.amount",
+                0,
+              ],
+            },
+          },
+        },
+      },
+      {
+        $sort: { name: 1 }, // Sort by name alphabetically
+      },
+    ]);
+
+    return res.status(200).json({
+      message: "Balance details found successfully",
+      success: true,
+      accountGroup,
+      data: balanceDetails.map((detail) => ({
+        _id: detail._id,
+        name: detail.name,
+        total: detail.settlementTotal || 0, // Ensure zero if no total
+      })),
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      error: "Internal Server Error",
+      details: error.message,
+    });
+  }
+};
+
+export const findSourceTransactions = async (req, res) => {
+  const { cmp_id, id } = req.params;
+  const { startOfDayParam, endOfDayParam, accGroup } = req.query;
+
+  try {
+    let dateFilter = {};
+    let openingBalanceFilter = {};
+    if (startOfDayParam && endOfDayParam) {
+      const startDate = parseISO(startOfDayParam);
+      const endDate = parseISO(endOfDayParam);
+
+      dateFilter = {
+        "settlements.created_at": {
+          $gte: startOfDay(startDate),
+          $lte: endOfDay(endDate),
+        },
+      };
+
+      // Filter for opening balance (before start date)
+      openingBalanceFilter = {
+        "settlements.created_at": {
+          $lt: startOfDay(startDate),
+        },
+      };
+    }
+
+    let model;
+    let openingField;
+    switch (accGroup) {
+      case "cashInHand":
+        model = cashModel;
+        openingField = "cash_opening";
+        break;
+      case "bankBalance":
+        model = bankModel;
+        openingField = "bank_opening";
+        break;
+      default:
+        return res.status(400).json({ message: "Invalid account group" });
+    }
+
+    const [openingBalanceResult, transactions] = await Promise.all([
+      // First pipeline to calculate opening balance
+      model.aggregate([
+        {
+          $match: {
+            _id: new mongoose.Types.ObjectId(id),
+            cmp_id: cmp_id,
+          },
+        },
+        {
+          $project: {
+            [openingField]: 1, // Include opening field
+            settlements: {
+              $cond: {
+                if: { $isArray: "$settlements" },
+                then: "$settlements",
+                else: [],
+              },
+            },
+          },
+        },
+        {
+          $unwind: {
+            path: "$settlements",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
+          $match: openingBalanceFilter,
+        },
+        {
+          $group: {
+            _id: null,
+            calculatedOpeningBalance: { $sum: "$settlements.amount" },
+            openingField: { $first: `$${openingField}` }, // Retrieve opening field value
+          },
+        },
+        {
+          $project: {
+            _id: 0,
+            openingBalance: {
+              $add: ["$calculatedOpeningBalance", "$openingField"], // Combine calculated and opening field
+            },
+          },
+        },
+      ]),
+
+      // Second pipeline to get current period transactions
+      model.aggregate([
+        {
+          $match: {
+            _id: new mongoose.Types.ObjectId(id),
+            cmp_id: cmp_id,
+          },
+        },
+        {
+          $project: {
+            settlements: {
+              $cond: {
+                if: { $isArray: "$settlements" },
+                then: "$settlements",
+                else: [],
+              },
+            },
+          },
+        },
+        {
+          $unwind: {
+            path: "$settlements",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
+          $match: dateFilter,
+        },
+        {
+          $group: {
+            _id: null,
+            settlements: { $push: "$settlements" },
+            count: { $sum: 1 },
+            total: { $sum: "$settlements.amount" },
+          },
+        },
+        {
+          $project: {
+            _id: 0,
+            settlements: {
+              $map: {
+                input: "$settlements",
+                as: "settlement",
+                in: {
+                  voucherNumber: "$$settlement.voucherNumber",
+                  _id: "$$settlement.voucherId",
+                  party_name: "$$settlement.party",
+                  enteredAmount: "$$settlement.amount",
+                  createdAt: "$$settlement.created_at",
+                  payment_mode: "$$settlement.payment_mode",
+                  type: {
+                    $switch: {
+                      branches: [
+                        {
+                          case: { $eq: ["$$settlement.type", "receipt"] },
+                          then: "Receipt",
+                        },
+                        {
+                          case: { $eq: ["$$settlement.type", "payment"] },
+                          then: "Payment",
+                        },
+                        {
+                          case: { $eq: ["$$settlement.type", "sale"] },
+                          then: "Tax Invoice",
+                        },
+                        {
+                          case: { $eq: ["$$settlement.type", "vanSale"] },
+                          then: "Van Sale",
+                        },
+                        {
+                          case: { $eq: ["$$settlement.type", "purchase"] },
+                          then: "Purchase",
+                        },
+                        {
+                          case: { $eq: ["$$settlement.type", "creditNote"] },
+                          then: "Credit Note",
+                        },
+                        {
+                          case: { $eq: ["$$settlement.type", "debitNote"] },
+                          then: "Debit Note",
+                        },
+                      ],
+                      default: "$$settlement.type",
+                    },
+                  },
+                },
+              },
+            },
+            count: 1,
+            total: 1,
+          },
+        },
+      ]),
+    ]);
+
+    // Handle case when no transactions are found
+    if (!transactions.length) {
+      return res.status(200).json({
+        message: "No transactions found for the specified period",
+        success: true,
+        data: {
+          settlements: [],
+          total: 0,
+          count: 0,
+          openingBalance: 0,
+        },
+      });
+    }
+
+    return res.status(200).json({
+      message: "Transactions found successfully",
+      success: true,
+      data: {
+        ...transactions[0],
+        openingBalance: openingBalanceResult[0]?.openingBalance || 0,
+      },
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      error: "Internal Server Error",
+      details: error.message,
+    });
+  }
+};
+
+/// add bank
+
+export const addBank = async (req, res) => {
+  const {
+    acholder_name,
+    ac_no,
+    ifsc,
+    bank_name,
+    branch,
+    upi_id,
+    cmp_id,
+    bank_opening,
+  } = req.body;
+  const Primary_user_id = req.pUserId || req.owner;
+  const bank_ledname = bank_name;
+
+  try {
+    const bank = await bankModel({
+      acholder_name,
+      ac_no,
+      ifsc,
+      bank_name,
+      branch,
+      upi_id,
+      cmp_id,
+      Primary_user_id,
+      bank_ledname,
+      bank_opening,
+    });
+
+    const result = await bank.save();
+
+    result.bank_id = result._id;
+    await result.save();
+
+    if (result) {
+      return res
+        .status(200)
+        .json({ success: true, message: "Bank added successfully" });
+    } else {
+      return res
+        .status(400)
+        .json({ success: false, message: "Adding bank failed" });
+    }
+  } catch (error) {
+    console.error(error);
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error, try again!" });
+  }
+};
+
+// @desc  edit edit bank details
+// route get/api/pUsers/editBank
+
+export const editBank = async (req, res) => {
+  const bank_id = req.params.bank_id;
+
+  try {
+    const udatedBank = await bankModel.findOneAndUpdate(
+      { _id: bank_id },
+      req.body,
+      { new: true }
+    );
+
+    udatedBank.bank_id = udatedBank._id;
+    udatedBank.bank_ledname = udatedBank.bank_name;
+    udatedBank.save();
+    res.status(200).json({
+      success: true,
+      message: "Bank updated successfully",
+      data: udatedBank,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
+};
+
+export const getBankDetails = async (req, res) => {
+  try {
+    const bankId = req?.params?.bank_id;
+    if (!bankId) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Bank ID is required" });
+    }
+
+    const bankDetails = await bankModel.findById(bankId);
+
+    if (!bankDetails) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Bank details not found" });
+    }
+
+    return res.status(200).json({ success: true, data: bankDetails });
+  } catch (error) {
+    console.error(`Error fetching bank details: ${error.message}`);
+
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error, try again!" });
+  }
+};
+
+/// add bank
+
+export const addCash = async (req, res) => {
+  const { cash_ledname, cash_opening, cmp_id } = req.body;
+  const Primary_user_id = req.pUserId || req.owner;
+
+  try {
+    const cash = await cashModel({
+      cash_ledname,
+      cash_opening,
+      Primary_user_id,
+      cmp_id,
+    });
+
+    const result = await cash.save();
+
+    result.cash_id = result._id;
+    await result.save();
+
+    if (result) {
+      return res
+        .status(200)
+        .json({ success: true, message: "Cash added successfully" });
+    } else {
+      return res
+        .status(400)
+        .json({ success: false, message: "Adding Cash failed" });
+    }
+  } catch (error) {
+    console.error(error);
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error, try again!" });
+  }
+};
+
+// gest cash details
+export const getCashDetails = async (req, res) => {
+  try {
+    const cashId = req?.params?.cash_id;
+    if (!cashId) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Cash is required" });
+    }
+
+    const cashDetails = await cashModel.findById(cashId);
+
+    if (!cashDetails) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Bank details not found" });
+    }
+
+    return res.status(200).json({ success: true, data: cashDetails });
+  } catch (error) {
+    console.error(`Error fetching cash details: ${error.message}`);
+
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error, try again!" });
+  }
+};
+
+// @desc  edit edit bank details
+// route get/api/pUsers/editBank
+
+export const editCash = async (req, res) => {
+  const cash_id = req.params.cash_id;
+  try {
+    const updatedCash = await cashModel.findOneAndUpdate(
+      { _id: cash_id },
+      req.body,
+      { new: true }
+    );
+
+    updatedCash.cash_id = updatedCash._id;
+    updatedCash.save();
+    res.status(200).json({
+      success: true,
+      message: "Cash updated successfully",
+      data: updatedCash,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };

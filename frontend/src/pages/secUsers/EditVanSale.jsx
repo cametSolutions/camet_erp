@@ -29,16 +29,19 @@ import DespatchDetails from "../../components/secUsers/DespatchDetails";
 import HeaderTile from "../../components/secUsers/main/HeaderTile";
 import AddPartyTile from "../../components/secUsers/main/AddPartyTile";
 import AddItemTile from "../../components/secUsers/main/AddItemTile";
+import TitleDiv from "../../components/common/TitleDiv";
+import FooterButton from "../../components/secUsers/main/FooterButton";
 
 function EditVanSale() {
   ////////////////////////////////state//////////////////////////////////////////////////////
-
 
   const [additional, setAdditional] = useState(false);
   const [salesNumber, setSalesNumber] = useState("");
   const date = useSelector((state) => state.salesSecondary.date);
   const [selectedDate, setSelectedDate] = useState(date);
-
+  const [dataLoading, setDataLoading] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [submitLoading, setSubmitLoading] = useState(false);
   const [additionalChragesFromCompany, setAdditionalChragesFromCompany] =
     useState([]);
   const [subTotal, setSubTotal] = useState(0);
@@ -67,10 +70,6 @@ function EditVanSale() {
   const [godownname, setGodownname] = useState("");
   const [godownId, setGodownId] = useState("");
 
-
-
-
-  
   ////////////////////////////////redux//////////////////////////////////////////////////////
 
   const orgId = useSelector(
@@ -93,7 +92,6 @@ function EditVanSale() {
     finalAmount: finalAmountFromRedux,
     heights: heightsFromRedux,
     date: dateFromRedux,
-
   } = salesDetailsFromRedux;
 
   ////////////////////////////////utils//////////////////////////////////////////////////////
@@ -101,14 +99,20 @@ function EditVanSale() {
   const dispatch = useDispatch();
   const { id } = useParams();
 
+  ////dataLoading////
+  // Helper function to manage dataLoading state
+  const incrementLoading = () => setDataLoading((prev) => prev + 1);
+  const decrementLoading = () => setDataLoading((prev) => prev - 1);
+
   ////////////////////////////////getting invoice details//////////////////////////////////////////////////////
 
   useEffect(() => {
     const fetchSalesDetails = async () => {
+      incrementLoading();
       try {
         const res = await api.get(`/api/sUsers/getSalesDetails/${id}`, {
-          params:{
-            vanSale:true
+          params: {
+            vanSale: true,
           },
           withCredentials: true,
         });
@@ -125,7 +129,6 @@ function EditVanSale() {
           createdAt,
           // selectedGodownName,
           // selectedGodownId
-
         } = res.data.data;
 
         console.log(createdAt);
@@ -200,6 +203,8 @@ function EditVanSale() {
         // setSelectedGodownName(selectedGodownName || "");
       } catch (error) {
         console.log(error);
+      } finally {
+        decrementLoading();
       }
     };
     fetchSalesDetails();
@@ -209,6 +214,7 @@ function EditVanSale() {
 
   useEffect(() => {
     const getAdditionalChargesIntegrated = async () => {
+      incrementLoading();
       try {
         const res = await api.get(`/api/sUsers/additionalcharges/${cmp_id}`, {
           withCredentials: true,
@@ -218,6 +224,8 @@ function EditVanSale() {
       } catch (error) {
         console.log(error);
         toast.error(error.response.data.message);
+      } finally {
+        decrementLoading();
       }
     };
     if (type != "self") {
@@ -231,6 +239,7 @@ function EditVanSale() {
 
   useEffect(() => {
     const fetchSingleOrganization = async () => {
+      incrementLoading();
       try {
         const res = await api.get(
           `/api/sUsers/getSingleOrganization/${orgId}`,
@@ -248,14 +257,17 @@ function EditVanSale() {
         }
       } catch (error) {
         console.log(error);
+      } finally {
+        decrementLoading();
       }
     };
 
     fetchSingleOrganization();
-  }, [ orgId]);
+  }, [orgId]);
 
   useEffect(() => {
     const fetchGodownname = async () => {
+      incrementLoading();
       try {
         const godown = await api.get(`/api/sUsers/godownsName/${cmp_id}`, {
           withCredentials: true,
@@ -266,11 +278,12 @@ function EditVanSale() {
       } catch (error) {
         console.log(error);
         toast.error(error.message);
+      } finally {
+        decrementLoading();
       }
     };
     fetchGodownname();
   }, []);
-
 
   console.log(rows);
 
@@ -412,38 +425,37 @@ function EditVanSale() {
   };
 
   const submitHandler = async () => {
-    console.log("haii");
+    setSubmitLoading(true);
     if (Object.keys(party).length == 0) {
-      console.log("haii");
-
       toast.error("Add a party first");
+      setSubmitLoading(false);
+
       return;
     }
     if (items.length == 0) {
-      console.log("haii");
-
       toast.error("Add at least an item");
+      setSubmitLoading(false);
+
       return;
     }
 
     if (additional) {
-      console.log("haii");
-
       const hasEmptyValue = rows.some((row) => row.value === "");
       if (hasEmptyValue) {
         console.log("haii");
 
         toast.error("Please add a value.");
+        setSubmitLoading(false);
+
         return;
       }
       const hasNagetiveValue = rows.some((row) => parseFloat(row.value) < 0);
       if (hasNagetiveValue) {
-        console.log("haii");
-
         toast.error("Please add a positive value");
+        setSubmitLoading(false);
+
         return;
       }
-      console.log("haii");
     }
 
     const lastAmount = totalAmount.toFixed(2);
@@ -459,21 +471,17 @@ function EditVanSale() {
       orgId,
       salesNumber,
       despatchDetails: despatchDetailsFromRedux,
-      selectedDate:dateFromRedux||new Date(),
-      selectedGodownId:godownId,
-      selectedGodownName:godownname,
+      selectedDate: dateFromRedux || new Date(),
+      selectedGodownId: godownId,
+      selectedGodownName: godownname,
     };
 
     // console.log("form data", formData);
-    
-
-
-    
 
     try {
       const res = await api.post(`/api/sUsers/editSale/${id}`, formData, {
-        params:{
-          vanSale:true
+        params: {
+          vanSale: true,
         },
         headers: {
           "Content-Type": "application/json",
@@ -492,89 +500,91 @@ function EditVanSale() {
         toast.error("An unexpected error occurred.");
       }
       console.log(error);
+    } finally {
+      setSubmitLoading(false);
     }
   };
 
-
+  
+  useEffect(() => {
+    if (dataLoading > 0) {
+      setLoading(true);
+    } else {
+      setLoading(false);
+    }
+  }, [dataLoading]);
 
   return (
     <div className="flex relative ">
       <div className="flex-1 bg-slate-100  h-screen   ">
-        <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex  items-center gap-2 sticky top-0 z-50  ">
-          {/* <IoReorderThreeSharp
-            onClick={handleToggleSidebar}
-            className="block md:hidden text-white text-3xl"
-          /> */}
-          <Link to={"/sUsers/dashboard"}>
-            <IoIosArrowRoundBack className="text-3xl text-white cursor-pointer md:hidden" />
-          </Link>
-          <p className="text-white text-lg   font-bold ">Van Sale Edit</p>
-        </div>
+        <TitleDiv title="Van Sale Edit" loading={loading || submitLoading} />
+        <div className={`${loading ? "pointer-events-none opacity-70" : ""}`}>
+          {/* invoiec date */}
 
-        {/* invoiec date */}
+          <HeaderTile
+            title={"Van Sale"}
+            number={salesNumber}
+            selectedDate={selectedDate}
+            setSelectedDate={setSelectedDate}
+            dispatch={dispatch}
+            changeDate={changeDate}
+            submitHandler={submitHandler}
+            removeAll={removeAll}
+            tab="edit"
+            loading={submitLoading}
+          />
 
-        <HeaderTile
-          title={"Van Sale"}
-          number={salesNumber}
-          selectedDate={selectedDate}
-          setSelectedDate={setSelectedDate}
-          dispatch={dispatch}
-          changeDate={changeDate}
-          submitHandler={submitHandler}
-          removeAll={removeAll}
-          tab="edit"
-        />
+          {/* adding party */}
 
-        {/* adding party */}
+          <AddPartyTile
+            party={party}
+            dispatch={dispatch}
+            removeParty={removeParty}
+            link="/sUsers/searchPartySales"
+            linkBillTo="/sUsers/billToSales"
+          />
 
-        <AddPartyTile
-          party={party}
-          dispatch={dispatch}
-          removeParty={removeParty}
-          link="/sUsers/searchPartySales"
-          linkBillTo="/sUsers/billToSales"
-        />
+          {/* Despatch details */}
 
-        {/* Despatch details */}
+          <DespatchDetails tab={"sale"} />
 
-        <DespatchDetails tab={"sale"} />
+          {/* adding items */}
 
-        {/* adding items */}
+          <AddItemTile
+            items={items}
+            handleAddItem={handleAddItem}
+            dispatch={dispatch}
+            removeItem={removeItem}
+            removeGodownOrBatch={removeGodownOrBatch}
+            navigate={navigate}
+            godownname={godownname}
+            subTotal={subTotal}
+            type="sale"
+            additional={additional}
+            cancelHandler={cancelHandler}
+            rows={rows}
+            handleDeleteRow={handleDeleteRow}
+            handleLevelChange={handleLevelChange}
+            additionalChragesFromCompany={additionalChragesFromCompany}
+            actionChange={actionChange}
+            handleRateChange={handleRateChange}
+            handleAddRow={handleAddRow}
+            setAdditional={setAdditional}
+            urlToAddItem="/sUsers/addItemVanSale"
+            urlToEditItem="/sUsers/editItemSales"
+          />
 
-      
-        <AddItemTile
-          items={items}
-          handleAddItem={handleAddItem}
-          dispatch={dispatch}
-          removeItem={removeItem}
-          removeGodownOrBatch={removeGodownOrBatch}
-          navigate={navigate}
-          godownname={godownname}
-          subTotal={subTotal}
-          type="sale"
-          additional={additional}
-          cancelHandler={cancelHandler}
-          rows={rows}
-          handleDeleteRow={handleDeleteRow}
-          handleLevelChange={handleLevelChange}
-          additionalChragesFromCompany={additionalChragesFromCompany}
-          actionChange={actionChange}
-          handleRateChange={handleRateChange}
-          handleAddRow={handleAddRow}
-          setAdditional={setAdditional}
-          urlToAddItem="/sUsers/addItemVanSale"
-          urlToEditItem="/sUsers/editItemSales"
-        />
-
-        <div className="flex justify-between bg-white mt-2 p-3">
-          <p className="font-bold text-lg">Total Amount</p>
-          <div className="flex flex-col items-center">
-            <p className="font-bold text-lg">₹ {totalAmount.toFixed(2) ?? 0}</p>
-            <p className="text-[9px] text-gray-400">(rounded)</p>
+          <div className="flex justify-between bg-white mt-2 p-3">
+            <p className="font-bold text-lg">Total Amount</p>
+            <div className="flex flex-col items-center">
+              <p className="font-bold text-lg">
+                ₹ {totalAmount.toFixed(2) ?? 0}
+              </p>
+              <p className="text-[9px] text-gray-400">(rounded)</p>
+            </div>
           </div>
-        </div>
 
-        <div className=" md:hidden ">
+          {/* <div className=" md:hidden ">
           <div className="flex justify-center overflow-hidden w-full">
             <button
               onClick={submitHandler}
@@ -584,12 +594,16 @@ function EditVanSale() {
               <p>Edit Sale</p>
             </button>
           </div>
+        </div> */}
+
+          <FooterButton
+            submitHandler={submitHandler}
+            tab="edit"
+            title="Van Sale"
+            loading={submitLoading || loading}
+          />
         </div>
-
-      
       </div>
-
-  
     </div>
   );
 }

@@ -6,20 +6,23 @@ import { useParams } from "react-router-dom";
 import api from "../../api/api";
 import { toast } from "react-toastify";
 import { FaEdit } from "react-icons/fa";
-import { useLocation, useNavigate } from "react-router-dom";
+import {  useNavigate } from "react-router-dom";
 import SalesProductDetails from "../../components/common/SalesProductDetails";
 import SwallFireForPdf from "../../components/common/SwallFireForPdf";
 import CancelButton from "../../components/common/CancelButton";
 import VoucherDetailsHeader from "../../components/common/VoucherDetailsHeader";
+import { useDispatch } from "react-redux";
+import { removeAll } from "../../../slices/filterSlices/paymentSplitting/paymentSplitting";
+import PaymentSplittingDetails from "../../components/secUsers/main/paymentSplitting/PaymentSplittingDetails";
 
 function SalesDetailsSecondary() {
   const [data, setData] = useState("");
   const [refresh, setRefresh] = useState(false);
 
   const { id } = useParams();
-  console.log(id);
-  const location = useLocation();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+
 
   useEffect(() => {
     const getTransactionDetails = async () => {
@@ -35,6 +38,7 @@ function SalesDetailsSecondary() {
       }
     };
     getTransactionDetails();
+    dispatch(removeAll());  /// for making initial in the payment splitting to true
   }, [refresh, id]);
 
   const reFetch = () => {
@@ -44,11 +48,7 @@ function SalesDetailsSecondary() {
   console.log(data);
   const backHandler = () => {
     navigate(-1)
-    // if (location?.state?.from === "dashboard") {
-    //   navigate("/sUsers/dashboard");
-    // } else {
-    //   navigate("/sUsers/transaction");
-    // }
+
   };
 
   const handleEdit = () => {
@@ -123,7 +123,14 @@ function SalesDetailsSecondary() {
         items={data?.items}
         priceLevel={data?.priceLevel}
         additionalCharges={data?.additionalCharges}
+        paymentSplittingData={data?.paymentSplittingData}
       />
+
+      {
+        data?.paymentSplittingData &&     data?.paymentSplittingData?.splittingData?.length >0 &&   (
+          <PaymentSplittingDetails  data={data?.paymentSplittingData}/>
+        )
+      }
 
       {/* payment method */}
 

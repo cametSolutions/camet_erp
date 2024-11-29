@@ -1,6 +1,5 @@
 /* eslint-disable react/no-unescaped-entities */
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
 
 import { useDispatch } from "react-redux";
@@ -8,7 +7,6 @@ import { useDispatch } from "react-redux";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import api from "../../api/api";
-import { IoIosAddCircle } from "react-icons/io";
 
 import {
   removeAll,
@@ -16,17 +14,18 @@ import {
   removeItem,
   removeGodownOrBatch,
   changeDate,
-  AddFinalAmount
+  AddFinalAmount,
 } from "../../../slices/stockTransferSecondary";
-import { IoIosArrowRoundBack } from "react-icons/io";
 
 import HeaderTile from "../../components/secUsers/main/HeaderTile";
 import AddItemTile from "../../components/secUsers/main/AddItemTile";
 import AddGodown from "../../components/secUsers/AddGodown";
+import TitleDiv from "../../components/common/TitleDiv";
+import FooterButton from "../../components/secUsers/main/FooterButton";
 function StockTransferSecondary() {
-
   const [stockTransferNumber, setStockTransferNumber] = useState("");
-
+  const [loading, setLoading] = useState(false);
+  const [submitLoading, setSubmitLoading] = useState(false);
 
   const date = useSelector((state) => state.stockTransferSecondary.date);
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -35,8 +34,6 @@ function StockTransferSecondary() {
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
 
-
-
   useEffect(() => {
     // localStorage.removeItem("scrollPositionAddItemSales");
     if (date) {
@@ -44,9 +41,10 @@ function StockTransferSecondary() {
     }
   }, []);
 
-
   useEffect(() => {
     const fetchConfigurationNumber = async () => {
+      setLoading(true);
+
       try {
         const res = await api.get(
           `/api/sUsers/fetchConfigurationNumber/${orgId}/stockTransfer`,
@@ -63,13 +61,11 @@ function StockTransferSecondary() {
         }
 
         const { configDetails, configurationNumber } = res.data;
-        
 
         if (configDetails) {
           const { widthOfNumericalPart, prefixDetails, suffixDetails } =
             configDetails;
           const newOrderNumber = configurationNumber.toString();
-         
 
           const padedNumber = newOrderNumber.padStart(widthOfNumericalPart, 0);
           // console.log(padedNumber);
@@ -83,6 +79,8 @@ function StockTransferSecondary() {
         }
       } catch (error) {
         console.log(error);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -91,19 +89,12 @@ function StockTransferSecondary() {
 
   // console.log(stockTransferNumber);
 
-
-
-
-
   const [subTotal, setSubTotal] = useState(0);
   const dispatch = useDispatch();
-
-
 
   const selectedGodown = useSelector(
     (state) => state.stockTransferSecondary.selectedGodown.godown
   );
-
 
   const selectedGodownId = useSelector(
     (state) => state.stockTransferSecondary.selectedGodown.godown_id
@@ -118,10 +109,7 @@ function StockTransferSecondary() {
     setSubTotal(subTotal);
   }, [items]);
 
-
-
-
-  const totalAmount = parseFloat(subTotal)
+  const totalAmount = parseFloat(subTotal);
 
   // console.log(totalAmount);
 
@@ -135,15 +123,12 @@ function StockTransferSecondary() {
     navigate("/sUsers/addItemStockTransfer");
   };
 
-
   const submitHandler = async () => {
-  
+    setSubmitLoading(true);
     if (items.length == 0) {
-
       toast.error("Add at least an item");
       return;
     }
-
 
     const lastAmount = totalAmount.toFixed(2);
 
@@ -159,18 +144,13 @@ function StockTransferSecondary() {
       stockTransferNumber,
     };
 
-
     try {
-      const res = await api.post(
-        `/api/sUsers/createStockTransfer`,
-        formData,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-          withCredentials: true,
-        }
-      );
+      const res = await api.post(`/api/sUsers/createStockTransfer`, formData, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        withCredentials: true,
+      });
       // console.log(res.data.data);
 
       toast.success(res.data.message);
@@ -179,80 +159,77 @@ function StockTransferSecondary() {
     } catch (error) {
       toast.error(error?.response?.data?.message);
       console.log(error);
+    } finally {
+      setSubmitLoading(false);
     }
   };
 
-
   return (
-    <div className="">
+    <div className="mb-14 sm:mb-0">
       <div className="flex-1 bg-slate-100 h -screen ">
-        <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex  items-center gap-2 sticky top-0 z-50  ">
-          {/* <IoReorderThreeSharp
-            onClick={handleToggleSidebar}
-            className="block md:hidden text-white text-3xl"
-          /> */}
-          <Link to={"/sUsers/selectVouchers"}>
-            <IoIosArrowRoundBack className="text-3xl text-white cursor-pointer " />
-          </Link>
-          <p className="text-white text-lg   font-bold ">Stock Transfer</p>
-        </div>
-
-        {/* invoiec date */}
-        <HeaderTile
-          title={"Stock Transfer"}
-          number={stockTransferNumber}
-          selectedDate={selectedDate}
-          setSelectedDate={setSelectedDate}
-          dispatch={dispatch}
-          changeDate={changeDate}
-          submitHandler={submitHandler}
-          removeAll={removeAll}
-          tab="add"
+        <TitleDiv
+          title="Stock Transfer"
+          from={`/sUsers/selectVouchers`}
+          loading={loading || submitLoading}
         />
 
-        {/* adding party */}
+        <div className={`${loading ? "pointer-events-none opacity-70" : ""}`}>
+          {/* invoiec date */}
+          <HeaderTile
+            title={"Stock Transfer"}
+            number={stockTransferNumber}
+            selectedDate={selectedDate}
+            setSelectedDate={setSelectedDate}
+            dispatch={dispatch}
+            changeDate={changeDate}
+            submitHandler={submitHandler}
+            removeAll={removeAll}
+            tab="add"
+            loading={submitLoading}
+          />
 
-        <AddGodown
-          selectedGodown={selectedGodown}
-          dispatch={dispatch}
-          removeGodown={removeGodown}
-          link="/sUsers/searchGodown"
-        />
+          {/* adding party */}
 
-        {/* adding items */}
+          <AddGodown
+            selectedGodown={selectedGodown}
+            dispatch={dispatch}
+            removeGodown={removeGodown}
+            link="/sUsers/searchGodown"
+          />
 
-        <AddItemTile
-          items={items}
-          handleAddItem={handleAddItem}
-          dispatch={dispatch}
-          removeItem={removeItem}
-          removeGodownOrBatch={removeGodownOrBatch}
-          navigate={navigate}
-          godownname={""}
-          subTotal={subTotal}
-          type="stockTransfer"
-          urlToAddItem="/sUsers/addItemStockTransfer"
-          urlToEditItem="/sUsers/editItemSales"
-        />
+          {/* adding items */}
 
-        <div className="flex justify-between bg-white mt-2 p-3">
-          <p className="font-bold text-lg">Total Amount</p>
-          <div className="flex flex-col items-center">
-            <p className="font-bold text-lg">₹ {totalAmount.toFixed(2) ?? 0}</p>
-            <p className="text-[9px] text-gray-400">(rounded)</p>
+          <AddItemTile
+            items={items}
+            handleAddItem={handleAddItem}
+            dispatch={dispatch}
+            removeItem={removeItem}
+            removeGodownOrBatch={removeGodownOrBatch}
+            navigate={navigate}
+            godownname={""}
+            subTotal={subTotal}
+            type="stockTransfer"
+            urlToAddItem="/sUsers/addItemStockTransfer"
+            urlToEditItem="/sUsers/editItemSales"
+          />
+
+          <div className="flex justify-between bg-white mt-2 p-3">
+            <p className="font-bold text-lg">Total Amount</p>
+            <div className="flex flex-col items-center">
+              <p className="font-bold text-lg">
+                ₹ {totalAmount.toFixed(2) ?? 0}
+              </p>
+              <p className="text-[9px] text-gray-400">(rounded)</p>
+            </div>
           </div>
-        </div>
 
-        <div className=" md:hidden ">
-          <div className="flex justify-center overflow-hidden w-full">
-            <button
-              onClick={submitHandler}
-              className="fixed bottom-0 text-white bg-violet-700  w-full  p-2 py-4 flex items-center justify-center gap-2 hover_scale cursor-pointer "
-            >
-              <IoIosAddCircle className="text-2xl" />
-              <p>Create Stock Transfer</p>
-            </button>
-          </div>
+        
+          <FooterButton
+            submitHandler={submitHandler}
+            tab="add"
+            title="Stock Transfer"
+            loading={submitLoading || loading}
+          />
         </div>
       </div>
     </div>

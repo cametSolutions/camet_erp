@@ -6,7 +6,12 @@ import {
   revertCreditNoteStockUpdates,
   updateTallyData,
 } from "../helpers/creditNoteHelper.js";
-import { processSaleItems as processCreditNoteItems } from "../helpers/salesHelper.js";
+import {
+  processSaleItems as processCreditNoteItems,
+  revertSettlementData,
+  saveSettlementData,
+  updateOutstandingBalance,
+} from "../helpers/salesHelper.js";
 
 import { checkForNumberExistence } from "../helpers/secondaryHelper.js";
 import creditNoteModel from "../models/creditNoteModel.js";
@@ -88,15 +93,35 @@ export const createCreditNote = async (req, res) => {
       session
     );
 
-    await updateTallyData(
-      orgId,
-      creditNoteNumber,
-      req.owner,
+    ///save settlement data
+    await saveSettlementData(
       party,
+      orgId,
+      "normal credit note",
+      "creditNote",
+      creditNoteNumber,
+      result._id,
       lastAmount,
-      secondaryMobile,
-      session // Pass session if needed
+      result?.createdAt,
+      party?.partyName,
+      session
     );
+
+    if (
+      party.accountGroup === "Sundry Debtors" ||
+      party.accountGroup === "Sundry Creditors"
+    ) {
+      await updateTallyData(
+        orgId,
+        creditNoteNumber,
+        result._id,
+        req.owner,
+        party,
+        lastAmount,
+        secondaryMobile,
+        session // Pass session if needed
+      );
+    }
 
     await session.commitTransaction();
     session.endSession();
@@ -125,7 +150,7 @@ export const createCreditNote = async (req, res) => {
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000; // 1 second
 
- export const cancelCreditNote = async (req, res) => {
+export const cancelCreditNote = async (req, res) => {
   let retryCount = 0;
 
   while (retryCount < MAX_RETRIES) {
@@ -148,6 +173,27 @@ const RETRY_DELAY = 1000; // 1 second
 
       // Revert existing stock updates
       await revertCreditNoteStockUpdates(existingCreditNote.items, session);
+
+      //// revert settlement data
+      await revertSettlementData(
+        existingCreditNote?.party,
+        existingCreditNote?.cmp_id,
+        existingCreditNote?.creditNoteNumber,
+        existingCreditNote?._id.toString(),
+        session
+      );
+
+      const cancelOutstanding = await TallyData.findOneAndUpdate(
+        {
+          bill_no: existingCreditNote?.creditNoteNumber,
+          billId: creditNoteId?.toString(),
+        },
+        {
+          $set: {
+            isCancelled: true,
+          },
+        }
+      ).session(session);
 
       existingCreditNote.isCancelled = true;
       const cancelledCreditNote = await existingCreditNote.save({ session });
@@ -258,36 +304,85 @@ export const editCreditNote = async (req, res) => {
       session,
     });
 
+    /// revert stock updates
+    await revertSettlementData(
+      existingCreditNote?.party,
+      orgId,
+      existingCreditNote?.creditNoteNumber,
+      existingCreditNote?._id.toString(),
+      session
+    );
+
+    /// recreate the settlement data
+
+    ///save settlement data
+    await saveSettlementData(
+      party,
+      orgId,
+      "normal credit note",
+      "creditNote",
+      updateData?.creditNoteNumber,
+      creditNoteId,
+      lastAmount,
+      updateData?.createdAt,
+      updateData?.party?.partyName,
+      session
+    );
+
     //// edit outstanding
 
-    const newBillValue = Number(lastAmount);
-    const oldBillValue = Number(existingCreditNote.finalAmount);
-    const diffBillValue = newBillValue - oldBillValue;
+    // ///updating the existing outstanding record by calculating the difference in bill value
 
-    const matchedOutStanding = await TallyData.findOne({
-      party_id: party?.party_master_id,
-      cmp_id: orgId,
-      bill_no: creditNoteNumber,
-    }).session(session);
+    const secondaryUser = await secondaryUserModel
+      .findById(req.sUserId)
+      .session(session);
+    const secondaryMobile = secondaryUser?.mobile;
 
-    if (matchedOutStanding) {
-      const newOutstanding =
-        Number(matchedOutStanding?.bill_pending_amt) + diffBillValue;
+    const outstandingResult = await updateOutstandingBalance({
+      existingVoucher: existingCreditNote,
+      newVoucherData: {
+        paymentSplittingData: {},
+        lastAmount,
+      },
+      orgId,
+      voucherNumber: creditNoteNumber,
+      party,
+      session,
+      createdBy: req.owner,
+      transactionType: "creditNote",
+      secondaryMobile,
+    });
 
-      // console.log("newOutstanding",newOutstanding);
+    // const newBillValue = Number(lastAmount);
+    // const oldBillValue = Number(existingCreditNote.finalAmount);
+    // const diffBillValue = newBillValue - oldBillValue;
 
-      const outStandingUpdateResult = await TallyData.updateOne(
-        {
-          party_id: party?.party_master_id,
-          cmp_id: orgId,
-          bill_no: creditNoteNumber,
-        },
-        {
-          $set: { bill_pending_amt: newOutstanding, bill_amount: newBillValue },
-        },
-        { new: true, session }
-      );
-    }
+    // const matchedOutStanding = await TallyData.findOne({
+    //   party_id: party?.party_master_id,
+    //   cmp_id: orgId,
+    //   bill_no: creditNoteNumber,
+    //   billId: existingCreditNote._id.toString(),
+    // }).session(session);
+
+    // if (matchedOutStanding) {
+    //   const newOutstanding =
+    //     Number(matchedOutStanding?.bill_pending_amt) + diffBillValue;
+
+    //   // console.log("newOutstanding",newOutstanding);
+
+    //   const outStandingUpdateResult = await TallyData.updateOne(
+    //     {
+    //       party_id: party?.party_master_id,
+    //       cmp_id: orgId,
+    //       bill_no: creditNoteNumber,
+    //       billId: existingCreditNote._id.toString(),
+    //     },
+    //     {
+    //       $set: { bill_pending_amt: newOutstanding, bill_amount: newBillValue },
+    //     },
+    //     { new: true, session }
+    //   );
+    // }
 
     await session.commitTransaction();
     session.endSession();

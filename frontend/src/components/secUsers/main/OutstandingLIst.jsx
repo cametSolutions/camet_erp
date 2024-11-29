@@ -134,7 +134,7 @@ function OutstandingLIst({
         </div>
       </div>
       <div className="grid grid-cols-1 gap-1 mt-2 text-center px-2  overflow-x-hidden ">
-        {data.map((el, index) => {
+        {data?.map((el, index) => {
           const billAmount = parseFloat(el.bill_pending_amt) || 0;
           const settledAmount = Math.min(billAmount, remainingAmount);
           const remainingBillAmount = Math.max(0, billAmount - settledAmount);

@@ -1,3 +1,5 @@
+/* eslint-disable no-case-declarations */
+import React, { useState } from "react";
 import {
   format,
   startOfToday,
@@ -18,7 +20,6 @@ import { useDispatch, useSelector } from "react-redux";
 import { addDate } from "../../../slices/filterSlices/date";
 import { useNavigate } from "react-router-dom";
 import TitleDiv from "../common/TitleDiv";
-import { useState } from "react";
 
 const DateRange = () => {
   const dispatch = useDispatch();
@@ -30,7 +31,11 @@ const DateRange = () => {
 
   const submitHandler = (rangeName, start, end) => {
     dispatch(
-      addDate({ rangeName, start: start.toISOString(), end: end.toISOString() })
+      addDate({
+        rangeName,
+        start: start.toISOString(),
+        end: end.toISOString(),
+      })
     );
     navigate(-1);
   };
@@ -40,9 +45,8 @@ const DateRange = () => {
       const startDate = parseISO(customStartDate);
       const endDate = parseISO(customEndDate);
 
-      // Ensure end date is not before start date
       if (endDate < startDate) {
-        alert("End date cannot be before start date");
+        alert("End date cannot be before start date.");
         return;
       }
 
@@ -51,23 +55,24 @@ const DateRange = () => {
         startDate,
         endDate
       );
+    } else {
+      alert("Both start and end dates must be selected.");
     }
   };
 
-  // Format date string to display format
-  const formatDisplayDate = (dateString) => {
-    if (!dateString) return "";
-    return format(parseISO(dateString), "dd-MMM-yyyy");
-  };
+  const formatDisplayDate = (dateString) =>
+    dateString ? format(parseISO(dateString), "dd-MMM-yyyy") : "";
 
-  // Function to get the start and end dates for each range
   const getRangeDates = (rangeType) => {
     let startDate, endDate;
-
     switch (rangeType) {
       case "Today":
-        startDate = endDate = startOfToday();
+        // Use a function that gets the current date at midnight in UTC
+        const today = new Date();
+        startDate = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate(), 0, 0, 0, 0));
+        endDate = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate(), 23, 59, 59, 999));
         break;
+    
       case "Yesterday":
         startDate = endDate = subDays(new Date(), 1);
         break;
@@ -142,7 +147,6 @@ const DateRange = () => {
     <div className="flex-col">
       <TitleDiv title="Date Range" />
       <div className="flex flex-col px-3 py-2 gap-2">
-        {/* Custom Date Range Picker */}
         <div
           className={`${
             title?.includes(" to ") ? "bg-slate-300 " : ""
@@ -217,7 +221,6 @@ const DateRange = () => {
           )}
         </div>
 
-        {/* Predefined Ranges */}
         {ranges.map((rangeName) => {
           const { start, end } = getRangeDates(rangeName);
 
@@ -227,9 +230,7 @@ const DateRange = () => {
               className={`${
                 title === rangeName ? "bg-slate-300 " : ""
               } flex justify-between cursor-pointer shadow-md p-6 hover:shadow-xl rounded-md hover:bg-slate-300 text-gray-500`}
-              onClick={() => {
-                submitHandler(rangeName, start, end);
-              }}
+              onClick={() => submitHandler(rangeName, start, end)}
             >
               <span className="font-bold text-[10px] md:text-xs flex items-center gap-3">
                 <BsFillCalendar2DateFill className="text-xs" /> {rangeName}

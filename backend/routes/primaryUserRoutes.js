@@ -11,7 +11,7 @@ import { registerPrimaryUser,login,addOrganizations,
   fetchHsn,getProducts,deleteProduct,productDetails
   ,PartyList,deleteParty,getSinglePartyDetails,editParty,
   fetchFilters,createInvoice,addBulkProducts,invoiceList,
- addBank,getBankDetails,editBank,getSecUserDetails,
+getBankDetails,getSecUserDetails,
   editSecUSer,saveOrderNumber,getInvoiceDetails,editInvoice,addAditionalCharge,
   deleteAdditionalCharge,EditAditionalCharge,addconfigurations,
   createSale,saveSalesNumber,fetchGodownsAndPriceLevels,fetchAdditionalDetails,
@@ -23,7 +23,8 @@ import { registerPrimaryUser,login,addOrganizations,
   import { cancelPurchase } from '../controllers/purchaseController.js';
 
 import {addProduct,editProduct,getCreditNoteDetails,transactions,fetchAdditionalCharges, getDebitNoteDetails,
-  getReceiptDetails,getPaymentDetails,getProductSubDetails,deleteProductSubDetails,editProductSubDetails,addProductSubDetails,addHsn,getSingleHsn,editHsn,deleteHsn,getSalesDetails,getPurchaseDetails,} from "../controllers/commonController.js";
+  getReceiptDetails,getPaymentDetails,getProductSubDetails,deleteProductSubDetails,editProductSubDetails,addProductSubDetails,addHsn,getSingleHsn,editHsn,deleteHsn,getSalesDetails,getPurchaseDetails,
+  updateMissingBillIds,addBank,editBank} from "../controllers/commonController.js";
 import { singleUpload } from '../multer/multer.js';
 import { primaryIsBlocked } from '../middlewares/isBlocked.js';
 import { companyAuthentication } from '../middlewares/authCompany.js';
@@ -74,7 +75,7 @@ router.get('/getSingleHsn/:hsnId',authPrimary,primaryIsBlocked,getSingleHsn)
 router.post('/editHsn/:hsnId',authPrimary,primaryIsBlocked,editHsn)
 router.post('/addBank',authPrimary,primaryIsBlocked,addBank)
 router.get('/getBankDetails/:id',authPrimary,primaryIsBlocked,getBankDetails)
-router.post('/editBank/:id',authPrimary,primaryIsBlocked,editBank)
+router.post('/editBank/:bank_id',authPrimary,primaryIsBlocked,editBank)
 router.get('/getSecUserDetails/:id',authPrimary,primaryIsBlocked,getSecUserDetails)
 router.post('/editSecUSer/:id',authPrimary,primaryIsBlocked,editSecUSer)
 router.post('/saveOrderNumber/:cmp_id',authPrimary,primaryIsBlocked,companyAuthentication,saveOrderNumber)
@@ -115,6 +116,10 @@ router.get('/getPaymentDetails/:id',authPrimary,primaryIsBlocked,getPaymentDetai
 ////receipt
 router.get('/getReceiptDetails/:id',authPrimary,primaryIsBlocked,getReceiptDetails)
 
+
+///additional
+
+router.put('/updateMissingBillIds',authPrimary,primaryIsBlocked,updateMissingBillIds)
 
 
 

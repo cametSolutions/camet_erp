@@ -7,7 +7,7 @@ import {
   revertPurchaseStockUpdates,
   updateTallyData,
 } from "../helpers/purchaseHelper.js";
-import { processSaleItems as processPurchaseItems } from "../helpers/salesHelper.js";
+import { processSaleItems as processPurchaseItems, revertSettlementData, saveSettlementData, updateOutstandingBalance } from "../helpers/salesHelper.js";
 import { checkForNumberExistence } from "../helpers/secondaryHelper.js";
 import purchaseModel from "../models/purchaseModel.js";
 import secondaryUserModel from "../models/secondaryUserModel.js";
@@ -87,15 +87,37 @@ export const createPurchase = async (req, res) => {
       session
     );
 
-    await updateTallyData(
-      orgId,
-      purchaseNumber,
-      req.owner,
-      party,
-      lastAmount,
-      secondaryMobile,
-      session // Pass session if needed
-    );
+       ///save settlement data
+       await saveSettlementData(
+        party,
+        orgId,
+        "normal purchase",
+        "purchase",
+        purchaseNumber,
+        result._id,
+        lastAmount,
+        result?.createdAt,
+        result?.party?.partyName,
+        session
+      );
+  
+
+
+    if (
+      party.accountGroup === "Sundry Debtors" ||
+      party.accountGroup === "Sundry Creditors"
+    ) {
+      await updateTallyData(
+        orgId,
+        purchaseNumber,
+        result._id,
+        req.owner,
+        party,
+        lastAmount,
+        secondaryMobile,
+        session // Pass session if needed
+      );
+    }
 
     await session.commitTransaction();
     session.endSession();
@@ -184,36 +206,57 @@ export const editPurchase = async (req, res) => {
       session,
     });
 
+
+
+    /// edit settlement data
+
+    /// revert it
+    await revertSettlementData(
+      existingPurchase?.party,
+      orgId,
+      existingPurchase?.purchaseNumber,
+      existingPurchase?._id.toString(),
+      session
+    );
+
+    /// recreate the settlement data
+
+    ///save settlement data
+    await saveSettlementData(
+      party,
+      orgId,
+      "normal purchase",
+      "purchase",
+      updateData?.purchaseNumber,
+      purchaseId,
+      lastAmount,
+      updateData?.createdAt,
+      updateData?.party?.partyName,
+      session
+    );
+
+
     //// edit outstanding
+    const secondaryUser = await secondaryUserModel
+      .findById(req.sUserId)
+      .session(session);
+    const secondaryMobile = secondaryUser?.mobile;
 
-    const newBillValue = Number(lastAmount);
-    const oldBillValue = Number(existingPurchase.finalAmount);
-    const diffBillValue = newBillValue - oldBillValue;
+    const outstandingResult = await updateOutstandingBalance({
+      existingVoucher: existingPurchase,
+      newVoucherData: {
+        paymentSplittingData: {},
+        lastAmount,
+      },
+      orgId,
+      voucherNumber: purchaseNumber,
+      party,
+      session,
+      createdBy: req.owner,
+      transactionType: "purchase",
+      secondaryMobile,
+    });
 
-    const matchedOutStanding = await TallyData.findOne({
-      party_id: party?.party_master_id,
-      cmp_id: orgId,
-      bill_no: purchaseNumber,
-    }).session(session);
-
-    if (matchedOutStanding) {
-      const newOutstanding =
-        Number(matchedOutStanding?.bill_pending_amt) + diffBillValue;
-
-      // console.log("newOutstanding",newOutstanding);
-
-      const outStandingUpdateResult = await TallyData.updateOne(
-        {
-          party_id: party?.party_master_id,
-          cmp_id: orgId,
-          bill_no: purchaseNumber,
-        },
-        {
-          $set: { bill_pending_amt: newOutstanding, bill_amount: newBillValue },
-        },
-        { new: true, session }
-      );
-    }
     await session.commitTransaction();
     session.endSession();
     res.status(200).json({
@@ -263,6 +306,29 @@ export const cancelPurchase = async (req, res) => {
 
       // Revert existing stock updates
       await revertPurchaseStockUpdates(existingPurchase.items, session);
+
+         //// revert settlement data
+    /// revert it
+    await revertSettlementData(
+      existingPurchase?.party,
+      existingPurchase?.cmp_id,
+      existingPurchase?.purchaseNumber,
+      existingPurchase?._id.toString(),
+      session
+    );
+
+
+      const cancelOutstanding = await TallyData.findOneAndUpdate(
+        {
+          bill_no: existingPurchase?.purchaseNumber,
+          billId: purchaseId?.toString(),
+        },
+        {
+          $set: {
+            isCancelled: true,
+          },
+        }
+      ).session(session);
 
       existingPurchase.isCancelled = true;
       const cancelledPurchase = await existingPurchase.save({ session });

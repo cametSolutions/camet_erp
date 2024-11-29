@@ -14,13 +14,14 @@ import {login,getSecUserData,fetchOutstandingTotal,
     godownwiseProducts,godownwiseProductsSelf,
     findGodownsNames,getAllSubDetails,
     fetchGodowns,
+    getBankAndCashSources
    } from "../controllers/secondaryUserController.js"
  
 import { createPurchase,editPurchase,cancelPurchase } from '../controllers/purchaseController.js';
 import { createCreditNote,cancelCreditNote ,editCreditNote} from '../controllers/creditNoteController.js';
 import {createSale,editSale,cancelSale,} from '../controllers/saleController.js';
 import { cancelDebitNote, createDebitNote, editDebitNote } from '../controllers/debitNoteController.js';
-import { getStockTransferDetails,addProduct ,editProduct,getCreditNoteDetails,transactions,fetchAdditionalCharges, getDebitNoteDetails,getReceiptDetails,getPaymentDetails,getProductSubDetails,deleteProductSubDetails,editProductSubDetails,addProductSubDetails,addHsn,getSingleHsn,editHsn,deleteHsn,getSalesDetails,getPurchaseDetails,getOpeningBalances} from '../controllers/commonController.js';
+import { getStockTransferDetails,addProduct ,editProduct,getCreditNoteDetails,transactions,fetchAdditionalCharges, getDebitNoteDetails,getReceiptDetails,getPaymentDetails,getProductSubDetails,deleteProductSubDetails,editProductSubDetails,addProductSubDetails,addHsn,getSingleHsn,editHsn,deleteHsn,getSalesDetails,getPurchaseDetails,getOpeningBalances, findSourceBalance, findSourceDetails, findSourceTransactions, addBank, editBank, addCash, getBankDetails, getCashDetails, editCash} from '../controllers/commonController.js';
 import { authSecondary } from '../middlewares/authSecUsers.js';
 import { secondaryIsBlocked } from '../middlewares/isBlocked.js';
 import { companyAuthentication } from '../middlewares/authCompany.js';
@@ -28,6 +29,7 @@ import { fetchOutstandingDetails,createReceipt,cancelReceipt,editReceipt } from 
 import { createPayment,cancelPayment, editPayment } from '../controllers/paymentController.js';
 import { createInvoice,editInvoice,cancelSalesOrder } from '../controllers/saleOrderController.js';
 import { createStockTransfer,editStockTransfer, cancelStockTransfer } from '../controllers/stockTransferController.js';
+import { addBankPaymentDetails } from '../../frontend/slices/payment.js';
 
 
 router.post('/login',login)
@@ -136,6 +138,22 @@ router.delete('/deleteHsn/:id',authSecondary,secondaryIsBlocked,deleteHsn)
 
 // reports
 router.get('/getOpeningBalances/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,getOpeningBalances)
+router.get('/findSourceBalance/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,findSourceBalance)
+router.get('/findSourceDetails/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,findSourceDetails)
+router.get('/findSourceTransactions/:cmp_id/:id',authSecondary,secondaryIsBlocked,companyAuthentication,findSourceTransactions)
+router.post('/addBank/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,addBank)
+router.put('/editBank/:cmp_id/:bank_id',authSecondary,secondaryIsBlocked,companyAuthentication,editBank)
+router.get('/getBankDetails/:cmp_id/:bank_id',authSecondary,secondaryIsBlocked,companyAuthentication,getBankDetails)
+router.post('/addCash/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,addCash)
+router.get('/getCashDetails/:cmp_id/:cash_id',authSecondary,secondaryIsBlocked,companyAuthentication,getCashDetails)
+router.put('/editCash/:cmp_id/:cash_id',authSecondary,secondaryIsBlocked,companyAuthentication,editCash)
+
+
+// router.get('/findSourceTransactions/:cmp_id/:id',authSecondary,secondaryIsBlocked,companyAuthentication,findSourceTransactions)
+
+///payment splitting
+router.get('/getBankAndCashSources/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,getBankAndCashSources)
+
 
 
 

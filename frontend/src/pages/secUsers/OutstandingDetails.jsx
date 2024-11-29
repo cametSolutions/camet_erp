@@ -1,4 +1,3 @@
-import { FaPhoneVolume } from "react-icons/fa6";
 import { IoPersonSharp } from "react-icons/io5";
 import { TbMoneybag } from "react-icons/tb";
 import { FaChevronDown } from "react-icons/fa";
@@ -72,7 +71,6 @@ function OutStandingDetails({ onTabChange }) {
   let remainingAmount = enteredAmount;
 
   const handleNextClick = () => {
-    console.log(enteredAmount);
 
     if (enteredAmount == null || enteredAmount <= 0) {
       toast.error("Enter an amount");
@@ -113,7 +111,7 @@ function OutStandingDetails({ onTabChange }) {
 
     console.log(settlementData);
     dispatch(addSettlementData(settlementData));
-    navigate("/sUsers/payment");
+    // navigate("/sUsers/payment");
   };
 
   return (
@@ -170,7 +168,7 @@ function OutStandingDetails({ onTabChange }) {
               </div>
             </div>
 
-            <div className="flex  gap-0 mt-0 bg-white shadow-lg px-4 py-5  justify-between  items-center rounded-md">
+            {/* <div className="flex  gap-0 mt-0 bg-white shadow-lg px-4 py-5  justify-between  items-center rounded-md">
               <div className="flex items-center w-3/4 ">
                 <label
                   className=" uppercase text-blueGray-600 text-sm font-bold px-3  "
@@ -186,7 +184,7 @@ function OutStandingDetails({ onTabChange }) {
                   className="border-  px-3 py-4 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow-lg focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                 />
               </div>
-              {/* <Link to={"/sUsers/payment"}> */}
+              <Link to={"/sUsers/payment"}>
               <div>
                 <button
                   onClick={handleNextClick}
@@ -195,8 +193,8 @@ function OutStandingDetails({ onTabChange }) {
                   Next
                 </button>
               </div>
-              {/* </Link> */}
-            </div>
+              </Link>
+            </div> */}
             <div
               className="bg-white px-4 py-4 pb-3 mt-3 rounded-md flex gap-2"
               style={{ boxShadow: "0px -4px 115px rgba(244,246,254 0.1)" }}
@@ -220,7 +218,7 @@ function OutStandingDetails({ onTabChange }) {
             return (
               <div
                 key={index}
-                className=" h-[100px] bg-[#f8ffff] rounded-md shadow-xl border border-gray-100  flex justify-between px-4  transition-all duration-150 transform hover:scale-105 ease-in-out "
+                className=" h-[100px] bg-[#f8ffff] rounded-md shadow-xl border border-gray-100  flex justify-between px-4  transition-all duration-150 transform ease-in-out "
               >
                 <div className=" h-full px-2 py-8 lg:p-6 w-[200px] md:w-[180px] lg:w-[300px] flex justify-center items-start relative flex-col ">
                   <div className="flex items-center gap-2">

@@ -5,6 +5,7 @@ const partySchema = new mongoose.Schema({
   Secondary_user_id: { type: String },
   cmp_id: { type: String, required: true },
   accountGroup: { type: String, required: true },
+  group_name: { type: String },
   partyName: { type: String, required: true },
   mobileNumber: { type: String},
   country: { type: String },

@@ -59,6 +59,8 @@ import {
 import stockTransferModel from "../models/stockTransferModel.js";
 import creditNoteModel from "../models/creditNoteModel.js";
 import payment from "../../frontend/slices/payment.js";
+import bankModel from "../models/bankModel.js";
+import cashModel from "../models/cashModel.js";
 
 // @desc Login secondary user
 // route POST/api/sUsers/login
@@ -586,7 +588,7 @@ export const PartyList = async (req, res) => {
     // Fetch parties and secondary user concurrently
     const [partyList, secUser] = await Promise.all([
       PartyModel.find({ cmp_id, Primary_user_id }).select(
-        "_id partyName party_master_id billingAddress shippingAddress mobileNumber gstNo emailID pin country state"
+        "_id partyName party_master_id billingAddress shippingAddress mobileNumber gstNo emailID pin country state accountGroup"
       ),
       SecondaryUser.findById(secUserId),
     ]);
@@ -619,6 +621,7 @@ export const PartyList = async (req, res) => {
           $match: {
             cmp_id,
             Primary_user_id: String(Primary_user_id),
+            isCancelled: false,
             ...sourceMatch,
           },
         },
@@ -626,7 +629,7 @@ export const PartyList = async (req, res) => {
           $group: {
             _id: "$party_id",
             totalOutstanding: { $sum: "$bill_pending_amt" },
-            latestBillDate: { $max: "$bill_date" },
+            // latestBillDate: { $max: "$bill_date" },
           },
         },
         {
@@ -635,7 +638,7 @@ export const PartyList = async (req, res) => {
             party_id: "$_id",
             partyName: 1,
             totalOutstanding: 1,
-            latestBillDate: 1,
+            // latestBillDate: 1,
           },
         },
       ]);
@@ -687,6 +690,7 @@ export const addParty = async (req, res) => {
       country,
       state,
       pin,
+      party_master_id, // Check if provided
     
     } = req.body;
 
@@ -714,10 +718,17 @@ export const addParty = async (req, res) => {
       country,
       state,
       pin,
+      party_master_id: party_master_id || undefined, // Allow Mongoose to assign _id if not provided
     
     });
 
     const result = await party.save();
+
+      // If party_master_id is not provided, use the MongoDB generated _id
+      if (!party_master_id) {
+        result.party_master_id = result._id.toString();
+        await result.save(); // Save the updated party with party_master_id set to _id
+      }
 
     if (result) {
       return res.status(200).json({
@@ -2390,3 +2401,50 @@ export const cancelStockTransfer = async (req, res) => {
     });
   }
 };
+
+
+/**
+ * @desc   To get bank and cash details
+ * @route  Get /api/sUsers/getBankAndCashSources/:cmp_id
+ * @access Public
+ */
+
+
+
+export const getBankAndCashSources = async (req, res) => {
+  const cmp_id = req.params.cmp_id;
+
+
+  try {
+    // Run both queries in parallel with filters for non-null and non-"null" fields
+    const [banks, cashs] = await Promise.all([
+      bankModel.find({
+        cmp_id,
+        bank_ledname: { $nin: [null, "null"] },
+        bank_id: { $exists: true },
+        bank_name: { $nin: [null, "null"] }
+      }).select({ bank_ledname: 1, bank_id: 1, bank_name: 1 }),
+
+      cashModel.find({
+        cmp_id,
+        cash_ledname: { $nin: [null, "null"] },
+        cash_id: { $exists: true }
+      }).select({ cash_ledname: 1, cash_id: 1 })
+    ]);
+
+    // Return fetched data with a consistent structure
+    res.status(200).json({
+      message: "Bank and Cash fetched",
+      data: { banks, cashs },
+    });
+
+  } catch (error) {
+
+ console.log("Error in getting bank and cash sources:", error);
+    res.status(500).json({
+      error: "Internal Server Error",
+      details: error.message,
+    });
+  }
+};
+

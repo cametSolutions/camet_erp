@@ -20,7 +20,7 @@ function formatAmount(amount) {
 function OutstandingListOfReceipt() {
   ///company Id
   const cmp_id = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg._id
+    (state) => state?.secSelectedOrganization.secSelectedOrg?._id
   );
   ///from receipt redux
   const {
@@ -106,6 +106,7 @@ function OutstandingListOfReceipt() {
 
         const resultObject = {
           billNo: el.bill_no,
+          billId: el.billId,
           settledAmount,
           remainingAmount: remainingBillAmount,
         };
@@ -122,6 +123,9 @@ function OutstandingListOfReceipt() {
       // cmp_id: data[0]?.cmp_id,
       billData: results,
     };
+
+    console.log(settlementData);
+    
 
     dispatch(addSettlementData(settlementData));
     navigate("/sUsers/receipt");

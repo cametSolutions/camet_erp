@@ -21,30 +21,30 @@ const TransactionTable = ({
 
   // Helper function to determine transaction type and color
   const getTransactionDisplay = (transaction) => {
-    const { type, accountGroup, paymentMethod, enteredAmount } = transaction;
+    const { type, accountGroup, paymentMethod, enteredAmount,cashTotal } = transaction;
 
     // Check if it's a debit (green) transaction
     const isDebitTransaction =
       (["Tax Invoice", "Debit Note"].includes(type) &&
         accountGroup === "Cash-in-Hand") ||
-      (type === "Receipt" && paymentMethod === "Cash");
+      (type === "Receipt" && paymentMethod === "Cash") || (["Tax Invoice", "Debit Note"].includes(type) && cashTotal > 0);
 
     // Check if it's a credit (red) transaction
     const isCreditTransaction =
       (["Purchase", "Credit Note"].includes(type) &&
         accountGroup === "Cash-in-Hand") ||
-      (type === "Payment" && paymentMethod === "Cash");
+      (type === "Payment" && paymentMethod === "Cash") ;
 
     // Return appropriate display object
     if (isDebitTransaction) {
       return {
-        amount: enteredAmount,
+        amount: cashTotal >0 ? cashTotal : enteredAmount,
         color: "text-green-500",
         type: "debit",
       };
     } else if (isCreditTransaction) {
       return {
-        amount: enteredAmount,
+        amount: cashTotal >0 ? cashTotal : enteredAmount,
         color: "text-red-500",
         type: "credit",
       };

@@ -30,9 +30,9 @@ function PaymentModeTile({ tab }) {
   const selectedRedux = tab === "receipt" ? "receipt" : "payment";
   ///////////////  PaymentModeTile   ////////////////
   const paymentMethods = [
-    { name: "Cash", bank: false },
-    { name: "Cheque", bank: true },
-    { name: "Online", bank: true },
+    { name: "Cash", source: true },
+    { name: "Cheque", source: true },
+    { name: "Online", source: true },
   ];
   const {
     paymentMethod: selectedPaymentMethodFromRedux,
@@ -40,7 +40,6 @@ function PaymentModeTile({ tab }) {
     note: noteFromRedux,
     isNoteOpen: isNoteOpenFromRedux,
   } = useSelector((state) => state[selectedRedux]);
-  
 
   const chequeDateFromRedux = paymentDetails?.chequeDate || "";
   const chequeNumberFromRedux = paymentDetails?.chequeNumber || "";
@@ -58,7 +57,7 @@ function PaymentModeTile({ tab }) {
   const [isNoteOpen, setIsNoteOpen] = useState(isNoteOpenFromRedux);
   const [note, setNote] = useState(noteFromRedux);
 
-/// to ensure data is visible in the ui
+  /// to ensure data is visible in the ui
   useEffect(() => {
     if (selectedPaymentMethodFromRedux) {
       const matchedMethod = paymentMethods.find(
@@ -77,13 +76,16 @@ function PaymentModeTile({ tab }) {
 
     setIsNoteOpen(isNoteOpenFromRedux);
     setNote(noteFromRedux);
+  }, [
+    selectedPaymentMethodFromRedux,
+    paymentDetails,
+    noteFromRedux,
+    isNoteOpenFromRedux,
+  ]);
 
-  }, [selectedPaymentMethodFromRedux, paymentDetails, noteFromRedux, isNoteOpenFromRedux]);
-
-/// debounced functions
+  /// debounced functions
   const debouncedDispatchChequeNumber = useCallback(
     debounce((number) => {
-      console.log("kaSDALK");
       if (tab === "payment") {
         dispatch(addChequeNumberForPayment(number));
       } else {
@@ -146,7 +148,11 @@ function PaymentModeTile({ tab }) {
             <button
               onClick={() => {
                 setSelectedPaymentMethod(method);
-                dispatch(tab === "receipt" ? addPaymentMethod(method.name) : addPaymentMethodForPayment(method.name));
+                dispatch(
+                  tab === "receipt"
+                    ? addPaymentMethod(method.name)
+                    : addPaymentMethodForPayment(method.name)
+                );
               }}
               key={index}
               className={` ${
@@ -161,78 +167,136 @@ function PaymentModeTile({ tab }) {
       </div>
       <hr className="" />
 
-      {selectedPaymentMethod?.bank && (
+      {selectedPaymentMethod?.source && (
         <>
-          {paymentDetails._id ? (
+          {selectedPaymentMethod?.name === "Cash" ? (
+            // Cash payment section
             <>
-              <div className="flex justify-between items-center p-4  ">
-                <div className="flex items-center gap-4 cursor-pointer">
-                  <PiBankBold size={17} />
-                  <p className="text-gray-700 font-semibold text-xs  ">
-                    {paymentDetails?.bank_name}
-                  </p>
+              {paymentDetails?.cash_ledname ? (
+                <div className="flex justify-between items-center p-4">
+                  <div className="flex items-center gap-4 cursor-pointer">
+                    <PiBankBold size={17} />
+                    <p className="text-gray-700 font-semibold text-xs">
+                      {paymentDetails.cash_ledname}
+                    </p>
+                  </div>
+                  <Link to={`/sUsers/${tab}/sourceList/Cash`}>
+                    <p className="text-violet-500 p-1 px-3 text-xs border border-1 border-gray-300 rounded-2xl cursor-pointer">
+                      Change
+                    </p>
+                  </Link>
                 </div>
-
-                <Link to={`/sUsers/${tab}/bankList`}>
-                  <p className="text-violet-500 p-1 px-3  text-xs border border-1 border-gray-300 rounded-2xl cursor-pointer">
-                    Change
-                  </p>
+              ) : (
+                <Link to={`/sUsers/${tab}/sourceList/Cash`}>
+                  <section className="flex items-center justify-between py-3 px-3 cursor-pointer">
+                    <div className="text-gray-700 font-semibold text-xs">
+                      Payment Received In
+                    </div>
+                    <MdKeyboardArrowRight
+                      className="text-violet-500 mr-2 font-bold"
+                      size={20}
+                    />
+                  </section>
                 </Link>
-              </div>
-
-              <hr />
+              )}
+            </>
+          ) : selectedPaymentMethod?.name === "Online" ? (
+            // Bank payment section
+            <>
+              {paymentDetails?.bank_ledname ? (
+                <div className="flex justify-between items-center p-4">
+                  <div className="flex items-center gap-4 cursor-pointer">
+                    <PiBankBold size={17} />
+                    <p className="text-gray-700 font-semibold text-xs">
+                      {paymentDetails.bank_ledname}
+                    </p>
+                  </div>
+                  <Link to={`/sUsers/${tab}/sourceList/Bank`}>
+                    <p className="text-violet-500 p-1 px-3 text-xs border border-1 border-gray-300 rounded-2xl cursor-pointer">
+                      Change
+                    </p>
+                  </Link>
+                </div>
+              ) : (
+                <Link to={`/sUsers/${tab}/sourceList/Bank`}>
+                  <section className="flex items-center justify-between py-3 px-3 cursor-pointer">
+                    <div className="text-gray-700 font-semibold text-xs">
+                      Payment Received In
+                    </div>
+                    <MdKeyboardArrowRight
+                      className="text-violet-500 mr-2 font-bold"
+                      size={20}
+                    />
+                  </section>
+                </Link>
+              )}
             </>
           ) : (
-            <>
-              <Link to={`/sUsers/${tab}/bankList`}>
-                <section className="flex items-center justify-between   py-3 px-3 cursor-pointer  ">
-                  <div className="text-gray-700 font-semibold text-xs  ">
-                    Payment Received In
+            selectedPaymentMethod?.name === "Cheque" && (
+              // Cheque payment section
+              <>
+                {paymentDetails?.bank_ledname ? (
+                  <div className="flex justify-between items-center p-4">
+                    <div className="flex items-center gap-4 cursor-pointer">
+                      <PiBankBold size={17} />
+                      <p className="text-gray-700 font-semibold text-xs">
+                        {paymentDetails.bank_ledname}
+                      </p>
+                    </div>
+                    <Link to={`/sUsers/${tab}/sourceList/Cheque`}>
+                      <p className="text-violet-500 p-1 px-3 text-xs border border-1 border-gray-300 rounded-2xl cursor-pointer">
+                        Change
+                      </p>
+                    </Link>
                   </div>
-                  <MdKeyboardArrowRight
-                    className="text-violet-500 mr-2 font-bold"
-                    size={20}
-                  />
+                ) : (
+                  <Link to={`/sUsers/${tab}/sourceList/Cheque`}>
+                    <section className="flex items-center justify-between py-3 px-3 cursor-pointer">
+                      <div className="text-gray-700 font-semibold text-xs">
+                        Payment Received In
+                      </div>
+                      <MdKeyboardArrowRight
+                        className="text-violet-500 mr-2 font-bold"
+                        size={20}
+                      />
+                    </section>
+                  </Link>
+                )}
+
+                {/* Cheque details section */}
+                <section className="flex gap-4 md:flex-row px-4 pb-4 w-full mt-6 shadow-lg">
+                  <div className="w-1/2">
+                    <input
+                      onChange={handleChequeNumberChange}
+                      id="chequeNumber"
+                      type="number"
+                      value={chequeNumber}
+                      placeholder="Cheque Number"
+                      className="w-full input-number input-field border-b-[1px] border-x-0 border-t-0 outline-none text-gray-600 text-xs"
+                      style={{
+                        boxShadow: "none",
+                        borderColor: "#b6b6b6",
+                      }}
+                    />
+                  </div>
+                  <div className="w-1/2">
+                    <DatePicker
+                      id="chequeDate"
+                      value={chequeDate}
+                      selected={chequeDate}
+                      placeholderText="Cheque Date"
+                      onChange={handleChequeDateChange}
+                      className="w-full py-2 border-b-[1px] border-x-0 border-t-0 text-gray-600 focus:outline-none !important focus:ring-0 !important text-xs"
+                      wrapperClassName="w-full"
+                      dateFormat="dd/MM/yyyy"
+                      tabIndex="-1"
+                    />
+                  </div>
                 </section>
-              </Link>
-              <hr />
-            </>
+              </>
+            )
           )}
-
-          {selectedPaymentMethod?.name === "Cheque" && (
-            <section className="flex gap-4 md:flex-row px-4 pb-4 w-full mt-6 shadow-lg">
-              {/* Cheque Number Input with Label */}
-              <div className="w-1/2">
-                <input
-                  onChange={handleChequeNumberChange}
-                  id="chequeNumber"
-                  type="number"
-                  value={chequeNumber}
-                  placeholder="Cheque Number"
-                  className="w-full input-number input-field  border-b-[1px] border-x-0 border-t-0 outline-none text-gray-600 text-xs"
-                  style={{
-                    boxShadow: "none",
-                    borderColor: "#b6b6b6",
-                  }}
-                />
-              </div>
-
-              {/* Cheque Date Input with Label */}
-              <div className="w-1/2">
-                <DatePicker
-                  id="chequeDate"
-                  value={chequeDate}
-                  selected={chequeDate}
-                  placeholderText="Cheque Date"
-                  onChange={handleChequeDateChange}
-                  className="w-full py-2 border-b-[1px] border-x-0 border-t-0 text-gray-600 focus:outline-none !important focus:ring-0 !important text-xs"
-                  wrapperClassName="w-full" // Ensure the wrapper has full width
-                  dateFormat="dd/MM/yyyy" // Customize date format
-                  tabIndex="-1"
-                />
-              </div>
-            </section>
-          )}
+          <hr />
         </>
       )}
 
@@ -240,7 +304,9 @@ function PaymentModeTile({ tab }) {
         <p
           onClick={() => {
             setIsNoteOpen(!isNoteOpen);
-            dispatch(tab === "receipt" ? addNote(note) : addNoteForPayment(note));
+            dispatch(
+              tab === "receipt" ? addNote(note) : addNoteForPayment(note)
+            );
           }}
           className="flex items-center cursor-pointer  gap-3  text-violet-500 text-xs md:text-md  font-bold "
         >

@@ -7,6 +7,8 @@ import mongoose from "mongoose";
 import secondaryUserModel from "../models/secondaryUserModel.js";
 import {
   createOutstandingWithAdvanceAmount,
+  saveSettlementData,
+  revertSettlementData,
 } from "../helpers/receiptHelper.js";
 
 import {
@@ -14,8 +16,6 @@ import {
   updatePaymentNumber,
   updateTallyData,
   revertTallyUpdates,
-
-
 } from "../helpers/paymentHelper.js";
 import paymentModel from "../models/paymentModel.js";
 
@@ -82,8 +82,6 @@ export const createPayment = async (req, res) => {
       session
     );
 
- 
-
     // Create the new payment
     const newPayment = new paymentModel({
       createdAt: new Date(date),
@@ -105,16 +103,37 @@ export const createPayment = async (req, res) => {
     });
 
     // Save the payment in the transaction session
-    const savedPayment = await newPayment.save({ session , new: true });
+    const savedPayment = await newPayment.save({ session, new: true });
 
-       // Use the helper function to update TallyData
-       await updateTallyData(billData, cmp_id, session,paymentNumber,savedPayment._id.toString());
+    /// save settlement data in cash or bank collection
+    await saveSettlementData(
+      paymentMethod,
+      paymentDetails,
+      paymentNumber,
+      savedPayment._id.toString(),
+      enteredAmount,
+      cmp_id,
+      "payment",
+      savedPayment?.createdAt,
+      savedPayment?.party?.partyName,
+      session
+    );
+
+    // Use the helper function to update TallyData
+    await updateTallyData(
+      billData,
+      cmp_id,
+      session,
+      paymentNumber,
+      savedPayment._id.toString()
+    );
 
     if (advanceAmount > 0 && savedPayment) {
       const outstandingWithAdvanceAmount =
         await createOutstandingWithAdvanceAmount(
           cmp_id,
           savedPayment.paymentNumber,
+          savedPayment._id.toString(),
           Primary_user_id,
           party,
           secondaryUser.mobileNumber,
@@ -180,10 +199,22 @@ export const cancelPayment = async (req, res) => {
     // Revert tally updates
     await revertTallyUpdates(payment.billData, cmp_id, session);
 
+
+     /// save settlement data in cash or bank collection
+     await revertSettlementData(
+      payment?.paymentMethod,
+      payment?.paymentDetails,
+      payment?.paymentNumber,
+      payment?._id.toString(),
+      cmp_id,
+      session
+    );
+
     // Delete advance payment, if any
     if (payment.advanceAmount > 0) {
       await deleteAdvancePayment(
         payment.paymentNumber,
+        payment._id.toString(),
         cmp_id,
         Primary_user_id,
         session
@@ -268,6 +299,18 @@ export const editPayment = async (req, res) => {
     // Revert tally updates
     await revertTallyUpdates(payment.billData, cmp_id, session);
 
+
+     /// save settlement data in cash or bank collection
+     await revertSettlementData(
+      payment?.paymentMethod,
+      payment?.paymentDetails,
+      payment?.paymentNumber,
+      payment?._id.toString(),
+      cmp_id,
+      session
+    );
+
+
     // Delete advance payment, if any
     if (payment.advanceAmount > 0) {
       await deleteAdvancePayment(
@@ -279,7 +322,13 @@ export const editPayment = async (req, res) => {
     }
 
     // Use the helper function to update TallyData
-    await updateTallyData(billData, cmp_id, session, paymentNumber,payment._id.toString());
+    await updateTallyData(
+      billData,
+      cmp_id,
+      session,
+      paymentNumber,
+      payment._id.toString()
+    );
 
     ///update the existing payment
     payment.date = date;
@@ -298,11 +347,26 @@ export const editPayment = async (req, res) => {
 
     const savedPayment = await payment.save({ session, new: true });
 
+    /// save settlement data in cash or bank collection
+    await saveSettlementData(
+      paymentMethod,
+      paymentDetails,
+      paymentNumber,
+      savedPayment._id.toString(),
+      enteredAmount,
+      cmp_id,
+      "payment",
+      savedPayment?.createdAt,
+      savedPayment?.party?.partyName,
+      session
+    );
+
     if (advanceAmount > 0) {
       const outstandingWithAdvanceAmount =
         await createOutstandingWithAdvanceAmount(
           cmp_id,
           savedPayment.paymentNumber,
+          savedPayment._id.toString(),
           Primary_user_id,
           party,
           secondaryUser.mobileNumber,

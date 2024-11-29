@@ -58,7 +58,7 @@ export const updatePaymentNumber = async (orgId, secondaryUser, session) => {
  */
 
 
-export const deleteAdvancePayment = async (paymentNumber, cmp_id, Primary_user_id, session) => {
+export const deleteAdvancePayment = async (paymentNumber,billId, cmp_id, Primary_user_id, session) => {
 
   // console.log(paymentNumber, cmp_id, Primary_user_id, session);
   
@@ -67,6 +67,7 @@ export const deleteAdvancePayment = async (paymentNumber, cmp_id, Primary_user_i
     const deletedAdvancePayment = await TallyData.findOneAndDelete({
       cmp_id,
       bill_no: paymentNumber,
+      billId:billId.toString(),
       Primary_user_id,
       source: "advancePayment"
     }).session(session);
@@ -98,13 +99,13 @@ export const deleteAdvancePayment = async (paymentNumber, cmp_id, Primary_user_i
 export const updateTallyData = async (billData, cmp_id, session, paymentNumber,_id) => {
   // Create a lookup map for billNo to remainingAmount and settledAmount from billData
   const billAmountMap = new Map(
-    billData.map((bill) => [bill.billNo, { remainingAmount: bill.remainingAmount, settledAmount: bill.settledAmount }])
+    billData.map((bill) => [bill.billId, { remainingAmount: bill.remainingAmount, settledAmount: bill.settledAmount }])
   );
 
   // Fetch the outstanding bills from TallyData for this company
   const outstandingData = await TallyData.find({
     cmp_id,
-    bill_no: { $in: Array.from(billAmountMap.keys()) },
+    billId: { $in: Array.from(billAmountMap.keys()) },
   }).session(session);
 
   if (outstandingData.length === 0) {
@@ -113,7 +114,7 @@ export const updateTallyData = async (billData, cmp_id, session, paymentNumber,_
 
   // Prepare bulk update operations for TallyData
   const bulkUpdateOperations = outstandingData.map((doc) => {
-    const { remainingAmount, settledAmount } = billAmountMap.get(doc.bill_no); // Get the remaining and settled amount
+    const { remainingAmount, settledAmount } = billAmountMap.get(doc.billId); // Get the remaining and settled amount
 
     return {
       updateOne: {
@@ -157,7 +158,7 @@ export const revertTallyUpdates = async (billData, cmp_id, session,paymentId) =>
     // Create a lookup map for billNo to settled amount from billData
     const billSettledAmountMap = new Map(
       billData.map((bill) => [
-        bill.billNo, 
+        bill.billId,
         bill.settledAmount  // The amount that was settled
       ])
     );
@@ -165,7 +166,7 @@ export const revertTallyUpdates = async (billData, cmp_id, session,paymentId) =>
     // Fetch the bills from TallyData that need to be reverted
     const tallyDataToRevert = await TallyData.find({
       cmp_id,
-      bill_no: { $in: Array.from(billSettledAmountMap.keys()) },
+      billId: { $in: Array.from(billSettledAmountMap.keys()) },
     }).session(session);
 
     if (tallyDataToRevert.length === 0) {
@@ -176,7 +177,7 @@ export const revertTallyUpdates = async (billData, cmp_id, session,paymentId) =>
     // Process updates one at a time instead of bulk
      // Process updates one at a time instead of bulk
      for (const doc of tallyDataToRevert) {
-      const settledAmount = billSettledAmountMap.get(doc.bill_no);
+      const settledAmount = billSettledAmountMap.get(doc.billId);
       await TallyData.updateOne(
         { _id: doc._id },
         {

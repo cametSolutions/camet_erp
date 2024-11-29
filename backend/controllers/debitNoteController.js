@@ -6,7 +6,12 @@ import {
   updateDebitNoteNumber,
   updateTallyData,
 } from "../helpers/debitNoteHelper.js";
-import { processSaleItems as processDebitNoteItems } from "../helpers/salesHelper.js";
+import {
+  processSaleItems as processDebitNoteItems,
+  revertSettlementData,
+  saveSettlementData,
+  updateOutstandingBalance,
+} from "../helpers/salesHelper.js";
 
 import { checkForNumberExistence } from "../helpers/secondaryHelper.js";
 import debitNoteModel from "../models/debitNoteModel.js";
@@ -86,15 +91,35 @@ export const createDebitNote = async (req, res) => {
       session // Pass session
     );
 
-    await updateTallyData(
-      orgId,
-      debitNoteNumber,
-      req.owner,
+    ///save settlement data
+    await saveSettlementData(
       party,
+      orgId,
+      "normal debit note",
+      "debitNote",
+      debitNoteNumber,
+      result._id,
       lastAmount,
-      secondaryMobile,
-      session // Pass session if needed
+      result?.createdAt,
+      result?.party?.partyName,
+      session
     );
+
+    if (
+      party.accountGroup === "Sundry Debtors" ||
+      party.accountGroup === "Sundry Creditors"
+    ) {
+      await updateTallyData(
+        orgId,
+        debitNoteNumber,
+        result._id,
+        req.owner,
+        party,
+        lastAmount,
+        secondaryMobile,
+        session // Pass session if needed
+      );
+    }
 
     await session.commitTransaction();
     session.endSession();
@@ -138,6 +163,27 @@ export const cancelDebitNote = async (req, res) => {
 
     // Revert existing stock updates
     await revertDebitNoteStockUpdates(existingDebitNote.items, session);
+
+    //// revert settlement data
+    await revertSettlementData(
+      existingDebitNote?.party,
+      existingDebitNote?.cmp_id,
+      existingDebitNote?.debitNoteNumber,
+      existingDebitNote?._id.toString(),
+      session
+    );
+
+    const cancelOutstanding = await TallyData.findOneAndUpdate(
+      {
+        bill_no: existingDebitNote?.debitNoteNumber,
+        billId: debitNoteId?.toString(),
+      },
+      {
+        $set: {
+          isCancelled: true,
+        },
+      }
+    ).session(session);
 
     // flagging is cancelled true
 
@@ -229,34 +275,54 @@ export const editDebitNote = async (req, res) => {
       session,
     });
 
+
+    /// revert settlement data
+    await revertSettlementData(
+      existingDebitNote?.party,
+      orgId,
+      existingDebitNote?.debitNoteNumber,
+      existingDebitNote?._id.toString(),
+      session
+    );
+
+    /// recreate the settlement data
+
+    ///save settlement data
+    await saveSettlementData(
+      party,
+      orgId,
+      "normal debit note",
+      "debitNote",
+      updateData?.debitNoteNumber,
+      debitNoteId,
+      lastAmount,
+      updateData?.createdAt,
+      updateData?.party?.partyName,
+      session
+    );
+
+
     //// edit outstanding
 
-    const newBillValue = Number(lastAmount);
-    const oldBillValue = Number(existingDebitNote.finalAmount);
-    const diffBillValue = newBillValue - oldBillValue;
+    const secondaryUser = await secondaryUserModel
+      .findById(req.sUserId)
+      .session(session);
+    const secondaryMobile = secondaryUser?.mobile;
 
-    const matchedOutStanding = await TallyData.findOne({
-      party_id: party?.party_master_id,
-      cmp_id: orgId,
-      bill_no: debitNoteNumber,
-    }).session(session);
-
-    if (matchedOutStanding) {
-      const newOutstanding = Number(matchedOutStanding?.bill_pending_amt) + diffBillValue;
-
-      // console.log("newOutstanding",newOutstanding);
-      
-     const outStandingUpdateResult = await TallyData.updateOne(
-        {
-          party_id: party?.party_master_id,
-          cmp_id: orgId,
-          bill_no: debitNoteNumber,
-        },
-        { $set: { bill_pending_amt: newOutstanding, bill_amount: newBillValue } },
-        { new: true,session }
-      );
-    }
-
+    const outstandingResult = await updateOutstandingBalance({
+      existingVoucher: existingDebitNote,
+      newVoucherData: {
+        paymentSplittingData: {},
+        lastAmount,
+      },
+      orgId,
+      voucherNumber: debitNoteNumber,
+      party,
+      session,
+      createdBy: req.owner,
+      transactionType: "debitNote",
+      secondaryMobile,
+    });
 
     await session.commitTransaction();
     session.endSession();

@@ -10,6 +10,7 @@ export const companyAuthentication = async (req, res, next) => {
             res.status(403).json({ message: "This company is restricted",companyRestricted:true });
         }
     } catch (error) {
-        res.status(500).json({ message: "Internal Server Error"});
+        console.log(error);
+        res.status(500).json({ message: "Internal Server Error  "});
     }
 };

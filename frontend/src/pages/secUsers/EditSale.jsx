@@ -1,14 +1,9 @@
 /* eslint-disable react/no-unescaped-entities */
 import { useEffect, useState, useMemo } from "react";
-import { IoMdAdd } from "react-icons/io";
-import { Link } from "react-router-dom";
-import { IoPerson } from "react-icons/io5";
 import { useSelector } from "react-redux";
-import { MdOutlineClose } from "react-icons/md";
 import {
   removeParty,
   addAdditionalCharges,
-  AddFinalAmount,
   deleteRow,
   removeAll,
   removeAdditionalCharge,
@@ -23,38 +18,30 @@ import {
   changeDate,
 } from "../../../slices/salesSecondary";
 import { useDispatch } from "react-redux";
-import { IoIosArrowDown } from "react-icons/io";
-import { MdCancel } from "react-icons/md";
-import { FiMinus } from "react-icons/fi";
+
 import { toast } from "react-toastify";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../../api/api";
-import { IoIosAddCircle } from "react-icons/io";
-import { MdPlaylistAdd } from "react-icons/md";
-import { IoIosArrowRoundBack } from "react-icons/io";
-import { Button, Label, Modal, TextInput } from "flowbite-react";
-import { PiAddressBookFill } from "react-icons/pi";
+
 import DespatchDetails from "../../components/secUsers/DespatchDetails";
 import HeaderTile from "../../components/secUsers/main/HeaderTile";
 import AddPartyTile from "../../components/secUsers/main/AddPartyTile";
 import AddItemTile from "../../components/secUsers/main/AddItemTile";
+import { addPaymentSplittingData } from "../../../slices/filterSlices/paymentSplitting/paymentSplitting";
+import PaymentSplittingIcon from "../../components/secUsers/main/paymentSplitting/PaymentSplittingIcon";
+import TitleDiv from "../../components/common/TitleDiv";
+import FooterButton from "../../components/secUsers/main/FooterButton";
 
 function EditSale() {
   ////////////////////////////////state//////////////////////////////////////////////////////
 
-  const [openModal, setOpenModal] = useState(false);
-  const [modalInputs, setModalInputs] = useState({
-    startingNumber: "1",
-    widthOfNumericalPart: "",
-    prefixDetails: "",
-    suffixDetails: "",
-  });
   const [additional, setAdditional] = useState(false);
-  const [godownname, setGodownname] = useState("");
-  const [refreshCmp, setrefreshCmp] = useState(false);
   const [salesNumber, setSalesNumber] = useState("");
   const date = useSelector((state) => state.salesSecondary.date);
   const [selectedDate, setSelectedDate] = useState(date);
+  const [dataLoading, setDataLoading] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [submitLoading, setSubmitLoading] = useState(false);
 
   const [additionalChragesFromCompany, setAdditionalChragesFromCompany] =
     useState([]);
@@ -81,6 +68,11 @@ function EditSale() {
       : [] // Fallback to an empty array if additionalChragesFromCompany is also empty
   );
 
+  ////dataLoading////
+  // Helper function to manage dataLoading state
+  const incrementLoading = () => setDataLoading((prev) => prev + 1);
+  const decrementLoading = () => setDataLoading((prev) => prev - 1);
+
   ////////////////////////////////redux//////////////////////////////////////////////////////
 
   const orgId = useSelector(
@@ -94,7 +86,14 @@ function EditSale() {
   );
 
   const salesDetailsFromRedux = useSelector((state) => state.salesSecondary);
-  console.log(salesDetailsFromRedux);
+  // console.log(salesDetailsFromRedux);
+
+  const {
+    paymentSplittingData: paymentSplittingReduxData,
+    initial: paymentSplittingInitial,
+  } = useSelector((state) => state?.paymentSplitting);
+
+  // console.log("paymentSplittingReduxData",paymentSplittingReduxData,"paymentSplittingInitial",paymentSplittingInitial);
 
   const {
     party: partyFromRedux,
@@ -114,12 +113,12 @@ function EditSale() {
 
   useEffect(() => {
     const fetchSalesDetails = async () => {
+      incrementLoading();
       try {
         const res = await api.get(`/api/sUsers/getSalesDetails/${id}`, {
           withCredentials: true,
         });
 
-        console.log(res.data.data);
         const {
           party,
           items,
@@ -129,22 +128,19 @@ function EditSale() {
           salesNumber,
           despatchDetails,
           createdAt,
+          paymentSplittingData,
         } = res.data.data;
-
-        console.log(createdAt);
 
         // // additionalCharges: [ { option: 'option 1', value: '95', action: 'add' } ],
         if (Object.keys(partyFromRedux) == 0) {
-          console.log("haii");
-
           dispatch(setParty(party));
         }
 
         if (itemsFromRedux.length == 0) {
           dispatch(setItem(items));
         }
-        if (finalAmount) {
-          dispatch(setFinalAmount(finalAmountFromRedux));
+        if (finalAmountFromRedux == "") {
+          dispatch(setFinalAmount(finalAmount));
         }
 
         if (!dateFromRedux) {
@@ -157,6 +153,13 @@ function EditSale() {
         }
         if (additionalChargesFromRedux.length == 0) {
           dispatch(setAdditionalCharges(additionalCharges));
+        }
+
+        if (
+          Object.keys(paymentSplittingReduxData).length == 0 &&
+          paymentSplittingInitial === true
+        ) {
+          dispatch(addPaymentSplittingData(paymentSplittingData));
         }
 
         // dispatch(setFinalAmount(finalAmount));
@@ -186,7 +189,6 @@ function EditSale() {
           setRows(newRows);
         }
         if (Object.keys(heightsFromRedux).length == 0) {
-          console.log("haii");
           //   dispatch(setBatchHeight());
         }
 
@@ -195,11 +197,12 @@ function EditSale() {
             (key) => despatchDetailsFromRedux[key] == ""
           )
         ) {
-          console.log("haii");
           dispatch(addDespatchDetails(despatchDetails));
         }
       } catch (error) {
         console.log(error);
+      } finally {
+        decrementLoading();
       }
     };
     fetchSalesDetails();
@@ -209,6 +212,7 @@ function EditSale() {
 
   useEffect(() => {
     const getAdditionalChargesIntegrated = async () => {
+      incrementLoading();
       try {
         const res = await api.get(`/api/sUsers/additionalcharges/${cmp_id}`, {
           withCredentials: true,
@@ -218,6 +222,8 @@ function EditSale() {
       } catch (error) {
         console.log(error);
         toast.error(error.response.data.message);
+      } finally {
+        decrementLoading();
       }
     };
     if (type != "self") {
@@ -231,6 +237,7 @@ function EditSale() {
 
   useEffect(() => {
     const fetchSingleOrganization = async () => {
+      incrementLoading();
       try {
         const res = await api.get(
           `/api/sUsers/getSingleOrganization/${orgId}`,
@@ -248,14 +255,13 @@ function EditSale() {
         }
       } catch (error) {
         console.log(error);
+      } finally {
+        decrementLoading();
       }
     };
 
     fetchSingleOrganization();
-  }, [refreshCmp, orgId]);
-
-
-
+  }, [orgId]);
 
   useEffect(() => {
     if (additionalChargesFromRedux.length > 0) {
@@ -395,44 +401,41 @@ function EditSale() {
   };
 
   const submitHandler = async () => {
+    setSubmitLoading(true);
     // e.preventDefault();
-    console.log("haii");
     if (Object.keys(party).length == 0) {
-      console.log("haii");
-
       toast.error("Add a party first");
+      setSubmitLoading(false);
+
       return;
     }
     if (items.length == 0) {
-      console.log("haii");
-
       toast.error("Add at least an item");
+      setSubmitLoading(false);
+
       return;
     }
 
     if (additional) {
-      console.log("haii");
-
       const hasEmptyValue = rows.some((row) => row.value === "");
       if (hasEmptyValue) {
-        console.log("haii");
-
         toast.error("Please add a value.");
+        setSubmitLoading(false);
+
         return;
       }
       const hasNagetiveValue = rows.some((row) => parseFloat(row.value) < 0);
       if (hasNagetiveValue) {
-        console.log("haii");
-
         toast.error("Please add a positive value");
+        setSubmitLoading(false);
+
         return;
       }
-      console.log("haii");
     }
 
     const lastAmount = totalAmount.toFixed(2);
 
-    dispatch(AddFinalAmount(lastAmount));
+    // dispatch(AddFinalAmount(lastAmount));
 
     const formData = {
       party,
@@ -445,6 +448,16 @@ function EditSale() {
       despatchDetails: despatchDetailsFromRedux,
       selectedDate: dateFromRedux || new Date(),
     };
+
+    if (
+      paymentSplittingReduxData &&
+      Object.keys(paymentSplittingReduxData).length !== 0
+    ) {
+      formData.paymentSplittingData = paymentSplittingReduxData;
+      // formData.balanceAmount=paymentSplittingReduxData?.balanceAmount;
+    } else {
+      formData.paymentSplittingData = {};
+    }
 
     console.log(formData);
 
@@ -470,124 +483,105 @@ function EditSale() {
         toast.error("An unexpected error occurred.");
       }
       console.log(error);
+    } finally {
+      setSubmitLoading(false);
     }
   };
 
-  function onCloseModal() {
-    setOpenModal(false);
-    // setEmail('');
-  }
-
-  const saveSalesNumber = async () => {
-    try {
-      const res = await api.post(
-        `/api/sUsers/saveSalesNumber/${orgId}`,
-        modalInputs,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-          withCredentials: true,
-        }
-      );
-
-      toast(res.data.message);
-      setOpenModal(false);
-      setrefreshCmp(!refreshCmp);
-
-      console.log(res);
-    } catch (error) {
-      console.log(error);
-      toast.error(error.response.data.message);
+  useEffect(() => {
+    if (dataLoading > 0) {
+      setLoading(true);
+    } else {
+      setLoading(false);
     }
-  };
+  }, [dataLoading]);
 
   return (
-    <div className="">
+    <div className="mb-14 sm:mb-0">
       <div className="flex-1 bg-slate-100 h -screen ">
-        <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex  items-center gap-2 sticky top-0 z-50  ">
-          {/* <IoReorderThreeSharp
-            onClick={handleToggleSidebar}
-            className="block md:hidden text-white text-3xl"
-          /> */}
-          <Link to={"/sUsers/selectVouchers"}>
-            <IoIosArrowRoundBack className="text-3xl text-white cursor-pointer" />
-          </Link>
-          <p className="text-white text-lg   font-bold ">Sales</p>
+        <TitleDiv
+          title="Sales"
+          from={`/sUsers/salesDetails/${id}`}
+          loading={submitLoading || loading}
+        />
+
+        {/* {!loading && ( */}
+
+        <div className={`${loading ? "pointer-events-none opacity-70" : ""}`}>
+          <HeaderTile
+            title={"Sale"}
+            number={salesNumber}
+            selectedDate={selectedDate}
+            setSelectedDate={setSelectedDate}
+            dispatch={dispatch}
+            changeDate={changeDate}
+            submitHandler={submitHandler}
+            removeAll={removeAll}
+            tab="edit"
+            loading={submitLoading}
+          />
+
+          <AddPartyTile
+            party={party}
+            dispatch={dispatch}
+            removeParty={removeParty}
+            link="/sUsers/searchPartySales"
+            linkBillTo="/sUsers/billToSales"
+          />
+          <DespatchDetails tab={"sale"} />
+
+          <AddItemTile
+            items={items}
+            handleAddItem={handleAddItem}
+            dispatch={dispatch}
+            removeItem={removeItem}
+            removeGodownOrBatch={removeGodownOrBatch}
+            navigate={navigate}
+            godownname={""}
+            subTotal={subTotal}
+            type="sale"
+            additional={additional}
+            cancelHandler={cancelHandler}
+            rows={rows}
+            handleDeleteRow={handleDeleteRow}
+            handleLevelChange={handleLevelChange}
+            additionalChragesFromCompany={additionalChragesFromCompany}
+            actionChange={actionChange}
+            handleRateChange={handleRateChange}
+            handleAddRow={handleAddRow}
+            setAdditional={setAdditional}
+            urlToAddItem="/sUsers/addItemSales"
+            urlToEditItem="/sUsers/editItemSales"
+          />
+
+          <div className="flex justify-between bg-white mt-2 p-3">
+            <p className="font-bold text-lg">Total Amount</p>
+            <div className="flex flex-col items-center">
+              <p className="font-bold text-lg">
+                ₹ {totalAmount.toFixed(2) ?? 0}
+              </p>
+              <p className="text-[9px] text-gray-400">(rounded)</p>
+            </div>
+          </div>
+
+          {items.length > 0 && totalAmount > 0 && (
+            <PaymentSplittingIcon
+              totalAmount={totalAmount}
+              party={party}
+              voucherType="sale"
+            />
+          )}
+
+          <FooterButton
+            submitHandler={submitHandler}
+            tab="edit"
+            title="Sale"
+            loading={submitLoading}
+          />
         </div>
-
-        {/* invoiec date */}
-        <HeaderTile
-          title={"Sale"}
-          number={salesNumber}
-          selectedDate={selectedDate}
-          setSelectedDate={setSelectedDate}
-          dispatch={dispatch}
-          changeDate={changeDate}
-          submitHandler={submitHandler}
-          removeAll={removeAll}
-          tab="edit"
-        />
-
-        {/* adding party */}
-
-        <AddPartyTile
-          party={party}
-          dispatch={dispatch}
-          removeParty={removeParty}
-          link="/sUsers/searchPartySales"
-          linkBillTo="/sUsers/billToSales"
-        />
-
-        {/* Despatch details */}
-
-        <DespatchDetails tab={"sale"} />
+        {/* )} */}
 
         {/* adding items */}
-
-        <AddItemTile
-          items={items}
-          handleAddItem={handleAddItem}
-          dispatch={dispatch}
-          removeItem={removeItem}
-          removeGodownOrBatch={removeGodownOrBatch}
-          navigate={navigate}
-          godownname={""}
-          subTotal={subTotal}
-          type="sale"
-          additional={additional}
-          cancelHandler={cancelHandler}
-          rows={rows}
-          handleDeleteRow={handleDeleteRow}
-          handleLevelChange={handleLevelChange}
-          additionalChragesFromCompany={additionalChragesFromCompany}
-          actionChange={actionChange}
-          handleRateChange={handleRateChange}
-          handleAddRow={handleAddRow}
-          setAdditional={setAdditional}
-          urlToAddItem="/sUsers/addItemSales"
-          urlToEditItem="/sUsers/editItemSales"
-        />
-
-        <div className="flex justify-between bg-white mt-2 p-3">
-          <p className="font-bold text-lg">Total Amount</p>
-          <div className="flex flex-col items-center">
-            <p className="font-bold text-lg">₹ {totalAmount.toFixed(2) ?? 0}</p>
-            <p className="text-[9px] text-gray-400">(rounded)</p>
-          </div>
-        </div>
-
-        <div className=" md:hidden ">
-          <div className="flex justify-center overflow-hidden w-full">
-            <button
-              onClick={submitHandler}
-              className="fixed bottom-0 text-white bg-violet-700  w-full  p-2 py-4 flex items-center justify-center gap-2 hover_scale cursor-pointer "
-            >
-              <IoIosAddCircle className="text-2xl" />
-              <p>Edit Sale</p>
-            </button>
-          </div>
-        </div>
       </div>
     </div>
   );

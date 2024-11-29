@@ -29,16 +29,19 @@ import DespatchDetails from "../../components/secUsers/DespatchDetails";
 import HeaderTile from "../../components/secUsers/main/HeaderTile";
 import AddPartyTile from "../../components/secUsers/main/AddPartyTile";
 import AddItemTile from "../../components/secUsers/main/AddItemTile";
+import TitleDiv from "../../components/common/TitleDiv";
+import FooterButton from "../../components/secUsers/main/FooterButton";
 
 function EditPurchase() {
   ////////////////////////////////state//////////////////////////////////////////////////////
-
 
   const [additional, setAdditional] = useState(false);
   const [purchaseNumber, setPurchaseNumber] = useState("");
   const date = useSelector((state) => state.purchase.date);
   const [selectedDate, setSelectedDate] = useState(date);
-
+  const [dataLoading, setDataLoading] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [submitLoading, setSubmitLoading] = useState(false);
   const [additionalChragesFromCompany, setAdditionalChragesFromCompany] =
     useState([]);
   const [subTotal, setSubTotal] = useState(0);
@@ -67,10 +70,6 @@ function EditPurchase() {
   const [godownname, setGodownname] = useState("");
   const [godownId, setGodownId] = useState("");
 
-
-
-
-  
   ////////////////////////////////redux//////////////////////////////////////////////////////
 
   const orgId = useSelector(
@@ -92,24 +91,27 @@ function EditPurchase() {
     finalAmount: finalAmountFromRedux,
     heights: heightsFromRedux,
     date: dateFromRedux,
-
   } = purchaseDetailsFromRedux;
-
-  
 
   ////////////////////////////////utils//////////////////////////////////////////////////////
 
   const dispatch = useDispatch();
   const { id } = useParams();
 
+  ////dataLoading////
+  // Helper function to manage dataLoading state
+  const incrementLoading = () => setDataLoading((prev) => prev + 1);
+  const decrementLoading = () => setDataLoading((prev) => prev - 1);
+
   ////////////////////////////////getting invoice details//////////////////////////////////////////////////////
 
   useEffect(() => {
     const fetchSalesDetails = async () => {
+      incrementLoading();
       try {
         const res = await api.get(`/api/sUsers/getPurchaseDetails/${id}`, {
-          params:{
-            vanSale:true
+          params: {
+            vanSale: true,
           },
           withCredentials: true,
         });
@@ -126,7 +128,6 @@ function EditPurchase() {
           createdAt,
           // selectedGodownName,
           // selectedGodownId
-
         } = res.data.data;
 
         console.log(despatchDetails);
@@ -188,8 +189,6 @@ function EditPurchase() {
         //   //   dispatch(setBatchHeight());
         // }
 
-        
-
         if (
           Object.keys(despatchDetailsFromRedux).every(
             (key) => despatchDetailsFromRedux[key] == ""
@@ -203,6 +202,8 @@ function EditPurchase() {
         // setSelectedGodownName(selectedGodownName || "");
       } catch (error) {
         console.log(error);
+      } finally {
+        decrementLoading();
       }
     };
     fetchSalesDetails();
@@ -212,6 +213,7 @@ function EditPurchase() {
 
   useEffect(() => {
     const getAdditionalChargesIntegrated = async () => {
+      incrementLoading();
       try {
         const res = await api.get(`/api/sUsers/additionalcharges/${cmp_id}`, {
           withCredentials: true,
@@ -221,6 +223,8 @@ function EditPurchase() {
       } catch (error) {
         console.log(error);
         toast.error(error.response.data.message);
+      } finally {
+        decrementLoading();
       }
     };
     if (type != "self") {
@@ -234,6 +238,7 @@ function EditPurchase() {
 
   useEffect(() => {
     const fetchSingleOrganization = async () => {
+      incrementLoading();
       try {
         const res = await api.get(
           `/api/sUsers/getSingleOrganization/${orgId}`,
@@ -251,14 +256,17 @@ function EditPurchase() {
         }
       } catch (error) {
         console.log(error);
+      } finally {
+        decrementLoading();
       }
     };
 
     fetchSingleOrganization();
-  }, [ orgId]);
+  }, [orgId]);
 
   useEffect(() => {
     const fetchGodownname = async () => {
+      incrementLoading();
       try {
         const godown = await api.get(`/api/sUsers/godownsName/${cmp_id}`, {
           withCredentials: true,
@@ -269,11 +277,12 @@ function EditPurchase() {
       } catch (error) {
         console.log(error);
         toast.error(error.message);
+      } finally {
+        decrementLoading();
       }
     };
     fetchGodownname();
   }, []);
-
 
   console.log(rows);
 
@@ -415,38 +424,36 @@ function EditPurchase() {
   };
 
   const submitHandler = async () => {
-    console.log("haii");
+    setSubmitLoading(true);
     if (Object.keys(party).length == 0) {
-      console.log("haii");
-
       toast.error("Add a party first");
+      setSubmitLoading(false);
+      setSubmitLoading(false);
+
       return;
     }
     if (items.length == 0) {
-      console.log("haii");
-
       toast.error("Add at least an item");
+      setSubmitLoading(false);
+
       return;
     }
 
     if (additional) {
-      console.log("haii");
-
       const hasEmptyValue = rows.some((row) => row.value === "");
       if (hasEmptyValue) {
-        console.log("haii");
-
         toast.error("Please add a value.");
+        setSubmitLoading(false);
+
         return;
       }
       const hasNagetiveValue = rows.some((row) => parseFloat(row.value) < 0);
       if (hasNagetiveValue) {
-        console.log("haii");
-
         toast.error("Please add a positive value");
+        setSubmitLoading(false);
+
         return;
       }
-      console.log("haii");
     }
 
     const lastAmount = totalAmount.toFixed(2);
@@ -462,21 +469,17 @@ function EditPurchase() {
       orgId,
       purchaseNumber,
       despatchDetails: despatchDetailsFromRedux,
-      selectedDate:dateFromRedux||new Date(),
-      selectedGodownId:godownId,
-      selectedGodownName:godownname,
+      selectedDate: dateFromRedux || new Date(),
+      selectedGodownId: godownId,
+      selectedGodownName: godownname,
     };
 
     // console.log("form data", formData);
-    
-
-
-    
 
     try {
       const res = await api.post(`/api/sUsers/editPurchase/${id}`, formData, {
-        params:{
-          vanSale:true
+        params: {
+          vanSale: true,
         },
         headers: {
           "Content-Type": "application/json",
@@ -495,104 +498,102 @@ function EditPurchase() {
         toast.error("An unexpected error occurred.");
       }
       console.log(error);
+    } finally {
+      setSubmitLoading(false);
     }
   };
 
-
+  useEffect(() => {
+    if (dataLoading > 0) {
+      setLoading(true);
+    } else {
+      setLoading(false);
+    }
+  }, [dataLoading]);
 
   return (
-    <div className="flex relative ">
+    <div className="mb-14 sm:mb-0">
       <div className="flex-1 bg-slate-100  h-screen   ">
-        <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex  items-center gap-2 sticky top-0 z-50  ">
-          {/* <IoReorderThreeSharp
-            onClick={handleToggleSidebar}
-            className="block md:hidden text-white text-3xl"
-          /> */}
-          <Link to={-1}>
-            <IoIosArrowRoundBack className="text-3xl text-white cursor-pointer " />
-          </Link>
-          <p className="text-white text-lg   font-bold ">Purchase Edit</p>
-        </div>
-
-        {/* invoiec date */}
-
-        <HeaderTile
-          title={"Purchase"}
-          number={purchaseNumber}
-          selectedDate={selectedDate}
-          setSelectedDate={setSelectedDate}
-          dispatch={dispatch}
-          changeDate={changeDate}
-          submitHandler={submitHandler}
-          removeAll={removeAll}
-          tab="edit"
+        <TitleDiv
+          title="Purchase"
+          from={`/sUsers/selectVouchers`}
+          loading={loading || submitLoading}
         />
+        <div className={`${loading ? "pointer-events-none opacity-70" : ""}`}>
+          {/* invoiec date */}
 
-        {/* adding party */}
+          <HeaderTile
+            title={"Purchase"}
+            number={purchaseNumber}
+            selectedDate={selectedDate}
+            setSelectedDate={setSelectedDate}
+            dispatch={dispatch}
+            changeDate={changeDate}
+            submitHandler={submitHandler}
+            removeAll={removeAll}
+            tab="edit"
+            loading={submitLoading}
 
-        <AddPartyTile
-          party={party}
-          dispatch={dispatch}
-          removeParty={removeParty}
-          link="/sUsers/searchPartyPurchase"
-          linkBillTo="/sUsers/billToPurchase"
-        />
+          />
 
-        {/* Despatch details */}
+          {/* adding party */}
 
-        <DespatchDetails tab={"purchase"} />
+          <AddPartyTile
+            party={party}
+            dispatch={dispatch}
+            removeParty={removeParty}
+            link="/sUsers/searchPartyPurchase"
+            linkBillTo="/sUsers/billToPurchase"
+          />
 
-        {/* adding items */}
+          {/* Despatch details */}
 
-      
-        <AddItemTile
-          items={items}
-          handleAddItem={handleAddItem}
-          dispatch={dispatch}
-          removeItem={removeItem}
-          removeGodownOrBatch={removeGodownOrBatch}
-          navigate={navigate}
-          godownname={godownname}
-          subTotal={subTotal}
-          type="sale"
-          additional={additional}
-          cancelHandler={cancelHandler}
-          rows={rows}
-          handleDeleteRow={handleDeleteRow}
-          handleLevelChange={handleLevelChange}
-          additionalChragesFromCompany={additionalChragesFromCompany}
-          actionChange={actionChange}
-          handleRateChange={handleRateChange}
-          handleAddRow={handleAddRow}
-          setAdditional={setAdditional}
-          urlToAddItem="/sUsers/addItemPurchase"
-          urlToEditItem="/sUsers/editItemPurchase"
-        />
+          <DespatchDetails tab={"purchase"} />
 
-        <div className="flex justify-between bg-white mt-2 p-3">
-          <p className="font-bold text-lg">Total Amount</p>
-          <div className="flex flex-col items-center">
-            <p className="font-bold text-lg">₹ {totalAmount.toFixed(2) ?? 0}</p>
-            <p className="text-[9px] text-gray-400">(rounded)</p>
+          {/* adding items */}
+
+          <AddItemTile
+            items={items}
+            handleAddItem={handleAddItem}
+            dispatch={dispatch}
+            removeItem={removeItem}
+            removeGodownOrBatch={removeGodownOrBatch}
+            navigate={navigate}
+            godownname={godownname}
+            subTotal={subTotal}
+            type="sale"
+            additional={additional}
+            cancelHandler={cancelHandler}
+            rows={rows}
+            handleDeleteRow={handleDeleteRow}
+            handleLevelChange={handleLevelChange}
+            additionalChragesFromCompany={additionalChragesFromCompany}
+            actionChange={actionChange}
+            handleRateChange={handleRateChange}
+            handleAddRow={handleAddRow}
+            setAdditional={setAdditional}
+            urlToAddItem="/sUsers/addItemPurchase"
+            urlToEditItem="/sUsers/editItemPurchase"
+          />
+
+          <div className="flex justify-between bg-white mt-2 p-3">
+            <p className="font-bold text-lg">Total Amount</p>
+            <div className="flex flex-col items-center">
+              <p className="font-bold text-lg">
+                ₹ {totalAmount.toFixed(2) ?? 0}
+              </p>
+              <p className="text-[9px] text-gray-400">(rounded)</p>
+            </div>
           </div>
-        </div>
 
-        <div className=" md:hidden ">
-          <div className="flex justify-center overflow-hidden w-full">
-            <button
-              onClick={submitHandler}
-              className="fixed bottom-0 text-white bg-violet-700  w-full  p-2 py-4 flex items-center justify-center gap-2 hover_scale cursor-pointer "
-            >
-              <IoIosAddCircle className="text-2xl" />
-              <p>Edit Purchase</p>
-            </button>
-          </div>
+          <FooterButton
+            submitHandler={submitHandler}
+            tab="edit"
+            title="Purchase"
+            loading={submitLoading || loading}
+          />
         </div>
-
-      
       </div>
-
-  
     </div>
   );
 }

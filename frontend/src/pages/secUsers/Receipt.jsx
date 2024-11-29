@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
-import { IoIosArrowRoundBack } from "react-icons/io";
 import { useSelector } from "react-redux";
-import { Link } from "react-router-dom";
 import api from "../../api/api";
 import HeaderTile from "../../components/secUsers/main/HeaderTile";
 import { useDispatch } from "react-redux";
@@ -16,7 +14,8 @@ import AddAmountTile from "../../components/secUsers/main/AddAmountTile";
 import PaymentModeTile from "../../components/secUsers/main/PaymentModeTile";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
-import ReceiptButton from "../../components/secUsers/main/Forms/ReceiptButton";
+import TitleDiv from "../../components/common/TitleDiv";
+import FooterButton from "../../components/secUsers/main/FooterButton";
 
 function Receipt() {
   // ////////////////dispatch
@@ -43,11 +42,14 @@ function Receipt() {
 
   const [receiptNumber, setReceiptNumber] = useState("");
   const [selectedDate, setSelectedDate] = useState(dateRedux);
+  const [loading, setLoading] = useState(false);
+  const [submitLoading, setSubmitLoading] = useState(false);
 
   // ////////////for fetching configuration number
   useEffect(() => {
     if (receiptNumberRedux === "") {
       const fetchConfigurationNumber = async () => {
+        setLoading(true);
         try {
           const res = await api.get(
             `/api/sUsers/fetchConfigurationNumber/${cmp_id}/receipt`,
@@ -94,6 +96,8 @@ function Receipt() {
           }
         } catch (error) {
           console.log(error);
+        } finally {
+          setLoading(false);
         }
       };
       fetchConfigurationNumber();
@@ -103,6 +107,7 @@ function Receipt() {
   }, []);
 
   const submitHandler = async () => {
+    setSubmitLoading(true);
     // Form data
     const formData = {
       cmp_id,
@@ -120,6 +125,8 @@ function Receipt() {
       outstandings,
     };
 
+    console.log();
+
     if (formData?.paymentMethod === "Online") {
       formData.paymentDetails = {
         ...formData.paymentDetails,
@@ -130,9 +137,9 @@ function Receipt() {
     if (formData?.paymentMethod === "Cash") {
       formData.paymentDetails = {
         ...formData.paymentDetails,
+        cash_name: formData.paymentDetails.cash_ledname,
         bank_ledname: null,
         bank_name: null,
-        _id: null,
         chequeDate: null,
         chequeNumber: null,
       };
@@ -140,18 +147,22 @@ function Receipt() {
 
     // Validation
     if (!formData.receiptNumber) {
+      setSubmitLoading(false);
       return toast.error("Receipt number is required.");
     }
 
     if (!formData.party || !formData.party._id) {
+      setSubmitLoading(false);
       return toast.error("Party selection is required.");
     }
 
     if (!formData.enteredAmount) {
+      setSubmitLoading(false);
       return toast.error(" Amount is required.");
     }
 
     if (!formData.paymentMethod) {
+      setSubmitLoading(false);
       return toast.error("Payment method is required.");
     }
     if (
@@ -159,6 +170,7 @@ function Receipt() {
         formData.paymentMethod === "Online") &&
       !formData.paymentDetails
     ) {
+      setSubmitLoading(false);
       return toast.error(
         "Payment details are required for cheque or online payments."
       );
@@ -166,9 +178,11 @@ function Receipt() {
 
     if (formData.paymentMethod === "Cheque") {
       if (!formData.paymentDetails.chequeDate) {
+        setSubmitLoading(false);
         return toast.error("Cheque date is required.");
       }
       if (!formData.paymentDetails.chequeNumber) {
+        setSubmitLoading(false);
         return toast.error("Cheque number is required.");
       }
       if (
@@ -176,6 +190,7 @@ function Receipt() {
         !formData.paymentDetails.bank_name ||
         !formData.paymentDetails._id
       ) {
+        setSubmitLoading(false);
         return toast.error("Bank details are required.");
       }
     }
@@ -186,13 +201,21 @@ function Receipt() {
         !formData.paymentDetails.bank_name ||
         !formData.paymentDetails._id
       ) {
+        setSubmitLoading(false);
         return toast.error("Bank details are required.");
       }
     }
+    if (formData.paymentMethod === "Cash") {
+      if (
+        !formData.paymentDetails.cash_ledname ||
+        !formData.paymentDetails._id
+      ) {
+        setSubmitLoading(false);
+        return toast.error("Cash details are required.");
+      }
+    }
 
-    console.log("formDataddd", formData);
-
-    // // If validation passes, proceed with the form submission
+    // If validation passes, proceed with the form submission
     try {
       const res = await api.post(`/api/sUsers/createReceipt`, formData, {
         headers: {
@@ -209,42 +232,52 @@ function Receipt() {
     } catch (error) {
       toast.error(error.response?.data?.message || "An error occurred.");
       console.log(error);
+    } finally {
+      setSubmitLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen relative">
-      <header className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex  items-center gap-2 sticky top-0 z-50  ">
-        <Link to={"/sUsers/selectVouchers"}>
-          <IoIosArrowRoundBack className="text-3xl text-white cursor-pointer" />
-        </Link>
-        <p className="text-white text-lg   font-bold ">Receipt</p>
-      </header>
-
-      <HeaderTile
-        title={"Receipt"}
-        number={receiptNumber}
-        selectedDate={selectedDate}
-        setSelectedDate={setSelectedDate}
-        dispatch={dispatch}
-        changeDate={changeDate}
-        submitHandler={submitHandler}
-        removeAll={removeAll}
-        tab="add"
+    <div className="min-h-screen relative mb-10 sm:mb-0">
+      <TitleDiv
+        title="Receipt"
+        from={`/sUsers/selectVouchers`}
+        loading={loading || submitLoading}
       />
 
-      <AddPartyTile
-        party={party}
-        dispatch={dispatch}
-        removeParty={removeParty}
-        link="/sUsers/searchPartyReceipt"
-        linkBillTo=""
-      />
+      <div className={`${loading ? "pointer-events-none opacity-70" : ""}`}>
+        <HeaderTile
+          title={"Receipt"}
+          number={receiptNumber}
+          selectedDate={selectedDate}
+          setSelectedDate={setSelectedDate}
+          dispatch={dispatch}
+          changeDate={changeDate}
+          submitHandler={submitHandler}
+          removeAll={removeAll}
+          tab="add"
+          loading={submitLoading}
+        />
 
-      <AddAmountTile party={party} tab="receipt" />
-      <PaymentModeTile tab="receipt" />
+        <AddPartyTile
+          party={party}
+          dispatch={dispatch}
+          removeParty={removeParty}
+          link="/sUsers/searchPartyReceipt"
+          linkBillTo=""
+        />
 
-      <ReceiptButton submitHandler={submitHandler} text="Generate Receipt" />
+        <AddAmountTile party={party} tab="receipt" />
+        <PaymentModeTile tab="receipt" />
+
+        {/* <ReceiptButton submitHandler={submitHandler} text="Generate Receipt" /> */}
+        <FooterButton
+          submitHandler={submitHandler}
+          tab="add"
+          title="Receipt"
+          loading={submitLoading || loading}
+        />
+      </div>
     </div>
   );
 }

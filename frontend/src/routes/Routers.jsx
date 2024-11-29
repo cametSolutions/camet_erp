@@ -58,7 +58,7 @@ import EditPartySecondary from '../pages/secUsers/EditPartySecondary'
 import AddProductSecondary from '../pages/secUsers/AddProductSecondary'
 import EditProductSecondary from '../pages/secUsers/EditProductSecondary'
 import AddBank from '../pages/primaryUsers/AddBank'
-import EditBank from '../pages/primaryUsers/EditBank'
+// import EditBank from '../pages/primaryUsers/EditBank'
 import EditSecUsers from '../pages/primaryUsers/EditSecUsers'
 import InvoiceDetails from '../pages/primaryUsers/InvoiceDetails'
 import ShareInvoice from '../pages/primaryUsers/ShareInvoice'
@@ -139,7 +139,6 @@ import SelectVouchers from '../pages/secUsers/SelectVouchers'
 import Receipt from '../pages/secUsers/Receipt'
 import SearchPartyReciept from '../pages/secUsers/SearchPartyReciept'
 import OutstandingListOfReceipt from '../pages/secUsers/OutstandingListOfReceipt'
-import BankReceipt from '../pages/secUsers/BankReceipt'
 import PurchasePayment from '../pages/secUsers/PurchasePayment'
 import SearchPartyPayment from '../pages/secUsers/SearchPartyPayment'
 import CreditNote from '../pages/secUsers/CreditNote'
@@ -181,6 +180,12 @@ import SalesSummary from '../pages/secUsers/Reports/salesSummary/SalesSummary'
 import PartyFilterList from '../components/Filters/party/PartyFilterList'
 import StatusFilterList from '../components/Filters/status/StatusFilterList'
 import OrderSummary from '../pages/secUsers/Reports/orderSummary/OrderSummary'
+import PaymentSplitting from '../components/secUsers/main/paymentSplitting/PaymentSplitting'
+import BalancePage from '../pages/secUsers/Reports/CashOrBank/BalancePage'
+import BalanceDetails from '../pages/secUsers/Reports/CashOrBank/BalanceDetails'
+import SourceList from '../pages/secUsers/SourceList'
+import SourceTransactions from '../pages/secUsers/Reports/CashOrBank/SourceTransactions'
+import AddCash from '../pages/primaryUsers/AddCash'
 
 const Routers = () => {
   return (
@@ -213,7 +218,7 @@ const Routers = () => {
         <Route path='/pUsers/demo' element={<ProtectedPriRoute><Demo/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/hsnList' element={<ProtectedPriRoute><HsnList/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/editHsn/:id' element={<ProtectedPriRoute><EditHsn/></ProtectedPriRoute>}></Route>
-        <Route path='/pUsers/editBank/:id' element={<ProtectedPriRoute><EditBank/></ProtectedPriRoute>}></Route>
+        {/* <Route path='/pUsers/editBank/:id' element={<ProtectedPriRoute><EditBank/></ProtectedPriRoute>}></Route>s */}
         <Route path='/pUsers/editUser/:id' element={<ProtectedPriRoute><EditSecUsers/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/InvoiceDetails/:id' element={<ProtectedPriRoute><InvoiceDetails/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/shareInvoice/:id' element={<ProtectedPriRoute><ShareInvoice/></ProtectedPriRoute>}></Route>
@@ -297,6 +302,8 @@ const Routers = () => {
         <Route path='/sUsers/shareSalesThreeInch/:id' element={<ProtectedSecRoute><ThreeInchSalesSec/></ProtectedSecRoute>}></Route> 
         <Route path='/sUsers/shareVanSaleThreeInch/:id' element={<ProtectedSecRoute><ThreeInchVanSaleSec/></ProtectedSecRoute>}></Route> 
         <Route path='/sUsers/contacts' element={<ProtectedSecRoute><Contacts/></ProtectedSecRoute>}></Route> 
+        <Route path='/sUsers/sales/paymentSplitting' element={<ProtectedSecRoute><PaymentSplitting/></ProtectedSecRoute>}></Route> 
+        <Route path='/sUsers/editSale/:id/paymentSplitting' element={<ProtectedSecRoute><PaymentSplitting/></ProtectedSecRoute>}></Route> 
        
        
        {/* purchase */}
@@ -335,7 +342,7 @@ const Routers = () => {
         <Route path='/sUsers/receipt' element={<ProtectedSecRoute><Receipt/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/searchPartyReceipt' element={<ProtectedSecRoute><SearchPartyReciept/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/receipt/addAmount/:party_id' element={<ProtectedSecRoute><OutstandingListOfReceipt/></ProtectedSecRoute>}></Route>
-        <Route path='/sUsers/receipt/bankList' element={<ProtectedSecRoute><BankReceipt/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/receipt/sourceList/:source' element={<ProtectedSecRoute><SourceList/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/receipt/details/:id' element={<ProtectedSecRoute><ReceiptDetailsOfSale/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/receiptPrintOut' element={<ProtectedSecRoute><ReceiptPrintOut/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/editReceipt/:id' element={<ProtectedSecRoute><EditReceipt/></ProtectedSecRoute>}></Route>
@@ -346,13 +353,13 @@ const Routers = () => {
         <Route path='/sUsers/paymentPurchase' element={<ProtectedSecRoute><PurchasePayment/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/searchPartyPurchasePayment' element={<ProtectedSecRoute><SearchPartyPayment/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/purchase/addAmount/:party_id' element={<ProtectedSecRoute><OutstandingListOfPayment/></ProtectedSecRoute>}></Route>
-        <Route path='/sUsers/payment/bankList' element={<ProtectedSecRoute><BankPayment/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/payment/sourceList/:source' element={<ProtectedSecRoute><SourceList/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/payment/details/:id' element={<ProtectedSecRoute><PaymtentDetails/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/paymentPrintOut' element={<ProtectedSecRoute><PaymentPrintOut/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/editPayment/:id' element={<ProtectedSecRoute><EditPayment/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/payment/edit/addAmount/:party_id' element={<ProtectedSecRoute><OutstandingListOfPaymentForEdit/></ProtectedSecRoute>}></Route>
 
-
+{/* bank payment */}
          {/* creditNote */}
         <Route path='/sUsers/creditNote' element={<ProtectedSecRoute><CreditNote/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/searchPartyCreditNote' element={<ProtectedSecRoute><SearchPartyCreditNote/></ProtectedSecRoute>}></Route>
@@ -406,7 +413,15 @@ const Routers = () => {
         {/* order summary */}
         <Route path='/sUsers/orderSummary' element={<ProtectedSecRoute><OrderSummary/></ProtectedSecRoute>}></Route>
 
-        
+         {/* cash or bank */}
+         <Route path='/sUsers/balancePage' element={<ProtectedSecRoute><BalancePage/></ProtectedSecRoute>}></Route>
+         <Route path='/sUsers/balanceDetails/:accGroup' element={<ProtectedSecRoute><BalanceDetails/></ProtectedSecRoute>}></Route>
+         <Route path='/sUsers/sourceTransactions/:id/:accGroup' element={<ProtectedSecRoute><SourceTransactions/></ProtectedSecRoute>}></Route>
+         <Route path='/sUsers/addBank' element={<ProtectedSecRoute><AddBank/></ProtectedSecRoute>}></Route>
+         <Route path='/sUsers/editBank/:id' element={<ProtectedSecRoute><AddBank/></ProtectedSecRoute>}></Route>
+         <Route path='/sUsers/addCash' element={<ProtectedSecRoute><AddCash/></ProtectedSecRoute>}></Route>
+         <Route path='/sUsers/editCash/:id' element={<ProtectedSecRoute><AddCash/></ProtectedSecRoute>}></Route>
+
 
         {/* filters */}
         <Route path='/sUsers/dateRange' element={<ProtectedSecRoute><DateRange/></ProtectedSecRoute>}></Route>
