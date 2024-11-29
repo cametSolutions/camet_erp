@@ -63,14 +63,6 @@ function OutstandingListOfReceipt() {
     }
   }, [receiptData]);
 
-
-
-
-
-
-
-  
-
   const handleAmountChange = (event) => {
     const amount = parseFloat(event.target.value) || 0;
     if (amount > total) {

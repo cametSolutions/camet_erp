@@ -43,6 +43,8 @@ export const fetchOutstandingDetails = async (req, res) => {
     })
       .sort({ bill_date: 1 })
       .select("bill_no billId bill_date bill_pending_amt source bill_date");
+
+      
     if (outstandings) {
       return res.status(200).json({
         totalOutstandingAmount: outstandings.reduce(

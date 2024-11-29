@@ -103,7 +103,7 @@ function Outstanding() {
       </div>
 
       {currOrg ? (
-        <div className="grid grid-cols-1 gap-4 mt-6 text-center pb-10  md:px-8   ">
+        <div className="grid grid-cols-1 gap-4 mt-6 text-center pb-10  md:px-2    ">
           {finalData.map((el, index) => (
             <Link
               key={index}
@@ -113,7 +113,7 @@ function Outstanding() {
                 // onClick={() => {
                 //   onTabChange("outStandingDetails", el._id, el.totalBillAmount);
                 // }}
-                className="  bg-[#f8ffff] rounded-md shadow-xl border border-gray-100  flex flex-col px-4  transition-all duration-150 transform ease-in-out "
+                className="  bg-[#f8ffff] rounded-md shadow-xl border border-gray-100  flex flex-col px-4  transition-all hover:translate-y-[1px] duration-150 transform ease-in-out "
               >
                 <div className="flex justify-between items-center">
                   <div className=" h-full px-2 py-8 lg:p-6 w-[150px] md:w-[180px] lg:w-[300px] flex justify-center items-start relative flex-col ">
