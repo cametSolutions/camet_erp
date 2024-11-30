@@ -33,6 +33,8 @@ import { SiHelpscout } from "react-icons/si";
 import { GrInfo } from "react-icons/gr";
 import { IoMdPower } from "react-icons/io";
 import Swal from "sweetalert2";
+import { RiBox3Fill } from "react-icons/ri";
+
 
 function SidebarSec({ TAB, showBar }) {
   const [showSidebar, setShowSidebar] = useState(false);
@@ -129,6 +131,12 @@ function SidebarSec({ TAB, showBar }) {
         icon: <HiDocumentText />,
         label: "Tax classification",
       },
+      {
+        to: "/sUsers/productList",
+        label: "Products",
+        icon: <RiBox3Fill/>,
+        tab: "product",
+      }
     ];
 
     // if (org.type === "self") {
