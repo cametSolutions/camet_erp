@@ -2,9 +2,9 @@
 /* eslint-disable react/prop-types */
 
 import transactionImg from "../../assets/images/transactions.png";
-import stockreRister from "../../assets/images/clipboard.png";
+import customers from "../../assets/images/customers.png";
 import vouchers from "../../assets/images/application.png";
-import outStanding from "../../assets/images/outstanding.png";
+import product from "../../assets/images/product.png";
 import reportImg from "../../assets/images/reports.png";
 
 const DashboardCards = ({ userType, receiptTotal, handleLinkClick }) => {
@@ -17,33 +17,34 @@ const DashboardCards = ({ userType, receiptTotal, handleLinkClick }) => {
         link: "/pUsers/transaction",
       },
       {
-        icon: stockreRister,
+        icon: customers,
         subtitle: "Stock Register",
         link: "/pUsers/Inventory",
       },
     ],
     secondary: [
+     
       {
-        icon: reportImg,
-        title: `₹${receiptTotal.toFixed(2)}`,
-        subtitle: "Reports",
-        link: "/sUsers/reports",
+        icon: product,
+        subtitle: "Products",
+        link: "/sUsers/productList",
       },
       {
-        icon: outStanding,
-        subtitle: "Outstanding",
-        link: "/sUsers/outstanding",
-      },
-      {
-        icon: stockreRister,
-        subtitle: "Stock Register",
-        link: "/sUsers/Inventory",
+        icon: customers,
+        subtitle: "Customers",
+        link: "/sUsers/partyList",
       },
  
       {
         icon: vouchers,
         subtitle: "Vouchers",
         link: "/sUsers/selectVouchers",
+      },
+      {
+        icon: reportImg,
+        title: `₹${receiptTotal.toFixed(2)}`,
+        subtitle: "Reports",
+        link: "/sUsers/reports",
       },
     ],
   };
@@ -52,7 +53,7 @@ const DashboardCards = ({ userType, receiptTotal, handleLinkClick }) => {
 
   return (
     <div
-      className={`grid grid-cols-2 p-6 lg:px-6 gap-4 md:gap-6 bg-white w-full md:w-6.5/12 sticky top-[100px] `}
+      className={`grid grid-cols-2 md:grid-cols-4 p-6 lg:px-6 gap-4 md:gap-6 bg-white w-full md:w-6.5/12 sticky top-[100px] `}
     >
       {cards.map((card, index) => (
         <div

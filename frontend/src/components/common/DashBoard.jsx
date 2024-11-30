@@ -43,8 +43,8 @@ function DashBoard({
         </div>
         {/* company name */}
 
-        <div className="flex flex-col lg:flex-row   ">
-          <div className=" lg:h-screen sticky top-[100px] z-20  shadow-xl  ">
+        <div className="flex flex-col    ">
+          <div className=" sticky top-[100px] z-20  shadow-xl  ">
             {/* tiles */}
             <DashboardCard
               receiptTotal={receiptTotal}

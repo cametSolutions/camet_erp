@@ -20,6 +20,8 @@ import salesSummary from "../../../assets/images/Untitled Project.jpg";
 import oderSummary from "../../../assets/images/oderSummary.png";
 import reciptAandPayments from "../../../assets/images/reciptsandpayments.png";
 import bank from "../../../assets/images/bank.png";
+import outStanding from "../../../assets/images/outstanding.png";
+import stockRegister from "../../../assets/images/clipboard.png";
 
 import { IoAlertCircle } from "react-icons/io5";
 
@@ -157,6 +159,21 @@ const popular = [
     active: true,
     subtitle: "Manage cash and bank transactions",
   },
+  {
+    title: "Outstanding",
+    icon: outStanding,
+    to: "/sUsers/outstanding",
+    active: true,
+    subtitle: "Track pending dues",
+  },
+  {
+    title: "Stock Register",
+    icon: stockRegister,
+    to: "/sUsers/Inventory",
+    active: true,
+    subtitle: "Manage inventory records",
+  },
+  
 ];
 
 const VoucherCards = ({ tab }) => {

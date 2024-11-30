@@ -252,7 +252,7 @@ function InventorySecondaryUser() {
       <div className="sticky top-0 z-20 h-[117px]">
         <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3  flex justify-between items-center  ">
           <div className="flex items-center justify-center gap-2">
-            <Link to={"/sUsers/dashboard"}>
+            <Link to={"/sUsers/reports"}>
               <IoIosArrowRoundBack className="text-3xl text-white cursor-pointer " />
             </Link>
             <p className="text-white text-lg   font-bold ">Stock Register</p>
