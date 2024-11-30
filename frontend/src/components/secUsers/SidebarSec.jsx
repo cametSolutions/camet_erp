@@ -1,6 +1,6 @@
 /* eslint-disable react/prop-types */
 /* eslint-disable react/no-unknown-property */
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import api from "../../api/api";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
@@ -10,13 +10,9 @@ import {
   removeSecSelectedOrg,
 } from "../../../slices/secSelectedOrgSlice";
 import { Link } from "react-router-dom";
-import { IoReorderThreeSharp } from "react-icons/io5";
-import { MdDashboard } from "react-icons/md";
-import { TiUserAdd } from "react-icons/ti";
 import { RingLoader } from "react-spinners";
 import { IoMdSettings } from "react-icons/io";
 import { IoIosArrowDown, IoIosArrowUp, IoIosPricetags } from "react-icons/io";
-import { RiBox3Fill } from "react-icons/ri";
 import { TbBrandAppgallery, TbCategory2 } from "react-icons/tb";
 import { BiSolidCategoryAlt } from "react-icons/bi";
 import { HiBuildingStorefront, HiDocumentText } from "react-icons/hi2";
@@ -27,6 +23,18 @@ import { removeAllSales } from "../../../slices/salesSecondary";
 import { removeAll as removeAllStock } from "../../../slices/stockTransferSecondary";
 import { removeAll as removeAllPurchase } from "../../../slices/purchase";
 import { removeAll as removeAllCredit } from "../../../slices/creditNote";
+import CametHead from "../sidebar/CametHead";
+import ProfileSection from "../sidebar/ProfileSection";
+import { FaHome } from "react-icons/fa";
+import { FaAngleRight } from "react-icons/fa";
+import { MdOutlineSecurity } from "react-icons/md";
+import { LuTimerReset } from "react-icons/lu";
+import { SiHelpscout } from "react-icons/si";
+import { GrInfo } from "react-icons/gr";
+import { IoMdPower } from "react-icons/io";
+import Swal from "sweetalert2";
+import { RiBox3Fill } from "react-icons/ri";
+
 
 function SidebarSec({ TAB, showBar }) {
   const [showSidebar, setShowSidebar] = useState(false);
@@ -51,29 +59,84 @@ function SidebarSec({ TAB, showBar }) {
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
 
+  const sidebarRef = useRef(null);
+
+  useEffect(() => {
+  const handleClickOutside = (event) => {
+    if (sidebarRef.current && !sidebarRef.current.contains(event.target)) {
+      setShowSidebar(false);
+    }
+  };
+
+  document.addEventListener("click", handleClickOutside, true);
+  return () => {
+    document.removeEventListener("click", handleClickOutside, true);
+  };
+}, [sidebarRef, setShowSidebar]);
   const navItems = [
     {
       to: "/sUsers/dashboard",
       tab: "dash",
-      icon: <MdDashboard />,
-      label: "Dashboard",
+      icon: <FaHome />,
+      label: "Home",
+    },
+  ];
+
+  const securityItems = [
+    {
+      to: "/sUsers/dashboard",
+      tab: "passcode",
+      icon: <MdOutlineSecurity />,
+      label: "Passcode",
+    },
+    {
+      to: "/sUsers/dashboard",
+      tab: "resetPassword",
+      icon: <LuTimerReset />,
+      label: "Reset Password",
+    },
+  ];
+  const supportItems = [
+    {
+      to: "/sUsers/dashboard",
+      tab: "help",
+      icon: <SiHelpscout />,
+      label: "Help",
+    },
+    {
+      to: "/sUsers/dashboard",
+      tab: "About",
+      icon: <GrInfo />,
+      label: "About",
+    },
+    {
+      to: "#",
+      tab: "logout",
+      icon: <IoMdPower />,
+      label: "Log Out",
     },
   ];
 
   if (companies && companies.length > 0 && org.isApproved === true) {
     const additionalTabs = [
-      {
-        to: "/sUsers/partyList",
-        tab: "addParty",
-        icon: <TiUserAdd />,
-        label: "Customers",
-      },
+      // {
+      //   to: "/sUsers/partyList",
+      //   tab: "addParty",
+      //   icon: <TiUserAdd />,
+      //   label: "Customers",
+      // },
       {
         to: "/sUsers/hsnList",
         tab: "hsn",
         icon: <HiDocumentText />,
         label: "Tax classification",
       },
+      {
+        to: "/sUsers/productList",
+        label: "Products",
+        icon: <RiBox3Fill/>,
+        tab: "product",
+      }
     ];
 
     // if (org.type === "self") {
@@ -86,59 +149,60 @@ function SidebarSec({ TAB, showBar }) {
     // }
 
     // Show "Inventory" only if org.type is "self"
-    if (org.type === "self") {
-      additionalTabs.push({
-        to: "#",
-        icon: <MdOutlineInventory />,
-        label: "Inventory",
-        onClick: () => toggleSection("inventory"),
-        subItems: [
-          {
-            to: "/sUsers/productList",
-            label: "Products",
-            icon: <RiBox3Fill />,
-            tab: "product",
-          },
-          {
-            to: "/sUsers/brand",
-            label: "Brand",
-            icon: <TbBrandAppgallery />,
-            tab: "brand",
-          },
-          {
-            to: "/sUsers/category",
-            label: "Category",
-            icon: <BiSolidCategoryAlt />,
-            tab: "category",
-          },
-          {
-            to: "/sUsers/subcategory",
-            label: "Sub Category",
-            icon: <TbCategory2 />,
-            tab: "subcategory",
-          },
-          {
-            to: "/sUsers/godown",
-            label: "Godown",
-            icon: <HiBuildingStorefront />,
-            tab: "godown",
-          },
-          {
-            to: "/sUsers/pricelevel",
-            label: "Price Level",
-            icon: <IoIosPricetags />,
-            tab: "pricelevel",
-          },
-        ],
-      });
-    } else {
-      additionalTabs.push({
-        to: "/sUsers/productList",
-        label: "Products",
-        icon: <RiBox3Fill />,
-        tab: "product",
-      });
-    }
+    // if (org.type === "self") {
+    //   additionalTabs.push({
+    //     to: "#",
+    //     icon: <MdOutlineInventory />,
+    //     label: "Inventory",
+    //     onClick: () => toggleSection("inventory"),
+    //     subItems: [
+    //       // {
+    //       //   to: "/sUsers/productList",
+    //       //   label: "Products",
+    //       //   icon: <RiBox3Fill />,
+    //       //   tab: "product",
+    //       // },
+    //       {
+    //         to: "/sUsers/brand",
+    //         label: "Brand",
+    //         icon: <TbBrandAppgallery />,
+    //         tab: "brand",
+    //       },
+    //       {
+    //         to: "/sUsers/category",
+    //         label: "Category",
+    //         icon: <BiSolidCategoryAlt />,
+    //         tab: "category",
+    //       },
+    //       {
+    //         to: "/sUsers/subcategory",
+    //         label: "Sub Category",
+    //         icon: <TbCategory2 />,
+    //         tab: "subcategory",
+    //       },
+    //       {
+    //         to: "/sUsers/godown",
+    //         label: "Godown",
+    //         icon: <HiBuildingStorefront />,
+    //         tab: "godown",
+    //       },
+    //       {
+    //         to: "/sUsers/pricelevel",
+    //         label: "Price Level",
+    //         icon: <IoIosPricetags />,
+    //         tab: "pricelevel",
+    //       },
+    //     ],
+    //   });
+    // }
+    // else {
+    //   additionalTabs.push({
+    //     to: "/sUsers/productList",
+    //     label: "Products",
+    //     icon: <RiBox3Fill />,
+    //     tab: "product",
+    //   });
+    // }
     additionalTabs.push({
       to: "/sUsers/OrderConfigurations",
       tab: "terms",
@@ -215,23 +279,37 @@ function SidebarSec({ TAB, showBar }) {
   };
 
   const handleLogout = async () => {
-    try {
-      const res = await api.post(
-        "/api/sUsers/logout",
-        {},
-        {
-          withCredentials: true,
+    Swal.fire({
+      title: "Are you sure?",
+      text: "You want to logout!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      cancelButtonText: "Cancel",
+      confirmButtonText: "Yes, logout!",
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          const res = await api.post(
+            "/api/sUsers/logout",
+            {},
+            {
+              withCredentials: true,
+            }
+          );
+          toast.success(res.data.message);
+          localStorage.removeItem("sUserData");
+          dispatch(removeSecSelectedOrg());
+          navigate("/sUsers/login");
+        } catch (error) {
+          console.error(error);
+          toast.error(error.response?.data?.message || "An error occurred during logout");
         }
-      );
-      toast.success(res.data.message);
-      localStorage.removeItem("sUserData");
-      dispatch(removeSecSelectedOrg());
-      navigate("/sUsers/login");
-    } catch (error) {
-      console.error(error);
-      toast.error(error.response.data.message);
-    }
+      }
+    });
   };
+  
 
   const handleDropDownchange = (el) => {
     setDropdown(!dropdown);
@@ -247,8 +325,87 @@ function SidebarSec({ TAB, showBar }) {
     }, 1000);
   };
 
+  const SidebarCard = ({
+    item,
+    tab,
+    expandedSections,
+    handleSidebarItemClick,
+  }) => {
+    return (
+      <>
+        <Link to={item.to}>
+          <span
+            onClick={() => {
+              if (item.tab === "logout") {
+                handleLogout();
+              } else {
+                handleSidebarItemClick(item.tab);
+              }
+              // if (item.onClick) item.onClick();
+            }}
+            className={`
+            ${
+              tab === item.tab
+                ? "bg-gray-800 text-blue-500 border-r-2 border-blue-500 "
+                : "text-gray-400 hover:bg-gray-800 hover:text-white "
+            }
+            flex items-center w-full py-2 mt-3 transition-colors duration-300 transform   text-[13.5px] pl-5 `}
+          >
+            <div className="flex items-center justify-between w-full  ">
+              <div className="flex items-center">
+                {item.icon}
+                <span className="mx-4 font-medium">{item.label}</span>
+              </div>
+              <span className="mx-4 font-medium">
+                <FaAngleRight />
+              </span>
+            </div>
+            {item.subItems && (
+              <div className="flex items-center justify-between w-full cursor-pointer ml-6">
+                {expandedSections.inventory ? (
+                  <IoIosArrowUp />
+                ) : (
+                  <IoIosArrowDown />
+                )}
+              </div>
+            )}
+          </span>
+        </Link>
+        {item.subItems && expandedSections.inventory && (
+          <ul className="mt-2 space-y-2">
+            {item.subItems.map((subItem, subIndex) => (
+              <li
+                key={subIndex}
+                className={`${
+                  selectedSubTab === subItem.tab
+                    ? "text-white"
+                    : "text-gray-400"
+                } hover:text-white ml-4 rounded-md mt-5 px-4 py-2 flex items-center gap-4 text-sm font-medium`}
+              >
+                <Link
+                  className="flex items-center gap-3 mb-3"
+                  to={subItem.to}
+                  onClick={() => {
+                    handleSidebarItemClick(subItem.tab);
+                    setTab(item.tab);
+                    setSelectedSubTab(subItem.tab);
+                  }}
+                >
+                  {subItem.icon}
+                  <span>{subItem.label}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </>
+    );
+  };
+
   return (
-    <div className="nonPrintable-content">
+    <div 
+    ref={sidebarRef}
+    className="nonPrintable-content">
       {loader && (
         <div className="absolute top-0 w-screen h-screen z-50 flex justify-center items-center bg-black/[0.5]">
           <RingLoader color="#1c14a0" />
@@ -259,195 +416,81 @@ function SidebarSec({ TAB, showBar }) {
           showSidebar
             ? "z-50 absolute h-[125vh] transform translate-x-0"
             : "-translate-x-full md:translate-x-0 z-50 absolute md:relative"
-        }   transition-transform  duration-500 ease-in-out flex flex-col w-64 h-screen p-1   bg-gray-900   overflow-y-auto `}
+        }   transition-transform  duration-500 ease-in-out flex flex-col w-64 h-screen p-1   bg-[#0b1d34]    overflow-y-auto `}
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
-        <aside className="border-2 border-gray-700  pb-6 ">
-          {/* Keep existing header/profile section */}
-          <div className="w-full relative  flex items-center justify-between py-5 bg-[#19222d] px-5 ">
-            <div className="flex gap-3 px-4 items-center">
-              <img
-                className="h-9"
-                src="https://cdn-icons-png.flaticon.com/128/3097/3097023.png"
-                alt=""
-              />
+        {/* company head */}
+        <CametHead handleSidebarItemClick={handleSidebarItemClick}  />
 
-              <div className="flex flex-col">
-                <h1 className="text-white text-md font-bold">CAMET ERP</h1>
-                <p className="text-[8px] text-gray-300"> Camet IT Solutions</p>
-              </div>
-            </div>
+        {/* <Popover/> */}
 
-            <div
-              onClick={handleSidebarItemClick}
-              className="text-white text-3xl  md:hidden cursor-pointer"
-            >
-              <IoReorderThreeSharp />
-            </div>
-          </div>
-          <hr className=" border border-gray-800  mt-1" />
+        {/* user profile section */}
 
-          {/* <hr /> */}
+        <ProfileSection
+          org={org}
+          userData={userData}
+          handleDropDownchange={handleDropDownchange}
+          handleLogout={handleLogout}
+        />
 
-          {/* Keep existing profile section */}
-          <div className="flex flex-col items-center  mt-1  bg-[#19222d] p-4 py-6 rounded-sm ">
-            <div className="flex items-center justify-center h-26 w-26 rounded-full bg-blue-500 p-0.5">
-              <div className="flex items-center justify-center h-25 w-25 rounded-full bg-black p-1">
-                <img
-                  className="object-cover w-24 h-24 rounded-full"
-                  src={
-                    org?.logo ||
-                    "https://i.pinimg.com/736x/8b/16/7a/8b167af653c2399dd93b952a48740620.jpg"
-                  }
-                  alt="avatar"
+        <div className="flex flex-col  flex-1 mt-9 my-3">
+          <p className="text-sm text-gray-400 px-4">My account</p>
+
+          {/* my accounts */}
+          <nav>
+            {navItems.map((item, index) => (
+              <div key={index}>
+                <SidebarCard
+                  item={item}
+                  tab={tab}
+                  expandedSections={expandedSections}
+                  handleSidebarItemClick={handleSidebarItemClick}
                 />
               </div>
-            </div>
-            <h4 className="mx-2 mt-2 font-medium text-white">
-              {userData.name}
-            </h4>
-            {/* <p className="mx-2 mt-1 text-sm font-medium text-white">
-              {userData.email}
-            </p> */}
+            ))}
+          </nav>
 
-            <button
-              onClick={() => {
-                setDropdown(!dropdown);
-              }}
-              id="dropdownDefaultButton"
-              data-dropdown-toggle="dropdown"
-              className="text-white mt-6 bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
-              type="button"
-            >
-              {org?.name || "No company added"}{" "}
-              <svg
-                className="w-2.5 h-2.5 ms-3"
-                aria-hidden="true"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 10 6"
-              >
-                <path
-                  stroke="currentColor"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="m1 1 4 4 4-4"
+          {/* security items */}
+          <p className="text-sm text-gray-400 mt-7 px-4">Security</p>
+
+          <nav>
+            {securityItems.map((item, index) => (
+              <div key={index}>
+                <SidebarCard
+                  item={item}
+                  tab={tab}
+                  expandedSections={expandedSections}
+                  handleSidebarItemClick={handleSidebarItemClick}
                 />
-              </svg>
-            </button>
-
-            {dropdown && (
-              <div
-                className="relative flex justify-center
-                "
-              >
-                <div
-                  id="dropdown"
-                  className="z-10 absolute mt-2   bg-gray-700 divide-y divide-gray-100 rounded-lg shadow w-44 dark:bg-gray-700"
-                >
-                  <ul
-                    className="py-2 text-sm text-gray-200"
-                    aria-labelledby="dropdownDefaultButton"
-                  >
-                    {userData &&
-                      userData?.organization?.map((el, index) => (
-                        <li key={index}>
-                          <a
-                            // onClick={()=>{setDropdown(!dropdown);setOrg(el)}}
-                            onClick={() => handleDropDownchange(el)}
-                            href="#"
-                            className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
-                          >
-                            {el.name}
-                          </a>
-                        </li>
-                      ))}
-                  </ul>
-                </div>
               </div>
-            )}
+            ))}
+          </nav>
 
-            <div>
-              <button onClick={handleLogout} className="Btn">
-                <div className="sign">
-                  <svg viewBox="0 0 512 512">
-                    <path d="M377.9 105.9L500.7 228.7c7.2 7.2 11.3 17.1 11.3 27.3s-4.1 20.1-11.3 27.3L377.9 406.1c-6.4 6.4-15 9.9-24 9.9c-18.7 0-33.9-15.2-33.9-33.9l0-62.1-128 0c-17.7 0-32-14.3-32-32l0-64c0-17.7 14.3-32 32-32l128 0 0-62.1c0-18.7 15.2-33.9 33.9-33.9c9 0 17.6 3.6 24 9.9zM160 96L96 96c-17.7 0-32 14.3-32 32l0 256c0 17.7 14.3 32 32 32l64 0c17.7 0 32 14.3 32 32s-14.3 32-32 32l-64 0c-53 0-96-43-96-96L0 128C0 75 43 32 96 32l64 0c17.7 0 32 14.3 32 32s-14.3 32-32 32z"></path>
-                  </svg>
-                </div>
+          {/* suport items */}
+          <p className="text-sm text-gray-400 mt-7 px-4">Support</p>
 
-                <div className="text">Logout</div>
-              </button>
-            </div>
+          <nav>
+            {supportItems.map((item, index) => (
+              <div key={index}>
+                <SidebarCard
+                  item={item}
+                  tab={tab}
+                  expandedSections={expandedSections}
+                  handleSidebarItemClick={handleSidebarItemClick}
+                />
+              </div>
+            ))}
+          </nav>
+
+          {/* version */}
+          <hr className="mt-4 mb-2 border mx-2 border-gray-700" />
+
+          <div className="flex flex-col items-center px-4 bg-slate-800 py-1 ">
+            <h3 className="text-[10px] text-gray-400  tracking-widest">
+              Version 1.0.0
+            </h3>
           </div>
-
-          <hr className=" border border-gray-800 mt-1 " />
-
-          <div className="flex flex-col justify-between flex-1 mt-3 px-5">
-            <nav>
-              {navItems.map((item, index) => (
-                <div key={index}>
-                  <Link to={item.to}>
-                    <span
-                      onClick={() => {
-                        handleSidebarItemClick(item.tab);
-                        if (item.onClick) item.onClick();
-                      }}
-                      className={`
-                        ${
-                          tab === item.tab
-                            ? "bg-gray-800 text-white"
-                            : "text-gray-400 hover:bg-gray-800 hover:text-white"
-                        }
-                        flex items-center px-4 py-2 mt-5 transition-colors duration-300 transform rounded-md`}
-                    >
-                      <div className="flex items-center">
-                        {item.icon}
-                        <span className="mx-4 font-medium">{item.label}</span>
-                      </div>
-                      {item.subItems && (
-                        <div className="flex items-center justify-between w-full cursor-pointer ml-6">
-                          {expandedSections.inventory ? (
-                            <IoIosArrowUp />
-                          ) : (
-                            <IoIosArrowDown />
-                          )}
-                        </div>
-                      )}
-                    </span>
-                  </Link>
-                  {item.subItems && expandedSections.inventory && (
-                    <ul className="mt-2 space-y-2">
-                      {item.subItems.map((subItem, subIndex) => (
-                        <li
-                          key={subIndex}
-                          className={`${
-                            selectedSubTab === subItem.tab
-                              ? "text-white"
-                              : "text-gray-400"
-                          } hover:text-white ml-4 rounded-md mt-5 px-4 py-2 flex items-center gap-4 text-sm font-medium`}
-                        >
-                          <Link
-                            className="flex items-center gap-3 mb-3"
-                            to={subItem.to}
-                            onClick={() => {
-                              handleSidebarItemClick(subItem.tab);
-                              setTab(item.tab);
-                              setSelectedSubTab(subItem.tab);
-                            }}
-                          >
-                            {subItem.icon}
-                            <span>{subItem.label}</span>
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              ))}
-            </nav>
-          </div>
-        </aside>
+        </div>
       </div>
     </div>
   );

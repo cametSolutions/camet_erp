@@ -21,6 +21,9 @@ function OutstandingLIst({
   tab
 }) {
 
+  console.log("data", data);
+  
+
   
   return (
     <>
