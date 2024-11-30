@@ -34,11 +34,11 @@ function ProfileSection({
  
 
     <div className="relative" ref={popoverRef}>
-      <div className={` ${!open && "justify-center"} flex justify-between  bg-gray-700 py-2 pl-3 pr-1 text-white items-center gap-3 w-full`}>
+      <div className={` flex ${!open ? "justify-center pl-4" : "justify-between pl-3"}    bg-gray-700 py-2  pr-1 text-white items-center gap-3 w-full`}>
         <div className="flex items-center gap-3 ">
           <div className="   flex items-center justify-center w-10 h-10  rounded-full  border-2 border-gray-500 p-0.5">
             <img
-              className={`object-cover w-8 h-8 rounded-full   duration-500 ease-in-out origin-left `}
+              className={`object-cover w-8 h-8 rounded-full   duration-1000 ease-in-out origin-left `}
               src={
                 org?.logo ||
                 "https://i.pinimg.com/736x/8b/16/7a/8b167af653c2399dd93b952a48740620.jpg"
@@ -46,7 +46,7 @@ function ProfileSection({
               alt="avatar"
             />
           </div>
-          <div className={` ${!open && "scale-0 hidden"} duration-500 ease-in-out origin-left flex-1`}>
+          <div className={` ${!open ? " scale-0 opacity-0  ease-in-out duration-1000 w-0  " : "scale-100 ease-in-out duration-1000"} duration-500 ease-in-out origin-left flex-1`}>
             <p className="text-xs font-bold text-gray-300   ">
               {userData?.name?.length > 20
                 ? userData?.name.slice(0, 20) + "..."
@@ -61,9 +61,12 @@ function ProfileSection({
         </div>
         <HiDotsVertical className={`  ${!open && "hidden"} text-gray-300`}   />
       </div>
+
+      {/* {
+        open && ( */}
       <div
         onClick={() => setIsOpen(!isOpen)}
-        className="mt-2  w-full flex items-center  gap-2 bg-gray-700 py-2 px-4 text-white cursor-pointer "
+        className={`  ${!open ? "scale-0 ease-in-out duration-1000" : "scale-100 ease-in-out duration-1000"} mt-2  w-full flex items-center  gap-2 bg-gray-700 py-2 px-4 text-white cursor-pointer `}
       >
         <GrRadialSelected size={12} />
 
@@ -71,6 +74,9 @@ function ProfileSection({
           {org?.name?.length > 20 ? org?.name.slice(0, 20) + "..." : org?.name}
         </p>
       </div>
+          
+        {/* )
+      } */}
 
       {/* Popover Content */}
       {isOpen && (
