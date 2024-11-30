@@ -6,8 +6,8 @@ import { HiDotsVertical } from "react-icons/hi";
 function ProfileSection({
   org,
   userData,
-  handleLogout,
-  handleDropDownchange
+  handleDropDownchange,
+  open
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const popoverRef = useRef(null);
@@ -34,11 +34,11 @@ function ProfileSection({
  
 
     <div className="relative" ref={popoverRef}>
-      <div className="flex justify-between  bg-gray-700 py-2 pl-3 pr-1 text-white items-center gap-3 w-full">
+      <div className={` ${!open && "justify-center"} flex justify-between  bg-gray-700 py-2 pl-3 pr-1 text-white items-center gap-3 w-full`}>
         <div className="flex items-center gap-3 ">
-          <div className="   flex items-center justify-center  rounded-full  border-2 border-gray-500 p-0.5">
+          <div className="   flex items-center justify-center w-10 h-10  rounded-full  border-2 border-gray-500 p-0.5">
             <img
-              className="object-cover w-8 h-8 rounded-full"
+              className={`object-cover w-8 h-8 rounded-full   duration-500 ease-in-out origin-left `}
               src={
                 org?.logo ||
                 "https://i.pinimg.com/736x/8b/16/7a/8b167af653c2399dd93b952a48740620.jpg"
@@ -46,7 +46,7 @@ function ProfileSection({
               alt="avatar"
             />
           </div>
-          <div className="flex-1">
+          <div className={` ${!open && "scale-0 hidden"} duration-500 ease-in-out origin-left flex-1`}>
             <p className="text-xs font-bold text-gray-300   ">
               {userData?.name?.length > 20
                 ? userData?.name.slice(0, 20) + "..."
@@ -59,7 +59,7 @@ function ProfileSection({
             </p>
           </div>
         </div>
-        <HiDotsVertical className="text-gray-300" />
+        <HiDotsVertical className={`  ${!open && "hidden"} text-gray-300`}   />
       </div>
       <div
         onClick={() => setIsOpen(!isOpen)}

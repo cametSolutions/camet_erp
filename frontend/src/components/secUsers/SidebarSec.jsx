@@ -44,6 +44,7 @@ function SidebarSec({ TAB, showBar }) {
   const [expandedSections, setExpandedSections] = useState({
     inventory: false,
   });
+  const [open, setOpen] = useState(true);
 
   const selectedTab = localStorage.getItem("selectedSecondatSidebarTab");
   const [selectedSubTab, setSelectedSubTab] = useState(
@@ -60,17 +61,17 @@ function SidebarSec({ TAB, showBar }) {
   const sidebarRef = useRef(null);
 
   useEffect(() => {
-  const handleClickOutside = (event) => {
-    if (sidebarRef.current && !sidebarRef.current.contains(event.target)) {
-      setShowSidebar(false);
-    }
-  };
+    const handleClickOutside = (event) => {
+      if (sidebarRef.current && !sidebarRef.current.contains(event.target)) {
+        setShowSidebar(false);
+      }
+    };
 
-  document.addEventListener("click", handleClickOutside, true);
-  return () => {
-    document.removeEventListener("click", handleClickOutside, true);
-  };
-}, [sidebarRef, setShowSidebar]);
+    document.addEventListener("click", handleClickOutside, true);
+    return () => {
+      document.removeEventListener("click", handleClickOutside, true);
+    };
+  }, [sidebarRef, setShowSidebar]);
   const navItems = [
     {
       to: "/sUsers/dashboard",
@@ -296,12 +297,13 @@ function SidebarSec({ TAB, showBar }) {
           navigate("/sUsers/login");
         } catch (error) {
           console.error(error);
-          toast.error(error.response?.data?.message || "An error occurred during logout");
+          toast.error(
+            error.response?.data?.message || "An error occurred during logout"
+          );
         }
       }
     });
   };
-  
 
   const handleDropDownchange = (el) => {
     setDropdown(!dropdown);
@@ -395,9 +397,7 @@ function SidebarSec({ TAB, showBar }) {
   };
 
   return (
-    <div 
-    ref={sidebarRef}
-    className="nonPrintable-content">
+    <div ref={sidebarRef} className="nonPrintable-content">
       {loader && (
         <div className="absolute top-0 w-screen h-screen z-50 flex justify-center items-center bg-black/[0.5]">
           <RingLoader color="#1c14a0" />
@@ -408,11 +408,21 @@ function SidebarSec({ TAB, showBar }) {
           showSidebar
             ? "z-50 absolute h-[125vh] transform translate-x-0"
             : "-translate-x-full md:translate-x-0 z-50 absolute md:relative"
-        }   transition-transform  duration-500 ease-in-out flex flex-col w-64 h-screen p-1   bg-[#0b1d34]    overflow-y-auto `}
-        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+        } ${
+          open ? "w-64" : "w-28"
+        } transition-all duration-700 ease-in-out flex flex-col h-screen p-1 bg-[#0b1d34] overflow-y-auto`}
+        style={{
+          scrollbarWidth: "none",
+          msOverflowStyle: "none",
+          transitionProperty: "width, transform", // Add width transition explicitly
+        }}
       >
         {/* company head */}
-        <CametHead handleSidebarItemClick={handleSidebarItemClick}  />
+        <CametHead
+          handleSidebarItemClick={handleSidebarItemClick}
+          open={open}
+          setOpen={setOpen}
+        />
 
         {/* <Popover/> */}
 
@@ -423,6 +433,7 @@ function SidebarSec({ TAB, showBar }) {
           userData={userData}
           handleDropDownchange={handleDropDownchange}
           handleLogout={handleLogout}
+          open={open}
         />
 
         <div className="flex flex-col  flex-1 mt-9 my-3">
