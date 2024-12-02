@@ -431,7 +431,7 @@ function SidebarSec({ TAB, showBar }) {
             : "-translate-x-full md:translate-x-0 z-50 absolute md:relative"
         } ${
           open ? "w-64" : "w-28"
-        } transition-all duration-1000 ease-in-out flex flex-col h-screen p-1 bg-[#0b1d34] overflow-y-auto scrollbar-thin scrollbar-track-[#0B1D34] scrollbar-thumb-[#30435e]`}
+        } transition-all duration-1000 ease-in-out flex flex-col h-screen p-1 bg-[#0b1d34] overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-track-[#0B1D34] scrollbar-thumb-[#30435e]`}
         style={{
           //   scrollbarWidth: "thin",
           // scrollbarColor: "gray #0B1D34",

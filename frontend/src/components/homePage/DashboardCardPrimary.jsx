@@ -53,7 +53,7 @@ const DashboardCards = ({ userType, receiptTotal, handleLinkClick }) => {
 
   return (
     <div
-      className={`grid grid-cols-2 md:grid-cols-4 p-6 lg:px-6 gap-4 md:gap-6 bg-white w-full md:w-6.5/12 sticky top-[100px] `}
+      className={`grid grid-cols-2 md:grid-cols-4 p-6 lg:px-6 gap-4 md:gap-6 bg-white w-full md:w-6.5/12  `}
     >
       {cards.map((card, index) => (
         <div

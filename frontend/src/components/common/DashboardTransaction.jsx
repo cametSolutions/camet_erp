@@ -67,7 +67,7 @@ const DashboardTransaction = ({ filteredData, userType, from }) => {
         <div
           key={_id || index}
           onClick={() => handleTransactionClick(type, _id)}
-          className="bg-white cursor-pointer rounded-sm shadow-lg border border-gray-100 flex flex-col justify-between px-4 transition-all duration-150 transform hover:translate-x-[2px] ease-in-out"
+          className="w-full    bg-white cursor-pointer rounded-sm shadow-lg border border-gray-100 flex flex-col justify-between px-4 transition-all duration-150 transform hover:translate-x-[2px] ease-in-out"
         >
           <div className="flex w-full items-center">
             <div className="w-3/4">
@@ -144,7 +144,7 @@ const DashboardTransaction = ({ filteredData, userType, from }) => {
   const memoizedData = useMemo(() => filteredData, [filteredData]);
 
   return (
-    <div className="grid grid-cols-1 gap-4 text-center pb-2 mt-2 md:px-2 overflow-hidden">
+    <div className="grid grid-cols-1 gap-4 text-center pb-2 mt-2 md:px-2 overflow-hidden  ">
       {memoizedData?.map(renderTransaction)}
     </div>
   );
