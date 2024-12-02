@@ -34,6 +34,7 @@ import { GrInfo } from "react-icons/gr";
 import { IoMdPower } from "react-icons/io";
 import Swal from "sweetalert2";
 import { RiBox3Fill } from "react-icons/ri";
+import { TiUserAdd } from "react-icons/ti";
 
 
 function SidebarSec({ TAB, showBar }) {
@@ -119,12 +120,12 @@ function SidebarSec({ TAB, showBar }) {
 
   if (companies && companies.length > 0 && org.isApproved === true) {
     const additionalTabs = [
-      // {
-      //   to: "/sUsers/partyList",
-      //   tab: "addParty",
-      //   icon: <TiUserAdd />,
-      //   label: "Customers",
-      // },
+      {
+        to: "/sUsers/partyList",
+        tab: "addParty",
+        icon: <TiUserAdd />,
+        label: "Customers",
+      },
       {
         to: "/sUsers/hsnList",
         tab: "hsn",
