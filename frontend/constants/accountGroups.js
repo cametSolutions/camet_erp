@@ -35,3 +35,7 @@ export const accountGroups02 = [
   "Sundry Creditors",
   "Sundry Debtors",
 ];
+export const accountGroups03 = [
+  "Sundry Creditors",
+  "Sundry Debtors",
+];

@@ -13,6 +13,7 @@ import mongoose from "mongoose";
 export const saveDataFromTally = async (req, res) => {
   try {
     const dataToSave = await req.body.data;
+
     // console.log("dataToSave", dataToSave);
     const { Primary_user_id, cmp_id } = dataToSave[0];
 
@@ -21,6 +22,14 @@ export const saveDataFromTally = async (req, res) => {
     // Use Promise.all to parallelize document creation or update
     const savedData = await Promise.all(
       dataToSave.map(async (dataItem) => {
+
+
+           // Add bill_no as billId if billId is not present
+           if (!dataItem.billId && dataItem.bill_no) {
+            dataItem.billId = dataItem.bill_no;
+          }
+
+          
         // Use findOne to check if the document already exists
         const existingDocument = await TallyData.findOne({
           cmp_id: dataItem.cmp_id,
