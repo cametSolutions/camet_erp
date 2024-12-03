@@ -205,7 +205,7 @@ function ProductList() {
           <div className="flex items-center justify-center gap-2">
             <IoReorderThreeSharp
               onClick={handleToggleSidebar}
-              className="text-3xl text-white cursor-pointer md:hidden"
+              className="text-3xl text-white cursor-pointer "
             />
             <p className="text-white text-lg   font-bold ">Your Products</p>
           </div>
