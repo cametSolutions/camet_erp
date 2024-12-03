@@ -23,7 +23,7 @@ function DashBoard({
 
   return (
     <div className="overflow-hidden h-screen">
-      <div className="sticky top-0  z-[100] h-[100px] ">
+      <div className="sticky top-0   h-[100px] ">
         <div className="bg-[#012a4a]   p-3  text-white text-lg font-bold flex items-center gap-3  shadow-lg">
           <IoReorderThreeSharp
             onClick={handleToggleSidebar}
