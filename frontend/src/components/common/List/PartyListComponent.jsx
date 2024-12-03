@@ -4,11 +4,27 @@ import { MdDelete } from "react-icons/md";
 import { Link } from "react-router-dom";
 import { FixedSizeList as List } from "react-window";
 import CallIcon from "../CallIcon";
+import { useEffect, useState } from "react";
 
 function PartyListComponent({ filteredParty, type, deleteHandler,user="secondary" }) {
 
+  const [listHeight, setListHeight] = useState(0);
 
-  console.log(user);
+  useEffect(() => {
+    const calculateHeight = () => {
+      const newHeight = window.innerHeight - 117;
+      setListHeight(newHeight);
+    };
+
+
+    // Calculate the height on component mount and whenever the window is resized
+    calculateHeight();
+    window.addEventListener("resize", calculateHeight);
+
+    // Cleanup the event listener on component unmount
+    return () => window.removeEventListener("resize", calculateHeight);
+  }, []);
+
 
   const handleDelete = (id) => {
     deleteHandler(id);
@@ -81,7 +97,7 @@ function PartyListComponent({ filteredParty, type, deleteHandler,user="secondary
     >
       <List
         className=""
-        height={500}
+        height={listHeight}
         itemCount={filteredParty.length}
         itemSize={160}
         width="100%"

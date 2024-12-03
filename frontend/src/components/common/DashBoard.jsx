@@ -7,6 +7,7 @@ import { IoReorderThreeSharp } from "react-icons/io5";
 import DashboardCard from "../../components/homePage/DashboardCardPrimary";
 import DashboardSummary from "./DashboardSummary";
 import { useState } from "react";
+import TransactionSkeleton from "./TransactionSkeleton";
 
 function DashBoard({
   handleToggleSidebar,
@@ -16,6 +17,7 @@ function DashBoard({
   handleLinkClick,
   type,
   from,
+  loader,
 }) {
   const [tab, setTab] = useState("transactions");
 
@@ -106,11 +108,15 @@ function DashBoard({
 
         <div className=" w-full hidden sm:flex ">
           <div className="w-1/2 h-[calc(100vh-301px)] overflow-y-scroll scrollbar-thin mt-2 ">
-            <DashboardTransaction
-              filteredData={filteredData}
-              userType={type}
-              from={from}
-            />
+            {loader ? (
+              <TransactionSkeleton />
+            ) : (
+              <DashboardTransaction
+                filteredData={filteredData}
+                userType={type}
+                from={from}
+              />
+            )}
           </div>
           <div className="w-1/2">
             <DashboardSummary />

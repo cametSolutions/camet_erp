@@ -7,12 +7,12 @@ import { IoReorderThreeSharp } from "react-icons/io5";
 import { useSelector } from "react-redux";
 import Swal from "sweetalert2";
 import { Link } from "react-router-dom";
-import { HashLoader } from "react-spinners";
 import { IoIosAddCircle } from "react-icons/io";
 
 import SearchBar from "../../components/common/SearchBar";
 import { useSidebar } from "../../layout/Layout";
 import PartyListComponent from "../../components/common/List/PartyListComponent";
+import CustomBarLoader from "../../components/common/CustomBarLoader";
 
 function PartyListSecondary() {
   const [parties, setParties] = useState([]);
@@ -43,9 +43,8 @@ function PartyListSecondary() {
           withCredentials: true,
         });
 
-        setTimeout(() => {
           setParties(res.data.partyList);
-        }, 1000);
+   
       } catch (error) {
         console.log(error);
       } finally {
@@ -111,7 +110,7 @@ function PartyListSecondary() {
   return (
     <div
   
-     className=" bg-slate-50 ">
+     className=" bg-slate-50 h-screen overflow-hidden ">
       <div className="sticky top-0 z-20">
         <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3  flex justify-between items-center  ">
           <div className="flex items-center justify-center gap-2">
@@ -146,9 +145,7 @@ function PartyListSecondary() {
       {/* adding party */}
 
       {loader ? (
-        <div className="flex justify-center items-center h-screen">
-          <HashLoader color="#363ad6" />
-        </div>
+          <CustomBarLoader color="#363ad6" />
       ) : parties.length === 0 ? (
         <div className="font-bold flex justify-center items-center mt-12 text-gray-500">
           No Parties!!!

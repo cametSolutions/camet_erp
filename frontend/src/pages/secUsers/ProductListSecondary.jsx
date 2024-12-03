@@ -8,7 +8,7 @@ import { FaEdit } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import { MdDelete } from "react-icons/md";
 import Swal from "sweetalert2";
-import { HashLoader } from "react-spinners";
+import { BarLoader, HashLoader } from "react-spinners";
 
 import { IoIosAddCircle } from "react-icons/io";
 import { FixedSizeList as List } from "react-window";
@@ -18,12 +18,11 @@ import { useDispatch } from "react-redux";
 
 import SearchBar from "../../components/common/SearchBar";
 import { useSidebar } from "../../layout/Layout";
-
+import CustomBarLoader from "../../components/common/CustomBarLoader";
 
 function ProductListSecondary() {
   const [products, setProducts] = useState([]);
 
-  const [showSidebar, setShowSidebar] = useState(false);
   const [refresh, setRefresh] = useState(false);
   const [loader, setLoader] = useState(false);
   const [search, setSearch] = useState("");
@@ -36,9 +35,8 @@ function ProductListSecondary() {
   const type = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg.type
   );
-  const {  handleToggleSidebar } = useSidebar();
+  const { handleToggleSidebar } = useSidebar();
 
-  const dispatch = useDispatch();
   const searchData = (data) => {
     setSearch(data);
   };
@@ -54,9 +52,8 @@ function ProductListSecondary() {
         });
         setLoader(true);
 
-        setTimeout(() => {
-          setProducts(res.data.productData);
-        }, 1000);
+        setProducts(res.data.productData);
+        // setProducts([]);
       } catch (error) {
         console.log(error);
         toast.error(error.response.data.message);
@@ -65,10 +62,7 @@ function ProductListSecondary() {
       }
     };
     fetchProducts();
-
   }, [refresh, cmp_id]);
-
-
 
   console.log(products);
 
@@ -131,7 +125,6 @@ function ProductListSecondary() {
       setListHeight(newHeight);
     };
 
-    console.log(window.innerHeight);
 
     // Calculate the height on component mount and whenever the window is resized
     calculateHeight();
@@ -141,7 +134,6 @@ function ProductListSecondary() {
     return () => window.removeEventListener("resize", calculateHeight);
   }, []);
 
-  console.log(listHeight);
 
   const Row = ({ index, style }) => {
     const el = filteredProducts[index];
@@ -156,7 +148,7 @@ function ProductListSecondary() {
         <div
           key={index}
           style={adjustedStyle}
-          className="bg-white p-4 pb-6 drop-shadow-lg mt-4 flex flex-col mx-2 rounded-sm cursor-pointer hover:bg-slate-100  pr-7 "
+          className="bg-white p-4 pb-6 drop-shadow-lg mt-4 flex flex-col mx-2 rounded-sm cursor-pointer hover:bg-slate-100  pr-7  "
         >
           <div className="flex justify-between w-full gap-3 ">
             <div className="">
@@ -196,7 +188,7 @@ function ProductListSecondary() {
   };
 
   return (
-    <div className="flex-1 bg-slate-50  ">
+    <div className="flex-1 bg-slate-50  h-screen overflow-hidden  ">
       <div className="sticky top-0 z-20 ">
         <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3  flex justify-between items-center  ">
           <div className="flex items-center justify-center gap-2">
@@ -242,32 +234,26 @@ function ProductListSecondary() {
 
       {/* adding party */}
 
-      {loader ? (
-        <div className="flex justify-center items-center h-screen">
-          <HashLoader color="#363ad6" />
-        </div>
-      ) : products.length > 0 ? (
-        <div
-          // style={{
-          //   scrollbarWidth: "thin",
-          //   // scrollbarColor: "transparent transparent",
-          // }}
-        >
-          <List
-            className=""
-            height={listHeight} // Specify the height of your list
-            itemCount={filteredProducts.length} // Specify the total number of items
-            itemSize={165} // Specify the height of each item
-            // width="100%" // Specify the width of your list
-          >
-            {Row}
-          </List>
-        </div>
-      ) : (
-        <div className="font-bold flex justify-center items-center mt-12 text-gray-500">
-          No Products !!!
+      {loader && <CustomBarLoader />}
+
+      {!loader && products.length === 0 && (
+        <div className="flex justify-center items-center mt-20 overflow-hidden font-bold text-gray-500">
+          {" "}
+          Oops!!.No Products Found
         </div>
       )}
+
+      <div className="">
+        <List
+          className=""
+          height={listHeight} // Specify the height of your list
+          itemCount={filteredProducts.length} // Specify the total number of items
+          itemSize={165} // Specify the height of each item
+          // width="100%" // Specify the width of your list
+        >
+          {Row}
+        </List>
+      </div>
 
       {/* <Link to={"/sUsers/addProduct"} className={`${type!=="self" ? "hidden " : ""}  flex justify-center`}>
           <div className=" px-4 absolute bottom-12 text-white bg-violet-700 rounded-3xl p-2 flex items-center justify-center gap-2 hover_scale cursor-pointer ">

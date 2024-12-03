@@ -431,7 +431,7 @@ function SidebarSec({ TAB, showBar }) {
             : "-translate-x-full md:translate-x-0 z-50 absolute md:relative"
         } ${
           open ? "w-64" : "w-28"
-        } transition-all duration-1000 ease-in-out flex flex-col h-screen p-1 bg-[#0b1d34] overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-track-[#0B1D34] scrollbar-thumb-[#30435e]`}
+        } transition-all duration-700 ease-in-out flex flex-col h-screen p-1 bg-[#0b1d34] overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-track-[#0B1D34] scrollbar-thumb-[#30435e]`}
         style={{
           //   scrollbarWidth: "thin",
           // scrollbarColor: "gray #0B1D34",
@@ -520,7 +520,7 @@ function SidebarSec({ TAB, showBar }) {
 
           <div className="flex flex-col items-center px-4 bg-slate-800 py-1 ">
             <h3 className="text-[10px] text-gray-400  tracking-widest">
-              Version 1.0.0
+              Version 0.0.1
             </h3>
           </div>
         </div>
