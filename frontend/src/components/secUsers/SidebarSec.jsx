@@ -34,6 +34,8 @@ import { GrInfo } from "react-icons/gr";
 import { IoMdPower } from "react-icons/io";
 import Swal from "sweetalert2";
 import { RiBox3Fill } from "react-icons/ri";
+import { TiUserAdd } from "react-icons/ti";
+import { MdHomeRepairService } from "react-icons/md";
 
 
 function SidebarSec({ TAB, showBar }) {
@@ -126,18 +128,18 @@ function SidebarSec({ TAB, showBar }) {
       //   icon: <TiUserAdd />,
       //   label: "Customers",
       // },
-      {
-        to: "/sUsers/hsnList",
-        tab: "hsn",
-        icon: <HiDocumentText />,
-        label: "Tax classification",
-      },
-      {
-        to: "/sUsers/productList",
-        label: "Products",
-        icon: <RiBox3Fill/>,
-        tab: "product",
-      }
+      // {
+      //   to: "/sUsers/hsnList",
+      //   tab: "hsn",
+      //   icon: <HiDocumentText />,
+      //   label: "Tax classification",
+      // },
+      // {
+      //   to: "/sUsers/productList",
+      //   label: "Products",
+      //   icon: <RiBox3Fill/>,
+      //   tab: "product",
+      // }
     ];
 
     // if (org.type === "self") {
@@ -151,6 +153,13 @@ function SidebarSec({ TAB, showBar }) {
 
     // Show "Inventory" only if org.type is "self"
     // if (org.type === "self") {
+    //   additionalTabs.push({
+    //     to: "/sUsers/additionalChargesList",
+    //     label: "Ledger",
+    //     icon: <MdHomeRepairService />,
+    //     tab: "ledger",
+    //   });
+    // }
     //   additionalTabs.push({
     //     to: "#",
     //     icon: <MdOutlineInventory />,
@@ -520,7 +529,7 @@ function SidebarSec({ TAB, showBar }) {
 
           <div className="flex flex-col items-center px-4 bg-slate-800 py-1 ">
             <h3 className="text-[10px] text-gray-400  tracking-widest">
-              Version 0.0.1
+              Version 0.0.3
             </h3>
           </div>
         </div>

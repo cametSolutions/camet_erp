@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import api from "../../api/api";
 import Pagination from "../../components/common/Pagination";
-import {  IoReorderThreeSharp } from "react-icons/io5";
 import { FaEdit } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -9,9 +8,10 @@ import { MdDelete } from "react-icons/md";
 import Swal from "sweetalert2";
 import { removeAll } from "../../../slices/invoice";
 import { removeAllSales } from "../../../slices/sales";
-import { useSidebar } from "../../layout/Layout";
 import { useDispatch } from "react-redux";
 import { useLocation } from "react-router-dom";
+import { IoIosArrowRoundBack } from "react-icons/io";
+import { useNavigate } from "react-router-dom";
 
 function HsnList() {
   const [hsn, setHsn] = useState([]);
@@ -28,6 +28,7 @@ function HsnList() {
 
   const dispatch=useDispatch()
   const location = useLocation();
+  const navigate = useNavigate();
   let user;
   let orgId;
   let org;
@@ -66,7 +67,6 @@ function HsnList() {
 
   }, [orgId, refresh]);
 
-  const {  handleToggleSidebar } = useSidebar();
 
 
   const handleDelete = async (hsnId) => {
@@ -112,27 +112,19 @@ function HsnList() {
      
 
       <section className="  antialiased  text-gray-600     ">
-        <div className=" md:hidden sticky top-0 bg-[#201450] text-white mb-2 p-3 flex items-center gap-3  text-lg">
-          <IoReorderThreeSharp
-            onClick={handleToggleSidebar}
-            className="block md:hidden text-3xl cursor-pointer"
-          />
-
-          <div className="flex items-center justify-between w-full">
-            <p>HSN</p>
-            <Link to={`/${user}/hsn`}>
-              <button className="flex gap-2 bg-green-500 px-2 py-1 rounded-md text-sm  hover:scale-105 duration-100 ease-in-out hover:bg-green-600 mr-3">
-                Add HSN
-              </button>
-            </Link>
-          </div>
-        </div>
+       
         <div className="flex flex-col h-full ">
           {/* <!-- Table --> */}
-          <div className="w-full   bg-white shadow-lg rounded-sm border  border-gray-200">
-            <header className=" hidden md:block px-5 py-4 border-b border-gray-100 bg bg-[#261b56] text-white">
+          <div className="w-full   bg-white shadow-lg rounded-sm ">
+            <header className="  px-5 py-4 border-b border-gray-100 bg bg-[#261b56] text-white">
               <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2">
+
+                <IoIosArrowRoundBack
+                onClick={()=>{navigate(-1,{replace:true})}}
+                 className="text-2xl"/>
                 <h2 className="font-semibold ">HSN</h2>
+                </div>
                 {/* {org.type === "self" && ( */}
                   <Link to={`/${user}/hsn`}>
                     <button className="flex gap-2 bg-green-500 px-2 py-1 rounded-md text-sm  hover:scale-105 duration-100 ease-in-out hover:bg-green-600">

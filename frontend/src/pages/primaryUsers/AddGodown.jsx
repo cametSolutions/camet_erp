@@ -1,22 +1,22 @@
-import { IoReorderThreeSharp } from "react-icons/io5";
 import ProductSubDetailsForm from "../../components/homePage/ProductSubDetailsForm";
-import { useSidebar } from "../../layout/Layout";
+import { useState } from "react";
+import TitleDiv from "../../components/common/TitleDiv";
 
 function AddGodown() {
-  const {  handleToggleSidebar } = useSidebar();
+
+  const [loading, setLoading] = useState(false);
+
+  const handleLoader = (data) => {
+    setLoading(data)
+  }
 
   return (
  
 
-    <div className="flex-1  ">
-      <div className="bg-[#201450]  sticky top-0 p-3 z-100 text-white text-lg font-bold flex items-center gap-3 z-20">
-        <IoReorderThreeSharp
-            onClick={handleToggleSidebar}
-          className="block md:hidden text-3xl"
-        />
-        <p>Add Godown</p>
-      </div>
-      <ProductSubDetailsForm tab={"godown"}     />
+    <div className="flex-1 h-screen overflow-hidden ">
+           <TitleDiv title={"Add Location"} from="/sUsers/StockItem" loading={loading} />
+
+      <ProductSubDetailsForm tab={"godown"} handleLoader={handleLoader}    />
     </div>
   )
 }

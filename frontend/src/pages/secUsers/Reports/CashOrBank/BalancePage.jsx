@@ -26,7 +26,6 @@ const BalancePage = () => {
       color: "text-gray-900",
       value: "bankOd",
     },
-    
   ]);
 
   const cmp_id = useSelector(
@@ -34,11 +33,9 @@ const BalancePage = () => {
   );
   const { start, end } = useSelector((state) => state.date);
 
-
-  const {
-    data: sourceData,
-    loading,
-  } = useFetch(`/api/sUsers/findSourceBalance/${cmp_id}?startOfDayParam=${start}&endOfDayParam=${end}`);
+  const { data: sourceData, loading } = useFetch(
+    `/api/sUsers/findSourceBalance/${cmp_id}?startOfDayParam=${start}&endOfDayParam=${end}`
+  );
 
   useEffect(() => {
     if (sourceData) {
@@ -66,24 +63,32 @@ const BalancePage = () => {
 
   return (
     <>
+      <div className="sticky top-0">
+        <TitleDiv
+          title="Cash / Bank Balance"
+          from="/sUsers/reports"
+          loading={loading}
+        />
 
-    <div className="sticky top-0">
-
-      <TitleDiv title="Cash / Bank Balance" from="/sUsers/reports"  loading={loading}/>
-
-      <section className="shadow-lg border-b  ">
-        <SelectDate />
-      </section>
+        <section className="shadow-lg border-b  ">
+          <SelectDate />
+        </section>
         <div className="text-center bg-[#219ebc] shadow-xl text-white h-60 flex justify-center items-center flex-col">
-          <h2 className="text-3xl sm:text-4xl font-bold">₹ {sourceData?.grandTotal || 0}</h2>
+          <h2 className="text-3xl sm:text-4xl font-bold">
+            ₹ {sourceData?.grandTotal || 0}
+          </h2>
           <p className="text-sm mt-4 font-semibold opacity-90">
             {/* 01 APR 24 to 31 MAR 25 */}
-            {new Date(start).toDateString()} - {new Date(end).toDateString()} 
+            {new Date(start).toDateString()} - {new Date(end).toDateString()}
           </p>
         </div>
-    </div>
+      </div>
 
-      <div className={` ${loading && "animate-pulse opacity-70 pointer-events-none"}  flex flex-col gap-3`}>
+      <div
+        className={` ${
+          loading && "animate-pulse opacity-70 pointer-events-none"
+        }  flex flex-col gap-3`}
+      >
         {/* Total Balance */}
 
         {/* Balance Details Card */}

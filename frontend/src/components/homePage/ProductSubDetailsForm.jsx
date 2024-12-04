@@ -9,10 +9,11 @@ import { useSelector } from "react-redux";
 import Pagination from "../../components/common/Pagination";
 import { useLocation } from "react-router-dom";
 
-const ProductSubDetailsForm = ({ tab }) => {
+const ProductSubDetailsForm = ({ tab, handleLoader }) => {
   const [value, setValue] = useState("");
   const [data, setData] = useState([]);
   const [reload, setReload] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [postPerPage, setPostPerPage] = useState(5);
@@ -21,33 +22,26 @@ const ProductSubDetailsForm = ({ tab }) => {
     enabled: false,
   });
 
-
-
   const location = useLocation();
 
-// Call useSelector hooks unconditionally
-const selectedOrgId = useSelector(
-  (state) => state?.setSelectedOrganization?.selectedOrg?._id
-);
-const secSelectedOrgId = useSelector(
-  (state) => state?.secSelectedOrganization?.secSelectedOrg?._id
-);
+  // Call useSelector hooks unconditionally
+  const selectedOrgId = useSelector(
+    (state) => state?.setSelectedOrganization?.selectedOrg?._id
+  );
+  const secSelectedOrgId = useSelector(
+    (state) => state?.secSelectedOrganization?.secSelectedOrg?._id
+  );
 
-let user;
-let orgId;
+  let user;
+  let orgId;
 
-if (location?.pathname?.startsWith("/pUsers")) {
-  user = "pUsers";
-  orgId = selectedOrgId;
-} else {
-  user = "sUsers";
-  orgId = secSelectedOrgId;
-}
-
-  
-  
-
-
+  if (location?.pathname?.startsWith("/pUsers")) {
+    user = "pUsers";
+    orgId = selectedOrgId;
+  } else {
+    user = "sUsers";
+    orgId = secSelectedOrgId;
+  }
 
   useEffect(() => {
     getSubDetails();
@@ -62,6 +56,8 @@ if (location?.pathname?.startsWith("/pUsers")) {
 
   const getSubDetails = async (data) => {
     try {
+      setLoading(true);
+      handleLoader(true);
       const res = await api.get(
         `/api/${user}/getProductSubDetails/${orgId}?type=${tab}`,
         {
@@ -72,6 +68,9 @@ if (location?.pathname?.startsWith("/pUsers")) {
     } catch (error) {
       console.log(error);
       toast.error(error.response.data.message);
+    } finally {
+      setLoading(false);
+      handleLoader(false);
     }
   };
 
@@ -94,6 +93,8 @@ if (location?.pathname?.startsWith("/pUsers")) {
     }
 
     try {
+      setLoading(true);
+      handleLoader(true);
       const res = await api.post(
         `/api/${user}/addProductSubDetails/${orgId}`,
         formData,
@@ -107,6 +108,9 @@ if (location?.pathname?.startsWith("/pUsers")) {
     } catch (error) {
       console.log(error);
       toast.error(error.response.data.message);
+    } finally {
+      setLoading(false);
+      handleLoader(false);
     }
   };
 
@@ -138,6 +142,8 @@ if (location?.pathname?.startsWith("/pUsers")) {
 
       // If the user confirms the deletion
       if (result.isConfirmed) {
+        setLoading(true);
+        handleLoader(true);
         const res = await api.delete(
           `/api/${user}/deleteProductSubDetails/${orgId}/${id}?type=${tab}`,
           {
@@ -160,6 +166,9 @@ if (location?.pathname?.startsWith("/pUsers")) {
         error.response?.data?.message || "An error occurred while deleting",
         "error"
       );
+    } finally {
+      setLoading(false);
+      handleLoader(false);
     }
   };
 
@@ -191,6 +200,8 @@ if (location?.pathname?.startsWith("/pUsers")) {
       [tab]: value,
     };
     try {
+      setLoading(true);
+      handleLoader(true);
       const res = await api.put(
         `/api/${user}/editProductSubDetails/${orgId}/${id}?type=${tab}`,
         formData,
@@ -204,117 +215,84 @@ if (location?.pathname?.startsWith("/pUsers")) {
     } catch (error) {
       console.log(error);
       toast.error(error.response?.data?.message || "An error occurred");
+    } finally {
+      setLoading(false);
+      handleLoader(false);
     }
   };
 
-  const lastPostIndex = currentPage * postPerPage;
-  const firstPostIndex = lastPostIndex - postPerPage;
-  const finalData = data.slice(firstPostIndex, lastPostIndex);
-
   return (
-    <div className=" mb-6   ">
-      <h1 className="text-sm font-bold mb-6  text-gray-800 px-6 pt-6  uppercase">
-        ADD YOUR DESIRED {tab}
-      </h1>
-      <div className="flex items-center gap-1 w-full px-6  ">
-        <input
-          type="text"
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              handleSubmit(value);
-            }
-          }}
-          placeholder="Enter your brand name"
-          className="w-full md:w-1/2  p-1  border border-gray-300 rounded"
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-        />
-        <div className="flex justify-between">
+    <div className={`${loading ? "opacity-50 animate-pulse" : ""} `}>
+      <div className="flex flex-col justify-center  sticky top-0 z-10 ">
+        <div className=" flex justify-center items-center flex-col bg-[#457b9d] py-14">
+          <h2 className="font-bold uppercase text-white">
+            ADD YOUR DESIRED {tab}
+          </h2>
+          <input
+            type="text"
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                handleSubmit(value);
+              }
+            }}
+            placeholder={`Enter your ${tab} name `}
+            className=" w-4/6  sm:w-2/6   p-1 text-black border border-gray-300 rounded-full mt-3 text-center"
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+          />
           <button
             onClick={
               edit?.enabled
                 ? () => editSubDetails(edit.id, value)
                 : () => handleSubmit(value)
             }
-            className="bg-gray-800 text-white px-4 py-1 rounded "
+            className="bg-gray-800 text-white px-6 py-1 rounded-full mt-3 text-sm font-bold "
           >
             {edit ? "Update" : "Submit"}
           </button>
         </div>
+        <div className="h-3 bg-gray-100 "></div>
       </div>
-      <section className="py-1 bg-blueGray-50 px-1">
-        <div className="w-full   xl:mb-0  mt-12">
-          <div className="relative flex flex-col min-w-0 break-words bg-white w-full mb-6 shadow-lg rounded">
-            {/* <div className="rounded-t mb-0 px-4 py-3 border-0">
-              <div className="flex flex-wrap items-center">
-                <div className="relative w-full px-4 max-w-full flex-grow flex-1 text-right">
-                  <button
-                    className="bg-indigo-500 text-white active:bg-indigo-600 text-xs font-bold uppercase px-3 py-1 rounded outline-none focus:outline-none  mb-1 ease-linear transition-all duration-150"
-                    type="button"
-                  >
-                    See all
-                  </button>
+      
+      <section className="overflow-y-scroll h-[calc(100vh-273px)] px-4 scrollbar-thin ">
+        <div className="mt-2">
+          {data?.length > 0 && !loading ? (
+            data.map((el) => (
+              <div
+                key={el._id}
+                className="flex items-center justify-between border-t-0 align-middle  whitespace-nowrap p-4 mb-2 border-b cursor-pointer hover:bg-slate-100 hover:translate-y-[1px]"
+              >
+                <div className=" px-6 text-left text-wrap text-blueGray-700 text-sm font-bold text-gray-500">
+                  {el[tab]}
+                </div>
+
+                <div className="flex items-center gap-12 text-xs">
+                  <div className=" cursor-pointer text-center flex justify-center ">
+                    <p
+                      onClick={() => handleEdit(el._id, el[tab])}
+                      className="text-blue-500"
+                    >
+                      <FaEdit size={15}  />
+                    </p>
+                  </div>
+                  <div className=" cursor-pointer text-right ">
+                    <p
+                      onClick={() => deleteSubDetails(el._id)}
+                      className="flex justify-end mr-4 text-red-500"
+                    >
+                      <FaTrash />
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div> */}
-
-            <div className="block w-full overflow-x-auto">
-              <table className="items-center bg-transparent w-full border-collapse">
-                <thead>
-                  <tr>
-                    <th className=" w-4/6  px-6 text-left bg-blueGray-50 text-blueGray-500 border border-solid border-blueGray-100 py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold">
-                      Name
-                    </th>
-                    <th className="px-6 w-1/6 text-center bg-blueGray-50 text-blueGray-500 align-middle border border-solid border-blueGray-100 py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold">
-                      Edit
-                    </th>
-                    <th className="px-6 w-1/6 text-right bg-blueGray-50 text-blueGray-500 align-middle border border-solid border-blueGray-100 py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold">
-                      Delete
-                    </th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {finalData?.map((el) => (
-                    <tr key={el._id}>
-                      <th className="px-6 text-left col-span-2 text-wrap border-t-0 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4 text-blueGray-700">
-                        {el[tab]}
-                      </th>
-                      <td className="cursor-pointer text-center flex justify-center px-6 border-t-0 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
-                        <p
-                          onClick={() => {
-                            handleEdit(el._id, el[tab]);
-                          }}
-                          className="text-blue-500"
-                        >
-                          <FaEdit size={15} />
-                        </p>
-                      </td>
-                      <td className=" cursor-pointer text-right  px-6 border-t-0 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
-                        <p
-                          onClick={() => deleteSubDetails(el._id)}
-                          className="flex justify-end mr-4 text-red-500"
-                        >
-                          <FaTrash />
-                        </p>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            ))
+          ) : (
+            <div className="text-center text-gray-500 font-bold  whitespace-nowrap p-4 ">
+              {!loading && <p>Data not found</p>}
             </div>
-          </div>
+          )}
         </div>
       </section>
-
-      <div className="mt-1">
-        <Pagination
-          postPerPage={postPerPage}
-          totalPosts={data.length}
-          setCurrentPage={setCurrentPage}
-          currentPage={currentPage}
-        />
-      </div>
     </div>
   );
 };

@@ -1,24 +1,20 @@
-import { IoReorderThreeSharp } from 'react-icons/io5'
-import ProductSubDetailsForm from '../../components/homePage/ProductSubDetailsForm'
-import { useSidebar } from "../../layout/Layout";
+import ProductSubDetailsForm from "../../components/homePage/ProductSubDetailsForm";
+import TitleDiv from "../../components/common/TitleDiv";
+import { useState } from "react";
 
 function AddSubCategory() {
-  const {  handleToggleSidebar } = useSidebar();
+  const [loading, setLoading] = useState(false);
 
+  const handleLoader = (data) => {
+    setLoading(data)
+  }
   return (
-    
+    <div className="flex-1 h-screen overflow-y-hidden ">
+      <TitleDiv title={"Add Sub Category"} from="/sUsers/stockItemSettings"  loading={loading}/>
 
-    <div className="flex-1 ">
-      <div className="bg-[#201450]  sticky top-0 p-3 z-100 text-white text-lg font-bold flex items-center gap-3 z-20">
-        <IoReorderThreeSharp
-            onClick={handleToggleSidebar}
-          className="block md:hidden text-3xl"
-        />
-        <p>Add Sub Category</p>
-      </div>
-      <ProductSubDetailsForm tab={"subcategory"}     />
+      <ProductSubDetailsForm tab={"subcategory"} handleLoader={handleLoader} />
     </div>
-  )
+  );
 }
 
-export default AddSubCategory
+export default AddSubCategory;

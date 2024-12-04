@@ -163,7 +163,6 @@ import DebitNoteDetailsPrimary from '../pages/primaryUsers/DebitNoteDetailsPrima
 import ShareDebitNotePrimary from '../pages/primaryUsers/ShareDebitNotePrimary'
 import OutstandingListOfPayment from '../pages/secUsers/OutstandingListOfPayment'
 import ReceiptDetailsOfSale from '../pages/secUsers/ReceiptDetails'
-import BankPayment from '../pages/secUsers/BankPayment'
 import PaymtentDetails from '../pages/secUsers/PaymtentDetails'
 import PaymentPrintOut from '../pages/secUsers/PaymentPrintOut'
 import PaymtentDetailsPrimary from '../pages/primaryUsers/PaymtentDetailsPrimary'
@@ -187,6 +186,14 @@ import SourceList from '../pages/secUsers/SourceList'
 import SourceTransactions from '../pages/secUsers/Reports/CashOrBank/SourceTransactions'
 import AddCash from '../pages/primaryUsers/AddCash'
 import SettingsList from '../pages/secUsers/settilngs/SettingsList'
+import StockItem from '../pages/secUsers/settilngs/stockItem/StockItem'
+import PartySettings from '../pages/secUsers/settilngs/PartySettings'
+import DateEntrySettings from '../pages/secUsers/settilngs/DateEntrySettings'
+import OutstandingSettings from '../pages/secUsers/settilngs/OutstandingSettings'
+import StockItemSettings from '../pages/secUsers/settilngs/stockItem/stockItemSettings/StockItemSettings'
+import VoucerSettings from '../pages/secUsers/settilngs/dateEntry/VoucerSettings'
+import OrderSettings from '../pages/secUsers/settilngs/dateEntry/OrderSettings'
+import InvoiceSettings from '../pages/secUsers/settilngs/dateEntry/InvoiceSettings'
 
 const Routers = () => {
   return (
@@ -432,7 +439,16 @@ const Routers = () => {
 
         {/* settings */}
         <Route path='/sUsers/settings' element={<ProtectedSecRoute><SettingsList/></ProtectedSecRoute>}></Route>
-
+        <Route path='/sUsers/StockItem' element={<ProtectedSecRoute><StockItem/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/partySettings' element={<ProtectedSecRoute><PartySettings/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/dataEntrySettings' element={<ProtectedSecRoute><DateEntrySettings/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/OutstandingSettings' element={<ProtectedSecRoute><OutstandingSettings/></ProtectedSecRoute>}></Route>
+        {/* stock item settings */}
+        <Route path='/sUsers/StockItemSettings' element={<ProtectedSecRoute><StockItemSettings/></ProtectedSecRoute>}></Route>
+        {/* date entry settings */}
+        <Route path='/sUsers/VoucherSettings' element={<ProtectedSecRoute><VoucerSettings/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/OrderSettings' element={<ProtectedSecRoute><OrderSettings/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/InvoiceSettings' element={<ProtectedSecRoute><InvoiceSettings/></ProtectedSecRoute>}></Route>
 
         {/* errorPage */}
         <Route path='/errorPage' element={<ErrorPage />} />

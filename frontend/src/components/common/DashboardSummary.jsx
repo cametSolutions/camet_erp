@@ -1,4 +1,4 @@
-
+import { useNavigate } from "react-router-dom";
 
 const DashboardSummary = () => {
   const summaryData = [
@@ -140,6 +140,8 @@ const DashboardSummary = () => {
     {
       title: "Outstanding Receivables",
       value: "1,75,16,208.42",
+      to: "/sUsers/outstanding",
+
       icon: (
         <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
           <defs>
@@ -166,6 +168,7 @@ const DashboardSummary = () => {
     {
       title: "Outstanding Payables",
       value: "0",
+      to: "/sUsers/outstanding",
       icon: (
         <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
           <defs>
@@ -192,6 +195,7 @@ const DashboardSummary = () => {
     {
       title: "Cash/Bank Balance",
       value: "0",
+      to: "/sUsers/balancePage",
       icon: (
         <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
           <defs>
@@ -224,10 +228,22 @@ const DashboardSummary = () => {
     },
   ];
 
+  const navigate=useNavigate();
+
+  const handleLinkClick = (path) => {
+    if(path){
+      navigate(path);
+    }else{
+      return
+    }
+    
+  }
+
   return (
     <div className="shadow-lg rounded-lg px-3 py-4  w-full z-10  h-[calc(100vh-277px)] overflow-y-scroll  scrollbar-thin">
       {summaryData.map((item, index) => (
         <div
+          onClick={() => handleLinkClick(item?.to)}
           key={index}
           className=" p-4 flex items-center gap-5 bg-gray-100 mb-2 border-b shadow-md  cursor-pointer hover:bg-slate-100 hover:translate-x-[1px]"
         >
@@ -235,7 +251,7 @@ const DashboardSummary = () => {
             <div className="h-8 w-8">{item?.icon}</div>
           </div>
           <div className="">
-            <> ₹ {item.value}</>
+            <> ₹ 0</>
             <p className="text-gray-500 font-semibold text-sm">{item.title}</p>
           </div>
         </div>
