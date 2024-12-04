@@ -1,6 +1,6 @@
 /* eslint-disable react/prop-types */
 import { useEffect, useState } from "react";
-import { accountGroups02 } from "../../../../constants/accountGroups";
+import { accountGroups03 } from "../../../../constants/accountGroups";
 import { toast } from "react-toastify";
 import { useSelector } from "react-redux";
 import { statesData } from "../../../../constants/states.js";
@@ -208,7 +208,7 @@ function AddPartyForm({ submitHandler, partyDetails = {}, userType }) {
                         onChange={(e) => setAccountGroup(e.target.value)}
                       >
                         <option value="">Select Account Group</option>
-                        {accountGroups02.map((group, index) => (
+                        {accountGroups03.map((group, index) => (
                           <option key={index} value={group}>
                             {group}
                           </option>

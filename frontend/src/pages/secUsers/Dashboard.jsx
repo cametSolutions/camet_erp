@@ -11,6 +11,7 @@ import RemoveReduxData from "../../components/secUsers/RemoveReduxData";
 
 function Dashboard() {
   const [data, setData] = useState([]);
+  const [loader, setLoader] = useState(false);
 
   const navigate = useNavigate();
 
@@ -25,6 +26,7 @@ function Dashboard() {
   useEffect(() => {
     if (org) {
       const fetchTransactions = async () => {
+        setLoader(true);
         try {
           const res = await api.get(
             `/api/sUsers/transactions/${org._id}?todayOnly=true`,
@@ -39,6 +41,8 @@ function Dashboard() {
         } catch (error) {
           console.log(error);
           setData([]);
+        }finally {
+          setLoader(false);
         }
       };
       fetchTransactions();
@@ -82,6 +86,7 @@ function Dashboard() {
         handleLinkClick={handleLinkClick}
         type="secondary"
         from="dashboard"
+        loader={loader}
       />
     </div>
   );

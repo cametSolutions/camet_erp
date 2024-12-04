@@ -5,6 +5,9 @@ import { FaCaretDown } from "react-icons/fa";
 import { CiCalendarDate } from "react-icons/ci";
 import { IoReorderThreeSharp } from "react-icons/io5";
 import DashboardCard from "../../components/homePage/DashboardCardPrimary";
+import DashboardSummary from "./DashboardSummary";
+import { useState } from "react";
+import TransactionSkeleton from "./TransactionSkeleton";
 
 function DashBoard({
   handleToggleSidebar,
@@ -13,81 +16,129 @@ function DashBoard({
   receiptTotal,
   handleLinkClick,
   type,
-  from
+  from,
+  loader,
 }) {
+  const [tab, setTab] = useState("transactions");
+
   return (
-    <div className="">
-      <div className="sticky top-0  ">
-        <div className="sticky top-0  z-[100] h-[100px] ">
-          <div className="bg-[#012a4a]   sticky top-0 p-3  text-white text-lg font-bold flex items-center gap-3  shadow-lg">
-            <IoReorderThreeSharp
-              onClick={handleToggleSidebar}
-              className="block md:hidden text-3xl"
-            />
-            <p>Dashboard</p>
-          </div>
-
-          {/* company name */}
-
-          <div className="  bg-white shadow-lg p-2  flex items-center gap-3">
-            <div className="bg-blue-500 rounded-full w-[30px] h-[30px]  flex justify-center items-center text-md  text-white font-bold">
-              <div className="rounded-full w-[25px] h-[25px] md:w-[25px] md:h-[25px] bg-[#012a4a] flex items-center justify-center">
-                <p>{org?.name?.slice(0, 1)}</p>
-              </div>
-            </div>
-            <p className="font-bold text-md md:text-lg">
-              {org?.name || "Company Name"}
-            </p>
-            <FaCaretDown />
-          </div>
+    <div className="overflow-hidden h-screen">
+      <div className="sticky top-0   h-[100px] ">
+        <div className="bg-[#012a4a]   p-3  text-white text-lg font-bold flex items-center gap-3  shadow-lg">
+          <IoReorderThreeSharp
+            onClick={handleToggleSidebar}
+            className="block md:hidden text-3xl"
+          />
+          <p>Dashboard</p>
         </div>
+
         {/* company name */}
 
-        <div className="flex flex-col lg:flex-row   ">
-          <div className=" lg:h-screen sticky top-[100px] z-20  shadow-xl  ">
-            {/* tiles */}
-            <DashboardCard
-              receiptTotal={receiptTotal}
-              handleLinkClick={handleLinkClick}
-              userType={type}
-            />
-            {/* tiles */}
+        <div className="  bg-white shadow-lg p-2  flex items-center gap-3 mb-2 ">
+          <div className="bg-blue-500 rounded-full w-[30px] h-[30px]  flex justify-center items-center text-md  text-white font-bold">
+            <div className="rounded-full w-[25px] h-[25px] md:w-[25px] md:h-[25px] bg-[#012a4a] flex items-center justify-center">
+              <p>{org?.name?.trim().slice(0, 1)}</p>
+            </div>
+          </div>
+          <p className="font-bold text-md md:text-lg">
+            {org?.name || "Company Name"}
+          </p>
+          <FaCaretDown />
+        </div>
+      </div>
+      {/* company name */}
 
-            <div className=" md:hidden border-t-2  bg-white px-4 p-2  text-gray-500 text-sm md:text-lg font-bold flex items-center gap-3 z shadow-lg sm:sticky top-[115px]">
+      <div className="flex flex-col   ">
+        <div className=" z-20  shadow-xl   ">
+          {/* tiles */}
+          <DashboardCard
+            receiptTotal={receiptTotal}
+            handleLinkClick={handleLinkClick}
+            userType={type}
+          />
+          {/* tiles */}
+
+          <hr className="border" />
+
+          <div className=" hidden  sm:flex items-center   z-10  w-full pl-4">
+            <div className=" bg-white p-2 w-1/2 text-gray-500 text-xs md:text-sm font-bold flex items-center gap-3  ">
               <p> Today's Transactions</p>
-
-              <p className="text-[9px] md:text-sm">
-                ( {new Date().toDateString()} )
-              </p>
+              {/* 
+                <p className="text-[9px] md:text-sm">
+                  ( {new Date().toDateString()} )
+                </p> */}
+              <CiCalendarDate className="text-xl font-bold text-violet-500" />
+              <FaCaretDown />
+            </div>
+            <div className=" bg-white p-2  w-1/2 text-gray-500 text-xs md:text-sm font-bold flex items-center gap-3  ">
+              <p> Summary</p>
+              {/* 
+                <p className="text-[9px] md:text-sm">
+                  ( {new Date().toDateString()} )
+                </p> */}
               <CiCalendarDate className="text-xl font-bold text-violet-500" />
               <FaCaretDown />
             </div>
           </div>
+        </div>
 
-          {/* transactions */}
-
-          <div className=" md:flex-1 z-10   ">
-            <div className="hidden md:block  md:sticky md:top-[97px] z-10">
-              <div className=" bg-white p-2  text-gray-500 text-sm md:text-lg font-bold flex items-center gap-3 z shadow-lg  ">
-                <p> Today's Transactions</p>
-
-                <p className="text-[9px] md:text-sm">
-                  ( {new Date().toDateString()} )
-                </p>
-                <CiCalendarDate className="text-xl font-bold text-violet-500" />
-                <FaCaretDown />
-              </div>
-            </div>
-            {/* one */}
-            <DashboardTransaction
-              filteredData={filteredData}
-              userType={type}
-              from={from}
-            />
-            {/* one */}
+        {/* mobile view */}
+        <div className=" sm:hidden bg-white  w-full  text-gray-500 text-xs font-bold    flex items-center gap-8 border-b-2 ">
+          <div
+            onClick={() => setTab("transactions")}
+            className={` ${
+              tab === "transactions" && "text-violet-500 border-b-2 "
+            }   flex items-center gap-3 w-1/2 py-2 pl-4 mt-1 cursor-pointer`}
+          >
+            <p> Today's Transactions</p>
+            <CiCalendarDate className="text-sm font-bold text-violet-500" />
           </div>
+          <div
+            onClick={() => setTab("summary")}
+            className={` ${
+              tab === "summary" && "text-violet-500 border-b-2 "
+            }   flex items-center gap-3 w-1/2 py-2  mt-1 cursor-pointer`}
+          >
+            <p> Summary</p>
+            <CiCalendarDate className="text-sm font-bold text-violet-500" />
+          </div>
+        </div>
 
-          {/* transactions */}
+        {/* transactions */}
+
+        <div className=" w-full hidden sm:flex ">
+          <div className="w-1/2 h-[calc(100vh-301px)] overflow-y-scroll scrollbar-thin mt-2 ">
+            {loader ? (
+              <TransactionSkeleton />
+            ) : (
+              <DashboardTransaction
+                filteredData={filteredData}
+                userType={type}
+                from={from}
+              />
+            )}
+          </div>
+          <div className="w-1/2">
+            <DashboardSummary />
+          </div>
+        </div>
+
+        {/* mobile view */}
+
+        <div className=" w-full sm:hidden  ">
+          {tab === "transactions" ? (
+            <div className=" h-[calc(100vh-301px)] overflow-y-scroll scrollbar-thin mt-2 ">
+              <DashboardTransaction
+                filteredData={filteredData}
+                userType={type}
+                from={from}
+              />
+            </div>
+          ) : (
+            <div className="">
+              <DashboardSummary />
+            </div>
+          )}
         </div>
       </div>
     </div>

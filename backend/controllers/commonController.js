@@ -13,6 +13,8 @@ import AdditionalChargesModel from "../models/additionalChargesModel.js";
 import {
   aggregateTransactions,
   aggregateOpeningBalance,
+  addCorrespondingParty,
+  editCorrespondingParty,
 } from "../helpers/helper.js";
 import { startOfDay, endOfDay, parseISO } from "date-fns";
 import receiptModel from "../models/receiptModel.js";
@@ -1791,6 +1793,8 @@ export const addBank = async (req, res) => {
   const bank_ledname = bank_name;
 
   try {
+    const session = await mongoose.startSession();
+    session.startTransaction();
     const bank = await bankModel({
       acholder_name,
       ac_no,
@@ -1807,17 +1811,24 @@ export const addBank = async (req, res) => {
     const result = await bank.save();
 
     result.bank_id = result._id;
-    await result.save();
+    await result.save({ session });
 
-    if (result) {
-      return res
-        .status(200)
-        .json({ success: true, message: "Bank added successfully" });
-    } else {
-      return res
-        .status(400)
-        .json({ success: false, message: "Adding bank failed" });
-    }
+    await addCorrespondingParty(
+      bank_name,
+      Primary_user_id,
+      cmp_id,
+      "Bank Accounts",
+      result._id,
+      session
+    );
+
+    await session.commitTransaction();
+    session.endSession();
+    return res.status(200).json({
+      success: true,
+      message: "Bank added successfully",
+      data: result,
+    });
   } catch (error) {
     console.error(error);
     return res
@@ -1832,6 +1843,9 @@ export const addBank = async (req, res) => {
 export const editBank = async (req, res) => {
   const bank_id = req.params.bank_id;
 
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
     const udatedBank = await bankModel.findOneAndUpdate(
       { _id: bank_id },
@@ -1841,13 +1855,29 @@ export const editBank = async (req, res) => {
 
     udatedBank.bank_id = udatedBank._id;
     udatedBank.bank_ledname = udatedBank.bank_name;
-    udatedBank.save();
+    udatedBank.save({ session });
+
+    //// update corresponding party
+    await editCorrespondingParty(
+      udatedBank.bank_ledname,
+      udatedBank.Primary_user_id,
+      udatedBank.cmp_id,
+      "Bank Accounts",
+      udatedBank._id,
+      session
+    );
+
+    await session.commitTransaction();
+    session.endSession();
+
     res.status(200).json({
       success: true,
       message: "Bank updated successfully",
       data: udatedBank,
     });
   } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
     console.error(error);
     res.status(500).json({ success: false, message: "Internal Server Error" });
   }
@@ -1885,6 +1915,8 @@ export const getBankDetails = async (req, res) => {
 export const addCash = async (req, res) => {
   const { cash_ledname, cash_opening, cmp_id } = req.body;
   const Primary_user_id = req.pUserId || req.owner;
+  const session = await mongoose.startSession();
+  session.startTransaction();
 
   try {
     const cash = await cashModel({
@@ -1894,21 +1926,28 @@ export const addCash = async (req, res) => {
       cmp_id,
     });
 
-    const result = await cash.save();
+    const result = await cash.save({ session });
 
     result.cash_id = result._id;
     await result.save();
 
-    if (result) {
-      return res
-        .status(200)
-        .json({ success: true, message: "Cash added successfully" });
-    } else {
-      return res
-        .status(400)
-        .json({ success: false, message: "Adding Cash failed" });
-    }
+    await addCorrespondingParty(
+      cash_ledname,
+      Primary_user_id,
+      cmp_id,
+      "Cash-in-Hand",
+      result._id,
+      session
+    );
+
+    await session.commitTransaction();
+    session.endSession();
+    return res
+      .status(200)
+      .json({ success: true, message: "Cash added successfully" });
   } catch (error) {
+    session.abortTransaction();
+    session.endSession();
     console.error(error);
     return res
       .status(500)
@@ -1949,6 +1988,8 @@ export const getCashDetails = async (req, res) => {
 
 export const editCash = async (req, res) => {
   const cash_id = req.params.cash_id;
+  const session = await mongoose.startSession();
+  session.startTransaction();
   try {
     const updatedCash = await cashModel.findOneAndUpdate(
       { _id: cash_id },
@@ -1957,13 +1998,28 @@ export const editCash = async (req, res) => {
     );
 
     updatedCash.cash_id = updatedCash._id;
-    updatedCash.save();
+    updatedCash.save({ session });
+
+    //// update corresponding party
+    await editCorrespondingParty(
+      updatedCash.cash_ledname,
+      updatedCash.Primary_user_id,
+      updatedCash.cmp_id,
+      "Cash-in-Hand",
+      updatedCash._id,
+      session
+    );
+
+    await session.commitTransaction();
+    session.endSession();
     res.status(200).json({
       success: true,
       message: "Cash updated successfully",
       data: updatedCash,
     });
   } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
     console.error(error);
     res.status(500).json({ success: false, message: "Internal Server Error" });
   }

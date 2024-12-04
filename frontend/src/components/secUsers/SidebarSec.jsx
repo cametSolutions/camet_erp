@@ -35,6 +35,7 @@ import { IoMdPower } from "react-icons/io";
 import Swal from "sweetalert2";
 import { RiBox3Fill } from "react-icons/ri";
 import { TiUserAdd } from "react-icons/ti";
+import { MdHomeRepairService } from "react-icons/md";
 
 
 function SidebarSec({ TAB, showBar }) {
@@ -47,6 +48,7 @@ function SidebarSec({ TAB, showBar }) {
   const [expandedSections, setExpandedSections] = useState({
     inventory: false,
   });
+  const [open, setOpen] = useState(true);
 
   const selectedTab = localStorage.getItem("selectedSecondatSidebarTab");
   const [selectedSubTab, setSelectedSubTab] = useState(
@@ -63,17 +65,17 @@ function SidebarSec({ TAB, showBar }) {
   const sidebarRef = useRef(null);
 
   useEffect(() => {
-  const handleClickOutside = (event) => {
-    if (sidebarRef.current && !sidebarRef.current.contains(event.target)) {
-      setShowSidebar(false);
-    }
-  };
+    const handleClickOutside = (event) => {
+      if (sidebarRef.current && !sidebarRef.current.contains(event.target)) {
+        setShowSidebar(false);
+      }
+    };
 
-  document.addEventListener("click", handleClickOutside, true);
-  return () => {
-    document.removeEventListener("click", handleClickOutside, true);
-  };
-}, [sidebarRef, setShowSidebar]);
+    document.addEventListener("click", handleClickOutside, true);
+    return () => {
+      document.removeEventListener("click", handleClickOutside, true);
+    };
+  }, [sidebarRef, setShowSidebar]);
   const navItems = [
     {
       to: "/sUsers/dashboard",
@@ -151,6 +153,13 @@ function SidebarSec({ TAB, showBar }) {
 
     // Show "Inventory" only if org.type is "self"
     // if (org.type === "self") {
+      additionalTabs.push({
+        to: "/sUsers/additionalChargesList",
+        label: "Ledger",
+        icon: <MdHomeRepairService />,
+        tab: "ledger",
+      });
+    // }
     //   additionalTabs.push({
     //     to: "#",
     //     icon: <MdOutlineInventory />,
@@ -305,12 +314,13 @@ function SidebarSec({ TAB, showBar }) {
           navigate("/sUsers/login");
         } catch (error) {
           console.error(error);
-          toast.error(error.response?.data?.message || "An error occurred during logout");
+          toast.error(
+            error.response?.data?.message || "An error occurred during logout"
+          );
         }
       }
     });
   };
-  
 
   const handleDropDownchange = (el) => {
     setDropdown(!dropdown);
@@ -342,37 +352,50 @@ function SidebarSec({ TAB, showBar }) {
               } else {
                 handleSidebarItemClick(item.tab);
               }
-              // if (item.onClick) item.onClick();
             }}
-            className={`
-            ${
+            className={`${
               tab === item.tab
-                ? "bg-gray-800 text-blue-500 border-r-2 border-blue-500 "
-                : "text-gray-400 hover:bg-gray-800 hover:text-white "
-            }
-            flex items-center w-full py-2 mt-3 transition-colors duration-300 transform   text-[13.5px] pl-5 `}
+                ? `text-blue-500 ${
+                    open ? "border-r-2 border-blue-500 bg-gray-800" : ""
+                  }`
+                : "text-gray-400 hover:bg-gray-800 hover:text-white"
+            } flex items-center w-full py-2 mt-3 transition-all duration-300 transform text-[13.5px] h-10 ${
+              open && "pl-5"
+            }`}
           >
-            <div className="flex items-center justify-between w-full  ">
-              <div className="flex items-center">
-                {item.icon}
-                <span className="mx-4 font-medium">{item.label}</span>
+            {open ? (
+              <div className="flex items-center justify-between w-full">
+                <div className="flex items-center ">
+                  <span className="text-lg">{item.icon}</span>
+                  <span className=" transition-all mx-4 font-medium origin-left duration-500 ease-in-out">
+                    {item.label}
+                  </span>
+                </div>
+                <span className="mx-4 font-medium ">
+                  <FaAngleRight />
+                </span>
               </div>
-              <span className="mx-4 font-medium">
-                <FaAngleRight />
-              </span>
-            </div>
+            ) : (
+              <div className="flex justify-center text-lg">{item.icon}</div>
+            )}
+
             {item.subItems && (
-              <div className="flex items-center justify-between w-full cursor-pointer ml-6">
-                {expandedSections.inventory ? (
-                  <IoIosArrowUp />
-                ) : (
-                  <IoIosArrowDown />
-                )}
+              <div
+                className={`flex flex-col ml-6 overflow-hidden transition-[max-height] duration-500 ease-in-out ${
+                  expandedSections.inventory ? "max-h-[500px]" : "max-h-0"
+                }`}
+              >
+                {item.subItems.map((subItem, index) => (
+                  <div key={index} className="py-1">
+                    {subItem.label}
+                  </div>
+                ))}
               </div>
             )}
           </span>
         </Link>
-        {item.subItems && expandedSections.inventory && (
+
+        {/* {item.subItems && expandedSections.inventory && (
           <ul className="mt-2 space-y-2">
             {item.subItems.map((subItem, subIndex) => (
               <li
@@ -398,17 +421,15 @@ function SidebarSec({ TAB, showBar }) {
               </li>
             ))}
           </ul>
-        )}
+        )} */}
       </>
     );
   };
 
   return (
-    <div 
-    ref={sidebarRef}
-    className="nonPrintable-content">
+    <div ref={sidebarRef} className="nonPrintable-content">
       {loader && (
-        <div className="absolute top-0 w-screen h-screen z-50 flex justify-center items-center bg-black/[0.5]">
+        <div className="absolute top-0 w-screen h-screen z-50 flex justify-center items-center bg-black/[0.5] ">
           <RingLoader color="#1c14a0" />
         </div>
       )}
@@ -417,11 +438,24 @@ function SidebarSec({ TAB, showBar }) {
           showSidebar
             ? "z-50 absolute h-[125vh] transform translate-x-0"
             : "-translate-x-full md:translate-x-0 z-50 absolute md:relative"
-        }   transition-transform  duration-500 ease-in-out flex flex-col w-64 h-screen p-1   bg-[#0b1d34]    overflow-y-auto `}
-        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+        } ${
+          open ? "w-64" : "w-28"
+        } transition-all duration-700 ease-in-out flex flex-col h-screen p-1 bg-[#0b1d34] overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-track-[#0B1D34] scrollbar-thumb-[#30435e]`}
+        style={{
+          //   scrollbarWidth: "thin",
+          // scrollbarColor: "gray #0B1D34",
+          transitionProperty: "width, transform", // Add width transition explicitly
+          // '::-webkit-scrollbar': {
+          //   width: '1px'
+          // }
+        }}
       >
         {/* company head */}
-        <CametHead handleSidebarItemClick={handleSidebarItemClick}  />
+        <CametHead
+          handleSidebarItemClick={handleSidebarItemClick}
+          open={open}
+          setOpen={setOpen}
+        />
 
         {/* <Popover/> */}
 
@@ -432,10 +466,17 @@ function SidebarSec({ TAB, showBar }) {
           userData={userData}
           handleDropDownchange={handleDropDownchange}
           handleLogout={handleLogout}
+          open={open}
         />
 
-        <div className="flex flex-col  flex-1 mt-9 my-3">
-          <p className="text-sm text-gray-400 px-4">My account</p>
+        <div
+          className={`flex flex-col   flex-1  my-3  ${
+            !open ? "items-center  mt-1" :"mt-9"
+          } `}
+        >
+          <p className="text-sm text-gray-400 px-4">
+            Menu
+          </p>
 
           {/* my accounts */}
           <nav>
@@ -488,7 +529,7 @@ function SidebarSec({ TAB, showBar }) {
 
           <div className="flex flex-col items-center px-4 bg-slate-800 py-1 ">
             <h3 className="text-[10px] text-gray-400  tracking-widest">
-              Version 1.0.0
+              Version 0.0.2
             </h3>
           </div>
         </div>
