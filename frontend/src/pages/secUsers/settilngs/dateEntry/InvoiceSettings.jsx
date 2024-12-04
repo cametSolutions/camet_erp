@@ -63,7 +63,7 @@ const InvoiceSettings = () => {
 
   return (
     <div className="bg-white">
-      <TitleDiv title="Voucher Settings" from="/sUsers/dataEntrySettings" />
+      <TitleDiv title="Invoice Settings" from="/sUsers/dataEntrySettings" />
       <div className="space-y-4 b-white p-4   mx-1">
         {settingsOptions.map((option, index) => (
           <SettingsCard option={option} index={index} />

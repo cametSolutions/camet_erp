@@ -8,6 +8,7 @@ import DashboardCard from "../../components/homePage/DashboardCardPrimary";
 import DashboardSummary from "./DashboardSummary";
 import { useState } from "react";
 import TransactionSkeleton from "./TransactionSkeleton";
+import NotFound from "../../assets/images/space.png";
 
 function DashBoard({
   handleToggleSidebar,
@@ -110,6 +111,14 @@ function DashBoard({
           <div className="w-1/2 h-[calc(100vh-301px)] overflow-y-scroll scrollbar-thin mt-2 ">
             {loader ? (
               <TransactionSkeleton />
+            ) : filteredData.length === 0 ? (
+              <div className="h-[calc(100vh-301px)] flex justify-center flex-col items-center">
+                <img className="h-16 w-16" src={NotFound} alt="" />
+                <p className="text-xs font-bold text-gray-500 mt-1">
+                  {" "}
+                  No Transactions
+                </p>
+              </div>
             ) : (
               <DashboardTransaction
                 filteredData={filteredData}
@@ -128,11 +137,23 @@ function DashBoard({
         <div className=" w-full sm:hidden  ">
           {tab === "transactions" ? (
             <div className=" h-[calc(100vh-301px)] overflow-y-scroll scrollbar-thin mt-2 ">
+                {loader ? (
+              <TransactionSkeleton />
+            ) : filteredData.length === 0 ? (
+              <div className="h-[calc(100vh-301px)] flex justify-center flex-col items-center">
+                <img className="h-12 w-12" src={NotFound} alt="" />
+                <p className="text-xs font-bold text-gray-500 mt-2">
+                  {" "}
+                  No Transactions
+                </p>
+              </div>
+            ) : (
               <DashboardTransaction
                 filteredData={filteredData}
                 userType={type}
                 from={from}
               />
+            )}
             </div>
           ) : (
             <div className="">

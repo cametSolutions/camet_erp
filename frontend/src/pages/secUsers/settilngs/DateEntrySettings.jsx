@@ -32,7 +32,7 @@ const DateEntrySettings = () => {
 
   return (
     <div className="bg-white">
-      <TitleDiv title="Date Entry Settings" />
+      <TitleDiv title="Date Entry Settings" from="/sUsers/settings" />
       <div className="space-y-4 b-white p-4   mx-1">
         {settingsOptions.map((option, index) => (
           <SettingsCard option={option} index={index} />
