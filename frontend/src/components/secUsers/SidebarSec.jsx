@@ -205,7 +205,7 @@ function SidebarSec({ TAB, showBar }) {
     //   });
     // }
     additionalTabs.push({
-      to: "/sUsers/OrderConfigurations",
+      to: "/sUsers/settings",
       tab: "terms",
       icon: <IoMdSettings />,
       label: "Settings",

@@ -186,6 +186,7 @@ import BalanceDetails from '../pages/secUsers/Reports/CashOrBank/BalanceDetails'
 import SourceList from '../pages/secUsers/SourceList'
 import SourceTransactions from '../pages/secUsers/Reports/CashOrBank/SourceTransactions'
 import AddCash from '../pages/primaryUsers/AddCash'
+import SettingsList from '../pages/secUsers/settilngs/SettingsList'
 
 const Routers = () => {
   return (
@@ -428,6 +429,9 @@ const Routers = () => {
         <Route path='/sUsers/vouchersLIst' element={<ProtectedSecRoute><VouchersList/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/partyFilterList' element={<ProtectedSecRoute><PartyFilterList/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/statusFilterList' element={<ProtectedSecRoute><StatusFilterList/></ProtectedSecRoute>}></Route>
+
+        {/* settings */}
+        <Route path='/sUsers/settings' element={<ProtectedSecRoute><SettingsList/></ProtectedSecRoute>}></Route>
 
 
         {/* errorPage */}
