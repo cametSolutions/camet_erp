@@ -122,24 +122,24 @@ function SidebarSec({ TAB, showBar }) {
 
   if (companies && companies.length > 0 && org.isApproved === true) {
     const additionalTabs = [
-      {
-        to: "/sUsers/partyList",
-        tab: "addParty",
-        icon: <TiUserAdd />,
-        label: "Customers",
-      },
+      // {
+      //   to: "/sUsers/partyList",
+      //   tab: "addParty",
+      //   icon: <TiUserAdd />,
+      //   label: "Customers",
+      // },
       {
         to: "/sUsers/hsnList",
         tab: "hsn",
         icon: <HiDocumentText />,
         label: "Tax classification",
       },
-      {
-        to: "/sUsers/productList",
-        label: "Products",
-        icon: <RiBox3Fill/>,
-        tab: "product",
-      }
+      // {
+      //   to: "/sUsers/productList",
+      //   label: "Products",
+      //   icon: <RiBox3Fill/>,
+      //   tab: "product",
+      // }
     ];
 
     // if (org.type === "self") {
@@ -152,14 +152,14 @@ function SidebarSec({ TAB, showBar }) {
     // }
 
     // Show "Inventory" only if org.type is "self"
-    // if (org.type === "self") {
+    if (org.type === "self") {
       additionalTabs.push({
         to: "/sUsers/additionalChargesList",
         label: "Ledger",
         icon: <MdHomeRepairService />,
         tab: "ledger",
       });
-    // }
+    }
     //   additionalTabs.push({
     //     to: "#",
     //     icon: <MdOutlineInventory />,
@@ -529,7 +529,7 @@ function SidebarSec({ TAB, showBar }) {
 
           <div className="flex flex-col items-center px-4 bg-slate-800 py-1 ">
             <h3 className="text-[10px] text-gray-400  tracking-widest">
-              Version 0.0.2
+              Version 0.0.3
             </h3>
           </div>
         </div>

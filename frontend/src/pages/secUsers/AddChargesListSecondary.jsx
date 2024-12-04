@@ -24,7 +24,7 @@ function AddChargesListSecondary() {
   const cmp_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
- const navigate = useNavigate();
+  const navigate = useNavigate();
 
   const dispatch = useDispatch();
 
@@ -105,11 +105,15 @@ function AddChargesListSecondary() {
       </div> */}
 
       <section className=" flex-1 antialiased bg-gray-100 text-gray-600 h-screen overflow-hidden    ">
-        <header className=" flex items-center gap-2 px-5 py-4 border-b border-gray-100 bg bg-[#261b56] text-white sticky top-0">
-          <IoIosArrowRoundBack onClick={() => navigate("/sUsers/dashboard")} 
-          className="text-3xl"/>
-          <div className="flex justify-between items-center">
+        <header className=" flex items-center justify-between  gap-2 px-5 py-4 border-b border-gray-100 bg bg-[#261b56] text-white sticky top-0">
+          <div className="flex items-center gap-2">
+            <IoIosArrowRoundBack
+              onClick={() => navigate("/sUsers/dashboard")}
+              className="text-3xl"
+            />
             <h2 className="font-semibold ">Additional Charges</h2>
+          </div>
+          <div className="flex justify-between items-center">
             {org.type === "self" && (
               <Link to={"/sUsers/additionalCharges"}>
                 <button className="flex gap-2 bg-green-500 px-2 py-1 rounded-md text-sm  hover:scale-105 duration-100 ease-in-out hover:bg-green-600">
