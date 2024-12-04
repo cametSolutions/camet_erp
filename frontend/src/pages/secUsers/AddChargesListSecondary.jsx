@@ -8,9 +8,9 @@ import { useSelector } from "react-redux";
 import { MdDelete } from "react-icons/md";
 import Swal from "sweetalert2";
 import { removeAll } from "../../../slices/invoiceSecondary";
-
 import { useDispatch } from "react-redux";
-import SidebarSec from "../../components/secUsers/SidebarSec";
+import { IoIosArrowRoundBack } from "react-icons/io";
+import { useNavigate } from "react-router-dom";
 
 function AddChargesListSecondary() {
   const [additional, setAdditional] = useState([]);
@@ -24,9 +24,7 @@ function AddChargesListSecondary() {
   const cmp_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
-  console.log(cmp_id);
-
-  console.log(org);
+ const navigate = useNavigate();
 
   const dispatch = useDispatch();
 
@@ -49,7 +47,7 @@ function AddChargesListSecondary() {
     };
     fetchAdditionalCharges();
     dispatch(removeAll());
-  }, [cmp_id,refresh]);
+  }, [cmp_id, refresh]);
 
   console.log(org);
 
@@ -102,41 +100,29 @@ function AddChargesListSecondary() {
 
   return (
     <div className="flex">
-      <div className="" style={{ height: "100vh" }}>
+      {/* <div className="" style={{ height: "100vh" }}>
         <SidebarSec TAB={"additionalCharge"} showBar={showSidebar} />
-      </div>
+      </div> */}
 
-      <section className=" flex-1 antialiased bg-gray-100 text-gray-600 h-screen py-0 md:p-6 overflow-y-scroll   ">
-        <div className="block md:hidden bg-[#201450] text-white mb-2 p-3 flex items-center gap-3  text-lg">
-          <IoReorderThreeSharp
-            onClick={handleToggleSidebar}
-            className="block md:hidden text-3xl"
-          />
-
-          <div className="flex items-center justify-between w-full">
-            <p>Additional Charges</p>
-            <Link to={"/sUsers/additionalCharges"}>
-              <button className="flex gap-2 bg-green-500 px-2 py-1 rounded-md text-sm  hover:scale-105 duration-100 ease-in-out hover:bg-green-600 mr-3">
-                Add
-              </button>
-            </Link>
+      <section className=" flex-1 antialiased bg-gray-100 text-gray-600 h-screen overflow-hidden    ">
+        <header className=" flex items-center gap-2 px-5 py-4 border-b border-gray-100 bg bg-[#261b56] text-white sticky top-0">
+          <IoIosArrowRoundBack onClick={() => navigate("/sUsers/dashboard")} 
+          className="text-3xl"/>
+          <div className="flex justify-between items-center">
+            <h2 className="font-semibold ">Additional Charges</h2>
+            {org.type === "self" && (
+              <Link to={"/sUsers/additionalCharges"}>
+                <button className="flex gap-2 bg-green-500 px-2 py-1 rounded-md text-sm  hover:scale-105 duration-100 ease-in-out hover:bg-green-600">
+                  Add
+                </button>
+              </Link>
+            )}
           </div>
-        </div>
-        <div className="flex flex-col h-full px-[5px]">
+        </header>
+
+        <div className="flex flex-col h-full ">
           {/* <!-- Table --> */}
-          <div className="w-full max-w-[59rem] mx-auto  bg-white shadow-lg rounded-sm border  border-gray-200">
-            <header className=" hidden md:block px-5 py-4 border-b border-gray-100 bg bg-[#261b56] text-white">
-              <div className="flex justify-between items-center">
-                <h2 className="font-semibold ">Additional Charges</h2>
-                {org.type === "self" && (
-                  <Link to={"/sUsers/additionalCharges"}>
-                    <button className="flex gap-2 bg-green-500 px-2 py-1 rounded-md text-sm  hover:scale-105 duration-100 ease-in-out hover:bg-green-600">
-                      Add
-                    </button>
-                  </Link>
-                )}
-              </div>
-            </header>
+          <div className="w-full  mx-auto  bg-white shadow-lg rounded-sm border  border-gray-200">
             <div className="p-3">
               <div className="overflow-x-auto">
                 <table className="table-auto w-full">

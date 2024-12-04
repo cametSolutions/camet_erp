@@ -34,6 +34,7 @@ import { GrInfo } from "react-icons/gr";
 import { IoMdPower } from "react-icons/io";
 import Swal from "sweetalert2";
 import { RiBox3Fill } from "react-icons/ri";
+import { MdHomeRepairService } from "react-icons/md";
 
 
 function SidebarSec({ TAB, showBar }) {
@@ -151,6 +152,13 @@ function SidebarSec({ TAB, showBar }) {
 
     // Show "Inventory" only if org.type is "self"
     // if (org.type === "self") {
+      additionalTabs.push({
+        to: "/sUsers/additionalChargesList",
+        label: "Ledger",
+        icon: <MdHomeRepairService />,
+        tab: "ledger",
+      });
+    // }
     //   additionalTabs.push({
     //     to: "#",
     //     icon: <MdOutlineInventory />,
