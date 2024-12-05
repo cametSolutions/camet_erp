@@ -15,6 +15,7 @@ import {
   aggregateOpeningBalance,
   addCorrespondingParty,
   editCorrespondingParty,
+  getEmailService,
 } from "../helpers/helper.js";
 import { startOfDay, endOfDay, parseISO } from "date-fns";
 import receiptModel from "../models/receiptModel.js";
@@ -29,6 +30,8 @@ import mongoose from "mongoose";
 import cashModel from "../models/cashModel.js";
 import TallyData from "../models/TallyData.js";
 import bankModel from "../models/bankModel.js";
+import OragnizationModel from "../models/OragnizationModel.js";
+import nodemailer from "nodemailer";
 
 // @desc toget the details of transaction or sale
 // route get/api/sUsers/getSalesDetails
@@ -2024,3 +2027,67 @@ export const editCash = async (req, res) => {
     res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
+
+
+
+export const sendPdfViaEmail = async (req, res) => {
+  try {
+
+
+    const { email: toEmail, subject,pdfBlob } = req.body;
+    const cmp_id = req.params.cmp_id;
+
+    // console.log("toEmail", toEmail);
+    // console.log("subject", subject);
+    console.log("req.file", req.file);
+    
+
+
+    if (!toEmail || !subject || !pdfBlob) {
+      return res.status(400).json({ error: "Required fields are missing." });
+    }
+
+    // Fetch dynamic from email configuration from OrgModel
+    const org = await OragnizationModel.findById(cmp_id).lean();
+    if (!org || !org?.configurations[0]?.emailConfiguration) {
+      return res.status(400).json({ error: "Email configuration not found." });
+    }
+
+    const { email: fromEmail, appPassword } = org?.configurations[0]?.emailConfiguration;
+
+    // Create a transporter dynamically based on the from email domain
+    const transporter = nodemailer.createTransport({
+      service: getEmailService(fromEmail), // Dynamically determine the email service
+      auth: {
+        user: fromEmail,
+        pass: appPassword,
+      },
+    });
+
+    // Create the email options
+    const mailOptions = {
+      from: fromEmail,
+      to: toEmail,
+      subject,
+      // text: message,
+      attachments: [
+        {
+          filename: "Medical_Lab_Report.pdf", // The name you want the file to have
+          content: pdfBlob, // The PDF buffer
+          contentType: "application/pdf", // MIME type
+          encoding: "base64", // Specify the encoding
+        },
+      ]
+    };
+
+    // Send the email
+    await transporter.sendMail(mailOptions);
+    return res.status(200).json({ message: "Email sent successfully." });
+  } catch (error) {
+    console.error("Error sending email:", error);
+    return res.status(500).json({ error: "Failed to send email." });
+  }
+};
+
+// Utility function to determine the email service based on the email domain
+

@@ -17,6 +17,8 @@
     "decimal.js": "^10.4.3",
     "flowbite": "^2.3.0",
     "flowbite-react": "^0.7.2",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^2.5.2",
     "lodash.debounce": "^4.0.8",
     "react": "^18.2.0",
     "react-datepicker": "^6.9.0",

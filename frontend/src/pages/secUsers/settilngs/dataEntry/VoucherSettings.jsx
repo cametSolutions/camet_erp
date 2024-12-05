@@ -9,15 +9,16 @@ import {
 import TitleDiv from "../../../../components/common/TitleDiv";
 import SettingsCard from "../../../../components/common/SettingsCard";
 
-const VoucerSettings = () => {
+const VoucherSettings = () => {
   const settingsOptions = [
     {
       title: "Email",
       description:
         "Configure email list on which you need to send data entry email",
       icon: <TbMail />,
-      to: "/voucherSettings/email",
-      active: false,
+      to: "/sUsers/emailSettings",
+      active: true,
+      // modal: true,
     },
     {
       title: "Voucher Type",
@@ -51,16 +52,18 @@ const VoucerSettings = () => {
     },
   ];
 
+  const modalHandler = () => {};
+
   return (
     <div className="bg-white">
       <TitleDiv title="Voucher Settings" from="/sUsers/dataEntrySettings" />
       <div className="space-y-4 b-white p-4   mx-1">
         {settingsOptions.map((option, index) => (
-          <SettingsCard option={option} index={index} />
+          <SettingsCard option={option} index={index} modalHandler={modalHandler} />
         ))}
       </div>
     </div>
   );
 };
 
-export default VoucerSettings;
+export default VoucherSettings;

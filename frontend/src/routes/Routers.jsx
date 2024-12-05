@@ -191,9 +191,10 @@ import PartySettings from '../pages/secUsers/settilngs/PartySettings'
 import DateEntrySettings from '../pages/secUsers/settilngs/DateEntrySettings'
 import OutstandingSettings from '../pages/secUsers/settilngs/OutstandingSettings'
 import StockItemSettings from '../pages/secUsers/settilngs/stockItem/stockItemSettings/StockItemSettings'
-import VoucerSettings from '../pages/secUsers/settilngs/dateEntry/VoucerSettings'
-import OrderSettings from '../pages/secUsers/settilngs/dateEntry/OrderSettings'
-import InvoiceSettings from '../pages/secUsers/settilngs/dateEntry/InvoiceSettings'
+import VoucherSettings from '../pages/secUsers/settilngs/dataEntry/VoucherSettings'
+import OrderSettings from '../pages/secUsers/settilngs/dataEntry/OrderSettings'
+import InvoiceSettings from '../pages/secUsers/settilngs/dataEntry/InvoiceSettings'
+import EmailSettings from '../pages/secUsers/settilngs/dataEntry/voucherSettings/EmailSettings'
 
 const Routers = () => {
   return (
@@ -446,10 +447,12 @@ const Routers = () => {
         {/* stock item settings */}
         <Route path='/sUsers/StockItemSettings' element={<ProtectedSecRoute><StockItemSettings/></ProtectedSecRoute>}></Route>
         {/* date entry settings */}
-        <Route path='/sUsers/VoucherSettings' element={<ProtectedSecRoute><VoucerSettings/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/VoucherSettings' element={<ProtectedSecRoute><VoucherSettings/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/OrderSettings' element={<ProtectedSecRoute><OrderSettings/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/InvoiceSettings' element={<ProtectedSecRoute><InvoiceSettings/></ProtectedSecRoute>}></Route>
-
+        {/* voucher settings */}
+        <Route path='/sUsers/emailSettings' element={<ProtectedSecRoute><EmailSettings/></ProtectedSecRoute>}></Route>
+        
         {/* errorPage */}
         <Route path='/errorPage' element={<ErrorPage />} />
         <Route path='/serverError' element={<ServerError />} />

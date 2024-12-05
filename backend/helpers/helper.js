@@ -207,3 +207,16 @@ export const editCorrespondingParty = async (
     throw error; // Propagate the error
   }
 };
+
+
+//// get email service
+
+export const getEmailService = (email) => {
+  const domain = email.split("@")[1].toLowerCase();
+  if (domain.includes("gmail")) return "gmail";
+  if (domain.includes("hotmail")) return "hotmail";
+  if (domain.includes("yahoo")) return "yahoo";
+  if (domain.includes("outlook")) return "outlook";
+  return "smtp"; // Default to SMTP if no known domain
+};
+

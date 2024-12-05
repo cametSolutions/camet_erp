@@ -8,13 +8,13 @@ import { MdPrint } from "react-icons/md";
 // import numberToWords from "number-to-words";
 import { Link } from "react-router-dom";
 import SalesPdf from "../../components/common/SalesPdf";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
 
 function ShareSalesSecondary() {
   const [data, setData] = useState([]);
   const [org, setOrg] = useState([]);
-  // const [subTotal, setSubTotal] = useState("");
-  // const [additinalCharge, setAdditinalCharge] = useState("");
-  // const [inWords, setInWords] = useState("");
+
   const [bank, setBank] = useState([]);
 
   const { id } = useParams();
@@ -55,52 +55,11 @@ function ShareSalesSecondary() {
     getTransactionDetails();
   }, [id]);
 
-  console.log(data);
 
-  //  console.log(org?.configurations[0]?.terms);
-
-  // useEffect(() => {
-  //   if (data && data.items) {
-  //     const subTotal = data.items
-  //       .reduce((acc, curr) => acc + parseFloat(curr?.total), 0)
-  //       .toFixed(2);
-  //     setSubTotal(subTotal);
-
-  //     const addiTionalCharge = data?.additionalCharges
-  //       ?.reduce((acc, curr) => {
-  //         let value = curr?.finalValue === "" ? 0 : parseFloat(curr.finalValue);
-  //         if (curr?.action === "add") {
-  //           return acc + value;
-  //         } else if (curr?.action === "sub") {
-  //           return acc - value;
-  //         }
-  //         return acc;
-  //       }, 0)
-
-  //       ?.toFixed(2);
-  //     setAdditinalCharge(addiTionalCharge);
-
-  //     const [integerPart, decimalPart] = data.finalAmount.toString().split(".");
-  //     const integerWords = numberToWords.toWords(parseInt(integerPart, 10));
-  //     console.log(integerWords);
-  //     const decimalWords = decimalPart
-  //       ? ` and ${numberToWords.toWords(parseInt(decimalPart, 10))} `
-  //       : " and Zero";
-  //     console.log(decimalWords);
-
-  //     const mergedWord = [
-  //       ...integerWords,
-  //       // " Rupees",
-  //       ...decimalWords,
-  //       // "Paisa",
-  //     ].join("");
-
-  //     setInWords(mergedWord);
-  //   }
-  // }, [data]);
+  
 
 
-
+//// to print pdf
   const handlePrint = useReactToPrint({
     content: () => contentToPrint.current,
     // documentTitle: `Sales ${data.salesNumber}`,
@@ -163,6 +122,61 @@ function ShareSalesSecondary() {
     removeAfterPrint: true,
   });
   
+  /// to sent to email/////////////////
+
+  const sendEmailWithPdf = async () => {
+    const element = contentToPrint.current;
+
+    try {
+      // Generate PDF Blob
+      const pdfBlob = await generatePdfBlob(element);
+
+      // Convert Blob to Base64
+      const base64Pdf = await blobToBase64(pdfBlob);
+
+      const response = await api.post(
+        `/api/sUsers/sendPdfViaMail/${org?._id}`,
+        {
+          pdfBlob: base64Pdf,
+          email: data?.party?.emailID,
+          subject: "Your Sales Invoice",
+        },
+        { withCredentials: true } // Ensure this is passed in the second argument
+      );
+
+      if (response.data.success) {
+        console.log("Email sent successfully");
+      } else {
+        console.error("Failed to send email:", response.data.message);
+      }
+    } catch (error) {
+      console.error("Error generating or sending PDF:", error);
+    }
+  };
+
+
+  /////////// to generate blob////
+
+  const generatePdfBlob = async (element) => {
+    const canvas = await html2canvas(element);
+    const imgData = canvas.toDataURL("image/png");
+    const pdf = new jsPDF("p", "mm", "a4");
+    pdf.addImage(imgData, "PNG", 0, 0);
+    return pdf.output("blob");
+  };
+
+  //// convert blob to 64 base
+  const blobToBase64 = (blob) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(blob);
+      reader.onloadend = () => {
+        const base64data = reader.result.split(",")[1]; // Extract only the Base64 string
+        resolve(base64data);
+      };
+      reader.onerror = (error) => reject(error);
+    });
+  };
 
 
 
@@ -180,7 +194,7 @@ function ShareSalesSecondary() {
           <div>
             <MdPrint
               onClick={() => {
-                handlePrint(null, () => contentToPrint.current);
+                sendEmailWithPdf(null, () => contentToPrint.current);
               }}
               className="text-xl cursor-pointer "
             />
@@ -197,6 +211,7 @@ function ShareSalesSecondary() {
           // inWords={inWords}
           userType="secondaryUser"
           tab="sales"
+          // calculateTotalTax={calculateTotalTax}
           
         />
       </div>
