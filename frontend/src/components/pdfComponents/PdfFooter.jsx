@@ -8,7 +8,7 @@ function PdfFooter({
   additinalCharge,
   inWords,
   selectedOrganization,
-  calculateTotalTax,
+  calculateTotalTax = () => {},
 }) {
   return (
     <div>
