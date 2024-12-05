@@ -255,10 +255,10 @@ function SalesPdf({
                           <td className="pt-2  text-black pr-2 font-bold ">
                             {el.product_name}   {el?.igst && (<span className="text-gray-400 ">({el?.igst}%)</span>)} 
                             <br />
-                            {/* <p className="text-gray-400 font-normal mt-1">
+                            <p className="text-gray-400 font-normal mt-1">
                               {el?.hsn_code !== " Not Found" &&
-                                `HSN: ${el?.hsn_code} (${el?.igst}%)`}
-                            </p> */}
+                                `HSN: ${el?.hsn_code}`}
+                            </p>
                           </td>
                           <td className="pt-2 text-black text-right pr-2 font-bold">
                             {el?.count} {el?.unit.split("-")[0]}
@@ -382,6 +382,7 @@ function SalesPdf({
               inWords={inWords}
               tab={"sales"}
               selectedOrganization={selectedOrganization}
+              calculateTotalTax={calculateTotalTax}
             />
 
             <div className="page-number"></div>
