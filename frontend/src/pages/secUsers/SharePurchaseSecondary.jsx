@@ -196,6 +196,7 @@ function ShareSalesSecondary() {
           // additinalCharge={additinalCharge}
           // inWords={inWords}
           userType="secondaryUser"
+          tab="purchase"
         />
       </div>
     </div>

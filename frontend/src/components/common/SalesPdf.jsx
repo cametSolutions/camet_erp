@@ -19,6 +19,10 @@ function SalesPdf({
   const [subTotal, setSubTotal] = useState("");
   const [additinalCharge, setAdditinalCharge] = useState("");
   const [inWords, setInWords] = useState("");
+
+console.log("tab",tab);
+
+
   let title = "";
 
   switch (tab) {

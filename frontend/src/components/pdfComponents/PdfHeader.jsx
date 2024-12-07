@@ -80,7 +80,7 @@ function PdfHeader({ data, org, address, despatchDetails, tab = "sales" }) {
         <div className="flex items-center justify-between bg-gray-300 px-3 py-1">
           <div className="text-xs md:text-sm">{title} : {pdfNumber}</div>
           <div className="text-xs md:text-sm">
-            Date: {new Date().toDateString()}
+            Date: {new Date(data?.createdAt).toDateString()}
           </div>
         </div>
       </div>
