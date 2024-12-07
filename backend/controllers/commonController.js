@@ -2072,7 +2072,7 @@ export const sendPdfViaEmail = async (req, res) => {
       // text: message,
       attachments: [
         {
-          filename: "Medical_Lab_Report.pdf", // The name you want the file to have
+          filename: "camet.pdf", // The name you want the file to have
           content: pdfBlob, // The PDF buffer
           contentType: "application/pdf", // MIME type
           encoding: "base64", // Specify the encoding

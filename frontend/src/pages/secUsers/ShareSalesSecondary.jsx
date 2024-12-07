@@ -4,20 +4,23 @@ import { IoIosArrowRoundBack } from "react-icons/io";
 import api from "../../api/api";
 import { useParams } from "react-router-dom";
 import { toast } from "react-toastify";
-import { MdPrint } from "react-icons/md";
+// import { MdPrint } from "react-icons/md";
 // import numberToWords from "number-to-words";
 import { Link } from "react-router-dom";
 import SalesPdf from "../../components/common/SalesPdf";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { PDFDocument } from 'pdf-lib';
+// import { FaWhatsapp } from "react-icons/fa";
+import ShareModal from "./settilngs/dataEntry/modals/ShareModal";
+import { IoShareSocial } from "react-icons/io5";
+
 
 function ShareSalesSecondary() {
   const [data, setData] = useState([]);
   const [org, setOrg] = useState([]);
-
   const [bank, setBank] = useState([]);
-
+  const [showModal, setShowModal] = useState(false);
   const { id } = useParams();
 
   const contentToPrint = useRef(null);
@@ -162,131 +165,125 @@ function ShareSalesSecondary() {
     }
   };
   
- // Function to generate PDF Blob from the DOM element
-
-
-
-//// Function to convert Blob to Base64
-const blobToBase64 = (blob) => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      // Check if result is not NaN
-      const base64data = reader.result ? reader.result.split(",")[1] : null;
-      if (base64data) {
-        resolve(base64data);
-      } else {
-        reject(new Error("Failed to convert Blob to Base64"));
-      }
-    };
-    reader.onerror = (error) => reject(error);
-    reader.readAsDataURL(blob);
-  });
-};
-
-const generatePdfBlob = async (element) => {
-  try {
-    // Use html2canvas with more balanced settings
-    const canvas = await html2canvas(element, {
-      scale: 2, // Slightly increased scale for better quality
-      useCORS: true,
-      logging: false,
-      imageTimeout: 0,
-      allowTaint: true,
-      optimization: 2 // Balanced optimization
+  //// Function to convert Blob to Base64
+  const blobToBase64 = (blob) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        // Check if result is not NaN
+        const base64data = reader.result ? reader.result.split(",")[1] : null;
+        if (base64data) {
+          resolve(base64data);
+        } else {
+          reject(new Error("Failed to convert Blob to Base64"));
+        }
+      };
+      reader.onerror = (error) => reject(error);
+      reader.readAsDataURL(blob);
     });
-
-    // Use PNG for better quality, but with moderate compression
-    const imgData = canvas.toDataURL("image/png", 0.7); // Improved compression ratio
-
-    const pdf = new jsPDF({
-      orientation: "portrait",
-      unit: "mm",
-      format: "a4"
-    });
-
-    const imgProps = pdf.getImageProperties(imgData);
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = pdf.internal.pageSize.getHeight();
-
-    // Calculate image dimensions with better proportion preservation
-    const imgRatio = imgProps.width / imgProps.height;
-    const pdfRatio = pdfWidth / pdfHeight;
-
-    let drawWidth, drawHeight, xOffset, yOffset;
-
-    if (imgRatio > pdfRatio) {
-      // Width-constrained
-      drawWidth = pdfWidth;
-      drawHeight = pdfWidth / imgRatio;
-      xOffset = 0;
-      yOffset = (pdfHeight - drawHeight) / 2;
-    } else {
-      // Height-constrained
-      drawHeight = pdfHeight;
-      drawWidth = pdfHeight * imgRatio;
-      yOffset = 0;
-      xOffset = (pdfWidth - drawWidth) / 2;
-    }
-
-    // Add image with improved quality settings
-    pdf.addImage(
-      imgData, 
-      "PNG", 
-      xOffset, 
-      yOffset, 
-      drawWidth, 
-      drawHeight, 
-      null, 
-      'FAST' // Balanced compression
-    );
-
-    // Generate blob
-    const pdfOutput = pdf.output('blob');
-
-    // Optional compression
-    return await compressPDF(pdfOutput);
-
-  } catch (error) {
-    console.error("PDF generation error:", error);
-    throw error;
-  }
-};
-
+  };
   
-// Compression function
-async function compressPDF(pdfBlob) {
-  try {
-    const arrayBuffer = await pdfBlob.arrayBuffer();
-    const pdfDoc = await PDFDocument.load(arrayBuffer);
 
-    // Mild compression
-    const compressedPdf = await pdfDoc.save({
-      useObjectStreams: false,
-      addDefaultPage: false,
-      updateFieldAppearances: false
-    });
 
-    const compressedBlob = new Blob([compressedPdf], { 
-      type: 'application/pdf' 
-    });
-
-    // Logging for verification
-    console.log('Original Blob Size:', pdfBlob.size / 1024 + 'KB');
-    console.log('Compressed Blob Size:', compressedBlob.size / 1024 + 'KB');
-
-    return compressedBlob;
-
-  } catch (error) {
-    console.error("PDF compression error:", error);
-    return pdfBlob;
+  // Compression function
+  async function compressPDF(pdfBlob) {
+    try {
+      const arrayBuffer = await pdfBlob.arrayBuffer();
+      const pdfDoc = await PDFDocument.load(arrayBuffer);
+  
+      // Mild compression
+      const compressedPdf = await pdfDoc.save({
+        useObjectStreams: false,
+        addDefaultPage: false,
+        updateFieldAppearances: false
+      });
+  
+      const compressedBlob = new Blob([compressedPdf], { 
+        type: 'application/pdf' 
+      });
+  
+      // Logging for verification
+      console.log('Original Blob Size:', pdfBlob.size / 1024 + 'KB');
+      console.log('Compressed Blob Size:', compressedBlob.size / 1024 + 'KB');
+  
+      return compressedBlob;
+  
+    } catch (error) {
+      console.error("PDF compression error:", error);
+      return pdfBlob;
+    }
   }
-}
+
+
+
+
+  // New function to share via WhatsApp
+//   const shareViaWhatsApp = async () => {
+//     const element = contentToPrint.current;
+
+//    try {
+//      // Generate PDF if not already generated
+//      let currentPdfBlob = await generatePdfBlob(element);
+//      if (!currentPdfBlob) {
+//        const element = contentToPrint.current;
+//        currentPdfBlob = await generatePdfBlob(element);
+//       //  setPdfBlob(currentPdfBlob);
+//      }
+ 
+//      // Create a file object
+//      const pdfFile = new File([currentPdfBlob], `Sales_Invoice_${data.salesNumber}.pdf`, {
+//        type: 'application/pdf'
+//      });
+ 
+//      // Check if Web Share API is supported
+//      if (navigator.share && navigator.canShare) {
+//        try {
+//          await navigator.share({
+//            title: 'Sales Invoice',
+//            text: `Sales Invoice for ${data?.party?.name || 'Customer'}`,
+//            files: [pdfFile]
+//          });
+//        } catch (error) {
+//          console.error('Error sharing:', error);
+//          fallbackWhatsAppShare(pdfFile);
+//        }
+//      } else {
+//        // Fallback for browsers without Web Share API
+//        fallbackWhatsAppShare(pdfFile);
+//      }
+//    } catch (error) {
+//      console.error('Error preparing WhatsApp share:', error);
+//      toast.error('Failed to prepare PDF for sharing');
+//    }
+//  };
+  
+
+
+
+
+
+// Fallback method for WhatsApp sharing
+// const fallbackWhatsAppShare = (pdfFile) => {
+//   // Create a URL for the PDF file
+//   const pdfUrl = URL.createObjectURL(pdfFile);
+  
+//   // Construct WhatsApp share URL
+//   const whatsappShareUrl = `https://api.whatsapp.com/send?text=Sales Invoice&document=${encodeURIComponent(pdfUrl)}`;
+  
+//   // Open WhatsApp
+//   window.open(whatsappShareUrl, '_blank');
+  
+//   // Revoke the URL after a delay to free up memory
+//   setTimeout(() => {
+//     URL.revokeObjectURL(pdfUrl);
+//   }, 100);
+// };
 
 
 
   return (
     <div className="">
+
    
       <div className="">
         <div className="bg-[#012a4a]   sticky top-0 p-3 px-5 text-white text-lg font-bold flex items-center gap-3  shadow-lg justify-between">
@@ -297,20 +294,15 @@ async function compressPDF(pdfBlob) {
             <p>Share Your Sale</p>
           </div>
           <div className="flex">
-            <MdPrint
-              onClick={() => {
-                handlePrint(null, () => contentToPrint.current);
-              }}
-              className="text-xl cursor-pointer "
-            />
-            <MdPrint
-              onClick={() => {
-                sendEmailWithPdf(null, () => contentToPrint.current);
-              }}
-              className="text-xl cursor-pointer "
-            />
+          
+            <IoShareSocial  className="text-xl cursor-pointer" onClick={() => setShowModal(true)}/>
+
+
           </div>
         </div>
+
+      <ShareModal data={data} org={org} contentToPrint={contentToPrint} showModal={showModal} setShowModal={setShowModal} />
+
 
         <SalesPdf
           contentToPrint={contentToPrint}
