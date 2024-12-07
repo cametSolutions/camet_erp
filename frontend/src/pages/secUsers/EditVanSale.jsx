@@ -185,17 +185,16 @@ function EditVanSale() {
           });
           setRows(newRows);
         }
-        if (Object.keys(heightsFromRedux).length == 0) {
-          console.log("haii");
-          //   dispatch(setBatchHeight());
-        }
+        // if (Object.keys(heightsFromRedux).length == 0) {
+        //   console.log("haii");
+        //   //   dispatch(setBatchHeight());
+        // }
 
         if (
           Object.keys(despatchDetailsFromRedux).every(
             (key) => despatchDetailsFromRedux[key] == ""
           )
         ) {
-          console.log("haii");
           dispatch(addDespatchDetails(despatchDetails));
         }
 
