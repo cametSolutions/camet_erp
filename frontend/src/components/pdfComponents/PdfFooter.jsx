@@ -8,7 +8,7 @@ function PdfFooter({
   additinalCharge,
   inWords,
   selectedOrganization,
-  calculateTotalTax,
+  calculateTotalTax = () => {},
 }) {
   return (
     <div>
@@ -85,13 +85,12 @@ function PdfFooter({
 
           <div className="flex flex-col items-end text-[9px] text-black font-bold gap-1 mt-3">
             <p className={calculateTotalTax() > 0 ? "" : "hidden"}>
-              CGST : {(calculateTotalTax() / 2).toFixed(2)}
+              CGST : {(calculateTotalTax() / 2)?.toFixed(2) || "0.00"} 
             </p>
             <p className={calculateTotalTax() > 0 ? "" : "hidden"}>
-              SGST : {(calculateTotalTax() / 2).toFixed(2)}
+              SGST : {(calculateTotalTax() / 2)?.toFixed(2) || "0.00"}
             </p>
           </div>
-
           <div className="flex justify-end border-black py-3">
             <div className="w-3/4"></div>
             <div className="w-2/4 text-gray-700 font-bold text-[10px] flex justify-end">

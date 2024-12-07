@@ -4,38 +4,55 @@ function PdfHeader({ data, org, address, despatchDetails, tab = "sales" }) {
   // console.log(tab);
 
   let pdfNumber;
+  let title;
 
   switch (tab) {
     case "sales":
-      pdfNumber = data?.salesNumber;
+      pdfNumber = data?.salesNumber,
+      title= "Invoice No ";
       break;
 
     case "salesOrder":
       pdfNumber = data?.orderNumber;
+      title= "No";
+
+
       break;
 
     case "vanSale":
       pdfNumber = data?.salesNumber;
+      title= "No";
+
       break;
 
     case "purchase":
       pdfNumber = data?.purchaseNumber;
+      title= "No";
+
       break;
 
     case "creditNote":
       pdfNumber = data?.creditNoteNumber;
+      title= "No";
+
       break;
 
     case "debitNote":
       pdfNumber = data?.debitNoteNumber;
+      title= "No";
+
       break;
 
     case "stockTransfer":
       pdfNumber = data?.stockTransferNumber;
+      title= "No";
+
       break;
 
     default:
-      pdfNumber = "Unknown"; // or any default value you prefer
+      pdfNumber = "Unknown";
+      title= "No";
+       // or any default value you prefer
       break;
   }
   function capitalizeFirstLetter(str) {
@@ -61,7 +78,7 @@ function PdfHeader({ data, org, address, despatchDetails, tab = "sales" }) {
       <div>
         <div className="bg-gray-500 h-2 w-full mt-1"></div>
         <div className="flex items-center justify-between bg-gray-300 px-3 py-1">
-          <div className="text-xs md:text-sm">No : {pdfNumber}</div>
+          <div className="text-xs md:text-sm">{title} : {pdfNumber}</div>
           <div className="text-xs md:text-sm">
             Date: {new Date().toDateString()}
           </div>
