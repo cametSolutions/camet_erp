@@ -192,7 +192,7 @@ function EditSale() {
 
         // dispatch(addDespatchDetails(despatchDetails));
 
-        console.log("despatchDetailsFromRedux", despatchDetailsFromRedux);
+        // console.log("despatchDetailsFromRedux", despatchDetailsFromRedux);
         
 
 
