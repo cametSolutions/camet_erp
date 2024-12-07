@@ -68,11 +68,11 @@ function PdfHeader({ data, org, address, despatchDetails, tab = "sales" }) {
         </div>
       </div>
       <div className="flex items-center border-t-2 py-2">
-        <div className="w-0.5/5">
+        {/* <div className="w-0.5/5">
           {org.logo && (
             <img className="h-16 w-16 mr-2 mt-1" src={org.logo} alt="Logo" />
           )}
-        </div>
+        </div> */}
         <div className="w-4/5 flex flex-col mt-1 ml-2">
           <div className="">
             <p className="text-gray-700 font-semibold text-base pb-1">

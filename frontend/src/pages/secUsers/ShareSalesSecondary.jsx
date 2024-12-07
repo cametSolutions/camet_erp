@@ -10,6 +10,7 @@ import { Link } from "react-router-dom";
 import SalesPdf from "../../components/common/SalesPdf";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
+import { PDFDocument } from 'pdf-lib';
 
 function ShareSalesSecondary() {
   const [data, setData] = useState([]);
@@ -126,14 +127,21 @@ function ShareSalesSecondary() {
 
   const sendEmailWithPdf = async () => {
     const element = contentToPrint.current;
-
+  
     try {
       // Generate PDF Blob
       const pdfBlob = await generatePdfBlob(element);
 
+      console.log("pdfBlobdddd", pdfBlob);
+      
+  
+      // Compress the PDF to reduce size
+      const compressedPdfBlob = await compressPDF(pdfBlob);
+  
       // Convert Blob to Base64
-      const base64Pdf = await blobToBase64(pdfBlob);
-
+      const base64Pdf = await blobToBase64(compressedPdfBlob);
+  
+      // Send the PDF as a base64-encoded string to your backend
       const response = await api.post(
         `/api/sUsers/sendPdfViaMail/${org?._id}`,
         {
@@ -143,7 +151,7 @@ function ShareSalesSecondary() {
         },
         { withCredentials: true } // Ensure this is passed in the second argument
       );
-
+  
       if (response.data.success) {
         console.log("Email sent successfully");
       } else {
@@ -153,30 +161,127 @@ function ShareSalesSecondary() {
       console.error("Error generating or sending PDF:", error);
     }
   };
+  
+ // Function to generate PDF Blob from the DOM element
 
 
-  /////////// to generate blob////
 
-  const generatePdfBlob = async (element) => {
-    const canvas = await html2canvas(element);
-    const imgData = canvas.toDataURL("image/png");
-    const pdf = new jsPDF("p", "mm", "a4");
-    pdf.addImage(imgData, "PNG", 0, 0);
-    return pdf.output("blob");
-  };
-
-  //// convert blob to 64 base
-  const blobToBase64 = (blob) => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(blob);
-      reader.onloadend = () => {
-        const base64data = reader.result.split(",")[1]; // Extract only the Base64 string
+//// Function to convert Blob to Base64
+const blobToBase64 = (blob) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      // Check if result is not NaN
+      const base64data = reader.result ? reader.result.split(",")[1] : null;
+      if (base64data) {
         resolve(base64data);
-      };
-      reader.onerror = (error) => reject(error);
+      } else {
+        reject(new Error("Failed to convert Blob to Base64"));
+      }
+    };
+    reader.onerror = (error) => reject(error);
+    reader.readAsDataURL(blob);
+  });
+};
+
+const generatePdfBlob = async (element) => {
+  try {
+    // Use html2canvas with more balanced settings
+    const canvas = await html2canvas(element, {
+      scale: 2, // Slightly increased scale for better quality
+      useCORS: true,
+      logging: false,
+      imageTimeout: 0,
+      allowTaint: true,
+      optimization: 2 // Balanced optimization
     });
-  };
+
+    // Use PNG for better quality, but with moderate compression
+    const imgData = canvas.toDataURL("image/png", 0.7); // Improved compression ratio
+
+    const pdf = new jsPDF({
+      orientation: "portrait",
+      unit: "mm",
+      format: "a4"
+    });
+
+    const imgProps = pdf.getImageProperties(imgData);
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = pdf.internal.pageSize.getHeight();
+
+    // Calculate image dimensions with better proportion preservation
+    const imgRatio = imgProps.width / imgProps.height;
+    const pdfRatio = pdfWidth / pdfHeight;
+
+    let drawWidth, drawHeight, xOffset, yOffset;
+
+    if (imgRatio > pdfRatio) {
+      // Width-constrained
+      drawWidth = pdfWidth;
+      drawHeight = pdfWidth / imgRatio;
+      xOffset = 0;
+      yOffset = (pdfHeight - drawHeight) / 2;
+    } else {
+      // Height-constrained
+      drawHeight = pdfHeight;
+      drawWidth = pdfHeight * imgRatio;
+      yOffset = 0;
+      xOffset = (pdfWidth - drawWidth) / 2;
+    }
+
+    // Add image with improved quality settings
+    pdf.addImage(
+      imgData, 
+      "PNG", 
+      xOffset, 
+      yOffset, 
+      drawWidth, 
+      drawHeight, 
+      null, 
+      'FAST' // Balanced compression
+    );
+
+    // Generate blob
+    const pdfOutput = pdf.output('blob');
+
+    // Optional compression
+    return await compressPDF(pdfOutput);
+
+  } catch (error) {
+    console.error("PDF generation error:", error);
+    throw error;
+  }
+};
+
+  
+// Compression function
+async function compressPDF(pdfBlob) {
+  try {
+    const arrayBuffer = await pdfBlob.arrayBuffer();
+    const pdfDoc = await PDFDocument.load(arrayBuffer);
+
+    // Mild compression
+    const compressedPdf = await pdfDoc.save({
+      useObjectStreams: false,
+      addDefaultPage: false,
+      updateFieldAppearances: false
+    });
+
+    const compressedBlob = new Blob([compressedPdf], { 
+      type: 'application/pdf' 
+    });
+
+    // Logging for verification
+    console.log('Original Blob Size:', pdfBlob.size / 1024 + 'KB');
+    console.log('Compressed Blob Size:', compressedBlob.size / 1024 + 'KB');
+
+    return compressedBlob;
+
+  } catch (error) {
+    console.error("PDF compression error:", error);
+    return pdfBlob;
+  }
+}
 
 
 
@@ -191,7 +296,13 @@ function ShareSalesSecondary() {
             </Link>
             <p>Share Your Sale</p>
           </div>
-          <div>
+          <div className="flex">
+            <MdPrint
+              onClick={() => {
+                handlePrint(null, () => contentToPrint.current);
+              }}
+              className="text-xl cursor-pointer "
+            />
             <MdPrint
               onClick={() => {
                 sendEmailWithPdf(null, () => contentToPrint.current);
