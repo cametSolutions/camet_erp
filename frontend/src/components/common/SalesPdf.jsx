@@ -20,9 +20,6 @@ function SalesPdf({
   const [additinalCharge, setAdditinalCharge] = useState("");
   const [inWords, setInWords] = useState("");
 
-console.log("tab",tab);
-
-
   let title = "";
 
   switch (tab) {
@@ -80,18 +77,28 @@ console.log("tab",tab);
     const count = parseFloat(el.count) || 0;
     const total = parseFloat(el.total) || 0;
     const igst = parseFloat(el.igst) || 0;
+    const isTaxInclusive = el.isTaxInclusive || false; // Flag to check if price is tax-inclusive
 
+
+    // Calculate the total price before tax
     const priceRateCount = selectedPriceRate * count;
 
-    const igstFactor = Number(
-      (total - (total * 100) / (igst + 100)).toFixed(2)
-    );
-
-    const finalValue = parseFloat(
-      (priceRateCount + igstFactor - total).toFixed(2)
-    );
-
-    return finalValue;
+    // Check if tax is included or not
+    if (isTaxInclusive) {
+      // For tax-inclusive, compare totalPrice and finalAmt
+      // If they are equal, there's no discount. Otherwise, calculate the discount
+      const discount = (
+        priceRateCount === total ? 0 : priceRateCount - total
+      ).toFixed(2);
+      return parseFloat(discount);
+      // return 100;
+    } else {
+      // For tax-exclusive, adjust the total amount by subtracting igst
+      const priceWithoutTax = total - igst;
+      const discount = (priceRateCount - priceWithoutTax).toFixed(2);
+      return parseFloat(discount);
+      // return 200;
+    }
   };
 
   const calculateTotalTax = () => {
@@ -111,6 +118,22 @@ console.log("tab",tab);
       // Add curr.count to the accumulator
       return acc + curr?.count;
     }, 0);
+  };
+
+  //// for batch and godown
+
+  const calculateDiscount = (rate, count, taxAmt, finalAmt, isTaxInclusive) => {
+    // Calculate the total price
+    const totalPrice = rate * count;
+
+    // Check if tax is inclusive
+    if (isTaxInclusive) {
+      // For tax-inclusive items, directly compare totalPrice and finalAmt
+      return (totalPrice === finalAmt ? 0 : totalPrice - finalAmt).toFixed(2);
+    } else {
+      // For non-tax-inclusive items
+      return (totalPrice - (finalAmt - taxAmt)).toFixed(2);
+    }
   };
 
   useEffect(() => {
@@ -139,8 +162,6 @@ console.log("tab",tab);
       const decimalWords = decimalPart
         ? ` and ${numberToWords.toWords(parseInt(decimalPart, 10))} `
         : " and Zero";
-      // console.log(decimalWords);
-      console.log(selectedOrganization?.currencyName);
 
       const mergedWord = [
         ...(integerWords + " "),
@@ -227,7 +248,7 @@ console.log("tab",tab);
             <table className="w-full text-left bg-slate-200">
               <thead
                 className=" 
-               border-b-2 border-t-2 border-black text-[10px] text-right no-repeat-header"
+               border-y border-black text-[10px] text-right no-repeat-header"
               >
                 <tr>
                   <th className="text-gray-700 font-bold uppercase py-2 px-1 text-left">
@@ -235,6 +256,12 @@ console.log("tab",tab);
                   </th>
                   <th className="text-gray-700 font-bold uppercase py-2 px-1 text-left">
                     Items
+                  </th>
+                  <th className="text-gray-700 font-bold uppercase py-2 px-1 ">
+                    Hsn
+                  </th>
+                  <th className="text-gray-700 font-bold uppercase py-2 px-1 ">
+                    Tax %
                   </th>
                   <th className="text-gray-700 font-bold uppercase p-2">Qty</th>
                   <th className="text-gray-700 font-bold uppercase p-2">
@@ -256,13 +283,24 @@ console.log("tab",tab);
                       <React.Fragment key={index}>
                         <tr className={`text-[9px] bg-white  `}>
                           <td className="w-2  ">{index + 1}</td>
-                          <td className="pt-2  text-black pr-2 font-bold ">
-                            {el.product_name}   {el?.igst && (<span className="text-gray-400 ">({el?.igst}%)</span>)} 
+                          <td className={`  ${data?.items?.length===index+1 ? "pb-3" :""}  pt-2  text-black pr-2 font-bold`}>
+                            {el.product_name}{" "}
+                            {el?.igst && (
+                              <span className="text-gray-400 ">
+                                ({el?.igst}%)
+                              </span>
+                            )}
                             <br />
-                            <p className="text-gray-400 font-normal mt-1">
+                            {/* <p className="text-gray-400 font-normal mt-1">
                               {el?.hsn_code !== " Not Found" &&
                                 `HSN: ${el?.hsn_code} `}
-                            </p>
+                            </p> */}
+                          </td>
+                          <td className="pt-2 text-black text-right pr-2  text-[8px]">
+                            {el?.hsn_code}
+                          </td>
+                          <td className="pt-2 text-black text-right pr-2 ">
+                            {el?.igst}
                           </td>
                           <td className="pt-2 text-black text-right pr-2 font-bold">
                             {el?.count} {el?.unit.split("-")[0]}
@@ -280,13 +318,16 @@ console.log("tab",tab);
                           </td>
 
                           <td className="pt-2 text-black text-right pr-2">
-                            {el.GodownList &&
-                            el.GodownList.length > 0 &&
-                            el.GodownList.every(
-                              (godown) => godown.godown_id && !godown.batch
-                            )
-                              ? ` ${calculateDiscountAmntOFNoBAtch(el)}`
-                              : "0.00"}
+                            {
+                              el.GodownList &&
+                                el.GodownList.length > 0 &&
+                                calculateDiscountAmntOFNoBAtch(el)
+                              // el.GodownList.every(
+                              //   (godown) => godown.godown_id && !godown.batch
+                              // )
+                              //   ? ` ${calculateDiscountAmntOFNoBAtch(el)}`
+                              //   : "1.00"}
+                            }
                           </td>
                           <td className="pt-2 text-black text-right pr-2 font-bold">
                             {`  ${(
@@ -312,10 +353,14 @@ console.log("tab",tab);
                             const count = godownOrBatch?.count || 0;
                             const finalAmt =
                               Number(godownOrBatch?.individualTotal) || 0;
-
-                            const discountAmount = (
-                              rate * count + (taxAmt - Number(finalAmt)) || 0
-                            ).toFixed(2);
+                            // const discountAmount = ((rate * count + taxAmt) - Number(finalAmt)).toFixed(2);
+                            const discountAmount = calculateDiscount(
+                              rate,
+                              count,
+                              taxAmt,
+                              finalAmt,
+                              el?.isTaxInclusive
+                            );
 
                             return godownOrBatch.added &&
                               godownOrBatch.batch ? (
@@ -327,6 +372,12 @@ console.log("tab",tab);
                                       Batch: {godownOrBatch?.batch}
                                     </p>
                                   )}
+                                </td>
+                                <td className="pt-2 text-black text-right pr-2  text-[8px]">
+                                  {el?.hsn_code}
+                                </td>
+                                <td className="pt-2 text-black text-right pr-2 ">
+                                  {el?.igst}
                                 </td>
                                 <td className="pt-2  flex justify-end pr-2">
                                   {godownOrBatch?.count} {el?.unit}
@@ -358,9 +409,11 @@ console.log("tab",tab);
               </tbody>
 
               <tfoot className="">
-                <tr className="bg-white border-y-2 ">
+                <tr className="border-y border-black bg-slate-200 ">
                   <td className="font-bold"></td>
-                  <td className="font-bold text-[9px] p-3">Subtotal</td>
+                  <td className="font-bold text-[9px] p-2">Subtotal</td>
+                  <td className="font-bold text-[9px] p-2"></td>
+                  <td className="font-bold text-[9px] p-2"></td>
                   <td className="text-black text-[9px] ">
                     <p className="text-right pr-1 font-bold">
                       {calculateTotalQunatity()}/unit
