@@ -67,7 +67,9 @@ const organizationSchema = new mongoose.Schema(
         emailConfiguration: {
           email: { type: String },
           appPassword: { type: String },
+
         },
+        
       },
     ],
   },

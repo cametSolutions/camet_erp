@@ -93,11 +93,11 @@ function PdfFooter({
         </div>
       </div>
 
-      <div className="flex justify-between my-3">
+      <div className="flex justify-between my-1 ">
         <div className=" w-1/2">
           {bank && Object.keys(bank).length > 0 ? (
             <>
-              <div className="text-gray-500 font-semibold text-[10px] leading-4">
+              <div className="text-gray-500 font-semibold text-[10px] ">
                 Bank Name: {bank?.bank_name}
               </div>
               <div className="text-gray-500 font-semibold text-[10px] leading-4">
@@ -109,7 +109,7 @@ function PdfFooter({
               <div className="text-gray-500 font-semibold text-[10px] leading-4">
                 Branch: {bank?.branch}
               </div>
-              <div
+              {/* <div
                 style={{
                   height: "auto",
                   margin: "0",
@@ -118,7 +118,7 @@ function PdfFooter({
                   width: "100%",
                 }}
               >
-                {/* <QRCode
+                <QRCode
                   size={250}
                   style={{
                     height: "auto",
@@ -127,15 +127,15 @@ function PdfFooter({
                   }}
                   value={`upi:pay?pa=${bank?.upi_id}&am=${data?.finalAmount}`}
                   viewBox={`0 0 256 256`}
-                /> */}
-              </div>
+                />
+              </div> */}
             </>
           ) : (
             <div className="text-gray-500 font-semibold text-[10px] leading-5"></div>
           )}
         </div>{" "}
-        <div className="flex flex-col justify-between text-[9px] font-bold text-right">
-          <p>For JM Motors</p>
+        <div className="flex flex-col justify-between text-[10px] font-semibold text-right">
+          <p>{org?.name}</p>
           <p>Authorized Signatory</p>
         </div>
       </div>

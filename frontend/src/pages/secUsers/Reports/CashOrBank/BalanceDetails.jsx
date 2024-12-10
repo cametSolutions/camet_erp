@@ -10,7 +10,7 @@ import { RiEdit2Fill } from "react-icons/ri";
 const BalanceDetails = () => {
   const [balanceDetails, setBalanceDetails] = useState([]);
   const [grandTotal, setGrandTotal] = useState(0);
-  const { _id: cmp_id, type } = useSelector(
+  const { _id: cmp_id } = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
   const { start, end } = useSelector((state) => state.date);

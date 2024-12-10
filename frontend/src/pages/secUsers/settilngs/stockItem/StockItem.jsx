@@ -2,11 +2,12 @@
 import TitleDiv from "../../../../components/common/TitleDiv";
 import SettingsCard from "../../../../components/common/SettingsCard";
 import { FiDollarSign, FiMapPin, FiPlusCircle, FiSettings,FiTag  } from "react-icons/fi";
+import { IoBarcodeOutline } from "react-icons/io5";
 
 const StockItem = () => {
     const settingsOptions = [
         {
-          title: "Stock Item Settings",
+          title: "Stock Item Filter",
           description: "Filters only show product creation window if it's enabled",
           icon: <FiSettings />,
           to: "/sUsers/stockItemSettings",
@@ -32,6 +33,13 @@ const StockItem = () => {
           description: "Enable it to adding HSN and Tax details when creating a new stock item",
           icon: <FiTag />,
           to: "/sUsers/hsnList",
+          active: true,
+        },
+        {
+          title: "Barcode Management",
+          description: "Manage your product barcode effectively",
+          icon: <IoBarcodeOutline />,
+          to: "/sUsers/barcodeList",
           active: true,
         },
         {

@@ -79,7 +79,6 @@ function SalesPdf({
     const igst = parseFloat(el.igst) || 0;
     const isTaxInclusive = el.isTaxInclusive || false; // Flag to check if price is tax-inclusive
 
-
     // Calculate the total price before tax
     const priceRateCount = selectedPriceRate * count;
 
@@ -248,7 +247,7 @@ function SalesPdf({
             <table className="w-full text-left bg-slate-200">
               <thead
                 className=" 
-               border-y border-black text-[10px] text-right no-repeat-header"
+               border-y border-black text-[10px] text-right no-repeat-header "
               >
                 <tr>
                   <th className="text-gray-700 font-bold uppercase py-2 px-1 text-left">
@@ -276,14 +275,18 @@ function SalesPdf({
                   </th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="">
                 {data?.items?.length > 0 &&
                   data?.items.map((el, index) => {
                     return (
                       <React.Fragment key={index}>
-                        <tr className={`text-[9px] bg-white  `}>
+                        <tr className={`text-[9px] bg-white `}>
                           <td className="w-2  ">{index + 1}</td>
-                          <td className={`  ${data?.items?.length===index+1 ? "pb-3" :""}  pt-2  text-black pr-2 font-bold`}>
+                          <td
+                            className={`  ${
+                              data?.items?.length === index + 1 ? "pb-3" : ""
+                            }  pt-2  text-black pr-2 font-bold`}
+                          >
                             {el.product_name}{" "}
                             {el?.igst && (
                               <span className="text-gray-400 ">
@@ -364,11 +367,11 @@ function SalesPdf({
 
                             return godownOrBatch.added &&
                               godownOrBatch.batch ? (
-                              <tr key={idx} className={`bg-white text-[9px]`}>
+                              <tr key={idx} className={`bg-white text-[9px] `}>
                                 <td> </td>
                                 <td className="">
                                   {godownOrBatch.batch && (
-                                    <p className="ml-1.5">
+                                    <p className="ml-1.5  ">
                                       Batch: {godownOrBatch?.batch}
                                     </p>
                                   )}
@@ -409,8 +412,8 @@ function SalesPdf({
               </tbody>
 
               <tfoot className="">
-                <tr className="border-y border-black bg-slate-200 ">
-                  <td className="font-bold"></td>
+                <tr className="border-y  border-black bg-slate-200 py-6">
+                  <td className="font-bold "></td>
                   <td className="font-bold text-[9px] p-2">Subtotal</td>
                   <td className="font-bold text-[9px] p-2"></td>
                   <td className="font-bold text-[9px] p-2"></td>

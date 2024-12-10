@@ -21,6 +21,7 @@ import partyFilter from "../slices/filterSlices/partyFIlter";
 import statusFilter from "../slices/filterSlices/statusFilter";
 import partySlice from "../slices/partySlice";
 import paymentSplitting from "../slices/filterSlices/paymentSplitting/paymentSplitting"
+import barcode from "../slices/barcodeSlice";
 
 export const store = configureStore({
   reducer: {
@@ -46,5 +47,6 @@ export const store = configureStore({
     statusFilter: statusFilter,
     partySlice,
     paymentSplitting,
+    barcode
   },
 });
