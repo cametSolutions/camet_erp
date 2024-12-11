@@ -164,6 +164,7 @@ const BarcodeFormat = () => {
       
   
     } catch (error) {
+      toast.error("Failed to update Barcode Format");
       console.error(error);
     }
   };

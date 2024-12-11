@@ -2150,3 +2150,42 @@ export const addBarcodeData = async (req, res) => {
     return res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
+
+
+/// @desc  edit barcode data
+/// @route PUT/api/sUsers/editBarcodeData/:id
+/// @access Public
+
+export const editBarcodeData = async (req, res) => {
+  const { id } = req.params;
+  const { stickerName, printOn, format1, format2, printOff } = req.body;
+
+  try {
+    const updatedBarcode = await barcodeModel.findByIdAndUpdate(
+      id,
+      {
+        stickerName,
+        printOn,
+        format1,
+        format2,
+        printOff,
+      },
+      { new: true }
+    );
+
+    if (!updatedBarcode) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Barcode not found" });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Barcode updated successfully",
+      data: updatedBarcode,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
