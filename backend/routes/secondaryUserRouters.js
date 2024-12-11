@@ -21,7 +21,7 @@ import { createPurchase,editPurchase,cancelPurchase } from '../controllers/purch
 import { createCreditNote,cancelCreditNote ,editCreditNote} from '../controllers/creditNoteController.js';
 import {createSale,editSale,cancelSale,} from '../controllers/saleController.js';
 import { cancelDebitNote, createDebitNote, editDebitNote } from '../controllers/debitNoteController.js';
-import { getStockTransferDetails,addProduct ,editProduct,getCreditNoteDetails,transactions,fetchAdditionalCharges, getDebitNoteDetails,getReceiptDetails,getPaymentDetails,getProductSubDetails,deleteProductSubDetails,editProductSubDetails,addProductSubDetails,addHsn,getSingleHsn,editHsn,deleteHsn,getSalesDetails,getPurchaseDetails,getOpeningBalances, findSourceBalance, findSourceDetails, findSourceTransactions, addBank, editBank, addCash, getBankDetails, getCashDetails, editCash} from '../controllers/commonController.js';
+import { getStockTransferDetails,addProduct ,editProduct,getCreditNoteDetails,transactions,fetchAdditionalCharges, getDebitNoteDetails,getReceiptDetails,getPaymentDetails,getProductSubDetails,deleteProductSubDetails,editProductSubDetails,addProductSubDetails,addHsn,getSingleHsn,editHsn,deleteHsn,getSalesDetails,getPurchaseDetails,getOpeningBalances, findSourceBalance, findSourceDetails, findSourceTransactions, addBank, editBank, addCash, getBankDetails, getCashDetails, editCash, sendPdfViaEmail, getBarcodeList, addBarcodeData, editBarcodeData} from '../controllers/commonController.js';
 import { authSecondary } from '../middlewares/authSecUsers.js';
 import { secondaryIsBlocked } from '../middlewares/isBlocked.js';
 import { companyAuthentication } from '../middlewares/authCompany.js';
@@ -30,6 +30,7 @@ import { createPayment,cancelPayment, editPayment } from '../controllers/payment
 import { createInvoice,editInvoice,cancelSalesOrder } from '../controllers/saleOrderController.js';
 import { createStockTransfer,editStockTransfer, cancelStockTransfer } from '../controllers/stockTransferController.js';
 import { addBankPaymentDetails } from '../../frontend/slices/payment.js';
+import { addEmailConfiguration, getConfiguration } from '../controllers/settingsController.js';
 
 
 router.post('/login',login)
@@ -148,13 +149,20 @@ router.post('/addCash/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentic
 router.get('/getCashDetails/:cmp_id/:cash_id',authSecondary,secondaryIsBlocked,companyAuthentication,getCashDetails)
 router.put('/editCash/:cmp_id/:cash_id',authSecondary,secondaryIsBlocked,companyAuthentication,editCash)
 
-
-// router.get('/findSourceTransactions/:cmp_id/:id',authSecondary,secondaryIsBlocked,companyAuthentication,findSourceTransactions)
-
 ///payment splitting
 router.get('/getBankAndCashSources/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,getBankAndCashSources)
 
+/// settings
+//email configuration
+router.post('/addEmailConfiguration/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,addEmailConfiguration)
+router.get('/getConfiguration/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,getConfiguration)
+//// send pdf via mail
+router.post('/sendPdfViaMail/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,sendPdfViaEmail)
 
+/// barcode routes
+router.get('/getBarcodeList/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,getBarcodeList)
+router.post('/addBarcodeData/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,addBarcodeData)
+router.put('/editBarcodeData/:id/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,editBarcodeData)
 
 
 

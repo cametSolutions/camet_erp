@@ -191,9 +191,15 @@ import PartySettings from '../pages/secUsers/settilngs/PartySettings'
 import DateEntrySettings from '../pages/secUsers/settilngs/DateEntrySettings'
 import OutstandingSettings from '../pages/secUsers/settilngs/OutstandingSettings'
 import StockItemSettings from '../pages/secUsers/settilngs/stockItem/stockItemSettings/StockItemSettings'
-import VoucerSettings from '../pages/secUsers/settilngs/dateEntry/VoucerSettings'
-import OrderSettings from '../pages/secUsers/settilngs/dateEntry/OrderSettings'
-import InvoiceSettings from '../pages/secUsers/settilngs/dateEntry/InvoiceSettings'
+import VoucherSettings from '../pages/secUsers/settilngs/dataEntry/VoucherSettings'
+import OrderSettings from '../pages/secUsers/settilngs/dataEntry/OrderSettings'
+import InvoiceSettings from '../pages/secUsers/settilngs/dataEntry/InvoiceSettings'
+import EmailSettings from '../pages/secUsers/settilngs/dataEntry/voucherSettings/EmailSettings'
+import BarcodeList from '../pages/secUsers/settilngs/stockItem/stockItemSettings/barcode/BarcodeList'
+import BarcodeCreationDetails from '../pages/secUsers/settilngs/stockItem/stockItemSettings/barcode/BarcodeCreationDetails'
+import BarcodePrintOn from '../pages/secUsers/settilngs/stockItem/stockItemSettings/barcode/BarcodePrintOn'
+import BarcodePrintOff from '../pages/secUsers/settilngs/stockItem/stockItemSettings/barcode/BarcodePrintOff'
+import BarcodeFormat from '../pages/secUsers/settilngs/stockItem/stockItemSettings/barcode/BarcodeFormat'
 
 const Routers = () => {
   return (
@@ -445,11 +451,18 @@ const Routers = () => {
         <Route path='/sUsers/OutstandingSettings' element={<ProtectedSecRoute><OutstandingSettings/></ProtectedSecRoute>}></Route>
         {/* stock item settings */}
         <Route path='/sUsers/StockItemSettings' element={<ProtectedSecRoute><StockItemSettings/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/barcodeList' element={<ProtectedSecRoute><BarcodeList/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/barcodeCreationDetails' element={<ProtectedSecRoute><BarcodeCreationDetails/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/barcodePrintOn' element={<ProtectedSecRoute><BarcodePrintOn/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/barcodePrintOff' element={<ProtectedSecRoute><BarcodePrintOff/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/barcodeFormat' element={<ProtectedSecRoute><BarcodeFormat/></ProtectedSecRoute>}></Route>
         {/* date entry settings */}
-        <Route path='/sUsers/VoucherSettings' element={<ProtectedSecRoute><VoucerSettings/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/VoucherSettings' element={<ProtectedSecRoute><VoucherSettings/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/OrderSettings' element={<ProtectedSecRoute><OrderSettings/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/InvoiceSettings' element={<ProtectedSecRoute><InvoiceSettings/></ProtectedSecRoute>}></Route>
-
+        {/* voucher settings */}
+        <Route path='/sUsers/emailSettings' element={<ProtectedSecRoute><EmailSettings/></ProtectedSecRoute>}></Route>
+        
         {/* errorPage */}
         <Route path='/errorPage' element={<ErrorPage />} />
         <Route path='/serverError' element={<ServerError />} />

@@ -1,22 +1,21 @@
 import { useRef, useEffect, useState } from "react";
-import { useReactToPrint } from "react-to-print";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import api from "../../api/api";
 import { useParams } from "react-router-dom";
 import { toast } from "react-toastify";
-import { MdPrint } from "react-icons/md";
-// import numberToWords from "number-to-words";
+
 import { Link } from "react-router-dom";
 import SalesPdf from "../../components/common/SalesPdf";
+
+import ShareModal from "./settilngs/dataEntry/modals/ShareModal";
+import { IoShareSocial } from "react-icons/io5";
+
 
 function ShareSalesSecondary() {
   const [data, setData] = useState([]);
   const [org, setOrg] = useState([]);
-  // const [subTotal, setSubTotal] = useState("");
-  // const [additinalCharge, setAdditinalCharge] = useState("");
-  // const [inWords, setInWords] = useState("");
   const [bank, setBank] = useState([]);
-
+  const [showModal, setShowModal] = useState(false);
   const { id } = useParams();
 
   const contentToPrint = useRef(null);
@@ -55,119 +54,16 @@ function ShareSalesSecondary() {
     getTransactionDetails();
   }, [id]);
 
-  console.log(data);
 
-  //  console.log(org?.configurations[0]?.terms);
-
-  // useEffect(() => {
-  //   if (data && data.items) {
-  //     const subTotal = data.items
-  //       .reduce((acc, curr) => acc + parseFloat(curr?.total), 0)
-  //       .toFixed(2);
-  //     setSubTotal(subTotal);
-
-  //     const addiTionalCharge = data?.additionalCharges
-  //       ?.reduce((acc, curr) => {
-  //         let value = curr?.finalValue === "" ? 0 : parseFloat(curr.finalValue);
-  //         if (curr?.action === "add") {
-  //           return acc + value;
-  //         } else if (curr?.action === "sub") {
-  //           return acc - value;
-  //         }
-  //         return acc;
-  //       }, 0)
-
-  //       ?.toFixed(2);
-  //     setAdditinalCharge(addiTionalCharge);
-
-  //     const [integerPart, decimalPart] = data.finalAmount.toString().split(".");
-  //     const integerWords = numberToWords.toWords(parseInt(integerPart, 10));
-  //     console.log(integerWords);
-  //     const decimalWords = decimalPart
-  //       ? ` and ${numberToWords.toWords(parseInt(decimalPart, 10))} `
-  //       : " and Zero";
-  //     console.log(decimalWords);
-
-  //     const mergedWord = [
-  //       ...integerWords,
-  //       // " Rupees",
-  //       ...decimalWords,
-  //       // "Paisa",
-  //     ].join("");
-
-  //     setInWords(mergedWord);
-  //   }
-  // }, [data]);
-
-
-
-  const handlePrint = useReactToPrint({
-    content: () => contentToPrint.current,
-    // documentTitle: `Sales ${data.salesNumber}`,
-    pageStyle: `
-      @page {
-        size: A4;
-        margin: 0mm 10mm 9mm 10mm;
-      }
   
-      @media print {
-        body {
-          -webkit-print-color-adjust: exact;
-          font-family: 'Arial', sans-serif;
-        }
-  
-        .pdf-page {
-          page-break-after: always;
-        }
-  
-        .pdf-content {
-          font-size: 19px;
-        }
-  
-        .print-md-layout {
-          display: flex;
-          flex-direction: row;
-          justify-content: space-between;
-          align-items: flex-start;
-          gap: 8px;
-          padding: 1rem 2rem;
-          width: 100%;
-        }
-  
-        .bill-to, .ship-to {
-          width: 50%;
-          padding-right: 1rem;
-          border-right: 1px solid #e5e7eb; /* Tailwind color gray-300 */
-        }
-  
-        .details-table {
-          width: 50%;
-          padding-left: 1rem;
-        }
-  
-        .details-table td {
-          font-size: 11px;
-          color: #6b7280; /* Tailwind color gray-500 */
-        }
-  
-        /* Force flex-row for print */
-        @media print {
-          .print-md-layout {
-            display: flex !important;
-            flex-direction: row !important;
-          }
-        }
-      }
-    `,
-    onAfterPrint: () => console.log("after printing..."),
-    removeAfterPrint: true,
-  });
-  
+
+
 
 
 
   return (
     <div className="">
+
    
       <div className="">
         <div className="bg-[#012a4a]   sticky top-0 p-3 px-5 text-white text-lg font-bold flex items-center gap-3  shadow-lg justify-between">
@@ -177,15 +73,16 @@ function ShareSalesSecondary() {
             </Link>
             <p>Share Your Sale</p>
           </div>
-          <div>
-            <MdPrint
-              onClick={() => {
-                handlePrint(null, () => contentToPrint.current);
-              }}
-              className="text-xl cursor-pointer "
-            />
+          <div className="flex">
+          
+            <IoShareSocial  className="text-xl cursor-pointer" onClick={() => setShowModal(true)}/>
+
+
           </div>
         </div>
+
+      <ShareModal data={data} org={org} contentToPrint={contentToPrint} showModal={showModal} setShowModal={setShowModal} />
+
 
         <SalesPdf
           contentToPrint={contentToPrint}
@@ -197,6 +94,7 @@ function ShareSalesSecondary() {
           // inWords={inWords}
           userType="secondaryUser"
           tab="sales"
+          // calculateTotalTax={calculateTotalTax}
           
         />
       </div>

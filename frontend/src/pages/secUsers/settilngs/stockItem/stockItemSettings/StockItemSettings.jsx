@@ -3,6 +3,7 @@ import { TbBrandGoogle, TbTags, TbListDetails } from "react-icons/tb";
 import TitleDiv from "../../../../../components/common/TitleDiv";
 import SettingsCard from "../../../../../components/common/SettingsCard";
 
+
 const StockItemSettings = () => {
     const settingsOptions = [
         {
@@ -26,6 +27,7 @@ const StockItemSettings = () => {
           to: "/sUsers/subcategory",
           active: true,
         },
+        
       ];
 
   return (
@@ -33,7 +35,7 @@ const StockItemSettings = () => {
       <TitleDiv title="Stock Item Settings"  from="/sUsers/StockItem"/>
       <div className="space-y-4 b-white p-4   mx-1">
         {settingsOptions.map((option, index) => (
-          <SettingsCard option={option} index={index} />
+          <SettingsCard key={index} option={option} index={index} />
         ))}
       </div>
     </div>

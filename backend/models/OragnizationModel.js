@@ -39,9 +39,9 @@ const organizationSchema = new mongoose.Schema(
     purchaseNumber: { type: Number, default: 1 },
     vanSalesNumber: { type: Number, default: 1 },
     stockTransferNumber: { type: Number, default: 1 },
-    receiptNumber: { type: Number, default: 1 },  
+    receiptNumber: { type: Number, default: 1 },
     paymentNumber: { type: Number, default: 1 },
-    creditNoteNumber: { type: Number, default: 1 },  
+    creditNoteNumber: { type: Number, default: 1 },
     debitNoteNumber: { type: Number, default: 1 },
     salesNumberDetails: { type: Object },
     currency: { type: String },
@@ -61,9 +61,15 @@ const organizationSchema = new mongoose.Schema(
       {
         bank: { type: mongoose.Schema.Types.ObjectId, ref: "BankDetails" },
         terms: { type: Array },
-        enableBillToShipTo: { type: Boolean, default: true   },
-        despatchDetails:{type:Object},
+        enableBillToShipTo: { type: Boolean, default: true },
+        despatchDetails: { type: Object },
         taxInclusive: { type: Boolean, default: false },
+        emailConfiguration: {
+          email: { type: String },
+          appPassword: { type: String },
+
+        },
+        
       },
     ],
   },

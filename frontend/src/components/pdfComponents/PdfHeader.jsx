@@ -4,38 +4,53 @@ function PdfHeader({ data, org, address, despatchDetails, tab = "sales" }) {
   // console.log(tab);
 
   let pdfNumber;
+  let title;
 
   switch (tab) {
     case "sales":
-      pdfNumber = data?.salesNumber;
+      (pdfNumber = data?.salesNumber), (title = "Invoice No ");
       break;
 
     case "salesOrder":
       pdfNumber = data?.orderNumber;
+      title = "No";
+
       break;
 
     case "vanSale":
       pdfNumber = data?.salesNumber;
+      title = "No";
+
       break;
 
     case "purchase":
       pdfNumber = data?.purchaseNumber;
+      title = "No";
+
       break;
 
     case "creditNote":
       pdfNumber = data?.creditNoteNumber;
+      title = "No";
+
       break;
 
     case "debitNote":
       pdfNumber = data?.debitNoteNumber;
+      title = "No";
+
       break;
 
     case "stockTransfer":
       pdfNumber = data?.stockTransferNumber;
+      title = "No";
+
       break;
 
     default:
-      pdfNumber = "Unknown"; // or any default value you prefer
+      pdfNumber = "Unknown";
+      title = "No";
+      // or any default value you prefer
       break;
   }
   function capitalizeFirstLetter(str) {
@@ -61,9 +76,11 @@ function PdfHeader({ data, org, address, despatchDetails, tab = "sales" }) {
       <div>
         <div className="bg-gray-500 h-2 w-full mt-1"></div>
         <div className="flex items-center justify-between bg-gray-300 px-3 py-1">
-          <div className="text-xs md:text-sm">No : {pdfNumber}</div>
           <div className="text-xs md:text-sm">
-            Date: {new Date().toDateString()}
+            {title} : {pdfNumber}
+          </div>
+          <div className="text-xs md:text-sm">
+            Date: {new Date(data?.createdAt).toDateString()}
           </div>
         </div>
       </div>
@@ -119,9 +136,9 @@ function PdfHeader({ data, org, address, despatchDetails, tab = "sales" }) {
       </div>
       <hr className="border-2" />
 
-      <div className="   print-md-layout flex flex-col md:flex-row  w-full py-3 px-2 gap-3     ">
+      <div className="   print-md-layout flex flex-col md:flex-row  py-3 px-2 gap-3     ">
         {/* bill to  */}
-        <div className=" bill-to  md:w-1/2  w-full mt-1  flex justify-between tracking-wider text-[11px]  md:border-r md:pr-4 ">
+        <div className=" bill-to  w-[70%]   mt-1  flex justify-between  gap-3 tracking-wider text-[11px]  md:border-r md:pr-4 ">
           <div className="border-gray-300 mb-2 ">
             <h2 className="text-xs font-bold mb-1">Bill To:</h2>
             <div className="text-gray-700 ">{address?.billToName}</div>
@@ -166,7 +183,7 @@ function PdfHeader({ data, org, address, despatchDetails, tab = "sales" }) {
         {/* table */}
         <hr className="mb-1" />
 
-        <table className="m details-table md:w-1/2 w-full divide-y divide-gray-200">
+        <table className=" details-table w-[30%]  divide-y divide-gray-200">
           <tbody>
             {despatchDetails &&
               Object?.entries(despatchDetails)
@@ -175,14 +192,14 @@ function PdfHeader({ data, org, address, despatchDetails, tab = "sales" }) {
                   if (value) {
                     return (
                       <tr key={key} className="flex justify-between">
-                        <td className="text-gray-500 mb-0.5 text-[11px]">
+                        <td className="text-gray-500 mb-0.5 text-[9px]">
                           {displayTitles[key] ||
                             capitalizeFirstLetter(
                               key?.split(/(?=[A-Z])/).join(" ")
                             )}
                           :
                         </td>
-                        <td className="text-gray-500 mb-0.5 text-[11px]">
+                        <td className="text-gray-500 mb-0.5 text-[9px]">
                           {value}
                         </td>
                       </tr>

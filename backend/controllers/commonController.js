@@ -15,6 +15,7 @@ import {
   aggregateOpeningBalance,
   addCorrespondingParty,
   editCorrespondingParty,
+  getEmailService,
 } from "../helpers/helper.js";
 import { startOfDay, endOfDay, parseISO } from "date-fns";
 import receiptModel from "../models/receiptModel.js";
@@ -29,6 +30,9 @@ import mongoose from "mongoose";
 import cashModel from "../models/cashModel.js";
 import TallyData from "../models/TallyData.js";
 import bankModel from "../models/bankModel.js";
+import OragnizationModel from "../models/OragnizationModel.js";
+import nodemailer from "nodemailer";
+import barcodeModel from "../models/barcodeModel.js";
 
 // @desc toget the details of transaction or sale
 // route get/api/sUsers/getSalesDetails
@@ -2022,5 +2026,166 @@ export const editCash = async (req, res) => {
     session.endSession();
     console.error(error);
     res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
+};
+
+export const sendPdfViaEmail = async (req, res) => {
+  try {
+    const { email: toEmail, subject, pdfBlob } = req.body;
+    const cmp_id = req.params.cmp_id;
+
+    // console.log("toEmail", toEmail);
+    // console.log("subject", subject);
+    console.log("req.file", req.file);
+
+    if (!toEmail || !subject || !pdfBlob) {
+      return res.status(400).json({ error: "Required fields are missing." });
+    }
+
+    // Fetch dynamic from email configuration from OrgModel
+    const org = await OragnizationModel.findById(cmp_id).lean();
+    if (!org || !org?.configurations[0]?.emailConfiguration) {
+      return res.status(400).json({ error: "Email configuration not found." });
+    }
+
+    const { email: fromEmail, appPassword } =
+      org?.configurations[0]?.emailConfiguration;
+
+    // Create a transporter dynamically based on the from email domain
+    const transporter = nodemailer.createTransport({
+      service: getEmailService(fromEmail), // Dynamically determine the email service
+      auth: {
+        user: fromEmail,
+        pass: appPassword,
+      },
+    });
+
+    // Create the email options
+    const mailOptions = {
+      from: fromEmail,
+      to: toEmail,
+      subject,
+      // text: message,
+      attachments: [
+        {
+          filename: "camet.pdf", // The name you want the file to have
+          content: pdfBlob, // The PDF buffer
+          contentType: "application/pdf", // MIME type
+          encoding: "base64", // Specify the encoding
+        },
+      ],
+    };
+
+    // Send the email
+    await transporter.sendMail(mailOptions);
+    return res.status(200).json({ message: "Email sent successfully." });
+  } catch (error) {
+    console.error("Error sending email:", error);
+    return res.status(500).json({ error: "Failed to send email." });
+  }
+};
+
+/// @desc  get barcode list
+/// @route GET/api/sUsers/getBarcodeList/:cmp_id
+/// @access Public
+
+export const getBarcodeList = async (req, res) => {
+  try {
+    const cmp_id = req.params.cmp_id;
+    
+    const barcodeList = await barcodeModel.find({ cmp_id : cmp_id });
+    if (barcodeList.length === 0) {
+      return res
+        .status(404)
+        .json({ success: false, message: "No barcodes found" });
+    } else {
+      res.status(200).json({ success: true, data: barcodeList });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
+
+/// @desc  add barcode list
+/// @route POST/api/sUsers/addBarcodeList/:cmp_id
+/// @access Public
+
+export const addBarcodeData = async (req, res) => {
+  const cmp_id = req.params.cmp_id;
+  const primary_user_id = req.pUserId || req.owner;
+  const {  stickerName, printOn, format1, format2, printOff } =
+    req.body;
+  try {
+    const newBarcode = new barcodeModel({
+      cmp_id,
+      stickerName,
+      printOn,
+      format1,
+      format2,
+      printOff,
+      primary_user_id
+    });
+
+    const existingBarcode = await barcodeModel.findOne({
+      cmp_id,
+      primary_user_id,
+      stickerName,
+    })
+
+    if (existingBarcode) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Barcode already exists" });
+    }
+
+    const save = await newBarcode.save();
+    return res.status(201).json({
+      success: true,
+      message: "Barcode added successfully",
+      data: save,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
+
+
+/// @desc  edit barcode data
+/// @route PUT/api/sUsers/editBarcodeData/:id
+/// @access Public
+
+export const editBarcodeData = async (req, res) => {
+  const { id } = req.params;
+  const { stickerName, printOn, format1, format2, printOff } = req.body;
+
+  try {
+    const updatedBarcode = await barcodeModel.findByIdAndUpdate(
+      id,
+      {
+        stickerName,
+        printOn,
+        format1,
+        format2,
+        printOff,
+      },
+      { new: true }
+    );
+
+    if (!updatedBarcode) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Barcode not found" });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Barcode updated successfully",
+      data: updatedBarcode,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ success: false, message: "Internal server error" });
   }
 };

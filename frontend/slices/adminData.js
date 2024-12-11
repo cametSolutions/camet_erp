@@ -17,7 +17,7 @@ const adminDataSlice = createSlice({
         localStorage.setItem('adminData',adminData)
       },
 
-      removeAdminData:(state,action)=>{
+      removeAdminData:(state)=>{
         state.loginData=""
         localStorage.removeItem('adminData')
       }

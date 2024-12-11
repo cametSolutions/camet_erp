@@ -86,14 +86,12 @@ function EditSale() {
   );
 
   const salesDetailsFromRedux = useSelector((state) => state.salesSecondary);
-  // console.log(salesDetailsFromRedux);
 
   const {
     paymentSplittingData: paymentSplittingReduxData,
     initial: paymentSplittingInitial,
   } = useSelector((state) => state?.paymentSplitting);
 
-  // console.log("paymentSplittingReduxData",paymentSplittingReduxData,"paymentSplittingInitial",paymentSplittingInitial);
 
   const {
     party: partyFromRedux,
@@ -188,9 +186,15 @@ function EditSale() {
           });
           setRows(newRows);
         }
-        if (Object.keys(heightsFromRedux).length == 0) {
-          //   dispatch(setBatchHeight());
-        }
+        // if (Object.keys(heightsFromRedux).length == 0) {
+        //   //   dispatch(setBatchHeight());
+        // }
+
+        // dispatch(addDespatchDetails(despatchDetails));
+
+        // console.log("despatchDetailsFromRedux", despatchDetailsFromRedux);
+        
+
 
         if (
           Object.keys(despatchDetailsFromRedux).every(
@@ -217,7 +221,6 @@ function EditSale() {
         const res = await api.get(`/api/sUsers/additionalcharges/${cmp_id}`, {
           withCredentials: true,
         });
-        console.log(res.data);
         setAdditionalChragesFromCompany(res.data);
       } catch (error) {
         console.log(error);
@@ -246,7 +249,6 @@ function EditSale() {
           }
         );
 
-        console.log(res.data.organizationData);
         // setCompany(res.data.organizationData);
         if (type == "self") {
           setAdditionalChragesFromCompany(
@@ -271,7 +273,6 @@ function EditSale() {
 
   const handleAddRow = () => {
     const hasEmptyValue = rows.some((row) => row.value === "");
-    console.log(hasEmptyValue);
     if (hasEmptyValue) {
       toast.error("Please add a value.");
       return;
@@ -295,7 +296,6 @@ function EditSale() {
     const selectedOption = additionalChragesFromCompany.find(
       (option) => option._id === id
     );
-    console.log(selectedOption);
 
     const newRows = [...rows];
     newRows[index] = {
@@ -306,13 +306,11 @@ function EditSale() {
       _id: selectedOption?._id,
       finalValue: "",
     };
-    console.log(newRows);
     setRows(newRows);
 
     dispatch(addAdditionalCharges({ index, row: newRows[index] }));
   };
 
-  console.log(rows);
 
   const handleRateChange = (index, value) => {
     const newRows = [...rows];
@@ -352,7 +350,6 @@ function EditSale() {
     const subTotal = items.reduce((acc, curr) => {
       return (acc = acc + (parseFloat(curr.total) || 0));
     }, 0);
-    console.log(subTotal);
     setSubTotal(subTotal);
   }, [items]);
 
@@ -368,17 +365,14 @@ function EditSale() {
     }, 0);
   }, [rows]);
 
-  console.log(additionalChargesTotal);
   const totalAmountNotRounded =
     parseFloat(subTotal) + additionalChargesTotal || parseFloat(subTotal);
   const totalAmount = Math.round(totalAmountNotRounded);
 
-  console.log(totalAmount);
 
   const navigate = useNavigate();
 
   const handleAddItem = () => {
-    console.log(Object.keys(party).length);
     if (Object.keys(party).length === 0) {
       toast.error("Select a party first");
       return;
@@ -459,7 +453,6 @@ function EditSale() {
       formData.paymentSplittingData = {};
     }
 
-    console.log(formData);
 
     try {
       const res = await api.post(`/api/sUsers/editSale/${id}`, formData, {
