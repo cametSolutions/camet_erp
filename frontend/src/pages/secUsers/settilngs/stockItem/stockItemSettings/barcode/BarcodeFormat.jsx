@@ -1,8 +1,11 @@
 import { useState, useMemo, useEffect } from "react";
 import TitleDiv from "../../../../../../components/common/TitleDiv";
 import SelectedBarcode from "./SelectedBarcode";
-import { addBarcodeData } from "../../../../../../../slices/barcodeSlice";
+import { addBarcodeData,removeAll } from "../../../../../../../slices/barcodeSlice";
 import { useDispatch, useSelector } from "react-redux";
+import api from "../../../../../../api/api";
+import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 
 const labelOptions = [
   { value: "companyName", label: "Company Name" },
@@ -24,9 +27,15 @@ const BarcodeFormat = () => {
   });
 
   const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   // Get the barcode data from Redux
   const barcodeData = useSelector((state) => state.barcode);
+  const cmp_id = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg._id
+  );
+
+  // console.log("barcodeData", barcodeData);
 
   // Set initial textarea contents and label replacements from Redux data
   useEffect(() => {
@@ -92,10 +101,14 @@ const BarcodeFormat = () => {
   const modifiedLines = lines.map((line, index) => {
     const replacement = labelReplacements[activeTab][index];
     if (replacement) {
-      // Extract the last quoted part
-      const match = line.match(/"([^"]*)"$/);
+      // Check if the line contains a colon within double quotes
+      const match = line.match(/"([^"]*):([^"]*)"/);
       if (match) {
-        return line.replace(match[1], `\${${replacement}}`); // Format when applying
+        // If colon is present, replace only the part after the colon inside the quotes
+        return line.replace(match[2], `\${${replacement}}`);
+      } else {
+        // If no colon is present, replace the entire value inside the quotes
+        return line.replace(/"([^"]*)"/, `"\${${replacement}}"`);
       }
     }
     return line;
@@ -103,15 +116,57 @@ const BarcodeFormat = () => {
 
   useEffect(() => {
     if (activeTab === "label1") {
-      dispatch(addBarcodeData({
-        format1: modifiedLines.join("\n")
-      }));
+      dispatch(
+        addBarcodeData({
+          format1: modifiedLines.join("\n"),
+        })
+      );
     } else {
-      dispatch(addBarcodeData({
-        format2: modifiedLines.join("\n")
-      }));
+      dispatch(
+        addBarcodeData({
+          format2: modifiedLines.join("\n"),
+        })
+      );
     }
   }, [modifiedLines]);
+
+  const submitHandler = async () => {
+    const { _id, stickerName, printOn, printOff, format1, format2 } =
+      barcodeData;
+
+    const data = {
+      _id: _id || "",
+      stickerName,
+      printOn,
+      printOff,
+      format1,
+      format2,
+    };
+
+    const method = _id === "" ? "POST" : "PUT";
+
+    const url =
+      _id === ""
+        ? `/api/sUsers/addBarcodeData/${cmp_id}`
+        : `/api/sUsers/editBarcodeData/${_id}/${cmp_id}`;
+
+    try {
+      const res = await api[method.toLowerCase()](url, data, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        withCredentials: true,
+      });
+
+      toast.success("Barcode Format Updated Successfully");
+      dispatch(removeAll());
+      navigate("/sUsers/barcodeList");
+      
+  
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   return (
     <div>
@@ -122,19 +177,19 @@ const BarcodeFormat = () => {
         />
         <SelectedBarcode />
       </div>
-      <div className="max-w-6xl mx-auto p-6 bg-gray-50 min-h-screen">
-        <div className="bg-white shadow-md rounded-lg overflow-hidden">
+      <div className="max-w-6xl p-6 bg-white shadow-xl m-5 border ">
+        <div className="bg-white shadow-md rounded-lg ">
           {/* Tabs */}
-          <div className="flex border-b">
+          <div className="flex border-b px-4 w-1/2">
             {["label1", "label2"].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`flex-1 py-3 px-4 font-semibold text-sm 
+                className={`flex-1 py-3 px-4 text-gray-500 text-sm  font-bold
                 ${
                   activeTab === tab
-                    ? "bg-blue-500 text-white"
-                    : "text-gray-600 hover:bg-gray-100"
+                    ? "border-b-2 border-blue-500 shadow-xl text-gray-700 "
+                    : " hover:bg-gray-100"
                 }`}
               >
                 {tab === "label1" ? "Label 1" : "Label 2"}
@@ -145,12 +200,12 @@ const BarcodeFormat = () => {
           {/* Content Area */}
           <div className="grid grid-cols-2 gap-4 p-4">
             {/* Left Section - Textarea */}
-            <div className="border rounded">
+            <div className="">
               <textarea
                 value={textareaContents[activeTab]}
                 onChange={handleTextareaChange}
                 placeholder="Paste your PRN label content here..."
-                className="w-full h-[500px] p-2 resize-none overflow-x-auto whitespace-nowrap 
+                className="w-full h-[400px] p-2 resize-none overflow-x-auto whitespace-nowrap bg-[#d8edff] border-none shadow-lg
                          focus:outline-none focus:ring-2 focus:ring-blue-300"
               />
             </div>
@@ -182,15 +237,15 @@ const BarcodeFormat = () => {
               ))}
             </div>
           </div>
-
-          {/* Preview Section */}
-          {/* <div className="p-4 bg-gray-100 border-t">
-            <h3 className="text-lg font-semibold mb-2">Modified Lines</h3>
-            <pre className="bg-white p-3 rounded border overflow-x-auto whitespace-pre">
-              {modifiedLines.join("\n")}
-            </pre>
-          </div> */}
         </div>
+
+        <button
+          className="bg-pink-500 w-full mt-4 ml-4 w-20 text-white active:bg-pink-600 font-bold uppercase text-xs px-4 py-2 rounded shadow hover:shadow-md outline-none focus:outline-none mr-1 ease-linear transition-all duration-150 transform hover:scale-105"
+          type="button"
+          onClick={submitHandler}
+        >
+          Update
+        </button>
       </div>
     </div>
   );

@@ -161,7 +161,7 @@ router.post('/sendPdfViaMail/:cmp_id',authSecondary,secondaryIsBlocked,companyAu
 
 /// barcode routes
 router.get('/getBarcodeList/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,getBarcodeList)
-router.get('/addBarcodeData/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,addBarcodeData)
+router.post('/addBarcodeData/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,addBarcodeData)
 
 
 

@@ -2124,6 +2124,7 @@ export const addBarcodeData = async (req, res) => {
       format1,
       format2,
       printOff,
+      primary_user_id
     });
 
     const existingBarcode = await barcodeModel.findOne({

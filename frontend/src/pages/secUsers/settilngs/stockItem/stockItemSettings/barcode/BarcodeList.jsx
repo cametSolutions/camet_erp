@@ -8,9 +8,10 @@ import {
   addBarcodeList,
   addStickerName,
   addBarcodeData,
+  removeAll
+  
 } from "../../../../../../../slices/barcodeSlice";
 import { useDispatch } from "react-redux";
-import { use } from "react";
 function BarcodeList() {
   const [data, setData] = useState([]);
   const [updateLoading, setUpdateLoading] = useState(false);
@@ -34,6 +35,7 @@ function BarcodeList() {
     `/api/sUsers/getBarcodeList/${cmp_id}`
   );
   useEffect(() => {
+    dispatch(removeAll());
     if (apiData) {
       dispatch(addBarcodeList(apiData?.data));
     }
