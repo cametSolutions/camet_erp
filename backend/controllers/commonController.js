@@ -2189,3 +2189,31 @@ export const editBarcodeData = async (req, res) => {
     return res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
+
+
+
+/// @desc  delete barcode
+/// @route DELETE/api/sUsers/deleteBarcode/:id
+/// @access Public
+
+export const deleteBarcode = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const deletedBarcode = await barcodeModel.findByIdAndDelete(id);
+
+    if (!deletedBarcode) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Barcode not found" });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Barcode deleted successfully",
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};

@@ -8,16 +8,19 @@ import {
   addBarcodeList,
   addStickerName,
   addBarcodeData,
-  removeAll
-  
+  editBarcodeDataInList,
+  deleteBarcodeFromList
 } from "../../../../../../../slices/barcodeSlice";
 import { useDispatch } from "react-redux";
+import api from "../../../../../../api/api";
+import { toast } from "react-toastify";
+import Swal from "sweetalert2";
 function BarcodeList() {
   const [data, setData] = useState([]);
   const [updateLoading, setUpdateLoading] = useState(false);
   const [inputValue, setInputValue] = useState("");
   const [edit, setEdit] = useState({
-    id: "",
+    index: "",
     enabled: false,
   });
 
@@ -27,55 +30,155 @@ function BarcodeList() {
   const cmp_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg?._id
   );
-  const barcodeList = useSelector(
-    (state) => state.barcode.barcodeList
-  );
+  const barcodeList = useSelector((state) => state.barcode.barcodeList);
 
-  const { data: apiData, loading } = useFetch(barcodeList.length === 0 &&
-    `/api/sUsers/getBarcodeList/${cmp_id}`
+  const { data: apiData, loading } = useFetch(
+    barcodeList.length === 0 && `/api/sUsers/getBarcodeList/${cmp_id}`
   );
   useEffect(() => {
-    dispatch(removeAll());
+    // dispatch(removeAll());
     if (apiData) {
       dispatch(addBarcodeList(apiData?.data));
     }
   }, [apiData]);
 
   useEffect(() => {
+    if (inputValue === "") {
+      setEdit(false);
+    }
+  }, [inputValue]);
+
+  useEffect(() => {
     console.log("barcodeList", barcodeList);
     setData(barcodeList);
-    
   }, [barcodeList]);
 
   ///  handle edit
-  const handleEdit = async (id, value) => {
-    // setValue(value);
-    // setEdit({
-    //   id,
-    //   enabled: true,
-    // });
+  const handleEdit = async (index, value) => {
+    setInputValue(value);
+    setEdit({
+      index,
+      enabled: true,
+    });
   };
 
   const handleSubmit = async (value) => {
     setUpdateLoading(true);
 
     setTimeout(() => {
-      dispatch(addStickerName( value ));
+      dispatch(addStickerName(value));
       setUpdateLoading(false);
       setInputValue("");
     }, 500);
-
   };
-
-
 
   ///// handle click
 
   const handleClick = (item) => {
     dispatch(addBarcodeData(item));
     navigate("/sUsers/barcodeCreationDetails");
+  };
+
+  ///// handle edit data
+
+  const editBarcodeData = async (index, value) => {
+    setUpdateLoading(true);
+    const dataToEdit = data[index];
+    if (dataToEdit) {
+      if (dataToEdit?._id) {
+        const { printOn, printOff, format1, format2 } = dataToEdit;
+        const editBarcodeData = {
+          stickerName : inputValue,
+          printOn,
+          printOff,
+          format1,
+          format2,
+        };
+        try {
+          const res = await api.put(
+            `/api/sUsers/editBarcodeData/${dataToEdit?._id}/${cmp_id}`,
+            editBarcodeData,
+            {
+              headers: {
+                "Content-Type": "application/json",
+              },
+              withCredentials: true,
+            }
+          );
+
+          toast.success(res.data.message);
+          dispatch(editBarcodeDataInList({ index, stickerName: value }));
+          setInputValue("");
+        } catch (error) {
+          toast.error(error.response.data.message);
+          console.log(error);
+        } finally {
+          setUpdateLoading(false);
+        }
+      } else {
+        setTimeout(() => {
+          dispatch(editBarcodeDataInList({ index, stickerName: value }));
+          setInputValue("");
+          setUpdateLoading(false);
+        }, 500);
+      }
+    }
+  };
+
+  ///// handle delete data
+
+  const deleteBarcodeData = async (index) => {
+    const dataToEdit = data[index];
+    if (dataToEdit) {
+      // Show confirmation dialog
+      const result = await Swal.fire({
+        title: "Are you sure?",
+        text: "This action will permanently delete the barcode.",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Yes, delete it!",
+      });
   
-  }
+      if (result.isConfirmed) {
+        setUpdateLoading(true);
+        if (dataToEdit?._id) {
+          try {
+            const res = await api.delete(
+              `/api/sUsers/deleteBarcode/${dataToEdit?._id}/${cmp_id}`,
+              {
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                withCredentials: true,
+              }
+            );
+  
+            dispatch(deleteBarcodeFromList({ index }));
+            setInputValue("");
+            toast.success(res.data.message);
+  
+            Swal.fire("Deleted!", "The barcode has been deleted.", "success");
+          } catch (error) {
+            toast.error(error.response?.data?.message || "An error occurred");
+            console.error(error);
+          } finally {
+            setUpdateLoading(false);
+          }
+        } else {
+          setTimeout(() => {
+            dispatch(deleteBarcodeFromList({ index }));
+            setInputValue("");
+            setUpdateLoading(false);
+          }, 500);
+  
+          Swal.fire("Deleted!", "The barcode has been removed.", "success");
+        }
+      }
+    }
+  };
+  
 
   const loader = updateLoading || loading;
 
@@ -103,16 +206,16 @@ function BarcodeList() {
               onChange={(e) => setInputValue(e.target.value)}
             />
             <button
-              onClick={() => handleSubmit(inputValue)}
-              // onClick={
-              //   edit?.enabled
-              //     ? () => editSubDetails(edit.id, value)
-              //     : () => handleSubmit(value)
-              // }
+              // onClick={() => handleSubmit(inputValue)}
+              onClick={
+                edit?.enabled
+                  ? () => editBarcodeData(edit.index, inputValue)
+                  : () => handleSubmit(inputValue)
+              }
               className="bg-gray-800 text-white px-6 py-1 rounded-full mt-3 text-sm font-bold "
             >
-              Submit
-              {/* {edit ? "Update" : "Submit"} */}
+              {/* Submit */}
+              {edit ? "Update" : "Submit"}
             </button>
           </div>
           <div className="h-3 bg-gray-100 "></div>
@@ -122,22 +225,25 @@ function BarcodeList() {
       <section className="overflow-y-scroll h-[calc(100vh-273px)] px-4 scrollbar-thin ">
         <div className="mt-2">
           {data?.length > 0 && !loading ? (
-            data.map((el) => (
+            data.map((el, index) => (
               <div
-              onClick={()=>{handleClick(el)}}
-              // onClick={() => navigate(`/sUsers/barcodeCreationDetails/${el._id}`)}
-                key={el._id}
-                
+                // onClick={() => navigate(`/sUsers/barcodeCreationDetails/${el._id}`)}
+                key={index}
                 className="flex items-center justify-between border-t-0 align-middle  whitespace-nowrap p-4 mb-2 border-b cursor-pointer hover:bg-slate-100 hover:translate-y-[1px]"
               >
-                <div className=" px-6 text-left text-wrap text-blueGray-700 text-sm font-bold text-gray-500">
+                <div
+                  onClick={() => {
+                    handleClick(el);
+                  }}
+                  className=" px-6 text-left text-wrap text-blueGray-700 text-sm font-bold text-gray-500"
+                >
                   {el?.stickerName}
                 </div>
 
                 <div className="flex items-center gap-12 text-xs">
                   <div className=" cursor-pointer text-center flex justify-center ">
                     <p
-                      onClick={() => handleEdit(el._id, el?.stickerName)}
+                      onClick={() => handleEdit(index, el?.stickerName)}
                       className="text-blue-500"
                     >
                       <FaEdit size={15} />
@@ -145,7 +251,7 @@ function BarcodeList() {
                   </div>
                   <div className=" cursor-pointer text-right ">
                     <p
-                      // onClick={() => deleteSubDetails(el._id)}
+                      onClick={() => deleteBarcodeData(index)}
                       className="flex justify-end mr-4 text-red-500"
                     >
                       <FaTrash />

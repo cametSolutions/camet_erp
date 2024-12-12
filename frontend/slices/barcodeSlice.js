@@ -15,13 +15,31 @@ const barcodeSlice = createSlice({
   reducers: {
     addBarcodeData: (state, action) => {
       state._id = action.payload._id ? action.payload._id : state._id;
-      state.stickerName = action.payload.stickerName ? action.payload.stickerName : state.stickerName;
-      state.printOn = action.payload.printOn ? action.payload.printOn : state.printOn;
-      state.format1 = action.payload.format1 ? action.payload.format1 : state.format1;
-      state.format2 = action.payload.format2 ? action.payload.format2 : state.format2;
-      state.printOff = action.payload.printOff ? action.payload.printOff : state.printOff;
+      state.stickerName = action.payload.stickerName
+        ? action.payload.stickerName
+        : state.stickerName;
+      state.printOn = action.payload.printOn
+        ? action.payload.printOn
+        : state.printOn;
+      state.format1 = action.payload.format1
+        ? action.payload.format1
+        : state.format1;
+      state.format2 = action.payload.format2
+        ? action.payload.format2
+        : state.format2;
+      state.printOff = action.payload.printOff
+        ? action.payload.printOff
+        : state.printOff;
     },
-    
+
+    editBarcodeDataInList: (state, action) => {
+      const index = action.payload.index;
+      const dataToEdit = state.barcodeList[index];
+
+      if (dataToEdit) {
+        dataToEdit.stickerName = action.payload.stickerName;
+      }
+    },
 
     addBarcodeList: (state, action) => {
       state.barcodeList = action.payload;
@@ -44,12 +62,18 @@ const barcodeSlice = createSlice({
       state.barcodeList.push(data);
     },
 
+
+     deleteBarcodeFromList :(state, action) => {
+      const index = action.payload.index;
+      state.barcodeList.splice(index, 1);
+    },
+
     removeAll: (state) => {
       Object.assign(state, initialState);
     },
   },
 });
 
-export const { addBarcodeData, removeAll, addStickerName, addBarcodeList } =
+export const { addBarcodeData, removeAll, addStickerName, addBarcodeList,editBarcodeDataInList,deleteBarcodeFromList   } =
   barcodeSlice.actions;
 export default barcodeSlice.reducer;
