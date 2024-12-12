@@ -266,7 +266,7 @@ export const cancelReceipt = async (req, res) => {
     if (receipt.advanceAmount > 0) {
       await deleteAdvanceReceipt(
         receipt.receiptNumber,
-        receipt._Id.toString(),
+        receipt._id?.toString(),
         cmp_id,
         Primary_user_id,
         session
@@ -370,6 +370,7 @@ export const editReceipt = async (req, res) => {
     if (receipt.advanceAmount > 0) {
       await deleteAdvanceReceipt(
         receipt.receiptNumber,
+        receipt._id?.toString(),
         cmp_id,
         Primary_user_id,
         session

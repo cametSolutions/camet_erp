@@ -16,6 +16,7 @@ import SearchBar from "../../components/common/SearchBar";
 import CustomBarLoader from "../../components/common/CustomBarLoader";
 import { useNavigate } from "react-router-dom";
 import { PiBarcode } from "react-icons/pi";
+import BarcodeModal from "../../components/common/BarcodeModal";
 
 function ProductListSecondary() {
   const [products, setProducts] = useState([]);
@@ -25,6 +26,8 @@ function ProductListSecondary() {
   const [search, setSearch] = useState("");
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [listHeight, setListHeight] = useState(0);
+  const [openModal, setOpenModal] = useState(false);
+  const [selectedProductForPrint, setSelectedProductForPrint] = useState(null);
 
   const cmp_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
@@ -243,65 +246,70 @@ function ProductListSecondary() {
   //   }
   // };
 
-  const handlePrint = async (el) => {
-    try {
-      // Fetch print data from the API
-      const res = await api.get(`/api/sUsers/getBarcodeList/${cmp_id}`, {
-        withCredentials: true,
-      });
+  // const handlePrint = async (el) => {
+  //   try {
+  //     // Fetch print data from the API
+  //     const res = await api.get(`/api/sUsers/getBarcodeList/${cmp_id}`, {
+  //       withCredentials: true,
+  //     });
 
-      const printData = res.data?.data[0];
-      if (!printData) {
-        console.error("No print data found");
-        return;
-      }
+  //     const printData = res.data?.data[0];
+  //     if (!printData) {
+  //       console.error("No print data found");
+  //       return;
+  //     }
 
-      // Extract product details from the passed element
-      const productName = el?.product_name || "Unknown Product";
-      const productCode = el?.hsn_code || "Unknown Code";
+  //     // Extract product details from the passed element
+  //     const productName = el?.product_name || "Unknown Product";
+  //     const productCode = el?.hsn_code || "Unknown Code";
 
-      // Replace placeholders in format1 and format2 with actual values
-      const format1WithValues = printData.format1
-        .replace(/\${productName}/g, productName)
-        .replace(/\${productCode}/g, productCode);
+  //     // Replace placeholders in format1 and format2 with actual values
+  //     const format1WithValues = printData.format1
+  //       .replace(/\${productName}/g, productName)
+  //       .replace(/\${productCode}/g, productCode);
 
-      const format2WithValues = printData.format2
-        .replace(/\${productName}/g, productName)
-        .replace(/\${productCode}/g, productCode);
+  //     const format2WithValues = printData.format2
+  //       .replace(/\${productName}/g, productName)
+  //       .replace(/\${productCode}/g, productCode);
 
-      // Combine both formats side by side
-      const combinedFormat = `
-        ${printData.printOn}
-        ${format1WithValues}
-        
-        ${format2WithValues}
-        ${printData.printOff}
-      `;
+  //     // Combine both formats side by side
+  //     const combinedFormat = `
+  //       ${printData.printOn}
+  //       ${format1WithValues}
 
-      // Log the command for debugging
-      console.log("Generated Command for Double Sticker:", combinedFormat);
+  //       ${format2WithValues}
+  //       ${printData.printOff}
+  //     `;
 
-      // Create a Blob from the command
-      const blob = new Blob([combinedFormat], { type: "text/plain" });
-      const url = URL.createObjectURL(blob);
+  //     // Log the command for debugging
+  //     console.log("Generated Command for Double Sticker:", combinedFormat);
 
-      // Open a new window or tab and print the Blob
-      const printWindow = window.open("", "_blank");
-      printWindow.document.write(
-        "<html><head><title>Print Command</title></head><body>"
-      );
-      printWindow.document.write("<pre>" + combinedFormat + "</pre>");
-      printWindow.document.write("</body></html>");
-      printWindow.document.close();
-      printWindow.focus();
-      printWindow.print();
-      printWindow.close();
+  //     // Create a Blob from the command
+  //     const blob = new Blob([combinedFormat], { type: "text/plain" });
+  //     const url = URL.createObjectURL(blob);
 
-      // Clean up the object URL
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error("Error fetching print data:", error);
-    }
+  //     // Open a new window or tab and print the Blob
+  //     const printWindow = window.open("", "_blank");
+  //     printWindow.document.write(
+  //       "<html><head><title>Print Command</title></head><body>"
+  //     );
+  //     printWindow.document.write("<pre>" + combinedFormat + "</pre>");
+  //     printWindow.document.write("</body></html>");
+  //     printWindow.document.close();
+  //     printWindow.focus();
+  //     printWindow.print();
+  //     printWindow.close();
+
+  //     // Clean up the object URL
+  //     URL.revokeObjectURL(url);
+  //   } catch (error) {
+  //     console.error("Error fetching print data:", error);
+  //   }
+  // };
+
+  const handlePrint = (el) => {
+    setOpenModal(true);
+    setSelectedProductForPrint(el);
   };
 
   const Row = ({ index, style }) => {
@@ -381,80 +389,69 @@ function ProductListSecondary() {
   // };
 
   return (
-    <div className="flex-1 bg-slate-50  h-screen overflow-hidden  ">
-      <div className="sticky top-0 z-20 ">
-        <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3  flex justify-between items-center  ">
-          <div className="flex items-center justify-center gap-2">
-            <IoIosArrowRoundBack
-              onClick={() => navigate("/sUsers/dashboard")}
-              className="cursor-pointer text-3xl text-white "
-            />
-            <p className="text-white text-lg   font-bold ">Your Products</p>
-          </div>
-          {type === "self" && (
-            <div>
-              <Link to={"/sUsers/addProduct"}>
-                <button className="flex items-center gap-2 text-white bg-[#40679E] px-2 py-1 rounded-md text-sm  hover:scale-105 duration-100 ease-in-out ">
-                  <IoIosAddCircle className="text-xl" />
-                  Add Products
-                </button>
-              </Link>
+    <>
+      <BarcodeModal
+        isOpen={openModal}
+        onClose={() => setOpenModal(false)}
+        product={selectedProductForPrint}
+      />
+      <div className="flex-1 bg-slate-50  h-screen overflow-hidden  ">
+        <div className="sticky top-0 z-20 ">
+          <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3  flex justify-between items-center  ">
+            <div className="flex items-center justify-center gap-2">
+              <IoIosArrowRoundBack
+                onClick={() => navigate("/sUsers/dashboard")}
+                className="cursor-pointer text-3xl text-white "
+              />
+              <p className="text-white text-lg   font-bold ">Your Products</p>
             </div>
-          )}
+            {type === "self" && (
+              <div>
+                <Link to={"/sUsers/addProduct"}>
+                  <button className="flex items-center gap-2 text-white bg-[#40679E] px-2 py-1 rounded-md text-sm  hover:scale-105 duration-100 ease-in-out ">
+                    <IoIosAddCircle className="text-xl" />
+                    Add Products
+                  </button>
+                </Link>
+              </div>
+            )}
+          </div>
+
+          {/* invoiec date */}
+          <div className=" p-4  bg-white drop-shadow-lg">
+            <div className="flex justify-between  items-center"></div>
+            <div className=" md:w-1/2 ">
+              {/* search bar */}
+              <SearchBar onType={searchData} />
+
+              {/* search bar */}
+            </div>
+          </div>
         </div>
 
-        {/* invoiec date */}
-        <div className=" p-4  bg-white drop-shadow-lg">
-          <div className="flex justify-between  items-center">
-            {/* <div className=" flex flex-col gap-1 justify-center">
-            <p className="text-md font-semibold text-violet-400">
-              Search Parties
-            </p>
-          </div>
-          <div className="flex items-center hover_scale cursor-pointer">
-            <p className="text-pink-500 m-2 cursor-pointer  ">Cancel</p>
-            <MdCancel className="text-pink-500" />
-          </div> */}
-          </div>
-          <div className=" md:w-1/2 ">
-            {/* search bar */}
-            <SearchBar onType={searchData} />
+        {/* adding party */}
 
-            {/* search bar */}
+        {loader && <CustomBarLoader />}
+
+        {!loader && products.length === 0 && (
+          <div className="flex justify-center items-center mt-20 overflow-hidden font-bold text-gray-500">
+            {" "}
+            Oops!!.No Products Found
           </div>
+        )}
+
+        <div className="">
+          <List
+            className=""
+            height={listHeight} // Specify the height of your list
+            itemCount={filteredProducts.length} // Specify the total number of items
+            itemSize={165} // Specify the height of each item
+          >
+            {Row}
+          </List>
         </div>
       </div>
-
-      {/* adding party */}
-
-      {loader && <CustomBarLoader />}
-
-      {!loader && products.length === 0 && (
-        <div className="flex justify-center items-center mt-20 overflow-hidden font-bold text-gray-500">
-          {" "}
-          Oops!!.No Products Found
-        </div>
-      )}
-
-      <div className="">
-        <List
-          className=""
-          height={listHeight} // Specify the height of your list
-          itemCount={filteredProducts.length} // Specify the total number of items
-          itemSize={165} // Specify the height of each item
-          // width="100%" // Specify the width of your list
-        >
-          {Row}
-        </List>
-      </div>
-
-      {/* <Link to={"/sUsers/addProduct"} className={`${type!=="self" ? "hidden " : ""}  flex justify-center`}>
-          <div className=" px-4 absolute bottom-12 text-white bg-violet-700 rounded-3xl p-2 flex items-center justify-center gap-2 hover_scale cursor-pointer ">
-            <IoIosAddCircle className="text-2xl" />
-            <p>Create New Product</p>
-          </div>
-        </Link> */}
-    </div>
+    </>
   );
 }
 

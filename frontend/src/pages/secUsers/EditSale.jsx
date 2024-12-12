@@ -409,6 +409,11 @@ function EditSale() {
 
       return;
     }
+    if (!salesNumber || salesNumber==="") {
+      toast.error("Error with your voucher number");
+      setSubmitLoading(false);
+      return;
+    }
 
     if (additional) {
       const hasEmptyValue = rows.some((row) => row.value === "");

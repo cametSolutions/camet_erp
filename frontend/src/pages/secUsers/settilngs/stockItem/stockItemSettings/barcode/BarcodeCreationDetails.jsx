@@ -3,11 +3,9 @@ import { TbPrinter, TbLayoutGridAdd, TbSettings } from "react-icons/tb";
 import TitleDiv from "../../../../../../components/common/TitleDiv";
 import SettingsCard from "../../../../../../components/common/SettingsCard";
 
-import { useNavigate } from "react-router-dom";
 import SelectedBarcode from "./SelectedBarcode";
 
 const BarcodeCreationDetails = () => {
-  const navigate = useNavigate();
 
   const settingsOptions = [
     {

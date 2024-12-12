@@ -2119,12 +2119,12 @@ export const addBarcodeData = async (req, res) => {
   try {
     const newBarcode = new barcodeModel({
       cmp_id,
-      stickerName,
-      printOn,
-      format1,
-      format2,
-      printOff,
-      primary_user_id
+      stickerName: stickerName || "",
+      printOn : printOn || "",
+      format1 : format1 || "",
+      format2 : format2 || "",
+      printOff : printOff || "",
+      primary_user_id 
     });
 
     const existingBarcode = await barcodeModel.findOne({
@@ -2184,6 +2184,58 @@ export const editBarcodeData = async (req, res) => {
       message: "Barcode updated successfully",
       data: updatedBarcode,
     });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
+
+
+
+/// @desc  delete barcode
+/// @route DELETE/api/sUsers/deleteBarcode/:id
+/// @access Public
+
+export const deleteBarcode = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const deletedBarcode = await barcodeModel.findByIdAndDelete(id);
+
+    if (!deletedBarcode) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Barcode not found" });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Barcode deleted successfully",
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
+
+
+/// @desc  get single barcode data
+/// @route GET/api/sUsers/getSingleBarcode/:id
+/// @access Public
+
+export const getSingleBarcodeData = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const barcode = await barcodeModel.findById(id);
+
+    if (!barcode) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Barcode not found" });
+    }
+
+    return res.status(200).json({ success: true, data: barcode });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ success: false, message: "Internal server error" });

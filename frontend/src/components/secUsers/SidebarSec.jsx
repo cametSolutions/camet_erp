@@ -529,7 +529,7 @@ function SidebarSec({ TAB, showBar }) {
 
           <div className="flex flex-col items-center px-4 bg-slate-800 py-1 ">
             <h3 className="text-[10px] text-gray-400  tracking-widest">
-              Version 0.0.3
+              Version 0.0.4
             </h3>
           </div>
         </div>
