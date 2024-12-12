@@ -4,16 +4,15 @@ import useFetch from "../../customHook/useFetch";
 import { useSelector } from "react-redux";
 import CustomBarLoader from "./CustomBarLoader";
 
-const BarcodeModal = ({ isOpen, onClose }) => {
+const BarcodeModal = ({ isOpen, onClose, product }) => {
   const [selectedBarcode, setSelectedBarcode] = useState("");
   const [mrp, setMrp] = useState("");
   const [splCode, setSplCode] = useState("");
   const [barcodeList, setBarcodeList] = useState([]);
 
-  const cmp_id = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg?._id
+  const { _id: cmp_id, name: company_name } = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg
   );
-
 
   const {
     data: apiData,
@@ -26,6 +25,69 @@ const BarcodeModal = ({ isOpen, onClose }) => {
       setBarcodeList(apiData?.data);
     }
   }, [apiData]);
+
+  const handlePrint = () => {
+
+    if(!selectedBarcode) {
+      alert("Please select a Barcode");
+    }
+    if (selectedBarcode) {
+      const currentBarcode = barcodeList.find(
+        (item) => item._id === selectedBarcode
+      );
+
+      const productName = product?.product_name;
+      const companyName = company_name;
+      const productCode = product?.product_code;
+
+      // Replace placeholders in format1 and format2 with actual values
+      const format1WithValues = currentBarcode.format1
+        .replace(/\${productName}/g, productName)
+        .replace(/\${productCode}/g, productCode)
+        .replace(/\${companyName}/g, companyName)
+        .replace(/\${mrp}/g, mrp)
+        .replace(/\${splCode}/g, splCode);
+
+      // const format2WithValues = currentBarcode.format2
+      //   .replace(/\${productName}/g, productName)
+      //   .replace(/\${productCode}/g, productCode);
+
+      // Combine both formats side by side
+      const combinedFormat = `
+        ${currentBarcode.printOn}
+        ${format1WithValues}
+
+        ${currentBarcode.printOff}
+      `;
+
+      // Log the command for debugging
+      console.log("Generated Command for Double Sticker:", combinedFormat);
+
+      // Create a Blob from the command
+      const blob = new Blob([combinedFormat], { type: "text/plain" });
+      const url = URL.createObjectURL(blob);
+
+      // Open a new window or tab and print the Blob
+      const printWindow = window.open("", "_blank");
+      printWindow.document.write(
+        "<html><head><title>Print Command</title></head><body>"
+      );
+      printWindow.document.write("<pre>" + combinedFormat + "</pre>");
+      printWindow.document.write("</body></html>");
+      printWindow.document.close();
+      printWindow.focus();
+      printWindow.print();
+      printWindow.close();
+
+      // Clean up the object URL
+      URL.revokeObjectURL(url);
+      onClose();
+      setMrp("");
+      setSplCode("");
+      setSelectedBarcode("");
+
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -104,9 +166,7 @@ const BarcodeModal = ({ isOpen, onClose }) => {
               Close
             </button>
             <button
-              onClick={() => {
-                handlePrint();
-              }}
+              onClick={handlePrint}
               className="px-4 py-2 bg-pink-500 text-white rounded-md hover:bg-pink-600"
             >
               Print

@@ -27,6 +27,7 @@ function ProductListSecondary() {
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [listHeight, setListHeight] = useState(0);
   const [openModal, setOpenModal] = useState(false);
+  const [selectedProductForPrint, setSelectedProductForPrint] = useState(null);
 
   const cmp_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
@@ -275,7 +276,7 @@ function ProductListSecondary() {
   //     const combinedFormat = `
   //       ${printData.printOn}
   //       ${format1WithValues}
-        
+
   //       ${format2WithValues}
   //       ${printData.printOff}
   //     `;
@@ -306,12 +307,10 @@ function ProductListSecondary() {
   //   }
   // };
 
-
- const handlePrint=()=>{
-  setOpenModal(true);
- }
-
-
+  const handlePrint = (el) => {
+    setOpenModal(true);
+    setSelectedProductForPrint(el);
+  };
 
   const Row = ({ index, style }) => {
     const el = filteredProducts[index];
@@ -390,67 +389,69 @@ function ProductListSecondary() {
   // };
 
   return (
-
-    <><BarcodeModal isOpen={openModal} onClose={() => setOpenModal(false)} /><div className="flex-1 bg-slate-50  h-screen overflow-hidden  ">
-      <div className="sticky top-0 z-20 ">
-        <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3  flex justify-between items-center  ">
-          <div className="flex items-center justify-center gap-2">
-            <IoIosArrowRoundBack
-              onClick={() => navigate("/sUsers/dashboard")}
-              className="cursor-pointer text-3xl text-white " />
-            <p className="text-white text-lg   font-bold ">Your Products</p>
-          </div>
-          {type === "self" && (
-            <div>
-              <Link to={"/sUsers/addProduct"}>
-                <button className="flex items-center gap-2 text-white bg-[#40679E] px-2 py-1 rounded-md text-sm  hover:scale-105 duration-100 ease-in-out ">
-                  <IoIosAddCircle className="text-xl" />
-                  Add Products
-                </button>
-              </Link>
+    <>
+      <BarcodeModal
+        isOpen={openModal}
+        onClose={() => setOpenModal(false)}
+        product={selectedProductForPrint}
+      />
+      <div className="flex-1 bg-slate-50  h-screen overflow-hidden  ">
+        <div className="sticky top-0 z-20 ">
+          <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3  flex justify-between items-center  ">
+            <div className="flex items-center justify-center gap-2">
+              <IoIosArrowRoundBack
+                onClick={() => navigate("/sUsers/dashboard")}
+                className="cursor-pointer text-3xl text-white "
+              />
+              <p className="text-white text-lg   font-bold ">Your Products</p>
             </div>
-          )}
+            {type === "self" && (
+              <div>
+                <Link to={"/sUsers/addProduct"}>
+                  <button className="flex items-center gap-2 text-white bg-[#40679E] px-2 py-1 rounded-md text-sm  hover:scale-105 duration-100 ease-in-out ">
+                    <IoIosAddCircle className="text-xl" />
+                    Add Products
+                  </button>
+                </Link>
+              </div>
+            )}
+          </div>
+
+          {/* invoiec date */}
+          <div className=" p-4  bg-white drop-shadow-lg">
+            <div className="flex justify-between  items-center"></div>
+            <div className=" md:w-1/2 ">
+              {/* search bar */}
+              <SearchBar onType={searchData} />
+
+              {/* search bar */}
+            </div>
+          </div>
         </div>
 
-        {/* invoiec date */}
-        <div className=" p-4  bg-white drop-shadow-lg">
-          <div className="flex justify-between  items-center">
+        {/* adding party */}
 
-          </div>
-          <div className=" md:w-1/2 ">
-            {/* search bar */}
-            <SearchBar onType={searchData} />
+        {loader && <CustomBarLoader />}
 
-            {/* search bar */}
+        {!loader && products.length === 0 && (
+          <div className="flex justify-center items-center mt-20 overflow-hidden font-bold text-gray-500">
+            {" "}
+            Oops!!.No Products Found
           </div>
+        )}
+
+        <div className="">
+          <List
+            className=""
+            height={listHeight} // Specify the height of your list
+            itemCount={filteredProducts.length} // Specify the total number of items
+            itemSize={165} // Specify the height of each item
+          >
+            {Row}
+          </List>
         </div>
       </div>
-
-      {/* adding party */}
-
-      {loader && <CustomBarLoader />}
-
-      {!loader && products.length === 0 && (
-        <div className="flex justify-center items-center mt-20 overflow-hidden font-bold text-gray-500">
-          {" "}
-          Oops!!.No Products Found
-        </div>
-      )}
-
-      <div className="">
-        <List
-          className=""
-          height={listHeight} // Specify the height of your list
-          itemCount={filteredProducts.length} // Specify the total number of items
-          itemSize={165} // Specify the height of each item
-
-        >
-          {Row}
-        </List>
-      </div>
-
-
-    </div></>
+    </>
   );
 }
 
