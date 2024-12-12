@@ -315,6 +315,7 @@ export const editPayment = async (req, res) => {
     if (payment.advanceAmount > 0) {
       await deleteAdvancePayment(
         payment.paymentNumber,
+        payment._id.toString(),
         cmp_id,
         Primary_user_id,
         session
