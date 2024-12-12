@@ -6,10 +6,8 @@ import { FaEdit, FaTrash } from "react-icons/fa";
 import { useEffect, useState } from "react";
 import {
   addBarcodeList,
-  addStickerName,
   addBarcodeData,
-  editBarcodeDataInList,
-  deleteBarcodeFromList
+  removeData,
 } from "../../../../../../../slices/barcodeSlice";
 import { useDispatch } from "react-redux";
 import api from "../../../../../../api/api";
@@ -32,11 +30,12 @@ function BarcodeList() {
   );
   const barcodeList = useSelector((state) => state.barcode.barcodeList);
 
-  const { data: apiData, loading } = useFetch(
-    barcodeList.length === 0 && `/api/sUsers/getBarcodeList/${cmp_id}`
-  );
+  const {
+    data: apiData,
+    loading,
+    refreshHook,
+  } = useFetch(`/api/sUsers/getBarcodeList/${cmp_id}`);
   useEffect(() => {
-    // dispatch(removeAll());
     if (apiData) {
       dispatch(addBarcodeList(apiData?.data));
     }
@@ -49,7 +48,10 @@ function BarcodeList() {
   }, [inputValue]);
 
   useEffect(() => {
-    console.log("barcodeList", barcodeList);
+    dispatch(removeData());
+  });
+
+  useEffect(() => {
     setData(barcodeList);
   }, [barcodeList]);
 
@@ -62,66 +64,74 @@ function BarcodeList() {
     });
   };
 
-  const handleSubmit = async (value) => {
+  const handleSubmit = async () => {
     setUpdateLoading(true);
 
-    setTimeout(() => {
-      dispatch(addStickerName(value));
-      setUpdateLoading(false);
+    try {
+      const res = await api.post(
+        `/api/sUsers/addBarcodeData/${cmp_id}`,
+        { stickerName: inputValue },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+          withCredentials: true,
+        }
+      );
+
+      toast.success(res.data.message);
       setInputValue("");
-    }, 500);
+      refreshHook();
+    } catch (error) {
+      toast.error(error.response.data.message);
+      console.log(error);
+    } finally {
+      setUpdateLoading(false);
+    }
   };
 
   ///// handle click
 
   const handleClick = (item) => {
+    dispatch(removeData());
     dispatch(addBarcodeData(item));
     navigate("/sUsers/barcodeCreationDetails");
   };
 
   ///// handle edit data
 
-  const editBarcodeData = async (index, value) => {
+  const editBarcodeData = async (index) => {
     setUpdateLoading(true);
     const dataToEdit = data[index];
-    if (dataToEdit) {
-      if (dataToEdit?._id) {
-        const { printOn, printOff, format1, format2 } = dataToEdit;
-        const editBarcodeData = {
-          stickerName : inputValue,
-          printOn,
-          printOff,
-          format1,
-          format2,
-        };
-        try {
-          const res = await api.put(
-            `/api/sUsers/editBarcodeData/${dataToEdit?._id}/${cmp_id}`,
-            editBarcodeData,
-            {
-              headers: {
-                "Content-Type": "application/json",
-              },
-              withCredentials: true,
-            }
-          );
 
-          toast.success(res.data.message);
-          dispatch(editBarcodeDataInList({ index, stickerName: value }));
-          setInputValue("");
-        } catch (error) {
-          toast.error(error.response.data.message);
-          console.log(error);
-        } finally {
-          setUpdateLoading(false);
+    const { printOn, printOff, format1, format2 } = dataToEdit;
+    const editBarcodeData = {
+      stickerName: inputValue,
+      printOn,
+      printOff,
+      format1,
+      format2,
+    };
+    try {
+      const res = await api.put(
+        `/api/sUsers/editBarcodeData/${dataToEdit?._id}/${cmp_id}`,
+        editBarcodeData,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+          withCredentials: true,
         }
-      } else {
-        setTimeout(() => {
-          dispatch(editBarcodeDataInList({ index, stickerName: value }));
-          setInputValue("");
-          setUpdateLoading(false);
-        }, 500);
-      }
+      );
+
+      toast.success(res.data.message);
+      refreshHook();
+      setInputValue("");
+    } catch (error) {
+      toast.error(error.response.data.message);
+      console.log(error);
+    } finally {
+      setUpdateLoading(false);
     }
   };
 
@@ -140,45 +150,34 @@ function BarcodeList() {
         cancelButtonColor: "#d33",
         confirmButtonText: "Yes, delete it!",
       });
-  
+
       if (result.isConfirmed) {
         setUpdateLoading(true);
-        if (dataToEdit?._id) {
-          try {
-            const res = await api.delete(
-              `/api/sUsers/deleteBarcode/${dataToEdit?._id}/${cmp_id}`,
-              {
-                headers: {
-                  "Content-Type": "application/json",
-                },
-                withCredentials: true,
-              }
-            );
-  
-            dispatch(deleteBarcodeFromList({ index }));
-            setInputValue("");
-            toast.success(res.data.message);
-  
-            Swal.fire("Deleted!", "The barcode has been deleted.", "success");
-          } catch (error) {
-            toast.error(error.response?.data?.message || "An error occurred");
-            console.error(error);
-          } finally {
-            setUpdateLoading(false);
-          }
-        } else {
-          setTimeout(() => {
-            dispatch(deleteBarcodeFromList({ index }));
-            setInputValue("");
-            setUpdateLoading(false);
-          }, 500);
-  
-          Swal.fire("Deleted!", "The barcode has been removed.", "success");
+        try {
+          const res = await api.delete(
+            `/api/sUsers/deleteBarcode/${dataToEdit?._id}/${cmp_id}`,
+            {
+              headers: {
+                "Content-Type": "application/json",
+              },
+              withCredentials: true,
+            }
+          );
+
+          setInputValue("");
+          toast.success(res.data.message);
+          refreshHook();
+
+          Swal.fire("Deleted!", "The barcode has been deleted.", "success");
+        } catch (error) {
+          toast.error(error.response?.data?.message || "An error occurred");
+          console.error(error);
+        } finally {
+          setUpdateLoading(false);
         }
       }
     }
   };
-  
 
   const loader = updateLoading || loading;
 
@@ -189,6 +188,7 @@ function BarcodeList() {
         from="/sUsers/StockItem"
         loading={loader}
       />
+
       <section>
         <div className="flex flex-col justify-center  sticky top-0 z-10 ">
           <div className=" flex justify-center items-center flex-col bg-[#508991] py-14">

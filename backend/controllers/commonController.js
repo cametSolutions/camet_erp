@@ -2119,12 +2119,12 @@ export const addBarcodeData = async (req, res) => {
   try {
     const newBarcode = new barcodeModel({
       cmp_id,
-      stickerName,
-      printOn,
-      format1,
-      format2,
-      printOff,
-      primary_user_id
+      stickerName: stickerName || "",
+      printOn : printOn || "",
+      format1 : format1 || "",
+      format2 : format2 || "",
+      printOff : printOff || "",
+      primary_user_id 
     });
 
     const existingBarcode = await barcodeModel.findOne({

@@ -79,6 +79,14 @@ function PrintOnOffTextArea({ tab }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    console.log("inputValue:", inputValue);
+    
+
+    if(!inputValue.trim()) {
+      toast.error("Please enter a value");
+      return;
+    }
   
     // Prepare the data to send based on the selected tab
     const { _id, stickerName, printOn, printOff, format1, format2 } = barcodeDetails;
