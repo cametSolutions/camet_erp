@@ -21,7 +21,7 @@ import { createPurchase,editPurchase,cancelPurchase } from '../controllers/purch
 import { createCreditNote,cancelCreditNote ,editCreditNote} from '../controllers/creditNoteController.js';
 import {createSale,editSale,cancelSale,} from '../controllers/saleController.js';
 import { cancelDebitNote, createDebitNote, editDebitNote } from '../controllers/debitNoteController.js';
-import { getStockTransferDetails,addProduct ,editProduct,getCreditNoteDetails,transactions,fetchAdditionalCharges, getDebitNoteDetails,getReceiptDetails,getPaymentDetails,getProductSubDetails,deleteProductSubDetails,editProductSubDetails,addProductSubDetails,addHsn,getSingleHsn,editHsn,deleteHsn,getSalesDetails,getPurchaseDetails,getOpeningBalances, findSourceBalance, findSourceDetails, findSourceTransactions, addBank, editBank, addCash, getBankDetails, getCashDetails, editCash, sendPdfViaEmail, getBarcodeList, addBarcodeData, editBarcodeData, deleteBarcode} from '../controllers/commonController.js';
+import { getStockTransferDetails,addProduct ,editProduct,getCreditNoteDetails,transactions,fetchAdditionalCharges, getDebitNoteDetails,getReceiptDetails,getPaymentDetails,getProductSubDetails,deleteProductSubDetails,editProductSubDetails,addProductSubDetails,addHsn,getSingleHsn,editHsn,deleteHsn,getSalesDetails,getPurchaseDetails,getOpeningBalances, findSourceBalance, findSourceDetails, findSourceTransactions, addBank, editBank, addCash, getBankDetails, getCashDetails, editCash, sendPdfViaEmail, getBarcodeList, addBarcodeData, editBarcodeData, deleteBarcode, getSingleBarcodeData} from '../controllers/commonController.js';
 import { authSecondary } from '../middlewares/authSecUsers.js';
 import { secondaryIsBlocked } from '../middlewares/isBlocked.js';
 import { companyAuthentication } from '../middlewares/authCompany.js';
@@ -164,6 +164,7 @@ router.get('/getBarcodeList/:cmp_id',authSecondary,secondaryIsBlocked,companyAut
 router.post('/addBarcodeData/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,addBarcodeData)
 router.put('/editBarcodeData/:id/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,editBarcodeData)
 router.delete('/deleteBarcode/:id/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,deleteBarcode)
+router.delete('/getSingleBarcodeData/:id/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,getSingleBarcodeData)
 
 
 
