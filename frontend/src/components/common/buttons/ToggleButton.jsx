@@ -1,10 +1,26 @@
-import { useState } from "react";
+/* eslint-disable react/prop-types */
+import { useState, useEffect } from "react";
 
-const ToggleButton = () => {
-  const [isChecked, setIsChecked] = useState(true);
+const ToggleButton = ({ isChecked, onToggle,option }) => {
+  // Initial state based on the isChecked prop
+  const [checked, setChecked] = useState(isChecked);
+
+  // Sync state change to parent component if necessary
+  useEffect(() => {
+    setChecked(isChecked);
+  }, [isChecked]);
 
   const handleCheckboxChange = () => {
-    setIsChecked(!isChecked);
+    const newChecked = !checked;
+    setChecked(newChecked);
+    const data={
+      title:option.dbField,
+      
+      checked:newChecked
+    }
+    if (onToggle) {
+      onToggle(data); // Pass the updated value to the parent
+    }
   };
 
   return (
@@ -12,24 +28,21 @@ const ToggleButton = () => {
       <div className="relative">
         <input
           type="checkbox"
-          checked={isChecked}
+          checked={checked}
           onChange={handleCheckboxChange}
           className="sr-only"
         />
-        {/* Reduced size for the switch background */}
         <div
           className={`block h-5 w-10 rounded-full transition ${
-            isChecked ? "bg-blue-500" : "bg-gray-300"
+            checked ? "bg-blue-500" : "bg-gray-300"
           }`}
         ></div>
-        {/* Reduced size and adjusted position for the dot */}
         <div
           className={`dot absolute top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-white transition ${
-            isChecked ? "left-6" : "left-0.5"
+            checked ? "left-6" : "left-0.5"
           }`}
         >
-          {/* Checked Icon */}
-          {isChecked ? (
+          {checked ? (
             <span className="active">
               <svg
                 width="8"
@@ -47,7 +60,6 @@ const ToggleButton = () => {
               </svg>
             </span>
           ) : (
-            /* Unchecked Icon */
             <span className="inactive text-body-color">
               <svg
                 className="h-3 w-3 stroke-current"

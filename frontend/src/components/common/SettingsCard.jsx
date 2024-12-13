@@ -2,19 +2,54 @@
 import { IoSettings } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
 import ToggleButton from "./buttons/ToggleButton";
+import api from "../../api/api";
+import { toast } from "react-toastify";
 
-function SettingsCard({ option, index, modalHandler }) {
+function SettingsCard({
+  option,
+  index,
+  modalHandler,
+  type,
+  cmp_id,
+  refreshHook,
+}) {
+  console.log("type", type);
+
   const navigate = useNavigate();
-
   const handleNavigate = (option) => {
     if (option?.active) {
       if (option?.modal && option?.modal === true) {
         modalHandler(true);
+      } else if (option.toggle) {
+        return;
       } else {
         navigate(option?.to);
       }
     } else {
       return;
+    }
+  };
+
+  const handleToggleChange = async (newState) => {
+    const apiData = {
+      ...newState,
+      type,
+    };
+
+    console.log("api data", apiData);
+
+    try {
+      await api.put(`/api/sUsers/updateConfiguration/${cmp_id}`, apiData, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        withCredentials: true,
+      });
+
+      refreshHook();
+    } catch (error) {
+      toast.error(error.response.data.message);
+      console.log(error);
     }
   };
 
@@ -25,22 +60,26 @@ function SettingsCard({ option, index, modalHandler }) {
           handleNavigate(option);
         }}
         key={index}
-        className={` ${
+        className={`${
           option?.active === false && "opacity-50"
-        }  flex items-center justify-between  shadow-md  p-4 rounded-sm hover:bg-slate-100 cursor-pointer  `}
+        }  flex items-center justify-between  shadow-md  p-4 rounded-sm hover:bg-slate-100 cursor-pointer`}
       >
         <div className="flex items-center gap-3 ">
-          <section className="text-xl  ">{option?.icon}</section>
+          <section className="text-xl ">{option?.icon}</section>
           <section>
-            <h3 className="text-xs  font-bold">{option.title}</h3>
+            <h3 className="text-xs font-bold">{option.title}</h3>
             <p className="text-gray-500 text-xs mt-0.5">{option.description}</p>
           </section>
         </div>
 
         {option?.toggle ? (
-          <ToggleButton />
+          <ToggleButton
+            option={option}
+            isChecked={option.toggleValue}
+            onToggle={handleToggleChange}
+          />
         ) : (
-          <button className="  px-4 py-2 rounded-lg  text-xs font-bold ">
+          <button className="px-4 py-2 rounded-lg text-xs font-bold ">
             <IoSettings size={15} />
           </button>
         )}

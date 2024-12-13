@@ -200,6 +200,7 @@ import BarcodeCreationDetails from '../pages/secUsers/settilngs/stockItem/stockI
 import BarcodePrintOn from '../pages/secUsers/settilngs/stockItem/stockItemSettings/barcode/BarcodePrintOn'
 import BarcodePrintOff from '../pages/secUsers/settilngs/stockItem/stockItemSettings/barcode/BarcodePrintOff'
 import BarcodeFormat from '../pages/secUsers/settilngs/stockItem/stockItemSettings/barcode/BarcodeFormat'
+import PrintConfiguration from '../pages/secUsers/settilngs/PrintConfiguration/PrintConfiguration'
 
 const Routers = () => {
   return (
@@ -462,7 +463,10 @@ const Routers = () => {
         <Route path='/sUsers/InvoiceSettings' element={<ProtectedSecRoute><InvoiceSettings/></ProtectedSecRoute>}></Route>
         {/* voucher settings */}
         <Route path='/sUsers/emailSettings' element={<ProtectedSecRoute><EmailSettings/></ProtectedSecRoute>}></Route>
-        
+        {/* printConfiguration */}
+        <Route path='/sUsers/printConfiguration' element={<ProtectedSecRoute><PrintConfiguration/></ProtectedSecRoute>}></Route>
+
+
         {/* errorPage */}
         <Route path='/errorPage' element={<ErrorPage />} />
         <Route path='/serverError' element={<ServerError />} />
