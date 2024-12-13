@@ -9,14 +9,13 @@ import { MdPrint } from "react-icons/md";
 import { Link } from "react-router-dom";
 import SaleOrderPdf from "../../components/common/SaleOrderPdf";
 import { useSelector } from "react-redux";
+import ShareModal from "./settilngs/dataEntry/modals/ShareModal";
+import { IoShareSocial } from "react-icons/io5";
 
 function ShareInvoiceSecondary() {
   const [data, setData] = useState([]);
   const [org, setOrg] = useState([]);
-  // const [subTotal, setSubTotal] = useState("");
-  // const [additinalCharge, setAdditinalCharge] = useState("");
-  // const [finalAmount, setFinalAmount] = useState("");
-  // const [inWords, setInWords] = useState("");
+  const [showModal, setShowModal] = useState(false);
   const { id } = useParams();
   const [bank, setBank] = useState([]);
 
@@ -55,7 +54,6 @@ function ShareInvoiceSecondary() {
 
     getTransactionDetails();
   }, [id]);
-
 
   // useEffect(() => {
   //   if (data && data.items) {
@@ -103,14 +101,9 @@ function ShareInvoiceSecondary() {
   //   }
   // }, [data]);
 
-  const {printTitle} = useSelector(
+  const { printTitle } = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
-
-  
-
-
-
 
   // if (totalAmount) {
 
@@ -181,7 +174,6 @@ function ShareInvoiceSecondary() {
 
   return (
     <div className="flex">
-     
       <div className="flex-1">
         <div className="bg-[#012a4a]   sticky top-0 p-3 px-5 text-white text-lg font-bold flex items-center gap-3  shadow-lg justify-between">
           <div className="flex gap-2 ">
@@ -191,17 +183,31 @@ function ShareInvoiceSecondary() {
             <p>Share Your Order</p>
           </div>
           <div>
-            <MdPrint
+            {/* <MdPrint
               onClick={() => {
                 handlePrint(null, () => contentToPrint.current);
               }}
               className="text-xl cursor-pointer "
-            />
+            /> */}
+
+            <div className="flex">
+              <IoShareSocial
+                className="text-xl cursor-pointer"
+                onClick={() => setShowModal(true)}
+              />
+            </div>
           </div>
         </div>
 
+        <ShareModal
+          data={data}
+          org={org}
+          contentToPrint={contentToPrint}
+          showModal={showModal}
+          setShowModal={setShowModal}
+        />
         <SaleOrderPdf
-          printTitle={printTitle }
+          printTitle={printTitle}
           contentToPrint={contentToPrint}
           data={data}
           org={org}

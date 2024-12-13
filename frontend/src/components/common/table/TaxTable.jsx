@@ -19,10 +19,10 @@ const TaxTable = ({ products }) => {
         }
 
         acc[taxKey].taxableAmt += product?.subTotal || 0;
-        acc[taxKey].cgst += product?.cgstAmt || 0;
-        acc[taxKey].sgst += product?.sgstAmt || 0;
-        acc[taxKey].igst += product?.igstAmt || 0;
-        acc[taxKey].total += product?.total || 0;
+        acc[taxKey].cgst += Number(product?.cgstAmt) || 0;
+        acc[taxKey].sgst +=Number( product?.sgstAmt) || 0;
+        acc[taxKey].igst += Number(product?.igstAmt) || 0;
+        acc[taxKey].total += Number(product?.total) || 0;
 
         return acc;
       }, {});
@@ -31,6 +31,10 @@ const TaxTable = ({ products }) => {
     }
     return [];
   }, [products]);
+
+
+  console.log("consolidatedTaxData", consolidatedTaxData);
+  
 
   return (
     <div className="flex justify-between ">
