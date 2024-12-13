@@ -2034,9 +2034,7 @@ export const sendPdfViaEmail = async (req, res) => {
     const { email: toEmail, subject, pdfBlob } = req.body;
     const cmp_id = req.params.cmp_id;
 
-    // console.log("toEmail", toEmail);
-    // console.log("subject", subject);
-    console.log("req.file", req.file);
+
 
     if (!toEmail || !subject || !pdfBlob) {
       return res.status(400).json({ error: "Required fields are missing." });

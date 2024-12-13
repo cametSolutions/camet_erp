@@ -56,7 +56,6 @@ const BarcodeModal = ({ isOpen, onClose, product }) => {
       const combinedFormat = `
         ${currentBarcode.printOn}
         ${format1WithValues}
-
         ${currentBarcode.printOff}
       `;
 
