@@ -21,7 +21,7 @@ import { createPurchase,editPurchase,cancelPurchase } from '../controllers/purch
 import { createCreditNote,cancelCreditNote ,editCreditNote} from '../controllers/creditNoteController.js';
 import {createSale,editSale,cancelSale,} from '../controllers/saleController.js';
 import { cancelDebitNote, createDebitNote, editDebitNote } from '../controllers/debitNoteController.js';
-import { getStockTransferDetails,addProduct ,editProduct,getCreditNoteDetails,transactions,fetchAdditionalCharges, getDebitNoteDetails,getReceiptDetails,getPaymentDetails,getProductSubDetails,deleteProductSubDetails,editProductSubDetails,addProductSubDetails,addHsn,getSingleHsn,editHsn,deleteHsn,getSalesDetails,getPurchaseDetails,getOpeningBalances, findSourceBalance, findSourceDetails, findSourceTransactions, addBank, editBank, addCash, getBankDetails, getCashDetails, editCash, sendPdfViaEmail, getBarcodeList, addBarcodeData, editBarcodeData, deleteBarcode, getSingleBarcodeData} from '../controllers/commonController.js';
+import { getStockTransferDetails,addProduct ,editProduct,getCreditNoteDetails,transactions,fetchAdditionalCharges, getDebitNoteDetails,getReceiptDetails,getPaymentDetails,getProductSubDetails,deleteProductSubDetails,editProductSubDetails,addProductSubDetails,addHsn,getSingleHsn,editHsn,deleteHsn,getSalesDetails,getPurchaseDetails,getOpeningBalances, findSourceBalance, findSourceDetails, findSourceTransactions, addBank, editBank, addCash, getBankDetails, getCashDetails, editCash, sendPdfViaEmail, getBarcodeList, addBarcodeData, editBarcodeData, deleteBarcode, getSingleBarcodeData, getPrintingConfiguration, updateConfiguration} from '../controllers/commonController.js';
 import { authSecondary } from '../middlewares/authSecUsers.js';
 import { secondaryIsBlocked } from '../middlewares/isBlocked.js';
 import { companyAuthentication } from '../middlewares/authCompany.js';
@@ -31,6 +31,7 @@ import { createInvoice,editInvoice,cancelSalesOrder } from '../controllers/saleO
 import { createStockTransfer,editStockTransfer, cancelStockTransfer } from '../controllers/stockTransferController.js';
 import { addBankPaymentDetails } from '../../frontend/slices/payment.js';
 import { addEmailConfiguration, getConfiguration } from '../controllers/settingsController.js';
+import { updateSecondaryUserConfiguration } from '../helpers/saleOrderHelper.js';
 
 
 router.post('/login',login)
@@ -165,6 +166,11 @@ router.post('/addBarcodeData/:cmp_id',authSecondary,secondaryIsBlocked,companyAu
 router.put('/editBarcodeData/:id/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,editBarcodeData)
 router.delete('/deleteBarcode/:id/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,deleteBarcode)
 router.delete('/getSingleBarcodeData/:id/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,getSingleBarcodeData)
+
+///// printing configuration 
+router.get('/getPrintingConfiguration/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,getPrintingConfiguration)
+router.put('/updateConfiguration/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,updateConfiguration)
+
 
 
 

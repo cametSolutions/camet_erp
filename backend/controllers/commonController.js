@@ -2034,10 +2034,6 @@ export const sendPdfViaEmail = async (req, res) => {
     const { email: toEmail, subject, pdfBlob } = req.body;
     const cmp_id = req.params.cmp_id;
 
-    // console.log("toEmail", toEmail);
-    // console.log("subject", subject);
-    console.log("req.file", req.file);
-
     if (!toEmail || !subject || !pdfBlob) {
       return res.status(400).json({ error: "Required fields are missing." });
     }
@@ -2092,8 +2088,8 @@ export const sendPdfViaEmail = async (req, res) => {
 export const getBarcodeList = async (req, res) => {
   try {
     const cmp_id = req.params.cmp_id;
-    
-    const barcodeList = await barcodeModel.find({ cmp_id : cmp_id });
+
+    const barcodeList = await barcodeModel.find({ cmp_id: cmp_id });
     if (barcodeList.length === 0) {
       return res
         .status(404)
@@ -2114,24 +2110,23 @@ export const getBarcodeList = async (req, res) => {
 export const addBarcodeData = async (req, res) => {
   const cmp_id = req.params.cmp_id;
   const primary_user_id = req.pUserId || req.owner;
-  const {  stickerName, printOn, format1, format2, printOff } =
-    req.body;
+  const { stickerName, printOn, format1, format2, printOff } = req.body;
   try {
     const newBarcode = new barcodeModel({
       cmp_id,
       stickerName: stickerName || "",
-      printOn : printOn || "",
-      format1 : format1 || "",
-      format2 : format2 || "",
-      printOff : printOff || "",
-      primary_user_id 
+      printOn: printOn || "",
+      format1: format1 || "",
+      format2: format2 || "",
+      printOff: printOff || "",
+      primary_user_id,
     });
 
     const existingBarcode = await barcodeModel.findOne({
       cmp_id,
       primary_user_id,
       stickerName,
-    })
+    });
 
     if (existingBarcode) {
       return res
@@ -2147,10 +2142,11 @@ export const addBarcodeData = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ success: false, message: "Internal server error" });
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error" });
   }
 };
-
 
 /// @desc  edit barcode data
 /// @route PUT/api/sUsers/editBarcodeData/:id
@@ -2186,11 +2182,11 @@ export const editBarcodeData = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ success: false, message: "Internal server error" });
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error" });
   }
 };
-
-
 
 /// @desc  delete barcode
 /// @route DELETE/api/sUsers/deleteBarcode/:id
@@ -2214,10 +2210,11 @@ export const deleteBarcode = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ success: false, message: "Internal server error" });
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error" });
   }
 };
-
 
 /// @desc  get single barcode data
 /// @route GET/api/sUsers/getSingleBarcode/:id
@@ -2238,6 +2235,96 @@ export const getSingleBarcodeData = async (req, res) => {
     return res.status(200).json({ success: true, data: barcode });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ success: false, message: "Internal server error" });
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error" });
   }
 };
+
+/// @desc  get printing configuration
+/// @route GET/api/sUsers/getPrintingConfiguration/:cmp_id
+/// @access Public
+
+export const getPrintingConfiguration = async (req, res) => {
+  const cmp_id = req.params.cmp_id;
+  const voucher = req.query.voucher || "all";
+  
+
+  try {
+    const company = await OragnizationModel.findById(cmp_id).lean();
+    if (!company) {
+      return res.status(404).json({ message: "Company not found" });
+    }
+
+    const printingConfig = company.configurations[0].printConfiguration.find(
+      (config) => config.voucher === voucher
+    );
+    if (!printingConfig) {
+      return res
+        .status(404)
+        .json({ message: "Printing configuration not found" });
+    }
+
+    res.status(200).json({ success: true, data: printingConfig });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
+
+export const updateConfiguration = async (req, res) => {
+  const cmp_id = req?.params?.cmp_id;
+  const { title, type, checked, voucher } = req?.body;
+
+  try {
+    const company = await OragnizationModel.findById(cmp_id).lean();
+    if (!company) {
+      return res.status(404).json({ message: "Company not found" });
+    }
+
+    const configuration = company.configurations[0];
+    if (!configuration) {
+      return res.status(404).json({ message: "Configuration not found" });
+    }
+
+    const selectedConfiguration = configuration[type];
+    if (!selectedConfiguration) {
+      return res
+        .status(404)
+        .json({ message: "Specific configuration not found" });
+    }
+
+    // Update the configuration in the database
+    const updatedCompany = await OragnizationModel.findByIdAndUpdate(
+      cmp_id,
+      {
+        $set: {
+          [`configurations.0.${type}.$[voucher].${title}`]: checked, // This is where you update the configuration
+        },
+      },
+      {
+        new: true, // Return the updated document
+        arrayFilters: [{ "voucher.voucher": voucher }], // Array filter to match the specific voucher
+      }
+    );
+
+    if (!updatedCompany) {
+      return res.status(500).json({
+        success: false,
+        message: "Failed to update configuration",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Configuration updated successfully",
+      data: updatedCompany.configurations[0],
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
+
+
+

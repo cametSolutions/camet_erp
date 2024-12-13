@@ -1,7 +1,7 @@
 /* eslint-disable react/jsx-key */
 import TitleDiv from "../../../components/common/TitleDiv";
 import { HiTemplate } from "react-icons/hi";
-import { IoPersonSharp } from "react-icons/io5";
+import { IoPersonSharp, IoPrint } from "react-icons/io5";
 import { MdDataSaverOff } from "react-icons/md";
 import { TbMoneybag } from "react-icons/tb";
 import { MdHomeRepairService } from "react-icons/md";
@@ -44,6 +44,14 @@ const Settings = () => {
       description: "Configure your Ledger",
       icon: <MdHomeRepairService />,
       to: "/sUsers/additionalChargesList",
+      active: true,
+
+    },
+    {
+      title: "Print Configuration",
+      description: "Configure your print settings",
+      icon: <IoPrint />,
+      to: "/sUsers/printConfiguration",
       active: true,
 
     },
