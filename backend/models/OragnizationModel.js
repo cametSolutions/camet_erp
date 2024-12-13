@@ -69,17 +69,21 @@ const organizationSchema = new mongoose.Schema(
           appPassword: { type: String },
 
         },
-        printConfiguration: {
-          showCompanyDetails: { type: Boolean, default: true },
-          showDiscount: { type: Boolean, default: false },
-          showHsn: { type: Boolean, default: false },
-          showTaxPercentage: { type: Boolean, default: false },
-          showInclTaxRate: { type: Boolean, default: false },
-          showTaxAnalysis: { type: Boolean, default: false },
-          showTeamsAndConditions: { type: Boolean, default: false },
-          showBankDetails: { type: Boolean, default: false },
-          showTaxAmount: { type: Boolean, default: true },
-        },
+        printConfiguration: [
+          {
+            voucher: { type: String,default: "saleOrder" }, // Define the type for clarity
+            showCompanyDetails: { type: Boolean, default: true },
+            showDiscount: { type: Boolean, default: false },
+            showHsn: { type: Boolean, default: false },
+            showTaxPercentage: { type: Boolean, default: false },
+            showInclTaxRate: { type: Boolean, default: false },
+            showTaxAnalysis: { type: Boolean, default: false },
+            showTeamsAndConditions: { type: Boolean, default: false },
+            showBankDetails: { type: Boolean, default: false },
+            showTaxAmount: { type: Boolean, default: true },
+          },
+        ],
+        
       },
     ],
   },

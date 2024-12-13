@@ -2247,6 +2247,8 @@ export const getSingleBarcodeData = async (req, res) => {
 
 export const getPrintingConfiguration = async (req, res) => {
   const cmp_id = req.params.cmp_id;
+  const voucher = req.query.voucher || "all";
+  
 
   try {
     const company = await OragnizationModel.findById(cmp_id).lean();
@@ -2254,7 +2256,9 @@ export const getPrintingConfiguration = async (req, res) => {
       return res.status(404).json({ message: "Company not found" });
     }
 
-    const printingConfig = company.configurations[0].printConfiguration;
+    const printingConfig = company.configurations[0].printConfiguration.find(
+      (config) => config.voucher === voucher
+    );
     if (!printingConfig) {
       return res
         .status(404)
@@ -2270,8 +2274,7 @@ export const getPrintingConfiguration = async (req, res) => {
 
 export const updateConfiguration = async (req, res) => {
   const cmp_id = req?.params?.cmp_id;
-
-  const { title, type, checked } = req?.body;
+  const { title, type, checked, voucher } = req?.body;
 
   try {
     const company = await OragnizationModel.findById(cmp_id).lean();
@@ -2285,7 +2288,6 @@ export const updateConfiguration = async (req, res) => {
     }
 
     const selectedConfiguration = configuration[type];
-
     if (!selectedConfiguration) {
       return res
         .status(404)
@@ -2297,16 +2299,19 @@ export const updateConfiguration = async (req, res) => {
       cmp_id,
       {
         $set: {
-          [`configurations.0.${type}.${title}`]: checked
-        }
+          [`configurations.0.${type}.$[voucher].${title}`]: checked, // This is where you update the configuration
+        },
       },
-      { new: true } // Return the updated document
+      {
+        new: true, // Return the updated document
+        arrayFilters: [{ "voucher.voucher": voucher }], // Array filter to match the specific voucher
+      }
     );
 
     if (!updatedCompany) {
-      return res.status(500).json({ 
-        success: false, 
-        message: "Failed to update configuration" 
+      return res.status(500).json({
+        success: false,
+        message: "Failed to update configuration",
       });
     }
 
@@ -2320,5 +2325,6 @@ export const updateConfiguration = async (req, res) => {
     res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
+
 
 

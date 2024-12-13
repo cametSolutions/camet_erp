@@ -12,7 +12,7 @@ const PrintConfiguration = () => {
   const cmp_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
-  const { data:apiData, loading,refreshHook } = useFetch(`/api/sUsers/getPrintingConfiguration/${cmp_id}`);
+  const { data:apiData, loading,refreshHook } = useFetch(`/api/sUsers/getPrintingConfiguration/${cmp_id}?voucher=saleOrder`);
   const data = apiData?.data;
   
   const [settings, setSettings] = useState([]);
@@ -122,7 +122,7 @@ const PrintConfiguration = () => {
       <TitleDiv title="Print Configuration" from="/sUsers/settings" loading={loading}  />
       <div className="space-y-4 b-white p-4 mx-1">
         {settings.map((option, index) => (
-          <SettingsCard option={option} index={index} key={index} type={"printConfiguration"} cmp_id={cmp_id} refreshHook={refreshHook} />
+          <SettingsCard option={option} index={index} key={index} type={"printConfiguration"} cmp_id={cmp_id} refreshHook={refreshHook} voucher={"saleOrder"} />
         ))}
       </div>
     </div>

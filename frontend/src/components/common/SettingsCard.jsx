@@ -4,7 +4,8 @@ import { useNavigate } from "react-router-dom";
 import ToggleButton from "./buttons/ToggleButton";
 import api from "../../api/api";
 import { toast } from "react-toastify";
-
+import { updateConfiguration } from "../../../slices/secSelectedOrgSlice"; 
+import { useDispatch } from "react-redux";
 function SettingsCard({
   option,
   index,
@@ -12,10 +13,11 @@ function SettingsCard({
   type,
   cmp_id,
   refreshHook,
+  voucher
 }) {
-  console.log("type", type);
 
   const navigate = useNavigate();
+  const dispatch=useDispatch();
   const handleNavigate = (option) => {
     if (option?.active) {
       if (option?.modal && option?.modal === true) {
@@ -34,19 +36,26 @@ function SettingsCard({
     const apiData = {
       ...newState,
       type,
+      voucher
     };
 
-    console.log("api data", apiData);
 
     try {
-      await api.put(`/api/sUsers/updateConfiguration/${cmp_id}`, apiData, {
+      const res=await api.put(`/api/sUsers/updateConfiguration/${cmp_id}`, apiData, {
         headers: {
           "Content-Type": "application/json",
         },
         withCredentials: true,
       });
 
+      dispatch(updateConfiguration(res?.data?.data));
+
+      console.log(res.data.data);
+      
       refreshHook();
+
+      
+
     } catch (error) {
       toast.error(error.response.data.message);
       console.log(error);

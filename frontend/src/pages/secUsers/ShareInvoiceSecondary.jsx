@@ -1,16 +1,15 @@
 import { useRef, useEffect, useState } from "react";
-import { useReactToPrint } from "react-to-print";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import api from "../../api/api";
 import { useParams } from "react-router-dom";
 import { toast } from "react-toastify";
-import { MdPrint } from "react-icons/md";
 // import numberToWords from "number-to-words";
 import { Link } from "react-router-dom";
-import SaleOrderPdf from "../../components/common/SaleOrderPdf";
+// import SaleOrderPdf from "../../components/common/SaleOrderPdf";
 import { useSelector } from "react-redux";
 import ShareModal from "./settilngs/dataEntry/modals/ShareModal";
 import { IoShareSocial } from "react-icons/io5";
+import SalesOrderPdf from "../../components/pdf/saleOrder/SalesOrderPdf";
 
 function ShareInvoiceSecondary() {
   const [data, setData] = useState([]);
@@ -105,72 +104,6 @@ function ShareInvoiceSecondary() {
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
 
-  // if (totalAmount) {
-
-  //   // setInWords(mergedWord)
-  // }
-
-  const handlePrint = useReactToPrint({
-    content: () => contentToPrint.current,
-    // documentTitle: `Sales ${data.salesNumber}`,
-    pageStyle: `
-      @page {
-        size: A4;
-        margin: 0mm 10mm 9mm 10mm;
-      }
-  
-      @media print {
-        body {
-          -webkit-print-color-adjust: exact;
-          font-family: 'Arial', sans-serif;
-        }
-  
-        .pdf-page {
-          page-break-after: always;
-        }
-  
-        .pdf-content {
-          font-size: 19px;
-        }
-  
-        .print-md-layout {
-          display: flex;
-          flex-direction: row;
-          justify-content: space-between;
-          align-items: flex-start;
-          gap: 8px;
-          padding: 1rem 2rem;
-          width: 100%;
-        }
-  
-        .bill-to, .ship-to {
-          width: 50%;
-          padding-right: 1rem;
-          border-right: 1px solid #e5e7eb; /* Tailwind color gray-300 */
-        }
-  
-        .details-table {
-          width: 50%;
-          padding-left: 1rem;
-        }
-  
-        .details-table td {
-          font-size: 11px;
-          color: #6b7280; /* Tailwind color gray-500 */
-        }
-  
-        /* Force flex-row for print */
-        @media print {
-          .print-md-layout {
-            display: flex !important;
-            flex-direction: row !important;
-          }
-        }
-      }
-    `,
-    onAfterPrint: () => console.log("after printing..."),
-    removeAfterPrint: true,
-  });
 
   return (
     <div className="flex">
@@ -206,7 +139,7 @@ function ShareInvoiceSecondary() {
           showModal={showModal}
           setShowModal={setShowModal}
         />
-        <SaleOrderPdf
+        <SalesOrderPdf
           printTitle={printTitle}
           contentToPrint={contentToPrint}
           data={data}
