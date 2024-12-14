@@ -8,6 +8,7 @@ import { MdPrint } from "react-icons/md";
 // import numberToWords from "number-to-words";
 import { Link } from "react-router-dom";
 import SalesThreeInchPdf from "../../components/common/SalesThreeInchPdf";
+import { useSelector } from "react-redux";
 // import PrintButton from "../../components/common/buttons/PrintButton";
 
 function ThreeInchSalesSec() {
@@ -22,6 +23,20 @@ function ThreeInchSalesSec() {
   const { id } = useParams();
 
   const contentToPrint = useRef(null);
+
+  const configurations = useSelector(
+    (state) =>
+      state.secSelectedOrganization?.secSelectedOrg?.configurations[0]
+        ?.printConfiguration
+  );
+
+  console.log("configurations", configurations);
+
+  const saleOrderConfiguration = configurations?.find(
+    (item) => item.voucher === "saleOrder"
+  );
+
+  console.log("saleOrderConfiguration", saleOrderConfiguration);
 
   useEffect(() => {
     const getTransactionDetails = async () => {
@@ -141,6 +156,7 @@ function ThreeInchSalesSec() {
           // additinalCharge={additinalCharge}
           // inWords={inWords}
           tab="sales"
+          saleOrderConfiguration={saleOrderConfiguration}
         />
       </div> 
     

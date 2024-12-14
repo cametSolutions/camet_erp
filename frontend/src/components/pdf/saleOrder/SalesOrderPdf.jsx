@@ -167,6 +167,7 @@ function SalesOrderPdf({
           address={address}
           despatchDetails={despatchDetails}
           tab={"salesOrder"}
+          isShowCompany={saleOrderConfiguration?.showCompanyDetails}
         />
 
         {/* <hr className="border-t-2 border-black mb-0.5" /> */}

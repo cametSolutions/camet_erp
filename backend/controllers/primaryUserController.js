@@ -2096,7 +2096,7 @@ export const addconfigurations = async (req, res) => {
       return res.status(404).json({ message: "Organization not found" });
     }
 
-    const { selectedBank, termsList, enableBillToShipTo, despatchDetails } =
+    const { selectedBank, termsList, enableBillToShipTo, despatchDetails ,taxInclusive} =
       req.body;
 
     // Check if selectedBank is provided
@@ -2113,6 +2113,7 @@ export const addconfigurations = async (req, res) => {
       terms: termsList,
       enableBillToShipTo,
       despatchDetails,
+      taxInclusive,
       printConfiguration:org.configurations[0].printConfiguration
     };
     org.configurations = [newConfigurations];

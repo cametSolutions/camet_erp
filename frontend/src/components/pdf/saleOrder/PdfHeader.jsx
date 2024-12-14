@@ -2,7 +2,10 @@
 
 import { useSelector } from "react-redux";
 
-function PdfHeader({ data, org, address, despatchDetails, tab = "sales" }) {
+function PdfHeader({ data, org, address, despatchDetails, tab = "sales" ,isShowCompany }) {
+
+
+
   const configurations = useSelector(
     (state) =>
       state.secSelectedOrganization?.secSelectedOrg?.configurations
@@ -97,7 +100,7 @@ function PdfHeader({ data, org, address, despatchDetails, tab = "sales" }) {
         </div>
       </div>
 
-      {saleOrderConfiguration?.showCompanyDetails && (
+      {isShowCompany && (
         <>
           <div className="flex items-center border-t-2 py-2">
             <div className="w-0.5/5">

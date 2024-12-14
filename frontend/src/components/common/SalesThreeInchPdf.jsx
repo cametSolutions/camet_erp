@@ -14,6 +14,7 @@ function SalesThreeInchPdf({
   printTitle,
   voucherNumber,
   tab,
+  saleOrderConfiguration,
 }) {
   const [subTotal, setSubTotal] = useState("");
   const [additinalCharge, setAdditinalCharge] = useState("");
@@ -203,7 +204,7 @@ function SalesThreeInchPdf({
             </div>
           </div>
         </div>
-
+{saleOrderConfiguration?.showCompanyDetails && (
         <div className="flex justify-center">
           <div className=" flex flex-col  items-center">
             <div className=" flex justify-center ">
@@ -248,6 +249,7 @@ function SalesThreeInchPdf({
             </div>
           </div>
         </div>
+        )}
         {/* </div> */}
 
         <div className="leading-4">
@@ -381,7 +383,7 @@ function SalesThreeInchPdf({
                     STATE TAX : {calculateStateTax()}
                   </p>
                 </div>
-              ) : (
+              ) :   ( saleOrderConfiguration?.showTaxAnalysis &&
                 <div className="flex flex-col items-end text-[12px] text-black font-bold gap-1">
                   <p className={calculateTotalTax() > 0 ? "" : "hidden"}>
                     VAT : {Number(calculateTotalTax()).toFixed(2)}

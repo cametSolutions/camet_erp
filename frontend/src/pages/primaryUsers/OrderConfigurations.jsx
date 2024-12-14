@@ -17,6 +17,7 @@ function OrderConfigurations() {
   const [selectedBank, setSelectedBank] = useState("");
   const [termsInput, setTermsInput] = useState("");
   const [termsList, setTermsList] = useState([]);
+  const [taxInclusive, setTaxInclusive] = useState(false);
   const [enableBillToShipTo, setEnableBillToShipTo] = useState(true);
   const [tab, setTab] = useState("terms");
 
@@ -53,11 +54,14 @@ function OrderConfigurations() {
 
         if (company && company.configurations.length > 0) {
           console.log(company.configurations);
-          const { bank, terms, enableBillToShipTo, despatchDetails } =
+          const { bank, terms, enableBillToShipTo, despatchDetails ,taxInclusive} =
           company.configurations[0];
           console.log(bank);
           if (bank) {
             setSelectedBank(bank._id);
+          }
+          if(taxInclusive){
+            setTaxInclusive(taxInclusive)
           }
 
           if (despatchDetails) {
@@ -155,13 +159,14 @@ function OrderConfigurations() {
       return; // Do not proceed with submission if validation failed
     }
 
- 
+    console.log(taxInclusive)
 
     const formData = {
       selectedBank,
       termsList,
       enableBillToShipTo,
       despatchDetails,
+      taxInclusive,
     };
 
     try {
@@ -197,6 +202,8 @@ function OrderConfigurations() {
           />
           <p className="">Order Configurations</p>
         </div>
+        
+      
 
         <ConfigurationForm
         org={org}
@@ -213,6 +220,9 @@ function OrderConfigurations() {
         despatchDetails={despatchDetails}
         updateDespatchDetails={updateDespatchDetails}
         termsList={termsList}
+        taxInclusive={taxInclusive}
+        setTaxInclusive={setTaxInclusive}
+        
       />
       </div>
   );

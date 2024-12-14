@@ -18,7 +18,10 @@ function ConfigurationForm({
   termsList,
   setTaxInclusive,
   taxInclusive
-}) {
+})
+
+{
+  console.log(taxInclusive) 
   return (
     <div>
       <div className="w-full lg:w-8/12 px-4 mx-auto pb-[30px] md:mt-5 ">
@@ -109,7 +112,7 @@ function ConfigurationForm({
                         type="checkbox"
                         id="valueCheckbox"
                         className="form-checkbox h-5 w-5 text-indigo-600 transition duration-150 ease-in-out"
-                        checked={taxInclusive === true}
+                        checked={taxInclusive == true}
                         onChange={() => {
                           setTaxInclusive(!taxInclusive);
                         }}
