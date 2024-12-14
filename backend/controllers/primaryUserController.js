@@ -2113,6 +2113,7 @@ export const addconfigurations = async (req, res) => {
       terms: termsList,
       enableBillToShipTo,
       despatchDetails,
+      printConfiguration:org.configurations[0].printConfiguration
     };
     org.configurations = [newConfigurations];
 

@@ -2256,7 +2256,7 @@ export const getPrintingConfiguration = async (req, res) => {
       return res.status(404).json({ message: "Company not found" });
     }
 
-    const printingConfig = company.configurations[0].printConfiguration.find(
+    const printingConfig = company.configurations[0]?.printConfiguration?.find(
       (config) => config.voucher === voucher
     );
     if (!printingConfig) {
@@ -2318,7 +2318,7 @@ export const updateConfiguration = async (req, res) => {
     res.status(200).json({
       success: true,
       message: "Configuration updated successfully",
-      data: updatedCompany.configurations[0],
+      data: updatedCompany,
     });
   } catch (error) {
     console.error(error);

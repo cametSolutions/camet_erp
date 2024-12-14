@@ -116,6 +116,8 @@ function AddOrgForm({ onSubmit, orgData = {} }) {
     }
   }, [orgData]);
 
+  console.log(orgData);
+
   const handleCheckboxChange = () => {
     setShowInputs(!showInputs);
   };
@@ -157,7 +159,7 @@ function AddOrgForm({ onSubmit, orgData = {} }) {
       }
     }
 
-    if (currency.trim() === "" || currencyName.trim() === "") {
+    if (currency?.trim() === "" || currencyName?.trim() === "") {
       toast.error("Currency and Currency Name must be filled");
       return;
     }

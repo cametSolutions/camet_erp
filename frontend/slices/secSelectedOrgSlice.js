@@ -18,13 +18,14 @@ const secSelectedOrganizationSlice = createSlice({
       const org = JSON.stringify(action.payload);
       localStorage.setItem("secOrg", org);
     },
-    removeSecSelectedOrg: (state, action) => {
+    removeSecSelectedOrg: (state,) => {
       state.secSelectedOrg = "";
       localStorage.setItem("secOrg", "");
     },
 
     updateConfiguration: (state, action) => {
-      state.secSelectedOrg.configurations = action.payload;
+      state.secSelectedOrg.configurations = action.payload?.configurations;
+      localStorage.setItem("secOrg", JSON.stringify(state.secSelectedOrg));
     },
   },
 });

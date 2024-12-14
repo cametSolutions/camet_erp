@@ -40,7 +40,10 @@ function InvoiceDetailsSecondary() {
 
 
   const backHandler = () => {
-    if (location?.state?.from === "dashboard") {
+    let pathnameWithoutId = location.pathname.split('/').slice(0, -1).join('/');
+    if (location?.state?.from === "dashboard" ) {
+      navigate("/sUsers/dashboard");
+    } else if(pathnameWithoutId === '/sUsers/InvoiceDetails'){
       navigate("/sUsers/dashboard");
     } else {
       navigate(-1);

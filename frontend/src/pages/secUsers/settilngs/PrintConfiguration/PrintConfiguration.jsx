@@ -14,6 +14,7 @@ const PrintConfiguration = () => {
   );
   const { data:apiData, loading,refreshHook } = useFetch(`/api/sUsers/getPrintingConfiguration/${cmp_id}?voucher=saleOrder`);
   const data = apiData?.data;
+  console.log(data)
   
   const [settings, setSettings] = useState([]);
 

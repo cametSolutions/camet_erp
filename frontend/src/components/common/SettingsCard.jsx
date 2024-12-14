@@ -47,10 +47,10 @@ function SettingsCard({
         },
         withCredentials: true,
       });
+      console.log(res?.data?.data);
 
       dispatch(updateConfiguration(res?.data?.data));
-
-      console.log(res.data.data);
+      
       
       refreshHook();
 
