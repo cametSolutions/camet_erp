@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import numberToWords from "number-to-words";
 
+
 function SalesThreeInchPdf({
   contentToPrint,
   data,
@@ -14,11 +15,25 @@ function SalesThreeInchPdf({
   printTitle,
   voucherNumber,
   tab,
-  saleOrderConfiguration,
+
 }) {
   const [subTotal, setSubTotal] = useState("");
   const [additinalCharge, setAdditinalCharge] = useState("");
   const [inWords, setInWords] = useState("");
+  
+  const configurations = useSelector(
+    (state) =>
+      state.secSelectedOrganization?.secSelectedOrg?.configurations[0]
+        ?.printConfiguration
+  );
+
+  console.log("configurations", configurations);
+
+  const saleOrderConfiguration = configurations?.find(
+    (item) => item.voucher === "saleOrder"
+  );
+
+  console.log("saleOrderConfiguration", saleOrderConfiguration);
 
   let title = "";
   let pdfNumber;
@@ -300,11 +315,11 @@ function SalesThreeInchPdf({
                   >
                     <td className="py-1 text-black  font-bold  pr-2 flex ">
                       {el.product_name} <br />
-                      <p className="text-black ">({el.igst}%)</p>
+                      {saleOrderConfiguration?.showTaxPercentage && ( <p className="text-black ">({el.igst}%)</p> )}
                     </td>
                     <td className="py-1 text-black  font-bold text-right pr-2">
                       {el?.count}
-                     {saleOrderConfiguration?.showTaxPercentage && ( <p className="text-[10px] font-semibold">{el?.unit}</p>)}
+                      <p className="text-[10px] font-semibold">{el?.unit}</p>
                     </td>
                     <td className="py-1 text-black font-bold  text-right pl-2 pr-1 text-nowrap">
                       {rate || 0}
