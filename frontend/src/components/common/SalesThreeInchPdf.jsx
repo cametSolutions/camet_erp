@@ -304,7 +304,7 @@ function SalesThreeInchPdf({
                     </td>
                     <td className="py-1 text-black  font-bold text-right pr-2">
                       {el?.count}
-                      <p className="text-[10px] font-semibold">{el?.unit}</p>
+                     {saleOrderConfiguration?.showTaxPercentage && ( <p className="text-[10px] font-semibold">{el?.unit}</p>)}
                     </td>
                     <td className="py-1 text-black font-bold  text-right pl-2 pr-1 text-nowrap">
                       {rate || 0}
