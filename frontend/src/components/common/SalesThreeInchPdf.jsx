@@ -383,7 +383,7 @@ function SalesThreeInchPdf({
                     STATE TAX : {calculateStateTax()}
                   </p>
                 </div>
-              ) :   ( saleOrderConfiguration?.showTaxAnalysis &&
+              ) :   ( saleOrderConfiguration?.showTaxPercentage &&
                 <div className="flex flex-col items-end text-[12px] text-black font-bold gap-1">
                   <p className={calculateTotalTax() > 0 ? "" : "hidden"}>
                     VAT : {Number(calculateTotalTax()).toFixed(2)}
