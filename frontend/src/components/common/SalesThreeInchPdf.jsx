@@ -376,10 +376,9 @@ function SalesThreeInchPdf({
               <div className="text-black font-semibold text-[10px] leading-5"></div>
             )}
           </div> */}
-
           <div className=" mt-1  ">
             <div className="  flex flex-col items-end ">
-              {selectedOrganization?.country === "India" ? (
+{ selectedOrganization?.country === "India" ? ( saleOrderConfiguration?.showTaxPercentage &&
                 <div className="flex flex-col items-end text-[12px] text-black font-bold gap-1">
                   <p className={calculateTotalTax() > 0 ? "" : "hidden"}>
                     CGST : {(calculateTotalTax() / 2).toFixed(2)}
@@ -398,14 +397,13 @@ function SalesThreeInchPdf({
                     STATE TAX : {calculateStateTax()}
                   </p>
                 </div>
-              ) :   ( saleOrderConfiguration?.showTaxPercentage &&
+              ) :   ( saleOrderConfiguration?.showTaxAmount &&
                 <div className="flex flex-col items-end text-[12px] text-black font-bold gap-1">
                   <p className={calculateTotalTax() > 0 ? "" : "hidden"}>
                     VAT : {Number(calculateTotalTax()).toFixed(2)}
                   </p>
                 </div>
               )}
-
               {additinalCharge > 0 && (
                 <div className="flex items-center mt-1 mb-1">
                   <div className="text-black mr-2 font-bold text-[12px] ">
