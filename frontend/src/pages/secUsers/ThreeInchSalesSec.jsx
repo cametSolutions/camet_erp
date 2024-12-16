@@ -8,6 +8,7 @@ import { MdPrint } from "react-icons/md";
 // import numberToWords from "number-to-words";
 import { Link } from "react-router-dom";
 import SalesThreeInchPdf from "../../components/common/SalesThreeInchPdf";
+
 // import PrintButton from "../../components/common/buttons/PrintButton";
 
 function ThreeInchSalesSec() {
@@ -22,6 +23,7 @@ function ThreeInchSalesSec() {
   const { id } = useParams();
 
   const contentToPrint = useRef(null);
+
 
   useEffect(() => {
     const getTransactionDetails = async () => {
@@ -141,6 +143,7 @@ function ThreeInchSalesSec() {
           // additinalCharge={additinalCharge}
           // inWords={inWords}
           tab="sales"
+          
         />
       </div> 
     

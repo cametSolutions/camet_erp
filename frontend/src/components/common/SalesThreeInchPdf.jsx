@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import numberToWords from "number-to-words";
 
+
 function SalesThreeInchPdf({
   contentToPrint,
   data,
@@ -14,10 +15,25 @@ function SalesThreeInchPdf({
   printTitle,
   voucherNumber,
   tab,
+
 }) {
   const [subTotal, setSubTotal] = useState("");
   const [additinalCharge, setAdditinalCharge] = useState("");
   const [inWords, setInWords] = useState("");
+  
+  const configurations = useSelector(
+    (state) =>
+      state.secSelectedOrganization?.secSelectedOrg?.configurations[0]
+        ?.printConfiguration
+  );
+
+  console.log("configurations", configurations);
+
+  const saleOrderConfiguration = configurations?.find(
+    (item) => item.voucher === "saleOrder"
+  );
+
+  console.log("saleOrderConfiguration", saleOrderConfiguration);
 
   let title = "";
   let pdfNumber;
@@ -203,7 +219,7 @@ function SalesThreeInchPdf({
             </div>
           </div>
         </div>
-
+{saleOrderConfiguration?.showCompanyDetails && (
         <div className="flex justify-center">
           <div className=" flex flex-col  items-center">
             <div className=" flex justify-center ">
@@ -248,6 +264,7 @@ function SalesThreeInchPdf({
             </div>
           </div>
         </div>
+        )}
         {/* </div> */}
 
         <div className="leading-4">
@@ -298,7 +315,7 @@ function SalesThreeInchPdf({
                   >
                     <td className="py-1 text-black  font-bold  pr-2 flex ">
                       {el.product_name} <br />
-                      <p className="text-black ">({el.igst}%)</p>
+                      {saleOrderConfiguration?.showTaxPercentage && ( <p className="text-black ">({el.igst}%)</p> )}
                     </td>
                     <td className="py-1 text-black  font-bold text-right pr-2">
                       {el?.count}
@@ -359,10 +376,9 @@ function SalesThreeInchPdf({
               <div className="text-black font-semibold text-[10px] leading-5"></div>
             )}
           </div> */}
-
           <div className=" mt-1  ">
             <div className="  flex flex-col items-end ">
-              {selectedOrganization?.country === "India" ? (
+{ selectedOrganization?.country === "India" ? ( saleOrderConfiguration?.showTaxPercentage &&
                 <div className="flex flex-col items-end text-[12px] text-black font-bold gap-1">
                   <p className={calculateTotalTax() > 0 ? "" : "hidden"}>
                     CGST : {(calculateTotalTax() / 2).toFixed(2)}
@@ -381,14 +397,13 @@ function SalesThreeInchPdf({
                     STATE TAX : {calculateStateTax()}
                   </p>
                 </div>
-              ) : (
+              ) :   ( saleOrderConfiguration?.showTaxAmount &&
                 <div className="flex flex-col items-end text-[12px] text-black font-bold gap-1">
                   <p className={calculateTotalTax() > 0 ? "" : "hidden"}>
                     VAT : {Number(calculateTotalTax()).toFixed(2)}
                   </p>
                 </div>
               )}
-
               {additinalCharge > 0 && (
                 <div className="flex items-center mt-1 mb-1">
                   <div className="text-black mr-2 font-bold text-[12px] ">

@@ -145,6 +145,8 @@ function OrderConfigurationsSecondary() {
       return; // Do not proceed with submission if validation failed
     }
 
+    console.log(taxInclusive)
+
     const formData = {
       selectedBank,
       termsList,

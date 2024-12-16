@@ -2256,7 +2256,7 @@ export const getPrintingConfiguration = async (req, res) => {
       return res.status(404).json({ message: "Company not found" });
     }
 
-    const printingConfig = company.configurations[0].printConfiguration.find(
+    const printingConfig = company.configurations[0]?.printConfiguration?.find(
       (config) => config.voucher === voucher
     );
     if (!printingConfig) {

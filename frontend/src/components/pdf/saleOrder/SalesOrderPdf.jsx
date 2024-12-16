@@ -52,6 +52,7 @@ function SalesOrderPdf({
       const subTotal = data.items
         .reduce((acc, curr) => acc + parseFloat(curr?.total), 0)
         .toFixed(2);
+
       setSubTotal(subTotal);
 
       const addiTionalCharge = data?.additionalCharges
@@ -167,11 +168,12 @@ function SalesOrderPdf({
           address={address}
           despatchDetails={despatchDetails}
           tab={"salesOrder"}
+          isShowCompany={saleOrderConfiguration?.showCompanyDetails}
         />
 
         {/* <hr className="border-t-2 border-black mb-0.5" /> */}
-        <table className="w-full text-left  bg-slate-200">
-          <thead className="border-b-2 border-t-2 border-black text-[10px] text-right">
+        <table className="w-full text-left  bg-slate-200 table-fixed ">
+          <thead className="border-b-2 border-t-2 border-black text-[10px] text-right ">
             <tr>
               <th className="text-gray-700 font-bold uppercase py-2 px-1 text-left">
                 No
@@ -191,10 +193,11 @@ function SalesOrderPdf({
               {saleOrderConfiguration?.showDiscount && (
                 <th className="text-gray-700 font-bold uppercase p-2">Disc</th>
               )}
-              {saleOrderConfiguration?.showTaxAmount && (
-                <th className="text-gray-700 font-bold uppercase p-2">Tax</th>
-              )}
-              <th className="text-gray-700 font-bold uppercase p-2 pr-0">
+              {saleOrderConfiguration?.showTaxAmount &&
+                (
+                  <th className="text-gray-700 font-bold uppercase p-2">{saleOrderConfiguration?.showInclTaxRate && 'Tax'}</th>
+                )}
+              <th className="text-gray-700 font-bold uppercase p-2 pr-0 ">
                 Amount
               </th>
             </tr>
@@ -203,11 +206,6 @@ function SalesOrderPdf({
           <tbody>
             {data?.items?.length > 0 &&
               data?.items.map((el, index) => {
-                let rate;
-
-                 rate = el?.selectedPriceRate || 0;
-
-              
                 const taxAmt =
                   Number(
                     (
@@ -215,15 +213,23 @@ function SalesOrderPdf({
                       (el?.total * 100) / (parseFloat(el.igst) + 100)
                     )?.toFixed(2)
                   ) || 0;
-                const count = el?.count || 0;
-                const finalAmt = Number(el?.total) || 0;
+      
+                const rate = (
+                  saleOrderConfiguration?.showInclTaxRate
+                    ? el?.selectedPriceRate + (taxAmt/el?.count)
+                    : el?.selectedPriceRate || 0
+                ).toFixed(2);
 
+                const count = el?.count || 0;
+                
+                const finalAmt = Number(el?.total) || 0;
+                
                 const discountAmount =
                   rate * count + taxAmt - Number(finalAmt) || 0;
                 return (
                   <tr
                     key={index}
-                    className="border-b-2 border-t-1 text-[9px] bg-white"
+                    className="border-b-2 border-t-1 text-[9px] bg-white w-full"
                   >
                     <td className="w-2  ">{index + 1}</td>
 
@@ -258,12 +264,12 @@ function SalesOrderPdf({
                     )}
 
                     {saleOrderConfiguration?.showTaxAmount && (
-                      <td className="py-4 text-black text-right pr-2">
-                        {taxAmt}
-                      </td>
-                    )}
+                        <td className="py-4 text-black text-end pr-2">
+                          {saleOrderConfiguration?.showInclTaxRate && taxAmt}
+                        </td>
+                      )}
 
-                    <td className="py-4 text-black text-right"> {finalAmt}</td>
+                    <td className="py-4 text-black w-full text-right"> {finalAmt}</td>
                   </tr>
                 );
               })}
@@ -271,7 +277,7 @@ function SalesOrderPdf({
 
           <tfoot className="">
             <tr className="bg-white border-y-2 ">
-            <td className="font-bold"></td>
+              <td className="font-bold"></td>
 
               <td className="font-bold text-[9px] p-2">Subtotal</td>
 
@@ -281,16 +287,14 @@ function SalesOrderPdf({
               {saleOrderConfiguration?.showTaxPercentage && (
                 <td className="font-bold"></td>
               )}
-               <td className="text-black text-[9px] ">
+              <td className="text-black text-[9px] ">
                 <p className="text-right pr-1 font-bold">
                   {calculateTotalQunatity()}/unit
                 </p>{" "}
               </td>
 
+              <td className="font-bold"></td>
 
-                <td className="font-bold"></td>
-
-             
               {saleOrderConfiguration?.showDiscount && (
                 <td className="text-right pr-1 text-black font-bold text-[9px]"></td>
               )}
