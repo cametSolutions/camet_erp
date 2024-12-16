@@ -353,6 +353,9 @@ function InvoiceSecondary() {
       isTaxInclusive,
     };
 
+    console.log(formData);
+    
+
 
     try {
       const res = await api.post("/api/sUsers/createInvoice", formData, {

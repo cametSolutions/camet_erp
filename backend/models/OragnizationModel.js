@@ -72,6 +72,7 @@ const organizationSchema = new mongoose.Schema(
         printConfiguration: [
           {
             voucher: { type: String,default: "saleOrder" }, // Define the type for clarity
+            printTitle: { type: String },
             showCompanyDetails: { type: Boolean, default: true },
             showDiscount: { type: Boolean, default: false },
             showHsn: { type: Boolean, default: false },

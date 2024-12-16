@@ -36,7 +36,7 @@ function SalesOrderPdf({
         ?.printConfiguration
   );
 
-  // console.log("configurations", configurations);
+  console.log("configurations", configurations);
   
   const saleOrderConfiguration = configurations?.find(
     (item) => item.voucher === "saleOrder"
@@ -156,7 +156,7 @@ function SalesOrderPdf({
       >
         <div className="flex ">
           <div className="font-bold text-sm md:text-xl mb-2 mt-6">
-            {printTitle || "Quotation"}
+            {saleOrderConfiguration?.printTitle || "Quotation"}
           </div>
         </div>
 

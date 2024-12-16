@@ -90,8 +90,8 @@ export const createInvoice = async (req, res) => {
 
         await updateSecondaryUserConfiguration(secondaryUser, orgId, session);
 
-        await session.commitTransaction();
-        return res.status(200).json({ message: "Sale order created successfully", data: result });
+        // await session.commitTransaction();
+        // return res.status(200).json({ message: "Sale order created successfully", data: result });
       } catch (error) {
         await session.abortTransaction();
         if (error.code === 112) { // Write conflict error code

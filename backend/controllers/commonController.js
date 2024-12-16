@@ -2256,7 +2256,7 @@ export const getPrintingConfiguration = async (req, res) => {
       return res.status(404).json({ message: "Company not found" });
     }
 
-    const printingConfig = company.configurations[0]?.printConfiguration?.find(
+    const printingConfig = company.configurations[0].printConfiguration.find(
       (config) => config.voucher === voucher
     );
     if (!printingConfig) {
@@ -2274,7 +2274,7 @@ export const getPrintingConfiguration = async (req, res) => {
 
 export const updateConfiguration = async (req, res) => {
   const cmp_id = req?.params?.cmp_id;
-  const { title, type, checked, voucher } = req?.body;
+  const { title, type, checked, voucher, input, value } = req?.body;
 
   try {
     const company = await OragnizationModel.findById(cmp_id).lean();
@@ -2294,17 +2294,46 @@ export const updateConfiguration = async (req, res) => {
         .json({ message: "Specific configuration not found" });
     }
 
-    // Update the configuration in the database
+    // Handle `input` and `value` case
+    if (input && value !== undefined) {
+      const updatedCompany = await OragnizationModel.findByIdAndUpdate(
+        cmp_id,
+        {
+          $set: {
+            [`configurations.0.${type}.$[voucher].${input}`]: value,
+          },
+        },
+        {
+          new: true,
+          arrayFilters: [{ "voucher.voucher": voucher }],
+        }
+      );
+
+      if (!updatedCompany) {
+        return res.status(500).json({
+          success: false,
+          message: "Failed to update field",
+        });
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: "Field updated successfully",
+        data: updatedCompany,
+      });
+    }
+
+    // Existing functionality for updating based on `title` and `checked`
     const updatedCompany = await OragnizationModel.findByIdAndUpdate(
       cmp_id,
       {
         $set: {
-          [`configurations.0.${type}.$[voucher].${title}`]: checked, // This is where you update the configuration
+          [`configurations.0.${type}.$[voucher].${title}`]: checked,
         },
       },
       {
-        new: true, // Return the updated document
-        arrayFilters: [{ "voucher.voucher": voucher }], // Array filter to match the specific voucher
+        new: true,
+        arrayFilters: [{ "voucher.voucher": voucher }],
       }
     );
 
@@ -2325,6 +2354,7 @@ export const updateConfiguration = async (req, res) => {
     res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
+
 
 
 

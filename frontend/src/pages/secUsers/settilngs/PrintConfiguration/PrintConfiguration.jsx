@@ -7,20 +7,44 @@ import { MdOutlineAttachMoney } from "react-icons/md";
 import useFetch from "../../../../customHook/useFetch";
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
+import api from "../../../../api/api";
+import { toast } from "react-toastify";
+import { updateConfiguration } from "../../../../../slices/secSelectedOrgSlice";
+import { useDispatch } from "react-redux";
+import { MdTitle } from "react-icons/md";
+import PrintTitleModal from "./PrintTitleModal";
 
 const PrintConfiguration = () => {
+  const [settings, setSettings] = useState([]);
+  const [printTitleModal, setPrintTitleModal] = useState(false);
+  const dispatch = useDispatch();
+
+  ///// redux and api call
   const cmp_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
-  const { data:apiData, loading,refreshHook } = useFetch(`/api/sUsers/getPrintingConfiguration/${cmp_id}?voucher=saleOrder`);
+  const {
+    data: apiData,
+    loading,
+    refreshHook,
+  } = useFetch(
+    `/api/sUsers/getPrintingConfiguration/${cmp_id}?voucher=saleOrder`
+  );
   const data = apiData?.data;
-  console.log(data)
-  
-  const [settings, setSettings] = useState([]);
 
   useEffect(() => {
     if (data) {
       setSettings([
+        {
+          title: "Print Title",
+          description: "Update ",
+          icon: <MdTitle />,
+          to: "/sUsers/EnableCompanyDetails",
+          active: true,
+          toggle: false,
+          modal: true,
+          dbField: "showCompanyDetails",
+        },
         {
           title: "Enable Company Details",
           description: "Enable company details",
@@ -63,7 +87,8 @@ const PrintConfiguration = () => {
         },
         {
           title: "Enable Incl. Tax Rate",
-          description: "Enable Inclusive tax rate, This will hide tax amount column in invoice",
+          description:
+            "Enable Inclusive tax rate, This will hide tax amount column in invoice",
           icon: <RiStockFill />,
           to: "/sUsers/EnableStockWiseTaxAmount",
           active: true,
@@ -115,15 +140,87 @@ const PrintConfiguration = () => {
     }
   }, [data]);
 
-  console.log(settings);
-  
+  const handleToggleChange = async (newState) => {
+    const apiData = {
+      ...newState,
+      type: "printConfiguration",
+      voucher: "saleOrder",
+    };
+
+    try {
+      const res = await api.put(
+        `/api/sUsers/updateConfiguration/${cmp_id}`,
+        apiData,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+          withCredentials: true,
+        }
+      );
+      dispatch(updateConfiguration(res?.data?.data));
+      localStorage.setItem("secOrg", JSON.stringify(res.data.data));
+
+      refreshHook();
+    } catch (error) {
+      toast.error(error.response.data.message);
+      console.log(error);
+    }
+  };
+
+  const savePrintTitle = async (value) => {
+    const apiData = {
+      input: "printTitle",
+      value,
+      type: "printConfiguration",
+      voucher: "saleOrder",
+    };
+
+    try {
+      const res = await api.put(
+        `/api/sUsers/updateConfiguration/${cmp_id}`,
+        apiData,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+          withCredentials: true,
+        }
+      );
+      dispatch(updateConfiguration(res?.data?.data));
+      localStorage.setItem("secOrg", JSON.stringify(res.data.data));
+
+      refreshHook();
+    } catch (error) {
+      toast.error(error.response.data.message);
+      console.log(error);
+    }
+  };
 
   return (
     <div className="bg-white">
-      <TitleDiv title="Print Configuration" from="/sUsers/settings" loading={loading}  />
+      <TitleDiv
+        title="Print Configuration"
+        from="/sUsers/settings"
+        loading={loading}
+      />
+
+      <PrintTitleModal
+        isOpen={printTitleModal}
+        onClose={() => setPrintTitleModal(false)}
+        onSubmit={savePrintTitle}
+        data={data}
+        loading={loading}
+      />
       <div className="space-y-4 b-white p-4 mx-1">
         {settings.map((option, index) => (
-          <SettingsCard option={option} index={index} key={index} type={"printConfiguration"} cmp_id={cmp_id} refreshHook={refreshHook} voucher={"saleOrder"} />
+          <SettingsCard
+            option={option}
+            index={index}
+            key={index}
+            modalHandler={() => setPrintTitleModal(true)}
+            handleToggleChangeFromParent={handleToggleChange}
+          />
         ))}
       </div>
     </div>

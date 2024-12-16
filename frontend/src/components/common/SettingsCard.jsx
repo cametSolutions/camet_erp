@@ -2,22 +2,20 @@
 import { IoSettings } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
 import ToggleButton from "./buttons/ToggleButton";
-import api from "../../api/api";
-import { toast } from "react-toastify";
-import { updateConfiguration } from "../../../slices/secSelectedOrgSlice"; 
-import { useDispatch } from "react-redux";
+
 function SettingsCard({
   option,
   index,
-  modalHandler,
-  type,
-  cmp_id,
-  refreshHook,
-  voucher
+  modalHandler = () => {},
+  // type,
+  // cmp_id,
+  // refreshHook,
+  // voucher,
+  handleToggleChangeFromParent = () => {},
 }) {
 
   const navigate = useNavigate();
-  const dispatch=useDispatch();
+
   const handleNavigate = (option) => {
     if (option?.active) {
       if (option?.modal && option?.modal === true) {
@@ -33,34 +31,7 @@ function SettingsCard({
   };
 
   const handleToggleChange = async (newState) => {
-    const apiData = {
-      ...newState,
-      type,
-      voucher
-    };
-
-
-    try {
-      const res=await api.put(`/api/sUsers/updateConfiguration/${cmp_id}`, apiData, {
-        headers: {
-          "Content-Type": "application/json",
-        },
-        withCredentials: true,
-      });
-      console.log(res?.data?.data);
-
-      dispatch(updateConfiguration(res?.data?.data));
-
-      localStorage.setItem("secOrg", JSON.stringify(res.data.data));
-      
-      refreshHook();
-
-      
-
-    } catch (error) {
-      toast.error(error.response.data.message);
-      console.log(error);
-    }
+    handleToggleChangeFromParent(newState);
   };
 
   return (
