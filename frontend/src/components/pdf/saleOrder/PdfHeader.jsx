@@ -2,18 +2,7 @@
 
 import { useSelector } from "react-redux";
 
-function PdfHeader({ data, org, address, despatchDetails, tab = "sales" }) {
-  const configurations = useSelector(
-    (state) =>
-      state.secSelectedOrganization?.secSelectedOrg?.configurations
-        ?.printConfiguration
-  );
-  const saleOrderConfiguration = configurations?.find(
-    (item) => item.voucher === "saleOrder"
-  );
-
-  console.log("saleOrderConfiguration", saleOrderConfiguration);
-  // console.log(tab);
+function PdfHeader({ data, org, address, despatchDetails, tab = "sales" ,saleOrderConfiguration}) {
 
   let pdfNumber;
   let title;

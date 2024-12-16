@@ -26,16 +26,18 @@ function SalesOrderPdf({
   const secondarySelectedOrg = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
+  console.log("secondarySelectedOrg", secondarySelectedOrg);
+  
 
-  // const configurations =  useSelector(
-  //   (state) => state.setSelectedOrganization.secSelectedOrg?.printConfiguration
-  // );
 
   const configurations = useSelector(
     (state) =>
-      state.secSelectedOrganization?.secSelectedOrg?.configurations
+      state.secSelectedOrganization?.secSelectedOrg?.configurations[0]
         ?.printConfiguration
   );
+
+  // console.log("configurations", configurations);
+  
   const saleOrderConfiguration = configurations?.find(
     (item) => item.voucher === "saleOrder"
   );
@@ -158,6 +160,8 @@ function SalesOrderPdf({
         </div>
 
         <PdfHeader
+          saleOrderConfiguration={saleOrderConfiguration}
+
           data={data}
           org={org}
           address={address}
@@ -199,7 +203,11 @@ function SalesOrderPdf({
           <tbody>
             {data?.items?.length > 0 &&
               data?.items.map((el, index) => {
-                const rate = el?.selectedPriceRate || 0;
+                let rate;
+
+                 rate = el?.selectedPriceRate || 0;
+
+              
                 const taxAmt =
                   Number(
                     (

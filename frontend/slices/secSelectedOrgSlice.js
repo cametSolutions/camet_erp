@@ -24,7 +24,7 @@ const secSelectedOrganizationSlice = createSlice({
     },
 
     updateConfiguration: (state, action) => {
-      state.secSelectedOrg.configurations = action.payload;
+      state.secSelectedOrg.configurations =[ action.payload];
     },
   },
 });

@@ -33,7 +33,7 @@ const TaxTable = ({ products }) => {
   }, [products]);
 
 
-  console.log("consolidatedTaxData", consolidatedTaxData);
+  // console.log("consolidatedTaxData", consolidatedTaxData);
   
 
   return (

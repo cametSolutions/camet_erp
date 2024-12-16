@@ -12,7 +12,13 @@ function PdfFooter({
   selectedOrganization,
   calculateTotalTax = () => {},
 }) {
+
+
+  console.log("saleOrderConfiguration", saleOrderConfiguration);
+  
   return (
+
+    
     <div>
       {/*  tax table and total */}
       <div className="flex justify-between items-start mt-3 ">
@@ -23,6 +29,7 @@ function PdfFooter({
         ) : (
           <div></div>
         )}
+
 
         {/* Right Div */}
         <div className="w-1/2">
