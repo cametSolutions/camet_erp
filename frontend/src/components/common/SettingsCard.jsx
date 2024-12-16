@@ -50,7 +50,6 @@ function SettingsCard({
 
       dispatch(updateConfiguration(res?.data?.data));
 
-      console.log(res.data.data);
       localStorage.setItem("secOrg", JSON.stringify(res.data.data));
       
       refreshHook();
