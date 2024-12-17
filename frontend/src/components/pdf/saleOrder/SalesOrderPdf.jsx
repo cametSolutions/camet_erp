@@ -211,6 +211,7 @@ function SalesOrderPdf({
               {saleOrderConfiguration?.showTaxPercentage && (
                 <th className="text-gray-700 font-bold uppercase p-2">Tax %</th>
               )}
+              
               <th className="text-gray-700 font-bold uppercase p-2">Qty</th>
               <th className="text-gray-700 font-bold uppercase p-2">Rate</th>
               {saleOrderConfiguration?.showDiscount &&
@@ -225,11 +226,11 @@ function SalesOrderPdf({
                     Disc{" "}
                   </th>
                 )}
-              {saleOrderConfiguration?.showTaxAmount && (
+              {/* {saleOrderConfiguration?.showTaxAmount && ( */}
                 <th className="text-gray-700 font-bold uppercase p-2">
                   {saleOrderConfiguration?.showInclTaxRate && "Tax"}
                 </th>
-              )}
+              {/* // )} */}
               <th className="text-gray-700 font-bold uppercase p-2 pr-0 ">
                 Amount
               </th>
@@ -327,11 +328,11 @@ function SalesOrderPdf({
                         </td>
                       )}
 
-                    {saleOrderConfiguration?.showTaxAmount && (
+                    {/* {saleOrderConfiguration?.showTaxAmount && ( */}
                       <td className="py-4 text-black text-end pr-2">
                         {saleOrderConfiguration?.showInclTaxRate && taxAmt}
                       </td>
-                    )}
+                    {/* // )} */}
 
                     <td className="py-4 text-black w-full text-right">
                       {" "}
@@ -366,11 +367,11 @@ function SalesOrderPdf({
                 <td className="text-right pr-1 text-black font-bold text-[9px]"></td>
               )}
 
-              {saleOrderConfiguration?.showTaxAmount && (
+              {/* {saleOrderConfiguration?.showTaxAmount &&  ( */}
                 <td className="text-right pr-1 text-black font-bold text-[9px]">
                   {calculateTotalTax()}
                 </td>
-              )}
+              {/* )} */}
 
               <td className="text-right pr-1 text-black font-bold text-[9px]">
                 {subTotal}
