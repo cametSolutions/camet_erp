@@ -136,7 +136,7 @@ function PdfFooter({
         </div>{" "}
         <div className="flex flex-col justify-between text-[10px] font-semibold text-right">
           <p>{org?.name}</p>
-          <p>Authorized Signatory</p>
+          <p className="mt-8">Authorized Signatory</p>
         </div>
       </div>
 

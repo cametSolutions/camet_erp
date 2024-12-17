@@ -390,7 +390,10 @@ function SalesPdf({
                                 </td>
 
                                 <td className="pt-2  pr-2 text-end">
-                                  {` ${discountAmount}`}
+                                  {/* {` ${discountAmount}`} */}
+                                  {
+                                    Number(discountAmount)<0 ? 0: discountAmount
+                                  }
                                 </td>
 
                                 <td className="pt-2  text-black text-right pr-2">
