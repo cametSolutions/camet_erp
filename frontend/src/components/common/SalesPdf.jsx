@@ -128,7 +128,7 @@ function SalesPdf({
     // Check if tax is inclusive
     if (isTaxInclusive) {
       // For tax-inclusive items, directly compare totalPrice and finalAmt
-      return (totalPrice === finalAmt ? 0 : totalPrice - finalAmt).toFixed(2);
+      return (totalPrice === finalAmt ? 0 : totalPrice - finalAmt).toFixed(2) ;
     } else {
       // For non-tax-inclusive items
       return (totalPrice - (finalAmt - taxAmt)).toFixed(2);
@@ -324,7 +324,8 @@ function SalesPdf({
                             {
                               el.GodownList &&
                                 el.GodownList.length > 0 &&
-                                calculateDiscountAmntOFNoBAtch(el)
+                                // 1
+                                calculateDiscountAmntOFNoBAtch(el) <0 ? ` ${0}` : ` ${calculateDiscountAmntOFNoBAtch(el)}`
                               // el.GodownList.every(
                               //   (godown) => godown.godown_id && !godown.batch
                               // )
