@@ -1,5 +1,4 @@
 /* eslint-disable react/prop-types */
-import QRCode from "react-qr-code";
 import TaxTable from "../../common/table/TaxTable";
 
 function PdfFooter({
@@ -11,14 +10,11 @@ function PdfFooter({
   inWords,
   selectedOrganization,
   calculateTotalTax = () => {},
+  party = {},
 }) {
+  // console.log("saleOrderConfiguration", saleOrderConfiguration);
 
-
-  console.log("saleOrderConfiguration", saleOrderConfiguration);
-  
   return (
-
-    
     <div>
       {/*  tax table and total */}
       <div className="flex justify-between items-start mt-3 ">
@@ -29,7 +25,6 @@ function PdfFooter({
         ) : (
           <div></div>
         )}
-
 
         {/* Right Div */}
         <div className="w-1/2">
@@ -62,16 +57,23 @@ function PdfFooter({
             </div>
           )}
 
-          {saleOrderConfiguration?.showTaxAmount && (
-            <div className="flex flex-col items-end text-[9px] text-black font-bold gap-1 mt-3">
-              <p className={calculateTotalTax() > 0 ? "" : "hidden"}>
-                CGST : {(calculateTotalTax() / 2)?.toFixed(2) || "0.00"}
-              </p>
-              <p className={calculateTotalTax() > 0 ? "" : "hidden"}>
-                SGST : {(calculateTotalTax() / 2)?.toFixed(2) || "0.00"}
-              </p>
-            </div>
-          )}
+          {saleOrderConfiguration?.showTaxAmount &&
+            (org?.state === party?.state ? (
+              <div className="flex flex-col items-end text-[9px] text-black font-bold gap-1 mt-3">
+                <p className={calculateTotalTax() > 0 ? "" : "hidden"}>
+                  CGST : {(calculateTotalTax() / 2)?.toFixed(2) || "0.00"}
+                </p>
+                <p className={calculateTotalTax() > 0 ? "" : "hidden"}>
+                  SGST : {(calculateTotalTax() / 2)?.toFixed(2) || "0.00"}
+                </p>
+              </div>
+            ) : (
+              <div className="flex flex-col items-end text-[9px] text-black font-bold gap-1 mt-3">
+                <p className={calculateTotalTax() > 0 ? "" : "hidden"}>
+                  IGST : {Number(calculateTotalTax())?.toFixed(2) || "0.00"}
+                </p>
+              </div>
+            ))}
 
           <div className="flex justify-end border-black py-3">
             <div className="w-3/4"></div>
@@ -84,15 +86,6 @@ function PdfFooter({
               </div>
             </div>
           </div>
-          {/* <div className="flex justify-end border-black pb-3 w-full">
-            <div className="w-2/4"></div>
-            <div className="text-gray-700 font-bold text-[10px] flex flex-col justify-end text-right mt-1">
-              <p className="text-nowrap">Total Amount(in words)</p>
-              <div className="text-gray-700 full font-bold text-[7.5px] text-nowrap uppercase mt-1">
-                <p className="whitespace-normal"> {inWords} </p>
-              </div>
-            </div>
-          </div> */}
         </div>
       </div>
 

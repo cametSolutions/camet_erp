@@ -13,6 +13,8 @@ import { updateConfiguration } from "../../../../../slices/secSelectedOrgSlice";
 import { useDispatch } from "react-redux";
 import { MdTitle } from "react-icons/md";
 import PrintTitleModal from "./PrintTitleModal";
+import { FaDollarSign } from "react-icons/fa";
+
 
 const PrintConfiguration = () => {
   const [settings, setSettings] = useState([]);
@@ -56,7 +58,7 @@ const PrintConfiguration = () => {
           dbField: "showCompanyDetails",
         },
         {
-          title: "Enable Discount",
+          title: "Enable Discount Column",  
           description: "Enable discount for parties",
           icon: <FiPercent />,
           to: "/sUsers/enableDiscount",
@@ -64,6 +66,16 @@ const PrintConfiguration = () => {
           toggle: true,
           toggleValue: data.showDiscount,
           dbField: "showDiscount",
+        },
+        {
+          title: "Enable Discount Amount",
+          description:"Show discount amount and hide percentage in the invoice",
+          icon: <FaDollarSign />,
+          to: "/sUsers/enableDiscount",
+          active: data?.showDiscount,
+          toggle: true,
+          toggleValue: data.showDiscountAmount,
+          dbField: "showDiscountAmount",
         },
         {
           title: "Enable HSN",

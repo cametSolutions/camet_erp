@@ -75,6 +75,7 @@ const organizationSchema = new mongoose.Schema(
             printTitle: { type: String },
             showCompanyDetails: { type: Boolean, default: true },
             showDiscount: { type: Boolean, default: false },
+            showDiscountAmount: { type: Boolean, default: true },
             showHsn: { type: Boolean, default: false },
             showTaxPercentage: { type: Boolean, default: false },
             showInclTaxRate: { type: Boolean, default: false },

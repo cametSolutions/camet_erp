@@ -42,7 +42,7 @@ function SettingsCard({
         }}
         key={index}
         className={`${
-          option?.active === false && "opacity-50"
+          option?.active === false && "opacity-50 pointer-events-none"
         }  flex items-center justify-between  shadow-md  p-4 rounded-sm hover:bg-slate-100 cursor-pointer`}
       >
         <div className="flex items-center gap-3 ">
