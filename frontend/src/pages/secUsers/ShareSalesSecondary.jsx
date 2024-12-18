@@ -5,7 +5,7 @@ import { useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 
 import { Link } from "react-router-dom";
-import SalesPdf from "../../components/common/SalesPdf";
+import SalesPdf from "../../components/pdf/sales/SalesPdf";
 
 import ShareModal from "./settilngs/dataEntry/modals/ShareModal";
 import { IoShareSocial } from "react-icons/io5";

@@ -1,6 +1,5 @@
 /* eslint-disable react/prop-types */
 import { useEffect, useState } from "react";
-import { BarLoader } from "react-spinners";
 import CustomBarLoader from "../../../../components/common/CustomBarLoader";
 
 function PrintTitleModal({ isOpen, onClose, onSubmit, data = {}, loading }) {

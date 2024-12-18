@@ -40,7 +40,6 @@ function SalesOrderPdf({
     (item) => item.voucher === "saleOrder"
   );
 
-  // console.log("saleOrderConfiguration", saleOrderConfiguration);
 
   const selectedOrganization =
     userType === "primaryUser" ? primarySelectedOrg : secondarySelectedOrg;
@@ -191,7 +190,6 @@ function SalesOrderPdf({
           address={address}
           despatchDetails={despatchDetails}
           tab={"salesOrder"}
-          isShowCompany={saleOrderConfiguration?.showCompanyDetails}
         />
 
         {/* <hr className="border-t-2 border-black mb-0.5" /> */}

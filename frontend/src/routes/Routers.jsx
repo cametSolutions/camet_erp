@@ -201,6 +201,8 @@ import BarcodePrintOn from '../pages/secUsers/settilngs/stockItem/stockItemSetti
 import BarcodePrintOff from '../pages/secUsers/settilngs/stockItem/stockItemSettings/barcode/BarcodePrintOff'
 import BarcodeFormat from '../pages/secUsers/settilngs/stockItem/stockItemSettings/barcode/BarcodeFormat'
 import PrintConfiguration from '../pages/secUsers/settilngs/PrintConfiguration/PrintConfiguration'
+import SaleOrderPrintConfiguration from '../pages/secUsers/settilngs/PrintConfiguration/SaleOrderPrintConfiguration'
+import SalePrintConfiguration from '../pages/secUsers/settilngs/PrintConfiguration/SalePrintConfiguration'
 
 const Routers = () => {
   return (
@@ -465,6 +467,8 @@ const Routers = () => {
         <Route path='/sUsers/emailSettings' element={<ProtectedSecRoute><EmailSettings/></ProtectedSecRoute>}></Route>
         {/* printConfiguration */}
         <Route path='/sUsers/printConfiguration' element={<ProtectedSecRoute><PrintConfiguration/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/saleOrderPrintConfiguration' element={<ProtectedSecRoute><SaleOrderPrintConfiguration/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/salePrintConfiguration' element={<ProtectedSecRoute><SalePrintConfiguration/></ProtectedSecRoute>}></Route>
 
 
         {/* errorPage */}

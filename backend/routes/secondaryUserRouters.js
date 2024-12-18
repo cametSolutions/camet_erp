@@ -21,7 +21,7 @@ import { createPurchase,editPurchase,cancelPurchase } from '../controllers/purch
 import { createCreditNote,cancelCreditNote ,editCreditNote} from '../controllers/creditNoteController.js';
 import {createSale,editSale,cancelSale,} from '../controllers/saleController.js';
 import { cancelDebitNote, createDebitNote, editDebitNote } from '../controllers/debitNoteController.js';
-import { getStockTransferDetails,addProduct ,editProduct,getCreditNoteDetails,transactions,fetchAdditionalCharges, getDebitNoteDetails,getReceiptDetails,getPaymentDetails,getProductSubDetails,deleteProductSubDetails,editProductSubDetails,addProductSubDetails,addHsn,getSingleHsn,editHsn,deleteHsn,getSalesDetails,getPurchaseDetails,getOpeningBalances, findSourceBalance, findSourceDetails, findSourceTransactions, addBank, editBank, addCash, getBankDetails, getCashDetails, editCash, sendPdfViaEmail, getBarcodeList, addBarcodeData, editBarcodeData, deleteBarcode, getSingleBarcodeData, getPrintingConfiguration, updateConfiguration} from '../controllers/commonController.js';
+import { getStockTransferDetails,addProduct ,editProduct,getCreditNoteDetails,transactions,fetchAdditionalCharges, getDebitNoteDetails,getReceiptDetails,getPaymentDetails,getProductSubDetails,deleteProductSubDetails,editProductSubDetails,addProductSubDetails,addHsn,getSingleHsn,editHsn,deleteHsn,getSalesDetails,getPurchaseDetails,getOpeningBalances, findSourceBalance, findSourceDetails, findSourceTransactions, addBank, editBank, addCash, getBankDetails, getCashDetails, editCash, sendPdfViaEmail} from '../controllers/commonController.js';
 import { authSecondary } from '../middlewares/authSecUsers.js';
 import { secondaryIsBlocked } from '../middlewares/isBlocked.js';
 import { companyAuthentication } from '../middlewares/authCompany.js';
@@ -30,7 +30,7 @@ import { createPayment,cancelPayment, editPayment } from '../controllers/payment
 import { createInvoice,editInvoice,cancelSalesOrder } from '../controllers/saleOrderController.js';
 import { createStockTransfer,editStockTransfer, cancelStockTransfer } from '../controllers/stockTransferController.js';
 import { addBankPaymentDetails } from '../../frontend/slices/payment.js';
-import { addEmailConfiguration, getConfiguration } from '../controllers/settingsController.js';
+import { addEmailConfiguration, getConfiguration, getBarcodeList, addBarcodeData, editBarcodeData, deleteBarcode, getSingleBarcodeData, getPrintingConfiguration, updateConfiguration } from '../controllers/settingsController.js';
 import { updateSecondaryUserConfiguration } from '../helpers/saleOrderHelper.js';
 
 
