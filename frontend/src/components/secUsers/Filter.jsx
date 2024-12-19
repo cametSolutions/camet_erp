@@ -7,7 +7,6 @@ import { useDispatch } from "react-redux";
 function Filter({ addAllProducts, godownName }) {
 
 
-  console.log("godownName", godownName);
   
   const dispatch = useDispatch();
 

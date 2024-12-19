@@ -1,7 +1,7 @@
 import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
-  date:"",
+  date: "",
   products: [],
   party: {},
   items: [],
@@ -71,13 +71,14 @@ export const invoiceSliceSecondary = createSlice({
         state.items[indexToUpdate].selectedPriceRate = selectedPriceRate;
       }
     },
-   
+
     changeIgstAndDiscount: (state, action) => {
       const id = action.payload._id;
       const igst = action.payload?.igst || 0;
       const discount = action.payload?.discount || 0;
       const count = action.payload?.count || 0;
       const isTaxInclusive = action.payload?.isTaxInclusive || false;
+      const discountType = action.payload?.discountType || false;
 
       const discountPercentage = action.payload?.discountPercentage || 0;
       const newTotal = action.payload?.total.toFixed(2) || 0;
@@ -90,6 +91,7 @@ export const invoiceSliceSecondary = createSlice({
         state.items[indexToUpdate].count = count;
         state.items[indexToUpdate].isTaxInclusive = isTaxInclusive;
         state.items[indexToUpdate].discountPercentage = discountPercentage;
+        state.items[indexToUpdate].discountType = discountType;
       }
     },
 
@@ -189,7 +191,7 @@ export const {
   addPriceRate,
   addNewAddress,
   addDespatchDetails,
-  changeDate
+  changeDate,
 } = invoiceSliceSecondary.actions;
 
 export default invoiceSliceSecondary.reducer;
