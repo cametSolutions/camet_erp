@@ -2,9 +2,6 @@ import productModel from "../models/productModel.js";
 import OragnizationModel from "../models/OragnizationModel.js";
 import { truncateToNDecimals } from "./helper.js";
 
-
-
-
 // Helper to fetch last invoice and calculate the serial number
 export const fetchLastInvoice = async (model, session) => {
   const lastInvoice = await model
@@ -17,23 +14,14 @@ export const fetchLastInvoice = async (model, session) => {
 export const updateItemStockAndCalculatePrice = async (
   item,
   priceLevelFromRedux,
-  session,
-  
+  session
 ) => {
-  const selectedPriceLevel = item.Priceleveles.find(
-    (priceLevel) => priceLevel.pricelevel === priceLevelFromRedux
-  );
+  // const selectedPriceLevel = item.Priceleveles.find(
+  //   (priceLevel) => priceLevel.pricelevel === priceLevelFromRedux
+  // );
 
   const selectedPrice = item?.selectedPriceRate || 0;
   let totalPrice = selectedPrice * (item.count || 1) || 0;
-
-  // Apply discounts if available
-  if (item.discount) {
-    totalPrice -= item.discount;
-  } else if (item.discountPercentage) {
-    const discountAmount = (totalPrice * item.discountPercentage) / 100;
-    totalPrice -= discountAmount;
-  }
 
   const itemCount = parseFloat(item.count);
   const product = await productModel.findById(item._id).session(session);
@@ -51,38 +39,57 @@ export const updateItemStockAndCalculatePrice = async (
     { session }
   );
 
+  // Calculate taxes
+  const { cgst = 0, sgst = 0, igst = 0, isTaxInclusive = false } = item;
+  let basePrice = totalPrice;
+  let cgstAmt = 0;
+  let sgstAmt = 0;
+  let igstAmt = 0;
+  let subTotal = 0;//// after discount
+
+  if (isTaxInclusive) {
+    const totalTaxPercentage = igst / 100;
+    basePrice = totalPrice / (1 + totalTaxPercentage);
+
+    //  discount calulation
+    let priceAfterDiscount = basePrice;
+    if (item.discount || item.discountPercentage) {
+      priceAfterDiscount = basePrice - item.discount;
+    }
+
+    // Calculate the tax amounts
+    cgstAmt = (priceAfterDiscount * cgst) / 100;
+    sgstAmt = (priceAfterDiscount * sgst) / 100;
+    igstAmt = (priceAfterDiscount * igst) / 100;
+    subTotal = priceAfterDiscount;
+
+    // console.log("igstAmt", igstAmt);
+    // console.log("priceAfterDiscount", priceAfterDiscount);
+    // console.log("totalTaxPercentage", totalTaxPercentage);
+    // console.log("basePrice", basePrice);
+    // console.log("totalPrice", totalPrice);
+  } else {
+    //  discount calulation
+    let priceAfterDiscount = basePrice;
+    if (item.discount || item.discountPercentage) {
+      priceAfterDiscount = totalPrice - item.discount;
+    }
+
+    cgstAmt = (priceAfterDiscount * cgst) / 100;
+    sgstAmt = (priceAfterDiscount * sgst) / 100;
+    igstAmt = (priceAfterDiscount * igst) / 100;
+    subTotal = priceAfterDiscount;
+
+    // console.log("igstAmt", igstAmt);
+    // console.log("priceAfterDiscount", priceAfterDiscount);
+    // console.log("totalPrice", totalPrice);
+  }
+
+  // console.log("igstAmt", igstAmt);
+  // console.log("cgstAmt", cgstAmt);
+  // console.log("sgstAmt", sgstAmt);
+  // console.log("subTotal", subTotal);
   
-
-
-   // Calculate taxes
-   const { cgst = 0, sgst = 0, igst = 0 ,isTaxInclusive=false} = item; 
-   let basePrice = totalPrice;
-   let cgstAmt = 0, sgstAmt = 0, igstAmt = 0;
-
-   
- 
-   if (isTaxInclusive) {
-     const totalTaxPercentage = (igst ) / 100;
-     basePrice = totalPrice / (1 + totalTaxPercentage); 
- 
-     // Calculate the tax amounts
-     cgstAmt = (basePrice * cgst) / 100;
-     sgstAmt = (basePrice * sgst) / 100;
-     igstAmt = (basePrice * igst) / 100;
-   } else {
-     cgstAmt = (totalPrice * cgst) / 100;
-     sgstAmt = (totalPrice * sgst) / 100;
-     igstAmt = (totalPrice * igst) / 100;
-   }
-
-
-      // console.log(
-      //   `  totalPrice:${totalPrice} cgstAmt: ${cgstAmt} sgstAmt: ${sgstAmt} igstAmt: ${igstAmt}`
-      // );
-   
- 
-
-
 
   return {
     ...item,
@@ -90,7 +97,7 @@ export const updateItemStockAndCalculatePrice = async (
     cgstAmt: parseFloat(cgstAmt.toFixed(2)),
     sgstAmt: parseFloat(sgstAmt.toFixed(2)),
     igstAmt: parseFloat(igstAmt.toFixed(2)),
-    subTotal: totalPrice,
+    subTotal: parseFloat((subTotal || 0).toFixed(2)),
   };
 };
 
@@ -138,25 +145,23 @@ export const updateSecondaryUserConfiguration = async (
   }
 };
 
-
 // Helper to revert stock changes from the original invoice
 export const revertStockChanges = async (invoice, session) => {
-    for (const item of invoice.items) {
-      const product = await productModel.findById(item._id).session(session);
-      if (!product) {
-        throw new Error(`Product with ID ${item._id} not found`);
-      }
-  
-      const newBalanceStock = truncateToNDecimals(
-        parseFloat(product.balance_stock) + parseFloat(item.count),
-        3
-      );
-  
-      await productModel.updateOne(
-        { _id: product._id },
-        { $set: { balance_stock: newBalanceStock } },
-        { session }
-      );
+  for (const item of invoice.items) {
+    const product = await productModel.findById(item._id).session(session);
+    if (!product) {
+      throw new Error(`Product with ID ${item._id} not found`);
     }
-  };
-  
+
+    const newBalanceStock = truncateToNDecimals(
+      parseFloat(product.balance_stock) + parseFloat(item.count),
+      3
+    );
+
+    await productModel.updateOne(
+      { _id: product._id },
+      { $set: { balance_stock: newBalanceStock } },
+      { session }
+    );
+  }
+};

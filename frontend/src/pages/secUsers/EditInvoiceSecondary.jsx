@@ -64,7 +64,6 @@ function EditInvoiceSecondary() {
     (state) => state.invoiceSecondary.additionalCharges
   );
 
-  console.log(additionalChargesFromRedux);
   const orgId = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
@@ -86,7 +85,6 @@ function EditInvoiceSecondary() {
         const res = await api.get(`/api/sUsers/additionalcharges/${cmp_id}`, {
           withCredentials: true,
         });
-        console.log(res.data);
         setAdditionalChragesFromCompany(res.data);
       } catch (error) {
         console.log(error);
@@ -147,17 +145,14 @@ function EditInvoiceSecondary() {
     if (additionalChargesFromRedux.length) {
       setAdditional(true);
     } else if (id !== undefined) {
-      console.log("haii");
       dispatch(saveId(id));
     }
   }, []);
   const [subTotal, setSubTotal] = useState(0);
 
-  console.log(id);
 
   const handleAddRow = () => {
     const hasEmptyValue = rows.some((row) => row.value === "");
-    console.log(hasEmptyValue);
     if (hasEmptyValue) {
       toast.error("Please add a value.");
       return;
@@ -181,7 +176,6 @@ function EditInvoiceSecondary() {
     const selectedOption = additionalChragesFromCompany.find(
       (option) => option._id === id
     );
-    console.log(selectedOption);
 
     const newRows = [...rows];
     newRows[index] = {
@@ -192,7 +186,6 @@ function EditInvoiceSecondary() {
       _id: selectedOption?._id,
       finalValue: "",
     };
-    console.log(newRows);
     setRows(newRows);
 
     dispatch(addAdditionalCharges({ index, row: newRows[index] }));
@@ -256,7 +249,6 @@ function EditInvoiceSecondary() {
           createdAt,
         } = res.data.data;
 
-        console.log(createdAt);
 
         // additionalCharges: [ { option: 'option 1', value: '95', action: 'add' } ],
         if (Object.keys(partyFromRedux) == 0) {
@@ -310,7 +302,6 @@ function EditInvoiceSecondary() {
             (key) => despatchDetailsFromRedux[key] == ""
           )
         ) {
-          console.log("haii");
           dispatch(addDespatchDetails(despatchDetails));
         }
       } catch (error) {
@@ -326,7 +317,6 @@ function EditInvoiceSecondary() {
     const subTotal = items.reduce((acc, curr) => {
       return (acc = acc + (parseFloat(curr.total) || 0));
     }, 0);
-    console.log(subTotal);
     setSubTotal(subTotal);
   }, [items]);
 
@@ -348,7 +338,6 @@ function EditInvoiceSecondary() {
   const navigate = useNavigate();
 
   const handleAddItem = () => {
-    console.log(Object.keys(party).length);
     if (Object.keys(party).length === 0) {
       toast.error("Select a party first");
       return;
@@ -410,8 +399,7 @@ function EditInvoiceSecondary() {
       selectedDate: dateFromRedux || new Date(),
     };
 
-    console.log(formData);
-    console.log(id);
+ 
     try {
       const res = await api.post(
         `/api/sUsers/editInvoice/${InvoiceIdForEdit}`,
@@ -424,7 +412,6 @@ function EditInvoiceSecondary() {
         }
       );
 
-      console.log(res.data);
       toast.success(res.data.message);
 
       navigate(`/sUsers/InvoiceDetails/${res.data.data._id}`);

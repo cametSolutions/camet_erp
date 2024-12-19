@@ -93,7 +93,7 @@ function EditItemSecondary() {
         );
       }
 
-      // console.log({ calculatedDiscountAmount, calculatedDiscountPercentage });
+      console.log({ calculatedDiscountAmount, calculatedDiscountPercentage });
 
       const discountedPrice = Number(
         (taxBasePrice - calculatedDiscountAmount).toFixed(2)
@@ -130,7 +130,7 @@ function EditItemSecondary() {
         );
       }
 
-      // console.log({ calculatedDiscountAmount, calculatedDiscountPercentage });
+      console.log({ calculatedDiscountAmount, calculatedDiscountPercentage });
 
       const discountedPrice = Number(
         (taxExclusivePrice - calculatedDiscountAmount).toFixed(2)
