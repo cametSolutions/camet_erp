@@ -14,6 +14,8 @@ import { useDispatch } from "react-redux";
 import { MdTitle } from "react-icons/md";
 import PrintTitleModal from "./PrintTitleModal";
 import { FaDollarSign } from "react-icons/fa";
+import { RiMoneyDollarCircleFill } from "react-icons/ri";
+
 
 
 const SaleOrderPrintConfiguration = () => {
@@ -119,6 +121,26 @@ const SaleOrderPrintConfiguration = () => {
           dbField: "showTaxAnalysis",
         },
         {
+          title: "Enable Stock wise Tax Amount",
+          description: "Enable Stock wise  tax amount",
+          icon: <RiMoneyDollarCircleFill />,
+          to: "/sUsers/EnableTaxAmount",
+          active: true,
+          toggle: true,
+          toggleValue: data.showStockWiseTaxAmount,
+          dbField: "showStockWiseTaxAmount",
+        },
+        {
+          title: "Enable Tax Amount",
+          description: "Enable tax amount",
+          icon: <MdOutlineAttachMoney />,
+          to: "/sUsers/EnableTaxAmount",
+          active: true,
+          toggle: true,
+          toggleValue: data.showTaxAmount,
+          dbField: "showTaxAmount",
+        },
+        {
           title: "Enable Teams & Conditions",
           description: "Enable teams & conditions for parties",
           icon: <FiUsers />,
@@ -138,16 +160,7 @@ const SaleOrderPrintConfiguration = () => {
           toggleValue: data.showBankDetails,
           dbField: "showBankDetails",
         },
-        {
-          title: "Enable Tax Amount",
-          description: "Enable tax amount",
-          icon: <MdOutlineAttachMoney />,
-          to: "/sUsers/EnableTaxAmount",
-          active: true,
-          toggle: true,
-          toggleValue: data.showTaxAmount,
-          dbField: "showTaxAmount",
-        },
+       
       ]);
     }
   }, [data]);

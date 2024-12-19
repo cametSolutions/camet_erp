@@ -83,6 +83,7 @@ const organizationSchema = new mongoose.Schema(
             showTeamsAndConditions: { type: Boolean, default: false },
             showBankDetails: { type: Boolean, default: false },
             showTaxAmount: { type: Boolean, default: true },
+            showStockWiseTaxAmount: { type: Boolean, default: true },
           },
         ],
         

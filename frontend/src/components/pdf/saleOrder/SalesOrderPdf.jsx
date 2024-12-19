@@ -40,7 +40,6 @@ function SalesOrderPdf({
     (item) => item.voucher === "saleOrder"
   );
 
-
   const selectedOrganization =
     userType === "primaryUser" ? primarySelectedOrg : secondarySelectedOrg;
 
@@ -88,9 +87,7 @@ function SalesOrderPdf({
   }, [data]);
 
   const calculateTotalTax = () => {
-    const individualTax = data?.items?.map(
-      (el) => el?.total - (el?.total * 100) / (parseFloat(el.igst) + 100)
-    );
+    const individualTax = data?.items?.map((el) => el?.igstAmt || 0);
     const totalTax = individualTax
       ?.reduce((acc, curr) => (acc += curr), 0)
       .toFixed(2);
@@ -106,31 +103,31 @@ function SalesOrderPdf({
     }, 0);
   };
 
-  const calculateDiscount = (rate, count, taxAmt, finalAmt, isTaxInclusive) => {
-    // Calculate the total price
-    const totalPrice = rate * count;
+  // const calculateDiscount = (rate, count, taxAmt, finalAmt, isTaxInclusive) => {
+  //   // Calculate the total price
+  //   const totalPrice = rate * count;
 
-    // Calculate the discount amount
-    let discountAmount;
+  //   // Calculate the discount amount
+  //   let discountAmount;
 
-    // Check if tax is inclusive
-    if (isTaxInclusive) {
-      // For tax-inclusive items, directly compare totalPrice and finalAmt
-      discountAmount = totalPrice === finalAmt ? 0 : totalPrice - finalAmt;
-    } else {
-      // For non-tax-inclusive items, adjust for tax
-      discountAmount = totalPrice - (finalAmt - taxAmt);
-    }
+  //   // Check if tax is inclusive
+  //   if (isTaxInclusive) {
+  //     // For tax-inclusive items, directly compare totalPrice and finalAmt
+  //     discountAmount = totalPrice === finalAmt ? 0 : totalPrice - finalAmt;
+  //   } else {
+  //     // For non-tax-inclusive items, adjust for tax
+  //     discountAmount = totalPrice - (finalAmt - taxAmt);
+  //   }
 
-    // Calculate discount percentage
-    const discountPercentage =
-      totalPrice !== 0 ? ((discountAmount / totalPrice) * 100).toFixed(2) : 0;
+  //   // Calculate discount percentage
+  //   const discountPercentage =
+  //     totalPrice !== 0 ? ((discountAmount / totalPrice) * 100).toFixed(2) : 0;
 
-    return {
-      discountAmount: discountAmount.toFixed(2),
-      discountPercentage: discountPercentage + "%",
-    };
-  };
+  //   return {
+  //     discountAmount: discountAmount.toFixed(2),
+  //     discountPercentage: discountPercentage + "%",
+  //   };
+  // };
 
   let address;
 
@@ -209,7 +206,7 @@ function SalesOrderPdf({
               {saleOrderConfiguration?.showTaxPercentage && (
                 <th className="text-gray-700 font-bold uppercase p-2">Tax %</th>
               )}
-              
+
               <th className="text-gray-700 font-bold uppercase p-2">Qty</th>
               <th className="text-gray-700 font-bold uppercase p-2">Rate</th>
               {saleOrderConfiguration?.showDiscount &&
@@ -224,11 +221,9 @@ function SalesOrderPdf({
                     Disc{" "}
                   </th>
                 )}
-              {/* {saleOrderConfiguration?.showTaxAmount && ( */}
-                <th className="text-gray-700 font-bold uppercase p-2">
-                  {saleOrderConfiguration?.showInclTaxRate && "Tax"}
-                </th>
-              {/* // )} */}
+              {saleOrderConfiguration?.showStockWiseTaxAmount && (
+                <th className="text-gray-700 font-bold uppercase p-2">Tax</th>
+              )}
               <th className="text-gray-700 font-bold uppercase p-2 pr-0 ">
                 Amount
               </th>
@@ -238,32 +233,35 @@ function SalesOrderPdf({
           <tbody>
             {data?.items?.length > 0 &&
               data?.items.map((el, index) => {
-                const taxAmt =
-                  Number(
+                let rate = el?.selectedPriceRate || 0;
+
+                if (
+                  saleOrderConfiguration?.showInclTaxRate &&
+                  !el?.isTaxInclusive
+                ) {
+                  ///add tax amount with respect to base price
+                  rate = Number(
                     (
-                      el?.total -
-                      (el?.total * 100) / (parseFloat(el.igst) + 100)
-                    )?.toFixed(2)
-                  ) || 0;
-
-                // const rate = (
-                //   saleOrderConfiguration?.showInclTaxRate
-                //     ? el?.selectedPriceRate + taxAmt / el?.count
-                //     : el?.selectedPriceRate || 0
-                // ).toFixed(2);
-
-                const rate = el?.selectedPriceRate || 0;
+                      el?.selectedPriceRate +
+                      el?.selectedPriceRate * (Number(el?.igst / 100) || 0)
+                    ).toFixed(2)
+                  );
+                } else if (
+                  !saleOrderConfiguration?.showInclTaxRate &&
+                  el?.isTaxInclusive
+                ) {
+                  ///add tax amount with respect to base price
+                  rate = Number(
+                    (
+                      el?.selectedPriceRate / (1 + Number(el?.igst / 100) || 0)
+                    ).toFixed(2)
+                  );
+                } else {
+                  rate = el?.selectedPriceRate;
+                }
 
                 const count = el?.count || 0;
-
                 const finalAmt = Number(el?.total) || 0;
-
-                // const discountAmount = rate * count + taxAmt - finalAmt || 0;
-
-                // console.log("discountAmount", discountAmount);
-                // console.log("finalAmt", rate * count);
-
-                
 
                 return (
                   <tr
@@ -297,40 +295,22 @@ function SalesOrderPdf({
                     {saleOrderConfiguration?.showDiscount &&
                       saleOrderConfiguration?.showDiscountAmount && (
                         <td className="py-4 text-black text-right pr-2 ">
-                          {
-                            // Show the discount amount
-                            calculateDiscount(
-                              rate,
-                              count,
-                              taxAmt,
-                              finalAmt,
-                              el?.isTaxInclusive
-                            ).discountAmount
-                          }
+                          {el?.discount || 0}
                         </td>
                       )}
 
                     {saleOrderConfiguration?.showDiscount &&
                       !saleOrderConfiguration?.showDiscountAmount && (
                         <td className="py-4 text-black text-right pr-2 ">
-                          {
-                            // Show the discount percentage
-                            calculateDiscount(
-                              rate,
-                              count,
-                              taxAmt,
-                              finalAmt,
-                              el?.isTaxInclusive
-                            ).discountPercentage
-                          }
+                          {el?.discountPercentage || 0}
                         </td>
                       )}
 
-                    {/* {saleOrderConfiguration?.showTaxAmount && ( */}
+                    {saleOrderConfiguration?.showStockWiseTaxAmount && (
                       <td className="py-4 text-black text-end pr-2">
-                        {saleOrderConfiguration?.showInclTaxRate && taxAmt}
+                        {el?.igstAmt}
                       </td>
-                    {/* // )} */}
+                    )}
 
                     <td className="py-4 text-black w-full text-right">
                       {" "}
@@ -365,11 +345,11 @@ function SalesOrderPdf({
                 <td className="text-right pr-1 text-black font-bold text-[9px]"></td>
               )}
 
-              {/* {saleOrderConfiguration?.showTaxAmount &&  ( */}
-                <td className="text-right pr-1 text-black font-bold text-[9px]">
-                  {calculateTotalTax()}
-                </td>
-              {/* )} */}
+              {saleOrderConfiguration?.showStockWiseTaxAmount &&  (
+              <td className="text-right pr-1 text-black font-bold text-[9px]">
+                {calculateTotalTax()}
+              </td>
+               )} 
 
               <td className="text-right pr-1 text-black font-bold text-[9px]">
                 {subTotal}
