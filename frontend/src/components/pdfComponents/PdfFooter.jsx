@@ -16,7 +16,7 @@ function PdfFooter({
       {/*  tax table and total */}
       <div className="flex justify-between items-start mt-3 ">
         {/* Left Div: Tax Table */}
-        <TaxTable products={data?.items} />
+        <TaxTable products={data?.items}  />
 
         {/* Right Div */}
         <div className="w-1/2">

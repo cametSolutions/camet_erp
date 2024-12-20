@@ -24,6 +24,7 @@ function EditItemForm({
   const [discountAmount, setDiscountAmount] = useState(0); // State for discount amount
   const [discountPercentage, setDiscountPercentage] = useState(0);
   const [isTaxInclusive, setIsTaxInclusive] = useState(false);
+  const [taxAmount, setTaxAmount] = useState(0);
 
   const { id, index } = useParams();
 
@@ -34,78 +35,152 @@ function EditItemForm({
   const selectedGodown = selectedItem[0]?.GodownList[index];
 
   useEffect(() => {
+
+    
     setItem(selectedItem[0]);
 
     if (selectedItem[0]?.hasGodownOrBatch) {
       setNewPrice(selectedGodown?.selectedPriceRate || 0);
 
       setQuantity(selectedGodown?.count || 1);
-      if (selectedGodown?.discountPercentage > 0) {
-        setDiscount(selectedGodown?.discountPercentage);
-      } else if (selectedGodown?.discount > 0) {
+
+
+      if (selectedGodown?.discountType === "amount") {
         setDiscount(selectedGodown?.discount);
-      } else if (
-        selectedGodown?.discountPercentage == 0 &&
-        selectedGodown?.discount == 0
-      ) {
-        setDiscount("");
+        setType("amount");
+        setDiscountPercentage(selectedGodown?.discountPercentage);
+        setDiscountAmount(selectedGodown?.discount);
+      } else {
+        setDiscount(selectedGodown?.discountPercentage);
+        setDiscountAmount(selectedGodown?.discount);
+
+        setType("percentage");
+        setDiscountPercentage(selectedGodown?.discountPercentage);
       }
     } else {
       setNewPrice(selectedItem[0]?.GodownList[0]?.selectedPriceRate || 0);
 
       setQuantity(selectedItem[0]?.count || 1);
-      if (selectedItem[0]?.discountPercentage > 0) {
-        setDiscount(selectedItem[0]?.discountPercentage);
-      } else if (selectedItem[0]?.discount > 0) {
+     
+
+      if (selectedItem[0]?.discountType === "amount") {
         setDiscount(selectedItem[0]?.discount);
-      } else if (
-        selectedItem[0]?.discountPercentage == 0 &&
-        selectedItem[0]?.discount == 0
-      ) {
-        setDiscount("");
+        setType("amount");
+        setDiscountPercentage(selectedItem[0]?.discountPercentage);
+        setDiscountAmount(selectedItem[0]?.discount);
+      } else {
+        setDiscount(selectedItem[0]?.discountPercentage);
+        setDiscountAmount(selectedItem[0]?.discount);
+
+        setType("percentage");
+        setDiscountPercentage(selectedItem[0]?.discountPercentage);
       }
     }
     setUnit(selectedItem[0]?.unit);
     setIgst(selectedItem[0]?.igst);
     setIsTaxInclusive(selectedItem[0]?.isTaxInclusive);
 
-    // }
   }, [selectedItem[0]]);
 
+
+
   useEffect(() => {
-    const taxExclusivePrice = parseFloat(newPrice) * Number(quantity) || 0;
-    setTaxExclusivePrice(taxExclusivePrice);
-    // Calculate the discount amount and percentage
-    let calculatedDiscountAmount = 0;
-    let calculatedDiscountPercentage = 0;
+    // Ensure all inputs are properly parsed
+    const newPriceValue = parseFloat(newPrice) || 0;
+    const quantityValue = parseFloat(quantity) || 1;
+    const discountValue = parseFloat(discount) || 0;
+    const igstValue = parseFloat(igst) || 0;
 
-    if (discount !== "") {
+    ///////////////// for tax inclusive and exclusive //////////////
+
+    if (isTaxInclusive) {
+      const taxInclusivePrice = newPriceValue * quantityValue;
+      const taxBasePrice = Number(
+        (taxInclusivePrice / (1 + igstValue / 100)).toFixed(2)
+      );
+
+      /// Discount calculation
+      /// Discount calculation
+      let calculatedDiscountAmount = 0;
+      let calculatedDiscountPercentage = 0;
+
       if (type === "amount") {
-        calculatedDiscountAmount = parseFloat(discount);
+        calculatedDiscountAmount = discountValue; // Given discount value is treated as amount
         calculatedDiscountPercentage =
-          (parseFloat(discount) / taxExclusivePrice) * 100;
+          Number(
+            ((discountValue / taxExclusivePrice) * 100).toFixed(2) // Calculate percentage
+          ) || 0;
       } else if (type === "percentage") {
-        calculatedDiscountPercentage = parseFloat(discount).toFixed(2);
-        calculatedDiscountAmount =
-          (parseFloat(discount) / 100) * taxExclusivePrice;
+        calculatedDiscountPercentage = discountValue; // Given discount value is treated as percentage
+        calculatedDiscountAmount = Number(
+          ((discountValue / 100) * taxExclusivePrice).toFixed(2) // Calculate amount
+        );
       }
+
+
+      const discountedPrice = Number(
+        (taxBasePrice - calculatedDiscountAmount).toFixed(2)
+      );
+
+      ////final calculation
+      const taxAmount = discountedPrice * (igstValue / 100);
+      const totalPayableAmount = Number(
+        (discountedPrice + taxAmount).toFixed(2)
+      );
+
+      setTotalAmount(totalPayableAmount);
+      setDiscountAmount(calculatedDiscountAmount);
+      setDiscountPercentage(calculatedDiscountPercentage);
+      setTaxExclusivePrice(taxBasePrice);
+      setTaxAmount(taxAmount);
+    } else {
+      const taxExclusivePrice = newPriceValue * quantityValue;
+
+      /// Discount calculation
+      let calculatedDiscountAmount = 0;
+      let calculatedDiscountPercentage = 0;
+
+      if (type === "amount") {
+        calculatedDiscountAmount = discountValue; // Given discount value is treated as amount
+        calculatedDiscountPercentage =
+          Number(
+            ((discountValue / taxExclusivePrice) * 100).toFixed(2) // Calculate percentage
+          ) || 0;
+      } else if (type === "percentage") {
+        calculatedDiscountPercentage = discountValue; // Given discount value is treated as percentage
+        calculatedDiscountAmount = Number(
+          ((discountValue / 100) * taxExclusivePrice).toFixed(2) // Calculate amount
+        );
+      }
+
+      console.log({ calculatedDiscountAmount, calculatedDiscountPercentage });
+
+      const discountedPrice = Number(
+        (taxExclusivePrice - calculatedDiscountAmount).toFixed(2)
+      );
+
+      ////final calculation
+      const taxAmount = discountedPrice * (igstValue / 100);
+      const totalPayableAmount = Number(
+        (discountedPrice + taxAmount).toFixed(2)
+      );
+      setTotalAmount(totalPayableAmount);
+      setDiscountAmount(calculatedDiscountAmount);
+      setDiscountPercentage(calculatedDiscountPercentage);
+      setTaxExclusivePrice(taxExclusivePrice);
+      setTaxAmount(taxAmount);
     }
-
-    setDiscountAmount(calculatedDiscountAmount);
-    setDiscountPercentage(calculatedDiscountPercentage);
-
-    // Calculate the total amount
-    let totalAmount = taxExclusivePrice - calculatedDiscountAmount;
-
-    // Apply tax if present
-    if (igst !== "" && !isTaxInclusive) {
-      const taxAmount = (parseFloat(igst) / 100) * totalAmount;
-      totalAmount += taxAmount;
-    }
-
-    setTotalAmount(totalAmount);
-  }, [selectedItem, quantity, discount]);
-
+  }, [
+    newPrice,
+    quantity,
+    discount,
+    type,
+    igst,
+    isTaxInclusive,
+    discountAmount,
+    discountPercentage,
+    taxExclusivePrice,
+  ]);
   const handleBackClick = () => {
     navigate(-1);
   };
@@ -133,10 +208,10 @@ function EditItemForm({
       selectedItem,
       discountAmount,
       discountPercentage,
-      
       type,
       igst,
-      isTaxInclusive
+      isTaxInclusive,
+      // taxAmount
     );
   };
 
@@ -188,25 +263,27 @@ function EditItemForm({
                       />
                     </div>
 
-                    {taxInclusive &&  isTaxInclusive !== null && isTaxInclusive !== undefined && (
-                      <div className="flex items-center gap-3 ml-1 ">
-                        <input
-                          type="checkbox"
-                          id="valueCheckbox"
-                          className="form-checkbox h-5 w-5 text-indigo-600 transition duration-150 ease-in-out"
-                          checked={isTaxInclusive === true}
-                          onChange={() => {
-                            setIsTaxInclusive(!isTaxInclusive);
-                          }}
-                        />
-                        <label
-                          className="block uppercase text-blueGray-600 text-xs font-bold "
-                          htmlFor="termsInput"
-                        >
-                          Tax Inclusive
-                        </label>
-                      </div>
-                    )}
+                    {taxInclusive &&
+                      isTaxInclusive !== null &&
+                      isTaxInclusive !== undefined && (
+                        <div className="flex items-center gap-3 ml-1 ">
+                          <input
+                            type="checkbox"
+                            id="valueCheckbox"
+                            className="form-checkbox h-5 w-5 text-indigo-600 transition duration-150 ease-in-out"
+                            checked={isTaxInclusive === true}
+                            onChange={() => {
+                              setIsTaxInclusive(!isTaxInclusive);
+                            }}
+                          />
+                          <label
+                            className="block uppercase text-blueGray-600 text-xs font-bold "
+                            htmlFor="termsInput"
+                          >
+                            Tax Inclusive
+                          </label>
+                        </div>
+                      )}
 
                     <div className="flex items-center space-x-4">
                       <div className="flex flex-col">
@@ -305,7 +382,7 @@ function EditItemForm({
 
                     <div className="bg-slate-200 p-3 font-semibold flex flex-col gap-2 text-gray-500">
                       <div className="flex justify-between">
-                        <p className="text-xs">Tax Exclusive Price * Qty</p>
+                        <p className="text-xs">Tax Exclusive Price</p>
                         <p className="text-xs">
                           {" "}
                           {taxExclusivePrice.toFixed(2)}
@@ -339,11 +416,9 @@ function EditItemForm({
                         <p className="text-xs">Tax Rate</p>
                         <div className="flex items-center gap-2">
                           <p className="text-xs">{`( ${igst} % )`}</p>
-                          <p className="text-xs">{`₹ ${(
-                            ((taxExclusivePrice - discountAmount) *
-                              parseFloat(igst)) /
-                            100
-                          ).toFixed(2)}`}</p>
+                          <p className="text-xs">{`₹ ${taxAmount.toFixed(
+                            2
+                          )}`}</p>
                         </div>
                       </div>
                       <div className="flex justify-between font-bold text-black">
