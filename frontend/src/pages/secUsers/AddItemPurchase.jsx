@@ -364,7 +364,7 @@ function AddItemPurchase() {
         subtotal += discountedSubtotal + gstAmount;
 
         const individualTotal = parseFloat(
-          (discountedSubtotal + gstAmount).toFixed(2)
+          (discountedSubtotal + gstAmount)?.toFixed(2)
         );
 
         individualTotals.push({
@@ -396,7 +396,7 @@ function AddItemPurchase() {
       subtotal += discountedSubtotal + gstAmount;
 
       const individualTotal = parseFloat(
-        (discountedSubtotal + gstAmount).toFixed(2)
+        (discountedSubtotal + gstAmount)?.toFixed(2)
       );
 
       individualTotals.push({
@@ -406,7 +406,7 @@ function AddItemPurchase() {
       });
     }
 
-    subtotal = parseFloat(subtotal.toFixed(2));
+    subtotal = parseFloat(subtotal?.toFixed(2));
 
     return {
       individualTotals,

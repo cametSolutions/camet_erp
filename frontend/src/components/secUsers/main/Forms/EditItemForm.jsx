@@ -96,7 +96,7 @@ function EditItemForm({
     if (isTaxInclusive) {
       const taxInclusivePrice = newPriceValue * quantityValue;
       const taxBasePrice = Number(
-        (taxInclusivePrice / (1 + igstValue / 100)).toFixed(2)
+        (taxInclusivePrice / (1 + igstValue / 100))?.toFixed(2)
       );
 
       /// Discount calculation
@@ -108,24 +108,24 @@ function EditItemForm({
         calculatedDiscountAmount = discountValue; // Given discount value is treated as amount
         calculatedDiscountPercentage =
           Number(
-            ((discountValue / taxExclusivePrice) * 100).toFixed(2) // Calculate percentage
+            ((discountValue / taxExclusivePrice) * 100)?.toFixed(2) // Calculate percentage
           ) || 0;
       } else if (type === "percentage") {
         calculatedDiscountPercentage = discountValue; // Given discount value is treated as percentage
         calculatedDiscountAmount = Number(
-          ((discountValue / 100) * taxExclusivePrice).toFixed(2) // Calculate amount
+          ((discountValue / 100) * taxExclusivePrice)?.toFixed(2) // Calculate amount
         );
       }
 
 
       const discountedPrice = Number(
-        (taxBasePrice - calculatedDiscountAmount).toFixed(2)
+        (taxBasePrice - calculatedDiscountAmount)?.toFixed(2)
       );
 
       ////final calculation
       const taxAmount = discountedPrice * (igstValue / 100);
       const totalPayableAmount = Number(
-        (discountedPrice + taxAmount).toFixed(2)
+        (discountedPrice + taxAmount)?.toFixed(2)
       );
 
       setTotalAmount(totalPayableAmount);
@@ -144,25 +144,25 @@ function EditItemForm({
         calculatedDiscountAmount = discountValue; // Given discount value is treated as amount
         calculatedDiscountPercentage =
           Number(
-            ((discountValue / taxExclusivePrice) * 100).toFixed(2) // Calculate percentage
+            ((discountValue / taxExclusivePrice) * 100)?.toFixed(2) // Calculate percentage
           ) || 0;
       } else if (type === "percentage") {
         calculatedDiscountPercentage = discountValue; // Given discount value is treated as percentage
         calculatedDiscountAmount = Number(
-          ((discountValue / 100) * taxExclusivePrice).toFixed(2) // Calculate amount
+          ((discountValue / 100) * taxExclusivePrice)?.toFixed(2) // Calculate amount
         );
       }
 
       console.log({ calculatedDiscountAmount, calculatedDiscountPercentage });
 
       const discountedPrice = Number(
-        (taxExclusivePrice - calculatedDiscountAmount).toFixed(2)
+        (taxExclusivePrice - calculatedDiscountAmount)?.toFixed(2)
       );
 
       ////final calculation
       const taxAmount = discountedPrice * (igstValue / 100);
       const totalPayableAmount = Number(
-        (discountedPrice + taxAmount).toFixed(2)
+        (discountedPrice + taxAmount)?.toFixed(2)
       );
       setTotalAmount(totalPayableAmount);
       setDiscountAmount(calculatedDiscountAmount);
@@ -385,7 +385,7 @@ function EditItemForm({
                         <p className="text-xs">Tax Exclusive Price</p>
                         <p className="text-xs">
                           {" "}
-                          {taxExclusivePrice.toFixed(2)}
+                          {taxExclusivePrice?.toFixed(2)}
                         </p>
                       </div>
                       {type === "amount" ? (
@@ -394,8 +394,8 @@ function EditItemForm({
                           <div className="flex items-center gap-2">
                             <p className="text-xs">{`(${parseFloat(
                               discountPercentage
-                            ).toFixed(2)} % ) `}</p>
-                            <p className="text-xs">{`₹ ${discountAmount.toFixed(
+                            )?.toFixed(2)} % ) `}</p>
+                            <p className="text-xs">{`₹ ${discountAmount?.toFixed(
                               2
                             )}`}</p>
                           </div>
@@ -405,7 +405,7 @@ function EditItemForm({
                           <p className="text-xs">Discount</p>
                           <div className="flex items-center gap-2">
                             <p className="text-xs">{`(${discountPercentage}) %`}</p>
-                            <p className="text-xs">{`₹ ${discountAmount.toFixed(
+                            <p className="text-xs">{`₹ ${discountAmount?.toFixed(
                               2
                             )} `}</p>
                           </div>
@@ -416,14 +416,14 @@ function EditItemForm({
                         <p className="text-xs">Tax Rate</p>
                         <div className="flex items-center gap-2">
                           <p className="text-xs">{`( ${igst} % )`}</p>
-                          <p className="text-xs">{`₹ ${taxAmount.toFixed(
+                          <p className="text-xs">{`₹ ${taxAmount?.toFixed(
                             2
                           )}`}</p>
                         </div>
                       </div>
                       <div className="flex justify-between font-bold text-black">
                         <p className="text-sm">Total amount</p>
-                        <p className="text-xs">{totalAmount.toFixed(2)}</p>
+                        <p className="text-xs">{totalAmount?.toFixed(2)}</p>
                       </div>
                     </div>
                   </div>
