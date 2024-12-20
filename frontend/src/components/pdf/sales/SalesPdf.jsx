@@ -328,11 +328,11 @@ function SalesPdf({
                         Disc{" "}
                       </th>
                     )}
-                  {/* {configurations?.showTaxAmount && ( */}
-                  <th className="text-gray-700 font-bold uppercase p-2">
-                    {configurations?.showInclTaxRate && "Tax"}
-                  </th>
-                  {/* // )} */}
+                  {configurations?.showStockWiseTaxAmount && (
+                    <th className="text-gray-700 font-bold uppercase p-2">
+                      Tax
+                    </th>
+                  )}
                   <th className="text-gray-700 font-bold uppercase p-2 pr-0 ">
                     Amount
                   </th>
@@ -395,15 +395,17 @@ function SalesPdf({
                             </td>
                           )}
 
-                          <td className="pt-2 text-black text-right pr-2 font-bold">
-                            {el?.hasGodownOrBatch === true
-                              ? null
-                              : `  ${(
-                                  el?.total -
-                                  (el?.total * 100) /
-                                    (parseFloat(el.igst) + 100)
-                                )?.toFixed(2)}`}
-                          </td>
+                          {configurations?.showStockWiseTaxAmount && (
+                            <td className="pt-2 text-black text-right pr-2 font-bold">
+                              {el?.hasGodownOrBatch === true
+                                ? null
+                                : `  ${(
+                                    el?.total -
+                                    (el?.total * 100) /
+                                      (parseFloat(el.igst) + 100)
+                                  )?.toFixed(2)}`}
+                            </td>
+                          )}
 
                           <td className="pt-2 pr-1 text-black text-right font-bold">
                             {el?.total}
@@ -471,15 +473,12 @@ function SalesPdf({
                                   </td>
                                 )}
 
-                                <td className="pt-2  text-black text-right pr-2">
-                                  {/* {`${(
-                                    godownOrBatch?.individualTotal -
-                                    (godownOrBatch?.individualTotal * 100) /
-                                      (parseFloat(el.igst) + 100)
-                                  )?.toFixed(2)}` || " 0"} */}
+                                {configurations?.showStockWiseTaxAmount && (
+                                  <td className="pt-2  text-end pr-2">
+                                    {calculateTaxAmount(godownOrBatch, el)}
+                                  </td>
+                                )}
 
-                                  {calculateTaxAmount(godownOrBatch, el)}
-                                </td>
                                 <td className="pt-2 text-end pr-1">
                                   <p>{godownOrBatch.individualTotal ?? 0}</p>
                                 </td>
@@ -509,10 +508,15 @@ function SalesPdf({
                   {configurations?.showDiscount && (
                     <td className="text-right pr-1 text-black font-bold text-[9px]"></td>
                   )}
+
+                  {configurations?.showStockWiseTaxAmount && (
+                    <td className="text-right pr-1 text-black font-bold text-[9px]">
+                      {" "}
+                      {calculateTotalTax()}
+                    </td>
+                  )}
+                  {}
                   <td className="text-right pr-1 text-black font-bold text-[9px]"></td>
-                  <td className="text-right pr-1 text-black font-bold text-[9px]">
-                    {calculateTotalTax()}
-                  </td>
                   <td className="text-right pr-1 text-black font-bold text-[9px]">
                     {subTotal}
                   </td>

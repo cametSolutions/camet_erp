@@ -269,6 +269,7 @@ function SalesPdf({
                   <th className="text-gray-700 font-bold uppercase p-2">
                     Disc
                   </th>
+                  
                   <th className="text-gray-700 font-bold uppercase p-2">Tax</th>
                   <th className="text-gray-700 font-bold uppercase p-2 pr-0">
                     Amount

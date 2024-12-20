@@ -20,7 +20,7 @@ function PdfFooter({
         {/* Left Div: Tax Table */}
 
         {configurations?.showTaxAnalysis ? (
-          <TaxTable products={data?.items} />
+          <TaxTable products={data?.items} org={org} party={party}  />
         ) : (
           <div></div>
         )}
