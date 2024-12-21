@@ -154,16 +154,16 @@ function AddItemPurchase() {
             }
           });
           setItem(updatedItems);
-          if (updatedItems.length > 0) {
-            fetchFilters();
-          }
+          // if (updatedItems.length > 0) {
+          //   fetchFilters();
+          // }
 
           setRefresh((prevRefresh) => !prevRefresh);
         } else {
           setItem(productData);
-          if (productData.length > 0) {
-            fetchFilters();
-          }
+          // if (productData.length > 0) {
+          //   fetchFilters();
+          // }
           setRefresh((prevRefresh) => !prevRefresh);
         }
 
