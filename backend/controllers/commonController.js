@@ -353,10 +353,11 @@ export const transactions = async (req, res) => {
         },
       };
     } else if (todayOnly === "true") {
+      const today = new Date();
       dateFilter = {
         createdAt: {
-          $gte: startOfDay(new Date()),
-          $lte: endOfDay(new Date()),
+          $gte:new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate(), 0, 0, 0, 0)),
+          $lte:  new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate(), 23, 59, 59, 999)),
         },
       };
     }

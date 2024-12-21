@@ -456,7 +456,7 @@ function EditPurchase() {
       }
     }
 
-    const lastAmount = totalAmount.toFixed(2);
+    const lastAmount = totalAmount?.toFixed(2);
 
     dispatch(AddFinalAmount(lastAmount));
 
@@ -580,7 +580,7 @@ function EditPurchase() {
             <p className="font-bold text-lg">Total Amount</p>
             <div className="flex flex-col items-center">
               <p className="font-bold text-lg">
-                ₹ {totalAmount.toFixed(2) ?? 0}
+                ₹ {totalAmount?.toFixed(2) ?? 0}
               </p>
               <p className="text-[9px] text-gray-400">(rounded)</p>
             </div>

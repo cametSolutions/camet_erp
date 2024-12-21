@@ -2,7 +2,7 @@ import TitleDiv from "../../../../components/common/TitleDiv";
 import SettingsCard from "../../../../components/common/SettingsCard";
 import { FiUsers, FiSave, FiPercent, FiInfo, FiFileText } from "react-icons/fi";
 import { GiBank } from "react-icons/gi";
-import { RiStockFill } from "react-icons/ri";
+import { RiMoneyDollarCircleFill, RiStockFill } from "react-icons/ri";
 import { MdOutlineAttachMoney } from "react-icons/md";
 import useFetch from "../../../../customHook/useFetch";
 import { useEffect, useState } from "react";
@@ -14,7 +14,6 @@ import { useDispatch } from "react-redux";
 import { MdTitle } from "react-icons/md";
 import PrintTitleModal from "./PrintTitleModal";
 import { FaDollarSign } from "react-icons/fa";
-
 
 const SalePrintConfiguration = () => {
   const [settings, setSettings] = useState([]);
@@ -29,9 +28,7 @@ const SalePrintConfiguration = () => {
     data: apiData,
     loading,
     refreshHook,
-  } = useFetch(
-    `/api/sUsers/getPrintingConfiguration/${cmp_id}?voucher=sale`
-  );
+  } = useFetch(`/api/sUsers/getPrintingConfiguration/${cmp_id}?voucher=sale`);
   const data = apiData?.data;
 
   useEffect(() => {
@@ -58,7 +55,7 @@ const SalePrintConfiguration = () => {
           dbField: "showCompanyDetails",
         },
         {
-          title: "Enable Discount Column",  
+          title: "Enable Discount Column",
           description: "Enable discount for parties",
           icon: <FiPercent />,
           to: "/sUsers/enableDiscount",
@@ -69,7 +66,8 @@ const SalePrintConfiguration = () => {
         },
         {
           title: "Enable Discount Amount",
-          description:"Show discount amount and hide percentage in the invoice",
+          description:
+            "Show discount amount and hide percentage in the invoice",
           icon: <FaDollarSign />,
           to: "/sUsers/enableDiscount",
           active: data?.showDiscount,
@@ -117,6 +115,16 @@ const SalePrintConfiguration = () => {
           toggle: true,
           toggleValue: data.showTaxAnalysis,
           dbField: "showTaxAnalysis",
+        },
+        {
+          title: "Enable Stock wise Tax Amount",
+          description: "Enable Stock wise  tax amount",
+          icon: <RiMoneyDollarCircleFill />,
+          to: "/sUsers/EnableTaxAmount",
+          active: true,
+          toggle: true,
+          toggleValue: data.showStockWiseTaxAmount,
+          dbField: "showStockWiseTaxAmount",
         },
         {
           title: "Enable Teams & Conditions",

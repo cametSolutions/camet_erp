@@ -1,23 +1,31 @@
 /* eslint-disable react/no-unknown-property */
 
 import { useNavigate } from "react-router-dom";
-import {  useDispatch, useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { updateItem } from "../../../slices/purchase";
 import EditItemForm from "../../components/secUsers/main/Forms/EditItemForm";
 
 function EditItemSalesSecondary() {
+  const ItemsFromRedux = useSelector((state) => {
+    return state.purchase.items;
+  });
 
-  const ItemsFromRedux = useSelector((state)=>{
-    return state.purchase.items
-  })
-
-  
   const dispatch = useDispatch();
-  const navigate=useNavigate();
+  const navigate = useNavigate();
 
-  const submitHandler = (item, index, quantity, newPrice, totalAmount, selectedItem,discountAmount,discountPercentage, type,igst) => {
+  const submitHandler = (
+    item,
+    index,
+    quantity,
+    newPrice,
+    totalAmount,
+    selectedItem,
+    discountAmount,
+    discountPercentage,
+    type,
+    igst
+  ) => {
     const newItem = structuredClone(item);
-
 
     if (selectedItem[0]?.hasGodownOrBatch) {
       const newGodownList = newItem.GodownList.map((godown, idx) => {
@@ -26,10 +34,11 @@ function EditItemSalesSecondary() {
             ...godown,
             count: Number(quantity) || 0,
             selectedPriceRate: Number(newPrice) || 0,
-            discount: type === "amount" ? discountAmount : "",
-            discountPercentage:
-              type === "amount" ? "" : parseFloat(discountPercentage),
+            discount: discountAmount || 0,
+            // taxAmount: Number(taxAmount.toFixed(2)),
+            discountPercentage: discountPercentage || 0,
             individualTotal: Number(totalAmount.toFixed(2)),
+            discountType: type,
           };
         } else {
           return godown;
@@ -37,18 +46,12 @@ function EditItemSalesSecondary() {
       });
 
       newItem.GodownList = newGodownList;
-      newItem.count = Number(
-        newGodownList
-          ?.reduce((acc, curr) => (acc += curr?.count || 0), 0)
-          .toFixed(2)
-      );
 
       newItem.count = Number(
         newGodownList?.reduce((acc, curr) => {
           if (curr.added === true) {
             return acc + curr.count;
           } else {
-
             return acc;
           }
         }, 0)
@@ -62,7 +65,6 @@ function EditItemSalesSecondary() {
           )
           .toFixed(2)
       );
-  
     } else {
       // newItem.total = Number(totalAmount.toFixed(2));
       newItem.GodownList[0].individualTotal = Number(totalAmount.toFixed(2));
@@ -70,24 +72,22 @@ function EditItemSalesSecondary() {
       newItem.count = quantity || 0;
       const godownList = [...newItem.GodownList];
       godownList[0].selectedPriceRate = Number(newPrice) || 0;
-
       newItem.GodownList = godownList;
       newItem.newGst = igst;
-      if (type === "amount") {
-        newItem.discount = discountAmount;
-        newItem.discountPercentage = "";
-      } else {
-        newItem.discount = "";
-        newItem.discountPercentage = parseFloat(discountPercentage);
-      }
+      newItem.discount = discountAmount;
+      newItem.discountPercentage = discountPercentage;
+      newItem.discountType = type;
     }
-      dispatch(updateItem(newItem));
+    dispatch(updateItem(newItem));
     navigate(-1);
   };
-  
 
   return (
-<EditItemForm submitHandler={submitHandler} ItemsFromRedux={ItemsFromRedux} from="purchase"/>
+    <EditItemForm
+      submitHandler={submitHandler}
+      ItemsFromRedux={ItemsFromRedux}
+      from="purchase"
+    />
   );
 }
 

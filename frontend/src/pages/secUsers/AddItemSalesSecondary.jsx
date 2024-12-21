@@ -457,6 +457,15 @@ function AddItemSalesSecondary() {
     };
   };
 
+
+  //// for find tax rate////////
+
+  const findTaxRate = (item) => {
+
+    
+
+  };
+
   ///////////////////////////handleAddClick///////////////////////////////////
 
   const handleAddClick = (_id, idx) => {
