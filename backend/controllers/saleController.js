@@ -413,6 +413,7 @@ export const editSale = async (req, res) => {
       return res
         .status(200)
         .json({ success: true, message: "Sale edited successfully" });
+
     } catch (error) {
       await session.abortTransaction();
       console.error("Error editing sale:", error);

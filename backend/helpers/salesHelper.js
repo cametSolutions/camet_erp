@@ -239,57 +239,87 @@ export const processSaleItems = (items) => {
       return (acc += Number(curr?.individualTotal));
     }, 0);
 
-    if (item.discount) {
-      totalPrice -= item.discount;
-    } else if (item.discountPercentage) {
-      const discountAmount = (totalPrice * item.discountPercentage) / 100;
-      totalPrice -= discountAmount;
-    }
+    let subTotal;
+    let cgstAmt = 0;
+    let sgstAmt = 0;
+    let igstAmt = 0;
 
-    const { cgst = 0, sgst = 0, igst = 0, isTaxInclusive = false } = item; // Default tax rates to 0 if not provided
-    const cgstNumber = Number(cgst);
-    const sgstNumber = Number(sgst);
-    const igstNumber = Number(igst);
-    let basePrice = 0;
-    let cgstAmt = 0,
-      sgstAmt = 0,
-      igstAmt = 0;
+    const igstValue = parseFloat(item.igst) || 0;
 
-    // console.log("isTaxInclusive", isTaxInclusive);
+    console.log("item?.hasGodownOrBatch ", item?.hasGodownOrBatch);
 
-    if (!isTaxInclusive) {
-      // If price is tax-inclusive, calculate base price
-      const totalTaxPercentage = igstNumber / 100;
-      basePrice = totalPrice / (1 + totalTaxPercentage); // Reverse calculation to get base price
+    if (item?.hasGodownOrBatch) {
+      const subTotals = item?.GodownList?.map((godown) => {
+        if (!godown?.added) {
+          return 0;
+        }
 
-      // Calculate the tax amounts
-      cgstAmt = Number(((basePrice * cgstNumber) / 100).toFixed(2));
-      sgstAmt = Number(((basePrice * sgstNumber) / 100).toFixed(2));
-      igstAmt = Number(((basePrice * igstNumber) / 100).toFixed(2));
+        const { selectedPriceRate, count, discount } = godown;
 
-      // console.log(
-      //   `  totalPrice:${totalPrice} cgstAmt: ${cgstAmt} sgstAmt: ${sgstAmt} igstAmt: ${igstAmt}`
-      // );
+        const totalPrice = selectedPriceRate * count;
+
+        let basePrice;
+        let priceAfterDiscount;
+
+        if (item?.isTaxInclusive) {
+          basePrice = totalPrice / (1 + igstValue / 100);
+        } else {
+          basePrice = totalPrice;
+        }
+
+        if (discount) {
+          priceAfterDiscount = basePrice - (discount || 0);
+        } else {
+          priceAfterDiscount = basePrice; // Default to basePrice if no discount
+        }
+
+        return priceAfterDiscount || 0; // Ensure a value is returned for each iteration
+      });
+
+      subTotal = Number(
+        subTotals
+          .reduce((acc, curr) => {
+            return (acc += curr || 0);
+          }, 0)
+          .toFixed(2)
+      );
+
+      cgstAmt = parseFloat(((subTotal * Number(item.cgst)) / 100).toFixed(2));
+      sgstAmt = parseFloat(((subTotal * Number(item.sgst)) / 100).toFixed(2));
+      igstAmt = parseFloat(((subTotal * igstValue) / 100).toFixed(2));
     } else {
-      // console.log("igstNumber", igstNumber);
+      const { selectedPriceRate = 0 } = item?.GodownList[0];
+      const count = item?.count || 0;
+      const totalPrice1 = selectedPriceRate * count;
 
-      const basePrice = (totalPrice * 100) / (100 + igstNumber);
-      // If price is tax-exclusive, calculate taxes based on total price
-      cgstAmt = Number(((basePrice * cgstNumber) / 100).toFixed(2));
-      sgstAmt = Number(((basePrice * sgstNumber) / 100).toFixed(2));
-      igstAmt = Number(((basePrice * igstNumber) / 100).toFixed(2));
-      // console.log(
-      //   ` totalPrice: ${totalPrice}  cgstAmt: ${cgstAmt} sgstAmt: ${sgstAmt} igstAmt: ${igstAmt}`
-      // );
+      let basePrice;
+      let priceAfterDiscount = 0;
+
+      if (item?.isTaxInclusive) {
+        basePrice = totalPrice1 / (1 + igstValue / 100);
+      } else {
+        basePrice = totalPrice1;
+
+        if (item?.discount) {
+          priceAfterDiscount = basePrice - (item?.discount || 0);
+        } else {
+          priceAfterDiscount = basePrice;
+        }
+
+        subTotal = Number(priceAfterDiscount.toFixed(2));
+        cgstAmt = parseFloat(((subTotal * Number(item.cgst)) / 100).toFixed(2));
+        sgstAmt = parseFloat(((subTotal * Number(item.sgst)) / 100).toFixed(2));
+        igstAmt = parseFloat(((subTotal * igstValue) / 100).toFixed(2));
+      }
+
+      return {
+        ...item,
+        cgstAmt,
+        sgstAmt,
+        igstAmt,
+        subTotal,
+      };
     }
-
-    return {
-      ...item,
-      cgstAmt,
-      sgstAmt,
-      igstAmt,
-      subTotal: totalPrice - (Number(igstAmt) || 0),
-    };
   });
 };
 
@@ -829,7 +859,7 @@ export const updateOutstandingBalance = async ({
 };
 
 export const saveSettlementData = async (
-party,
+  party,
   orgId,
   paymentMethod,
   type,
@@ -919,7 +949,7 @@ export const revertSettlementData = async (
     }
 
     if (!model) {
-     return
+      return;
     }
 
     const query = {

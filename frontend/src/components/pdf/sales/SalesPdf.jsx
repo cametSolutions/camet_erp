@@ -261,6 +261,28 @@ function SalesPdf({
     }
   }
 
+  const findRate = (rate, isTaxInclusive, igst) => {
+    let newRate;
+
+    console.log("isTaxInclusive", isTaxInclusive);
+    console.log(
+      "configurations?.showInclTaxRat",
+      configurations?.showInclTaxRate
+    );
+
+    if (configurations?.showInclTaxRate && !isTaxInclusive) {
+      ///add tax amount with respect to base price
+      newRate = Number((rate + rate * (Number(igst / 100) || 0)).toFixed(2));
+    } else if (!configurations?.showInclTaxRate && isTaxInclusive) {
+      ///add tax amount with respect to base price
+      newRate = Number((rate / (1 + Number(igst / 100) || 0)).toFixed(2));
+    } else {
+      newRate = rate;
+    }
+
+    return newRate;
+  };
+
   return (
     <div>
       {/* <style dangerouslySetInnerHTML={{ __html: `
@@ -374,14 +396,20 @@ function SalesPdf({
                           </td>
 
                           <td className="pt-2 text-black text-right pr-2 text-nowrap">
-                            {(!el.hasGodownOrBatch ||
+                            {/* {(!el.hasGodownOrBatch ||
                               (el.hasGodownOrBatch &&
                                 el.GodownList &&
                                 el.GodownList.length > 0 &&
                                 el.GodownList.every(
                                   (godown) => godown.godown_id && !godown.batch
                                 ))) &&
-                              `  ${el.GodownList[0]?.selectedPriceRate || 0}`}
+                              `  ${el.GodownList[0]?.selectedPriceRate || 0}`} */}
+
+                            {findRate(
+                              el.GodownList[0]?.selectedPriceRate,
+                              el.isTaxInclusive,
+                              el.igst
+                            )}
                           </td>
                           {configurations?.showDiscount && (
                             <td className="pt-2 text-black text-right pr-2">
@@ -461,7 +489,12 @@ function SalesPdf({
                                   {godownOrBatch?.count} {el?.unit}
                                 </td>
                                 <td className="pt-2  text-end pr-2">
-                                  {godownOrBatch?.selectedPriceRate || 0}
+                                  {findRate(
+                                    godownOrBatch?.selectedPriceRate,
+                                    el.isTaxInclusive,
+                                    el.igst
+                                  )}
+                                  {/* {godownOrBatch?.selectedPriceRate || 0} */}
                                 </td>
 
                                 {configurations?.showDiscount && (

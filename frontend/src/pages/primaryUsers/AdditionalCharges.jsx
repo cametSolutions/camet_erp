@@ -57,7 +57,6 @@ function AdditionalCharges() {
         }
       );
 
-      console.log(res.data);
       toast.success(res.data.message);
       navigate("/pUsers/additionalChargesList");
     } catch (error) {
@@ -66,9 +65,6 @@ function AdditionalCharges() {
     }
   };
 
-  console.log(name);
-  console.log(hsn);
-  console.log(taxPercentage);
 
   return (
     
