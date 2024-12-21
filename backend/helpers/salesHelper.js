@@ -311,15 +311,14 @@ export const processSaleItems = (items) => {
         sgstAmt = parseFloat(((subTotal * Number(item.sgst)) / 100).toFixed(2));
         igstAmt = parseFloat(((subTotal * igstValue) / 100).toFixed(2));
       }
-
-      return {
-        ...item,
-        cgstAmt,
-        sgstAmt,
-        igstAmt,
-        subTotal,
-      };
     }
+    return {
+      ...item,
+      cgstAmt,
+      sgstAmt,
+      igstAmt,
+      subTotal,
+    };
   });
 };
 
