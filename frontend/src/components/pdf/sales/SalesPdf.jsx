@@ -417,8 +417,10 @@ function SalesPdf({
                                 ? null
                                 : el.GodownList && el.GodownList.length > 0
                                 ? configurations?.showDiscountAmount
-                                  ? el?.discount
-                                  : el?.discountPercentage + " %"
+                                  ? el?.discount || 0
+                                  : el?.discountPercentage !== undefined
+                                  ? el?.discountPercentage + " %"
+                                  : "0 %"
                                 : null}
                             </td>
                           )}
@@ -501,8 +503,10 @@ function SalesPdf({
                                   <td className="pt-2  pr-2 text-end">
                                     {configurations?.showDiscountAmount
                                       ? godownOrBatch?.discount || 0
-                                      : godownOrBatch?.discountPercentage +
-                                          " %" || 0 + " %"}
+                                      : godownOrBatch?.discountPercentage !==
+                                        undefined
+                                      ? godownOrBatch?.discountPercentage + " %"
+                                      : "0 %"}
                                   </td>
                                 )}
 

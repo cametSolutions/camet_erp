@@ -365,7 +365,7 @@ function SalesPdf({
                               taxAmt,
                               finalAmt,
                               el?.isTaxInclusive
-                            );
+                            ) || 0;
 
                             return godownOrBatch.added &&
                               godownOrBatch.batch ? (
@@ -394,7 +394,7 @@ function SalesPdf({
                                 <td className="pt-2  pr-2 text-end">
                                   {/* {` ${discountAmount}`} */}
                                   {
-                                    Number(discountAmount)<0 ? 0: discountAmount
+                                    ((Number(discountAmount)<0 ? 0: discountAmount) || 0)
                                   }
                                 </td>
 
