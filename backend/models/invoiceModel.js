@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 
 const invoiceSchema = new mongoose.Schema(
   {
+    date: { type: Date, required: true },
     serialNumber: { type: Number }, // Add this line to include a serial number field
     orderNumber: { type: String, required: true },
     Primary_user_id: { type: String, required: true },

@@ -1,7 +1,9 @@
-
 import partyModel from "../models/partyModel.js";
+import OragnizationModel from "../models/OragnizationModel.js";
+import { countries } from "../../frontend/constants/countries.js";
+import mongoose from "mongoose";
 
-
+/// truncate to n decimals
 
 export const truncateToNDecimals = (num, n) => {
   const parts = num.toString().split(".");
@@ -10,6 +12,50 @@ export const truncateToNDecimals = (num, n) => {
   return parseFloat(parts.join("."));
 };
 
+///// formatting  date to local date
+
+
+export const formatToLocalDate = async (date, cmp_id) => {
+  try {
+    // Fetch the organization details using the company ID
+    const company = await OragnizationModel.findById(cmp_id);
+    if (!company) {
+      throw new Error("Company not found");
+    }
+
+    // Get the country associated with the company
+    const countryName = company.country;
+
+    // Find the timezone for the given country
+    const countryData = countries.find((country) => country.countryName === countryName);
+    if (!countryData) {
+      throw new Error("Country not found in the list");
+    }
+
+    const timezone = countryData.timeZone;
+
+    // Create a new Date object considering the timezone
+    const localDate = new Date(date).toLocaleString("en-US", { timeZone: timezone });
+
+    // Convert it into a Date object for manual formatting
+    const dateObj = new Date(localDate);
+
+    // Format the date as DD/MM/YYYY
+    const day = String(dateObj.getDate()).padStart(2, "0");
+    const month = String(dateObj.getMonth() + 1).padStart(2, "0"); // Months are 0-based
+    const year = dateObj.getFullYear();
+
+    console.log(`${day}/${month}/${year}`);
+    
+
+    return `${day}/${month}/${year}`;
+  } catch (error) {
+    console.error("Error formatting date:", error.message);
+    throw error;
+  }
+};
+
+
 ///formatting amount with comma
 
 export const formatAmount = (amount) => {
@@ -17,8 +63,6 @@ export const formatAmount = (amount) => {
 };
 
 /////helper for transactions
-
-import mongoose from "mongoose";
 
 export const aggregateTransactions = (
   model,
@@ -171,7 +215,6 @@ export const addCorrespondingParty = async (
   }
 };
 
-
 /// edit corresponding party
 
 export const editCorrespondingParty = async (
@@ -187,11 +230,11 @@ export const editCorrespondingParty = async (
     const existingParty = await partyModel.findOne({
       party_master_id: masterId,
       cmp_id: cmp_id,
-      Primary_user_id: Primary_user_id
+      Primary_user_id: Primary_user_id,
     });
 
     if (!existingParty) {
-      return
+      return;
     }
 
     // Update the existing party details
@@ -208,7 +251,6 @@ export const editCorrespondingParty = async (
   }
 };
 
-
 //// get email service
 
 export const getEmailService = (email) => {
@@ -219,4 +261,3 @@ export const getEmailService = (email) => {
   if (domain.includes("outlook")) return "outlook";
   return "smtp"; // Default to SMTP if no known domain
 };
-

@@ -165,6 +165,7 @@ function PdfHeader({ data, org, address, despatchDetails, tab = "sales",configur
                 ? address?.billToMobile
                 : ""}
             </div>
+          
           </div>
           {enableBillToShipTo && (
             <div className="border-gray-300 ">

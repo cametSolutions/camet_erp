@@ -9,6 +9,7 @@ import {
 import invoiceModel from "../models/invoiceModel.js";
 import secondaryUserModel from "../models/secondaryUserModel.js";
 import mongoose from "mongoose";
+import { formatToLocalDate } from "../helpers/helper.js";
 
 /**
  * @desc  create sale order
@@ -41,57 +42,59 @@ export const createInvoice = async (req, res) => {
           selectedDate,
         } = req.body;
 
-        const numberExistence = await checkForNumberExistence(
-          invoiceModel,
-          "orderNumber",
-          orderNumber,
-          orgId,
-          session
-        );
+        formatToLocalDate(selectedDate, orgId);
 
-        if (numberExistence) {
-          await session.abortTransaction();
-          return res.status(400).json({ message: "SaleOrder with the same number already exists" });
-        }
+        // const numberExistence = await checkForNumberExistence(
+        //   invoiceModel,
+        //   "orderNumber",
+        //   orderNumber,
+        //   orgId,
+        //   session
+        // );
 
-        const newSerialNumber = await fetchLastInvoice(invoiceModel, session);
-        const updatedItems = await Promise.all(
-          items.map((item) => updateItemStockAndCalculatePrice(item, priceLevelFromRedux, session))
-        );
+        // if (numberExistence) {
+        //   await session.abortTransaction();
+        //   return res.status(400).json({ message: "SaleOrder with the same number already exists" });
+        // }
 
-        const updateAdditionalCharge =
-          additionalChargesFromRedux.length > 0
-            ? calculateAdditionalCharges(additionalChargesFromRedux)
-            : [];
+        // const newSerialNumber = await fetchLastInvoice(invoiceModel, session);
+        // const updatedItems = await Promise.all(
+        //   items.map((item) => updateItemStockAndCalculatePrice(item, priceLevelFromRedux, session))
+        // );
 
-        const invoice = new invoiceModel({
-          serialNumber: newSerialNumber,
-          cmp_id: orgId,
-          partyAccount: party?.partyName,
-          party,
-          items: updatedItems,
-          priceLevel: priceLevelFromRedux,
-          additionalCharges: updateAdditionalCharge,
-          finalAmount: lastAmount,
-          Primary_user_id: owner,
-          Secondary_user_id,
-          orderNumber,
-          despatchDetails,
-          createdAt: selectedDate,
-        });
+        // const updateAdditionalCharge =
+        //   additionalChargesFromRedux.length > 0
+        //     ? calculateAdditionalCharges(additionalChargesFromRedux)
+        //     : [];
 
-        const result = await invoice.save({ session });
-        const secondaryUser = await secondaryUserModel.findById(Secondary_user_id).session(session);
+        // const invoice = new invoiceModel({
+        //   serialNumber: newSerialNumber,
+        //   cmp_id: orgId,
+        //   partyAccount: party?.partyName,
+        //   party,
+        //   items: updatedItems,
+        //   priceLevel: priceLevelFromRedux,
+        //   additionalCharges: updateAdditionalCharge,
+        //   finalAmount: lastAmount,
+        //   Primary_user_id: owner,
+        //   Secondary_user_id,
+        //   orderNumber,
+        //   despatchDetails,
+        //   createdAt: selectedDate,
+        // });
 
-        if (!secondaryUser) {
-          await session.abortTransaction();
-          return res.status(404).json({ message: "Secondary user not found" });
-        }
+        // const result = await invoice.save({ session });
+        // const secondaryUser = await secondaryUserModel.findById(Secondary_user_id).session(session);
 
-        await updateSecondaryUserConfiguration(secondaryUser, orgId, session);
+        // if (!secondaryUser) {
+        //   await session.abortTransaction();
+        //   return res.status(404).json({ message: "Secondary user not found" });
+        // }
 
-        await session.commitTransaction();
-        return res.status(200).json({ message: "Sale order created successfully", data: result });
+        // await updateSecondaryUserConfiguration(secondaryUser, orgId, session);
+
+        // await session.commitTransaction();
+        // return res.status(200).json({ message: "Sale order created successfully", data: result });
       } catch (error) {
         await session.abortTransaction();
         if (error.code === 112) { // Write conflict error code
