@@ -1,6 +1,5 @@
 /* eslint-disable react/prop-types */
 
-import { useSelector } from "react-redux";
 
 function PdfHeader({ data, org, address, despatchDetails, tab = "sales" ,saleOrderConfiguration}) {
 
@@ -166,6 +165,11 @@ function PdfHeader({ data, org, address, despatchDetails, tab = "sales" ,saleOrd
                 ? address?.billToMobile
                 : ""}
             </div>
+            <div className="text-gray-700">
+              {address?.billToGst && address?.billToGst !== "null"
+                ? address?.billToGst
+                : ""}
+            </div>
           </div>
           {enableBillToShipTo && (
             <div className="border-gray-300 ">
@@ -183,6 +187,11 @@ function PdfHeader({ data, org, address, despatchDetails, tab = "sales" ,saleOrd
               <div className="text-gray-700">
                 {address?.shipToMobile && address?.shipToMobile !== "null"
                   ? address?.shipToMobile
+                  : ""}
+              </div>
+              <div className="text-gray-700">
+                {address?.shipToGst && address?.shipToGst !== "null"
+                  ? address?.shipToGst
                   : ""}
               </div>
             </div>

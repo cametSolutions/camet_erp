@@ -1,6 +1,13 @@
 /* eslint-disable react/prop-types */
 
-function PdfHeader({ data, org, address, despatchDetails, tab = "sales",configurations }) {
+function PdfHeader({
+  data,
+  org,
+  address,
+  despatchDetails,
+  tab = "sales",
+  configurations,
+}) {
   // console.log(tab);
 
   let pdfNumber;
@@ -165,6 +172,11 @@ function PdfHeader({ data, org, address, despatchDetails, tab = "sales",configur
                 ? address?.billToMobile
                 : ""}
             </div>
+            <div className="text-gray-700">
+              {address?.billToGst && address?.billToGst !== "null"
+                ? address?.billToGst
+                : ""}
+            </div>
           </div>
           {enableBillToShipTo && (
             <div className="border-gray-300 ">
@@ -182,6 +194,11 @@ function PdfHeader({ data, org, address, despatchDetails, tab = "sales",configur
               <div className="text-gray-700">
                 {address?.shipToMobile && address?.shipToMobile !== "null"
                   ? address?.shipToMobile
+                  : ""}
+              </div>
+              <div className="text-gray-700">
+                {address?.shipToGst && address?.shipToGst !== "null"
+                  ? address?.shipToGst
                   : ""}
               </div>
             </div>

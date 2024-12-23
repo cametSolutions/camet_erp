@@ -21,41 +21,7 @@ function SalesPdf({
   const [additinalCharge, setAdditinalCharge] = useState("");
   const [inWords, setInWords] = useState("");
 
-  let title = "";
 
-  switch (tab) {
-    case "sales":
-      title = "Tax Invoice";
-      break;
-
-    case "purchase":
-      title = "Purchase Invoice";
-      break;
-
-    case "stockTransfer":
-      title = "Stock Transfer";
-      break;
-
-    case "salesOrder":
-      title = "Sales Order";
-      break;
-
-    case "vanSale":
-      title = "Tax Invoice";
-      break;
-
-    case "creditNote":
-      title = "Credit Note";
-      break;
-
-    case "debitNote":
-      title = "Debit Note";
-      break;
-
-    default:
-      title = "Tax Invoice";
-      break;
-  }
 
   const primarySelectedOrg = useSelector(
     (state) => state.setSelectedOrganization.selectedOrg
@@ -537,11 +503,14 @@ function SalesPdf({
                   {configurations?.showTaxPercentage && (
                     <td className="font-bold text-[9px] p-2"></td>
                   )}
+                    <td className="font-bold text-[9px] p-2"></td>
+
                   <td className="text-black text-[9px] ">
                     <p className="text-right pr-1 font-bold">
                       {calculateTotalQunatity()}/unit
                     </p>{" "}
                   </td>
+                  
                   {configurations?.showDiscount && (
                     <td className="text-right pr-1 text-black font-bold text-[9px]"></td>
                   )}
@@ -553,7 +522,6 @@ function SalesPdf({
                     </td>
                   )}
                   {}
-                  <td className="text-right pr-1 text-black font-bold text-[9px]"></td>
                   <td className="text-right pr-1 text-black font-bold text-[9px]">
                     {subTotal}
                   </td>

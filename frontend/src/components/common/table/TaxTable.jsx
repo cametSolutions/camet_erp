@@ -40,12 +40,12 @@ const TaxTable = ({ products, org = {}, party = {} }) => {
   // console.log("consolidatedTaxData", consolidatedTaxData);
 
   return (
-    <div className="flex justify-between ">
+    <div className="flex justify-between  ">
       {consolidatedTaxData?.length === 0 ? (
         <div></div>
       ) : (
-        <div className="w-[40%]">
-          <table className="w-full text-gray-700 text-[7px]">
+        <div className="w-[50%]">
+          <table className="w-full text-gray-700 text-[9px]">
             <thead>
               <tr>
                 <th className="p-1">TAX %</th>
@@ -61,7 +61,7 @@ const TaxTable = ({ products, org = {}, party = {} }) => {
                 <th className="p-1">TOTAL</th>
               </tr>
             </thead>
-            <tbody className="text-[6px]">
+            <tbody className="text-[9px]">
               {consolidatedTaxData.map((tax, index) => (
                 <tr key={index}>
                   <td className="p-1 text-center">{tax?.taxRate}</td>
