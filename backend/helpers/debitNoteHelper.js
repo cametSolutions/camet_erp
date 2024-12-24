@@ -1,6 +1,6 @@
 import productModel from "../models/productModel.js";
 import debitNoteModel from "../models/debitNoteModel.js";
-import { truncateToNDecimals } from "./helper.js";
+import { formatToLocalDate, truncateToNDecimals } from "./helper.js";
 import OragnizationModel from "../models/OragnizationModel.js";
 import TallyData from "../models/TallyData.js";
 
@@ -168,15 +168,9 @@ export const createDebitNoteRecord = async (
       party,
       despatchDetails,
       lastAmount,
+      selectedDate
     } = req.body;
 
-    let selectedDate = req.body.selectedDate;
-
-    if (!selectedDate) {
-      selectedDate = new Date();
-    }
-
-    console.log("selectedDate: ", selectedDate);
 
     const Primary_user_id = req.owner;
     const Secondary_user_id = req.sUserId;
@@ -194,7 +188,6 @@ export const createDebitNoteRecord = async (
       newSerialNumber = lastPurchase.serialNumber + 1;
     }
 
-    console.log("debitNoteNumber: ", debitNoteNumber);
 
     const debit = new model({
       selectedGodownId: selectedGodownId ?? "",
@@ -210,7 +203,8 @@ export const createDebitNoteRecord = async (
       finalAmount: lastAmount,
       Primary_user_id,
       Secondary_user_id,
-      createdAt: new Date(selectedDate) ? new Date(selectedDate) : new Date(),
+      date:await formatToLocalDate(selectedDate, orgId, session),
+      createdAt: new Date(),
     });
 
     const result = await debit.save({ session });
