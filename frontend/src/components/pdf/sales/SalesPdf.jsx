@@ -334,9 +334,7 @@ function SalesPdf({
                         <tr className={`text-[9px] bg-white `}>
                           <td className="w-2  ">{index + 1}</td>
                           <td
-                            className={`  ${
-                              data?.items?.length === index + 1 ? "pb-3" : ""
-                            }  pt-2  text-black pr-2 font-bold`}
+                           className="   text-black pr-2 font-bold"
                           >
                             {el.product_name}{" "}
                           </td>
@@ -351,17 +349,17 @@ function SalesPdf({
 
                           {configurations?.showTaxPercentage &&
                             (!el?.hasGodownOrBatch ? (
-                              <td className="pt-2 text-black text-right pr-2 ">
+                              <td className=" text-black text-right pr-2 ">
                                 {el?.igst}
                               </td>
                             ) : (
                               <td></td>
                             ))}
-                          <td className="pt-2 text-black text-right pr-2 font-bold">
+                          <td className=" text-black text-right pr-2 font-bold">
                             {el?.count} {el?.unit.split("-")[0]}
                           </td>
 
-                          <td className="pt-2 text-black text-right pr-2 text-nowrap">
+                          <td className=" text-black text-right pr-2 text-nowrap">
                             {/* {(!el.hasGodownOrBatch ||
                               (el.hasGodownOrBatch &&
                                 el.GodownList &&
@@ -378,7 +376,7 @@ function SalesPdf({
                             )}
                           </td>
                           {configurations?.showDiscount && (
-                            <td className="pt-2 text-black text-right pr-2">
+                            <td className=" text-black text-right pr-2">
                               {el?.hasGodownOrBatch === true
                                 ? null
                                 : el.GodownList && el.GodownList.length > 0
@@ -392,7 +390,7 @@ function SalesPdf({
                           )}
 
                           {configurations?.showStockWiseTaxAmount && (
-                            <td className="pt-2 text-black text-right pr-2 font-bold">
+                            <td className=" text-black text-right pr-2 font-bold">
                               {el?.hasGodownOrBatch === true
                                 ? null
                                 : `  ${(
@@ -403,7 +401,7 @@ function SalesPdf({
                             </td>
                           )}
 
-                          <td className="pt-2 pr-1 text-black text-right font-bold">
+                          <td className=" pr-1 text-black text-right font-bold">
                             {el?.total}
                           </td>
                         </tr>
@@ -442,21 +440,21 @@ function SalesPdf({
                                   )}
                                 </td>
                                 {configurations?.showHsn && (
-                                  <td className="pt-2 text-black text-right pr-2  text-[8px]">
+                                  <td className=" text-black text-right pr-2  text-[8px]">
                                     {el?.hsn_code}
                                   </td>
                                 )}
 
                                 {configurations?.showTaxPercentage && (
-                                  <td className="pt-2 text-black text-right pr-2  text-[8px]">
+                                  <td className=" text-black text-right pr-2  text-[8px]">
                                     {el?.igst}
                                   </td>
                                 )}
 
-                                <td className="pt-2  flex justify-end pr-2">
+                                <td className="  flex justify-end pr-2">
                                   {godownOrBatch?.count} {el?.unit}
                                 </td>
-                                <td className="pt-2  text-end pr-2">
+                                <td className="  text-end pr-2">
                                   {findRate(
                                     godownOrBatch?.selectedPriceRate,
                                     el.isTaxInclusive,
@@ -466,7 +464,7 @@ function SalesPdf({
                                 </td>
 
                                 {configurations?.showDiscount && (
-                                  <td className="pt-2  pr-2 text-end">
+                                  <td className="  pr-2 text-end">
                                     {configurations?.showDiscountAmount
                                       ? godownOrBatch?.discount || 0
                                       : godownOrBatch?.discountPercentage !==
@@ -477,12 +475,12 @@ function SalesPdf({
                                 )}
 
                                 {configurations?.showStockWiseTaxAmount && (
-                                  <td className="pt-2  text-end pr-2">
+                                  <td className="  text-end pr-2">
                                     {calculateTaxAmount(godownOrBatch, el)}
                                   </td>
                                 )}
 
-                                <td className="pt-2 text-end pr-1">
+                                <td className=" text-end pr-1">
                                   <p>{godownOrBatch.individualTotal ?? 0}</p>
                                 </td>
                               </tr>

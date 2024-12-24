@@ -8,6 +8,7 @@ import { MdPrint } from "react-icons/md";
 // import numberToWords from "number-to-words";
 import { Link } from "react-router-dom";
 import SalesPdf from "../../components/common/SalesPdf";
+import PurchasePdf from "../../components/pdf/purchase/PurchasePdf";
 
 function ShareSalesSecondary() {
   const [data, setData] = useState([]);
@@ -187,7 +188,7 @@ function ShareSalesSecondary() {
           </div>
         </div>
 
-        <SalesPdf
+        <PurchasePdf
           contentToPrint={contentToPrint}
           data={data}
           org={org}
