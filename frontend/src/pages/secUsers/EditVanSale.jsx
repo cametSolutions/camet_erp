@@ -126,16 +126,15 @@ function EditVanSale() {
           finalAmount,
           salesNumber,
           despatchDetails,
-          createdAt,
+          // createdAt,
+          date,
           // selectedGodownName,
           // selectedGodownId
         } = res.data.data;
 
-        console.log(createdAt);
 
         // // additionalCharges: [ { option: 'option 1', value: '95', action: 'add' } ],
         if (Object.keys(partyFromRedux) == 0) {
-          console.log("haii");
 
           dispatch(setParty(party));
         }
@@ -148,8 +147,8 @@ function EditVanSale() {
         }
 
         if (!dateFromRedux) {
-          setSelectedDate(createdAt);
-          dispatch(changeDate(createdAt));
+          setSelectedDate(date)
+          dispatch(changeDate(date))
         }
 
         if (priceLevelFromRedux == "") {
