@@ -20,7 +20,6 @@ import { FiMinus } from "react-icons/fi";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import api from "../../api/api";
-import { IoIosAddCircle } from "react-icons/io";
 import { MdPlaylistAdd } from "react-icons/md";
 import {
   removeAll,
@@ -33,7 +32,6 @@ import {
   saveId,
   removeItem,
 } from "../../../slices/invoiceSecondary";
-import { IoIosArrowRoundBack } from "react-icons/io";
 import { useParams } from "react-router-dom";
 import { PiAddressBookFill } from "react-icons/pi";
 import DespatchDetails from "../../components/secUsers/DespatchDetails";
@@ -48,7 +46,6 @@ function EditInvoiceSecondary() {
   const type = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg.type
   );
-  const [openModal, setOpenModal] = useState(false);
 
   const [additional, setAdditional] = useState(false);
   const [orderNumber, setOrderNumber] = useState("");
@@ -246,7 +243,8 @@ function EditInvoiceSecondary() {
           finalAmount,
           orderNumber,
           despatchDetails,
-          createdAt,
+          // createdAt,
+          date: dateFromApi
         } = res.data.data;
 
 
@@ -262,8 +260,8 @@ function EditInvoiceSecondary() {
           dispatch(setItem(items));
         }
         if (!dateFromRedux) {
-          setSelectedDate(createdAt);
-          dispatch(changeDate(createdAt));
+          setSelectedDate(dateFromApi);
+          dispatch(changeDate(dateFromApi));
         }
 
         if (priceLevelFromRedux == "") {

@@ -17,6 +17,7 @@ import secondaryUserModel from "../models/secondaryUserModel.js";
 import salesModel from "../models/salesModel.js";
 import vanSaleModel from "../models/vanSaleModel.js";
 import TallyData from "../models/TallyData.js";
+import { formatToLocalDate } from "../helpers/helper.js";
 
 /**
  * @desc To createSale
@@ -36,6 +37,7 @@ export const createSale = async (req, res) => {
       party,
       lastAmount,
       paymentSplittingData,
+      selectedDate
     } = req.body;
 
     const Secondary_user_id = req.sUserId;
@@ -237,6 +239,13 @@ export const editSale = async (req, res) => {
       );
       await handleSaleStockUpdates(updatedItems, false, session);
 
+
+  
+
+
+   
+      
+
       const updateData = {
         selectedGodownId: selectedGodownId || existingSale.selectedGodownId,
         selectedGodownName: selectedGodownName
@@ -254,7 +263,8 @@ export const editSale = async (req, res) => {
         Primary_user_id: req.owner,
         Secondary_user_id: req.secondaryUserId,
         salesNumber: salesNumber,
-        createdAt: new Date(selectedDate),
+        date:await formatToLocalDate(selectedDate, orgId, session),
+        createdAt: existingSale.createdAt,
         paymentSplittingData,
       };
 

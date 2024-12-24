@@ -44,60 +44,69 @@ export const createInvoice = async (req, res) => {
 
         formatToLocalDate(selectedDate, orgId);
 
-        // const numberExistence = await checkForNumberExistence(
-        //   invoiceModel,
-        //   "orderNumber",
-        //   orderNumber,
-        //   orgId,
-        //   session
-        // );
+        const numberExistence = await checkForNumberExistence(
+          invoiceModel,
+          "orderNumber",
+          orderNumber,
+          orgId,
+          session
+        );
 
-        // if (numberExistence) {
-        //   await session.abortTransaction();
-        //   return res.status(400).json({ message: "SaleOrder with the same number already exists" });
-        // }
+        if (numberExistence) {
+          await session.abortTransaction();
+          return res
+            .status(400)
+            .json({ message: "SaleOrder with the same number already exists" });
+        }
 
-        // const newSerialNumber = await fetchLastInvoice(invoiceModel, session);
-        // const updatedItems = await Promise.all(
-        //   items.map((item) => updateItemStockAndCalculatePrice(item, priceLevelFromRedux, session))
-        // );
+        const newSerialNumber = await fetchLastInvoice(invoiceModel, session);
+        const updatedItems = await Promise.all(
+          items.map((item) =>
+            updateItemStockAndCalculatePrice(item, priceLevelFromRedux, session)
+          )
+        );
 
-        // const updateAdditionalCharge =
-        //   additionalChargesFromRedux.length > 0
-        //     ? calculateAdditionalCharges(additionalChargesFromRedux)
-        //     : [];
+        const updateAdditionalCharge =
+          additionalChargesFromRedux.length > 0
+            ? calculateAdditionalCharges(additionalChargesFromRedux)
+            : [];
 
-        // const invoice = new invoiceModel({
-        //   serialNumber: newSerialNumber,
-        //   cmp_id: orgId,
-        //   partyAccount: party?.partyName,
-        //   party,
-        //   items: updatedItems,
-        //   priceLevel: priceLevelFromRedux,
-        //   additionalCharges: updateAdditionalCharge,
-        //   finalAmount: lastAmount,
-        //   Primary_user_id: owner,
-        //   Secondary_user_id,
-        //   orderNumber,
-        //   despatchDetails,
-        //   createdAt: selectedDate,
-        // });
+        const invoice = new invoiceModel({
+          serialNumber: newSerialNumber,
+          cmp_id: orgId,
+          partyAccount: party?.partyName,
+          party,
+          items: updatedItems,
+          priceLevel: priceLevelFromRedux,
+          additionalCharges: updateAdditionalCharge,
+          finalAmount: lastAmount,
+          Primary_user_id: owner,
+          Secondary_user_id,
+          orderNumber,
+          despatchDetails,
+          date: await formatToLocalDate(selectedDate, orgId, session),
+        });
 
-        // const result = await invoice.save({ session });
-        // const secondaryUser = await secondaryUserModel.findById(Secondary_user_id).session(session);
+        const result = await invoice.save({ session });
+        const secondaryUser = await secondaryUserModel
+          .findById(Secondary_user_id)
+          .session(session);
 
-        // if (!secondaryUser) {
-        //   await session.abortTransaction();
-        //   return res.status(404).json({ message: "Secondary user not found" });
-        // }
+        if (!secondaryUser) {
+          await session.abortTransaction();
+          return res.status(404).json({ message: "Secondary user not found" });
+        }
 
-        // await updateSecondaryUserConfiguration(secondaryUser, orgId, session);
+        await updateSecondaryUserConfiguration(secondaryUser, orgId, session);
 
-        // await session.commitTransaction();
-        // return res.status(200).json({ message: "Sale order created successfully", data: result });
+        await session.commitTransaction();
+        return res
+          .status(200)
+          .json({ message: "Sale order created successfully", data: result });
       } catch (error) {
         await session.abortTransaction();
-        if (error.code === 112) { // Write conflict error code
+        if (error.code === 112) {
+          // Write conflict error code
           attempts++;
           console.warn(`Retrying transaction, attempt ${attempts}...`);
           await delay(500); // Adding a small delay before retry
@@ -110,12 +119,13 @@ export const createInvoice = async (req, res) => {
     throw new Error("Transaction failed after multiple attempts");
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ message: "Internal server error", error: error.message });
+    return res
+      .status(500)
+      .json({ message: "Internal server error", error: error.message });
   } finally {
     await session.endSession();
   }
 };
-
 
 /**
  * @desc  edit sale order
@@ -174,6 +184,13 @@ export const editInvoice = async (req, res) => {
           : [];
 
       // Update the invoice with new data
+
+      const formattedDate = await formatToLocalDate(
+        selectedDate,
+        orgId,
+        session
+      );
+
       const updatedInvoice = await invoiceModel.findByIdAndUpdate(
         invoiceId,
         {
@@ -188,7 +205,8 @@ export const editInvoice = async (req, res) => {
             Secondary_user_id,
             orderNumber,
             despatchDetails,
-            createdAt: new Date(selectedDate),
+            date: formattedDate,
+            createdAt: existingInvoice.createdAt,
           },
         },
         { new: true, session, timestamps: false }
@@ -203,6 +221,8 @@ export const editInvoice = async (req, res) => {
         data: updatedInvoice,
       });
     } catch (error) {
+      console.log(error);
+
       // Handle write conflict or transient transaction errors
       if (
         error.codeName === "WriteConflict" ||

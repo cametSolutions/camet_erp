@@ -125,7 +125,8 @@ function EditSale() {
           finalAmount,
           salesNumber,
           despatchDetails,
-          createdAt,
+          // createdAt,
+          date,
           paymentSplittingData,
         } = res.data.data;
 
@@ -142,8 +143,8 @@ function EditSale() {
         }
 
         if (!dateFromRedux) {
-          setSelectedDate(createdAt);
-          dispatch(changeDate(createdAt));
+          setSelectedDate(date);
+          dispatch(changeDate(date));
         }
 
         if (priceLevelFromRedux == "") {

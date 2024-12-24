@@ -15,10 +15,10 @@ export const truncateToNDecimals = (num, n) => {
 ///// formatting  date to local date
 
 
-export const formatToLocalDate = async (date, cmp_id) => {
+export const formatToLocalDate = async (date, cmp_id, session) => {
   try {
-    // Fetch the organization details using the company ID
-    const company = await OragnizationModel.findById(cmp_id);
+    // Fetch the organization details using the company ID and session
+    const company = await OragnizationModel.findById(cmp_id).session(session);
     if (!company) {
       throw new Error("Company not found");
     }
@@ -34,26 +34,28 @@ export const formatToLocalDate = async (date, cmp_id) => {
 
     const timezone = countryData.timeZone;
 
-    // Create a new Date object considering the timezone
+    // Convert to the local date based on the timezone
     const localDate = new Date(date).toLocaleString("en-US", { timeZone: timezone });
 
-    // Convert it into a Date object for manual formatting
+    // Convert back to a Date object
     const dateObj = new Date(localDate);
 
-    // Format the date as DD/MM/YYYY
-    const day = String(dateObj.getDate()).padStart(2, "0");
-    const month = String(dateObj.getMonth() + 1).padStart(2, "0"); // Months are 0-based
-    const year = dateObj.getFullYear();
+    // Set the time to 00:00:00.000 in local timezone
+    dateObj.setHours(0, 0, 0, 0);
 
-    console.log(`${day}/${month}/${year}`);
+    // Convert to UTC by creating a new Date with the same date and resetting timezone
+    const utcDate = new Date(Date.UTC(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate()));
+    console.log("utcDate:", utcDate);
     
 
-    return `${day}/${month}/${year}`;
+    return utcDate; // This is now in UTC with time set to 00:00:00.000
   } catch (error) {
     console.error("Error formatting date:", error.message);
     throw error;
   }
 };
+
+
 
 
 ///formatting amount with comma
