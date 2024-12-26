@@ -11,6 +11,7 @@ import {
 } from "../helpers/stockTranferHelper.js";
 import SecondaryUser from "../models/secondaryUserModel.js";
 import stockTransferModel from "../models/stockTransferModel.js";
+import { formatToLocalDate } from "../helpers/stockTransferHelper.js";
 
 ////////// facing many issues while adding session and transaction in stock transfer so keeping it without session and transaction  for further updation ///////////
 
@@ -136,17 +137,27 @@ export const editStockTransfer = async (req, res) => {
     const updatedProducts = await processStockTransfer(transferData);
 
     // Update the existing stock transfer document with new data
-    existingTransfer.selectedDate = selectedDate;
-    existingTransfer.orgId = orgId;
-    existingTransfer.selectedGodown = selectedGodown;
-    existingTransfer.selectedGodownId = selectedGodownId;
-    existingTransfer.items = items;
-    existingTransfer.lastAmount = lastAmount;
-    existingTransfer.updatedAt = new Date();
+    // existingTransfer.date = formatToLocalDate(selectedDate,orgId);
+    // existingTransfer.orgId = orgId;
+    // existingTransfer.selectedGodown = selectedGodown;
+    // existingTransfer.selectedGodownId = selectedGodownId;
+    // existingTransfer.items = items;
+    // existingTransfer.lastAmount = lastAmount;
+
+    const updateData = {
+      date: await formatToLocalDate(selectedDate,orgId),
+      orgId: orgId,
+      selectedGodown: selectedGodown,
+      selectedGodownId: selectedGodownId,
+      items: items,
+      lastAmount: lastAmount,
+      updatedAt: new Date()  // Add updatedAt if you're tracking it
+    };
+
 
     await stockTransferModel.findByIdAndUpdate(
       existingTransfer._id,
-      existingTransfer
+      updateData
     );
 
     res.status(200).json({

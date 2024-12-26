@@ -45,7 +45,7 @@ export const formatToLocalDate = async (date, cmp_id, session) => {
 
     // Convert to UTC by creating a new Date with the same date and resetting timezone
     const utcDate = new Date(Date.UTC(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate()));
-    console.log("utcDate:", utcDate);
+    // console.log("utcDate:", utcDate);
     
 
     return utcDate; // This is now in UTC with time set to 00:00:00.000
