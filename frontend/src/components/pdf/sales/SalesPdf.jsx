@@ -400,27 +400,7 @@ function SalesPdf({
                         </tr>
                         {el.hasGodownOrBatch &&
                           el.GodownList.map((godownOrBatch, idx) => {
-                            // const rate = godownOrBatch?.selectedPriceRate || 0;
-                            // const taxAmt =
-                            //   Number(
-                            //     (
-                            //       godownOrBatch?.individualTotal -
-                            //       (godownOrBatch?.individualTotal * 100) /
-                            //         (parseFloat(el.igst) + 100)
-                            //     )?.toFixed(2)
-                            //   ) || 0;
-                            // const count = godownOrBatch?.count || 0;
-                            // const finalAmt =
-                            //   Number(godownOrBatch?.individualTotal) || 0;
-                            // const discountAmount = ((rate * count + taxAmt) - Number(finalAmt)).toFixed(2);
-                            // const discountAmount = calculateDiscount(
-                            //   rate,
-                            //   count,
-                            //   taxAmt,
-                            //   finalAmt,
-                            //   el?.isTaxInclusive
-                            // );
-
+               
                             return godownOrBatch.added &&
                               godownOrBatch.batch ? (
                               <tr key={idx} className={`bg-white text-[9px] `}>
