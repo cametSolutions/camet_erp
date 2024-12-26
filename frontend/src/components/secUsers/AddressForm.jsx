@@ -221,8 +221,8 @@ function AddressForm({ getFormData, newBillToShipTo, partyDetails }) {
       shipToMobile,
       shipToEmail,
       shipToSupply,
-      billToParty,
-      shipToParty,
+      // billToParty,
+      // shipToParty,
     } = formData;
     const requiredFields = [
       { value: billToName, message: "Bill To Name is required" },
