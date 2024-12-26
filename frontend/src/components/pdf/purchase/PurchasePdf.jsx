@@ -121,19 +121,19 @@ function PurchasePdf({
 
   //// for batch and godown
 
-  const calculateDiscount = (rate, count, taxAmt, finalAmt, isTaxInclusive) => {
-    // Calculate the total price
-    const totalPrice = rate * count;
+  // const calculateDiscount = (rate, count, taxAmt, finalAmt, isTaxInclusive) => {
+  //   // Calculate the total price
+  //   const totalPrice = rate * count;
 
-    // Check if tax is inclusive
-    if (isTaxInclusive) {
-      // For tax-inclusive items, directly compare totalPrice and finalAmt
-      return (totalPrice === finalAmt ? 0 : totalPrice - finalAmt).toFixed(2);
-    } else {
-      // For non-tax-inclusive items
-      return (totalPrice - (finalAmt - taxAmt)).toFixed(2);
-    }
-  };
+  //   // Check if tax is inclusive
+  //   if (isTaxInclusive) {
+  //     // For tax-inclusive items, directly compare totalPrice and finalAmt
+  //     return (totalPrice === finalAmt ? 0 : totalPrice - finalAmt).toFixed(2);
+  //   } else {
+  //     // For non-tax-inclusive items
+  //     return (totalPrice - (finalAmt - taxAmt)).toFixed(2);
+  //   }
+  // };
 
   useEffect(() => {
     if (data && data.items) {
@@ -250,16 +250,16 @@ function PurchasePdf({
                border-y border-black text-[10px] text-right no-repeat-header "
               >
                 <tr>
-                  <th className="text-gray-700 font-bold uppercase py-2 px-1 text-left">
+                  <th className="text-gray-700 font-bold uppercase  px-1 text-left">
                     No
                   </th>
-                  <th className="text-gray-700 font-bold uppercase py-2 px-1 text-left">
+                  <th className="text-gray-700 font-bold uppercase  px-1 text-left">
                     Items
                   </th>
-                  <th className="text-gray-700 font-bold uppercase py-2 px-1 ">
+                  <th className="text-gray-700 font-bold uppercase  px-1 ">
                     Hsn
                   </th>
-                  <th className="text-gray-700 font-bold uppercase py-2 px-1 ">
+                  <th className="text-gray-700 font-bold uppercase  px-1 ">
                     Tax %
                   </th>
                   <th className="text-gray-700 font-bold uppercase p-2">Qty</th>
@@ -287,11 +287,11 @@ function PurchasePdf({
                             {el.product_name}{" "}
                           </td>
                           {!el?.hasGodownOrBatch ? (
-                            <td className="py-4 text-black text-right pr-2">
+                            <td className=" text-black text-right pr-2">
                               {el?.hsn_code || ""}
                             </td>
                           ) : (
-                            <td className="py-4 text-black text-right pr-2"></td>
+                            <td className=" text-black text-right pr-2"></td>
                           )}
                           {!el?.hasGodownOrBatch ? (
                             <td className=" text-black text-right pr-2 ">
@@ -331,27 +331,27 @@ function PurchasePdf({
                         </tr>
                         {el.hasGodownOrBatch &&
                           el.GodownList.map((godownOrBatch, idx) => {
-                            const rate = godownOrBatch?.selectedPriceRate || 0;
-                            const taxAmt =
-                              Number(
-                                (
-                                  godownOrBatch?.individualTotal -
-                                  (godownOrBatch?.individualTotal * 100) /
-                                    (parseFloat(el.igst) + 100)
-                                )?.toFixed(2)
-                              ) || 0;
-                            const count = godownOrBatch?.count || 0;
-                            const finalAmt =
-                              Number(godownOrBatch?.individualTotal) || 0;
+                            // const rate = godownOrBatch?.selectedPriceRate || 0;
+                            // const taxAmt =
+                            //   Number(
+                            //     (
+                            //       godownOrBatch?.individualTotal -
+                            //       (godownOrBatch?.individualTotal * 100) /
+                            //         (parseFloat(el.igst) + 100)
+                            //     )?.toFixed(2)
+                            //   ) || 0;
+                            // const count = godownOrBatch?.count || 0;
+                            // const finalAmt =
+                            //   Number(godownOrBatch?.individualTotal) || 0;
                             // const discountAmount = ((rate * count + taxAmt) - Number(finalAmt)).toFixed(2);
-                            const discountAmount =
-                              calculateDiscount(
-                                rate,
-                                count,
-                                taxAmt,
-                                finalAmt,
-                                el?.isTaxInclusive
-                              ) || 0;
+                            // const discountAmount =
+                            //   calculateDiscount(
+                            //     rate,
+                            //     count,
+                            //     taxAmt,
+                            //     finalAmt,
+                            //     el?.isTaxInclusive
+                            //   ) || 0;
 
                             return godownOrBatch.added &&
                               godownOrBatch.batch ? (

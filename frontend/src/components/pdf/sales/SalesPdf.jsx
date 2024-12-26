@@ -332,19 +332,19 @@ function SalesPdf({
                     return (
                       <React.Fragment key={index}>
                         <tr className={`text-[9px] bg-white `}>
-                          <td className="w-2  ">{index + 1}</td>
+                          <td className="w-2 py-0.5 ">{index + 1}</td>
                           <td
-                           className="   text-black pr-2 font-bold"
+                           className="   text-black pr-2 font-bold "
                           >
                             {el.product_name}{" "}
                           </td>
                           {configurations?.showHsn &&
                             (!el?.hasGodownOrBatch ? (
-                              <td className="py-4 text-black text-right pr-2">
+                              <td className=" text-black text-right pr-2">
                                 {el?.hsn_code || ""}
                               </td>
                             ) : (
-                              <td className="py-4 text-black text-right pr-2"></td>
+                              <td className=" text-black text-right pr-2"></td>
                             ))}
 
                           {configurations?.showTaxPercentage &&
@@ -433,7 +433,6 @@ function SalesPdf({
                                     el.isTaxInclusive,
                                     el.igst
                                   )}
-                                  {/* {godownOrBatch?.selectedPriceRate || 0} */}
                                 </td>
 
                                 {configurations?.showDiscount && (

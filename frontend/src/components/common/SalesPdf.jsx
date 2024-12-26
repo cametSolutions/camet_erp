@@ -281,12 +281,12 @@ function SalesPdf({
                   data?.items.map((el, index) => {
                     return (
                       <React.Fragment key={index}>
-                        <tr className={`text-[9px] bg-white `}>
+                        <tr className={`text-[9px] bg-white  `}>
                           <td className="w-2  ">{index + 1}</td>
                           <td
                             className={`  ${
-                              data?.items?.length === index + 1 ? "pb-3" : ""
-                            }  pt-2  text-black pr-2 font-bold`}
+                              data?.items?.length === index + 1 ? "" : ""
+                            }    text-black pr-2 font-bold `}
                           >
                             {el.product_name}{" "}
                             {el?.igst && (
@@ -295,10 +295,7 @@ function SalesPdf({
                               </span>
                             )}
                             <br />
-                            {/* <p className="text-gray-400 font-normal mt-1">
-                              {el?.hsn_code !== " Not Found" &&
-                                `HSN: ${el?.hsn_code} `}
-                            </p> */}
+                            
                           </td>
                           <td className="pt-2 text-black text-right pr-2  text-[8px]">
                             {el?.hsn_code}
@@ -325,13 +322,8 @@ function SalesPdf({
                             {
                               el.GodownList &&
                                 el.GodownList.length > 0 &&
-                                // 1
                                 calculateDiscountAmntOFNoBAtch(el) <0 ? ` ${0}` : ` ${calculateDiscountAmntOFNoBAtch(el)}`
-                              // el.GodownList.every(
-                              //   (godown) => godown.godown_id && !godown.batch
-                              // )
-                              //   ? ` ${calculateDiscountAmntOFNoBAtch(el)}`
-                              //   : "1.00"}
+                            
                             }
                           </td>
                           <td className="pt-2 text-black text-right pr-2 font-bold">
