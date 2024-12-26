@@ -30,11 +30,11 @@ const paymentSchema = new mongoose.Schema(
     outstandings: { type: Array, required: true },
 
     isCancelled: { type: Boolean, default: false },
-    createdAt: {
-      type: Date,
-      default: Date.now,
-      immutable: false, // This allows the field to be updated
-    },
+    // createdAt: {
+    //   type: Date,
+    //   default: Date.now,
+    //   immutable: false, // This allows the field to be updated
+    // },
   },
   {
     timestamps: true,

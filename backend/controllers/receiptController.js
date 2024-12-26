@@ -164,7 +164,7 @@ export const createReceipt = async (req, res) => {
       enteredAmount,
       cmp_id,
       "receipt",
-      newReceipt?.createdAt,
+      newReceipt?.date,
       savedReceipt?.party?.partyName,
       session
     );
@@ -412,7 +412,7 @@ export const editReceipt = async (req, res) => {
         enteredAmount,
         cmp_id,
         "receipt",
-        receipt?.createdAt,
+        receipt?.date,
         receipt?.party?.partyName,
         session
       );
