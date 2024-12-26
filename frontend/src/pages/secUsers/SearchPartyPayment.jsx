@@ -7,6 +7,7 @@ import { useDispatch } from "react-redux";
 import { addParty } from "../../../slices/payment";
 import { useLocation } from "react-router-dom";
 import PartyList from "../../components/secUsers/main/PartyList";
+import { addAllParties } from "../../../slices/partySlice";
 
 // import { MdCancel } from "react-icons/md";
 

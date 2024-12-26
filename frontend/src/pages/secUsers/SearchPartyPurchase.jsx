@@ -7,8 +7,7 @@ import { useDispatch } from "react-redux";
 import { addParty } from "../../../slices/purchase";
 import { useLocation } from "react-router-dom";
 import PartyList from "../../components/secUsers/main/PartyList";
-
-
+import { addAllParties } from "../../../slices/partySlice";
 
 // import { MdCancel } from "react-icons/md";
 
@@ -40,12 +39,12 @@ function SearchPartyPurchase() {
         });
 
         setParties(res.data.partyList);
-        setLoading(false);
+        dispatch(addAllParties(res.data.partyList));
 
+        setLoading(false);
       } catch (error) {
         console.log(error);
         setLoading(false);
-
       }
     };
     fetchParties();
@@ -60,14 +59,13 @@ function SearchPartyPurchase() {
     }
   };
 
-  const backHandler=()=>{
+  const backHandler = () => {
     if (location?.state?.from === "editPurchase") {
       navigate(`/sUsers/editPurchase/${location?.state?.id}`);
     } else {
       navigate("/sUsers/purchase");
     }
-
-  }
+  };
 
   useEffect(() => {
     if (search === "") {

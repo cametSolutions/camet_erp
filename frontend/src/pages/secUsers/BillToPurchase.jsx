@@ -12,6 +12,8 @@ function BillToPurchase() {
   const partyDetails = useSelector((state) => state.purchase.party);
   const newBillToShipTo =
     useSelector((state) => state.purchase.party.newBillToShipTo) || {};
+  
+
 
     const submitFormData = (formData) => {
       
