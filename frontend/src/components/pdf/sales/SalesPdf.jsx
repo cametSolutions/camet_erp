@@ -360,14 +360,7 @@ function SalesPdf({
                           </td>
 
                           <td className=" text-black text-right pr-2 text-nowrap">
-                            {/* {(!el.hasGodownOrBatch ||
-                              (el.hasGodownOrBatch &&
-                                el.GodownList &&
-                                el.GodownList.length > 0 &&
-                                el.GodownList.every(
-                                  (godown) => godown.godown_id && !godown.batch
-                                ))) &&
-                              `  ${el.GodownList[0]?.selectedPriceRate || 0}`} */}
+                         
 
                             {findRate(
                               el.GodownList[0]?.selectedPriceRate,

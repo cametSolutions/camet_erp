@@ -299,6 +299,7 @@ export const processSaleItems = (items) => {
         basePrice = totalPrice1 / (1 + igstValue / 100);
       } else {
         basePrice = totalPrice1;
+      }
 
         if (item?.discount) {
           priceAfterDiscount = basePrice - (item?.discount || 0);
@@ -310,7 +311,7 @@ export const processSaleItems = (items) => {
         cgstAmt = parseFloat(((subTotal * Number(item.cgst)) / 100).toFixed(2));
         sgstAmt = parseFloat(((subTotal * Number(item.sgst)) / 100).toFixed(2));
         igstAmt = parseFloat(((subTotal * igstValue) / 100).toFixed(2));
-      }
+  
     }
     return {
       ...item,
