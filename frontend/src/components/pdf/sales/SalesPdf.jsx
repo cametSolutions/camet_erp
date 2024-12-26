@@ -21,41 +21,7 @@ function SalesPdf({
   const [additinalCharge, setAdditinalCharge] = useState("");
   const [inWords, setInWords] = useState("");
 
-  let title = "";
 
-  switch (tab) {
-    case "sales":
-      title = "Tax Invoice";
-      break;
-
-    case "purchase":
-      title = "Purchase Invoice";
-      break;
-
-    case "stockTransfer":
-      title = "Stock Transfer";
-      break;
-
-    case "salesOrder":
-      title = "Sales Order";
-      break;
-
-    case "vanSale":
-      title = "Tax Invoice";
-      break;
-
-    case "creditNote":
-      title = "Credit Note";
-      break;
-
-    case "debitNote":
-      title = "Debit Note";
-      break;
-
-    default:
-      title = "Tax Invoice";
-      break;
-  }
 
   const primarySelectedOrg = useSelector(
     (state) => state.setSelectedOrganization.selectedOrg
@@ -366,44 +332,35 @@ function SalesPdf({
                     return (
                       <React.Fragment key={index}>
                         <tr className={`text-[9px] bg-white `}>
-                          <td className="w-2  ">{index + 1}</td>
+                          <td className="w-2 py-0.5 ">{index + 1}</td>
                           <td
-                            className={`  ${
-                              data?.items?.length === index + 1 ? "pb-3" : ""
-                            }  pt-2  text-black pr-2 font-bold`}
+                           className="   text-black pr-2 font-bold "
                           >
                             {el.product_name}{" "}
                           </td>
                           {configurations?.showHsn &&
                             (!el?.hasGodownOrBatch ? (
-                              <td className="py-4 text-black text-right pr-2">
+                              <td className=" text-black text-right pr-2">
                                 {el?.hsn_code || ""}
                               </td>
                             ) : (
-                              <td className="py-4 text-black text-right pr-2"></td>
+                              <td className=" text-black text-right pr-2"></td>
                             ))}
 
                           {configurations?.showTaxPercentage &&
                             (!el?.hasGodownOrBatch ? (
-                              <td className="pt-2 text-black text-right pr-2 ">
+                              <td className=" text-black text-right pr-2 ">
                                 {el?.igst}
                               </td>
                             ) : (
                               <td></td>
                             ))}
-                          <td className="pt-2 text-black text-right pr-2 font-bold">
+                          <td className=" text-black text-right pr-2 font-bold">
                             {el?.count} {el?.unit.split("-")[0]}
                           </td>
 
-                          <td className="pt-2 text-black text-right pr-2 text-nowrap">
-                            {/* {(!el.hasGodownOrBatch ||
-                              (el.hasGodownOrBatch &&
-                                el.GodownList &&
-                                el.GodownList.length > 0 &&
-                                el.GodownList.every(
-                                  (godown) => godown.godown_id && !godown.batch
-                                ))) &&
-                              `  ${el.GodownList[0]?.selectedPriceRate || 0}`} */}
+                          <td className=" text-black text-right pr-2 text-nowrap">
+                         
 
                             {findRate(
                               el.GodownList[0]?.selectedPriceRate,
@@ -412,7 +369,7 @@ function SalesPdf({
                             )}
                           </td>
                           {configurations?.showDiscount && (
-                            <td className="pt-2 text-black text-right pr-2">
+                            <td className=" text-black text-right pr-2">
                               {el?.hasGodownOrBatch === true
                                 ? null
                                 : el.GodownList && el.GodownList.length > 0
@@ -426,7 +383,7 @@ function SalesPdf({
                           )}
 
                           {configurations?.showStockWiseTaxAmount && (
-                            <td className="pt-2 text-black text-right pr-2 font-bold">
+                            <td className=" text-black text-right pr-2 font-bold">
                               {el?.hasGodownOrBatch === true
                                 ? null
                                 : `  ${(
@@ -437,33 +394,13 @@ function SalesPdf({
                             </td>
                           )}
 
-                          <td className="pt-2 pr-1 text-black text-right font-bold">
+                          <td className=" pr-1 text-black text-right font-bold">
                             {el?.total}
                           </td>
                         </tr>
                         {el.hasGodownOrBatch &&
                           el.GodownList.map((godownOrBatch, idx) => {
-                            // const rate = godownOrBatch?.selectedPriceRate || 0;
-                            // const taxAmt =
-                            //   Number(
-                            //     (
-                            //       godownOrBatch?.individualTotal -
-                            //       (godownOrBatch?.individualTotal * 100) /
-                            //         (parseFloat(el.igst) + 100)
-                            //     )?.toFixed(2)
-                            //   ) || 0;
-                            // const count = godownOrBatch?.count || 0;
-                            // const finalAmt =
-                            //   Number(godownOrBatch?.individualTotal) || 0;
-                            // const discountAmount = ((rate * count + taxAmt) - Number(finalAmt)).toFixed(2);
-                            // const discountAmount = calculateDiscount(
-                            //   rate,
-                            //   count,
-                            //   taxAmt,
-                            //   finalAmt,
-                            //   el?.isTaxInclusive
-                            // );
-
+               
                             return godownOrBatch.added &&
                               godownOrBatch.batch ? (
                               <tr key={idx} className={`bg-white text-[9px] `}>
@@ -476,31 +413,30 @@ function SalesPdf({
                                   )}
                                 </td>
                                 {configurations?.showHsn && (
-                                  <td className="pt-2 text-black text-right pr-2  text-[8px]">
+                                  <td className=" text-black text-right pr-2  text-[8px]">
                                     {el?.hsn_code}
                                   </td>
                                 )}
 
                                 {configurations?.showTaxPercentage && (
-                                  <td className="pt-2 text-black text-right pr-2  text-[8px]">
+                                  <td className=" text-black text-right pr-2  text-[8px]">
                                     {el?.igst}
                                   </td>
                                 )}
 
-                                <td className="pt-2  flex justify-end pr-2">
+                                <td className="  flex justify-end pr-2">
                                   {godownOrBatch?.count} {el?.unit}
                                 </td>
-                                <td className="pt-2  text-end pr-2">
+                                <td className="  text-end pr-2">
                                   {findRate(
                                     godownOrBatch?.selectedPriceRate,
                                     el.isTaxInclusive,
                                     el.igst
                                   )}
-                                  {/* {godownOrBatch?.selectedPriceRate || 0} */}
                                 </td>
 
                                 {configurations?.showDiscount && (
-                                  <td className="pt-2  pr-2 text-end">
+                                  <td className="  pr-2 text-end">
                                     {configurations?.showDiscountAmount
                                       ? godownOrBatch?.discount || 0
                                       : godownOrBatch?.discountPercentage !==
@@ -511,12 +447,12 @@ function SalesPdf({
                                 )}
 
                                 {configurations?.showStockWiseTaxAmount && (
-                                  <td className="pt-2  text-end pr-2">
+                                  <td className="  text-end pr-2">
                                     {calculateTaxAmount(godownOrBatch, el)}
                                   </td>
                                 )}
 
-                                <td className="pt-2 text-end pr-1">
+                                <td className=" text-end pr-1">
                                   <p>{godownOrBatch.individualTotal ?? 0}</p>
                                 </td>
                               </tr>
@@ -537,11 +473,14 @@ function SalesPdf({
                   {configurations?.showTaxPercentage && (
                     <td className="font-bold text-[9px] p-2"></td>
                   )}
+                    <td className="font-bold text-[9px] p-2"></td>
+
                   <td className="text-black text-[9px] ">
                     <p className="text-right pr-1 font-bold">
                       {calculateTotalQunatity()}/unit
                     </p>{" "}
                   </td>
+                  
                   {configurations?.showDiscount && (
                     <td className="text-right pr-1 text-black font-bold text-[9px]"></td>
                   )}
@@ -553,7 +492,6 @@ function SalesPdf({
                     </td>
                   )}
                   {}
-                  <td className="text-right pr-1 text-black font-bold text-[9px]"></td>
                   <td className="text-right pr-1 text-black font-bold text-[9px]">
                     {subTotal}
                   </td>

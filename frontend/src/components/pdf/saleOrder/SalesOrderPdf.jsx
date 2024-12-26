@@ -193,10 +193,10 @@ function SalesOrderPdf({
         <table className="w-full text-left  bg-slate-200 table-fixed ">
           <thead className="border-b-2 border-t-2 border-black text-[10px] text-right ">
             <tr>
-              <th className="text-gray-700 font-bold uppercase py-2 px-1 text-left">
+              <th className="text-gray-700 font-bold uppercase  px-1 text-left">
                 No
               </th>
-              <th className="text-gray-700 font-bold uppercase py-2 px-1 text-left">
+              <th className="text-gray-700 font-bold uppercase  px-1 text-left">
                 Items
               </th>
               {saleOrderConfiguration?.showHsn && (
@@ -270,49 +270,49 @@ function SalesOrderPdf({
                   >
                     <td className="w-2  ">{index + 1}</td>
 
-                    <td className="py-4 text-black pr-2">
+                    <td className="py-1 text-black pr-2">
                       {el.product_name} <br />
                     </td>
 
                     {saleOrderConfiguration?.showHsn && (
-                      <td className="py-4 text-black text-right pr-2">
+                      <td className="py-1 text-black text-right pr-2">
                         {el?.hsn_code || ""}
                       </td>
                     )}
 
                     {saleOrderConfiguration?.showTaxPercentage && (
-                      <td className="py-4 text-black text-right pr-2">
+                      <td className="py-1 text-black text-right pr-2">
                         {el?.igst || "0"}
                       </td>
                     )}
-                    <td className="py-4 text-black text-right pr-2">
+                    <td className="py-1 text-black text-right pr-2">
                       {count} {el?.unit?.split("-")[0]}
                     </td>
-                    <td className="py-4 text-black text-right pr-2 text-nowrap">
+                    <td className="py-1 text-black text-right pr-2 text-nowrap">
                       {rate}
                     </td>
 
                     {saleOrderConfiguration?.showDiscount &&
                       saleOrderConfiguration?.showDiscountAmount && (
-                        <td className="py-4 text-black text-right pr-2 ">
+                        <td className="py-1 text-black text-right pr-2 ">
                           {el?.discount || 0}
                         </td>
                       )}
 
                     {saleOrderConfiguration?.showDiscount &&
                       !saleOrderConfiguration?.showDiscountAmount && (
-                        <td className="py-4 text-black text-right pr-2 ">
+                        <td className="py-1 text-black text-right pr-2 ">
                           {el?.discountPercentage || 0}
                         </td>
                       )}
 
                     {saleOrderConfiguration?.showStockWiseTaxAmount && (
-                      <td className="py-4 text-black text-end pr-2">
+                      <td className="py-1 text-black text-end pr-2">
                         {el?.igstAmt}
                       </td>
                     )}
 
-                    <td className="py-4 text-black w-full text-right">
+                    <td className="py-1 text-black w-full text-right">
                       {" "}
                       {finalAmt}
                     </td>
@@ -322,7 +322,7 @@ function SalesOrderPdf({
           </tbody>
 
           <tfoot className="">
-            <tr className="bg-white border-y-2 ">
+            <tr className="bg-gray-200  border-black border-y ">
               <td className="font-bold"></td>
 
               <td className="font-bold text-[9px] p-2">Subtotal</td>
