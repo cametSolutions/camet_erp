@@ -10,7 +10,6 @@ const api = axios.create({
 });
 
 
-
 api.interceptors.response.use(
   function (response) {
     return response;

@@ -513,35 +513,6 @@
 
 
 
-const dummyData = [
-  {
-    cmp_id: "CMP66b870a95387e8f388f9af6c001",
-    primary_user_id: "65bcc9346b50fc180e8e804d",
-    stickerName: "Product Label - Standard",
-    printOn: "<xpml><page quantity='0' pitch='25.0 mm'></xpml>I8,A\nq813\nO\nJF\nZT\nQ200,25\n<xpml></page></xpml>",
-    format1: "A780,74,2,3,1,1,N,\"MRP:500.00\"\nA616,74,2,3,1,1,N,\"USP:500.00\"\nA786,47,2,1,1,1,N,\"(Prices Inclusive of all Taxes)\"",
-    format2: "A356,74,2,3,1,1,N,\"MRP:500.00\"\nA192,74,2,3,1,1,N,\"USP:500.00\"\nA362,47,2,1,1,1,N,\"(Prices Inclusive of all Taxes)\"",
-    printOff: "P1\n<xpml></page></xpml><xpml><end/></xpml>",
-  },
-  {
-    cmp_id: "66b870a95387e8f388f9af6c",
-    primary_user_id: "65bcc9346b50fc180e8e804d",
-    stickerName: "Product Label - Deluxe",
-    printOn: "<xpml><page quantity='0' pitch='30.0 mm'></xpml>I8,B\nq1000\nO\nJF\nZT\nQ250,30\n<xpml></page></xpml>",
-    format1: "A800,80,2,3,1,1,N,\"MRP:1000.00\"\nA630,80,2,3,1,1,N,\"USP:900.00\"\nA810,50,2,1,1,1,N,\"(Taxes Included)\"",
-    format2: "A370,80,2,3,1,1,N,\"MRP:1000.00\"\nA200,80,2,3,1,1,N,\"USP:900.00\"\nA370,50,2,1,1,1,N,\"(Taxes Included)\"",
-    printOff: "P2\n<xpml></page></xpml><xpml><end/></xpml>",
-  },
-  {
-    cmp_id: "66b870a95387e8f388f9af6c",
-    primary_user_id: "USER003",
-    stickerName: "Warehouse Barcode",
-    printOn: "<xpml><page quantity='0' pitch='20.0 mm'></xpml>I8,C\nq700\nO\nJF\nZT\nQ150,20\n<xpml></page></xpml>",
-    format1: "A760,70,2,3,1,1,N,\"MRP:1500.00\"\nA600,70,2,3,1,1,N,\"USP:1400.00\"\nA760,40,2,1,1,1,N,\"(Tax Included)\"",
-    format2: "A350,70,2,3,1,1,N,\"MRP:1500.00\"\nA190,70,2,3,1,1,N,\"USP:1400.00\"\nA350,40,2,1,1,1,N,\"(Tax Included)\"",
-    printOff: "P3\n<xpml></page></xpml><xpml><end/></xpml>",
-  },
-];
 
 
 
