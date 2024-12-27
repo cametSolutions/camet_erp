@@ -57,7 +57,6 @@ const DashboardTransaction = ({ filteredData, userType, from }) => {
         party_name,
         date,
         // billNo,
-        createdAt,
         enteredAmount,
         isCancelled,
         voucherNumber,

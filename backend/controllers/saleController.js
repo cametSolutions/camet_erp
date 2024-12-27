@@ -120,7 +120,7 @@ export const createSale = async (req, res) => {
       salesNumber,
       result._id,
       valueToUpdateInTally,
-      result?.createdAt,
+      result?.date,
       result?.party?.partyName,
       session
     );
@@ -156,7 +156,7 @@ export const createSale = async (req, res) => {
         req.owner,
         secondaryMobile,
         "sale",
-        result?.createdAt,
+        result?.date,
         result?.party?.partyName,
         session
       );
@@ -303,7 +303,7 @@ export const editSale = async (req, res) => {
         updateData?.salesNumber,
         saleId,
         valueToUpdateInTally,
-        updateData?.createdAt,
+        updateData?.date,
         updateData?.party?.partyName,
         session
       );
@@ -382,7 +382,7 @@ export const editSale = async (req, res) => {
               req.owner,
               secondaryMobile,
               "sale",
-              updateData?.createdAt,
+              updateData?.date,
               updateData?.party?.partyName,
 
               session
@@ -396,7 +396,7 @@ export const editSale = async (req, res) => {
               req.owner,
               secondaryMobile,
               "sale",
-              updateData?.createdAt,
+              updateData?.date,
               updateData?.party?.partyName,
 
               session
@@ -411,7 +411,7 @@ export const editSale = async (req, res) => {
             req.owner,
             secondaryMobile,
             "sale",
-            updateData?.createdAt,
+            updateData?.date,
             updateData?.party?.partyName,
 
             session
