@@ -115,7 +115,8 @@ function EditDebitNote() {
           finalAmount,
           debitNoteNumber,
           despatchDetails,
-          createdAt,
+          date,
+          // createdAt,
         } = res.data.data;
 
         // // additionalCharges: [ { option: 'option 1', value: '95', action: 'add' } ],
@@ -131,8 +132,8 @@ function EditDebitNote() {
         }
 
         if (!dateFromRedux) {
-          setSelectedDate(createdAt);
-          dispatch(changeDate(createdAt));
+          setSelectedDate(date);
+          dispatch(changeDate(date));
         }
 
         if (priceLevelFromRedux == "") {

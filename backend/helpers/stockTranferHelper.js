@@ -1,6 +1,10 @@
 import OragnizationModel from "../models/OragnizationModel.js";
 import productModel from "../models/productModel.js";
 import stockTransferModel from "../models/stockTransferModel.js";
+import { formatToLocalDate } from "./stockTransferHelper.js";
+
+///
+
 
 //////////////////////////balance stock updation asd of stock transfer ///////////////////
 
@@ -119,6 +123,7 @@ export const handleStockTransfer = async ({
   try {
     const newStockTransfer = new stockTransferModel({
       serialNumber,
+      date: await formatToLocalDate(selectedDate, orgId),
       stockTransferNumber,
       Primary_user_id: req.owner.toString(),
       Secondary_user_id: req.sUserId,
@@ -127,7 +132,7 @@ export const handleStockTransfer = async ({
       selectedGodownId,
       items,
       finalAmount: lastAmount,
-      createdAt: selectedDate,
+      createdAt: new Date(),
     });
 
     const result = await newStockTransfer.save();
@@ -218,8 +223,8 @@ export const increaseStockTransferNumber = async (secondaryUser, orgId) => {
         configuration.stockTransferConfiguration
         //  &&
         // Object.entries(configuration.stockTransferConfiguration)
-          // .filter(([key]) => key !== "startingNumber")
-          // .every(([_, value]) => value !== "")
+        // .filter(([key]) => key !== "startingNumber")
+        // .every(([_, value]) => value !== "")
       ) {
         stConfig = true;
       }
@@ -230,8 +235,14 @@ export const increaseStockTransferNumber = async (secondaryUser, orgId) => {
       const updatedConfiguration = secondaryUser.configurations.map(
         (config) => {
           if (config.organization.toString() === orgId) {
-            const newStockTransferNumber = (config.stockTransferNumber || 0) + 1;
-            console.log("Updating stockTransferNumber from", config.stockTransferNumber, "to", newStockTransferNumber);
+            const newStockTransferNumber =
+              (config.stockTransferNumber || 0) + 1;
+            console.log(
+              "Updating stockTransferNumber from",
+              config.stockTransferNumber,
+              "to",
+              newStockTransferNumber
+            );
 
             return {
               ...config,

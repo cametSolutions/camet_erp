@@ -2,6 +2,16 @@ import mongoose from "mongoose";
 
 const creditNoteSchema = new mongoose.Schema(
   {
+    date: { 
+      type: Date, 
+      required: true,
+      set: function(value) {
+        // Set the time to 00:00:00.000
+        const date = new Date(value);
+        date.setUTCHours(0, 0, 0, 0); // Ensure the time is zeroed out
+        return date;
+      }
+    },
     serialNumber: { type: Number }, // Add this line to include a serial number field
     creditNoteNumber: { type: String, required: true },
     Primary_user_id: { type: String, required: true },

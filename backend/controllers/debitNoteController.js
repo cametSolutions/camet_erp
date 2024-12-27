@@ -1,4 +1,4 @@
-import { truncateToNDecimals } from "../helpers/helper.js";
+import { formatToLocalDate, truncateToNDecimals } from "../helpers/helper.js";
 import {
   createDebitNoteRecord,
   handleDebitNoteStockUpdates,
@@ -267,7 +267,8 @@ export const editDebitNote = async (req, res) => {
       Primary_user_id: req.owner,
       Secondary_user_id: req.secondaryUserId,
       debitNoteNumber: debitNoteNumber,
-      createdAt: new Date(selectedDate),
+      date:await formatToLocalDate(selectedDate, orgId, session),
+      createdAt: existingDebitNote.createdAt,
     };
 
     await debitNoteModel.findByIdAndUpdate(debitNoteId, updateData, {

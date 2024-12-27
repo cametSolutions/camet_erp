@@ -75,6 +75,7 @@ function EditReceipt() {
         const {
           receiptNumber,
           createdAt,
+          date,
           party,
           billData,
           totalBillAmount,
@@ -95,9 +96,9 @@ function EditReceipt() {
           dispatch(addReceiptNumber(receiptNumber));
         }
 
-        if (createdAt) {
-          setSelectedDate(new Date(createdAt));
-          dispatch(changeDate(new Date(createdAt).toISOString()));
+        if (date) {
+          setSelectedDate(new Date(date));
+          dispatch(changeDate(new Date(date).toISOString()));
         } else {
           console.log("date not changed");
 

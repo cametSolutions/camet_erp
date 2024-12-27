@@ -73,7 +73,8 @@ function EditPayment() {
     if (paymentDetailsOfPurchase) {
       const {
         paymentNumber,
-        createdAt,
+        // createdAt,
+        date,
         party,
         billData,
         totalBillAmount,
@@ -94,9 +95,9 @@ function EditPayment() {
         dispatch(addPaymentNumber(paymentNumber));
       }
 
-      if (createdAt) {
-        setSelectedDate(new Date(createdAt));
-        dispatch(changeDate(new Date(createdAt).toISOString()));
+      if (date) {
+        setSelectedDate(new Date(date));
+        dispatch(changeDate(new Date(date).toISOString()));
       } else {
         console.log("date not changed");
 

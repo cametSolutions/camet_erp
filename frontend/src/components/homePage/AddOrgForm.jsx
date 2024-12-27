@@ -433,13 +433,7 @@ function AddOrgForm({ onSubmit, orgData = {} }) {
                   // }}
                   value={currency}
                 >
-                  {/* <option value="">Select currency</option> */}
-                  {/* {currencies.map((currency) => (
-                    <option value={currency} key={currency}>
-                      {currency}
-                    </option>
-                  ))} */}
-
+          
                   {/* Add more options as needed */}
                 </input>
               </div>

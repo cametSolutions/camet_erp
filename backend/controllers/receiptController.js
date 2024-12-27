@@ -15,6 +15,7 @@ import {
   saveSettlementData,
   revertSettlementData,
 } from "../helpers/receiptHelper.js";
+import { formatToLocalDate } from "../helpers/helper.js";
 
 /**
  * @desc  get outstanding data from tally
@@ -131,7 +132,9 @@ export const createReceipt = async (req, res) => {
 
     // Create the new receipt
     const newReceipt = new ReceiptModel({
-      createdAt: new Date(date),
+      createdAt: new Date(),
+      date:await formatToLocalDate(date, cmp_id, session),
+      
       receiptNumber,
       serialNumber,
       cmp_id,
@@ -161,7 +164,7 @@ export const createReceipt = async (req, res) => {
       enteredAmount,
       cmp_id,
       "receipt",
-      newReceipt?.createdAt,
+      newReceipt?.date,
       savedReceipt?.party?.partyName,
       session
     );
@@ -409,7 +412,7 @@ export const editReceipt = async (req, res) => {
         enteredAmount,
         cmp_id,
         "receipt",
-        receipt?.createdAt,
+        receipt?.date,
         receipt?.party?.partyName,
         session
       );

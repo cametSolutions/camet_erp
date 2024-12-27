@@ -8,6 +8,7 @@ import { addParty } from "../../../slices/debitNote";
 
 
 import PartyList from "../../components/secUsers/main/PartyList";
+import { addAllParties } from "../../../slices/partySlice";
 
 // import { MdCancel } from "react-icons/md";
 
@@ -38,6 +39,8 @@ function SearchPartyDebitNote() {
         });
 
         setParties(res.data.partyList);
+        dispatch(addAllParties(res.data.partyList));
+
         setLoading(false);
       } catch (error) {
         console.log(error);

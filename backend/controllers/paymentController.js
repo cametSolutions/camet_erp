@@ -18,6 +18,7 @@ import {
   revertTallyUpdates,
 } from "../helpers/paymentHelper.js";
 import paymentModel from "../models/paymentModel.js";
+import { formatToLocalDate } from "../helpers/helper.js";
 
 /**
  * @desc  create payment
@@ -84,7 +85,9 @@ export const createPayment = async (req, res) => {
 
     // Create the new payment
     const newPayment = new paymentModel({
-      createdAt: new Date(date),
+      createdAt: new Date(),
+      date: await formatToLocalDate(date, cmp_id, session),
+
       paymentNumber,
       serialNumber,
       cmp_id,
@@ -114,7 +117,7 @@ export const createPayment = async (req, res) => {
       enteredAmount,
       cmp_id,
       "payment",
-      savedPayment?.createdAt,
+      savedPayment?.date,
       savedPayment?.party?.partyName,
       session
     );
@@ -199,9 +202,8 @@ export const cancelPayment = async (req, res) => {
     // Revert tally updates
     await revertTallyUpdates(payment.billData, cmp_id, session);
 
-
-     /// save settlement data in cash or bank collection
-     await revertSettlementData(
+    /// save settlement data in cash or bank collection
+    await revertSettlementData(
       payment?.paymentMethod,
       payment?.paymentDetails,
       payment?.paymentNumber,
@@ -299,9 +301,8 @@ export const editPayment = async (req, res) => {
     // Revert tally updates
     await revertTallyUpdates(payment.billData, cmp_id, session);
 
-
-     /// save settlement data in cash or bank collection
-     await revertSettlementData(
+    /// save settlement data in cash or bank collection
+    await revertSettlementData(
       payment?.paymentMethod,
       payment?.paymentDetails,
       payment?.paymentNumber,
@@ -309,7 +310,6 @@ export const editPayment = async (req, res) => {
       cmp_id,
       session
     );
-
 
     // Delete advance payment, if any
     if (payment.advanceAmount > 0) {
@@ -357,7 +357,7 @@ export const editPayment = async (req, res) => {
       enteredAmount,
       cmp_id,
       "payment",
-      savedPayment?.createdAt,
+      savedPayment?.date,
       savedPayment?.party?.partyName,
       session
     );

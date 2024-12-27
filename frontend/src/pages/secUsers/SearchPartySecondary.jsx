@@ -7,7 +7,7 @@ import { useDispatch } from "react-redux";
 import { addParty } from "../../../slices/invoiceSecondary";
 import { useLocation } from "react-router-dom";
 import PartyList from "../../components/secUsers/main/PartyList";
-
+import { addAllParties } from "../../../slices/partySlice";
 
 // import { MdCancel } from "react-icons/md";
 
@@ -34,6 +34,7 @@ function SearchPartySecondary() {
         setLoading(false);
 
         setParties(res.data.partyList);
+        dispatch(addAllParties(res.data.partyList));
       } catch (error) {
         setLoading(false);
         console.log(error);
@@ -42,7 +43,6 @@ function SearchPartySecondary() {
     fetchParties();
   }, [cpm_id]);
 
-  
   const searchData = (data) => {
     setSearch(data);
   };
@@ -77,16 +77,13 @@ function SearchPartySecondary() {
 
   return (
     <div className="flex relative  ">
-  
-
-    <PartyList
-    backHandler={backHandler}
-    searchData={searchData}
-    loading = {loading}
-    filteredParties={filteredParties}
-    selectHandler = {selectHandler}
-    
-    />
+      <PartyList
+        backHandler={backHandler}
+        searchData={searchData}
+        loading={loading}
+        filteredParties={filteredParties}
+        selectHandler={selectHandler}
+      />
     </div>
   );
 }

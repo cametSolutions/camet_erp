@@ -1,4 +1,4 @@
-import { truncateToNDecimals } from "../helpers/helper.js";
+import { formatToLocalDate, truncateToNDecimals } from "../helpers/helper.js";
 import {
   createCreditNoteRecord,
   handleCreditNoteStockUpdates,
@@ -296,7 +296,8 @@ export const editCreditNote = async (req, res) => {
       Primary_user_id: req.owner,
       Secondary_user_id: req.secondaryUserId,
       creditNoteNumber: creditNoteNumber,
-      createdAt: new Date(selectedDate),
+      date: await formatToLocalDate(selectedDate, orgId, session),
+      createdAt: existingCreditNote.createdAt,
     };
 
     await creditNoteModel.findByIdAndUpdate(creditNoteId, updateData, {

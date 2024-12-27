@@ -3,7 +3,7 @@ import salesModel from "../models/salesModel.js";
 import TallyData from "../models/TallyData.js";
 import vanSaleModel from "../models/vanSaleModel.js";
 import OrganizationModel from "../models/OragnizationModel.js";
-import { truncateToNDecimals } from "./helper.js";
+import { formatToLocalDate, truncateToNDecimals } from "./helper.js";
 import { login } from "../controllers/secondaryUserController.js";
 import cashModel from "../models/cashModel.js";
 import bankModel from "../models/bankModel.js";
@@ -374,7 +374,8 @@ export const createSaleRecord = async (
       Primary_user_id,
       Secondary_user_id,
       salesNumber,
-      createdAt: new Date(selectedDate),
+      date:await formatToLocalDate(selectedDate, orgId, session),
+      createdAt: new Date(),
       paymentSplittingData,
     });
 

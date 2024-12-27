@@ -1,13 +1,33 @@
 /* eslint-disable react/no-unknown-property */
 /* eslint-disable react/prop-types */
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import {  useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { FaLocationDot } from "react-icons/fa6";
 import Select from "react-select"; // Import React Select
+import { useLocation } from "react-router-dom";
 
 function AddressForm({ getFormData, newBillToShipTo, partyDetails }) {
+  const location = useLocation();
+  let useCompanyAddress = false;
+
+  if (location?.pathname.includes("billToPurchase")) {
+    useCompanyAddress = true;
+  }
+
   const partyList = useSelector((state) => state?.partySlice?.allParties);
+  const {
+    name: companyName,
+    email: companyEmail,
+    mobile: companyMobile,
+    pin: companyPin,
+    gstNum: companyGst,
+    state: companyState,
+    flat: companyFlat,
+    landmark: companyLandmark,
+    road: companyRoad,
+  } = useSelector((state) => state?.secSelectedOrganization?.secSelectedOrg) ||
+  {};
 
   const navigate = useNavigate();
   useEffect(() => {
@@ -58,30 +78,53 @@ function AddressForm({ getFormData, newBillToShipTo, partyDetails }) {
           partyName,
           gstNo,
           emailID,
-          state_reference,
+          // state_reference,
           mobileNumber,
           pin,
           billingAddress,
           shippingAddress,
-          state
+          state,
         } = partyDetails;
-        setFormData({
-          ...formData,
-          billToName: partyName,
-          billToAddress: billingAddress,
-          billToPin: pin,
-          billToGst: gstNo,
-          billToMobile: mobileNumber,
-          billToEmail: emailID,
-          billToSupply: state,
-          shipToName: partyName,
-          shipToAddress: shippingAddress,
-          shipToPin: pin,
-          shipToGst: gstNo,
-          shipToMobile: mobileNumber,
-          shipToEmail: emailID,
-          shipToSupply: state,
-        });
+        /// add company address as default ship to address for purchase
+
+        if (useCompanyAddress) {
+          setFormData({
+            ...formData,
+            billToName: partyName,
+            billToAddress: billingAddress,
+            billToPin: pin,
+            billToGst: gstNo,
+            billToMobile: mobileNumber,
+            billToEmail: emailID,
+            billToSupply: state,
+            shipToName: companyName,
+            shipToAddress:
+              companyFlat + "," + companyLandmark + "," + companyRoad,
+            shipToPin: companyPin,
+            shipToGst: companyGst,
+            shipToMobile: companyMobile,
+            shipToEmail: companyEmail,
+            shipToSupply: companyState,
+          });
+        } else {
+          setFormData({
+            ...formData,
+            billToName: partyName,
+            billToAddress: billingAddress,
+            billToPin: pin,
+            billToGst: gstNo,
+            billToMobile: mobileNumber,
+            billToEmail: emailID,
+            billToSupply: state,
+            shipToName: partyName,
+            shipToAddress: shippingAddress,
+            shipToPin: pin,
+            shipToGst: gstNo,
+            shipToMobile: mobileNumber,
+            shipToEmail: emailID,
+            shipToSupply: state,
+          });
+        }
       }
     }
   }, [partyDetails]);
@@ -114,8 +157,6 @@ function AddressForm({ getFormData, newBillToShipTo, partyDetails }) {
   };
 
   const handleSelectChange = (selectedOption, actionMeta) => {
-
-    
     const commonData = {
       ...formData,
       [actionMeta.name]: selectedOption,
@@ -153,14 +194,15 @@ function AddressForm({ getFormData, newBillToShipTo, partyDetails }) {
         });
       }
     }
- 
   };
-
 
   const partyOptions = partyList?.map((party) => ({
     value: party._id,
     label: party.partyName,
   }));
+
+  console.log("partyList", partyList);
+  console.log("partyOptions", partyOptions);
 
   const handleSubmit = () => {
     // Handle form submission, e.g., save to database
@@ -179,8 +221,8 @@ function AddressForm({ getFormData, newBillToShipTo, partyDetails }) {
       shipToMobile,
       shipToEmail,
       shipToSupply,
-      billToParty,
-      shipToParty,
+      // billToParty,
+      // shipToParty,
     } = formData;
     const requiredFields = [
       { value: billToName, message: "Bill To Name is required" },
@@ -210,10 +252,10 @@ function AddressForm({ getFormData, newBillToShipTo, partyDetails }) {
       }
     }
 
-
     getFormData(formData);
   };
 
+  // console.log("party",formData);
 
   return (
     <div className="md:px-6">

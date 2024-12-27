@@ -2,7 +2,7 @@ import OragnizationModel from "../models/OragnizationModel.js";
 import productModel from "../models/productModel.js";
 import purchaseModel from "../models/purchaseModel.js";
 import TallyData from "../models/TallyData.js";
-import { truncateToNDecimals } from "./helper.js";
+import { formatToLocalDate, truncateToNDecimals } from "./helper.js";
 
 ///////////////////////// for stock update ////////////////////////////////
 export const handlePurchaseStockUpdates = async (items,session) => {
@@ -221,15 +221,11 @@ export const createPurchaseRecord = async (
       party,
       despatchDetails,
       lastAmount,
+      selectedDate
     } = req.body;
 
-    let selectedDate = req.body.selectedDate;
 
-    if (!selectedDate) {
-      selectedDate = new Date();
-    }
 
-    console.log("selectedDate: ", selectedDate);
 
     const Primary_user_id = req.owner;
     const Secondary_user_id = req.sUserId;
@@ -264,7 +260,8 @@ export const createPurchaseRecord = async (
       Primary_user_id,
       Secondary_user_id,
       PurchaseNumber,
-      createdAt: new Date(selectedDate) ? new Date(selectedDate) : new Date(),
+      date:await formatToLocalDate(selectedDate, orgId, session),
+      createdAt: new Date(),
     });
 
     const result = await purchase.save({ session });

@@ -1,7 +1,9 @@
-
 import partyModel from "../models/partyModel.js";
+import OragnizationModel from "../models/OragnizationModel.js";
+import { countries } from "../../frontend/constants/countries.js";
+import mongoose from "mongoose";
 
-
+/// truncate to n decimals
 
 export const truncateToNDecimals = (num, n) => {
   const parts = num.toString().split(".");
@@ -10,6 +12,52 @@ export const truncateToNDecimals = (num, n) => {
   return parseFloat(parts.join("."));
 };
 
+///// formatting  date to local date
+
+
+export const formatToLocalDate = async (date, cmp_id, session) => {
+  try {
+    // Fetch the organization details using the company ID and session
+    const company = await OragnizationModel.findById(cmp_id).session(session);
+    if (!company) {
+      throw new Error("Company not found");
+    }
+
+    // Get the country associated with the company
+    const countryName = company.country;
+
+    // Find the timezone for the given country
+    const countryData = countries.find((country) => country.countryName === countryName);
+    if (!countryData) {
+      throw new Error("Country not found in the list");
+    }
+
+    const timezone = countryData.timeZone;
+
+    // Convert to the local date based on the timezone
+    const localDate = new Date(date).toLocaleString("en-US", { timeZone: timezone });
+
+    // Convert back to a Date object
+    const dateObj = new Date(localDate);
+
+    // Set the time to 00:00:00.000 in local timezone
+    dateObj.setHours(0, 0, 0, 0);
+
+    // Convert to UTC by creating a new Date with the same date and resetting timezone
+    const utcDate = new Date(Date.UTC(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate()));
+    console.log("utcDate:", utcDate);
+    
+
+    return utcDate; // This is now in UTC with time set to 00:00:00.000
+  } catch (error) {
+    console.error("Error formatting date:", error.message);
+    throw error;
+  }
+};
+
+
+
+
 ///formatting amount with comma
 
 export const formatAmount = (amount) => {
@@ -17,8 +65,6 @@ export const formatAmount = (amount) => {
 };
 
 /////helper for transactions
-
-import mongoose from "mongoose";
 
 export const aggregateTransactions = (
   model,
@@ -53,6 +99,7 @@ export const aggregateTransactions = (
           type === "Receipt" || type === "Payment"
             ? "$enteredAmount"
             : "$finalAmount",
+            date: 1,
         createdAt: 1,
         isCancelled: 1,
         paymentMethod: 1,
@@ -171,7 +218,6 @@ export const addCorrespondingParty = async (
   }
 };
 
-
 /// edit corresponding party
 
 export const editCorrespondingParty = async (
@@ -187,11 +233,11 @@ export const editCorrespondingParty = async (
     const existingParty = await partyModel.findOne({
       party_master_id: masterId,
       cmp_id: cmp_id,
-      Primary_user_id: Primary_user_id
+      Primary_user_id: Primary_user_id,
     });
 
     if (!existingParty) {
-      return
+      return;
     }
 
     // Update the existing party details
@@ -208,7 +254,6 @@ export const editCorrespondingParty = async (
   }
 };
 
-
 //// get email service
 
 export const getEmailService = (email) => {
@@ -219,4 +264,3 @@ export const getEmailService = (email) => {
   if (domain.includes("outlook")) return "outlook";
   return "smtp"; // Default to SMTP if no known domain
 };
-

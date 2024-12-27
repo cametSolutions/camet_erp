@@ -347,7 +347,7 @@ export const transactions = async (req, res) => {
       const startDate = parseISO(startOfDayParam);
       const endDate = parseISO(endOfDayParam);
       dateFilter = {
-        createdAt: {
+        date: {
           $gte: startOfDay(startDate),
           $lte: endOfDay(endDate),
         },
@@ -355,7 +355,7 @@ export const transactions = async (req, res) => {
     } else if (todayOnly === "true") {
       const today = new Date();
       dateFilter = {
-        createdAt: {
+        date: {
           $gte:new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate(), 0, 0, 0, 0)),
           $lte:  new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate(), 23, 59, 59, 999)),
         },
@@ -473,7 +473,7 @@ export const transactions = async (req, res) => {
 
     const combined = results
       .flat()
-      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      .sort((a, b) => new Date(b.date) - new Date(a.date));
 
     const totalTransactionAmount = combined.reduce((sum, transaction) => {
       // Convert to number and handle potential null/undefined values
@@ -1088,7 +1088,7 @@ export const getOpeningBalances = async (req, res) => {
     const startDate = parseISO(startOfDayParam) || new Date();
 
     const openingBalanceDateFilter = {
-      createdAt: {
+      date: {
         $lt: startOfDay(startDate),
       },
     };

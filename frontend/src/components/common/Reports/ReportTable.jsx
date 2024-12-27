@@ -1,10 +1,14 @@
 /* eslint-disable no-unsafe-optional-chaining */
 /* eslint-disable react/prop-types */
+import dayjs from "dayjs";
+
 const ReportTable = ({ data, loading, openingBalances }) => {
   // Calculate total debit and credit amounts
   const { totalDebit, totalCredit } = data?.reduce(
     (totals, transaction) => {
-      if (["Debit Note", "Tax Invoice", "Payment"].includes(transaction?.type)) {
+      if (
+        ["Debit Note", "Tax Invoice", "Payment"].includes(transaction?.type)
+      ) {
         totals.totalDebit += Number(transaction?.balanceAmount);
       } else if (
         ["Purchase", "Receipt", "Credit Note"].includes(transaction?.type)
@@ -14,10 +18,9 @@ const ReportTable = ({ data, loading, openingBalances }) => {
       return totals;
     },
     { totalDebit: 0, totalCredit: 0 }
- );
+  );
 
   // console.log("totalDebit :",totalDebit, "totalCredit :",totalCredit);
-  
 
   const closingDebit = totalDebit + (openingBalances?.debitBalance || 0);
   const closingCredit = totalCredit + (openingBalances?.creditBalance || 0);
@@ -26,9 +29,6 @@ const ReportTable = ({ data, loading, openingBalances }) => {
 
   // console.log("closingDebit :",closingDebit, "closingCredit :",closingCredit);
   // console.log("closingBalance :",closingBalance);
-  
-  
-
 
   return (
     <div className="w-full overflow-x-auto px-3 py-4 ">
@@ -47,8 +47,6 @@ const ReportTable = ({ data, loading, openingBalances }) => {
           </tr>
         </thead> */}
         <tbody className="">
-         
-
           {/* Transaction Rows */}
           {data?.map((transaction) => (
             <tr
@@ -58,11 +56,11 @@ const ReportTable = ({ data, loading, openingBalances }) => {
               <td className="py-6 px-3 font-bold w-1/3">
                 <div className="space-y-1">
                   <div className="text-[10px]  flex gap-1 flex-col">
-                    <span className="text-gray-400">#{transaction?.voucherNumber}</span>
+                    <span className="text-gray-400">
+                      #{transaction?.voucherNumber}
+                    </span>
                     <span className="text-violet-400">
-                      {new Date(transaction?.createdAt).toLocaleDateString(
-                        "en-IN"
-                      )}
+                      {dayjs(transaction?.date).format("DD/MM/YYYY")}
                     </span>
                   </div>
                   <div className="font-bold text-[13px] text-gray-500">

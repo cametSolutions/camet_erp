@@ -32,6 +32,7 @@ import { createStockTransfer,editStockTransfer, cancelStockTransfer } from '../c
 import { addBankPaymentDetails } from '../../frontend/slices/payment.js';
 import { addEmailConfiguration, getConfiguration, getBarcodeList, addBarcodeData, editBarcodeData, deleteBarcode, getSingleBarcodeData, getPrintingConfiguration, updateConfiguration } from '../controllers/settingsController.js';
 import { updateSecondaryUserConfiguration } from '../helpers/saleOrderHelper.js';
+import { updateDateFieldsByCompany } from '../controllers/testingController.js';
 
 
 router.post('/login',login)
@@ -171,6 +172,9 @@ router.delete('/getSingleBarcodeData/:id/:cmp_id',authSecondary,secondaryIsBlock
 router.get('/getPrintingConfiguration/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,getPrintingConfiguration)
 router.put('/updateConfiguration/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,updateConfiguration)
 
+//// testing routes
+
+router.put('/updateDateFieldsByCompany/:cmp_id',updateDateFieldsByCompany)
 
 
 
