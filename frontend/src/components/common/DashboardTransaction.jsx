@@ -55,6 +55,7 @@ const DashboardTransaction = ({ filteredData, userType, from }) => {
         type,
         _id,
         party_name,
+        date,
         // billNo,
         createdAt,
         enteredAmount,
@@ -91,7 +92,7 @@ const DashboardTransaction = ({ filteredData, userType, from }) => {
                 <div className=" px-2 py-2 lg:px-6  lg:py-1  w-[150px] md:w-[180px] lg:w-[300px] flex justify-center items-start relative flex-col">
                   <section className="flex gap-1  items-center">
                     <p className="text-gray-400 text-[10px] font-bold">
-                      {dayjs(createdAt).format("DD/MM/YYYY")}
+                      {dayjs(date).format("DD/MM/YYYY")}
                     </p>
 
                     <div

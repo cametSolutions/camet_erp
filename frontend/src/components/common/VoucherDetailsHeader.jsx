@@ -45,7 +45,7 @@ function VoucherDetailsHeader({
             ID #{number || ""}
           </p>
           <p className="text-xs font-medium text-gray-500 mt-1 ">
-            {dayjs(data.createdAt).format("DD/MM/YYYY")}
+            {dayjs(data.date).format("DD/MM/YYYY")}
           </p>
         </div>
 

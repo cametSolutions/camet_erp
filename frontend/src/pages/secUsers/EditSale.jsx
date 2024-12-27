@@ -98,7 +98,7 @@ function EditSale() {
     items: itemsFromRedux,
     despatchDetails: despatchDetailsFromRedux,
     finalAmount: finalAmountFromRedux,
-    heights: heightsFromRedux,
+    // heights: heightsFromRedux,
     date: dateFromRedux,
   } = salesDetailsFromRedux;
 
