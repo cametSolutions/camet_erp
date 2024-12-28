@@ -7,8 +7,9 @@ import { toast } from "react-toastify";
 import { MdPrint } from "react-icons/md";
 // import numberToWords from "number-to-words";
 import { Link } from "react-router-dom";
-import SalesPdf from "../../components/common/SalesPdf";
 import PurchasePdf from "../../components/pdf/purchase/PurchasePdf";
+import { useSelector } from "react-redux";
+import PurchasePdfNonIndian from "../../components/pdf/purchase/nonIndian/PurchasePdfNonIndian";
 
 function ShareSalesSecondary() {
   const [data, setData] = useState([]);
@@ -19,6 +20,11 @@ function ShareSalesSecondary() {
   const [bank, setBank] = useState([]);
 
   const { id } = useParams();
+
+  const IsIndian =
+    useSelector(
+      (state) => state.secSelectedOrganization.secSelectedOrg.country
+    ) === "India";
 
   const contentToPrint = useRef(null);
 
@@ -59,48 +65,6 @@ function ShareSalesSecondary() {
   console.log(data);
 
   //  console.log(org?.configurations[0]?.terms);
-
-  // useEffect(() => {
-  //   if (data && data.items) {
-  //     const subTotal = data.items
-  //       .reduce((acc, curr) => acc + parseFloat(curr?.total), 0)
-  //       .toFixed(2);
-  //     setSubTotal(subTotal);
-
-  //     const addiTionalCharge = data?.additionalCharges
-  //       ?.reduce((acc, curr) => {
-  //         let value = curr?.finalValue === "" ? 0 : parseFloat(curr.finalValue);
-  //         if (curr?.action === "add") {
-  //           return acc + value;
-  //         } else if (curr?.action === "sub") {
-  //           return acc - value;
-  //         }
-  //         return acc;
-  //       }, 0)
-
-  //       ?.toFixed(2);
-  //     setAdditinalCharge(addiTionalCharge);
-
-  //     const [integerPart, decimalPart] = data.finalAmount.toString().split(".");
-  //     const integerWords = numberToWords.toWords(parseInt(integerPart, 10));
-  //     console.log(integerWords);
-  //     const decimalWords = decimalPart
-  //       ? ` and ${numberToWords.toWords(parseInt(decimalPart, 10))} `
-  //       : " and Zero";
-  //     console.log(decimalWords);
-
-  //     const mergedWord = [
-  //       ...integerWords,
-  //       // " Rupees",
-  //       ...decimalWords,
-  //       // "Paisa",
-  //     ].join("");
-
-  //     setInWords(mergedWord);
-  //   }
-  // }, [data]);
-
-
 
   const handlePrint = useReactToPrint({
     content: () => contentToPrint.current,
@@ -163,13 +127,9 @@ function ShareSalesSecondary() {
     onAfterPrint: () => console.log("after printing..."),
     removeAfterPrint: true,
   });
-  
-
-
 
   return (
     <div className="">
-   
       <div className="">
         <div className="bg-[#012a4a]   sticky top-0 p-3 px-5 text-white text-lg font-bold flex items-center gap-3  shadow-lg justify-between">
           <div className="flex gap-2 ">
@@ -188,17 +148,25 @@ function ShareSalesSecondary() {
           </div>
         </div>
 
-        <PurchasePdf
-          contentToPrint={contentToPrint}
-          data={data}
-          org={org}
-          bank={bank}
-          // subTotal={subTotal}
-          // additinalCharge={additinalCharge}
-          // inWords={inWords}
-          userType="secondaryUser"
-          tab="purchase"
-        />
+        {IsIndian ? (
+          <PurchasePdf
+            contentToPrint={contentToPrint}
+            data={data}
+            org={org}
+            bank={bank}
+            userType="secondaryUser"
+            tab="purchase"
+          />
+        ) : (
+          <PurchasePdfNonIndian
+            contentToPrint={contentToPrint}
+            data={data}
+            org={org}
+            bank={bank}
+            userType="secondaryUser"
+            tab="purchase"
+          />
+        )}
       </div>
     </div>
   );

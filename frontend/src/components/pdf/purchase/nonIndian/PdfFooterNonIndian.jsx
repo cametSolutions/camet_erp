@@ -1,7 +1,8 @@
 /* eslint-disable react/prop-types */
+// import QRCode from "react-qr-code";
 
-function PdfFotterNonInd({
-  saleOrderConfiguration,
+
+function PdfFooterNonIndian({
   bank,
   org,
   data,
@@ -9,17 +10,13 @@ function PdfFotterNonInd({
   inWords,
   selectedOrganization,
   calculateTotalTax = () => {},
-  // party = {},
 }) {
-  // console.log("saleOrderConfiguration", saleOrderConfiguration);
-
   return (
-    <div className="mb-5">
+    <div>
       {/*  tax table and total */}
       <div className="flex justify-between items-start mt-3 ">
         {/* Left Div: Tax Table */}
-
-   <div></div>
+<div></div>
         {/* Right Div */}
         <div className="w-1/2">
           {additinalCharge > 0 && (
@@ -51,13 +48,12 @@ function PdfFotterNonInd({
             </div>
           )}
 
-          {saleOrderConfiguration?.showTaxAmount &&
-            (  <div className="flex flex-col items-end text-[9px] text-black font-bold gap-1 mt-3">
-              <p className={calculateTotalTax() > 0 ? "" : "hidden"}>
-                Vat : {Number(calculateTotalTax())?.toFixed(2) || "0.00"}
-              </p>
-            </div>)}
-
+          <div className="flex flex-col items-end text-[9px] text-black font-bold gap-1 mt-3">
+            <p className={calculateTotalTax() > 0 ? "" : "hidden"}>
+              vat : {Number(calculateTotalTax() || 0)?.toFixed(2) || "0.00"}
+            </p>
+          
+          </div>
           <div className="flex justify-end border-black py-3">
             <div className="w-3/4"></div>
             <div className="w-2/4 text-gray-700 font-bold text-[10px] flex justify-end">
@@ -69,6 +65,7 @@ function PdfFotterNonInd({
               </div>
             </div>
           </div>
+    
         </div>
       </div>
 
@@ -87,9 +84,7 @@ function PdfFotterNonInd({
 
       <div className="flex justify-between my-1 ">
         <div className=" w-1/2">
-          {saleOrderConfiguration?.showBankDetails &&
-          bank &&
-          Object.keys(bank).length > 0 ? (
+          {bank && Object.keys(bank).length > 0 ? (
             <>
               <div className="text-gray-500 font-semibold text-[10px] ">
                 Bank Name: {bank?.bank_name}
@@ -104,25 +99,25 @@ function PdfFotterNonInd({
                 Branch: {bank?.branch}
               </div>
               {/* <div
-          style={{
-            height: "auto",
-            margin: "0",
-            marginTop: "10px",
-            maxWidth: 64,
-            width: "100%",
-          }}
-        >
-          <QRCode
-            size={250}
-            style={{
-              height: "auto",
-              maxWidth: "100%",
-              width: "100%",
-            }}
-            value={`upi:pay?pa=${bank?.upi_id}&am=${data?.finalAmount}`}
-            viewBox={`0 0 256 256`}
-          />
-        </div> */}
+                style={{
+                  height: "auto",
+                  margin: "0",
+                  marginTop: "10px",
+                  maxWidth: 64,
+                  width: "100%",
+                }}
+              >
+                <QRCode
+                  size={250}
+                  style={{
+                    height: "auto",
+                    maxWidth: "100%",
+                    width: "100%",
+                  }}
+                  value={`upi:pay?pa=${bank?.upi_id}&am=${data?.finalAmount}`}
+                  viewBox={`0 0 256 256`}
+                />
+              </div> */}
             </>
           ) : (
             <div className="text-gray-500 font-semibold text-[10px] leading-5"></div>
@@ -130,30 +125,30 @@ function PdfFotterNonInd({
         </div>{" "}
         <div className="flex flex-col justify-between text-[10px] font-semibold text-right">
           <p>{org?.name}</p>
-          <p>Authorized Signatory</p>
+          <p className="mt-8">Authorized Signatory</p>
         </div>
       </div>
 
       <hr />
 
-      {saleOrderConfiguration?.showTeamsAndConditions &&
-        org &&
-        org.configurations?.length > 0 && (
-          <div className="border-gray-300 mb-5 mt-2">
-            <div className="text-gray-700 mb-1 font-bold text-[10px]">
-              Terms and Conditions
-            </div>
-            <div className="text-gray-700 text-[9px] leading-4">
-              {org?.configurations[0]?.terms?.map((el, index) => (
-                <p key={index}>
-                  <span className="font-bold">{index + 1}.</span> {el}
-                </p>
-              ))}
-            </div>
+      {org && org.configurations?.length > 0 && (
+        <div className="border-gray-300 mb-5 mt-2">
+          <div className="text-gray-700 mb-1 font-bold text-[10px]">
+            Terms and Conditions
           </div>
-        )}
+          <div className="text-gray-700 text-[9px] leading-4">
+            {org?.configurations[0]?.terms?.map((el, index) => (
+              <p key={index}>
+                <span className="font-bold">{index + 1}.</span> {el}
+              </p>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-export default PdfFotterNonInd;
+export default PdfFooterNonIndian;
+
+

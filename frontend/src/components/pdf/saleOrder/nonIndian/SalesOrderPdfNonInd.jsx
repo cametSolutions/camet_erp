@@ -199,12 +199,10 @@ function SalesOrderPdfNonInd({
               <th className="text-gray-700 font-bold uppercase  px-1 text-left">
                 Items
               </th>
-              {saleOrderConfiguration?.showHsn && (
-                <th className="text-gray-700 font-bold uppercase p-2">HSN</th>
-              )}
+            
 
               {saleOrderConfiguration?.showTaxPercentage && (
-                <th className="text-gray-700 font-bold uppercase p-2">Tax %</th>
+                <th className="text-gray-700 font-bold uppercase p-2">Vat %</th>
               )}
 
               <th className="text-gray-700 font-bold uppercase p-2">Qty</th>
@@ -222,7 +220,7 @@ function SalesOrderPdfNonInd({
                   </th>
                 )}
               {saleOrderConfiguration?.showStockWiseTaxAmount && (
-                <th className="text-gray-700 font-bold uppercase p-2">Tax</th>
+                <th className="text-gray-700 font-bold uppercase p-2">Vat</th>
               )}
               <th className="text-gray-700 font-bold uppercase p-2 pr-0 ">
                 Amount
@@ -274,11 +272,7 @@ function SalesOrderPdfNonInd({
                       {el.product_name} <br />
                     </td>
 
-                    {saleOrderConfiguration?.showHsn && (
-                      <td className="py-1 text-black text-right pr-2">
-                        {el?.hsn_code || ""}
-                      </td>
-                    )}
+                   
 
                     {saleOrderConfiguration?.showTaxPercentage && (
                       <td className="py-1 text-black text-right pr-2">
@@ -327,9 +321,7 @@ function SalesOrderPdfNonInd({
 
               <td className="font-bold text-[9px] p-2">Subtotal</td>
 
-              {saleOrderConfiguration?.showHsn && (
-                <td className="font-bold"></td>
-              )}
+           
               {saleOrderConfiguration?.showTaxPercentage && (
                 <td className="font-bold"></td>
               )}
