@@ -10,6 +10,7 @@ import { useSelector } from "react-redux";
 import ShareModal from "./settilngs/dataEntry/modals/ShareModal";
 import { IoShareSocial } from "react-icons/io5";
 import SalesOrderPdf from "../../components/pdf/saleOrder/SalesOrderPdf";
+import SalesOrderPdfNonInd from "../../components/pdf/saleOrder/nonIndian/SalesOrderPdfNonInd";
 
 function ShareInvoiceSecondary() {
   const [data, setData] = useState([]);
@@ -19,6 +20,11 @@ function ShareInvoiceSecondary() {
   const [bank, setBank] = useState([]);
 
   const contentToPrint = useRef(null);
+
+  const IsIndian =
+    useSelector(
+      (state) => state.secSelectedOrganization.secSelectedOrg.country
+    ) === "India";
 
   useEffect(() => {
     const getTransactionDetails = async () => {
@@ -54,56 +60,9 @@ function ShareInvoiceSecondary() {
     getTransactionDetails();
   }, [id]);
 
-  // useEffect(() => {
-  //   if (data && data.items) {
-  //     const subTotal = data.items
-  //       .reduce((acc, curr) => acc + parseFloat(curr?.total), 0)
-  //       .toFixed(2);
-  //     setSubTotal(subTotal);
-
-  //     const addiTionalCharge = data?.additionalCharges
-  //       ?.reduce((acc, curr) => {
-  //         let value = curr?.finalValue === "" ? 0 : parseFloat(curr.finalValue);
-  //         if (curr?.action === "add") {
-  //           return acc + value;
-  //         } else if (curr?.action === "sub") {
-  //           return acc - value;
-  //         }
-  //         return acc;
-  //       }, 0)
-
-  //       ?.toFixed(2);
-  //     setAdditinalCharge(addiTionalCharge);
-
-  //     const finalAmount = data.finalAmount;
-
-  //     setFinalAmount(finalAmount);
-
-  //     const [integerPart, decimalPart] = finalAmount.toString().split(".");
-  //     const integerWords = numberToWords.toWords(parseInt(integerPart, 10));
-  //     console.log(integerWords);
-
-  //     const decimalWords = decimalPart
-  //       ? ` and ${numberToWords.toWords(parseInt(decimalPart, 10))} `
-  //       : " and Zero ";
-
-  //     console.log(decimalWords);
-
-  //     const mergedWord = [
-  //       ...integerWords,
-  //       // " Rupees",
-  //       ...decimalWords,
-  //       // "Paisa",
-  //     ].join("");
-
-  //     setInWords(mergedWord);
-  //   }
-  // }, [data]);
-
   const { printTitle } = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
-
 
   return (
     <div className="flex">
@@ -139,17 +98,26 @@ function ShareInvoiceSecondary() {
           showModal={showModal}
           setShowModal={setShowModal}
         />
-        <SalesOrderPdf
-          printTitle={printTitle}
-          contentToPrint={contentToPrint}
-          data={data}
-          org={org}
-          bank={bank}
-          // subTotal={subTotal}
-          // additinalCharge={additinalCharge}
-          // inWords={inWords}
-          userType="secondaryUser"
-        />
+
+        {IsIndian ? (
+          <SalesOrderPdf
+            printTitle={printTitle}
+            contentToPrint={contentToPrint}
+            data={data}
+            org={org}
+            bank={bank}
+            userType="secondaryUser"
+          />
+        ) : (
+          <SalesOrderPdfNonInd
+            printTitle={printTitle}
+            contentToPrint={contentToPrint}
+            data={data}
+            org={org}
+            bank={bank}
+            userType="secondaryUser"
+          />
+        )}
       </div>
     </div>
   );

@@ -8,7 +8,12 @@ const BarcodeModal = ({ isOpen, onClose, product }) => {
   const [selectedBarcode, setSelectedBarcode] = useState("");
   const [mrp, setMrp] = useState("");
   const [splCode, setSplCode] = useState("");
+  const [barcodeItemName, setBarcodeItemName] = useState("");
   const [barcodeList, setBarcodeList] = useState([]);
+  
+
+  console.log("barcodeitemanme", barcodeItemName);
+  
 
   const { _id: cmp_id, name: company_name } = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg
@@ -46,7 +51,9 @@ const BarcodeModal = ({ isOpen, onClose, product }) => {
         .replace(/\${productCode}/g, productCode)
         .replace(/\${companyName}/g, companyName)
         .replace(/\${mrp}/g, mrp)
-        .replace(/\${splCode}/g, splCode);
+        .replace(/\${splCode}/g, splCode)
+        .replace(/\${barcodeItemName}/g, barcodeItemName);
+        
 
       // const format2WithValues = currentBarcode.format2
       //   .replace(/\${productName}/g, productName)
@@ -123,6 +130,22 @@ const BarcodeModal = ({ isOpen, onClose, product }) => {
             </select>
           </div>
 
+          <div className="mb-4">
+            <label
+              htmlFor="barcode-item-name"
+              className=" block text-sm font-medium text-gray-700 mb-1"
+            >
+              Barcode Item Name:
+            </label>
+            <input
+              type="text"
+              id="barcode-item-name"
+              value={barcodeItemName}
+              onChange={(e) => setBarcodeItemName(e.target.value)}
+              placeholder="Enter Barcode Item Name"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-300"
+            />
+          </div>
           <div className="mb-4">
             <label
               htmlFor="mrp"

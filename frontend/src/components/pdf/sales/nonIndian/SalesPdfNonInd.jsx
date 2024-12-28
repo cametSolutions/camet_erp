@@ -3,10 +3,11 @@ import React, { useEffect, useState } from "react";
 
 import { useSelector } from "react-redux";
 import numberToWords from "number-to-words";
-import PdfHeader from "./PdfHeader";
-import PdfFooter from "./PdfFooter";
+import PdfHeaderNonInd from "./PdfHeaderNonInd";
+import PdfFooterNonInd from "./PdfFooterNonInd";
 
-function SalesPdf({
+
+function SalesPdfNonInd({
   data,
   org,
   contentToPrint,
@@ -39,7 +40,7 @@ function SalesPdf({
   ).find((item) => item.voucher === "sale");
 
 
-  
+
   const calculateTotalTax = () => {
     const individualTax = data?.items?.map(
       (el) => el?.total - (el?.total * 100) / (parseFloat(el.igst) + 100)
@@ -60,6 +61,7 @@ function SalesPdf({
   };
 
   const calculateTaxAmount = (godownOrBatch, item) => {
+
 
     const { selectedPriceRate, count, discount } = godownOrBatch;
     const { isTaxInclusive, igst } = item;
@@ -188,7 +190,6 @@ function SalesPdf({
   const findRate = (rate, isTaxInclusive, igst) => {
     let newRate;
 
- 
 
     if (configurations?.showInclTaxRate && !isTaxInclusive) {
       ///add tax amount with respect to base price
@@ -225,7 +226,7 @@ function SalesPdf({
                 {configurations?.printTitle || "Tax Invoice"}
               </div>
             </div>
-            <PdfHeader
+            <PdfHeaderNonInd
               configurations={configurations}
               data={data}
               org={org}
@@ -242,15 +243,10 @@ function SalesPdf({
                   <th className="text-gray-700 font-bold uppercase py-2 px-1 text-left">
                     Items
                   </th>
-                  {configurations?.showHsn && (
-                    <th className="text-gray-700 font-bold uppercase p-2">
-                      HSN
-                    </th>
-                  )}
-
+              
                   {configurations?.showTaxPercentage && (
                     <th className="text-gray-700 font-bold uppercase p-2">
-                      Tax %
+                      Vat %
                     </th>
                   )}
 
@@ -272,7 +268,7 @@ function SalesPdf({
                     )}
                   {configurations?.showStockWiseTaxAmount && (
                     <th className="text-gray-700 font-bold uppercase p-2">
-                      Tax
+                      Vat
                     </th>
                   )}
                   <th className="text-gray-700 font-bold uppercase p-2 pr-0 ">
@@ -292,14 +288,7 @@ function SalesPdf({
                           >
                             {el.product_name}{" "}
                           </td>
-                          {configurations?.showHsn &&
-                            (!el?.hasGodownOrBatch ? (
-                              <td className=" text-black text-right pr-2">
-                                {el?.hsn_code || ""}
-                              </td>
-                            ) : (
-                              <td className=" text-black text-right pr-2"></td>
-                            ))}
+                      
 
                           {configurations?.showTaxPercentage &&
                             (!el?.hasGodownOrBatch ? (
@@ -366,12 +355,7 @@ function SalesPdf({
                                     </p>
                                   )}
                                 </td>
-                                {configurations?.showHsn && (
-                                  <td className=" text-black text-right pr-2  text-[8px]">
-                                    {el?.hsn_code}
-                                  </td>
-                                )}
-
+                          
                                 {configurations?.showTaxPercentage && (
                                   <td className=" text-black text-right pr-2  text-[8px]">
                                     {el?.igst}
@@ -421,9 +405,7 @@ function SalesPdf({
                 <tr className="border-y  border-black bg-slate-200 py-6">
                   <td className="font-bold "></td>
                   <td className="font-bold text-[9px] p-2">Subtotal</td>
-                  {configurations?.showHsn && (
-                    <td className="font-bold text-[9px] p-2"></td>
-                  )}
+               
                   {configurations?.showTaxPercentage && (
                     <td className="font-bold text-[9px] p-2"></td>
                   )}
@@ -453,7 +435,7 @@ function SalesPdf({
               </tfoot>
             </table>
 
-            <PdfFooter
+            <PdfFooterNonInd
               bank={bank}
               org={org}
               data={data}
@@ -474,4 +456,4 @@ function SalesPdf({
   );
 }
 
-export default SalesPdf;
+export default SalesPdfNonInd;
