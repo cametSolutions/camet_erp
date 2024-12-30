@@ -37,7 +37,7 @@ function SalesPdfNonInd({
     (state) =>
       state.secSelectedOrganization?.secSelectedOrg?.configurations[0]
         ?.printConfiguration
-  ).find((item) => item.voucher === "sale");
+  )?.find((item) => item.voucher === "sale");
 
 
 
