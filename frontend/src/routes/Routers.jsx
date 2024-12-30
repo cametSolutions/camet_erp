@@ -203,6 +203,7 @@ import BarcodeFormat from '../pages/secUsers/settilngs/stockItem/stockItemSettin
 import PrintConfiguration from '../pages/secUsers/settilngs/PrintConfiguration/PrintConfiguration'
 import SaleOrderPrintConfiguration from '../pages/secUsers/settilngs/PrintConfiguration/SaleOrderPrintConfiguration'
 import SalePrintConfiguration from '../pages/secUsers/settilngs/PrintConfiguration/SalePrintConfiguration'
+import DespatchTitleSettings from '../pages/secUsers/settilngs/dataEntry/voucherSettings/DespatchTitleSettings'
 
 const Routers = () => {
   return (
@@ -465,6 +466,8 @@ const Routers = () => {
         <Route path='/sUsers/InvoiceSettings' element={<ProtectedSecRoute><InvoiceSettings/></ProtectedSecRoute>}></Route>
         {/* voucher settings */}
         <Route path='/sUsers/emailSettings' element={<ProtectedSecRoute><EmailSettings/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/order/customDespatchTitle' element={<ProtectedSecRoute><DespatchTitleSettings/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/invoice/customDespatchTitle' element={<ProtectedSecRoute><DespatchTitleSettings/></ProtectedSecRoute>}></Route>
         {/* printConfiguration */}
         <Route path='/sUsers/printConfiguration' element={<ProtectedSecRoute><PrintConfiguration/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/saleOrderPrintConfiguration' element={<ProtectedSecRoute><SaleOrderPrintConfiguration/></ProtectedSecRoute>}></Route>

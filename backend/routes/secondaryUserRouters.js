@@ -30,7 +30,7 @@ import { createPayment,cancelPayment, editPayment } from '../controllers/payment
 import { createInvoice,editInvoice,cancelSalesOrder } from '../controllers/saleOrderController.js';
 import { createStockTransfer,editStockTransfer, cancelStockTransfer } from '../controllers/stockTransferController.js';
 import { addBankPaymentDetails } from '../../frontend/slices/payment.js';
-import { addEmailConfiguration, getConfiguration, getBarcodeList, addBarcodeData, editBarcodeData, deleteBarcode, getSingleBarcodeData, getPrintingConfiguration, updateConfiguration } from '../controllers/settingsController.js';
+import { addEmailConfiguration, getConfiguration, getBarcodeList, addBarcodeData, editBarcodeData, deleteBarcode, getSingleBarcodeData, getPrintingConfiguration, updateConfiguration, getDespatchTitles, updateDespatchTitles } from '../controllers/settingsController.js';
 import { updateSecondaryUserConfiguration } from '../helpers/saleOrderHelper.js';
 import { updateDateFieldsByCompany } from '../controllers/testingController.js';
 
@@ -171,6 +171,12 @@ router.delete('/getSingleBarcodeData/:id/:cmp_id',authSecondary,secondaryIsBlock
 ///// printing configuration 
 router.get('/getPrintingConfiguration/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,getPrintingConfiguration)
 router.put('/updateConfiguration/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,updateConfiguration)
+
+//// despatch details title configuration
+router.get('/getDespatchTitles/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,getDespatchTitles)
+router.put('/updateDespatchTitles/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,updateDespatchTitles)
+
+
 
 //// testing routes
 
