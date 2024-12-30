@@ -37,7 +37,6 @@ function AddItemSalesSecondary() {
   // const [godownname, setGodownname] = useState("");
   const [heights, setHeights] = useState({});
 
-  const [expandedItems, setExpandedItems] = useState({});
 
   ///////////////////////////cpm_id///////////////////////////////////
 
