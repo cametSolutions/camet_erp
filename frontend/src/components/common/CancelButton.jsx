@@ -15,10 +15,14 @@ function CancelButton({ id, tab, isCancelled, reFetch, vanSale = false,isEditabl
     vanSale = true;
   }
 
+  
+
 
   const handleCancel = () => {
+    console.log("isEditablerr", isEditable);
 
-    if (!isEditable) {
+    if (isEditable !== undefined && isEditable === false) {
+      
       window.alert("You can't cancel this voucher since it has been used to generate receipts or payments");
       return;
     }
@@ -39,7 +43,7 @@ function CancelButton({ id, tab, isCancelled, reFetch, vanSale = false,isEditabl
           console.log(tab);
 
           try {
-            const res = await api.post(
+            await api.post(
               `/api/sUsers/cancel${tab}/${id}?vanSale=${vanSale}`,
               {},
 
