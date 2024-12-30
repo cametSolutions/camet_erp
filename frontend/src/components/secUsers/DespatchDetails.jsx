@@ -24,6 +24,15 @@ function DespatchDetails({ tab }) {
       : state.invoiceSecondary.despatchDetails
   );
 
+  /// find voucher to get corresponding despatch details from configurations
+
+  let voucher;
+  if(tab==="sale") {
+    voucher="sale";
+  }else{
+    voucher="saleOrder";
+  }
+
   const [formValues, setFormValues] = useState({});
   const [displayTitles, setDisplayTitles] = useState({});
   const cmp_id = useSelector(
@@ -42,15 +51,13 @@ function DespatchDetails({ tab }) {
         const company = res?.data?.organizationData;
 
         if (company && company.configurations.length > 0) {
-          const { despatchDetails } = company.configurations[0];
-          const titles = {};
-          for (const key in despatchDetails) {
-            titles[key] =
-              despatchDetails[key] ||
-              capitalizeFirstLetter(key.split(/(?=[A-Z])/).join(" "));
-          }
 
-          setDisplayTitles(titles);
+          const despatchTitles = company.configurations[0].despatchTitles.find(
+            (config) => config.voucher === voucher
+          );
+          setDisplayTitles(despatchTitles);
+
+     
         }
       } catch (error) {
         console.log(error);
