@@ -125,7 +125,8 @@ function EditPurchase() {
           finalAmount,
           purchaseNumber,
           despatchDetails,
-          createdAt,
+          // createdAt,
+          date,
           // selectedGodownName,
           // selectedGodownId
         } = res.data.data;
@@ -147,8 +148,8 @@ function EditPurchase() {
         }
 
         if (!dateFromRedux) {
-          setSelectedDate(createdAt);
-          dispatch(changeDate(createdAt));
+          setSelectedDate(date);
+          dispatch(changeDate(date));
         }
 
         if (priceLevelFromRedux == "") {

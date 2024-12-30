@@ -48,45 +48,45 @@ const TaxTable = ({ products, org = {}, party = {} }) => {
           <table className="w-full text-gray-700 text-[9px]">
             <thead>
               <tr>
-                <th className="p-1">TAX %</th>
-                <th className="p-1">Taxable Amt</th>
+                <th className="p-0.5">TAX %</th>
+                <th className="p-0.5">Taxable Amt</th>
                 {org?.state === party?.state ? (
                   <>
-                    <th className="p-1">CGST</th>
-                    <th className="p-1">SGST</th>
+                    <th className="p-0.5">CGST</th>
+                    <th className="p-0.5">SGST</th>
                   </>
                 ) : (
-                  <th className="p-1">IGST</th>
+                  <th className="p-0.5">IGST</th>
                 )}
-                <th className="p-1">TOTAL</th>
+                <th className="p-0.5">TOTAL</th>
               </tr>
             </thead>
             <tbody className="text-[9px]">
               {consolidatedTaxData.map((tax, index) => (
                 <tr key={index}>
-                  <td className="p-1 text-center">{tax?.taxRate}</td>
-                  <td className="p-1 text-right">
+                  <td className="p-0.5 text-center">{tax?.taxRate}</td>
+                  <td className="p-0.5 text-right">
                     {tax?.taxableAmt?.toFixed(2)}
                   </td>
                   {org?.state === party?.state ? (
                     <>
-                      <td className="p-1 text-right">
+                      <td className="p-0.5 text-right">
                         {tax?.cgst?.toFixed(2)}
                       </td>
-                      <td className="p-1 text-right">
+                      <td className="p-0.5 text-right">
                         {tax?.sgst?.toFixed(2)}
                       </td>
                     </>
                   ) : (
-                    <td className="p-1 text-right">{tax?.igst?.toFixed(2)}</td>
+                    <td className="p-0.5 text-right">{tax?.igst?.toFixed(2)}</td>
                   )}
 
-                  <td className="p-1 text-right">{tax?.total?.toFixed(2)}</td>
+                  <td className="p-0.5 text-right">{tax?.total?.toFixed(2)}</td>
                 </tr>
               ))}
               <tr>
-                <td className="p-1 font-bold">Total</td>
-                <td className="p-1 text-right font-bold">
+                <td className="p-0.5 font-bold">Total</td>
+                <td className="p-0.5 text-right font-bold">
                   {consolidatedTaxData
                     ?.reduce((sum, tax) => sum + tax?.taxableAmt, 0)
                     ?.toFixed(2)}
@@ -94,26 +94,26 @@ const TaxTable = ({ products, org = {}, party = {} }) => {
 
                 {org?.state === party?.state ? (
                   <>
-                    <td className="p-1 text-right font-bold">
+                    <td className="p-0.5 text-right font-bold">
                       {consolidatedTaxData
                         ?.reduce((sum, tax) => sum + tax?.cgst, 0)
                         ?.toFixed(2)}
                     </td>
-                    <td className="p-1 text-right font-bold">
+                    <td className="p-0.5 text-right font-bold">
                       {consolidatedTaxData
                         ?.reduce((sum, tax) => sum + tax?.sgst, 0)
                         ?.toFixed(2)}
                     </td>
                   </>
                 ) : (
-                  <td className="p-1 text-right font-bold">
+                  <td className="p-0.5 text-right font-bold">
                     {consolidatedTaxData
                       ?.reduce((sum, tax) => sum + tax?.igst, 0)
                       ?.toFixed(2)}
                   </td>
                 )}
 
-                <td className="p-1 text-right font-bold">
+                <td className="p-0.5 text-right font-bold">
                   {consolidatedTaxData
                     ?.reduce((sum, tax) => sum + tax?.total, 0)
                     ?.toFixed(2)}

@@ -1,4 +1,5 @@
 /* eslint-disable react/prop-types */
+import dayjs from "dayjs";
 import { useEffect, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
@@ -11,7 +12,6 @@ const TransactionTable = ({
   const location = useLocation();
   const navigate = useNavigate();
 
-  console.log("location", location.pathname);
   let userType;
   if (location.pathname.startsWith("/pUsers")) {
     userType = "primaryUser";
@@ -21,30 +21,32 @@ const TransactionTable = ({
 
   // Helper function to determine transaction type and color
   const getTransactionDisplay = (transaction) => {
-    const { type, accountGroup, paymentMethod, enteredAmount,cashTotal } = transaction;
+    const { type, accountGroup, paymentMethod, enteredAmount, cashTotal } =
+      transaction;
 
     // Check if it's a debit (green) transaction
     const isDebitTransaction =
       (["Tax Invoice", "Debit Note"].includes(type) &&
         accountGroup === "Cash-in-Hand") ||
-      (type === "Receipt" && paymentMethod === "Cash") || (["Tax Invoice", "Debit Note"].includes(type) && cashTotal > 0);
+      (type === "Receipt" && paymentMethod === "Cash") ||
+      (["Tax Invoice", "Debit Note"].includes(type) && cashTotal > 0);
 
     // Check if it's a credit (red) transaction
     const isCreditTransaction =
       (["Purchase", "Credit Note"].includes(type) &&
         accountGroup === "Cash-in-Hand") ||
-      (type === "Payment" && paymentMethod === "Cash") ;
+      (type === "Payment" && paymentMethod === "Cash");
 
     // Return appropriate display object
     if (isDebitTransaction) {
       return {
-        amount: cashTotal >0 ? cashTotal : enteredAmount,
+        amount: cashTotal > 0 ? cashTotal : enteredAmount,
         color: "text-green-500",
         type: "debit",
       };
     } else if (isCreditTransaction) {
       return {
-        amount: cashTotal >0 ? cashTotal : enteredAmount,
+        amount: cashTotal > 0 ? cashTotal : enteredAmount,
         color: "text-red-500",
         type: "credit",
       };
@@ -129,7 +131,7 @@ const TransactionTable = ({
                         #{transaction?.voucherNumber}
                       </div>
                       <div className="font-bold text-[0.7rem] mb-2 mt-1 text-violet-400">
-                        {new Date(transaction?.createdAt).toLocaleDateString()}
+                        {dayjs(transaction?.date).format("DD/MM/YYYY")}
                       </div>
                       <div className="font-bold text-gray-700 mt-3">
                         {transaction?.party_name}

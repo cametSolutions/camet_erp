@@ -24,8 +24,7 @@ import { useDispatch } from "react-redux";
 import { toast } from "react-toastify";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../../api/api";
-import { IoIosAddCircle } from "react-icons/io";
-import { IoIosArrowRoundBack } from "react-icons/io";
+
 import DespatchDetails from "../../components/secUsers/DespatchDetails";
 import HeaderTile from "../../components/secUsers/main/HeaderTile";
 import AddPartyTile from "../../components/secUsers/main/AddPartyTile";
@@ -118,7 +117,8 @@ function EditCreditNote() {
           finalAmount,
           creditNoteNumber,
           despatchDetails,
-          createdAt,
+          // createdAt,
+          date
         } = res.data.data;
 
         // // additionalCharges: [ { option: 'option 1', value: '95', action: 'add' } ],
@@ -134,8 +134,8 @@ function EditCreditNote() {
         }
 
         if (!dateFromRedux) {
-          setSelectedDate(createdAt);
-          dispatch(changeDate(createdAt));
+          setSelectedDate(date);
+          dispatch(changeDate(date));
         }
 
         if (priceLevelFromRedux == "") {

@@ -1,6 +1,5 @@
 /* eslint-disable react/no-unescaped-entities */
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
 
 import { useDispatch } from "react-redux";
@@ -8,7 +7,6 @@ import { useDispatch } from "react-redux";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import api from "../../api/api";
-import { IoIosAddCircle } from "react-icons/io";
 import { useParams } from "react-router-dom";
 
 import {
@@ -21,7 +19,6 @@ import {
   addSelectedGodown,
   addAllItems,
 } from "../../../slices/stockTransferSecondary";
-import { IoIosArrowRoundBack } from "react-icons/io";
 
 import HeaderTile from "../../components/secUsers/main/HeaderTile";
 import AddItemTile from "../../components/secUsers/main/AddItemTile";
@@ -31,7 +28,6 @@ import FooterButton from "../../components/secUsers/main/FooterButton";
 function EditStockTransferSecondary() {
   // const [salesNumber, setSalesNumber] = useState("");
 
-  const date = useSelector((state) => state.stockTransferSecondary.date);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [subTotal, setSubTotal] = useState(0);
   const [stockTransferNumber, setStockTransferNumber] = useState("");
@@ -49,7 +45,11 @@ function EditStockTransferSecondary() {
   const finalAmount = useSelector(
     (state) => state.stockTransferSecondary.finalAmount
   );
-  const createdAt = useSelector((state) => state.stockTransferSecondary.date);
+  const date = useSelector((state) => state.stockTransferSecondary.date);
+
+  useEffect(() => {
+    setSelectedDate(new Date(date));
+  }, [date]);
 
   const orgId = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
@@ -81,7 +81,8 @@ function EditStockTransferSecondary() {
           selectedGodownId: selectedGodownIdFromApi,
           items: apiItems,
           finalAmount: finalAmountFromApi,
-          createdAt: createdAtFromApi,
+          // date: createdAtFromApi,
+          date: dateFromApi,
           stockTransferNumber: stockTransferNumberFromApi,
         } = res.data.data;
 
@@ -106,8 +107,10 @@ function EditStockTransferSecondary() {
         if (!finalAmount && finalAmountFromApi) {
           dispatch(AddFinalAmount(finalAmountFromApi));
         }
-        if (!createdAt && createdAtFromApi) {
-          dispatch(changeDate(createdAtFromApi));
+        if (!date && dateFromApi) {
+          console.log("dateFromApi:", dateFromApi);
+          
+          dispatch(changeDate(dateFromApi));
         }
       } catch (error) {
         console.log(error);

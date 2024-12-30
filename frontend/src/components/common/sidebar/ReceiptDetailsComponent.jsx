@@ -44,7 +44,7 @@ function ReceiptDetailsComponent({
               ID #{voucherNumber}
             </p>
             <p className="text-xs font-medium text-gray-500 mt-1 ">
-              {dayjs(data.createdAt).format("DD/MM/YYYY")}
+              {dayjs(data.date).format("DD/MM/YYYY")}
             </p>
           </div>
           <div className="w-full flex justify-center bottom-0 absolute md:flex md:justify-end p-4 md:relative  gap-14 md:text-md text-violet-500 md:mr-14 bg-white ">

@@ -307,4 +307,38 @@ border-color: #b6b6b6 !important;
 }
 
 
+/* table {
+  border-collapse: collapse;
+  width: 100%;
+  table-layout: fixed;
+} */
+th, td {
+  /* border: 1px solid black; */
+  padding-bottom: 2px;
+  word-wrap: break-word;
+}
+tr {
+  page-break-inside: avoid;
+}
+
+@media print {
+  /* tr {
+    page-break-inside: avoid;
+  }
+  table {
+    page-break-after: auto;
+  } */
+  /* tr:last-child {
+    page-break-after: always;
+  } */
+  th, td {
+    /* border: 1px solid black; */
+    padding-bottom: 3px;
+    word-wrap: break-word;
+  }
+}
+
+
+
+
 

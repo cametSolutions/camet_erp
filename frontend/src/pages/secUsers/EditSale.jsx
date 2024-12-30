@@ -88,7 +88,7 @@ function EditSale() {
   const salesDetailsFromRedux = useSelector((state) => state.salesSecondary);
 
   const {
-    paymentSplittingData: paymentSplittingReduxData,
+    paymentSplittingData: paymentSplittingReduxData ={},
     initial: paymentSplittingInitial,
   } = useSelector((state) => state?.paymentSplitting);
 
@@ -98,7 +98,7 @@ function EditSale() {
     items: itemsFromRedux,
     despatchDetails: despatchDetailsFromRedux,
     finalAmount: finalAmountFromRedux,
-    heights: heightsFromRedux,
+    // heights: heightsFromRedux,
     date: dateFromRedux,
   } = salesDetailsFromRedux;
 
@@ -125,7 +125,8 @@ function EditSale() {
           finalAmount,
           salesNumber,
           despatchDetails,
-          createdAt,
+          // createdAt,
+          date,
           paymentSplittingData,
         } = res.data.data;
 
@@ -142,8 +143,8 @@ function EditSale() {
         }
 
         if (!dateFromRedux) {
-          setSelectedDate(createdAt);
-          dispatch(changeDate(createdAt));
+          setSelectedDate(date);
+          dispatch(changeDate(date));
         }
 
         if (priceLevelFromRedux == "") {
@@ -152,6 +153,13 @@ function EditSale() {
         if (additionalChargesFromRedux.length == 0) {
           dispatch(setAdditionalCharges(additionalCharges));
         }
+        if (salesNumber) {
+          setSalesNumber(salesNumber);
+        }
+
+        console.log("paymentSplittingReduxData", paymentSplittingReduxData);
+        console.log("paymentSplittingInitial", paymentSplittingInitial);
+        
 
         if (
           Object.keys(paymentSplittingReduxData).length == 0 &&
@@ -162,9 +170,7 @@ function EditSale() {
 
         // dispatch(setFinalAmount(finalAmount));
 
-        if (salesNumber) {
-          setSalesNumber(salesNumber);
-        }
+    
 
         if (
           additionalCharges &&

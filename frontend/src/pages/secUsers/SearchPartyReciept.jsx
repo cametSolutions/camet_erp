@@ -7,6 +7,7 @@ import { useDispatch } from "react-redux";
 import { addParty } from "../../../slices/receipt";
 import { useLocation } from "react-router-dom";
 import PartyList from "../../components/secUsers/main/PartyList";
+import { addAllParties } from "../../../slices/partySlice";
 
 // import { MdCancel } from "react-icons/md";
 
@@ -17,7 +18,6 @@ function SearchPartyReciept() {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const location = useLocation();
 
   const cpm_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id

@@ -1,6 +1,5 @@
 /* eslint-disable react/no-unescaped-entities */
 import { useEffect, useState, useMemo } from "react";
-import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
 import {
   removeParty,
@@ -23,8 +22,6 @@ import { useDispatch } from "react-redux";
 import { toast } from "react-toastify";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../../api/api";
-import { IoIosAddCircle } from "react-icons/io";
-import { IoIosArrowRoundBack } from "react-icons/io";
 import DespatchDetails from "../../components/secUsers/DespatchDetails";
 import HeaderTile from "../../components/secUsers/main/HeaderTile";
 import AddPartyTile from "../../components/secUsers/main/AddPartyTile";
@@ -90,7 +87,7 @@ function EditVanSale() {
     items: itemsFromRedux,
     despatchDetails: despatchDetailsFromRedux,
     finalAmount: finalAmountFromRedux,
-    heights: heightsFromRedux,
+    // heights: heightsFromRedux,
     date: dateFromRedux,
   } = salesDetailsFromRedux;
 
@@ -126,16 +123,15 @@ function EditVanSale() {
           finalAmount,
           salesNumber,
           despatchDetails,
-          createdAt,
+          // createdAt,
+          date,
           // selectedGodownName,
           // selectedGodownId
         } = res.data.data;
 
-        console.log(createdAt);
 
         // // additionalCharges: [ { option: 'option 1', value: '95', action: 'add' } ],
         if (Object.keys(partyFromRedux) == 0) {
-          console.log("haii");
 
           dispatch(setParty(party));
         }
@@ -148,8 +144,8 @@ function EditVanSale() {
         }
 
         if (!dateFromRedux) {
-          setSelectedDate(createdAt);
-          dispatch(changeDate(createdAt));
+          setSelectedDate(date)
+          dispatch(changeDate(date))
         }
 
         if (priceLevelFromRedux == "") {

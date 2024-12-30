@@ -6,8 +6,8 @@ import api from "../../api/api";
 import { useDispatch } from "react-redux";
 import { addParty } from "../../../slices/creditNote";
 
-
 import PartyList from "../../components/secUsers/main/PartyList";
+import { addAllParties } from "../../../slices/partySlice";
 
 // import { MdCancel } from "react-icons/md";
 
@@ -38,6 +38,8 @@ function SearchPartyCreditNote() {
         });
 
         setParties(res.data.partyList);
+        dispatch(addAllParties(res.data.partyList));
+
         setLoading(false);
       } catch (error) {
         console.log(error);
@@ -50,12 +52,10 @@ function SearchPartyCreditNote() {
   const selectHandler = (el) => {
     dispatch(addParty(el));
     navigate(-1);
-
   };
 
   const backHandler = () => {
     navigate(-1);
-  
   };
 
   console.log(parties);

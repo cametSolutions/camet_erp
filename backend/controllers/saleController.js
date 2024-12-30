@@ -17,6 +17,7 @@ import secondaryUserModel from "../models/secondaryUserModel.js";
 import salesModel from "../models/salesModel.js";
 import vanSaleModel from "../models/vanSaleModel.js";
 import TallyData from "../models/TallyData.js";
+import { formatToLocalDate } from "../helpers/helper.js";
 
 /**
  * @desc To createSale
@@ -36,6 +37,7 @@ export const createSale = async (req, res) => {
       party,
       lastAmount,
       paymentSplittingData,
+      selectedDate
     } = req.body;
 
     const Secondary_user_id = req.sUserId;
@@ -118,7 +120,7 @@ export const createSale = async (req, res) => {
       salesNumber,
       result._id,
       valueToUpdateInTally,
-      result?.createdAt,
+      result?.date,
       result?.party?.partyName,
       session
     );
@@ -154,7 +156,7 @@ export const createSale = async (req, res) => {
         req.owner,
         secondaryMobile,
         "sale",
-        result?.createdAt,
+        result?.date,
         result?.party?.partyName,
         session
       );
@@ -237,6 +239,13 @@ export const editSale = async (req, res) => {
       );
       await handleSaleStockUpdates(updatedItems, false, session);
 
+
+  
+
+
+   
+      
+
       const updateData = {
         selectedGodownId: selectedGodownId || existingSale.selectedGodownId,
         selectedGodownName: selectedGodownName
@@ -254,7 +263,8 @@ export const editSale = async (req, res) => {
         Primary_user_id: req.owner,
         Secondary_user_id: req.secondaryUserId,
         salesNumber: salesNumber,
-        createdAt: new Date(selectedDate),
+        date:await formatToLocalDate(selectedDate, orgId, session),
+        createdAt: existingSale.createdAt,
         paymentSplittingData,
       };
 
@@ -293,7 +303,7 @@ export const editSale = async (req, res) => {
         updateData?.salesNumber,
         saleId,
         valueToUpdateInTally,
-        updateData?.createdAt,
+        updateData?.date,
         updateData?.party?.partyName,
         session
       );
@@ -372,7 +382,7 @@ export const editSale = async (req, res) => {
               req.owner,
               secondaryMobile,
               "sale",
-              updateData?.createdAt,
+              updateData?.date,
               updateData?.party?.partyName,
 
               session
@@ -386,7 +396,7 @@ export const editSale = async (req, res) => {
               req.owner,
               secondaryMobile,
               "sale",
-              updateData?.createdAt,
+              updateData?.date,
               updateData?.party?.partyName,
 
               session
@@ -401,7 +411,7 @@ export const editSale = async (req, res) => {
             req.owner,
             secondaryMobile,
             "sale",
-            updateData?.createdAt,
+            updateData?.date,
             updateData?.party?.partyName,
 
             session

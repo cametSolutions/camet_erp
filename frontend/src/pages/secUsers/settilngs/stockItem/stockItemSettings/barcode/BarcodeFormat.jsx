@@ -16,6 +16,7 @@ const labelOptions = [
   { value: "productCode", label: "Product Code" },
   { value: "mrp", label: "MRP" },
   { value: "splCode", label: "Special Code" },
+  { value: "barcodeItemName", label: "Barcode Item Name" },
 ];
 
 const BarcodeFormat = () => {

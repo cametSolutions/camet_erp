@@ -9,7 +9,8 @@ import SalesPdf from "../../components/pdf/sales/SalesPdf";
 
 import ShareModal from "./settilngs/dataEntry/modals/ShareModal";
 import { IoShareSocial } from "react-icons/io5";
-
+import { useSelector } from "react-redux";
+import SalesPdfNonInd from "../../components/pdf/sales/nonIndian/SalesPdfNonInd";
 
 function ShareSalesSecondary() {
   const [data, setData] = useState([]);
@@ -17,6 +18,12 @@ function ShareSalesSecondary() {
   const [bank, setBank] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const { id } = useParams();
+
+  const IsIndian =
+    useSelector(
+      (state) => state.secSelectedOrganization.secSelectedOrg.country
+    ) === "India";
+
 
   const contentToPrint = useRef(null);
 
@@ -54,17 +61,8 @@ function ShareSalesSecondary() {
     getTransactionDetails();
   }, [id]);
 
-
-  
-
-
-
-
-
   return (
     <div className="">
-
-   
       <div className="">
         <div className="bg-[#012a4a]   sticky top-0 p-3 px-5 text-white text-lg font-bold flex items-center gap-3  shadow-lg justify-between">
           <div className="flex gap-2 ">
@@ -74,29 +72,40 @@ function ShareSalesSecondary() {
             <p>Share Your Sale</p>
           </div>
           <div className="flex">
-          
-            <IoShareSocial  className="text-xl cursor-pointer" onClick={() => setShowModal(true)}/>
-
-
+            <IoShareSocial
+              className="text-xl cursor-pointer"
+              onClick={() => setShowModal(true)}
+            />
           </div>
         </div>
 
-      <ShareModal data={data} org={org} contentToPrint={contentToPrint} showModal={showModal} setShowModal={setShowModal} />
-
-
-        <SalesPdf
-          contentToPrint={contentToPrint}
+        <ShareModal
           data={data}
           org={org}
-          bank={bank}
-          // subTotal={subTotal}
-          // additinalCharge={additinalCharge}
-          // inWords={inWords}
-          userType="secondaryUser"
-          tab="sales"
-          // calculateTotalTax={calculateTotalTax}
-          
+          contentToPrint={contentToPrint}
+          showModal={showModal}
+          setShowModal={setShowModal}
         />
+
+        {IsIndian ? (
+          <SalesPdf
+            contentToPrint={contentToPrint}
+            data={data}
+            org={org}
+            bank={bank}
+            userType="secondaryUser"
+            tab="sales"
+          />
+        ) : (
+          <SalesPdfNonInd
+            contentToPrint={contentToPrint}
+            data={data}
+            org={org}
+            bank={bank}
+            userType="secondaryUser"
+            tab="sales"
+          />
+        )}
       </div>
     </div>
   );

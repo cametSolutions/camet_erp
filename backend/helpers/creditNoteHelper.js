@@ -1,16 +1,18 @@
 import productModel from "../models/productModel.js";
 import creditNoteModel from "../models/creditNoteModel.js";
-import { truncateToNDecimals } from "./helper.js";
+import { formatToLocalDate, truncateToNDecimals } from "./helper.js";
 import OragnizationModel from "../models/OragnizationModel.js";
 import TallyData from "../models/TallyData.js";
 
 ///////////////////////// for stock update ////////////////////////////////
-export const handleCreditNoteStockUpdates = async (items,session) => {
+export const handleCreditNoteStockUpdates = async (items, session) => {
   const productUpdates = [];
   const godownUpdates = [];
 
   for (const item of items) {
-    const product = await productModel.findOne({ _id: item._id }).session(session);
+    const product = await productModel
+      .findOne({ _id: item._id })
+      .session(session);
     if (!product) {
       throw new Error(`Product not found for item ID: ${item._id}`);
     }
@@ -39,7 +41,7 @@ export const handleCreditNoteStockUpdates = async (items,session) => {
       for (const godown of item.GodownList) {
         const godownCount = parseFloat(godown.count);
 
-      if (godown.batch && !godown.godown_id) {
+        if (godown.batch && !godown.godown_id) {
           console.log("batch only ");
           const godownIndex = product.GodownList.findIndex(
             (g) => g.batch === godown.batch
@@ -148,8 +150,8 @@ export const handleCreditNoteStockUpdates = async (items,session) => {
   //   console.log("godownUpdates", godownUpdates);
   //   console.log("productUpdates", productUpdates);
 
-  await productModel.bulkWrite(productUpdates , { session });
-  await productModel.bulkWrite(godownUpdates , { session });
+  await productModel.bulkWrite(productUpdates, { session });
+  await productModel.bulkWrite(godownUpdates, { session });
 };
 // Helper function to create purchase record
 export const createCreditNoteRecord = async (
@@ -167,15 +169,8 @@ export const createCreditNoteRecord = async (
       party,
       despatchDetails,
       lastAmount,
+      selectedDate,
     } = req.body;
-
-    let selectedDate = req.body.selectedDate;
-
-    if (!selectedDate) {
-      selectedDate = new Date();
-    }
-
-    console.log("selectedDate: ", selectedDate);
 
     const Primary_user_id = req.owner;
     const Secondary_user_id = req.sUserId;
@@ -185,15 +180,13 @@ export const createCreditNoteRecord = async (
     const lastPurchase = await model.findOne(
       {},
       {},
-      { sort: { serialNumber: -1 },session }
+      { sort: { serialNumber: -1 }, session }
     );
     let newSerialNumber = 1;
 
     if (lastPurchase && !isNaN(lastPurchase.serialNumber)) {
       newSerialNumber = lastPurchase.serialNumber + 1;
     }
-
-    console.log("creditNoteNumber: ", creditNoteNumber);
 
     const purchase = new model({
       selectedGodownId: selectedGodownId ?? "",
@@ -210,7 +203,8 @@ export const createCreditNoteRecord = async (
       Primary_user_id,
       Secondary_user_id,
       creditNoteNumber,
-      createdAt: new Date(selectedDate) ? new Date(selectedDate) : new Date(),
+      date: await formatToLocalDate(selectedDate, orgId, session),
+      createdAt: new Date(),
     });
 
     const result = await purchase.save({ session });
@@ -224,7 +218,7 @@ export const createCreditNoteRecord = async (
 
 // update purchase number
 
-export const updateCreditNoteNumber = async (orgId, secondaryUser,session) => {
+export const updateCreditNoteNumber = async (orgId, secondaryUser, session) => {
   try {
     let creditNoteConfig = false;
 
@@ -234,7 +228,6 @@ export const updateCreditNoteNumber = async (orgId, secondaryUser,session) => {
 
     if (configuration) {
       creditNoteConfig = true;
-
     }
 
     if (creditNoteConfig === true) {
@@ -250,12 +243,12 @@ export const updateCreditNoteNumber = async (orgId, secondaryUser,session) => {
         }
       );
       secondaryUser.configurations = updatedConfiguration;
-      await secondaryUser.save({  session });
+      await secondaryUser.save({ session });
     } else {
       await OragnizationModel.findByIdAndUpdate(
         orgId,
         { $inc: { creditNoteNumber: 1 } },
-        { new: true , session }
+        { new: true, session }
       );
     }
   } catch (error) {
@@ -264,14 +257,15 @@ export const updateCreditNoteNumber = async (orgId, secondaryUser,session) => {
   }
 };
 
-
-export const revertCreditNoteStockUpdates = async (items,session) => {
+export const revertCreditNoteStockUpdates = async (items, session) => {
   try {
     const productUpdates = [];
     const godownUpdates = [];
 
     for (const item of items) {
-      const product = await productModel.findOne({ _id: item._id }).session(session);
+      const product = await productModel
+        .findOne({ _id: item._id })
+        .session(session);
       if (!product) {
         throw new Error(`Product not found for item ID: ${item._id}`);
       }
@@ -416,18 +410,16 @@ export const revertCreditNoteStockUpdates = async (items,session) => {
     }
 
     // Execute bulk operations to revert stock changes
-    await productModel.bulkWrite(productUpdates , {session});
-    await productModel.bulkWrite(godownUpdates , {session});
+    await productModel.bulkWrite(productUpdates, { session });
+    await productModel.bulkWrite(godownUpdates, { session });
   } catch (error) {
     console.error("Error reverting sale stock updates:", error);
     throw error;
   }
 };
 
-
-
 /// Update Tally Data
-export const  updateTallyData = async (
+export const updateTallyData = async (
   orgId,
   creditNoteNumber,
   billId,
@@ -438,42 +430,39 @@ export const  updateTallyData = async (
   session
 ) => {
   try {
-
     // throw new Error("Not Implemented");
     const billData = {
-        Primary_user_id,
-        bill_no: creditNoteNumber,
-        billId:billId.toString(),
-        cmp_id: orgId,
-        party_id: party?.party_master_id,
-        bill_amount: lastAmount,
-        bill_date: new Date(),
-        bill_pending_amt: lastAmount,
-        email: party?.emailID,
-        mobile_no: party?.mobileNumber,
-        party_name: party?.partyName,
-        user_id: secondaryMobile || "null",
-        source: "creditNote",
-        classification: "Cr",
-      };
+      Primary_user_id,
+      bill_no: creditNoteNumber,
+      billId: billId.toString(),
+      cmp_id: orgId,
+      party_id: party?.party_master_id,
+      bill_amount: lastAmount,
+      bill_date: new Date(),
+      bill_pending_amt: lastAmount,
+      email: party?.emailID,
+      mobile_no: party?.mobileNumber,
+      party_name: party?.partyName,
+      user_id: secondaryMobile || "null",
+      source: "creditNote",
+      classification: "Cr",
+    };
 
-    const tallyUpdate=await TallyData.findOneAndUpdate(
+    const tallyUpdate = await TallyData.findOneAndUpdate(
       {
         cmp_id: orgId,
         bill_no: creditNoteNumber,
-        billId:billId.toString(),
+        billId: billId.toString(),
         Primary_user_id: Primary_user_id,
         party_id: party?.party_master_id,
       },
       billData,
-      { upsert: true, new: true,session }
+      { upsert: true, new: true, session }
     );
 
-    console.log("tallyUpdate",tallyUpdate);
-    
+    console.log("tallyUpdate", tallyUpdate);
   } catch (error) {
     console.error("Error updateTallyData sale stock updates:", error);
     throw error;
   }
 };
-
