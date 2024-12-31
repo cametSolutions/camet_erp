@@ -67,11 +67,25 @@ const organizationSchema = new mongoose.Schema(
         emailConfiguration: {
           email: { type: String },
           appPassword: { type: String },
-
         },
+
+        despatchTitles: [
+          {
+            voucher: { type: String, default: "saleOrder" },
+            challanNo: { type: String, default: "Challan No" },
+            containerNo: { type: String, default: "Container No" },
+            despatchThrough: { type: String, default: "Despatch Through" },
+            destination: { type: String, default: "Destination" },
+            vehicleNo: { type: String, default: "Vehicle No" },
+            orderNo: { type: String, default: "Order No" },
+            termsOfPay: { type: String, default: "Terms Of Pay" },
+            termsOfDelivery: { type: String, default: "Terms Of Delivery" },
+          },
+        ],
+
         printConfiguration: [
           {
-            voucher: { type: String,default: "saleOrder" }, // Define the type for clarity
+            voucher: { type: String, default: "saleOrder" }, // Define the type for clarity
             printTitle: { type: String },
             showCompanyDetails: { type: Boolean, default: true },
             showDiscount: { type: Boolean, default: false },
@@ -86,7 +100,13 @@ const organizationSchema = new mongoose.Schema(
             showStockWiseTaxAmount: { type: Boolean, default: true },
           },
         ],
-        
+
+        termsAndConditions: [
+          {
+            voucher: { type: String, default: "saleOrder" }, // Define the type for clarity
+            terms: { type: Array },
+          },
+        ],
       },
     ],
   },

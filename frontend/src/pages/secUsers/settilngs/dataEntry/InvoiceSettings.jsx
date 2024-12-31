@@ -1,11 +1,25 @@
 /* eslint-disable react/jsx-key */
-import { TbSettings, TbDiscount2, TbReceiptTax, TbLock, TbFileText, TbTruck } from "react-icons/tb";
+import { TbSettings, TbDiscount2, TbReceiptTax, TbLock, TbFileText, TbTruck, TbEdit } from "react-icons/tb";
 import TitleDiv from "../../../../components/common/TitleDiv";
 import SettingsCard from "../../../../components/common/SettingsCard";
 
 const InvoiceSettings = () => {
 
     const settingsOptions = [
+      {
+        title: "Terms & Conditions",
+        description: "Define the terms and conditions for invoices and orders",
+        icon: <TbFileText />,
+        to: "/sUsers/invoice/termsAndConditions",
+       active: true,
+      },
+      {
+        title: "Custom Despatch Title",
+        description: "Add a custom title for despatch details in vouchers",
+        icon: <TbEdit />,
+        to: "/sUsers/invoice/customDespatchTitle",
+        active: true,
+      },
       {
         title: "Disable Rate for an Item",
         description: "Enable this to restrict users from editing the rate while adding an item in the invoice",
@@ -50,13 +64,7 @@ const InvoiceSettings = () => {
         toggle: true,
 
       },
-      {
-        title: "Terms & Conditions",
-        description: "Define the terms and conditions for invoices and orders",
-        icon: <TbFileText />,
-        to: "/invoiceSettings/termsAndConditions",
-       active: false,
-      },
+      
     ];
     
     
@@ -66,7 +74,7 @@ const InvoiceSettings = () => {
       <TitleDiv title="Invoice Settings" from="/sUsers/dataEntrySettings" />
       <div className="space-y-4 b-white p-4   mx-1">
         {settingsOptions.map((option, index) => (
-          <SettingsCard option={option} index={index} />
+          <SettingsCard key={index} option={option} index={index} />
         ))}
       </div>
     </div>

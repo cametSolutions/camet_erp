@@ -4,7 +4,6 @@ import {
   TbFileInvoice,
   TbBuildingBank,
   TbPhoto,
-  TbEdit,
 } from "react-icons/tb";
 import TitleDiv from "../../../../components/common/TitleDiv";
 import SettingsCard from "../../../../components/common/SettingsCard";
@@ -43,13 +42,7 @@ const VoucherSettings = () => {
       to: "/voucherSettings/companyLogo",
       active: false,
     },
-    {
-      title: "Custom Despatch Title",
-      description: "Add a custom title for despatch details in vouchers",
-      icon: <TbEdit />,
-      to: "/voucherSettings/customDespatchTitle",
-      active: false,
-    },
+    
   ];
 
   const modalHandler = () => {};

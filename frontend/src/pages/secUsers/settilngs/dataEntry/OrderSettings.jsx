@@ -1,14 +1,35 @@
 /* eslint-disable react/jsx-key */
-import {  TbMail, TbReceiptTax, TbDiscount2, TbLock, TbFileText } from "react-icons/tb";
+import {
+  TbMail,
+  TbReceiptTax,
+  TbDiscount2,
+  TbLock,
+  TbFileText,
+  TbEdit,
+} from "react-icons/tb";
 import TitleDiv from "../../../../components/common/TitleDiv";
 import SettingsCard from "../../../../components/common/SettingsCard";
 
 const OrderSettings = () => {
-
   const settingsOptions = [
     {
+      title: "Terms & Conditions",
+      description: "Define the terms and conditions for invoices and orders",
+      icon: <TbFileText />,
+      to: "/sUsers/order/termsAndConditions",
+      active: true,
+    },
+    {
+      title: "Custom Despatch Title",
+      description: "Add a custom title for despatch details in vouchers",
+      icon: <TbEdit />,
+      to: "/sUsers/order/customDespatchTitle",
+      active: true,
+    },
+    {
       title: "Disable Rate for an Item",
-      description: "Enable this to restrict users from editing the rate while adding an item in the invoice",
+      description:
+        "Enable this to restrict users from editing the rate while adding an item in the invoice",
       icon: <TbLock />,
       to: "/orderSettings/disableRate",
       active: false,
@@ -16,12 +37,12 @@ const OrderSettings = () => {
     },
     {
       title: "Disable Discount for an Item",
-      description: "Enable this to restrict users from editing the discount while adding an item in the invoice",
+      description:
+        "Enable this to restrict users from editing the discount while adding an item in the invoice",
       icon: <TbDiscount2 />,
       to: "/orderSettings/disableDiscount",
       active: false,
       toggle: true,
-
     },
     {
       title: "Add Rate with Tax",
@@ -30,7 +51,6 @@ const OrderSettings = () => {
       to: "/orderSettings/addRateWithTax",
       active: false,
       toggle: true,
-
     },
     {
       title: "Allow Zero Values Entries",
@@ -39,15 +59,8 @@ const OrderSettings = () => {
       to: "/orderSettings/allowZeroValues",
       active: false,
       toggle: true,
+    },
 
-    },
-    {
-      title: "Terms & Conditions",
-      description: "Define the terms and conditions for invoices and orders",
-      icon: <TbFileText />,
-      to: "/orderSettings/termsAndConditions",
-      active: false,
-    },
   ];
 
   return (

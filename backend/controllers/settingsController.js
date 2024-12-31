@@ -60,8 +60,6 @@ export const getConfiguration = async (req, res) => {
   }
 };
 
-
-
 /// @desc  get barcode list
 /// @route GET/api/sUsers/getBarcodeList/:cmp_id
 /// @access Public
@@ -229,7 +227,6 @@ export const getSingleBarcodeData = async (req, res) => {
 export const getPrintingConfiguration = async (req, res) => {
   const cmp_id = req.params.cmp_id;
   const voucher = req.query.voucher || "all";
-  
 
   try {
     const company = await OragnizationModel.findById(cmp_id).lean();
@@ -238,7 +235,6 @@ export const getPrintingConfiguration = async (req, res) => {
     }
 
     // console.log("printingConfiguration", company.configurations[0].printConfiguration);
-    
 
     const printingConfig = company.configurations[0].printConfiguration.find(
       (config) => config.voucher === voucher
@@ -344,6 +340,245 @@ export const updateConfiguration = async (req, res) => {
   }
 };
 
+/// @desc  get despatch titles
+/// @route GET/api/sUsers/getDespatchTitles/:cmp_id
+/// @access Public
 
+export const getDespatchTitles = async (req, res) => {
+  const cmp_id = req.params.cmp_id;
+  const voucher = req.query.voucher || "all";
 
+  try {
+    const company = await OragnizationModel.findById(cmp_id).lean();
+    if (!company) {
+      return res.status(404).json({ message: "Company not found" });
+    }
 
+    // console.log("printingConfiguration", company.configurations[0].printConfiguration);
+
+    const despatchTitles = company.configurations[0].despatchTitles.find(
+      (config) => config.voucher === voucher
+    );
+    if (!despatchTitles) {
+      return res.status(404).json({ message: "Despatch titles not found" });
+    }
+
+    res.status(200).json({ success: true, data: despatchTitles });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
+
+/// @desc  update despatch titles
+/// @route PUT/api/sUsers/updateDespatchTitles/:cmp_id
+/// @access Public
+
+export const updateDespatchTitles = async (req, res) => {
+  const cmp_id = req?.params?.cmp_id;
+  const voucher = req.query.voucher || "all";
+
+  console.log(req.body);
+
+  const {
+    challanNo,
+    containerNo,
+    despatchThrough,
+    destination,
+    orderNo,
+    termsOfDelivery,
+    termsOfPay,
+    vehicleNo,
+  } = req.body;
+
+  // Define default values
+  const defaultValues = {
+    ChallanNo: "Challan No",
+    ContainerNo: "Container No",
+    DespatchThrough: "Despatch Through",
+    Destination: "Destination",
+    VehicleNo: "Vehicle No",
+    OrderNo: "Order No",
+    TermsOfPay: "Terms Of Pay",
+    TermsOfDelivery: "Terms Of Delivery",
+  };
+
+  try {
+    const company = await OragnizationModel.findById(cmp_id).lean();
+    if (!company) {
+      return res.status(404).json({ message: "Company not found" });
+    }
+
+    const configuration = company.configurations[0];
+    if (!configuration) {
+      return res.status(404).json({ message: "Configuration not found" });
+    }
+
+    const despatchTitles = company.configurations[0].despatchTitles.find(
+      (config) => config.voucher === voucher
+    );
+    if (!despatchTitles) {
+      return res.status(404).json({ message: "Despatch titles not found" });
+    }
+
+    const updatedCompany = await OragnizationModel.findOneAndUpdate(
+      {
+        _id: cmp_id,
+        "configurations.0.despatchTitles": {
+          $elemMatch: { voucher: voucher },
+        },
+      },
+      {
+        $set: {
+          "configurations.0.despatchTitles.$": {
+            voucher: voucher,
+            challanNo: challanNo || defaultValues.ChallanNo,
+            containerNo: containerNo || defaultValues.ContainerNo,
+            despatchThrough: despatchThrough || defaultValues.DespatchThrough,
+            destination: destination || defaultValues.Destination,
+            vehicleNo: vehicleNo || defaultValues.VehicleNo,
+            orderNo: orderNo || defaultValues.OrderNo,
+            termsOfPay: termsOfPay || defaultValues.TermsOfPay,
+            termsOfDelivery: termsOfDelivery || defaultValues.TermsOfDelivery,
+          },
+        },
+      },
+      { new: true }
+    );
+
+    if (!updatedCompany) {
+      return res.status(404).json({
+        success: false,
+        message: "Failed to update despatch titles",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Despatch titles updated successfully",
+      data: updatedCompany.configurations[0].despatchTitles.find(
+        (config) => config.voucher === voucher
+      ),
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
+
+/// @desc  get terms and conditions
+/// @route GET/api/sUsers/getTermsAndConditions/:cmp_id
+/// @access Public
+
+export const getTermsAndConditions = async (req, res) => {
+  const cmp_id = req.params.cmp_id;
+  const voucher = req.query.voucher || "all";
+
+  try {
+    const company = await OragnizationModel.findById(cmp_id).lean();
+    if (!company) {
+      return res.status(404).json({ message: "Company not found" });
+    }
+
+    // console.log("printingConfiguration", company.configurations[0].printConfiguration);
+
+    const termsAndConditions =
+      company.configurations[0].termsAndConditions?.find(
+        (config) => config.voucher === voucher
+      );
+    if (!termsAndConditions) {
+      return res
+        .status(404)
+        .json({ message: "Terms and conditions not found" });
+    }
+
+    res.status(200).json({ success: true, data: termsAndConditions });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
+
+/// @desc  update terms and conditions
+/// @route PUT/api/sUsers/updateTermsAndConditions/:cmp_id
+/// @access Public
+
+export const updateTermsAndConditions = async (req, res) => {
+  const cmp_id = req?.params?.cmp_id;
+  const voucher = req.query.voucher || "all";
+
+  const termsAndConditions = req.body;
+
+  try {
+    // Fetch the company and its configurations
+    const company = await OragnizationModel.findById(cmp_id).lean();
+    if (!company) {
+      return res.status(404).json({ message: "Company not found" });
+    }
+
+    const configuration = company.configurations[0];
+    if (!configuration) {
+      return res.status(404).json({ message: "Configuration not found" });
+    }
+
+    // Check if the terms for the specified voucher exist
+    const termsIndex = configuration.termsAndConditions?.findIndex(
+      (term) => term.voucher === voucher
+    );
+
+    let updatedCompany;
+
+    if (termsIndex > -1) {
+      // If terms exist, update them
+      updatedCompany = await OragnizationModel.findOneAndUpdate(
+        {
+          _id: cmp_id,
+          "configurations.0.termsAndConditions": {
+            $elemMatch: { voucher: voucher },
+          },
+        },
+        {
+          $set: {
+            "configurations.0.termsAndConditions.$": {
+              voucher: voucher,
+              terms: termsAndConditions,
+            },
+          },
+        },
+        { new: true }
+      );
+    } else {
+      // If terms don't exist, push new terms
+      updatedCompany = await OragnizationModel.findOneAndUpdate(
+        { _id: cmp_id },
+        {
+          $push: {
+            "configurations.0.termsAndConditions": {
+              voucher: voucher,
+              terms: termsAndConditions,
+            },
+          },
+        },
+        { new: true }
+      );
+    }
+
+    if (!updatedCompany) {
+      return res.status(404).json({
+        success: false,
+        message: "Failed to update terms and conditions",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Terms and conditions updated successfully",
+      data: updatedCompany.configurations[0].termsAndConditions.find(
+        (config) => config.voucher === voucher
+      ),
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};

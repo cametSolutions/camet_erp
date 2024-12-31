@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import QRCode from "react-qr-code";
+// import QRCode from "react-qr-code";
 import TaxTable from "../../common/table/TaxTable";
 
 function PdfFooter({
@@ -13,14 +13,21 @@ function PdfFooter({
   configurations,
   party,
 }) {
+
+  const termsAndConditions = org?.configurations?.[0]?.termsAndConditions?.find(
+    (el) => el?.voucher === "sale"
+  )?.terms;
   return (
+
+  
+  
     <div className="mb-5">
       {/*  tax table and total */}
       <div className="flex justify-between items-start mt-3 ">
         {/* Left Div: Tax Table */}
 
         {configurations?.showTaxAnalysis ? (
-          <TaxTable products={data?.items} org={org} party={party}  />
+          <TaxTable products={data?.items} org={org} party={party} />
         ) : (
           <div></div>
         )}
@@ -101,23 +108,25 @@ function PdfFooter({
       </div>
 
       {/* bank details */}
-        <div className="flex justify-between my-1 ">
-          <div className=" w-1/2">
-            {  configurations?.showBankDetails && bank && Object.keys(bank).length > 0 ? (
-              <>
-                <div className="text-gray-500 font-semibold text-[10px] ">
-                  Bank Name: {bank?.bank_name}
-                </div>
-                <div className="text-gray-500 font-semibold text-[10px] leading-4">
-                  IFSC Code: {bank?.ifsc}
-                </div>
-                <div className="text-gray-500 font-semibold text-[10px] leading-4">
-                  Account Number: {bank?.ac_no}
-                </div>
-                <div className="text-gray-500 font-semibold text-[10px] leading-4">
-                  Branch: {bank?.branch}
-                </div>
-                {/* <div
+      <div className="flex justify-between my-1 ">
+        <div className=" w-1/2">
+          {configurations?.showBankDetails &&
+          bank &&
+          Object.keys(bank).length > 0 ? (
+            <>
+              <div className="text-gray-500 font-semibold text-[10px] ">
+                Bank Name: {bank?.bank_name}
+              </div>
+              <div className="text-gray-500 font-semibold text-[10px] leading-4">
+                IFSC Code: {bank?.ifsc}
+              </div>
+              <div className="text-gray-500 font-semibold text-[10px] leading-4">
+                Account Number: {bank?.ac_no}
+              </div>
+              <div className="text-gray-500 font-semibold text-[10px] leading-4">
+                Branch: {bank?.branch}
+              </div>
+              {/* <div
           style={{
             height: "auto",
             margin: "0",
@@ -137,36 +146,34 @@ function PdfFooter({
             viewBox={`0 0 256 256`}
           />
         </div> */}
-              </>
-            ) : (
-              <div className="text-gray-500 font-semibold text-[10px] leading-5"></div>
-            )}
-          </div>{" "}
-          <div className="flex flex-col justify-between text-[10px] font-semibold text-right">
-            <p className="mb-8">{org?.name}</p>
-            <p>Authorized Signatory</p>
-          </div>
+            </>
+          ) : (
+            <div className="text-gray-500 font-semibold text-[10px] leading-5"></div>
+          )}
+        </div>{" "}
+        <div className="flex flex-col justify-between text-[10px] font-semibold text-right">
+          <p className="mb-8">{org?.name}</p>
+          <p>Authorized Signatory</p>
         </div>
-   
+      </div>
+
       <hr />
 
       {/* terms and conditions */}
-      {configurations?.showTeamsAndConditions &&
-        org &&
-        org.configurations?.length > 0 && (
-          <div className="border-gray-300 mb-5 mt-2">
-            <div className="text-gray-700 mb-1 font-bold text-[10px]">
-              Terms and Conditions
-            </div>
-            <div className="text-gray-700 text-[9px] leading-4">
-              {org?.configurations[0]?.terms?.map((el, index) => (
-                <p key={index}>
-                  <span className="font-bold">{index + 1}.</span> {el}
-                </p>
-              ))}
-            </div>
+      {termsAndConditions?.length > 0 && (
+        <div className="border-gray-300 mb-5 mt-2">
+          <div className="text-gray-700 mb-1 font-bold text-[10px]">
+            Terms and Conditions
           </div>
-        )}
+          <div className="text-gray-700 text-[9px] leading-4">
+            {termsAndConditions?.map((term, index) => (
+              <p key={index}>
+                <span className="font-bold">{index + 1}.</span> {term}
+              </p>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

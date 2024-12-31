@@ -7,7 +7,9 @@ import { toast } from "react-toastify";
 import { MdPrint } from "react-icons/md";
 // import numberToWords from "number-to-words";
 import { Link } from "react-router-dom";
-import SalesPdf from "../../components/common/SalesPdf";
+import SalesPdfNonInd from "../../components/pdf/sales/nonIndian/SalesPdfNonInd";
+import { useSelector } from "react-redux";
+import SalesPdf from "../../components/pdf/sales/SalesPdf";
 
 function ShareVanSaleSecondary() {
   const [data, setData] = useState([]);
@@ -18,8 +20,11 @@ function ShareVanSaleSecondary() {
   const [bank, setBank] = useState([]);
 
   const { id } = useParams();
-
   const contentToPrint = useRef(null);
+  const IsIndian =
+    useSelector(
+      (state) => state.secSelectedOrganization.secSelectedOrg.country
+    ) === "India";
 
   useEffect(() => {
     const getTransactionDetails = async () => {
@@ -27,7 +32,7 @@ function ShareVanSaleSecondary() {
         // Fetch invoice details
         const res = await api.get(`/api/sUsers/getSalesDetails/${id}`, {
           params: {
-            vanSale:true
+            vanSale: true,
           },
           withCredentials: true,
         });
@@ -102,8 +107,6 @@ function ShareVanSaleSecondary() {
   //   }
   // }, [data]);
 
-
-
   const handlePrint = useReactToPrint({
     content: () => contentToPrint.current,
     // documentTitle: `Sales ${data.salesNumber}`,
@@ -165,17 +168,13 @@ function ShareVanSaleSecondary() {
     onAfterPrint: () => console.log("after printing..."),
     removeAfterPrint: true,
   });
-  
-
-
 
   return (
     <div className="">
-   
       <div className="">
         <div className="bg-[#012a4a]   sticky top-0 p-3 px-5 text-white text-lg font-bold flex items-center gap-3  shadow-lg justify-between">
           <div className="flex gap-2 ">
-            <Link to={(-1)}>
+            <Link to={-1}>
               <IoIosArrowRoundBack className="text-3xl" />
             </Link>
             <p>Share Your Order</p>
@@ -190,17 +189,25 @@ function ShareVanSaleSecondary() {
           </div>
         </div>
 
-        <SalesPdf
-          contentToPrint={contentToPrint}
-          data={data}
-          org={org}
-          bank={bank}
-          // subTotal={subTotal}
-          // additinalCharge={additinalCharge}
-          // inWords={inWords}
-          tab="vanSale"
-
-        />
+        {IsIndian ? (
+          <SalesPdf
+            contentToPrint={contentToPrint}
+            data={data}
+            org={org}
+            bank={bank}
+            userType="secondaryUser"
+            tab="sales"
+          />
+        ) : (
+          <SalesPdfNonInd
+            contentToPrint={contentToPrint}
+            data={data}
+            org={org}
+            bank={bank}
+            userType="secondaryUser"
+            tab="sales"
+          />
+        )}
       </div>
     </div>
   );

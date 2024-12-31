@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import TitleDiv from "../../../../../components/common/TitleDiv";
 import Gmail from "../../../../../assets/images/gmail.png";
 import FindUserAndCompany from "../../../../../components/Filters/FindUserAndCompany";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
+import {  useNavigate, } from "react-router-dom";
 import api from "../../../../../api/api";
 import { toast } from "react-toastify";
 import useFetch from "../../../../../customHook/useFetch";
@@ -13,8 +13,8 @@ function EmailSettings() {
   const [appPassword, setAppPassword] = useState("");
   const [userAndCompanyData, setUserAndCompanyData] = useState(null);
   const [loading, setLoading] = useState(false);
-  const location = useLocation();
-  const { id } = useParams();
+  // const location = useLocation();
+  // const { id } = useParams();
   const [errors, setErrors] = useState({
     email: "",
     appPassword: "",
