@@ -29,8 +29,10 @@ function DespatchDetails({ tab }) {
   let voucher;
   if(tab==="sale") {
     voucher="sale";
-  }else{
+  }else if(tab==="order") {
     voucher="saleOrder";
+  }else{
+    voucher="default";
   }
 
   const [formValues, setFormValues] = useState({});

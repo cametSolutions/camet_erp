@@ -63,7 +63,8 @@ function PdfHeader({ data, org, address, despatchDetails, tab = "sales" }) {
   if (org?.configurations) {
     enableBillToShipTo = org?.configurations[0]?.enableBillToShipTo ?? true;
 
-    const despatchDetailsConfig = org?.configurations[0]?.despatchDetails ?? {};
+    const despatchDetailsConfig = org?.configurations[0]?.despatchTitles?.find((config) => config.voucher === "default") ?? {};
+
     for (const key in despatchDetailsConfig) {
       displayTitles[key] =
         despatchDetailsConfig[key] ||

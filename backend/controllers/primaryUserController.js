@@ -218,6 +218,87 @@ export const addOrganizations = async (req, res) => {
   } = req.body;
 
   const owner = req.pUserId;
+
+   // Default configurations
+   const defaultConfigurations = [
+    {
+      bank: null,
+      terms: [],
+      enableBillToShipTo: true,
+      taxInclusive: false,
+      emailConfiguration: null,
+      despatchTitles: [
+        {
+          voucher: "saleOrder",
+          challanNo: "Challan No",
+          containerNo: "Container No",
+          despatchThrough: "Despatch Through",
+          destination: "Destination",
+          vehicleNo: "Vehicle No",
+          orderNo: "Order No",
+          termsOfPay: "Terms Of Pay",
+          termsOfDelivery: "Terms Of Delivery",
+        },
+        {
+          voucher: "sale",
+          challanNo: "Challan No",
+          containerNo: "Container No",
+          despatchThrough: "Despatch Through",
+          destination: "Destination",
+          vehicleNo: "Vehicle No",
+          orderNo: "Order No",
+          termsOfPay: "Terms Of Pay",
+          termsOfDelivery: "Terms Of Delivery",
+        },
+        {
+          voucher: "default",
+          challanNo: "Challan No",
+          containerNo: "Container No",
+          despatchThrough: "Despatch Through",
+          destination: "Destination",
+          vehicleNo: "Vehicle No",
+          orderNo: "Order No",
+          termsOfPay: "Terms Of Pay",
+          termsOfDelivery: "Terms Of Delivery",
+        },
+      ],
+      printConfiguration: [
+        {
+          voucher: "saleOrder",
+          printTitle: null,
+          showCompanyDetails: true,
+          showDiscount: false,
+          showDiscountAmount: true,
+          showHsn: false,
+          showTaxPercentage: false,
+          showInclTaxRate: false,
+          showTaxAnalysis: false,
+          showTeamsAndConditions: false,
+          showBankDetails: false,
+          showTaxAmount: true,
+          showStockWiseTaxAmount: true,
+        },
+        {
+          voucher: "sale",
+          printTitle: null,
+          showCompanyDetails: true,
+          showDiscount: false,
+          showDiscountAmount: true,
+          showHsn: false,
+          showTaxPercentage: false,
+          showInclTaxRate: false,
+          showTaxAnalysis: false,
+          showTeamsAndConditions: false,
+          showBankDetails: false,
+          showTaxAmount: true,
+          showStockWiseTaxAmount: true,
+        },
+      ],
+    },
+  ];
+
+
+  
   try {
     const organization = await Organization.create({
       name,
@@ -246,7 +327,8 @@ export const addOrganizations = async (req, res) => {
       currency,
       currencyName,
       symbol,
-      subunit
+      subunit,
+      configurations: defaultConfigurations, // Adding default configurations
     });
 
     if (organization) {

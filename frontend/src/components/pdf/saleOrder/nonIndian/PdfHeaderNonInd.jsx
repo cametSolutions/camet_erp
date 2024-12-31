@@ -63,7 +63,7 @@ function PdfHeaderNonInd({ data, org, address, despatchDetails, tab = "sales" ,s
   if (org?.configurations) {
     enableBillToShipTo = org?.configurations[0]?.enableBillToShipTo ?? true;
 
-    const despatchDetailsConfig = org?.configurations[0]?.despatchDetails ?? {};
+    const despatchDetailsConfig = org?.configurations[0]?.despatchTitles?.find((config) => config.voucher === "saleOrder") ?? {};
     for (const key in despatchDetailsConfig) {
       displayTitles[key] =
         despatchDetailsConfig[key] ||

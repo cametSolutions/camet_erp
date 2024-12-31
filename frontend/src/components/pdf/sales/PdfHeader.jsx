@@ -70,7 +70,7 @@ function PdfHeader({
   if (org?.configurations) {
     enableBillToShipTo = org?.configurations[0]?.enableBillToShipTo ?? true;
 
-    const despatchDetailsConfig = org?.configurations[0]?.despatchDetails ?? {};
+    const despatchDetailsConfig = org?.configurations[0]?.despatchTitles?.find((config) => config.voucher === "sale") ?? {};
     for (const key in despatchDetailsConfig) {
       displayTitles[key] =
         despatchDetailsConfig[key] ||
