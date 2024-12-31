@@ -10,8 +10,11 @@ function PdfFooterNonInd({
   selectedOrganization,
   calculateTotalTax = () => {},
   configurations,
-  party,
+  // party,
 }) {
+  const termsAndConditions = org?.configurations?.[0]?.termsAndConditions?.find(
+    (el) => el?.voucher === "sale"
+  )?.terms;
   return (
     <div className="mb-5">
       {/*  tax table and total */}
@@ -138,22 +141,20 @@ function PdfFooterNonInd({
       <hr />
 
       {/* terms and conditions */}
-      {configurations?.showTeamsAndConditions &&
-        org &&
-        org.configurations?.length > 0 && (
-          <div className="border-gray-300 mb-5 mt-2">
-            <div className="text-gray-700 mb-1 font-bold text-[10px]">
-              Terms and Conditions
-            </div>
-            <div className="text-gray-700 text-[9px] leading-4">
-              {org?.configurations[0]?.terms?.map((el, index) => (
-                <p key={index}>
-                  <span className="font-bold">{index + 1}.</span> {el}
-                </p>
-              ))}
-            </div>
+      {termsAndConditions?.length > 0 && (
+        <div className="border-gray-300 mb-5 mt-2">
+          <div className="text-gray-700 mb-1 font-bold text-[10px]">
+            Terms and Conditions
           </div>
-        )}
+          <div className="text-gray-700 text-[9px] leading-4">
+            {termsAndConditions?.map((term, index) => (
+              <p key={index}>
+                <span className="font-bold">{index + 1}.</span> {term}
+              </p>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

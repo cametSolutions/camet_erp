@@ -100,6 +100,13 @@ const organizationSchema = new mongoose.Schema(
             showStockWiseTaxAmount: { type: Boolean, default: true },
           },
         ],
+
+        termsAndConditions: [
+          {
+            voucher: { type: String, default: "saleOrder" }, // Define the type for clarity
+            terms: { type: Array },
+          },
+        ],
       },
     ],
   },

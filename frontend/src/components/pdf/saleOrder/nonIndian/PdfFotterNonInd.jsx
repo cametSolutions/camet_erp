@@ -11,7 +11,9 @@ function PdfFotterNonInd({
   calculateTotalTax = () => {},
   // party = {},
 }) {
-  // console.log("saleOrderConfiguration", saleOrderConfiguration);
+  const termsAndConditions = org?.configurations?.[0]?.termsAndConditions?.find(
+    (el) => el?.voucher === "saleOrder"
+  )?.terms;
 
   return (
     <div className="mb-5">
@@ -19,7 +21,7 @@ function PdfFotterNonInd({
       <div className="flex justify-between items-start mt-3 ">
         {/* Left Div: Tax Table */}
 
-   <div></div>
+        <div></div>
         {/* Right Div */}
         <div className="w-1/2">
           {additinalCharge > 0 && (
@@ -51,12 +53,13 @@ function PdfFotterNonInd({
             </div>
           )}
 
-          {saleOrderConfiguration?.showTaxAmount &&
-            (  <div className="flex flex-col items-end text-[9px] text-black font-bold gap-1 mt-3">
+          {saleOrderConfiguration?.showTaxAmount && (
+            <div className="flex flex-col items-end text-[9px] text-black font-bold gap-1 mt-3">
               <p className={calculateTotalTax() > 0 ? "" : "hidden"}>
                 Vat : {Number(calculateTotalTax())?.toFixed(2) || "0.00"}
               </p>
-            </div>)}
+            </div>
+          )}
 
           <div className="flex justify-end border-black py-3">
             <div className="w-3/4"></div>
@@ -136,7 +139,7 @@ function PdfFotterNonInd({
 
       <hr />
 
-      {saleOrderConfiguration?.showTeamsAndConditions &&
+      {/* {saleOrderConfiguration?.showTeamsAndConditions &&
         org &&
         org.configurations?.length > 0 && (
           <div className="border-gray-300 mb-5 mt-2">
@@ -144,14 +147,31 @@ function PdfFotterNonInd({
               Terms and Conditions
             </div>
             <div className="text-gray-700 text-[9px] leading-4">
-              {org?.configurations[0]?.terms?.map((el, index) => (
-                <p key={index}>
-                  <span className="font-bold">{index + 1}.</span> {el}
-                </p>
-              ))}
+              {org?.configurations[0]?.termsAndConditions
+                ?.find((el) => el?.voucher === "saleOrder")
+                ?.terms?.map((term, index) => (
+                  <p key={index}>
+                    <span className="font-bold">{index + 1}.</span> {term}
+                  </p>
+                ))}
             </div>
           </div>
-        )}
+        )} */}
+
+      {termsAndConditions?.length > 0 && (
+        <div className="border-gray-300 mb-5 mt-2">
+          <div className="text-gray-700 mb-1 font-bold text-[10px]">
+            Terms and Conditions
+          </div>
+          <div className="text-gray-700 text-[9px] leading-4">
+            {termsAndConditions?.map((term, index) => (
+              <p key={index}>
+                <span className="font-bold">{index + 1}.</span> {term}
+              </p>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

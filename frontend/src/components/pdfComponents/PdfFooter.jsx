@@ -142,7 +142,7 @@ function PdfFooter({
 
       <hr />
 
-      {org && org.configurations?.length > 0 && (
+      {/* {org && org.configurations?.length > 0 && (
         <div className="border-gray-300 mb-5 mt-2">
           <div className="text-gray-700 mb-1 font-bold text-[10px]">
             Terms and Conditions
@@ -155,7 +155,7 @@ function PdfFooter({
             ))}
           </div>
         </div>
-      )}
+      )} */}
     </div>
   );
 }

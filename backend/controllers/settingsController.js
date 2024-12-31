@@ -379,7 +379,6 @@ export const updateDespatchTitles = async (req, res) => {
   const voucher = req.query.voucher || "all";
 
   console.log(req.body);
-  
 
   const {
     challanNo,
@@ -401,7 +400,7 @@ export const updateDespatchTitles = async (req, res) => {
     VehicleNo: "Vehicle No",
     OrderNo: "Order No",
     TermsOfPay: "Terms Of Pay",
-    TermsOfDelivery: "Terms Of Delivery"
+    TermsOfDelivery: "Terms Of Delivery",
   };
 
   try {
@@ -426,8 +425,8 @@ export const updateDespatchTitles = async (req, res) => {
       {
         _id: cmp_id,
         "configurations.0.despatchTitles": {
-          $elemMatch: { voucher: voucher }
-        }
+          $elemMatch: { voucher: voucher },
+        },
       },
       {
         $set: {
@@ -440,17 +439,17 @@ export const updateDespatchTitles = async (req, res) => {
             vehicleNo: vehicleNo || defaultValues.VehicleNo,
             orderNo: orderNo || defaultValues.OrderNo,
             termsOfPay: termsOfPay || defaultValues.TermsOfPay,
-            termsOfDelivery: termsOfDelivery || defaultValues.TermsOfDelivery
-          }
-        }
+            termsOfDelivery: termsOfDelivery || defaultValues.TermsOfDelivery,
+          },
+        },
       },
       { new: true }
     );
 
     if (!updatedCompany) {
-      return res.status(404).json({ 
-        success: false, 
-        message: "Failed to update despatch titles" 
+      return res.status(404).json({
+        success: false,
+        message: "Failed to update despatch titles",
       });
     }
 
@@ -458,10 +457,126 @@ export const updateDespatchTitles = async (req, res) => {
       success: true,
       message: "Despatch titles updated successfully",
       data: updatedCompany.configurations[0].despatchTitles.find(
-        config => config.voucher === voucher
-      )
+        (config) => config.voucher === voucher
+      ),
     });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
 
+/// @desc  get terms and conditions
+/// @route GET/api/sUsers/getTermsAndConditions/:cmp_id
+/// @access Public
+
+export const getTermsAndConditions = async (req, res) => {
+  const cmp_id = req.params.cmp_id;
+  const voucher = req.query.voucher || "all";
+
+  try {
+    const company = await OragnizationModel.findById(cmp_id).lean();
+    if (!company) {
+      return res.status(404).json({ message: "Company not found" });
+    }
+
+    // console.log("printingConfiguration", company.configurations[0].printConfiguration);
+
+    const termsAndConditions =
+      company.configurations[0].termsAndConditions?.find(
+        (config) => config.voucher === voucher
+      );
+    if (!termsAndConditions) {
+      return res
+        .status(404)
+        .json({ message: "Terms and conditions not found" });
+    }
+
+    res.status(200).json({ success: true, data: termsAndConditions });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
+
+/// @desc  update terms and conditions
+/// @route PUT/api/sUsers/updateTermsAndConditions/:cmp_id
+/// @access Public
+
+export const updateTermsAndConditions = async (req, res) => {
+  const cmp_id = req?.params?.cmp_id;
+  const voucher = req.query.voucher || "all";
+
+  const termsAndConditions = req.body;
+
+  try {
+    // Fetch the company and its configurations
+    const company = await OragnizationModel.findById(cmp_id).lean();
+    if (!company) {
+      return res.status(404).json({ message: "Company not found" });
+    }
+
+    const configuration = company.configurations[0];
+    if (!configuration) {
+      return res.status(404).json({ message: "Configuration not found" });
+    }
+
+    // Check if the terms for the specified voucher exist
+    const termsIndex = configuration.termsAndConditions?.findIndex(
+      (term) => term.voucher === voucher
+    );
+
+    let updatedCompany;
+
+    if (termsIndex > -1) {
+      // If terms exist, update them
+      updatedCompany = await OragnizationModel.findOneAndUpdate(
+        {
+          _id: cmp_id,
+          "configurations.0.termsAndConditions": {
+            $elemMatch: { voucher: voucher },
+          },
+        },
+        {
+          $set: {
+            "configurations.0.termsAndConditions.$": {
+              voucher: voucher,
+              terms: termsAndConditions,
+            },
+          },
+        },
+        { new: true }
+      );
+    } else {
+      // If terms don't exist, push new terms
+      updatedCompany = await OragnizationModel.findOneAndUpdate(
+        { _id: cmp_id },
+        {
+          $push: {
+            "configurations.0.termsAndConditions": {
+              voucher: voucher,
+              terms: termsAndConditions,
+            },
+          },
+        },
+        { new: true }
+      );
+    }
+
+    if (!updatedCompany) {
+      return res.status(404).json({
+        success: false,
+        message: "Failed to update terms and conditions",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Terms and conditions updated successfully",
+      data: updatedCompany.configurations[0].termsAndConditions.find(
+        (config) => config.voucher === voucher
+      ),
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, message: "Internal server error" });

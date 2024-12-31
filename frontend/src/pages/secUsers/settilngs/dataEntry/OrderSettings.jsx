@@ -13,6 +13,20 @@ import SettingsCard from "../../../../components/common/SettingsCard";
 const OrderSettings = () => {
   const settingsOptions = [
     {
+      title: "Terms & Conditions",
+      description: "Define the terms and conditions for invoices and orders",
+      icon: <TbFileText />,
+      to: "/sUsers/order/termsAndConditions",
+      active: true,
+    },
+    {
+      title: "Custom Despatch Title",
+      description: "Add a custom title for despatch details in vouchers",
+      icon: <TbEdit />,
+      to: "/sUsers/order/customDespatchTitle",
+      active: true,
+    },
+    {
       title: "Disable Rate for an Item",
       description:
         "Enable this to restrict users from editing the rate while adding an item in the invoice",
@@ -46,20 +60,7 @@ const OrderSettings = () => {
       active: false,
       toggle: true,
     },
-    {
-      title: "Terms & Conditions",
-      description: "Define the terms and conditions for invoices and orders",
-      icon: <TbFileText />,
-      to: "/orderSettings/termsAndConditions",
-      active: false,
-    },
-    {
-      title: "Custom Despatch Title",
-      description: "Add a custom title for despatch details in vouchers",
-      icon: <TbEdit />,
-      to: "/sUsers/order/customDespatchTitle",
-      active: true,
-    },
+
   ];
 
   return (
