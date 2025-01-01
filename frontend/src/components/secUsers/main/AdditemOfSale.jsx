@@ -54,6 +54,10 @@ function AdditemOfSale({
 }) {
   const navigate = useNavigate();
 
+  const scanHandler = () => {
+    navigate("/sUsers/sales/scanProduct");
+  };
+
   
 
 
@@ -350,7 +354,7 @@ function AdditemOfSale({
                     )}
                   </select>
                 </div>
-                <MdOutlineQrCodeScanner className="text-white text-lg  cursor-pointer md:text-xl" />
+                <MdOutlineQrCodeScanner onClick={scanHandler} className="text-white text-lg  cursor-pointer md:text-xl" />
               </div>
             </div>
             {/* <div className="flex justify-end">
