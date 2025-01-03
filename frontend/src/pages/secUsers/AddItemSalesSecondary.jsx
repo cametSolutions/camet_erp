@@ -169,8 +169,8 @@ function AddItemSalesSecondary() {
 
           isScanOn ? setItem(itemsFromRedux) : setItem(updatedItems);
 
-          if (updatedItems.length > 0 & itemsFromRedux.length === 0) {
-            fetchFilters();
+          if (updatedItems.length > 0 ) {
+            await fetchFilters();
           }
 
           setRefresh((prevRefresh) => !prevRefresh);
@@ -178,7 +178,7 @@ function AddItemSalesSecondary() {
           isScanOn ? setItem([]) : setItem(productData);
 
           if (productData.length > 0) {
-            fetchFilters();
+            await fetchFilters();
           }
           setRefresh((prevRefresh) => !prevRefresh);
         }
@@ -254,6 +254,7 @@ function AddItemSalesSecondary() {
   // useEffect(() => {
   const fetchFilters = async () => {
     try {
+
       let res;
       if (type == "self") {
         res = await api.get(`/api/sUsers/fetchFilters/${orgId}`, {

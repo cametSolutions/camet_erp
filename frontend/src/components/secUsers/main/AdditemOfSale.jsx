@@ -13,6 +13,7 @@ import { IoAddCircleSharp } from "react-icons/io5";
 import { useMemo } from "react";
 import Filter from "../Filter";
 import BarcodeScan from "../barcodeScanning/BarcodeScan";
+import CustomBarLoader from "../../common/CustomBarLoader";
 
 /* eslint-disable react/prop-types */
 function AdditemOfSale({
@@ -377,76 +378,49 @@ function AdditemOfSale({
           </div>
         ) : (
           <SearchBar onType={searchData} />
-
-          // <div className=" px-3 py-2 bg-white drop-shadow-lg  ">
-          //   <div className="flex justify-between  items-center"></div>
-          //   <div className="mt-2  md:w-1/2 ">
-          //     <div className="relative ">
-          //       <div className="absolute inset-y-0 start-0 flex items-center  pointer-events-none ">
-          //         <svg
-          //           className="w-4 h-4 text-gray-500 "
-          //           aria-hidden="true"
-          //           xmlns="http://www.w3.org/2000/svg"
-          //           fill="none"
-          //           viewBox="0 0 20 20"
-          //         >
-          //           <path
-          //             stroke="currentColor"
-          //             strokeLinecap="round"
-          //             strokeLinejoin="round"
-          //             strokeWidth="2"
-          //             d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"
-          //           />
-          //         </svg>
-          //       </div>
-          //       <SearchBar onType={searchData} />
-          //     </div>
-          //   </div>
-          // </div>
         )}
+        {loader && <CustomBarLoader />}
 
         <Filter addAllProducts={addAllProducts} />
       </div>
 
-      {loader ? (
-        <div className="flex justify-center items-center h-screen">
-          <HashLoader color="#363ad6" />
-        </div>
-      ) : filteredItems.length === 0 ? (
+      {filteredItems.length === 0 ? (
         <div className="bg-white p-4 py-2 pb-6 mt-4 flex justify-center items-center rounded-sm cursor-pointer border-b-2 h-screen">
           <p>No products available</p>
         </div>
       ) : (
-        <div className="relative">
-          <List
-            ref={listRef}
-            style={{
-              scrollbarWidth: "thin",
-              paddingBottom: "45px",
-              zIndex: "10",
-              // scrollbarColor: "transparent transparent",
-            }}
-            className="z-0"
-            height={listHeight} // Specify the height of your list
-            itemCount={filteredItems.length} // Specify the total number of items
-            // itemSize={170} // Specify the height of each item
-            itemSize={getItemSize}
-            width="100%" // Specify the width of your list
-            initialScrollOffset={scrollPosition}
-            onScroll={({ scrollOffset }) => {
-              setScrollPosition(scrollOffset);
-              localStorage.setItem(
-                "scrollPositionAddItemSales",
-                scrollOffset.toString()
-              );
-            }}
-          >
-            {Row}
-          </List>
-        </div>
+        !loader && (
+          <div className="relative">
+            <List
+              ref={listRef}
+              style={{
+                scrollbarWidth: "thin",
+                paddingBottom: "45px",
+                zIndex: "10",
+                // scrollbarColor: "transparent transparent",
+              }}
+              className="z-0"
+              height={listHeight} // Specify the height of your list
+              itemCount={filteredItems.length} // Specify the total number of items
+              // itemSize={170} // Specify the height of each item
+              itemSize={getItemSize}
+              width="100%" // Specify the width of your list
+              initialScrollOffset={scrollPosition}
+              onScroll={({ scrollOffset }) => {
+                setScrollPosition(scrollOffset);
+                localStorage.setItem(
+                  "scrollPositionAddItemSales",
+                  scrollOffset.toString()
+                );
+              }}
+            >
+              {Row}
+            </List>
+          </div>
+        )
       )}
 
-      {item.length > 0 && (
+      {item.length > 0 && !loader && (
         <div className=" sticky bottom-0 bg-white  w-full flex justify-center p-3 border-t h-[70px] ">
           <button
             onClick={continueHandler}

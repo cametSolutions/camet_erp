@@ -189,7 +189,7 @@ const BarcodeScan = ({handleBarcodeScanProducts}) => {
               value={searchTerm}
               onChange={handleInputChange}
               className="no-focus-box border-none w-full pr-8"
-              placeholder="Scan barcode or type product name..."
+              placeholder="Scan barcode or type product name or code..."
             />
             {searchTerm && (
               <button
