@@ -52,17 +52,16 @@ function AdditemOfSale({
   handleAddClick,
   addAllProducts,
   isScanOn = false,
-  handleBarcodeScanProducts
+  handleBarcodeScanProducts,
+  setIsScanOn,
 }) {
   const navigate = useNavigate();
 
   const scanHandler = () => {
-    return
-    // navigate("/sUsers/sales/scanProduct");
+    
+    setIsScanOn(!isScanOn);
   };
 
-  // console.log("filteredItems", filteredItems);
-  
 
   // Filter items with balace stock zero for purchase only but not for normal no   batch and  no godown items
   const displayedItems = useMemo(() => {
@@ -323,193 +322,140 @@ function AdditemOfSale({
   };
 
   return (
- 
-      <div className="flex-1 bg-slate-50 h-screen z-40  ">
-        <div className="sticky top-0 h-[165px] ">
-          <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3  ">
-            <div className="flex justify-between  items-center gap-2 ">
-              <div className="flex items-center gap-2">
-                <IoIosArrowRoundBack
-                  onClick={backHandler}
-                  className="text-2xl text-white cursor-pointer"
-                />
-                <p className="text-white text-sm   font-bold ">Add Item</p>
-              </div>
-              <div className="flex items-center gap-4 md:gap-6  ">
-                <div className={`${tab === "Purchase" && "hidden"}`}>
-                  <select
-                    onChange={(e) => handlePriceLevelChange(e)}
-                    value={selectedPriceLevel}
-                    className="block w-full p-1 px-3 truncate text-xs  border rounded-lg border-gray-100 bg-[#012a4a] text-white focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    {priceLevels.length > 0 ? (
-                      priceLevels.map((el, index) => (
-                        <option key={index} value={el}>
-                          {el}
-                        </option>
-                      ))
-                    ) : (
-                      <option key="no-price-level" value="No price level added">
-                        No price level added
+    <div className="flex-1 bg-slate-50 h-screen z-40  ">
+      <div className="sticky top-0 h-[165px] ">
+        <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3  ">
+          <div className="flex justify-between  items-center gap-2 ">
+            <div className="flex items-center gap-2">
+              <IoIosArrowRoundBack
+                onClick={backHandler}
+                className="text-2xl text-white cursor-pointer"
+              />
+              <p className="text-white text-sm   font-bold ">Add Item</p>
+            </div>
+            <div className="flex items-center gap-4 md:gap-6  ">
+              <div className={`${tab === "Purchase" && "hidden"}`}>
+                <select
+                  onChange={(e) => handlePriceLevelChange(e)}
+                  value={selectedPriceLevel}
+                  className="block w-full p-1 px-3 truncate text-xs  border rounded-lg border-gray-100 bg-[#012a4a] text-white focus:ring-blue-500 focus:border-blue-500"
+                >
+                  {priceLevels.length > 0 ? (
+                    priceLevels.map((el, index) => (
+                      <option key={index} value={el}>
+                        {el}
                       </option>
-                    )}
-                  </select>
-                </div>
+                    ))
+                  ) : (
+                    <option key="no-price-level" value="No price level added">
+                      No price level added
+                    </option>
+                  )}
+                </select>
+              </div>
+              <div
+                className={`${isScanOn && "border p-0.5 border-yellow-500"}`}
+              >
                 <MdOutlineQrCodeScanner
                   onClick={scanHandler}
-                  className="text-white text-lg  cursor-pointer md:text-xl"
+                  className="text-white text-lg  cursor-pointer md:text-xl hover:scale-[1.05]  "
                 />
               </div>
             </div>
-            {/* <div className="flex justify-end">
+          </div>
+          {/* <div className="flex justify-end">
             <p className="text-sm text-white">Showroom</p>
             </div> */}
-          </div>
-
-          {isScanOn ? (
-            <BarcodeScan handleBarcodeScanProducts={handleBarcodeScanProducts}  addAllProducts={addAllProducts} />
-          ) : (
-            <div className=" px-3 py-2 bg-white drop-shadow-lg  ">
-              <div className="flex justify-between  items-center"></div>
-              <div className="mt-2  md:w-1/2 ">
-                <div className="relative ">
-                  <div className="absolute inset-y-0 start-0 flex items-center  pointer-events-none ">
-                    <svg
-                      className="w-4 h-4 text-gray-500 "
-                      aria-hidden="true"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 20 20"
-                    >
-                      <path
-                        stroke="currentColor"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"
-                      />
-                    </svg>
-                  </div>
-                  <SearchBar onType={searchData} />
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* <div
-            className="bg-white text-sm font-semibold py-0 pb-1 px-2 flex items-center justify-evenly z-20 w-full gap-2  "
-            style={{ position: "relative", zIndex: "20" }}
-          >
-            <div className="w-4/12">
-              <select
-                value={selectedBrand}
-                onChange={(e) => {
-                  setSelectedBrand(e.target.value);
-                  dispatch(setBrandInRedux(e.target.value));
-                }}
-                className="full form-select block border-none  py-1.5 text-sm md:text-base font-normal text-gray-700 bg-white bg-clip-padding bg-no-repeat border rounded transition ease-in-out m-0 focus:ring-0 focus:border-none"
-              >
-                <option value="">Brands</option>
-                {brands.length > 0 &&
-                  brands.map((brand, index) => (
-                    <option key={index} value={brand}>
-                      {brand}
-                    </option>
-                  ))}
-              </select>
-            </div>
-
-            <div className="w-4/12">
-              <select
-                value={selectedCategory}
-                onChange={(e) => {
-                  setseleCtedCategory(e.target.value);
-                  dispatch(setCategoryInRedux(e.target.value));
-                }}
-                className="w-full   form-select block border-none  py-1.5 text-sm md:text-base font-normal text-gray-700 bg-white bg-clip-padding bg-no-repeat border rounded transition ease-in-out m-0 focus:ring-0 focus:border-none"
-              >
-                <option value="">Categories</option>
-                {categories.map((category, index) => (
-                  <option key={index} value={category}>
-                    {category}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="w-4/12">
-              <select
-                value={selectedSubCategory}
-                onChange={(e) => {
-                  setSelectedSubCategory(e.target.value);
-                  dispatch(setSubCategoryInRedux(e.target.value));
-                }}
-                className=" w-full  form-select block  py-1.5 text-sm md:text-base font-normal text-gray-700 bg-white bg-clip-padding bg-no-repeat border  border-none rounded transition ease-in-out m-0 focus:ring-0 focus:border-none "
-              >
-                <option value="">Subcategories</option>
-                {subCategories.map((el, index) => (
-                  <option key={index} value={el}>
-                    {el}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div> */}
-
-          <Filter addAllProducts={addAllProducts} />
         </div>
 
-        {loader ? (
-          <div className="flex justify-center items-center h-screen">
-            <HashLoader color="#363ad6" />
-          </div>
-        ) : filteredItems.length === 0 ? (
-          <div className="bg-white p-4 py-2 pb-6 mt-4 flex justify-center items-center rounded-sm cursor-pointer border-b-2 h-screen">
-            <p>No products available</p>
-          </div>
+        {isScanOn ? (
+          <BarcodeScan
+            handleBarcodeScanProducts={handleBarcodeScanProducts}
+            addAllProducts={addAllProducts}
+          />
         ) : (
-          
-          <List
-            ref={listRef}
-            style={{
-              scrollbarWidth: "thin",
-              paddingBottom: "45px",
-              zIndex: "10",
-              // scrollbarColor: "transparent transparent",
-            }}
-            className="z-0"
-            height={listHeight} // Specify the height of your list
-            itemCount={filteredItems.length} // Specify the total number of items
-            // itemSize={170} // Specify the height of each item
-            itemSize={getItemSize}
-            width="100%" // Specify the width of your list
-            initialScrollOffset={scrollPosition}
-            onScroll={({ scrollOffset }) => {
-              setScrollPosition(scrollOffset);
-              localStorage.setItem(
-                "scrollPositionAddItemSales",
-                scrollOffset.toString()
-              );
-            }}
-          >
-            {Row}
-          </List>
-          // <div>
-          //   vgxfgfdgdfg
+          <SearchBar onType={searchData} />
+
+          // <div className=" px-3 py-2 bg-white drop-shadow-lg  ">
+          //   <div className="flex justify-between  items-center"></div>
+          //   <div className="mt-2  md:w-1/2 ">
+          //     <div className="relative ">
+          //       <div className="absolute inset-y-0 start-0 flex items-center  pointer-events-none ">
+          //         <svg
+          //           className="w-4 h-4 text-gray-500 "
+          //           aria-hidden="true"
+          //           xmlns="http://www.w3.org/2000/svg"
+          //           fill="none"
+          //           viewBox="0 0 20 20"
+          //         >
+          //           <path
+          //             stroke="currentColor"
+          //             strokeLinecap="round"
+          //             strokeLinejoin="round"
+          //             strokeWidth="2"
+          //             d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"
+          //           />
+          //         </svg>
+          //       </div>
+          //       <SearchBar onType={searchData} />
+          //     </div>
+          //   </div>
           // </div>
         )}
 
-        {item.length > 0 && (
-          <div className=" sticky bottom-0 bg-white  w-full flex justify-center p-3 border-t h-[70px] ">
-            <button
-              onClick={continueHandler}
-              className="bg-violet-700  w-[85%] text-ld font-bold text-white p-2 rounded-md"
-            >
-              Continue
-            </button>
-          </div>
-        )}
+        <Filter addAllProducts={addAllProducts} />
       </div>
+
+      {loader ? (
+        <div className="flex justify-center items-center h-screen">
+          <HashLoader color="#363ad6" />
+        </div>
+      ) : filteredItems.length === 0 ? (
+        <div className="bg-white p-4 py-2 pb-6 mt-4 flex justify-center items-center rounded-sm cursor-pointer border-b-2 h-screen">
+          <p>No products available</p>
+        </div>
+      ) : (
+        <List
+          ref={listRef}
+          style={{
+            scrollbarWidth: "thin",
+            paddingBottom: "45px",
+            zIndex: "10",
+            // scrollbarColor: "transparent transparent",
+          }}
+          className="z-0"
+          height={listHeight} // Specify the height of your list
+          itemCount={filteredItems.length} // Specify the total number of items
+          // itemSize={170} // Specify the height of each item
+          itemSize={getItemSize}
+          width="100%" // Specify the width of your list
+          initialScrollOffset={scrollPosition}
+          onScroll={({ scrollOffset }) => {
+            setScrollPosition(scrollOffset);
+            localStorage.setItem(
+              "scrollPositionAddItemSales",
+              scrollOffset.toString()
+            );
+          }}
+        >
+          {Row}
+        </List>
+        // <div>
+        //   vgxfgfdgdfg
+        // </div>
+      )}
+
+      {item.length > 0 && (
+        <div className=" sticky bottom-0 bg-white  w-full flex justify-center p-3 border-t h-[70px] ">
+          <button
+            onClick={continueHandler}
+            className="bg-violet-700  w-[85%] text-ld font-bold text-white p-2 rounded-md"
+          >
+            Continue
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
 

@@ -6,6 +6,10 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import debounce from "lodash/debounce";
 import { useSelector } from "react-redux";
 import CustomBarLoader from "../../common/CustomBarLoader";
+import { PiBarcode } from "react-icons/pi";
+
+
+
 
 
 const BarcodeScan = ({handleBarcodeScanProducts}) => {
@@ -177,7 +181,7 @@ const BarcodeScan = ({handleBarcodeScanProducts}) => {
     <div>
        <div className="relative">
           <div className="flex items-center p-2 px-4 bg-white shadow-lg relative">
-            <CiSearch size={20} className="mr-2" />
+            <PiBarcode size={20} className="mr-2" />
             <input
               type="text"
               value={searchTerm}

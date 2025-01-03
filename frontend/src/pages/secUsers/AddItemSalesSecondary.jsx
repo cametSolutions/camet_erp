@@ -33,7 +33,7 @@ function AddItemSalesSecondary() {
   const [listHeight, setListHeight] = useState(0);
   const [scrollPosition, setScrollPosition] = useState(0);
   const [refresh, setRefresh] = useState(false);
-  const [isScanOn, setIsScanOn] = useState(true);
+  const [isScanOn, setIsScanOn] = useState(false);
   // const [scannedProducts, setScannedProducts] = useState([]);
 
   // const [godownname, setGodownname] = useState("");
@@ -169,7 +169,7 @@ function AddItemSalesSecondary() {
 
           isScanOn ? setItem(itemsFromRedux) : setItem(updatedItems);
 
-          if (updatedItems.length > 0) {
+          if (updatedItems.length > 0 & itemsFromRedux.length === 0) {
             fetchFilters();
           }
 
@@ -206,13 +206,25 @@ function AddItemSalesSecondary() {
       // listRef?.current?.scrollTo(parseInt(scrollPosition, 10));\
       window.scrollTo(0, scrollPosition);
     }
-  }, [cpm_id]);
+  }, [cpm_id,isScanOn]);
 
   ///////////////////////////setSelectedPriceLevel fom redux///////////////////////////////////
 
   useEffect(() => {
     setSelectedPriceLevel(priceLevelFromRedux);
   }, []);
+
+
+  //// resting height of list on toggling between scan and add items
+
+  useEffect(() => {
+    if (listRef.current) {
+      listRef.current.resetAfterIndex(0);
+    }
+
+    setSearch("");
+  
+  }, [isScanOn]);
 
   /////////////////////////scroll////////////////////////////
 
@@ -585,14 +597,12 @@ function AddItemSalesSecondary() {
 
   ///////////////////////////handleDecrement///////////////////////////////////
   const handleDecrement = (_id, godownIndex = null) => {
-
     console.log("handleDecrement called with id:", _id);
-    
+
     const updatedItems = item.map((item) => {
       if (item._id !== _id) return item; // Keep items unchanged if _id doesn't match
       const currentItem = structuredClone(item);
 
-      
       if (godownIndex !== null && currentItem.hasGodownOrBatch) {
         const godownOrBatch = { ...currentItem.GodownList[godownIndex] };
         godownOrBatch.count = new Decimal(godownOrBatch.count)
@@ -646,8 +656,7 @@ function AddItemSalesSecondary() {
       }
       console.log("currentItem", currentItem);
 
-
-      dispatch(updateItem({item: currentItem, moveToTop: false})); // Log the updated currentItem
+      dispatch(updateItem({ item: currentItem, moveToTop: false })); // Log the updated currentItem
       // Log the updated currentItem
       return currentItem; // Return the updated currentItem
     });
@@ -734,8 +743,6 @@ function AddItemSalesSecondary() {
   /////////////////////expansion panel////////////////////
 
   const handleExpansion = (id) => {
-    console.log("handleExpansion called with id:", id);
-
     const currentItems = [...item];
 
     const updatedItems = structuredClone(currentItems);
@@ -749,6 +756,7 @@ function AddItemSalesSecondary() {
 
     // Update state with the new items array
     setItem(updatedItems);
+    // dispatch(updateItem({ item: updatedItems[index], moveToTop: false }));
 
     // Optionally update refresh state or other operations
     // setRefresh((prevRefresh) => !prevRefresh);
@@ -790,29 +798,34 @@ function AddItemSalesSecondary() {
     if (searchResult.length === 0) {
       return;
     }
-  
+
     let scannedItem = structuredClone(searchResult[0]);
-  
+
     // Finding price rate
     const priceRate =
       scannedItem?.Priceleveles?.find(
         (priceLevelItem) => priceLevelItem.pricelevel === selectedPriceLevel
       )?.pricerate || 0;
-  
+
     if (scannedItem?.hasGodownOrBatch) {
       scannedItem.isExpanded = true;
       scannedItem?.GodownList.forEach(
         (godown) => (godown.selectedPriceRate = priceRate)
       );
-  
+
       // Check if the item already exists
-      let isItemExistIndex = item?.findIndex((el) => el._id === scannedItem._id);
-  
+      let isItemExistIndex = item?.findIndex(
+        (el) => el._id === scannedItem._id
+      );
+
       if (isItemExistIndex !== -1) {
         // Move the existing item to the top
+        // Move the existing item to the top
         const [existingItem] = item.splice(isItemExistIndex, 1);
-        existingItem.isExpanded = true;
-        setItem([existingItem, ...item]);
+
+        // Create a new object with updated properties
+        const updatedItem = { ...existingItem, isExpanded: true };
+        setItem([updatedItem, ...item]);
         listRef.current.resetAfterIndex(0);
       } else {
         // Add the scanned item to the top if it doesn't exist
@@ -820,8 +833,10 @@ function AddItemSalesSecondary() {
       }
     } else {
       // Check if the item already exists
-      let isItemExistIndex = item?.findIndex((el) => el._id === scannedItem._id);
-  
+      let isItemExistIndex = item?.findIndex(
+        (el) => el._id === scannedItem._id
+      );
+
       if (isItemExistIndex !== -1) {
         // Increment the count and move to the top
         handleIncrement(scannedItem._id, null, true);
@@ -836,10 +851,9 @@ function AddItemSalesSecondary() {
         dispatch(addItem({ payload: scannedItem, moveToTop: true }));
       }
     }
-  
+
     console.log("item", item);
   };
-  
 
   return (
     <AdditemOfSale
@@ -880,6 +894,7 @@ function AddItemSalesSecondary() {
       addAllProducts={addAllProducts}
       isScanOn={isScanOn}
       handleBarcodeScanProducts={handleBarcodeScanProducts}
+      setIsScanOn={setIsScanOn}
     />
   );
 }

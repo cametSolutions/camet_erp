@@ -49,11 +49,7 @@ function PartyList({
         </div>
 
         {/* Search Bar */}
-        <div className="p-4 bg-white drop-shadow-lg">
-          <div className="md:w-1/2">
-            <SearchBar onType={searchData} />
-          </div>
-        </div>
+        <SearchBar onType={searchData} />
       </div>
 
       {/* Party List */}
