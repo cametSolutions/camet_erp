@@ -91,7 +91,7 @@ function EditItemSalesSecondary() {
     }
 
     dispatch(changeTaxInclusive(selectedItem[0]?._id));
-    dispatch(updateItem(newItem));
+    dispatch(updateItem({item:newItem,moveToTop:false}));
 
     navigate(-1);
   };

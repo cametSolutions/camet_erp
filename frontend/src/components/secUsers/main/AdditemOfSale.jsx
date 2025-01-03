@@ -12,6 +12,7 @@ import { VariableSizeList as List } from "react-window";
 import { IoAddCircleSharp } from "react-icons/io5";
 import { useMemo } from "react";
 import Filter from "../Filter";
+import BarcodeScan from "../barcodeScanning/BarcodeScan";
 
 /* eslint-disable react/prop-types */
 function AdditemOfSale({
@@ -49,24 +50,24 @@ function AdditemOfSale({
   handleExpansion,
   handleIncrement,
   handleAddClick,
-  addAllProducts
-  
+  addAllProducts,
+  isScanOn = false,
+  handleBarcodeScanProducts
 }) {
   const navigate = useNavigate();
 
   const scanHandler = () => {
-    navigate("/sUsers/sales/scanProduct");
+    return
+    // navigate("/sUsers/sales/scanProduct");
   };
 
+  // console.log("filteredItems", filteredItems);
   
-
-
 
   // Filter items with balace stock zero for purchase only but not for normal no   batch and  no godown items
   const displayedItems = useMemo(() => {
     if (tab === "Purchase") {
       return filteredItems.map((item) => {
-
         const processedItem = {
           ...item,
           GodownList:
@@ -170,7 +171,7 @@ function AdditemOfSale({
                         // el?.Priceleveles?.find(
                         //   (item) => item.pricelevel === selectedPriceLevel
                         // )?.pricerate
-                     (   el?.GodownList[0]?.selectedPriceRate || 0)
+                        el?.GodownList[0]?.selectedPriceRate || 0
                       }{" "}
                       /
                     </p>{" "}
@@ -322,8 +323,8 @@ function AdditemOfSale({
   };
 
   return (
-    <div className="">
-      <div className="flex-1 bg-slate-50 h-screen   ">
+ 
+      <div className="flex-1 bg-slate-50 h-screen z-40  ">
         <div className="sticky top-0 h-[165px] ">
           <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3  ">
             <div className="flex justify-between  items-center gap-2 ">
@@ -335,7 +336,7 @@ function AdditemOfSale({
                 <p className="text-white text-sm   font-bold ">Add Item</p>
               </div>
               <div className="flex items-center gap-4 md:gap-6  ">
-                <div className={`${tab==="Purchase" && "hidden"}`}>
+                <div className={`${tab === "Purchase" && "hidden"}`}>
                   <select
                     onChange={(e) => handlePriceLevelChange(e)}
                     value={selectedPriceLevel}
@@ -354,7 +355,10 @@ function AdditemOfSale({
                     )}
                   </select>
                 </div>
-                <MdOutlineQrCodeScanner onClick={scanHandler} className="text-white text-lg  cursor-pointer md:text-xl" />
+                <MdOutlineQrCodeScanner
+                  onClick={scanHandler}
+                  className="text-white text-lg  cursor-pointer md:text-xl"
+                />
               </div>
             </div>
             {/* <div className="flex justify-end">
@@ -362,31 +366,35 @@ function AdditemOfSale({
             </div> */}
           </div>
 
-          <div className=" px-3 py-2 bg-white drop-shadow-lg  ">
-            <div className="flex justify-between  items-center"></div>
-            <div className="mt-2  md:w-1/2 ">
-              <div className="relative ">
-                <div className="absolute inset-y-0 start-0 flex items-center  pointer-events-none ">
-                  <svg
-                    className="w-4 h-4 text-gray-500 "
-                    aria-hidden="true"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      stroke="currentColor"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"
-                    />
-                  </svg>
+          {isScanOn ? (
+            <BarcodeScan handleBarcodeScanProducts={handleBarcodeScanProducts}  addAllProducts={addAllProducts} />
+          ) : (
+            <div className=" px-3 py-2 bg-white drop-shadow-lg  ">
+              <div className="flex justify-between  items-center"></div>
+              <div className="mt-2  md:w-1/2 ">
+                <div className="relative ">
+                  <div className="absolute inset-y-0 start-0 flex items-center  pointer-events-none ">
+                    <svg
+                      className="w-4 h-4 text-gray-500 "
+                      aria-hidden="true"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        stroke="currentColor"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"
+                      />
+                    </svg>
+                  </div>
+                  <SearchBar onType={searchData} />
                 </div>
-                <SearchBar onType={searchData} />
               </div>
             </div>
-          </div>
+          )}
 
           {/* <div
             className="bg-white text-sm font-semibold py-0 pb-1 px-2 flex items-center justify-evenly z-20 w-full gap-2  "
@@ -448,7 +456,7 @@ function AdditemOfSale({
             </div>
           </div> */}
 
-          <Filter addAllProducts={addAllProducts}/>
+          <Filter addAllProducts={addAllProducts} />
         </div>
 
         {loader ? (
@@ -460,15 +468,16 @@ function AdditemOfSale({
             <p>No products available</p>
           </div>
         ) : (
+          
           <List
             ref={listRef}
             style={{
               scrollbarWidth: "thin",
               paddingBottom: "45px",
+              zIndex: "10",
               // scrollbarColor: "transparent transparent",
-              // marginTop: "0px",
             }}
-            className=""
+            className="z-0"
             height={listHeight} // Specify the height of your list
             itemCount={filteredItems.length} // Specify the total number of items
             // itemSize={170} // Specify the height of each item
@@ -485,6 +494,9 @@ function AdditemOfSale({
           >
             {Row}
           </List>
+          // <div>
+          //   vgxfgfdgdfg
+          // </div>
         )}
 
         {item.length > 0 && (
@@ -498,7 +510,6 @@ function AdditemOfSale({
           </div>
         )}
       </div>
-    </div>
   );
 }
 

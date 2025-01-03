@@ -1,23 +1,37 @@
-import { CiSearch } from "react-icons/ci";
+/* eslint-disable react/prop-types */
+/* eslint-disable react/no-unescaped-entities */
+import { CiCircleRemove, CiSearch } from "react-icons/ci";
 import { useLocation } from "react-router-dom";
 import { useState, useEffect, useCallback, useRef } from "react";
 import debounce from "lodash/debounce";
 import { useSelector } from "react-redux";
-import TitleDiv from "../../common/TitleDiv";
+import CustomBarLoader from "../../common/CustomBarLoader";
 
-const BarcodeScan = () => {
+
+const BarcodeScan = ({handleBarcodeScanProducts}) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isScanning, setIsScanning] = useState(false);
   const [barcodeBuffer, setBarcodeBuffer] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
+  const [searchLoding, setSearchLoading] = useState(false);
+  const [filteredProducts, setFilteredProducts] = useState([]);
+  const [selectedProducts, setSelectedProducts] = useState([]);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [localProducts, setLocalProducts] = useState([]); // New state for local products
 
   const location = useLocation();
   const path = location.pathname;
   let redux = path.includes("/purchase") ? "purchase" : "salesSecondary";
 
   // get products from redux
-  const products = useSelector((state) => state[redux].products);
-  const [filteredProducts, setFilteredProducts] = useState([]);
+  const reduxProducts = useSelector((state) => state[redux].products);
+   // Sync redux products with local state
+   useEffect(() => {
+    if (reduxProducts) {
+      setLocalProducts(reduxProducts);
+    }
+  }, [reduxProducts]);
+
 
   // Reference to track if the current search is from barcode
   const isBarcodeSearch = useRef(false);
@@ -25,52 +39,73 @@ const BarcodeScan = () => {
   // Debounced search for manual typing only
   const handleManualSearch = useCallback(
     debounce((term) => {
+      setSearchLoading(true);
+
       if (!term.trim() || isBarcodeSearch.current) {
         setShowDropdown(false);
+        setSearchLoading(false);
+
         return;
       }
 
-      const searchResults = products.filter((product) => {
+      const searchResults = localProducts.filter((product) => {
         const searchLower = term.toLowerCase();
         return product?.product_name?.toLowerCase().includes(searchLower);
       });
 
-      console.log("maual");
-      
+      if (searchResults.length === 0) {
+        setFilteredProducts([]);
+
+        setSearchLoading(false);
+        setErrorMessage("Product not found with this name.");
+        return;
+      }
 
       setFilteredProducts(searchResults);
+      setSearchLoading(false);
       setShowDropdown(true);
     }, 300),
-    [products]
+    [localProducts]
   );
 
-  // console.log("barcode", barcode);
-
   // Immediate search for barcode scans
-  const handleBarcodeSearch = (barcode) => {
+ // Modified barcode search to handle initial state
+ const handleBarcodeSearch = (barcode) => {
+  setSearchLoading(true);
+ 
 
-    console.log("barcode", barcode);
-    
-    isBarcodeSearch.current = true; // Mark as barcode search
+  isBarcodeSearch.current = true;
 
-    if (!barcode.trim()) {
-      
-      setFilteredProducts([]);
-      return;
-    }
+  if (!barcode.trim()) {
+    setSearchLoading(false);
+    return;
+  }
 
-    const searchResults = products.filter(
-      (product) => product?.product_code === barcode
-    );
+  // Ensure we have products to search through
+  if (!localProducts || localProducts.length === 0) {
+    console.log("No local products available yet");
+    setSearchLoading(false);
+    setErrorMessage("Product database not loaded. Please try again.");
+    return;
+  }
 
-    console.log("searchResults", searchResults);
+  const searchResults = localProducts.filter((product) => {
+    return product?.product_code === barcode;
+  });
 
-    setFilteredProducts(searchResults);
-    setShowDropdown(false); // Don't show dropdown for barcode searches
-    setSearchTerm(barcode);
-  };
 
-  console.log("filteredProducts", filteredProducts);
+  if (searchResults.length === 0) {
+    setSearchLoading(false);
+    setErrorMessage("Product not found with this code.");
+    return;
+  }
+
+  setSelectedProducts(searchResults);
+  setSearchLoading(false);
+  setShowDropdown(false);
+  setSearchTerm("");
+};
+
 
   // Global listener for barcode scans
   useEffect(() => {
@@ -110,9 +145,10 @@ const BarcodeScan = () => {
 
     window.addEventListener("keydown", handleKeydown);
     return () => window.removeEventListener("keydown", handleKeydown);
-  }, []);
+  }, [localProducts]);
 
   const handleInputChange = (e) => {
+    setErrorMessage("");
     const value = e.target.value;
     setSearchTerm(value);
     setIsScanning(false);
@@ -121,71 +157,72 @@ const BarcodeScan = () => {
   };
 
   const handleProductSelect = (product) => {
-    console.log("Selected product:", product);
-    setSearchTerm(product.product_name);
+    setSelectedProducts((prevResults) => [...prevResults, product]);
     setShowDropdown(false);
+    setSearchTerm("");
   };
+
+  useEffect(() => {
+    if (selectedProducts.length > 0) {
+      handleBarcodeScanProducts(selectedProducts);
+    }
+  }, [selectedProducts]);
+
+  
+
+  
+
 
   return (
     <div>
-      <div className="sticky top-0 bg-white z-50">
-        <TitleDiv title="Scan Barcode" />
-
-        <div className="relative">
-          <div className="flex items-center p-2 px-4 bg-white shadow-lg">
-            <CiSearch size={20} />
+       <div className="relative">
+          <div className="flex items-center p-2 px-4 bg-white shadow-lg relative">
+            <CiSearch size={20} className="mr-2" />
             <input
               type="text"
               value={searchTerm}
               onChange={handleInputChange}
-              className="no-focus-box border-none w-full"
+              className="no-focus-box border-none w-full pr-8"
               placeholder="Scan barcode or type product name..."
             />
+            {searchTerm && (
+              <button
+                onClick={() => {
+                  setSearchTerm("");
+                  setErrorMessage("");
+                }}
+                className="absolute right-3 text-gray-400 hover:text-gray-600"
+              >
+                <CiCircleRemove size={20} />
+              </button>
+            )}
+            <div></div>
           </div>
+          {errorMessage && (
+            <div className="p-2 px-4 font-semibold  w-full bg-wite shadow-lg flex items-center text-xs text-gray-500">
+              {errorMessage}
+            </div>
+          )}
+
+          {searchLoding && <CustomBarLoader />}
 
           {/* Dropdown for manual search */}
           {showDropdown && filteredProducts.length > 0 && (
-            <div className="absolute w-full bg-white border rounded-lg shadow-lg mt-1 max-h-64 overflow-y-auto z-50">
+            <div className="absolute w-full bg-white border rounded-lg shadow-lg mt-1 max-h-64 overflow-y-auto z-100 px-2 ">
               {filteredProducts.map((product) => (
                 <div
                   key={product.id}
-                  className="p-2 hover:bg-gray-100 cursor-pointer"
+                  className=" p-3 px-4 hover:bg-gray-200 cursor-pointer bg-slate-100"
                   onClick={() => handleProductSelect(product)}
                 >
-                  <div className="font-medium">{product.product_name}</div>
-                  <div className="text-sm text-gray-600">
-                    Code: {product.product_code}
+                  <div className="text-xs font-semibold">
+                    {product.product_name}
                   </div>
                 </div>
               ))}
             </div>
           )}
         </div>
-      </div>
-
-      {/* Main results area */}
-      <div className="mt-4 px-4">
-        {filteredProducts.length > 0 && !showDropdown ? (
-          <div className="grid gap-4">
-            {filteredProducts.map((product) => (
-              <div
-                key={product.id}
-                className="bg-white p-4 rounded-lg shadow hover:shadow-md transition-shadow cursor-pointer"
-                onClick={() => handleProductSelect(product)}
-              >
-                <h3 className="font-medium">{product.product_name}</h3>
-                <div className="text-sm text-gray-600">
-                  <p>Code: {product.product_code}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : searchTerm && !showDropdown ? (
-          <div className="text-center text-gray-500 py-8">
-            No products found matching "{searchTerm}"
-          </div>
-        ) : null}
-      </div>
     </div>
   );
 };
