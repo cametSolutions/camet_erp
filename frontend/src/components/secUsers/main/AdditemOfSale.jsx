@@ -58,10 +58,8 @@ function AdditemOfSale({
   const navigate = useNavigate();
 
   const scanHandler = () => {
-    
     setIsScanOn(!isScanOn);
   };
-
 
   // Filter items with balace stock zero for purchase only but not for normal no   batch and  no godown items
   const displayedItems = useMemo(() => {
@@ -101,7 +99,7 @@ function AdditemOfSale({
       <div
         style={adjustedStyle}
         key={index}
-        className="bg-white  py-2 pb-6  mt-0  rounded-sm cursor-pointer  z-0 shadow-lg  "
+        className="bg-white  py-2 pb-6  mt-0  rounded-sm cursor-pointer z-10  shadow-lg  "
       >
         <div className=" flex justify-between items-center p-4">
           <div className="flex items-start gap-3 md:gap-4  ">
@@ -322,8 +320,8 @@ function AdditemOfSale({
   };
 
   return (
-    <div className="flex-1 bg-slate-50 h-screen z-40  ">
-      <div className="sticky top-0 h-[165px] ">
+    <div className="flex-1 bg-slate-50 h-screen relative  ">
+      <div className="sticky top-0 h-[165px]  z-40 ">
         <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3  ">
           <div className="flex justify-between  items-center gap-2 ">
             <div className="flex items-center gap-2">
@@ -369,10 +367,14 @@ function AdditemOfSale({
         </div>
 
         {isScanOn ? (
-          <BarcodeScan
-            handleBarcodeScanProducts={handleBarcodeScanProducts}
-            addAllProducts={addAllProducts}
-          />
+          <div className="relative z-50">
+            {" "}
+            {/* Added z-index */}
+            <BarcodeScan
+              handleBarcodeScanProducts={handleBarcodeScanProducts}
+              addAllProducts={addAllProducts}
+            />
+          </div>
         ) : (
           <SearchBar onType={searchData} />
 
@@ -415,34 +417,33 @@ function AdditemOfSale({
           <p>No products available</p>
         </div>
       ) : (
-        <List
-          ref={listRef}
-          style={{
-            scrollbarWidth: "thin",
-            paddingBottom: "45px",
-            zIndex: "10",
-            // scrollbarColor: "transparent transparent",
-          }}
-          className="z-0"
-          height={listHeight} // Specify the height of your list
-          itemCount={filteredItems.length} // Specify the total number of items
-          // itemSize={170} // Specify the height of each item
-          itemSize={getItemSize}
-          width="100%" // Specify the width of your list
-          initialScrollOffset={scrollPosition}
-          onScroll={({ scrollOffset }) => {
-            setScrollPosition(scrollOffset);
-            localStorage.setItem(
-              "scrollPositionAddItemSales",
-              scrollOffset.toString()
-            );
-          }}
-        >
-          {Row}
-        </List>
-        // <div>
-        //   vgxfgfdgdfg
-        // </div>
+        <div className="relative">
+          <List
+            ref={listRef}
+            style={{
+              scrollbarWidth: "thin",
+              paddingBottom: "45px",
+              zIndex: "10",
+              // scrollbarColor: "transparent transparent",
+            }}
+            className="z-0"
+            height={listHeight} // Specify the height of your list
+            itemCount={filteredItems.length} // Specify the total number of items
+            // itemSize={170} // Specify the height of each item
+            itemSize={getItemSize}
+            width="100%" // Specify the width of your list
+            initialScrollOffset={scrollPosition}
+            onScroll={({ scrollOffset }) => {
+              setScrollPosition(scrollOffset);
+              localStorage.setItem(
+                "scrollPositionAddItemSales",
+                scrollOffset.toString()
+              );
+            }}
+          >
+            {Row}
+          </List>
+        </div>
       )}
 
       {item.length > 0 && (

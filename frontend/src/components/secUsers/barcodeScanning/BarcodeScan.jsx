@@ -54,7 +54,7 @@ const BarcodeScan = ({handleBarcodeScanProducts}) => {
 
       const searchResults = localProducts.filter((product) => {
         const searchLower = term.toLowerCase();
-        return product?.product_name?.toLowerCase().includes(searchLower);
+        return (product?.product_name?.toLowerCase().includes(searchLower) || product?.product_code == searchLower);
       });
 
       if (searchResults.length === 0) {
@@ -161,7 +161,7 @@ const BarcodeScan = ({handleBarcodeScanProducts}) => {
   };
 
   const handleProductSelect = (product) => {
-    setSelectedProducts((prevResults) => [...prevResults, product]);
+    setSelectedProducts([product]);
     setShowDropdown(false);
     setSearchTerm("");
   };
@@ -171,6 +171,8 @@ const BarcodeScan = ({handleBarcodeScanProducts}) => {
       handleBarcodeScanProducts(selectedProducts);
     }
   }, [selectedProducts]);
+
+  
 
   
 
@@ -212,14 +214,14 @@ const BarcodeScan = ({handleBarcodeScanProducts}) => {
 
           {/* Dropdown for manual search */}
           {showDropdown && filteredProducts.length > 0 && (
-            <div className="absolute w-full bg-white border rounded-lg shadow-lg mt-1 max-h-64 overflow-y-auto z-100 px-2 ">
+            <div className="absolute  bg-white border w-3/4 sm:w-1/2 shadow-lg mt-1 max-h-64 overflow-y-auto z-100 mx-1 ">
               {filteredProducts.map((product) => (
                 <div
                   key={product.id}
-                  className=" p-3 px-4 hover:bg-gray-200 cursor-pointer bg-slate-100"
+                  className="  hover:bg-gray-200 cursor-pointer "
                   onClick={() => handleProductSelect(product)}
                 >
-                  <div className="text-xs font-semibold">
+                  <div className="text-xs font-semibold p-3 px-4">
                     {product.product_name}
                   </div>
                 </div>
