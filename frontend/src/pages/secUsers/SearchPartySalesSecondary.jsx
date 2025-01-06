@@ -22,10 +22,6 @@ function SearchPartySalesSecondary() {
   const dispatch = useDispatch();
   const location = useLocation();
 
- 
-  
-
-
   const cpm_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
@@ -34,29 +30,39 @@ function SearchPartySalesSecondary() {
     setSearch(data);
   };
 
-  useEffect(() => {
-    const fetchParties = async () => {
-      try {
-        const res = await api.get(`/api/sUsers/PartyList/${cpm_id}`, {
-          withCredentials: true,
-        });
+  let url;
 
-        setParties(res.data.partyList);
-        dispatch(addAllParties(res.data.partyList));
-        setLoading(false);
-      } catch (error) {
-        console.log(error);
-        setLoading(false);
-      }
-    };
-    fetchParties();
-  }, [cpm_id]);
+  if (location.pathname === "/sUsers/orderPending/partyList") {
+    url = "/api/sUsers/PartyListWithOrderPending";
+  } else {
+    url = "/api/sUsers/PartyList";
+  }
+
+  useEffect(() => {
+    if (url) {
+      const fetchParties = async () => {
+        try {
+          const res = await api.get(`${url}/${cpm_id}`, {
+            withCredentials: true,
+          });
+
+          setParties(res.data.partyList);
+          dispatch(addAllParties(res.data.partyList));
+          setLoading(false);
+        } catch (error) {
+          console.log(error);
+          setLoading(false);
+        }
+      };
+      fetchParties();
+    }
+  }, [cpm_id, url]);
 
   const selectHandler = (el) => {
     if (location.pathname === "/sUsers/partyStatement/partyList") {
-      console.log(el);
-      
       navigate("/sUsers/partyStatement", { state: el });
+    } else if (location.pathname === "/sUsers/orderPending/partyList") {
+      navigate(`/sUsers/pendingOrders/${el?._id}`);
     } else {
       dispatch(addParty(el));
       navigate(-1);
@@ -64,7 +70,7 @@ function SearchPartySalesSecondary() {
   };
 
   const backHandler = () => {
-    navigate(-1);
+    navigate(-1, { replace: true });
   };
 
   useEffect(() => {

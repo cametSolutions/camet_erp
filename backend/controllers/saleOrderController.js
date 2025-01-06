@@ -10,6 +10,7 @@ import invoiceModel from "../models/invoiceModel.js";
 import secondaryUserModel from "../models/secondaryUserModel.js";
 import mongoose from "mongoose";
 import { formatToLocalDate } from "../helpers/helper.js";
+import partyModel from "../models/partyModel.js";
 
 /**
  * @desc  create sale order
@@ -318,5 +319,66 @@ export const cancelSalesOrder = async (req, res) => {
       message: "Internal server error, try again!",
       error: error.message,
     });
+  }
+};
+
+/**
+ * @desc finding party List with total amount of sale orders
+ * @route POST/api/sUsers/cancelSalesOrder
+ * @access Public
+ */
+
+export const PartyListWithOrderPending = async (req, res) => {
+  const { cmp_id } = req.params;
+  const { owner: Primary_user_id, sUserId: secUserId } = req;
+
+  try {
+    // Fetch parties and orders concurrently
+    const [partyList, orders] = await Promise.all([
+      partyModel.find({ cmp_id, Primary_user_id }).select(
+        "_id partyName billingAddress shippingAddress mobileNumber gstNo emailID pin country state accountGroup"
+      ),
+      invoiceModel.find({ 
+        cmp_id, 
+        Primary_user_id,
+        isCancelled: false 
+      }).select('party._id finalAmount')
+    ]);
+
+    if (partyList.length === 0) {
+      return res.status(404).json({ message: "No parties found" });
+    }
+
+    // Create a map of party totals from orders
+    const partyTotals = orders.reduce((acc, order) => {
+      const partyId = order.party._id.toString();
+      const amount = parseFloat(order.finalAmount) || 0;
+      acc[partyId] = (acc[partyId] || 0) + amount;
+      return acc;
+    }, {});
+
+    // Attach order totals to party data
+    const partiesWithTotals = partyList.map(party => {
+      const partyId = party._id.toString();
+      return {
+        ...party.toObject(),
+        totalOutstanding: Number((partyTotals[partyId] || 0).toFixed(2))
+      };
+    });
+
+    // Sort parties by total order amount in descending order
+    partiesWithTotals.sort((a, b) => 
+      parseFloat(b.totalOrderAmount) - parseFloat(a.totalOrderAmount)
+    );
+
+    res.status(200).json({
+      success: true,
+      partyList: partiesWithTotals,
+      message: "Parties fetched successfully with order totals"
+    });
+
+  } catch (error) {
+    console.error("Error in PartyList:", error.message);
+    res.status(500).json({ success: false, message: "Internal server error" });
   }
 };

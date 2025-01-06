@@ -27,7 +27,7 @@ import { secondaryIsBlocked } from '../middlewares/isBlocked.js';
 import { companyAuthentication } from '../middlewares/authCompany.js';
 import { fetchOutstandingDetails,createReceipt,cancelReceipt,editReceipt } from '../controllers/receiptController.js';
 import { createPayment,cancelPayment, editPayment } from '../controllers/paymentController.js';
-import { createInvoice,editInvoice,cancelSalesOrder } from '../controllers/saleOrderController.js';
+import { createInvoice,editInvoice,cancelSalesOrder, PartyListWithOrderPending } from '../controllers/saleOrderController.js';
 import { createStockTransfer,editStockTransfer, cancelStockTransfer } from '../controllers/stockTransferController.js';
 import { addBankPaymentDetails } from '../../frontend/slices/payment.js';
 import { addEmailConfiguration, getConfiguration, getBarcodeList, addBarcodeData, editBarcodeData, deleteBarcode, getSingleBarcodeData, getPrintingConfiguration, updateConfiguration, getDespatchTitles, updateDespatchTitles, getTermsAndConditions, updateTermsAndConditions } from '../controllers/settingsController.js';
@@ -181,6 +181,9 @@ router.put('/updateDespatchTitles/:cmp_id',authSecondary,secondaryIsBlocked,comp
 router.get('/getTermsAndConditions/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,getTermsAndConditions)
 router.put('/updateTermsAndConditions/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,updateTermsAndConditions)
 
+
+/// order pending
+router.get('/PartyListWithOrderPending/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,PartyListWithOrderPending)
 
 //// testing routes
 

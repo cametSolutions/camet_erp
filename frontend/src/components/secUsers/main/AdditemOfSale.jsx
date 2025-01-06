@@ -54,7 +54,7 @@ function AdditemOfSale({
   addAllProducts,
   isScanOn = false,
   handleBarcodeScanProducts,
-  setIsScanOn,
+  setIsScanOn=() => {},
 }) {
   const navigate = useNavigate();
 

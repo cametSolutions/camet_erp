@@ -581,8 +581,6 @@ export const PartyList = async (req, res) => {
   const { owner: Primary_user_id, sUserId: secUserId } = req;
   const { outstanding ,voucher } = req.query;
 
-  // console.log("voucher", voucher);
-  
 
   try {
     // Fetch parties and secondary user concurrently
@@ -612,9 +610,7 @@ export const PartyList = async (req, res) => {
        sourceMatch =  { classification: "Cr" };
      }
 
-    //  console.log("sourceMatch", sourceMatch);
-     
-
+   
 
       const partyOutstandingData = await TallyData.aggregate([
         {
@@ -643,8 +639,6 @@ export const PartyList = async (req, res) => {
         },
       ]);
 
-      // console.log("partyOutstandingData", partyOutstandingData);
-      
 
       partyListWithOutstanding = partyList.map((party) => {
         const outstandingData = partyOutstandingData.find(
