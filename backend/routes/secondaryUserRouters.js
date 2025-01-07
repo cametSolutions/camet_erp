@@ -32,7 +32,7 @@ import { createStockTransfer,editStockTransfer, cancelStockTransfer } from '../c
 import { addBankPaymentDetails } from '../../frontend/slices/payment.js';
 import { addEmailConfiguration, getConfiguration, getBarcodeList, addBarcodeData, editBarcodeData, deleteBarcode, getSingleBarcodeData, getPrintingConfiguration, updateConfiguration } from '../controllers/settingsController.js';
 import { updateSecondaryUserConfiguration } from '../helpers/saleOrderHelper.js';
-import { updateDateFieldsByCompany } from '../controllers/testingController.js';
+import { updateDateFieldsByCompany, updateUnitFields } from '../controllers/testingController.js';
 
 
 router.post('/login',login)
@@ -175,6 +175,7 @@ router.put('/updateConfiguration/:cmp_id',authSecondary,secondaryIsBlocked,compa
 //// testing routes
 
 router.put('/updateDateFieldsByCompany/:cmp_id',updateDateFieldsByCompany)
+router.put('/updateUnitFields/:cmp_id',updateUnitFields)
 
 
 
