@@ -8,6 +8,8 @@ import VanSales from "../models/vanSaleModel.js";
 import Receipts from "../models/receiptModel.js";
 import Payments from "../models/paymentModel.js";
 import ProductModel from "../models/productModel.js";
+import salesModel from "../models/salesModel.js";
+import purchaseModel from "../models/purchaseModel.js";
 
 /**
  * @description Updates the `date` field in documents where it is missing
@@ -209,6 +211,64 @@ export const updateUnitFields = async (req, res) => {
     console.error("Error updating all unit fields:", error);
     return res.status(500).json({
       message: "An error occurred while updating unit fields for all products.",
+      error: error.message,
+    });
+  }
+};
+
+export const updateSalesItemUnitFields = async (req, res) => {
+  try {
+    // Find all sales documents and update the unit and alt_unit fields in items array
+    // const result = await salesModel.updateMany(
+    const result = await purchaseModel.updateMany(
+      {}, // Empty filter to match all documents
+      [
+        {
+          $set: {
+            items: {
+              $map: {
+                input: "$items",
+                as: "item",
+                in: {
+                  $mergeObjects: [
+                    "$$item",
+                    {
+                      unit: {
+                        $arrayElemAt: [
+                          { $split: ["$$item.unit", "-"] },
+                          0
+                        ]
+                      },
+                      alt_unit: {
+                        $cond: {
+                          if: { $eq: ["$$item.alt_unit", ""] },
+                          then: "",
+                          else: {
+                            $arrayElemAt: [
+                              { $split: ["$$item.alt_unit", "-"] },
+                              0
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      ]
+    );
+
+    return res.status(200).json({
+      message: "Unit fields updated for all sales items.",
+      modifiedCount: result.modifiedCount,
+    });
+  } catch (error) {
+    console.error("Error updating sales items unit fields:", error);
+    return res.status(500).json({
+      message: "An error occurred while updating unit fields for sales items.",
       error: error.message,
     });
   }
