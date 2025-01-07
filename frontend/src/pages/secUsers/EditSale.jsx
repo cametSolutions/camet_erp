@@ -157,8 +157,6 @@ function EditSale() {
           setSalesNumber(salesNumber);
         }
 
-        console.log("paymentSplittingReduxData", paymentSplittingReduxData);
-        console.log("paymentSplittingInitial", paymentSplittingInitial);
         
 
         if (

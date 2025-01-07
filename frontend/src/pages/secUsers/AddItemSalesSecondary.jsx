@@ -33,10 +33,11 @@ function AddItemSalesSecondary() {
   const [listHeight, setListHeight] = useState(0);
   const [scrollPosition, setScrollPosition] = useState(0);
   const [refresh, setRefresh] = useState(false);
+  const [isScanOn, setIsScanOn] = useState(false);
+  // const [scannedProducts, setScannedProducts] = useState([]);
 
   // const [godownname, setGodownname] = useState("");
   const [heights, setHeights] = useState({});
-
 
   ///////////////////////////cpm_id///////////////////////////////////
 
@@ -165,16 +166,19 @@ function AddItemSalesSecondary() {
               return product;
             }
           });
-          setItem(updatedItems);
-          if (updatedItems.length > 0) {
-            fetchFilters();
+
+          isScanOn ? setItem(itemsFromRedux) : setItem(updatedItems);
+
+          if (updatedItems.length > 0 ) {
+            await fetchFilters();
           }
 
           setRefresh((prevRefresh) => !prevRefresh);
         } else {
-          setItem(productData);
+          isScanOn ? setItem([]) : setItem(productData);
+
           if (productData.length > 0) {
-            fetchFilters();
+            await fetchFilters();
           }
           setRefresh((prevRefresh) => !prevRefresh);
         }
@@ -202,13 +206,25 @@ function AddItemSalesSecondary() {
       // listRef?.current?.scrollTo(parseInt(scrollPosition, 10));\
       window.scrollTo(0, scrollPosition);
     }
-  }, [cpm_id]);
+  }, [cpm_id,isScanOn]);
 
   ///////////////////////////setSelectedPriceLevel fom redux///////////////////////////////////
 
   useEffect(() => {
     setSelectedPriceLevel(priceLevelFromRedux);
   }, []);
+
+
+  //// resting height of list on toggling between scan and add items
+
+  useEffect(() => {
+    if (listRef.current) {
+      listRef.current.resetAfterIndex(0);
+    }
+
+    setSearch("");
+  
+  }, [isScanOn]);
 
   /////////////////////////scroll////////////////////////////
 
@@ -238,6 +254,7 @@ function AddItemSalesSecondary() {
   // useEffect(() => {
   const fetchFilters = async () => {
     try {
+
       let res;
       if (type == "self") {
         res = await api.get(`/api/sUsers/fetchFilters/${orgId}`, {
@@ -250,8 +267,12 @@ function AddItemSalesSecondary() {
       }
 
       if (type === "self") {
-        const { brands, categories, subcategories, priceLevels } =
-          res.data.data;
+        const {
+          // brands,
+          //  categories,
+          //   subcategories,
+          priceLevels,
+        } = res.data.data;
         // setBrands(brands);
         // setCategories(categories);
         // setSubCategories(subcategories);
@@ -275,9 +296,8 @@ function AddItemSalesSecondary() {
           setSelectedPriceLevel(defaultPriceLevel);
 
           // console.log("defaultPriceLevel", defaultPriceLevel);
-          
-          dispatch(setPriceLevel(defaultPriceLevel));
 
+          dispatch(setPriceLevel(defaultPriceLevel));
         }
       }
     } catch (error) {
@@ -456,15 +476,6 @@ function AddItemSalesSecondary() {
     };
   };
 
-
-  //// for find tax rate////////
-
-  const findTaxRate = (item) => {
-
-    
-
-  };
-
   ///////////////////////////handleAddClick///////////////////////////////////
 
   const handleAddClick = (_id, idx) => {
@@ -500,7 +511,7 @@ function AddItemSalesSecondary() {
         itemToUpdate.total = totalData?.total || 0;
         itemToUpdate.added = true;
 
-        dispatch(addItem(itemToUpdate));
+        dispatch(addItem({ payload: itemToUpdate, moveToTop: false }));
 
         return itemToUpdate;
       }
@@ -519,7 +530,7 @@ function AddItemSalesSecondary() {
 
   ///////////////////////////handleIncrement///////////////////////////////////
 
-  const handleIncrement = (_id, godownIndex = null) => {
+  const handleIncrement = (_id, godownIndex = null, moveToTop = false) => {
     const updatedItems = item.map((item) => {
       if (item._id !== _id) return item; // Keep items unchanged if _id doesn't match
       const currentItem = structuredClone(item);
@@ -567,18 +578,32 @@ function AddItemSalesSecondary() {
         currentItem.GodownList[0].individualTotal = totalData?.total; // Update the overall total
       }
 
-      dispatch(updateItem(currentItem)); // Log the updated currentItem
+      dispatch(updateItem({ item: currentItem, moveToTop })); // Log the updated currentItem
       return currentItem; // Return the updated currentItem
     });
 
-    setItem(updatedItems); // Update the state with the updated items
+    // Move the updated item to the top if moveToTop is true
+    if (moveToTop) {
+      const updatedItemIndex = updatedItems.findIndex((el) => el._id === _id);
+      if (updatedItemIndex !== -1) {
+        const [updatedItem] = updatedItems.splice(updatedItemIndex, 1);
+        setItem([updatedItem, ...updatedItems]); // Move the updated item to the top
+      } else {
+        setItem(updatedItems); // Otherwise, update the state as is
+      }
+    } else {
+      setItem(updatedItems); // Update the state with the updated items
+    } // Update the state with the updated items
   };
 
   ///////////////////////////handleDecrement///////////////////////////////////
   const handleDecrement = (_id, godownIndex = null) => {
+    console.log("handleDecrement called with id:", _id);
+
     const updatedItems = item.map((item) => {
       if (item._id !== _id) return item; // Keep items unchanged if _id doesn't match
       const currentItem = structuredClone(item);
+
       if (godownIndex !== null && currentItem.hasGodownOrBatch) {
         const godownOrBatch = { ...currentItem.GodownList[godownIndex] };
         godownOrBatch.count = new Decimal(godownOrBatch.count)
@@ -630,8 +655,9 @@ function AddItemSalesSecondary() {
         currentItem.GodownList[0].individualTotal = totalData?.total;
         currentItem.total = totalData.total; // Update the overall total
       }
+      console.log("currentItem", currentItem);
 
-      dispatch(updateItem(currentItem)); // Log the updated currentItem
+      dispatch(updateItem({ item: currentItem, moveToTop: false })); // Log the updated currentItem
       // Log the updated currentItem
       return currentItem; // Return the updated currentItem
     });
@@ -731,6 +757,7 @@ function AddItemSalesSecondary() {
 
     // Update state with the new items array
     setItem(updatedItems);
+    // dispatch(updateItem({ item: updatedItems[index], moveToTop: false }));
 
     // Optionally update refresh state or other operations
     // setRefresh((prevRefresh) => !prevRefresh);
@@ -766,6 +793,68 @@ function AddItemSalesSecondary() {
     });
   }, []);
 
+  //// handle barcode scan product search
+
+  const handleBarcodeScanProducts = (searchResult) => {
+    if (searchResult.length === 0) {
+      return;
+    }
+
+    let scannedItem = structuredClone(searchResult[0]);
+
+    // Finding price rate
+    const priceRate =
+      scannedItem?.Priceleveles?.find(
+        (priceLevelItem) => priceLevelItem.pricelevel === selectedPriceLevel
+      )?.pricerate || 0;
+
+    if (scannedItem?.hasGodownOrBatch) {
+      scannedItem.isExpanded = true;
+      scannedItem?.GodownList.forEach(
+        (godown) => (godown.selectedPriceRate = priceRate)
+      );
+
+      // Check if the item already exists
+      let isItemExistIndex = item?.findIndex(
+        (el) => el._id === scannedItem._id
+      );
+
+      if (isItemExistIndex !== -1) {
+        // Move the existing item to the top
+        // Move the existing item to the top
+        const [existingItem] = item.splice(isItemExistIndex, 1);
+
+        // Create a new object with updated properties
+        const updatedItem = { ...existingItem, isExpanded: true };
+        setItem([updatedItem, ...item]);
+        listRef.current.resetAfterIndex(0);
+      } else {
+        // Add the scanned item to the top if it doesn't exist
+        setItem((prevResults) => [scannedItem, ...prevResults]);
+      }
+    } else {
+      // Check if the item already exists
+      let isItemExistIndex = item?.findIndex(
+        (el) => el._id === scannedItem._id
+      );
+
+      if (isItemExistIndex !== -1) {
+        // Increment the count and move to the top
+        handleIncrement(scannedItem._id, null, true);
+      } else {
+        // Add the new item
+        scannedItem.added = true;
+        scannedItem.GodownList[0].selectedPriceRate = Number(priceRate);
+        scannedItem.GodownList[0].individualTotal = Number(priceRate);
+        scannedItem.count = 1;
+        scannedItem.total = Number(priceRate);
+        setItem((prevResults) => [scannedItem, ...prevResults]);
+        dispatch(addItem({ payload: scannedItem, moveToTop: true }));
+      }
+    }
+
+    console.log("item", item);
+  };
 
   return (
     <AdditemOfSale
@@ -804,6 +893,9 @@ function AddItemSalesSecondary() {
       handleIncrement={handleIncrement}
       handleAddClick={handleAddClick}
       addAllProducts={addAllProducts}
+      isScanOn={isScanOn}
+      handleBarcodeScanProducts={handleBarcodeScanProducts}
+      setIsScanOn={setIsScanOn}
     />
   );
 }

@@ -205,6 +205,8 @@ import SaleOrderPrintConfiguration from '../pages/secUsers/settilngs/PrintConfig
 import SalePrintConfiguration from '../pages/secUsers/settilngs/PrintConfiguration/SalePrintConfiguration'
 import DespatchTitleSettings from '../pages/secUsers/settilngs/dataEntry/invoiceAndOrderCommon/DespatchTitleSettings'
 import TermsAndConditionSettings from '../pages/secUsers/settilngs/dataEntry/invoiceAndOrderCommon/TermsAndConditionSettings'
+import BarcodeScan from '../components/secUsers/barcodeScanning/BarcodeScan'
+import PendingOrders from '../pages/secUsers/orderPendings/PendingOrders'
 
 const Routers = () => {
   return (
@@ -448,6 +450,12 @@ const Routers = () => {
         <Route path='/sUsers/partyFilterList' element={<ProtectedSecRoute><PartyFilterList/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/statusFilterList' element={<ProtectedSecRoute><StatusFilterList/></ProtectedSecRoute>}></Route>
 
+
+
+        {/* barcode scanning */}
+        <Route path='/sUsers/sales/scanProduct' element={<ProtectedSecRoute><BarcodeScan/></ProtectedSecRoute>}></Route>
+
+
         {/* settings */}
         <Route path='/sUsers/settings' element={<ProtectedSecRoute><SettingsList/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/StockItem' element={<ProtectedSecRoute><StockItem/></ProtectedSecRoute>}></Route>
@@ -478,6 +486,10 @@ const Routers = () => {
         <Route path='/sUsers/printConfiguration' element={<ProtectedSecRoute><PrintConfiguration/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/saleOrderPrintConfiguration' element={<ProtectedSecRoute><SaleOrderPrintConfiguration/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/salePrintConfiguration' element={<ProtectedSecRoute><SalePrintConfiguration/></ProtectedSecRoute>}></Route>
+
+      {/* order pending */}
+      <Route path='/sUsers/orderPending/partyList' element={<ProtectedSecRoute><SearchPartySalesSecondary/></ProtectedSecRoute>}></Route>
+      <Route path='/sUsers/pendingOrders/:partyId' element={<ProtectedSecRoute><PendingOrders/></ProtectedSecRoute>}></Route>
 
 
         {/* errorPage */}
