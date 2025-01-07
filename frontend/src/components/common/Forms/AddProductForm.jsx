@@ -507,8 +507,8 @@ function AddProductForm({
                     >
                       <option value="">Select a unit</option>
                       {units.map((el, index) => (
-                        <option key={index} value={el}>
-                          {el}
+                        <option key={index} value={el?.shortForm}>
+                          {el?.fullForm}
                         </option>
                       ))}
                     </select>
@@ -533,8 +533,8 @@ function AddProductForm({
                     >
                       <option value="">Select an Alt.unit</option>
                       {units.map((el, index) => (
-                        <option key={index} value={el}>
-                          {el}
+                        <option key={index} value={el?.shortForm}>
+                          {el?.fullForm}
                         </option>
                       ))}
                     </select>

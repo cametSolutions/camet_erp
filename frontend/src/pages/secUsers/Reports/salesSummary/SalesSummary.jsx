@@ -51,10 +51,10 @@ function SalesSummary() {
         <section className="shadow-lg border-b">
           <SelectDate />
         </section>
-        <section className="shadow-lg p-3 flex items-center gap-6 bg-white  border-b">
+        {/* <section className="shadow-lg p-3 flex items-center gap-6 bg-white  border-b">
           <PartyFilter />
           <StatusFilter />
-        </section>
+        </section> */}
 
         {transactionLoading && (
           <section className="w-full">
@@ -94,13 +94,13 @@ function SalesSummary() {
         </section>
       )}
 
-      <section>
+      {/* <section>
         <DashboardTransaction
           filteredData={transactionData?.data?.combined}
           userType={userAndCompanyData?.userType}
           from="/sUsers/reports/salesSummary"
         />
-      </section>
+      </section> */}
     </div>
   );
 }

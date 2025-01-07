@@ -1,280 +1,101 @@
 {
   "data": [
     {
-      "product_name": "Bathch only 1", 
-      "balance_stock": 100,
-      "category": "\u0004 Not Applicable",
-      "sub_category": "null",
-      "unit": "Nos",
-      "alt_unit": "null",
-      "unit_conversion": 0,
-      "alt_unit_conversion": 1,
-      "hsn_code": "\u0004 Not Found",
-      "cgst": 0,
-      "sgst": 0,
-      "igst": 0,
-      "cess": 0,
-      "addl_cess": 0,
-      "state_cess": 0,
-      "product_master_id": 100,
-      "cmp_id": "66b870a95387e8f388f9af6c",
-      "Primary_user_id": "65bcc9346b50fc180e8e804d",
-      "GodownList": [
-        {
-          "balance_stock": 50,
-          "batch": "B1 A",
-          "mfgdt": "31-Mar-24"
-        },
-        {
-          "balance_stock": 50,
-          "batch": "B1 B",
-          "mfgdt": "31-Mar-24"
-        }
-      ],
-     "Priceleveles": [
-        {
-          "alt_unit": "null",
-          "pricelevel": "P1",
-          
-          "pricerate": 100
-        },
-        {
-          "alt_unit": "null",
-          "pricelevel": "P2",
-          "pricerate": 200
-        },
-        {
-          "alt_unit": "null",
-          "pricelevel": "P3",
-          "pricerate": 300
-        }
-      ]
-    },
-    {
-      "product_name": "Bathch only 2",
-      "balance_stock": 100,
-      "category": "\u0004 Not Applicable",
-      "sub_category": "null",
-      "unit": "Nos",
-      "alt_unit": "null",
-      "unit_conversion": 0,
-      "alt_unit_conversion": 1,
-      "hsn_code": "\u0004 Not Found",
-      "cgst": 0,
-      "sgst": 0,
-      "igst": 0,
-      "cess": 0,
-      "addl_cess": 0,
-      "state_cess": 0,
-      "product_master_id": 101,
-      "cmp_id": "66b870a95387e8f388f9af6c",
-      "Primary_user_id": "65bcc9346b50fc180e8e804d",
-      "GodownList": [
-        {
-          "balance_stock": 25,
-          "batch": "B2",
-          "mfgdt": "1-Apr-23"
-        }
-      ],
-      "Priceleveles": [
-        {
-          "alt_unit": "null",
-          "pricelevel": "P1",
-          "pricerate": 100
-        },
-        {
-          "alt_unit": "null",
-          "pricelevel": "P2",
-          "pricerate": 200
-        },
-        {
-          "alt_unit": "null",
-          "pricelevel": "P3",
-          "pricerate": 300
-        }
-      ]
-    },
-    {
-      "product_name": "Bathch only 3",
-      "balance_stock": 14,
-      "category": "\u0004 Not Applicable",
-      "sub_category": "null",
-      "unit": "Nos",
-      "alt_unit": "null",
-      "unit_conversion": 0,
-      "alt_unit_conversion": 1,
-      "hsn_code": "\u0004 Not Found",
-      "cgst": 0,
-      "sgst": 0,
-      "igst": 0,
-      "cess": 0,
-      "addl_cess": 0,
-      "state_cess": 0,
-      "product_master_id": 102,
-      "cmp_id": "66b870a95387e8f388f9af6c",
-      "Primary_user_id": "65bcc9346b50fc180e8e804d",
-      "GodownList": [
-        {
-          "balance_stock": 14,
-          "batch": "B3",
-          "mfgdt": "1-Apr-23",
-          "expdt": "31-Dec-24"
-        }
-      ],
-      "Priceleveles": [
-        {
-          "alt_unit": "null",
-          "pricelevel": "P1",
-          "pricerate": 100
-        },
-        {
-          "alt_unit": "null",
-          "pricelevel": "P2",
-          "pricerate": 200
-        },
-        {
-          "alt_unit": "null",
-          "pricelevel": "P3",
-          "pricerate": 300
-        }
-      ]
-    },
-    {
-      "product_name": "Chatni Powder",
-      "product_code": "1",
-      "balance_stock": 73,
-      "godownCount": 5,
-      "category": "\u0004 Not Applicable",
-      "sub_category": "null",
-      "unit": "Nos",
-      "alt_unit": "null",
-      "unit_conversion": 0,
-      "alt_unit_conversion": 1,
-      "hsn_code": "091050",
-      "cgst": 2.5,
-      "sgst": 2.5,
-      "igst": 5,
-      "cess": 0,
-      "addl_cess": 0,
-      "state_cess": 0,
-      "product_master_id": 103,
-      "cmp_id": "66b870a95387e8f388f9af6c",
-      "Primary_user_id": "65bcc9346b50fc180e8e804d",
-      "GodownList": [
-        {
-          "balance_stock": 100,
-          "godown": "Main Location",
-          "godown_id": "ID:62",
-          "batch": "110",
-          "mfgdt": "1-Apr-18",
-          "expdt": "2 Days"
-        },
-        {
-          "balance_stock": 200,
-          "godown": "Dummy Location",
-          "godown_id": "ID:007",
-          "batch": "110",
-          "mfgdt": "1-Apr-18",
-          "expdt": "2 Days"
-        },
-        {
-          "balance_stock":300 ,
-          "godown": "Main Location",
-          "godown_id": "ID:62",
-          "batch": "A-1",
-          "mfgdt": "1-Apr-18",
-          "expdt": "3 Months"
-        },
-        {
-          "balance_stock": 400,
-          "godown": "Main Location",
-          "godown_id": "ID:62",
-          "batch": "A-2",
-          "mfgdt": "1-Apr-18",
-          "expdt": "3 Months"
-        },
-        {
-          "balance_stock": 500,
-          "godown": "Main Location",
-          "godown_id": "ID:62",
-          "batch": "CH - 01",
-          "mfgdt": "3-Apr-17",
-          "expdt": "1 Years"
-        },
-        {
-          "balance_stock": 600,
-          "godown": "Main Location",
-          "godown_id": "ID:62",
-          "batch": "Ch-04",
-          "mfgdt": "3-Apr-17",
-          "expdt": "6 Months"
-        }
-      ],
-      "Priceleveles": [
-        {
-          "alt_unit": "null",
-          "pricelevel": "P1",
-          "pricerate": 100
-        },
-        {
-          "alt_unit": "null",
-          "pricelevel": "P2",
-          "pricerate": 200
-        },
-        {
-          "alt_unit": "null",
-          "pricelevel": "P3",
-          "pricerate": 300
-        }
-      ]
-    },
-    {
+      "_id": {
+        "$oid": "673ebee5367189ee3537859a"
+      },
       "product_name": "Cut Mango Pickle",
-      "product_code": "CMP1",
-      "balance_stock": 54,
-      "godownCount": 3,
-      "category": "\u0004 Not Applicable",
-      "sub_category": "null",
-      "unit": "Nos",
-      "alt_unit": "null",
-      "unit_conversion": 0,
-      "alt_unit_conversion": 1,
-      "hsn_code": "210690",
-      "cgst": 6,
-      "sgst": 6,
-      "igst": 12,
-      "cess": 0,
-      "addl_cess": 0,
-      "state_cess": 0,
-      "product_master_id": 104,
       "cmp_id": "66b870a95387e8f388f9af6c",
-      "Primary_user_id": "65bcc9346b50fc180e8e804d",
+      "product_code": "123",
+      "balance_stock": -210,
+      "Primary_user_id": {
+        "$oid": "65bcc9346b50fc180e8e804d"
+      },
+      "category": {
+        "_id": "677cb9deb5e8d9932ed74615",
+        "name": "Bike"
+      },
+      "sub_category": "null",
+      "unit": "BOX",
+      "alt_unit": "BKL",
+      "unit_conversion": 50,
+      "alt_unit_conversion": 1,
+      "godownCount": 3,
+      "hsn_code": "210690",
+      "Priceleveles": [
+        {
+          "alt_unit": "null",
+          "pricelevel": "P1",
+          "pricerate": 100
+        },
+        {
+          "alt_unit": "null",
+          "pricelevel": "P2",
+          "pricerate": 200
+        },
+        {
+          "alt_unit": "null",
+          "pricelevel": "P3",
+          "pricerate": 300
+        }
+      ],
       "GodownList": [
         {
-          "balance_stock": 100,
+          "balance_stock": 15,
           "godown": "Main Location",
           "godown_id": "ID:62",
-          "batch": "55/107",
           "mfgdt": "1-Apr-17",
           "expdt": "1 Months"
         },
         {
-          "balance_stock": 200,
+          "balance_stock": 125,
           "godown": "Dummy Location 2",
           "godown_id": "ID:62878",
-          "batch": "55/107",
           "mfgdt": "1-Apr-18",
           "expdt": "3 Months"
         },
         {
-          "balance_stock": 300,
+          "balance_stock": 293,
           "godown": "Main Location",
           "godown_id": "ID:62",
-          "batch": "CMP-2",
           "mfgdt": "1-Apr-18",
           "expdt": "3 Months"
         }
       ],
+      "cgst": "6",
+      "sgst": "6",
+      "igst": "12",
+      "cess": "0",
+      "addl_cess": "0",
+      "state_cess": "0",
+      "product_master_id": "104",
+      "batchEnabled": false,
+      "__v": 0,
+      "brand": {
+        "_id": "66b9b3667d891d655fbc6d2b",
+        "name": "Honda"
+      }
+    },
+    {
+      "_id": {
+        "$oid": "673ebee5367189ee3537859c"
+      },
+      "product_name": "Bathch only 2",
+      "cmp_id": "66b870a95387e8f388f9af6c",
+      "balance_stock": 65,
+      "Primary_user_id": {
+        "$oid": "65bcc9346b50fc180e8e804d"
+      },
+      "category": {
+        "_id": "677cb9e0b5e8d9932ed74624",
+        "name": "Car"
+      },
+      "sub_category": "null",
+      "unit": "CAN",
+      "alt_unit": "BUN",
+      "unit_conversion": 5,
+      "alt_unit_conversion": 1,
+      "hsn_code": "",
       "Priceleveles": [
         {
           "alt_unit": "null",
@@ -291,37 +112,389 @@
           "pricelevel": "P3",
           "pricerate": 300
         }
-      ]
-    },
-    {
-      "product_name": "Dried Mango Pickle",
-      "balance_stock": -20,
-      "godownCount": 1,
-      "category": "\u0004 Not Applicable",
-      "sub_category": "null",
-      "unit": "Nos",
-      "alt_unit": "null",
-      "unit_conversion": 0,
-      "alt_unit_conversion": 1,
-      "hsn_code": "210690",
-      "cgst": 6,
-      "sgst": 6,
-      "igst": 12,
-      "cess": 0,
-      "addl_cess": 0,
-      "state_cess": 0,
-      "product_master_id": 105,
-      "cmp_id": "66b870a95387e8f388f9af6c",
-      "Primary_user_id": "65bcc9346b50fc180e8e804d",
+      ],
       "GodownList": [
         {
-          "balance_stock": -20,
+          "godown_id": "675018b0302dec4e100d79a6",
+          "godown": "Default Godown",
+          "balance_stock": 0,
+          "defaultGodown": true
+        }
+      ],
+      "cgst": "0",
+      "sgst": "0",
+      "igst": "0",
+      "cess": "0",
+      "addl_cess": "0",
+      "state_cess": "0",
+      "product_master_id": "101",
+      "batchEnabled": false,
+      "__v": 0,
+      "product_code": "13234",
+      "brand": {
+        "_id": "66b9b3767d891d655fbc6d30",
+        "name": "BMW"
+      }
+    },
+    {
+      "_id": {
+        "$oid": "673ebee5367189ee3537859e"
+      },
+      "product_name": "Bathch only 3",
+      "cmp_id": "66b870a95387e8f388f9af6c",
+      "balance_stock": 3,
+      "Primary_user_id": {
+        "$oid": "65bcc9346b50fc180e8e804d"
+      },
+      "category": {
+        "_id": "677cb9e2b5e8d9932ed74633",
+        "name": "Phone"
+      },
+      "sub_category": "null",
+      "unit": "CBM",
+      "alt_unit": "BTL",
+      "unit_conversion": 6,
+      "alt_unit_conversion": 1,
+      "hsn_code": "KO & KO",
+      "Priceleveles": [
+        {
+          "alt_unit": "null",
+          "pricelevel": "P1",
+          "pricerate": 100
+        },
+        {
+          "alt_unit": "null",
+          "pricelevel": "P2",
+          "pricerate": 200
+        },
+        {
+          "alt_unit": "null",
+          "pricelevel": "P3",
+          "pricerate": 300
+        }
+      ],
+      "GodownList": [
+        {
+          "godown_id": "675018b0302dec4e100d79a6",
+          "godown": "Default Godown",
+          "balance_stock": 0,
+          "defaultGodown": true
+        }
+      ],
+      "cgst": "10",
+      "sgst": "10",
+      "igst": "20",
+      "cess": "20",
+      "addl_cess": "30",
+      "state_cess": "0",
+      "product_master_id": "102",
+      "batchEnabled": false,
+      "__v": 0,
+      "product_code": "1235",
+      "brand": {
+        "_id": "66cc4dfd76e5ea13963d044b",
+        "name": "Apple"
+      }
+    },
+    {
+      "_id": {
+        "$oid": "673ebee5367189ee353785a0"
+      },
+      "product_name": "Bathch only 1",
+      "cmp_id": "66b870a95387e8f388f9af6c",
+      "balance_stock": 88,
+      "Primary_user_id": {
+        "$oid": "65bcc9346b50fc180e8e804d"
+      },
+      "category": {
+        "_id": "677cb9deb5e8d9932ed74615",
+        "name": "Bike"
+      },
+      "sub_category": "null",
+      "unit": "CAN",
+      "alt_unit": "BOX",
+      "unit_conversion": 6,
+      "alt_unit_conversion": 1,
+      "hsn_code": "KO & KO",
+      "Priceleveles": [
+        {
+          "alt_unit": "null",
+          "pricelevel": "P1",
+          "pricerate": 100
+        },
+        {
+          "alt_unit": "null",
+          "pricelevel": "P2",
+          "pricerate": 200
+        },
+        {
+          "alt_unit": "null",
+          "pricelevel": "P3",
+          "pricerate": 300
+        }
+      ],
+      "GodownList": [
+        {
+          "balance_stock": 44,
+          "mfgdt": "31-Mar-24"
+        },
+        {
+          "balance_stock": 45,
+          "mfgdt": "31-Mar-24"
+        }
+      ],
+      "cgst": "10",
+      "sgst": "10",
+      "igst": "20",
+      "cess": "20",
+      "addl_cess": "30",
+      "state_cess": "0",
+      "product_master_id": "100",
+      "batchEnabled": false,
+      "__v": 0,
+      "product_code": "123456",
+      "brand": {
+        "_id": "66b9b3667d891d655fbc6d2b",
+        "name": "Honda"
+      }
+    },
+    {
+      "_id": {
+        "$oid": "673ebee5367189ee353785a2"
+      },
+      "product_name": "Chatni Powder",
+      "cmp_id": "66b870a95387e8f388f9af6c",
+      "product_code": "1234567",
+      "balance_stock": 50,
+      "Primary_user_id": {
+        "$oid": "65bcc9346b50fc180e8e804d"
+      },
+      "category": {
+        "_id": "677cb9e0b5e8d9932ed74624",
+        "name": "Car"
+      },
+      "sub_category": "null",
+      "unit": "BUN",
+      "alt_unit": "BTL",
+      "unit_conversion": 5,
+      "alt_unit_conversion": 1,
+      "godownCount": 5,
+      "hsn_code": "KO & KO",
+      "Priceleveles": [
+        {
+          "alt_unit": "null",
+          "pricelevel": "P1",
+          "pricerate": 100
+        },
+        {
+          "alt_unit": "null",
+          "pricelevel": "P2",
+          "pricerate": 200
+        },
+        {
+          "alt_unit": "null",
+          "pricelevel": "P3",
+          "pricerate": 300
+        }
+      ],
+      "GodownList": [
+        {
+          "balance_stock": 89,
           "godown": "Main Location",
           "godown_id": "ID:62",
-          "batch": "34435",
+          "mfgdt": "1-Apr-18",
+          "expdt": "2 Days"
+        },
+        {
+          "balance_stock": 199,
+          "godown": "Dummy Location",
+          "godown_id": "ID:007",
+          "mfgdt": "1-Apr-18",
+          "expdt": "2 Days"
+        },
+        {
+          "balance_stock": 299,
+          "godown": "Main Location",
+          "godown_id": "ID:62",
+          "mfgdt": "1-Apr-18",
+          "expdt": "3 Months"
+        },
+        {
+          "balance_stock": 399,
+          "godown": "Main Location",
+          "godown_id": "ID:62",
+          "mfgdt": "1-Apr-18",
+          "expdt": "3 Months"
+        },
+        {
+          "balance_stock": 499,
+          "godown": "Main Location",
+          "godown_id": "ID:62",
+          "mfgdt": "3-Apr-17",
+          "expdt": "1 Years"
+        },
+        {
+          "balance_stock": 597,
+          "godown": "Main Location",
+          "godown_id": "ID:62",
+          "mfgdt": "3-Apr-17",
+          "expdt": "6 Months"
+        }
+      ],
+      "cgst": "10",
+      "sgst": "10",
+      "igst": "20",
+      "cess": "20",
+      "addl_cess": "30",
+      "state_cess": "0",
+      "product_master_id": "103",
+      "batchEnabled": false,
+      "__v": 0,
+      "brand": {
+        "_id": "66b9b3767d891d655fbc6d30",
+        "name": "BMW"
+      }
+    },
+    {
+      "_id": {
+        "$oid": "673ebee5367189ee353785a4"
+      },
+      "product_name": "Godown only 1",
+      "cmp_id": "66b870a95387e8f388f9af6c",
+      "balance_stock": 89,
+      "Primary_user_id": {
+        "$oid": "65bcc9346b50fc180e8e804d"
+      },
+      "category": {
+        "_id": "677cb9e2b5e8d9932ed74633",
+        "name": "Phone"
+      },
+      "sub_category": "null",
+      "unit": "CBM",
+      "alt_unit": "null",
+      "unit_conversion": 6,
+      "alt_unit_conversion": 1,
+      "godownCount": 1,
+      "hsn_code": "12121",
+      "Priceleveles": [
+        {
+          "alt_unit": "null",
+          "pricelevel": "P1",
+          "pricerate": 100
+        },
+        {
+          "alt_unit": "null",
+          "pricelevel": "P2",
+          "pricerate": 200
+        },
+        {
+          "alt_unit": "null",
+          "pricelevel": "P3",
+          "pricerate": 300
+        }
+      ],
+      "GodownList": [
+        {
+          "godown_id": "675018b0302dec4e100d79a6",
+          "godown": "Default Godown",
+          "balance_stock": 0,
+          "defaultGodown": true
+        }
+      ],
+      "cgst": "9",
+      "sgst": "9",
+      "igst": "18",
+      "cess": "0",
+      "addl_cess": "0",
+      "state_cess": "0",
+      "product_master_id": "106",
+      "batchEnabled": false,
+      "__v": 0,
+      "product_code": "12345678",
+      "brand": {
+        "_id": "66cc4dfd76e5ea13963d044b",
+        "name": "Apple"
+      }
+    },
+    {
+      "_id": {
+        "$oid": "673ebee5367189ee353785a6"
+      },
+      "product_name": "Dried Mango Pickle",
+      "cmp_id": "66b870a95387e8f388f9af6c",
+      "balance_stock": -24,
+      "Primary_user_id": {
+        "$oid": "65bcc9346b50fc180e8e804d"
+      },
+      "category": {
+        "_id": "677cb9deb5e8d9932ed74615",
+        "name": "Bike"
+      },
+      "sub_category": "null",
+      "unit": "BAL",
+      "alt_unit": "BUN",
+      "unit_conversion": 6,
+      "alt_unit_conversion": 1,
+      "godownCount": 1,
+      "hsn_code": "KO & KO",
+      "Priceleveles": [
+        {
+          "alt_unit": "null",
+          "pricelevel": "P1",
+          "pricerate": 100
+        },
+        {
+          "alt_unit": "null",
+          "pricelevel": "P2",
+          "pricerate": 200
+        },
+        {
+          "alt_unit": "null",
+          "pricelevel": "P3",
+          "pricerate": 300
+        }
+      ],
+      "GodownList": [
+        {
+          "balance_stock": -24,
+          "godown": "Main Location",
+          "godown_id": "ID:62",
           "mfgdt": "1-Apr-18"
         }
       ],
+      "cgst": "10",
+      "sgst": "10",
+      "igst": "20",
+      "cess": "20",
+      "addl_cess": "30",
+      "state_cess": "0",
+      "product_master_id": "105",
+      "batchEnabled": false,
+      "__v": 0,
+      "product_code": "123456789",
+      "brand": {
+        "_id": "66b9b3667d891d655fbc6d2b",
+        "name": "Honda"
+      }
+    },
+    {
+      "_id": {
+        "$oid": "673ebee5367189ee353785a8"
+      },
+      "product_name": "Godown only 2",
+      "cmp_id": "66b870a95387e8f388f9af6c",
+      "balance_stock": -16,
+      "Primary_user_id": {
+        "$oid": "65bcc9346b50fc180e8e804d"
+      },
+      "category": "\u0004 Not Applicable",
+      "sub_category": "null",
+      "unit": "Nos",
+      "alt_unit": "null",
+      "unit_conversion": 0,
+      "alt_unit_conversion": 1,
+      "godownCount": 1,
+      "hsn_code": "90922",
       "Priceleveles": [
         {
           "alt_unit": "null",
@@ -337,159 +510,102 @@
           "alt_unit": "null",
           "pricelevel": "P3",
           "pricerate": 300
-        }
-      ]
-    },
-    {
-      "product_name": "Godown only 1",
-      "balance_stock": 100,
-      "godownCount": 1,
-      "category": "\u0004 Not Applicable",
-      "sub_category": "null",
-      "unit": "Nos",
-      "alt_unit": "null",
-      "unit_conversion": 0,
-      "alt_unit_conversion": 1,
-      "hsn_code": "12121",
-      "cgst": 9,
-      "sgst": 9,
-      "igst": 18,
-      "cess": 0,
-      "addl_cess": 0,
-      "state_cess": 0,
-      "product_master_id": 106,
-      "cmp_id": "66b870a95387e8f388f9af6c",
-      "Primary_user_id": "65bcc9346b50fc180e8e804d",
-      "GodownList": [
-        {
-          "balance_stock": 100,
-          "godown": "GD 1",
-          "godown_id": "ID:168"
         }
       ],
-      "Priceleveles": [
-        {
-          "alt_unit": "null",
-          "pricelevel": "P1",
-          "pricerate": 100
-        },
-        {
-          "alt_unit": "null",
-          "pricelevel": "P2",
-          "pricerate": 200
-        },
-        {
-          "alt_unit": "null",
-          "pricelevel": "P3",
-          "pricerate": 300
-        }
-      ]
-    },
-    {
-      "product_name": "Godown only 2",
-      "balance_stock": 50,
-      "godownCount": 1,
-      "category": "\u0004 Not Applicable",
-      "sub_category": "null",
-      "unit": "Nos",
-      "alt_unit": "null",
-      "unit_conversion": 0,
-      "alt_unit_conversion": 1,
-      "hsn_code": "90922",
-      "cgst": 6,
-      "sgst": 6,
-      "igst": 12,
-      "cess": 0,
-      "addl_cess": 0,
-      "state_cess": 0,
-      "product_master_id": 107,
-      "cmp_id": "66b870a95387e8f388f9af6c",
-      "Primary_user_id": "65bcc9346b50fc180e8e804d",
       "GodownList": [
         {
-          "balance_stock": 50,
+          "balance_stock": 43,
           "godown": "GD 2",
           "godown_id": "ID:169"
         },
         {
-          "balance_stock": 50,
+          "balance_stock": -9,
           "godown": "GD 1",
           "godown_id": "ID:168"
         }
       ],
-      "Priceleveles": [
-        {
-          "alt_unit": "null",
-          "pricelevel": "P1",
-          "pricerate": 100
-        },
-        {
-          "alt_unit": "null",
-          "pricelevel": "P2",
-          "pricerate": 200
-        },
-        {
-          "alt_unit": "null",
-          "pricelevel": "P3",
-          "pricerate": 300
-        }
-      ]
+      "cgst": "6",
+      "sgst": "6",
+      "igst": "12",
+      "cess": "0",
+      "addl_cess": "0",
+      "state_cess": "0",
+      "product_master_id": "107",
+      "batchEnabled": false,
+      "__v": 0,
+      "product_code": "223456789"
     },
     {
+      "_id": {
+        "$oid": "673ebee5367189ee353785aa"
+      },
       "product_name": "Nothing 1",
-      "balance_stock": 100,
-      "category": "\u0004 Not Applicable",
+      "cmp_id": "66b870a95387e8f388f9af6c",
+      "balance_stock": 66,
+      "Primary_user_id": {
+        "$oid": "65bcc9346b50fc180e8e804d"
+      },
+      "category": {
+        "_id": "677cb9e2b5e8d9932ed74633",
+        "name": "Phone"
+      },
       "sub_category": "null",
-      "unit": "Nos",
-      "alt_unit": "null",
-  
-      "unit_conversion": 0,
+      "unit": "CAN",
+      "alt_unit": "BUN",
+      "unit_conversion": 6,
       "alt_unit_conversion": 1,
       "hsn_code": "12121",
-      "cgst": 9,
-      "sgst": 9,
-      "igst": 18,
-      "cess": 0,
-      "addl_cess": 0,
-      "state_cess": 0,
-      "product_master_id": 108,
-      "cmp_id": "66b870a95387e8f388f9af6c",
-      "Primary_user_id": "65bcc9346b50fc180e8e804d",
-      "GodownList": [
-        {
-          "balance_stock": 100
-        }
-      ],
       "Priceleveles": [
         {
-          "alt_unit": "null"
-        }
-      ]
-    },
-    {
-      "product_name": "Nothing 2",
-      "balance_stock": 50,
-      "category": "\u0004 Not Applicable",
-      "sub_category": "null",
-      "unit": "Nos",
-      "alt_unit": "null",
-      "unit_conversion": 0,
-      "alt_unit_conversion": 1,
-      "hsn_code": "90922",
-      "cgst": 6,
-      "sgst": 6,
-      "igst": 12,
-      "cess": 0,
-      "addl_cess": 0,
-      "state_cess": 0,
-      "product_master_id": 109,
-      "cmp_id": "66b870a95387e8f388f9af6c",
-      "Primary_user_id": "65bcc9346b50fc180e8e804d",
+          "alt_unit": "null",
+          "pricelevel": "P1",
+          "pricerate": "100"
+        },
+        {}
+      ],
       "GodownList": [
         {
-          "balance_stock": 60
+          "godown_id": "675018b0302dec4e100d79a6",
+          "godown": "Default Godown",
+          "balance_stock": 0,
+          "defaultGodown": true
         }
       ],
+      "cgst": "9",
+      "sgst": "9",
+      "igst": "18",
+      "cess": "0",
+      "addl_cess": "0",
+      "state_cess": "0",
+      "product_master_id": "108",
+      "batchEnabled": false,
+      "__v": 0,
+      "product_code": "2234567891",
+      "brand": {
+        "_id": "66cc4dfd76e5ea13963d044b",
+        "name": "Apple"
+      }
+    },
+    {
+      "_id": {
+        "$oid": "673ebee5367189ee353785ac"
+      },
+      "product_name": "Nothing 2",
+      "cmp_id": "66b870a95387e8f388f9af6c",
+      "balance_stock": 9,
+      "Primary_user_id": {
+        "$oid": "65bcc9346b50fc180e8e804d"
+      },
+      "category": {
+        "_id": "677cb9e0b5e8d9932ed74624",
+        "name": "Car"
+      },
+      "sub_category": "null",
+      "unit": "BUN",
+      "alt_unit": "BTL",
+      "unit_conversion": 6,
+      "alt_unit_conversion": 1,
+      "hsn_code": "90922",
       "Priceleveles": [
         {
           "alt_unit": "null",
@@ -506,14 +622,29 @@
           "pricelevel": "P3",
           "pricerate": 300
         }
-      ]
+      ],
+      "GodownList": [
+        {
+          "godown_id": "675018b0302dec4e100d79a6",
+          "godown": "Default Godown",
+          "balance_stock": 0,
+          "defaultGodown": true
+        }
+      ],
+      "cgst": "6",
+      "sgst": "6",
+      "igst": "12",
+      "cess": "0",
+      "addl_cess": "0",
+      "state_cess": "0",
+      "product_master_id": "109",
+      "batchEnabled": false,
+      "__v": 0,
+      "product_code": "22345678912",
+      "brand": {
+        "_id": "66b9b3767d891d655fbc6d30",
+        "name": "BMW"
+      }
     }
   ]
 }
-
-
-
-
-
-
-
