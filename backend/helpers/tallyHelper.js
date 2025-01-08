@@ -5,6 +5,7 @@ import salesModel from "../models/salesModel.js";
 import stockTransferModel from "../models/stockTransferModel.js";
 import TransactionModel from "../models/TransactionModel.js";
 import vanSaleModel from "../models/vanSaleModel.js";
+import purchaseModel from "../models/purchaseModel.js";
 
 export const fetchData = async (type, cmp_id, serialNumber, res) => {
   let model;
@@ -18,6 +19,10 @@ export const fetchData = async (type, cmp_id, serialNumber, res) => {
     case "vanSales":
       model = vanSaleModel;
       break;
+
+      case "purchase":
+        model = purchaseModel;
+        break;
     case "transactions":
       model = TransactionModel;
       break;
