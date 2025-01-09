@@ -694,7 +694,7 @@ function AddItemSalesSecondary() {
         });
 
         dispatch(
-          updateItem({ ...item, GodownList: updatedGodownList, total: total })
+          updateItem({item:{ ...item, GodownList: updatedGodownList, total: total }, moveToTop: false})
         );
         return {
           ...item,
@@ -711,6 +711,9 @@ function AddItemSalesSecondary() {
   ///////////////////////////handlePriceLevelChange///////////////////////////////////
 
   const handlePriceLevelChange = (e) => {
+
+    console.log("handlePriceLevelChange");
+    
     const selectedValue = e.target.value;
     setSelectedPriceLevel(selectedValue);
     dispatch(setPriceLevel(selectedValue));

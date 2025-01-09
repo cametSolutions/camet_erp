@@ -192,6 +192,8 @@ export const salesSecondarySlice = createSlice({
 
     updateItem: (state, actions) => {
       const {item,moveToTop=false} = actions.payload
+      console.log(actions.payload);
+      
       console.log("item",item);
       
       console.log("mocveToTop",moveToTop);

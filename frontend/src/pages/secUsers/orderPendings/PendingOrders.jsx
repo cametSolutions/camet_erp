@@ -8,7 +8,6 @@ import { useMemo } from "react";
 import { PiSelectionAllFill } from "react-icons/pi";
 import { PiSelectionAllDuotone } from "react-icons/pi";
 
-
 function PendingOrders() {
   const { start, end } = useSelector((state) => state.date);
   const { partyId } = useParams();
@@ -69,22 +68,37 @@ function PendingOrders() {
 
       <div className="bg-white p-2 shadow-lg font-bold text-xs sm:text-sm pr-4 text-gray-500 flex items-center justify-between">
         <div className="flex items-center gap-2  ">
-       {
-        selectAll ? (
-          <PiSelectionAllFill onClick={handleSelectAll} className="w-4 h-4 cursor-pointer text-black text-sm sm:text-lg" />
-        ) : (
-          <PiSelectionAllDuotone onClick={handleSelectAll} className="w-4 h-4 cursor-pointer text-sm sm:text-lg " />
-        )
-       }
-           <p>Select all</p>
+          {selectAll ? (
+            <PiSelectionAllFill
+              onClick={handleSelectAll}
+              className="w-4 h-4 cursor-pointer text-black text-sm sm:text-lg"
+            />
+          ) : (
+            <PiSelectionAllDuotone
+              onClick={handleSelectAll}
+              className="w-4 h-4 cursor-pointer text-sm sm:text-lg "
+            />
+          )}
+          <p>Select all</p>
         </div>
-        <div>
+        {/* <div>
           Total : ₹
           {parseFloat(
             transactionData?.data?.totalTransactionAmount || 0
           ).toLocaleString()}{" "}
-        </div>
+        </div> */}
+          {/* <div className="bg-white py-2 shadow-lg flex  justify-end px-2"> */}
+        <button className="bg-blue-500 px-2.5 text-xs py-1.5  text-white rounded">
+          Convert
+        </button>
       </div>
+      {/* </div> */}
+
+      {/* <div className="bg-white py-2 shadow-lg flex  justify-end px-2">
+        <button className="bg-blue-500 px-2.5 text-xs py-1.5  text-white rounded">
+          Convert
+        </button>
+      </div> */}
 
       <div className=" py-2">
         <div className="bg-white rounded-lg ">
@@ -133,7 +147,6 @@ function PendingOrders() {
                     </tr>
                   ))}
                 </tbody>
-               
               </table>
             </div>
           </div>
