@@ -55,7 +55,7 @@ function SearchPartyPurchase() {
     if (location?.state?.from === "editPurchase") {
       navigate(`/sUsers/editPurchase/${location?.state?.id}`);
     } else {
-      navigate("/sUsers/purchase");
+      navigate(-1,{replace:true});
     }
   };
 
