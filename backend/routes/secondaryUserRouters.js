@@ -116,7 +116,8 @@ import {
 import {
   createInvoice,
   editInvoice,
-  cancelSalesOrder
+  cancelSalesOrder,
+  PartyListWithOrderPending
 } from "../controllers/saleOrderController.js"
 import {
   createStockTransfer,
@@ -140,7 +141,11 @@ import {
   updateTermsAndConditions
 } from "../controllers/settingsController.js"
 import { updateSecondaryUserConfiguration } from "../helpers/saleOrderHelper.js"
-import { updateDateFieldsByCompany } from "../controllers/testingController.js"
+import {
+  updateDateFieldsByCompany,
+  updateSalesItemUnitFields,
+  updateUnitFields
+} from "../controllers/testingController.js"
 
 router.post("/login", login)
 router.post("/sendOtp", sendOtp)
@@ -176,7 +181,13 @@ router.get(
   companyAuthentication,
   transactions
 )
-
+router.get(
+  "/salesSummary/:cmp_id",
+  authSecondary,
+  secondaryIsBlocked,
+  companyAuthentication,
+  getSummary
+)
 router.get(
   "/getTransactionDetails/:id",
   authSecondary,
@@ -784,17 +795,19 @@ router.put(
   updateTermsAndConditions
 )
 
-//// testing routes
-
-router.put("/updateDateFieldsByCompany/:cmp_id", updateDateFieldsByCompany)
-
-///////sales summary routes
+/// order pending
 router.get(
-  "/salesSummary/:cmp_id",
+  "/PartyListWithOrderPending/:cmp_id",
   authSecondary,
   secondaryIsBlocked,
   companyAuthentication,
-  getSummary
+  PartyListWithOrderPending
 )
+
+//// testing routes
+
+router.put("/updateDateFieldsByCompany/:cmp_id", updateDateFieldsByCompany)
+router.put("/updateUnitFields/:cmp_id", updateUnitFields)
+router.put("/updateSalesItemUnitFields/:cmp_id", updateSalesItemUnitFields)
 
 export default router

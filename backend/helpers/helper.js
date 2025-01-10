@@ -73,13 +73,12 @@ export const aggregateTransactions = (
   type,
   voucherNumber
 ) => {
-  console.log("nooo", voucherNumber)
   return model.aggregate([
     { $match: matchCriteria },
     {
       $addFields: {
-        Secondary_user_idObj: { $toObjectId: "$Secondary_user_id" }
-      }
+        Secondary_user_idObj: { $toObjectId: "$Secondary_user_id" },
+      },
     },
     {
       $lookup: {
@@ -87,8 +86,8 @@ export const aggregateTransactions = (
         localField: "Secondary_user_idObj",
         foreignField: "_id",
         as: "secondaryUser",
-        pipeline: [{ $project: { name: 1, _id: 0 } }]
-      }
+        pipeline: [{ $project: { name: 1, _id: 0 } }],
+      },
     },
     { $unwind: { path: "$secondaryUser", preserveNullAndEmptyArrays: true } },
     {
@@ -101,7 +100,7 @@ export const aggregateTransactions = (
           type === "Receipt" || type === "Payment"
             ? "$enteredAmount"
             : "$finalAmount",
-        date: 1,
+            date: 1,
         createdAt: 1,
         isCancelled: 1,
         paymentMethod: 1,
@@ -112,9 +111,9 @@ export const aggregateTransactions = (
               "$paymentSplittingData.balanceAmount",
               type === "Receipt" || type === "Payment"
                 ? "$enteredAmount"
-                : "$finalAmount"
-            ]
-          }
+                : "$finalAmount",
+            ],
+          },
         },
         // cashTotal: {
         //   $toString: {
@@ -137,23 +136,23 @@ export const aggregateTransactions = (
                       if: {
                         $or: [
                           { $eq: [type, "Receipt"] },
-                          { $eq: [type, "Payment"] }
-                        ]
+                          { $eq: [type, "Payment"] },
+                        ],
                       },
                       then: "$enteredAmount",
-                      else: "$finalAmount"
-                    }
+                      else: "$finalAmount",
+                    },
                   },
-                  else: "0"
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  ])
-}
+                  else: "0",
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  ]);
+};
 
 // Function to aggregate opening balance with proper string-to-number conversion
 export const aggregateOpeningBalance = async (

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import TitleDiv from "../../../../components/common/TitleDiv"
 import FindUserAndCompany from "../../../../components/Filters/FindUserAndCompany"
 import PartyFilter from "../../../../components/Filters/party/PartyFilter"
@@ -16,6 +16,9 @@ import { MdDoNotDisturbOnTotalSilence } from "react-icons/md"
 function SalesSummary() {
   const [userAndCompanyData, setUserAndCompanyData] = useState(null)
   const [selectedOption, setSelectedOption] = useState("Ledger")
+  const [summary, setSummary] = useState([])
+  const [datasummary, setdataSummary] = useState([])
+
   // const location = useLocation();
 
   const { accGroup } = useParams()
@@ -37,15 +40,165 @@ function SalesSummary() {
   }, [userAndCompanyData, start, end, selectedOption])
 
   const {
-    data: transactionData,
+    data: salesummaryData,
     loading: transactionLoading,
     error: transactionError
   } = useFetch(salesummaryUrl)
-  console.log(transactionData)
+  useEffect(() => {
+    if (salesummaryData && salesummaryData?.flattenedResults) {
+      setSummary(salesummaryData.flattenedResults)
+    }
+  }, [salesummaryData])
+  useEffect(() => {
+    if (summary && summary.length > 0) {
+      if (selectedOption === "Ledger") {
+        handleLedger(selectedOption)
+      } else if (selectedOption === "Stock Item") {
+      } else if (selectedOption === "") {
+      }
+    }
+  }, [summary])
+  const handleLedger = (option) => {
+    let check = []
+    let arr = []
+    const partybase = summary.map((item) => {
+      let existingParty = check.find((data) => {
+        data.partyId === item.party?._id
+      })
+
+      if (existingParty) {
+        const sale = item.items.map((it) => {
+          if (it.hasGodownOrBatch) {
+            return (godown = it.GodownList.map((items) => {
+              if (items.added) {
+                const a = {
+                  billnumber: item?.salesNumber,
+                  billDate: item?.date,
+                  itemName: item.product_name,
+                  batch: items?.batch,
+                  groupName: it?.brand?.name,
+                  quantity: items?.count,
+                  rate: items?.selectedPriceRate,
+                  discount: items?.discount,
+                  taxPercentage: it?.igst,
+                  taxAmount: it?.igstAmt,
+                  netAmount: it?.individualTotal
+                }
+                existingParty.sale.push(a)
+              }
+            }))
+          }
+        })
+      } else {
+        let object = {
+          partyName: item?.party?.partyName,
+          partyId: item?.party?._id,
+          sale: []
+        }
+
+        const sale = item.items.map((it) => {
+          if (it.hasGodownOrBatch) {
+            if (
+              it.GodownList.every((item) => item.godown_id) && // Check all have godown_id
+              it.GodownList.every((item) => !item.hasOwnProperty("batch")) // Ensure no item has batch
+            ) {
+              console.log("unddddd")
+              const godown = it.GodownList.reduce((acc, items) => {
+                const existing = acc.find(
+                  (entry) => entry.godown_id === items.godown_id
+                )
+
+                if (existing) {
+                  console.log("inddddd")
+                  // Update totals for the existing entry
+                  existing.quantity += items?.count || 0
+                  existing.discount += items?.discount || 0
+                  existing.netAmount += items?.individualTotal || 0
+                  existing.taxAmount += items?.igstAmt || 0
+                } else {
+                  console.log("mergedddd")
+                  // Add a new entry for this godown_id
+                  acc.push({
+                    godown_id: items?.godown_id,
+                    billnumber: item?.salesNumber,
+                    billDate: item?.date,
+                    itemName: it?.product_name,
+                    groupName: it?.brand?.name,
+                    quantity: items?.count || 0,
+                    rate: items?.selectedPriceRate || 0,
+                    discount: items?.discount || 0,
+                    taxPercentage: it?.igst || 0,
+                    taxAmount: items?.igstAmt || 0,
+                    netAmount: items?.individualTotal || 0
+                  })
+                }
+                return acc
+              }, [])
+              object.sale.push(godown)
+            } else {
+              const godown = it.GodownList.map((items) => {
+                if (items.added) {
+                  const a = {
+                    billnumber: item?.salesNumber,
+                    billDate: item?.date,
+                    itemName: it?.product_name,
+                    batch: items?.batch,
+                    groupName: it?.brand?.name,
+                    quantity: items?.count,
+                    rate: items?.selectedPriceRate,
+                    discount: items?.discount,
+                    taxPercentage: it?.igst,
+                    taxAmount: it?.igstAmt,
+                    netAmount: items?.individualTotal
+                  }
+                  object.sale.push(a)
+                }
+              })
+            }
+            // const down = it.GodownList.reduce((acc, ms) => {
+            //   if (ms?.godown_id && !ms?.batch) {
+            //     acc.push(2)
+            //     const existing = acc.find(
+            //       (entry) => entry.godown_id === ms.godown_id
+            //     )
+            //     console.log("godownonly", acc)
+            //     console.log("godownonly2", ms)
+            //   }
+            //   return acc
+            // }, [])
+          } else {
+            const godown = it.GodownList.map((items) => {
+              const a = {
+                billnumber: item?.salesNumber,
+                billDate: item?.date,
+                itemName: it?.product_name,
+
+                groupName: it?.brand?.name,
+                quantiy: it?.count,
+                rate: items?.selectedPriceRate,
+                discount: it?.discount,
+                taxPercentage: it?.igst,
+                taxAmount: it?.igstAmt,
+                netAmount: items?.individualTotal
+              }
+              object.sale.push(a)
+            })
+          }
+        })
+        check.push(object)
+
+        // arr.push(saleobject)
+        // object.sale = arr
+        // check.push(object)
+      }
+    })
+    console.log("checkk", check)
+  }
+
   const handleUserAndCompanyData = (data) => {
     setUserAndCompanyData(data)
   }
-  console.log("hiiiddd", transactionData)
+
   return (
     <div>
       <div className="sticky top-0 z-50">

@@ -63,7 +63,7 @@ export const getSummary = async (req, res) => {
     }
     // Get the appropriate models to query based on selectedVoucher
     const modelsToQuery = selectedVoucher ? summaryTypeMap[selectedVoucher] : ""
-    console.log("querrrrrr", modelsToQuery)
+
     if (!modelsToQuery) {
       return res.status(400).json({
         status: false,
@@ -71,12 +71,19 @@ export const getSummary = async (req, res) => {
       })
     }
     // Create transaction promises based on selected voucher type
-    const summaryPromises = modelsToQuery.map(({ model, numberField }) => {
+    const summaryPromises = modelsToQuery.map(({ model, numberField }) =>
       aggregateSummary(model, matchCriteria, numberField)
-    })
-    console.log("promises",summaryPromises)
-    // const results = await Promise.all(summaryPromises)
-    console.log("resultssss", results)
+    )
+
+    const results = await Promise.all(summaryPromises)
+    const flattenedResults = results.flat()
+
+    console.log("res", flattenedResults)
+    if (results.length > 0) {
+      return res
+        .status(200)
+        .json({ message: "Sale summary found", flattenedResults })
+    }
   } catch (error) {
     console.log("error:", error.message)
   }

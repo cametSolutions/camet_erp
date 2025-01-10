@@ -22,6 +22,7 @@ import reciptAandPayments from "../../../assets/images/reciptsandpayments.png";
 import bank from "../../../assets/images/bank.png";
 import outStanding from "../../../assets/images/outstanding.png";
 import stockRegister from "../../../assets/images/clipboard.png";
+import peding from "../../../assets/images/pending.png";
 
 import { IoAlertCircle } from "react-icons/io5";
 
@@ -110,6 +111,13 @@ const others = [
     to: "/sUsers/stockTransfer",
     active: true,
     subtitle: "Track inventory transfers between locations",
+  },
+  {
+    title: "Order Pending",
+    icon: peding,
+    to: "/sUsers/orderPending/partyList",
+    active: true,
+    subtitle: "Convert pending orders to sales",
   },
 
   // Commented out tiles can be uncommented if needed

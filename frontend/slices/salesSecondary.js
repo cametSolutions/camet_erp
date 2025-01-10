@@ -164,13 +164,29 @@ export const salesSecondarySlice = createSlice({
     },
 
     addItem: (state, action) => {
-      const index = state.items.findIndex((el) => el._id === action.payload._id)
+      const { payload, moveToTop } = action.payload;
+    
+      const index = state.items.findIndex((el) => el._id === payload._id);
+    
       if (index !== -1) {
-        state.items[index] = action.payload
+        // If the item already exists, update it
+        state.items[index] = payload;
+    
+        if (moveToTop) {
+          // Remove the item from its current position and move it to the top
+          const [updatedItem] = state.items.splice(index, 1);
+          state.items.unshift(updatedItem);
+        }
       } else {
-        state.items.push(action.payload)
+        // If the item doesn't exist, add it
+        if (moveToTop) {
+          state.items.unshift(payload);
+        } else {
+          state.items.push(payload);
+        }
       }
     },
+    
 
     // updateItem: (state, actions) => {
     //   const index = state.items.findIndex(
@@ -181,23 +197,23 @@ export const salesSecondarySlice = createSlice({
     //   }
     // },
     updateItem: (state, actions) => {
-      const { item, moveToTop = false } = actions.payload
-      console.log(actions.payload)
-
-      console.log("item", item)
-
-      console.log("mocveToTop", moveToTop)
-
-      const index = state.items.findIndex((el) => el._id === item._id)
+      const {item,moveToTop=false} = actions.payload
+      console.log("item",item);
+      
+      console.log("mocveToTop",moveToTop);
+      
+      const index = state.items.findIndex(
+        (el) => el._id === item._id
+      );
       if (index !== -1) {
-        state.items[index] = item
+        state.items[index] = item;
 
         if (moveToTop) {
           // Remove the item from its current position and move it to the top
-          const [updatedItem] = state.items.splice(index, 1)
-          console.log("updatedItem", updatedItem)
-
-          state.items.unshift(updatedItem)
+          const [updatedItem] = state.items.splice(index, 1);
+          console.log("updatedItem", updatedItem);
+          
+          state.items.unshift(updatedItem);
         }
       }
     },
