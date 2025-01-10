@@ -58,7 +58,7 @@ export const formatToLocalDate = async (date, cmp_id, session) => {
 
 
 
-///formatting amount with comma
+///formatting amount with commaeit
 
 export const formatAmount = (amount) => {
   return amount.toLocaleString("en-IN", { maximumFractionDigits: 2 });
