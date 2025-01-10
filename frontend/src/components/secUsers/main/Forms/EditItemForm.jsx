@@ -181,6 +181,8 @@ function EditItemForm({
     discountPercentage,
     taxExclusivePrice,
   ]);
+
+  
   const handleBackClick = () => {
     navigate(-1);
   };
