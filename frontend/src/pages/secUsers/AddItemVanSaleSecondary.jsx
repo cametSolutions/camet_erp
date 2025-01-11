@@ -90,7 +90,6 @@ function AddItemVanSaleSecondary() {
           withCredentials: true,
         });
 
-        console.log(godown.data?.data?.godownName);
         
         setGodownname(godown.data?.data?.godownName || "");
 
@@ -528,7 +527,7 @@ function AddItemVanSaleSecondary() {
         itemToUpdate.total = totalData?.total || 0;
         itemToUpdate.added = true;
 
-        dispatch(addItem(itemToUpdate));
+        dispatch(addItem({ payload: itemToUpdate, moveToTop: false }));
 
         return itemToUpdate;
       }
@@ -546,7 +545,7 @@ function AddItemVanSaleSecondary() {
 
   ///////////////////////////handleIncrement///////////////////////////////////
 
-  const handleIncrement = (_id, godownIndex = null) => {
+  const handleIncrement = (_id, godownIndex = null,moveToTop = false) => {
     const updatedItems = item.map((item) => {
       if (item._id !== _id) return item; // Keep items unchanged if _id doesn't match
       const currentItem = structuredClone(item);
@@ -604,7 +603,7 @@ function AddItemVanSaleSecondary() {
         currentItem.GodownList[0].individualTotal = totalData?.total; // Update the overall total
       }
 
-      dispatch(updateItem(currentItem)); // Log the updated currentItem
+      dispatch(updateItem({ item: currentItem, moveToTop })); // Log the updated currentItem
       return currentItem; // Return the updated currentItem
     });
 
@@ -678,7 +677,7 @@ function AddItemVanSaleSecondary() {
         currentItem.total = totalData.total; // Update the overall total
       }
 
-      dispatch(updateItem(currentItem)); // Log the updated currentItem
+      dispatch(updateItem({ item: currentItem, moveToTop: false })); // Log the updated currentItem
       // Log the updated currentItem
       return currentItem; // Return the updated currentItem
     });
@@ -715,7 +714,7 @@ function AddItemVanSaleSecondary() {
         });
 
         dispatch(
-          updateItem({ ...item, GodownList: updatedGodownList, total: total })
+          updateItem({item:{ ...item, GodownList: updatedGodownList, total: total }, moveToTop: false})
         );
         return {
           ...item,
@@ -738,7 +737,6 @@ function AddItemVanSaleSecondary() {
     handleTotalChangeWithPriceLevel(selectedValue);
   };
 
-  console.log(item);
 
   ///////////////////////////react window ///////////////////////////////////
 
@@ -779,8 +777,7 @@ function AddItemVanSaleSecondary() {
     }
 
     // Log the updated items for debugging
-    console.log(updatedItems.length);
-    console.log(updatedItems);
+
 
     // Update state with the new items array
     setItem(updatedItems);
@@ -823,7 +820,6 @@ function AddItemVanSaleSecondary() {
     });
   }, []);
 
-  console.log(filteredItems);
 
   const Row = ({ index, style }) => {
     const el = filteredItems[index];
@@ -1106,31 +1102,8 @@ function AddItemVanSaleSecondary() {
               </div> */}
           </div>
 
-          <div className=" px-3 py-2 bg-white drop-shadow-lg  ">
-            <div className="flex justify-between  items-center"></div>
-            <div className="mt-2  md:w-1/2 ">
-              <div className="relative ">
-                <div className="absolute inset-y-0 start-0 flex items-center  pointer-events-none ">
-                  <svg
-                    className="w-4 h-4 text-gray-500 "
-                    aria-hidden="true"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      stroke="currentColor"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"
-                    />
-                  </svg>
-                </div>
-                <SearchBar onType={searchData} />
-              </div>
-            </div>
-          </div>
+          <SearchBar onType={searchData} />
+         
 
 
           <Filter addAllProducts={addAllProducts} godownName={godownname} />

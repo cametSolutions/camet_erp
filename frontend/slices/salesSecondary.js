@@ -168,7 +168,7 @@ export const salesSecondarySlice = createSlice({
     addItem: (state, action) => {
       const { payload, moveToTop } = action.payload;
     
-      const index = state.items.findIndex((el) => el._id === payload._id);
+      const index = state.items.findIndex((el) => el?._id === payload?._id);
     
       if (index !== -1) {
         // If the item already exists, update it
@@ -197,8 +197,11 @@ export const salesSecondarySlice = createSlice({
       console.log("mocveToTop",moveToTop);
       
       const index = state.items.findIndex(
-        (el) => el._id === item._id
+        (el) => el?._id === item?._id
       );
+
+      console.log("index",index);
+      
       if (index !== -1) {
         state.items[index] = item;
 
