@@ -694,7 +694,7 @@ function AddItemSalesSecondary() {
         });
 
         dispatch(
-          updateItem({ ...item, GodownList: updatedGodownList, total: total })
+          updateItem({item:{ ...item, GodownList: updatedGodownList, total: total }, moveToTop: false})
         );
         return {
           ...item,
