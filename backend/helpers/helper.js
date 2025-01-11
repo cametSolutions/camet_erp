@@ -70,8 +70,69 @@ export const aggregateTransactions = (
   model,
   matchCriteria,
   type,
-  voucherNumber
+  voucherNumber,
+  returnFullDetails
 ) => {
+  // Define base projection fields that are always included
+  const baseProjection = {
+    voucherNumber: `$${voucherNumber}`,
+    party_name: "$party.partyName",
+    accountGroup: "$party.accountGroup",
+    type: type,
+    enteredAmount:
+      type === "Receipt" || type === "Payment"
+        ? "$enteredAmount"
+        : "$finalAmount",
+    date: 1,
+    createdAt: 1,
+    isCancelled: 1,
+    paymentMethod: 1,
+    secondaryUserName: "$secondaryUser.name",
+    balanceAmount: {
+      $toString: {
+        $ifNull: [
+          "$paymentSplittingData.balanceAmount",
+          type === "Receipt" || type === "Payment"
+            ? "$enteredAmount"
+            : "$finalAmount",
+        ],
+      },
+    },
+    cashTotal: {
+      $toString: {
+        $cond: {
+          if: { $ifNull: ["$paymentSplittingData.cashTotal", false] },
+          then: "$paymentSplittingData.cashTotal",
+          else: {
+            $cond: {
+              if: { $eq: ["$party.accountGroup", "Cash-in-Hand"] },
+              then: {
+                $cond: {
+                  if: {
+                    $or: [
+                      { $eq: [type, "Receipt"] },
+                      { $eq: [type, "Payment"] },
+                    ],
+                  },
+                  then: "$enteredAmount",
+                  else: "$finalAmount",
+                },
+              },
+              else: "0",
+            },
+          },
+        },
+      },
+    },
+  };
+
+  // Add additional fields if returnFullDetails is true
+  if (returnFullDetails) {
+    baseProjection.items = 1;
+    baseProjection.party = 1;
+    baseProjection.additionalCharges = 1;
+  }
+
   return model.aggregate([
     { $match: matchCriteria },
     {
@@ -90,68 +151,10 @@ export const aggregateTransactions = (
     },
     { $unwind: { path: "$secondaryUser", preserveNullAndEmptyArrays: true } },
     {
-      $project: {
-        voucherNumber: `$${voucherNumber}`,
-        party_name: "$party.partyName",
-        accountGroup: "$party.accountGroup",
-        type: type,
-        enteredAmount:
-          type === "Receipt" || type === "Payment"
-            ? "$enteredAmount"
-            : "$finalAmount",
-            date: 1,
-        createdAt: 1,
-        isCancelled: 1,
-        paymentMethod: 1,
-        secondaryUserName: "$secondaryUser.name",
-        balanceAmount: {
-          $toString: {
-            $ifNull: [
-              "$paymentSplittingData.balanceAmount",
-              type === "Receipt" || type === "Payment"
-                ? "$enteredAmount"
-                : "$finalAmount",
-            ],
-          },
-        },
-        // cashTotal: {
-        //   $toString: {
-        //     $ifNull: [
-        //       '$paymentSplittingData.cashTotal',
-        //       "0"
-        //     ]
-        //   }
-        // },
-        cashTotal: {
-          $toString: {
-            $cond: {
-              if: { $ifNull: ["$paymentSplittingData.cashTotal", false] },
-              then: "$paymentSplittingData.cashTotal",
-              else: {
-                $cond: {
-                  if: { $eq: ["$party.accountGroup", "Cash-in-Hand"] },
-                  then: {
-                    $cond: {
-                      if: {
-                        $or: [
-                          { $eq: [type, "Receipt"] },
-                          { $eq: [type, "Payment"] },
-                        ],
-                      },
-                      then: "$enteredAmount",
-                      else: "$finalAmount",
-                    },
-                  },
-                  else: "0",
-                },
-              },
-            },
-          },
-        },
-      },
+      $project: baseProjection
     },
   ]);
-};
+};  
 
 // Function to aggregate opening balance with proper string-to-number conversion
 export const aggregateOpeningBalance = async (

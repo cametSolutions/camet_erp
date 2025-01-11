@@ -338,7 +338,16 @@ export const transactions = async (req, res) => {
     endOfDayParam,
     party_id,
     selectedVoucher,
+    fullDetails="false",
   } = req.query;
+
+  let returnFullDetails = false;
+
+  if (fullDetails === "true") {
+    returnFullDetails = true;
+  }
+
+  
 
   try {
     // Initialize dateFilter based on provided parameters
@@ -455,6 +464,9 @@ export const transactions = async (req, res) => {
       });
     }
 
+    console.log("full details", typeof(fullDetails));
+    
+
     // Create transaction promises based on selected voucher type
     const transactionPromises = modelsToQuery.map(
       ({ model, type, numberField }) =>
@@ -465,7 +477,9 @@ export const transactions = async (req, res) => {
             ...(userId ? { Secondary_user_id: userId } : {}),
           },
           type,
-          numberField
+          numberField,
+          returnFullDetails
+
         )
     );
 

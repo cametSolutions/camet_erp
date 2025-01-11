@@ -7,6 +7,9 @@ import { useParams } from "react-router-dom";
 import { useMemo } from "react";
 import { PiSelectionAllFill } from "react-icons/pi";
 import { PiSelectionAllDuotone } from "react-icons/pi";
+import { useDispatch } from "react-redux";
+import { addOrderConversionDetails } from "../../../../slices/salesSecondary";
+import { useNavigate } from "react-router-dom";
 
 function PendingOrders() {
   const { start, end } = useSelector((state) => state.date);
@@ -16,12 +19,14 @@ function PendingOrders() {
   );
   const [selectedOrders, setSelectedOrders] = useState(new Set());
   const [selectAll, setSelectAll] = useState(false);
+  const dispatch = useDispatch();
+  const navigate=useNavigate();
 
   const transactionsUrl = useMemo(() => {
     if (start && end) {
       return `/api/sUsers/transactions/${cmp_id}?party_id=${
         partyId ?? ""
-      }&startOfDayParam=${start}&endOfDayParam=${end}&selectedVoucher=saleOrder`;
+      }&startOfDayParam=${start}&endOfDayParam=${end}&selectedVoucher=saleOrder&fullDetails=true`;
     }
     return null;
   }, [cmp_id, start, end, partyId]);
@@ -53,6 +58,72 @@ function PendingOrders() {
     }
     setSelectedOrders(newSelected);
   };
+
+
+  
+
+
+  const handleConvertion = () => {
+    const selectedSaleOrders = transactionData?.data?.combined.filter((order) =>
+      selectedOrders.has(order._id)
+    );
+  
+    console.log("selectedSaleOrders", selectedSaleOrders);
+  
+    if (selectedSaleOrders.length === 0) return;
+  
+    const party = selectedSaleOrders[0].party;
+  
+    // Combine all items and modify `GodownList[0].individualTotal`
+    const allItems = selectedSaleOrders.reduce((acc, order) => {
+      const updatedItems = order.items.map((item) => {
+        if (item?.GodownList?.[0]) {
+          // Add `total` to `GodownList[0].individualTotal`
+          item.GodownList[0].individualTotal =
+            Number(item.GodownList[0].individualTotal || 0) + Number(item.total || 0);
+        }
+        return item;
+      });
+      return acc.concat(updatedItems);
+    }, []);
+  
+    // Combine additional charges to get allAdditionalCharges
+    const allAdditionalCharges = selectedSaleOrders.reduce((acc, order) => {
+      return acc.concat(order.additionalCharges);
+    }, []);
+  
+    // Consolidate additional charges by `_id`
+    const consolidatedAdditionalCharges = allAdditionalCharges.reduce((acc, charge) => {
+      const existingCharge = acc.find((item) => item._id === charge._id);
+      if (existingCharge) {
+        // If the same `_id` exists, consolidate the values
+        existingCharge.value = Number(existingCharge.value) + Number(charge.value);
+        existingCharge.finalValue =
+          Number(existingCharge.finalValue) + Number(charge.finalValue);
+        existingCharge.taxAmt = Number(existingCharge.taxAmt) + Number(charge.taxAmt);
+      } else {
+        // Add new charge if `_id` doesn't exist
+        acc.push({ ...charge });
+      }
+      return acc;
+    }, []);
+  
+    console.log("Consolidated Additional Charges:", consolidatedAdditionalCharges);
+  
+    // Dispatch updated items and additional charges
+    dispatch(
+      addOrderConversionDetails({
+        items: allItems,
+        party,
+        additionalCharges: consolidatedAdditionalCharges, // Add consolidated additional charges
+      })
+    );
+  
+    navigate("/sUsers/sales");
+  };
+  
+  
+  
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
@@ -87,8 +158,13 @@ function PendingOrders() {
             transactionData?.data?.totalTransactionAmount || 0
           ).toLocaleString()}{" "}
         </div> */}
-          {/* <div className="bg-white py-2 shadow-lg flex  justify-end px-2"> */}
-        <button className="bg-blue-500 px-2.5 text-xs py-1.5  text-white rounded">
+        {/* <div className="bg-white py-2 shadow-lg flex  justify-end px-2"> */}
+        <button
+          onClick={() => {
+            handleConvertion();
+          }}
+          className="bg-blue-500 px-2.5 text-xs py-1.5  text-white rounded"
+        >
           Convert
         </button>
       </div>
