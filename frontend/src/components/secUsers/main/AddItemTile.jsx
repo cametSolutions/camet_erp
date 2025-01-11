@@ -98,10 +98,10 @@ function AddItemTile({
                             }
                           } else {
                             return (acc += Number(
-                              curr.individualTotal.toFixed(2) || 0
-                            ));
+                              curr.individualTotal?.toFixed(2) || 0
+                            )) || el?.total;
                           }
-                        }, 0).toFixed(2)}
+                        }, 0)?.toFixed(2)}
                       </p>
                     </div>
                     <div className="flex gap-1 text-xs mt-1">
@@ -112,7 +112,9 @@ function AddItemTile({
                       el.GodownList.map((godownOrBatch, idx) =>
                         godownOrBatch.added ? (
                           <>
-                            <div className="flex items-center gap-2">
+                            <div
+                              key={idx}
+                             className="flex items-center gap-2">
                               <MdCancel
                                 onClick={() => {
                                   dispatch(

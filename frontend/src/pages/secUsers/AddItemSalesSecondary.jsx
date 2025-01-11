@@ -711,6 +711,9 @@ function AddItemSalesSecondary() {
   ///////////////////////////handlePriceLevelChange///////////////////////////////////
 
   const handlePriceLevelChange = (e) => {
+
+    console.log("handlePriceLevelChange");
+    
     const selectedValue = e.target.value;
     setSelectedPriceLevel(selectedValue);
     dispatch(setPriceLevel(selectedValue));

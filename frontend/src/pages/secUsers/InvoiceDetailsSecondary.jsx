@@ -38,17 +38,27 @@ function InvoiceDetailsSecondary() {
     getTransactionDetails();
   }, [refresh, id]);
 
-
   const backHandler = () => {
-    let pathnameWithoutId = location.pathname.split('/').slice(0, -1).join('/');
-    if (location?.state?.from === "dashboard" ) {
+    let pathnameWithoutId = location.pathname.split("/").slice(0, -1).join("/");
+    if (location?.state?.from === "dashboard") {
       navigate("/sUsers/dashboard");
-    } else if(pathnameWithoutId === '/sUsers/InvoiceDetails'){
+    } else if (pathnameWithoutId === "/sUsers/InvoiceDetails") {
       navigate("/sUsers/dashboard");
     } else {
       navigate(-1);
     }
   };
+
+  const handleEdit = () => {
+    if (data?.isConverted === true) {
+      alert(
+        "You can't edit this voucher since it has been  converted to sales"
+      );
+      return;
+    }
+    navigate(`/sUsers/editInvoice/${data._id}`);
+  };
+
   return (
     <div className="bg-[rgb(244,246,254)] flex-1 relative  pb-[70px] md:pb-0 ">
       {/* headinh section  */}
@@ -75,8 +85,6 @@ function InvoiceDetailsSecondary() {
         user={"secondary"}
         number={data?.orderNumber}
         tab={"salesOrder"}
-
-
       />
       {/* header */}
 
@@ -116,10 +124,12 @@ function InvoiceDetailsSecondary() {
             tab="SalesOrder"
             isCancelled={data?.isCancelled}
             reFetch={reFetch}
+            isConverted={data?.isConverted}
           />
 
           <div
-            onClick={() => navigate(`/sUsers/editInvoice/${data._id}`)}
+            // onClick={() => navigate(`/sUsers/editInvoice/${data._id}`)}
+            onClick={handleEdit}
             className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer"
           >
             <FaEdit className="text-blue-500" />

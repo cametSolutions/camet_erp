@@ -4,6 +4,7 @@ const initialState = {
   // selectedGodownName:"",
   // selectedGodownId:"",
   date: "",
+  convertedFrom:[],
   products: [],
   party: {},
   items: [],
@@ -44,8 +45,6 @@ export const salesSecondarySlice = createSlice({
     addAllProducts: (state, action) => {
       state.products = action.payload;
     },
-   
-
 
     removeItem: (state, action) => {
       const id = action.payload._id;
@@ -173,7 +172,7 @@ export const salesSecondarySlice = createSlice({
       if (index !== -1) {
         // If the item already exists, update it
         state.items[index] = payload;
-    
+
         if (moveToTop) {
           // Remove the item from its current position and move it to the top
           const [updatedItem] = state.items.splice(index, 1);
@@ -188,7 +187,6 @@ export const salesSecondarySlice = createSlice({
         }
       }
     },
-    
 
     updateItem: (state, actions) => {
       const {item,moveToTop=false} = actions.payload
@@ -209,7 +207,7 @@ export const salesSecondarySlice = createSlice({
           // Remove the item from its current position and move it to the top
           const [updatedItem] = state.items.splice(index, 1);
           console.log("updatedItem", updatedItem);
-          
+
           state.items.unshift(updatedItem);
         }
       }
@@ -297,15 +295,21 @@ export const salesSecondarySlice = createSlice({
           }
         });
 
-
         item.total = item.GodownList.reduce((acc, curr) => {
           const individualTotal = parseFloat(curr?.individualTotal) || 0;
           return acc + individualTotal;
         }, 0);
-
       }
     },
-    
+
+    addOrderConversionDetails: (state, action) => {
+      const { party, items,additionalCharges,convertedFrom } = action.payload;
+
+      state.items = items;
+      state.party = party;
+      state.additionalCharges = additionalCharges;
+      state.convertedFrom = convertedFrom
+    },
   },
 });
 
@@ -346,6 +350,8 @@ export const {
   addDespatchDetails,
   changeDate,
   changeTaxInclusive,
+  addOrderConversionDetails
+  
 } = salesSecondarySlice.actions;
 
 export default salesSecondarySlice.reducer;

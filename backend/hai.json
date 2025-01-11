@@ -1,11 +1,9 @@
 {
   "data": [
     {
-      "_id": {
-        "$oid": "673ebee5367189ee3537859a"
-      },
+   
       "product_name": "Cut Mango Pickle",
-      "cmp_id": "66b870a95387e8f388f9af6c",
+      "cmp_id": "65bccc186b50fc180e8e806f",
       "product_code": "123",
       "balance_stock": -210,
       "Primary_user_id": {
@@ -77,11 +75,9 @@
       }
     },
     {
-      "_id": {
-        "$oid": "673ebee5367189ee3537859c"
-      },
+     
       "product_name": "Bathch only 2",
-      "cmp_id": "66b870a95387e8f388f9af6c",
+      "cmp_id": "65bccc186b50fc180e8e806f",
       "balance_stock": 65,
       "Primary_user_id": {
         "$oid": "65bcc9346b50fc180e8e804d"
@@ -137,11 +133,9 @@
       }
     },
     {
-      "_id": {
-        "$oid": "673ebee5367189ee3537859e"
-      },
+     
       "product_name": "Bathch only 3",
-      "cmp_id": "66b870a95387e8f388f9af6c",
+      "cmp_id": "65bccc186b50fc180e8e806f",
       "balance_stock": 3,
       "Primary_user_id": {
         "$oid": "65bcc9346b50fc180e8e804d"
@@ -197,11 +191,9 @@
       }
     },
     {
-      "_id": {
-        "$oid": "673ebee5367189ee353785a0"
-      },
+      
       "product_name": "Bathch only 1",
-      "cmp_id": "66b870a95387e8f388f9af6c",
+      "cmp_id": "65bccc186b50fc180e8e806f",
       "balance_stock": 88,
       "Primary_user_id": {
         "$oid": "65bcc9346b50fc180e8e804d"
@@ -259,11 +251,9 @@
       }
     },
     {
-      "_id": {
-        "$oid": "673ebee5367189ee353785a2"
-      },
+     
       "product_name": "Chatni Powder",
-      "cmp_id": "66b870a95387e8f388f9af6c",
+      "cmp_id": "65bccc186b50fc180e8e806f",
       "product_code": "1234567",
       "balance_stock": 50,
       "Primary_user_id": {
@@ -356,11 +346,9 @@
       }
     },
     {
-      "_id": {
-        "$oid": "673ebee5367189ee353785a4"
-      },
+    
       "product_name": "Godown only 1",
-      "cmp_id": "66b870a95387e8f388f9af6c",
+      "cmp_id": "65bccc186b50fc180e8e806f",
       "balance_stock": 89,
       "Primary_user_id": {
         "$oid": "65bcc9346b50fc180e8e804d"
@@ -417,11 +405,9 @@
       }
     },
     {
-      "_id": {
-        "$oid": "673ebee5367189ee353785a6"
-      },
+     
       "product_name": "Dried Mango Pickle",
-      "cmp_id": "66b870a95387e8f388f9af6c",
+      "cmp_id": "65bccc186b50fc180e8e806f",
       "balance_stock": -24,
       "Primary_user_id": {
         "$oid": "65bcc9346b50fc180e8e804d"
@@ -478,11 +464,9 @@
       }
     },
     {
-      "_id": {
-        "$oid": "673ebee5367189ee353785a8"
-      },
+      
       "product_name": "Godown only 2",
-      "cmp_id": "66b870a95387e8f388f9af6c",
+      "cmp_id": "65bccc186b50fc180e8e806f",
       "balance_stock": -16,
       "Primary_user_id": {
         "$oid": "65bcc9346b50fc180e8e804d"
@@ -536,11 +520,9 @@
       "product_code": "223456789"
     },
     {
-      "_id": {
-        "$oid": "673ebee5367189ee353785aa"
-      },
+     
       "product_name": "Nothing 1",
-      "cmp_id": "66b870a95387e8f388f9af6c",
+      "cmp_id": "65bccc186b50fc180e8e806f",
       "balance_stock": 66,
       "Primary_user_id": {
         "$oid": "65bcc9346b50fc180e8e804d"
@@ -587,11 +569,9 @@
       }
     },
     {
-      "_id": {
-        "$oid": "673ebee5367189ee353785ac"
-      },
+   
       "product_name": "Nothing 2",
-      "cmp_id": "66b870a95387e8f388f9af6c",
+      "cmp_id": "65bccc186b50fc180e8e806f",
       "balance_stock": 9,
       "Primary_user_id": {
         "$oid": "65bcc9346b50fc180e8e804d"

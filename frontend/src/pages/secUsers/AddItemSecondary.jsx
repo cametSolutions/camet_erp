@@ -301,6 +301,9 @@ const filterItems = (items, brand, category, subCategory, searchTerm) => {
           pricelevel,
           "priceLevelChange"
         ).toFixed(2);
+
+        console.log("newTotal", newTotal);
+        
         dispatch(changeTotal({ ...item, total: newTotal }));
 
         const newPriceRate = item?.Priceleveles.find(
@@ -318,8 +321,13 @@ const filterItems = (items, brand, category, subCategory, searchTerm) => {
       return item;
     });
 
+    
+
     setItem(updatedItems);
   };
+
+  // console.log("item", item);
+  
 
   ///////////////////////////handleIncrement///////////////////////////////////
 
@@ -389,8 +397,8 @@ const filterItems = (items, brand, category, subCategory, searchTerm) => {
     const selectedValue = e.target.value;
     setSelectedPriceLevel(selectedValue);
     dispatch(setPriceLevel(selectedValue));
-    handleTotalChangeWithPriceLevel(selectedValue);
     addSelectedRate(selectedValue);
+    handleTotalChangeWithPriceLevel(selectedValue);
   };
 
   /////////////////////////// calculateHeight ///////////////////////////////////

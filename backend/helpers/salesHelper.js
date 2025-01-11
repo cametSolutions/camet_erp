@@ -9,6 +9,7 @@ import cashModel from "../models/cashModel.js";
 import bankModel from "../models/bankModel.js";
 import partyModel from "../models/partyModel.js";
 import mongoose from "mongoose";
+import invoiceModel from "../models/invoiceModel.js";
 
 export const checkForNumberExistence = async (
   model,
@@ -327,6 +328,7 @@ export const createSaleRecord = async (
   req,
   salesNumber,
   updatedItems,
+
   updateAdditionalCharge,
 
   session
@@ -341,6 +343,8 @@ export const createSaleRecord = async (
       lastAmount,
       selectedDate,
       paymentSplittingData,
+      convertedFrom = [],
+
     } = req.body;
 
     const Primary_user_id = req.owner;
@@ -377,6 +381,8 @@ export const createSaleRecord = async (
       date:await formatToLocalDate(selectedDate, orgId, session),
       createdAt: new Date(),
       paymentSplittingData,
+      convertedFrom,
+
     });
 
     const result = await sales.save({ session });
@@ -985,3 +991,42 @@ export const revertSettlementData = async (
     throw error;
   }
 };
+
+
+export const changeConversionStatusOfOrder = async (convertedFrom, session) => {
+  try {
+    const orderIds = convertedFrom.map(item => item._id); // Extract all order IDs
+    await invoiceModel.updateMany(
+      { _id: { $in: orderIds } }, // Filter for the orders
+      { $set: { isConverted: true } }, // Update `isConverted` field
+      { session } // Pass the session for transactional safety
+    );
+  } catch (error) {
+    console.error("Error in changeConversionStatusOfOrder:", {
+      error: error.message,
+      stack: error.stack,
+      input: { convertedFrom },
+    });
+    throw error;
+  }
+};
+
+
+export const reverseConversionStatusOfOrder = async (convertedFrom, session) => {
+  try {
+    const orderIds = convertedFrom.map(item => item._id); // Extract all order IDs
+    await invoiceModel.updateMany(
+      { _id: { $in: orderIds } }, // Filter for the orders
+      { $set: { isConverted: false } }, // Update `isConverted` field
+      { session } // Pass the session for transactional safety
+    );
+  } catch (error) {
+    console.error("Error in changeConversionStatusOfOrder:", {
+      error: error.message,
+      stack: error.stack,
+      input: { convertedFrom },
+    });
+    throw error;
+  }
+};
+

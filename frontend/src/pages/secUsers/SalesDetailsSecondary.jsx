@@ -51,15 +51,15 @@ function SalesDetailsSecondary() {
 
   };
 
-  const handleEdit = () => {
-    if (data?.isEditable === false) {
-      alert(
-        "You can't edit this voucher since it has been used to generate receipts or payments"
-      );
-      return;
-    }
-    navigate(`/sUsers/editSale/${data?._id}`);
-  };
+    const handleEdit = () => {
+      if (data?.isEditable === false) {
+        alert(
+          "You can't edit this voucher since it has been used to generate receipts or payments"
+        );
+        return;
+      }
+      navigate(`/sUsers/editSale/${data?._id}`);
+    };
 
   return (
     <div className="bg-[rgb(244,246,254)] flex-1  relative  pb-[70px] md:pb-0 ">

@@ -6,24 +6,35 @@ import api from "../../api/api";
 import { toast } from "react-toastify";
 import { useState } from "react";
 
-function CancelButton({ id, tab, isCancelled, reFetch, vanSale = false,isEditable }) {
+function CancelButton({
+  id,
+  tab,
+  isCancelled,
+  reFetch,
+  vanSale = false,
+  isEditable,
+  isConverted = false,
+}) {
   const [refresh, setRefresh] = useState(false);
 
   if (tab === "vanSale") {
-
     tab = "Sales";
     vanSale = true;
   }
-
-  
-
 
   const handleCancel = () => {
     console.log("isEditablerr", isEditable);
 
     if (isEditable !== undefined && isEditable === false) {
-      
-      window.alert("You can't cancel this voucher since it has been used to generate receipts or payments");
+      window.alert(
+        "You can't cancel this voucher since it has been used to generate receipts or payments"
+      );
+      return;
+    }
+    if (isConverted !== undefined && isConverted === true) {
+      window.alert(
+        "You can't edit this voucher since it has been  converted to sales"
+      );
       return;
     }
     Swal.fire({
