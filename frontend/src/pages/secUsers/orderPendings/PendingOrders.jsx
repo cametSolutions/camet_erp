@@ -43,9 +43,10 @@ function PendingOrders() {
     if (transactionData?.data?.combined) {
       const filteredOrders = transactionData?.data?.combined.filter(
         (order) =>
-          order.isConverted === false ||
-          order.isConverted === null ||
-          order.isConverted === undefined
+          (order.isConverted === false ||
+            order.isConverted === null ||
+            order.isConverted === undefined) &&
+          order.isCancelled === false
       );
       setFilteredOrders(filteredOrders);
     }
@@ -71,11 +72,9 @@ function PendingOrders() {
       newSelected.add(orderId);
     }
 
-    
-
-    if (newSelected.size ===filteredOrders?.length) {
+    if (newSelected.size === filteredOrders?.length) {
       setSelectAll(true);
-    }else{
+    } else {
       setSelectAll(false);
     }
     setSelectedOrders(newSelected);
