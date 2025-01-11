@@ -464,7 +464,6 @@ export const transactions = async (req, res) => {
       });
     }
 
-    console.log("full details", typeof(fullDetails));
     
 
     // Create transaction promises based on selected voucher type

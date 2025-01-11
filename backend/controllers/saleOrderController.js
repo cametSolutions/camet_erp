@@ -341,7 +341,12 @@ export const PartyListWithOrderPending = async (req, res) => {
       invoiceModel.find({ 
         cmp_id, 
         Primary_user_id,
-        isCancelled: false 
+        isCancelled: false ,
+        $or: [
+          { isConverted: false },
+          { isConverted: { $exists: false } },
+          { isConverted: null }
+        ]
       }).select('party._id finalAmount')
     ]);
 

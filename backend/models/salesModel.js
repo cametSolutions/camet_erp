@@ -12,6 +12,7 @@ const salesSchema = new mongoose.Schema(
         return date;
       }
     },
+    convertedFrom: { type: Array,default:[] },
     serialNumber: { type: Number }, // Add this line to include a serial number field
     salesNumber: { type: String, required: true },
     Primary_user_id: { type: String, required: true },

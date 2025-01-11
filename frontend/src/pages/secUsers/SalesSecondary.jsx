@@ -4,7 +4,7 @@ import { useSelector } from "react-redux";
 import {
   removeParty,
   addAdditionalCharges,
-  AddFinalAmount,
+  // AddFinalAmount,
   deleteRow,
 } from "../../../slices/salesSecondary";
 import { useDispatch } from "react-redux";
@@ -55,10 +55,17 @@ function SalesSecondary() {
   const despatchDetails = useSelector(
     (state) => state.salesSecondary.despatchDetails
   );
+  const convertedFrom = useSelector(
+    (state) => state.salesSecondary.convertedFrom
+  ) || [];
 
   const paymentSplittingReduxData = useSelector(
     (state) => state?.paymentSplitting?.paymentSplittingData
   );
+
+
+  console.log("convertedFrom", convertedFrom);
+  
 
   ////dataLoading////
   // Helper function to manage dataLoading state
@@ -339,16 +346,13 @@ function SalesSecondary() {
 
   const submitHandler = async () => {
     setSubmitLoading(true);
-    // console.log("haii");
     if (Object.keys(party).length == 0) {
-      // console.log("haii");
 
       toast.error("Add a party first");
       setSubmitLoading(false);
       return;
     }
     if (items.length == 0) {
-      // console.log("haii");
 
       toast.error("Add at least an item");
       setSubmitLoading(false);
@@ -387,6 +391,7 @@ function SalesSecondary() {
       salesNumber,
       batchHeights,
       selectedDate,
+      convertedFrom
     };
 
     if (Object.keys(paymentSplittingReduxData).length !== 0) {
@@ -418,7 +423,8 @@ function SalesSecondary() {
     } catch (error) {
       toast.error(error.response.data.message);
       console.log(error);
-    } finally {
+    } 
+    finally {
       setSubmitLoading(false);
     }
   };

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import TitleDiv from "../../../components/common/TitleDiv";
 import SelectDate from "../../../components/Filters/SelectDate";
@@ -17,10 +17,12 @@ function PendingOrders() {
   const cmp_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
+
+  const [filteredOrders, setFilteredOrders] = useState([]);
   const [selectedOrders, setSelectedOrders] = useState(new Set());
   const [selectAll, setSelectAll] = useState(false);
   const dispatch = useDispatch();
-  const navigate=useNavigate();
+  const navigate = useNavigate();
 
   const transactionsUrl = useMemo(() => {
     if (start && end) {
@@ -36,6 +38,18 @@ function PendingOrders() {
     loading: transactionLoading,
     error: transactionError,
   } = useFetch(transactionsUrl);
+
+  useEffect(() => {
+    if (transactionData?.data?.combined) {
+      const filteredOrders = transactionData?.data?.combined.filter(
+        (order) =>
+          order.isConverted === false ||
+          order.isConverted === null ||
+          order.isConverted === undefined
+      );
+      setFilteredOrders(filteredOrders);
+    }
+  }, [transactionData]);
 
   const handleSelectAll = () => {
     if (selectedOrders.size === transactionData?.data?.combined?.length) {
@@ -56,74 +70,93 @@ function PendingOrders() {
     } else {
       newSelected.add(orderId);
     }
+
+    
+
+    if (newSelected.size ===filteredOrders?.length) {
+      setSelectAll(true);
+    }else{
+      setSelectAll(false);
+    }
     setSelectedOrders(newSelected);
   };
 
-
-  
-
-
   const handleConvertion = () => {
+    if (selectedOrders.size === 0) {
+      window.alert("Select at least one order to convert");
+    }
+
     const selectedSaleOrders = transactionData?.data?.combined.filter((order) =>
       selectedOrders.has(order._id)
     );
-  
-    console.log("selectedSaleOrders", selectedSaleOrders);
-  
+
     if (selectedSaleOrders.length === 0) return;
-  
+
     const party = selectedSaleOrders[0].party;
-  
+
     // Combine all items and modify `GodownList[0].individualTotal`
     const allItems = selectedSaleOrders.reduce((acc, order) => {
       const updatedItems = order.items.map((item) => {
         if (item?.GodownList?.[0]) {
           // Add `total` to `GodownList[0].individualTotal`
           item.GodownList[0].individualTotal =
-            Number(item.GodownList[0].individualTotal || 0) + Number(item.total || 0);
+            Number(item.GodownList[0].individualTotal || 0) +
+            Number(item.total || 0);
+
+          /// add selected price rate
+          item.GodownList[0].selectedPriceRate = item.selectedPriceRate || 0;
         }
         return item;
       });
       return acc.concat(updatedItems);
     }, []);
-  
+
     // Combine additional charges to get allAdditionalCharges
     const allAdditionalCharges = selectedSaleOrders.reduce((acc, order) => {
       return acc.concat(order.additionalCharges);
     }, []);
-  
+
     // Consolidate additional charges by `_id`
-    const consolidatedAdditionalCharges = allAdditionalCharges.reduce((acc, charge) => {
-      const existingCharge = acc.find((item) => item._id === charge._id);
-      if (existingCharge) {
-        // If the same `_id` exists, consolidate the values
-        existingCharge.value = Number(existingCharge.value) + Number(charge.value);
-        existingCharge.finalValue =
-          Number(existingCharge.finalValue) + Number(charge.finalValue);
-        existingCharge.taxAmt = Number(existingCharge.taxAmt) + Number(charge.taxAmt);
-      } else {
-        // Add new charge if `_id` doesn't exist
-        acc.push({ ...charge });
-      }
-      return acc;
-    }, []);
-  
-    console.log("Consolidated Additional Charges:", consolidatedAdditionalCharges);
-  
+    const consolidatedAdditionalCharges = allAdditionalCharges.reduce(
+      (acc, charge) => {
+        const existingCharge = acc.find((item) => item._id === charge._id);
+        if (existingCharge) {
+          // If the same `_id` exists, consolidate the values
+          existingCharge.value =
+            Number(existingCharge.value) + Number(charge.value);
+          existingCharge.finalValue =
+            Number(existingCharge.finalValue) + Number(charge.finalValue);
+          existingCharge.taxAmt =
+            Number(existingCharge.taxAmt) + Number(charge.taxAmt);
+        } else {
+          // Add new charge if `_id` doesn't exist
+          acc.push({ ...charge });
+        }
+        return acc;
+      },
+      []
+    );
+
+    /// save details of orders which are converted
+    const convertedFrom = selectedSaleOrders.map((order) => ({
+      _id: order._id,
+      saleOrderNo: order.voucherNumber,
+      amount: Number(order.enteredAmount),
+      date: order.date,
+    }));
+
     // Dispatch updated items and additional charges
     dispatch(
       addOrderConversionDetails({
         items: allItems,
         party,
         additionalCharges: consolidatedAdditionalCharges, // Add consolidated additional charges
+        convertedFrom: convertedFrom,
       })
     );
-  
+
     navigate("/sUsers/sales");
   };
-  
-  
-  
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
@@ -199,7 +232,7 @@ function PendingOrders() {
                   </tr>
                 </thead>
                 <tbody>
-                  {transactionData?.data?.combined?.map((transaction) => (
+                  {filteredOrders?.map((transaction) => (
                     <tr
                       key={transaction._id}
                       className="border-b hover:bg-gray-50 font-semibold text-gray-500"
