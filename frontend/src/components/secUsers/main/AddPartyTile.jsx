@@ -6,7 +6,7 @@ import { PiAddressBookFill } from "react-icons/pi";
 import { Link } from "react-router-dom";
 import { useLocation } from "react-router-dom";
 
-function AddPartyTile({ party, dispatch, removeParty, link, linkBillTo }) {
+function AddPartyTile({ party, dispatch, removeParty, link, linkBillTo,convertedFrom=[] }) {
   const location = useLocation();
 
   
@@ -23,7 +23,7 @@ function AddPartyTile({ party, dispatch, removeParty, link, linkBillTo }) {
 
           {Object.keys(party).length !== 0 && (
             <div className="flex  items-center">
-              <div>
+              <div className={`${convertedFrom.length>0 && "opacity-50 pointer-events-none"}`}>
                 <Link to={link} >
                   <p className="text-violet-500 p-1 px-3  text-xs border border-1 border-gray-300 rounded-2xl cursor-pointer">
                     Change
@@ -59,8 +59,8 @@ function AddPartyTile({ party, dispatch, removeParty, link, linkBillTo }) {
               <IoPerson className="ml-4 text-gray-500" />
               <span>{party?.partyName}</span>
             </div>
-            <div className="">
-              <MdOutlineClose
+            <div className={`${convertedFrom.length>0 && "opacity-50 pointer-events-none"}`}>
+            <MdOutlineClose
                 onClick={() => {
                   dispatch(removeParty());
                 }}

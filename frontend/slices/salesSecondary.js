@@ -4,7 +4,7 @@ const initialState = {
   // selectedGodownName:"",
   // selectedGodownId:"",
   date: "",
-  convertedFrom:[],
+  convertedFrom: [],
   products: [],
   party: {},
   items: [],
@@ -166,9 +166,9 @@ export const salesSecondarySlice = createSlice({
 
     addItem: (state, action) => {
       const { payload, moveToTop } = action.payload;
-    
+
       const index = state.items.findIndex((el) => el?._id === payload?._id);
-    
+
       if (index !== -1) {
         // If the item already exists, update it
         state.items[index] = payload;
@@ -189,17 +189,15 @@ export const salesSecondarySlice = createSlice({
     },
 
     updateItem: (state, actions) => {
-      const {item,moveToTop=false} = actions.payload
-      console.log("item",item);
-      
-      console.log("mocveToTop",moveToTop);
-      
-      const index = state.items.findIndex(
-        (el) => el?._id === item?._id
-      );
+      const { item, moveToTop = false } = actions.payload;
+      console.log("item", item);
 
-      console.log("index",index);
-      
+      console.log("mocveToTop", moveToTop);
+
+      const index = state.items.findIndex((el) => el?._id === item?._id);
+
+      console.log("index", index);
+
       if (index !== -1) {
         state.items[index] = item;
 
@@ -303,12 +301,23 @@ export const salesSecondarySlice = createSlice({
     },
 
     addOrderConversionDetails: (state, action) => {
-      const { party, items,additionalCharges,convertedFrom } = action.payload;
+      const {
+        party,
+        items,
+        additionalCharges,
+        convertedFrom,
+        despatchDetails,
+      } = action.payload;
 
       state.items = items;
       state.party = party;
       state.additionalCharges = additionalCharges;
-      state.convertedFrom = convertedFrom
+      state.convertedFrom = convertedFrom;
+      state.despatchDetails = despatchDetails;
+    },
+
+    addConvertedFrom: (state, action) => {
+      state.convertedFrom = action.payload;
     },
   },
 });
@@ -350,8 +359,8 @@ export const {
   addDespatchDetails,
   changeDate,
   changeTaxInclusive,
-  addOrderConversionDetails
-  
+  addOrderConversionDetails,
+  addConvertedFrom,
 } = salesSecondarySlice.actions;
 
 export default salesSecondarySlice.reducer;

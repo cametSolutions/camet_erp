@@ -36,7 +36,7 @@ function PendingOrders() {
   const {
     data: transactionData,
     loading: transactionLoading,
-    error: transactionError,
+    // error: transactionError,
   } = useFetch(transactionsUrl);
 
   useEffect(() => {
@@ -96,37 +96,43 @@ function PendingOrders() {
     // Combine all items and modify `GodownList[0].individualTotal`
     const allItems = selectedSaleOrders.reduce((acc, order) => {
       const updatedItems = order.items.map((item) => {
-        if (item?.GodownList?.[0]) {
+        // Create a deep clone of the item to avoid modifying the original object
+        const clonedItem = structuredClone(item);
+    
+        if (clonedItem?.GodownList?.[0]) {
           // Add `total` to `GodownList[0].individualTotal`
-          item.GodownList[0].individualTotal =
-            Number(item.GodownList[0].individualTotal || 0) +
-            Number(item.total || 0);
-
-          /// add selected price rate
-          item.GodownList[0].selectedPriceRate = item.selectedPriceRate || 0;
+          clonedItem.GodownList[0].individualTotal =
+            Number(clonedItem.GodownList[0]?.individualTotal || 0) +
+            Number(clonedItem?.total || 0);
+    
+          // Add selected price rate
+          clonedItem.GodownList[0].selectedPriceRate = clonedItem?.selectedPriceRate || 0;
+          clonedItem.GodownList[0].added = true;
         }
-        return item;
+        return clonedItem;
       });
+    
       return acc.concat(updatedItems);
     }, []);
+    
 
     // Combine additional charges to get allAdditionalCharges
-    const allAdditionalCharges = selectedSaleOrders.reduce((acc, order) => {
-      return acc.concat(order.additionalCharges);
+    const allAdditionalCharges = selectedSaleOrders?.reduce((acc, order) => {
+      return acc.concat(order?.additionalCharges);
     }, []);
 
     // Consolidate additional charges by `_id`
-    const consolidatedAdditionalCharges = allAdditionalCharges.reduce(
+    const consolidatedAdditionalCharges = allAdditionalCharges?.reduce(
       (acc, charge) => {
-        const existingCharge = acc.find((item) => item._id === charge._id);
+        const existingCharge = acc?.find((item) => item?._id === charge?._id);
         if (existingCharge) {
           // If the same `_id` exists, consolidate the values
           existingCharge.value =
-            Number(existingCharge.value) + Number(charge.value);
+            Number(existingCharge?.value) + Number(charge?.value);
           existingCharge.finalValue =
-            Number(existingCharge.finalValue) + Number(charge.finalValue);
+            Number(existingCharge?.finalValue) + Number(charge?.finalValue);
           existingCharge.taxAmt =
-            Number(existingCharge.taxAmt) + Number(charge.taxAmt);
+            Number(existingCharge?.taxAmt) + Number(charge?.taxAmt);
         } else {
           // Add new charge if `_id` doesn't exist
           acc.push({ ...charge });
@@ -144,6 +150,12 @@ function PendingOrders() {
       date: order.date,
     }));
 
+    //  adding the despatch details of the 1 st order to the sale
+    const firstOrder = selectedSaleOrders[0];
+
+    
+    const despatchDetails = firstOrder.despatchDetails;
+
     // Dispatch updated items and additional charges
     dispatch(
       addOrderConversionDetails({
@@ -151,6 +163,7 @@ function PendingOrders() {
         party,
         additionalCharges: consolidatedAdditionalCharges, // Add consolidated additional charges
         convertedFrom: convertedFrom,
+        despatchDetails,
       })
     );
 
