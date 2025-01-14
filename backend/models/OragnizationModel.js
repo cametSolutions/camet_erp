@@ -68,6 +68,14 @@ const organizationSchema = new mongoose.Schema(
           email: { type: String },
           appPassword: { type: String },
         },
+        addRateWithTax: {
+          type: Object,
+          default: {
+            sale: false,
+            saleOrder: false,
+          
+          }
+        },
 
         despatchTitles: [
           {

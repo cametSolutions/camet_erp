@@ -25,6 +25,8 @@ const secSelectedOrganizationSlice = createSlice({
 
     updateConfiguration: (state, action) => {
       state.secSelectedOrg = action.payload;
+      localStorage.setItem("secOrg", JSON.stringify(action.payload));
+
     },
   },
 });

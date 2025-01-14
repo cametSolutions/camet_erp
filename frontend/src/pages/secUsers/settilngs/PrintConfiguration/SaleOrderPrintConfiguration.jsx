@@ -184,7 +184,6 @@ const SaleOrderPrintConfiguration = () => {
         }
       );
       dispatch(updateConfiguration(res?.data?.data));
-      localStorage.setItem("secOrg", JSON.stringify(res.data.data));
 
       refreshHook();
     } catch (error) {
