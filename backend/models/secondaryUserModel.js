@@ -11,6 +11,7 @@ const secondaryUserSchema = new mongoose.Schema(
       { type: mongoose.Schema.Types.ObjectId, ref: "Organization" },
     ],
     primaryUser: { type: mongoose.Schema.Types.ObjectId, ref: "PrimaryUser" },
+    role: { type: String },
     otp: { type: Number },
     configurations: [
       {

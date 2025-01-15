@@ -37,25 +37,36 @@ import ReceiptModel from "../models/receiptModel.js";
 // route POST/api/pUsers/register
 
 export const registerPrimaryUser = async (req, res) => {
+  const session = await mongoose.startSession();
+
   try {
     const { userName, mobile, email, password, subscription } = req.body;
 
-    const userExists = await PrimaryUser.findOne({ email });
-    const mobileExists = await PrimaryUser.findOne({ mobile });
+    // Start a transaction
+    session.startTransaction();
+
+    // Check if email or mobile already exists
+    const userExists = await PrimaryUser.findOne({ email }).session(session);
+    const mobileExists = await PrimaryUser.findOne({ mobile }).session(session);
 
     if (userExists) {
+      await session.abortTransaction();
+      session.endSession();
       return res
         .status(400)
         .json({ success: false, message: "Email already exists" });
     }
 
     if (mobileExists) {
+      await session.abortTransaction();
+      session.endSession();
       return res
         .status(400)
         .json({ success: false, message: "Mobile number already exists" });
     }
 
-    const user = new PrimaryUser({
+    // Create Primary User
+    const primaryUser = new PrimaryUser({
       userName,
       mobile,
       email,
@@ -63,19 +74,51 @@ export const registerPrimaryUser = async (req, res) => {
       subscription,
     });
 
-    const result = await user.save();
+    const primaryUserResult = await primaryUser.save({ session });
 
-    if (result) {
-      return res
-        .status(200)
-        .json({ success: true, message: "User registration is successful" });
-    } else {
+    if (!primaryUserResult) {
+      await session.abortTransaction();
+      session.endSession();
       return res
         .status(400)
-        .json({ success: false, message: "User registration failed" });
+        .json({ success: false, message: "Primary user registration failed" });
     }
+
+    // Create Secondary User with role "admin"
+    const secondaryUser = new SecondaryUser({
+      name: userName,
+      email,
+      mobile,
+      password: password, // Reuse the hashed password
+      role: "admin",
+      primaryUser: primaryUserResult._id, // Link to the primary user
+      organization: [], // Leave organization empty
+    });
+
+    const secondaryUserResult = await secondaryUser.save({ session });
+
+    if (!secondaryUserResult) {
+      await session.abortTransaction();
+      session.endSession();
+      return res
+        .status(400)
+        .json({ success: false, message: "Secondary user creation failed" });
+    }
+
+    // Commit the transaction
+    await session.commitTransaction();
+    session.endSession();
+
+    // Successful response
+    return res.status(200).json({
+      success: true,
+      message: "User registration is successful",
+    });
   } catch (error) {
     console.error(error);
+    // Rollback in case of any error
+    await session.abortTransaction();
+    session.endSession();
     return res
       .status(500)
       .json({ success: false, message: "Internal server error, try again!" });
