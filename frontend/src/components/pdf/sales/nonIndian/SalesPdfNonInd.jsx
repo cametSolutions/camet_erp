@@ -39,6 +39,9 @@ function SalesPdfNonInd({
         ?.printConfiguration
   )?.find((item) => item.voucher === "sale");
 
+ 
+
+
 
 
   const calculateTotalTax = () => {

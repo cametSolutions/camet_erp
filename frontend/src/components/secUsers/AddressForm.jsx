@@ -1,13 +1,18 @@
 /* eslint-disable react/no-unknown-property */
 /* eslint-disable react/prop-types */
 import { useEffect, useState } from "react";
-import {  useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { FaLocationDot } from "react-icons/fa6";
 import Select from "react-select"; // Import React Select
 import { useLocation } from "react-router-dom";
 
-function AddressForm({ getFormData, newBillToShipTo, partyDetails }) {
+function AddressForm({
+  getFormData,
+  newBillToShipTo,
+  partyDetails,
+  showShipTo = true,
+}) {
   const location = useLocation();
   let useCompanyAddress = false;
 
@@ -200,9 +205,6 @@ function AddressForm({ getFormData, newBillToShipTo, partyDetails }) {
     value: party._id,
     label: party.partyName,
   }));
-
-  console.log("partyList", partyList);
-  console.log("partyOptions", partyOptions);
 
   const handleSubmit = () => {
     // Handle form submission, e.g., save to database
@@ -399,172 +401,174 @@ function AddressForm({ getFormData, newBillToShipTo, partyDetails }) {
             </div>
           </div>
 
-          <div className=" mt-6 bg-gray-50 rounded-b-lg shadow p-3 sm:p-6">
-            <div className="flex">
-              <div className="flex gap-2 items-center py-5 pl-5 overflow-hidden  ">
-                <FaLocationDot className="w-6 h-6 text-red-800" />
-                <h1 className="inline text-2xl text-blue-400 font-bold  leading-none">
-                  Ship To
-                </h1>
-              </div>
-            </div>
-            <div className="px-5 pb-5">
-              <label className="block text-sm font-medium text-gray-700 ">
-                Select Party
-              </label>
-              <Select
-                name="shipToParty"
-                value={formData.shipToParty}
-                options={partyOptions}
-                onChange={handleSelectChange}
-                placeholder="Select a party"
-                className="mt-2 mb-3 no-focus-box border-0 border-b"
-              />
-              <label
-                htmlFor="shipToParty"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Name
-              </label>
-              <input
-                id="shipToName"
-                name="shipToName"
-                value={formData.shipToName}
-                onChange={handleInputChange}
-                placeholder="Name"
-                className="text-black placeholder-gray-600 w-full px-2 py-2.5 mt-2 text-base no-focus-box border-0 border-b  outline-none"
-              />
-              <label
-                htmlFor="shipToAddress"
-                className="block text-sm font-medium text-gray-700 mt-4"
-              >
-                Address
-              </label>
-              <textarea
-                id="shipToAddress"
-                name="shipToAddress"
-                value={formData.shipToAddress}
-                onChange={handleInputChange}
-                placeholder="Address"
-                className="text-black placeholder-gray-600 w-full px-2 py-5 mt-2 text-base no-focus-box border-0 border-b  outline-none"
-              />
-              <div className="flex flex-col sm:flex-row gap-2">
-                <div className="  w-full sm:w-2/4 pr-2">
-                  <label
-                    htmlFor="shipToPin"
-                    className="block text-sm font-medium text-gray-700 mt-4"
-                  >
-                    Pin
-                  </label>
-                  <input
-                    id="shipToPin"
-                    name="shipToPin"
-                    type="number"
-                    value={formData.shipToPin}
-                    onChange={handleInputChange}
-                    placeholder="Pin"
-                    className="text-black input-number placeholder-gray-600 w-full px-2 py-2.5 mt-2 text-base no-focus-box border-0 border-b  outline-none"
-                  />
-                </div>
-                <div className=" w-full sm:w-2/4">
-                  <label
-                    htmlFor="shipToGst"
-                    className="block text-sm font-medium text-gray-700 mt-4"
-                  >
-                    Gst No.
-                  </label>
-                  <input
-                    id="shipToGst"
-                    name="shipToGst"
-                    value={formData.shipToGst}
-                    onChange={handleInputChange}
-                    placeholder="Gst No."
-                    className="text-black placeholder-gray-600 w-full px-2 py-2.5 mt-2 text-base no-focus-box border-0 border-b  outline-none"
-                  />
+          {showShipTo && (
+            <div className=" mt-6 bg-gray-50 rounded-b-lg shadow p-3 sm:p-6">
+              <div className="flex">
+                <div className="flex gap-2 items-center py-5 pl-5 overflow-hidden  ">
+                  <FaLocationDot className="w-6 h-6 text-red-800" />
+                  <h1 className="inline text-2xl text-blue-400 font-bold  leading-none">
+                    Ship To
+                  </h1>
                 </div>
               </div>
-              <div className="flex flex-col sm:flex-row gap-2">
-                <div className=" w-full sm:w-2/4 pr-2">
-                  <label
-                    htmlFor="shipToMobile"
-                    className="block text-sm font-medium text-gray-700 mt-4"
-                  >
-                    Mobile
-                  </label>
-                  <input
-                    id="shipToMobile"
-                    name="shipToMobile"
-                    type="number"
-                    value={formData.shipToMobile}
-                    onChange={handleInputChange}
-                    placeholder="Mobile"
-                    className="input-number input-number text-black placeholder-gray-600 w-full px-2 py-2.5 mt-2 text-base no-focus-box border-0 border-b  outline-none"
-                  />
+              <div className="px-5 pb-5">
+                <label className="block text-sm font-medium text-gray-700 ">
+                  Select Party
+                </label>
+                <Select
+                  name="shipToParty"
+                  value={formData.shipToParty}
+                  options={partyOptions}
+                  onChange={handleSelectChange}
+                  placeholder="Select a party"
+                  className="mt-2 mb-3 no-focus-box border-0 border-b"
+                />
+                <label
+                  htmlFor="shipToParty"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Name
+                </label>
+                <input
+                  id="shipToName"
+                  name="shipToName"
+                  value={formData.shipToName}
+                  onChange={handleInputChange}
+                  placeholder="Name"
+                  className="text-black placeholder-gray-600 w-full px-2 py-2.5 mt-2 text-base no-focus-box border-0 border-b  outline-none"
+                />
+                <label
+                  htmlFor="shipToAddress"
+                  className="block text-sm font-medium text-gray-700 mt-4"
+                >
+                  Address
+                </label>
+                <textarea
+                  id="shipToAddress"
+                  name="shipToAddress"
+                  value={formData.shipToAddress}
+                  onChange={handleInputChange}
+                  placeholder="Address"
+                  className="text-black placeholder-gray-600 w-full px-2 py-5 mt-2 text-base no-focus-box border-0 border-b  outline-none"
+                />
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <div className="  w-full sm:w-2/4 pr-2">
+                    <label
+                      htmlFor="shipToPin"
+                      className="block text-sm font-medium text-gray-700 mt-4"
+                    >
+                      Pin
+                    </label>
+                    <input
+                      id="shipToPin"
+                      name="shipToPin"
+                      type="number"
+                      value={formData.shipToPin}
+                      onChange={handleInputChange}
+                      placeholder="Pin"
+                      className="text-black input-number placeholder-gray-600 w-full px-2 py-2.5 mt-2 text-base no-focus-box border-0 border-b  outline-none"
+                    />
+                  </div>
+                  <div className=" w-full sm:w-2/4">
+                    <label
+                      htmlFor="shipToGst"
+                      className="block text-sm font-medium text-gray-700 mt-4"
+                    >
+                      Gst No.
+                    </label>
+                    <input
+                      id="shipToGst"
+                      name="shipToGst"
+                      value={formData.shipToGst}
+                      onChange={handleInputChange}
+                      placeholder="Gst No."
+                      className="text-black placeholder-gray-600 w-full px-2 py-2.5 mt-2 text-base no-focus-box border-0 border-b  outline-none"
+                    />
+                  </div>
                 </div>
-                <div className="w-full sm:w-2/4 pr-2">
-                  <label
-                    htmlFor="shipToEmail"
-                    className="block text-sm font-medium text-gray-700 mt-4"
-                  >
-                    Email
-                  </label>
-                  <input
-                    id="shipToEmail"
-                    name="shipToEmail"
-                    value={formData.shipToEmail}
-                    onChange={handleInputChange}
-                    placeholder="Email"
-                    className="text-black placeholder-gray-600 w-full px-2 py-2.5 mt-2 text-base no-focus-box border-0 border-b  outline-none"
-                  />
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <div className=" w-full sm:w-2/4 pr-2">
+                    <label
+                      htmlFor="shipToMobile"
+                      className="block text-sm font-medium text-gray-700 mt-4"
+                    >
+                      Mobile
+                    </label>
+                    <input
+                      id="shipToMobile"
+                      name="shipToMobile"
+                      type="number"
+                      value={formData.shipToMobile}
+                      onChange={handleInputChange}
+                      placeholder="Mobile"
+                      className="input-number input-number text-black placeholder-gray-600 w-full px-2 py-2.5 mt-2 text-base no-focus-box border-0 border-b  outline-none"
+                    />
+                  </div>
+                  <div className="w-full sm:w-2/4 pr-2">
+                    <label
+                      htmlFor="shipToEmail"
+                      className="block text-sm font-medium text-gray-700 mt-4"
+                    >
+                      Email
+                    </label>
+                    <input
+                      id="shipToEmail"
+                      name="shipToEmail"
+                      value={formData.shipToEmail}
+                      onChange={handleInputChange}
+                      placeholder="Email"
+                      className="text-black placeholder-gray-600 w-full px-2 py-2.5 mt-2 text-base no-focus-box border-0 border-b  outline-none"
+                    />
+                  </div>
                 </div>
-              </div>
-              <label
-                htmlFor="shipToSupply"
-                className="block text-sm font-medium text-gray-700 mt-4"
-              >
-                Place Of Supply
-              </label>
-              <input
-                id="shipToSupply"
-                name="shipToSupply"
-                value={formData.shipToSupply}
-                onChange={handleInputChange}
-                placeholder="Place Of Supply"
-                className="text-black placeholder-gray-600 w-full px-2 py-2.5 mt-2 text-base no-focus-box border-0 border-b  outline-none"
-              />
+                <label
+                  htmlFor="shipToSupply"
+                  className="block text-sm font-medium text-gray-700 mt-4"
+                >
+                  Place Of Supply
+                </label>
+                <input
+                  id="shipToSupply"
+                  name="shipToSupply"
+                  value={formData.shipToSupply}
+                  onChange={handleInputChange}
+                  placeholder="Place Of Supply"
+                  className="text-black placeholder-gray-600 w-full px-2 py-2.5 mt-2 text-base no-focus-box border-0 border-b  outline-none"
+                />
 
-              <div className="pt-4 flex items-center space-x-4 mt-10">
-                <button
-                  onClick={() => {
-                    navigate(-1);
-                  }}
-                  className="flex justify-center items-center w-full text-gray-900 px-2 py-3 rounded-md focus:outline-none "
-                >
-                  <svg
-                    className="w-6 h-6 mr-3"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
+                <div className="pt-4 flex items-center space-x-4 mt-10">
+                  <button
+                    onClick={() => {
+                      navigate(-1);
+                    }}
+                    className="flex justify-center items-center w-full text-gray-900 px-2 py-3 rounded-md focus:outline-none "
                   >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M6 18L18 6M6 6l12 12"
-                    ></path>
-                  </svg>{" "}
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSubmit}
-                  className="bg-pink-500 flex justify-center items-center w-full text-white px-2 py-3 rounded-md focus:outline-none"
-                >
-                  Save
-                </button>
+                    <svg
+                      className="w-6 h-6 mr-3"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M6 18L18 6M6 6l12 12"
+                      ></path>
+                    </svg>{" "}
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSubmit}
+                    className="bg-pink-500 flex justify-center items-center w-full text-white px-2 py-3 rounded-md focus:outline-none"
+                  >
+                    Save
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

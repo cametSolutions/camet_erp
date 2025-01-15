@@ -226,6 +226,10 @@ export const addOrganizations = async (req, res) => {
       terms: [],
       enableBillToShipTo: true,
       taxInclusive: false,
+      addRateWithTax: [
+        saleOrder=false,
+        sale=false,
+      ],
       emailConfiguration: null,
       despatchTitles: [
         {

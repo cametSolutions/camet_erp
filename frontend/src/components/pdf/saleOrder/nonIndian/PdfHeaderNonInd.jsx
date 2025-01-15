@@ -1,5 +1,7 @@
 /* eslint-disable react/prop-types */
 
+import { useSelector } from "react-redux";
+
 
 function PdfHeaderNonInd({ data, org, address, despatchDetails, tab = "sales" ,saleOrderConfiguration}) {
 
@@ -57,11 +59,9 @@ function PdfHeaderNonInd({ data, org, address, despatchDetails, tab = "sales" ,s
     return str.charAt(0).toUpperCase() + str.slice(1);
   }
 
-  let enableBillToShipTo;
 
   let displayTitles = {};
   if (org?.configurations) {
-    enableBillToShipTo = org?.configurations[0]?.enableBillToShipTo ?? true;
 
     const despatchDetailsConfig = org?.configurations[0]?.despatchTitles?.find((config) => config.voucher === "saleOrder") ?? {};
     for (const key in despatchDetailsConfig) {
@@ -70,6 +70,10 @@ function PdfHeaderNonInd({ data, org, address, despatchDetails, tab = "sales" ,s
         capitalizeFirstLetter(key.split(/(?=[A-Z])/).join(" "));
     }
   }
+
+  const showShipTo= useSelector(
+    (state) => state?.secSelectedOrganization?.secSelectedOrg?.configurations[0]?.enableShipTo["saleOrder"]
+  );
 
   return (
     <div>
@@ -171,7 +175,7 @@ function PdfHeaderNonInd({ data, org, address, despatchDetails, tab = "sales" ,s
                 : ""}
             </div>
           </div>
-          {enableBillToShipTo && (
+          {showShipTo && (
             <div className="border-gray-300 ">
               <h2 className="text-xs font-bold mb-1">Ship To:</h2>
               <div className="text-gray-700">{address?.shipToName}</div>

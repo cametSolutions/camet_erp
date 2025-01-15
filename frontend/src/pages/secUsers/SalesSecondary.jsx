@@ -64,7 +64,6 @@ function SalesSecondary() {
   );
 
 
-  console.log("convertedFrom", convertedFrom);
   
 
   ////dataLoading////
@@ -469,6 +468,9 @@ function SalesSecondary() {
               removeParty={removeParty}
               link="/sUsers/searchPartySales"
               linkBillTo="/sUsers/billToSales"
+              convertedFrom={convertedFrom}
+
+
             />
 
             {/* Despatch details */}
@@ -497,6 +499,7 @@ function SalesSecondary() {
               handleRateChange={handleRateChange}
               handleAddRow={handleAddRow}
               setAdditional={setAdditional}
+              convertedFrom={convertedFrom}
               urlToAddItem="/sUsers/addItemSales"
               urlToEditItem="/sUsers/editItemSales"
             />

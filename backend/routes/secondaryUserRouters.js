@@ -30,7 +30,7 @@ import { createPayment,cancelPayment, editPayment } from '../controllers/payment
 import { createInvoice,editInvoice,cancelSalesOrder, PartyListWithOrderPending } from '../controllers/saleOrderController.js';
 import { createStockTransfer,editStockTransfer, cancelStockTransfer } from '../controllers/stockTransferController.js';
 import { addBankPaymentDetails } from '../../frontend/slices/payment.js';
-import { addEmailConfiguration, getConfiguration, getBarcodeList, addBarcodeData, editBarcodeData, deleteBarcode, getSingleBarcodeData, getPrintingConfiguration, updateConfiguration, getDespatchTitles, updateDespatchTitles, getTermsAndConditions, updateTermsAndConditions } from '../controllers/settingsController.js';
+import { addEmailConfiguration, getConfiguration, getBarcodeList, addBarcodeData, editBarcodeData, deleteBarcode, getSingleBarcodeData, getPrintingConfiguration, updateConfiguration, getDespatchTitles, updateDespatchTitles, getTermsAndConditions, updateTermsAndConditions, updateBankAccount, updateTaxConfiguration, updateShipToConfiguration } from '../controllers/settingsController.js';
 import { updateSecondaryUserConfiguration } from '../helpers/saleOrderHelper.js';
 import { updateDateFieldsByCompany, updateSalesItemUnitFields, updateUnitFields } from '../controllers/testingController.js';
 
@@ -180,6 +180,16 @@ router.put('/updateDespatchTitles/:cmp_id',authSecondary,secondaryIsBlocked,comp
 /// terms and conditions configurations
 router.get('/getTermsAndConditions/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,getTermsAndConditions)
 router.put('/updateTermsAndConditions/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,updateTermsAndConditions)
+
+/// update bank account
+router.put('/updateBankAccount/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,updateBankAccount)
+
+/// tax settings
+router.put('/updateTaxConfiguration/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,updateTaxConfiguration)
+/// ship to settings
+router.put('/updateShipToConfiguration/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,updateShipToConfiguration)
+
+
 
 
 /// order pending

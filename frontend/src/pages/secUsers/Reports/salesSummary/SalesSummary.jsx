@@ -41,6 +41,9 @@ function SalesSummary() {
   const handleUserAndCompanyData = (data) => {
     setUserAndCompanyData(data);
   };
+
+  console.log("transactionData", transactionData);
+  
   return (
     <div>
       <div className="sticky top-0 z-50">
@@ -94,13 +97,13 @@ function SalesSummary() {
         </section>
       )}
 
-      {/* <section>
+      <section>
         <DashboardTransaction
           filteredData={transactionData?.data?.combined}
           userType={userAndCompanyData?.userType}
           from="/sUsers/reports/salesSummary"
         />
-      </section> */}
+      </section>
     </div>
   );
 }

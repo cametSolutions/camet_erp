@@ -16,6 +16,7 @@ import {
   setFinalAmount,
   addDespatchDetails,
   changeDate,
+  addConvertedFrom
 } from "../../../slices/salesSecondary";
 import { useDispatch } from "react-redux";
 
@@ -85,6 +86,10 @@ function EditSale() {
     (state) => state.secSelectedOrganization.secSelectedOrg.type
   );
 
+  const convertedFromFromRedux = useSelector(
+    (state) => state.salesSecondary.convertedFrom
+  ) || [];
+
   const salesDetailsFromRedux = useSelector((state) => state.salesSecondary);
 
   const {
@@ -128,6 +133,7 @@ function EditSale() {
           // createdAt,
           date,
           paymentSplittingData,
+          convertedFrom
         } = res.data.data;
 
         // // additionalCharges: [ { option: 'option 1', value: '95', action: 'add' } ],
@@ -206,6 +212,10 @@ function EditSale() {
           )
         ) {
           dispatch(addDespatchDetails(despatchDetails));
+        }
+
+        if(convertedFromFromRedux.length == 0){
+          dispatch(addConvertedFrom(convertedFrom));
         }
       } catch (error) {
         console.log(error);
@@ -529,6 +539,7 @@ function EditSale() {
             removeParty={removeParty}
             link="/sUsers/searchPartySales"
             linkBillTo="/sUsers/billToSales"
+            convertedFrom={convertedFromFromRedux}
           />
           <DespatchDetails tab={"sale"} />
 
@@ -552,6 +563,7 @@ function EditSale() {
             handleRateChange={handleRateChange}
             handleAddRow={handleAddRow}
             setAdditional={setAdditional}
+            convertedFrom={convertedFromFromRedux}
             urlToAddItem="/sUsers/addItemSales"
             urlToEditItem="/sUsers/editItemSales"
           />

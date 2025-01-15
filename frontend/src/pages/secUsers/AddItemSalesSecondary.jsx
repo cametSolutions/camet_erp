@@ -41,9 +41,17 @@ function AddItemSalesSecondary() {
 
   ///////////////////////////cpm_id///////////////////////////////////
 
-  const cpm_id = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg._id
+  const {_id:cpm_id ,configurations} = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg
   );
+
+  ///// check if the company is tax inclusive or not  //////////////////////////
+  const {addRateWithTax} = configurations[0];
+  const taxInclusive = addRateWithTax["sale"] || false; 
+
+  // console.log(taxInclusive);
+  
+
 
   ///////////////////////////itemsFromRedux///////////////////////////////////
 
@@ -92,7 +100,7 @@ function AddItemSalesSecondary() {
       try {
         if (allProductsFromRedux.length === 0) {
           const res = await api.get(`/api/sUsers/getProducts/${cpm_id}`, {
-            params: { vanSale: false, taxInclusive: true },
+            params: { vanSale: false, taxInclusive: taxInclusive },
             withCredentials: true,
           });
           productData = res.data.productData;
@@ -206,7 +214,7 @@ function AddItemSalesSecondary() {
       // listRef?.current?.scrollTo(parseInt(scrollPosition, 10));\
       window.scrollTo(0, scrollPosition);
     }
-  }, [cpm_id,isScanOn]);
+  }, [cpm_id,isScanOn,taxInclusive]);
 
   ///////////////////////////setSelectedPriceLevel fom redux///////////////////////////////////
 

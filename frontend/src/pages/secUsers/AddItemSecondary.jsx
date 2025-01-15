@@ -12,9 +12,9 @@ import {
   addItem,
   removeItem,
   changeTotal,
-  setBrandInRedux,
-  setCategoryInRedux,
-  setSubCategoryInRedux,
+  // setBrandInRedux,
+  // setCategoryInRedux,
+  // setSubCategoryInRedux,
   setPriceLevel,
   changeCount,
   addPriceRate,
@@ -30,9 +30,9 @@ function AddItemSecondary() {
   const [item, setItem] = useState([]);
   const [selectedPriceLevel, setSelectedPriceLevel] = useState("");
   const [refresh, setRefresh] = useState(false);
-  const [brands, setBrands] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [subCategories, setSubCategories] = useState([]);
+  // const [brands, setBrands] = useState([]);
+  // const [categories, setCategories] = useState([]);
+  // const [subCategories, setSubCategories] = useState([]);
   const [selectedBrand, setSelectedBrand] = useState("");
   const [selectedCategory, setseleCtedCategory] = useState("");
   const [selectedSubCategory, setSelectedSubCategory] = useState("");
@@ -60,6 +60,10 @@ function AddItemSecondary() {
     },
   } = useSelector((state) => state);
 
+
+  ///// check if the company is tax inclusive or not  //////////////////////////
+  const {addRateWithTax} = configurations[0];
+  const taxInclusive = addRateWithTax["saleOrder"] || false; 
 
 
 
@@ -118,7 +122,7 @@ const filterItems = (items, brand, category, subCategory, searchTerm) => {
 
       try {
         if (allProductsFromRedux.length === 0) {
-          const res = await api.get(`/api/sUsers/getProducts/${cpm_id}?taxInclusive=${true}`, {
+          const res = await api.get(`/api/sUsers/getProducts/${cpm_id}?taxInclusive=${taxInclusive}`, {
             withCredentials: true,
           });
 

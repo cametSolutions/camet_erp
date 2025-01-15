@@ -1,14 +1,12 @@
-/* eslint-disable react/jsx-key */
-import {
-  TbMail,
-  TbFileInvoice,
-  TbBuildingBank,
-  TbPhoto,
-} from "react-icons/tb";
+import { useState } from "react";
+import { TbMail, TbFileInvoice, TbBuildingBank, TbPhoto } from "react-icons/tb";
 import TitleDiv from "../../../../components/common/TitleDiv";
 import SettingsCard from "../../../../components/common/SettingsCard";
+import SelectBankModal from "./modals/SelectBankModal";
 
 const VoucherSettings = () => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   const settingsOptions = [
     {
       title: "Email",
@@ -17,7 +15,6 @@ const VoucherSettings = () => {
       icon: <TbMail />,
       to: "/sUsers/emailSettings",
       active: true,
-      // modal: true,
     },
     {
       title: "Voucher Type",
@@ -32,7 +29,8 @@ const VoucherSettings = () => {
         "On selection, it shows the bank account details in orders, invoices",
       icon: <TbBuildingBank />,
       to: "/voucherSettings/bankAccount",
-      active: false,
+      active: true,
+      modal: true,
     },
     {
       title: "Company Logo",
@@ -42,19 +40,26 @@ const VoucherSettings = () => {
       to: "/voucherSettings/companyLogo",
       active: false,
     },
-    
   ];
 
-  const modalHandler = () => {};
+  const handleModalOpen = () => setIsModalOpen(true);
+  const handleModalClose = () => setIsModalOpen(false);
 
   return (
     <div className="bg-white">
       <TitleDiv title="Voucher Settings" from="/sUsers/dataEntrySettings" />
-      <div className="space-y-4 b-white p-4   mx-1">
+      <div className="space-y-4 bg-white p-4 mx-1">
         {settingsOptions.map((option, index) => (
-          <SettingsCard option={option} index={index} modalHandler={modalHandler} />
+          <SettingsCard
+            key={index}
+            option={option}
+            index={index}
+            modalHandler={option.modal ? handleModalOpen : undefined}
+          />
         ))}
       </div>
+      {/* Conditionally Render Modal */}
+      {isModalOpen && <SelectBankModal showModal={isModalOpen} setShowModal={setIsModalOpen}  onClose={handleModalClose} />}
     </div>
   );
 };

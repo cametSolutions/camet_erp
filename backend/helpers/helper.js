@@ -132,6 +132,7 @@ export const aggregateTransactions = (
     baseProjection.party = 1;
     baseProjection.additionalCharges = 1;
     baseProjection.isConverted  = 1;
+    baseProjection.despatchDetails = 1;
   }
 
   return model.aggregate([

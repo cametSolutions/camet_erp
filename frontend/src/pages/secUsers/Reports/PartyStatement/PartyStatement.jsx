@@ -24,10 +24,11 @@ function PartyStatement() {
   // Memoize API URLs
   const transactionsUrl = useMemo(
     () =>
-      `/api/sUsers/transactions/${cmp_id}?party_id=${party_id}&startOfDayParam=${start}&endOfDayParam=${end}`,
+      `/api/sUsers/transactions/${cmp_id}?party_id=${party_id}&startOfDayParam=${start}&endOfDayParam=${end}&ignore=saleorder`,
     [cmp_id, party_id, start, end]
   );
 
+  
   const balanceUrl = useMemo(
     () =>
       `/api/sUsers/getOpeningBalances/${cmp_id}?party_id=${party_id}&startOfDayParam=${start}`,
