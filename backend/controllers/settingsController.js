@@ -621,34 +621,35 @@ export const updateBankAccount = async (req, res) => {
   }
 };
 
-
+/**
+ * @description Update tax configuration of a company
+ * @param {string} cmp_id Company ID
+ * @param {string} voucher Voucher type (sale or saleOrder)
+ * @param {boolean} value New value for addRateWithTax
+ * @returns {object} Updated company configuration
+ * @route PUT /api/settings/updateTaxConfiguration/:cmp_id?voucher={sale|saleOrder}
+ * @access Private
+ */
 export const updateTaxConfiguration = async (req, res) => {
   try {
     const cmp_id = req?.params?.cmp_id;
     const voucher = req.query.voucher || "";
-    const { addRateWithTax:value } = req.body; // Expecting a boolean value
+    const { addRateWithTax: value } = req.body; // Expecting a boolean value
 
-    console.log("value", value);
+
+    console.log("value",value);
     
 
     // Validate inputs
     if (!cmp_id || !voucher) {
-      return res.status(400).json({ 
-        message: "Company ID and voucher type are required" 
+      return res.status(400).json({
+        message: "Company ID and voucher type are required",
       });
     }
 
-    if (typeof value !== 'boolean') {
-      return res.status(400).json({ 
-        message: "Value must be a boolean (true/false)" 
-      });
-    }
-
-    // Validate voucher type
-    const validVouchers = ['sale', 'saleOrder'];
-    if (!validVouchers.includes(voucher)) {
-      return res.status(400).json({ 
-        message: `Invalid voucher type. Must be one of: ${validVouchers.join(', ')}` 
+    if (typeof value !== "boolean") {
+      return res.status(400).json({
+        message: "Value must be a boolean (true/false)",
       });
     }
 
@@ -667,32 +668,89 @@ export const updateTaxConfiguration = async (req, res) => {
     if (!company.configurations[0].addRateWithTax) {
       company.configurations[0].addRateWithTax = {
         sale: false,
-        saleOrder: false
+        saleOrder: false,
       };
     }
 
     company.configurations[0].addRateWithTax = {
       ...company.configurations[0].addRateWithTax,
-      [voucher]: value
+      [voucher]: value,
     };
 
     // console.log("company.configurations[0].addRateWithTax", company.configurations[0].addRateWithTax);
-    
-    
-
 
     // Save the updated company
     await company.save();
 
     return res.status(200).json({
       message: "Tax configuration updated successfully",
-      updatedConfig: company
+      updatedConfig: company,
     });
   } catch (error) {
     console.error("Error updating tax configuration:", error);
-    return res.status(500).json({ 
+    return res.status(500).json({
       message: "Internal server error",
-      error: error.message 
+      error: error.message,
+    });
+  }
+};
+
+export const updateShipToConfiguration = async (req, res) => {
+  try {
+    const cmp_id = req?.params?.cmp_id;
+    const voucher = req.query.voucher || "";
+    const { enableShipTo: value } = req.body; // Expecting a boolean value
+
+    // Validate inputs
+    if (!cmp_id || !voucher) {
+      return res.status(400).json({
+        message: "Company ID and voucher type are required",
+      });
+    }
+
+    if (typeof value !== "boolean") {
+      return res.status(400).json({
+        message: "Value must be a boolean (true/false)",
+      });
+    }
+
+    // Find company and update configuration
+    const company = await OragnizationModel.findById(cmp_id);
+    if (!company) {
+      return res.status(404).json({ message: "Company not found" });
+    }
+
+    // Ensure configurations array exists and has at least one element
+    if (!company.configurations || company.configurations.length === 0) {
+      company.configurations = [{}];
+    }
+
+    // Initialize enableShipTo if it doesn't exist
+    if (!company.configurations[0].enableShipTo) {
+      company.configurations[0].enableShipTo = {
+        sale: false,
+        saleOrder: false,
+      };
+    }
+
+    company.configurations[0].enableShipTo = {
+      ...company.configurations[0].enableShipTo,
+      [voucher]: value,
+    };
+
+
+    // Save the updated company
+    await company.save();
+
+    return res.status(200).json({
+      message: "Address  configuration updated successfully",
+      updatedConfig: company,
+    });
+  } catch (error) {
+    console.error("Error updating address configuration:", error);
+    return res.status(500).json({
+      message: "Internal server error",
+      error: error.message,
     });
   }
 };

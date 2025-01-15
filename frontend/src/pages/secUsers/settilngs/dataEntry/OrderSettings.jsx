@@ -6,6 +6,7 @@ import {
   TbLock,
   TbFileText,
   TbEdit,
+  TbTruck,
 } from "react-icons/tb";
 import TitleDiv from "../../../../components/common/TitleDiv";
 import SettingsCard from "../../../../components/common/SettingsCard";
@@ -27,7 +28,7 @@ const OrderSettings = () => {
 
   useEffect(() => {
     if (configurations) {
-      const { addRateWithTax } = configurations[0];
+      const { addRateWithTax,enableShipTo } = configurations[0];
 
       setSettings([
         {
@@ -46,6 +47,28 @@ const OrderSettings = () => {
           icon: <TbEdit />,
           to: "/sUsers/order/customDespatchTitle",
           active: true,
+        },
+        {
+          id: 5,
+          title: "Add Rate with Tax",
+          description: "On selection, allows entering rate with tax field",
+          icon: <TbReceiptTax />,
+          active: true,
+          toggle: true,
+          dbField: "addRateWithTax",
+          toggleValue: addRateWithTax["saleOrder"] || false,
+        },
+        {
+          id:7,
+          title: "Enable Ship to Bill on Order",
+          description:
+            "Enable this option to include 'Ship to Bill' details on the Sale Order",
+          icon: <TbTruck />,
+          to: "/invoiceSettings/enableShipToBill",
+          toggleValue: enableShipTo["saleOrder"] || false,
+          dbField: "enableShipTo",
+          active: true,
+          toggle: true,
         },
         {
           id: 3,
@@ -67,16 +90,7 @@ const OrderSettings = () => {
           active: false,
           toggle: true,
         },
-        {
-          id: 5,
-          title: "Add Rate with Tax",
-          description: "On selection, allows entering rate with tax field",
-          icon: <TbReceiptTax />,
-          active: true,
-          toggle: true,
-          dbField: "addRateWithTax",
-          toggleValue: addRateWithTax["saleOrder"] || false,
-        },
+
         {
           id: 6,
           title: "Allow Zero Values Entries",
@@ -114,9 +128,12 @@ const OrderSettings = () => {
       case "addRateWithTax":
         url = "/updateTaxConfiguration";
         break;
+      case "enableShipTo":
+        url = "/updateShipToConfiguration";
+        break;
 
       default:
-        url = "/updateTaxConfiguration";
+        url = "";
         break;
     }
 
@@ -124,7 +141,7 @@ const OrderSettings = () => {
   };
 
   const handleToggleChangeFromParent = async (data) => {
-    const url = getUrl(data.dbField);
+    const url = getUrl(data?.title);
 
     if (url) {
       try {

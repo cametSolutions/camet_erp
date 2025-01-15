@@ -9,7 +9,6 @@ function SettingsCard({
   modalHandler = () => {},
   handleToggleChangeFromParent = () => {},
 }) {
-
   const navigate = useNavigate();
 
   const handleNavigate = (option) => {
@@ -27,8 +26,8 @@ function SettingsCard({
   };
 
   const handleToggleChange = async (newState) => {
+    console.log(newState);
 
-      
     handleToggleChangeFromParent(newState);
   };
 

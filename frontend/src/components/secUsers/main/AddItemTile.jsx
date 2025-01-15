@@ -28,9 +28,8 @@ function AddItemTile({
   urlToEditItem,
   convertedFrom = [],
 }) {
-
   console.log("convertedFrom", convertedFrom);
-  
+
   return (
     <div>
       {items.length == 0 && (
@@ -40,9 +39,7 @@ function AddItemTile({
             <span className="text-red-500 mt-[-4px] font-bold">*</span>
           </div>
 
-          <div
-            className="   mt-3 p-6 border border-gray-300 h-10 rounded-md flex  cursor-pointer justify-center   items-center font-medium text-violet-500 "
-          >
+          <div className="   mt-3 p-6 border border-gray-300 h-10 rounded-md flex  cursor-pointer justify-center   items-center font-medium text-violet-500 ">
             <div
               onClick={handleAddItem}
               className="flex justify-center gap-2 hover_scale items-center "
@@ -63,10 +60,17 @@ function AddItemTile({
                 <p className="text-xs sm:text-md">Items ({items.length})</p>
               </div>
 
-             
-              <Link className={` ${convertedFrom.length > 0 && "pointer-events-none"}  `}
-               to={urlToAddItem}>
-                <div className={` ${convertedFrom.length > 0 && "opacity-50"}  flex items-center gap-2 font-bold text-violet-500`}>
+              <Link
+                className={` ${
+                  convertedFrom.length > 0 && "pointer-events-none"
+                }  `}
+                to={urlToAddItem}
+              >
+                <div
+                  className={` ${
+                    convertedFrom.length > 0 && "opacity-50"
+                  }  flex items-center gap-2 font-bold text-violet-500`}
+                >
                   <IoMdAdd className="text-lg sm:text-2xl" />
                   <p className="text-xs sm:text-md">Add Item</p>
                 </div>
@@ -209,7 +213,10 @@ function AddItemTile({
                                       );
                                     }}
                                     className={`
-                                       ${convertedFrom.length > 0 && "opacity-50 pointer-events-none"}
+                                       ${
+                                         convertedFrom.length > 0 &&
+                                         "opacity-50 pointer-events-none"
+                                       }
                                       text-violet-500 text-xs md:text-base font-bold p-1 px-4 border border-1 border-gray-300 rounded-2xl cursor-pointer`}
                                   >
                                     Edit
@@ -259,7 +266,7 @@ function AddItemTile({
                                 }
                               );
                             }}
-                            className="text-violet-500 text-xs md:text-base font-bold p-1 px-4 border border-1 border-gray-300 rounded-2xl cursor-pointer"
+                            className={` ${convertedFrom.length > 0 && "opacity-50 pointer-events-none"} text-violet-500 text-xs md:text-base font-bold p-1 px-4 border border-1 border-gray-300 rounded-2xl cursor-pointer`}
                           >
                             Edit
                           </p>

@@ -91,6 +91,21 @@ function PendingOrders() {
 
     if (selectedSaleOrders.length === 0) return;
 
+    // Check for items with hasGodownOrBatch and collect voucher numbers
+    const ordersWithGodownOrBatch = selectedSaleOrders.filter((order) =>
+      order.items.some((item) => item.hasGodownOrBatch)
+    );
+
+    if (ordersWithGodownOrBatch.length > 0) {
+      const voucherNumbers = ordersWithGodownOrBatch
+        .map((order) => order.voucherNumber)
+        .join(", ");
+      window.alert(
+        `Cannot convert orders containing items with Godown or Batch tracking.\nAffected order(s): ${voucherNumbers}`
+      );
+      return;
+    }
+
     const party = selectedSaleOrders[0].party;
 
     // Combine all items and modify `GodownList[0].individualTotal`
@@ -98,23 +113,23 @@ function PendingOrders() {
       const updatedItems = order.items.map((item) => {
         // Create a deep clone of the item to avoid modifying the original object
         const clonedItem = structuredClone(item);
-    
+
         if (clonedItem?.GodownList?.[0]) {
           // Add `total` to `GodownList[0].individualTotal`
           clonedItem.GodownList[0].individualTotal =
             Number(clonedItem.GodownList[0]?.individualTotal || 0) +
             Number(clonedItem?.total || 0);
-    
+
           // Add selected price rate
-          clonedItem.GodownList[0].selectedPriceRate = clonedItem?.selectedPriceRate || 0;
+          clonedItem.GodownList[0].selectedPriceRate =
+            clonedItem?.selectedPriceRate || 0;
           clonedItem.GodownList[0].added = true;
         }
         return clonedItem;
       });
-    
+
       return acc.concat(updatedItems);
     }, []);
-    
 
     // Combine additional charges to get allAdditionalCharges
     const allAdditionalCharges = selectedSaleOrders?.reduce((acc, order) => {
@@ -153,7 +168,6 @@ function PendingOrders() {
     //  adding the despatch details of the 1 st order to the sale
     const firstOrder = selectedSaleOrders[0];
 
-    
     const despatchDetails = firstOrder.despatchDetails;
 
     // Dispatch updated items and additional charges
@@ -166,7 +180,6 @@ function PendingOrders() {
         despatchDetails,
       })
     );
-
     navigate("/sUsers/sales");
   };
 
@@ -238,8 +251,8 @@ function PendingOrders() {
                 <thead>
                   <tr className="bg-slate-100 font-bold">
                     <th className="p-3 text-left">Select</th>
-                    <th className="p-3 text-left">Date</th>
-                    <th className="p-3 text-left">Voucher No</th>
+                    <th className="p-3 text-center">Date</th>
+                    <th className="p-3 text-center">Voucher No</th>
                     <th className="p-3 text-right">Amount</th>
                   </tr>
                 </thead>
@@ -254,14 +267,16 @@ function PendingOrders() {
                           type="checkbox"
                           checked={selectedOrders.has(transaction._id)}
                           onChange={() => handleSelectOrder(transaction._id)}
-                          className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          className="h-4 w-4 rounded border-gray-300 cursor-pointer text-blue-600 focus:ring-blue-500"
                         />
                       </td>
-                      <td className="p-3">
+                      <td className="p-3 text-center">
                         {new Date(transaction.date).toLocaleDateString()}
                       </td>
-                      <td className="p-3">{transaction.voucherNumber}</td>
-                      <td className="p-3 text-right">
+                      <td 
+                      onClick={()=>{navigate("/sUsers/InvoiceDetails/" + transaction._id)}}
+                      className="p-3 text-center hover:underline cursor-pointer">{transaction.voucherNumber}</td>
+                      <td className="p-3 text-right ">
                         ₹
                         {parseFloat(transaction.enteredAmount).toLocaleString()}
                       </td>

@@ -39,6 +39,16 @@ function SalesPdf({
   ).find((item) => item.voucher === "sale");
 
 
+
+  
+
+  
+  
+
+
+  
+
+
   
   const calculateTotalTax = () => {
     const individualTax = data?.items?.map(

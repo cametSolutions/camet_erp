@@ -20,6 +20,17 @@ function BillToSales() {
     };
     
 
+    const {configurations} = useSelector(
+      (state) => state.secSelectedOrganization.secSelectedOrg
+    );
+
+    // const ship to
+    const showShipTo=configurations[0]?.enableShipTo["sale"]
+    
+
+    // console.log(configurations);
+    
+
   return (
     <div className="flex ">
       <div className="flex-1 bg-slate-100  h-screen overflow-y-scroll ">
@@ -35,6 +46,8 @@ function BillToSales() {
           getFormData={submitFormData}
           newBillToShipTo={newBillToShipTo}
           partyDetails={partyDetails}
+          showShipTo={showShipTo}
+
         />
       </div>
     </div>

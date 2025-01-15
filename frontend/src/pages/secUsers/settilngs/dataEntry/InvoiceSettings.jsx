@@ -26,7 +26,7 @@ const InvoiceSettings = () => {
 
   useEffect(() => {
     if (configurations) {
-      const { addRateWithTax } = configurations[0];
+      const { addRateWithTax, enableShipTo } = configurations[0];
       setSettings([
         {
           title: "Terms & Conditions",
@@ -42,6 +42,28 @@ const InvoiceSettings = () => {
           icon: <TbEdit />,
           to: "/sUsers/invoice/customDespatchTitle",
           active: true,
+        },
+        {
+          title: "Add Rate with Tax",
+          description:
+            "On selection, allows entering the rate with a tax field",
+          icon: <TbReceiptTax />,
+          to: "/invoiceSettings/addRateWithTax",
+          active: true,
+          toggle: true,
+          dbField: "addRateWithTax",
+          toggleValue: addRateWithTax["sale"] || false,
+        },
+        {
+          title: "Enable Ship to Bill on Invoice",
+          description:
+            "Enable this option to include 'Ship to Bill' details on the invoice",
+          icon: <TbTruck />,
+          to: "/invoiceSettings/enableShipToBill",
+          toggleValue: enableShipTo["sale"] || false,
+          dbField: "enableShipTo",
+          active: true,
+          toggle: true,
         },
         {
           title: "Disable Rate for an Item",
@@ -61,17 +83,7 @@ const InvoiceSettings = () => {
           active: false,
           toggle: true,
         },
-        {
-          title: "Add Rate with Tax",
-          description:
-            "On selection, allows entering the rate with a tax field",
-          icon: <TbReceiptTax />,
-          to: "/invoiceSettings/addRateWithTax",
-          active: true,
-          toggle: true,
-          dbField: "addRateWithTax",
-          toggleValue: addRateWithTax["sale"] || false,
-        },
+
         {
           title: "Allow Zero Values Entries",
           description: "Enable this to create invoices with zero values",
@@ -80,28 +92,24 @@ const InvoiceSettings = () => {
           active: false,
           toggle: true,
         },
-        {
-          title: "Enable Ship to Bill on Invoice",
-          description:
-            "Enable this option to include 'Ship to Bill' details on the invoice",
-          icon: <TbTruck />,
-          to: "/invoiceSettings/enableShipToBill",
-          active: false,
-          toggle: true,
-        },
       ]);
     }
   }, [configurations]);
 
   const getUrl = (title) => {
+    console.log(title);
+
     let url;
     switch (title) {
       case "addRateWithTax":
         url = "/updateTaxConfiguration";
         break;
+      case "enableShipTo":
+        url = "/updateShipToConfiguration";
+        break;
 
       default:
-        url = "/updateTaxConfiguration";
+        url = "";
         break;
     }
 
@@ -111,7 +119,9 @@ const InvoiceSettings = () => {
   const dispatch = useDispatch();
 
   const handleToggleChangeFromParent = async (data) => {
-    const url = getUrl(data.dbField);
+    console.log(data);
+
+    const url = getUrl(data?.title);
 
     if (url) {
       try {

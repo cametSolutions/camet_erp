@@ -73,8 +73,14 @@ const organizationSchema = new mongoose.Schema(
           default: {
             sale: false,
             saleOrder: false,
-          
-          }
+          },
+        },
+        enableShipTo: {
+          type: Object,
+          default: {
+            sale: false,
+            saleOrder: false,
+          },
         },
 
         despatchTitles: [
