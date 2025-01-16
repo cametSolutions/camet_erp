@@ -426,8 +426,10 @@ function SalesPdf({
               <tfoot className="">
                 <tr className="border-y  border-black bg-slate-200 py-6">
                   <td className="font-bold "></td>
-                  {configurations?.showStockWiseAmount && (
+                  {configurations?.showStockWiseAmount ? (
                     <td className="font-bold text-[9px] p-2">Subtotal</td>
+                  ) : (
+                    <td className="font-bold text-[9px] p-2"></td>
                   )}{" "}
                   {configurations?.showHsn && (
                     <td className="font-bold text-[9px] p-2"></td>
