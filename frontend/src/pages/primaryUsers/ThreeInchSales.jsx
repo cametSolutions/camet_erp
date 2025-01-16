@@ -56,7 +56,6 @@ function ThreeInchSales() {
     getTransactionDetails();
   }, [id]);
 
-
   //  console.log(org?.configurations[0]?.terms);
 
   // useEffect(() => {
@@ -110,40 +109,32 @@ function ThreeInchSales() {
   });
 
   return (
-    
-      <div className="flex-1 " style={{width:"80mm"}}>
-        <div className="bg-[#012a4a]   sticky top-0 p-3 px-5 text-white text-lg font-bold flex items-center gap-3  shadow-lg justify-between">
-          <div className="flex gap-2 ">
-            <Link to={`/pUsers/salesDetails/${id}`}>
-              <IoIosArrowRoundBack className="text-3xl" />
-            </Link>
-            <p>Share Your Sale</p>
-          </div>
-          <div>
-            <MdPrint
-              onClick={() => {
-                handlePrint(null, () => contentToPrint.current);
-              }}
-              className="text-xl cursor-pointer "
-            />
-          </div>
+    <div className="flex-1 " style={{ width: "80mm" }}>
+      <div className="bg-[#012a4a]   sticky top-0 p-3 px-5 text-white text-lg font-bold flex items-center gap-3  shadow-lg justify-between">
+        <div className="flex gap-2 ">
+          <Link to={`/pUsers/salesDetails/${id}`}>
+            <IoIosArrowRoundBack className="text-3xl" />
+          </Link>
+          <p>Share Your Sale</p>
         </div>
-        <SalesThreeInchPdf
-          contentToPrint={contentToPrint}
-          data={data}
-          org={org}
-          // subTotal={subTotal}
-          bank={bank}
-          // additinalCharge={additinalCharge}
-          // inWords={inWords}
-          userType="primaryUser"
-          tab="sales"
-
-        />
-
-
-        
+        <div>
+          <MdPrint
+            onClick={() => {
+              handlePrint(null, () => contentToPrint.current);
+            }}
+            className="text-xl cursor-pointer "
+          />
+        </div>
       </div>
+      <SalesThreeInchPdf
+        contentToPrint={contentToPrint}
+        data={data}
+        org={org}
+        bank={bank}
+        userType="primaryUser"
+        tab="sale"
+      />
+    </div>
   );
 }
 
