@@ -864,7 +864,6 @@ function AddItemSalesSecondary() {
       }
     }
 
-    console.log("item", item);
   };
 
   return (
