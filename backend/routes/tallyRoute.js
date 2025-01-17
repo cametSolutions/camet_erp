@@ -3,7 +3,8 @@ import { saveDataFromTally,giveTransaction,addBankData ,
     saveProductsFromTally,savePartyFromTally,addCashData,
     saveAdditionalChargesFromTally,giveInvoice,giveSales,giveVanSales,getStockTransfers,giveReceipts,givePayments,
     updateStock,
-    updatePriceLevels} from "../controllers/tallyController.js";
+    updatePriceLevels,
+    givePurchase} from "../controllers/tallyController.js";
 
 const router =express.Router();
 
@@ -25,6 +26,7 @@ router.get('/getVanSales/:cmp_id/:SNo',giveVanSales)
 router.get('/getStockTransfers/:cmp_id/:SNo',getStockTransfers)
 router.get('/getReceipts/:cmp_id/:SNo',giveReceipts)
 router.get('/getPayments/:cmp_id/:SNo',givePayments)
+router.get('/getPurchase/:cmp_id/:SNo',givePurchase)
 
 
 export default router

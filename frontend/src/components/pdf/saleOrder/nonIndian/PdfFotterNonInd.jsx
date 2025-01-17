@@ -63,14 +63,16 @@ function PdfFotterNonInd({
 
           <div className="flex justify-end border-black py-3">
             <div className="w-3/4"></div>
-            <div className="w-2/4 text-gray-700 font-bold text-[10px] flex justify-end">
-              <p className="text-nowrap border-y-2 py-2">Net Amt :&nbsp;</p>
-              <div className="text-gray-700 font-bold text-[10px] text-nowrap border-y-2 py-2">
-                {` ${selectedOrganization?.currency ?? ""} ${
-                  data?.finalAmount
-                }`}
+            {saleOrderConfiguration?.showNetAmount && (
+              <div className="w-2/4 text-gray-700 font-bold text-[10px] flex justify-end">
+                <p className="text-nowrap border-y-2 py-2">Net Amt :&nbsp;</p>
+                <div className="text-gray-700 font-bold text-[10px] text-nowrap border-y-2 py-2">
+                  {` ${selectedOrganization?.currency ?? ""} ${
+                    data?.finalAmount
+                  }`}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       </div>
@@ -79,14 +81,16 @@ function PdfFotterNonInd({
 
       {/* in words */}
 
-      <div className="flex justify-start py-2 w-full gap-3 items-start  mt-2 border-y border-gray-100">
-        <p className="text-nowrap font-bold text-[10px]">
-          Net Amount(in words) :
-        </p>
-        <div className="text-gray-700 full font-semibold text-[10px] text-nowrap uppercase ">
-          <p className="whitespace-normal"> {inWords} </p>
+      {saleOrderConfiguration?.showNetAmount && (
+        <div className="flex justify-start py-2 w-full gap-3 items-start  mt-2 border-y border-gray-100">
+          <p className="text-nowrap font-bold text-[10px]">
+            Net Amount(in words) :
+          </p>
+          <div className="text-gray-700 full font-semibold text-[10px] text-nowrap uppercase ">
+            <p className="whitespace-normal"> {inWords} </p>
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="flex justify-between my-1 ">
         <div className=" w-1/2">
@@ -132,31 +136,14 @@ function PdfFotterNonInd({
           )}
         </div>{" "}
         <div className="flex flex-col justify-between text-[10px] font-semibold text-right">
-          <p>{org?.name}</p>
+          <p className="mb-8">{org?.name}</p>
           <p>Authorized Signatory</p>
         </div>
       </div>
 
       <hr />
 
-      {/* {saleOrderConfiguration?.showTeamsAndConditions &&
-        org &&
-        org.configurations?.length > 0 && (
-          <div className="border-gray-300 mb-5 mt-2">
-            <div className="text-gray-700 mb-1 font-bold text-[10px]">
-              Terms and Conditions
-            </div>
-            <div className="text-gray-700 text-[9px] leading-4">
-              {org?.configurations[0]?.termsAndConditions
-                ?.find((el) => el?.voucher === "saleOrder")
-                ?.terms?.map((term, index) => (
-                  <p key={index}>
-                    <span className="font-bold">{index + 1}.</span> {term}
-                  </p>
-                ))}
-            </div>
-          </div>
-        )} */}
+      
 
       {termsAndConditions?.length > 0 && (
         <div className="border-gray-300 mb-5 mt-2">

@@ -142,7 +142,7 @@ function ThreeInchSalesSec() {
           bank={bank}
           // additinalCharge={additinalCharge}
           // inWords={inWords}
-          tab="sales"
+          tab="sale"
           
         />
       </div> 

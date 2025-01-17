@@ -199,14 +199,17 @@ function SalesOrderPdfNonInd({
               <th className="text-gray-700 font-bold uppercase  px-1 text-left">
                 Items
               </th>
-            
 
               {saleOrderConfiguration?.showTaxPercentage && (
                 <th className="text-gray-700 font-bold uppercase p-2">Vat %</th>
               )}
 
-              <th className="text-gray-700 font-bold uppercase p-2">Qty</th>
-              <th className="text-gray-700 font-bold uppercase p-2">Rate</th>
+              {saleOrderConfiguration?.showQuantity && (
+                <th className="text-gray-700 font-bold uppercase p-2">Qty</th>
+              )}
+              {saleOrderConfiguration?.showRate && (
+                <th className="text-gray-700 font-bold uppercase p-2">Rate</th>
+              )}
               {saleOrderConfiguration?.showDiscount &&
                 saleOrderConfiguration?.showDiscountAmount && (
                   <th className="text-gray-700 font-bold uppercase p-2">
@@ -222,9 +225,11 @@ function SalesOrderPdfNonInd({
               {saleOrderConfiguration?.showStockWiseTaxAmount && (
                 <th className="text-gray-700 font-bold uppercase p-2">Vat</th>
               )}
-              <th className="text-gray-700 font-bold uppercase p-2 pr-0 ">
-                Amount
-              </th>
+              {saleOrderConfiguration?.showStockWiseAmount && (
+                <th className="text-gray-700 font-bold uppercase p-2 pr-0 ">
+                  Amount
+                </th>
+              )}
             </tr>
           </thead>
 
@@ -272,19 +277,21 @@ function SalesOrderPdfNonInd({
                       {el.product_name} <br />
                     </td>
 
-                   
-
                     {saleOrderConfiguration?.showTaxPercentage && (
                       <td className="py-1 text-black text-right pr-2">
                         {el?.igst || "0"}
                       </td>
                     )}
-                    <td className="py-1 text-black text-right pr-2">
-                      {count} {el?.unit?.split("-")[0]}
-                    </td>
-                    <td className="py-1 text-black text-right pr-2 text-nowrap">
-                      {rate}
-                    </td>
+                    {saleOrderConfiguration?.showQuantity && (
+                      <td className=" text-black text-right pr-2 font-bold">
+                        {el?.count} {el?.unit.split("-")[0]}
+                      </td>
+                    )}
+                    {saleOrderConfiguration?.showRate && (
+                      <td className="py-1 text-black text-right pr-2 text-nowrap">
+                        {rate}
+                      </td>
+                    )}
 
                     {saleOrderConfiguration?.showDiscount &&
                       saleOrderConfiguration?.showDiscountAmount && (
@@ -306,10 +313,12 @@ function SalesOrderPdfNonInd({
                       </td>
                     )}
 
-                    <td className="py-1 text-black w-full text-right">
-                      {" "}
-                      {finalAmt}
-                    </td>
+                    {saleOrderConfiguration?.showStockWiseAmount && (
+                      <td className="py-1 text-black w-full text-right">
+                        {" "}
+                        {finalAmt}
+                      </td>
+                    )}
                   </tr>
                 );
               })}
@@ -318,34 +327,37 @@ function SalesOrderPdfNonInd({
           <tfoot className="">
             <tr className="bg-gray-200  border-black border-y ">
               <td className="font-bold"></td>
-
-              <td className="font-bold text-[9px] p-2">Subtotal</td>
-
-           
+              {saleOrderConfiguration?.showStockWiseAmount ? (
+                <td className="font-bold text-[9px] p-2">Subtotal</td>
+              ) : (
+                <td className="font-bold text-[9px] p-2"></td>
+              )}{" "}
               {saleOrderConfiguration?.showTaxPercentage && (
                 <td className="font-bold"></td>
               )}
-              <td className="text-black text-[9px] ">
-                <p className="text-right pr-1 font-bold">
-                  {calculateTotalQunatity()}/unit
-                </p>{" "}
-              </td>
-
-              <td className="font-bold"></td>
-
+              {saleOrderConfiguration?.showQuantity && (
+                <td className="text-black text-[9px] ">
+                  <p className="text-right pr-1 font-bold">
+                    {calculateTotalQunatity()}/unit
+                  </p>{" "}
+                </td>
+              )}
+              {saleOrderConfiguration?.showRate && (
+                <td className="font-bold text-[9px] p-2"></td>
+              )}
               {saleOrderConfiguration?.showDiscount && (
                 <td className="text-right pr-1 text-black font-bold text-[9px]"></td>
               )}
-
-              {saleOrderConfiguration?.showStockWiseTaxAmount &&  (
-              <td className="text-right pr-1 text-black font-bold text-[9px]">
-                {calculateTotalTax()}
-              </td>
-               )} 
-
-              <td className="text-right pr-1 text-black font-bold text-[9px]">
-                {subTotal}
-              </td>
+              {saleOrderConfiguration?.showStockWiseTaxAmount && (
+                <td className="text-right pr-1 text-black font-bold text-[9px]">
+                  {calculateTotalTax()}
+                </td>
+              )}
+              {saleOrderConfiguration?.showStockWiseAmount && (
+                <td className="text-right pr-1 text-black font-bold text-[9px]">
+                  {subTotal}
+                </td>
+              )}
             </tr>
           </tfoot>
         </table>

@@ -142,10 +142,8 @@ function ThreeInchInvoiceSec() {
           contentToPrint={contentToPrint}
           data={data}
           org={org}
-          // subTotal={subTotal}
           bank={bank}
-          // additinalCharge={additinalCharge}
-          // inWords={inWords}
+          tab={"saleOrder"}
           userType="secondaryUser"
         />
       </div>

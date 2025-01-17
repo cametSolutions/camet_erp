@@ -13,14 +13,10 @@ function PdfFooter({
   configurations,
   party,
 }) {
-
   const termsAndConditions = org?.configurations?.[0]?.termsAndConditions?.find(
     (el) => el?.voucher === "sale"
   )?.terms;
   return (
-
-  
-  
     <div className="mb-5">
       {/*  tax table and total */}
       <div className="flex justify-between items-start mt-3 ">
@@ -82,14 +78,16 @@ function PdfFooter({
             ))}
           <div className="flex justify-end border-black py-3">
             <div className="w-3/4"></div>
-            <div className="w-2/4 text-gray-700 font-bold text-[10px] flex justify-end">
-              <p className="text-nowrap border-y-2 py-2">Net Amt :&nbsp;</p>
-              <div className="text-gray-700 font-bold text-[10px] text-nowrap border-y-2 py-2">
-                {` ${selectedOrganization?.currency ?? ""} ${
-                  data?.finalAmount
-                }`}
+            {configurations?.showNetAmount && (
+              <div className="w-2/4 text-gray-700 font-bold text-[10px] flex justify-end">
+                <p className="text-nowrap border-y-2 py-2">Net Amt :&nbsp;</p>
+                <div className="text-gray-700 font-bold text-[10px] text-nowrap border-y-2 py-2">
+                  {` ${selectedOrganization?.currency ?? ""} ${
+                    data?.finalAmount
+                  }`}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       </div>
@@ -98,15 +96,16 @@ function PdfFooter({
 
       {/* in words */}
 
-      <div className="flex justify-start py-2 w-full gap-3 items-start  mt-2 border-y border-gray-100">
-        <p className="text-nowrap font-bold text-[10px]">
-          Net Amount(in words) :
-        </p>
-        <div className="text-gray-700 full font-semibold text-[10px] text-nowrap uppercase ">
-          <p className="whitespace-normal"> {inWords} </p>
+      {configurations?.showNetAmount && (
+        <div className="flex justify-start py-2 w-full gap-3 items-start  mt-2 border-y border-gray-100">
+          <p className="text-nowrap font-bold text-[10px]">
+            Net Amount(in words) :
+          </p>
+          <div className="text-gray-700 full font-semibold text-[10px] text-nowrap uppercase ">
+            <p className="whitespace-normal"> {inWords} </p>
+          </div>
         </div>
-      </div>
-
+      )}
       {/* bank details */}
       <div className="flex justify-between my-1 ">
         <div className=" w-1/2">
