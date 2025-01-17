@@ -41,19 +41,17 @@ function SalesDetailsSecondary() {
     dispatch(removeAll()); /// for making initial in the payment splitting to true
   }, [refresh, id]);
 
-
   const reFetch = () => {
     setRefresh(!refresh);
   };
+  console.log(location);
 
   const backHandler = () => {
-    // if (location?.state?.from === "'sUsers/sales'") {
-    //   navigate("");
-    // } else {
-    //   navigate(-1);
-    // }
+    if (location?.state?.from === "orderPending") {
+      navigate("/sUsers/orderPending/partyList",{replace: true,state: { from: "convertedSaleDetail" }});
+    } else {
       navigate(-1);
-
+    }
   };
 
   const handleEdit = () => {

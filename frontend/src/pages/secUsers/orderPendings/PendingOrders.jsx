@@ -180,7 +180,11 @@ function PendingOrders() {
         despatchDetails,
       })
     );
-    navigate("/sUsers/sales");
+    navigate("/sUsers/sales",{
+      state:{
+        from:"orderPending"
+      }
+    });
   };
 
   return (
