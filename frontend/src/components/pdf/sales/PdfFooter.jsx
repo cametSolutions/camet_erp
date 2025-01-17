@@ -60,22 +60,26 @@ function PdfFooter({
           )}
 
           {configurations?.showTaxAmount &&
-            (org?.state === party?.state ? (
-              <div className="flex flex-col items-end text-[9px] text-black font-bold gap-1 mt-3">
-                <p className={calculateTotalTax() > 0 ? "" : "hidden"}>
-                  CGST : {(calculateTotalTax() / 2)?.toFixed(2) || "0.00"}
-                </p>
-                <p className={calculateTotalTax() > 0 ? "" : "hidden"}>
-                  SGST : {(calculateTotalTax() / 2)?.toFixed(2) || "0.00"}
-                </p>
-              </div>
-            ) : (
-              <div className="flex flex-col items-end text-[9px] text-black font-bold gap-1 mt-3">
-                <p className={calculateTotalTax() > 0 ? "" : "hidden"}>
-                  IGST : {Number(calculateTotalTax())?.toFixed(2) || "0.00"}
-                </p>
-              </div>
-            ))}
+            (() => {
+              const totalTax = Number(calculateTotalTax()) || 0; // Validate total tax
+              const isSameState = org?.state === party?.state || !party?.state;
+
+              return isSameState ? (
+                <div className="flex flex-col items-end text-[9px] text-black font-bold gap-1 mt-3">
+                  {totalTax > 0 && (
+                    <>
+                      <p>CGST : {(totalTax / 2).toFixed(2)}</p>
+                      <p>SGST : {(totalTax / 2).toFixed(2)}</p>
+                    </>
+                  )}
+                </div>
+              ) : (
+                <div className="flex flex-col items-end text-[9px] text-black font-bold gap-1 mt-3">
+                  {totalTax > 0 && <p>IGST : {totalTax.toFixed(2)}</p>}
+                </div>
+              );
+            })()}
+
           <div className="flex justify-end border-black py-3">
             <div className="w-3/4"></div>
             {configurations?.showNetAmount && (

@@ -368,7 +368,7 @@ function InvoiceSecondary() {
       // console.log(res.data);
       toast.success(res.data.message);
 
-      navigate(`/sUsers/InvoiceDetails/${res.data.data._id}`,{replace:true});
+      navigate(`/sUsers/InvoiceDetails/${res.data.data._id}`);
 
       dispatch(removeAll());
     } catch (error) {

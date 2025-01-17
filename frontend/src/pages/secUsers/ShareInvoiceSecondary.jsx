@@ -4,7 +4,7 @@ import api from "../../api/api";
 import { useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 // import numberToWords from "number-to-words";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 // import SaleOrderPdf from "../../components/common/SaleOrderPdf";
 import { useSelector } from "react-redux";
 import ShareModal from "./settilngs/dataEntry/modals/ShareModal";
@@ -20,6 +20,7 @@ function ShareInvoiceSecondary() {
   const [bank, setBank] = useState([]);
 
   const contentToPrint = useRef(null);
+  const navigate = useNavigate();
 
   const IsIndian =
     useSelector(
@@ -64,14 +65,19 @@ function ShareInvoiceSecondary() {
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
 
+  const handleNavigation = () => {
+    navigate(-1, { replace: true });
+  };
+
+
   return (
     <div className="flex">
       <div className="flex-1">
         <div className="bg-[#012a4a]   sticky top-0 p-3 px-5 text-white text-lg font-bold flex items-center gap-3  shadow-lg justify-between">
           <div className="flex gap-2 ">
-            <Link to={`/sUsers/InvoiceDetails/${id}`}>
+          <button onClick={handleNavigation}>
               <IoIosArrowRoundBack className="text-3xl" />
-            </Link>
+            </button>
             <p>Share Your Order</p>
           </div>
           <div>

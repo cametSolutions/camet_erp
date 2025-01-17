@@ -10,7 +10,7 @@ import {
 import { useDispatch } from "react-redux";
 
 import { toast } from "react-toastify";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import api from "../../api/api";
 import {
   removeAll,
@@ -55,16 +55,14 @@ function SalesSecondary() {
   const despatchDetails = useSelector(
     (state) => state.salesSecondary.despatchDetails
   );
-  const convertedFrom = useSelector(
-    (state) => state.salesSecondary.convertedFrom
-  ) || [];
+  const convertedFrom =
+    useSelector((state) => state.salesSecondary.convertedFrom) || [];
 
   const paymentSplittingReduxData = useSelector(
     (state) => state?.paymentSplitting?.paymentSplittingData
   );
 
-
-  
+  const location = useLocation();
 
   ////dataLoading////
   // Helper function to manage dataLoading state
@@ -346,13 +344,11 @@ function SalesSecondary() {
   const submitHandler = async () => {
     setSubmitLoading(true);
     if (Object.keys(party).length == 0) {
-
       toast.error("Add a party first");
       setSubmitLoading(false);
       return;
     }
     if (items.length == 0) {
-
       toast.error("Add at least an item");
       setSubmitLoading(false);
 
@@ -390,7 +386,7 @@ function SalesSecondary() {
       salesNumber,
       batchHeights,
       selectedDate,
-      convertedFrom
+      convertedFrom,
     };
 
     if (Object.keys(paymentSplittingReduxData).length !== 0) {
@@ -417,13 +413,16 @@ function SalesSecondary() {
       // console.log(res.data);
       toast.success(res.data.message);
 
-      navigate(`/sUsers/salesDetails/${res.data.data._id}`);
+      navigate(`/sUsers/salesDetails/${res.data.data._id}`, {
+        state: {
+          from: location?.state?.from || "null",
+        },
+      });
       dispatch(removeAll());
     } catch (error) {
       toast.error(error.response.data.message);
       console.log(error);
-    } 
-    finally {
+    } finally {
       setSubmitLoading(false);
     }
   };
@@ -445,90 +444,88 @@ function SalesSecondary() {
           loading={loading || submitLoading}
         />
 
-          <div className={`${loading ? "pointer-events-none opacity-70" : ""}`}>
-            {/* invoiec date */}
+        <div className={`${loading ? "pointer-events-none opacity-70" : ""}`}>
+          {/* invoiec date */}
 
-            <HeaderTile
-              title={"Sale"}
-              number={salesNumber}
-              selectedDate={selectedDate}
-              setSelectedDate={setSelectedDate}
-              dispatch={dispatch}
-              changeDate={changeDate}
-              submitHandler={submitHandler}
-              removeAll={removeAll}
-              tab="add"
-              loading={submitLoading}
-            />
-            {/* adding party */}
+          <HeaderTile
+            title={"Sale"}
+            number={salesNumber}
+            selectedDate={selectedDate}
+            setSelectedDate={setSelectedDate}
+            dispatch={dispatch}
+            changeDate={changeDate}
+            submitHandler={submitHandler}
+            removeAll={removeAll}
+            tab="add"
+            loading={submitLoading}
+          />
+          {/* adding party */}
 
-            <AddPartyTile
-              party={party}
-              dispatch={dispatch}
-              removeParty={removeParty}
-              link="/sUsers/searchPartySales"
-              linkBillTo="/sUsers/billToSales"
-              convertedFrom={convertedFrom}
+          <AddPartyTile
+            party={party}
+            dispatch={dispatch}
+            removeParty={removeParty}
+            link="/sUsers/searchPartySales"
+            linkBillTo="/sUsers/billToSales"
+            convertedFrom={convertedFrom}
+          />
 
+          {/* Despatch details */}
 
-            />
+          <DespatchDetails tab={"sale"} />
 
-            {/* Despatch details */}
+          {/* adding items */}
 
-            <DespatchDetails tab={"sale"} />
+          <AddItemTile
+            items={items}
+            handleAddItem={handleAddItem}
+            dispatch={dispatch}
+            removeItem={removeItem}
+            removeGodownOrBatch={removeGodownOrBatch}
+            navigate={navigate}
+            godownname={""}
+            subTotal={subTotal}
+            type="sale"
+            additional={additional}
+            cancelHandler={cancelHandler}
+            rows={rows}
+            handleDeleteRow={handleDeleteRow}
+            handleLevelChange={handleLevelChange}
+            additionalChragesFromCompany={additionalChragesFromCompany}
+            actionChange={actionChange}
+            handleRateChange={handleRateChange}
+            handleAddRow={handleAddRow}
+            setAdditional={setAdditional}
+            convertedFrom={convertedFrom}
+            urlToAddItem="/sUsers/addItemSales"
+            urlToEditItem="/sUsers/editItemSales"
+          />
 
-            {/* adding items */}
-
-            <AddItemTile
-              items={items}
-              handleAddItem={handleAddItem}
-              dispatch={dispatch}
-              removeItem={removeItem}
-              removeGodownOrBatch={removeGodownOrBatch}
-              navigate={navigate}
-              godownname={""}
-              subTotal={subTotal}
-              type="sale"
-              additional={additional}
-              cancelHandler={cancelHandler}
-              rows={rows}
-              handleDeleteRow={handleDeleteRow}
-              handleLevelChange={handleLevelChange}
-              additionalChragesFromCompany={additionalChragesFromCompany}
-              actionChange={actionChange}
-              handleRateChange={handleRateChange}
-              handleAddRow={handleAddRow}
-              setAdditional={setAdditional}
-              convertedFrom={convertedFrom}
-              urlToAddItem="/sUsers/addItemSales"
-              urlToEditItem="/sUsers/editItemSales"
-            />
-
-            <div className="flex justify-between items-center bg-white mt-2 p-3">
-              <p className="font-bold text-md">Total Amount</p>
-              <div className="flex flex-col items-center">
-                <p className="font-bold text-md">
-                  ₹ {totalAmount.toFixed(2) ?? 0}
-                </p>
-                <p className="text-[9px] text-gray-400">(rounded)</p>
-              </div>
+          <div className="flex justify-between items-center bg-white mt-2 p-3">
+            <p className="font-bold text-md">Total Amount</p>
+            <div className="flex flex-col items-center">
+              <p className="font-bold text-md">
+                ₹ {totalAmount.toFixed(2) ?? 0}
+              </p>
+              <p className="text-[9px] text-gray-400">(rounded)</p>
             </div>
-
-            {items.length > 0 && totalAmount > 0 && (
-              <PaymentSplittingIcon
-                totalAmount={totalAmount}
-                party={party}
-                voucherType="sale"
-              />
-            )}
-
-            <FooterButton
-              submitHandler={submitHandler}
-              tab="add"
-              title="Sale"
-              loading={submitLoading || loading}
-            />
           </div>
+
+          {items.length > 0 && totalAmount > 0 && (
+            <PaymentSplittingIcon
+              totalAmount={totalAmount}
+              party={party}
+              voucherType="sale"
+            />
+          )}
+
+          <FooterButton
+            submitHandler={submitHandler}
+            tab="add"
+            title="Sale"
+            loading={submitLoading || loading}
+          />
+        </div>
       </div>
     </div>
   );
