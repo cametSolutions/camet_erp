@@ -6,7 +6,7 @@ import { useParams } from "react-router-dom";
 import api from "../../api/api";
 import { toast } from "react-toastify";
 import { FaEdit } from "react-icons/fa";
-import {  useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import SalesProductDetails from "../../components/common/SalesProductDetails";
 import SwallFireForPdf from "../../components/common/SwallFireForPdf";
 import CancelButton from "../../components/common/CancelButton";
@@ -22,7 +22,7 @@ function SalesDetailsSecondary() {
   const { id } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
-
+  const location = useLocation();
 
   useEffect(() => {
     const getTransactionDetails = async () => {
@@ -38,28 +38,33 @@ function SalesDetailsSecondary() {
       }
     };
     getTransactionDetails();
-    dispatch(removeAll());  /// for making initial in the payment splitting to true
+    dispatch(removeAll()); /// for making initial in the payment splitting to true
   }, [refresh, id]);
+
 
   const reFetch = () => {
     setRefresh(!refresh);
   };
 
-  console.log(data);
   const backHandler = () => {
-    navigate(-1)
+    // if (location?.state?.from === "'sUsers/sales'") {
+    //   navigate("");
+    // } else {
+    //   navigate(-1);
+    // }
+      navigate(-1);
 
   };
 
-    const handleEdit = () => {
-      if (data?.isEditable === false) {
-        alert(
-          "You can't edit this voucher since it has been used to generate receipts or payments"
-        );
-        return;
-      }
-      navigate(`/sUsers/editSale/${data?._id}`);
-    };
+  const handleEdit = () => {
+    if (data?.isEditable === false) {
+      alert(
+        "You can't edit this voucher since it has been used to generate receipts or payments"
+      );
+      return;
+    }
+    navigate(`/sUsers/editSale/${data?._id}`);
+  };
 
   return (
     <div className="bg-[rgb(244,246,254)] flex-1  relative  pb-[70px] md:pb-0 ">
@@ -126,11 +131,10 @@ function SalesDetailsSecondary() {
         paymentSplittingData={data?.paymentSplittingData}
       />
 
-      {
-        data?.paymentSplittingData &&     data?.paymentSplittingData?.splittingData?.length >0 &&   (
-          <PaymentSplittingDetails  data={data?.paymentSplittingData}/>
-        )
-      }
+      {data?.paymentSplittingData &&
+        data?.paymentSplittingData?.splittingData?.length > 0 && (
+          <PaymentSplittingDetails data={data?.paymentSplittingData} />
+        )}
 
       {/* payment method */}
 

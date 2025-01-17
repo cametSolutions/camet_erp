@@ -26,8 +26,7 @@ function SalesThreeInchPdf({
     (item) => item.voucher === tab
   );
 
-  console.log(voucherConfiguration);
-  console.log(tab);
+
 
   let pdfNumber;
 

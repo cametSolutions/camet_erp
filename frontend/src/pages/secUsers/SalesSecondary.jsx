@@ -417,7 +417,11 @@ function SalesSecondary() {
       // console.log(res.data);
       toast.success(res.data.message);
 
-      navigate(`/sUsers/salesDetails/${res.data.data._id}`);
+      navigate(`/sUsers/salesDetails/${res.data.data._id}`,{
+        state: {
+          from:"sUsers/sales"
+        }
+      });
       dispatch(removeAll());
     } catch (error) {
       toast.error(error.response.data.message);

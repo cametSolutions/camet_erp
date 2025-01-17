@@ -65,7 +65,8 @@ function SearchPartySalesSecondary() {
       navigate(`/sUsers/pendingOrders/${el?._id}`);
     } else {
       dispatch(addParty(el));
-      navigate(-1);
+      navigate(-1, { replace: true });
+
     }
   };
 

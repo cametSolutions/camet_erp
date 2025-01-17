@@ -21,7 +21,7 @@ function AddPartyForm({ submitHandler, partyDetails = {}, userType }) {
   const [openingBalanceType, setOpeningBalanceType] = useState("");
   const [openingBalanceAmount, setOpeningBalanceAmount] = useState("");
   const [country, setCountry] = useState("India");
-  const [state, setState] = useState("");
+  const [state, setState] = useState("Kerala");
   const [pin, setPin] = useState("");
 
   const primarySelectedOrg = useSelector(
