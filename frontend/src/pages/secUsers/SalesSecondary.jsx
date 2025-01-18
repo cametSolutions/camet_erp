@@ -440,7 +440,7 @@ function SalesSecondary() {
       <div className="flex-1 bg-slate-100 h -screen ">
         <TitleDiv
           title="Sales"
-          from={`/sUsers/selectVouchers`}
+          // from={`/sUsers/selectVouchers`}
           loading={loading || submitLoading}
         />
 

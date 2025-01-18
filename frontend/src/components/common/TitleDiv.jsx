@@ -9,7 +9,7 @@ function TitleDiv({ title, from = "", loading = false }) {
 
   const handleNavigate = () => {
     if (from) {
-      navigate(from);
+      navigate(from,{replace:true});
     } else {
       navigate(-1,{replace:true});
     }
