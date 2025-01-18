@@ -108,7 +108,7 @@ export const login = async (req, res) => {
     return res.status(200).json({
       message: "Login successful",
       token,
-      data: { email, name, _id, mobile },
+      data: { email, name, _id, mobile, role: secUser.role || "user" },
     });
   } catch (error) {
     return res.status(500).json({ status: false, message: "Failed to login!" });
@@ -579,8 +579,7 @@ export const getTransactionDetails = async (req, res) => {
 export const PartyList = async (req, res) => {
   const { cmp_id } = req.params;
   const { owner: Primary_user_id, sUserId: secUserId } = req;
-  const { outstanding ,voucher } = req.query;
-
+  const { outstanding, voucher } = req.query;
 
   try {
     // Fetch parties and secondary user concurrently
@@ -602,54 +601,51 @@ export const PartyList = async (req, res) => {
 
     let partyListWithOutstanding = partyList;
 
-     // Determine the source values to match based on the voucher type
-     let sourceMatch = {};
-     if (voucher === "receipt") {
-       sourceMatch =  { classification: "Dr" };
-     } else if (voucher === "payment") {
-       sourceMatch =  { classification: "Cr" };
-     }
+    // Determine the source values to match based on the voucher type
+    let sourceMatch = {};
+    if (voucher === "receipt") {
+      sourceMatch = { classification: "Dr" };
+    } else if (voucher === "payment") {
+      sourceMatch = { classification: "Cr" };
+    }
 
-   
-
-      const partyOutstandingData = await TallyData.aggregate([
-        {
-          $match: {
-            cmp_id,
-            Primary_user_id: String(Primary_user_id),
-            isCancelled: false,
-            ...sourceMatch,
-          },
+    const partyOutstandingData = await TallyData.aggregate([
+      {
+        $match: {
+          cmp_id,
+          Primary_user_id: String(Primary_user_id),
+          isCancelled: false,
+          ...sourceMatch,
         },
-        {
-          $group: {
-            _id: "$party_id",
-            totalOutstanding: { $sum: "$bill_pending_amt" },
-            // latestBillDate: { $max: "$bill_date" },
-          },
+      },
+      {
+        $group: {
+          _id: "$party_id",
+          totalOutstanding: { $sum: "$bill_pending_amt" },
+          // latestBillDate: { $max: "$bill_date" },
         },
-        {
-          $project: {
-            _id: 0,
-            party_id: "$_id",
-            partyName: 1,
-            totalOutstanding: 1,
-            // latestBillDate: 1,
-          },
+      },
+      {
+        $project: {
+          _id: 0,
+          party_id: "$_id",
+          partyName: 1,
+          totalOutstanding: 1,
+          // latestBillDate: 1,
         },
-      ]);
+      },
+    ]);
 
-
-      partyListWithOutstanding = partyList.map((party) => {
-        const outstandingData = partyOutstandingData.find(
-          (item) => item.party_id === party.party_master_id
-        );
-        return {
-          ...party.toObject(),
-          totalOutstanding: outstandingData?.totalOutstanding || 0,
-          latestBillDate: outstandingData?.latestBillDate || null,
-        };
-      });
+    partyListWithOutstanding = partyList.map((party) => {
+      const outstandingData = partyOutstandingData.find(
+        (item) => item.party_id === party.party_master_id
+      );
+      return {
+        ...party.toObject(),
+        totalOutstanding: outstandingData?.totalOutstanding || 0,
+        latestBillDate: outstandingData?.latestBillDate || null,
+      };
+    });
 
     res.status(200).json({
       message: "Parties fetched",
@@ -685,7 +681,6 @@ export const addParty = async (req, res) => {
       state,
       pin,
       party_master_id, // Check if provided
-    
     } = req.body;
 
     const Secondary_user_id = req?.sUserId;
@@ -713,16 +708,15 @@ export const addParty = async (req, res) => {
       state,
       pin,
       party_master_id: party_master_id || undefined, // Allow Mongoose to assign _id if not provided
-    
     });
 
     const result = await party.save();
 
-      // If party_master_id is not provided, use the MongoDB generated _id
-      if (!party_master_id) {
-        result.party_master_id = result._id.toString();
-        await result.save(); // Save the updated party with party_master_id set to _id
-      }
+    // If party_master_id is not provided, use the MongoDB generated _id
+    if (!party_master_id) {
+      result.party_master_id = result._id.toString();
+      await result.save(); // Save the updated party with party_master_id set to _id
+    }
 
     if (result) {
       return res.status(200).json({
@@ -748,7 +742,6 @@ export const addParty = async (req, res) => {
 // route get/api/pUsers/
 
 export const getProducts = async (req, res) => {
-
   // console.log("get prodtctys functyion")
   const Secondary_user_id = req.sUserId;
   const cmp_id = req.params.cmp_id;
@@ -903,7 +896,7 @@ export const getProducts = async (req, res) => {
     ];
 
     // Conditionally add taxInclusive stage
-    if (taxInclusive ) {
+    if (taxInclusive) {
       const addTaxInclusiveStage = {
         $addFields: {
           isTaxInclusive: true,
@@ -929,8 +922,6 @@ export const getProducts = async (req, res) => {
       .json({ success: false, message: "Internal server error, try again!" });
   }
 };
-
-
 
 // @desc get invoiceList
 // route get/api/pUsers/invoiceList;
@@ -1444,8 +1435,6 @@ export const getInvoiceDetails = async (req, res) => {
   }
 };
 
-
-
 export const fetchFilters = async (req, res) => {
   const cmp_id = req.params.cmp_id;
   try {
@@ -1615,8 +1604,13 @@ export const addconfigurations = async (req, res) => {
       return res.status(404).json({ message: "Organization not found" });
     }
 
-    const { selectedBank, termsList, enableBillToShipTo, despatchDetails ,taxInclusive} =
-      req.body;
+    const {
+      selectedBank,
+      termsList,
+      enableBillToShipTo,
+      despatchDetails,
+      taxInclusive,
+    } = req.body;
 
     // Check if selectedBank is provided
     let bankId = null; // Default to null if not provided
@@ -1632,12 +1626,9 @@ export const addconfigurations = async (req, res) => {
       terms: termsList,
       enableBillToShipTo,
       despatchDetails,
-      taxInclusive
+      taxInclusive,
     };
 
-
-
-    
     org.configurations = [newConfigurations];
 
     await org.save();
@@ -1655,7 +1646,6 @@ export const addconfigurations = async (req, res) => {
     });
   }
 };
-
 
 // @desc   saveSalesNumber
 // route post/api/sUsers/saveSalesNumber/cmp_id
@@ -1851,7 +1841,6 @@ export const fetchConfigurationNumber = async (req, res) => {
           payment: company.paymentNumber,
           creditNote: company.creditNoteNumber,
           debitNote: company.debitNoteNumber,
-          
         };
 
         return companyNumbers[title] || null;
@@ -2110,11 +2099,6 @@ export const findGodownsNames = async (req, res) => {
   }
 };
 
-
-
-
-
-
 // @desc get brands, categories, subcategories, godowns, priceLevels
 // route get/api/sUsers/getAllSubDetails
 
@@ -2357,8 +2341,6 @@ export const createStockTransfer = async (req, res) => {
 //   }
 // };
 
-
-
 // @desc to cancel stock tranfer
 // route post/api/sUsers/cancelstockTransfer;
 
@@ -2396,34 +2378,34 @@ export const cancelStockTransfer = async (req, res) => {
   }
 };
 
-
 /**
  * @desc   To get bank and cash details
  * @route  Get /api/sUsers/getBankAndCashSources/:cmp_id
  * @access Public
  */
 
-
-
 export const getBankAndCashSources = async (req, res) => {
   const cmp_id = req.params.cmp_id;
-
 
   try {
     // Run both queries in parallel with filters for non-null and non-"null" fields
     const [banks, cashs] = await Promise.all([
-      bankModel.find({
-        cmp_id,
-        bank_ledname: { $nin: [null, "null"] },
-        bank_id: { $exists: true },
-        bank_name: { $nin: [null, "null"] }
-      }).select({ bank_ledname: 1, bank_id: 1, bank_name: 1 }),
+      bankModel
+        .find({
+          cmp_id,
+          bank_ledname: { $nin: [null, "null"] },
+          bank_id: { $exists: true },
+          bank_name: { $nin: [null, "null"] },
+        })
+        .select({ bank_ledname: 1, bank_id: 1, bank_name: 1 }),
 
-      cashModel.find({
-        cmp_id,
-        cash_ledname: { $nin: [null, "null"] },
-        cash_id: { $exists: true }
-      }).select({ cash_ledname: 1, cash_id: 1 })
+      cashModel
+        .find({
+          cmp_id,
+          cash_ledname: { $nin: [null, "null"] },
+          cash_id: { $exists: true },
+        })
+        .select({ cash_ledname: 1, cash_id: 1 }),
     ]);
 
     // Return fetched data with a consistent structure
@@ -2431,14 +2413,11 @@ export const getBankAndCashSources = async (req, res) => {
       message: "Bank and Cash fetched",
       data: { banks, cashs },
     });
-
   } catch (error) {
-
- console.log("Error in getting bank and cash sources:", error);
+    console.log("Error in getting bank and cash sources:", error);
     res.status(500).json({
       error: "Internal Server Error",
       details: error.message,
     });
   }
 };
-

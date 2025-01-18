@@ -12,11 +12,6 @@ import {
 import { Link } from "react-router-dom";
 import { RingLoader } from "react-spinners";
 import { IoMdSettings } from "react-icons/io";
-import { IoIosArrowDown, IoIosArrowUp, IoIosPricetags } from "react-icons/io";
-import { TbBrandAppgallery, TbCategory2 } from "react-icons/tb";
-import { BiSolidCategoryAlt } from "react-icons/bi";
-import { HiBuildingStorefront, HiDocumentText } from "react-icons/hi2";
-import { MdOutlineInventory } from "react-icons/md";
 
 import { removeAll } from "../../../slices/invoiceSecondary";
 import { removeAllSales } from "../../../slices/salesSecondary";
@@ -33,10 +28,6 @@ import { SiHelpscout } from "react-icons/si";
 import { GrInfo } from "react-icons/gr";
 import { IoMdPower } from "react-icons/io";
 import Swal from "sweetalert2";
-import { RiBox3Fill } from "react-icons/ri";
-import { TiUserAdd } from "react-icons/ti";
-import { MdHomeRepairService } from "react-icons/md";
-
 
 function SidebarSec({ TAB, showBar }) {
   const [showSidebar, setShowSidebar] = useState(false);
@@ -45,15 +36,9 @@ function SidebarSec({ TAB, showBar }) {
   const [org, setOrg] = useState("");
   const [loader, setLoader] = useState(false);
   const [companies, setCompanies] = useState([]);
-  const [expandedSections, setExpandedSections] = useState({
-    inventory: false,
-  });
+  const [role, setRole] = useState("user");
   const [open, setOpen] = useState(true);
-
   const selectedTab = localStorage.getItem("selectedSecondatSidebarTab");
-  const [selectedSubTab, setSelectedSubTab] = useState(
-    localStorage.getItem("selectedSubTab") || ""
-  );
 
   const [tab, setTab] = useState(selectedTab);
   const navigate = useNavigate();
@@ -84,6 +69,15 @@ function SidebarSec({ TAB, showBar }) {
       label: "Home",
     },
   ];
+
+  if(role==="admin"){
+    navItems.push({
+      to: "/sUsers/settings",
+      tab: "settings",
+      icon: <IoMdSettings />,
+      label: "Company",
+    });
+  }
 
   const securityItems = [
     {
@@ -121,98 +115,7 @@ function SidebarSec({ TAB, showBar }) {
   ];
 
   if (companies && companies.length > 0 && org.isApproved === true) {
-    const additionalTabs = [
-      // {
-      //   to: "/sUsers/partyList",
-      //   tab: "addParty",
-      //   icon: <TiUserAdd />,
-      //   label: "Customers",
-      // },
-      // {
-      //   to: "/sUsers/hsnList",
-      //   tab: "hsn",
-      //   icon: <HiDocumentText />,
-      //   label: "Tax classification",
-      // },
-      // {
-      //   to: "/sUsers/productList",
-      //   label: "Products",
-      //   icon: <RiBox3Fill/>,
-      //   tab: "product",
-      // }
-    ];
-
-    // if (org.type === "self") {
-    //   additionalTabs.push({
-    //     to: "/sUsers/hsnList",
-    //     tab: "hsn",
-    //     icon: <HiDocumentText />,
-    //     label: "Tax classification",
-    //   });
-    // }
-
-    // Show "Inventory" only if org.type is "self"
-    // if (org.type === "self") {
-    //   additionalTabs.push({
-    //     to: "/sUsers/additionalChargesList",
-    //     label: "Ledger",
-    //     icon: <MdHomeRepairService />,
-    //     tab: "ledger",
-    //   });
-    // }
-    //   additionalTabs.push({
-    //     to: "#",
-    //     icon: <MdOutlineInventory />,
-    //     label: "Inventory",
-    //     onClick: () => toggleSection("inventory"),
-    //     subItems: [
-    //       // {
-    //       //   to: "/sUsers/productList",
-    //       //   label: "Products",
-    //       //   icon: <RiBox3Fill />,
-    //       //   tab: "product",
-    //       // },
-    //       {
-    //         to: "/sUsers/brand",
-    //         label: "Brand",
-    //         icon: <TbBrandAppgallery />,
-    //         tab: "brand",
-    //       },
-    //       {
-    //         to: "/sUsers/category",
-    //         label: "Category",
-    //         icon: <BiSolidCategoryAlt />,
-    //         tab: "category",
-    //       },
-    //       {
-    //         to: "/sUsers/subcategory",
-    //         label: "Sub Category",
-    //         icon: <TbCategory2 />,
-    //         tab: "subcategory",
-    //       },
-    //       {
-    //         to: "/sUsers/godown",
-    //         label: "Godown",
-    //         icon: <HiBuildingStorefront />,
-    //         tab: "godown",
-    //       },
-    //       {
-    //         to: "/sUsers/pricelevel",
-    //         label: "Price Level",
-    //         icon: <IoIosPricetags />,
-    //         tab: "pricelevel",
-    //       },
-    //     ],
-    //   });
-    // }
-    // else {
-    //   additionalTabs.push({
-    //     to: "/sUsers/productList",
-    //     label: "Products",
-    //     icon: <RiBox3Fill />,
-    //     tab: "product",
-    //   });
-    // }
+    const additionalTabs = [];
     additionalTabs.push({
       to: "/sUsers/settings",
       tab: "terms",
@@ -233,8 +136,10 @@ function SidebarSec({ TAB, showBar }) {
       setUserData(res?.data?.data?.userData);
       setCompanies(res?.data?.data?.userData.organization);
 
+      setRole(res.data.data.userData.role || "user");
       if (!prevOrg) {
         setOrg(res.data.data.userData.organization[0]);
+
         dispatch(
           setSecSelectedOrganization(res.data.data.userData.organization[0])
         );
@@ -263,13 +168,6 @@ function SidebarSec({ TAB, showBar }) {
       setShowSidebar(false);
     }
   }, []);
-
-  const toggleSection = (section) => {
-    setExpandedSections((prevSections) => ({
-      ...prevSections,
-      [section]: !prevSections[section],
-    }));
-  };
 
   const handleSidebarItemClick = (newTab) => {
     if (window.innerWidth < 768) {
@@ -471,12 +369,10 @@ function SidebarSec({ TAB, showBar }) {
 
         <div
           className={`flex flex-col   flex-1  my-3  ${
-            !open ? "items-center  mt-1" :"mt-9"
+            !open ? "items-center  mt-1" : "mt-9"
           } `}
         >
-          <p className="text-sm text-gray-400 px-4">
-            Menu
-          </p>
+          <p className="text-sm text-gray-400 px-4">Menu</p>
 
           {/* my accounts */}
           <nav>
@@ -485,7 +381,7 @@ function SidebarSec({ TAB, showBar }) {
                 <SidebarCard
                   item={item}
                   tab={tab}
-                  expandedSections={expandedSections}
+                  // expandedSections={expandedSections}
                   handleSidebarItemClick={handleSidebarItemClick}
                 />
               </div>
@@ -501,7 +397,7 @@ function SidebarSec({ TAB, showBar }) {
                 <SidebarCard
                   item={item}
                   tab={tab}
-                  expandedSections={expandedSections}
+                  // expandedSections={expandedSections}
                   handleSidebarItemClick={handleSidebarItemClick}
                 />
               </div>
@@ -517,7 +413,7 @@ function SidebarSec({ TAB, showBar }) {
                 <SidebarCard
                   item={item}
                   tab={tab}
-                  expandedSections={expandedSections}
+                  // expandedSections={expandedSections}
                   handleSidebarItemClick={handleSidebarItemClick}
                 />
               </div>
