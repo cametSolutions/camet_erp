@@ -31,9 +31,11 @@ function SearchPartySalesSecondary() {
   };
 
   let url;
+  let pendingPartyList=false;
 
   if (location.pathname === "/sUsers/orderPending/partyList") {
     url = "/api/sUsers/PartyListWithOrderPending";
+    pendingPartyList=true
   } else {
     url = "/api/sUsers/PartyList";
   }
@@ -96,6 +98,7 @@ function SearchPartySalesSecondary() {
         loading={loading}
         filteredParties={filteredParties}
         selectHandler={selectHandler}
+        pendingPartyList={pendingPartyList}
       />
     </div>
   );
