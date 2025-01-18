@@ -2,7 +2,7 @@
 import { useEffect, useState, useMemo } from "react";
 
 import { IoMdAdd } from "react-icons/io";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import {
   removeParty,
@@ -65,6 +65,8 @@ function InvoiceSecondary() {
   const despatchDetails = useSelector(
     (state) => state.invoiceSecondary.despatchDetails
   );
+
+  const location = useLocation();
 
   ////dataLoading////
   // Helper function to manage dataLoading state
@@ -354,8 +356,6 @@ function InvoiceSecondary() {
     };
 
     console.log(formData);
-    
-
 
     try {
       const res = await api.post("/api/sUsers/createInvoice", formData, {
@@ -387,12 +387,15 @@ function InvoiceSecondary() {
     }
   }, [dataLoading]);
 
+  console.log(location);
+
   return (
     <div className="mb-14 sm:mb-0">
       <div className="flex-1 bg-slate-100  h-screen  ">
         <TitleDiv
           title="Create Bill / Sales Order"
-          from={`/sUsers/selectVouchers`}
+          from={location?.state?.from ?? "/sUsers/selectVouchers"}
+          // from=     {`/sUsers/selectVouchers`}
           loading={loading || submitLoading}
         />
 
@@ -842,7 +845,6 @@ function InvoiceSecondary() {
             </div>
           </div>
 
-  
           <FooterButton
             submitHandler={submitHandler}
             tab="add"
