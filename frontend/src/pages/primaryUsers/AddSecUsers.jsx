@@ -8,7 +8,7 @@ function AddSecUsers() {
 
   const submitHandler = async (formData) => {
     try {
-      const res = await api.post("/api/pUsers/addSecUsers", formData, {
+      const res = await api.post("/api/sUsers/addSecUsers", formData, {
         headers: {
           "Content-Type": "application/json",
         },
@@ -16,7 +16,7 @@ function AddSecUsers() {
       });
 
       toast.success(res.data.message);
-      navigate("/pUsers/retailers");
+      navigate("/sUsers/retailers");
     } catch (error) {
       toast.error(error.response.data.message);
       console.log(error);

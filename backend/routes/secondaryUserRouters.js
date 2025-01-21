@@ -33,6 +33,8 @@ import { addBankPaymentDetails } from '../../frontend/slices/payment.js';
 import { addEmailConfiguration, getConfiguration, getBarcodeList, addBarcodeData, editBarcodeData, deleteBarcode, getSingleBarcodeData, getPrintingConfiguration, updateConfiguration, getDespatchTitles, updateDespatchTitles, getTermsAndConditions, updateTermsAndConditions, updateBankAccount, updateTaxConfiguration, updateShipToConfiguration } from '../controllers/settingsController.js';
 import { updateSecondaryUserConfiguration } from '../helpers/saleOrderHelper.js';
 import { updateDateFieldsByCompany, updateSalesItemUnitFields, updateUnitFields } from '../controllers/testingController.js';
+import { authPrimary } from '../middlewares/authPrimaryUsers.js';
+import { addOrganizations, addSecUsers, editOrg, editSecUSer, fetchSecondaryUsers, getOrganizations, getSecUserDetails } from '../controllers/primaryUserController.js';
 
 
 router.post('/login',login)
@@ -189,17 +191,31 @@ router.put('/updateTaxConfiguration/:cmp_id',authSecondary,secondaryIsBlocked,co
 /// ship to settings
 router.put('/updateShipToConfiguration/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,updateShipToConfiguration)
 
-
-
-
 /// order pending
 router.get('/PartyListWithOrderPending/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,PartyListWithOrderPending)
+
+
+//// company creation
+router.post('/addOrganizations', authPrimary,secondaryIsBlocked,addOrganizations);
+router.get('/getOrganizations', authPrimary,secondaryIsBlocked,getOrganizations);
+router.post('/editOrg/:id', authPrimary,secondaryIsBlocked,editOrg);
+
+//// managing secondary users
+router.get('/fetchSecondaryUsers', authPrimary,secondaryIsBlocked,fetchSecondaryUsers);
+router.post('/addSecUsers', authPrimary,secondaryIsBlocked,addSecUsers);
+router.get('/getSecUserDetails/:id', authPrimary,secondaryIsBlocked,getSecUserDetails)
+router.put('/editSecUSer/:id', authPrimary,secondaryIsBlocked,editSecUSer)
+
+
+
+
 
 //// testing routes
 
 router.put('/updateDateFieldsByCompany/:cmp_id',updateDateFieldsByCompany)
 router.put('/updateUnitFields/:cmp_id',updateUnitFields)
 router.put('/updateSalesItemUnitFields/:cmp_id',updateSalesItemUnitFields)
+
 
 
 

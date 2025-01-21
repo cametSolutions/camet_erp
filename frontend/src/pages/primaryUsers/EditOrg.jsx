@@ -1,23 +1,22 @@
 import { useEffect, useState } from "react";
 import api from "../../api/api.js";
 import { toast } from "react-toastify";
-import { IoReorderThreeSharp } from "react-icons/io5";
+// import { IoReorderThreeSharp } from "react-icons/io5";
 import { useParams, useNavigate } from "react-router-dom";
 import AddOrgForm from "../../components/homePage/AddOrgForm.jsx";
-import { useSidebar } from "../../layout/Layout";
+// import { useSidebar } from "../../layout/Layout";
 import { useDispatch } from "react-redux";
 import { setSelectedOrganization } from "../../../slices/PrimarySelectedOrgSlice.jsx";
-import { setSecSelectedOrganization } from "../../../slices/secSelectedOrgSlice.js";
+// import { setSecSelectedOrganization } from "../../../slices/secSelectedOrgSlice.js";
 
 import { useSelector } from "react-redux";
+import TitleDiv from "../../components/common/TitleDiv.jsx";
 
 const EditOrg = () => {
  const selectedOrganization = useSelector(
     (state) => state?.setSelectedOrganization?.selectedOrg
   );
-  // const selectedOrganizationSecondary = useSelector(
-  //   (state) => state.secSelectedOrganization?.secSelectedOrg?._id
-  // );
+
 
 
   // console.log("sec", selectedOrganizationSecondary);
@@ -36,7 +35,7 @@ const EditOrg = () => {
   useEffect(() => {
     const fetchSingleOrganization = async () => {
       try {
-        const res = await api.get(`/api/pUsers/getSingleOrganization/${id}`, {
+        const res = await api.get(`/api/sUsers/getSingleOrganization/${id}`, {
           withCredentials: true,
         });
         setOrgData(res.data.organizationData);
@@ -58,7 +57,7 @@ const EditOrg = () => {
 
 
 
-  const {  handleToggleSidebar } = useSidebar();
+  // const {  handleToggleSidebar } = useSidebar();
 
 
   const submitHandler = async (formData) => {
@@ -67,7 +66,7 @@ const EditOrg = () => {
  
 
     try {
-      const res = await api.post(`/api/pUsers/editOrg/${id}`, formData, {
+      const res = await api.post(`/api/sUsers/editOrg/${id}`, formData, {
         headers: {
           "Content-Type": "application/json",
         },
@@ -81,7 +80,7 @@ const EditOrg = () => {
 
       toast.success(res.data.message);
 
-      navigate("/pUsers/organizationList");
+      navigate("/sUsers/company/list");
 
     } catch (error) {
       toast.error(error.response.data.message);
@@ -96,13 +95,7 @@ const EditOrg = () => {
      
       <div className=" ">
         <section className=" bg-blueGray-50 ">
-          <div className="bg-[#201450] sticky top-0 p-3 z-100 text-white text-lg font-bold flex items-center gap-3 z-20">
-            <IoReorderThreeSharp
-              onClick={handleToggleSidebar}
-              className="block md:hidden text-3xl"
-            />
-            <p>Edit Company</p>
-          </div>
+       <TitleDiv title="Edit Organization" />
           <div className="w-full lg:w-8/12 px-4 mx-auto  pb-[30px]  ">
             <div className="relative flex flex-col min-w-0 break-words w-full mb-6 shadow-lg rounded-lg bg-blueGray-100 border-0">
               <div className="rounded-t bg-white mb-0 px-6 py-2">

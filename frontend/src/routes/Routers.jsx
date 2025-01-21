@@ -492,9 +492,28 @@ const Routers = () => {
       <Route path='/sUsers/pendingOrders/:partyId' element={<ProtectedSecRoute><PendingOrders/></ProtectedSecRoute>}></Route>
 
 
+
+      {/* company secondary user */}
+      <Route path='/sUsers/company/list' element={<ProtectedSecRoute><OrganizationList/></ProtectedSecRoute>}></Route>
+      <Route path='/sUsers/addOrganization' element={<ProtectedSecRoute><AddOrganisation/></ProtectedSecRoute>}></Route>
+      <Route path='/sUsers/editOrg/:id' element={<ProtectedSecRoute><EditOrg/></ProtectedSecRoute>}></Route>
+
+
+        {/* adding sec users */}
+      <Route path='/sUsers/retailers' element={<ProtectedSecRoute><RetailersList/></ProtectedSecRoute>}></Route>
+      <Route path='/sUsers/addSecUsers' element={<ProtectedSecRoute><AddSecUsers/></ProtectedSecRoute>}></Route>
+      <Route path='/sUsers/editUser/:id' element={<ProtectedSecRoute><EditSecUsers/></ProtectedSecRoute>}></Route>
+
+
+
+
+
+
         {/* errorPage */}
         <Route path='/errorPage' element={<ErrorPage />} />
         <Route path='/serverError' element={<ServerError />} />
+        <Route path='/sUsers/demo' element={<ProtectedSecRoute><Demo/></ProtectedSecRoute>}></Route>
+
 
     
     </Routes>

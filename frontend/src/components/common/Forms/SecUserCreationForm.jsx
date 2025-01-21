@@ -9,6 +9,7 @@ import api from "../../../api/api";
 import { useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { IoIosSettings } from "react-icons/io";
+import TitleDiv from "../TitleDiv";
 
 function SecUserCreationForm({ submitHandler, tab = "add" }) {
   const [organizations, setOrganizations] = useState([]);
@@ -20,20 +21,19 @@ function SecUserCreationForm({ submitHandler, tab = "add" }) {
   const [showPassword, setShowPassword] = useState(false);
   const [oldPassword, setOldPassword] = useState("");
 
-  const country =  useSelector(
-    (state) => state?.setSelectedOrganization?.selectedOrg?.country
+  const country = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg.country
   );
-  
+
   const { id } = useParams();
 
   useEffect(() => {
     if (tab === "edit") {
       const fetchUserDetails = async () => {
         try {
-          const res = await api.get(`/api/pUsers/getSecUserDetails/${id}`, {
+          const res = await api.get(`/api/sUsers/getSecUserDetails/${id}`, {
             withCredentials: true,
           });
-          console.log(res.data.data);
 
           const { name, email, mobile, password, organization } = res.data.data;
           setName(name);
@@ -52,7 +52,7 @@ function SecUserCreationForm({ submitHandler, tab = "add" }) {
   useEffect(() => {
     const fetchOrganizations = async () => {
       try {
-        const res = await api.get("/api/pUsers/getOrganizations", {
+        const res = await api.get("/api/sUsers/getOrganizations", {
           withCredentials: true,
         });
 
@@ -83,7 +83,6 @@ function SecUserCreationForm({ submitHandler, tab = "add" }) {
     }
   };
 
-  console.log("tab", tab);
 
   const onSubmitHandler = async (e) => {
     e.preventDefault();
@@ -97,7 +96,6 @@ function SecUserCreationForm({ submitHandler, tab = "add" }) {
       toast.error("Name must be at most 30 characters");
       return;
     }
-
 
     if (country === "India" && !/^\d{10}$/.test(mobile)) {
       toast.error("Mobile number must be 10 digits");
@@ -161,12 +159,7 @@ function SecUserCreationForm({ submitHandler, tab = "add" }) {
     <div className="flex">
       <div className="flex-1 ">
         <section className=" bg-blueGray-50 ">
-          <div className="block  bg-[#201450] text-white mb-2 p-3 flex items-center gap-3 sticky top-0 z-20 text-lg  ">
-            <Link to={"/pUsers/retailers"}>
-              <IoIosArrowRoundBack className="text-3xl text-white cursor-pointer " />
-            </Link>
-            <p> Add Users </p>
-          </div>
+          <TitleDiv title="Secondary User" />
           <div className="w-full lg:w-8/12 px-4 mx-auto mt-6 pb-[30px]">
             <div className="relative flex flex-col min-w-0 break-words w-full mb-6 shadow-lg rounded-lg bg-blueGray-100 border-0">
               <div className="rounded-t bg-white mb-0 px-6 py-6">
@@ -292,48 +285,51 @@ function SecUserCreationForm({ submitHandler, tab = "add" }) {
                         Companies
                       </label>
                       <div className="space-y-2">
-                          {organizations.length > 0 ? (
-                            organizations.map((item, index) => (
-                              <div key={index} className="flex justify-between">
-                                {/* <button type="button" className="bg-purple-500 p-1.5 py-1 text-white mr-2 rounded-md text-xs">Configure</button> */}
-                                <div className="flex items-center">
-                                  <input
-                                    type="checkbox"
-                                    id={`organizationCheckbox${index}`}
-                                    value={item._id}
-                                    checked={selectedOrg.includes(item._id)}
-                                    onChange={(e) =>
-                                      handleCheckboxChange(e.target.value)
-                                    }
-                                    className="mr-2"
-                                  />
-                                  <label
-                                    htmlFor={`organizationCheckbox${index}`}
-                                    className="text-blueGray-600"
-                                  >
-                                    {item.name}
-                                  </label>
-                                </div>
-                                {/* <button
+                        {organizations.length > 0 ? (
+                          organizations.map((item, index) => (
+                            <div key={index} className="flex justify-between">
+                              {/* <button type="button" className="bg-purple-500 p-1.5 py-1 text-white mr-2 rounded-md text-xs">Configure</button> */}
+                              <div className="flex items-center">
+                                <input
+                                  type="checkbox"
+                                  id={`organizationCheckbox${index}`}
+                                  value={item._id}
+                                  checked={selectedOrg.includes(item._id)}
+                                  onChange={(e) =>
+                                    handleCheckboxChange(e.target.value)
+                                  }
+                                  className="mr-2"
+                                />
+                                <label
+                                  htmlFor={`organizationCheckbox${index}`}
+                                  className="text-blueGray-600"
+                                >
+                                  {item.name}
+                                </label>
+                              </div>
+                              {/* <button
                                   type="button"
                                   className="bg-purple-400 p-1.5 py-1 text-white mr-2 rounded-md text-xs"
                                 >
                                   Configure
                                 </button> */}
 
-                                {selectedOrg.includes(item._id) && tab=="edit" && (
-                                  <Link to={`/pUsers/configureSecondaryUser/${item._id}/${id}/${item.name}`}>
-                                  <IoIosSettings className="cursor-pointer" />
-                                </Link>
+                              {selectedOrg.includes(item._id) &&
+                                tab == "edit" && (
+                                  <Link
+                                    to={`/pUsers/configureSecondaryUser/${item._id}/${id}/${item.name}`}
+                                  >
+                                    <IoIosSettings className="cursor-pointer" />
+                                  </Link>
                                 )}
-                              </div>
-                            ))
-                          ) : (
-                            <p className="text-blueGray-600">
-                              No organization added
-                            </p>
-                          )}
-                        </div>
+                            </div>
+                          ))
+                        ) : (
+                          <p className="text-blueGray-600">
+                            No organization added
+                          </p>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </form>

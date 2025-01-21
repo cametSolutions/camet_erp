@@ -28,6 +28,8 @@ import { SiHelpscout } from "react-icons/si";
 import { GrInfo } from "react-icons/gr";
 import { IoMdPower } from "react-icons/io";
 import Swal from "sweetalert2";
+import { BsFillBuildingsFill } from "react-icons/bs";
+import { SlUserFollow } from "react-icons/sl";
 
 function SidebarSec({ TAB, showBar }) {
   const [showSidebar, setShowSidebar] = useState(false);
@@ -68,15 +70,29 @@ function SidebarSec({ TAB, showBar }) {
       icon: <FaHome />,
       label: "Home",
     },
+    // {
+    //   to: "/sUsers/settings",
+    //   tab: "settings",
+    //   icon: <IoMdSettings />,
+    //   label: "Settings",
+    // },
   ];
 
-  if(role==="admin"){
-    navItems.push({
-      to: "/sUsers/settings",
-      tab: "settings",
-      icon: <IoMdSettings />,
-      label: "Company",
-    });
+  if (role === "admin") {
+    navItems.push(
+      {
+        to: "/sUsers/company/list",
+        tab: "company",
+        icon: <BsFillBuildingsFill />,
+        label: "Company",
+      },
+      {
+        to: "/sUsers/retailers",
+        tab: "addSec",
+        icon: <SlUserFollow />,
+        label: "Users",
+      }
+    );
   }
 
   const securityItems = [
@@ -133,16 +149,18 @@ function SidebarSec({ TAB, showBar }) {
       const res = await api.get("/api/sUsers/getSecUserData", {
         withCredentials: true,
       });
-      setUserData(res?.data?.data?.userData);
-      setCompanies(res?.data?.data?.userData.organization);
 
-      setRole(res.data.data.userData.role || "user");
+      const { userData } = res.data.data;
+
+      setUserData(userData);
+
+      setCompanies(userData?.organization);
+
+      setRole(userData?.role || "user");
       if (!prevOrg) {
-        setOrg(res.data.data.userData.organization[0]);
+        setOrg(userData?.organization[0]);
 
-        dispatch(
-          setSecSelectedOrganization(res.data.data.userData.organization[0])
-        );
+        dispatch(setSecSelectedOrganization(userData?.organization[0]));
       } else {
         setOrg(prevOrg);
       }

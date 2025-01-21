@@ -32,7 +32,6 @@ import debitNoteModel from "../models/debitNoteModel.js";
 import paymentModel from "../models/paymentModel.js";
 import ReceiptModel from "../models/receiptModel.js";
 
-
 // @desc Register Primary user
 // route POST/api/pUsers/register
 
@@ -231,6 +230,7 @@ export const getPrimaryUserData = async (req, res) => {
 // @desc Adding organizations by primary users
 // route POST/api/pUsers/addOrganizations
 
+
 export const addOrganizations = async (req, res) => {
   const {
     name,
@@ -257,22 +257,24 @@ export const addOrganizations = async (req, res) => {
     currency,
     currencyName,
     symbol,
-    subunit
+    subunit,
   } = req.body;
 
-  const owner = req.pUserId;
+  const owner = req.owner;
+  const session = await mongoose.startSession(); // Start a session
+  session.startTransaction(); // Start the transaction
 
-   // Default configurations
-   const defaultConfigurations = [
+  // Default configurations
+  const defaultConfigurations = [
     {
       bank: null,
       terms: [],
       enableBillToShipTo: true,
       taxInclusive: false,
-      addRateWithTax: [
-        saleOrder=false,
-        sale=false,
-      ],
+      addRateWithTax: {
+        saleOrder: false,
+        sale: false,
+      },
       emailConfiguration: null,
       despatchTitles: [
         {
@@ -324,10 +326,10 @@ export const addOrganizations = async (req, res) => {
           showBankDetails: false,
           showTaxAmount: true,
           showStockWiseTaxAmount: true,
-          showRate:true,
-          showQuantity:true,
-          showStockWiseAmount:true,
-          showNetAmount:true
+          showRate: true,
+          showQuantity: true,
+          showStockWiseAmount: true,
+          showNetAmount: true,
         },
         {
           voucher: "sale",
@@ -343,59 +345,88 @@ export const addOrganizations = async (req, res) => {
           showBankDetails: false,
           showTaxAmount: true,
           showStockWiseTaxAmount: true,
-          showRate:true,
-          showQuantity:true,
-          showStockWiseAmount:true,
-          showNetAmount:true
+          showRate: true,
+          showQuantity: true,
+          showStockWiseAmount: true,
+          showNetAmount: true,
         },
       ],
     },
   ];
 
-
-  
   try {
-    const organization = await Organization.create({
-      name,
-      // place,
-      pin,
-      state,
-      country,
-      owner,
-      email,
-      mobile,
-      logo,
-      flat,
-      road,
-      landmark,
-      senderId,
-      username,
-      password,
-      website,
-      pan,
-      financialYear,
-      gstNum,
-      type,
-      batchEnabled,
-      industry,
-      printTitle,
-      currency,
-      currencyName,
-      symbol,
-      subunit,
-      configurations: defaultConfigurations, // Adding default configurations
-    });
+    // Create the organization
+    const organization = await Organization.create(
+      [
+        {
+          name,
+          pin,
+          state,
+          country,
+          owner,
+          email,
+          mobile,
+          logo,
+          flat,
+          road,
+          landmark,
+          senderId,
+          username,
+          password,
+          website,
+          pan,
+          financialYear,
+          gstNum,
+          type,
+          batchEnabled,
+          industry,
+          printTitle,
+          currency,
+          currencyName,
+          symbol,
+          subunit,
+          configurations: defaultConfigurations,
+        },
+      ],
+      { session }
+    );
 
-    if (organization) {
-      return res
-        .status(200)
-        .json({ success: true, message: "Organization added successfully" });
-    } else {
+    if (!organization) {
+      await session.abortTransaction();
+      session.endSession();
       return res
         .status(400)
         .json({ success: false, message: "Adding organization failed" });
     }
+
+  
+
+    // Update the SecondaryUser's organization array
+    const updatedUser = await SecondaryUser.findByIdAndUpdate(
+      req.sUserId,
+      { $push: { organization: organization[0]._id } },
+      { new: true, session } // Use the session
+    );
+
+    if (!updatedUser) {
+      await session.abortTransaction();
+      session.endSession();
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
+
+    // Commit the transaction
+    await session.commitTransaction();
+    session.endSession();
+
+    return res
+      .status(200)
+      .json({ success: true, message: "Organization added successfully" });
   } catch (error) {
+    // Rollback the transaction on error
+    await session.abortTransaction();
+    session.endSession();
     console.error(error);
     return res
       .status(500)
@@ -403,11 +434,12 @@ export const addOrganizations = async (req, res) => {
   }
 };
 
+
 // @desc get Primary user organization list
 // route GET/api/pUsers/getOrganizations
 
 export const getOrganizations = async (req, res) => {
-  const userId = new mongoose.Types.ObjectId(req.pUserId);
+  const userId = new mongoose.Types.ObjectId(req.owner);
   try {
     const organizations = await Organization.find({ owner: userId });
     if (organizations) {
@@ -490,7 +522,7 @@ export const editOrg = async (req, res) => {
 export const addSecUsers = async (req, res) => {
   try {
     const { name, mobile, email, password, selectedOrg } = req.body;
-    const pUserId = req.pUserId;
+    const pUserId = req.owner;
 
     const userExists = await SecondaryUser.findOne({ email });
 
@@ -534,7 +566,7 @@ export const addSecUsers = async (req, res) => {
 // route GET/api/pUsers/fetchSecondaryUsers
 
 export const fetchSecondaryUsers = async (req, res) => {
-  const userId = new mongoose.Types.ObjectId(req.pUserId);
+  const userId = new mongoose.Types.ObjectId(req.owner);
   try {
     const secondaryUsers = await SecondaryUser.find({ primaryUser: userId })
       .populate("organization")
@@ -707,7 +739,6 @@ export const confirmCollection = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
-
 
 // @desc for cancelling transactions
 // route GET/api/pUsers/cancelTransaction
@@ -987,7 +1018,6 @@ export const addParty = async (req, res) => {
       country,
       state,
       pin,
-    
     } = req.body;
 
     // Create a new party document with either the provided party_master_id or MongoDB generated _id
@@ -1009,7 +1039,7 @@ export const addParty = async (req, res) => {
       country,
       state,
       pin,
-    
+
       party_master_id: party_master_id || undefined, // Allow Mongoose to assign _id if not provided
     });
 
@@ -1802,9 +1832,6 @@ export const invoiceList = async (req, res) => {
   }
 };
 
-
-
-
 // @desc  editHsn details
 // route get/api/pUsers/addBank
 
@@ -1812,8 +1839,7 @@ export const invoiceList = async (req, res) => {
 //   const { acholder_name, ac_no, ifsc, bank_name, branch, upi_id, cmp_id } =
 //     req.body;
 //   const Primary_user_id = req.pUserId;
-  
-  
+
 //   try {
 //     const bank = await bankModel.create({
 //       acholder_name,
@@ -2233,8 +2259,13 @@ export const addconfigurations = async (req, res) => {
       return res.status(404).json({ message: "Organization not found" });
     }
 
-    const { selectedBank, termsList, enableBillToShipTo, despatchDetails ,taxInclusive} =
-      req.body;
+    const {
+      selectedBank,
+      termsList,
+      enableBillToShipTo,
+      despatchDetails,
+      taxInclusive,
+    } = req.body;
 
     // Check if selectedBank is provided
     let bankId = null; // Default to null if not provided
@@ -2251,7 +2282,7 @@ export const addconfigurations = async (req, res) => {
       enableBillToShipTo,
       despatchDetails,
       taxInclusive,
-      printConfiguration:org.configurations[0].printConfiguration
+      printConfiguration: org.configurations[0].printConfiguration,
     };
     org.configurations = [newConfigurations];
 
@@ -2502,8 +2533,6 @@ export const createSale = async (req, res) => {
     });
   }
 };
-
-
 
 // @desc toget the godown list
 // route get/api/pUsers/fetchGodowns
@@ -2839,9 +2868,17 @@ export const addSecondaryConfigurations = async (req, res) => {
     }
 
     if (changes.receiptNumber) {
-      const receiptExists = await checkForNumberExistence(ReceiptModel, 'receiptNumber', NewreceiptNumber);
+      const receiptExists = await checkForNumberExistence(
+        ReceiptModel,
+        "receiptNumber",
+        NewreceiptNumber
+      );
       if (receiptExists) {
-        return res.status(400).json({ message: `Receipt is added with this number ${NewreceiptNumber}` });
+        return res
+          .status(400)
+          .json({
+            message: `Receipt is added with this number ${NewreceiptNumber}`,
+          });
       }
     }
 
@@ -3112,7 +3149,6 @@ export const godownwiseProductsSelf = async (req, res) => {
   }
 };
 
-
 // @desc get ** all ** subDetails of product such as brand category subcategory etc
 // route get/api/pUsers/getProductSubDetails
 
@@ -3214,12 +3250,12 @@ export const fetchConfigurationCurrentNumber = async (req, res) => {
 
     return res.status(200).json({
       message: "Configuration numbers retrieved successfully",
-      salesOrderNumber:orderNumber,
+      salesOrderNumber: orderNumber,
       salesNumber,
       purchaseNumber,
       receiptNumber,
       paymentNumber,
-      vanSaleNumber:vanSalesNumber,
+      vanSaleNumber: vanSalesNumber,
       stockTransferNumber,
       creditNoteNumber,
       debitNoteNumber,

@@ -22,7 +22,7 @@ function EditSecUsers() {
     console.log("formData edit", formData);
 
     try {
-      const res = await api.post(`/api/pUsers/editSecUSer/${id}`, postData, {
+      const res = await api.put(`/api/sUsers/editSecUSer/${id}`, postData, {
         headers: {
           "Content-Type": "application/json",
         },
@@ -30,7 +30,7 @@ function EditSecUsers() {
       });
 
       toast.success(res.data.message);
-      navigate("/pUsers/retailers");
+      navigate("/sUsers/retailers");
     } catch (error) {
       toast.error(error.response.data.message);
       console.log(error);

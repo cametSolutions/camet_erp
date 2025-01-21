@@ -15,7 +15,7 @@ function PendingOrders() {
   const { start, end } = useSelector((state) => state.date);
   const { partyId } = useParams();
   const cmp_id = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg._id
+    (state) => state?.secSelectedOrganization?.secSelectedOrg?._id
   );
 
   const [filteredOrders, setFilteredOrders] = useState([]);

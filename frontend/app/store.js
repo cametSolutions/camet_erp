@@ -19,6 +19,7 @@ import date from "../slices/filterSlices/date";
 import voucherType from "../slices/filterSlices/voucherType";
 import partyFilter from "../slices/filterSlices/partyFIlter";
 import statusFilter from "../slices/filterSlices/statusFilter";
+import companyFilter from "../slices/filterSlices/companyFilter";
 import partySlice from "../slices/partySlice";
 import paymentSplitting from "../slices/filterSlices/paymentSplitting/paymentSplitting"
 import barcode from "../slices/barcodeSlice";
@@ -47,6 +48,7 @@ export const store = configureStore({
     statusFilter: statusFilter,
     partySlice,
     paymentSplitting,
-    barcode
+    barcode,
+    companyFilter
   },
 });

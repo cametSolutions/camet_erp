@@ -29,7 +29,7 @@ function AddOrgForm({ onSubmit, orgData = {} }) {
   const [senderId, setSenderId] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [userData, setUserData] = useState("");
+  // const [userData, setUserData] = useState("");
   const [website, setWebsite] = useState("");
   const [pan, setPan] = useState("");
   const [financialYear, setFinancialYear] = useState("");
@@ -42,19 +42,19 @@ function AddOrgForm({ onSubmit, orgData = {} }) {
   const [printTitle, setPrintTitle] = useState("");
   const [subunit, setSubunit] = useState("Paisa");
 
-  useEffect(() => {
-    const getUserData = async () => {
-      try {
-        const res = await api.get("/api/pUsers/getPrimaryUserData", {
-          withCredentials: true,
-        });
-        setUserData(res.data.data.userData);
-      } catch (error) {
-        console.log(error);
-      }
-    };
-    getUserData();
-  }, []);
+  // useEffect(() => {
+  //   const getUserData = async () => {
+  //     try {
+  //       const res = await api.get("/api/sUsers/getPrimaryUserData", {
+  //         withCredentials: true,
+  //       });
+  //       setUserData(res.data.data.userData);
+  //     } catch (error) {
+  //       console.log(error);
+  //     }
+  //   };
+  //   getUserData();
+  // }, []);
 
 
 
@@ -558,7 +558,7 @@ function AddOrgForm({ onSubmit, orgData = {} }) {
           </div>
           {/* address */}
 
-          {userData.sms && (
+          {/* {userData.sms && (
             <>
               <hr className="mt-6 border-b-1 border-blueGray-300" />
               <h6 className="text-blueGray-400 text-sm mt-3 mb-6 font-bold uppercase flex gap-4 items-center">
@@ -634,7 +634,7 @@ function AddOrgForm({ onSubmit, orgData = {} }) {
                 </div>
               )}
             </>
-          )}
+          )} */}
 
           <hr className="mt-6 border-b-1 border-blueGray-300" />
           <h6 className="text-blueGray-400 text-sm mt-3 mb-6 font-bold uppercase">
