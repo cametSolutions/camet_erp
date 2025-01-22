@@ -1,21 +1,22 @@
 import { useEffect, useMemo, useState } from "react"
+import { Link } from "react-router-dom"
 import TitleDiv from "../../../../components/common/TitleDiv"
 import FindUserAndCompany from "../../../../components/Filters/FindUserAndCompany"
-import PartyFilter from "../../../../components/Filters/party/PartyFilter"
+import SummmaryDropdown from "../../../../components/Filters/SummaryDropdown"
+import SaleSummaryTable from "./saleSummaryTable"
 import SelectDate from "../../../../components/Filters/SelectDate"
-import StatusFilter from "../../../../components/Filters/status/StatusFilter"
+
 import { useSelector } from "react-redux"
-import { MdAddLink } from "react-icons/md"
+
 import { useNavigate, useParams } from "react-router-dom"
 import useFetch from "../../../../customHook/useFetch"
-import DashboardTransaction from "../../../../components/common/DashboardTransaction"
+
 import { BarLoader } from "react-spinners"
-// import { useLocation } from "react-router-dom";
-import { MdDoNotDisturbOnTotalSilence } from "react-icons/md"
 
 function SalesSummary() {
   const [userAndCompanyData, setUserAndCompanyData] = useState(null)
   const [selectedOption, setSelectedOption] = useState("Ledger")
+  const [showDetails, setShowDetails] = useState(false)
   const [summary, setSummary] = useState([])
   const [summaryReport, setSummaryReport] = useState([])
   const [selectedIndex, setSelectedIndex] = useState(null)
@@ -57,26 +58,27 @@ function SalesSummary() {
       handleLedger(selectedOption)
     }
   }, [summary])
-  console.log(selectedOption)
+  const handleViewDetails = () => {
+    // Perform any logic before showing details (e.g., API call to fetch data)
+
+    setShowDetails(true) // Show the details page
+  }
+
+  const handleBack = () => {
+    setShowDetails(false) // Hide details page and go back
+  }
+
   const handleLedger = (option) => {
     setSelectedOption(option)
     let check = []
     let arr = []
-    console.log(option)
     if (option === "Ledger") {
       const partybase = summary.map((item) => {
-        console.log(item)
-        console.log(check)
         let existingParty = check.find((data) => {
-          console.log(data.partyId)
-          console.log(item.party._id)
           return data.partyId === item.party?._id
         })
 
-        console.log(existingParty)
         if (existingParty) {
-          let c = 0
-          console.log(existingParty)
           const sale = item.items.map((it) => {
             if (it.hasGodownOrBatch) {
               if (
@@ -84,76 +86,113 @@ function SalesSummary() {
                 it.GodownList.every((item) => !item.hasOwnProperty("batch")) // Ensure no item has batch
               ) {
                 const godown = it.GodownList.reduce((acc, items) => {
-                  const existing = acc.find(
-                    (entry) => entry.godown_id === items.godown_id
-                  )
-
-                  if (existing && items.added) {
-                    console.log("inddddd")
-                    // Update totals for the existing entry
-                    existing.quantity += items?.count || 0
-                    existing.discount += items?.discount || 0
-                    existing.netAmount += items?.individualTotal || 0
-                    existing.taxAmount += items?.igstAmt || 0
-                    c += items?.individualTotal
-                  } else if (!existing && items.added) {
-                    // Add a new entry for this godown_id
-                    acc.push({
-                      godown_id: items?.godown_id,
-                      billnumber: item?.salesNumber,
-                      billDate: item?.date,
-                      itemName: it?.product_name,
-                      groupName: it?.brand?.name,
-                      quantity: items?.count || 0,
-                      rate: items?.selectedPriceRate || 0,
-                      discount: items?.discount || 0,
-                      taxPercentage: it?.igst || 0,
-                      taxAmount: items?.igstAmt || 0,
-                      netAmount: items?.individualTotal || 0
-                    })
-                    c += items?.individualTotal
+                  if (items.added) {
+                    if (Object.keys(acc).length > 0) {
+                      // Update the existing object's values
+                      acc.quantity += items?.count
+                      acc.discount += items?.discount
+                      acc.netAmount += items?.individualTotal
+                      acc.taxAmount += items?.igstAmt
+                      existingParty.saleAmount += items?.individualTotal
+                    } else {
+                      let pamount
+                      let ptax
+                      if (it.isTaxInclusive) {
+                        pamount = (
+                          items?.selectedPriceRate /
+                          (1 + it?.igst / 100)
+                        ).toFixed(2)
+                        ptax = ((pamount * it.igst) / 100).toFixed(2)
+                      } else {
+                        pamount = items.selectedPriceRate
+                        ptax = (it?.igst / 100) * pamount
+                      }
+                      // Populate the object for the first time
+                      Object.assign(acc, {
+                        billnumber: item?.salesNumber,
+                        billDate: item?.date,
+                        itemName: it?.product_name,
+                        groupName: it?.brand?.name,
+                        categoryName: it.category?.name,
+                        quantity: items?.count,
+                        rate: items?.selectedPriceRate,
+                        discount: items?.discount,
+                        taxPercentage: it?.igst,
+                        taxAmount: ptax,
+                        netAmount: items?.individualTotal,
+                        amount: pamount
+                      })
+                      existingParty.saleAmount += items?.individualTotal
+                    }
                   }
                   return acc
-                }, [])
-                existingParty.saleAmount = c
+                }, {})
                 existingParty.sale.push(godown)
               } else {
-                const godown = it.GodownList.map((items) => {
+                const a = it.GodownList.map((items) => {
                   if (items.added) {
-                    const a = {
-                      billnumber: item?.salesNumber,
-                      billDate: item?.date,
-                      itemName: it?.product_name,
-                      batch: items?.batch,
-                      groupName: it?.brand?.name,
-                      quantity: items?.count,
-                      rate: items?.selectedPriceRate,
-                      discount: items?.discount,
-                      taxPercentage: it?.igst,
-                      taxAmount: it?.igstAmt,
-                      netAmount: items?.individualTotal
+                    let pamount
+                    let ptax
+                    if (it.isTaxInclusive) {
+                      pamount = (
+                        items?.selectedPriceRate /
+                        (1 + it?.igst / 100)
+                      ).toFixed(2)
+                      ptax = ((pamount * it.igst) / 100).toFixed(2)
+                    } else {
+                      pamount = items.selectedPriceRate
+                      ptax = (it?.igst / 100) * pamount
                     }
-                    existingParty.saleAmount += items?.individualTotal
-                    existingParty.sale.push(a)
+                    const newSale = {
+                      billnumber: item.salesNumber,
+                      billDate: item.date,
+                      itemName: it.product_name,
+                      batch: items.batch,
+                      groupName: it.brand?.name,
+                      categoryName: it?.category.name,
+                      quantity: items.count,
+                      rate: items.selectedPriceRate,
+                      discount: items.discount,
+                      taxPercentage: it.igst,
+                      taxAmount: ptax,
+                      netAmount: items.individualTotal,
+                      amount: pamount
+                    }
+                    existingParty.saleAmount += items.individualTotal
+                    // Push the new sale entry to the sale array
+                    existingParty.sale.push(newSale)
                   }
                 })
               }
             } else {
-              console.log("hh")
               const godown = it.GodownList.map((items) => {
+                let pamount
+                let ptax
+                if (it.isTaxInclusive) {
+                  pamount = (
+                    items?.selectedPriceRate /
+                    (1 + it?.igst / 100)
+                  ).toFixed(2)
+                  ptax = ((pamount * it.igst) / 100).toFixed(2)
+                } else {
+                  pamount = items.selectedPriceRate
+                  ptax = (it?.igst / 100) * pamount
+                }
                 const a = {
                   billnumber: item?.salesNumber,
                   billDate: item?.date,
                   itemName: it?.product_name,
-
+                  categoryName: it?.category?.name,
                   groupName: it?.brand?.name,
                   quantity: it?.count,
                   rate: items?.selectedPriceRate,
                   discount: it?.discount,
                   taxPercentage: it?.igst,
-                  taxAmount: it?.igstAmt,
-                  netAmount: items?.individualTotal
+                  taxAmount: ptax,
+                  netAmount: items?.individualTotal,
+                  amount: pamount
                 }
+
                 existingParty.saleAmount += items?.individualTotal
                 existingParty.sale.push(a)
               })
@@ -166,9 +205,9 @@ function SalesSummary() {
             sale: [],
             saleAmount: 0
           }
-          let a = 0
+
           const sale = item.items.map((it) => {
-            console.log(it)
+            let m = 0
             if (it.hasGodownOrBatch) {
               if (
                 it.GodownList.every((item) => item.godown_id) && // Check all have godown_id
@@ -177,205 +216,252 @@ function SalesSummary() {
                 const godown = it.GodownList.reduce((acc, items) => {
                   if (items.added) {
                     if (Object.keys(acc).length > 0) {
-                      console.log(Object.keys(acc).length > 0)
-                      console.log("j")
                       // Update the existing object's values
-                      acc.quantity += items?.count || 0
-                      acc.discount += items?.discount || 0
-                      acc.netAmount += items?.individualTotal || 0
-                      acc.taxAmount += items?.igstAmt || 0
-                      console.log(items?.individualTotal)
-                      console.log(a)
-                      a += items?.individualTotal
-                      console.log(a)
+                      acc.quantity += items?.count
+                      acc.discount += items?.discount
+                      acc.netAmount += items?.individualTotal
+                      acc.taxAmount += items?.igstAmt
+                      m += items?.individualTotal
                     } else {
+                      let pamount
+                      let ptax
+                      if (it.isTaxInclusive) {
+                        pamount = (
+                          items?.selectedPriceRate /
+                          (1 + it?.igst / 100)
+                        ).toFixed(2)
+                        ptax = ((pamount * it.igst) / 100).toFixed(2)
+                      } else {
+                        pamount = items.selectedPriceRate
+                        ptax = (it?.igst / 100) * pamount
+                      }
                       // Populate the object for the first time
                       Object.assign(acc, {
                         billnumber: item?.salesNumber,
                         billDate: item?.date,
                         itemName: it?.product_name,
+                        categoryName: it?.category?.name,
                         groupName: it?.brand?.name,
-                        quantity: items?.count || 0,
-                        rate: items?.selectedPriceRate || 0,
-                        discount: items?.discount || 0,
-                        taxPercentage: it?.igst || 0,
-                        taxAmount: items?.igstAmt || 0,
-                        netAmount: items?.individualTotal || 0
+                        quantity: items?.count,
+                        rate: items?.selectedPriceRate,
+                        discount: items?.discount,
+                        taxPercentage: it?.igst,
+                        taxAmount: ptax,
+                        netAmount: items?.individualTotal,
+                        amount: pamount
                       })
-
-                      console.log(a)
-                      a += items?.individualTotal
-                      console.log(a)
+                      m += items?.individualTotal
                     }
-                    return acc
                   }
+                  return acc
                 }, {})
-                console.log(a)
-                console.log(object.saleAmount)
-
-                object.saleAmount += a
-                console.log(a)
-                console.log(object.saleAmount)
+                object.saleAmount += m
                 object.sale.push(godown)
-                console.log(object)
               } else {
-                const godown = it.GodownList.map((items) => {
+                const a = it.GodownList.map((items) => {
                   if (items.added) {
-                    const a = {
+                    let pamount
+                    let ptax
+                    if (it.isTaxInclusive) {
+                      pamount = (
+                        items?.selectedPriceRate /
+                        (1 + it?.igst / 100)
+                      ).toFixed(2)
+                      ptax = ((pamount * it?.igst) / 100).toFixed(2)
+                    } else {
+                      pamount = items.selectedPriceRate
+                      ptax = (it?.igst / 100) * pamount
+                    }
+                    const newSale = {
                       billnumber: item?.salesNumber,
                       billDate: item?.date,
-                      itemName: it?.product_name,
+                      itemName: it.product_name,
                       batch: items?.batch,
                       groupName: it?.brand?.name,
+                      categoryName: it?.category.name,
                       quantity: items?.count,
                       rate: items?.selectedPriceRate,
                       discount: items?.discount,
                       taxPercentage: it?.igst,
-                      taxAmount: it?.igstAmt,
-                      netAmount: items?.individualTotal
+                      taxAmount: ptax,
+                      netAmount: items?.individualTotal,
+                      amount: pamount
                     }
-                    console.log(object)
-                    console.log(items?.individualTotal, items?.count)
-                    object.saleAmount += items?.individualTotal
-                    console.log(object)
-                    object.sale.push(a)
+                    object.saleAmount += items.individualTotal || 0
+
+                    // Push the new sale entry to the sale array
+                    object.sale.push(newSale)
                   }
                 })
-                console.log(object)
               }
             } else {
               const godown = it.GodownList.map((items) => {
+                let pamount
+                let ptax
+                if (it.isTaxInclusive) {
+                  pamount = (
+                    items?.selectedPriceRate /
+                    (1 + it?.igst / 100)
+                  ).toFixed(2)
+                  ptax = ((pamount * it.igst) / 100).toFixed(2)
+                } else {
+                  pamount = items.selectedPriceRate
+                  ptax = (it?.igst / 100) * pamount
+                }
                 const a = {
                   billnumber: item?.salesNumber,
                   billDate: item?.date,
                   itemName: it?.product_name,
-
+                  categoryName: it?.category?.name,
                   groupName: it?.brand?.name,
                   quantity: it?.count,
                   rate: items?.selectedPriceRate,
                   discount: it?.discount,
                   taxPercentage: it?.igst,
-                  taxAmount: it?.igstAmt,
-                  netAmount: items?.individualTotal
+                  taxAmount: ptax,
+                  netAmount: items?.individualTotal,
+                  amount: pamount
                 }
-                console.log(object.saleAmount)
-                console.log(items?.individualTotal)
+
                 object.saleAmount += items?.individualTotal
-                console.log(object.saleAmount)
                 object.sale.push(a)
-                console.log(object.saleAmount)
               })
-              console.log(object)
             }
           })
-          console.log(object)
           check.push(object)
-
-          // arr.push(saleobject)
-          // object.sale = arr
-          // check.push(object)
         }
       })
       setSummaryReport(check)
-      console.log("checkk", check)
     } else if (option === "Stock Group") {
-      console.log("hii")
       const partybase = summary.map((item) => {
         const z = item.items.map((h) => {
           if (h?.brand?.name) {
-            console.log(item)
-            console.log(h.brand.name)
-            console.log(h)
             let existingParty = check.find((data) => {
               return data.groupId === h.brand?._id
             })
-            console.log(existingParty)
-            if (existingParty) {
-              console.log(existingParty)
-              let c = 0
-              console.log(existingParty)
-              const sale = item.items.map((it) => {
-                if (it.hasGodownOrBatch) {
-                  if (
-                    it.GodownList.every((item) => item.godown_id) && // Check all have godown_id
-                    it.GodownList.every((item) => !item.hasOwnProperty("batch")) // Ensure no item has batch
-                  ) {
-                    const godown = it.GodownList.reduce((acc, items) => {
-                      const existing = acc.find(
-                        (entry) => entry.godown_id === items.godown_id
-                      )
 
-                      if (existing && items.added) {
-                        console.log("inddddd")
-                        // Update totals for the existing entry
-                        existing.quantity += items?.count || 0
-                        existing.discount += items?.discount || 0
-                        existing.netAmount += items?.individualTotal || 0
-                        existing.taxAmount += items?.igstAmt || 0
-                        c += items?.individualTotal
-                      } else if (!existing && items.added) {
-                        // Add a new entry for this godown_id
-                        acc.push({
-                          godown_id: items?.godown_id,
+            if (existingParty) {
+              if (h.hasGodownOrBatch) {
+                if (
+                  h.GodownList.every((item) => item.godown_id) && // Check all have godown_id
+                  h.GodownList.every((item) => !item.hasOwnProperty("batch")) // Ensure no item has batch
+                ) {
+                  const godown = h.GodownList.reduce((acc, items) => {
+                    if (items.added) {
+                      if (Object.keys(acc).length > 0) {
+                        // Update the existing object's values
+                        acc.quantity += items?.count
+                        acc.discount += h?.discount
+                        acc.netAmount += items?.individualTotal
+                        acc.taxAmount += h?.igstAmt
+                        existingParty.saleAmount += items?.individualTotal
+                      } else {
+                        let pamount
+                        let ptax
+                        if (h.isTaxInclusive) {
+                          pamount = (
+                            items?.selectedPriceRate /
+                            (1 + h?.igst / 100)
+                          ).toFixed(2)
+                          ptax = ((pamount * h.igst) / 100).toFixed(2)
+                        } else {
+                          pamount = items.selectedPriceRate
+                          ptax = (h?.igst / 100) * pamount
+                        }
+                        // Populate the object for the first time
+                        Object.assign(acc, {
                           billnumber: item?.salesNumber,
                           billDate: item?.date,
-                          itemName: it?.product_name,
-                          groupName: it?.brand?.name,
-                          quantity: items?.count || 0,
-                          rate: items?.selectedPriceRate || 0,
-                          discount: items?.discount || 0,
-                          taxPercentage: it?.igst || 0,
-                          taxAmount: items?.igstAmt || 0,
-                          netAmount: items?.individualTotal || 0
-                        })
-                        c += items?.individualTotal
-                      }
-                      return acc
-                    }, [])
-                    existingParty.saleAmount = c
-                    existingParty.sale.push(godown)
-                  } else {
-                    const godown = it.GodownList.map((items) => {
-                      if (items.added) {
-                        const a = {
-                          billnumber: item?.salesNumber,
-                          billDate: item?.date,
-                          itemName: it?.product_name,
-                          batch: items?.batch,
-                          groupName: it?.brand?.name,
+                          itemName: h?.product_name,
+                          categoryName: h?.category?.name,
+
+                          partyName: item?.party?.partyName,
                           quantity: items?.count,
                           rate: items?.selectedPriceRate,
                           discount: items?.discount,
-                          taxPercentage: it?.igst,
-                          taxAmount: it?.igstAmt,
-                          netAmount: items?.individualTotal
-                        }
-                        existingParty.saleAmount += items?.individualTotal
-                        existingParty.sale.push(a)
-                      }
-                    })
-                  }
-                } else {
-                  console.log("hh")
-                  const godown = it.GodownList.map((items) => {
-                    const a = {
-                      billnumber: item?.salesNumber,
-                      billDate: item?.date,
-                      itemName: it?.product_name,
+                          taxPercentage: h?.igst,
+                          taxAmount: h?.igstAmt,
+                          netAmount: items?.individualTotal,
+                          amount: pamount
+                        })
 
-                      groupName: it?.brand?.name,
-                      quantity: it?.count,
-                      rate: items?.selectedPriceRate,
-                      discount: it?.discount,
-                      taxPercentage: it?.igst,
-                      taxAmount: it?.igstAmt,
-                      netAmount: items?.individualTotal
+                        existingParty.saleAmount += items?.individualTotal
+                      }
+                      return acc
                     }
-                    existingParty.saleAmount += items?.individualTotal
-                    existingParty.sale.push(a)
+                  }, {})
+                  existingParty.sale.push(godown)
+                } else {
+                  const a = h.GodownList.map((items) => {
+                    if (items.added) {
+                      let pamount
+                      let ptax
+                      if (h.isTaxInclusive) {
+                        pamount = (
+                          items?.selectedPriceRate /
+                          (1 + h?.igst / 100)
+                        ).toFixed(2)
+                        ptax = ((pamount * h.igst) / 100).toFixed(2)
+                      } else {
+                        pamount = items.selectedPriceRate
+                        ptax = (h?.igst / 100) * pamount
+                      }
+                      const newSale = {
+                        billnumber: item?.salesNumber,
+                        billDate: item?.date,
+                        itemName: h?.product_name,
+                        batch: items?.batch,
+                        partyName: item?.party?.partyName,
+                        categoryName: h?.category?.name,
+                        quantity: items?.count,
+                        rate: items?.selectedPriceRate,
+                        discount: items?.discount,
+                        taxPercentage: h?.igst,
+                        taxAmount: h?.igstAmt,
+                        netAmount: items?.individualTotal,
+                        amount: pamount
+                      }
+
+                      existingParty.saleAmount += items?.individualTotal
+
+                      // Push the new sale entry to the sale array
+                      existingParty.sale.push(newSale)
+                    }
                   })
                 }
-              })
+              } else {
+                const godown = h.GodownList.map((items) => {
+                  let pamount
+                  let ptax
+                  if (h.isTaxInclusive) {
+                    pamount = (
+                      items?.selectedPriceRate /
+                      (1 + h?.igst / 100)
+                    ).toFixed(2)
+                    ptax = ((pamount * h.igst) / 100).toFixed(2)
+                  } else {
+                    pamount = items.selectedPriceRate
+                    ptax = (h?.igst / 100) * pamount
+                  }
+                  const a = {
+                    billnumber: item?.salesNumber,
+                    billDate: item?.date,
+                    itemName: h?.product_name,
+                    categoryName: h?.category?.name,
+                    partyName: item?.party?.partyName,
+                    quantity: h?.count,
+                    rate: items?.selectedPriceRate,
+                    discount: h?.discount || 0,
+                    taxPercentage: h?.igst,
+                    taxAmount: h?.igstAmt,
+                    netAmount: items?.individualTotal,
+                    amount: pamount
+                  }
+
+                  existingParty.saleAmount += items?.individualTotal
+                  existingParty.sale.push(a)
+                })
+              }
             } else {
               const object = {
                 groupName: h?.brand?.name,
@@ -383,95 +469,660 @@ function SalesSummary() {
                 sale: [],
                 saleAmount: 0
               }
-              console.log(object)
-              let a = 0
 
+              let m = 0
               if (h.hasGodownOrBatch) {
-                console.log("hii")
                 if (
-                  it.GodownList.every((item) => item.godown_id) && // Check all have godown_id
-                  it.GodownList.every((item) => !item.hasOwnProperty("batch")) // Ensure no item has batch
+                  h.GodownList.every((item) => item.godown_id) && // Check all have godown_id
+                  h.GodownList.every((item) => !item.hasOwnProperty("batch")) // Ensure no item has batch
                 ) {
-                  console.log("gggg")
-                  const godown = it.GodownList.reduce((acc, items) => {
+                  const godown = h.GodownList.reduce((acc, items) => {
                     if (items.added) {
                       if (Object.keys(acc).length > 0) {
                         // Update the existing object's values
-                        acc.quantity += items?.count || 0
-                        acc.discount += items?.discount || 0
-                        acc.netAmount += items?.individualTotal || 0
-                        acc.taxAmount += items?.igstAmt || 0
-                        a += items?.individualTotal
+                        acc.quantity += items?.count
+                        acc.discount += items?.discount
+                        acc.netAmount += items?.individualTotal
+                        acc.taxAmount += h?.igstAmt
+
+                        m += items?.individualTotal
                       } else {
+                        let pamount
+                        let ptax
+                        if (h.isTaxInclusive) {
+                          pamount = (
+                            items?.selectedPriceRate /
+                            (1 + h?.igst / 100)
+                          ).toFixed(2)
+                          ptax = ((pamount * h.igst) / 100).toFixed(2)
+                        } else {
+                          pamount = items.selectedPriceRate
+                          ptax = (h?.igst / 100) * pamount
+                        }
                         // Populate the object for the first time
                         Object.assign(acc, {
                           billnumber: item?.salesNumber,
                           billDate: item?.date,
-                          itemName: it?.product_name,
-                          groupName: it?.brand?.name,
-                          quantity: items?.count || 0,
-                          rate: items?.selectedPriceRate || 0,
-                          discount: items?.discount || 0,
-                          taxPercentage: it?.igst || 0,
-                          taxAmount: items?.igstAmt || 0,
-                          netAmount: items?.individualTotal || 0
+                          itemName: h?.product_name,
+                          partyName: item?.party?.partyName,
+                          categoryName: h?.category?.name,
+                          quantity: items?.count,
+                          rate: items?.selectedPriceRate,
+                          discount: items?.discount,
+                          taxPercentage: h?.igst,
+                          taxAmount: h?.igstAmt,
+                          netAmount: items?.individualTotal,
+                          amount: pamount
                         })
-
-                        a += items?.individualTotal
+                        m += items?.individualTotal
                       }
                       return acc
                     }
                   }, {})
-                  object.saleAmount = a
+                  object.saleAmount += m
                   object.sale.push(godown)
                 } else {
-                  console.log("hi")
-                  const godown = it.GodownList.map((items) => {
+                  const godown = h.GodownList.map((items) => {
                     if (items.added) {
-                      const a = {
+                      let pamount
+                      let ptax
+                      if (h.isTaxInclusive) {
+                        pamount = (
+                          items?.selectedPriceRate /
+                          (1 + h?.igst / 100)
+                        ).toFixed(2)
+                        ptax = ((pamount * h.igst) / 100).toFixed(2)
+                      } else {
+                        pamount = items.selectedPriceRate
+                        ptax = (h?.igst / 100) * pamount
+                      }
+                      const newSale = {
                         billnumber: item?.salesNumber,
                         billDate: item?.date,
-                        itemName: it?.product_name,
+                        itemName: h?.product_name,
                         batch: items?.batch,
-                        groupName: it?.brand?.name,
+                        partyName: item?.party?.partyName,
+                        categoryName: h?.category?.name,
                         quantity: items?.count,
                         rate: items?.selectedPriceRate,
                         discount: items?.discount,
-                        taxPercentage: it?.igst,
-                        taxAmount: it?.igstAmt,
-                        netAmount: items?.individualTotal
+                        taxPercentage: h?.igst,
+                        taxAmount: h?.igstAmt,
+                        netAmount: items?.individualTotal,
+                        amount: pamount
                       }
+
+                      // Add the individual total to the sale amount
                       object.saleAmount += items?.individualTotal
-                      object.sale.push(a)
+
+                      // Push the new sale entry to the sale array
+                      object.sale.push(newSale)
                     }
                   })
                 }
               } else {
-                console.log("uu")
-                console.log(h)
-                console.log(item)
                 const godown = h.GodownList.map((items) => {
-                  console.log(items)
+                  let pamount
+                  let ptax
+                  if (h.isTaxInclusive) {
+                    pamount = (
+                      items?.selectedPriceRate /
+                      (1 + h?.igst / 100)
+                    ).toFixed(2)
+                    ptax = ((pamount * h.igst) / 100).toFixed(2)
+                  } else {
+                    pamount = items.selectedPriceRate
+                    ptax = (h?.igst / 100) * pamount
+                  }
                   const a = {
                     billnumber: item?.salesNumber,
                     billDate: item?.date,
                     itemName: h?.product_name,
+                    partyName: item?.party?.partyName,
+                    categoryName: h?.category?.name,
+                    quantity: h?.count,
+                    rate: items?.selectedPriceRate,
+                    discount: h?.discount,
+                    taxPercentage: h?.igst,
+                    taxAmount: h?.igstAmt,
+                    netAmount: items?.individualTotal,
+                    amount: pamount
+                  }
+                  object.saleAmount += items?.individualTotal
+                  object.sale.push(a)
+                })
+              }
 
+              check.push(object)
+            }
+          }
+        })
+      })
+      setSummaryReport(check)
+    } else if (option === "Stock Category") {
+      const partybase = summary.map((item) => {
+        const z = item.items.map((h) => {
+          if (h?.category) {
+            let existingParty = check.find((data) => {
+              return data.categoryName === h.category
+            })
+            if (existingParty) {
+              if (h.hasGodownOrBatch) {
+                if (
+                  h.GodownList.every((item) => item.godown_id) && // Check all have godown_id
+                  h.GodownList.every((item) => !item.hasOwnProperty("batch")) // Ensure no item has batch
+                ) {
+                  const godown = h.GodownList.reduce((acc, items) => {
+                    if (items.added) {
+                      if (Object.keys(acc).length > 0) {
+                        // Update the existing object's values
+                        acc.quantity += items?.count
+                        acc.discount += items?.discount
+                        acc.netAmount += items?.individualTotal
+                        acc.taxAmount += items?.igstAmt
+                        existingParty.saleAmount += items?.individualTotal
+                      } else {
+                        let pamount
+                        let ptax
+                        if (h.isTaxInclusive) {
+                          pamount = (
+                            items?.selectedPriceRate /
+                            (1 + h?.igst / 100)
+                          ).toFixed(2)
+                          ptax = ((pamount * h.igst) / 100).toFixed(2)
+                        } else {
+                          pamount = items.selectedPriceRate
+                          ptax = (h?.igst / 100) * pamount
+                        }
+
+                        // Populate the object for the first time
+                        Object.assign(acc, {
+                          billnumber: item?.salesNumber,
+                          billDate: item?.date,
+                          itemName: h?.product_name,
+                          partyName: item?.party?.partyName,
+                          groupName: h?.brand?.name,
+                          quantity: items?.count,
+                          rate: items?.selectedPriceRate,
+                          discount: items?.discount,
+                          taxPercentage: h?.igst,
+                          taxAmount: items?.igstAmt,
+                          netAmount: items?.individualTotal,
+                          amount: pamount
+                        })
+                        existingParty.saleAmount += items?.individualTotal
+                      }
+                      return acc
+                    }
+                  }, {})
+                  existingParty.sale.push(godown)
+                } else {
+                  const a = h.GodownList.map((items) => {
+                    if (items.added) {
+                      let pamount
+                      let ptax
+                      if (h.isTaxInclusive) {
+                        pamount = (
+                          items?.selectedPriceRate /
+                          (1 + h?.igst / 100)
+                        ).toFixed(2)
+                        ptax = ((pamount * h.igst) / 100).toFixed(2)
+                      } else {
+                        pamount = items.selectedPriceRate
+                        ptax = (h?.igst / 100) * pamount
+                      }
+                      const newSale = {
+                        billnumber: item?.salesNumber,
+                        billDate: item?.date,
+                        itemName: h?.product_name,
+                        batch: items?.batch,
+                        partyName: item?.party?.partyName,
+                        groupName: h?.brand?.name,
+                        quantity: items?.count,
+                        rate: items?.selectedPriceRate,
+                        discount: items?.discount,
+                        taxPercentage: h?.igst,
+                        taxAmount: h?.igstAmt,
+                        netAmount: items?.individualTotal,
+                        amount: pamount
+                      }
+                      existingParty.saleAmount += items?.individualTotal
+
+                      // Push the new sale entry to the sale array
+                      existingParty.sale.push(newSale)
+                    }
+                  })
+                }
+              } else {
+                const godown = h.GodownList.map((items) => {
+                  let pamount
+                  let ptax
+                  if (h.isTaxInclusive) {
+                    pamount = (
+                      items?.selectedPriceRate /
+                      (1 + h?.igst / 100)
+                    ).toFixed(2)
+                    ptax = ((pamount * h.igst) / 100).toFixed(2)
+                  } else {
+                    pamount = items.selectedPriceRate
+                    ptax = (h?.igst / 100) * pamount
+                  }
+                  const a = {
+                    billnumber: item?.salesNumber,
+                    billDate: item?.date,
+                    itemName: h?.product_name,
+                    groupName: h?.brand?.name,
                     partyName: item?.party?.partyName,
                     quantity: h?.count,
                     rate: items?.selectedPriceRate,
                     discount: h?.discount,
                     taxPercentage: h?.igst,
                     taxAmount: h?.igstAmt,
-                    netAmount: items?.individualTotal
+                    netAmount: items?.individualTotal,
+                    amount: pamount
                   }
-                  console.log(a)
+
+                  existingParty.saleAmount += items?.individualTotal
+                  existingParty.sale.push(a)
+                })
+              }
+            } else {
+              const object = {
+                categoryName: h?.category?.name,
+
+                sale: [],
+                saleAmount: 0
+              }
+
+              let m = 0
+              if (h.hasGodownOrBatch) {
+                if (
+                  h.GodownList.every((item) => item.godown_id) && // Check all have godown_id
+                  h.GodownList.every((item) => !item.hasOwnProperty("batch")) // Ensure no item has batch
+                ) {
+                  const godown = h.GodownList.reduce((acc, items) => {
+                    if (items.added) {
+                      if (Object.keys(acc).length > 0) {
+                        // Update the existing object's values
+                        acc.quantity += items?.count
+                        acc.discount += items?.discount
+                        acc.netAmount += items?.individualTotal
+                        acc.taxAmount += items?.igstAmt
+                        m += items?.individualTotal
+                      } else {
+                        let pamount
+                        let ptax
+                        if (h.isTaxInclusive) {
+                          pamount = (
+                            items?.selectedPriceRate /
+                            (1 + h?.igst / 100)
+                          ).toFixed(2)
+                          ptax = ((pamount * h.igst) / 100).toFixed(2)
+                        } else {
+                          pamount = items.selectedPriceRate
+                          ptax = (h?.igst / 100) * pamount
+                        }
+                        // Populate the object for the first time
+                        Object.assign(acc, {
+                          billnumber: item?.salesNumber,
+                          billDate: item?.date,
+                          itemName: h?.product_name,
+                          groupName: h?.brand?.name,
+                          partyName: item?.party?.partyName,
+                          quantity: items?.count,
+                          rate: items?.selectedPriceRate,
+                          discount: items?.discount,
+                          taxPercentage: h?.igst,
+                          taxAmount: items?.igstAmt,
+                          netAmount: items?.individualTotal,
+                          amount: pamount
+                        })
+                        m += items?.individualTotal
+                      }
+                      return acc
+                    }
+                  }, {})
+                  object.saleAmount += m
+                  object.sale.push(godown)
+                } else {
+                  const godown = h.GodownList.map((items) => {
+                    if (items.added) {
+                      let pamount
+                      let ptax
+                      if (h.isTaxInclusive) {
+                        pamount = (
+                          items?.selectedPriceRate /
+                          (1 + h?.igst / 100)
+                        ).toFixed(2)
+                        ptax = ((pamount * h.igst) / 100).toFixed(2)
+                      } else {
+                        pamount = items.selectedPriceRate
+                        ptax = (h?.igst / 100) * pamount
+                      }
+                      const newSale = {
+                        billnumber: item?.salesNumber,
+                        billDate: item?.date,
+                        itemName: h?.product_name,
+                        batch: items?.batch,
+                        partyName: item?.party?.partyName,
+                        groupName: h?.brand?.name,
+                        quantity: items?.count,
+                        rate: items?.selectedPriceRate,
+                        discount: items?.discount,
+                        taxPercentage: h?.igst,
+                        taxAmount: h?.igstAmt,
+                        netAmount: items?.individualTotal,
+                        amount: pamount
+                      }
+
+                      // Add the individual total to the sale amount
+                      object.saleAmount += items?.individualTotal
+
+                      // Push the new sale entry to the sale array
+                      object.sale.push(newSale)
+                    }
+                  })
+                }
+              } else {
+                const godown = h.GodownList.map((items) => {
+                  let pamount
+                  let ptax
+                  if (h.isTaxInclusive) {
+                    pamount = (
+                      items?.selectedPriceRate /
+                      (1 + h?.igst / 100)
+                    ).toFixed(2)
+                    ptax = ((pamount * h.igst) / 100).toFixed(2)
+                  } else {
+                    pamount = items.selectedPriceRate
+                    ptax = (h?.igst / 100) * pamount
+                  }
+                  const a = {
+                    billnumber: item?.salesNumber,
+                    billDate: item?.date,
+                    itemName: h?.product_name,
+                    partyName: item?.party?.partyName,
+                    groupName: h?.brand?.name,
+                    quantity: h?.count,
+                    rate: items?.selectedPriceRate,
+                    discount: h?.discount,
+                    taxPercentage: h?.igst,
+                    taxAmount: h?.igstAmt,
+                    netAmount: items?.individualTotal,
+                    amount: pamount
+                  }
                   object.saleAmount += items?.individualTotal
                   object.sale.push(a)
                 })
               }
 
-              console.log(object)
+              check.push(object)
+            }
+          }
+        })
+      })
+      setSummaryReport(check)
+    } else if (option === "Stock Item") {
+      const partybase = summary.map((item) => {
+        const z = item.items.map((h) => {
+          if (h?.product_name) {
+            let existingParty = check.find((data) => {
+              return data.itemName === h.product_name
+            })
+            if (existingParty) {
+              if (h.hasGodownOrBatch) {
+                if (
+                  h.GodownList.every((item) => item.godown_id) && // Check all have godown_id
+                  h.GodownList.every((item) => !item.hasOwnProperty("batch")) // Ensure no item has batch
+                ) {
+                  const godown = h.GodownList.reduce((acc, items) => {
+                    if (items.added) {
+                      if (Object.keys(acc).length > 0) {
+                        // Update the existing object's values
+                        acc.quantity += items?.count
+                        acc.discount += items?.discount
+                        acc.netAmount += items?.individualTotal
+                        acc.taxAmount += items?.igstAmt
+                        existingParty.saleAmount += items?.individualTotal
+                      } else {
+                        let pamount
+                        let ptax
+                        if (h.isTaxInclusive) {
+                          pamount = (
+                            items?.selectedPriceRate /
+                            (1 + h?.igst / 100)
+                          ).toFixed(2)
+                          ptax = ((pamount * h.igst) / 100).toFixed(2)
+                        } else {
+                          pamount = items?.selectedPriceRate
+                          ptax = (h?.igst / 100) * pamount
+                        }
+                        // Populate the object for the first time
+                        Object.assign(acc, {
+                          billnumber: item?.salesNumber,
+                          billDate: item?.date,
+                          groupName: h?.brand?.name,
+                          partyName: item?.party?.partyName,
+                          categoryName: h?.category?.name,
+                          quantity: items?.count,
+                          rate: items?.selectedPriceRate,
+                          discount: items?.discount,
+                          taxPercentage: h?.igst,
+                          taxAmount: ptax,
+                          netAmount: items?.individualTotal,
+                          amount: pamount
+                        })
+                        existingParty.saleAmount += items?.individualTotal
+                      }
+                    }
+                    return acc
+                  }, {})
+                  existingParty.sale.push(godown)
+                } else {
+                  const a = h.GodownList.map((items) => {
+                    if (items.added) {
+                      let pamount
+                      let ptax
+                      if (h.isTaxInclusive) {
+                        pamount = (
+                          items?.selectedPriceRate /
+                          (1 + h?.igst / 100)
+                        ).toFixed(2)
+                        ptax = ((pamount * h.igst) / 100).toFixed(2)
+                      } else {
+                        pamount = items.selectedPriceRate
+                        ptax = (h?.igst / 100) * pamount
+                      }
+                      const newSale = {
+                        billnumber: item?.salesNumber,
+                        billDate: item?.date,
+                        itemName: h?.product_name,
+                        batch: items?.batch,
+                        groupName: h?.brand?.name,
+                        categoryName: h?.category?.name,
+                        partyName: item?.party?.partyName,
+                        quantity: items?.count,
+                        rate: items?.selectedPriceRate,
+                        discount: items?.discount,
+                        taxPercentage: h?.igst,
+                        taxAmount: ptax,
+                        netAmount: items?.individualTotal,
+                        amount: pamount
+                      }
+                      existingParty.saleAmount += items?.individualTotal
+
+                      // Push the new sale entry to the sale array
+                      existingParty.sale.push(newSale)
+                    }
+                  })
+                }
+              } else {
+                const godown = h.GodownList.map((items) => {
+                  let pamount
+                  let ptax
+                  if (h.isTaxInclusive) {
+                    pamount = (
+                      items?.selectedPriceRate /
+                      (1 + h?.igst / 100)
+                    ).toFixed(2)
+                    ptax = ((pamount * h.igst) / 100).toFixed(2)
+                  } else {
+                    pamount = items?.selectedPriceRate
+                    ptax = (h?.igst / 100) * pamount
+                  }
+                  const a = {
+                    billnumber: item?.salesNumber,
+                    billDate: item?.date,
+                    itemName: h?.product_name,
+                    groupName: h?.brand?.name,
+                    categoryName: h?.category?.name,
+                    partyName: item?.party?.partyName,
+                    quantity: h?.count,
+                    rate: items?.selectedPriceRate,
+                    discount: h?.discount,
+                    taxPercentage: h?.igst,
+                    taxAmount: ptax,
+                    netAmount: items?.individualTotal,
+                    amount: pamount
+                  }
+
+                  existingParty.saleAmount += items?.individualTotal
+                  existingParty.sale.push(a)
+                })
+              }
+            } else {
+              const object = {
+                itemName: h?.product_name,
+
+                sale: [],
+                saleAmount: 0
+              }
+
+              let m = 0
+              if (h.hasGodownOrBatch) {
+                if (
+                  h.GodownList.every((item) => item.godown_id) && // Check all have godown_id
+                  h.GodownList.every((item) => !item.hasOwnProperty("batch")) // Ensure no item has batch
+                ) {
+                  const godown = h.GodownList.reduce((acc, items) => {
+                    if (items.added) {
+                      if (Object.keys(acc).length > 0) {
+                        // Update the existing object's values
+                        acc.quantity += items?.count
+                        acc.discount += items?.discount
+                        acc.netAmount += items?.individualTotal
+                        acc.taxAmount += items?.igstAmt
+                        m += items?.individualTotal
+                      } else {
+                        let pamount
+                        let ptax
+                        if (h.isTaxInclusive) {
+                          pamount = (
+                            items?.selectedPriceRate /
+                            (1 + h?.igst / 100)
+                          ).toFixed(2)
+                          ptax = ((pamount * h.igst) / 100).toFixed(2)
+                        } else {
+                          pamount = items?.selectedPriceRate
+                          ptax = (h?.igst / 100) * pamount
+                        }
+                        // Populate the object for the first time
+                        Object.assign(acc, {
+                          billnumber: item?.salesNumber,
+                          billDate: item?.date,
+                          itemName: h?.product_name,
+                          groupName: h?.brand?.name,
+                          categoryName: h?.category?.name,
+                          partyName: item?.party?.partyName,
+                          quantity: items?.count,
+                          rate: items?.selectedPriceRate,
+                          discount: items?.discount,
+                          taxPercentage: h?.igst,
+                          taxAmount: ptax,
+                          netAmount: items?.individualTotal,
+                          amount: pamount
+                        })
+                        m += items?.individualTotal
+                      }
+                    }
+                    return acc
+                  }, {})
+                  object.saleAmount += m
+                  object.sale.push(godown)
+                } else {
+                  const godown = h.GodownList.map((items) => {
+                    if (items.added) {
+                      let pamount
+                      let ptax
+                      if (h.isTaxInclusive) {
+                        pamount = (
+                          items?.selectedPriceRate /
+                          (1 + h?.igst / 100)
+                        ).toFixed(2)
+                        ptax = ((pamount * h.igst) / 100).toFixed(2)
+                      } else {
+                        pamount = items?.selectedPriceRate
+                        ptax = (h?.igst / 100) * pamount
+                      }
+                      const newSale = {
+                        billnumber: item?.salesNumber,
+                        billDate: item?.date,
+                        itemName: h?.product_name,
+                        groupName: h?.brand?.name,
+                        categoryName: h?.category?.name,
+                        batch: items?.batch,
+                        partyName: item?.party?.partyName,
+                        quantity: items?.count,
+                        rate: items?.selectedPriceRate,
+                        discount: items?.discount,
+                        taxPercentage: h?.igst,
+                        taxAmount: ptax,
+                        netAmount: items?.individualTotal,
+                        amount: pamount
+                      }
+
+                      // Add the individual total to the sale amount
+                      object.saleAmount += items?.individualTotal
+
+                      // Push the new sale entry to the sale array
+                      object.sale.push(newSale)
+                    }
+                  })
+                }
+              } else {
+                const godown = h.GodownList.map((items) => {
+                  let pamount
+                  let ptax
+                  if (h?.isTaxInclusive) {
+                    pamount = (
+                      items?.selectedPriceRate /
+                      (1 + h?.igst / 100)
+                    ).toFixed(2)
+                    ptax = ((pamount * h?.igst) / 100).toFixed(2)
+                  } else {
+                    pamount = items?.selectedPriceRate
+                    ptax = (h?.igst / 100) * pamount
+                  }
+                  const a = {
+                    billnumber: item?.salesNumber,
+                    billDate: item?.date,
+                    itemName: h?.product_name,
+                    partyName: item?.party?.partyName,
+                    categoryName: h?.category?.name,
+                    groupName: h?.brand?.name,
+                    quantity: h?.count,
+                    rate: items?.selectedPriceRate,
+                    discount: h?.discount,
+                    taxPercentage: h?.igst,
+                    taxAmount: ptax,
+                    netAmount: items?.individualTotal,
+                    amount: pamount
+                  }
+                  object.saleAmount += items?.individualTotal
+                  object.sale.push(a)
+                })
+              }
+
               check.push(object)
             }
           }
@@ -484,110 +1135,34 @@ function SalesSummary() {
   const handleUserAndCompanyData = (data) => {
     setUserAndCompanyData(data)
   }
-  console.log(summaryReport)
-  console.log(selectedOption)
+
   return (
-    <div>
-      <div className="sticky top-0 z-50">
-        <FindUserAndCompany getUserAndCompany={handleUserAndCompanyData} />
-        <TitleDiv title="Sales Summary" from={"/sUsers/reports"} />
-        <section className="shadow-lg border-b">
-          <SelectDate />
-        </section>
-        {/* <section className="shadow-lg p-3 flex items-center gap-6 bg-white  border-b">
-          <PartyFilter />
-          <StatusFilter />
-        </section> */}
-
-        {Loading && (
-          <section className="w-full">
-            <BarLoader color="#9900ff" width="100%" />
-          </section>
-        )}
-        <div
-          style={{ backgroundColor: "#219ebc" }}
-          className=" opacity-80  flex flex-col   pb-11 shadow-xl justify-center"
-        >
-          <div className="m-2">
-            <select
-              className="w-full sm:max-w-sm md:max-w-xs bg-[#219ebc] text-white font-semibold py-2 px-3 rounded-lg shadow-lg hover:shadow-xl cursor-pointer appearance-none focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-75"
-              value={selectedOption}
-              onChange={(e) => {
-                console.log(e.target.value)
-                handleLedger(e.target.value)
-              }}
+    <>
+      {showDetails ? (
+        <div className=" bg-gray-50 rounded-lg shadow-lg ">
+          <div className="bg-[#219ebc] sticky top-0 z-50 ">
+            <SummmaryDropdown
+              selectedOption={selectedOption}
+              handleLedger={handleLedger}
+            />
+          </div>
+          <div className="flex justify-end m-1 cursor-pointer">
+            <button
+              className="bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 text-white px-2 py-.5 rounded-lg shadow-2xl hover:shadow-3xl transform hover:scale-110 transition-all duration-200"
+              onClick={() => setShowDetails(false)}
             >
-              <option value="Ledger">Ledger</option>
-              <option value="Stock Item">Stock Item</option>
-              <option value="Stock Group">Stock Group</option>
-              <option value="Stock Category">Stock Category</option>
-            </select>
+              Go Back
+            </button>
           </div>
 
-          <div
-            className={`   text-center  text-white  flex justify-center items-center flex-col mt-5`}
-          >
-            {/* <h2 className="text-3xl sm:text-4xl font-bold">₹{grandTotal}</h2> */}
-            <p className="text-sm mt-4 font-semibold opacity-90">
-              {new Date(start).toDateString()} - {new Date(end).toDateString()}
-            </p>
-            {/* <p className="text-sm mt-4 font-bold opacity-90">{title}</p> */}
+          <div className="text-center text-xl font-bold ">
+            <h1>{selectedOption} Summary</h1>
           </div>
-        </div>
-      </div>
 
-      {!Loading && Error && (
-        <section>
-          <p className="text-gray-500 text-center font-bold  mt-20">
-            Oops!.. No data found
-          </p>
-        </section>
-      )}
-      <div>
-        {summaryReport && summaryReport.length > 0 && (
-          <>
-            <div className="flex justify-end mt-2">
-              <button
-                className="px-2 py-1 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition duration-200 cursor-pointer"
-                onClick={() => setSelectedIndex(!null)} // Reset when "View Details" is clicked
-              >
-                View Details
-              </button>
-            </div>
-            <div className="mb-2">
-              {summaryReport &&
-                summaryReport.length > 0 &&
-                selectedIndex === null &&
-                summaryReport.map((item, index) => (
-                  <div
-                    key={index}
-                    className="flex justify-between items-center mb-4 p-4 bg-white rounded-lg shadow-md transform transition duration-300 hover:shadow-xl hover:scale-55 hover:-translate-y-1"
-                  >
-                    <span className="text-gray-800 font-medium">
-                      {item.partyName || item.groupName}
-                    </span>
-                    <span className="text-gray-600 font-semibold">
-                      {item.saleAmount}
-                    </span>
-                  </div>
-                ))}
-            </div>
-          </>
-        )}
-
-        {selectedIndex !== null && (
-          <div className="px-2 bg-gray-50 rounded-lg shadow-lg ">
-            <div className="flex justify-between items-center mb-1  ">
-              <button
-                className="px-4 py-1 bg-red-600 text-white rounded-lg shadow hover:bg-red-700 transition duration-200 cursor-pointer"
-                onClick={() => setSelectedIndex(null)} // Reset to close the table view
-              >
-                Close
-              </button>
-            </div>
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b bg-gray-200">
+          <div className=" max-h-[600px] overflow-auto">
+            <table className="w-full text-center border">
+              <thead className="sticky top-0 bg-gray-300 z-40">
+                <tr className="">
                   <th className="p-2 font-semibold text-gray-600">
                     {" "}
                     {selectedOption === "Ledger"
@@ -603,10 +1178,40 @@ function SalesSummary() {
                   <th className="p-2 font-semibold text-gray-600">Bill No</th>
                   <th className="p-2 font-semibold text-gray-600">Bill Date</th>
                   <th className="p-2 font-semibold text-gray-600">
-                    {selectedOption === "Ledger" ? "Group Name" : "Party Name"}
+                    {selectedOption === "Ledger"
+                      ? "Item Name"
+                      : selectedOption === "Stock Group"
+                      ? "Category Name"
+                      : selectedOption === "Stock Category"
+                      ? "Group Name"
+                      : selectedOption === "Stock Item"
+                      ? "Party Name"
+                      : ""}
+                  </th>
+                  <th className="p-2 font-semibold text-gray-600">
+                    {selectedOption === "Ledger"
+                      ? "Category Name"
+                      : selectedOption === "Stock Group"
+                      ? "Party Name"
+                      : selectedOption === "Stock Category"
+                      ? "Item Name"
+                      : selectedOption === "Stock Item"
+                      ? "Group Name"
+                      : ""}
+                  </th>
+                  <th className="p-2 font-semibold text-gray-600">
+                    {" "}
+                    {selectedOption === "Ledger"
+                      ? "Group Name"
+                      : selectedOption === "Stock Group"
+                      ? "Item Name"
+                      : selectedOption === "Stock Category"
+                      ? "Party Name"
+                      : selectedOption === "Stock Item"
+                      ? "Category Name"
+                      : ""}
                   </th>
                   <th className="p-2 font-semibold text-gray-600">Batch</th>
-                  <th className="p-2 font-semibold text-gray-600">Item Name</th>
                   <th className="p-2 font-semibold text-gray-600">Quantity</th>
                   <th className="p-2 font-semibold text-gray-600">Rate</th>
                   <th className="p-2 font-semibold text-gray-600">Discount</th>
@@ -621,66 +1226,199 @@ function SalesSummary() {
                 </tr>
               </thead>
               <tbody>
-                {summaryReport.map((party, partyIndex) =>
-                  party.sale.map((saleItem, saleIndex) => (
-                    <tr
-                      key={`${partyIndex}-${saleIndex}`}
-                      className="border-b hover:bg-gray-100 transition duration-200"
-                    >
-                      {/* Display Party Name only for the first item in the sale array */}
-                      {saleIndex === 0 ? (
+                {summaryReport?.map((party, partyIndex) => (
+                  <>
+                    {/* Add a thicker border between parties */}
+                    {partyIndex !== 0 && (
+                      <tr>
                         <td
-                          className="p-2 text-gray-800 font-bold"
-                          rowSpan={party.sale.length} // Merge rows for the same party
-                        >
-                          {party.partyName || party.groupName}
+                          colSpan={14}
+                          className="h-1 bg-gray-300" // Adds a gray row for visual separation
+                        ></td>
+                      </tr>
+                    )}
+                    {party?.sale.map((saleItem, saleIndex) => (
+                      <tr
+                        key={`${partyIndex}-${saleIndex}`}
+                        className="border-b hover:bg-pink-100 transition duration-200 text-sm "
+                      >
+                        {/* Display Party Name only for the first item in the sale array */}
+                        {saleIndex === 0 ? (
+                          <td
+                            className="px-1 py-2 text-gray-800 font-bold"
+                            rowSpan={party.sale.length} // Merge rows for the same party
+                          >
+                            {selectedOption === "Ledger"
+                              ? party?.partyName
+                              : selectedOption === "Stock Group"
+                              ? party?.groupName
+                              : selectedOption === "Stock Category"
+                              ? party?.categoryName
+                              : selectedOption === "Stock Item"
+                              ? party?.itemName
+                              : ""}
+                          </td>
+                        ) : null}
+                        <td className="px-1 py-2 text-gray-800">
+                          {saleItem?.billnumber}
                         </td>
-                      ) : null}
+                        <td className="px-1 py-2 text-gray-800">
+                          {/* {saleItem?.billDate} */}
+                          {/* {
+                            new Date(saleItem?.billDate)
+                              .toISOString()
+                              .split("T")[0]
+                          } */}
+                        </td>
+                        <td className="px-1 py-2 text-gray-800">
+                          {selectedOption === "Ledger"
+                            ? saleItem?.itemName
+                            : selectedOption === "Stock Group"
+                            ? saleItem?.categoryName
+                            : selectedOption === "Stock Category"
+                            ? saleItem?.groupName
+                            : selectedOption === "Stock Item"
+                            ? saleItem?.partyName
+                            : ""}
+                        </td>
+                        <td className="px-1 py-2 text-gray-800">
+                          {selectedOption === "Ledger"
+                            ? saleItem?.categoryName
+                            : selectedOption === "Stock Group"
+                            ? saleItem?.partyName
+                            : selectedOption === "Stock Category"
+                            ? saleItem?.itemName
+                            : selectedOption === "Stock Item"
+                            ? saleItem?.groupName
+                            : ""}
+                        </td>
+                        <td className="px-1 py-2 text-gray-800">
+                          {selectedOption === "Ledger"
+                            ? saleItem?.groupName
+                            : selectedOption === "Stock Group"
+                            ? saleItem?.itemName
+                            : selectedOption === "Stock Category"
+                            ? saleItem?.partyName
+                            : selectedOption === "Stock Item"
+                            ? saleItem?.categoryName
+                            : ""}
+                        </td>
 
-                      <td className="p-2 text-gray-800">
-                        {saleItem?.billnumber}
-                      </td>
-                      <td className="p-2 text-gray-800">
-                        {" "}
-                        {
-                          new Date(saleItem?.billDate)
-                            .toISOString()
-                            .split("T")[0]
-                        }
-                      </td>
-                      <td className="p-2 text-gray-800">
-                        {saleItem?.groupName || saleItem?.partyName}
-                      </td>
-                      <td className="p-2 text-gray-800">{saleItem?.batch}</td>
-                      <td className="p-2 text-gray-800">
-                        {saleItem?.itemName}
-                      </td>
-                      <td className="p-2 text-gray-800">
-                        {saleItem?.quantity}
-                      </td>
-                      <td className="p-2 text-gray-800">{saleItem?.rate}</td>
-                      <td className="p-2 text-gray-800">
-                        {saleItem?.discount}
-                      </td>
-                      <td className="p-2 text-gray-800">{saleItem?.amount}</td>
-                      <td className="p-2 text-gray-800">
-                        {saleItem?.taxPercentage}
-                      </td>
-                      <td className="p-2 text-gray-800">
-                        {saleItem?.taxAmount}
-                      </td>
-                      <td className="p-2 text-gray-800">
-                        {saleItem?.netAmount}
-                      </td>
-                    </tr>
-                  ))
-                )}
+                        <td className="px-1 py-2 text-gray-800">
+                          {saleItem?.batch}
+                        </td>
+                        <td className="px-1 py-2 text-gray-800">
+                          {saleItem?.quantity}
+                        </td>
+                        <td className="px-1 py-2 text-gray-800">
+                          {saleItem?.rate}
+                        </td>
+                        <td className="px-1 py-2 text-gray-800">
+                          {saleItem?.discount}
+                        </td>
+                        <td className="px-1 py-2 text-gray-800">
+                          {saleItem?.amount}
+                        </td>
+                        <td className="px-1 py-2 text-gray-800">
+                          {saleItem?.taxPercentage}
+                        </td>
+                        <td className="px-1 py-2 text-gray-800">
+                          {saleItem?.taxAmount}
+                        </td>
+                        <td className="px-1 py-2 text-gray-800">
+                          {saleItem?.netAmount}
+                        </td>
+                      </tr>
+                    ))}
+                  </>
+                ))}
               </tbody>
             </table>
           </div>
-        )}
-      </div>
-    </div>
+        </div>
+      ) : (
+        <div>
+          <div className="sticky top-0 z-50">
+            <FindUserAndCompany getUserAndCompany={handleUserAndCompanyData} />
+            <TitleDiv title="Sales Summary" from={"/sUsers/reports"} />
+            <section className="shadow-lg border-b">
+              <SelectDate />
+            </section>
+
+            {Loading && (
+              <section className="w-full">
+                <BarLoader color="#9900ff" width="100%" />
+              </section>
+            )}
+            <div
+              style={{ backgroundColor: "#219ebc" }}
+              className=" opacity-80  flex flex-col   pb-11 shadow-xl justify-center pt-2"
+            >
+              <SummmaryDropdown
+                selectedOption={selectedOption}
+                handleLedger={handleLedger}
+              />
+
+              <div
+                className={`   text-center  text-white  flex justify-center items-center flex-col mt-5`}
+              >
+                {/* <h2 className="text-3xl sm:text-4xl font-bold">₹{grandTotal}</h2> */}
+                <p className="text-sm mt-4 font-semibold opacity-90">
+                  {new Date(start).toDateString()} -{" "}
+                  {new Date(end).toDateString()}
+                </p>
+                {/* <p className="text-sm mt-4 font-bold opacity-90">{title}</p> */}
+              </div>
+            </div>
+          </div>
+
+          {!Loading && summaryReport.length <= 0 && (
+            <section>
+              <p className="text-gray-500 text-center font-bold  mt-20">
+                Oops!.. No data found
+              </p>
+            </section>
+          )}
+
+          <div>
+            {summaryReport && summaryReport.length > 0 && (
+              <>
+                <div className="flex justify-end mt-1">
+                  <button
+                    className="px-2 py-0.5 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition duration-200 cursor-pointer mx-3"
+                    onClick={() => setShowDetails(true)} // Reset or handle your state
+                  >
+                    View Details
+                  </button>
+                </div>
+
+                <div className="mt-2">
+                  {summaryReport &&
+                    summaryReport.length > 0 &&
+                    selectedIndex === null &&
+                    summaryReport.map((item, index) => (
+                      <div
+                        key={index}
+                        className="flex justify-between items-center mb-3 p-3 bg-white rounded-lg shadow-md transform transition duration-300 hover:shadow-xl hover:scale-55 hover:-translate-y-1"
+                      >
+                        <span className="text-gray-800 font-medium">
+                          {item?.partyName ||
+                            item?.groupName ||
+                            item?.categoryName ||
+                            item?.itemName}
+                        </span>
+                        <span className="text-gray-600 font-semibold">
+                          {item.saleAmount}
+                        </span>
+                      </div>
+                    ))}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+    </>
   )
 }
 

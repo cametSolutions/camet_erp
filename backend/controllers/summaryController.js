@@ -13,8 +13,7 @@ export const getSummary = async (req, res) => {
     startOfDayParam,
     endOfDayParam,
 
-    selectedVoucher,
-    selectedOption
+    selectedVoucher
   } = req.query
 
   try {
@@ -76,9 +75,9 @@ export const getSummary = async (req, res) => {
     )
 
     const results = await Promise.all(summaryPromises)
+
     const flattenedResults = results.flat()
 
-    console.log("res", flattenedResults)
     if (results.length > 0) {
       return res
         .status(200)
