@@ -33,7 +33,7 @@ import { addBankPaymentDetails } from '../../frontend/slices/payment.js';
 import { addEmailConfiguration, getConfiguration, getBarcodeList, addBarcodeData, editBarcodeData, deleteBarcode, getSingleBarcodeData, getPrintingConfiguration, updateConfiguration, getDespatchTitles, updateDespatchTitles, getTermsAndConditions, updateTermsAndConditions, updateBankAccount, updateTaxConfiguration, updateShipToConfiguration } from '../controllers/settingsController.js';
 import { updateSecondaryUserConfiguration } from '../helpers/saleOrderHelper.js';
 import { updateDateFieldsByCompany, updateSalesItemUnitFields, updateUnitFields } from '../controllers/testingController.js';
-
+import { getSummary } from "../controllers/summaryController.js"
 
 router.post('/login',login)
 router.post('/sendOtp',sendOtp)
@@ -189,6 +189,14 @@ router.put('/updateTaxConfiguration/:cmp_id',authSecondary,secondaryIsBlocked,co
 /// ship to settings
 router.put('/updateShipToConfiguration/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,updateShipToConfiguration)
 
+
+router.get(
+  "/salesSummary/:cmp_id",
+  authSecondary,
+  secondaryIsBlocked,
+  companyAuthentication,
+  getSummary
+)
 
 
 
