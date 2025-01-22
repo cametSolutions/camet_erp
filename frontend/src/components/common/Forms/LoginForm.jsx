@@ -220,7 +220,7 @@ function LoginForm({ user }) {
               </p>
             </form>
 
-            {user == "secondary" ? (
+            {/* {user == "secondary" ? (
               <p className="text-gray-800 text-sm  text-center mt-2">
                 Login as{" "}
                 <Link to={"/pUsers/login"}>
@@ -238,7 +238,7 @@ function LoginForm({ user }) {
                   </span>
                 </Link>
               </p>
-            )}
+            )} */}
           </div>
         </div>
       </div>

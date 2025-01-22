@@ -9,7 +9,6 @@ import { Link } from "react-router-dom";
 import { IoIosAddCircle, IoIosArrowRoundBack } from "react-icons/io";
 
 import SearchBar from "../../components/common/SearchBar";
-import { useSidebar } from "../../layout/Layout";
 import PartyListComponent from "../../components/common/List/PartyListComponent";
 import CustomBarLoader from "../../components/common/CustomBarLoader";
 import { useNavigate } from "react-router-dom";
@@ -28,12 +27,11 @@ function PartyListSecondary() {
     (state) => state.secSelectedOrganization.secSelectedOrg.type
   );
 
-  const navigate=useNavigate();
+  const navigate = useNavigate();
 
   const searchData = (data) => {
     setSearch(data);
   };
-
 
   useEffect(() => {
     setLoader(true);
@@ -44,8 +42,7 @@ function PartyListSecondary() {
           withCredentials: true,
         });
 
-          setParties(res.data.partyList);
-   
+        setParties(res.data.partyList);
       } catch (error) {
         console.log(error);
       } finally {
@@ -53,7 +50,6 @@ function PartyListSecondary() {
       }
     };
     fetchParties();
-
   }, [cpm_id, refresh]);
   useEffect(() => {
     if (search === "") {
@@ -109,44 +105,35 @@ function PartyListSecondary() {
   };
 
   return (
-    <div
-  
-     className=" bg-slate-50 h-screen overflow-hidden ">
+    <div className=" bg-slate-50 h-screen overflow-hidden ">
       <div className="sticky top-0 z-20">
         <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3  flex justify-between items-center  ">
           <div className="flex items-center justify-center gap-2">
-          <IoIosArrowRoundBack
-          onClick={() => navigate("/sUsers/dashboard")}
-            className="cursor-pointer text-3xl text-white "
-          />
+            <IoIosArrowRoundBack
+              onClick={() => navigate("/sUsers/dashboard")}
+              className="cursor-pointer text-3xl text-white "
+            />
             <p className="text-white text-lg   font-bold ">Your Customers</p>
           </div>
           <div>
             {/* {type === "self" && ( */}
-              <Link to={"/sUsers/addParty"}>
-                <button className="flex items-center gap-2 text-white bg-[#40679E] px-2 py-1 rounded-md text-sm  hover:scale-105 duration-100 ease-in-out ">
-                  <IoIosAddCircle className="text-xl" />
-                  Add Customers
-                </button>
-              </Link>
+            <Link to={"/sUsers/addParty"}>
+              <button className="flex items-center gap-2 text-white bg-[#40679E] px-2 py-1 rounded-md text-sm  hover:scale-105 duration-100 ease-in-out ">
+                <IoIosAddCircle className="text-xl" />
+                Add Customers
+              </button>
+            </Link>
             {/* )} */}
           </div>
         </div>
 
-        {/* invoiec date */}
-        <div className=" p-4  bg-white drop-shadow-lg">
-          <div className="flex justify-between  items-center"></div>
-          <div className=" md:w-1/2 ">
-            {/* search bar */}
-            <SearchBar onType={searchData} />
-          </div>
-        </div>
+        <SearchBar onType={searchData} />
       </div>
 
       {/* adding party */}
 
       {loader ? (
-          <CustomBarLoader color="#363ad6" />
+        <CustomBarLoader color="#363ad6" />
       ) : parties.length === 0 ? (
         <div className="font-bold flex justify-center items-center mt-12 text-gray-500">
           No Parties!!!

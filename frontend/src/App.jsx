@@ -24,7 +24,7 @@ export default function App() {
     <>
       <Routes>
         {/* Routes without Layout */}
-        <Route path="/" element={<LoginPrimary />} />
+        <Route path="/" element={<LoginSecondary />} />
         <Route path="/notFound" element={<Notfound />} />
         <Route path="/pUsers/register" element={<Register />} />
         <Route path="/pUsers/login" element={<LoginPrimary />} />
