@@ -2538,8 +2538,10 @@ export const createSale = async (req, res) => {
 // route get/api/pUsers/fetchGodowns
 
 export const fetchGodownsAndPriceLevels = async (req, res) => {
-  const Primary_user_id = req.pUserId;
+  const Primary_user_id = req.owner;
   const cmp_id = req.params.cmp_id;
+
+  
   try {
     // First, collect all price levels across products
     const priceLevelsResult = await productModel.aggregate([
@@ -2693,7 +2695,7 @@ export const fetchAdditionalDetails = async (req, res) => {
 
 export const addSecondaryConfigurations = async (req, res) => {
   const cmp_id = req.params.cmp_id;
-  const Primary_user_id = req.pUserId;
+  const Primary_user_id = req.owner;
   const secondary_user_id = req.params.userId;
 
   try {

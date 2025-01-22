@@ -34,7 +34,7 @@ import { addEmailConfiguration, getConfiguration, getBarcodeList, addBarcodeData
 import { updateSecondaryUserConfiguration } from '../helpers/saleOrderHelper.js';
 import { updateDateFieldsByCompany, updateSalesItemUnitFields, updateUnitFields } from '../controllers/testingController.js';
 import { authPrimary } from '../middlewares/authPrimaryUsers.js';
-import { addOrganizations, addSecUsers, editOrg, editSecUSer, fetchSecondaryUsers, getOrganizations, getSecUserDetails } from '../controllers/primaryUserController.js';
+import { addOrganizations, addSecondaryConfigurations, addSecUsers, editOrg, editSecUSer, fetchConfigurationCurrentNumber, fetchGodownsAndPriceLevels, fetchSecondaryUsers, getOrganizations, getSecUserDetails } from '../controllers/primaryUserController.js';
 
 
 router.post('/login',login)
@@ -205,6 +205,11 @@ router.get('/fetchSecondaryUsers', authPrimary,secondaryIsBlocked,fetchSecondary
 router.post('/addSecUsers', authPrimary,secondaryIsBlocked,addSecUsers);
 router.get('/getSecUserDetails/:id', authPrimary,secondaryIsBlocked,getSecUserDetails)
 router.put('/editSecUSer/:id', authPrimary,secondaryIsBlocked,editSecUSer)
+router.get("/fetchConfigurationCurrentNumber/:orgId/:_id",authPrimary,secondaryIsBlocked,fetchConfigurationCurrentNumber)
+router.get('/fetchGodownsAndPriceLevels/:cmp_id',authPrimary,secondaryIsBlocked,companyAuthentication,fetchGodownsAndPriceLevels)
+router.post('/addSecondaryConfigurations/:cmp_id/:userId',authPrimary,secondaryIsBlocked,companyAuthentication,addSecondaryConfigurations)
+
+
 
 
 

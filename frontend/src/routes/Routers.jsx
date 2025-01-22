@@ -503,6 +503,7 @@ const Routers = () => {
       <Route path='/sUsers/retailers' element={<ProtectedSecRoute><RetailersList/></ProtectedSecRoute>}></Route>
       <Route path='/sUsers/addSecUsers' element={<ProtectedSecRoute><AddSecUsers/></ProtectedSecRoute>}></Route>
       <Route path='/sUsers/editUser/:id' element={<ProtectedSecRoute><EditSecUsers/></ProtectedSecRoute>}></Route>
+      <Route path='/sUsers/configureSecondaryUser/:id/:userId/:cmp_name' element={<ProtectedSecRoute><ConfigureSecondaryUser/></ProtectedSecRoute>}></Route>
 
 
 

@@ -42,7 +42,7 @@ function ConfigureSecondaryUser() {
     const fetchGodowns = async () => {
       try {
         const res = await api.get(
-          `/api/pUsers/fetchGodownsAndPriceLevels/${id}`,
+          `/api/sUsers/fetchGodownsAndPriceLevels/${id}`,
           {
             withCredentials: true,
           }
@@ -60,7 +60,7 @@ function ConfigureSecondaryUser() {
     const fetchConfigurationNumber = async () => {
       try {
         const res = await api.get(
-          `/api/pUsers/fetchConfigurationCurrentNumber/${id}/${userId}`,
+          `/api/sUsers/fetchConfigurationCurrentNumber/${id}/${userId}`,
           {
             withCredentials: true,
           }
@@ -108,7 +108,7 @@ function ConfigureSecondaryUser() {
   useEffect(() => {
     const fetchSingleUser = async () => {
       try {
-        const res = await api.get(`/api/pUsers/getSecUserDetails/${userId}`, {
+        const res = await api.get(`/api/sUsers/getSecUserDetails/${userId}`, {
           withCredentials: true,
         });
         const fullConfigurations = res?.data?.data?.configurations;
@@ -339,7 +339,7 @@ function ConfigureSecondaryUser() {
 
     try {
       const res = await api.post(
-        `/api/pUsers/addSecondaryConfigurations/${id}/${userId}`,
+        `/api/sUsers/addSecondaryConfigurations/${id}/${userId}`,
         formData,
         {
           headers: {
@@ -349,7 +349,7 @@ function ConfigureSecondaryUser() {
         }
       );
       toast.success(res.data.message);
-      navigate(`/pUsers/editUser/${userId}`);
+      navigate(`/sUsers/editUser/${userId}`);
     } catch (error) {
       toast.error(error.response.data.message);
       console.log(error);
@@ -359,7 +359,7 @@ function ConfigureSecondaryUser() {
   return (
     <div className="flex-1   ">
       <div className="  bg-[#201450] text-white mb-2 p-3 flex items-center gap-3 sticky top-0 z-20 text-lg   ">
-        <Link to={`/pUsers/editUser/${userId}`}>
+        <Link to={`/sUsers/editUser/${userId}`}>
           <IoIosArrowRoundBack className="text-3xl text-white cursor-pointer " />
         </Link>
         <p> Configure Users </p>

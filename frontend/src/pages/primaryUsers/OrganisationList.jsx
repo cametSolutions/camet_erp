@@ -8,14 +8,18 @@ import { removeAllSales } from "../../../slices/sales";
 import { useDispatch } from "react-redux";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import { useNavigate } from "react-router-dom";
+import CustomBarLoader from "../../components/common/CustomBarLoader";
+import { RiDeleteBin5Fill } from "react-icons/ri";
 
 function OrganisationList() {
   const [organizations, setOrganizations] = useState([]);
+  const [loading, setLoading] = useState(false);
   const dispatch = useDispatch();
-  const navigate=useNavigate();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchOrganiszations = async () => {
+      setLoading(true);
       try {
         const res = await api.get("/api/sUsers/getOrganizations", {
           withCredentials: true,
@@ -24,6 +28,8 @@ function OrganisationList() {
       } catch (error) {
         console.log(error);
         toast.error(error.response.data.message);
+      } finally {
+        setLoading(false);
       }
     };
     fetchOrganiszations();
@@ -35,7 +41,9 @@ function OrganisationList() {
     <section className="flex-1 text-gray-600">
       <div className="sticky top-0 bg-[#201450] text-white p-3 flex items-center gap-3 text-lg">
         <IoIosArrowRoundBack
-        onClick={()=>{navigate("/sUsers/dashboard")}}
+          onClick={() => {
+            navigate("/sUsers/dashboard");
+          }}
           className="block cursor-pointer  text-3xl"
         />
         <div className="flex items-center justify-between w-full  font-bold">
@@ -47,6 +55,8 @@ function OrganisationList() {
           </Link>
         </div>
       </div>
+
+      {loading && <CustomBarLoader />}
 
       <div className="    text-sm p-2  ">
         {organizations.length > 0 ? (
@@ -68,22 +78,29 @@ function OrganisationList() {
                       <span>Mobile: </span>
                       <span className="ml-1 ">{item?.mobile}</span>
                     </div>
-                  </div >
-                  <Link to={`/sUsers/editOrg/${item?._id}`}>
-                    <div className="flex items-center space-x-3 ">
-                      <button className="text-blue-500 hover:text-green-700">
-                        <FaEdit className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </Link>
-                </div>  
+                  </div>
+
+                  <div className="flex items-center space-x-3 sm:text-lg ">
+                    <Link to={`/sUsers/editOrg/${item?._id}`}>
+                      <div className="flex items-center space-x-3 ">
+                        <button className="text-blue-500 hover:text-green-700">
+                          <FaEdit />
+                        </button>
+                      </div>
+                    </Link>
+
+                    {/* <RiDeleteBin5Fill className="text-red-800 cursor-pointer hover:text-red-900 hover:scale-105" /> */}
+                  </div>
+                </div>
               </div>
             ))}
           </div>
         ) : (
-          <div className="flex items-center justify-center h-full mt-36">
-            <h1 className="text-gray-400 font-bold">No Data Found</h1>
-          </div>
+          !loading && (
+            <div className="flex items-center justify-center h-full mt-36">
+              <h1 className="text-gray-400 font-bold">No Data Found</h1>
+            </div>
+          )
         )}
       </div>
     </section>

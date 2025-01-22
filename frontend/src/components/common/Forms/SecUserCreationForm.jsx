@@ -4,7 +4,6 @@ import { toast } from "react-toastify";
 import { FaRegEye } from "react-icons/fa";
 import { IoMdEyeOff } from "react-icons/io";
 import { Link } from "react-router-dom";
-import { IoIosArrowRoundBack } from "react-icons/io";
 import api from "../../../api/api";
 import { useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -317,7 +316,7 @@ function SecUserCreationForm({ submitHandler, tab = "add" }) {
                               {selectedOrg.includes(item._id) &&
                                 tab == "edit" && (
                                   <Link
-                                    to={`/pUsers/configureSecondaryUser/${item._id}/${id}/${item.name}`}
+                                    to={`/sUsers/configureSecondaryUser/${item._id}/${id}/${item.name}`}
                                   >
                                     <IoIosSettings className="cursor-pointer" />
                                   </Link>

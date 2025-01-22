@@ -57,24 +57,27 @@ function RetailersList() {
   }, [companyFilter, secondaryUsers]);
 
   return (
-    <section className="flex-1 text-gray-600">
-      <div className="sticky top-0 bg-[#201450] text-white p-3 flex items-center gap-3 text-lg">
-        <Link to={"/sUsers/dashboard"}>
-          <IoIosArrowRoundBack className="block cursor-pointer text-3xl" />
-        </Link>
-        <div className="flex items-center justify-between w-full font-bold">
-          <p>Your Users</p>
-          <Link to={"/sUsers/addSecUsers"}>
-            <button className="flex gap-2 bg-[#2b1b6b] shadow-lg px-2 py-1 rounded-xs text-sm hover:scale-105 duration-100 ease-in-out hover:bg-[#2f245a] mr-3">
-              Add User
-            </button>
+    <section className="flex-1 text-gray-600  ">
+      
+      <div className="flex flex-col sticky top-0 z-50">
+        <div className=" bg-[#201450] text-white p-3 flex items-center gap-3 text-lg">
+          <Link to={"/sUsers/dashboard"}>
+            <IoIosArrowRoundBack className="block cursor-pointer text-3xl" />
           </Link>
+          <div className="flex items-center justify-between w-full font-bold">
+            <p>Your Users</p>
+            <Link to={"/sUsers/addSecUsers"}>
+              <button className="flex gap-2 bg-[#2b1b6b] shadow-lg px-2 py-1 rounded-xs text-sm hover:scale-105 duration-100 ease-in-out hover:bg-[#2f245a] mr-3">
+                Add User
+              </button>
+            </Link>
+          </div>
+        </div>
+        <div className="">
+          <CompanyFilter setLoading={setLoading} />
         </div>
       </div>
-
-      <CompanyFilter setLoading={setLoading} />
       {loading && <CustomBarLoader />}
-
       <div className=" ">
         {filteredUsers.length > 0 && !loading ? (
           <div className="space-y-2 p-2">
