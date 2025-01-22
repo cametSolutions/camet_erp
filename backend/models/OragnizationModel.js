@@ -68,6 +68,20 @@ const organizationSchema = new mongoose.Schema(
           email: { type: String },
           appPassword: { type: String },
         },
+        addRateWithTax: {
+          type: Object,
+          default: {
+            sale: false,
+            saleOrder: false,
+          },
+        },
+        enableShipTo: {
+          type: Object,
+          default: {
+            sale: false,
+            saleOrder: false,
+          },
+        },
 
         despatchTitles: [
           {
@@ -98,6 +112,10 @@ const organizationSchema = new mongoose.Schema(
             showBankDetails: { type: Boolean, default: false },
             showTaxAmount: { type: Boolean, default: true },
             showStockWiseTaxAmount: { type: Boolean, default: true },
+            showRate: { type: Boolean, default: true },
+            showQuantity: { type: Boolean, default: true },
+            showStockWiseAmount: { type: Boolean, default: true },
+            showNetAmount: { type: Boolean, default: true },
           },
         ],
 

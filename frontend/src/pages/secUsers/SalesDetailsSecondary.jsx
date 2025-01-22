@@ -6,7 +6,7 @@ import { useParams } from "react-router-dom";
 import api from "../../api/api";
 import { toast } from "react-toastify";
 import { FaEdit } from "react-icons/fa";
-import {  useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import SalesProductDetails from "../../components/common/SalesProductDetails";
 import SwallFireForPdf from "../../components/common/SwallFireForPdf";
 import CancelButton from "../../components/common/CancelButton";
@@ -22,7 +22,7 @@ function SalesDetailsSecondary() {
   const { id } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
-
+  const location = useLocation();
 
   useEffect(() => {
     const getTransactionDetails = async () => {
@@ -38,17 +38,20 @@ function SalesDetailsSecondary() {
       }
     };
     getTransactionDetails();
-    dispatch(removeAll());  /// for making initial in the payment splitting to true
+    dispatch(removeAll()); /// for making initial in the payment splitting to true
   }, [refresh, id]);
 
   const reFetch = () => {
     setRefresh(!refresh);
   };
+  console.log(location);
 
-  console.log(data);
   const backHandler = () => {
-    navigate(-1)
-
+    if (location?.state?.from === "orderPending") {
+      navigate("/sUsers/orderPending/partyList",{replace: true,state: { from: "convertedSaleDetail" }});
+    } else {
+      navigate(-1);
+    }
   };
 
   const handleEdit = () => {
@@ -126,11 +129,10 @@ function SalesDetailsSecondary() {
         paymentSplittingData={data?.paymentSplittingData}
       />
 
-      {
-        data?.paymentSplittingData &&     data?.paymentSplittingData?.splittingData?.length >0 &&   (
-          <PaymentSplittingDetails  data={data?.paymentSplittingData}/>
-        )
-      }
+      {data?.paymentSplittingData &&
+        data?.paymentSplittingData?.splittingData?.length > 0 && (
+          <PaymentSplittingDetails data={data?.paymentSplittingData} />
+        )}
 
       {/* payment method */}
 

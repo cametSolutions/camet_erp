@@ -226,6 +226,10 @@ export const addOrganizations = async (req, res) => {
       terms: [],
       enableBillToShipTo: true,
       taxInclusive: false,
+      addRateWithTax: [
+        saleOrder=false,
+        sale=false,
+      ],
       emailConfiguration: null,
       despatchTitles: [
         {
@@ -277,6 +281,10 @@ export const addOrganizations = async (req, res) => {
           showBankDetails: false,
           showTaxAmount: true,
           showStockWiseTaxAmount: true,
+          showRate:true,
+          showQuantity:true,
+          showStockWiseAmount:true,
+          showNetAmount:true
         },
         {
           voucher: "sale",
@@ -292,6 +300,10 @@ export const addOrganizations = async (req, res) => {
           showBankDetails: false,
           showTaxAmount: true,
           showStockWiseTaxAmount: true,
+          showRate:true,
+          showQuantity:true,
+          showStockWiseAmount:true,
+          showNetAmount:true
         },
       ],
     },

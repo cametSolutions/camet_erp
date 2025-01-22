@@ -58,6 +58,10 @@ function EditItemSecondary() {
     }
   }, [selectedItem[0]]);
 
+
+  console.log(isTaxInclusive);
+  
+
   
 
   useEffect(() => {
@@ -231,7 +235,7 @@ function EditItemSecondary() {
 
                   {}
 
-                  {isTaxInclusive !== null && isTaxInclusive !== undefined && (
+                  {isTaxInclusive !== null && isTaxInclusive !== undefined && isTaxInclusive && (
                     <div className="flex items-center gap-3 ml-1 ">
                       <input
                         type="checkbox"

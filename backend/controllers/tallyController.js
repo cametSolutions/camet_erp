@@ -722,3 +722,12 @@ export const givePayments = async (req, res) => {
   const serialNumber = req.params.SNo;
   return fetchData("payment", cmp_id, serialNumber, res);
 };
+
+// // @desc for giving sales to tally
+// // route GET/api/tally/giveSales
+
+export const givePurchase = async (req, res) => {
+  const cmp_id = req.params.cmp_id;
+  const serialNumber = req.params.SNo;
+  return fetchData("purchase", cmp_id, serialNumber, res);
+};    

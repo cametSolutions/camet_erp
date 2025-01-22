@@ -3,67 +3,54 @@ import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import numberToWords from "number-to-words";
 
-
 function SalesThreeInchPdf({
   contentToPrint,
   data,
   org,
-  // subTotal,
-  // additinalCharge,
-  // inWords,
+
   userType,
-  printTitle,
   voucherNumber,
   tab,
-
 }) {
   const [subTotal, setSubTotal] = useState("");
   const [additinalCharge, setAdditinalCharge] = useState("");
   const [inWords, setInWords] = useState("");
-  
+
   const configurations = useSelector(
     (state) =>
       state.secSelectedOrganization?.secSelectedOrg?.configurations[0]
         ?.printConfiguration
   );
 
-  console.log("configurations", configurations);
-
-  const saleOrderConfiguration = configurations?.find(
-    (item) => item.voucher === "saleOrder"
+  const voucherConfiguration = configurations?.find(
+    (item) => item.voucher === tab
   );
 
-  console.log("saleOrderConfiguration", saleOrderConfiguration);
 
-  let title = "";
+
   let pdfNumber;
 
   switch (tab) {
-    case "sales":
-      title = "Tax Invoice";
+    case "sale":
       pdfNumber = data?.salesNumber;
 
       break;
     case "vanSale":
-      title = "Tax Invoice";
       pdfNumber = data?.salesNumber;
 
       break;
 
     case "purchase":
-      title = "Purchase Invoice";
       pdfNumber = data?.purchaseNumber;
 
       break;
 
     case "stockTransfer":
-      title = "Stock Transfer";
       pdfNumber = data?.stockTransferNumber;
 
       break;
 
     default:
-      title = "Tax Invoice";
       pdfNumber = "";
 
       break;
@@ -198,6 +185,8 @@ function SalesThreeInchPdf({
     }
   }
 
+  console.log(voucherConfiguration);
+
   // console.log(address);
   return (
     <div
@@ -207,7 +196,9 @@ function SalesThreeInchPdf({
     >
       <div className=" print-container  max-w-3xl mx-auto  md:block w-full ">
         <div className="flex justify-center ">
-          <div className="font-bold text-md  mt-6">{printTitle || title}</div>
+          <div className="font-bold text-md  mt-6">
+            {voucherConfiguration?.printTitle}
+          </div>
         </div>
         <div>
           <div className="flex items-center justify-between flex-col leading-4   font-bold">
@@ -219,51 +210,51 @@ function SalesThreeInchPdf({
             </div>
           </div>
         </div>
-{saleOrderConfiguration?.showCompanyDetails && (
-        <div className="flex justify-center">
-          <div className=" flex flex-col  items-center">
-            <div className=" flex justify-center ">
-              <p className="text-black font-extrabold text-[15px] pb-1 text-center">
-                {org?.name}
-              </p>
-            </div>
-            <div className=" flex flex-col items-center leading-4 ">
-              <div className="text-black  text-[12px] font-semibold text-center">
-                {[
-                  org?.flat,
-                  org?.landmark,
-                  org?.road,
-                  org?.place,
-                  org?.pin,
-                  org?.mobile,
-                ]
-                  .filter(Boolean) // Remove any falsy values (e.g., undefined or null)
-                  .join(", ")}
+        {voucherConfiguration?.showCompanyDetails && (
+          <div className="flex justify-center">
+            <div className=" flex flex-col  items-center">
+              <div className=" flex justify-center ">
+                <p className="text-black font-extrabold text-[15px] pb-1 text-center">
+                  {org?.name}
+                </p>
               </div>
-              <div className="text-black font-semibold   text-[12px] ">
-                {org?.email}
+              <div className=" flex flex-col items-center leading-4 ">
+                <div className="text-black  text-[12px] font-semibold text-center">
+                  {[
+                    org?.flat,
+                    org?.landmark,
+                    org?.road,
+                    org?.place,
+                    org?.pin,
+                    org?.mobile,
+                  ]
+                    .filter(Boolean) // Remove any falsy values (e.g., undefined or null)
+                    .join(", ")}
+                </div>
+                <div className="text-black font-semibold   text-[12px] ">
+                  {org?.email}
+                </div>
+
+                {org?.website && (
+                  <div className="text-black font-semibold  text-[12px]">
+                    Website: {org?.website}
+                  </div>
+                )}
+
+                {org?.gstNum && (
+                  <div className="text-black font-semibold  text-[12px]">
+                    Tax No: {org?.gstNum}
+                  </div>
+                )}
+
+                {org?.pan && (
+                  <div className="text-black font-semibold   text-[12px]">
+                    Pan No: {org?.pan}
+                  </div>
+                )}
               </div>
-
-              {org?.website && (
-                <div className="text-black font-semibold  text-[12px]">
-                  Website: {org?.website}
-                </div>
-              )}
-
-              {org?.gstNum && (
-                <div className="text-black font-semibold  text-[12px]">
-                  Tax No: {org?.gstNum}
-                </div>
-              )}
-
-              {org?.pan && (
-                <div className="text-black font-semibold   text-[12px]">
-                  Pan No: {org?.pan}
-                </div>
-              )}
             </div>
           </div>
-        </div>
         )}
         {/* </div> */}
 
@@ -285,17 +276,24 @@ function SalesThreeInchPdf({
               <th className="text-black font-bold uppercase  px-1 text-left">
                 Items
               </th>
-              <th className="text-black font-bold uppercase text-center p-2">
-                Qty
-              </th>
-              <th className="text-black font-bold uppercase text-center p-2">
-                Rate
-              </th>
-              {/* <th className="text-black font-bold uppercase p-2">Disc</th> */}
-              {/* <th className="text-black font-bold uppercase p-2">Tax</th> */}
-              <th className="text-black font-bold uppercase p-2 pr-0">
-                Amount
-              </th>
+
+              {voucherConfiguration?.showQuantity && (
+                <th className="text-black font-bold uppercase text-center p-2">
+                  Qty
+                </th>
+              )}
+
+              {voucherConfiguration?.showRate && (
+                <th className="text-black font-bold uppercase text-right p-2">
+                  Rate
+                </th>
+              )}
+
+              {voucherConfiguration?.showStockWiseAmount && (
+                <th className="text-black font-bold uppercase p-2 pr-0">
+                  Amount
+                </th>
+              )}
             </tr>
           </thead>
 
@@ -315,33 +313,60 @@ function SalesThreeInchPdf({
                   >
                     <td className="py-1 text-black  font-bold  pr-2 flex ">
                       {el.product_name} <br />
-                      {saleOrderConfiguration?.showTaxPercentage && ( <p className="text-black ">({el.igst}%)</p> )}
-                    </td>
-                    <td className="py-1 text-black  font-bold text-right pr-2">
-                      {el?.count}
-                      <p className="text-[10px] font-semibold">{el?.unit}</p>
-                    </td>
-                    <td className="py-1 text-black font-bold  text-right pl-2 pr-1 text-nowrap">
-                      {rate || 0}
+                      {voucherConfiguration?.showTaxPercentage && (
+                        <p className="text-black ">({el.igst}%)</p>
+                      )}
                     </td>
 
-                    <td className="py-1 text-black  font-bold text-right">
-                      {el?.total}
-                    </td>
+                    {voucherConfiguration?.showQuantity && (
+                      <td className="py-1 text-black  font-bold text-center pr-2">
+                        {el?.count}
+                        <p className="text-[10px] font-semibold">{el?.unit}</p>
+                      </td>
+                    )}
+
+                    {voucherConfiguration?.showRate && (
+                      <td className="py-1 text-black font-bold  text-right pl-2 pr-1 text-nowrap">
+                        {rate || 0}
+                      </td>
+                    )}
+
+                    {voucherConfiguration?.showStockWiseAmount && (
+                      <td className="py-1 text-black  font-bold text-right">
+                        {el?.total}
+                      </td>
+                    )}
                   </tr>
                 );
               })}
-            <tr className=" border-y-2 border-t-2 border-gray-500  font-bold  text-[12px] bg-white">
-              <td className="py-1 text-black ">Total</td>
-              <td className=" col-span-2 py-1 text-black text-center">
-                {" "}
-                {data?.items?.reduce(
-                  (acc, curr) => (acc += Number(curr?.count)),
-                  0
-                )}
-              </td>
-              <td className="py-1 text-black "></td>
-              <td className="py-1 text-black text-right "> {subTotal}</td>
+
+            <tr
+              className={`border-gray-500 font-bold text-[12px] bg-white ${
+                voucherConfiguration?.showStockWiseAmount ||
+                voucherConfiguration?.showQuantity
+                  ? "border-y"
+                  : ""
+              }`}
+            >
+              {voucherConfiguration?.showStockWiseAmount ? (
+                <td className="py-1 text-black">Total</td>
+              ):(
+                <td className="py-1 text-black"></td>
+              )
+            
+            }
+              {voucherConfiguration?.showQuantity && (
+                <td className="col-span-2 py-1 text-black text-center">
+                  {data?.items?.reduce(
+                    (acc, curr) => (acc += Number(curr?.count)),
+                    0
+                  )}
+                </td>
+              )}
+              <td className="py-1 text-black"></td>
+              {voucherConfiguration?.showStockWiseAmount && (
+                <td className="py-1 text-black text-right">{subTotal}</td>
+              )}
             </tr>
           </tbody>
         </table>
@@ -378,32 +403,34 @@ function SalesThreeInchPdf({
           </div> */}
           <div className=" mt-1  ">
             <div className="  flex flex-col items-end ">
-{ selectedOrganization?.country === "India" ? ( saleOrderConfiguration?.showTaxPercentage &&
-                <div className="flex flex-col items-end text-[12px] text-black font-bold gap-1">
-                  <p className={calculateTotalTax() > 0 ? "" : "hidden"}>
-                    CGST : {(calculateTotalTax() / 2).toFixed(2)}
-                  </p>
-                  <p className={calculateTotalTax() > 0 ? "" : "hidden"}>
-                    SGST : {(calculateTotalTax() / 2).toFixed(2)}
-                  </p>
+              {selectedOrganization?.country === "India"
+                ? voucherConfiguration?.showTaxAmount && (
+                    <div className="flex flex-col items-end text-[12px] text-black font-bold gap-1">
+                      <p className={calculateTotalTax() > 0 ? "" : "hidden"}>
+                        CGST : {(calculateTotalTax() / 2).toFixed(2)}
+                      </p>
+                      <p className={calculateTotalTax() > 0 ? "" : "hidden"}>
+                        SGST : {(calculateTotalTax() / 2).toFixed(2)}
+                      </p>
 
-                  <p className={calculateCess() > 0 ? "" : "hidden"}>
-                    CESS : {calculateCess()}
-                  </p>
-                  <p className={calculateAddCess() > 0 ? "" : "hidden"}>
-                    ADD.CESS : {calculateAddCess()}
-                  </p>
-                  <p className={calculateStateTax() > 0 ? "" : "hidden"}>
-                    STATE TAX : {calculateStateTax()}
-                  </p>
-                </div>
-              ) :   ( saleOrderConfiguration?.showTaxAmount &&
-                <div className="flex flex-col items-end text-[12px] text-black font-bold gap-1">
-                  <p className={calculateTotalTax() > 0 ? "" : "hidden"}>
-                    VAT : {Number(calculateTotalTax()).toFixed(2)}
-                  </p>
-                </div>
-              )}
+                      <p className={calculateCess() > 0 ? "" : "hidden"}>
+                        CESS : {calculateCess()}
+                      </p>
+                      <p className={calculateAddCess() > 0 ? "" : "hidden"}>
+                        ADD.CESS : {calculateAddCess()}
+                      </p>
+                      <p className={calculateStateTax() > 0 ? "" : "hidden"}>
+                        STATE TAX : {calculateStateTax()}
+                      </p>
+                    </div>
+                  )
+                : voucherConfiguration?.showTaxAmount && (
+                    <div className="flex flex-col items-end text-[12px] text-black font-bold gap-1">
+                      <p className={calculateTotalTax() > 0 ? "" : "hidden"}>
+                        VAT : {Number(calculateTotalTax()).toFixed(2)}
+                      </p>
+                    </div>
+                  )}
               {additinalCharge > 0 && (
                 <div className="flex items-center mt-1 mb-1">
                   <div className="text-black mr-2 font-bold text-[12px] ">
@@ -432,101 +459,35 @@ function SalesThreeInchPdf({
               </>
             ))}
 
-            <div className="flex justify-end  border-black  ">
-              <div className="w-3/4"></div>
+            {voucherConfiguration?.showNetAmount && (
+              <div className="flex justify-end  border-black  ">
+                <div className="w-3/4"></div>
 
-              <div className="  text-black  font-extrabold text-[11px] flex justify-end   ">
-                <p className="text-nowrap border-y-2 py-1">
-                  NET AMOUNT :&nbsp;{" "}
-                </p>
-                <div className="text-black  font-bold text-[11px] text-nowrap  border-y-2 py-1    ">
-                  {selectedOrganization?.currency} {data?.finalAmount}
+                <div className="  text-black  font-extrabold text-[11px] flex justify-end   ">
+                  <p className="text-nowrap border-y-2 py-1">
+                    NET AMOUNT :&nbsp;{" "}
+                  </p>
+                  <div className="text-black  font-bold text-[11px] text-nowrap  border-y-2 py-1    ">
+                    {selectedOrganization?.currency} {data?.finalAmount}
+                  </div>
                 </div>
               </div>
-            </div>
-            <div className="flex  justify-end border-black pb-3 w-full ">
-              <div className="w-2/4"></div>
-
-              <div className="text-black font-bold text-[12px] flex flex-col justify-end text-right mt-1">
-                <p className="text-nowrap">Total Amount (in words)</p>
-                <div className="text-black full font-bold text-[9px] text-nowrap uppercase mt-1   ">
-                  <p className="whitespace-normal -">{inWords} </p>
-                </div>
-              </div>
-            </div>
-            {/* <div className="flex flex-col items-end mb-4">
-          <p className="text-black text-[7.5px] ">
-            Scan here for payment
-          </p>
-          <div
-            style={{
-              height: "auto",
-              margin: "0 ",
-              marginTop: "2px",
-              maxWidth: 64,
-              width: "100%",
-            }}
-          >
-            <QRCode
-              size={250}
-              style={{
-                height: "auto",
-                maxWidth: "100%",
-                width: "100%",
-              }}
-              value={`upi://pay?pa=${bank?.upi_id}&am=${data?.finalAmount}`}
-              viewBox={`0 0 256 256`}
-            />
-          </div>
-        </div> */}
-          </div>
-        </div>
-
-        {/* <div className="mt-3  flex justify-center ">
-            {bank && Object.keys(bank).length > 0 ? (
-              <>
-          
-                <div
-                  style={{
-                    height: "auto",
-                    margin: "0 ",
-                    marginTop: "10px",
-                    maxWidth: 90,
-                    width: "100%",
-                  }}
-                >
-                  <QRCode
-                    size={300}
-                    style={{
-                      height: "auto",
-                      maxWidth: "100%",
-                      width: "100%",
-                    }}
-                    value={`upi://pay?pa=${bank?.upi_id}&am=${data?.finalAmount}`}
-                    viewBox={`0 0 256 256`}
-                  />
-                </div>
-              </>
-            ) : (
-              <div className="text-black font-semibold text-[10px] leading-5"></div>
             )}
-          </div> */}
 
-        {/* {org && org.configurations?.length > 0 && (
-      <div className="border-gray-300 mb-5 mt-4">
-        <div className="text-black mb-2 font-bold text-[10px]">
-          Terms and Conditions
+            {voucherConfiguration?.showNetAmount && (
+              <div className="flex  justify-end border-black pb-3 w-full ">
+                <div className="w-2/4"></div>
+
+                <div className="text-black font-bold text-[12px] flex flex-col justify-end text-right mt-1">
+                  <p className="text-nowrap">Total Amount (in words)</p>
+                  <div className="text-black full font-bold text-[9px] text-nowrap uppercase mt-1   ">
+                    <p className="whitespace-normal -">{inWords} </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
-        <div className="text-black text-[9px] leading-5">
-          {org?.configurations[0]?.terms?.map((el, index) => (
-            <p key={index}>
-              {" "}
-              <span className="font-bold">{index + 1}.</span> {el}
-            </p>
-          ))}
-        </div>
-      </div>
-    )} */}
       </div>
     </div>
   );

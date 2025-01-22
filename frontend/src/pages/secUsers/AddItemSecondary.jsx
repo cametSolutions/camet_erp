@@ -12,9 +12,9 @@ import {
   addItem,
   removeItem,
   changeTotal,
-  setBrandInRedux,
-  setCategoryInRedux,
-  setSubCategoryInRedux,
+  // setBrandInRedux,
+  // setCategoryInRedux,
+  // setSubCategoryInRedux,
   setPriceLevel,
   changeCount,
   addPriceRate,
@@ -24,15 +24,15 @@ import { FixedSizeList as List } from "react-window";
 import { Decimal } from "decimal.js";
 import SearchBar from "../../components/common/SearchBar";
 import Filter from "../../components/secUsers/Filter";
-
+import CustomBarLoader from "../../components/common/CustomBarLoader";
 
 function AddItemSecondary() {
   const [item, setItem] = useState([]);
   const [selectedPriceLevel, setSelectedPriceLevel] = useState("");
   const [refresh, setRefresh] = useState(false);
-  const [brands, setBrands] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [subCategories, setSubCategories] = useState([]);
+  // const [brands, setBrands] = useState([]);
+  // const [categories, setCategories] = useState([]);
+  // const [subCategories, setSubCategories] = useState([]);
   const [selectedBrand, setSelectedBrand] = useState("");
   const [selectedCategory, setseleCtedCategory] = useState("");
   const [selectedSubCategory, setSelectedSubCategory] = useState("");
@@ -42,13 +42,11 @@ function AddItemSecondary() {
   const [listHeight, setListHeight] = useState(0);
   const [scrollPosition, setScrollPosition] = useState(0);
 
-  
-
   // Redux hooks
   const dispatch = useDispatch();
   const {
     secSelectedOrganization: {
-      secSelectedOrg: { _id: cpm_id, type,configurations },
+      secSelectedOrg: { _id: cpm_id, type, configurations },
     },
     invoiceSecondary: {
       items: itemsFromRedux,
@@ -60,49 +58,47 @@ function AddItemSecondary() {
     },
   } = useSelector((state) => state);
 
+  ///// check if the company is tax inclusive or not  //////////////////////////
+  const { addRateWithTax } = configurations[0];
+  const taxInclusive = addRateWithTax["saleOrder"] || false;
 
+  // Helper functions
+  const calculateTotal = (item, selectedPriceLevel, situation = "normal") => {
+    let priceRate =
+      situation === "priceLevelChange"
+        ? item.Priceleveles.find(
+            (level) => level.pricelevel === selectedPriceLevel
+          )?.pricerate || 0
+        : item.selectedPriceRate || 0;
 
+    let subtotal = priceRate * item?.count;
+    let discountedSubtotal = subtotal;
 
-// Helper functions
-const calculateTotal = (item, selectedPriceLevel, situation = "normal") => {
+    if (item.discount) {
+      discountedSubtotal -= item?.discount;
+    } else if (item?.discountPercentage) {
+      discountedSubtotal -= (subtotal * item?.discountPercentage) / 100;
+    }
 
-  
-  let priceRate =
-    situation === "priceLevelChange"
-      ? item.Priceleveles.find(
-          (level) => level.pricelevel === selectedPriceLevel
-        )?.pricerate || 0
-      : item.selectedPriceRate || 0;
+    const gstAmount = item?.isTaxInclusive
+      ? 0
+      : (discountedSubtotal * (item?.newGst || item?.igst || 0)) / 100;
 
-  let subtotal = priceRate * item?.count;
-  let discountedSubtotal = subtotal;
+    return discountedSubtotal + gstAmount;
+  };
 
-  if (item.discount) {
-    discountedSubtotal -= item?.discount;
-  } else if (item?.discountPercentage) {
-    discountedSubtotal -= (subtotal * item?.discountPercentage) / 100;
-  }
+  const filterItems = (items, brand, category, subCategory, searchTerm) => {
+    return items.filter(
+      (item) =>
+        (!brand || item.brand === brand) &&
+        (!category || item.category === category) &&
+        (!subCategory || item.sub_category === subCategory) &&
+        (!searchTerm ||
+          item.product_name.toLowerCase().includes(searchTerm.toLowerCase()))
+    );
+  };
 
-  const gstAmount =item?.isTaxInclusive? 0:(discountedSubtotal * (item?.newGst || item?.igst || 0)) / 100
-   
-  return discountedSubtotal + gstAmount;
-};
-
-const filterItems = (items, brand, category, subCategory, searchTerm) => {
-  return items.filter(
-    (item) =>
-      (!brand || item.brand === brand) &&
-      (!category || item.category === category) &&
-      (!subCategory || item.sub_category === subCategory) &&
-      (!searchTerm ||
-        item.product_name.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
-};
-
-// Helper closee
-
-
-  
+  // Helper closee
 
   // Other hooks
   const navigate = useNavigate();
@@ -118,9 +114,12 @@ const filterItems = (items, brand, category, subCategory, searchTerm) => {
 
       try {
         if (allProductsFromRedux.length === 0) {
-          const res = await api.get(`/api/sUsers/getProducts/${cpm_id}?taxInclusive=${true}`, {
-            withCredentials: true,
-          });
+          const res = await api.get(
+            `/api/sUsers/getProducts/${cpm_id}?taxInclusive=${taxInclusive}`,
+            {
+              withCredentials: true,
+            }
+          );
 
           productData = res.data.productData;
           dispatch(addAllProducts(res.data.productData));
@@ -142,11 +141,10 @@ const filterItems = (items, brand, category, subCategory, searchTerm) => {
             }
           });
 
-
           setItem(updatedItems);
           setRefresh(!refresh);
           if (updatedItems.length > 0) {
-            fetchFilters();
+            await fetchFilters();
           }
           setRefresh(!refresh);
         } else {
@@ -154,7 +152,7 @@ const filterItems = (items, brand, category, subCategory, searchTerm) => {
           setRefresh(!refresh);
 
           if (productData.length > 0) {
-            fetchFilters();
+            await fetchFilters();
           }
         }
 
@@ -301,6 +299,9 @@ const filterItems = (items, brand, category, subCategory, searchTerm) => {
           pricelevel,
           "priceLevelChange"
         ).toFixed(2);
+
+        console.log("newTotal", newTotal);
+
         dispatch(changeTotal({ ...item, total: newTotal }));
 
         const newPriceRate = item?.Priceleveles.find(
@@ -321,6 +322,8 @@ const filterItems = (items, brand, category, subCategory, searchTerm) => {
     setItem(updatedItems);
   };
 
+  // console.log("item", item);
+
   ///////////////////////////handleIncrement///////////////////////////////////
 
   const handleIncrement = (_id) => {
@@ -328,7 +331,6 @@ const filterItems = (items, brand, category, subCategory, searchTerm) => {
     const index = updatedItems.findIndex((item) => item._id === _id);
 
     const currentItem = { ...updatedItems[index] };
-
 
     if (!currentItem.count) {
       currentItem.count = 1;
@@ -389,8 +391,8 @@ const filterItems = (items, brand, category, subCategory, searchTerm) => {
     const selectedValue = e.target.value;
     setSelectedPriceLevel(selectedValue);
     dispatch(setPriceLevel(selectedValue));
-    handleTotalChangeWithPriceLevel(selectedValue);
     addSelectedRate(selectedValue);
+    handleTotalChangeWithPriceLevel(selectedValue);
   };
 
   /////////////////////////// calculateHeight ///////////////////////////////////
@@ -555,6 +557,7 @@ const filterItems = (items, brand, category, subCategory, searchTerm) => {
               />
               <p className="text-white text-lg   font-bold ">Add Item</p>
             </div>
+
             <div className="flex items-center gap-4 md:gap-6 ">
               <div>
                 <select
@@ -580,76 +583,13 @@ const filterItems = (items, brand, category, subCategory, searchTerm) => {
           </div>
 
           <SearchBar onType={searchData} />
-          
 
-          {/* <div
-            className="bg-white text-sm font-semibold py-0 px-2 flex items-center justify-evenly z-20 w-full gap-2  "
-            style={{ position: "relative", zIndex: "20" }}
-          >
-            <div className="w-4/12">
-              <select
-                value={selectedBrand}
-                onChange={(e) => {
-                  setSelectedBrand(e.target.value);
-                  dispatch(setBrandInRedux(e.target.value));
-                }}
-                className="full form-select block border-none  py-1.5 text-sm md:text-base font-normal text-gray-700 bg-white bg-clip-padding bg-no-repeat border rounded transition ease-in-out m-0 focus:ring-0 focus:border-none"
-              >
-                <option value="">Brands</option>
-                {brands.length > 0 &&
-                  brands.map((brand, index) => (
-                    <option key={index} value={brand}>
-                      {brand}
-                    </option>
-                  ))}
-              </select>
-            </div>
+          {loader && <CustomBarLoader />}
 
-            <div className="w-4/12">
-              <select
-                value={selectedCategory}
-                onChange={(e) => {
-                  setseleCtedCategory(e.target.value);
-                  dispatch(setCategoryInRedux(e.target.value));
-                }}
-                className="w-full   form-select block border-none  py-1.5 text-sm md:text-base font-normal text-gray-700 bg-white bg-clip-padding bg-no-repeat border rounded transition ease-in-out m-0 focus:ring-0 focus:border-none"
-              >
-                <option value="">Categories</option>
-                {categories.map((category, index) => (
-                  <option key={index} value={category}>
-                    {category}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="w-4/12">
-              <select
-                value={selectedSubCategory}
-                onChange={(e) => {
-                  setSelectedSubCategory(e.target.value);
-                  dispatch(setSubCategoryInRedux(e.target.value));
-                }}
-                className=" w-full  form-select block  py-1.5 text-sm md:text-base font-normal text-gray-700 bg-white bg-clip-padding bg-no-repeat border  border-none rounded transition ease-in-out m-0 focus:ring-0 focus:border-none "
-              >
-                <option value="">Subcategories</option>
-                {subCategories.map((el, index) => (
-                  <option key={index} value={el}>
-                    {el}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div> */}
-          <Filter addAllProducts={addAllProducts}/>
-
+          <Filter addAllProducts={addAllProducts} />
         </div>
 
-        {loader ? (
-          <div className="flex justify-center items-center h-screen">
-            <HashLoader color="#363ad6" />
-          </div>
-        ) : filteredItems.length === 0 ? (
+        {filteredItems.length === 0 ? (
           <div className="bg-white p-4 py-2 pb-6 mt-4 flex justify-center items-center rounded-sm cursor-pointer border-b-2 h-screen">
             <p>No products available</p>
           </div>
@@ -679,8 +619,8 @@ const filterItems = (items, brand, category, subCategory, searchTerm) => {
           </List>
         )}
 
-        {item.length > 0 && (
-          <div className=" sticky bottom-0 bg-white  w-full flex justify-center p-3 border-t h-[70px] ">
+        {item.length > 0 &&  (
+          <div className={` ${loader && "opacity-50 pointer-events-none"}  sticky bottom-0 bg-white  w-full flex justify-center p-3 border-t h-[70px`} >
             <button
               onClick={continueHandler}
               className="bg-violet-700  w-[85%] text-ld font-bold text-white p-2 rounded-md"

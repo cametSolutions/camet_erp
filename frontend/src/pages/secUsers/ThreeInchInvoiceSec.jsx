@@ -5,8 +5,7 @@ import api from "../../api/api";
 import { useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import { MdPrint } from "react-icons/md";
-import numberToWords from "number-to-words";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 // import SidebarSec from "../../components/secUsers/SidebarSec";
 import SalesThreeInchPdf from "../../components/common/SalesThreeInchPdf";
 import { useSelector } from "react-redux";
@@ -21,6 +20,7 @@ function ThreeInchInvoiceSec() {
   const [bank, setBank] = useState([]);
 
   const { id } = useParams();
+  const navigate = useNavigate();
 
   const { printTitle } = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg
@@ -116,13 +116,17 @@ function ThreeInchInvoiceSec() {
     removeAfterPrint: true,
   });
 
+  const handleNavigation = () => {
+    navigate(-1, { replace: true });
+  };
+
   return (
     <div>
       <div className=" nonPrintable-content bg-[#012a4a]   sticky top-0 p-3 px-5 text-white text-lg font-bold flex items-center gap-3  shadow-lg justify-between">
         <div className="flex gap-2 ">
-          <Link to={`/sUsers/InvoiceDetails/${id}`}>
-            <IoIosArrowRoundBack className="text-3xl" />
-          </Link>
+        <button onClick={handleNavigation}>
+              <IoIosArrowRoundBack className="text-3xl" />
+            </button> 
           <p>Share Your Order</p>
         </div>
         <div>
@@ -142,10 +146,8 @@ function ThreeInchInvoiceSec() {
           contentToPrint={contentToPrint}
           data={data}
           org={org}
-          // subTotal={subTotal}
           bank={bank}
-          // additinalCharge={additinalCharge}
-          // inWords={inWords}
+          tab={"saleOrder"}
           userType="secondaryUser"
         />
       </div>

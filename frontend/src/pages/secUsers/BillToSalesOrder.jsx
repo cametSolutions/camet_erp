@@ -17,6 +17,14 @@ function BillToSalesOrder() {
       dispatch(addNewAddress(formData));
       navigate(-1);
     };
+
+    const {configurations} = useSelector(
+      (state) => state.secSelectedOrganization.secSelectedOrg
+    );
+
+    // const ship to
+    const showShipTo=configurations[0]?.enableShipTo["saleOrder"]
+    
     
 
   return (
@@ -34,6 +42,7 @@ function BillToSalesOrder() {
           getFormData={submitFormData}
           newBillToShipTo={newBillToShipTo}
           partyDetails={partyDetails}
+          showShipTo={showShipTo}
         />
       </div>
     </div>

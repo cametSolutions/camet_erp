@@ -31,9 +31,11 @@ function SearchPartySalesSecondary() {
   };
 
   let url;
+  let pendingPartyList=false;
 
   if (location.pathname === "/sUsers/orderPending/partyList") {
     url = "/api/sUsers/PartyListWithOrderPending";
+    pendingPartyList=true
   } else {
     url = "/api/sUsers/PartyList";
   }
@@ -65,12 +67,16 @@ function SearchPartySalesSecondary() {
       navigate(`/sUsers/pendingOrders/${el?._id}`);
     } else {
       dispatch(addParty(el));
-      navigate(-1);
+      navigate(-1, { replace: true });
     }
   };
 
   const backHandler = () => {
-    navigate(-1, { replace: true });
+    if (location?.state?.from === "convertedSaleDetail") {
+      navigate("/sUsers/selectVouchers");
+    } else {
+      navigate(-1, { replace: true });
+    }
   };
 
   useEffect(() => {
@@ -92,6 +98,7 @@ function SearchPartySalesSecondary() {
         loading={loading}
         filteredParties={filteredParties}
         selectHandler={selectHandler}
+        pendingPartyList={pendingPartyList}
       />
     </div>
   );

@@ -338,11 +338,16 @@ export const PartyListWithOrderPending = async (req, res) => {
       partyModel.find({ cmp_id, Primary_user_id }).select(
         "_id partyName billingAddress shippingAddress mobileNumber gstNo emailID pin country state accountGroup"
       ),
-      invoiceModel.find({ 
-        cmp_id, 
+      invoiceModel.find({
+        cmp_id,
         Primary_user_id,
-        isCancelled: false 
-      }).select('party._id finalAmount')
+        isCancelled: false,
+        $or: [
+          { isConverted: false },
+          { isConverted: { $exists: false } },
+          { isConverted: null }
+        ]
+      }).select("party._id finalAmount")
     ]);
 
     if (partyList.length === 0) {
@@ -357,18 +362,20 @@ export const PartyListWithOrderPending = async (req, res) => {
       return acc;
     }, {});
 
-    // Attach order totals to party data
-    const partiesWithTotals = partyList.map(party => {
-      const partyId = party._id.toString();
-      return {
-        ...party.toObject(),
-        totalOutstanding: Number((partyTotals[partyId] || 0).toFixed(2))
-      };
-    });
+    // Attach order totals to party data and filter for totals > 0
+    const partiesWithTotals = partyList
+      .map((party) => {
+        const partyId = party._id.toString();
+        return {
+          ...party.toObject(),
+          totalOutstanding: Number((partyTotals[partyId] || 0).toFixed(2))
+        };
+      })
+      .filter((party) => party.totalOutstanding > 0);
 
     // Sort parties by total order amount in descending order
-    partiesWithTotals.sort((a, b) => 
-      parseFloat(b.totalOrderAmount) - parseFloat(a.totalOrderAmount)
+    partiesWithTotals.sort(
+      (a, b) => parseFloat(b.totalOutstanding) - parseFloat(a.totalOutstanding)
     );
 
     res.status(200).json({
@@ -376,7 +383,6 @@ export const PartyListWithOrderPending = async (req, res) => {
       partyList: partiesWithTotals,
       message: "Parties fetched successfully with order totals"
     });
-
   } catch (error) {
     console.error("Error in PartyList:", error.message);
     res.status(500).json({ success: false, message: "Internal server error" });

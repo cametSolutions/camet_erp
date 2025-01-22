@@ -5,11 +5,9 @@ import api from "../../api/api";
 import { useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import { MdPrint } from "react-icons/md";
-// import numberToWords from "number-to-words";
-import { Link } from "react-router-dom";
 import SalesThreeInchPdf from "../../components/common/SalesThreeInchPdf";
+import { useNavigate } from "react-router-dom";
 
-// import PrintButton from "../../components/common/buttons/PrintButton";
 
 function ThreeInchSalesSec() {
   const [data, setData] = useState([]);
@@ -23,7 +21,7 @@ function ThreeInchSalesSec() {
   const { id } = useParams();
 
   const contentToPrint = useRef(null);
-
+  const navigate=useNavigate(); 
 
   useEffect(() => {
     const getTransactionDetails = async () => {
@@ -58,7 +56,6 @@ function ThreeInchSalesSec() {
 
     getTransactionDetails();
   }, [id]);
-
 
   //  console.log(org?.configurations[0]?.terms);
 
@@ -114,13 +111,17 @@ function ThreeInchSalesSec() {
     removeAfterPrint: true,
   });
 
+  const handleNavigation = () => {
+    navigate(-1, { replace: true });
+  };
+
   return (
-    <div >
+    <div>
       <div className=" nonPrintable-content bg-[#012a4a]   sticky top-0 p-3 px-5 text-white text-lg font-bold flex items-center gap-3  shadow-lg justify-between">
         <div className="flex gap-2 ">
-          <Link to={`/sUsers/salesDetails/${id}`}>
+          <button onClick={handleNavigation}>
             <IoIosArrowRoundBack className="text-3xl" />
-          </Link>
+          </button>
           <p>Share Your Order</p>
         </div>
         <div>
@@ -142,11 +143,9 @@ function ThreeInchSalesSec() {
           bank={bank}
           // additinalCharge={additinalCharge}
           // inWords={inWords}
-          tab="sales"
-          
+          tab="sale"
         />
-      </div> 
-    
+      </div>
     </div>
   );
 }

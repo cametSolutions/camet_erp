@@ -337,9 +337,19 @@ export const transactions = async (req, res) => {
     endOfDayParam,
     party_id,
     selectedVoucher,
+    fullDetails = "false",
+    ignore = "" // New parameter for collections to ignore
   } = req.query;
 
+  let returnFullDetails = false;
+  if (fullDetails === "true") {
+    returnFullDetails = true;
+  }
+
   try {
+    // Parse ignore parameter - split by comma to handle multiple collections
+    const ignoredCollections = ignore.split(',').map(item => item.trim().toLowerCase());
+
     // Initialize dateFilter based on provided parameters
     let dateFilter = {};
     if (startOfDayParam && endOfDayParam) {
@@ -355,8 +365,8 @@ export const transactions = async (req, res) => {
       const today = new Date();
       dateFilter = {
         date: {
-          $gte:new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate(), 0, 0, 0, 0)),
-          $lte:  new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate(), 23, 59, 59, 999)),
+          $gte: new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate(), 0, 0, 0, 0)),
+          $lte: new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate(), 23, 59, 59, 999)),
         },
       };
     }
@@ -380,25 +390,13 @@ export const transactions = async (req, res) => {
         { model: vanSaleModel, type: "Van Sale", numberField: "salesNumber" },
       ],
       purchase: [
-        {
-          model: purchaseModel,
-          type: "Purchase",
-          numberField: "purchaseNumber",
-        },
+        { model: purchaseModel, type: "Purchase", numberField: "purchaseNumber" },
       ],
       debitNote: [
-        {
-          model: debitNoteModel,
-          type: "Debit Note",
-          numberField: "debitNoteNumber",
-        },
+        { model: debitNoteModel, type: "Debit Note", numberField: "debitNoteNumber" },
       ],
       creditNote: [
-        {
-          model: creditNoteModel,
-          type: "Credit Note",
-          numberField: "creditNoteNumber",
-        },
+        { model: creditNoteModel, type: "Credit Note", numberField: "creditNoteNumber" },
       ],
       receipt: [
         { model: receiptModel, type: "Receipt", numberField: "receiptNumber" },
@@ -407,50 +405,33 @@ export const transactions = async (req, res) => {
         { model: paymentModel, type: "Payment", numberField: "paymentNumber" },
       ],
       stockTransfer: [
-        {
-          model: stockTransferModel,
-          type: "Stock Transfer",
-          numberField: "stockTransferNumber",
-        },
+        { model: stockTransferModel, type: "Stock Transfer", numberField: "stockTransferNumber" },
       ],
       all: [
         { model: salesModel, type: "Tax Invoice", numberField: "salesNumber" },
         { model: invoiceModel, type: "Sale Order", numberField: "orderNumber" },
         { model: vanSaleModel, type: "Van Sale", numberField: "salesNumber" },
-        {
-          model: purchaseModel,
-          type: "Purchase",
-          numberField: "purchaseNumber",
-        },
-        {
-          model: debitNoteModel,
-          type: "Debit Note",
-          numberField: "debitNoteNumber",
-        },
-        {
-          model: creditNoteModel,
-          type: "Credit Note",
-          numberField: "creditNoteNumber",
-        },
+        { model: purchaseModel, type: "Purchase", numberField: "purchaseNumber" },
+        { model: debitNoteModel, type: "Debit Note", numberField: "debitNoteNumber" },
+        { model: creditNoteModel, type: "Credit Note", numberField: "creditNoteNumber" },
         { model: receiptModel, type: "Receipt", numberField: "receiptNumber" },
         { model: paymentModel, type: "Payment", numberField: "paymentNumber" },
-        {
-          model: stockTransferModel,
-          type: "Stock Transfer",
-          numberField: "stockTransferNumber",
-        },
+        { model: stockTransferModel, type: "Stock Transfer", numberField: "stockTransferNumber" },
       ],
     };
 
     // Get the appropriate models to query based on selectedVoucher
-    const modelsToQuery = selectedVoucher
-      ? voucherTypeMap[selectedVoucher]
-      : voucherTypeMap.all;
+    let modelsToQuery = selectedVoucher ? voucherTypeMap[selectedVoucher] : voucherTypeMap.all;
 
-    if (!modelsToQuery) {
+    // Filter out ignored collections
+    modelsToQuery = modelsToQuery.filter(({ type }) => 
+      !ignoredCollections.includes(type.toLowerCase().replace(/\s+/g, ''))
+    );
+
+    if (!modelsToQuery || modelsToQuery.length === 0) {
       return res.status(400).json({
         status: false,
-        message: "Invalid voucher type selected",
+        message: "Invalid voucher type selected or all collections ignored",
       });
     }
 
@@ -464,7 +445,8 @@ export const transactions = async (req, res) => {
             ...(userId ? { Secondary_user_id: userId } : {}),
           },
           type,
-          numberField
+          numberField,
+          returnFullDetails
         )
     );
 
@@ -475,7 +457,6 @@ export const transactions = async (req, res) => {
       .sort((a, b) => new Date(b.date) - new Date(a.date));
 
     const totalTransactionAmount = combined.reduce((sum, transaction) => {
-      // Convert to number and handle potential null/undefined values
       const amount = Number(transaction.enteredAmount) || 0;
       return sum + amount;
     }, 0);

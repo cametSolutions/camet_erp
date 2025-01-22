@@ -412,7 +412,7 @@ function EditInvoiceSecondary() {
 
       toast.success(res.data.message);
 
-      navigate(`/sUsers/InvoiceDetails/${res.data.data._id}`);
+      navigate(`/sUsers/InvoiceDetails/${res.data.data._id}`,{replace: true});
 
       dispatch(removeAll());
     } catch (error) {
@@ -436,7 +436,6 @@ function EditInvoiceSecondary() {
       <div className="flex-1 bg-slate-100    ">
         <TitleDiv
           title="Edit Sale Order"
-          from={`/sUsers/selectVouchers`}
           loading={loading || submitLoading}
         />
 

@@ -207,8 +207,12 @@ function SalesOrderPdf({
                 <th className="text-gray-700 font-bold uppercase p-2">Tax %</th>
               )}
 
-              <th className="text-gray-700 font-bold uppercase p-2">Qty</th>
-              <th className="text-gray-700 font-bold uppercase p-2">Rate</th>
+              {saleOrderConfiguration?.showQuantity && (
+                <th className="text-gray-700 font-bold uppercase p-2">Qty</th>
+              )}
+              {saleOrderConfiguration?.showRate && (
+                <th className="text-gray-700 font-bold uppercase p-2">Rate</th>
+              )}
               {saleOrderConfiguration?.showDiscount &&
                 saleOrderConfiguration?.showDiscountAmount && (
                   <th className="text-gray-700 font-bold uppercase p-2">
@@ -224,9 +228,11 @@ function SalesOrderPdf({
               {saleOrderConfiguration?.showStockWiseTaxAmount && (
                 <th className="text-gray-700 font-bold uppercase p-2">Tax</th>
               )}
-              <th className="text-gray-700 font-bold uppercase p-2 pr-0 ">
-                Amount
-              </th>
+              {saleOrderConfiguration?.showStockWiseAmount && (
+                <th className="text-gray-700 font-bold uppercase p-2 pr-0 ">
+                  Amount
+                </th>
+              )}
             </tr>
           </thead>
 
@@ -285,12 +291,16 @@ function SalesOrderPdf({
                         {el?.igst || "0"}
                       </td>
                     )}
-                    <td className="py-1 text-black text-right pr-2">
-                      {count} {el?.unit?.split("-")[0]}
-                    </td>
-                    <td className="py-1 text-black text-right pr-2 text-nowrap">
-                      {rate}
-                    </td>
+                    {saleOrderConfiguration?.showQuantity && (
+                      <td className=" text-black text-right pr-2 font-bold">
+                        {el?.count} {el?.unit.split("-")[0]}
+                      </td>
+                    )}
+                    {saleOrderConfiguration?.showRate && (
+                      <td className="py-1 text-black text-right pr-2 text-nowrap">
+                        {rate}
+                      </td>
+                    )}
 
                     {saleOrderConfiguration?.showDiscount &&
                       saleOrderConfiguration?.showDiscountAmount && (
@@ -311,11 +321,12 @@ function SalesOrderPdf({
                         {el?.igstAmt}
                       </td>
                     )}
-
-                    <td className="py-1 text-black w-full text-right">
-                      {" "}
-                      {finalAmt}
-                    </td>
+                    {saleOrderConfiguration?.showStockWiseAmount && (
+                      <td className="py-1 text-black w-full text-right">
+                        {" "}
+                        {finalAmt}
+                      </td>
+                    )}
                   </tr>
                 );
               })}
@@ -324,36 +335,40 @@ function SalesOrderPdf({
           <tfoot className="">
             <tr className="bg-gray-200  border-black border-y ">
               <td className="font-bold"></td>
-
-              <td className="font-bold text-[9px] p-2">Subtotal</td>
-
+              {saleOrderConfiguration?.showStockWiseAmount ? (
+                <td className="font-bold text-[9px] p-2">Subtotal</td>
+              ) : (
+                <td className="font-bold text-[9px] p-2"></td>
+              )}{" "}
               {saleOrderConfiguration?.showHsn && (
                 <td className="font-bold"></td>
               )}
               {saleOrderConfiguration?.showTaxPercentage && (
                 <td className="font-bold"></td>
               )}
-              <td className="text-black text-[9px] ">
-                <p className="text-right pr-1 font-bold">
-                  {calculateTotalQunatity()}/unit
-                </p>{" "}
-              </td>
-
-              <td className="font-bold"></td>
-
+              {saleOrderConfiguration?.showQuantity && (
+                <td className="text-black text-[9px] ">
+                  <p className="text-right pr-1 font-bold">
+                    {calculateTotalQunatity()}/unit
+                  </p>{" "}
+                </td>
+              )}
+              {saleOrderConfiguration?.showRate && (
+                <td className="font-bold text-[9px] p-2"></td>
+              )}
               {saleOrderConfiguration?.showDiscount && (
                 <td className="text-right pr-1 text-black font-bold text-[9px]"></td>
               )}
-
-              {saleOrderConfiguration?.showStockWiseTaxAmount &&  (
-              <td className="text-right pr-1 text-black font-bold text-[9px]">
-                {calculateTotalTax()}
-              </td>
-               )} 
-
-              <td className="text-right pr-1 text-black font-bold text-[9px]">
-                {subTotal}
-              </td>
+              {saleOrderConfiguration?.showStockWiseTaxAmount && (
+                <td className="text-right pr-1 text-black font-bold text-[9px]">
+                  {calculateTotalTax()}
+                </td>
+              )}
+              {saleOrderConfiguration?.showStockWiseAmount && (
+                <td className="text-right pr-1 text-black font-bold text-[9px]">
+                  {subTotal}
+                </td>
+              )}
             </tr>
           </tfoot>
         </table>

@@ -4,6 +4,7 @@ const initialState = {
   // selectedGodownName:"",
   // selectedGodownId:"",
   date: "",
+  convertedFrom: [],
   products: [],
   party: {},
   items: [],
@@ -165,13 +166,13 @@ export const salesSecondarySlice = createSlice({
 
     addItem: (state, action) => {
       const { payload, moveToTop } = action.payload;
-    
-      const index = state.items.findIndex((el) => el._id === payload._id);
-    
+
+      const index = state.items.findIndex((el) => el?._id === payload?._id);
+
       if (index !== -1) {
         // If the item already exists, update it
         state.items[index] = payload;
-    
+
         if (moveToTop) {
           // Remove the item from its current position and move it to the top
           const [updatedItem] = state.items.splice(index, 1);
@@ -186,7 +187,6 @@ export const salesSecondarySlice = createSlice({
         }
       }
     },
-    
 
     // updateItem: (state, actions) => {
     //   const index = state.items.findIndex(
@@ -197,14 +197,15 @@ export const salesSecondarySlice = createSlice({
     //   }
     // },
     updateItem: (state, actions) => {
-      const {item,moveToTop=false} = actions.payload
-      console.log("item",item);
-      
-      console.log("mocveToTop",moveToTop);
-      
-      const index = state.items.findIndex(
-        (el) => el._id === item._id
-      );
+      const { item, moveToTop = false } = actions.payload;
+      console.log("item", item);
+
+      console.log("mocveToTop", moveToTop);
+
+      const index = state.items.findIndex((el) => el?._id === item?._id);
+
+      console.log("index", index);
+
       if (index !== -1) {
         state.items[index] = item;
 
@@ -212,7 +213,7 @@ export const salesSecondarySlice = createSlice({
           // Remove the item from its current position and move it to the top
           const [updatedItem] = state.items.splice(index, 1);
           console.log("updatedItem", updatedItem);
-          
+
           state.items.unshift(updatedItem);
         }
       }
@@ -298,16 +299,38 @@ export const salesSecondarySlice = createSlice({
                 godown.selectedPriceRate * godown.count + taxAmount
             }
           }
-        })
+
+        });
 
         item.total = item.GodownList.reduce((acc, curr) => {
-          const individualTotal = parseFloat(curr?.individualTotal) || 0
-          return acc + individualTotal
-        }, 0)
+          const individualTotal = parseFloat(curr?.individualTotal) || 0;
+          return acc + individualTotal;
+        }, 0);
       }
-    }
-  }
-})
+    },
+
+    addOrderConversionDetails: (state, action) => {
+      const {
+        party,
+        items,
+        additionalCharges,
+        convertedFrom,
+        despatchDetails,
+      } = action.payload;
+
+      state.items = items;
+      state.party = party;
+      state.additionalCharges = additionalCharges;
+      state.convertedFrom = convertedFrom;
+      state.despatchDetails = despatchDetails;
+    },
+
+    addConvertedFrom: (state, action) => {
+      state.convertedFrom = action.payload;
+    },
+  },
+});
+
 
 // Action creators are generated for each case reducer function
 export const {
@@ -345,7 +368,10 @@ export const {
   addNewAddress,
   addDespatchDetails,
   changeDate,
-  changeTaxInclusive
-} = salesSecondarySlice.actions
+
+  changeTaxInclusive,
+  addOrderConversionDetails,
+  addConvertedFrom,
+} = salesSecondarySlice.actions;
 
 export default salesSecondarySlice.reducer

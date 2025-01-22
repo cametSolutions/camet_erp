@@ -160,6 +160,46 @@ const SaleOrderPrintConfiguration = () => {
           toggleValue: data.showBankDetails,
           dbField: "showBankDetails",
         },
+        {
+          title: "Enable Rate ",
+          description: "Enable rate for product",
+          icon: <MdOutlineAttachMoney />,
+          to: "/sUsers/EnableTaxAmount",
+          active: true,
+          toggle: true,
+          toggleValue: data.showRate,
+          dbField: "showRate",
+        },
+        {
+          title: "Enable Quantity ",
+          description: "Enable quantity for product",
+          icon: <MdOutlineAttachMoney />,
+          to: "/sUsers/EnableTaxAmount",
+          active: true,
+          toggle: true,
+          toggleValue: data.showQuantity,
+          dbField: "showQuantity",
+        },
+        {
+          title: "Enable Stock Wise Amount  ",
+          description: "Enable stock wise amount for product",
+          icon: <MdOutlineAttachMoney />,
+          to: "/sUsers/EnableTaxAmount",
+          active: true,
+          toggle: true,
+          toggleValue: data.showStockWiseAmount,
+          dbField: "showStockWiseAmount",
+        },
+        {
+          title: "Enable NET Amount",
+          description: "Enable net amount for product",
+          icon: <MdOutlineAttachMoney />,
+          to: "/sUsers/EnableTaxAmount",
+          active: true,
+          toggle: true,
+          toggleValue: data.showNetAmount,
+          dbField: "showNetAmount",
+        },
        
       ]);
     }
@@ -184,7 +224,6 @@ const SaleOrderPrintConfiguration = () => {
         }
       );
       dispatch(updateConfiguration(res?.data?.data));
-      localStorage.setItem("secOrg", JSON.stringify(res.data.data));
 
       refreshHook();
     } catch (error) {

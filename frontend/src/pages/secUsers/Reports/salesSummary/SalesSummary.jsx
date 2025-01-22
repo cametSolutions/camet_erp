@@ -1341,6 +1341,7 @@ function SalesSummary() {
               <SelectDate />
             </section>
 
+
             {Loading && (
               <section className="w-full">
                 <BarLoader color="#9900ff" width="100%" />
@@ -1416,6 +1417,7 @@ function SalesSummary() {
       )}
     </>
   )
+
 }
 
 export default SalesSummary

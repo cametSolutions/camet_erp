@@ -21,7 +21,7 @@ function AddPartyForm({ submitHandler, partyDetails = {}, userType }) {
   const [openingBalanceType, setOpeningBalanceType] = useState("");
   const [openingBalanceAmount, setOpeningBalanceAmount] = useState("");
   const [country, setCountry] = useState("India");
-  const [state, setState] = useState("");
+  const [state, setState] = useState("Kerala");
   const [pin, setPin] = useState("");
 
   const primarySelectedOrg = useSelector(
@@ -76,13 +76,13 @@ function AddPartyForm({ submitHandler, partyDetails = {}, userType }) {
   }, [partyDetails]);
 
   const submitForm = async () => {
-    let accGroupValidation = false;
-    if (
-      accountGroup === "Sundry Creditors" ||
-      accountGroup === "Sundry Debtors"
-    ) {
-      accGroupValidation = true;
-    }
+    // let accGroupValidation = false;
+    // if (
+    //   accountGroup === "Sundry Creditors" ||
+    //   accountGroup === "Sundry Debtors"
+    // ) {
+    //   accGroupValidation = true;
+    // }
     if (
       [
         accountGroup,
@@ -99,16 +99,16 @@ function AddPartyForm({ submitHandler, partyDetails = {}, userType }) {
       return;
     }
 
-    if (accGroupValidation && (!emailID || !mobileNumber)) {
-      toast.error(
-        "Email ID and Mobile Number are required when Account Group is Sundry Creditors or Sundry Debtors"
-      );
-      return;
-    }
+    // if (accGroupValidation && (!emailID || !mobileNumber)) {
+    //   toast.error(
+    //     "Email ID and Mobile Number are required when Account Group is Sundry Creditors or Sundry Debtors"
+    //   );
+    //   return;
+    // }
 
 
     
-    if (selectedOrganization?.country === "India" && !/^\d{10}$/.test(mobileNumber)) {
+    if (selectedOrganization?.country === "India" && mobileNumber &&  !/^\d{10}$/.test(mobileNumber)) {
       toast.error("Mobile number must be 10 digits");
       return;
     }

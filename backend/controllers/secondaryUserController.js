@@ -763,8 +763,8 @@ export const getProducts = async (req, res) => {
 
   try {
     const secUser = await SecondaryUser.findById(Secondary_user_id);
-    const company = await OragnizationModel.findById(cmp_id);
-    const isTaxInclusive = company.configurations[0]?.taxInclusive || false;
+    // const company = await OragnizationModel.findById(cmp_id);
+    // const isTaxInclusive = company.configurations[0]?.taxInclusive || false;
 
     if (!secUser) {
       return res.status(404).json({ message: "Secondary user not found" });
@@ -903,10 +903,10 @@ export const getProducts = async (req, res) => {
     ];
 
     // Conditionally add taxInclusive stage
-    if (taxInclusive && isTaxInclusive) {
+    if (taxInclusive ) {
       const addTaxInclusiveStage = {
         $addFields: {
-          isTaxInclusive: isTaxInclusive,
+          isTaxInclusive: true,
         },
       };
       aggregationPipeline.push(addTaxInclusiveStage);

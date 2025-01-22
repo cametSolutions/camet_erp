@@ -12,6 +12,8 @@ import {
   updateOutstandingBalance,
   saveSettlementData,
   revertSettlementData,
+  changeConversionStatusOfOrder,
+  reverseConversionStatusOfOrder,
 } from "../helpers/salesHelper.js";
 import secondaryUserModel from "../models/secondaryUserModel.js";
 import salesModel from "../models/salesModel.js";
@@ -37,7 +39,8 @@ export const createSale = async (req, res) => {
       party,
       lastAmount,
       paymentSplittingData,
-      selectedDate
+      selectedDate,
+      convertedFrom = [],
     } = req.body;
 
     const Secondary_user_id = req.sUserId;
@@ -101,6 +104,9 @@ export const createSale = async (req, res) => {
       updateAdditionalCharge,
       session // Pass session
     );
+
+    /// add conversion status in sale order if the sale is converted from order
+    if(convertedFrom.length > 0) await changeConversionStatusOfOrder(convertedFrom, session);
 
     let valueToUpdateInTally = 0;
 
@@ -239,13 +245,6 @@ export const editSale = async (req, res) => {
       );
       await handleSaleStockUpdates(updatedItems, false, session);
 
-
-  
-
-
-   
-      
-
       const updateData = {
         selectedGodownId: selectedGodownId || existingSale.selectedGodownId,
         selectedGodownName: selectedGodownName
@@ -263,7 +262,7 @@ export const editSale = async (req, res) => {
         Primary_user_id: req.owner,
         Secondary_user_id: req.secondaryUserId,
         salesNumber: salesNumber,
-        date:await formatToLocalDate(selectedDate, orgId, session),
+        date: await formatToLocalDate(selectedDate, orgId, session),
         createdAt: existingSale.createdAt,
         paymentSplittingData,
       };
@@ -423,7 +422,6 @@ export const editSale = async (req, res) => {
       return res
         .status(200)
         .json({ success: true, message: "Sale edited successfully" });
-
     } catch (error) {
       await session.abortTransaction();
       console.error("Error editing sale:", error);
@@ -481,6 +479,8 @@ export const cancelSale = async (req, res) => {
     // Revert stock updates
     await revertSaleStockUpdates(sale.items, session); // Ensure stock updates use session
 
+
+
     // Update sale status
     sale.isCancelled = true;
     await (vanSaleQuery === "true"
@@ -511,6 +511,13 @@ export const cancelSale = async (req, res) => {
       sale?._id.toString(),
       session
     );
+
+
+    /// if sale is created from order conversion then revert it
+
+    if(sale?.convertedFrom.length > 0){
+      await reverseConversionStatusOfOrder(sale?.convertedFrom, session);
+    }
 
     //// revert payment splitting data in sources
 

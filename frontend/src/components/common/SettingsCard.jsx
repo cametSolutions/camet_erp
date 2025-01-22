@@ -7,13 +7,8 @@ function SettingsCard({
   option,
   index,
   modalHandler = () => {},
-  // type,
-  // cmp_id,
-  // refreshHook,
-  // voucher,
   handleToggleChangeFromParent = () => {},
 }) {
-
   const navigate = useNavigate();
 
   const handleNavigate = (option) => {
@@ -31,6 +26,8 @@ function SettingsCard({
   };
 
   const handleToggleChange = async (newState) => {
+    console.log(newState);
+
     handleToggleChangeFromParent(newState);
   };
 

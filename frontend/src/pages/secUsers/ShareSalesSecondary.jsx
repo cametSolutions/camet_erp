@@ -4,8 +4,8 @@ import api from "../../api/api";
 import { useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 
-import { Link } from "react-router-dom";
 import SalesPdf from "../../components/pdf/sales/SalesPdf";
+import { useNavigate } from "react-router-dom";
 
 import ShareModal from "./settilngs/dataEntry/modals/ShareModal";
 import { IoShareSocial } from "react-icons/io5";
@@ -24,8 +24,8 @@ function ShareSalesSecondary() {
       (state) => state.secSelectedOrganization.secSelectedOrg.country
     ) === "India";
 
-
   const contentToPrint = useRef(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const getTransactionDetails = async () => {
@@ -61,14 +61,18 @@ function ShareSalesSecondary() {
     getTransactionDetails();
   }, [id]);
 
+  const handleNavigation = () => {
+    navigate(-1, { replace: true });
+  };
+
   return (
     <div className="">
       <div className="">
         <div className="bg-[#012a4a]   sticky top-0 p-3 px-5 text-white text-lg font-bold flex items-center gap-3  shadow-lg justify-between">
           <div className="flex gap-2 ">
-            <Link to={`/sUsers/salesDetails/${id}`}>
+            <button onClick={handleNavigation}>
               <IoIosArrowRoundBack className="text-3xl" />
-            </Link>
+            </button>
             <p>Share Your Sale</p>
           </div>
           <div className="flex">

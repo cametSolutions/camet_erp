@@ -17,13 +17,18 @@ function PartyList({
   loading,
   filteredParties,
   selectHandler,
-  filter = false
+  filter = false,
+  pendingPartyList = false,
 }) {
   const location = useLocation();
   const navigate = useNavigate();
 
   const clickHandler = () => {
-    navigate("/sUsers/addParty", { state: { from: location.pathname } });
+    if (pendingPartyList) {
+      navigate(`/sUsers/invoice`,{  state:{from:location.pathname}});
+    } else {
+      navigate("/sUsers/addParty", { state: { from: location.pathname } });
+    }
   };
 
   return (
@@ -43,7 +48,7 @@ function PartyList({
               className="flex items-center gap-2 text-white bg-[#40679E] px-2 py-1 rounded-md text-xs hover:scale-105 duration-100 ease-in-out"
             >
               <IoIosAddCircle className="text-xl" />
-              Add Customers
+              {pendingPartyList ? "Add Orders" : "Add Customer"}
             </button>
           </div>
         </div>

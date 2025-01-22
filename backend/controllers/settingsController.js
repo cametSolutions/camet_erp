@@ -1,5 +1,6 @@
 import barcodeModel from "../models/barcodeModel.js";
 import OragnizationModel from "../models/OragnizationModel.js";
+import { updateDateFieldsByCompany } from "./testingController.js";
 
 /**
  * @desc  add email configuration for a company
@@ -580,5 +581,176 @@ export const updateTermsAndConditions = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
+
+/**
+ * @description Update bank account details of a company
+ * @route PUT /api/settings/updateBankAccount/:cmp_id
+ * @access Private
+ */
+export const updateBankAccount = async (req, res) => {
+  const cmp_id = req?.params?.cmp_id;
+
+  const { bankAccount } = req.body;
+
+  try {
+    const updatedCompany = await OragnizationModel.findOneAndUpdate(
+      { _id: cmp_id },
+      {
+        $set: {
+          "configurations.0.bank": bankAccount,
+        },
+      },
+      { new: true }
+    );
+    if (!updatedCompany) {
+      return res.status(404).json({
+        success: false,
+        message: "Failed to update bank account",
+      });
+    }
+    res.status(200).json({
+      success: true,
+      message: "Bank account updated successfully",
+      data: updatedCompany,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
+
+/**
+ * @description Update tax configuration of a company
+ * @param {string} cmp_id Company ID
+ * @param {string} voucher Voucher type (sale or saleOrder)
+ * @param {boolean} value New value for addRateWithTax
+ * @returns {object} Updated company configuration
+ * @route PUT /api/settings/updateTaxConfiguration/:cmp_id?voucher={sale|saleOrder}
+ * @access Private
+ */
+export const updateTaxConfiguration = async (req, res) => {
+  try {
+    const cmp_id = req?.params?.cmp_id;
+    const voucher = req.query.voucher || "";
+    const { addRateWithTax: value } = req.body; // Expecting a boolean value
+
+
+    console.log("value",value);
+    
+
+    // Validate inputs
+    if (!cmp_id || !voucher) {
+      return res.status(400).json({
+        message: "Company ID and voucher type are required",
+      });
+    }
+
+    if (typeof value !== "boolean") {
+      return res.status(400).json({
+        message: "Value must be a boolean (true/false)",
+      });
+    }
+
+    // Find company and update configuration
+    const company = await OragnizationModel.findById(cmp_id);
+    if (!company) {
+      return res.status(404).json({ message: "Company not found" });
+    }
+
+    // Ensure configurations array exists and has at least one element
+    if (!company.configurations || company.configurations.length === 0) {
+      company.configurations = [{}];
+    }
+
+    // Initialize addRateWithTax if it doesn't exist
+    if (!company.configurations[0].addRateWithTax) {
+      company.configurations[0].addRateWithTax = {
+        sale: false,
+        saleOrder: false,
+      };
+    }
+
+    company.configurations[0].addRateWithTax = {
+      ...company.configurations[0].addRateWithTax,
+      [voucher]: value,
+    };
+
+    // console.log("company.configurations[0].addRateWithTax", company.configurations[0].addRateWithTax);
+
+    // Save the updated company
+    await company.save();
+
+    return res.status(200).json({
+      message: "Tax configuration updated successfully",
+      updatedConfig: company,
+    });
+  } catch (error) {
+    console.error("Error updating tax configuration:", error);
+    return res.status(500).json({
+      message: "Internal server error",
+      error: error.message,
+    });
+  }
+};
+
+export const updateShipToConfiguration = async (req, res) => {
+  try {
+    const cmp_id = req?.params?.cmp_id;
+    const voucher = req.query.voucher || "";
+    const { enableShipTo: value } = req.body; // Expecting a boolean value
+
+    // Validate inputs
+    if (!cmp_id || !voucher) {
+      return res.status(400).json({
+        message: "Company ID and voucher type are required",
+      });
+    }
+
+    if (typeof value !== "boolean") {
+      return res.status(400).json({
+        message: "Value must be a boolean (true/false)",
+      });
+    }
+
+    // Find company and update configuration
+    const company = await OragnizationModel.findById(cmp_id);
+    if (!company) {
+      return res.status(404).json({ message: "Company not found" });
+    }
+
+    // Ensure configurations array exists and has at least one element
+    if (!company.configurations || company.configurations.length === 0) {
+      company.configurations = [{}];
+    }
+
+    // Initialize enableShipTo if it doesn't exist
+    if (!company.configurations[0].enableShipTo) {
+      company.configurations[0].enableShipTo = {
+        sale: false,
+        saleOrder: false,
+      };
+    }
+
+    company.configurations[0].enableShipTo = {
+      ...company.configurations[0].enableShipTo,
+      [voucher]: value,
+    };
+
+
+    // Save the updated company
+    await company.save();
+
+    return res.status(200).json({
+      message: "Address  configuration updated successfully",
+      updatedConfig: company,
+    });
+  } catch (error) {
+    console.error("Error updating address configuration:", error);
+    return res.status(500).json({
+      message: "Internal server error",
+      error: error.message,
+    });
   }
 };

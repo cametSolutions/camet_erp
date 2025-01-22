@@ -35,15 +35,12 @@ function EditItemForm({
   const selectedGodown = selectedItem[0]?.GodownList[index];
 
   useEffect(() => {
-
-    
     setItem(selectedItem[0]);
 
     if (selectedItem[0]?.hasGodownOrBatch) {
       setNewPrice(selectedGodown?.selectedPriceRate || 0);
 
       setQuantity(selectedGodown?.count || 1);
-
 
       if (selectedGodown?.discountType === "amount") {
         setDiscount(selectedGodown?.discount);
@@ -61,7 +58,6 @@ function EditItemForm({
       setNewPrice(selectedItem[0]?.GodownList[0]?.selectedPriceRate || 0);
 
       setQuantity(selectedItem[0]?.count || 1);
-     
 
       if (selectedItem[0]?.discountType === "amount") {
         setDiscount(selectedItem[0]?.discount);
@@ -78,11 +74,13 @@ function EditItemForm({
     }
     setUnit(selectedItem[0]?.unit);
     setIgst(selectedItem[0]?.igst);
-    setIsTaxInclusive(selectedItem[0]?.isTaxInclusive);
-
+    if (taxInclusive) {
+      
+      setIsTaxInclusive(selectedItem[0]?.isTaxInclusive);
+    }
   }, [selectedItem[0]]);
 
-
+  console.log(isTaxInclusive);
 
   useEffect(() => {
     // Ensure all inputs are properly parsed
@@ -116,7 +114,6 @@ function EditItemForm({
           ((discountValue / 100) * taxExclusivePrice)?.toFixed(2) // Calculate amount
         );
       }
-
 
       const discountedPrice = Number(
         (taxBasePrice - calculatedDiscountAmount)?.toFixed(2)
@@ -181,6 +178,7 @@ function EditItemForm({
     discountPercentage,
     taxExclusivePrice,
   ]);
+
   const handleBackClick = () => {
     navigate(-1);
   };
@@ -210,10 +208,12 @@ function EditItemForm({
       discountPercentage,
       type,
       igst,
-      isTaxInclusive,
+      isTaxInclusive
       // taxAmount
     );
   };
+
+  console.log(isTaxInclusive);
 
   return (
     <div className=" ">

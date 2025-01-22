@@ -29,6 +29,13 @@ function VoucherDetailsHeader({
       );
       return;
     }
+
+    if (data?.isConverted !== undefined && data?.isConverted === true) {
+      window.alert(
+        "You can't edit this voucher since it has been  converted to sales"
+      );
+      return;
+    }
     navigate(editLink);
   };
 
@@ -60,6 +67,7 @@ function VoucherDetailsHeader({
                     isCancelled={data?.isCancelled}
                     reFetch={reFetch}
                     isEditable={data?.isEditable}
+                    isConverted={data?.isConverted}
                   />
 
                   <div
