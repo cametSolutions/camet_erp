@@ -1,9 +1,7 @@
 import { useEffect, useMemo, useState } from "react"
-import { Link } from "react-router-dom"
 import TitleDiv from "../../../../components/common/TitleDiv"
 import FindUserAndCompany from "../../../../components/Filters/FindUserAndCompany"
 import SummmaryDropdown from "../../../../components/Filters/SummaryDropdown"
-import SaleSummaryTable from "./saleSummaryTable"
 import SelectDate from "../../../../components/Filters/SelectDate"
 
 import { useSelector } from "react-redux"
@@ -22,9 +20,7 @@ function SalesSummary() {
   const [selectedIndex, setSelectedIndex] = useState(null)
   const [datasummary, setdataSummary] = useState([])
 
-  // const location = useLocation();
-
-  const { accGroup } = useParams()
+ 
 
   const { start, end } = useSelector((state) => state.date)
   const { _id: partyID } = useSelector(
