@@ -1,5 +1,7 @@
 // /* eslint-disable no-unused-vars */
 /* eslint-disable no-prototype-builtins */
+
+//  corrected
 import { useEffect, useMemo, useState } from "react";
 import TitleDiv from "../../../../components/common/TitleDiv";
 import FindUserAndCompany from "../../../../components/Filters/FindUserAndCompany";
@@ -64,47 +66,46 @@ function SalesSummary() {
   //   setShowDetails(false) // Hide details page and go back
   // }
 
-  function calculateTaxAndPrice(item, items, isTaxInclusive) {
-    let pamount, ptax;
-    if (isTaxInclusive) {
-      pamount = (
-        (items?.selectedPriceRate * items?.count) /
-        (1 + item?.igst / 100)
-      ).toFixed(2);
-      
-      const discountedPrice = Number(
-        (pamount - (items?.discount || 0))?.toFixed(2)
-      );
-      ptax = ((discountedPrice * item?.igst) / 100).toFixed(2);
-    } else {
-      pamount = items.selectedPriceRate * items?.count;
-      const discountedPrice = Number(
-        (pamount - (items?.discount || 0))?.toFixed(2)
-      );
-      ptax = (item?.igst / 100) * discountedPrice;
-    }
-    
-    return { pamount, ptax };
-  }
+  // function calculateTaxAndPrice(item, items, isTaxInclusive) {
+  //   let pamount, ptax;
+  //   if (isTaxInclusive) {
+  //     pamount = (
+  //       (items?.selectedPriceRate * items?.count) /
+  //       (1 + item?.igst / 100)
+  //     ).toFixed(2);
 
+  //     const discountedPrice = Number(
+  //       (pamount - (items?.discount || 0))?.toFixed(2)
+  //     );
+  //     ptax = ((discountedPrice * item?.igst) / 100).toFixed(2);
+  //   } else {
+  //     pamount = items.selectedPriceRate * items?.count;
+  //     const discountedPrice = Number(
+  //       (pamount - (items?.discount || 0))?.toFixed(2)
+  //     );
+  //     ptax = (item?.igst / 100) * discountedPrice;
+  //   }
 
-  function createSaleEntry(item, it, items, pamount, ptax) {
-    return {
-      billnumber: item?.salesNumber,
-      billDate: item?.date,
-      itemName: it?.product_name,
-      batch: items?.batch || "",
-      groupName: it?.brand?.name,
-      categoryName: it?.category.name,
-      quantity: items?.count,
-      rate: items?.selectedPriceRate,
-      discount: items?.discount,
-      taxPercentage: it?.igst,
-      taxAmount: ptax,
-      netAmount: items?.individualTotal,
-      amount: pamount,
-    };
-  }
+  //   return { pamount, ptax };
+  // }
+
+  // function createSaleEntry(item, it, items, pamount, ptax) {
+  //   return {
+  //     billnumber: item?.salesNumber,
+  //     billDate: item?.date,
+  //     itemName: it?.product_name,
+  //     batch: items?.batch || "",
+  //     groupName: it?.brand?.name,
+  //     categoryName: it?.category.name,
+  //     quantity: items?.count,
+  //     rate: items?.selectedPriceRate,
+  //     discount: items?.discount,
+  //     taxPercentage: it?.igst,
+  //     taxAmount: ptax,
+  //     netAmount: items?.individualTotal,
+  //     amount: pamount,
+  //   };
+  // }
 
   const handleLedger = (option) => {
     setSelectedOption(option);
@@ -123,49 +124,76 @@ function SalesSummary() {
                 it.GodownList.every((item) => item.godown_id) && // Check all have godown_id
                 it.GodownList.every((item) => !item.hasOwnProperty("batch")) // Ensure no item has batch
               ) {
-                const godown = it.GodownList.reduce((acc, items) => {
+                // Initialize aggregation variables
+                const aggregation = {
+                  totalQuantity: 0,
+                  totalDiscount: 0,
+                  totalIndividualTotal: 0,
+                  totalBasePrice: 0,
+                  totalTaxAmount: 0,
+                  rate: 0,
+                };
+
+                it.GodownList.forEach((items) => {
                   if (items.added) {
-                    if (Object.keys(acc).length > 0) {
-                      // Update the existing object's values
-                      acc.quantity += items?.count;
-                      acc.discount += items?.discount;
-                      acc.netAmount += items?.individualTotal;
-                      acc.taxAmount += items?.igstAmt;
-                      existingParty.saleAmount += items?.individualTotal;
-                    } else {
-                      let pamount;
-                      let ptax;
-                      if (it.isTaxInclusive) {
-                        pamount = (
+                    // Sum quantity, discount, and individual total
+                    aggregation.totalQuantity += items?.count || 0;
+                    aggregation.totalDiscount += items?.discount || 0;
+                    aggregation.totalIndividualTotal +=
+                      items?.individualTotal || 0;
+                    aggregation.rate = items?.selectedPriceRate;
+
+                    // Calculate base price
+                    let basePrice, taxAmount;
+                    if (it.isTaxInclusive) {
+                      basePrice = Number(
+                        (
                           (items?.selectedPriceRate * items?.count) /
                           (1 + it?.igst / 100)
-                        ).toFixed(2);
-                        ptax = ((pamount * it.igst) / 100).toFixed(2);
-                      } else {
-                        pamount = items.selectedPriceRate * items?.count;
-                        ptax = (it?.igst / 100) * pamount;
-                      }
-                      // Populate the object for the first time
-                      Object.assign(acc, {
-                        billnumber: item?.salesNumber,
-                        billDate: item?.date,
-                        itemName: it?.product_name,
-                        groupName: it?.brand?.name,
-                        categoryName: it.category?.name,
-                        quantity: items?.count,
-                        rate: items?.selectedPriceRate,
-                        discount: items?.discount,
-                        taxPercentage: it?.igst,
-                        taxAmount: ptax,
-                        netAmount: items?.individualTotal,
-                        amount: pamount,
-                      });
-                      existingParty.saleAmount += items?.individualTotal;
+                        ).toFixed(2)
+                      );
+
+                      const discountedPrice = Number(
+                        (basePrice - (items?.discount || 0)).toFixed(2)
+                      );
+
+                      taxAmount = Number(
+                        ((discountedPrice * it.igst) / 100).toFixed(2)
+                      );
+                    } else {
+                      basePrice = items.selectedPriceRate * items?.count;
+
+                      const discountedPrice = Number(
+                        (basePrice - (items?.discount || 0)).toFixed(2)
+                      );
+
+                      taxAmount = Number(
+                        ((discountedPrice * it.igst) / 100).toFixed(2)
+                      );
                     }
+
+                    // Sum base price and tax amount
+                    aggregation.totalBasePrice += basePrice;
+                    aggregation.totalTaxAmount += taxAmount;
                   }
-                  return acc;
-                }, {});
-                existingParty.sale.push(godown);
+                });
+
+                // Use aggregation results as needed
+                existingParty.sale.push({
+                  billnumber: item.salesNumber,
+                  billDate: item.date,
+                  itemName: it.product_name,
+                  batch: "",
+                  groupName: it.brand?.name,
+                  categoryName: it?.category.name,
+                  quantity: aggregation.totalQuantity,
+                  rate: aggregation.rate,
+                  discount: aggregation.totalDiscount,
+                  taxPercentage: it.igst,
+                  taxAmount: aggregation.totalTaxAmount,
+                  netAmount: aggregation.totalIndividualTotal,
+                  amount: aggregation.totalBasePrice,
+                });
               } else {
                 const a = it.GodownList.map((items) => {
                   if (items.added) {
@@ -267,6 +295,7 @@ function SalesSummary() {
                   totalIndividualTotal: 0,
                   totalBasePrice: 0,
                   totalTaxAmount: 0,
+                  rate: 0,
                 };
 
                 it.GodownList.forEach((items) => {
@@ -276,6 +305,7 @@ function SalesSummary() {
                     aggregation.totalDiscount += items?.discount || 0;
                     aggregation.totalIndividualTotal +=
                       items?.individualTotal || 0;
+                    aggregation.rate = items?.selectedPriceRate;
 
                     // Calculate base price
                     let basePrice, taxAmount;
@@ -313,7 +343,6 @@ function SalesSummary() {
                 });
 
                 // Use aggregation results as needed
-                object.saleAmount += aggregation.totalIndividualTotal;
                 object.sale.push({
                   billnumber: item.salesNumber,
                   billDate: item.date,
@@ -322,7 +351,7 @@ function SalesSummary() {
                   groupName: it.brand?.name,
                   categoryName: it?.category.name,
                   quantity: aggregation.totalQuantity,
-                  rate: "",
+                  rate: aggregation.rate,
                   discount: aggregation.totalDiscount,
                   taxPercentage: it.igst,
                   taxAmount: aggregation.totalTaxAmount,
@@ -331,23 +360,20 @@ function SalesSummary() {
                 });
 
                 // Add more processing if required
-              } 
-              else {
+              } else {
                 const a = it.GodownList.map((items) => {
                   if (items.added) {
                     let pamount;
                     let ptax;
                     if (it.isTaxInclusive) {
                       pamount = (
-                        (items?.selectedPriceRate * items?.count) /
+                        (items?.selectedPriceRate * it?.count) /
                         (1 + it?.igst / 100)
                       ).toFixed(2);
-
 
                       const discountedPrice = Number(
                         (pamount - (items?.discount || 0))?.toFixed(2)
                       );
-                   
 
                       ptax = ((discountedPrice * it?.igst) / 100).toFixed(2);
                     } else {
@@ -394,7 +420,7 @@ function SalesSummary() {
                   const discountedPrice = Number(
                     (pamount - (it?.discount || 0))?.toFixed(2)
                   );
-                  ptax = it?.igstAmt || 0;
+                  ptax =( it?.igstAmt/100)*discountedPrice || 0;
                 }
                 const a = {
                   billnumber: item?.salesNumber,
@@ -420,9 +446,7 @@ function SalesSummary() {
         }
       });
       setSummaryReport(check);
-    } 
-    
-    else if (option === "Stock Group") {
+    } else if (option === "Stock Group") {
       summary.map((item) => {
         item.items.map((h) => {
           if (h?.brand?.name) {
@@ -450,13 +474,19 @@ function SalesSummary() {
                         let ptax;
                         if (h.isTaxInclusive) {
                           pamount = (
-                            items?.selectedPriceRate /
+                            items?.selectedPriceRate*items?.count /
                             (1 + h?.igst / 100)
                           ).toFixed(2);
-                          ptax = ((pamount * h.igst) / 100).toFixed(2);
+                          const discountedPrice = Number(
+                            (pamount - (items?.discount || 0))?.toFixed(2)
+                          );
+                          ptax = ((discountedPrice * h.igst) / 100).toFixed(2);
                         } else {
-                          pamount = items.selectedPriceRate;
-                          ptax = (h?.igst / 100) * pamount;
+                          pamount = items?.selectedPriceRate * items?.count;
+                          const discountedPrice = Number(
+                            (pamount - (items?.discount || 0))?.toFixed(2)
+                          )
+                          ptax = (h?.igst / 100) * discountedPrice;
                         }
                         // Populate the object for the first time
                         Object.assign(acc, {
@@ -488,13 +518,19 @@ function SalesSummary() {
                       let ptax;
                       if (h.isTaxInclusive) {
                         pamount = (
-                          items?.selectedPriceRate /
+                          items?.selectedPriceRate*items?.count /
                           (1 + h?.igst / 100)
                         ).toFixed(2);
-                        ptax = ((pamount * h.igst) / 100).toFixed(2);
+                        const discountedPrice = Number(
+                          (pamount - (items?.discount || 0))?.toFixed(2)
+                        );
+                        ptax = ((discountedPrice * h.igst) / 100).toFixed(2);
                       } else {
-                        pamount = items.selectedPriceRate;
-                        ptax = (h?.igst / 100) * pamount;
+                        pamount = items?.selectedPriceRate * items?.count;
+                        const discountedPrice = Number(
+                          (pamount - (items?.discount || 0))?.toFixed(2)
+                        )
+                        ptax = (h?.igst / 100) * discountedPrice;
                       }
                       const newSale = {
                         billnumber: item?.salesNumber,
@@ -525,13 +561,19 @@ function SalesSummary() {
                   let ptax;
                   if (h.isTaxInclusive) {
                     pamount = (
-                      items?.selectedPriceRate /
+                      items?.selectedPriceRate*items?.count /
                       (1 + h?.igst / 100)
                     ).toFixed(2);
-                    ptax = ((pamount * h.igst) / 100).toFixed(2);
+                    const discountedPrice = Number(
+                      (pamount - (items?.discount || 0))?.toFixed(2)
+                    );
+                    ptax = ((discountedPrice * h.igst) / 100).toFixed(2);
                   } else {
-                    pamount = items.selectedPriceRate;
-                    ptax = (h?.igst / 100) * pamount;
+                    pamount = items?.selectedPriceRate * items?.count;
+                    const discountedPrice = Number(
+                      (pamount - (items?.discount || 0))?.toFixed(2)
+                    )
+                    ptax = (h?.igst / 100) * discountedPrice;
                   }
                   const a = {
                     billnumber: item?.salesNumber,
@@ -578,16 +620,21 @@ function SalesSummary() {
                         m += items?.individualTotal;
                       } else {
                         let pamount;
-                        let ptax;
                         if (h.isTaxInclusive) {
                           pamount = (
-                            items?.selectedPriceRate /
+                            items?.selectedPriceRate*items?.count /
                             (1 + h?.igst / 100)
                           ).toFixed(2);
-                          ptax = ((pamount * h.igst) / 100).toFixed(2);
+                          const discountedPrice = Number(
+                            (pamount - (items?.discount || 0))?.toFixed(2)
+                          );
+                          ptax = ((discountedPrice * h.igst) / 100).toFixed(2);
                         } else {
-                          pamount = items.selectedPriceRate;
-                          ptax = (h?.igst / 100) * pamount;
+                          pamount = items?.selectedPriceRate * items?.count;
+                          const discountedPrice = Number(
+                            (pamount - (items?.discount || 0))?.toFixed(2)
+                          )
+                          ptax = (h?.igst / 100) * discountedPrice;
                         }
                         // Populate the object for the first time
                         Object.assign(acc, {
@@ -618,13 +665,19 @@ function SalesSummary() {
                       let ptax;
                       if (h.isTaxInclusive) {
                         pamount = (
-                          items?.selectedPriceRate /
+                          items?.selectedPriceRate*items?.count /
                           (1 + h?.igst / 100)
                         ).toFixed(2);
-                        ptax = ((pamount * h.igst) / 100).toFixed(2);
+                        const discountedPrice = Number(
+                          (pamount - (items?.discount || 0))?.toFixed(2)
+                        );
+                        ptax = ((discountedPrice * h.igst) / 100).toFixed(2);
                       } else {
-                        pamount = items.selectedPriceRate;
-                        ptax = (h?.igst / 100) * pamount;
+                        pamount = items?.selectedPriceRate * items?.count;
+                        const discountedPrice = Number(
+                          (pamount - (items?.discount || 0))?.toFixed(2)
+                        )
+                        ptax = (h?.igst / 100) * discountedPrice;
                       }
                       const newSale = {
                         billnumber: item?.salesNumber,
@@ -656,13 +709,19 @@ function SalesSummary() {
                   let ptax;
                   if (h.isTaxInclusive) {
                     pamount = (
-                      items?.selectedPriceRate /
+                      items?.selectedPriceRate*items?.count /
                       (1 + h?.igst / 100)
                     ).toFixed(2);
-                    ptax = ((pamount * h.igst) / 100).toFixed(2);
+                    const discountedPrice = Number(
+                      (pamount - (items?.discount || 0))?.toFixed(2)
+                    );
+                    ptax = ((discountedPrice * h.igst) / 100).toFixed(2);
                   } else {
-                    pamount = items.selectedPriceRate;
-                    ptax = (h?.igst / 100) * pamount;
+                    pamount = items?.selectedPriceRate * items?.count;
+                    const discountedPrice = Number(
+                      (pamount - (items?.discount || 0))?.toFixed(2)
+                    )
+                    ptax = (h?.igst / 100) * discountedPrice;
                   }
                   const a = {
                     billnumber: item?.salesNumber,
@@ -689,9 +748,7 @@ function SalesSummary() {
         });
       });
       setSummaryReport(check);
-    } 
-    
-    else if (option === "Stock Category") {
+    } else if (option === "Stock Category") {
       summary.map((item) => {
         const z = item.items.map((h) => {
           if (h?.category) {
@@ -718,13 +775,19 @@ function SalesSummary() {
                         let ptax;
                         if (h.isTaxInclusive) {
                           pamount = (
-                            items?.selectedPriceRate /
+                            items?.selectedPriceRate*items?.count /
                             (1 + h?.igst / 100)
                           ).toFixed(2);
-                          ptax = ((pamount * h.igst) / 100).toFixed(2);
+                          const discountedPrice = Number(
+                            (pamount - (items?.discount || 0))?.toFixed(2)
+                          );
+                          ptax = ((discountedPrice * h.igst) / 100).toFixed(2);
                         } else {
-                          pamount = items.selectedPriceRate;
-                          ptax = (h?.igst / 100) * pamount;
+                          pamount = items?.selectedPriceRate * items?.count;
+                          const discountedPrice = Number(
+                            (pamount - (items?.discount || 0))?.toFixed(2)
+                          )
+                          ptax = (h?.igst / 100) * discountedPrice;
                         }
 
                         // Populate the object for the first time
@@ -755,13 +818,19 @@ function SalesSummary() {
                       let ptax;
                       if (h.isTaxInclusive) {
                         pamount = (
-                          items?.selectedPriceRate /
+                          items?.selectedPriceRate*items?.count /
                           (1 + h?.igst / 100)
                         ).toFixed(2);
-                        ptax = ((pamount * h.igst) / 100).toFixed(2);
+                        const discountedPrice = Number(
+                          (pamount - (items?.discount || 0))?.toFixed(2)
+                        );
+                        ptax = ((discountedPrice * h.igst) / 100).toFixed(2);
                       } else {
-                        pamount = items.selectedPriceRate;
-                        ptax = (h?.igst / 100) * pamount;
+                        pamount = items?.selectedPriceRate * items?.count;
+                        const discountedPrice = Number(
+                          (pamount - (items?.discount || 0))?.toFixed(2)
+                        )
+                        ptax = (h?.igst / 100) * discountedPrice;
                       }
                       const newSale = {
                         billnumber: item?.salesNumber,
@@ -791,13 +860,19 @@ function SalesSummary() {
                   let ptax;
                   if (h.isTaxInclusive) {
                     pamount = (
-                      items?.selectedPriceRate /
+                      items?.selectedPriceRate*items?.count /
                       (1 + h?.igst / 100)
                     ).toFixed(2);
-                    ptax = ((pamount * h.igst) / 100).toFixed(2);
+                    const discountedPrice = Number(
+                      (pamount - (items?.discount || 0))?.toFixed(2)
+                    );
+                    ptax = ((discountedPrice * h.igst) / 100).toFixed(2);
                   } else {
-                    pamount = items.selectedPriceRate;
-                    ptax = (h?.igst / 100) * pamount;
+                    pamount = items?.selectedPriceRate * items?.count;
+                    const discountedPrice = Number(
+                      (pamount - (items?.discount || 0))?.toFixed(2)
+                    )
+                    ptax = (h?.igst / 100) * discountedPrice;
                   }
                   const a = {
                     billnumber: item?.salesNumber,
@@ -846,13 +921,19 @@ function SalesSummary() {
                         let ptax;
                         if (h.isTaxInclusive) {
                           pamount = (
-                            items?.selectedPriceRate /
+                            items?.selectedPriceRate*items?.count /
                             (1 + h?.igst / 100)
                           ).toFixed(2);
-                          ptax = ((pamount * h.igst) / 100).toFixed(2);
+                          const discountedPrice = Number(
+                            (pamount - (items?.discount || 0))?.toFixed(2)
+                          );
+                          ptax = ((discountedPrice * h.igst) / 100).toFixed(2);
                         } else {
-                          pamount = items.selectedPriceRate;
-                          ptax = (h?.igst / 100) * pamount;
+                          pamount = items?.selectedPriceRate * items?.count;
+                          const discountedPrice = Number(
+                            (pamount - (items?.discount || 0))?.toFixed(2)
+                          )
+                          ptax = (h?.igst / 100) * discountedPrice;
                         }
                         // Populate the object for the first time
                         Object.assign(acc, {
@@ -883,13 +964,19 @@ function SalesSummary() {
                       let ptax;
                       if (h.isTaxInclusive) {
                         pamount = (
-                          items?.selectedPriceRate /
+                          items?.selectedPriceRate*items?.count /
                           (1 + h?.igst / 100)
                         ).toFixed(2);
-                        ptax = ((pamount * h.igst) / 100).toFixed(2);
+                        const discountedPrice = Number(
+                          (pamount - (items?.discount || 0))?.toFixed(2)
+                        );
+                        ptax = ((discountedPrice * h.igst) / 100).toFixed(2);
                       } else {
-                        pamount = items.selectedPriceRate;
-                        ptax = (h?.igst / 100) * pamount;
+                        pamount = items?.selectedPriceRate * items?.count;
+                        const discountedPrice = Number(
+                          (pamount - (items?.discount || 0))?.toFixed(2)
+                        )
+                        ptax = (h?.igst / 100) * discountedPrice;
                       }
                       const newSale = {
                         billnumber: item?.salesNumber,
@@ -921,13 +1008,19 @@ function SalesSummary() {
                   let ptax;
                   if (h.isTaxInclusive) {
                     pamount = (
-                      items?.selectedPriceRate /
+                      items?.selectedPriceRate*items?.count /
                       (1 + h?.igst / 100)
                     ).toFixed(2);
-                    ptax = ((pamount * h.igst) / 100).toFixed(2);
+                    const discountedPrice = Number(
+                      (pamount - (items?.discount || 0))?.toFixed(2)
+                    );
+                    ptax = ((discountedPrice * h.igst) / 100).toFixed(2);
                   } else {
-                    pamount = items.selectedPriceRate;
-                    ptax = (h?.igst / 100) * pamount;
+                    pamount = items?.selectedPriceRate * items?.count;
+                    const discountedPrice = Number(
+                      (pamount - (items?.discount || 0))?.toFixed(2)
+                    )
+                    ptax = (h?.igst / 100) * discountedPrice;
                   }
                   const a = {
                     billnumber: item?.salesNumber,
@@ -955,7 +1048,7 @@ function SalesSummary() {
       });
       setSummaryReport(check);
     } else if (option === "Stock Item") {
-        summary.map((item) => {
+      summary.map((item) => {
         item.items.map((h) => {
           if (h?.product_name) {
             let existingParty = check.find((data) => {
@@ -967,65 +1060,147 @@ function SalesSummary() {
                   h.GodownList.every((item) => item.godown_id) && // Check all have godown_id
                   h.GodownList.every((item) => !item.hasOwnProperty("batch")) // Ensure no item has batch
                 ) {
-                  const godown = h.GodownList.reduce((acc, items) => {
+                  // Initialize aggregation variables
+                  const aggregation = {
+                    totalQuantity: 0,
+                    totalDiscount: 0,
+                    totalIndividualTotal: 0,
+                    totalBasePrice: 0,
+                    totalTaxAmount: 0,
+                    rate: 0,
+                  };
+
+                  h.GodownList.forEach((items) => {
+
                     if (items.added) {
-                      if (Object.keys(acc).length > 0) {
-                        // Update the existing object's values
-                        acc.quantity += items?.count;
-                        acc.discount += items?.discount;
-                        acc.netAmount += items?.individualTotal;
-                        acc.taxAmount += items?.igstAmt;
-                        existingParty.saleAmount += items?.individualTotal;
-                      } else {
-                        let pamount;
-                        let ptax;
-                        if (h.isTaxInclusive) {
-                          pamount = (
-                            items?.selectedPriceRate /
+                      // Sum quantity, discount, and individual total
+                      aggregation.totalQuantity += items?.count || 0;
+                      aggregation.totalDiscount += items?.discount || 0;
+                      aggregation.totalIndividualTotal +=
+                        items?.individualTotal || 0;
+                      aggregation.rate = items?.selectedPriceRate;
+
+                      // Calculate base price
+                      let basePrice, taxAmount;
+                      if (h.isTaxInclusive) {
+                        basePrice = Number(
+                          (
+                            (items?.selectedPriceRate * items?.count) /
                             (1 + h?.igst / 100)
-                          ).toFixed(2);
-                          ptax = ((pamount * h.igst) / 100).toFixed(2);
-                        } else {
-                          pamount = items?.selectedPriceRate;
-                          ptax = (h?.igst / 100) * pamount;
-                        }
-                        // Populate the object for the first time
-                        Object.assign(acc, {
-                          billnumber: item?.salesNumber,
-                          billDate: item?.date,
-                          groupName: h?.brand?.name,
-                          partyName: item?.party?.partyName,
-                          categoryName: h?.category?.name,
-                          quantity: items?.count,
-                          rate: items?.selectedPriceRate,
-                          discount: items?.discount,
-                          taxPercentage: h?.igst,
-                          taxAmount: ptax,
-                          netAmount: items?.individualTotal,
-                          amount: pamount,
-                        });
-                        existingParty.saleAmount += items?.individualTotal;
+                          ).toFixed(2)
+                        );
+
+                        const discountedPrice = Number(
+                          (basePrice - (items?.discount || 0)).toFixed(2)
+                        );
+
+                        taxAmount = Number(
+                          ((discountedPrice * h.igst) / 100).toFixed(2)
+                        );
+                      } else {
+                        basePrice = items.selectedPriceRate * items?.count;
+
+                        const discountedPrice = Number(
+                          (basePrice - (items?.discount || 0)).toFixed(2)
+                        );
+
+                        taxAmount = Number(
+                          ((discountedPrice * h.igst) / 100).toFixed(2)
+                        );
                       }
+
+                      // Sum base price and tax amount
+                      aggregation.totalBasePrice += basePrice;
+                      aggregation.totalTaxAmount += taxAmount;
                     }
-                    return acc;
-                  }, {});
-                  existingParty.sale.push(godown);
-                } 
-                
-                else {
+                  });
+
+                  // Use aggregation results as needed
+                  existingParty.sale.push({
+                    billnumber: item.salesNumber,
+                    billDate: item.date,
+                    partyName: item.party?.partyName,
+                    batch: "",
+                    groupName: h.brand?.name,
+                    categoryName: h?.category.name,
+                    quantity: aggregation.totalQuantity,
+                    rate: aggregation.rate,
+                    discount: aggregation.totalDiscount,
+                    taxPercentage: h.igst,
+                    taxAmount: aggregation.totalTaxAmount,
+                    netAmount: aggregation.totalIndividualTotal,
+                    amount: aggregation.totalBasePrice,
+                  });
+                  console.log(aggregation.totalIndividualTotal);
+
+                  existingParty.saleAmount += aggregation.totalIndividualTotal;
+                  // existingParty.sale.push(godown);
+
+                  // const godown = h.GodownList.reduce((acc, items) => {
+                  //   if (items.added) {
+                  //     if (Object.keys(acc).length > 0) {
+                  //       // Update the existing object's values
+                  //       acc.quantity += items?.count;
+                  //       acc.discount += items?.discount;
+                  //       acc.netAmount += items?.individualTotal;
+                  //       acc.taxAmount += items?.igstAmt;
+                  //       existingParty.saleAmount += items?.individualTotal;
+                  //     } else {
+                  //       let pamount;
+                  //       let ptax;
+                  //       if (h.isTaxInclusive) {
+                  //         pamount = (
+                  //           items?.selectedPriceRate /
+                  //           (1 + h?.igst / 100)
+                  //         ).toFixed(2);
+                  //         ptax = ((pamount * h.igst) / 100).toFixed(2);
+                  //       } else {
+                  //         pamount = items?.selectedPriceRate;
+                  //         ptax = (h?.igst / 100) * pamount;
+                  //       }
+                  //       // Populate the object for the first time
+                  //       Object.assign(acc, {
+                  //         billnumber: item?.salesNumber,
+                  //         billDate: item?.date,
+                  //         groupName: h?.brand?.name,
+                  //         partyName: item?.party?.partyName,
+                  //         categoryName: h?.category?.name,
+                  //         quantity: items?.count,
+                  //         rate: items?.selectedPriceRate,
+                  //         discount: items?.discount,
+                  //         taxPercentage: h?.igst,
+                  //         taxAmount: ptax,
+                  //         netAmount: items?.individualTotal,
+                  //         amount: pamount,
+                  //       });
+                  //       existingParty.saleAmount += items?.individualTotal;
+                  //     }
+                  //   }
+                  //   return acc;
+                  // }, {});
+                } else {
+
+                  console.log("dkfjgdlk");
+                  
                   const a = h.GodownList.map((items) => {
                     if (items.added) {
                       let pamount;
                       let ptax;
                       if (h.isTaxInclusive) {
                         pamount = (
-                          items?.selectedPriceRate /
+                          items?.selectedPriceRate*items?.count /
                           (1 + h?.igst / 100)
                         ).toFixed(2);
-                        ptax = ((pamount * h.igst) / 100).toFixed(2);
+                        const discountedPrice = Number(
+                          (pamount - (items?.discount || 0))?.toFixed(2)
+                        );
+                        ptax = ((discountedPrice * h.igst) / 100).toFixed(2);
                       } else {
-                        pamount = items.selectedPriceRate;
-                        ptax = (h?.igst / 100) * pamount;
+                        pamount = items?.selectedPriceRate * items?.count;
+                        const discountedPrice = Number(
+                          (pamount - (items?.discount || 0))?.toFixed(2)
+                        )
+                        ptax = (h?.igst / 100) * discountedPrice;
                       }
                       const newSale = {
                         billnumber: item?.salesNumber,
@@ -1050,21 +1225,27 @@ function SalesSummary() {
                     }
                   });
                 }
-              } 
-              
-              else {
+              } else {
+                
                 const godown = h.GodownList.map((items) => {
                   let pamount;
                   let ptax;
                   if (h.isTaxInclusive) {
                     pamount = (
-                      items?.selectedPriceRate /
+                      items?.selectedPriceRate*h?.count /
                       (1 + h?.igst / 100)
                     ).toFixed(2);
-                    ptax = ((pamount * h.igst) / 100).toFixed(2);
+
+                    const discountedPrice = Number(
+                      (pamount - (h?.discount || 0))?.toFixed(2)
+                    );
+                    ptax = ((discountedPrice * h.igst) / 100).toFixed(2);
                   } else {
-                    pamount = items?.selectedPriceRate;
-                    ptax = (h?.igst / 100) * pamount;
+                    pamount = items?.selectedPriceRate * h?.count;
+                    const discountedPrice = Number(
+                      (pamount - (h?.discount || 0))?.toFixed(2)
+                    )
+                    ptax = (h?.igst / 100) * discountedPrice;
                   }
                   const a = {
                     billnumber: item?.salesNumber,
@@ -1100,51 +1281,81 @@ function SalesSummary() {
                   h.GodownList.every((item) => item.godown_id) && // Check all have godown_id
                   h.GodownList.every((item) => !item.hasOwnProperty("batch")) // Ensure no item has batch
                 ) {
-                  const godown = h.GodownList.reduce((acc, items) => {
+                  const aggregation = {
+                    totalQuantity: 0,
+                    totalDiscount: 0,
+                    totalIndividualTotal: 0,
+                    totalBasePrice: 0,
+                    totalTaxAmount: 0,
+                    rate: 0,
+                  };
+
+                  h.GodownList.forEach((items) => {
+                    console.log(items);
+
                     if (items.added) {
-                      if (Object.keys(acc).length > 0) {
-                        // Update the existing object's values
-                        acc.quantity += items?.count;
-                        acc.discount += items?.discount;
-                        acc.netAmount += items?.individualTotal;
-                        acc.taxAmount += items?.igstAmt;
-                        m += items?.individualTotal;
-                      } else {
-                        let pamount;
-                        let ptax;
-                        if (h.isTaxInclusive) {
-                          pamount = (
-                            items?.selectedPriceRate /
+                      // Sum quantity, discount, and individual total
+                      aggregation.totalQuantity += items?.count || 0;
+                      aggregation.totalDiscount += items?.discount || 0;
+                      aggregation.totalIndividualTotal +=
+                        items?.individualTotal || 0;
+                      aggregation.rate = items?.selectedPriceRate;
+
+                      // Calculate base price
+                      let basePrice, taxAmount;
+                      if (h.isTaxInclusive) {
+                        basePrice = Number(
+                          (
+                            (items?.selectedPriceRate * items?.count) /
                             (1 + h?.igst / 100)
-                          ).toFixed(2);
-                          ptax = ((pamount * h.igst) / 100).toFixed(2);
-                        } else {
-                          pamount = items?.selectedPriceRate;
-                          ptax = (h?.igst / 100) * pamount;
-                        }
-                        // Populate the object for the first time
-                        Object.assign(acc, {
-                          billnumber: item?.salesNumber,
-                          billDate: item?.date,
-                          itemName: h?.product_name,
-                          groupName: h?.brand?.name,
-                          categoryName: h?.category?.name,
-                          partyName: item?.party?.partyName,
-                          quantity: items?.count,
-                          rate: items?.selectedPriceRate,
-                          discount: items?.discount,
-                          taxPercentage: h?.igst,
-                          taxAmount: ptax,
-                          netAmount: items?.individualTotal,
-                          amount: pamount,
-                        });
-                        m += items?.individualTotal;
+                          ).toFixed(2)
+                        );
+
+                        const discountedPrice = Number(
+                          (basePrice - (items?.discount || 0)).toFixed(2)
+                        );
+
+                        taxAmount = Number(
+                          ((discountedPrice * h.igst) / 100).toFixed(2)
+                        );
+                      } else {
+                        basePrice = items.selectedPriceRate * items?.count;
+
+                        const discountedPrice = Number(
+                          (basePrice - (items?.discount || 0)).toFixed(2)
+                        );
+
+                        taxAmount = Number(
+                          ((discountedPrice * h.igst) / 100).toFixed(2)
+                        );
                       }
+
+                      // Sum base price and tax amount
+                      aggregation.totalBasePrice += basePrice;
+                      aggregation.totalTaxAmount += taxAmount;
                     }
-                    return acc;
-                  }, {});
-                  object.saleAmount += m;
-                  object.sale.push(godown);
+                  });
+
+                  // Use aggregation results as needed
+                  object.sale.push({
+                    billnumber: item.salesNumber,
+                    billDate: item.date,
+                    // itemName: h.product_name,
+                    partyName: item?.party?.partyName,
+
+                    batch: "",
+                    groupName: h.brand?.name,
+                    categoryName: h?.category.name,
+                    quantity: aggregation.totalQuantity,
+                    rate: aggregation.rate,
+                    discount: aggregation.totalDiscount,
+                    taxPercentage: h.igst,
+                    taxAmount: aggregation.totalTaxAmount,
+                    netAmount: aggregation.totalIndividualTotal,
+                    amount: aggregation.totalBasePrice,
+                  });
+
+                  object.saleAmount += aggregation.totalIndividualTotal;
                 } else {
                   const godown = h.GodownList.map((items) => {
                     if (items.added) {
@@ -1152,13 +1363,21 @@ function SalesSummary() {
                       let ptax;
                       if (h.isTaxInclusive) {
                         pamount = (
-                          items?.selectedPriceRate /
+                          items?.selectedPriceRate*items?.count /
                           (1 + h?.igst / 100)
                         ).toFixed(2);
-                        ptax = ((pamount * h.igst) / 100).toFixed(2);
+
+                        const discountedPrice = Number(
+                          (pamount - (items?.discount || 0))?.toFixed(2)
+                        );
+                        ptax = ((discountedPrice * h.igst) / 100).toFixed(2);
                       } else {
-                        pamount = items?.selectedPriceRate;
-                        ptax = (h?.igst / 100) * pamount;
+                        pamount = items?.selectedPriceRate * items?.count;
+
+                        const discountedPrice = Number(
+                          (pamount - (items?.discount || 0))?.toFixed(2)
+                        );
+                        ptax = (h?.igst / 100) * discountedPrice;
                       }
                       const newSale = {
                         billnumber: item?.salesNumber,
@@ -1186,18 +1405,32 @@ function SalesSummary() {
                   });
                 }
               } else {
+                
                 const godown = h.GodownList.map((items) => {
                   let pamount;
                   let ptax;
-                  if (h?.isTaxInclusive) {
+                  if (h.isTaxInclusive) {
+                    
                     pamount = (
-                      items?.selectedPriceRate /
+                      items?.selectedPriceRate*h?.count /
                       (1 + h?.igst / 100)
                     ).toFixed(2);
-                    ptax = ((pamount * h?.igst) / 100).toFixed(2);
+
+                    
+
+
+                    const discountedPrice = Number(
+                      (pamount - (h?.discount || 0))?.toFixed(2)
+                    );
+
+                    
+                    ptax = ((discountedPrice * h.igst) / 100).toFixed(2);
                   } else {
-                    pamount = items?.selectedPriceRate;
-                    ptax = (h?.igst / 100) * pamount;
+                    pamount = items?.selectedPriceRate * h?.count;
+                    const discountedPrice = Number(
+                      (pamount - (h?.discount || 0))?.toFixed(2)
+                    )
+                    ptax = (h?.igst / 100) * discountedPrice;
                   }
                   const a = {
                     billnumber: item?.salesNumber,
@@ -1360,11 +1593,11 @@ function SalesSummary() {
                         </td>
                         <td className="px-1 py-2 text-gray-800">
                           {/* {saleItem?.billDate} */}
-                          {/* {
+                          {
                             new Date(saleItem?.billDate)
                               .toISOString()
                               .split("T")[0]
-                          } */}
+                          }
                         </td>
                         <td className="px-1 py-2 text-gray-800">
                           {selectedOption === "Ledger"
