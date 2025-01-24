@@ -16,6 +16,7 @@ import useFetch from "../../../../customHook/useFetch";
 import { BarLoader } from "react-spinners";
 
 function SalesSummary() {
+  
   const [userAndCompanyData, setUserAndCompanyData] = useState(null);
   const [selectedOption, setSelectedOption] = useState("Ledger");
   const [showDetails, setShowDetails] = useState(false);
