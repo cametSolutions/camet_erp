@@ -8,7 +8,7 @@ function SummmaryDropdown({ selectedOption, handleLedger }) {
         value={selectedOption}
         onChange={(e) => {
           console.log(e.target.value)
-          handleLedger(e.target.value)
+          // handleLedger(e.target.value)
         }}
       >
         <option value="Ledger">Ledger</option>
