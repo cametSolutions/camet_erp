@@ -36,6 +36,7 @@ import { updateDateFieldsByCompany, updateSalesItemUnitFields, updateUnitFields 
 import { authPrimary } from '../middlewares/authPrimaryUsers.js';
 import { addOrganizations, addSecondaryConfigurations, addSecUsers, editOrg, editSecUSer, fetchConfigurationCurrentNumber, fetchGodownsAndPriceLevels, fetchSecondaryUsers, getOrganizations, getSecUserDetails } from '../controllers/primaryUserController.js';
 
+import { getSummary } from "../controllers/summaryController.js"
 
 router.post('/login',login)
 router.post('/sendOtp',sendOtp)
@@ -190,6 +191,17 @@ router.put('/updateBankAccount/:cmp_id',authSecondary,secondaryIsBlocked,company
 router.put('/updateTaxConfiguration/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,updateTaxConfiguration)
 /// ship to settings
 router.put('/updateShipToConfiguration/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,updateShipToConfiguration)
+
+
+router.get(
+  "/salesSummary/:cmp_id",
+  authSecondary,
+  secondaryIsBlocked,
+  companyAuthentication,
+  getSummary
+)
+
+
 
 /// order pending
 router.get('/PartyListWithOrderPending/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,PartyListWithOrderPending)

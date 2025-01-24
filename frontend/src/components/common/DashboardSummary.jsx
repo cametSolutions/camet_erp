@@ -1,9 +1,10 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom"
 
 const DashboardSummary = () => {
   const summaryData = [
     {
       title: "Sales - Credit Note",
+      to: "/sUsers/salesSummary",
       value: "1,77,40,000",
       icon: (
         <svg
@@ -19,7 +20,7 @@ const DashboardSummary = () => {
             ></path>
           </g>
         </svg>
-      ),
+      )
     },
     {
       title: "Purchase - Debit Note",
@@ -75,7 +76,7 @@ const DashboardSummary = () => {
             />
           </g>
         </svg>
-      ),
+      )
     },
 
     {
@@ -103,7 +104,7 @@ const DashboardSummary = () => {
             />
           </g>
         </svg>
-      ),
+      )
     },
     {
       title: "Payment",
@@ -135,7 +136,7 @@ const DashboardSummary = () => {
             />
           </g>
         </svg>
-      ),
+      )
     },
     {
       title: "Outstanding Receivables",
@@ -163,7 +164,7 @@ const DashboardSummary = () => {
             />
           </g>
         </svg>
-      ),
+      )
     },
     {
       title: "Outstanding Payables",
@@ -190,7 +191,7 @@ const DashboardSummary = () => {
             />
           </g>
         </svg>
-      ),
+      )
     },
     {
       title: "Cash/Bank Balance",
@@ -217,26 +218,50 @@ const DashboardSummary = () => {
             />
           </g>
         </svg>
-      ),
+      )
     },
     {
       title: "Sale Order",
       value: "0",
       icon: (
-  <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><defs><style>{`.cls-1{fill:#d8e1ef;}.cls-2{fill:#0593ff;}`}</style></defs><title/><g data-name="Phone Shield" id="Phone_Shield"><rect className="cls-1" height="26" rx="3" ry="3" width="18" x="7" y="3"/><path className="cls-2" d="M20.42,3,18.71,4.71A1,1,0,0,1,18,5H14a1,1,0,0,1-.71-.29L11.58,3Z"/><path className="cls-2" d="M20,12a3.39,3.39,0,0,1-3.11-1.46A1,1,0,0,0,16,10a1,1,0,0,0-.9.53A3.38,3.38,0,0,1,12,12a1,1,0,0,0-1,1v2.91a6,6,0,0,0,3.32,5.37l1.23.61a1,1,0,0,0,.9,0l1.23-.61A6,6,0,0,0,21,15.91V13A1,1,0,0,0,20,12Z"/></g></svg>
-      ),
-    },
-  ];
+        <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <style>{`.cls-1{fill:#d8e1ef;}.cls-2{fill:#0593ff;}`}</style>
+          </defs>
+          <title />
+          <g data-name="Phone Shield" id="Phone_Shield">
+            <rect
+              className="cls-1"
+              height="26"
+              rx="3"
+              ry="3"
+              width="18"
+              x="7"
+              y="3"
+            />
+            <path
+              className="cls-2"
+              d="M20.42,3,18.71,4.71A1,1,0,0,1,18,5H14a1,1,0,0,1-.71-.29L11.58,3Z"
+            />
+            <path
+              className="cls-2"
+              d="M20,12a3.39,3.39,0,0,1-3.11-1.46A1,1,0,0,0,16,10a1,1,0,0,0-.9.53A3.38,3.38,0,0,1,12,12a1,1,0,0,0-1,1v2.91a6,6,0,0,0,3.32,5.37l1.23.61a1,1,0,0,0,.9,0l1.23-.61A6,6,0,0,0,21,15.91V13A1,1,0,0,0,20,12Z"
+            />
+          </g>
+        </svg>
+      )
+    }
+  ]
 
-  const navigate=useNavigate();
+  const navigate = useNavigate()
 
   const handleLinkClick = (path) => {
-    if(path){
-      navigate(path);
-    }else{
+    console.log(path)
+    if (path) {
+      navigate(path)
+    } else {
       return
     }
-    
   }
 
   return (
@@ -257,7 +282,7 @@ const DashboardSummary = () => {
         </div>
       ))}
     </div>
-  );
-};
+  )
+}
 
-export default DashboardSummary;
+export default DashboardSummary

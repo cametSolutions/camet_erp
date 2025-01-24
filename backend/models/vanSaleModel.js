@@ -1,32 +1,32 @@
-import mongoose from "mongoose";
+import mongoose from "mongoose"
 
 const vanSaleSchema = new mongoose.Schema(
   {
-    date: { 
-      type: Date, 
+    date: {
+      type: Date,
       required: true,
-      set: function(value) {
+      set: function (value) {
         // Set the time to 00:00:00.000
-        const date = new Date(value);
-        date.setUTCHours(0, 0, 0, 0); // Ensure the time is zeroed out
-        return date;
+        const date = new Date(value)
+        date.setUTCHours(0, 0, 0, 0) // Ensure the time is zeroed out
+        return date
       }
     },
     serialNumber: { type: Number },
     salesNumber: { type: String, required: true },
     Primary_user_id: { type: String, required: true },
     Secondary_user_id: { type: String },
-    selectedGodownName:{ type: String, required: true },
-    selectedGodownId:{ type: String, required: true },
+    selectedGodownName: { type: String, required: true },
+    selectedGodownId: { type: String, required: true },
     cmp_id: { type: String, required: true },
     partyAccount: { type: String, required: true },
     party: { type: Object, required: true },
     priceLevel: { type: String },
     items: { type: Array, required: true },
-    despatchDetails: { 
-      type: Object ,
-      set :function(value){
-        return  { title: "Despatch Details", ...value };
+    despatchDetails: {
+      type: Object,
+      set: function (value) {
+        return { title: "Despatch Details", ...value }
       }
     },
     additionalCharges: { type: Array, required: true },
@@ -36,11 +36,15 @@ const vanSaleSchema = new mongoose.Schema(
     createdAt: {
       type: Date,
       default: Date.now,
-      immutable: false, // This allows the field to be updated
-    },
+      immutable: false // This allows the field to be updated
+    }
   },
   {
-    timestamps: true,
+    timestamps: true
   }
-);
-export default mongoose.model("vanSale", vanSaleSchema);
+)
+const vanSaleModel = mongoose.model("vanSale", vanSaleSchema)
+export default vanSaleModel
+// Prevent OverwriteModelError
+// export default mongoose.models.vanSale ||
+//   mongoose.model("vanSale", vanSaleSchema)

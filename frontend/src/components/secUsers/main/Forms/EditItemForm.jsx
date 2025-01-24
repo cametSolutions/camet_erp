@@ -80,7 +80,6 @@ function EditItemForm({
     }
   }, [selectedItem[0]]);
 
-  console.log(isTaxInclusive);
 
   useEffect(() => {
     // Ensure all inputs are properly parsed

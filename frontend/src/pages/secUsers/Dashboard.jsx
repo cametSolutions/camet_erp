@@ -53,7 +53,9 @@ function Dashboard() {
 
   // Filter data based on today's date
   const filteredData = data?.filter((item) => {
+
     const createdAtDate = new Date(item?.date);
+
     return createdAtDate.toDateString() === today.toDateString();
   });
 
