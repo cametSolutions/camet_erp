@@ -1,10 +1,12 @@
 /* eslint-disable react/prop-types */
 import React from "react"
-function SummmaryDropdown({ selectedOption, handleLedger }) {
+function SummmaryDropdown({ selectedOption, handleLedger,bgColor="#ffff",textColor="#6b7280"}) {
+  
   return (
     <div className="">
       <select
-        className="w-full sm:max-w-sm md:max-w-sm bg-[#219ebc] text-white font-semibold py-2 px-3   cursor-pointer no-focus-box border-none !border-b"
+      style={{backgroundColor:bgColor,color:textColor}}
+        className="w-full sm:max-w-sm md:max-w-sm text-sm font-bold   py-2 px-3  cursor-pointer no-focus-box border-none !border-b"
         value={selectedOption}
         onChange={(e) => {
           // console.log(e.target.value)
@@ -13,8 +15,8 @@ function SummmaryDropdown({ selectedOption, handleLedger }) {
       >
         <option value="Ledger">Ledger</option>
         <option value="Stock Item">Stock Item</option>
-        <option value="Stock Group">Stock Group</option>
-        <option value="Stock Category">Stock Category</option>
+        {/* <option value="Stock Group">Stock Group</option>
+        <option value="Stock Category">Stock Category</option> */}
       </select>
     </div>
   )

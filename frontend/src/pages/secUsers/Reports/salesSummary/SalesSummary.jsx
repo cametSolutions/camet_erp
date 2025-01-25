@@ -7,10 +7,8 @@ import TitleDiv from "../../../../components/common/TitleDiv";
 import FindUserAndCompany from "../../../../components/Filters/FindUserAndCompany";
 import SummmaryDropdown from "../../../../components/Filters/SummaryDropdown";
 import SelectDate from "../../../../components/Filters/SelectDate";
-
 import { useSelector } from "react-redux";
-
-// import { useNavigate, useParams } from "react-router-dom"
+import { useNavigate } from "react-router-dom"
 import useFetch from "../../../../customHook/useFetch";
 
 import { BarLoader } from "react-spinners";
@@ -29,6 +27,7 @@ function SalesSummary() {
   const { _id: partyID } = useSelector(
     (state) => state.partyFilter.selectedParty
   );
+  const navigate=useNavigate();
 
   const salesummaryUrl = useMemo(() => {
     if (userAndCompanyData && start && end && selectedOption) {
@@ -57,6 +56,22 @@ function SalesSummary() {
       handleLedger(selectedOption);
     }
   }, [summary]);
+
+
+  const handleNavigate=()=>{
+    navigate("/sUsers/salesSummaryDetails",{
+      state: {
+        summary: summary,
+      }
+    });
+  }
+
+
+
+
+
+
+
   // const handleViewDetails = () => {
   //   // Perform any logic before showing details (e.g., API call to fetch data)
 
@@ -1766,11 +1781,13 @@ function SalesSummary() {
             )}
             <div
               style={{ backgroundColor: "#219ebc" }}
-              className=" opacity-80  flex flex-col   pb-11 shadow-xl justify-center pt-2 px-2"
+              className="   flex flex-col   pb-11 shadow-xl justify-center pt-2 px-2"
             >
               <SummmaryDropdown
                 selectedOption={selectedOption}
                 handleLedger={handleLedger}
+                bgColor={"#219ebc"}
+                textColor={"#fff"}
               />
 
               <div
@@ -1781,7 +1798,10 @@ function SalesSummary() {
                   {new Date(start).toDateString()} -{" "}
                   {new Date(end).toDateString()}
                 </p>
-                <p className="text-xs mt-4 font-bold opacity-90  underline cursor-pointer hover:scale-105 duration-500">View Details</p>
+
+                <p
+                onClick={handleNavigate}
+                 className="text-xs mt-4 font-bold opacity-90  underline cursor-pointer hover:scale-105 duration-500">View Details</p>
               </div>
             </div>
           </div>
