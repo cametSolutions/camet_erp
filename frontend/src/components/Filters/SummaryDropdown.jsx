@@ -1,6 +1,6 @@
 /* eslint-disable react/prop-types */
 import React from "react"
-function SummmaryDropdown({ selectedOption, handleLedger,bgColor="#ffff",textColor="#6b7280"}) {
+function SummmaryDropdown({ selectedOption, handleFilter,bgColor="#ffff",textColor="#6b7280"}) {
   
   return (
     <div className="">
@@ -10,7 +10,7 @@ function SummmaryDropdown({ selectedOption, handleLedger,bgColor="#ffff",textCol
         value={selectedOption}
         onChange={(e) => {
           // console.log(e.target.value)
-          handleLedger(e.target.value)
+          handleFilter(e.target.value)
         }}
       >
         <option value="Ledger">Ledger</option>

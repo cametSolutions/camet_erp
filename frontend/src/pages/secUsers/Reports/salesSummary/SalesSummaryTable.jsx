@@ -1,21 +1,51 @@
 /* eslint-disable no-prototype-builtins */
 import { useLocation } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 
 import TitleDiv from "../../../../components/common/TitleDiv";
 import SummmaryDropdown from "../../../../components/Filters/SummaryDropdown";
 import SelectDate from "../../../../components/Filters/SelectDate";
+import { useSelector } from "react-redux";
+import useFetch from "../../../../customHook/useFetch";
 function SalesSummaryTable() {
   const [selectedOption, setSelectedOption] = useState("Ledger");
   const [summaryReport, setSummaryReport] = useState([]);
+  const [summary, setSummary] = useState([]);
 
-  const location = useLocation();
-  const summary = location?.state?.summary;
+  // const location = useLocation();
+  // const summary = location?.state?.summary;
+
+  const { start, end } = useSelector((state) => state.date);
+  const cmp_id = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg._id
+  );
+
+    const salesummaryUrl = useMemo(() => {
+      if (  start && end) {
+        return `/api/sUsers/salesSummary/${
+          cmp_id
+       }?startOfDayParam=${start}&endOfDayParam=${end}&selectedVoucher=sale`;
+      }
+      return null; // Or return an empty string if preferred
+    }, [ start, end]);
+
+    const {
+      data: salesummaryData,
+      // loading: Loading,
+      // error: Error,
+    } = useFetch(salesummaryUrl);
+
+    useEffect(() => {
+      if (salesummaryData && salesummaryData?.flattenedResults) {
+        setSummary(salesummaryData.flattenedResults);
+      }
+    }, [salesummaryData]);
+  
 
   useEffect(() => {
     if (summary && summary.length > 0) {
       // setSelectedIndex(null);
-      handleLedger(selectedOption);
+      handleFilter(selectedOption);
     }
   }, [summary]);
 
@@ -105,6 +135,7 @@ function SalesSummaryTable() {
       billnumber: sale?.salesNumber,
       billDate: sale?.date,
       itemName: item?.product_name,
+      partyName: sale?.party?.partyName,
       batch: "",
       groupName: item?.brand?.name,
       categoryName: item?.category?.name,
@@ -120,12 +151,11 @@ function SalesSummaryTable() {
     return saleObject.sale;
   };
 
-  const handleLedger = (option) => {
+  const handleFilter = (option) => {
     setSelectedOption(option);
     let check = [];
     // let arr = []
     if (option === "Ledger") {
-
       summary.map((item) => {
         let existingParty = check?.find((data) => {
           return data?.partyId === item?.party?._id;
@@ -196,8 +226,6 @@ function SalesSummaryTable() {
                 existingParty.sale.push(newSale);
               });
             }
-
-
           });
         } else {
           const saleObject = {
@@ -208,12 +236,11 @@ function SalesSummaryTable() {
           };
 
           item.items.map((it) => {
-            let m = 0;
             if (it.hasGodownOrBatch) {
               if (isGodownOnly(it)) {
                 processGodownMerging(it, saleObject, item);
               } else {
-                const a = it.GodownList.map((items) => {
+                it.GodownList.map((items) => {
                   if (items.added) {
                     const { basePrice, taxAmount } = calculateTaxAndPrice(
                       it.isTaxInclusive,
@@ -287,149 +314,20 @@ function SalesSummaryTable() {
             if (existingParty) {
               if (h.hasGodownOrBatch) {
                 if (
-                  h.GodownList.every((item) => item.godown_id) && // Check all have godown_id
-                  h.GodownList.every((item) => !item.hasOwnProperty("batch")) // Ensure no item has batch
+                  isGodownOnly(h) // Ensure no item has batch
                 ) {
-                  // Initialize aggregation variables
-                  const aggregation = {
-                    totalQuantity: 0,
-                    totalDiscount: 0,
-                    totalIndividualTotal: 0,
-                    totalBasePrice: 0,
-                    totalTaxAmount: 0,
-                    rate: 0,
-                  };
-
-                  h.GodownList.forEach((items) => {
-                    if (items.added) {
-                      // Sum quantity, discount, and individual total
-                      aggregation.totalQuantity += items?.count || 0;
-                      aggregation.totalDiscount += items?.discount || 0;
-                      aggregation.totalIndividualTotal +=
-                        items?.individualTotal || 0;
-                      aggregation.rate = items?.selectedPriceRate;
-
-                      // Calculate base price
-                      let basePrice, taxAmount;
-                      if (h.isTaxInclusive) {
-                        basePrice = Number(
-                          (
-                            (items?.selectedPriceRate * items?.count) /
-                            (1 + h?.igst / 100)
-                          ).toFixed(2)
-                        );
-
-                        const discountedPrice = Number(
-                          (basePrice - (items?.discount || 0)).toFixed(2)
-                        );
-
-                        taxAmount = Number(
-                          ((discountedPrice * h.igst) / 100).toFixed(2)
-                        );
-                      } else {
-                        basePrice = items.selectedPriceRate * items?.count;
-
-                        const discountedPrice = Number(
-                          (basePrice - (items?.discount || 0)).toFixed(2)
-                        );
-
-                        taxAmount = Number(
-                          ((discountedPrice * h.igst) / 100).toFixed(2)
-                        );
-                      }
-
-                      // Sum base price and tax amount
-                      aggregation.totalBasePrice += basePrice;
-                      aggregation.totalTaxAmount += taxAmount;
-                    }
-                  });
-
-                  // Use aggregation results as needed
-                  existingParty.sale.push({
-                    billnumber: item.salesNumber,
-                    billDate: item.date,
-                    partyName: item.party?.partyName,
-                    batch: "",
-                    groupName: h.brand?.name,
-                    categoryName: h?.category.name,
-                    quantity: aggregation.totalQuantity,
-                    rate: aggregation.rate,
-                    discount: aggregation.totalDiscount,
-                    taxPercentage: h.igst,
-                    taxAmount: aggregation.totalTaxAmount,
-                    netAmount: aggregation.totalIndividualTotal,
-                    amount: aggregation.totalBasePrice,
-                  });
-                  console.log(aggregation.totalIndividualTotal);
-
-                  existingParty.saleAmount += aggregation.totalIndividualTotal;
-                  // existingParty.sale.push(godown);
-
-                  // const godown = h.GodownList.reduce((acc, items) => {
-                  //   if (items.added) {
-                  //     if (Object.keys(acc).length > 0) {
-                  //       // Update the existing saleObject's values
-                  //       acc.quantity += items?.count;
-                  //       acc.discount += items?.discount;
-                  //       acc.netAmount += items?.individualTotal;
-                  //       acc.taxAmount += items?.igstAmt;
-                  //       existingParty.saleAmount += items?.individualTotal;
-                  //     } else {
-                  //       let pamount;
-                  //       let ptax;
-                  //       if (h.isTaxInclusive) {
-                  //         pamount = (
-                  //           items?.selectedPriceRate /
-                  //           (1 + h?.igst / 100)
-                  //         ).toFixed(2);
-                  //         ptax = ((pamount * h.igst) / 100).toFixed(2);
-                  //       } else {
-                  //         pamount = items?.selectedPriceRate;
-                  //         ptax = (h?.igst / 100) * pamount;
-                  //       }
-                  //       // Populate the saleObject for the first time
-                  //       Object.assign(acc, {
-                  //         billnumber: item?.salesNumber,
-                  //         billDate: item?.date,
-                  //         groupName: h?.brand?.name,
-                  //         partyName: item?.party?.partyName,
-                  //         categoryName: h?.category?.name,
-                  //         quantity: items?.count,
-                  //         rate: items?.selectedPriceRate,
-                  //         discount: items?.discount,
-                  //         taxPercentage: h?.igst,
-                  //         taxAmount: ptax,
-                  //         netAmount: items?.individualTotal,
-                  //         amount: pamount,
-                  //       });
-                  //       existingParty.saleAmount += items?.individualTotal;
-                  //     }
-                  //   }
-                  //   return acc;
-                  // }, {});
+                  processGodownMerging(h, existingParty, item);
                 } else {
-                  console.log("dkfjgdlk");
-
-                  const a = h.GodownList.map((items) => {
+                  h.GodownList.map((items) => {
                     if (items.added) {
-                      let pamount;
-                      let ptax;
-                      if (h.isTaxInclusive) {
-                        pamount = (
-                          (items?.selectedPriceRate * items?.count) /
-                          (1 + h?.igst / 100)
-                        ).toFixed(2);
-                        const discountedPrice = Number(
-                          (pamount - (items?.discount || 0))?.toFixed(2)
-                        );
-                        ptax = ((discountedPrice * h.igst) / 100).toFixed(2);
-                      } else {
-                        pamount = items?.selectedPriceRate * items?.count;
-                        const discountedPrice = Number(
-                          (pamount - (items?.discount || 0))?.toFixed(2)
-                        );
-                        ptax = (h?.igst / 100) * discountedPrice;
-                      }
+                      const { basePrice, taxAmount } = calculateTaxAndPrice(
+                        h.isTaxInclusive,
+                        items?.selectedPriceRate,
+                        items?.count,
+                        h?.igst,
+                        items?.discount
+                      );
+
                       const newSale = {
                         billnumber: item?.salesNumber,
                         billDate: item?.date,
@@ -442,41 +340,27 @@ function SalesSummaryTable() {
                         rate: items?.selectedPriceRate,
                         discount: items?.discount,
                         taxPercentage: h?.igst,
-                        taxAmount: ptax,
+                        taxAmount: taxAmount,
                         netAmount: items?.individualTotal,
-                        amount: pamount,
+                        amount: basePrice,
                       };
-                      existingParty.saleAmount += items?.individualTotal;
+                      // existingParty.saleAmount += items?.individualTotal;
 
                       // Push the new sale entry to the sale array
                       existingParty.sale.push(newSale);
                     }
                   });
                 }
-              } 
-              
-              
-              else {
-                const godown = h.GodownList.map((items) => {
-                  let pamount;
-                  let ptax;
-                  if (h.isTaxInclusive) {
-                    pamount = (
-                      (items?.selectedPriceRate * h?.count) /
-                      (1 + h?.igst / 100)
-                    ).toFixed(2);
+              } else {
+                h.GodownList.map((items) => {
+                  const { basePrice, taxAmount } = calculateTaxAndPrice(
+                    h.isTaxInclusive,
+                    items?.selectedPriceRate,
+                    h?.count,
+                    h?.igst,
+                    h?.discount
+                  );
 
-                    const discountedPrice = Number(
-                      (pamount - (h?.discount || 0))?.toFixed(2)
-                    );
-                    ptax = ((discountedPrice * h.igst) / 100).toFixed(2);
-                  } else {
-                    pamount = items?.selectedPriceRate * h?.count;
-                    const discountedPrice = Number(
-                      (pamount - (h?.discount || 0))?.toFixed(2)
-                    );
-                    ptax = (h?.igst / 100) * discountedPrice;
-                  }
                   const a = {
                     billnumber: item?.salesNumber,
                     billDate: item?.date,
@@ -488,12 +372,11 @@ function SalesSummaryTable() {
                     rate: items?.selectedPriceRate,
                     discount: h?.discount,
                     taxPercentage: h?.igst,
-                    taxAmount: ptax,
+                    taxAmount: taxAmount,
                     netAmount: items?.individualTotal,
-                    amount: pamount,
+                    amount: basePrice,
                   };
 
-                  existingParty.saleAmount += items?.individualTotal;
                   existingParty.sale.push(a);
                 });
               }
@@ -505,110 +388,115 @@ function SalesSummaryTable() {
                 saleAmount: 0,
               };
 
-              let m = 0;
               if (h.hasGodownOrBatch) {
                 if (
-                  h.GodownList.every((item) => item.godown_id) && // Check all have godown_id
-                  h.GodownList.every((item) => !item.hasOwnProperty("batch")) // Ensure no item has batch
+                  isGodownOnly(h) // Ensure no item has batch
                 ) {
-                  const aggregation = {
-                    totalQuantity: 0,
-                    totalDiscount: 0,
-                    totalIndividualTotal: 0,
-                    totalBasePrice: 0,
-                    totalTaxAmount: 0,
-                    rate: 0,
-                  };
+                  processGodownMerging(h, saleObject, item);
+                  // const aggregation = {
+                  //   totalQuantity: 0,
+                  //   totalDiscount: 0,
+                  //   totalIndividualTotal: 0,
+                  //   totalBasePrice: 0,
+                  //   totalTaxAmount: 0,
+                  //   rate: 0,
+                  // };
 
-                  h.GodownList.forEach((items) => {
-                    console.log(items);
+                  // h.GodownList.forEach((items) => {
 
-                    if (items.added) {
-                      // Sum quantity, discount, and individual total
-                      aggregation.totalQuantity += items?.count || 0;
-                      aggregation.totalDiscount += items?.discount || 0;
-                      aggregation.totalIndividualTotal +=
-                        items?.individualTotal || 0;
-                      aggregation.rate = items?.selectedPriceRate;
+                  //   if (items.added) {
+                  //     // Sum quantity, discount, and individual total
+                  //     aggregation.totalQuantity += items?.count || 0;
+                  //     aggregation.totalDiscount += items?.discount || 0;
+                  //     aggregation.totalIndividualTotal +=
+                  //       items?.individualTotal || 0;
+                  //     aggregation.rate = items?.selectedPriceRate;
 
-                      // Calculate base price
-                      let basePrice, taxAmount;
-                      if (h.isTaxInclusive) {
-                        basePrice = Number(
-                          (
-                            (items?.selectedPriceRate * items?.count) /
-                            (1 + h?.igst / 100)
-                          ).toFixed(2)
-                        );
+                  //     // Calculate base price
+                  //     let basePrice, taxAmount;
+                  //     if (h.isTaxInclusive) {
+                  //       basePrice = Number(
+                  //         (
+                  //           (items?.selectedPriceRate * items?.count) /
+                  //           (1 + h?.igst / 100)
+                  //         ).toFixed(2)
+                  //       );
 
-                        const discountedPrice = Number(
-                          (basePrice - (items?.discount || 0)).toFixed(2)
-                        );
+                  //       const discountedPrice = Number(
+                  //         (basePrice - (items?.discount || 0)).toFixed(2)
+                  //       );
 
-                        taxAmount = Number(
-                          ((discountedPrice * h.igst) / 100).toFixed(2)
-                        );
-                      } else {
-                        basePrice = items.selectedPriceRate * items?.count;
+                  //       taxAmount = Number(
+                  //         ((discountedPrice * h.igst) / 100).toFixed(2)
+                  //       );
+                  //     } else {
+                  //       basePrice = items.selectedPriceRate * items?.count;
 
-                        const discountedPrice = Number(
-                          (basePrice - (items?.discount || 0)).toFixed(2)
-                        );
+                  //       const discountedPrice = Number(
+                  //         (basePrice - (items?.discount || 0)).toFixed(2)
+                  //       );
 
-                        taxAmount = Number(
-                          ((discountedPrice * h.igst) / 100).toFixed(2)
-                        );
-                      }
+                  //       taxAmount = Number(
+                  //         ((discountedPrice * h.igst) / 100).toFixed(2)
+                  //       );
+                  //     }
 
-                      // Sum base price and tax amount
-                      aggregation.totalBasePrice += basePrice;
-                      aggregation.totalTaxAmount += taxAmount;
-                    }
-                  });
+                  //     // Sum base price and tax amount
+                  //     aggregation.totalBasePrice += basePrice;
+                  //     aggregation.totalTaxAmount += taxAmount;
+                  //   }
+                  // });
 
-                  // Use aggregation results as needed
-                  saleObject.sale.push({
-                    billnumber: item.salesNumber,
-                    billDate: item.date,
-                    // itemName: h.product_name,
-                    partyName: item?.party?.partyName,
+                  // // Use aggregation results as needed
+                  // saleObject.sale.push({
+                  //   billnumber: item.salesNumber,
+                  //   billDate: item.date,
+                  //   itemName: h.product_name,
+                  //   partyName: item?.party?.partyName,
 
-                    batch: "",
-                    groupName: h.brand?.name,
-                    categoryName: h?.category.name,
-                    quantity: aggregation.totalQuantity,
-                    rate: aggregation.rate,
-                    discount: aggregation.totalDiscount,
-                    taxPercentage: h.igst,
-                    taxAmount: aggregation.totalTaxAmount,
-                    netAmount: aggregation.totalIndividualTotal,
-                    amount: aggregation.totalBasePrice,
-                  });
+                  //   batch: "",
+                  //   groupName: h.brand?.name,
+                  //   categoryName: h?.category.name,
+                  //   quantity: aggregation.totalQuantity,
+                  //   rate: aggregation.rate,
+                  //   discount: aggregation.totalDiscount,
+                  //   taxPercentage: h.igst,
+                  //   taxAmount: aggregation.totalTaxAmount,
+                  //   netAmount: aggregation.totalIndividualTotal,
+                  //   amount: aggregation.totalBasePrice,
+                  // });
 
-                  saleObject.saleAmount += aggregation.totalIndividualTotal;
+                  // saleObject.saleAmount += aggregation.totalIndividualTotal;
                 } else {
                   const godown = h.GodownList.map((items) => {
                     if (items.added) {
-                      let pamount;
-                      let ptax;
-                      if (h.isTaxInclusive) {
-                        pamount = (
-                          (items?.selectedPriceRate * items?.count) /
-                          (1 + h?.igst / 100)
-                        ).toFixed(2);
+                      const { basePrice, taxAmount } = calculateTaxAndPrice(
+                        h.isTaxInclusive,
+                        items?.selectedPriceRate,
+                        items?.count,
+                        h?.igst,
+                        items?.discount
+                      );
+                      // let pamount;
+                      // let ptax;
+                      // if (h.isTaxInclusive) {
+                      //   pamount = (
+                      //     (items?.selectedPriceRate * items?.count) /
+                      //     (1 + h?.igst / 100)
+                      //   ).toFixed(2);
 
-                        const discountedPrice = Number(
-                          (pamount - (items?.discount || 0))?.toFixed(2)
-                        );
-                        ptax = ((discountedPrice * h.igst) / 100).toFixed(2);
-                      } else {
-                        pamount = items?.selectedPriceRate * items?.count;
+                      //   const discountedPrice = Number(
+                      //     (pamount - (items?.discount || 0))?.toFixed(2)
+                      //   );
+                      //   ptax = ((discountedPrice * h.igst) / 100).toFixed(2);
+                      // } else {
+                      //   pamount = items?.selectedPriceRate * items?.count;
 
-                        const discountedPrice = Number(
-                          (pamount - (items?.discount || 0))?.toFixed(2)
-                        );
-                        ptax = (h?.igst / 100) * discountedPrice;
-                      }
+                      //   const discountedPrice = Number(
+                      //     (pamount - (items?.discount || 0))?.toFixed(2)
+                      //   );
+                      //   ptax = (h?.igst / 100) * discountedPrice;
+                      // }
                       const newSale = {
                         billnumber: item?.salesNumber,
                         billDate: item?.date,
@@ -621,9 +509,9 @@ function SalesSummaryTable() {
                         rate: items?.selectedPriceRate,
                         discount: items?.discount,
                         taxPercentage: h?.igst,
-                        taxAmount: ptax,
+                        taxAmount: taxAmount,
                         netAmount: items?.individualTotal,
-                        amount: pamount,
+                        amount: basePrice,
                       };
 
                       // Add the individual total to the sale amount
@@ -635,27 +523,15 @@ function SalesSummaryTable() {
                   });
                 }
               } else {
-                const godown = h.GodownList.map((items) => {
-                  let pamount;
-                  let ptax;
-                  if (h.isTaxInclusive) {
-                    pamount = (
-                      (items?.selectedPriceRate * h?.count) /
-                      (1 + h?.igst / 100)
-                    ).toFixed(2);
+                h.GodownList.map((items) => {
+                  const { basePrice, taxAmount } = calculateTaxAndPrice(
+                    h.isTaxInclusive,
+                    items?.selectedPriceRate,
+                    h?.count,
+                    h?.igst,
+                    h?.discount
+                  );
 
-                    const discountedPrice = Number(
-                      (pamount - (h?.discount || 0))?.toFixed(2)
-                    );
-
-                    ptax = ((discountedPrice * h.igst) / 100).toFixed(2);
-                  } else {
-                    pamount = items?.selectedPriceRate * h?.count;
-                    const discountedPrice = Number(
-                      (pamount - (h?.discount || 0))?.toFixed(2)
-                    );
-                    ptax = (h?.igst / 100) * discountedPrice;
-                  }
                   const a = {
                     billnumber: item?.salesNumber,
                     billDate: item?.date,
@@ -667,9 +543,9 @@ function SalesSummaryTable() {
                     rate: items?.selectedPriceRate,
                     discount: h?.discount,
                     taxPercentage: h?.igst,
-                    taxAmount: ptax,
+                    taxAmount: taxAmount,
                     netAmount: items?.individualTotal,
-                    amount: pamount,
+                    amount: basePrice,
                   };
                   saleObject.saleAmount += items?.individualTotal;
                   saleObject.sale.push(a);
@@ -693,7 +569,7 @@ function SalesSummaryTable() {
         <div className="flex px-2  bg-white shadow-lg border-t shadow-lg">
           <SummmaryDropdown
             selectedOption={selectedOption}
-            handleLedger={handleLedger}
+            handleFilter={handleFilter}
           />
         </div>
         <table></table>
