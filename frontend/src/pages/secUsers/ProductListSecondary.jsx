@@ -421,16 +421,9 @@ function ProductListSecondary() {
             )}
           </div>
 
-          {/* invoiec date */}
-          <div className=" p-4  bg-white drop-shadow-lg">
-            <div className="flex justify-between  items-center"></div>
-            <div className=" md:w-1/2 ">
-              {/* search bar */}
-              <SearchBar onType={searchData} />
+         
 
-              {/* search bar */}
-            </div>
-          </div>
+          <SearchBar onType={searchData} />
         </div>
 
         {/* adding party */}

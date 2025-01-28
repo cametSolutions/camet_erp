@@ -160,17 +160,17 @@ function SalesSummaryTable() {
         });
 
         if (existingParty) {
-          item.items.map((it) => {
-            if (it.hasGodownOrBatch) {
+          item?.items?.map((it) => {
+            if (it?.hasGodownOrBatch) {
               if (isGodownOnly(it)) {
                 processGodownMerging(it, existingParty, item);
               } 
               
               else {
-                it.GodownList.map((items) => {
-                  if (items.added) {
+                it.GodownList?.map((items) => {
+                  if (items?.added) {
                     const { basePrice, taxAmount } = calculateTaxAndPrice(
-                      it.isTaxInclusive,
+                      it?.isTaxInclusive,
                       items?.selectedPriceRate,
                       items?.count,
                       it?.igst,
@@ -178,30 +178,30 @@ function SalesSummaryTable() {
                     );
 
                     const newSale = {
-                      billnumber: item.salesNumber,
-                      billDate: item.date,
-                      itemName: it.product_name,
-                      batch: items.batch,
-                      groupName: it.brand?.name,
-                      categoryName: it?.category.name,
-                      quantity: items.count,
-                      rate: items.selectedPriceRate,
-                      discount: items.discount,
-                      taxPercentage: it.igst,
+                      billnumber: item?.salesNumber,
+                      billDate: item?.date,
+                      itemName: it?.product_name,
+                      batch: items?.batch,
+                      groupName: it?.brand?.name,
+                      categoryName: it?.category?.name,
+                      quantity: items?.count,
+                      rate: items?.selectedPriceRate,
+                      discount: items?.discount,
+                      taxPercentage: it?.igst,
                       taxAmount: taxAmount,
-                      netAmount: items.individualTotal,
+                      netAmount: items?.individualTotal,
                       amount: basePrice,
                     };
-                    existingParty.saleAmount += items.individualTotal;
+                    existingParty.saleAmount += items?.individualTotal;
                     // Push the new sale entry to the sale array
-                    existingParty.sale.push(newSale);
+                    existingParty?.sale?.push(newSale);
                   }
-                });
+                })
               }
             } else {
-              it.GodownList.map((items) => {
+              it.GodownList?.map((items) => {
                 const { basePrice, taxAmount } = calculateTaxAndPrice(
-                  it.isTaxInclusive,
+                  it?.isTaxInclusive,
                   items?.selectedPriceRate,
                   it?.count,
                   it?.igst,
@@ -223,7 +223,7 @@ function SalesSummaryTable() {
                 };
 
                 existingParty.saleAmount += items?.individualTotal;
-                existingParty.sale.push(newSale);
+                existingParty?.sale?.push(newSale);
               });
             }
           });
@@ -236,15 +236,15 @@ function SalesSummaryTable() {
           };
 
           item.items.map((it) => {
-            if (it.hasGodownOrBatch) {
+            if (it?.hasGodownOrBatch) {
               if (isGodownOnly(it)) {
                 processGodownMerging(it, saleObject, item);
               } 
               else {
-                it.GodownList.map((items) => {
-                  if (items.added) {
+                it?.GodownList?.map((items) => {
+                  if (items?.added) {
                     const { basePrice, taxAmount } = calculateTaxAndPrice(
-                      it.isTaxInclusive,
+                      it?.isTaxInclusive,
                       items?.selectedPriceRate,
                       items?.count,
                       it?.igst,
@@ -265,10 +265,10 @@ function SalesSummaryTable() {
                       netAmount: items?.individualTotal,
                       amount: basePrice,
                     };
-                    saleObject.saleAmount += items.individualTotal || 0;
+                    saleObject.saleAmount += items?.individualTotal || 0;
 
                     // Push the new sale entry to the sale array
-                    saleObject.sale.push(newSale);
+                    saleObject?.sale?.push(newSale);
                   }
                 });
               }
@@ -297,7 +297,7 @@ function SalesSummaryTable() {
                 };
 
                 saleObject.saleAmount += items?.individualTotal;
-                saleObject.sale.push(a);
+                saleObject?.sale?.push(a);
               });
             }
           });
@@ -565,12 +565,12 @@ function SalesSummaryTable() {
       summary.map((item) => {
         item.items.map((h) => {
           if (h?.brand?.name) {
-            let existingParty = check.find((data) => {
-              return data.groupId === h.brand?._id;
+            let existingParty = check?.find((data) => {
+              return data?.groupId === h?.brand?._id;
             });
 
             if (existingParty) {
-              if (h.hasGodownOrBatch) {
+              if (h?.hasGodownOrBatch) {
                 if (isGodownOnly(h)) {
                   processGodownMerging(h, existingParty, item);
                 } 
@@ -579,7 +579,7 @@ function SalesSummaryTable() {
                   h.GodownList.map((items) => {
                     if (items.added) {
                       const { basePrice, taxAmount } = calculateTaxAndPrice(
-                        h.isTaxInclusive,
+                        h?.isTaxInclusive,
                         items?.selectedPriceRate,
                         items?.count,
                         h?.igst,
@@ -605,14 +605,14 @@ function SalesSummaryTable() {
                       existingParty.saleAmount += items?.individualTotal;
 
                       // Push the new sale entry to the sale array
-                      existingParty.sale.push(newSale);
+                      existingParty?.sale?.push(newSale);
                     }
                   });
                 }
               } else {
                 h.GodownList.map((items) => {
                   const { basePrice, taxAmount } = calculateTaxAndPrice(
-                    h.isTaxInclusive,
+                    h?.isTaxInclusive,
                     items?.selectedPriceRate,
                     h?.count,
                     h?.igst,
@@ -634,7 +634,7 @@ function SalesSummaryTable() {
                   };
 
                   existingParty.saleAmount += items?.individualTotal;
-                  existingParty.sale.push(a);
+                  existingParty?.sale?.push(a);
                 });
               }
             } else {
@@ -678,14 +678,14 @@ function SalesSummaryTable() {
                       saleObject.saleAmount += items?.individualTotal;
 
                       // Push the new sale entry to the sale array
-                      saleObject.sale.push(newSale);
+                      saleObject?.sale?.push(newSale);
                     }
                   });
                 }
               } else {
                 h.GodownList.map((items) => {
                   const { basePrice, taxAmount } = calculateTaxAndPrice(
-                    h.isTaxInclusive,
+                    h?.isTaxInclusive,
                     items?.selectedPriceRate,
                     h?.count,
                     h?.igst,
@@ -706,11 +706,11 @@ function SalesSummaryTable() {
                     amount: basePrice,
                   };
                   saleObject.saleAmount += items?.individualTotal;
-                  saleObject.sale.push(a);
+                  saleObject?.sale?.push(a);
                 });
               }
 
-              check.push(saleObject);
+              check?.push(saleObject);
             }
           }
         });
@@ -719,10 +719,10 @@ function SalesSummaryTable() {
     }
     else if (option === "Stock Category") {
       summary.map((item) => {
-        item.items.map((h) => {
+        item?.items?.map((h) => {
           if (h?.brand?.name) {
-            let existingParty = check.find((data) => {
-              return data.groupId === h.category?._id;
+            let existingParty = check?.find((data) => {
+              return data.groupId === h?.category?._id;
             });
 
             if (existingParty) {
@@ -837,14 +837,14 @@ function SalesSummaryTable() {
                       saleObject.saleAmount += items?.individualTotal;
 
                       // Push the new sale entry to the sale array
-                      saleObject.sale.push(newSale);
+                      saleObject?.sale?.push(newSale);
                     }
                   });
                 }
               } else {
                 h.GodownList.map((items) => {
                   const { basePrice, taxAmount } = calculateTaxAndPrice(
-                    h.isTaxInclusive,
+                    h?.isTaxInclusive,
                     items?.selectedPriceRate,
                     h?.count,
                     h?.igst,
@@ -865,7 +865,7 @@ function SalesSummaryTable() {
                     amount: basePrice,
                   };
                   saleObject.saleAmount += items?.individualTotal;
-                  saleObject.sale.push(a);
+                  saleObject?.sale?.push(a);
                 });
               }
 
@@ -997,7 +997,7 @@ function SalesSummaryTable() {
                         </td>
                         <td className="px-1 py-2 text-gray-800 text-xs cursor-pointer">
                           {saleItem?.billDate
-                            ? new Date(saleItem.billDate)
+                            ? new Date(saleItem?.billDate)
                                 .toISOString()
                                 .split("T")[0]
                             : "N/A"}
@@ -1047,15 +1047,17 @@ function SalesSummaryTable() {
                         </td>
                         <td className="px-1 py-2 text-gray-800 text-xs cursor-pointer">
                           {saleItem?.discount}
+                          
                         </td>
                         <td className="px-1 py-2 text-gray-800 text-xs cursor-pointer">
-                          {(saleItem?.amount)?.toFixed(2)}
+                          {Number((saleItem?.amount)).toFixed(2)}
+
                         </td>
                         <td className="px-1 py-2 text-gray-800 text-xs cursor-pointer">
                           {saleItem?.taxPercentage}
                         </td>
                         <td className="px-1 py-2 text-gray-800 text-xs cursor-pointer">
-                          {(saleItem?.taxAmount)?.toFixed(2)}
+                          {Number((saleItem?.taxAmount)).toFixed(2)}
                         </td>
                         <td className="px-1 py-2 text-gray-800 text-xs cursor-pointer">
                           {saleItem?.netAmount}

@@ -109,7 +109,7 @@ const SalesSummary = () => {
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
       <div className="sticky top-0 z-50">
-        <TitleDiv title="Sales Summary" from="/sUsers/reports" />
+        <TitleDiv title="Sales Summary" />
         <section className="shadow-lg border-b">
           <SelectDate />
         </section>
