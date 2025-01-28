@@ -57,7 +57,6 @@ function Outstanding() {
     fetchOutstanding();
   }, [selectedOrgFromRedux]);
 
-  console.log(data);
 
   const filterOutstanding = (data, secUser) => {
     return data.filter((item) => {
@@ -72,7 +71,6 @@ function Outstanding() {
   };
 
   const finalData = filterOutstanding(data, secUser);
-  console.log(finalData);
 
   return (
     <div className="  ">
