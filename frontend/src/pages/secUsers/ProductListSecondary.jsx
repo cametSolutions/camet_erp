@@ -332,9 +332,13 @@ function ProductListSecondary() {
               <p className="font-bold text-sm">{el?.product_name}</p>
             </div>
             <div
-              className={` ${
+              className={`
+                 ${
                 type !== "self" ? "pointer-events-none opacity-50" : ""
-              }  flex gap-3 mt-2 px-4`}
+              }  
+
+
+              flex gap-3 mt-2 px-4`}
             >
               <Link to={`/sUsers/editProduct/${el._id}`}>
                 <FaEdit className="text-blue-500" />
