@@ -23,7 +23,6 @@ function Outstanding() {
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
   const secUser = JSON.parse(localStorage.getItem("sUserData"));
-  console.log(secUser);
 
   // function formatAmount(amount) {
   //   return amount.toLocaleString("en-IN", { maximumFractionDigits: 2 });
@@ -32,7 +31,6 @@ function Outstanding() {
   const selectedOrgFromRedux = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
-  console.log(selectedOrgFromRedux);
 
   const searchData = (data) => {
     setSearch(data);
@@ -89,17 +87,8 @@ function Outstanding() {
           />
           <p className="text-white text-lg   font-bold ">Outstandings</p>
         </div>
-        <div className=" mt-0 shadow-lg p-3 md:p-4">
-          <form>
-            <label
-              for="default-search"
-              class="mb-2 text-sm font-medium text-gray-900 sr-only"
-            >
-              Search
-            </label>
-            <SearchBar className="" onType={searchData} />
-          </form>
-        </div>
+        <SearchBar className="" onType={searchData} />
+        
       </div>
 
       {currOrg ? (

@@ -127,7 +127,9 @@ function PartyListSecondary() {
           </div>
         </div>
 
+  
         <SearchBar onType={searchData} />
+
       </div>
 
       {/* adding party */}

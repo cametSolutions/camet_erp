@@ -23,7 +23,6 @@ import { useSidebar } from "../../layout/Layout";
 function ProductList() {
   const [products, setProducts] = useState([]);
 
-  const [showSidebar, setShowSidebar] = useState(false);
   const [refresh, setRefresh] = useState(false);
   const [loader, setLoader] = useState(false);
   const [search, setSearch] = useState("");
@@ -236,7 +235,6 @@ function ProductList() {
           </div>
           <div className=" md:w-1/2 ">
             {/* search bar */}
-            <SearchBar onType={searchData} />
 
             {/* search bar */}
           </div>
