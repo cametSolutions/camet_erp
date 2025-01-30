@@ -32,11 +32,12 @@ import { createStockTransfer,editStockTransfer, cancelStockTransfer } from '../c
 import { addBankPaymentDetails } from '../../frontend/slices/payment.js';
 import { addEmailConfiguration, getConfiguration, getBarcodeList, addBarcodeData, editBarcodeData, deleteBarcode, getSingleBarcodeData, getPrintingConfiguration, updateConfiguration, getDespatchTitles, updateDespatchTitles, getTermsAndConditions, updateTermsAndConditions, updateBankAccount, updateTaxConfiguration, updateShipToConfiguration } from '../controllers/settingsController.js';
 import { updateSecondaryUserConfiguration } from '../helpers/saleOrderHelper.js';
-import { updateDateFieldsByCompany, updateSalesItemUnitFields, updateUnitFields } from '../controllers/testingController.js';
+import { convertPrimaryToSecondary, updateDateFieldsByCompany, updateSalesItemUnitFields, updateUnitFields } from '../controllers/testingController.js';
 import { authPrimary } from '../middlewares/authPrimaryUsers.js';
 import { addOrganizations, addSecondaryConfigurations, addSecUsers, editOrg, editSecUSer, fetchConfigurationCurrentNumber, fetchGodownsAndPriceLevels, fetchSecondaryUsers, getOrganizations, getSecUserDetails } from '../controllers/primaryUserController.js';
 
 import { getSummary } from "../controllers/summaryController.js"
+import { getOutstandingSummary } from '../controllers/outStandingController.js';
 
 router.post('/login',login)
 router.post('/sendOtp',sendOtp)
@@ -221,7 +222,9 @@ router.get("/fetchConfigurationCurrentNumber/:orgId/:_id",authPrimary,secondaryI
 router.get('/fetchGodownsAndPriceLevels/:cmp_id',authPrimary,secondaryIsBlocked,companyAuthentication,fetchGodownsAndPriceLevels)
 router.post('/addSecondaryConfigurations/:cmp_id/:userId',authPrimary,secondaryIsBlocked,companyAuthentication,addSecondaryConfigurations)
 
+//// outstanding routes
 
+router.get('/getOutstandingSummary/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,getOutstandingSummary) 
 
 
 
@@ -232,6 +235,7 @@ router.post('/addSecondaryConfigurations/:cmp_id/:userId',authPrimary,secondaryI
 router.put('/updateDateFieldsByCompany/:cmp_id',updateDateFieldsByCompany)
 router.put('/updateUnitFields/:cmp_id',updateUnitFields)
 router.put('/updateSalesItemUnitFields/:cmp_id',updateSalesItemUnitFields)
+router.post('/convertPrimaryToSecondary',convertPrimaryToSecondary)
 
 
 

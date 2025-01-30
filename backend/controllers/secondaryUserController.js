@@ -94,12 +94,18 @@ export const login = async (req, res) => {
     if (secUser.isBlocked) {
       return res.status(401).json({ message: "User is blocked" });
     }
-
+    // console.log("secUser", secUser);
     const isPasswordMatch = await bcrypt.compare(password, secUser.password);
+
+    // console.log("isPasswordMatch", isPasswordMatch);
+    
 
     if (!isPasswordMatch) {
       return res.status(400).json({ message: "Invalid email or password" });
     }
+
+    
+    
 
     const { name, _id, mobile } = secUser._doc;
 

@@ -10,6 +10,9 @@ import Payments from "../models/paymentModel.js";
 import ProductModel from "../models/productModel.js";
 import salesModel from "../models/salesModel.js";
 import purchaseModel from "../models/purchaseModel.js";
+import primaryUserModel from "../models/primaryUserModel.js";
+import OragnizationModel from "../models/OragnizationModel.js";
+import secondaryUserModel from "../models/secondaryUserModel.js";
 
 /**
  * @description Updates the `date` field in documents where it is missing
@@ -234,10 +237,7 @@ export const updateSalesItemUnitFields = async (req, res) => {
                     "$$item",
                     {
                       unit: {
-                        $arrayElemAt: [
-                          { $split: ["$$item.unit", "-"] },
-                          0
-                        ]
+                        $arrayElemAt: [{ $split: ["$$item.unit", "-"] }, 0],
                       },
                       alt_unit: {
                         $cond: {
@@ -246,18 +246,18 @@ export const updateSalesItemUnitFields = async (req, res) => {
                           else: {
                             $arrayElemAt: [
                               { $split: ["$$item.alt_unit", "-"] },
-                              0
-                            ]
-                          }
-                        }
-                      }
-                    }
-                  ]
-                }
-              }
-            }
-          }
-        }
+                              0,
+                            ],
+                          },
+                        },
+                      },
+                    },
+                  ],
+                },
+              },
+            },
+          },
+        },
       ]
     );
 
@@ -271,5 +271,46 @@ export const updateSalesItemUnitFields = async (req, res) => {
       message: "An error occurred while updating unit fields for sales items.",
       error: error.message,
     });
+  }
+};
+
+export const convertPrimaryToSecondary = async (req, res) => {
+  try {
+    const primaryUsers = await primaryUserModel.find({});
+    if (!primaryUsers || primaryUsers.length === 0) {
+      return res.status(404).json({ message: "No primary users found" });
+    }
+
+    for (const user of primaryUsers) {
+      const existingSecondary = await secondaryUserModel.findOne({
+        // email: user.email,
+        mobile: user.mobile,
+      });
+
+      if (existingSecondary) {
+        console.log(`User with email ${user.email} and mobile ${user.mobile} already exists as a secondary user.`);
+        // continue; // Skip conversion if already exists
+      }
+
+      const organizations = await OragnizationModel.find({ owner: user._id });
+
+      const secondaryUser = new secondaryUserModel({
+        name: user.userName,
+        email: user.email,
+        mobile: user.mobile,
+        password: user.password,
+        organization: organizations.map((org) => org._id),
+        primaryUser: user._id,
+        role: "admin",
+      });
+
+      await secondaryUser.save();
+      console.log("Converted primary user to secondary:", secondaryUser);
+    }
+
+    return res.status(200).json({ message: "Primary users successfully converted to secondary users where applicable." });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Error in converting primary to secondary" });
   }
 };

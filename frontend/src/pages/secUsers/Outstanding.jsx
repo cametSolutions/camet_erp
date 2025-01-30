@@ -11,6 +11,7 @@ import { IoIosArrowRoundBack } from "react-icons/io";
 import SearchBar from "../../components/common/SearchBar";
 import { useNavigate } from "react-router-dom";
 import { formatAmount } from "../../../../backend/helpers/helper";
+import { CgDetailsLess } from "react-icons/cg";
 
 function Outstanding() {
   const [data, setData] = useState([]);
@@ -57,7 +58,6 @@ function Outstanding() {
     fetchOutstanding();
   }, [selectedOrgFromRedux]);
 
-
   const filterOutstanding = (data, secUser) => {
     return data.filter((item) => {
       const searchFilter = item.party_name
@@ -75,18 +75,24 @@ function Outstanding() {
   return (
     <div className="  ">
       <div className="sticky top-0 flex flex-col z-30 bg-white">
-        <div className="bg-white"></div>
-        <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex  items-center gap-2  ">
-          <IoIosArrowRoundBack
-            onClick={() => {
-              navigate("/sUsers/reports");
-            }}
-            className=" text-white text-3xl"
-          />
-          <p className="text-white text-lg   font-bold ">Outstandings</p>
+        <div className=" flex  items-center justify-between w-full bg-[#012a4a] shadow-lg px-4 py-3 pb-3   ">
+          <div className="flex items-center gap-2">
+            <IoIosArrowRoundBack
+              onClick={() => {
+                navigate("/sUsers/reports");
+              }}
+              className=" text-white text-3xl"
+            />
+            <p className="text-white text-lg   font-bold ">Outstanding</p>
+          </div>
+          <Link to={`/sUsers/outstandingSummary`}>
+            <div className="text-white text-xs font-bold flex items-center gap-2 bg-[#163c5a] hover:bg-[#244a67] hover:scale-105 transform ease-in-out duration-200 py-1 px-3 rounded-sm shadow-lg cursor-pointer ">
+              <p>Summary</p>
+              <CgDetailsLess size={20} />
+            </div>
+          </Link>
         </div>
         <SearchBar className="" onType={searchData} />
-        
       </div>
 
       {currOrg ? (
