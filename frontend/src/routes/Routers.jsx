@@ -288,8 +288,7 @@ const Routers = () => {
 
 
         <Route path='/sUsers/home' element={<ProtectedSecRoute><SecHome/></ProtectedSecRoute>}></Route>
-        <Route path='/sUsers/outstanding' element={<ProtectedSecRoute><Outstanding/></ProtectedSecRoute>}></Route>
-        <Route path='/sUsers/outstandingDetails/:party_id/:cmp_id/:total' element={<ProtectedSecRoute><OutstandingDetails/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/outstandingDetails/:party_id' element={<ProtectedSecRoute><OutstandingDetails/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/payment' element={<ProtectedSecRoute><PaymentSec/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/transaction' element={<ProtectedSecRoute><Transaction /></ProtectedSecRoute>}></Route>
         {/* <Route path='/sUsers/receiptDetails/:id' element={<ProtectedSecRoute><SecReceptionDetails/></ProtectedSecRoute>}></Route> */}
@@ -511,6 +510,7 @@ const Routers = () => {
 
       {/* outstanding  */}
       <Route path='/sUsers/outstandingSummary' element={<ProtectedSecRoute><OutstandingSummary/></ProtectedSecRoute>}></Route>
+      <Route path='/sUsers/outstanding' element={<ProtectedSecRoute><Outstanding/></ProtectedSecRoute>}></Route>
 
 
 

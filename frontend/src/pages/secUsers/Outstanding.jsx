@@ -1,76 +1,70 @@
+/* eslint-disable react/jsx-key */
 /* eslint-disable react/no-unknown-property */
 import { FaArrowDown } from "react-icons/fa6";
 import { useEffect, useState } from "react";
-import { toast } from "react-toastify";
-import api from "../../api/api";
-import { useSelector, useDispatch } from "react-redux";
+
+import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
-import { removeSettlementData } from "../../../slices/settlementDataSlice";
-import { FaWhatsapp } from "react-icons/fa";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import SearchBar from "../../components/common/SearchBar";
 import { useNavigate } from "react-router-dom";
 import { formatAmount } from "../../../../backend/helpers/helper";
 import { CgDetailsLess } from "react-icons/cg";
+import useFetch from "../../customHook/useFetch";
+import CustomBarLoader from "../../components/common/CustomBarLoader";
 
 function Outstanding() {
   const [data, setData] = useState([]);
 
   const [search, setSearch] = useState("");
 
-  const dispatch = useDispatch();
   const navigate = useNavigate();
-  const currOrg = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg
-  );
-  const secUser = JSON.parse(localStorage.getItem("sUserData"));
 
-  // function formatAmount(amount) {
-  //   return amount.toLocaleString("en-IN", { maximumFractionDigits: 2 });
-  // }
 
-  const selectedOrgFromRedux = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg
+  const cmp_id = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
 
   const searchData = (data) => {
     setSearch(data);
   };
 
+  
+
+  const { data: outstandingData, loading } = useFetch(
+    `/api/sUsers/fetchOutstandingTotal/${cmp_id}`
+  );
+
   useEffect(() => {
-    const fetchOutstanding = async () => {
-      try {
-        const res = await api.get(
-          `/api/sUsers/fetchOutstandingTotal/${selectedOrgFromRedux._id}`,
-          {
-            withCredentials: true,
-          }
-        );
+    if (outstandingData) {
+      setData(outstandingData?.outstandingData);
+    }
+  }, [cmp_id, outstandingData]);
 
-        setData(res.data.outstandingData);
-
-        dispatch(removeSettlementData());
-      } catch (error) {
-        console.log(error);
-        toast.error(error.response.data.message);
-      }
-    };
-    fetchOutstanding();
-  }, [selectedOrgFromRedux]);
-
-  const filterOutstanding = (data, secUser) => {
+  const filterOutstanding = (data) => {
     return data.filter((item) => {
       const searchFilter = item.party_name
         ?.toLowerCase()
         .includes(search.toLowerCase());
 
-      // const userIdFilter = (item.user_id === String(secUser.mobile)) || (item.user_id === 'null');
-
       return searchFilter;
     });
   };
 
-  const finalData = filterOutstanding(data, secUser);
+  const finalData = filterOutstanding(data);
+
+  console.log(finalData);
+  
+
+
+  const handleNavigate = (party_id,party_name,totalBillAmount) => {
+    navigate(`/sUsers/outstandingDetails/${party_id}`,{
+      state:{party_name,totalBillAmount}
+    });
+  };
+
+
+  
 
   return (
     <div className="  ">
@@ -94,18 +88,18 @@ function Outstanding() {
         </div>
         <SearchBar className="" onType={searchData} />
       </div>
+      {loading && <CustomBarLoader />}
 
-      {currOrg ? (
-        <div className="grid grid-cols-1 gap-4 mt-6 text-center pb-10  md:px-2    ">
+      {!loading && finalData?.length > 0 ? (
+        <div className="grid grid-cols-1 gap-4 mt-6 text-center pb-10  md:px-2 cursor-pointer   ">
           {finalData.map((el, index) => (
-            <Link
-              key={index}
-              to={`/sUsers/outstandingDetails/${el._id}/${selectedOrgFromRedux._id}/${el.totalBillAmount}`}
-            >
+            // <Link
+            //   key={index}
+            //   to={`/sUsers/outstandingDetails/${el._id}`}
+            // >
               <div
-                // onClick={() => {
-                //   onTabChange("outStandingDetails", el._id, el.totalBillAmount);
-                // }}
+                key={index}
+                onClick={() => handleNavigate(el?._id,el?.party_name,el?.totalBillAmount)}
                 className="  bg-[#f8ffff] rounded-md shadow-xl border border-gray-100  flex flex-col px-4  transition-all hover:translate-y-[1px] duration-150 transform ease-in-out "
               >
                 <div className="flex justify-between items-center">
@@ -130,21 +124,24 @@ function Outstanding() {
                     </div>
                   </div>
                 </div>
-                <hr />
+                {/* <hr />
                 <hr />
                 <hr />
                 <div className=" flex justify-end p-2 items-center gap-2 text-green-500">
                   <FaWhatsapp />
                   <p className="text-black">Share Payment Link </p>
-                </div>
+                </div> */}
               </div>
-            </Link>
+            // </Link>
           ))}
         </div>
       ) : (
-        <div className="flex justify-center h-screen items-center ">
-          <p className="font-semibold text-lg ">Select an organisation first</p>
-        </div>
+        !loading &&
+        finalData?.length === 0 && (
+          <div className="flex justify-center h-screen items-center">
+            <p className="font-semibold text-lg ">No Data Available</p>
+          </div>
+        )
       )}
     </div>
   );

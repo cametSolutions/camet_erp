@@ -4,6 +4,8 @@ import TitleDiv from "../../components/common/TitleDiv";
 import useFetch from "../../customHook/useFetch";
 import { useSelector } from "react-redux";
 import { FixedSizeList as List } from "react-window";
+import { RiFileExcel2Fill } from "react-icons/ri";
+import * as XLSX from "xlsx"; // Import xlsx
 
 function OutstandingSummary() {
   const [summary, setSummary] = useState([]);
@@ -16,21 +18,15 @@ function OutstandingSummary() {
     `/api/sUsers/getOutstandingSummary/${cmp_id}`
   );
 
-
-  ////// fetch data
-
   useEffect(() => {
     if (data) {
       setSummary(data?.data);
     }
   }, [data, cmp_id]);
 
-
-  ////// calculate list height
-
   useEffect(() => {
     const updateHeight = () => {
-      const titleDiv = document.getElementById("titleDiv");
+      const titleDiv = document.getElementById("title-div");
       const titleHeight = titleDiv ? titleDiv.offsetHeight : 50;
       const windowHeight = window.innerHeight;
       const availableHeight = windowHeight - titleHeight;
@@ -42,7 +38,6 @@ function OutstandingSummary() {
     return () => window.removeEventListener("resize", updateHeight);
   }, []);
 
-  // Flatten the summary for react-window
   const rowData = [];
   summary.forEach((party) => {
     rowData.push({ type: "header", party_name: party.party_name });
@@ -55,15 +50,84 @@ function OutstandingSummary() {
     });
   });
 
+  const exportToExcel = () => {
+    if (!rowData || rowData.length === 0) {
+      window.alert("No data available to export.");
+      return;
+    }
+  
+    const excelData = [];
+  
+    rowData.forEach((row) => {
+      if (row.type === "header") {
+        excelData.push({
+          "Party Name": row.party_name,
+          "Bill Date": "",
+          "Bill No": "",
+          "Bill Amount": "",
+          "Pending Amount": "",
+          "Post-Dated Amount": "",
+          "Final Balance": "",
+          "Due Date": "",
+          "Age of Bill": "",
+        });
+      } else if (row.type === "bill") {
+        excelData.push({
+          "Party Name": "",
+          "Bill Date": new Date(row.bill_date).toLocaleDateString(),
+          "Bill No": row.bill_no,
+          "Bill Amount": row.bill_amount?.toFixed(2),
+          "Pending Amount": row.bill_pending_amt?.toFixed(2),
+          "Post-Dated Amount": "0.00",
+          "Final Balance": row.bill_pending_amt?.toFixed(2),
+          "Due Date": new Date(row.bill_due_date).toLocaleDateString(),
+          "Age of Bill": `${row.age_of_bill} days`,
+        });
+      } else if (row.type === "total") {
+        excelData.push({
+          "Party Name": "Total",
+          "Bill Date": "",
+          "Bill No": "",
+          "Bill Amount": row.total_bill_amount?.toFixed(2),
+          "Pending Amount": row.total_pending_amount?.toFixed(2),
+          "Post-Dated Amount": "0.00",
+          "Final Balance": row.total_final_balance?.toFixed(2),
+          "Due Date": "",
+          "Age of Bill": "",
+        });
+      }
+    });
+  
+    // Create worksheet and workbook
+    const worksheet = XLSX.utils.json_to_sheet(excelData);
+  
+    // Set column widths
+    worksheet["!cols"] = [
+      { wch: 40 }, // Party Name (More width)
+      { wch: 15 }, // Bill Date
+      { wch: 15 }, // Bill No
+      { wch: 20 }, // Bill Amount
+      { wch: 20 }, // Pending Amount
+      { wch: 20 }, // Post-Dated Amount
+      { wch: 20 }, // Final Balance
+      { wch: 15 }, // Due On
+      { wch: 15 }, // Age of Bill
+    ];
+  
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Outstanding Summary");
+  
+    // Generate and download Excel file
+    XLSX.writeFile(workbook, "OutstandingSummary.xlsx");
+  };
+  
+
   const Row = ({ index, style }) => {
     const row = rowData[index];
 
     if (row.type === "header") {
       return (
-        <div
-          style={style}
-          className="bg-gray-200 font-bold px-4 py-2 col-span-8"
-        >
+        <div style={style} className="bg-slate-200 font-bold px-4 py-2 col-span-8">
           {row.party_name}
         </div>
       );
@@ -75,17 +139,10 @@ function OutstandingSummary() {
         >
           <div className="text-left">Total</div>
           <div className="text-left"></div>
-          <div className="text-right">
-            {row.total_bill_amount?.toFixed(2) || ""}
-          </div>
-          <div className="text-right">
-            {row.total_pending_amount?.toFixed(2) || ""}
-          </div>
-          <div className="text-right">0.00</div>{" "}
-          {/* Placeholder for Post-Dated Amount */}
-          <div className="text-right">
-            {row.total_final_balance?.toFixed(2) || ""}
-          </div>
+          <div className="text-right">{row.total_bill_amount?.toFixed(2) || ""}</div>
+          <div className="text-right">{row.total_pending_amount?.toFixed(2) || ""}</div>
+          <div className="text-right">0.00</div>
+          <div className="text-right">{row.total_final_balance?.toFixed(2) || ""}</div>
           <div className="text-right"></div>
           <div className="text-right"></div>
         </div>
@@ -101,19 +158,13 @@ function OutstandingSummary() {
           </div>
           <div className="text-left">{row?.bill_no || ""}</div>
           <div className="text-right">{row?.bill_amount?.toFixed(2) || ""}</div>
-          <div className="text-right">
-            {row?.bill_pending_amt?.toFixed(2) || ""}
-          </div>
-          <div className="text-right">0.00</div>{" "}
-          {/* Placeholder for Post-Dated Amount */}
-          <div className="text-right">
-            {row?.bill_pending_amt?.toFixed(2) || ""}
-          </div>
+          <div className="text-right">{row?.bill_pending_amt?.toFixed(2) || ""}</div>
+          <div className="text-right">0.00</div>
+          <div className="text-right">{row?.bill_pending_amt?.toFixed(2) || ""}</div>
           <div className="text-right">
             {new Date(row?.bill_due_date)?.toLocaleDateString() || ""}
           </div>
-          <div className="text-right">{row?.age_of_bill || ""} days</div>{" "}
-          {/* Display age as days */}
+          <div className="text-right">{row?.age_of_bill || ""} days</div>
         </div>
       );
     }
@@ -121,12 +172,13 @@ function OutstandingSummary() {
 
   return (
     <div className="relative">
-      {/* Sticky Title */}
       <header id="title-div" className="sticky top-0 bg-white z-20 shadow">
         <TitleDiv
           title="Outstanding Summary"
           from="/sUsers/outstanding"
           loading={loading}
+          rightSideContent={<RiFileExcel2Fill size={20} />}
+          rightSideContentOnClick={exportToExcel}
         />
       </header>
 
@@ -138,28 +190,8 @@ function OutstandingSummary() {
 
       {!loading && summary.length > 0 && (
         <div className="overflow-x-auto">
-          <div className="min-w-screen border border-gray-300 bg-white  text-[6px] sm:text-xs">
-            {/* Sticky Table Head */}
-            <div className="relative">
-              <div className="grid grid-cols-8 bg-gray-100 font-bold px-4 py-2 sticky top-10 z-10">
-                <div className="text-left">Bill Date</div>
-                <div className="text-left">Bill No</div>
-                <div className="text-right">Bill Amount</div>
-                <div className="text-right">Pending Amount</div>
-                <div className="text-right">Post-Dated Amount</div>
-                <div className="text-right">Final Balance</div>
-                <div className="text-right">Due on</div>
-                <div className="text-right">Age of bill</div>
-              </div>
-            </div>
-
-            {/* Virtualized List */}
-            <List
-              height={listHeight} // Adjust height as needed
-              itemCount={rowData.length}
-              itemSize={40} // Row height
-              width="100%"
-            >
+          <div className="min-w-screen border border-gray-300 bg-white text-[6px] sm:text-xs">
+            <List height={listHeight} itemCount={rowData.length} itemSize={40} width="100%">
               {Row}
             </List>
           </div>
