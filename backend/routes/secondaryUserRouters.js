@@ -25,7 +25,7 @@ import { getStockTransferDetails,addProduct ,editProduct,getCreditNoteDetails,tr
 import { authSecondary } from '../middlewares/authSecUsers.js';
 import { secondaryIsBlocked } from '../middlewares/isBlocked.js';
 import { companyAuthentication } from '../middlewares/authCompany.js';
-import { fetchOutstandingDetails,createReceipt,cancelReceipt,editReceipt } from '../controllers/receiptController.js';
+import { createReceipt,cancelReceipt,editReceipt } from '../controllers/receiptController.js';
 import { createPayment,cancelPayment, editPayment } from '../controllers/paymentController.js';
 import { createInvoice,editInvoice,cancelSalesOrder, PartyListWithOrderPending } from '../controllers/saleOrderController.js';
 import { createStockTransfer,editStockTransfer, cancelStockTransfer } from '../controllers/stockTransferController.js';
@@ -37,7 +37,7 @@ import { authPrimary } from '../middlewares/authPrimaryUsers.js';
 import { addOrganizations, addSecondaryConfigurations, addSecUsers, editOrg, editSecUSer, fetchConfigurationCurrentNumber, fetchGodownsAndPriceLevels, fetchSecondaryUsers, getOrganizations, getSecUserDetails } from '../controllers/primaryUserController.js';
 
 import { getSummary } from "../controllers/summaryController.js"
-import { fetchOutstandingTotal, getOutstandingSummary } from '../controllers/outStandingController.js';
+import { fetchOutstandingDetails, fetchOutstandingTotal, getOutstandingSummary } from '../controllers/outStandingController.js';
 
 router.post('/login',login)
 router.post('/sendOtp',sendOtp)
