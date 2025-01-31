@@ -6,10 +6,14 @@ import { useSelector } from "react-redux";
 import { FixedSizeList as List } from "react-window";
 import { RiFileExcel2Fill } from "react-icons/ri";
 import * as XLSX from "xlsx"; // Import xlsx
+import SearchBar from "../../components/common/SearchBar";
 
 function OutstandingSummary() {
   const [summary, setSummary] = useState([]);
   const [listHeight, setListHeight] = useState(500); // Default height
+  const [search, setSearch] = useState("");
+  const [filteredSummary, setFilteredSummary] = useState([]);
+
   const cmp_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
@@ -38,8 +42,15 @@ function OutstandingSummary() {
     return () => window.removeEventListener("resize", updateHeight);
   }, []);
 
+  useEffect(() => {
+    const filtered = summary.filter((party) =>
+      party.party_name.toLowerCase().includes(search.toLowerCase())
+    );
+    setFilteredSummary(filtered);
+  }, [search, summary]);
+
   const rowData = [];
-  summary.forEach((party) => {
+  filteredSummary.forEach((party) => {
     rowData.push({ type: "header", party_name: party.party_name });
     rowData.push(...party.bills.map((bill) => ({ type: "bill", ...bill })));
     rowData.push({
@@ -51,82 +62,87 @@ function OutstandingSummary() {
   });
 
   const exportToExcel = () => {
-    if (!rowData || rowData.length === 0) {
-      window.alert("No data available to export.");
-      return;
-    }
-
-    const excelData = [];
-    const headerIndices = [];
-    const totalIndices = [];
-    let currentIndex = 0;
-
-    rowData.forEach((row) => {
-      if (row.type === "header") {
-        headerIndices.push(currentIndex);
-        excelData.push({
-          "Party Name": row.party_name,
-          "Bill Date": "",
-          "Bill No": "",
-          "Bill Amount": "",
-          "Pending Amount": "",
-          "Post-Dated Amount": "",
-          "Final Balance": "",
-          "Due Date": "",
-          "Age of Bill": "",
-        });
-        currentIndex++;
-      } else if (row.type === "bill") {
-        excelData.push({
-          "Party Name": "",
-          "Bill Date": new Date(row.bill_date).toLocaleDateString(),
-          "Bill No": row.bill_no,
-          "Bill Amount": row.bill_amount?.toFixed(2),
-          "Pending Amount": row.bill_pending_amt?.toFixed(2),
-          "Post-Dated Amount": "0.00",
-          "Final Balance": row.bill_pending_amt?.toFixed(2),
-          "Due Date": new Date(row.bill_due_date).toLocaleDateString(),
-          "Age of Bill": `${row.age_of_bill} days`,
-        });
-        currentIndex++;
-      } else if (row.type === "total") {
-        totalIndices.push(currentIndex);
-        excelData.push({
-          "Party Name": "Total",
-          "Bill Date": "",
-          "Bill No": "",
-          "Bill Amount": row.total_bill_amount?.toFixed(2),
-          "Pending Amount": row.total_pending_amount?.toFixed(2),
-          "Post-Dated Amount": "0.00",
-          "Final Balance": row.total_final_balance?.toFixed(2),
-          "Due Date": "",
-          "Age of Bill": "",
-        });
-        currentIndex++;
+    try {
+      if (!rowData || rowData.length === 0) {
+        window.alert("No data available to export.");
+        return;
       }
-    });
 
-    // Create worksheet
-    const worksheet = XLSX.utils.json_to_sheet(excelData);
+      const excelData = [];
+      const headerIndices = [];
+      const totalIndices = [];
+      let currentIndex = 0;
 
-    // Set column widths
-    worksheet["!cols"] = [
-      { wch: 40 }, // Party Name
-      { wch: 15 }, // Bill Date
-      { wch: 15 }, // Bill No
-      { wch: 20 }, // Bill Amount
-      { wch: 20 }, // Pending Amount
-      { wch: 20 }, // Post-Dated Amount
-      { wch: 20 }, // Final Balance
-      { wch: 15 }, // Due On
-      { wch: 15 }, // Age of Bill
-    ];
+      rowData.forEach((row) => {
+        if (row.type === "header") {
+          headerIndices.push(currentIndex);
+          excelData.push({
+            "Party Name": row.party_name,
+            "Bill Date": "",
+            "Bill No": "",
+            "Bill Amount": "",
+            "Pending Amount": "",
+            "Post-Dated Amount": "",
+            "Final Balance": "",
+            "Due Date": "",
+            "Age of Bill": "",
+          });
+          currentIndex++;
+        } else if (row.type === "bill") {
+          excelData.push({
+            "Party Name": "",
+            "Bill Date": new Date(row.bill_date).toLocaleDateString(),
+            "Bill No": row.bill_no,
+            "Bill Amount": row.bill_amount?.toFixed(2),
+            "Pending Amount": row.bill_pending_amt?.toFixed(2),
+            "Post-Dated Amount": "0.00",
+            "Final Balance": row.bill_pending_amt?.toFixed(2),
+            "Due Date": new Date(row.bill_due_date).toLocaleDateString(),
+            "Age of Bill": `${row.age_of_bill} days`,
+          });
+          currentIndex++;
+        } else if (row.type === "total") {
+          totalIndices.push(currentIndex);
+          excelData.push({
+            "Party Name": "Total",
+            "Bill Date": "",
+            "Bill No": "",
+            "Bill Amount": row.total_bill_amount?.toFixed(2),
+            "Pending Amount": row.total_pending_amount?.toFixed(2),
+            "Post-Dated Amount": "0.00",
+            "Final Balance": row.total_final_balance?.toFixed(2),
+            "Due Date": "",
+            "Age of Bill": "",
+          });
+          currentIndex++;
+        }
+      });
 
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Outstanding Summary");
+      // Create worksheet
+      const worksheet = XLSX.utils.json_to_sheet(excelData);
 
-    // Generate and download Excel file
-    XLSX.writeFile(workbook, "OutstandingSummary.xlsx");
+      // Set column widths
+      worksheet["!cols"] = [
+        { wch: 40 }, // Party Name
+        { wch: 15 }, // Bill Date
+        { wch: 15 }, // Bill No
+        { wch: 20 }, // Bill Amount
+        { wch: 20 }, // Pending Amount
+        { wch: 20 }, // Post-Dated Amount
+        { wch: 20 }, // Final Balance
+        { wch: 15 }, // Due On
+        { wch: 15 }, // Age of Bill
+      ];
+
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Outstanding Summary");
+
+      // Generate and download Excel file
+      XLSX.writeFile(workbook, "OutstandingSummary.xlsx");
+    } catch (error) {
+      window.alert(`An error occurred while exporting: ${error.message}`);
+      console.error("Export Error:", error);
+    }
   };
 
   const Row = ({ index, style }) => {
@@ -190,6 +206,10 @@ function OutstandingSummary() {
     }
   };
 
+  const searchData = (data) => {
+    setSearch(data);
+  };
+
   return (
     <div className="relative">
       <header id="title-div" className="sticky top-0 bg-white z-20 shadow">
@@ -200,20 +220,21 @@ function OutstandingSummary() {
           rightSideContent={<RiFileExcel2Fill size={20} />}
           rightSideContentOnClick={exportToExcel}
         />
+        <SearchBar onType={searchData} />
       </header>
 
-      {!loading && summary.length === 0 && (
+      {!loading && filteredSummary.length === 0 && (
         <p className="text-center text-gray-500 mt-20 font-bold">
           No data available.
         </p>
       )}
 
-      {!loading && summary.length > 0 && (
+      {!loading && filteredSummary.length > 0 && (
         <div className="overflow-x-auto">
           <div className="min-w-screen border border-gray-300 bg-white text-[6px] sm:text-xs">
             {/* Sticky Table Head */}
             <div className="relative">
-              <div className="grid grid-cols-8 bg-gray-100 font-bold px-4 py-2 sticky top-10 z-10">
+              <div className="grid grid-cols-8 bg-gray-300 font-bold p-4 sticky top-10 z-10">
                 <div className="text-left">Bill Date</div>
                 <div className="text-left">Bill No</div>
                 <div className="text-right">Bill Amount</div>

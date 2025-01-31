@@ -115,8 +115,7 @@ export const fetchOutstandingTotal = async (req, res) => {
   const Primary_user_id = req.owner.toString();
 
   try {
-    // const tallyData = await TallyData.find({ Primary_user_id: userId });
-    const outstandingData = await TallyData.aggregate([
+    const result = await TallyData.aggregate([
       { $match: { cmp_id: cmp_id, Primary_user_id: Primary_user_id } },
       {
         $group: {
@@ -125,21 +124,48 @@ export const fetchOutstandingTotal = async (req, res) => {
           party_name: { $first: "$party_name" },
           cmp_id: { $first: "$cmp_id" },
           user_id: { $first: "$user_id" },
+          group_name: { $first: "$group_name" },
+          group_name_id: { $first: "$group_name_id" },
+          accountGroup: { $first: "$accountGroup" },
+        },
+      },
+      {
+        $facet: {
+          outstandingData: [{ $sort: { party_name: 1 } }], // Sorting inside MongoDB
+          uniqueGroups: [
+            {
+              $group: {
+                _id: "$group_name_id",
+                group_name: { $first: "$group_name" },
+              },
+            },
+            { $project: { _id: 0, group_name_id: "$_id", group_name: 1 } },
+          ],
+          uniqueAccountGroups: [
+            {
+              $group: {
+                _id: "$accountGroup",
+              },
+            },
+            { $project: { _id: 0, accountGroup: "$_id" } },
+          ],
         },
       },
     ]);
 
-    outstandingData.sort((a, b) => a.party_name.localeCompare(b.party_name));
-
-    if (outstandingData) {
+    if (result.length) {
       return res.status(200).json({
-        outstandingData: outstandingData,
-        message: "tallyData fetched",
+        outstandingData: result[0].outstandingData,
+        uniqueGroups: result[0].uniqueGroups,
+        uniqueAccountGroups: result[0].uniqueAccountGroups.map(
+          (item) => item.accountGroup
+        ),
+        message: "Tally data fetched",
       });
     } else {
       return res
         .status(404)
-        .json({ message: "No outstandingData were found for user" });
+        .json({ message: "No outstanding data were found for user" });
     }
   } catch (error) {
     return res
@@ -147,6 +173,7 @@ export const fetchOutstandingTotal = async (req, res) => {
       .json({ success: false, message: "Internal server error, try again!" });
   }
 };
+
 
 
 /**
