@@ -55,11 +55,15 @@ function OutstandingSummary() {
       window.alert("No data available to export.");
       return;
     }
-  
+
     const excelData = [];
-  
+    const headerIndices = [];
+    const totalIndices = [];
+    let currentIndex = 0;
+
     rowData.forEach((row) => {
       if (row.type === "header") {
+        headerIndices.push(currentIndex);
         excelData.push({
           "Party Name": row.party_name,
           "Bill Date": "",
@@ -71,6 +75,7 @@ function OutstandingSummary() {
           "Due Date": "",
           "Age of Bill": "",
         });
+        currentIndex++;
       } else if (row.type === "bill") {
         excelData.push({
           "Party Name": "",
@@ -83,7 +88,9 @@ function OutstandingSummary() {
           "Due Date": new Date(row.bill_due_date).toLocaleDateString(),
           "Age of Bill": `${row.age_of_bill} days`,
         });
+        currentIndex++;
       } else if (row.type === "total") {
+        totalIndices.push(currentIndex);
         excelData.push({
           "Party Name": "Total",
           "Bill Date": "",
@@ -95,15 +102,16 @@ function OutstandingSummary() {
           "Due Date": "",
           "Age of Bill": "",
         });
+        currentIndex++;
       }
     });
-  
-    // Create worksheet and workbook
+
+    // Create worksheet
     const worksheet = XLSX.utils.json_to_sheet(excelData);
-  
+
     // Set column widths
     worksheet["!cols"] = [
-      { wch: 40 }, // Party Name (More width)
+      { wch: 40 }, // Party Name
       { wch: 15 }, // Bill Date
       { wch: 15 }, // Bill No
       { wch: 20 }, // Bill Amount
@@ -113,21 +121,23 @@ function OutstandingSummary() {
       { wch: 15 }, // Due On
       { wch: 15 }, // Age of Bill
     ];
-  
+
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Outstanding Summary");
-  
+
     // Generate and download Excel file
     XLSX.writeFile(workbook, "OutstandingSummary.xlsx");
   };
-  
 
   const Row = ({ index, style }) => {
     const row = rowData[index];
 
     if (row.type === "header") {
       return (
-        <div style={style} className="bg-slate-200 font-bold px-4 py-2 col-span-8">
+        <div
+          style={style}
+          className="bg-slate-200 font-bold px-4 py-2 col-span-8"
+        >
           {row.party_name}
         </div>
       );
@@ -139,10 +149,16 @@ function OutstandingSummary() {
         >
           <div className="text-left">Total</div>
           <div className="text-left"></div>
-          <div className="text-right">{row.total_bill_amount?.toFixed(2) || ""}</div>
-          <div className="text-right">{row.total_pending_amount?.toFixed(2) || ""}</div>
+          <div className="text-right">
+            {row.total_bill_amount?.toFixed(2) || ""}
+          </div>
+          <div className="text-right">
+            {row.total_pending_amount?.toFixed(2) || ""}
+          </div>
           <div className="text-right">0.00</div>
-          <div className="text-right">{row.total_final_balance?.toFixed(2) || ""}</div>
+          <div className="text-right">
+            {row.total_final_balance?.toFixed(2) || ""}
+          </div>
           <div className="text-right"></div>
           <div className="text-right"></div>
         </div>
@@ -158,9 +174,13 @@ function OutstandingSummary() {
           </div>
           <div className="text-left">{row?.bill_no || ""}</div>
           <div className="text-right">{row?.bill_amount?.toFixed(2) || ""}</div>
-          <div className="text-right">{row?.bill_pending_amt?.toFixed(2) || ""}</div>
+          <div className="text-right">
+            {row?.bill_pending_amt?.toFixed(2) || ""}
+          </div>
           <div className="text-right">0.00</div>
-          <div className="text-right">{row?.bill_pending_amt?.toFixed(2) || ""}</div>
+          <div className="text-right">
+            {row?.bill_pending_amt?.toFixed(2) || ""}
+          </div>
           <div className="text-right">
             {new Date(row?.bill_due_date)?.toLocaleDateString() || ""}
           </div>
@@ -191,7 +211,25 @@ function OutstandingSummary() {
       {!loading && summary.length > 0 && (
         <div className="overflow-x-auto">
           <div className="min-w-screen border border-gray-300 bg-white text-[6px] sm:text-xs">
-            <List height={listHeight} itemCount={rowData.length} itemSize={40} width="100%">
+            {/* Sticky Table Head */}
+            <div className="relative">
+              <div className="grid grid-cols-8 bg-gray-100 font-bold px-4 py-2 sticky top-10 z-10">
+                <div className="text-left">Bill Date</div>
+                <div className="text-left">Bill No</div>
+                <div className="text-right">Bill Amount</div>
+                <div className="text-right">Pending Amount</div>
+                <div className="text-right">Post-Dated Amount</div>
+                <div className="text-right">Final Balance</div>
+                <div className="text-right">Due on</div>
+                <div className="text-right">Age of bill</div>
+              </div>
+            </div>
+            <List
+              height={listHeight}
+              itemCount={rowData.length}
+              itemSize={40}
+              width="100%"
+            >
               {Row}
             </List>
           </div>

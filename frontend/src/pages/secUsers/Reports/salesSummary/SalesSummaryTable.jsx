@@ -7,9 +7,13 @@ import SelectDate from "../../../../components/Filters/SelectDate";
 import { useSelector } from "react-redux";
 import useFetch from "../../../../customHook/useFetch";
 import CustomBarLoader from "../../../../components/common/CustomBarLoader";
+import * as XLSX from 'xlsx';
+import { RiFileExcel2Fill } from "react-icons/ri";
 function SalesSummaryTable() {
   const [summaryReport, setSummaryReport] = useState([]);
   const [summary, setSummary] = useState([]);
+
+  
 
   // const location = useLocation();
   // const summary = location?.state?.summary;
@@ -878,10 +882,181 @@ function SalesSummaryTable() {
     }
   };
 
+
+
+  ////////
+
+ const exportToExcel = () => {
+  
+    if (!summaryReport || summaryReport.length === 0) return;
+  
+    // Function to format date
+    const formatDate = (dateString) => {
+      return dateString ? new Date(dateString).toISOString().split('T')[0] : 'N/A';
+    };
+  
+    // Function to format numbers
+    const formatNumber = (number) => {
+      return number ? Number(number).toFixed(2) : '0.00';
+    };
+  
+    // Prepare worksheet data
+    const worksheetData = [];
+  
+    // Add headers based on selectedOption
+    const headers = [
+      getMainHeader(selectedOption),
+      'Bill No',
+      'Bill Date',
+      getSecondaryHeader(selectedOption),
+      getTertiaryHeader(selectedOption),
+      getQuaternaryHeader(selectedOption),
+      'Batch',
+      'Quantity',
+      'Rate',
+      'Discount',
+      'Amount',
+      'Tax%',
+      'Tax Amount',
+      'Net Amount'
+    ];
+    worksheetData.push(headers);
+
+    console.log(summaryReport);
+    
+  
+    // Add data rows
+    summaryReport.forEach(record => {
+      record.sale.forEach(saleItem => {
+        const row = [
+          // Main identifier based on selectedOption
+          selectedOption === 'Ledger' ? record.partyName :
+          selectedOption === 'Stock Group' ? record.groupName :
+          selectedOption === 'Stock Category' ? record.categoryName :
+          selectedOption === 'Stock Item' ? record.itemName : '',
+          
+          saleItem.billnumber,
+          formatDate(saleItem.billDate),
+          
+          // Secondary column based on selectedOption
+          selectedOption === 'Ledger' ? saleItem.itemName :
+          selectedOption === 'Stock Group' ? saleItem.categoryName :
+          selectedOption === 'Stock Category' ? saleItem.groupName :
+          selectedOption === 'Stock Item' ? saleItem.partyName : '',
+          
+          // Tertiary column based on selectedOption
+          selectedOption === 'Ledger' ? saleItem.categoryName :
+          selectedOption === 'Stock Group' ? saleItem.partyName :
+          selectedOption === 'Stock Category' ? saleItem.itemName :
+          selectedOption === 'Stock Item' ? saleItem.groupName : '',
+          
+          // Quaternary column based on selectedOption
+          selectedOption === 'Ledger' ? saleItem.groupName :
+          selectedOption === 'Stock Group' ? saleItem.itemName :
+          selectedOption === 'Stock Category' ? saleItem.partyName :
+          selectedOption === 'Stock Item' ? saleItem.categoryName : '',
+          
+          saleItem.batch || '',
+          saleItem.quantity,
+          saleItem.rate,
+          formatNumber(saleItem.discount),
+          formatNumber(saleItem.amount),
+          saleItem.taxPercentage,
+          formatNumber(saleItem.taxAmount),
+          formatNumber(saleItem.netAmount)
+        ];
+        worksheetData.push(row);
+      });
+  
+      // Add total row for each group
+      const totalRow = new Array(14).fill('');
+      totalRow[0] = `Total for ${getMainHeader(selectedOption)}`;
+      totalRow[13] = formatNumber(record.saleAmount);
+      worksheetData.push(totalRow);
+      
+      // Add empty row for separation
+      worksheetData.push(new Array(14).fill(''));
+    });
+  
+    // Create workbook and worksheet
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(worksheetData);
+  
+    // Add column widths
+    const colWidths = [
+      { wch: 20 }, // Main identifier
+      { wch: 12 }, // Bill No
+      { wch: 12 }, // Bill Date
+      { wch: 20 }, // Secondary column
+      { wch: 20 }, // Tertiary column
+      { wch: 20 }, // Quaternary column
+      { wch: 12 }, // Batch
+      { wch: 10 }, // Quantity
+      { wch: 10 }, // Rate
+      { wch: 10 }, // Discount
+      { wch: 12 }, // Amount
+      { wch: 8 },  // Tax%
+      { wch: 12 }, // Tax Amount
+      { wch: 12 }  // Net Amount
+    ];
+    ws['!cols'] = colWidths;
+  
+    // Add the worksheet to workbook
+    XLSX.utils.book_append_sheet(wb, ws, 'Sales Summary');
+  
+    // Generate Excel file
+    XLSX.writeFile(wb, `Sales_Summary_${selectedOption}_${formatDate(new Date())}.xlsx`);
+  };
+  
+  // Helper functions for header names
+  function getMainHeader(selectedOption) {
+    switch (selectedOption) {
+      case 'Ledger': return 'Party Name';
+      case 'Stock Group': return 'Group Name';
+      case 'Stock Category': return 'Category Name';
+      case 'Stock Item': return 'Item Name';
+      default: return '';
+    }
+  }
+  
+  function getSecondaryHeader(selectedOption) {
+    switch (selectedOption) {
+      case 'Ledger': return 'Item Name';
+      case 'Stock Group': return 'Category Name';
+      case 'Stock Category': return 'Group Name';
+      case 'Stock Item': return 'Party Name';
+      default: return '';
+    }
+  }
+  
+  function getTertiaryHeader(selectedOption) {
+    switch (selectedOption) {
+      case 'Ledger': return 'Category Name';
+      case 'Stock Group': return 'Party Name';
+      case 'Stock Category': return 'Item Name';
+      case 'Stock Item': return 'Group Name';
+      default: return '';
+    }
+  }
+  
+  function getQuaternaryHeader(selectedOption) {
+    switch (selectedOption) {
+      case 'Ledger': return 'Group Name';
+      case 'Stock Group': return 'Item Name';
+      case 'Stock Category': return 'Party Name';
+      case 'Stock Item': return 'Category Name';
+      default: return '';
+    }
+  }
+
   return (
     <div>
       <div className="flex flex-col sticky top-0 ">
-        <TitleDiv title={"Sales Summary Details"} from="/sUsers/salesSummary" />
+        <TitleDiv title={"Sales Summary Details"} from="/sUsers/salesSummary"
+        rightSideContent={<RiFileExcel2Fill size={20} />}
+                  rightSideContentOnClick={exportToExcel}
+         />
+        {/* <button onClick={()=>{exportToExcel(summaryReport,selectedOption)}}>convet</button> */}
         <SelectDate />
         <div className="flex px-2  bg-white shadow-lg border-t shadow-lg">
           <SummmaryDropdown />
