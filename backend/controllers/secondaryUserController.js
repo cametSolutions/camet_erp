@@ -147,46 +147,7 @@ export const getSecUserData = async (req, res) => {
   }
 };
 
-// @desc get outstanding data from tally
-// route GET/api/sUsers/fetchOutstanding
 
-export const fetchOutstandingTotal = async (req, res) => {
-  const cmp_id = req.params.cmp_id;
-  const Primary_user_id = req.owner.toString();
-
-  try {
-    // const tallyData = await TallyData.find({ Primary_user_id: userId });
-    const outstandingData = await TallyData.aggregate([
-      { $match: { cmp_id: cmp_id, Primary_user_id: Primary_user_id } },
-      {
-        $group: {
-          _id: "$party_id",
-          totalBillAmount: { $sum: "$bill_pending_amt" },
-          party_name: { $first: "$party_name" },
-          cmp_id: { $first: "$cmp_id" },
-          user_id: { $first: "$user_id" },
-        },
-      },
-    ]);
-
-    outstandingData.sort((a, b) => a.party_name.localeCompare(b.party_name));
-
-    if (outstandingData) {
-      return res.status(200).json({
-        outstandingData: outstandingData,
-        message: "tallyData fetched",
-      });
-    } else {
-      return res
-        .status(404)
-        .json({ message: "No outstandingData were found for user" });
-    }
-  } catch (error) {
-    return res
-      .status(500)
-      .json({ success: false, message: "Internal server error, try again!" });
-  }
-};
 
 // @desc get outstanding data from tally
 // route GET/api/sUsers/fetchOutstandingDetails

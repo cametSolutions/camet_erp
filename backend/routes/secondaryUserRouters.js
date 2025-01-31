@@ -1,6 +1,6 @@
 import express from 'express'
 const router = express.Router();
-import {login,getSecUserData,fetchOutstandingTotal,
+import {login,getSecUserData,
     confirmCollection,logout,
     cancelTransaction,fetchBanks,sendOtp,
     submitOtp,resetPassword,getTransactionDetails,PartyList,addParty,getProducts,invoiceList,getSinglePartyDetails,editParty,
@@ -37,7 +37,7 @@ import { authPrimary } from '../middlewares/authPrimaryUsers.js';
 import { addOrganizations, addSecondaryConfigurations, addSecUsers, editOrg, editSecUSer, fetchConfigurationCurrentNumber, fetchGodownsAndPriceLevels, fetchSecondaryUsers, getOrganizations, getSecUserDetails } from '../controllers/primaryUserController.js';
 
 import { getSummary } from "../controllers/summaryController.js"
-import { getOutstandingSummary } from '../controllers/outStandingController.js';
+import { fetchOutstandingTotal, getOutstandingSummary } from '../controllers/outStandingController.js';
 
 router.post('/login',login)
 router.post('/sendOtp',sendOtp)
