@@ -111,68 +111,88 @@ export const getOutstandingSummary = async (req, res) => {
  * @returns {object} - outstanding summary containing party_id, party_name, total_bill_amount, and user_id
  */
 export const fetchOutstandingTotal = async (req, res) => {
-  const cmp_id = req.params.cmp_id;
+  const { cmp_id } = req.params;
+  const { type } = req.query; // "ledger" or "group"
   const Primary_user_id = req.owner.toString();
 
   try {
-    const result = await TallyData.aggregate([
-      { $match: { cmp_id: cmp_id, Primary_user_id: Primary_user_id } },
-      {
-        $group: {
-          _id: "$party_id",
-          totalBillAmount: { $sum: "$bill_pending_amt" },
-          party_name: { $first: "$party_name" },
-          cmp_id: { $first: "$cmp_id" },
-          user_id: { $first: "$user_id" },
-          group_name: { $first: "$group_name" },
-          group_name_id: { $first: "$group_name_id" },
-          accountGroup: { $first: "$accountGroup" },
+    if (type === "ledger") {
+      // Fetching ledger-wise data
+      const ledgerData = await TallyData.aggregate([
+        { $match: { cmp_id, Primary_user_id } },
+        {
+          $group: {
+            _id: "$party_id",
+            totalBillAmount: { $sum: "$bill_pending_amt" },
+            party_name: { $first: "$party_name" },
+            cmp_id: { $first: "$cmp_id" },
+            user_id: { $first: "$user_id" },
+            group_name: { $first: "$group_name" },
+            group_name_id: { $first: "$group_name_id" },
+            accountGroup: { $first: "$accountGroup" },
+          },
         },
-      },
-      {
-        $facet: {
-          outstandingData: [{ $sort: { party_name: 1 } }], // Sorting inside MongoDB
-          uniqueGroups: [
-            {
-              $group: {
-                _id: "$group_name_id",
-                group_name: { $first: "$group_name" },
-              },
-            },
-            { $project: { _id: 0, group_name_id: "$_id", group_name: 1 } },
-          ],
-          uniqueAccountGroups: [
-            {
-              $group: {
-                _id: "$accountGroup",
-              },
-            },
-            { $project: { _id: 0, accountGroup: "$_id" } },
-          ],
-        },
-      },
-    ]);
+        { $sort: { party_name: 1 } }, // Sorting by party name
+      ]);
 
-    if (result.length) {
       return res.status(200).json({
-        outstandingData: result[0].outstandingData,
-        uniqueGroups: result[0].uniqueGroups,
-        uniqueAccountGroups: result[0].uniqueAccountGroups.map(
-          (item) => item.accountGroup
-        ),
-        message: "Tally data fetched",
+        outstandingData: ledgerData,
+        message: "Ledger-wise tally data fetched",
       });
-    } else {
-      return res
-        .status(404)
-        .json({ message: "No outstanding data were found for user" });
     }
+
+    if (type === "group") {
+      // Fetching group-wise data
+      const groupData = await TallyData.aggregate([
+        { $match: { cmp_id, Primary_user_id } },
+        {
+          $group: {
+            _id: { accountGroup: "$accountGroup", group_name_id: "$group_name_id" },
+            group_name: { $first: "$group_name" },
+            totalAmount: { $sum: "$bill_pending_amt" },
+            bills: {
+              $push: {
+                party_id: "$party_id",
+                party_name: "$party_name",
+                bill_pending_amt: "$bill_pending_amt",
+                cmp_id: "$cmp_id",
+                user_id: "$user_id",
+              },
+            },
+          },
+        },
+        {
+          $group: {
+            _id: "$_id.accountGroup",
+            totalAmount: { $sum: "$totalAmount" },
+            subgroups: {
+              $push: {
+                group_name_id: "$_id.group_name_id",
+                group_name: "$group_name",
+                totalAmount: "$totalAmount",
+                bills: "$bills",
+              },
+            },
+          },
+        },
+        { $sort: { _id: 1 } }, // Sort by account group
+      ]);
+
+      return res.status(200).json({
+        outstandingData: groupData,
+        message: "Group-wise tally data fetched",
+      });
+    }
+
+    return res.status(400).json({ message: "Invalid type parameter provided" });
   } catch (error) {
-    return res
-      .status(500)
-      .json({ success: false, message: "Internal server error, try again!" });
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error, try again!",
+    });
   }
 };
+
 
 
 

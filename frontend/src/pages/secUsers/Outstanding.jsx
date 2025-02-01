@@ -1,6 +1,4 @@
-/* eslint-disable react/jsx-key */
-/* eslint-disable react/no-unknown-property */
-import { FaArrowDown } from "react-icons/fa6";
+import { FaAngleDown, FaArrowDown } from "react-icons/fa6";
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
@@ -15,21 +13,22 @@ import CustomBarLoader from "../../components/common/CustomBarLoader";
 function Outstanding() {
   const [data, setData] = useState([]);
   const [search, setSearch] = useState("");
-  const [selectedFilter, setSelectedFilter] = useState("");
+  const [selectedTab, setSelectedTab] = useState("ledger");
+  const [expandedGroups, setExpandedGroups] = useState({});
+  const [expandedSubGroups, setExpandedSubGroups] = useState({});
 
   const navigate = useNavigate();
-
   const cmp_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
 
   const { data: outstandingData, loading } = useFetch(
-    `/api/sUsers/fetchOutstandingTotal/${cmp_id}`
+    `/api/sUsers/fetchOutstandingTotal/${cmp_id}?type=${selectedTab}`
   );
 
   useEffect(() => {
     if (outstandingData) {
-      setData(outstandingData?.outstandingData);
+      setData(outstandingData?.outstandingData || []);
     }
   }, [cmp_id, outstandingData]);
 
@@ -37,23 +36,24 @@ function Outstanding() {
     setSearch(data);
   };
 
-  // Filtering Function
   const filterOutstanding = (data) => {
+    return data.filter((item) =>
+      item.party_name?.toLowerCase().includes(search.toLowerCase())
+    );
+  };
 
-    return data.filter((item) => {
-      const searchFilter = item.party_name
-        ?.toLowerCase()
-        .includes(search.toLowerCase());
+  const toggleGroup = (groupId) => {
+    setExpandedGroups((prev) => ({
+      ...prev,
+      [groupId]: !prev[groupId],
+    }));
+  };
 
-        
-
-      const groupFilter = selectedFilter
-        ? item.group_name_id === Number(selectedFilter) ||
-          item.accountGroup === selectedFilter
-        : true;
-
-      return searchFilter && groupFilter;
-    });
+  const toggleSubGroup = (subGroupId) => {
+    setExpandedSubGroups((prev) => ({
+      ...prev,
+      [subGroupId]: !prev[subGroupId],
+    }));
   };
 
   const finalData = filterOutstanding(data);
@@ -65,9 +65,9 @@ function Outstanding() {
   };
 
   return (
-    <div className="  ">
+    <div>
       <div className="sticky top-0 flex flex-col z-30 bg-white shadow-lg pb-2">
-        <div className="flex items-center justify-between w-full bg-[#012a4a] shadow-lg px-4 py-3 pb-3">
+        <div className="flex items-center justify-between w-full bg-[#012a4a] shadow-lg px-4 py-3">
           <div className="flex items-center gap-2">
             <IoIosArrowRoundBack
               onClick={() => navigate("/sUsers/reports")}
@@ -83,34 +83,36 @@ function Outstanding() {
           </Link>
         </div>
 
-        {/* Search Bar */}
         <SearchBar onType={searchData} />
 
-        {/* Filter Dropdown */}
-        <div className="px-4 mt-2 sm:w-1/4 ">
-          <select
-            value={selectedFilter}
-            onChange={(e) => setSelectedFilter(e.target.value)}
-            className=" text-xs w-full p-2 border border-gray-300 rounded no-focus-box border-none" 
+        <div className="flex  mt-2 w-full px-3">
+          <button
+            onClick={() => setSelectedTab("ledger")}
+            className={`px-4 py-2 text-sm  ${
+              selectedTab === "ledger"
+                ? "border-b-2 text-black font-bold"
+                : "text-gray-500"
+            } w-1/2`}
           >
-            <option value="">All Groups</option>
-            {outstandingData?.uniqueGroups?.map((group) => (
-              <option key={group.group_name_id} value={group.group_name_id}>
-                {group.group_name}
-              </option>
-            ))}
-            {outstandingData?.uniqueAccountGroups?.map((accountGroup) => (
-              <option key={accountGroup} value={accountGroup}>
-                {accountGroup}
-              </option>
-            ))}
-          </select>
+            Ledger
+          </button>
+          <button
+            onClick={() => setSelectedTab("group")}
+            className={`px-4 py-2 text-sm  ${
+              selectedTab === "group"
+                ? "border-b-2 text-black font-bold"
+                : "text-gray-500"
+            }  w-1/2`}
+          >
+            Group
+          </button>
         </div>
       </div>
 
       {loading && <CustomBarLoader />}
 
-      {!loading && finalData?.length > 0 ? (
+      {/* Ledger-wise View */}
+      {selectedTab === "ledger" && !loading && finalData?.length > 0 ? (
         <div className="grid grid-cols-1 gap-4 mt-6 text-center pb-10 md:px-2 cursor-pointer">
           {finalData.map((el, index) => (
             <div
@@ -120,21 +122,19 @@ function Outstanding() {
               }
               className="bg-[#f8ffff] rounded-md shadow-xl border border-gray-100 flex flex-col px-4 transition-all hover:translate-y-[1px] duration-150 transform ease-in-out"
             >
-              <div className="flex justify-between items-center">
-                <div className="h-full px-2 py-8 lg:p-6 w-[150px] md:w-[180px] lg:w-[300px] flex justify-center items-start relative flex-col">
-                  <p className="font-bold md:font-semibold text-[11.3px] md:text-[15px] text-left">
-                    {el.party_name}
-                  </p>
-                  <p className="text-gray-400 text-sm">Customer</p>
+              <div className="flex justify-between items-center p-3 py-4">
+                <div className="h-full px-2  w-[300px] flex justify-center items-start flex-col">
+                  <p className="font-bold text-sm text-left">{el.party_name}</p>
+                  <p className="text-gray-400 text-xs">Customer</p>
                 </div>
-                <div className="h-full p-2 lg:p-6 w-[150px] md:w-[180px] lg:w-[300px] flex text-right relative flex-col">
+                <div className="h-full  w-[200px] flex text-right flex-col">
                   <div className="flex-col justify-center">
-                    <p className="font-semibold text-green-600">Total Amount</p>
-                    <div className="flex justify-end text-right">
+                    {/* <p className="font-semibold text-gray-600">Total Amount</p> */}
+                    <div className="flex justify-end">
                       <p className="text-sm font-bold">
                         ₹{formatAmount(el.totalBillAmount)}
                       </p>
-                      <FaArrowDown className="ml-1 md:mt-[.1rem] text-green-700" />
+                      {/* <FaArrowDown className="ml-1 text-gray-700" /> */}
                     </div>
                   </div>
                 </div>
@@ -142,9 +142,85 @@ function Outstanding() {
             </div>
           ))}
         </div>
+      ) : null}
+
+      {/* Group-wise View */}
+      {selectedTab === "group" && !loading && data?.length > 0 ? (
+        <div className="mt-6 px-4 pb-10">
+          {data.map((group) => (
+            <div key={group._id} className="mb-4 font-bold">
+              {/* Main Group */}
+              <button
+                onClick={() => toggleGroup(group?._id)}
+                className="w-full text-left  bg-[#f8ffff]  p-4 font-semibold rounded-xs shadow-md flex justify-between items-center transition-all hover:translate-y-[1px] duration-150 transform ease-in-out "
+              >
+                <div className="flex items-center gap-3">
+                  <FaAngleDown
+                    className={`${
+                      expandedGroups[group?._id] &&
+                      " transform translate duration-300 ease-in-out rotate-180"
+                    }  mt-1`}
+                  />
+                  <span className="font-bold text-gray-500">{group?._id}</span>
+                </div>
+                <span className="text-gray-600   font-bold">
+                  ₹{formatAmount(group?.totalAmount)}
+                </span>
+              </button>
+
+              {/* Subgroups */}
+              {expandedGroups[group?._id] &&
+                group?.subgroups.map((subgroup) => (
+                  <div key={subgroup?.group_name_id} className="ml-4  my-5">
+                    <button
+                      onClick={() => toggleSubGroup(subgroup?.group_name_id)}
+                      className="w-full text-left bg-slate-50 p-3  shadow-sm  flex justify-between items-center transition-all hover:translate-y-[1px] duration-150 transform ease-in-out "
+                    >
+                      <div className="flex items-center gap-3">
+                      <FaAngleDown
+                          className={`${
+                            expandedSubGroups[subgroup?.group_name_id] &&
+                            " transform translate duration-300 ease-in-out rotate-180"
+                          }  mt-1`}
+                        />
+                        <span className="font-medium text-sm">
+                          {subgroup?.group_name}
+                        </span>
+                       
+                      </div>
+
+                      <span className="text-gray-600">
+                        ₹{formatAmount(subgroup?.totalAmount)}
+                      </span>
+                    </button>
+
+                    {/* Bills */}
+                    {expandedSubGroups[subgroup?.group_name_id] && (
+                      <div className="ml-4 my-5">
+                        {subgroup.bills.map((bill, index) => (
+                          <div
+                          onClick={() =>
+                            handleNavigate(bill?.party_id, bill?.party_name, bill?.bill_pending_amt)
+                          }
+                            key={index}
+                            className="bg-white p-3 flex justify-between rounded-md shadow-sm mb-2 border border-gray-100"
+                          >
+                            <p className=" text-gray-700 text-sm font-semibold">{bill?.party_name}</p>
+                            <p className="text-gray-600 mt-1">
+                              ₹{formatAmount(bill.bill_pending_amt)}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+            </div>
+          ))}
+        </div>
       ) : (
         !loading &&
-        finalData?.length === 0 && (
+        selectedTab === "group" && (
           <div className="flex justify-center h-screen items-center">
             <p className="font-semibold text-lg">No Data Available</p>
           </div>
