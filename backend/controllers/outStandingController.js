@@ -135,8 +135,12 @@ export const fetchOutstandingTotal = async (req, res) => {
         { $sort: { party_name: 1 } }, // Sorting by party name
       ]);
 
+      // Calculate total outstanding amount
+      const totalOutstandingAmount = ledgerData.reduce((sum, item) => sum + item.totalBillAmount, 0);
+
       return res.status(200).json({
         outstandingData: ledgerData,
+        totalOutstandingAmount,
         message: "Ledger-wise tally data fetched",
       });
     }
@@ -178,8 +182,12 @@ export const fetchOutstandingTotal = async (req, res) => {
         { $sort: { _id: 1 } }, // Sort by account group
       ]);
 
+      // Calculate total outstanding amount
+      const totalOutstandingAmount = groupData.reduce((sum, item) => sum + item.totalAmount, 0);
+
       return res.status(200).json({
         outstandingData: groupData,
+        totalOutstandingAmount,
         message: "Group-wise tally data fetched",
       });
     }
@@ -192,6 +200,7 @@ export const fetchOutstandingTotal = async (req, res) => {
     });
   }
 };
+
 
 
 
