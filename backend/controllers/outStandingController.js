@@ -199,23 +199,36 @@ export const fetchOutstandingTotal = async (req, res) => {
     }
 
     if (type === "group") {
-      // Original group-wise logic remains unchanged
       const groupData = await TallyData.aggregate([
         { $match: { cmp_id, Primary_user_id } },
         {
           $group: {
-            _id: { accountGroup: "$accountGroup", group_name_id: "$group_name_id" },
+            _id: { accountGroup: "$accountGroup", group_name_id: "$group_name_id", party_id: "$party_id" },
+            party_name: { $first: "$party_name" },
             group_name: { $first: "$group_name" },
             totalDr: { $sum: { $cond: [{ $eq: ["$classification", "Dr"] }, "$bill_pending_amt", 0] } },
             totalCr: { $sum: { $cond: [{ $eq: ["$classification", "Cr"] }, "$bill_pending_amt", 0] } },
+            cmp_id: { $first: "$cmp_id" },
+            user_id: { $first: "$user_id" },
+            classification: { $first: "$classification" },
+          },
+        },
+        {
+          $group: {
+            _id: { accountGroup: "$_id.accountGroup", group_name_id: "$_id.group_name_id" },
+            group_name: { $first: "$group_name" },
+            totalDr: { $sum: "$totalDr" },
+            totalCr: { $sum: "$totalCr" },
             bills: {
               $push: {
-                party_id: "$party_id",
+                party_id: "$_id.party_id",
                 party_name: "$party_name",
-                bill_pending_amt: "$bill_pending_amt",
+                bill_pending_amt: { $abs: { $sum: { $subtract: ["$totalDr", "$totalCr"] } } },
                 cmp_id: "$cmp_id",
                 user_id: "$user_id",
-                classification: "$classification",
+                classification: {
+                  $cond: { if: { $gt: [{ $subtract: ["$totalDr", "$totalCr"] }, 0] }, then: "Dr", else: "Cr" },
+                },
               },
             },
           },
@@ -252,10 +265,10 @@ export const fetchOutstandingTotal = async (req, res) => {
 
       groupData.forEach((item) => {
         totalOutstandingDrCr += item.totalAmount;
-        if (item.totalAmount > 0) {
+        if (item.classification === "Dr") {
           totalOutstandingReceivable += item.totalAmount;
         } else {
-          totalOutstandingPayable += Math.abs(item.totalAmount);
+          totalOutstandingPayable += item.totalAmount;
         }
       });
 
@@ -267,6 +280,7 @@ export const fetchOutstandingTotal = async (req, res) => {
         message: "Group-wise tally data fetched",
       });
     }
+    
 
     return res.status(400).json({ message: "Invalid type parameter provided" });
   } catch (error) {

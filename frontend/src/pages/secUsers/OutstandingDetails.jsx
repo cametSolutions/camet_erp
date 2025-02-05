@@ -22,9 +22,9 @@ function OutStandingDetails() {
   const location = useLocation();
   const { party_id } = useParams();
 
-  const { party_name, totalBillAmount, selectedTab } = location.state;
+  const { party_name, totalBillAmount, selectedTab,classification } = location.state;
+  
 
-  console.log(selectedTab);
 
   const { data: apiData, loading } = useFetch(
     `/api/sUsers/fetchOutstandingDetails/${party_id}/${cmp_id}`
@@ -61,7 +61,7 @@ function OutStandingDetails() {
               <p className="font-bold  text-gray-500">{party_name}</p>
             </div>
             <p className="  text-green-600">
-              ₹{formatAmount(parseFloat(totalBillAmount))}
+              ₹{formatAmount(parseFloat(totalBillAmount))} {classification}
             </p>
           </div>
 
