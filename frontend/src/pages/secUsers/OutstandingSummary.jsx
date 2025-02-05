@@ -27,6 +27,20 @@ function OutstandingSummary() {
     }
   }, [data, cmp_id]);
 
+  useEffect(() => {
+    const updateHeight = () => {
+      const titleDiv = document.getElementById("title-div");
+      const titleHeight = titleDiv ? titleDiv.offsetHeight : 50;
+      const windowHeight = window.innerHeight;
+      const availableHeight = windowHeight - titleHeight;
+      setListHeight(availableHeight - 50);
+    };
+
+    updateHeight();
+    window.addEventListener("resize", updateHeight);
+    return () => window.removeEventListener("resize", updateHeight);
+  }, []);
+
   // Rest of the useEffect hooks remain the same...
 
   useEffect(() => {
@@ -217,7 +231,7 @@ function OutstandingSummary() {
   };
 
   return (
-    <div className="relative">
+    <div className="relative h-screen overflow-y-hidden ">
       <header id="title-div" className="sticky top-0 bg-white z-20 shadow">
         <TitleDiv
           title="Outstanding Summary"
