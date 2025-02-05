@@ -56,7 +56,10 @@ export const tallyDataSlice = createSlice({
     },
     addReceivableTotal: (state, action) => {
       state.receivableTotal = action.payload;
-    }
+    },
+    removeAll: (state) => {
+      Object.assign(state, initialState);
+    },
   },
 });
 
@@ -72,7 +75,8 @@ export const {
   addPayableData,
   addReceivableData,
   addPayableTotal,
-  addReceivableTotal  
+  addReceivableTotal,
+  removeAll,
 } = tallyDataSlice.actions;
 
 export default tallyDataSlice.reducer;

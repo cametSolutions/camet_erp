@@ -22,20 +22,32 @@ function OutStandingDetails() {
   const location = useLocation();
   const { party_id } = useParams();
 
-  const { party_name, totalBillAmount } = location.state;
+  const { party_name, totalBillAmount, selectedTab } = location.state;
+
+  console.log(selectedTab);
 
   const { data: apiData, loading } = useFetch(
     `/api/sUsers/fetchOutstandingDetails/${party_id}/${cmp_id}`
   );
 
   useEffect(() => {
-    if (apiData) {
-      setData(apiData.outstandings);
+    if (apiData && selectedTab) {
+      const { outstandings } = apiData;
+
+      let finalData = [];
+      if (selectedTab === "payables") {
+        finalData = outstandings.filter((item) => item.classification === "Cr");
+      } else if (selectedTab === "receivables") {
+        finalData = outstandings.filter((item) => item.classification === "Dr");
+      } else {
+        finalData = outstandings;
+      }
+      setData(finalData);
     }
-  }, [apiData]);
+  }, [apiData, selectedTab]);
 
   return (
-    <div className="  pb-28    ">
+    <div className="  pb-5   ">
       <div className="sticky  top-0 z-10 w-full shadow-lg  flex flex-col rounded-[3px] gap-1">
         {/* receive payment */}
 
@@ -73,7 +85,7 @@ function OutStandingDetails() {
                 >
                   <div className=" h-full= py-8 lg:p-6 w-[200px] md:w-[180px] lg:w-[300px] flex justify-center items-start relative flex-col ">
                     <div className="flex items-center gap-2">
-                      <div className="flex flex-col gap-1">
+                      <div className="flex flex-col gap-1 text-left">
                         <p className="font-bold text-[12px] text-violet-500">
                           #{el.bill_no}
                         </p>
@@ -87,6 +99,10 @@ function OutStandingDetails() {
                     <div className="flex-col justify-center text-end ">
                       <p className="  font-bold text-gray-600 ">
                         ₹{formatAmount(el.bill_pending_amt)}
+                        <span className=" text-sm">
+                          {" "}
+                          {el?.classification}{" "}
+                        </span>
                       </p>
                     </div>
                   </div>

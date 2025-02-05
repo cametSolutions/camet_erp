@@ -112,14 +112,66 @@ export const getOutstandingSummary = async (req, res) => {
  */
 export const fetchOutstandingTotal = async (req, res) => {
   const { cmp_id } = req.params;
-  const { type } = req.query; // "ledger" or "group"
+  const { type } = req.query; // "ledger", "group", "payables", "receivables"
   const Primary_user_id = req.owner.toString();
 
   try {
     if (type === "ledger") {
-      // Fetching ledger-wise data
+      // Original ledger-wise data logic
       const ledgerData = await TallyData.aggregate([
         { $match: { cmp_id, Primary_user_id } },
+        {
+          $group: {
+            _id: "$party_id",
+            totalDr: { $sum: { $cond: [{ $eq: ["$classification", "Dr"] }, "$bill_pending_amt", 0] } },
+            totalCr: { $sum: { $cond: [{ $eq: ["$classification", "Cr"] }, "$bill_pending_amt", 0] } },
+            party_name: { $first: "$party_name" },
+            cmp_id: { $first: "$cmp_id" },
+            user_id: { $first: "$user_id" },
+            group_name: { $first: "$group_name" },
+            group_name_id: { $first: "$group_name_id" },
+            accountGroup: { $first: "$accountGroup" },
+          },
+        },
+        {
+          $addFields: {
+            totalBillAmount: { $abs: { $subtract: ["$totalDr", "$totalCr"] } },
+            classification: {
+              $cond: { if: { $gt: [{ $subtract: ["$totalDr", "$totalCr"] }, 0] }, then: "Dr", else: "Cr" },
+            },
+          },
+        },
+        { $sort: { party_name: 1 } },
+      ]);
+
+      let totalOutstandingDrCr = 0;
+      let totalOutstandingPayable = 0;
+      let totalOutstandingReceivable = 0;
+
+      ledgerData.forEach((item) => {
+        totalOutstandingDrCr += item.totalDr + item.totalCr;
+        totalOutstandingPayable += item.totalCr;
+        totalOutstandingReceivable += item.totalDr;
+      });
+
+      return res.status(200).json({
+        outstandingData: ledgerData,
+        totalOutstandingDrCr,
+        totalOutstandingPayable,
+        totalOutstandingReceivable,
+        message: "Ledger-wise tally data fetched",
+      });
+    }
+
+    if (type === "payables" || type === "receivables") {
+      const matchClassification = type === "payables" ? "Cr" : "Dr";
+      
+      const outstandingData = await TallyData.aggregate([
+        { $match: { 
+          cmp_id, 
+          Primary_user_id,
+          classification: matchClassification 
+        }},
         {
           $group: {
             _id: "$party_id",
@@ -130,30 +182,31 @@ export const fetchOutstandingTotal = async (req, res) => {
             group_name: { $first: "$group_name" },
             group_name_id: { $first: "$group_name_id" },
             accountGroup: { $first: "$accountGroup" },
+            classification: { $first: "$classification" }
           },
         },
-        { $sort: { party_name: 1 } }, // Sorting by party name
+        { $sort: { party_name: 1 } },
       ]);
 
-      // Calculate total outstanding amount
-      const totalOutstandingAmount = ledgerData.reduce((sum, item) => sum + item.totalBillAmount, 0);
+      const totalOutstanding = outstandingData.reduce((sum, item) => sum + item.totalBillAmount, 0);
 
       return res.status(200).json({
-        outstandingData: ledgerData,
-        totalOutstandingAmount,
-        message: "Ledger-wise tally data fetched",
+        outstandingData,
+        totalOutstanding,
+        message: `${type.charAt(0).toUpperCase() + type.slice(1)} tally data fetched`,
       });
     }
 
     if (type === "group") {
-      // Fetching group-wise data
+      // Original group-wise logic remains unchanged
       const groupData = await TallyData.aggregate([
         { $match: { cmp_id, Primary_user_id } },
         {
           $group: {
             _id: { accountGroup: "$accountGroup", group_name_id: "$group_name_id" },
             group_name: { $first: "$group_name" },
-            totalAmount: { $sum: "$bill_pending_amt" },
+            totalDr: { $sum: { $cond: [{ $eq: ["$classification", "Dr"] }, "$bill_pending_amt", 0] } },
+            totalCr: { $sum: { $cond: [{ $eq: ["$classification", "Cr"] }, "$bill_pending_amt", 0] } },
             bills: {
               $push: {
                 party_id: "$party_id",
@@ -161,7 +214,16 @@ export const fetchOutstandingTotal = async (req, res) => {
                 bill_pending_amt: "$bill_pending_amt",
                 cmp_id: "$cmp_id",
                 user_id: "$user_id",
+                classification: "$classification",
               },
+            },
+          },
+        },
+        {
+          $addFields: {
+            totalAmount: { $abs: { $subtract: ["$totalDr", "$totalCr"] } },
+            classification: {
+              $cond: { if: { $gt: [{ $subtract: ["$totalDr", "$totalCr"] }, 0] }, then: "Dr", else: "Cr" },
             },
           },
         },
@@ -174,20 +236,33 @@ export const fetchOutstandingTotal = async (req, res) => {
                 group_name_id: "$_id.group_name_id",
                 group_name: "$group_name",
                 totalAmount: "$totalAmount",
+                classification: "$classification",
                 bills: "$bills",
               },
             },
           },
         },
-        { $sort: { _id: 1 } }, // Sort by account group
+        { $sort: { _id: 1 } },
       ]);
 
-      // Calculate total outstanding amount
-      const totalOutstandingAmount = groupData.reduce((sum, item) => sum + item.totalAmount, 0);
+      let totalOutstandingDrCr = 0;
+      let totalOutstandingPayable = 0;
+      let totalOutstandingReceivable = 0;
+
+      groupData.forEach((item) => {
+        totalOutstandingDrCr += item.totalAmount;
+        if (item.totalAmount > 0) {
+          totalOutstandingReceivable += item.totalAmount;
+        } else {
+          totalOutstandingPayable += Math.abs(item.totalAmount);
+        }
+      });
 
       return res.status(200).json({
         outstandingData: groupData,
-        totalOutstandingAmount,
+        totalOutstandingDrCr,
+        totalOutstandingPayable,
+        totalOutstandingReceivable,
         message: "Group-wise tally data fetched",
       });
     }
@@ -200,7 +275,6 @@ export const fetchOutstandingTotal = async (req, res) => {
     });
   }
 };
-
 
 
 
@@ -231,7 +305,7 @@ export const fetchOutstandingDetails = async (req, res) => {
       ...sourceMatch,
     })
       .sort({ bill_date: 1 })
-      .select("bill_no billId bill_date bill_pending_amt source bill_date");
+      .select("bill_no billId bill_date bill_pending_amt source bill_date classification");
 
       
     if (outstandings) {
