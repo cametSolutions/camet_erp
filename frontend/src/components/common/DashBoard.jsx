@@ -47,6 +47,7 @@ function DashBoard({
           <FaCaretDown />
         </div>
       </div>
+      <hr className="sm:hidden" />
       {/* company name */}
 
       <div className="flex flex-col   ">

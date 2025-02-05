@@ -18,7 +18,6 @@ export const getSummary = async (req, res) => {
 
   try {
     const cmp_id = req.params.cmp_id
-    console.log("cmpiddddd", cmp_id)
 
     let dateFilter = {}
     if (startOfDayParam && endOfDayParam) {

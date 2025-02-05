@@ -4,19 +4,25 @@ import { IoIosArrowRoundBack } from "react-icons/io";
 import { useNavigate } from "react-router-dom";
 import CustomBarLoader from "./CustomBarLoader";
 
-function TitleDiv({ title, from = "", loading = false }) {
+function TitleDiv({
+  title,
+  from = "",
+  loading = false,
+  rightSideContent = null,
+  rightSideContentOnClick = () => {},
+}) {
   const navigate = useNavigate();
 
   const handleNavigate = () => {
     if (from) {
-      navigate(from,{replace:true});
+      navigate(from, { replace: true });
     } else {
-      navigate(-1,{replace:true});
+      navigate(-1, { replace: true });
     }
   };
   return (
     <div className="sticky top-0 z-50 ">
-      <div className="  bg-[#201450] text-white  p-3 flex items-center gap-3 text-lg justify-between   ">
+      <div className="  bg-[#012a4a] text-white  p-3 flex items-center gap-3 text-lg justify-between   ">
         <div className="flex items-center justify-center gap-2">
           <IoIosArrowRoundBack
             onClick={handleNavigate}
@@ -25,9 +31,16 @@ function TitleDiv({ title, from = "", loading = false }) {
           <p className="font-bold"> {title}</p>
         </div>
 
+        {rightSideContent && (
+          <button
+           onClick={rightSideContentOnClick}
+           className="font-bold text-sm pr-2 cursor-pointer hover:scale-105 duration-300 ease-in-out hover:text-gray-200">
+            {rightSideContent}
+          </button>
+        )}
       </div>
 
-      {loading && <CustomBarLoader  />}
+      {loading && <CustomBarLoader />}
     </div>
   );
 }

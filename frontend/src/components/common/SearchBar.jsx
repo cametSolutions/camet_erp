@@ -3,13 +3,12 @@ import { useState } from "react";
 import { CiSearch } from "react-icons/ci";
 import { IoIosCloseCircleOutline } from "react-icons/io";
 
-
 function SearchBar({ onType }) {
   const [search, setSearch] = useState("");
 
   return (
     <div className="relative">
-      <div className="flex items-center p-2 px-4 bg-white shadow-lg relative">
+      <div className="flex items-center py-1 px-4 bg-white shadow-lg relative">
         <CiSearch size={20} className="mr-2" />
 
         <input
@@ -31,7 +30,7 @@ function SearchBar({ onType }) {
         type="submit"
         className={`${
           search.length > 0 ? "block" : "hidden"
-        }  absolute end-[40px] top-1/2 transform -translate-y-1/2 text-gray-500  text-md px-2 py-1`}
+        }  absolute end-[10px] top-1/2 transform -translate-y-1/2 text-gray-500  text-md px-2 py-1`}
       >
         <IoIosCloseCircleOutline />
       </button>
