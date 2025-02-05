@@ -1,5 +1,6 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { FaAngleDown } from "react-icons/fa6";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
 import { IoIosArrowRoundBack } from "react-icons/io";
@@ -16,6 +17,7 @@ import {
   addReceivableData,
   addPayableTotal,
   addReceivableTotal,
+  addScrollPosition,
 } from "../../../slices/tallyDataSlice";
 import SearchBar from "../../components/common/SearchBar";
 import CustomBarLoader from "../../components/common/CustomBarLoader";
@@ -25,6 +27,7 @@ function Outstanding() {
   // ---------- Redux & Router Hooks ----------
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const containerRef = useRef(null);
   const cmp_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
@@ -51,6 +54,8 @@ function Outstanding() {
   const [search, setSearch] = useState("");
   const [expandedGroups, setExpandedGroups] = useState({});
   const [expandedSubGroups, setExpandedSubGroups] = useState({});
+  const [scrollPosition, setScrollPosition] = useState(0);
+  const [listHeight, setListHeight] = useState(0);
 
   // ---------- Data Fetching Logic ----------
   const shouldFetch =
@@ -143,6 +148,44 @@ function Outstanding() {
     receivableDataFromRedux,
   ]);
 
+  /// -------------for handling scroll -----------------------
+
+  const handleScroll = () => {
+
+    if (containerRef.current) {
+      setScrollPosition(containerRef.current.scrollTop);
+    }
+  };
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (container) {
+      container.addEventListener("scroll", handleScroll);
+    }
+    return () => {
+      if (container) {
+        container.removeEventListener("scroll", handleScroll);
+      }
+    };
+  }, []);
+
+  console.log(scrollPosition);
+
+  /// -------------for handling list height -----------------------
+  useEffect(() => {
+    const updateHeight = () => {
+      const titleDiv = document.getElementById("title-div");
+      const titleHeight = titleDiv ? titleDiv.offsetHeight : 50;
+      const windowHeight = window.innerHeight;
+      const availableHeight = windowHeight - titleHeight;
+      setListHeight(availableHeight-23);
+    };
+
+    updateHeight();
+    window.addEventListener("resize", updateHeight);
+    return () => window.removeEventListener("resize", updateHeight);
+  }, []);
+
   // ---------- Event Handlers ----------
   const searchData = (data) => {
     setSearch(data);
@@ -183,8 +226,11 @@ function Outstanding() {
   );
 
   return (
-    <div>
-      <div className="sticky top-0 flex flex-col z-30 bg-white shadow-lg ">
+    <div className="h-screen overflow-hidden">
+      <div
+        id="title-div"
+        className="sticky top-0 flex flex-col z-30 bg-white shadow-lg "
+      >
         <div className="flex items-center justify-between w-full bg-[#012a4a] shadow-lg px-4 py-3">
           <div className="flex items-center gap-2">
             <IoIosArrowRoundBack
@@ -216,7 +262,7 @@ function Outstanding() {
             </select>
           </div>
 
-          <div className="text-center text-white flex justify-center items-center flex-col">
+          <div className=" text-center text-white flex justify-center items-center flex-col">
             <h2 className="text-3xl sm:text-4xl font-bold">
               ₹{total?.toFixed(2)}
             </h2>
@@ -238,7 +284,11 @@ function Outstanding() {
         selectedTab === "receivables") &&
       !loading &&
       finalData?.length > 0 ? (
-        <div className="grid grid-cols-1 gap-4 mt-6 text-center pb-10 md:px-2 cursor-pointer">
+        <div
+          ref={containerRef}
+          style={{ height: `${listHeight}px` }}
+          className={` overflow-y-scroll  grid grid-cols-1 gap-4 mt-6 text-center pb-10 md:px-2 cursor-pointer`}
+        >
           {finalData.map((el, index) => (
             <div
               key={index}
@@ -272,7 +322,10 @@ function Outstanding() {
       {/* Group View - Keeping the existing group view code */}
       {selectedTab === "group" && !loading && groupData?.length > 0 ? (
         // ... (keeping the existing group view code unchanged)
-        <div className="mt-6 px-4 pb-10">
+        <div
+        // ref={containerRef}
+        // style={{ height: `${listHeight}px` }}
+         className=" overflow-y-scroll mt-6 px-4 pb-10">
           {groupData.map((group) => (
             <div key={group._id} className="mb-4 font-bold">
               <button
