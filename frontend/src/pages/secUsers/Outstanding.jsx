@@ -222,7 +222,7 @@ function Outstanding() {
             </h2>
             <Link to={`/sUsers/outstandingSummary`}>
               <button className="text-xs mt-4 font-bold opacity-90 underline hover:scale-105 transition-transform duration-300">
-                View Summary
+                View Bill Party Wise
               </button>
             </Link>
           </div>

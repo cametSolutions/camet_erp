@@ -55,6 +55,7 @@ export const getOutstandingSummary = async (req, res) => {
               bill_pending_amt: "$bill_pending_amt",
               bill_id: "$bill_id",
               age_of_bill: "$age_of_bill", // Age of bill in days
+              classification: "$classification",
             },
           },
         },
