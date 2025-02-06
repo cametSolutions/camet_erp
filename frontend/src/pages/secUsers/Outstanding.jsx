@@ -49,7 +49,7 @@ function Outstanding() {
   // ---------- State Management ----------
   const [selectedTab, setSelectedTab] = useState("ledger");
   const [ledgerData, setLedgerData] = useState([]);
-  const [total, setTotal] = useState(0);
+  const [total, setTotal] = useState("");
   const [groupData, setGroupData] = useState([]);
   const [search, setSearch] = useState("");
   const [expandedGroups, setExpandedGroups] = useState({});
@@ -98,27 +98,43 @@ function Outstanding() {
     if (!outstandingData?.outstandingData) return;
 
     if (selectedTab === "ledger" && !ledgerDataFromRedux?.length) {
-      const ledgerOutstandingData = outstandingData.outstandingData;
+      const {
+        outstandingData: ledgerOutstandingData,
+        totalOutstandingPayable,
+        totalOutstandingReceivable,
+        totalOutstandingDrCr,
+      } = outstandingData;
       dispatch(addLedgerData(ledgerOutstandingData));
-      dispatch(addLedgerTotal(outstandingData?.totalOutstandingDrCr || 0));
-      setTotal(outstandingData?.totalOutstandingDrCr || 0);
+      const notation =
+        totalOutstandingReceivable > totalOutstandingPayable ? "Dr" : "Cr";
+
+      dispatch(addLedgerTotal(`${totalOutstandingDrCr} ${notation}`));
+      setTotal(`${totalOutstandingDrCr} ${notation}`);
       setLedgerData(ledgerOutstandingData);
     } else if (selectedTab === "group" && !groupDataFromRedux?.length) {
-      const groupOutstandingData = outstandingData.outstandingData;
+      const {
+        outstandingData: groupOutstandingData,
+        totalOutstandingPayable,
+        totalOutstandingReceivable,
+        totalOutstandingDrCr,
+      } = outstandingData;
+      const notation =
+        totalOutstandingReceivable > totalOutstandingPayable ? "Dr" : "Cr";
+
       dispatch(addGroupData(groupOutstandingData));
-      dispatch(addGroupTotal(outstandingData?.totalOutstandingDrCr));
+      dispatch(addGroupTotal(`${totalOutstandingDrCr} ${notation}`));
       setTotal(outstandingData?.totalOutstandingDrCr);
-      setGroupData(groupOutstandingData);
+      setGroupData(`${totalOutstandingDrCr} ${notation}`);
     } else if (selectedTab === "payables") {
       dispatch(addPayableData(outstandingData.outstandingData));
-      dispatch(addPayableTotal(outstandingData.totalOutstanding));
-      setLedgerData(outstandingData.outstandingData);
+      dispatch(addPayableTotal(`${outstandingData.totalOutstanding} Cr`));
+      setLedgerData(`${outstandingData.totalOutstanding} Cr`);
       setTotal(outstandingData.totalOutstanding);
     } else if (selectedTab === "receivables") {
       dispatch(addReceivableData(outstandingData.outstandingData));
-      dispatch(addReceivableTotal(outstandingData.totalOutstanding));
+      dispatch(addReceivableTotal(`${outstandingData.totalOutstanding} Dr`));
       setLedgerData(outstandingData.outstandingData);
-      setTotal(outstandingData.totalOutstanding);
+      setTotal(`${outstandingData.totalOutstanding} Dr`);
     }
   }, [outstandingData]);
 
@@ -205,11 +221,11 @@ function Outstanding() {
     }));
   };
 
-  const handleNavigate = (party_id, party_name, totalBillAmount) => {
+  const handleNavigate = (party_id, party_name, totalBillAmount,classification) => {
     dispatch(addExpandedGroups(expandedGroups));
     dispatch(addExpandedSubGroups(expandedSubGroups));
     navigate(`/sUsers/outstandingDetails/${party_id}`, {
-      state: { party_name, totalBillAmount, selectedTab },
+      state: { party_name, totalBillAmount, selectedTab,classification },
     });
   };
 
@@ -264,7 +280,9 @@ function Outstanding() {
 
           <div className=" text-center text-white flex justify-center items-center flex-col">
             <h2 className="text-3xl sm:text-4xl font-bold">
-              ₹{total?.toFixed(2)}
+              {   total && parseInt(total?.split(" ")[0])
+                .toFixed(2)
+                .concat(" ", total?.split(" ")[1])}
             </h2>
             <Link to={`/sUsers/outstandingSummary`}>
               <button className="text-xs mt-4 font-bold opacity-90 underline hover:scale-105 transition-transform duration-300">
@@ -293,7 +311,7 @@ function Outstanding() {
             <div
               key={index}
               onClick={() =>
-                handleNavigate(el?._id, el?.party_name, el?.totalBillAmount)
+                handleNavigate(el?._id, el?.party_name, el?.totalBillAmount ,el?.classification)
               }
               className="bg-[#f8ffff] rounded-md shadow-xl border border-gray-100 flex flex-col px-4 transition-all hover:translate-y-[1px] duration-150 transform ease-in-out"
             >
@@ -308,7 +326,7 @@ function Outstanding() {
                   <div className="flex-col justify-center">
                     <div className="flex justify-end">
                       <p className="text-sm font-bold text-gray-500">
-                        ₹{formatAmount(el.totalBillAmount)}
+                        ₹{formatAmount(el.totalBillAmount)} {el?.classification}
                       </p>
                     </div>
                   </div>
@@ -378,7 +396,8 @@ function Outstanding() {
                               handleNavigate(
                                 bill?.party_id,
                                 bill?.party_name,
-                                bill?.bill_pending_amt
+                                bill?.bill_pending_amt,
+                                bill?.classification
                               )
                             }
                             key={index}
@@ -388,7 +407,7 @@ function Outstanding() {
                               {bill?.party_name}
                             </p>
                             <p className="text-gray-600 mt-1">
-                              ₹{formatAmount(bill.bill_pending_amt)}
+                              ₹{formatAmount(bill.bill_pending_amt)} {bill?.classification}
                             </p>
                           </div>
                         ))}
