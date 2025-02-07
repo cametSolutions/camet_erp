@@ -9,6 +9,7 @@ import PartyModel from "../models/partyModel.js";
 import productModel from "../models/productModel.js";
 import invoiceModel from "../models/invoiceModel.js";
 import HsnModel from "../models/hsnModel.js";
+import AccountGroup from "../models/accountGroup.js";
 import OragnizationModel from "../models/OragnizationModel.js";
 import Organization from "../models/OragnizationModel.js";
 import AdditionalChargesModel from "../models/additionalChargesModel.js";
@@ -98,14 +99,10 @@ export const login = async (req, res) => {
     const isPasswordMatch = await bcrypt.compare(password, secUser.password);
 
     // console.log("isPasswordMatch", isPasswordMatch);
-    
 
     if (!isPasswordMatch) {
       return res.status(400).json({ message: "Invalid email or password" });
     }
-
-    
-    
 
     const { name, _id, mobile } = secUser._doc;
 
@@ -146,42 +143,6 @@ export const getSecUserData = async (req, res) => {
       .json({ status: false, message: "internal sever error" });
   }
 };
-
-
-
-// @desc get outstanding data from tally
-// route GET/api/sUsers/fetchOutstandingDetails
-
-// export const fetchOutstandingDetails = async (req, res) => {
-//   const partyId = req.params.party_id;
-//   const cmp_id = req.params.cmp_id;
-//   try {
-//     const outstandings = await TallyData.find({
-//       party_id: partyId,
-//       cmp_id: cmp_id,
-//       bill_pending_amt: { $gt: 0 },
-//     }).sort({ bill_date: 1 });
-//     if (outstandings) {
-//       return res.status(200).json({
-//         totalOutstandingAmount: outstandings.reduce(
-//           (total, out) => total + out.bill_pending_amt,
-//           0
-//         ),
-
-//         outstandings: outstandings,
-//         message: "outstandings fetched",
-//       });
-//     } else {
-//       return res
-//         .status(404)
-//         .json({ message: "No outstandings were found for user" });
-//     }
-//   } catch (error) {
-//     return res
-//       .status(500)
-//       .json({ success: false, message: "Internal server error, try again!" });
-//   }
-// };
 
 // @desc confirm collection and alter db
 // route GET/api/sUsers/confirmCollection
@@ -633,6 +594,7 @@ export const addParty = async (req, res) => {
       cpm_id: cmp_id,
       // Secondary_user_id,
       accountGroup,
+      accountGroup_id,
       partyName,
       mobileNumber,
       emailID,
@@ -660,6 +622,7 @@ export const addParty = async (req, res) => {
       Primary_user_id: req.owner,
       Secondary_user_id: req.sUserId,
       accountGroup,
+      accountGroup_id,
       partyName,
       mobileNumber,
       emailID,
@@ -2382,6 +2345,42 @@ export const getBankAndCashSources = async (req, res) => {
     });
   } catch (error) {
     console.log("Error in getting bank and cash sources:", error);
+    res.status(500).json({
+      error: "Internal Server Error",
+      details: error.message,
+    });
+  }
+};
+
+/**
+ * @desc   To get account groups
+ * @route  Get /api/sUsers/getAccountGroups/:cmp_id
+ * @access Public
+ */
+
+export const getAccountGroups = async (req, res) => {
+  const cmp_id = req.params.cmp_id;
+  const Primary_user_id = req.owner;
+  console.log(cmp_id, Primary_user_id);
+  
+  try {
+    const accountGroups = await AccountGroup.find({
+      cmp_id: cmp_id,
+      Primary_user_id: Primary_user_id,
+    });
+    if (accountGroups) {
+      res.status(200).json({
+        message: "Account Groups fetched",
+        data: accountGroups,
+      });
+    } else {
+      res.status(200).json({
+        message: "Account Groups not found",
+        data: [],
+      });
+    }
+  } catch (error) {
+    console.log("Error in getting account groups:", error);
     res.status(500).json({
       error: "Internal Server Error",
       details: error.message,

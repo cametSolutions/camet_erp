@@ -13,6 +13,10 @@ import purchaseModel from "../models/purchaseModel.js";
 import primaryUserModel from "../models/primaryUserModel.js";
 import OragnizationModel from "../models/OragnizationModel.js";
 import secondaryUserModel from "../models/secondaryUserModel.js";
+import AccountGroup from "../models/accountGroup.js";
+import PartyModel from "../models/partyModel.js";
+import { accountGroups03 } from "../../frontend/constants/accountGroups.js";
+import { login } from "./secondaryUserController.js";
 
 /**
  * @description Updates the `date` field in documents where it is missing
@@ -288,7 +292,9 @@ export const convertPrimaryToSecondary = async (req, res) => {
       });
 
       if (existingSecondary) {
-        console.log(`User with email ${user.email} and mobile ${user.mobile} already exists as a secondary user.`);
+        console.log(
+          `User with email ${user.email} and mobile ${user.mobile} already exists as a secondary user.`
+        );
         // continue; // Skip conversion if already exists
       }
 
@@ -308,9 +314,99 @@ export const convertPrimaryToSecondary = async (req, res) => {
       console.log("Converted primary user to secondary:", secondaryUser);
     }
 
-    return res.status(200).json({ message: "Primary users successfully converted to secondary users where applicable." });
+    return res.status(200).json({
+      message:
+        "Primary users successfully converted to secondary users where applicable.",
+    });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ message: "Error in converting primary to secondary" });
+    return res
+      .status(500)
+      .json({ message: "Error in converting primary to secondary" });
   }
 };
+
+// creating account groups for companies which are self
+export const createAccountGroups = async (req, res) => {
+  try {
+    const selfCompanies = await OragnizationModel.find({ type: "self" }).select(
+      "_id owner"
+    );
+
+    for (const company of selfCompanies) {
+      for (const group of accountGroups03) {
+        const newAccountGroup = new AccountGroup({
+          cmp_id: company._id.toString(),
+          Primary_user_id: company.owner,
+          accountGroup: group,
+        });
+
+        newAccountGroup.accountGroup_id = newAccountGroup._id; // ✅ Assign _id to accountGroup_id
+        await newAccountGroup.save(); // ✅ Save the document
+      }
+    }
+
+    res.status(200).json({ message: "Account groups created successfully" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error in creating account groups" });
+  }
+};
+
+/// adding account groups id to all parties
+export const addAccountGroupIdToParties = async (req, res) => {
+  try {
+    const selfCompanies = await OragnizationModel.find({ type: "self" }).select("_id");
+
+    for (const company of selfCompanies) {
+      const sundryDebtor = await AccountGroup.findOne({
+        cmp_id: company._id,
+        accountGroup: "Sundry Debtors",
+      }).select("_id").lean();
+
+      const sundryCreditor = await AccountGroup.findOne({
+        cmp_id: company._id,
+        accountGroup: "Sundry Creditors",
+      }).select("_id").lean();
+
+      console.log("sundryDebtor:", sundryDebtor);
+      console.log("sundryCreditor:", sundryCreditor);
+
+      if (!sundryDebtor || !sundryCreditor) {
+        console.warn(`Missing account groups for company ${company._id}`);
+        continue; // Skip this company if either group is missing
+      }
+
+      const parties = await PartyModel.find({ cmp_id: company._id }).select("_id accountGroup");
+
+
+      // console.log(parties);
+      
+
+      for (const party of parties) {
+        let accountGroupId = null;
+
+        if (party.accountGroup === "Sundry Debtors") {
+          accountGroupId = sundryDebtor._id;
+        } else if (party.accountGroup === "Sundry Creditors") {
+          accountGroupId = sundryCreditor._id;
+        }
+
+        if (accountGroupId) {
+          const updatedParty = await PartyModel.findByIdAndUpdate(
+            party._id,
+            { $set: { accountGroup_id: accountGroupId } },
+            { new: true }
+          );
+          // console.log("Updated Party:", updatedParty);
+        }
+      }
+    }
+
+    res.status(200).json({ message: "Account group IDs added to parties successfully" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error in updating parties with account group IDs" });
+  }
+};
+
