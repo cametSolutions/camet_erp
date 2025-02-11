@@ -19,6 +19,7 @@ const purchaseSchema = new mongoose.Schema(
     Secondary_user_id: { type: String },
     cmp_id:{ type: String, required: true },
     partyAccount:{ type: String, required: true },
+
     party: { type: Object, required: true },
     items: { type: Array, required: true },
     despatchDetails: {

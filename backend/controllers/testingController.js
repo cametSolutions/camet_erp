@@ -17,6 +17,7 @@ import AccountGroup from "../models/accountGroup.js";
 import PartyModel from "../models/partyModel.js";
 import { accountGroups03 } from "../../frontend/constants/accountGroups.js";
 import { login } from "./secondaryUserController.js";
+import TallyData from "../models/TallyData.js";
 
 /**
  * @description Updates the `date` field in documents where it is missing
@@ -334,19 +335,36 @@ export const createAccountGroups = async (req, res) => {
     );
 
     for (const company of selfCompanies) {
-      for (const group of accountGroups03) {
-        const newAccountGroup = new AccountGroup({
+      // Fetch existing account groups for the company
+      const existingGroups = await AccountGroup.find({
+        cmp_id: company._id,
+      }).select("accountGroup");
+
+      // Extract existing group names
+      const existingGroupNames = new Set(
+        existingGroups.map((group) => group.accountGroup)
+      );
+
+      // Filter out groups that don't exist
+      const newGroups = accountGroups03.filter(
+        (group) => !existingGroupNames.has(group)
+      );
+
+      if (newGroups.length > 0) {
+        const accountGroupsToInsert = newGroups.map((group) => ({
           cmp_id: company._id.toString(),
           Primary_user_id: company.owner,
           accountGroup: group,
-        });
+          accountGroup_id: new AccountGroup()._id, // Assign new _id
+        }));
 
-        newAccountGroup.accountGroup_id = newAccountGroup._id; // ✅ Assign _id to accountGroup_id
-        await newAccountGroup.save(); // ✅ Save the document
+        await AccountGroup.insertMany(accountGroupsToInsert); // Bulk insert
       }
     }
 
-    res.status(200).json({ message: "Account groups created successfully" });
+    res.status(200).json({
+      message: "Account groups created successfully (if not existing)",
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Error in creating account groups" });
@@ -356,18 +374,24 @@ export const createAccountGroups = async (req, res) => {
 /// adding account groups id to all parties
 export const addAccountGroupIdToParties = async (req, res) => {
   try {
-    const selfCompanies = await OragnizationModel.find({ type: "self" }).select("_id");
+    const selfCompanies = await OragnizationModel.find({ type: "self" }).select(
+      "_id"
+    );
 
     for (const company of selfCompanies) {
       const sundryDebtor = await AccountGroup.findOne({
         cmp_id: company._id,
         accountGroup: "Sundry Debtors",
-      }).select("_id").lean();
+      })
+        .select("_id")
+        .lean();
 
       const sundryCreditor = await AccountGroup.findOne({
         cmp_id: company._id,
         accountGroup: "Sundry Creditors",
-      }).select("_id").lean();
+      })
+        .select("_id")
+        .lean();
 
       console.log("sundryDebtor:", sundryDebtor);
       console.log("sundryCreditor:", sundryCreditor);
@@ -377,11 +401,11 @@ export const addAccountGroupIdToParties = async (req, res) => {
         continue; // Skip this company if either group is missing
       }
 
-      const parties = await PartyModel.find({ cmp_id: company._id }).select("_id accountGroup");
-
+      const parties = await PartyModel.find({ cmp_id: company._id }).select(
+        "_id accountGroup"
+      );
 
       // console.log(parties);
-      
 
       for (const party of parties) {
         let accountGroupId = null;
@@ -403,10 +427,56 @@ export const addAccountGroupIdToParties = async (req, res) => {
       }
     }
 
-    res.status(200).json({ message: "Account group IDs added to parties successfully" });
+    res
+      .status(200)
+      .json({ message: "Account group IDs added to parties successfully" });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Error in updating parties with account group IDs" });
+    res
+      .status(500)
+      .json({ message: "Error in updating parties with account group IDs" });
   }
 };
+
+/// adding account groups id to outstanding
+export const addAccountGroupIdToOutstanding = async (req, res) => {
+  try {
+    const selfCompanies = await OragnizationModel.find({ type: "self" }).select("_id owner");
+
+    for (const company of selfCompanies) {
+      const outstanding = await TallyData.find({ cmp_id: company._id });
+
+      const partyIds = outstanding.map(item => item.party_id).filter(Boolean);
+      const parties = await PartyModel.find({
+        party_master_id: { $in: partyIds },
+        accountGroup: { $in: ["Sundry Debtors", "Sundry Creditors"] }
+      }).select("party_master_id accountGroup accountGroup_id");
+
+      const partyMap = new Map(parties.map(party => [party.party_master_id.toString(), party]));
+
+      for (const item of outstanding) {
+        const party = partyMap.get(item.party_id?.toString());
+
+        if (
+          party && 
+          party.accountGroup && 
+          party.accountGroup_id && 
+          (!item.accountGroup || !item.accountGroup_id) 
+        ) {
+          await TallyData.updateOne(
+            { _id: item._id },
+            { $set: { accountGroup: party.accountGroup, accountGroup_id: party.accountGroup_id } }
+          );
+        }
+      }
+    }
+
+    res.status(200).json({ message: "Account groups added to outstanding records successfully" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error in updating outstanding records" });
+  }
+};
+
+
 
