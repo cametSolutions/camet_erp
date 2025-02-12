@@ -2,11 +2,19 @@ import api from "../../api/api";
 import { toast } from "react-toastify";
 import { useParams, useNavigate } from "react-router-dom";
 import SecUserCreationForm from "../../components/common/Forms/SecUserCreationForm";
+import { useDispatch } from "react-redux";
+import { refreshCompanies } from "../../../slices/secSelectedOrgSlice";
 
 function EditSecUsers() {
   const navigate = useNavigate();
 
   const { id } = useParams();
+  const dispatch = useDispatch();
+
+  const currentSecondaryUserId = JSON.parse(
+    localStorage.getItem("sUserData")
+  )._id;
+  const isCurrentUser = currentSecondaryUserId === id;
 
   const submitHandler = async (formData) => {
     const { name, email, mobile, password, selectedOrg } = formData;
@@ -19,8 +27,6 @@ function EditSecUsers() {
       organization: selectedOrg,
     };
 
-    console.log("formData edit", formData);
-
     try {
       const res = await api.put(`/api/sUsers/editSecUSer/${id}`, postData, {
         headers: {
@@ -28,6 +34,10 @@ function EditSecUsers() {
         },
         withCredentials: true,
       });
+
+      if (isCurrentUser) {
+        dispatch(refreshCompanies());
+      }
 
       toast.success(res.data.message);
       navigate("/sUsers/retailers");
