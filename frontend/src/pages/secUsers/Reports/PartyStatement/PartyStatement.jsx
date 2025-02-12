@@ -82,22 +82,25 @@ function PartyStatement() {
         )}
         <section>
           <table className="w-full">
-            <thead>
-              <tr className="border-b bg-slate-200">
-                <th className="py-3 px-6 w-1/3 text-left text-gray-400 text-sm">
+          {/* <thead>
+              <tr className="bg-slate-100 border-y">
+                <th className="py-3 px-6 text-left text-xs font-medium text-gray-500 ">
                   Transactions
                 </th>
-                <th className="py-3 px-6 w-1/3 text-right text-gray-400 text-sm">
+                <th className="py-3 px-6 text-right text-xs font-medium text-gray-500 ">
                   Debit
                 </th>
-                <th className="py-3 px-6 w-1/3 text-right text-gray-400 text-sm">
+                <th className="py-3 px-6 text-right text-xs font-medium text-gray-500 ">
                   Credit
                 </th>
+                <th className="py-3 px-6 text-right text-xs font-medium text-gray-500 ">
+                  Balance
+                </th>
               </tr>
-            </thead>
+            </thead> */}
           </table>
         </section>
-
+{/* 
         <section>
           <table className="w-full">
             <tr className="bg-slate-100 w-full">
@@ -116,7 +119,7 @@ function PartyStatement() {
               </td>
             </tr>
           </table>
-        </section>
+        </section> */}
       </div>
 
       <section className="z-10">
