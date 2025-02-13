@@ -1,10 +1,10 @@
-/* eslint-disable no-unsafe-optional-chaining */
 /* eslint-disable react/prop-types */
-import dayjs from "dayjs";
 
+import dayjs from "dayjs";
 const ReportTable = ({ data, loading, openingBalances }) => {
-  // Initialize running balance with opening balance
-  let runningBalance = openingBalances?.debitBalance || 0;
+  const { debitBalance, creditBalance } = openingBalances;
+  let runningBalance =
+    debitBalance > creditBalance ? debitBalance : creditBalance;
 
   const transactionsWithBalance = data?.map((transaction) => {
     const debitAmount = ["Debit Note", "Tax Invoice", "Payment"].includes(
@@ -29,47 +29,44 @@ const ReportTable = ({ data, loading, openingBalances }) => {
     };
   });
 
+  // Helper function to format balance with Dr/Cr
+  const formatBalanceWithType = (balance) => {
+    const absBalance = Math.abs(balance);
+    const type = balance >= 0 ? "Dr" : "Cr";
+    return `${absBalance} ${type}`;
+  };
+
   return (
-    <div className="w-full overflow-x-auto px-3 py-1">
-      <table className="w-full border-collapse border-t">
-        {/* Opening Balance Row */}
-        <tr className="border-b">
-          <td
-            colSpan="3"
-            className="py-2.5 px-3 text-left text-xs font-medium text-gray-600"
-          >
-            Opening Balance
-          </td>
-          <td className="py-2.5 px-3 text-right text-xs font-medium text-gray-600">
-            ₹ {openingBalances?.debitBalance?.toLocaleString() || 0}
-          </td>
-        </tr>
-
-        <thead className="">
-          <tr className="bg-slate-200">
-            <th className="py-2.5 px-3 text-left text-xs font-bold text-gray-600">
-              Transaction
-            </th>
-            <th className="py-2.5 px-3 text-right text-xs font-bold text-gray-600">
-              Debit
-            </th>
-            <th className="py-2.5 px-3 text-right text-xs font-bold text-gray-600">
-              Credit
-            </th>
-            <th className="py-2.5 px-3 text-right text-xs font-bold text-gray-600">
-              Balance
-            </th>
-          </tr>
-        </thead>
-
+    <div className="w-full overflow-x-auto">
+      <table className="w-full border-collapse">
         <tbody>
+          {/* Opening Balance Row */}
+          <tr className="border-b">
+            <td className="w-[45%] py-2.5 px-3 text-left text-xs font-medium text-gray-600">
+              Opening Balance
+            </td>
+            <td className="w-[18%] py-2.5 px-3 text-right text-xs font-medium text-gray-600">
+              {openingBalances?.debitBalance > creditBalance
+                ? ` ${openingBalances?.debitBalance || 0}`
+                : " 0"}
+            </td>
+            <td className="w-[18%] py-2.5 px-3 text-right text-xs font-medium text-gray-600">
+              {creditBalance > debitBalance
+                ? ` ${creditBalance || 0}`
+                : " 0"}
+            </td>
+            <td className="w-[19%] py-2.5 px-3 text-right text-xs font-medium text-gray-600">
+              {formatBalanceWithType(debitBalance > creditBalance ? debitBalance : -creditBalance)}
+            </td>
+          </tr>
+
           {transactionsWithBalance?.map((transaction) => (
             <tr key={transaction._id} className="border-b">
-              <td className="py-2.5 px-3 text-xs text-gray-600">
+              <td className="w-[45%] py-2.5 px-3 text-xs text-gray-600">
                 <div className="space-y-1">
-                  <div className="text-[10px] text-gray-400 font-semibold">
+                  <div className="text-[10px] text-gray-400 font-semibold flex flex-col">
                     <span className="text-violet-400">
-                      #{transaction?.voucherNumber} •{" "}
+                      #{transaction?.voucherNumber}
                     </span>
                     {dayjs(transaction?.date).format("DD/MM/YYYY")}
                   </div>
@@ -81,26 +78,26 @@ const ReportTable = ({ data, loading, openingBalances }) => {
                   )}
                 </div>
               </td>
-              <td className="py-2.5 px-3 text-right text-xs font-medium">
+              <td className="w-[18%] py-2.5 px-3 text-right text-xs font-medium">
                 {transaction.debitAmount > 0 ? (
                   <span className="text-red-500">
-                    ₹ {transaction.debitAmount.toLocaleString()}
+                    {transaction.debitAmount}
                   </span>
                 ) : (
-                  <span className="text-gray-500">₹ 0</span>
+                  <span className="text-gray-500"> 0</span>
                 )}
               </td>
-              <td className="py-2.5 px-3 text-right text-xs font-medium">
+              <td className="w-[18%] py-2.5 px-3 text-right text-xs font-medium">
                 {transaction.creditAmount > 0 ? (
                   <span className="text-green-500">
-                    ₹ {transaction.creditAmount.toLocaleString()}
+                    {transaction?.creditAmount}
                   </span>
                 ) : (
-                  <span className="text-gray-500">₹ 0</span>
+                  <span className="text-gray-500"> 0</span>
                 )}
               </td>
-              <td className="py-2.5 px-3 text-right text-xs font-medium text-gray-600">
-                ₹ {transaction.balance.toLocaleString()}
+              <td className="w-[19%] py-2.5 px-3 text-right text-xs font-medium text-gray-600">
+                {formatBalanceWithType(transaction.balance)}
               </td>
             </tr>
           ))}
@@ -109,17 +106,21 @@ const ReportTable = ({ data, loading, openingBalances }) => {
         {!loading && data?.length > 0 && (
           <tfoot>
             <tr className="bg-slate-200 border-t">
-              <td className="py-2.5 px-3 text-left text-xs font-bold text-gray-600">
+              <td className="w-[45%] py-2.5 px-3 text-left text-xs font-bold text-gray-600">
                 Closing Balance
               </td>
-              <td
-                colSpan="2"
-                className="py-2.5 px-3 text-right text-xs font-bold text-gray-600"
-              >
-                ₹ {runningBalance.toLocaleString()}
+              <td className="w-[18%] py-2.5 px-3 text-right text-xs font-bold text-gray-600">
+                {runningBalance > 0
+                  ? ` ${runningBalance}`
+                  : " 0"}
               </td>
-              <td className="py-2.5 px-3 text-right text-xs font-bold text-gray-600">
-                ₹ {runningBalance.toLocaleString()}
+              <td className="w-[18%] py-2.5 px-3 text-right text-xs font-bold text-gray-600">
+                {runningBalance < 0
+                  ? ` ${Math.abs(runningBalance)}`
+                  : " 0"}
+              </td>
+              <td className="w-[19%] py-2.5 px-3 text-right text-xs font-bold text-gray-600">
+                {formatBalanceWithType(runningBalance)}
               </td>
             </tr>
           </tfoot>
