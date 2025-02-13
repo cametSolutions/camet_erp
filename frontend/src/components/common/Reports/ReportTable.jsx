@@ -30,42 +30,28 @@ const ReportTable = ({ data, loading, openingBalances }) => {
   });
 
   return (
-    <div className="w-full overflow-x-auto px-3 py-1">
-      <table className="w-full border-collapse border-t">
-        {/* Opening Balance Row */}
-        <tr className="border-b">
-          <td
-            colSpan="3"
-            className="py-2.5 px-3 text-left text-xs font-medium text-gray-600"
-          >
-            Opening Balance
-          </td>
-          <td className="py-2.5 px-3 text-right text-xs font-medium text-gray-600">
-            ₹ {openingBalances?.debitBalance?.toLocaleString() || 0}
-          </td>
-        </tr>
-
-        <thead className="">
-          <tr className="bg-slate-200">
-            <th className="py-2.5 px-3 text-left text-xs font-bold text-gray-600">
-              Transaction
-            </th>
-            <th className="py-2.5 px-3 text-right text-xs font-bold text-gray-600">
-              Debit
-            </th>
-            <th className="py-2.5 px-3 text-right text-xs font-bold text-gray-600">
-              Credit
-            </th>
-            <th className="py-2.5 px-3 text-right text-xs font-bold text-gray-600">
-              Balance
-            </th>
+    <div className="w-full overflow-x-auto  py-1">
+      <table className="w-full border-collapse">
+        <tbody className="">
+          {/* Opening Balance Row */}
+          <tr className="border-b ">
+            <td className="w-[45%] py-2.5 px-5 text-left text-xs font-medium text-gray-600">
+              Opening Balance
+            </td>
+            <td className="w-[18%] py-2.5 px-5 text-right text-xs font-medium text-gray-600">
+              ₹ {openingBalances?.debitBalance?.toLocaleString() || 0}
+            </td>
+            <td className="w-[18%] py-2.5 px-5 text-right text-xs font-medium text-gray-600">
+              ₹ 0
+            </td>
+            <td className="w-[19%] py-2.5 px-5 text-right text-xs font-medium text-gray-600">
+              ₹ {openingBalances?.debitBalance?.toLocaleString() || 0}
+            </td>
           </tr>
-        </thead>
 
-        <tbody>
           {transactionsWithBalance?.map((transaction) => (
             <tr key={transaction._id} className="border-b">
-              <td className="py-2.5 px-3 text-xs text-gray-600">
+              <td className="w-[45%] py-2.5 px-5 text-xs text-gray-600">
                 <div className="space-y-1">
                   <div className="text-[10px] text-gray-400 font-semibold">
                     <span className="text-violet-400">
@@ -81,7 +67,7 @@ const ReportTable = ({ data, loading, openingBalances }) => {
                   )}
                 </div>
               </td>
-              <td className="py-2.5 px-3 text-right text-xs font-medium">
+              <td className="w-[18%] py-2.5 px-5 text-right text-xs font-medium">
                 {transaction.debitAmount > 0 ? (
                   <span className="text-red-500">
                     ₹ {transaction.debitAmount.toLocaleString()}
@@ -90,7 +76,7 @@ const ReportTable = ({ data, loading, openingBalances }) => {
                   <span className="text-gray-500">₹ 0</span>
                 )}
               </td>
-              <td className="py-2.5 px-3 text-right text-xs font-medium">
+              <td className="w-[18%] py-2.5 px-5 text-right text-xs font-medium">
                 {transaction.creditAmount > 0 ? (
                   <span className="text-green-500">
                     ₹ {transaction.creditAmount.toLocaleString()}
@@ -99,7 +85,7 @@ const ReportTable = ({ data, loading, openingBalances }) => {
                   <span className="text-gray-500">₹ 0</span>
                 )}
               </td>
-              <td className="py-2.5 px-3 text-right text-xs font-medium text-gray-600">
+              <td className="w-[19%] py-2.5 px-5 text-right text-xs font-medium text-gray-600">
                 ₹ {transaction.balance.toLocaleString()}
               </td>
             </tr>
@@ -107,18 +93,21 @@ const ReportTable = ({ data, loading, openingBalances }) => {
         </tbody>
 
         {!loading && data?.length > 0 && (
-          <tfoot>
-            <tr className="bg-slate-200 border-t">
-              <td className="py-2.5 px-3 text-left text-xs font-bold text-gray-600">
+          <tfoot className="">
+            <tr className="bg-slate-200 border-t ">
+              <td className="py-2.5 px-5 text-left text-xs font-bold text-gray-600">
                 Closing Balance
               </td>
-              <td
-                colSpan="2"
-                className="py-2.5 px-3 text-right text-xs font-bold text-gray-600"
-              >
-                ₹ {runningBalance.toLocaleString()}
+              <td className="py-2.5 px-5 text-right text-xs font-bold text-gray-600">
+                ₹ {runningBalance > 0 ? runningBalance.toLocaleString() : 0}
               </td>
-              <td className="py-2.5 px-3 text-right text-xs font-bold text-gray-600">
+              <td className="py-2.5 px-5 text-right text-xs font-bold text-gray-600">
+                ₹{" "}
+                {runningBalance < 0
+                  ? Math.abs(runningBalance).toLocaleString()
+                  : 0}
+              </td>
+              <td className="py-2.5 px-5 text-right text-xs font-bold text-gray-600">
                 ₹ {runningBalance.toLocaleString()}
               </td>
             </tr>
