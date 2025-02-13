@@ -14,7 +14,8 @@ import {login,getSecUserData,
     godownwiseProducts,godownwiseProductsSelf,
     findGodownsNames,getAllSubDetails,
     fetchGodowns,
-    getBankAndCashSources
+    getBankAndCashSources,
+    getDashboardSummary
    } from "../controllers/secondaryUserController.js"
  
 import { createPurchase,editPurchase,cancelPurchase } from '../controllers/purchaseController.js';
@@ -223,11 +224,11 @@ router.get('/fetchGodownsAndPriceLevels/:cmp_id',authPrimary,secondaryIsBlocked,
 router.post('/addSecondaryConfigurations/:cmp_id/:userId',authPrimary,secondaryIsBlocked,companyAuthentication,addSecondaryConfigurations)
 
 //// outstanding routes
-
 router.get('/getOutstandingSummary/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,getOutstandingSummary) 
 
 
-
+/// dashboard summary
+router.get('/getDashboardSummary/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,getDashboardSummary)
 
 
 //// testing routes

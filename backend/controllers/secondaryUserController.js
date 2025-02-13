@@ -61,6 +61,8 @@ import creditNoteModel from "../models/creditNoteModel.js";
 import payment from "../../frontend/slices/payment.js";
 import bankModel from "../models/bankModel.js";
 import cashModel from "../models/cashModel.js";
+import receiptModel from "../models/receiptModel.js";
+import paymentModel from "../models/paymentModel.js";
 
 // @desc Login secondary user
 // route POST/api/sUsers/login
@@ -98,14 +100,10 @@ export const login = async (req, res) => {
     const isPasswordMatch = await bcrypt.compare(password, secUser.password);
 
     // console.log("isPasswordMatch", isPasswordMatch);
-    
 
     if (!isPasswordMatch) {
       return res.status(400).json({ message: "Invalid email or password" });
     }
-
-    
-    
 
     const { name, _id, mobile } = secUser._doc;
 
@@ -146,8 +144,6 @@ export const getSecUserData = async (req, res) => {
       .json({ status: false, message: "internal sever error" });
   }
 };
-
-
 
 // @desc get outstanding data from tally
 // route GET/api/sUsers/fetchOutstandingDetails
@@ -2385,6 +2381,163 @@ export const getBankAndCashSources = async (req, res) => {
     res.status(500).json({
       error: "Internal Server Error",
       details: error.message,
+    });
+  }
+};
+
+/**
+ * @desc   To get dashboard summary
+ * @route  Get /api/sUsers/getDashboardSummary/:cmp_id
+ * @access Public
+ */
+
+export const getDashboardSummary = async (req, res) => {
+  const cmp_id = req.params.cmp_id;
+  try {
+    
+    // Get total sales
+    const salesTotal = await salesModel.aggregate([
+      { $match: { cmp_id: cmp_id } },
+      {
+        $group: {
+          _id: null,
+          total: {
+            $sum: { $toDouble: "$finalAmount" },
+          },
+        },
+      },
+    ]);
+
+    // Get total purchases
+    const purchaseTotal = await purchaseModel.aggregate([
+      { $match: { cmp_id: cmp_id } },
+      {
+        $group: {
+          _id: null,
+          total: {
+            $sum: { $toDouble: "$finalAmount" },
+          },
+        },
+      },
+    ]);
+
+    // Get total sale orders
+    const saleOrderTotal = await invoiceModel.aggregate([
+      { $match: { cmp_id: cmp_id } },
+      {
+        $group: {
+          _id: null,
+          total: {
+            $sum: { $toDouble: "$finalAmount" },
+          },
+        },
+      },
+    ]);
+
+    // Get total receipts
+    const receiptTotal = await receiptModel.aggregate([
+      { $match: { cmp_id: cmp_id } },
+      {
+        $group: {
+          _id: null,
+          total: {
+            $sum: "$enteredAmount",
+          },
+        },
+      },
+    ]);
+
+    // Get total payments
+    const paymentTotal = await paymentModel.aggregate([
+      { $match: { cmp_id: cmp_id } },
+      {
+        $group: {
+          _id: null,
+          total: {
+            $sum: "$enteredAmount",
+          },
+        },
+      },
+    ]);
+
+    // Get total cash transactions
+    const cashTotal = await cashModel.aggregate([
+      { $match: { cmp_id: cmp_id } },
+      { $unwind: "$settlements" },
+      {
+        $group: {
+          _id: null,
+          total: {
+            $sum: "$settlements.amount",
+          },
+        },
+      },
+    ]);
+
+    // Get total bank transactions
+    const bankTotal = await bankModel.aggregate([
+      { $match: { cmp_id: cmp_id } },
+      { $unwind: "$settlements" },
+      {
+        $group: {
+          _id: null,
+          total: {
+            $sum: "$settlements.amount",
+          },
+        },
+      },
+    ]);
+
+    /// out standing payables
+
+    const outstandingPayables = await TallyData.aggregate([
+      { $match: { cmp_id: cmp_id, classification: "Cr" } },
+      {
+        $group: {
+          _id: null,
+          total: {
+            $sum: "$bill_pending_amt",
+          },
+        },
+      },
+    ]);
+
+    ///  out standing receivables
+    const outstandingReceivables = await TallyData.aggregate([
+      { $match: { cmp_id: cmp_id, classification: "Dr" } },
+      {
+        $group: {
+          _id: null,
+          total: {
+            $sum: "$bill_pending_amt",
+          },
+        },
+      },
+    ]);
+
+    // Prepare response with safe handling of empty results
+    const summary = {
+      sales: salesTotal[0]?.total || 0,
+      purchases: purchaseTotal[0]?.total || 0,
+      saleOrders: saleOrderTotal[0]?.total || 0,
+      receipts: receiptTotal[0]?.total || 0,
+      payments: paymentTotal[0]?.total || 0,
+      cashOrBank: (cashTotal[0]?.total || 0) + (bankTotal[0].total || 0),
+      outstandingPayables: outstandingPayables[0]?.total || 0,
+      outstandingReceivables: outstandingReceivables[0]?.total || 0,
+    };
+
+    res.status(200).json({
+      success: true,
+      data: summary,
+    });
+  } catch (error) {
+    console.log(error);
+
+    res.status(500).json({
+      success: false,
+      message: "Error fetching dashboard summary",
+      error: error.message,
     });
   }
 };

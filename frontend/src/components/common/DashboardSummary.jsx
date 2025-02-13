@@ -1,288 +1,146 @@
-import { useNavigate } from "react-router-dom"
+import { useNavigate } from "react-router-dom";
+import useFetch from "../../customHook/useFetch";
+import { useDispatch, useSelector } from "react-redux";
+import { useEffect, useState, useCallback, memo } from "react";
+import { icons } from "./icons/DashboardIcons.jsx";
+import { addTab } from "../../../slices/tallyDataSlice.js";
+// import { Alert, AlertDescription } from "@/components/ui/alert";
+
+const SkeletonItem = () => (
+  <div className="p-4 flex items-center gap-5 bg-gray-100 mb-2 border-b animate-pulse">
+    <div className="h-8 w-8 bg-gray-300 rounded"></div>
+    <div className="flex-1">
+      <div className="h-4 w-24 bg-gray-300 rounded mb-2"></div>
+      <div className="h-4 w-32 bg-gray-300 rounded"></div>
+    </div>
+  </div>
+);
 
 const DashboardSummary = () => {
-  const summaryData = [
-    {
-      title: "Sales - Credit Note",
-      to: "/sUsers/salesSummary",
-      value: "1,77,40,000",
-      icon: (
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 64 64"
-          id="checkmark"
-        >
-          <g>
-            <path d="M24.54,58.83a3.79,3.79,0,0,1-3.35-2l-2.62-4.92A1.77,1.77,0,0,0,17.28,51l-5.49-1a3.78,3.78,0,0,1-3.12-4.28l.78-5.52A1.79,1.79,0,0,0,9,38.68l-3.88-4a3.79,3.79,0,0,1,0-5.3l3.87-4a1.79,1.79,0,0,0,.49-1.51l-.79-5.52a3.8,3.8,0,0,1,3.11-4.29l4.08-.72a1,1,0,0,1,.34,2L12.1,16a1.8,1.8,0,0,0-1.48,2l.79,5.52a3.77,3.77,0,0,1-1,3.18l-3.87,4a1.81,1.81,0,0,0,0,2.52l3.88,4a3.75,3.75,0,0,1,1,3.18L10.65,46a1.8,1.8,0,0,0,1.49,2l5.48,1a3.77,3.77,0,0,1,2.71,2L23,55.86a1.81,1.81,0,0,0,2.4.78l5-2.45a3.8,3.8,0,0,1,3.34,0l5,2.44a1.8,1.8,0,0,0,2.39-.78l2.61-4.92a3.78,3.78,0,0,1,2.7-2l5.49-1a1.8,1.8,0,0,0,1.48-2l-.79-5.52a3.77,3.77,0,0,1,1-3.18l3.87-4a1.81,1.81,0,0,0,0-2.52l-3.88-4a3.75,3.75,0,0,1-1-3.18L53.35,18a1.8,1.8,0,0,0-1.49-2l-5.48-1a3.77,3.77,0,0,1-2.71-2L41.05,8.14a1.81,1.81,0,0,0-2.4-.78l-5,2.45a3.8,3.8,0,0,1-3.34,0l-5-2.44a1.8,1.8,0,0,0-2.39.78l-1.75,3.31a1,1,0,0,1-1.77-.94l1.75-3.31a3.81,3.81,0,0,1,5-1.64l5,2.44a1.85,1.85,0,0,0,1.59,0l5-2.45a3.8,3.8,0,0,1,5,1.63l2.62,4.92a1.77,1.77,0,0,0,1.29.93l5.49,1a3.78,3.78,0,0,1,3.12,4.28l-.78,5.52A1.79,1.79,0,0,0,55,25.32l3.88,4a3.79,3.79,0,0,1,0,5.3l-3.87,4a1.79,1.79,0,0,0-.49,1.51l.79,5.52A3.8,3.8,0,0,1,52.25,50l-5.49,1a1.81,1.81,0,0,0-1.28.93l-2.61,4.93a3.8,3.8,0,0,1-5,1.64l-5-2.44a1.85,1.85,0,0,0-1.59,0l-5,2.45A3.81,3.81,0,0,1,24.54,58.83Z"></path>
-            <path
-              fill="#2689db"
-              d="M48.94,30.5a17,17,0,0,0-30.19-9.15A16.92,16.92,0,0,0,15,32.94,17,17,0,0,0,43.24,44.75h0A16.92,16.92,0,0,0,48.94,30.5Zm-7.43-4.56a29.73,29.73,0,0,0-12.06,13.4,1,1,0,0,1-.91.58h0a1,1,0,0,1-.9-.65,12.88,12.88,0,0,0-1.29-2.57,13.15,13.15,0,0,0-3.86-3.86,1,1,0,0,1,1.1-1.68A15.19,15.19,0,0,1,28,35.61c.21.32.4.65.59,1a31.27,31.27,0,0,1,4.77-6.66,31.84,31.84,0,0,1,7.14-5.72,1,1,0,0,1,1,1.73Z"
-            ></path>
-          </g>
-        </svg>
-      )
-    },
-    {
-      title: "Purchase - Debit Note",
-      value: "1,16,88,283.99",
-      icon: (
-        <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <style>
-              {`.cls-1 { fill: #8c9eff; }
-                .cls-2 { fill: #5f7cf9; }`}
-            </style>
-          </defs>
-          <title>Chart</title>
-          <g id="Chart">
-            <rect
-              className="cls-1"
-              height="13"
-              rx="1"
-              ry="1"
-              width="6"
-              x="5"
-              y="17"
-            />
-            <rect
-              className="cls-1"
-              height="17"
-              rx="1"
-              ry="1"
-              width="6"
-              x="21"
-              y="13"
-            />
-            <rect
-              className="cls-1"
-              height="24"
-              rx="1"
-              ry="1"
-              width="6"
-              x="13"
-              y="6"
-            />
-            <path
-              className="cls-2"
-              d="M27,14a1,1,0,0,0-.29-.71L21,17.66V29a1,1,0,0,0,1,1h4a1,1,0,0,0,1-1Z"
-            />
-            <path
-              className="cls-2"
-              d="M13,23.77V29a1,1,0,0,0,1,1h4a1,1,0,0,0,1-1V19.19Z"
-            />
-            <path
-              className="cls-2"
-              d="M5.27,29.68A1,1,0,0,0,6,30h4a1,1,0,0,0,1-1V25.3Z"
-            />
-          </g>
-        </svg>
-      )
-    },
+  const [summaryData, setSummaryData] = useState([]);
+  const cmp_id = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg._id
+  );
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const {
+    data,
+    error,
+    loading: isLoading,
+  } = useFetch(`/api/sUsers/getDashboardSummary/${cmp_id}`);
 
-    {
-      title: "Receipt",
-      value: "78,33,281.42",
+  useEffect(() => {
+    if (data) {
+      const {
+        data: {
+          sales,
+          purchases,
+          saleOrders,
+          receipts,
+          payments,
+          cashOrBank,
+          outstandingPayables,
+          outstandingReceivables,
+        },
+      } = data;
 
-      icon: (
-        <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <style>{`.cls-1{fill:#d8e1ef;}.cls-2{fill:#0593ff;}`}</style>
-          </defs>
-          <title />
-          <g id="Check">
-            <path
-              className="cls-1"
-              d="M25.71,10.29l-6-6A1,1,0,0,0,19,4H7A1,1,0,0,0,6,5V27a1,1,0,0,0,1,1H25a1,1,0,0,0,1-1V11A1,1,0,0,0,25.71,10.29Z"
-            />
-            <path
-              className="cls-2"
-              d="M26,11H20a1,1,0,0,1-1-1V4a1,1,0,0,1,.71.29l6,6A1,1,0,0,1,26,11Z"
-            />
-            <path
-              className="cls-2"
-              d="M15,22a.94.94,0,0,1-.55-.17l-3-2a1,1,0,0,1,1.1-1.66l2.26,1.5,4.42-5.31a1,1,0,1,1,1.54,1.28l-5,6A1,1,0,0,1,15,22Z"
-            />
-          </g>
-        </svg>
-      )
-    },
-    {
-      title: "Payment",
-      value: "57,33,000.47",
-      icon: (
-        <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <style>{`.cls-1{fill:#d8e1ef;}.cls-2{fill:#0593ff;}`}</style>
-          </defs>
-          <title />
-          <g data-name="Card Yes" id="Card_Yes">
-            <rect
-              className="cls-1"
-              height="18"
-              rx="3"
-              ry="3"
-              width="26"
-              x="2"
-              y="6"
-            />
-            <rect className="cls-2" height="3" width="26" x="2" y="10" />
-            <path
-              className="cls-2"
-              d="M10,20H7a1,1,0,0,1,0-2h3a1,1,0,0,1,0,2Z"
-            />
-            <path
-              className="cls-2"
-              d="M25,26a1,1,0,0,1-.71-.29l-2-2a1,1,0,0,1,1.42-1.42L25,23.59l3.29-3.3a1,1,0,0,1,1.42,1.42l-4,4A1,1,0,0,1,25,26Z"
-            />
-          </g>
-        </svg>
-      )
-    },
-    {
-      title: "Outstanding Receivables",
-      value: "1,75,16,208.42",
-      to: "/sUsers/outstanding",
-
-      icon: (
-        <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <style>{`.cls-1{fill:#0e6ae0;}.cls-2{fill:#d8e1ef;}.cls-3{fill:#0593ff;}`}</style>
-          </defs>
-          <title />
-          <g id="Search">
-            <path
-              className="cls-1"
-              d="M22,23a1,1,0,0,1-.71-.29l-1.93-1.93a1,1,0,0,1,1.42-1.42l1.93,1.93a1,1,0,0,1,0,1.42A1,1,0,0,1,22,23Z"
-            />
-            <path
-              className="cls-2"
-              d="M13,24A11,11,0,1,1,24,13,11,11,0,0,1,13,24ZM13,4a9,9,0,1,0,9,9A9,9,0,0,0,13,4Z"
-            />
-            <path
-              className="cls-3"
-              d="M28.21,23.79l-3.5-3.5a1,1,0,0,0-1.42,0l-3,3a1,1,0,0,0,0,1.42l3.5,3.5a3.14,3.14,0,0,0,4.42,0A3.14,3.14,0,0,0,28.21,23.79Z"
-            />
-          </g>
-        </svg>
-      )
-    },
-    {
-      title: "Outstanding Payables",
-      value: "0",
-      to: "/sUsers/outstanding",
-      icon: (
-        <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <style>{`.cls-1{fill:#9ac3f4;}.cls-2{fill:#2f7ded;}`}</style>
-          </defs>
-          <title />
-          <g data-name="cloud refresh" id="cloud_refresh">
-            <path
-              className="cls-1"
-              d="M27.89,13.86A6,6,0,0,0,22,9h0a7.12,7.12,0,0,0-.92.07A7.5,7.5,0,0,0,7.88,11.13,5,5,0,0,0,4.11,17a5.08,5.08,0,0,0,5.06,4H22a6,6,0,0,0,5.89-7.14Z"
-            />
-            <path
-              className="cls-2"
-              d="M16,15a5,5,0,0,0-5,5,4.92,4.92,0,0,0,.67,2.5L13.18,21A2.72,2.72,0,0,1,13,20a3,3,0,1,1,3,3V21l-3,3,3,3V25a5,5,0,0,0,0-10Z"
-            />
-            <path
-              className="cls-2"
-              d="M27.89,13.86A6,6,0,0,0,22,9h0a7.12,7.12,0,0,0-.92.07A7.5,7.5,0,0,0,7.88,11.13a5,5,0,0,0-.18,9.66,1,1,0,0,0,1.3-1H9a1,1,0,0,0-.77-1,3,3,0,0,1-2.16-2.23,3,3,0,0,1,.53-2.45A3,3,0,0,1,8.75,13a.92.92,0,0,0,.87-.7,5.51,5.51,0,0,1,10.13-1.6,1,1,0,0,0,1.13.44A3.8,3.8,0,0,1,22,11a4,4,0,0,1,1.6,7.67,1,1,0,0,0-.58.9h0a1,1,0,0,0,1.41.92,6,6,0,0,0,2.21-1.66A6,6,0,0,0,27.89,13.86Z"
-            />
-          </g>
-        </svg>
-      )
-    },
-    {
-      title: "Cash/Bank Balance",
-      value: "0",
-      to: "/sUsers/balancePage",
-      icon: (
-        <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <style>{`.cls-1{fill:#d8e1ef;}.cls-2{fill:#0593ff;}`}</style>
-          </defs>
-          <title />
-          <g data-name="Home Shield" id="Home_Shield">
-            <path
-              className="cls-1"
-              d="M26.45,9.11l-10-5a1,1,0,0,0-.9,0l-10,5A1,1,0,0,0,5,10V25a3,3,0,0,0,3,3H24a3,3,0,0,0,3-3V10A1,1,0,0,0,26.45,9.11Z"
-            />
-            <path
-              className="cls-2"
-              d="M21,14c-3.24,0-4.08-1.41-4.11-1.45A1,1,0,0,0,16,12a.94.94,0,0,0-.9.52s-.66,1.1-2.92,1.4A9,9,0,0,1,11,14a1,1,0,0,0-1,1v1.94a7,7,0,0,0,4.4,6.5l1.23.49a1,1,0,0,0,.74,0l1.23-.49a7,7,0,0,0,4.4-6.5V15A1,1,0,0,0,21,14Z"
-            />
-            <path
-              className="cls-2"
-              d="M28,12a.93.93,0,0,1-.45-.11L16,6.12,4.45,11.89a1,1,0,0,1-.9-1.78l12-6a1,1,0,0,1,.9,0l12,6a1,1,0,0,1,.44,1.34A1,1,0,0,1,28,12Z"
-            />
-          </g>
-        </svg>
-      )
-    },
-    {
-      title: "Sale Order",
-      value: "0",
-      icon: (
-        <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <style>{`.cls-1{fill:#d8e1ef;}.cls-2{fill:#0593ff;}`}</style>
-          </defs>
-          <title />
-          <g data-name="Phone Shield" id="Phone_Shield">
-            <rect
-              className="cls-1"
-              height="26"
-              rx="3"
-              ry="3"
-              width="18"
-              x="7"
-              y="3"
-            />
-            <path
-              className="cls-2"
-              d="M20.42,3,18.71,4.71A1,1,0,0,1,18,5H14a1,1,0,0,1-.71-.29L11.58,3Z"
-            />
-            <path
-              className="cls-2"
-              d="M20,12a3.39,3.39,0,0,1-3.11-1.46A1,1,0,0,0,16,10a1,1,0,0,0-.9.53A3.38,3.38,0,0,1,12,12a1,1,0,0,0-1,1v2.91a6,6,0,0,0,3.32,5.37l1.23.61a1,1,0,0,0,.9,0l1.23-.61A6,6,0,0,0,21,15.91V13A1,1,0,0,0,20,12Z"
-            />
-          </g>
-        </svg>
-      )
+      setSummaryData([
+        {
+          title: "Sales - Credit Note",
+          to: "/sUsers/salesSummary",
+          value: sales,
+          icon: icons.sales,
+        },
+        {
+          title: "Purchase - Debit Note",
+          value: purchases,
+          icon: icons.purchases,
+        },
+        {
+          title: "Receipt",
+          value: receipts,
+          icon: icons.receipts,
+        },
+        {
+          title: "Payment",
+          value: payments,
+          icon: icons.payments,
+        },
+        {
+          title: "Outstanding Receivables",
+          value: outstandingReceivables,
+          to: "/sUsers/outstanding",
+          icon: icons.outstandingReceivables,
+        },
+        {
+          title: "Outstanding Payables",
+          value: outstandingPayables,
+          to: "/sUsers/outstanding",
+          icon: icons.outstandingPayables,
+        },
+        {
+          title: "Cash/Bank Balance",
+          value: cashOrBank,
+          to: "/sUsers/balancePage",
+          icon: icons.cashOrBank,
+        },
+        {
+          title: "Sale Order",
+          value: saleOrders,
+          icon: icons.saleOrders,
+          to: "/sUsers/orderSummary",
+        },
+      ]);
     }
-  ]
+  }, [data]);
 
-  const navigate = useNavigate()
-
-  const handleLinkClick = (path) => {
-    console.log(path)
-    if (path) {
-      navigate(path)
-    } else {
-      return
-    }
-  }
+  const handleLinkClick = useCallback(
+    (path, value) => {
+      if (path) {
+        if (value === "Outstanding Payables") {
+          dispatch(addTab("payables"));
+          navigate(path);
+        } else if (value === "Outstanding Receivables") {
+          dispatch(addTab("receivables"));
+          navigate(path);
+        }else{
+          navigate(path)
+        }
+      }
+    },
+    [navigate]
+  );
 
   return (
-    <div className="shadow-lg rounded-lg px-3 py-4  w-full z-10  h-[calc(100vh-277px)] overflow-y-scroll  scrollbar-thin">
-      {summaryData.map((item, index) => (
-        <div
-          onClick={() => handleLinkClick(item?.to)}
-          key={index}
-          className=" p-4 flex items-center gap-5 bg-gray-100 mb-2 border-b shadow-md  cursor-pointer hover:bg-slate-100 hover:translate-x-[1px]"
-        >
-          <div className="">
+    <div className="shadow-lg rounded-lg px-3 py-4 w-full z-10 h-[calc(100vh-277px)] overflow-y-scroll scrollbar-thin">
+      {isLoading ? (
+        <>
+          {Array.from({ length: 7 }, (_, index) => (
+            <SkeletonItem key={index} />
+          ))}
+        </>
+      ) : (
+        summaryData.map((item, index) => (
+          <div
+            onClick={() => handleLinkClick(item?.to, item?.title)}
+            key={index}
+            className="p-4 flex items-center gap-5 bg-gray-100 mb-2 border-b shadow-md cursor-pointer hover:bg-slate-100 hover:translate-x-[1px] transition-all"
+          >
             <div className="h-8 w-8">{item?.icon}</div>
+            <div>
+              <p className="text-xs font-bold text-gray-500">
+                {" "}
+                ₹ {item?.value}
+              </p>
+              <p className="text-gray-500 font-semibold text-sm mt-1">
+                {item.title}
+              </p>
+            </div>
           </div>
-          <div className="">
-            <> ₹ 0</>
-            <p className="text-gray-500 font-semibold text-sm">{item.title}</p>
-          </div>
-        </div>
-      ))}
+        ))
+      )}
     </div>
-  )
-}
+  );
+};
 
-export default DashboardSummary
+export default memo(DashboardSummary);
