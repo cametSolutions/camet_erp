@@ -80,7 +80,7 @@ function PartyStatement() {
           </section>
         )}
         <section className="border-b bg-slate-300">
-          <div className="w-full overflow-x-auto px-3">
+          <div className="w-full overflow-x-auto ">
             <table className="w-full">
               <thead>
                 <tr className=" border-y">
