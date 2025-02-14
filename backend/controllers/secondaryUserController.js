@@ -12,7 +12,7 @@ import HsnModel from "../models/hsnModel.js";
 import OragnizationModel from "../models/OragnizationModel.js";
 import Organization from "../models/OragnizationModel.js";
 import AdditionalChargesModel from "../models/additionalChargesModel.js";
-import { truncateToNDecimals } from "../helpers/helper.js";
+import { getFinancialYearDates, truncateToNDecimals } from "../helpers/helper.js";
 import { Brand } from "../models/subDetails.js";
 import { Category } from "../models/subDetails.js";
 import { Subcategory } from "../models/subDetails.js";
@@ -2393,11 +2393,20 @@ export const getBankAndCashSources = async (req, res) => {
 
 export const getDashboardSummary = async (req, res) => {
   const cmp_id = req.params.cmp_id;
+  const { startDate, endDate } = getFinancialYearDates();
+
   try {
-    
     // Get total sales
     const salesTotal = await salesModel.aggregate([
-      { $match: { cmp_id: cmp_id } },
+      {
+        $match: {
+          cmp_id: cmp_id,
+          date: {
+            $gte: startDate,
+            $lte: endDate
+          }
+        }
+      },
       {
         $group: {
           _id: null,
@@ -2410,7 +2419,15 @@ export const getDashboardSummary = async (req, res) => {
 
     // Get total purchases
     const purchaseTotal = await purchaseModel.aggregate([
-      { $match: { cmp_id: cmp_id } },
+      {
+        $match: {
+          cmp_id: cmp_id,
+          date: {
+            $gte: startDate,
+            $lte: endDate
+          }
+        }
+      },
       {
         $group: {
           _id: null,
@@ -2423,7 +2440,15 @@ export const getDashboardSummary = async (req, res) => {
 
     // Get total sale orders
     const saleOrderTotal = await invoiceModel.aggregate([
-      { $match: { cmp_id: cmp_id } },
+      {
+        $match: {
+          cmp_id: cmp_id,
+          date: {
+            $gte: startDate,
+            $lte: endDate
+          }
+        }
+      },
       {
         $group: {
           _id: null,
@@ -2436,7 +2461,15 @@ export const getDashboardSummary = async (req, res) => {
 
     // Get total receipts
     const receiptTotal = await receiptModel.aggregate([
-      { $match: { cmp_id: cmp_id } },
+      {
+        $match: {
+          cmp_id: cmp_id,
+          date: {
+            $gte: startDate,
+            $lte: endDate
+          }
+        }
+      },
       {
         $group: {
           _id: null,
@@ -2449,7 +2482,15 @@ export const getDashboardSummary = async (req, res) => {
 
     // Get total payments
     const paymentTotal = await paymentModel.aggregate([
-      { $match: { cmp_id: cmp_id } },
+      {
+        $match: {
+          cmp_id: cmp_id,
+          date: {
+            $gte: startDate,
+            $lte: endDate
+          }
+        }
+      },
       {
         $group: {
           _id: null,
@@ -2462,8 +2503,24 @@ export const getDashboardSummary = async (req, res) => {
 
     // Get total cash transactions
     const cashTotal = await cashModel.aggregate([
-      { $match: { cmp_id: cmp_id } },
+      {
+        $match: {
+          cmp_id: cmp_id,
+          "settlements.created_at": {
+            $gte: startDate,
+            $lte: endDate
+          }
+        }
+      },
       { $unwind: "$settlements" },
+      {
+        $match: {
+          "settlements.created_at": {
+            $gte: startDate,
+            $lte: endDate
+          }
+        }
+      },
       {
         $group: {
           _id: null,
@@ -2476,8 +2533,24 @@ export const getDashboardSummary = async (req, res) => {
 
     // Get total bank transactions
     const bankTotal = await bankModel.aggregate([
-      { $match: { cmp_id: cmp_id } },
+      {
+        $match: {
+          cmp_id: cmp_id,
+          "settlements.created_at": {
+            $gte: startDate,
+            $lte: endDate
+          }
+        }
+      },
       { $unwind: "$settlements" },
+      {
+        $match: {
+          "settlements.created_at": {
+            $gte: startDate,
+            $lte: endDate
+          }
+        }
+      },
       {
         $group: {
           _id: null,
@@ -2488,10 +2561,18 @@ export const getDashboardSummary = async (req, res) => {
       },
     ]);
 
-    /// out standing payables
-
+    // Outstanding payables
     const outstandingPayables = await TallyData.aggregate([
-      { $match: { cmp_id: cmp_id, classification: "Cr" } },
+      {
+        $match: {
+          cmp_id: cmp_id,
+          classification: "Cr",
+          bill_date: {
+            $gte: startDate,
+            $lte: endDate
+          }
+        }
+      },
       {
         $group: {
           _id: null,
@@ -2502,9 +2583,18 @@ export const getDashboardSummary = async (req, res) => {
       },
     ]);
 
-    ///  out standing receivables
+    // Outstanding receivables
     const outstandingReceivables = await TallyData.aggregate([
-      { $match: { cmp_id: cmp_id, classification: "Dr" } },
+      {
+        $match: {
+          cmp_id: cmp_id,
+          classification: "Dr",
+          bill_date: {
+            $gte: startDate,
+            $lte: endDate
+          }
+        }
+      },
       {
         $group: {
           _id: null,
@@ -2522,7 +2612,7 @@ export const getDashboardSummary = async (req, res) => {
       saleOrders: saleOrderTotal[0]?.total || 0,
       receipts: receiptTotal[0]?.total || 0,
       payments: paymentTotal[0]?.total || 0,
-      cashOrBank: (cashTotal[0]?.total || 0) + (bankTotal[0].total || 0),
+      cashOrBank: (cashTotal[0]?.total || 0) + (bankTotal[0]?.total || 0),
       outstandingPayables: outstandingPayables[0]?.total || 0,
       outstandingReceivables: outstandingReceivables[0]?.total || 0,
     };
@@ -2530,10 +2620,13 @@ export const getDashboardSummary = async (req, res) => {
     res.status(200).json({
       success: true,
       data: summary,
+      dateRange: {
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString()
+      }
     });
   } catch (error) {
     console.log(error);
-
     res.status(500).json({
       success: false,
       message: "Error fetching dashboard summary",
