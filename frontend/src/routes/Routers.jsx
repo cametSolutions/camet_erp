@@ -210,6 +210,7 @@ import PendingOrders from '../pages/secUsers/orderPendings/PendingOrders'
 import SaleSummaryTable from '../pages/secUsers/Reports/salesSummary/SalesSummaryTable'
 import SalesSummaryTable from '../pages/secUsers/Reports/salesSummary/SalesSummaryTable'
 import OutstandingSummary from '../pages/secUsers/OutstandingSummary'
+import AddSubGroup from '../pages/secUsers/settilngs/partySettings/AddSubGroup'
 
 const Routers = () => {
   return (
@@ -512,7 +513,8 @@ const Routers = () => {
       <Route path='/sUsers/outstandingSummary' element={<ProtectedSecRoute><OutstandingSummary/></ProtectedSecRoute>}></Route>
       <Route path='/sUsers/outstanding' element={<ProtectedSecRoute><Outstanding/></ProtectedSecRoute>}></Route>
 
-
+      {/* sub groups */}
+      <Route path='/sUsers/addSubGroup' element={<ProtectedSecRoute><AddSubGroup/></ProtectedSecRoute>}></Route>
 
 
 
