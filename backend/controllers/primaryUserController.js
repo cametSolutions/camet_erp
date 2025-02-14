@@ -31,6 +31,8 @@ import creditNoteModel from "../models/creditNoteModel.js";
 import debitNoteModel from "../models/debitNoteModel.js";
 import paymentModel from "../models/paymentModel.js";
 import ReceiptModel from "../models/receiptModel.js";
+import { accountGroups03 } from "../../frontend/constants/accountGroups.js";
+import AccountGroup from "../models/accountGroup.js";
 
 // @desc Register Primary user
 // route POST/api/pUsers/register
@@ -230,7 +232,6 @@ export const getPrimaryUserData = async (req, res) => {
 // @desc Adding organizations by primary users
 // route POST/api/pUsers/addOrganizations
 
-
 export const addOrganizations = async (req, res) => {
   const {
     name,
@@ -399,8 +400,6 @@ export const addOrganizations = async (req, res) => {
         .json({ success: false, message: "Adding organization failed" });
     }
 
-  
-
     // Update the SecondaryUser's organization array
     const updatedUser = await SecondaryUser.findByIdAndUpdate(
       req.sUserId,
@@ -414,6 +413,24 @@ export const addOrganizations = async (req, res) => {
       return res
         .status(404)
         .json({ success: false, message: "User not found" });
+    }
+
+    /// create account group for organization
+
+    if (type === "self") {
+      if (Array.isArray(accountGroups03) && accountGroups03.length > 0) {
+        await Promise.all(
+          accountGroups03.map(async (group) => {
+            const accountGroup = new AccountGroup({
+              accountGroup: group,
+              cmp_id: organization[0]._id,
+              Primary_user_id: owner,
+            });
+
+            await accountGroup.save({ session }); // Ensure session is passed
+          })
+        );
+      }
     }
 
     // Commit the transaction
@@ -433,7 +450,6 @@ export const addOrganizations = async (req, res) => {
       .json({ success: false, message: "Internal server error, try again!" });
   }
 };
-
 
 // @desc get Primary user organization list
 // route GET/api/pUsers/getOrganizations
@@ -2541,7 +2557,6 @@ export const fetchGodownsAndPriceLevels = async (req, res) => {
   const Primary_user_id = req.owner;
   const cmp_id = req.params.cmp_id;
 
-  
   try {
     // First, collect all price levels across products
     const priceLevelsResult = await productModel.aggregate([
@@ -2876,11 +2891,9 @@ export const addSecondaryConfigurations = async (req, res) => {
         NewreceiptNumber
       );
       if (receiptExists) {
-        return res
-          .status(400)
-          .json({
-            message: `Receipt is added with this number ${NewreceiptNumber}`,
-          });
+        return res.status(400).json({
+          message: `Receipt is added with this number ${NewreceiptNumber}`,
+        });
       }
     }
 

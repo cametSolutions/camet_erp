@@ -128,184 +128,7 @@ function ProductListSecondary() {
     return () => window.removeEventListener("resize", calculateHeight);
   }, []);
 
-  // const handlePrint = (el) => {
-  //   let printData;
-
-  //   const fetchPrintData = async () => {
-  //     try {
-  //       const res = await api.get(`/api/sUsers/getBarcodeList/${cmp_id}`, {
-  //         withCredentials: true,
-  //       });
-
-  //       printData = res.data?.data[0];
-  //       console.log(printData);
-
-  //     } catch (error) {
-  //       console.log(error);
-  //     }
-  //   };
-  //   fetchPrintData();
-  //   // Extract the product name and product code
-  //   // const productName = el?.product_name;
-  //   // const productCode = el?.hsn_code;
-
-  //   // console.log("data", data);
-
-  //   // Generate the command for the barcode and product details
-  //   // const generateBarcodeCommand = () => {
-  //   //   return `
-  //   //     SIZE 50 mm, 25 mm
-  //   //     GAP 3 mm
-  //   //     DIRECTION 0,0
-  //   //     REFERENCE 0,0
-  //   //     OFFSET 0 mm
-  //   //     SET PEEL OFF
-  //   //     SET CUTTER ON
-  //   //     SET TEAR ON
-  //   //     CLS
-  //   //     BARCODE -350,155,"128M",77,0,180,2,4,"${productCode}"
-  //   //     CODEPAGE 1252
-  //   //     TEXT -350,180,"ROMAN.TTF",180,1,8,"${productName}"
-  //   //     TEXT -350,155,"ROMAN.TTF",77,0,180,2,4,"${productCode}"
-  //   //     PRINT 1,1
-  //   //   `;
-  //   // };
-
-  //   // // Create the command for the barcode printout
-  //   // const command = generateBarcodeCommand();
-
-  //   // // Create a Blob from the command
-  //   // const blob = new Blob([command], { type: 'text/plain' });
-  //   // const url = URL.createObjectURL(blob);
-
-  //   // // Create a new window or tab and print the Blob
-  //   // const printWindow = window.open('', '_blank');
-  //   // printWindow.document.write('<html><head><title>Print Command</title></head><body>');
-  //   // printWindow.document.write('<pre>' + command + '</pre>');
-  //   // printWindow.document.write('</body></html>');
-  //   // printWindow.document.close();
-  //   // printWindow.focus();
-  //   // printWindow.print();
-  //   // printWindow.close();
-
-  //   // // Clean up
-  //   // URL.revokeObjectURL(url);
-  // };
-
-  // const handlePrint = async (el) => {
-  //   try {
-  //     // Fetch print data from the API
-  //     const res = await api.get(`/api/sUsers/getBarcodeList/${cmp_id}`, {
-  //       withCredentials: true,
-  //     });
-
-  //     const printData = res.data?.data[0];
-  //     if (!printData) {
-  //       console.error("No print data found");
-  //       return;
-  //     }
-
-  //     // Extract product details from the passed element
-  //     const productName = el?.product_name || "Unknown Product";
-  //     const productCode = el?.hsn_code || "Unknown Code";
-
-  //     // Replace placeholders in the format with actual values
-  //     const formatWithValues = printData.format1
-  //       .replace(/\${productName}/g, productName)
-  //       .replace(/\${productCode}/g, productCode);
-
-  //     // Construct the complete print command
-  //     const command = `
-  //       ${printData.printOn}
-  //       ${formatWithValues}
-  //       ${printData.printOff}
-  //     `;
-
-  //     // Log the command for debugging
-  //     console.log("Generated Command:", command);
-
-  //     // Create a Blob from the command
-  //     const blob = new Blob([command], { type: "text/plain" });
-  //     const url = URL.createObjectURL(blob);
-
-  //     // Open a new window or tab and print the Blob
-  //     const printWindow = window.open("", "_blank");
-  //     printWindow.document.write("<html><head><title>Print Command</title></head><body>");
-  //     printWindow.document.write("<pre>" + command + "</pre>");
-  //     printWindow.document.write("</body></html>");
-  //     printWindow.document.close();
-  //     printWindow.focus();
-  //     printWindow.print();
-  //     printWindow.close();
-
-  //     // Clean up the object URL
-  //     URL.revokeObjectURL(url);
-  //   } catch (error) {
-  //     console.error("Error fetching print data:", error);
-  //   }
-  // };
-
-  // const handlePrint = async (el) => {
-  //   try {
-  //     // Fetch print data from the API
-  //     const res = await api.get(`/api/sUsers/getBarcodeList/${cmp_id}`, {
-  //       withCredentials: true,
-  //     });
-
-  //     const printData = res.data?.data[0];
-  //     if (!printData) {
-  //       console.error("No print data found");
-  //       return;
-  //     }
-
-  //     // Extract product details from the passed element
-  //     const productName = el?.product_name || "Unknown Product";
-  //     const productCode = el?.hsn_code || "Unknown Code";
-
-  //     // Replace placeholders in format1 and format2 with actual values
-  //     const format1WithValues = printData.format1
-  //       .replace(/\${productName}/g, productName)
-  //       .replace(/\${productCode}/g, productCode);
-
-  //     const format2WithValues = printData.format2
-  //       .replace(/\${productName}/g, productName)
-  //       .replace(/\${productCode}/g, productCode);
-
-  //     // Combine both formats side by side
-  //     const combinedFormat = `
-  //       ${printData.printOn}
-  //       ${format1WithValues}
-
-  //       ${format2WithValues}
-  //       ${printData.printOff}
-  //     `;
-
-  //     // Log the command for debugging
-  //     console.log("Generated Command for Double Sticker:", combinedFormat);
-
-  //     // Create a Blob from the command
-  //     const blob = new Blob([combinedFormat], { type: "text/plain" });
-  //     const url = URL.createObjectURL(blob);
-
-  //     // Open a new window or tab and print the Blob
-  //     const printWindow = window.open("", "_blank");
-  //     printWindow.document.write(
-  //       "<html><head><title>Print Command</title></head><body>"
-  //     );
-  //     printWindow.document.write("<pre>" + combinedFormat + "</pre>");
-  //     printWindow.document.write("</body></html>");
-  //     printWindow.document.close();
-  //     printWindow.focus();
-  //     printWindow.print();
-  //     printWindow.close();
-
-  //     // Clean up the object URL
-  //     URL.revokeObjectURL(url);
-  //   } catch (error) {
-  //     console.error("Error fetching print data:", error);
-  //   }
-  // };
-
+  
   const handlePrint = (el) => {
     setOpenModal(true);
     setSelectedProductForPrint(el);
@@ -324,7 +147,7 @@ function ProductListSecondary() {
         <div
           key={index}
           style={adjustedStyle}
-          className="bg-white p-4 pb-6 drop-shadow-lg mt-4 flex flex-col mx-2 rounded-sm cursor-pointer hover:bg-slate-100  pr-7  "
+          className="bg-white p-4 pb-6 drop-shadow-lg mt-4 flex flex-col  rounded-sm cursor-pointer hover:bg-slate-100    "
         >
           <div className="flex justify-between w-full gap-3 ">
             <div className="">
@@ -370,26 +193,7 @@ function ProductListSecondary() {
     );
   };
 
-  //   const generateBarcodeCommand = (productCode, productName, dateValue, invoiceNumber, testValue) => {
-  //     return `
-  //       SIZE 50 mm, 25 mm
-  //       GAP 3 mm
-  //       DIRECTION 0,0
-  //       REFERENCE 0,0
-  //       OFFSET 0 mm
-  //       SET PEEL OFF
-  //       SET CUTTER ON
-  //       SET TEAR ON
-  //       CLS
-  //       BARCODE -350,155,"128M",77,0,180,2,4,"${productCode}"  // productCode as barcode
-  //       CODEPAGE 1252
-  //       TEXT -350,180,"ROMAN.TTF",180,1,8,"${productName}"  // productName as text
-  //       TEXT -350,76,"ROMAN.TTF",180,1,6,"${dateValue}"
-  //       TEXT -350,60,"ROMAN.TTF",180,1,7,"${invoiceNumber}"
-  //       TEXT -350,34,"ROMAN.TTF",180,1,8,"${testValue}"
-  //       PRINT 1,1
-  //     `;
-  // };
+ 
 
   return (
     <>

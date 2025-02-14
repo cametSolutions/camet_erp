@@ -42,7 +42,7 @@ function PartyListComponent({ filteredParty, type, deleteHandler,user="secondary
       <div
         key={index}
         style={adjustedStyle}
-        className="bg-white p-4 pb-6 drop-shadow-lg mt-4 flex flex-col mx-2 rounded-sm cursor-pointer hover:bg-slate-100 pr-7"
+        className="bg-white p-4 pb-6 drop-shadow-lg mt-4 flex flex-col  rounded-sm cursor-pointer hover:bg-slate-100 pr-7"
       >
         <div className="flex justify-between w-full gap-3 ">
           <div className="">
