@@ -10,10 +10,14 @@ import productModel from "../models/productModel.js";
 import invoiceModel from "../models/invoiceModel.js";
 import HsnModel from "../models/hsnModel.js";
 import AccountGroup from "../models/accountGroup.js";
+import SubGroup from "../models/subGroup.js";
 import OragnizationModel from "../models/OragnizationModel.js";
 import Organization from "../models/OragnizationModel.js";
 import AdditionalChargesModel from "../models/additionalChargesModel.js";
-import { getFinancialYearDates, truncateToNDecimals } from "../helpers/helper.js";
+import {
+  getFinancialYearDates,
+  truncateToNDecimals,
+} from "../helpers/helper.js";
 import { Brand } from "../models/subDetails.js";
 import { Category } from "../models/subDetails.js";
 import { Subcategory } from "../models/subDetails.js";
@@ -597,6 +601,8 @@ export const addParty = async (req, res) => {
       // Secondary_user_id,
       accountGroup,
       accountGroup_id,
+      subGroup,
+      subGroup_id,
       partyName,
       mobileNumber,
       emailID,
@@ -625,6 +631,8 @@ export const addParty = async (req, res) => {
       Secondary_user_id: req.sUserId,
       accountGroup,
       accountGroup_id,
+      subGroup,
+      subGroup_id,
       partyName,
       mobileNumber,
       emailID,
@@ -2372,9 +2380,9 @@ export const getDashboardSummary = async (req, res) => {
           cmp_id: cmp_id,
           date: {
             $gte: startDate,
-            $lte: endDate
-          }
-        }
+            $lte: endDate,
+          },
+        },
       },
       {
         $group: {
@@ -2393,9 +2401,9 @@ export const getDashboardSummary = async (req, res) => {
           cmp_id: cmp_id,
           date: {
             $gte: startDate,
-            $lte: endDate
-          }
-        }
+            $lte: endDate,
+          },
+        },
       },
       {
         $group: {
@@ -2414,9 +2422,9 @@ export const getDashboardSummary = async (req, res) => {
           cmp_id: cmp_id,
           date: {
             $gte: startDate,
-            $lte: endDate
-          }
-        }
+            $lte: endDate,
+          },
+        },
       },
       {
         $group: {
@@ -2435,9 +2443,9 @@ export const getDashboardSummary = async (req, res) => {
           cmp_id: cmp_id,
           date: {
             $gte: startDate,
-            $lte: endDate
-          }
-        }
+            $lte: endDate,
+          },
+        },
       },
       {
         $group: {
@@ -2456,9 +2464,9 @@ export const getDashboardSummary = async (req, res) => {
           cmp_id: cmp_id,
           date: {
             $gte: startDate,
-            $lte: endDate
-          }
-        }
+            $lte: endDate,
+          },
+        },
       },
       {
         $group: {
@@ -2477,18 +2485,18 @@ export const getDashboardSummary = async (req, res) => {
           cmp_id: cmp_id,
           "settlements.created_at": {
             $gte: startDate,
-            $lte: endDate
-          }
-        }
+            $lte: endDate,
+          },
+        },
       },
       { $unwind: "$settlements" },
       {
         $match: {
           "settlements.created_at": {
             $gte: startDate,
-            $lte: endDate
-          }
-        }
+            $lte: endDate,
+          },
+        },
       },
       {
         $group: {
@@ -2507,18 +2515,18 @@ export const getDashboardSummary = async (req, res) => {
           cmp_id: cmp_id,
           "settlements.created_at": {
             $gte: startDate,
-            $lte: endDate
-          }
-        }
+            $lte: endDate,
+          },
+        },
       },
       { $unwind: "$settlements" },
       {
         $match: {
           "settlements.created_at": {
             $gte: startDate,
-            $lte: endDate
-          }
-        }
+            $lte: endDate,
+          },
+        },
       },
       {
         $group: {
@@ -2538,9 +2546,9 @@ export const getDashboardSummary = async (req, res) => {
           classification: "Cr",
           bill_date: {
             $gte: startDate,
-            $lte: endDate
-          }
-        }
+            $lte: endDate,
+          },
+        },
       },
       {
         $group: {
@@ -2560,9 +2568,9 @@ export const getDashboardSummary = async (req, res) => {
           classification: "Dr",
           bill_date: {
             $gte: startDate,
-            $lte: endDate
-          }
-        }
+            $lte: endDate,
+          },
+        },
       },
       {
         $group: {
@@ -2591,8 +2599,8 @@ export const getDashboardSummary = async (req, res) => {
       data: summary,
       dateRange: {
         startDate: startDate.toISOString(),
-        endDate: endDate.toISOString()
-      }
+        endDate: endDate.toISOString(),
+      },
     });
   } catch (error) {
     console.log(error);
@@ -2600,8 +2608,6 @@ export const getDashboardSummary = async (req, res) => {
       success: false,
       message: "Error fetching dashboard summary",
       error: error.message,
-
-
     });
   }
 };
@@ -2616,7 +2622,7 @@ export const getAccountGroups = async (req, res) => {
   const cmp_id = req.params.cmp_id;
   const Primary_user_id = req.owner;
   console.log(cmp_id, Primary_user_id);
-  
+
   try {
     const accountGroups = await AccountGroup.find({
       cmp_id: cmp_id,
@@ -2635,6 +2641,139 @@ export const getAccountGroups = async (req, res) => {
     }
   } catch (error) {
     console.log("Error in getting account groups:", error);
+    res.status(500).json({
+      error: "Internal Server Error",
+      details: error.message,
+    });
+  }
+};
+
+/**
+ * @desc   To add sub groups
+ * @route  Get /api/sUsers/addSubGroup/:cmp_id
+ * @access Public
+ */
+
+export const addSubGroup = async (req, res) => {
+  const cmp_id = req.params.cmp_id;
+  try {
+    const { accountGroup, subGroup } = req?.body;
+
+    const newSubGroup = new SubGroup({
+      accountGroup_id: new mongoose.Types.ObjectId(accountGroup),
+      subGroup: subGroup,
+      cmp_id: cmp_id,
+      Primary_user_id: req.owner,
+    });
+
+    await newSubGroup.save();
+    res.status(200).json({
+      message: "Sub Group added",
+      data: newSubGroup,
+    });
+  } catch (error) {
+    console.log(error);
+
+    res.status(500).json({
+      error: "Internal Server Error",
+      details: error.message,
+    });
+  }
+};
+
+/**
+ * @desc   To get sub groups
+ * @route  Get /api/sUsers/getSubGroup/:cmp_id
+ * @access Public
+ */
+
+export const getSubGroup = async (req, res) => {
+  const cmp_id = req.params.cmp_id;
+  try {
+    const subGroups = await SubGroup.find({
+      cmp_id: cmp_id,
+      Primary_user_id: req.owner,
+    }).populate("accountGroup_id");
+    if (subGroups) {
+      res.status(200).json({
+        message: "Sub Groups fetched",
+        data: subGroups,
+      });
+    } else {
+      res.status(200).json({
+        message: "Sub Groups not found",
+        data: [],
+      });
+    }
+  } catch (error) {
+    console.log("Error in getting sub groups:", error);
+    res.status(500).json({
+      error: "Internal Server Error",
+      details: error.message,
+    });
+  }
+};
+
+/**
+ * @desc   Delete sub group
+ * @route  DELETE /api/sUsers/deleteSubGroup/:subGroupId
+ * @access Public
+ */
+export const deleteSubGroup = async (req, res) => {
+  try {
+    const subGroupId = req.params.subGroupId;
+    await SubGroup.findByIdAndDelete(subGroupId);
+    res.status(200).json({
+      message: "Sub Group deleted",
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      error: "Internal Server Error",
+      details: error.message,
+    });
+  }
+};
+
+/**
+ * @desc   Edit sub group
+ * @route  PUT /api/sUsers/editSubGroup/:subGroupId
+ * @access Public
+ */
+export const editSubGroup = async (req, res) => {
+  try {
+    const subGroupId = req.params.subGroupId;
+
+    console.log("Sub Group ID:", subGroupId);
+    
+    const updateData = req.body;
+
+    console.log("Update Data:", updateData);
+
+    const existingSubGroup = await SubGroup.findById(
+      new mongoose.Types.ObjectId(subGroupId)
+    );
+
+    if (!existingSubGroup) {
+      return res.status(404).json({
+        message: "Sub Group not found",
+      });
+    }
+
+    // Update the sub-group
+    existingSubGroup.accountGroup_id = updateData.accountGroup;
+    existingSubGroup.subGroup = updateData.subGroup;
+
+    await existingSubGroup.save();
+
+    // Send success response
+    res.status(200).json({
+      message: "Sub Group updated successfully",
+      data: existingSubGroup, // Use the updated document
+    });
+
+  } catch (error) {
+    console.log("Error in editing sub group:", error);
     res.status(500).json({
       error: "Internal Server Error",
       details: error.message,

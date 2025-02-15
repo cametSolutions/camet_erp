@@ -66,7 +66,7 @@ const BalancePage = () => {
       <div className="sticky top-0">
         <TitleDiv
           title="Cash / Bank Balance"
-          from="/sUsers/reports"
+          
           loading={loading}
         />
 

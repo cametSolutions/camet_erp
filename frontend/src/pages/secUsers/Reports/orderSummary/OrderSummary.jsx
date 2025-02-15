@@ -46,7 +46,7 @@ function OrderSummary() {
       <div className="sticky top-0 z-50">
         <FindUserAndCompany getUserAndCompany={handleUserAndCompanyData} />
 
-        <TitleDiv title="Order Summary" from={"/sUsers/reports"} />
+        <TitleDiv title="Order Summary"  />
 
         <section className="shadow-lg border-b">
           <SelectDate />

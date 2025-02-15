@@ -1,6 +1,5 @@
 /* eslint-disable react/prop-types */
 import { useEffect, useState } from "react";
-import { accountGroups03 } from "../../../../constants/accountGroups";
 import { toast } from "react-toastify";
 import { useSelector } from "react-redux";
 import { statesData } from "../../../../constants/states.js";
@@ -8,9 +7,11 @@ import { countries } from "../../../../constants/countries.js";
 import useFetch from "../../../customHook/useFetch.jsx";
 
 function AddPartyForm({ submitHandler, partyDetails = {}, userType }) {
-  const [tab, setTab] = useState("business");
+  // const [tab, setTab] = useState("business");
   const [accountGroup, setAccountGroup] = useState("");
   const [accountGroup_id, setAccountGroup_id] = useState("");
+  const [subGroup, setSubGroup] = useState("");
+  const [subGroup_id, setSubGroup_id] = useState("");
 
   const [partyName, setPartyName] = useState("");
   const [mobileNumber, setMobileNumber] = useState("");
@@ -37,8 +38,11 @@ function AddPartyForm({ submitHandler, partyDetails = {}, userType }) {
   const selectedOrganization =
     userType === "primaryUser" ? primarySelectedOrg : secondarySelectedOrg;
 
-  const { data: accountGroupList, loading } = useFetch(
+  const { data: accountGroupList } = useFetch(
     `/api/sUsers/getAccountGroups/${selectedOrganization._id}`
+  );
+  const { data: subGroupList } = useFetch(
+    `/api/sUsers/getSubGroup/${selectedOrganization._id}`
   );
 
   useEffect(() => {
@@ -47,6 +51,8 @@ function AddPartyForm({ submitHandler, partyDetails = {}, userType }) {
       const {
         accountGroup,
         accountGroup_id,
+        subGroup,
+        subGroup_id,
         partyName,
         mobileNumber,
         emailID,
@@ -65,6 +71,8 @@ function AddPartyForm({ submitHandler, partyDetails = {}, userType }) {
 
       setAccountGroup(accountGroup);
       setAccountGroup_id(accountGroup_id);
+      setSubGroup(subGroup);
+      setSubGroup_id(subGroup_id);
       setPartyName(partyName);
       setMobileNumber(mobileNumber);
       setEmailID(emailID);
@@ -90,6 +98,18 @@ function AddPartyForm({ submitHandler, partyDetails = {}, userType }) {
 
     if (accountGroupName) {
       setAccountGroup(accountGroupName.accountGroup);
+    }
+    setSubGroup("");
+    setSubGroup_id("");
+  };
+  const handleSubGroup = (value) => {
+    setSubGroup_id(value);
+    const selectedSubGroup = subGroupList?.data?.find(
+      (item) => item._id === value
+    );
+
+    if (selectedSubGroup) {
+      setSubGroup(selectedSubGroup?.subGroup);
     }
   };
 
@@ -137,10 +157,13 @@ function AddPartyForm({ submitHandler, partyDetails = {}, userType }) {
       country,
       state,
       pin,
+      subGroup,
+      subGroup_id,
     };
 
     submitHandler(formData);
   };
+
 
   return (
     <div>
@@ -176,6 +199,35 @@ function AddPartyForm({ submitHandler, partyDetails = {}, userType }) {
                             {group?.accountGroup}
                           </option>
                         ))}
+                      </select>
+                    </div>
+                  </div>
+                  <div className="w-full lg:w-6/12 px-4">
+                    <div className="relative w-full mb-3">
+                      <label
+                        className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
+                        htmlFor="account-group"
+                      >
+                        Sub Group
+                      </label>
+                      <select
+                        disabled={!accountGroup_id}
+                        id="sub-group"
+                        className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                        value={subGroup_id}
+                        onChange={(e) => handleSubGroup(e.target.value)}
+                      >
+                        <option value="">Select Sub Group</option>
+                        {subGroupList?.data
+                          ?.filter(
+                            (item) =>
+                              item.accountGroup_id?._id === accountGroup_id
+                          )
+                          ?.map((subGroup, index) => (
+                            <option key={index} value={subGroup._id}>
+                              {subGroup?.subGroup}
+                            </option>
+                          ))}
                       </select>
                     </div>
                   </div>
@@ -336,7 +388,7 @@ function AddPartyForm({ submitHandler, partyDetails = {}, userType }) {
                   </div>
                 </div>
 
-                {tab === "business" && (
+                {/* {tab === "business" && ( */}
                   <div className="flex flex-wrap mt-12">
                     <div className="w-full lg:w-6/12 px-4">
                       <div className="relative w-full mb-3">
@@ -406,9 +458,9 @@ function AddPartyForm({ submitHandler, partyDetails = {}, userType }) {
                       </div>
                     </div>
                   </div>
-                )}
+                {/* // )} */}
 
-                {tab === "credit" && (
+                {/* {tab === "credit" && (
                   <>
                     <div className="flex flex-wrap mt-12">
                       <div className="w-full lg:w-6/12 px-4">
@@ -495,7 +547,7 @@ function AddPartyForm({ submitHandler, partyDetails = {}, userType }) {
                       </div>
                     </div>
                   </>
-                )}
+                )} */}
 
                 <div className="flex items-center  gap-0 mt-4 m-4 relative "></div>
                 <button

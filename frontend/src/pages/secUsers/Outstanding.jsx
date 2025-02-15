@@ -203,9 +203,9 @@ function Outstanding() {
     <div>
       <div className="sticky top-0 flex flex-col z-30 bg-white shadow-lg ">
         <div className="flex items-center justify-between w-full bg-[#012a4a] shadow-lg px-4 py-3">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 cursor-pointer">
             <IoIosArrowRoundBack
-              onClick={() => navigate("/sUsers/reports")}
+              onClick={() => navigate(-1,{ replace: true })}
               className="text-white text-3xl"
             />
             <p className="text-white text-lg font-bold">Outstanding</p>

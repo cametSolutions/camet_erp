@@ -16,7 +16,11 @@ import {login,getSecUserData,
     fetchGodowns,
     getBankAndCashSources,
     getDashboardSummary,
-    getAccountGroups
+    getAccountGroups,
+    addSubGroup,
+    getSubGroup,
+    deleteSubGroup,
+    editSubGroup
    } from "../controllers/secondaryUserController.js"
  
 import { createPurchase,editPurchase,cancelPurchase } from '../controllers/purchaseController.js';
@@ -229,6 +233,11 @@ router.get('/getOutstandingSummary/:cmp_id',authSecondary,secondaryIsBlocked,com
 router.get('/getDashboardSummary/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,getDashboardSummary)
 /// get account groups
 router.get('/getAccountGroups/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,getAccountGroups)
+/// sub groups
+router.post('/addSubGroup/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,addSubGroup)
+router.get('/getSubGroup/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,getSubGroup)
+router.delete('/deleteSubGroup/:subGroupId/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,deleteSubGroup)
+router.patch('/editSubGroup/:subGroupId/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,editSubGroup)
 
 
 

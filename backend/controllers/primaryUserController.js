@@ -421,17 +421,23 @@ export const addOrganizations = async (req, res) => {
       if (Array.isArray(accountGroups03) && accountGroups03.length > 0) {
         await Promise.all(
           accountGroups03.map(async (group) => {
+            // Generate a new ObjectId
+            const generatedId = new mongoose.Types.ObjectId();
+    
             const accountGroup = new AccountGroup({
               accountGroup: group,
               cmp_id: organization[0]._id,
               Primary_user_id: owner,
+              accountGroup_id: generatedId.toString(), // Assign before saving
+              _id: generatedId, // Ensure _id and accountGroup_id are the same
             });
-
-            await accountGroup.save({ session }); // Ensure session is passed
+    
+            await accountGroup.save({ session }); // Save only once
           })
         );
       }
     }
+    
 
     // Commit the transaction
     await session.commitTransaction();

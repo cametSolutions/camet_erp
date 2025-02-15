@@ -351,15 +351,21 @@ export const createAccountGroups = async (req, res) => {
       );
 
       if (newGroups.length > 0) {
-        const accountGroupsToInsert = newGroups.map((group) => ({
-          cmp_id: company._id.toString(),
-          Primary_user_id: company.owner,
-          accountGroup: group,
-          accountGroup_id: new AccountGroup()._id, // Assign new _id
-        }));
+        const accountGroupsToInsert = newGroups.map((group) => {
+          const generatedId = new mongoose.Types.ObjectId(); // Generate unique _id
+          return {
+            _id: generatedId, // Ensure _id is set
+            cmp_id: company._id.toString(),
+            Primary_user_id: company.owner,
+            accountGroup: group,
+            accountGroup_id: generatedId.toString(), // Ensure accountGroup_id matches _id
+          };
+        });
 
         await AccountGroup.insertMany(accountGroupsToInsert); // Bulk insert
       }
+    
+
     }
 
     res.status(200).json({
