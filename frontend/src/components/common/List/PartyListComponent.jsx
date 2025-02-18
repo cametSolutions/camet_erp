@@ -12,7 +12,7 @@ function PartyListComponent({ filteredParty, type, deleteHandler,user="secondary
 
   useEffect(() => {
     const calculateHeight = () => {
-      const newHeight = window.innerHeight - 117;
+      const newHeight = window.innerHeight - 95;
       setListHeight(newHeight);
     };
 

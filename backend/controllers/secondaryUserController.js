@@ -541,6 +541,8 @@ export const PartyList = async (req, res) => {
       sourceMatch = { classification: "Dr" };
     } else if (voucher === "payment") {
       sourceMatch = { classification: "Cr" };
+    }else if(voucher==="opening"){
+      sourceMatch = { source: "opening" };
     }
 
     const partyOutstandingData = await TallyData.aggregate([

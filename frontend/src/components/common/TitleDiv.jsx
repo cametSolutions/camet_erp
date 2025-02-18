@@ -1,8 +1,18 @@
+/* eslint-disable react/jsx-key */
 /* eslint-disable react/prop-types */
 /* eslint-disable no-undef */
 import { IoIosArrowRoundBack } from "react-icons/io";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import CustomBarLoader from "./CustomBarLoader";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "../../components/ui/dropdown-menu";
+import { BsThreeDotsVertical } from "react-icons/bs";
 
 function TitleDiv({
   title,
@@ -10,6 +20,7 @@ function TitleDiv({
   loading = false,
   rightSideContent = null,
   rightSideContentOnClick = () => {},
+  dropdownContents = [],
 }) {
   const navigate = useNavigate();
 
@@ -33,10 +44,33 @@ function TitleDiv({
 
         {rightSideContent && (
           <button
-           onClick={rightSideContentOnClick}
-           className="font-bold text-sm pr-2 cursor-pointer hover:scale-105 duration-300 ease-in-out hover:text-gray-200">
+            onClick={rightSideContentOnClick}
+            className="font-bold text-sm pr-2 cursor-pointer hover:scale-105 duration-300 ease-in-out hover:text-gray-200"
+          >
             {rightSideContent}
           </button>
+        )}
+
+        {dropdownContents.length > 0 && (
+          <DropdownMenu>
+            <DropdownMenuTrigger>
+              <BsThreeDotsVertical />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="mr-4 bg-[#012a4a] text-white text-xs p-2">
+              <DropdownMenuLabel>My Account</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {dropdownContents.map((item, index) => (
+                <Link key={index} to={item.to}>
+                  <DropdownMenuItem
+                    className="cursor-pointer"
+                    onClick={item.onClick}
+                  >
+                    {item.title}
+                  </DropdownMenuItem>
+                </Link>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         )}
       </div>
 

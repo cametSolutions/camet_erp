@@ -5,13 +5,11 @@ import api from "../../api/api";
 import { toast } from "react-toastify";
 import { useSelector } from "react-redux";
 import Swal from "sweetalert2";
-import { Link } from "react-router-dom";
-import { IoIosAddCircle, IoIosArrowRoundBack } from "react-icons/io";
 
 import SearchBar from "../../components/common/SearchBar";
 import PartyListComponent from "../../components/common/List/PartyListComponent";
 import CustomBarLoader from "../../components/common/CustomBarLoader";
-import { useNavigate } from "react-router-dom";
+import TitleDiv from "../../components/common/TitleDiv";
 
 function PartyListSecondary() {
   const [parties, setParties] = useState([]);
@@ -26,8 +24,6 @@ function PartyListSecondary() {
   const type = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg.type
   );
-
-  const navigate = useNavigate();
 
   const searchData = (data) => {
     setSearch(data);
@@ -105,31 +101,27 @@ function PartyListSecondary() {
   };
 
   return (
-    <div className=" bg-slate-50 h-screen overflow-hidden ">
+    <div className=" bg-slate-50 h-screen overflow-hidden  ">
       <div className="sticky top-0 z-20">
-        <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3  flex justify-between items-center  ">
-          <div className="flex items-center justify-center gap-2">
-            <IoIosArrowRoundBack
-              onClick={() => navigate("/sUsers/dashboard")}
-              className="cursor-pointer text-3xl text-white "
-            />
-            <p className="text-white text-lg   font-bold ">Your Customers</p>
-          </div>
-          <div>
-            {/* {type === "self" && ( */}
-            <Link to={"/sUsers/addParty"}>
-              <button className="flex items-center gap-2 text-white bg-[#40679E] px-2 py-1 rounded-md text-sm  hover:scale-105 duration-100 ease-in-out ">
-                <IoIosAddCircle className="text-xl" />
-                Add Customers
-              </button>
-            </Link>
-            {/* )} */}
-          </div>
-        </div>
+    
 
-  
+       
+
+        <TitleDiv
+          title="Your Customers"
+          dropdownContents={[
+            {
+              title: "Add Customers",
+              to: "/sUsers/addParty",
+            },
+            {
+              title: "Add Opening",
+              to: "/sUsers/addOpening",
+            },
+          ]}
+        />
+
         <SearchBar onType={searchData} />
-
       </div>
 
       {/* adding party */}

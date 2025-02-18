@@ -13,8 +13,8 @@ import { addAllParties } from "../../../slices/partySlice";
 
 function SearchPartyReciept() {
   const [parties, setParties] = useState([]);
-  const [search, setSearch] = useState("");
-  const [filteredParties, setFilteredParties] = useState([]);
+    const [search, setSearch] = useState("");
+    const [filteredParties, setFilteredParties] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const dispatch = useDispatch();

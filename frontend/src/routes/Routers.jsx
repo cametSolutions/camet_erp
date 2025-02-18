@@ -95,8 +95,7 @@ import Notfound from '../pages/errorPages/Notfound'
 import ServerError from '../pages/errorPages/ServerError'
 import ThreeInchSales from '../pages/primaryUsers/ThreeInchSales'
 import ThreeInchSalesSec from '../pages/secUsers/ThreeInchSalesSec'
-import Contacts from '../pages/secUsers/Contacts'
-import Purchase from '../pages/secUsers/Purchase'
+ import Purchase from '../pages/secUsers/Purchase'
 import SearchPartyPurchase from '../pages/secUsers/SearchPartyPurchase'
 import AddItemPurchase from '../pages/secUsers/AddItemPurchase'
 import EditItemPurchase from '../pages/secUsers/EditItemPurchase'
@@ -211,6 +210,7 @@ import SaleSummaryTable from '../pages/secUsers/Reports/salesSummary/SalesSummar
 import SalesSummaryTable from '../pages/secUsers/Reports/salesSummary/SalesSummaryTable'
 import OutstandingSummary from '../pages/secUsers/OutstandingSummary'
 import AddSubGroup from '../pages/secUsers/settilngs/partySettings/AddSubGroup'
+import AddOpening from '@/pages/secUsers/openings/PartyOpening/AddOpening'
 
 const Routers = () => {
   return (
@@ -325,7 +325,6 @@ const Routers = () => {
         <Route path='/sUsers/shareVanSale/:id' element={<ProtectedSecRoute><ShareVanSaleSecondary/></ProtectedSecRoute>}></Route> 
         <Route path='/sUsers/shareSalesThreeInch/:id' element={<ProtectedSecRoute><ThreeInchSalesSec/></ProtectedSecRoute>}></Route> 
         <Route path='/sUsers/shareVanSaleThreeInch/:id' element={<ProtectedSecRoute><ThreeInchVanSaleSec/></ProtectedSecRoute>}></Route> 
-        <Route path='/sUsers/contacts' element={<ProtectedSecRoute><Contacts/></ProtectedSecRoute>}></Route> 
         <Route path='/sUsers/sales/paymentSplitting' element={<ProtectedSecRoute><PaymentSplitting/></ProtectedSecRoute>}></Route> 
         <Route path='/sUsers/editSale/:id/paymentSplitting' element={<ProtectedSecRoute><PaymentSplitting/></ProtectedSecRoute>}></Route> 
        
@@ -516,6 +515,8 @@ const Routers = () => {
       {/* sub groups */}
       <Route path='/sUsers/addSubGroup' element={<ProtectedSecRoute><AddSubGroup/></ProtectedSecRoute>}></Route>
 
+      {/* party opening */}
+      <Route path='/sUsers/addOpening' element={<ProtectedSecRoute><AddOpening/></ProtectedSecRoute>}></Route>
 
 
 
