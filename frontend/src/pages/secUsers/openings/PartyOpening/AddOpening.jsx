@@ -18,9 +18,12 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format } from "date-fns";
 import { CalendarIcon, Plus, X } from "lucide-react";
 import { toast } from "react-toastify";
+import api from "@/api/api";
+import CustomBarLoader from "@/components/common/CustomBarLoader";
 
 function AddOpening() {
   const [partyData, setPartyData] = useState([]);
@@ -28,26 +31,32 @@ function AddOpening() {
   const [filteredParty, setFilteredParty] = useState([]);
   const [selectedParty, setSelectedParty] = useState(null);
   const [openDialog, setOpenDialog] = useState(false);
-  const [bills, setBills] = useState([
+  const [activeTab, setActiveTab] = useState("add");
+
+  // New bills for Add tab
+  const [newBills, setNewBills] = useState([
     {
       date: new Date(),
       billNo: "",
       dueDate: new Date(),
-      // dueDays: 0,
       amount: "",
       classification: "Dr",
     },
   ]);
+
+  // Existing bills for Edit tab
+  const [existingBills, setExistingBills] = useState([]);
+
   const [totalAmount, setTotalAmount] = useState(0);
   const [classification, setClassification] = useState("Dr");
-
-  console.log(bills);
+  const [fetchLoading, setFetchLoading] = useState(false);
+  const [hasExistingData, setHasExistingData] = useState(false);
 
   const cmp_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
 
-  const { data, loading } = useFetch(
+  const { data, loading, refreshHook } = useFetch(
     `/api/sUsers/PartyList/${cmp_id}?outstanding=true&voucher=opening`
   );
 
@@ -69,6 +78,47 @@ function AddOpening() {
     }
   }, [search, partyData]);
 
+  useEffect(() => {
+    const fetchOpenings = async () => {
+      if (selectedParty && selectedParty?._id) {
+        try {
+          setFetchLoading(true);
+          const res = await api.get(
+            `/api/sUsers/getPartyOpening/${cmp_id}/${selectedParty?.party_master_id}`,
+            {
+              withCredentials: true,
+            }
+          );
+
+          if (res?.data?.data && res?.data?.data.length > 0) {
+            setExistingBills(res?.data?.data);
+            setHasExistingData(true);
+            setActiveTab("edit"); // Switch to edit tab if data exists
+          } else {
+            setExistingBills([]);
+            setHasExistingData(false);
+            setActiveTab("add"); // Switch to add tab if no data exists
+          }
+        } catch (error) {
+          console.log(error);
+          setExistingBills([]);
+          setHasExistingData(false);
+        } finally {
+          setFetchLoading(false);
+        }
+      }
+    };
+    fetchOpenings();
+  }, [selectedParty, cmp_id]);
+
+  useEffect(() => {
+    if (activeTab === "add") {
+      calculateTotal(newBills);
+    } else {
+      calculateTotal(existingBills);
+    }
+  }, [newBills, existingBills, activeTab]);
+
   const searchData = (data) => {
     setSearch(data);
   };
@@ -76,13 +126,12 @@ function AddOpening() {
   const selectParty = (party) => {
     setSelectedParty(party);
     setOpenDialog(true);
-    // Reset bills when selecting a new party
-    setBills([
+    // Reset new bills when selecting a new party
+    setNewBills([
       {
         date: new Date(),
         billNo: "",
         dueDate: new Date(),
-        // dueDays: 0,
         amount: "",
         classification: "Dr",
       },
@@ -95,7 +144,7 @@ function AddOpening() {
   };
 
   const handleAddBill = () => {
-    const lastBill = bills[bills.length - 1];
+    const lastBill = newBills[newBills.length - 1];
 
     if (lastBill) {
       // Check if any field in the last bill is empty
@@ -108,44 +157,35 @@ function AddOpening() {
       }
     }
 
-    setBills([
-      ...bills,
+    setNewBills([
+      ...newBills,
       {
         date: new Date(),
         billNo: "",
         dueDate: new Date(),
-        // dueDays: 0,
         amount: "",
         classification: "Dr",
       },
     ]);
   };
 
-  const handleRemoveBill = (index) => {
-    const updatedBills = [...bills];
+  const handleRemoveNewBill = (index) => {
+    const updatedBills = [...newBills];
     updatedBills.splice(index, 1);
-    setBills(updatedBills);
-    calculateTotal(updatedBills);
+    setNewBills(updatedBills);
   };
 
-  const handleBillChange = (index, field, value) => {
-    const updatedBills = [...bills];
+  const handleRemoveExistingBill = (index) => {
+    const updatedBills = [...existingBills];
+    updatedBills.splice(index, 1);
+    setExistingBills(updatedBills);
+  };
+
+  const handleNewBillChange = (index, field, value) => {
+    const updatedBills = [...newBills];
 
     if (field === "date" || field === "dueDate") {
       updatedBills[index][field] = value;
-
-      // Recalculate due days when either date changes
-      // if (field === "date") {
-      //   const dueDays = Math.floor(
-      //     (updatedBills[index].dueDate - value) / (1000 * 60 * 60 * 24)
-      //   );
-      //   updatedBills[index].dueDays = dueDays > 0 ? dueDays : 0;
-      // } else if (field === "dueDate") {
-      //   const dueDays = Math.floor(
-      //     (value - updatedBills[index].date) / (1000 * 60 * 60 * 24)
-      //   );
-      //   updatedBills[index].dueDays = dueDays > 0 ? dueDays : 0;
-      // }
     } else if (field === "amount") {
       // Handle amount as a number
       updatedBills[index][field] = value === "" ? "" : parseFloat(value);
@@ -153,66 +193,346 @@ function AddOpening() {
       updatedBills[index][field] = value;
     }
 
-    setBills(updatedBills);
-    calculateTotal(updatedBills);
+    setNewBills(updatedBills);
+  };
+
+  const handleExistingBillChange = (index, field, value) => {
+    const updatedBills = [...existingBills];
+
+    if (field === "date" || field === "dueDate") {
+      updatedBills[index][field] = value;
+    } else if (field === "amount") {
+      // Handle amount as a number
+      updatedBills[index][field] = value === "" ? "" : parseFloat(value);
+    } else {
+      updatedBills[index][field] = value;
+    }
+
+    setExistingBills(updatedBills);
   };
 
   const calculateTotal = (billsArray) => {
-    console.log(billsArray);
-
-    const total = billsArray.reduce((sum, bill) => {
-      const amount = parseFloat(bill.amount) || 0;
-      return sum + amount;
-    }, 0);
-
-    let classificationTotal = {
-      DrTotal: 0,
-      CrTotal: 0,
-    };
-
-    billsArray.reduce((sum, bill) => {
-      if (bill.classification === "Dr") {
-        const amount = parseFloat(bill.amount) || 0;
-        classificationTotal.DrTotal += amount;
-      } else if (bill.classification === "Cr") {
-        const amount = parseFloat(bill.amount) || 0;
-        classificationTotal.CrTotal += amount;
-      }
-    });
-
-    console.log(classificationTotal);
-    if (classificationTotal.DrTotal > classificationTotal.CrTotal) {
-      setClassification("Dr");
-    } else {
-      setClassification("Cr");
+    if (!billsArray || billsArray.length === 0) {
+      setTotalAmount(0);
+      setClassification(null);
+      return;
     }
 
-    setTotalAmount(total);
+    let classificationTotal = billsArray.reduce(
+      (acc, bill) => {
+        const amount = parseFloat(bill.amount) || 0;
+
+        acc.total += amount;
+
+        if (bill.classification === "Dr") {
+          acc.DrTotal += amount;
+        } else if (bill.classification === "Cr") {
+          acc.CrTotal += amount;
+        }
+
+        return acc;
+      },
+      { total: 0, DrTotal: 0, CrTotal: 0 }
+    );
+
+    setClassification(
+      classificationTotal.DrTotal > classificationTotal.CrTotal ? "Dr" : "Cr"
+    );
+
+    setTotalAmount(classificationTotal.total);
   };
 
-  const handleSubmit = () => {
-    // TODO: Implement submission logic to your API
-    // This would send the bills data to your backend
+  const handleAddSubmit = async () => {
+    const hasEmptyField = newBills.some((bill) =>
+      Object.values(bill).some((value) => value === "")
+    );
 
-    // console.log("Submitting opening balance for:", selectedParty);
-    // console.log("Bills:", bills);
-
-    bills.forEach((bill) => {
-      const hasEmptyField = Object.values(bill).some((value) => value === "");
-      if (hasEmptyField) {
-        toast.error("Please fill all the fields");
-      }
-    });
+    if (hasEmptyField) {
+      toast.error("Please fill all the fields");
+      return;
+    }
 
     const formData = {
       party: selectedParty,
-      bills: bills,
+      bills: newBills,
+      classification: classification,
     };
 
-    console.log(formData);
+    try {
+      setFetchLoading(true);
+      const res = await api.post(
+        `/api/sUsers/addPartyOpening/${cmp_id}`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+          withCredentials: true,
+        }
+      );
 
-    // After submission, close the dialog
-    // handleCloseDialog();
+      toast.success("Opening balance added successfully");
+      refreshHook();
+      handleCloseDialog();
+    } catch (error) {
+      if (error?.response?.data?.conflictingBills?.length > 0) {
+        window.alert("Conflicting bills found for this party such as : \n\n" + error?.response?.data?.conflictingBills?.join(","));
+      } else {
+        toast.error(error.response?.data?.message || "Something went wrong");
+        console.log(error?.response?.data);
+      }
+    } finally {
+      setFetchLoading(false);
+    }
+  };
+
+  const handleEditSubmit = async () => {
+    const hasEmptyField = existingBills.some((bill) =>
+      Object.values(bill).some((value) => value === "")
+    );
+
+    if (hasEmptyField) {
+      toast.error("Please fill all the fields");
+      return;
+    }
+
+    const formData = {
+      party: selectedParty,
+      bills: existingBills,
+      classification: classification,
+    };
+
+    try {
+      setFetchLoading(true);
+      const res = await api.put(
+        `/api/sUsers/editPartyOpening/${cmp_id}/${selectedParty?.party_master_id}`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+          withCredentials: true,
+        }
+      );
+
+      toast.success("Opening balance updated successfully");
+      refreshHook();
+      handleCloseDialog();
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Something went wrong");
+      console.log(error);
+    } finally {
+      setFetchLoading(false);
+    }
+  };
+
+  // Renders bill rows for either add or edit tab
+  const renderBillRows = (bills, handleChange, handleRemove, isEditMode) => {
+    return bills.map((bill, index) => (
+      <div
+        key={index}
+        className="grid grid-cols-1 md:grid-cols-5 gap-2 md:gap-4 p-2 border-b items-center"
+      >
+        {/* Mobile labels + inputs */}
+        <div className="block md:hidden space-y-4">
+          <div className="grid grid-cols-2 gap-2 items-center">
+            <div className="text-sm font-medium">Date:</div>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="w-full justify-start text-left font-normal"
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {bill.date ? (
+                    format(new Date(bill.date), "dd/MM/yyyy")
+                  ) : (
+                    <span>Select date</span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={new Date(bill.date)}
+                  onSelect={(date) => handleChange(index, "date", date)}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 items-center">
+            <div className="text-sm font-medium">Bill No:</div>
+            <Input
+              value={bill.billNo}
+              onChange={(e) => handleChange(index, "billNo", e.target.value)}
+              placeholder="Bill No"
+              className="w-full"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 items-center">
+            <div className="text-sm font-medium">Due Date:</div>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="w-full justify-start text-left font-normal"
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {bill.dueDate ? (
+                    format(new Date(bill.dueDate), "dd/MM/yyyy")
+                  ) : (
+                    <span>Select date</span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={new Date(bill.dueDate)}
+                  onSelect={(date) => handleChange(index, "dueDate", date)}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 items-center">
+            <div className="text-sm font-medium">Amount:</div>
+            <Input
+              type="number"
+              value={bill.amount}
+              onChange={(e) => handleChange(index, "amount", e.target.value)}
+              placeholder="Amount"
+              className="w-full"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 items-center">
+            <div className="text-sm font-medium">Dr/Cr:</div>
+            <div className="flex w-full">
+              <select
+                value={bill.classification}
+                onChange={(e) =>
+                  handleChange(index, "classification", e.target.value)
+                }
+                className="w-full p-2 border rounded"
+              >
+                <option value="Dr">Dr</option>
+                <option value="Cr">Cr</option>
+              </select>
+
+              {bills.length > 1 && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleRemove(index)}
+                  className="ml-2 h-9 w-9"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Desktop view - hidden on mobile */}
+        <div className="hidden md:block col-span-1">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className="w-full justify-start text-left font-normal"
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {bill.date ? (
+                  format(new Date(bill.date), "dd/MM/yyyy")
+                ) : (
+                  <span>Select date</span>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0">
+              <Calendar
+                mode="single"
+                selected={new Date(bill.date)}
+                onSelect={(date) => handleChange(index, "date", date)}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+
+        <div className="hidden md:block col-span-1">
+          <Input
+            value={bill.billNo}
+            onChange={(e) => handleChange(index, "billNo", e.target.value)}
+            placeholder="Bill No"
+            className="w-full"
+          />
+        </div>
+
+        <div className="hidden md:block col-span-1">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className="w-full justify-start text-left font-normal"
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {bill.dueDate ? (
+                  format(new Date(bill.dueDate), "dd/MM/yyyy")
+                ) : (
+                  <span>Select date</span>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0">
+              <Calendar
+                mode="single"
+                selected={new Date(bill.dueDate)}
+                onSelect={(date) => handleChange(index, "dueDate", date)}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+
+        <div className="hidden md:block col-span-1">
+          <Input
+            type="number"
+            value={bill.amount}
+            onChange={(e) => handleChange(index, "amount", e.target.value)}
+            placeholder="Amount"
+            className="w-full"
+          />
+        </div>
+
+        <div className="hidden md:flex col-span-1">
+          <select
+            value={bill.classification}
+            onChange={(e) =>
+              handleChange(index, "classification", e.target.value)
+            }
+            className="w-full p-2 border rounded"
+          >
+            <option value="Dr">Dr</option>
+            <option value="Cr">Cr</option>
+          </select>
+
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => handleRemove(index)}
+            className="ml-2 h-9 w-9"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+    ));
   };
 
   return (
@@ -258,288 +578,153 @@ function AddOpening() {
         )}
       </section>
 
-      {/* Dialog for adding opening balance */}
-      {/* Dialog for adding opening balance */}
+      {/* Dialog with tabs for adding/editing opening balance */}
       <Dialog open={openDialog} onOpenChange={handleCloseDialog}>
-        <DialogContent className="sm:max-w-5xl max-w-[92vw] mx-auto ">
-          <DialogHeader className="px-2 sm:px-4 ">
-            <DialogTitle className="text-base sm:text-lg break-words ">
+        <DialogContent
+          className={`${
+            fetchLoading && "pointer-events-none opacity-70"
+          } sm:max-w-5xl max-w-[92vw] mx-auto`}
+        >
+          {fetchLoading && <CustomBarLoader />}
+          <DialogHeader className="px-2 sm:px-4">
+            <DialogTitle className="text-base sm:text-lg break-words">
               Bill-wise Breakup of: {selectedParty?.partyName}
             </DialogTitle>
-            {/* <div className="mt-2 text-sm text-gray-500">
-        Upto ₹ {totalAmount.toFixed(2)} Dr
-      </div> */}
           </DialogHeader>
 
-          <div className="overflow-y-auto max-h-[60vh] px-2 sm:px-4">
-            {/* Header row - hide on mobile */}
-            <div className="hidden md:grid grid-cols-5 gap-4 p-2 bg-gray-100 font-medium text-sm">
-              <div className="col-span-1">Date</div>
-              <div className="col-span-1">Bill No</div>
-              <div className="col-span-1">Due Date</div>
-              <div className="col-span-1">Amount</div>
-              <div className="col-span-1">Dr/Cr</div>
-            </div>
-
-            {/* Bill rows */}
-            {bills.map((bill, index) => (
-              <div
-                key={index}
-                className="grid grid-cols-1 md:grid-cols-5 gap-2 md:gap-4 p-2 border-b items-center"
+          <Tabs
+            value={activeTab}
+            onValueChange={setActiveTab}
+            className="w-full"
+          >
+            <TabsList className="w-full mb-4">
+              <TabsTrigger value="add" className="flex-1">
+                Add New Bills
+              </TabsTrigger>
+              <TabsTrigger
+                value="edit"
+                className="flex-1"
+                disabled={!hasExistingData}
               >
-                {/* Mobile labels + inputs */}
-                <div className="block md:hidden space-y-4">
-                  <div className="grid grid-cols-2 gap-2 items-center">
-                    <div className="text-sm font-medium">Date:</div>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className="w-full justify-start text-left font-normal"
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {bill.date ? (
-                            format(bill.date, "dd/MM/yyyy")
-                          ) : (
-                            <span>Select date</span>
-                          )}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={bill.date}
-                          onSelect={(date) =>
-                            handleBillChange(index, "date", date)
-                          }
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
+                Edit Existing Bills
+              </TabsTrigger>
+            </TabsList>
 
-                  <div className="grid grid-cols-2 gap-2 items-center">
-                    <div className="text-sm font-medium">Bill No:</div>
-                    <Input
-                      value={bill.billNo}
-                      onChange={(e) =>
-                        handleBillChange(index, "billNo", e.target.value)
-                      }
-                      placeholder="Bill No"
-                      className="w-full"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2 items-center">
-                    <div className="text-sm font-medium">Due Date:</div>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className="w-full justify-start text-left font-normal"
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {bill.dueDate ? (
-                            format(bill.dueDate, "dd/MM/yyyy")
-                          ) : (
-                            <span>Select date</span>
-                          )}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={bill.dueDate}
-                          onSelect={(date) =>
-                            handleBillChange(index, "dueDate", date)
-                          }
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2 items-center">
-                    <div className="text-sm font-medium">Amount:</div>
-                    <Input
-                      type="number"
-                      value={bill.amount}
-                      onChange={(e) =>
-                        handleBillChange(index, "amount", e.target.value)
-                      }
-                      placeholder="Amount"
-                      className="w-full"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2 items-center">
-                    <div className="text-sm font-medium">Dr/Cr:</div>
-                    <div className="flex w-full">
-                      <select
-                        value={bill.classification}
-                        onChange={(e) =>
-                          handleBillChange(
-                            index,
-                            "classification",
-                            e.target.value
-                          )
-                        }
-                        className="w-full p-2 border rounded"
-                      >
-                        <option value="Dr">Dr</option>
-                        <option value="Cr">Cr</option>
-                      </select>
-
-                      {bills.length > 1 && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleRemoveBill(index)}
-                          className="ml-2 h-9 w-9"
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                  </div>
+            {/* Add New Bills Tab */}
+            <TabsContent value="add" className="w-full">
+              <div className="overflow-y-auto max-h-[60vh] px-2 sm:px-4">
+                {/* Header row - hide on mobile */}
+                <div className="hidden md:grid grid-cols-5 gap-4 p-2 bg-gray-100 font-medium text-sm">
+                  <div className="col-span-1">Date</div>
+                  <div className="col-span-1">Bill No</div>
+                  <div className="col-span-1">Due Date</div>
+                  <div className="col-span-1">Amount</div>
+                  <div className="col-span-1">Dr/Cr</div>
                 </div>
 
-                {/* Desktop view - hidden on mobile */}
-                <div className="hidden md:block col-span-1">
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="w-full justify-start text-left font-normal"
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {bill.date ? (
-                          format(bill.date, "dd/MM/yyyy")
-                        ) : (
-                          <span>Select date</span>
-                        )}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                      <Calendar
-                        mode="single"
-                        selected={bill.date}
-                        onSelect={(date) =>
-                          handleBillChange(index, "date", date)
-                        }
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
+                {/* Bill rows for Add tab */}
+                {renderBillRows(
+                  newBills,
+                  handleNewBillChange,
+                  handleRemoveNewBill,
+                  false
+                )}
 
-                <div className="hidden md:block col-span-1">
-                  <Input
-                    value={bill.billNo}
-                    onChange={(e) =>
-                      handleBillChange(index, "billNo", e.target.value)
-                    }
-                    placeholder="Bill No"
-                    className="w-full"
-                  />
-                </div>
+                {/* Add more button - only in Add tab */}
+                <Button
+                  variant="ghost"
+                  onClick={handleAddBill}
+                  className="w-full mt-4 flex items-center justify-center text-sm"
+                >
+                  <Plus className="mr-2 h-4 w-4" /> Add Bill
+                </Button>
+              </div>
 
-                <div className="hidden md:block col-span-1">
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="w-full justify-start text-left font-normal"
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {bill.dueDate ? (
-                          format(bill.dueDate, "dd/MM/yyyy")
-                        ) : (
-                          <span>Select date</span>
-                        )}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                      <Calendar
-                        mode="single"
-                        selected={bill.dueDate}
-                        onSelect={(date) =>
-                          handleBillChange(index, "dueDate", date)
-                        }
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-
-                <div className="hidden md:block col-span-1">
-                  <Input
-                    type="number"
-                    value={bill.amount}
-                    onChange={(e) =>
-                      handleBillChange(index, "amount", e.target.value)
-                    }
-                    placeholder="Amount"
-                    className="w-full"
-                  />
-                </div>
-
-                <div className="hidden md:flex  col-span-1 ">
-                  <select
-                    value={bill.classification}
-                    onChange={(e) =>
-                      handleBillChange(index, "classification", e.target.value)
-                    }
-                    className="w-full p-2 border rounded"
-                  >
-                    <option value="Dr">Dr</option>
-                    <option value="Cr">Cr</option>
-                  </select>
-
-                  {bills.length > 1 && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleRemoveBill(index)}
-                      className="ml-2 h-9 w-9"
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  )}
+              {/* Total summary */}
+              <div className="p-2 sm:p-4 border-t mt-4">
+                <div className="flex justify-between items-center">
+                  <div className="text-sm font-medium">On Account:</div>
+                  <div className="font-bold">
+                    ₹ {totalAmount.toFixed(2)}
+                  </div>
                 </div>
               </div>
-            ))}
 
-            {/* Add more button */}
-            <Button
-              variant="ghost"
-              onClick={handleAddBill}
-              className="w-full mt-4 flex items-center justify-center text-sm"
-            >
-              <Plus className="mr-2 h-4 w-4" /> Add Another Bill
-            </Button>
-          </div>
+              <DialogFooter className="flex-col space-y-2 sm:space-y-0 sm:flex-row sm:justify-end pt-4">
+                <Button
+                  variant="outline"
+                  onClick={handleCloseDialog}
+                  className="w-full sm:w-auto"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  disabled={loading || fetchLoading}
+                  onClick={handleAddSubmit}
+                  className="w-full sm:w-auto"
+                >
+                  Submit
+                </Button>
+              </DialogFooter>
+            </TabsContent>
 
-          {/* Total summary */}
-          <div className="p-2 sm:p-4 border-t mt-4">
-            <div className="flex justify-between items-center">
-              <div className="text-sm font-medium">On Account:</div>
-              <div className="font-bold">₹ {totalAmount.toFixed(2)} </div>
-            </div>
-          </div>
+            {/* Edit Existing Bills Tab */}
+            <TabsContent value="edit" className="w-full">
+              <div className="overflow-y-auto max-h-[60vh] px-2 sm:px-4">
+                {/* Header row - hide on mobile */}
+                <div className="hidden md:grid grid-cols-5 gap-4 p-2 bg-gray-100 font-medium text-sm">
+                  <div className="col-span-1">Date</div>
+                  <div className="col-span-1">Bill No</div>
+                  <div className="col-span-1">Due Date</div>
+                  <div className="col-span-1">Amount</div>
+                  <div className="col-span-1">Dr/Cr</div>
+                </div>
 
-          <DialogFooter className="flex-col space-y-2 sm:space-y-0 sm:flex-row sm:justify-end pt-4">
-            <Button
-              variant="outline"
-              onClick={handleCloseDialog}
-              className="w-full sm:w-auto"
-            >
-              Cancel
-            </Button>
-            <Button onClick={handleSubmit} className="w-full sm:w-auto">
-              Submit
-            </Button>
-          </DialogFooter>
+                {/* Bill rows for Edit tab */}
+                {existingBills.length > 0 ? (
+                  renderBillRows(
+                    existingBills,
+                    handleExistingBillChange,
+                    handleRemoveExistingBill,
+                    true
+                  )
+                ) : (
+                  <div className="text-center py-6 text-gray-500">
+                    No existing bills found
+                  </div>
+                )}
+              </div>
+
+              {/* Total summary */}
+              <div className="p-2 sm:p-4 border-t mt-4">
+                <div className="flex justify-between items-center">
+                  <div className="text-sm font-medium">On Account:</div>
+                  <div className="font-bold">
+                    ₹ {totalAmount.toFixed(2)} 
+                  </div>
+                </div>
+              </div>
+
+              <DialogFooter className="flex-col space-y-2 sm:space-y-0 sm:flex-row sm:justify-end pt-4">
+                <Button
+                  variant="outline"
+                  onClick={handleCloseDialog}
+                  className="w-full sm:w-auto"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  disabled={
+                    loading || fetchLoading 
+                  }
+                  onClick={handleEditSubmit}
+                  className="w-full sm:w-auto"
+                >
+                  Update
+                </Button>
+              </DialogFooter>
+            </TabsContent>
+          </Tabs>
         </DialogContent>
       </Dialog>
     </div>

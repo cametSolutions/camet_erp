@@ -20,7 +20,10 @@ import {login,getSecUserData,
     addSubGroup,
     getSubGroup,
     deleteSubGroup,
-    editSubGroup
+    editSubGroup,
+    addPartyOpening,
+    getPartyOpening,
+    editPartyOpening
    } from "../controllers/secondaryUserController.js"
  
 import { createPurchase,editPurchase,cancelPurchase } from '../controllers/purchaseController.js';
@@ -239,7 +242,10 @@ router.get('/getSubGroup/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthen
 router.delete('/deleteSubGroup/:subGroupId/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,deleteSubGroup)
 router.patch('/editSubGroup/:subGroupId/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,editSubGroup)
 
-
+//// add party opening
+router.post('/addPartyOpening/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,addPartyOpening)
+router.put('/editPartyOpening/:cmp_id/:partyId',authSecondary,secondaryIsBlocked,companyAuthentication,editPartyOpening)
+router.get('/getPartyOpening/:cmp_id/:partyId',authSecondary,secondaryIsBlocked,companyAuthentication,getPartyOpening)
 
 //// testing routes
 

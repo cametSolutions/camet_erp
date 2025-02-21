@@ -36,7 +36,7 @@ function PartyListComponent({ filteredParty, type, deleteHandler,user="secondary
     const adjustedStyle = {
       ...style,
       marginTop: "16px",
-      height: "150px",
+      height: "130px",
     };
     return (
       <div
@@ -99,7 +99,7 @@ function PartyListComponent({ filteredParty, type, deleteHandler,user="secondary
         className=""
         height={listHeight}
         itemCount={filteredParty.length}
-        itemSize={160}
+        itemSize={140}
         width="100%"
       >
         {Row}

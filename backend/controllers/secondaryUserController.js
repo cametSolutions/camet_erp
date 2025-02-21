@@ -515,6 +515,9 @@ export const PartyList = async (req, res) => {
   const { owner: Primary_user_id, sUserId: secUserId } = req;
   const { outstanding, voucher } = req.query;
 
+  console.log("voucher", voucher);
+  console.log("Primary_user_id", Primary_user_id);
+
   try {
     // Fetch parties and secondary user concurrently
     const [partyList, secUser] = await Promise.all([
@@ -541,9 +544,11 @@ export const PartyList = async (req, res) => {
       sourceMatch = { classification: "Dr" };
     } else if (voucher === "payment") {
       sourceMatch = { classification: "Cr" };
-    }else if(voucher==="opening"){
+    } else if (voucher === "opening") {
       sourceMatch = { source: "opening" };
     }
+
+    console.log(sourceMatch);
 
     const partyOutstandingData = await TallyData.aggregate([
       {
@@ -2747,7 +2752,7 @@ export const editSubGroup = async (req, res) => {
     const subGroupId = req.params.subGroupId;
 
     console.log("Sub Group ID:", subGroupId);
-    
+
     const updateData = req.body;
 
     console.log("Update Data:", updateData);
@@ -2773,12 +2778,295 @@ export const editSubGroup = async (req, res) => {
       message: "Sub Group updated successfully",
       data: existingSubGroup, // Use the updated document
     });
-
   } catch (error) {
     console.log("Error in editing sub group:", error);
     res.status(500).json({
       error: "Internal Server Error",
       details: error.message,
+    });
+  }
+};
+
+/**
+ * @desc   Add party opening balance
+ * @route  POST /api/sUsers/addPartyOpening/:cmp_id
+ * @access Public
+ *
+ */
+// Function for adding new party bills
+export const addPartyOpening = async (req, res) => {
+  const cmp_id = req.params.cmp_id;
+  try {
+    const {
+      party: {
+        party_master_id: party_id = "",
+        accountGroup = "",
+        accountGroup_id = "",
+        subGroup = "",
+        subGroup_id = "",
+        partyName = "",
+        mobile_no = "",
+        email = "",
+      } = {},
+      bills = [],
+    } = req.body;
+
+    if (!Array.isArray(bills) || bills.length === 0) {
+      return res.status(400).json({
+        message: "No bills provided for addition.",
+      });
+    }
+
+    // Check for duplicate bill numbers within the request itself
+    const billNumbers = bills.map((bill) => bill.billNo);
+    const uniqueBillNumbers = new Set(billNumbers);
+    if (billNumbers.length !== uniqueBillNumbers.size) {
+      return res.status(400).json({
+        message: "Duplicate bill numbers detected in the request.",
+      });
+    }
+
+    // Check if any bill numbers already exist for this party
+    const existingBills = await TallyData.find({
+      cmp_id: cmp_id,
+      party_id: party_id,
+      bill_no: { $in: billNumbers },
+    }).select("bill_no");
+
+    if (existingBills.length > 0) {
+      // Extract the actual bill numbers from the existingBills results
+      const conflictingBillNumbers = existingBills.map((bill) => bill.bill_no);
+
+      return res.status(400).json({
+        message: "Some bill numbers already exist for this party.",
+        conflictingBills: conflictingBillNumbers,
+      });
+    }
+    // Prepare new bills for insertion
+    const newBills = bills.map((element) => ({
+      cmp_id: cmp_id,
+      Primary_user_id: req.owner,
+      party_id: party_id,
+      billId: new mongoose.Types.ObjectId(),
+      bill_no: element?.billNo || "",
+      bill_amount: element?.amount || 0,
+      bill_pending_amt: element?.amount || 0,
+      bill_date: element?.date || new Date(),
+      bill_due_date: element?.dueDate || new Date(),
+      accountGroup: accountGroup,
+      accountGroup_id: accountGroup_id,
+      group_name: subGroup,
+      group_name_id: subGroup_id,
+      partyName: partyName,
+      mobile_no: mobile_no,
+      email: email,
+      classification: element?.classification,
+      party_name: partyName,
+      user_id: "null",
+      source: "opening",
+    }));
+
+    // Insert all new bills
+    await TallyData.insertMany(newBills);
+
+    res.status(201).json({
+      message: "Party opening balance added successfully",
+      data: newBills,
+    });
+  } catch (error) {
+    console.error("Error in addPartyOpening:", error);
+    res
+      .status(500)
+      .json({ message: "Internal server error", error: error.message });
+  }
+};
+
+// Function for editing existing party bills
+export const editPartyOpening = async (req, res) => {
+  const cmp_id = req.params.cmp_id;
+  try {
+    const {
+      party: {
+        party_master_id: party_id = "",
+        accountGroup = "",
+        accountGroup_id = "",
+        subGroup = "",
+        subGroup_id = "",
+        partyName = "",
+        mobile_no = "",
+        email = "",
+      } = {},
+      bills = [],
+    } = req.body;
+
+    if (!Array.isArray(bills)) {
+      return res.status(400).json({
+        message: "Invalid bills data structure.",
+      });
+    }
+
+    // If empty bills array is provided, delete all outstandings
+    if (bills.length === 0) {
+      await TallyData.deleteMany({
+        party_id: party_id,
+        cmp_id: cmp_id,
+        source: "opening",
+      });
+      return res.status(200).json({
+        message: "All opening balances for this party have been removed.",
+      });
+    }
+
+    // Check for duplicate bill numbers within the request itself
+    const billNumbers = bills.map((bill) => bill.billNo);
+    const uniqueBillNumbers = new Set(billNumbers);
+    if (billNumbers.length !== uniqueBillNumbers.size) {
+      return res.status(400).json({
+        message: "Duplicate bill numbers detected in the request.",
+      });
+    }
+
+    // Get existing records to preserve billIds
+    const existingRecords = await TallyData.find({
+      cmp_id: cmp_id,
+      party_id: party_id,
+      source: "opening",
+    });
+
+    // Create a map of existing billIds by bill_no
+    const existingBillIdMap = {};
+    existingRecords.forEach((record) => {
+      existingBillIdMap[record.bill_no] = record.billId;
+    });
+
+    // Prepare bulk operations
+    const bulkOps = [];
+    const newBills = [];
+
+    // Process each bill
+    bills.forEach((element) => {
+      const billData = {
+        cmp_id: cmp_id,
+        Primary_user_id: req.owner,
+        party_id: party_id,
+        bill_no: element?.billNo || "",
+        bill_amount: element?.amount || 0,
+        bill_pending_amt: element?.amount || 0,
+        bill_date: element?.date || new Date(),
+        bill_due_date: element?.dueDate || new Date(),
+        accountGroup: accountGroup,
+        accountGroup_id: accountGroup_id,
+        group_name: subGroup,
+        group_name_id: subGroup_id,
+        partyName: partyName,
+        mobile_no: mobile_no,
+        email: email,
+        classification: element?.classification,
+        party_name: partyName,
+        user_id: "null",
+        source: "opening",
+      };
+
+      // Preserve billId if it exists for this bill_no
+      if (existingBillIdMap[element.billNo]) {
+        billData.billId = existingBillIdMap[element.billNo];
+
+        // Create update operation
+        bulkOps.push({
+          updateOne: {
+            filter: {
+              cmp_id: cmp_id,
+              party_id: party_id,
+              source: "opening",
+              bill_no: element.billNo,
+            },
+            update: billData,
+          },
+        });
+      } else {
+        // For new bills within edit operation, create a new billId
+        billData.billId = new mongoose.Types.ObjectId();
+        newBills.push(billData);
+      }
+    });
+
+    // Identify records to delete (bills removed from the request)
+    const requestBillNos = bills.map((bill) => bill.billNo);
+    const recordsToDelete = existingRecords.filter(
+      (record) => !requestBillNos.includes(record.bill_no)
+    );
+
+    if (recordsToDelete.length > 0) {
+      const deleteIds = recordsToDelete.map((record) => record._id);
+      bulkOps.push({
+        deleteMany: {
+          filter: { _id: { $in: deleteIds } },
+        },
+      });
+    }
+
+    // Insert new bills if any
+    if (newBills.length > 0) {
+      await TallyData.insertMany(newBills);
+    }
+
+    // Execute bulk operations if any
+    if (bulkOps.length > 0) {
+      await TallyData.bulkWrite(bulkOps);
+    }
+
+    res.status(200).json({
+      message: "Party opening balance updated successfully",
+      data: [
+        ...newBills,
+        ...existingRecords.filter((r) => requestBillNos.includes(r.bill_no)),
+      ],
+    });
+  } catch (error) {
+    console.error("Error in editPartyOpening:", error);
+    res
+      .status(500)
+      .json({ message: "Internal server error", error: error.message });
+  }
+};
+
+export const getPartyOpening = async (req, res) => {
+  const cmp_id = req?.params?.cmp_id;
+  const partyId = req?.params?.partyId;
+
+  try {
+    const openingOutstandings = await TallyData.find({
+      cmp_id: cmp_id,
+      party_id: partyId,
+      Primary_user_id: req?.owner,
+      source: "opening",
+    })
+      .select("bill_no bill_date bill_due_date bill_amount classification")
+      .lean();
+
+    // ✅ Corrected .map() function
+    const formattedOutstandings = openingOutstandings.map(
+      ({ bill_no, bill_date, bill_due_date, bill_amount, classification }) => ({
+        date: bill_date,
+        billNo: bill_no,
+        dueDate: bill_due_date,
+        amount: bill_amount,
+        classification: classification,
+      })
+    );
+
+    res.status(200).json({
+      message:
+        formattedOutstandings.length > 0
+          ? "Opening outstandings fetched"
+          : "Opening outstandings not found",
+      data: formattedOutstandings,
+    });
+  } catch (error) {
+    console.error("Error in getPartyOpening:", error);
+    res.status(500).json({
+      message: "Internal server error",
+      error: error.message,
     });
   }
 };
