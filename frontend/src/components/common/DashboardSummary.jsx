@@ -19,7 +19,7 @@ const SkeletonItem = () => (
 const DashboardSummary = () => {
   const [summaryData, setSummaryData] = useState([]);
   const cmp_id = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg._id
+    (state) => state?.secSelectedOrganization?.secSelectedOrg?._id
   );
   const navigate = useNavigate();
   const dispatch = useDispatch();
