@@ -206,11 +206,12 @@ import DespatchTitleSettings from '../pages/secUsers/settilngs/dataEntry/invoice
 import TermsAndConditionSettings from '../pages/secUsers/settilngs/dataEntry/invoiceAndOrderCommon/TermsAndConditionSettings'
 import BarcodeScan from '../components/secUsers/barcodeScanning/BarcodeScan'
 import PendingOrders from '../pages/secUsers/orderPendings/PendingOrders'
-import SaleSummaryTable from '../pages/secUsers/Reports/salesSummary/SalesSummaryTable'
+// import SaleSummaryTable from '../pages/secUsers/Reports/salesSummary/SalesSummaryTable'
 import SalesSummaryTable from '../pages/secUsers/Reports/salesSummary/SalesSummaryTable'
 import OutstandingSummary from '../pages/secUsers/OutstandingSummary'
 import AddSubGroup from '../pages/secUsers/settilngs/partySettings/AddSubGroup'
 import AddOpening from '@/pages/secUsers/openings/PartyOpening/AddOpening'
+import SalesSummaryTransactions from '@/pages/secUsers/Reports/salesSummary/SalesSummaryTransactions'
 
 const Routers = () => {
   return (
@@ -434,6 +435,7 @@ const Routers = () => {
         {/* sales summary */}
         <Route path='/sUsers/salesSummary' element={<ProtectedSecRoute><SalesSummary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/salesSummaryDetails' element={<ProtectedSecRoute><SalesSummaryTable/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/salesSummaryTransactions' element={<ProtectedSecRoute><SalesSummaryTransactions/></ProtectedSecRoute>}></Route>
         {/* order summary */}
         <Route path='/sUsers/orderSummary' element={<ProtectedSecRoute><OrderSummary/></ProtectedSecRoute>}></Route>
 

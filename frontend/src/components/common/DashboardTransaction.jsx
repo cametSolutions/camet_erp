@@ -10,6 +10,9 @@ import { GiCancel } from "react-icons/gi";
 const DashboardTransaction = ({ filteredData, userType, from }) => {
   const navigate = useNavigate();
 
+  console.log(filteredData);
+  
+
   const typeColors = useMemo(
     () => ({
       Receipt: "bg-red-500",

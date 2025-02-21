@@ -224,7 +224,7 @@ function Outstanding() {
                 dispatch(addTab(e.target.value));
               }}
               value={selectedTab}
-              className="w-full bg-[#219ebc] text-white sm:max-w-sm md:max-w-sm text-sm font-bold py-2 px-3 cursor-pointer no-focus-box border-none !border-b"
+              className="w-full bg-[#219ebc] text-white sm:max-w-sm md:max-w-sm text-sm font-bold py-2 px-3 cursor-pointer no-focus-box outline-none border-none !border-b"
             >
               <option value="ledger">Ledger</option>
               <option value="payables">Payables</option>

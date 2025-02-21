@@ -20,7 +20,7 @@ function SummaryDropdown({ bgColor="#ffff",textColor="#6b7280"}) {
     <div className="">
       <select
       style={{backgroundColor:bgColor,color:textColor}}
-        className="   w-full sm:max-w-sm md:max-w-sm text-sm font-bold   py-2 px-3  cursor-pointer no-focus-box border-none !border-b"
+        className="   w-full sm:max-w-sm md:max-w-sm text-sm font-bold   py-2 px-3  cursor-pointer no-focus-box outline-none border-none !border-b"
         value={option}
         onChange={(e) => {
           dispatch(setSelectedOption(e.target.value))
