@@ -109,7 +109,7 @@ function DashBoard({
         {/* transactions */}
 
         <div className=" w-full hidden sm:flex ">
-          <div className="w-1/2 h-[calc(100vh-301px)] overflow-y-scroll scrollbar-thin mt-2 ">
+          <div className="w-1/2 h-[calc(100vh-290px)] overflow-y-scroll scrollbar-thin mt-2 ">
             {loader ? (
               <TransactionSkeleton />
             ) : filteredData.length === 0 ? (

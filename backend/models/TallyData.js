@@ -16,6 +16,7 @@ const tallySchema = new mongoose.Schema({
     bill_due_date: { type: Date },
     bill_pending_amt:{ type: Number, required: true },
     accountGroup:{ type: String },
+    accountGroup_id:{ type: String },
     group_name: { type: String },
     group_name_id: { type: Number },
     user_id:{type:String},

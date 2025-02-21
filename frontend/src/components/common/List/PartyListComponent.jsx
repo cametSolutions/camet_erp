@@ -12,7 +12,7 @@ function PartyListComponent({ filteredParty, type, deleteHandler,user="secondary
 
   useEffect(() => {
     const calculateHeight = () => {
-      const newHeight = window.innerHeight - 117;
+      const newHeight = window.innerHeight - 95;
       setListHeight(newHeight);
     };
 
@@ -36,13 +36,13 @@ function PartyListComponent({ filteredParty, type, deleteHandler,user="secondary
     const adjustedStyle = {
       ...style,
       marginTop: "16px",
-      height: "150px",
+      height: "130px",
     };
     return (
       <div
         key={index}
         style={adjustedStyle}
-        className="bg-white p-4 pb-6 drop-shadow-lg mt-4 flex flex-col mx-2 rounded-sm cursor-pointer hover:bg-slate-100 pr-7"
+        className="bg-white p-4 pb-6 drop-shadow-lg mt-4 flex flex-col  rounded-sm cursor-pointer hover:bg-slate-100 pr-7"
       >
         <div className="flex justify-between w-full gap-3 ">
           <div className="">
@@ -99,7 +99,7 @@ function PartyListComponent({ filteredParty, type, deleteHandler,user="secondary
         className=""
         height={listHeight}
         itemCount={filteredParty.length}
-        itemSize={160}
+        itemSize={140}
         width="100%"
       >
         {Row}
