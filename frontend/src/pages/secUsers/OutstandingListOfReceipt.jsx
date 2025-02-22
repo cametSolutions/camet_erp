@@ -22,23 +22,23 @@ function OutstandingListOfReceipt() {
   const cmp_id = useSelector(
     (state) => state?.secSelectedOrganization.secSelectedOrg?._id
   );
-  ///from receipt redux
+  // ///from receipt redux
   const {
-    enteredAmount: enteredAmountRedux,
+    // enteredAmount: enteredAmountRedux,
     outstandings,
     totalBillAmount,
   } = useSelector((state) => state.receipt);
 
   const [data, setData] = useState(outstandings);
   const [total, setTotal] = useState(totalBillAmount);
-  const [advanceAmount, setAdvanceAmount] = useState(0);
-  const [enteredAmount, setEnteredAmount] = useState(() => {
-    const storedAmount = enteredAmountRedux || 0;
-    // Convert to a valid number or default to 0
-    const parsedAmount = parseFloat(storedAmount);
-    const validAmount = !isNaN(parsedAmount) ? parsedAmount : 0;
-    return validAmount;
-  });
+  // const [advanceAmount, setAdvanceAmount] = useState(0);
+  // const [enteredAmount, setEnteredAmount] = useState(() => {
+  //   const storedAmount = enteredAmountRedux || 0;
+  //   // Convert to a valid number or default to 0
+  //   const parsedAmount = parseFloat(storedAmount);
+  //   const validAmount = !isNaN(parsedAmount) ? parsedAmount : 0;
+  //   return validAmount;
+  // });
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -63,65 +63,65 @@ function OutstandingListOfReceipt() {
     }
   }, [receiptData]);
 
-  const handleAmountChange = (event) => {
-    const amount = parseFloat(event.target.value) || 0;
-    if (amount > total) {
-      setAdvanceAmount(amount - total);
-    } else {
-      setAdvanceAmount(0);
-    }
-    setEnteredAmount(amount);
-  };
+  // const handleAmountChange = (event) => {
+  //   const amount = parseFloat(event.target.value) || 0;
+  //   if (amount > total) {
+  //     setAdvanceAmount(amount - total);
+  //   } else {
+  //     setAdvanceAmount(0);
+  //   }
+  //   setEnteredAmount(amount);
+  // };
 
-  let remainingAmount = enteredAmount;
+  // let remainingAmount = enteredAmount;
 
-  const handleNextClick = () => {
-    console.log(enteredAmount);
+  // const handleNextClick = () => {
+  //   console.log(enteredAmount);
 
-    if (enteredAmount == null || enteredAmount <= 0) {
-      toast.error("Enter an amount");
-      return;
-    }
+  //   if (enteredAmount == null || enteredAmount <= 0) {
+  //     toast.error("Enter an amount");
+  //     return;
+  //   }
 
-    const results = [];
-    let remainingAmount = enteredAmount;
+  //   const results = [];
+  //   let remainingAmount = enteredAmount;
 
-    data.forEach((el) => {
-      const billAmount = parseFloat(el.bill_pending_amt) || 0;
-      const settledAmount = Math.min(billAmount, remainingAmount);
+  //   data.forEach((el) => {
+  //     const billAmount = parseFloat(el.bill_pending_amt) || 0;
+  //     const settledAmount = Math.min(billAmount, remainingAmount);
 
-      // Check if settledAmount is greater than zero before including it in results
-      if (settledAmount > 0) {
-        const remainingBillAmount = Math.max(0, billAmount - settledAmount);
+  //     // Check if settledAmount is greater than zero before including it in results
+  //     if (settledAmount > 0) {
+  //       const remainingBillAmount = Math.max(0, billAmount - settledAmount);
 
-        remainingAmount -= settledAmount;
+  //       remainingAmount -= settledAmount;
 
-        const resultObject = {
-          billNo: el.bill_no,
-          billId: el.billId,
-          settledAmount,
-          remainingAmount: remainingBillAmount,
-        };
+  //       const resultObject = {
+  //         billNo: el.bill_no,
+  //         billId: el.billId,
+  //         settledAmount,
+  //         remainingAmount: remainingBillAmount,
+  //       };
 
-        results.push(resultObject);
-      }
-    });
+  //       results.push(resultObject);
+  //     }
+  //   });
 
-    const settlementData = {
-      // party_id: data[0]?.party_id,
-      // party_name: data[0]?.party_name,
-      totalBillAmount: parseFloat(total),
-      enteredAmount: enteredAmount,
-      // cmp_id: data[0]?.cmp_id,
-      billData: results,
-    };
+  //   const settlementData = {
+  //     // party_id: data[0]?.party_id,
+  //     // party_name: data[0]?.party_name,
+  //     totalBillAmount: parseFloat(total),
+  //     enteredAmount: enteredAmount,
+  //     // cmp_id: data[0]?.cmp_id,
+  //     billData: results,
+  //   };
 
-    console.log(settlementData);
+  //   console.log(settlementData);
     
 
-    dispatch(addSettlementData(settlementData));
-    navigate("/sUsers/receipt");
-  };
+  //   dispatch(addSettlementData(settlementData));
+  //   navigate("/sUsers/receipt");
+  // };
 
   return (
     <OutstandingLIst
@@ -130,12 +130,12 @@ function OutstandingListOfReceipt() {
         data,
         navigate,
         total,
-        handleAmountChange,
-        enteredAmount,
-        handleNextClick,
-        remainingAmount,
+        // handleAmountChange,
+        // enteredAmount,
+        // handleNextClick,
+        // remainingAmount,
         formatAmount,
-        advanceAmount,
+        // advanceAmount,
         tab: "receipt",
       }}
     />
