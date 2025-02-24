@@ -1,10 +1,7 @@
 import { useEffect, useState } from "react";
-import { toast } from "react-toastify";
 import { useParams } from "react-router-dom";
-import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  addSettlementData,
   addOutstandings,
   setTotalBillAmount,
 } from "../../../slices/receipt";
@@ -12,10 +9,7 @@ import useFetch from "../../customHook/useFetch";
 import OutstandingLIst from "../../components/secUsers/main/OutstandingLIst";
 
 ///format the amount
-function formatAmount(amount) {
-  // Use toLocaleString to add commas to the number
-  return amount.toLocaleString("en-IN", { maximumFractionDigits: 2 });
-}
+
 
 function OutstandingListOfReceipt() {
   ///company Id
@@ -31,17 +25,8 @@ function OutstandingListOfReceipt() {
 
   const [data, setData] = useState(outstandings);
   const [total, setTotal] = useState(totalBillAmount);
-  // const [advanceAmount, setAdvanceAmount] = useState(0);
-  // const [enteredAmount, setEnteredAmount] = useState(() => {
-  //   const storedAmount = enteredAmountRedux || 0;
-  //   // Convert to a valid number or default to 0
-  //   const parsedAmount = parseFloat(storedAmount);
-  //   const validAmount = !isNaN(parsedAmount) ? parsedAmount : 0;
-  //   return validAmount;
-  // });
 
   const dispatch = useDispatch();
-  const navigate = useNavigate();
   const { party_id } = useParams();
 
 
@@ -63,17 +48,8 @@ function OutstandingListOfReceipt() {
     }
   }, [receiptData]);
 
-  // const handleAmountChange = (event) => {
-  //   const amount = parseFloat(event.target.value) || 0;
-  //   if (amount > total) {
-  //     setAdvanceAmount(amount - total);
-  //   } else {
-  //     setAdvanceAmount(0);
-  //   }
-  //   setEnteredAmount(amount);
-  // };
 
-  // let remainingAmount = enteredAmount;
+
 
   // const handleNextClick = () => {
   //   console.log(enteredAmount);
@@ -128,14 +104,7 @@ function OutstandingListOfReceipt() {
       {...{
         loading,
         data,
-        navigate,
         total,
-        // handleAmountChange,
-        // enteredAmount,
-        // handleNextClick,
-        // remainingAmount,
-        formatAmount,
-        // advanceAmount,
         tab: "receipt",
       }}
     />

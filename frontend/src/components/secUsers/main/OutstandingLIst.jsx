@@ -5,103 +5,230 @@ import { BarLoader } from "react-spinners";
 import { MdPeopleAlt } from "react-icons/md";
 import { FaChevronDown } from "react-icons/fa";
 import { useState, useEffect } from "react";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { toast } from "react-toastify";
 import CallIcon from "../../common/CallIcon";
 import { camelToNormalCase } from "../../../../utils/camelCaseToNormalCase";
+import { addSettlementData as addSettlementDataReceipt } from "../../../../slices/receipt";
+import { addSettlementData as addSettlementDataPayment } from "../../../../slices/payment";
+import { useNavigate } from "react-router-dom";
 
-function OutstandingList({
-  loading,
-  data,
-  navigate,
-  total,
-  formatAmount,
-  tab,
-}) {
-  const { enteredAmount: enteredAmountRedux } = useSelector(
+function OutstandingList({ loading, data, total, tab }) {
+  const { enteredAmount: enteredAmountReduxOfReceipt, billData: receiptBillData } = useSelector(
     (state) => state.receipt
   );
+  const { enteredAmount: enteredAmountReduxOfPayment, billData: paymentBillData } = useSelector(
+    (state) => state.payment
+  );
 
-  const [selectedBills, setSelectedBills] = useState(new Set());
-  const [advanceAmount, setAdvanceAmount] = useState(0);
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
+  // Get the appropriate billData based on tab
+  const savedBillData = tab === "receipt" ? receiptBillData : paymentBillData;
+
+  // Initialize states with saved data if available
+  const [selectedBills, setSelectedBills] = useState(() => {
+    if (savedBillData?.length > 0) {
+      return new Set(savedBillData.map(bill => bill.billNo));
+    }
+    return new Set();
+  });
+
+  const [billSettlements, setBillSettlements] = useState(() => {
+    if (savedBillData?.length > 0) {
+      return new Map(savedBillData.map(bill => [bill.billNo, bill.settledAmount]));
+    }
+    return new Map();
+  });
+
+  const [selectionOrder, setSelectionOrder] = useState(() => {
+    if (savedBillData?.length > 0) {
+      return savedBillData.map(bill => bill.billNo);
+    }
+    return [];
+  });
+
   const [enteredAmount, setEnteredAmount] = useState(() => {
-    const storedAmount = enteredAmountRedux || 0;
+    const storedAmount = tab === "receipt" ? enteredAmountReduxOfReceipt || 0 : enteredAmountReduxOfPayment || 0;
     const parsedAmount = parseFloat(storedAmount);
     return !isNaN(parsedAmount) ? parsedAmount : 0;
   });
+  const [advanceAmount, setAdvanceAmount] = useState(0);
 
-  // Calculate total amount of currently selected bills
-  const calculateSelectedTotal = (bills) => {
-    return data
-      .filter((bill) => bills.has(bill.bill_no))
-      .reduce((sum, bill) => sum + parseFloat(bill.bill_pending_amt), 0);
-  };
+  function formatAmount(amount) {
+    return amount.toLocaleString("en-IN", { maximumFractionDigits: 2 });
+  }
 
-  // Automatically select bills based on entered amount
-  useEffect(() => {
-    if (data && data.length > 0 && enteredAmount > 0) {
-      const newSelectedBills = new Set();
-      let remainingAmount = enteredAmount;
+  // Calculate settlements based on selection order
+  const calculateSettlements = (selectedBillsSet, billOrder, amount) => {
+    const settlements = new Map();
+    let remainingAmount = amount;
 
-      // Go through bills from top to bottom
-      for (const bill of data) {
-        const billAmount = parseFloat(bill.bill_pending_amt) || 0;
-
-        // If we can fully or partially settle this bill, select it
+    billOrder.forEach((billNo) => {
+      if (selectedBillsSet.has(billNo)) {
+        const bill = data.find((b) => b.bill_no === billNo);
+        const billAmount = parseFloat(bill.bill_pending_amt);
         if (remainingAmount > 0) {
-          newSelectedBills.add(bill.bill_no);
-          remainingAmount -= billAmount;
+          const settlementAmount = Math.min(billAmount, remainingAmount);
+          settlements.set(billNo, settlementAmount);
+          remainingAmount -= settlementAmount;
+        } else {
+          settlements.set(billNo, 0);
         }
       }
+    });
 
-      setSelectedBills(newSelectedBills);
+    return { settlements, advanceAmount: Math.max(0, remainingAmount) };
+  };
 
-      // Calculate advance amount if any remains after selecting all possible bills
-      if (remainingAmount > 0) {
-        setAdvanceAmount(remainingAmount);
+  // Check if the entered amount is fully settled
+  const isAmountFullySettled = () => {
+    const totalSettled = Array.from(billSettlements.values()).reduce(
+      (sum, amount) => sum + amount,
+      0
+    );
+    return Math.abs(totalSettled - enteredAmount) < 0.01;
+  };
+
+  // Use effect for initial setup and amount changes
+  useEffect(() => {
+    if (data && data.length > 0 && enteredAmount > 0) {
+      // If we have saved bill data, use that instead of FIFO
+      if (savedBillData?.length > 0) {
+        const { settlements, advanceAmount: newAdvanceAmount } = calculateSettlements(
+          selectedBills,
+          selectionOrder,
+          enteredAmount
+        );
+        setBillSettlements(settlements);
+        setAdvanceAmount(newAdvanceAmount);
       } else {
-        setAdvanceAmount(0);
+        // FIFO selection only if no saved data
+        const newSelectedBills = new Set();
+        const newSelectionOrder = [];
+        let remainingAmount = enteredAmount;
+
+        for (const bill of data) {
+          const billAmount = parseFloat(bill.bill_pending_amt);
+          if (remainingAmount > 0) {
+            newSelectedBills.add(bill.bill_no);
+            newSelectionOrder.push(bill.bill_no);
+            remainingAmount -= billAmount;
+          }
+        }
+
+        setSelectedBills(newSelectedBills);
+        setSelectionOrder(newSelectionOrder);
+
+        const { settlements, advanceAmount: newAdvanceAmount } = calculateSettlements(
+          newSelectedBills,
+          newSelectionOrder,
+          enteredAmount
+        );
+        setBillSettlements(settlements);
+        setAdvanceAmount(newAdvanceAmount);
       }
     } else {
       setSelectedBills(new Set());
+      setSelectionOrder([]);
+      setBillSettlements(new Map());
       setAdvanceAmount(0);
     }
-  }, [enteredAmount, data]);
+  }, [enteredAmount, data, savedBillData]);
 
   const handleAmountChange = (event) => {
     const amount = parseFloat(event.target.value) || 0;
     setEnteredAmount(amount);
   };
 
+  // Updated bill selection handler with validation
   const handleBillSelection = (billNo) => {
     const newSelectedBills = new Set(selectedBills);
+    const newSelectionOrder = [...selectionOrder];
 
     if (newSelectedBills.has(billNo)) {
-      // Always allow deselecting
+      // Always allow deselection
       newSelectedBills.delete(billNo);
+      const index = newSelectionOrder.indexOf(billNo);
+      if (index > -1) {
+        newSelectionOrder.splice(index, 1);
+      }
     } else {
-      const wouldExceedAmount = advanceAmount === 0;
-
-      if (wouldExceedAmount) {
+      // Check if amount is already fully settled before allowing new selection
+      if (isAmountFullySettled()) {
+        toast.warning(
+          "Entered amount is already fully settled. Cannot select more bills."
+        );
         return;
       }
-
+      // Manual selection
       newSelectedBills.add(billNo);
+      if (!newSelectionOrder.includes(billNo)) {
+        newSelectionOrder.push(billNo);
+      }
     }
 
     setSelectedBills(newSelectedBills);
+    setSelectionOrder(newSelectionOrder);
 
-    // Recalculate advance amount
-    const selectedTotal = calculateSelectedTotal(newSelectedBills);
-    if (enteredAmount > selectedTotal) {
-      setAdvanceAmount(enteredAmount - selectedTotal);
-    } else {
-      setAdvanceAmount(0);
-    }
+    const { settlements, advanceAmount: newAdvanceAmount } =
+      calculateSettlements(newSelectedBills, newSelectionOrder, enteredAmount);
+    setBillSettlements(settlements);
+    setAdvanceAmount(newAdvanceAmount);
   };
 
-  // Calculate remaining amount distribution among selected bills
-  let remainingAmount = enteredAmount;
+  // Format selected bills data for next step
+  const formatSelectedBillsData = () => {
+    return Array.from(selectedBills).map((billNo) => {
+      const bill = data.find((b) => b.bill_no === billNo);
+      const settledAmount = billSettlements.get(billNo) || 0;
+      const billAmount = parseFloat(bill.bill_pending_amt);
+
+      return {
+        billNo: bill.bill_no,
+        billId: bill._id,
+        settledAmount: Number(settledAmount.toFixed(2)),
+        remainingAmount: Number((billAmount - settledAmount).toFixed(2)),
+      };
+    });
+  };
+
+  // Handle next button click
+  const handleNextClick = () => {
+    if (selectedBills.size === 0) {
+      toast.warning("Please select at least one bill");
+      return;
+    }
+
+    if (enteredAmount <= 0) {
+      toast.warning("Please enter a valid amount");
+      return;
+    }
+
+    const formattedData = formatSelectedBillsData();
+
+    const settlementData = {
+      totalBillAmount: parseFloat(total),
+      enteredAmount: enteredAmount,
+      billData: formattedData,
+    };
+
+    console.log(settlementData);
+    
+
+    if (tab === "receipt") {
+      dispatch(addSettlementDataReceipt(settlementData));
+    } else if (tab === "payment") {
+      dispatch(addSettlementDataPayment(settlementData));
+    }
+
+    navigate(`/sUsers/${tab}`);
+  };
+
+
+
+  
 
   return (
     <>
@@ -141,9 +268,7 @@ function OutstandingList({
                 <p className="text-gray-500 test-sm mdd: text-md font-bold">
                   Total
                 </p>
-                <p className="text-green-600 font-bold">
-                  ₹{formatAmount(calculateSelectedTotal(selectedBills))}
-                </p>
+                <p className="text-green-600 font-bold">₹{total}</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -157,7 +282,7 @@ function OutstandingList({
               </p>
             </div>
           </div>
-          <hr className="h-px my-0 bg-gray-200 border-0" />
+          <hr className="h-px my-0 bg, ray-200 border-0" />
 
           <div className="flex p-2 justify-between gap-3 items-center rounded-md">
             <div className="flex items-center w-full md:w-3/4">
@@ -169,11 +294,14 @@ function OutstandingList({
                 type="text"
                 value={enteredAmount}
                 placeholder="₹12,500"
-                className="px-3 py-4 placeholder-blueGray-300 bg-white rounded text-sm shadow-lg w-full ease-linear transition-all duration-150"
+                className="px-3 py-4 placeholder-blueGray-300 bg-white rounded text-sm shadow-lg w-full ease-linear transition-all duration-150 no-focus-box outline-none border border-gray-200 focus:border-violet-500"
               />
             </div>
             <div className="flex-1">
-              <button className="w-full hidden md:block text-white p-4 bg-violet-500 text-md rounded-lg">
+              <button
+                onClick={handleNextClick}
+                className="w-full hidden md:block text-white p-4 bg-violet-500 text-md rounded-lg"
+              >
                 Next
               </button>
             </div>
@@ -199,31 +327,29 @@ function OutstandingList({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-1 mt-2 text-center px-2 overflow-x-hidden">
+      <div className="grid grid-cols-1 gap-1 mt-2 text-center px-2 overflow-x-hidden pb-5">
         {data?.map((el, index) => {
           const billAmount = parseFloat(el.bill_pending_amt) || 0;
           const isSelected = selectedBills.has(el.bill_no);
           const settledAmount = isSelected
-            ? Math.min(billAmount, remainingAmount)
+            ? billSettlements.get(el.bill_no) || 0
             : 0;
           const remainingBillAmount = Math.max(0, billAmount - settledAmount);
-
-          if (isSelected) {
-            remainingAmount -= settledAmount;
-          }
+          // const isDisabled = !isSelected && isAmountFullySettled();
 
           return (
             <div
               key={index}
-              className="h-[110px] rounded-md shadow-xl border border-gray-300 flex justify-between px-4 transition-all duration-150 transform hover:translate-x-1 ease-in-out overflow-y-auto"
+              className={`h-[110px] rounded-md shadow-xl border border-gray-300 flex justify-between px-4 transition-all duration-150 transform hover:translate-x-1 ease-in-out overflow-y-auto `}
             >
               <div className="h-full px-2 py-8 lg:p-6 w-[200px] md:w-[180px] lg:w-[300px] relative">
                 <div className="flex items-center gap-2">
                   <input
                     type="checkbox"
-                    onChange={() => handleBillSelection(el.bill_no, billAmount)}
+                    onChange={() => handleBillSelection(el.bill_no)}
                     checked={isSelected}
-                    className="w-7 h-7"
+                    // disabled={isDisabled}
+                    className="w-7 h-7 cursor-pointer"
                   />
                   <div className="flex flex-col items-start gap-1 ml-2">
                     <p className="font-bold text-gray-700 text-[12px]">
@@ -241,7 +367,7 @@ function OutstandingList({
               <div className="font-semibold h-full p-2 lg:p-6 w-[150px] md:w-[180px] lg:w-[300px] flex justify-center items-end relative flex-col">
                 <div className="flex-col justify-center text-end">
                   <p className="text-sm font-bold text-gray-600">
-                    ₹{formatAmount(el.bill_pending_amt)}
+                    ₹{formatAmount(billAmount)}
                   </p>
                   <p className="text-[12px] text-green-500">
                     ₹{formatAmount(settledAmount)} Settled
