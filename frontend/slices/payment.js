@@ -49,7 +49,7 @@ export const paymentSlice = createSlice({
       state.enteredAmount = 0;
     },
     addSettlementData: (state, action) => {
-      const { billData, totalBillAmount, enteredAmount,advanceAmount } = action.payload;
+      const { billData, totalBillAmount, enteredAmount,advanceAmount, remainingAmount } = action.payload;
 
       
 
@@ -57,6 +57,7 @@ export const paymentSlice = createSlice({
       state.totalBillAmount = totalBillAmount;
       state.enteredAmount = enteredAmount;
       state.advanceAmount = advanceAmount || 0;
+      state.remainingAmount = remainingAmount || 0;
 
       // if (enteredAmount > totalBillAmount) {
       //   state.advanceAmount = enteredAmount - totalBillAmount;

@@ -17,10 +17,12 @@ function OutstandingList({ loading, data, total, tab, process = "add" }) {
   const {
     enteredAmount: enteredAmountReduxOfReceipt,
     billData: receiptBillData,
+    advanceAmount: advanceAmountReduxOfReceipt,
   } = useSelector((state) => state.receipt);
   const {
     enteredAmount: enteredAmountReduxOfPayment,
     billData: paymentBillData,
+    advanceAmount: advanceAmountReduxOfPayment,
   } = useSelector((state) => state.payment);
 
   const dispatch = useDispatch();
@@ -28,6 +30,12 @@ function OutstandingList({ loading, data, total, tab, process = "add" }) {
 
   // Get the appropriate billData based on tab
   const savedBillData = tab === "receipt" ? receiptBillData : paymentBillData;
+
+  const savedAdvanceAmount =
+    tab === "receipt" ? advanceAmountReduxOfReceipt : advanceAmountReduxOfPayment;
+
+
+    
 
   // Initialize states with saved data if available
   const [selectedBills, setSelectedBills] = useState(new Set());
@@ -56,7 +64,7 @@ function OutstandingList({ loading, data, total, tab, process = "add" }) {
     const parsedAmount = parseFloat(storedAmount);
     return !isNaN(parsedAmount) ? parsedAmount : 0;
   });
-  const [advanceAmount, setAdvanceAmount] = useState(0);
+  const [advanceAmount, setAdvanceAmount] = useState(savedAdvanceAmount || 0);
 
   function formatAmount(amount) {
     return amount.toLocaleString("en-IN", { maximumFractionDigits: 2 });
@@ -66,6 +74,8 @@ function OutstandingList({ loading, data, total, tab, process = "add" }) {
   const calculateSettlements = (selectedBillsSet, billOrder, amount) => {
     const settlements = new Map();
     let remainingAmount = amount;
+
+    
 
     billOrder.forEach((billNo) => {
       if (selectedBillsSet.has(billNo)) {
@@ -81,7 +91,15 @@ function OutstandingList({ loading, data, total, tab, process = "add" }) {
       }
     });
 
-    return { settlements, advanceAmount: Math.max(0, remainingAmount) };
+
+    const advanceAmount = Math.abs(enteredAmount-(Array.from(settlements.values()).reduce(
+      (total, amount) => total + amount,
+      0
+    )))
+
+    
+
+    return { settlements, advanceAmount:advanceAmount };
   };
 
   // Check if the entered amount is fully settled
@@ -92,6 +110,8 @@ function OutstandingList({ loading, data, total, tab, process = "add" }) {
     );
     return Math.abs(totalSettled - enteredAmount) < 0.01;
   };
+
+  
 
   // Use effect for initial setup and amount changes
   useEffect(() => {
@@ -114,9 +134,19 @@ function OutstandingList({ loading, data, total, tab, process = "add" }) {
             enteredAmount
           );
 
+         
+          
+
         setBillSettlements(settlements);
-        setAdvanceAmount(newAdvanceAmount);
+        setAdvanceAmount(newAdvanceAmount );
       } else {
+
+        if(savedAdvanceAmount===enteredAmount){
+          setAdvanceAmount(savedAdvanceAmount)
+          return
+        }else{
+
+   
         // FIFO selection only if no saved data
         const newSelectedBills = new Set();
         const newSelectionOrder = [];
@@ -134,14 +164,18 @@ function OutstandingList({ loading, data, total, tab, process = "add" }) {
         setSelectedBills(newSelectedBills);
         setSelectionOrder(newSelectionOrder);
 
+      
+
         const { settlements, advanceAmount: newAdvanceAmount } =
           calculateSettlements(
             newSelectedBills,
             newSelectionOrder,
             enteredAmount
           );
+
         setBillSettlements(settlements);
         setAdvanceAmount(newAdvanceAmount);
+        }
       }
     } else {
       setSelectedBills(new Set());
@@ -228,6 +262,9 @@ function OutstandingList({ loading, data, total, tab, process = "add" }) {
       advanceAmount: advanceAmount || 0,
       remainingAmount: remainingAmount || 0,
     };
+
+
+    
 
     if (tab === "receipt") {
       dispatch(addSettlementDataReceipt(settlementData));

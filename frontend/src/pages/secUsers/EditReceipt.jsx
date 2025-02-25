@@ -67,7 +67,6 @@ function EditReceipt() {
     outstandingsRedux.length == 0 && `/api/sUsers/getReceiptDetails/${id}`
   );
 
-  console.log("receiptDetails", receiptDetails);
 
   useEffect(() => {
     if (receiptDetails) {
@@ -288,7 +287,6 @@ function EditReceipt() {
         withCredentials: true,
       });
 
-      console.log(res.data);
       toast.success(res.data.message);
 
       navigate(`/sUsers/receipt/details/${res?.data?.receipt._id}`);
