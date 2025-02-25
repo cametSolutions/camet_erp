@@ -49,56 +49,6 @@ function OutstandingListOfReceipt() {
   }, [receiptData]);
 
 
-
-
-  // const handleNextClick = () => {
-  //   console.log(enteredAmount);
-
-  //   if (enteredAmount == null || enteredAmount <= 0) {
-  //     toast.error("Enter an amount");
-  //     return;
-  //   }
-
-  //   const results = [];
-  //   let remainingAmount = enteredAmount;
-
-  //   data.forEach((el) => {
-  //     const billAmount = parseFloat(el.bill_pending_amt) || 0;
-  //     const settledAmount = Math.min(billAmount, remainingAmount);
-
-  //     // Check if settledAmount is greater than zero before including it in results
-  //     if (settledAmount > 0) {
-  //       const remainingBillAmount = Math.max(0, billAmount - settledAmount);
-
-  //       remainingAmount -= settledAmount;
-
-  //       const resultObject = {
-  //         billNo: el.bill_no,
-  //         billId: el.billId,
-  //         settledAmount,
-  //         remainingAmount: remainingBillAmount,
-  //       };
-
-  //       results.push(resultObject);
-  //     }
-  //   });
-
-  //   const settlementData = {
-  //     // party_id: data[0]?.party_id,
-  //     // party_name: data[0]?.party_name,
-  //     totalBillAmount: parseFloat(total),
-  //     enteredAmount: enteredAmount,
-  //     // cmp_id: data[0]?.cmp_id,
-  //     billData: results,
-  //   };
-
-  //   console.log(settlementData);
-    
-
-  //   dispatch(addSettlementData(settlementData));
-  //   navigate("/sUsers/receipt");
-  // };
-
   return (
     <OutstandingLIst
       {...{

@@ -76,11 +76,19 @@ export const updateTallyData = async (
     ])
   );
 
+
+  console.log("billAmountMap", billAmountMap);
+  
+
   // Fetch the outstanding bills from TallyData for this company
   const outstandingData = await TallyData.find({
     cmp_id,
     billId: { $in: Array.from(billAmountMap.keys()) },
   }).session(session);
+
+
+  console.log("outstandingData", outstandingData);
+  
 
   if (outstandingData.length === 0) {
     return;

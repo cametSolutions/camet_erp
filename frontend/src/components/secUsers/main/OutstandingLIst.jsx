@@ -1,7 +1,6 @@
 /* eslint-disable react/prop-types */
 import dayjs from "dayjs";
 import { IoIosArrowRoundBack } from "react-icons/io";
-import { BarLoader } from "react-spinners";
 import { MdPeopleAlt } from "react-icons/md";
 import { FaChevronDown } from "react-icons/fa";
 import { useState, useEffect } from "react";
@@ -12,14 +11,17 @@ import { camelToNormalCase } from "../../../../utils/camelCaseToNormalCase";
 import { addSettlementData as addSettlementDataReceipt } from "../../../../slices/receipt";
 import { addSettlementData as addSettlementDataPayment } from "../../../../slices/payment";
 import { useNavigate } from "react-router-dom";
+import CustomBarLoader from "@/components/common/CustomBarLoader";
 
-function OutstandingList({ loading, data, total, tab }) {
-  const { enteredAmount: enteredAmountReduxOfReceipt, billData: receiptBillData } = useSelector(
-    (state) => state.receipt
-  );
-  const { enteredAmount: enteredAmountReduxOfPayment, billData: paymentBillData } = useSelector(
-    (state) => state.payment
-  );
+function OutstandingList({ loading, data, total, tab, process = "add" }) {
+  const {
+    enteredAmount: enteredAmountReduxOfReceipt,
+    billData: receiptBillData,
+  } = useSelector((state) => state.receipt);
+  const {
+    enteredAmount: enteredAmountReduxOfPayment,
+    billData: paymentBillData,
+  } = useSelector((state) => state.payment);
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -28,29 +30,29 @@ function OutstandingList({ loading, data, total, tab }) {
   const savedBillData = tab === "receipt" ? receiptBillData : paymentBillData;
 
   // Initialize states with saved data if available
-  const [selectedBills, setSelectedBills] = useState(() => {
-    if (savedBillData?.length > 0) {
-      return new Set(savedBillData.map(bill => bill.billNo));
-    }
-    return new Set();
-  });
+  const [selectedBills, setSelectedBills] = useState(new Set());
 
   const [billSettlements, setBillSettlements] = useState(() => {
     if (savedBillData?.length > 0) {
-      return new Map(savedBillData.map(bill => [bill.billNo, bill.settledAmount]));
+      return new Map(
+        savedBillData.map((bill) => [bill.billNo, bill.settledAmount])
+      );
     }
     return new Map();
   });
 
   const [selectionOrder, setSelectionOrder] = useState(() => {
     if (savedBillData?.length > 0) {
-      return savedBillData.map(bill => bill.billNo);
+      return savedBillData.map((bill) => bill.billNo);
     }
     return [];
   });
 
   const [enteredAmount, setEnteredAmount] = useState(() => {
-    const storedAmount = tab === "receipt" ? enteredAmountReduxOfReceipt || 0 : enteredAmountReduxOfPayment || 0;
+    const storedAmount =
+      tab === "receipt"
+        ? enteredAmountReduxOfReceipt || 0
+        : enteredAmountReduxOfPayment || 0;
     const parsedAmount = parseFloat(storedAmount);
     return !isNaN(parsedAmount) ? parsedAmount : 0;
   });
@@ -67,8 +69,8 @@ function OutstandingList({ loading, data, total, tab }) {
 
     billOrder.forEach((billNo) => {
       if (selectedBillsSet.has(billNo)) {
-        const bill = data.find((b) => b.bill_no === billNo);
-        const billAmount = parseFloat(bill.bill_pending_amt);
+        const bill = data.find((b) => b?.bill_no === billNo);
+        const billAmount = parseFloat(bill?.bill_pending_amt);
         if (remainingAmount > 0) {
           const settlementAmount = Math.min(billAmount, remainingAmount);
           settlements.set(billNo, settlementAmount);
@@ -96,11 +98,22 @@ function OutstandingList({ loading, data, total, tab }) {
     if (data && data.length > 0 && enteredAmount > 0) {
       // If we have saved bill data, use that instead of FIFO
       if (savedBillData?.length > 0) {
-        const { settlements, advanceAmount: newAdvanceAmount } = calculateSettlements(
-          selectedBills,
-          selectionOrder,
-          enteredAmount
+        const newSelectedBills = new Set(
+          savedBillData.map((bill) => bill.billNo)
         );
+
+        const newSelectionOrder = savedBillData.map((bill) => bill.billNo);
+
+        setSelectedBills(newSelectedBills);
+        setSelectionOrder(newSelectionOrder);
+        // const newBill new Map(savedBillData.map((bill) => [bill?.billNo, bill?.settledAmount]));
+        const { settlements, advanceAmount: newAdvanceAmount } =
+          calculateSettlements(
+            newSelectedBills,
+            newSelectionOrder,
+            enteredAmount
+          );
+
         setBillSettlements(settlements);
         setAdvanceAmount(newAdvanceAmount);
       } else {
@@ -121,11 +134,12 @@ function OutstandingList({ loading, data, total, tab }) {
         setSelectedBills(newSelectedBills);
         setSelectionOrder(newSelectionOrder);
 
-        const { settlements, advanceAmount: newAdvanceAmount } = calculateSettlements(
-          newSelectedBills,
-          newSelectionOrder,
-          enteredAmount
-        );
+        const { settlements, advanceAmount: newAdvanceAmount } =
+          calculateSettlements(
+            newSelectedBills,
+            newSelectionOrder,
+            enteredAmount
+          );
         setBillSettlements(settlements);
         setAdvanceAmount(newAdvanceAmount);
       }
@@ -136,6 +150,7 @@ function OutstandingList({ loading, data, total, tab }) {
       setAdvanceAmount(0);
     }
   }, [enteredAmount, data, savedBillData]);
+  
 
   const handleAmountChange = (event) => {
     const amount = parseFloat(event.target.value) || 0;
@@ -157,9 +172,6 @@ function OutstandingList({ loading, data, total, tab }) {
     } else {
       // Check if amount is already fully settled before allowing new selection
       if (isAmountFullySettled()) {
-        toast.warning(
-          "Entered amount is already fully settled. Cannot select more bills."
-        );
         return;
       }
       // Manual selection
@@ -180,42 +192,42 @@ function OutstandingList({ loading, data, total, tab }) {
 
   // Format selected bills data for next step
   const formatSelectedBillsData = () => {
-    return Array.from(selectedBills).map((billNo) => {
-      const bill = data.find((b) => b.bill_no === billNo);
-      const settledAmount = billSettlements.get(billNo) || 0;
+    return Array.from(selectedBills)?.map((billNo) => {
+      const bill = data?.find((b) => b?.bill_no === billNo);
+      const settledAmount = billSettlements?.get(billNo) || 0;
       const billAmount = parseFloat(bill.bill_pending_amt);
 
       return {
-        billNo: bill.bill_no,
-        billId: bill._id,
-        settledAmount: Number(settledAmount.toFixed(2)),
-        remainingAmount: Number((billAmount - settledAmount).toFixed(2)),
+        billNo: bill?.bill_no,
+        billId: bill?.billId,
+        settledAmount: Number(settledAmount?.toFixed(2)),
+        remainingAmount: Number((billAmount - settledAmount)?.toFixed(2)),
       };
     });
   };
 
   // Handle next button click
   const handleNextClick = () => {
-    if (selectedBills.size === 0) {
-      toast.warning("Please select at least one bill");
-      return;
-    }
-
     if (enteredAmount <= 0) {
-      toast.warning("Please enter a valid amount");
+      toast?.warning("Please enter a valid amount");
       return;
     }
 
     const formattedData = formatSelectedBillsData();
 
+    const settledAmount = formattedData.reduce(
+      (total, bill) => total + bill.settledAmount,
+      0
+    );
+    const remainingAmount = total - settledAmount;
+
     const settlementData = {
       totalBillAmount: parseFloat(total),
       enteredAmount: enteredAmount,
       billData: formattedData,
+      advanceAmount: advanceAmount || 0,
+      remainingAmount: remainingAmount || 0,
     };
-
-    console.log(settlementData);
-    
 
     if (tab === "receipt") {
       dispatch(addSettlementDataReceipt(settlementData));
@@ -223,12 +235,20 @@ function OutstandingList({ loading, data, total, tab }) {
       dispatch(addSettlementDataPayment(settlementData));
     }
 
-    navigate(`/sUsers/${tab}`);
+    if (tab === "receipt") {
+      if (process === "add") {
+        navigate(`/sUsers/receipt`);
+      } else if (process === "edit") {
+        navigate(-1, { replace: true });
+      }
+    } else {
+      if (process === "add") {
+        navigate(`/sUsers/paymentPurchase`);
+      } else if (process === "edit") {
+        navigate(-1, { replace: true });
+      }
+    }
   };
-
-
-
-  
 
   return (
     <>
@@ -249,14 +269,7 @@ function OutstandingList({ loading, data, total, tab }) {
             </p>
           </div>
 
-          {loading && (
-            <BarLoader
-              height={6}
-              color="#3688da"
-              width={"100%"}
-              speedMultiplier={0}
-            />
-          )}
+          {loading && <CustomBarLoader />}
 
           <div className="px-4 py-2 flex justify-between">
             <div className="flex-col">

@@ -74,14 +74,13 @@ function EditReceipt() {
       if (receiptDetails) {
         const {
           receiptNumber,
-          createdAt,
           date,
           party,
           billData,
           totalBillAmount,
           enteredAmount,
-          // advanceAmount,
-          // remainingAmount,
+          advanceAmount,
+          remainingAmount,
           paymentMethod,
           paymentDetails,
           note,
@@ -109,8 +108,15 @@ function EditReceipt() {
           dispatch(addParty(party));
         }
         if (billData && billDataRedux.length == 0) {
+
           dispatch(
-            addSettlementData({ billData, totalBillAmount, enteredAmount })
+            addSettlementData({
+              billData,
+              totalBillAmount,
+              enteredAmount,
+              advanceAmount,
+              remainingAmount,
+            })
           );
         }
         if (totalBillAmount && !totalBillAmountRedux) {
@@ -120,17 +126,23 @@ function EditReceipt() {
         //   dispatch(addBankPaymentDetails(paymentDetails));
         // }
 
-        if (paymentMethod && paymentMethodRedux === "" && paymentMethod === "Cash") {
-           if (paymentDetails) {
-          dispatch(addCashPaymentDetails(paymentDetails));
+        if (
+          paymentMethod &&
+          paymentMethodRedux === "" &&
+          paymentMethod === "Cash"
+        ) {
+          if (paymentDetails) {
+            dispatch(addCashPaymentDetails(paymentDetails));
+          }
         }
-
-      }
-        if (paymentMethod && paymentMethodRedux === "" && (paymentMethod === "Online" || paymentMethod === "Cheque")) {
-           if (paymentDetails) {
-          dispatch(addBankPaymentDetails(paymentDetails));
-        }
-          
+        if (
+          paymentMethod &&
+          paymentMethodRedux === "" &&
+          (paymentMethod === "Online" || paymentMethod === "Cheque")
+        ) {
+          if (paymentDetails) {
+            dispatch(addBankPaymentDetails(paymentDetails));
+          }
         }
         if (paymentMethod && paymentMethodRedux === "") {
           dispatch(addPaymentMethod(paymentMethod));
