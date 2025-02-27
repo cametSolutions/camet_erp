@@ -49,7 +49,7 @@ function InventorySecondaryUser() {
       setLoader(true);
       try {
         const res = await api.get(`/api/sUsers/getProducts/${cmp_id}`, {
-         params:{stockTransfer:true},
+          params: { stockTransfer: true },
           withCredentials: true,
         });
         setLoader(true);
@@ -64,7 +64,6 @@ function InventorySecondaryUser() {
     fetchProducts();
     dispatch(removeAll());
   }, [cmp_id]);
-
 
   useEffect(() => {
     if (search === "") {
@@ -119,12 +118,11 @@ function InventorySecondaryUser() {
       return prevHeights;
     });
   }, []);
-  console.log(heights);
 
   const getItemSize = (index) => {
     const product = filteredProducts[index];
     const isExpanded = product?.isExpanded || false;
-    const baseHeight = isExpanded ? heights[index] || 250 : 190; // Base height for unexpanded and expanded items
+    const baseHeight = isExpanded ? heights[index] || 250 : 195; // Base height for unexpanded and expanded items
     const extraHeight = isExpanded ? 230 : 0; // Extra height for expanded items
 
     return baseHeight + extraHeight;
@@ -156,22 +154,31 @@ function InventorySecondaryUser() {
             !el?.hasGodownOrBatch ? "shadow-lg" : ""
           }  `}
         >
-          <div className="flex justify-between w-full gap-3   px-5  ">
+          <div className=" w-full gap-3   px-5  ">
             <div className="">
               <p className="font-bold text-sm">{el?.product_name}</p>
             </div>
           </div>
 
-          <div className=" text-sm  px-5 flex justify-between items-center mt-3  ">
-            <div className="flex-col">
+          
+
+          <div className=" text-sm  px-5 flex justify-between items-center mt-3   ">
+            <div className="flex-col font-semibold text-sm">
               <div className="flex gap-2 text-nowrap">
-                <p className="font-bold text-gray-400 uppercase ">Hsn :</p>
-                <p className="font-semibold text-gray-400"> {el?.hsn_code}</p>
+                <p className=" text-gray-400  ">Hsn :</p>
+                <p className=" text-gray-400"> {el?.hsn_code}</p>
               </div>
               <div className="flex gap-2    ">
-                <p className="font-bold text-gray-400">Tax :</p>
+                <p className=" text-gray-400">Tax :</p>
                 <p className=" text-gray-400"> {`${el?.igst} %`}</p>
               </div>
+
+              {el?.item_mrp && (
+                <div className="flex gap-2    ">
+                  <p className=" text-gray-400">Mrp :</p>
+                  <p className=" text-gray-400"> {`${el?.item_mrp}`}</p>
+                </div>
+              )}
             </div>
             <div>
               <div className="flex flex-col gap-1 ">
@@ -259,16 +266,7 @@ function InventorySecondaryUser() {
           </div>
         </div>
 
-        {/* invoiec date */}
-        <div className=" p-4  bg-white drop-shadow-lg">
-          <div className="flex justify-between  items-center"></div>
-          <div className=" md:w-1/2 ">
-            {/* search bar */}
-            <SearchBar onType={searchData} />
-
-            {/* search bar */}
-          </div>
-        </div>
+        <SearchBar onType={searchData} />
       </div>
 
       {/* adding party */}
