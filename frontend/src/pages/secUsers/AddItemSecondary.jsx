@@ -449,7 +449,7 @@ function AddItemSecondary() {
               <p>{el.product_name}</p>
               <div className="flex gap-1 items-center">
                 <p>
-                  <span>Mrp</span> : {el?.item_mrp || 0}
+                  <span>MRP</span> : {el?.item_mrp || 0}
                 </p>
                 | 
 

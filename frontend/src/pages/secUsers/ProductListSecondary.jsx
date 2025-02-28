@@ -168,7 +168,7 @@ function ProductListSecondary() {
 
               {el?.item_mrp && (
                 <div className="flex gap-2 text-nowrap">
-                  <p className=" text-gray-500 uppercase ">Mrp :</p>
+                  <p className=" text-gray-500 uppercase ">MRP :</p>
                   <p className=" text-gray-500"> {el?.item_mrp}</p>
                 </div>
               )}

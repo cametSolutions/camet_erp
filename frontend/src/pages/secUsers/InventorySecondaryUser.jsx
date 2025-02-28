@@ -175,7 +175,7 @@ function InventorySecondaryUser() {
 
               {el?.item_mrp && (
                 <div className="flex gap-2    ">
-                  <p className=" text-gray-400">Mrp :</p>
+                  <p className=" text-gray-400">MRP :</p>
                   <p className=" text-gray-400"> {`${el?.item_mrp}`}</p>
                 </div>
               )}
