@@ -26,6 +26,7 @@ import AddPartyTile from "../../components/secUsers/main/AddPartyTile";
 import AddItemTile from "../../components/secUsers/main/AddItemTile";
 import TitleDiv from "../../components/common/TitleDiv";
 import FooterButton from "../../components/secUsers/main/FooterButton";
+import { updateDashboardSummaryManually } from "../../../slices/dashboardSlices/fetchDashboardSummary";
 function CreditNote() {
   const [additional, setAdditional] = useState(false);
   const [dataLoading, setDataLoading] = useState(0);
@@ -226,8 +227,6 @@ function CreditNote() {
     dispatch(addAdditionalCharges({ index, row: newRows[index] }));
   };
 
-  console.log(rows);
-
   const handleRateChange = (index, value) => {
     const newRows = [...rows];
     let updatedRow = { ...newRows[index], value: value }; // Create a new object with the updated value
@@ -328,14 +327,14 @@ function CreditNote() {
       const hasEmptyValue = rows.some((row) => row.value === "");
       if (hasEmptyValue) {
         toast.error("Please add a value.");
-      setSubmitLoading(false);
+        setSubmitLoading(false);
 
         return;
       }
       const hasNagetiveValue = rows.some((row) => parseFloat(row.value) < 0);
       if (hasNagetiveValue) {
         toast.error("Please add a positive value");
-      setSubmitLoading(false);
+        setSubmitLoading(false);
 
         return;
       }
@@ -371,12 +370,21 @@ function CreditNote() {
 
       toast.success(res.data.message);
 
+      /// for updating payable also
+
+      dispatch(
+        updateDashboardSummaryManually({
+          voucher: "outstandingPayables",
+          amount: formData.lastAmount,
+        })
+      );
+
       navigate(`/sUsers/creditDetails/${res.data.data._id}`);
       dispatch(removeAll());
     } catch (error) {
       toast.error(error.response.data.message);
       console.log(error);
-    }finally {
+    } finally {
       setSubmitLoading(false);
     }
   };
@@ -392,8 +400,6 @@ function CreditNote() {
   return (
     <div className="mb-14 sm:mb-0">
       <div className="flex-1 bg-slate-100 h -screen ">
-     
-
         <TitleDiv
           title="Credit Note"
           from={`/sUsers/selectVouchers`}
@@ -412,7 +418,6 @@ function CreditNote() {
             removeAll={removeAll}
             tab="add"
             loading={submitLoading}
-
           />
 
           {/* adding party */}

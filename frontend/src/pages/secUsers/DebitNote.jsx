@@ -26,6 +26,7 @@ import AddPartyTile from "../../components/secUsers/main/AddPartyTile";
 import AddItemTile from "../../components/secUsers/main/AddItemTile";
 import TitleDiv from "../../components/common/TitleDiv";
 import FooterButton from "../../components/secUsers/main/FooterButton";
+import { updateDashboardSummaryManually } from "../../../slices/dashboardSlices/fetchDashboardSummary";
 function DebitNote() {
   const [additional, setAdditional] = useState(false);
   const [dataLoading, setDataLoading] = useState(0);
@@ -368,6 +369,15 @@ function DebitNote() {
 
       toast.success(res.data.message);
 
+      /// for updating receivables also
+
+      dispatch(
+        updateDashboardSummaryManually({
+          voucher: "outstandingReceivables",
+          amount: formData.lastAmount,
+        })
+      );
+
       navigate(`/sUsers/debitDetails/${res.data.data._id}`);
       dispatch(removeAll());
     } catch (error) {
@@ -389,7 +399,6 @@ function DebitNote() {
   return (
     <div className="mb-14 sm:mb-0">
       <div className="flex-1 bg-slate-100 h -screen ">
-   
         <TitleDiv
           title="Debit Note"
           from={`/sUsers/selectVouchers`}

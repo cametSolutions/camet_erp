@@ -16,6 +16,7 @@ import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import TitleDiv from "../../components/common/TitleDiv";
 import FooterButton from "../../components/secUsers/main/FooterButton";
+import { updateDashboardSummaryManually } from "../../../slices/dashboardSlices/fetchDashboardSummary";
 
 function PurchasePayment() {
   // ////////////////dispatch
@@ -220,8 +221,23 @@ function PurchasePayment() {
         withCredentials: true,
       });
 
-      console.log(res.data);
       toast.success(res.data.message);
+      /// to update to summary in dashboard
+      
+      dispatch(
+        updateDashboardSummaryManually({
+          voucher: "payments",
+          amount: enteredAmount,
+        })
+      );
+      /// for updating payables also
+
+      dispatch(
+        updateDashboardSummaryManually({
+          voucher: "outstandingPayables",
+          amount: formData.lastAmount,
+        })
+      );
 
       navigate(`/sUsers/payment/details/${res?.data?.payment._id}`);
       dispatch(removeAll());
@@ -251,7 +267,7 @@ function PurchasePayment() {
           changeDate={changeDate}
           submitHandler={submitHandler}
           removeAll={removeAll}
-          loading={submitLoading }
+          loading={submitLoading}
           tab="add"
         />
         <AddPartyTile

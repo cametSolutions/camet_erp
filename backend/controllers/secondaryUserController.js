@@ -2379,215 +2379,77 @@ export const getBankAndCashSources = async (req, res) => {
 export const getDashboardSummary = async (req, res) => {
   const cmp_id = req.params.cmp_id;
   const { startDate, endDate } = getFinancialYearDates();
+  const { lastFetched } = req.query; // Get lastFetched from frontend
 
   try {
+    // Convert lastFetched to a valid Date object
+    const lastFetchedDate = lastFetched && !isNaN(Number(lastFetched))
+      ? new Date(Number(lastFetched))
+      : null;
+
+    // Define common match condition
+    let matchCondition = { cmp_id };
+
+    if (lastFetchedDate) {
+      matchCondition.updatedAt = { $gt: lastFetchedDate }; // Fetch only updated records
+    }
+
     // Get total sales
     const salesTotal = await salesModel.aggregate([
-      {
-        $match: {
-          cmp_id: cmp_id,
-          date: {
-            $gte: startDate,
-            $lte: endDate,
-          },
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          total: {
-            $sum: { $toDouble: "$finalAmount" },
-          },
-        },
-      },
+      { $match: { ...matchCondition, date: { $gte: startDate, $lte: endDate } } },
+      { $group: { _id: null, total: { $sum: { $toDouble: "$finalAmount" } } } }
     ]);
 
     // Get total purchases
     const purchaseTotal = await purchaseModel.aggregate([
-      {
-        $match: {
-          cmp_id: cmp_id,
-          date: {
-            $gte: startDate,
-            $lte: endDate,
-          },
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          total: {
-            $sum: { $toDouble: "$finalAmount" },
-          },
-        },
-      },
+      { $match: { ...matchCondition, date: { $gte: startDate, $lte: endDate } } },
+      { $group: { _id: null, total: { $sum: { $toDouble: "$finalAmount" } } } }
     ]);
 
     // Get total sale orders
     const saleOrderTotal = await invoiceModel.aggregate([
-      {
-        $match: {
-          cmp_id: cmp_id,
-          date: {
-            $gte: startDate,
-            $lte: endDate,
-          },
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          total: {
-            $sum: { $toDouble: "$finalAmount" },
-          },
-        },
-      },
+      { $match: { ...matchCondition, date: { $gte: startDate, $lte: endDate } } },
+      { $group: { _id: null, total: { $sum: { $toDouble: "$finalAmount" } } } }
     ]);
 
     // Get total receipts
     const receiptTotal = await receiptModel.aggregate([
-      {
-        $match: {
-          cmp_id: cmp_id,
-          date: {
-            $gte: startDate,
-            $lte: endDate,
-          },
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          total: {
-            $sum: "$enteredAmount",
-          },
-        },
-      },
+      { $match: { ...matchCondition, date: { $gte: startDate, $lte: endDate } } },
+      { $group: { _id: null, total: { $sum: "$enteredAmount" } } }
     ]);
 
     // Get total payments
     const paymentTotal = await paymentModel.aggregate([
-      {
-        $match: {
-          cmp_id: cmp_id,
-          date: {
-            $gte: startDate,
-            $lte: endDate,
-          },
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          total: {
-            $sum: "$enteredAmount",
-          },
-        },
-      },
+      { $match: { ...matchCondition, date: { $gte: startDate, $lte: endDate } } },
+      { $group: { _id: null, total: { $sum: "$enteredAmount" } } }
     ]);
 
     // Get total cash transactions
     const cashTotal = await cashModel.aggregate([
-      {
-        $match: {
-          cmp_id: cmp_id,
-          "settlements.created_at": {
-            $gte: startDate,
-            $lte: endDate,
-          },
-        },
-      },
+      { $match: { ...matchCondition, "settlements.created_at": { $gte: startDate, $lte: endDate } } },
       { $unwind: "$settlements" },
-      {
-        $match: {
-          "settlements.created_at": {
-            $gte: startDate,
-            $lte: endDate,
-          },
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          total: {
-            $sum: "$settlements.amount",
-          },
-        },
-      },
+      { $match: { "settlements.created_at": { $gte: startDate, $lte: endDate } } },
+      { $group: { _id: null, total: { $sum: "$settlements.amount" } } }
     ]);
 
     // Get total bank transactions
     const bankTotal = await bankModel.aggregate([
-      {
-        $match: {
-          cmp_id: cmp_id,
-          "settlements.created_at": {
-            $gte: startDate,
-            $lte: endDate,
-          },
-        },
-      },
+      { $match: { ...matchCondition, "settlements.created_at": { $gte: startDate, $lte: endDate } } },
       { $unwind: "$settlements" },
-      {
-        $match: {
-          "settlements.created_at": {
-            $gte: startDate,
-            $lte: endDate,
-          },
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          total: {
-            $sum: "$settlements.amount",
-          },
-        },
-      },
+      { $match: { "settlements.created_at": { $gte: startDate, $lte: endDate } } },
+      { $group: { _id: null, total: { $sum: "$settlements.amount" } } }
     ]);
 
     // Outstanding payables
     const outstandingPayables = await TallyData.aggregate([
-      {
-        $match: {
-          cmp_id: cmp_id,
-          classification: "Cr",
-          bill_date: {
-            $gte: startDate,
-            $lte: endDate,
-          },
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          total: {
-            $sum: "$bill_pending_amt",
-          },
-        },
-      },
+      { $match: { ...matchCondition, classification: "Cr", bill_date: { $gte: startDate, $lte: endDate } } },
+      { $group: { _id: null, total: { $sum: "$bill_pending_amt" } } }
     ]);
 
     // Outstanding receivables
     const outstandingReceivables = await TallyData.aggregate([
-      {
-        $match: {
-          cmp_id: cmp_id,
-          classification: "Dr",
-          bill_date: {
-            $gte: startDate,
-            $lte: endDate,
-          },
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          total: {
-            $sum: "$bill_pending_amt",
-          },
-        },
-      },
+      { $match: { ...matchCondition, classification: "Dr", bill_date: { $gte: startDate, $lte: endDate } } },
+      { $group: { _id: null, total: { $sum: "$bill_pending_amt" } } }
     ]);
 
     // Prepare response with safe handling of empty results
@@ -2611,7 +2473,7 @@ export const getDashboardSummary = async (req, res) => {
       },
     });
   } catch (error) {
-    console.log(error);
+    console.error("Error fetching dashboard summary:", error);
     res.status(500).json({
       success: false,
       message: "Error fetching dashboard summary",
@@ -2619,6 +2481,7 @@ export const getDashboardSummary = async (req, res) => {
     });
   }
 };
+
 
 /**
  * @desc   To get account groups

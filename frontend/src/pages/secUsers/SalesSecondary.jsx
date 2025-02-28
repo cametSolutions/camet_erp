@@ -27,6 +27,7 @@ import AddItemTile from "../../components/secUsers/main/AddItemTile";
 import PaymentSplittingIcon from "../../components/secUsers/main/paymentSplitting/PaymentSplittingIcon";
 import FooterButton from "../../components/secUsers/main/FooterButton";
 import TitleDiv from "../../components/common/TitleDiv";
+import { updateDashboardSummaryManually } from "../../../slices/dashboardSlices/fetchDashboardSummary";
 
 function SalesSecondary() {
   const [additional, setAdditional] = useState(false);
@@ -413,11 +414,29 @@ function SalesSecondary() {
       // console.log(res.data);
       toast.success(res.data.message);
 
+      /// to update to summary in dashboard
+      dispatch(
+        updateDashboardSummaryManually({
+          voucher: "sales",
+          amount: formData.lastAmount,
+        })
+      );
+
+      /// for updating receivables also
+
+      dispatch(
+        updateDashboardSummaryManually({
+          voucher: "outstandingReceivables",
+          amount: formData.lastAmount,
+        })
+      );
+
       navigate(`/sUsers/salesDetails/${res.data.data._id}`, {
         state: {
           from: location?.state?.from || "null",
         },
       });
+
       dispatch(removeAll());
     } catch (error) {
       toast.error(error.response.data.message);

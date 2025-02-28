@@ -16,6 +16,7 @@ import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import TitleDiv from "../../components/common/TitleDiv";
 import FooterButton from "../../components/secUsers/main/FooterButton";
+import { updateDashboardSummaryManually } from "../../../slices/dashboardSlices/fetchDashboardSummary";
 
 function Receipt() {
   // ////////////////dispatch
@@ -226,7 +227,12 @@ function Receipt() {
 
       console.log(res.data);
       toast.success(res.data.message);
-
+      dispatch(
+        updateDashboardSummaryManually({
+          voucher: "receipts",
+          amount: enteredAmount,
+        })
+      );
       navigate(`/sUsers/receipt/details/${res?.data?.receipt._id}`);
       dispatch(removeAll());
     } catch (error) {

@@ -25,6 +25,7 @@ import DespatchDetails from "../../components/secUsers/DespatchDetails";
 import AddItemTile from "../../components/secUsers/main/AddItemTile";
 import TitleDiv from "../../components/common/TitleDiv";
 import FooterButton from "../../components/secUsers/main/FooterButton";
+import { updateDashboardSummaryManually } from "../../../slices/dashboardSlices/fetchDashboardSummary";
 
 function Purchase() {
   const [additional, setAdditional] = useState(false);
@@ -360,6 +361,7 @@ function Purchase() {
       });
 
       toast.success(res.data.message);
+      dispatch(updateDashboardSummaryManually({ voucher: "purchases", amount: lastAmount }));
 
       navigate(`/sUsers/purchaseDetails/${res.data.data._id}`);
       dispatch(removeAll());

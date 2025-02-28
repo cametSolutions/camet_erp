@@ -1,10 +1,11 @@
+/* eslint-disable react-refresh/only-export-components */
 import { useNavigate } from "react-router-dom";
-import useFetch from "../../customHook/useFetch";
 import { useDispatch, useSelector } from "react-redux";
 import { useEffect, useState, useCallback, memo } from "react";
 import { icons } from "./icons/DashboardIcons.jsx";
 import { addTab } from "../../../slices/tallyDataSlice.js";
 // import { Alert, AlertDescription } from "@/components/ui/alert";
+import { fetchDashboardSummary } from "../../../slices/dashboardSlices/fetchDashboardSummary";
 
 const SkeletonItem = () => (
   <div className="p-4 flex items-center gap-5 bg-gray-100 mb-2 border-b animate-pulse">
@@ -23,16 +24,20 @@ const DashboardSummary = () => {
   );
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const {
-    data,
-    error,
-    loading: isLoading,
-  } = useFetch(`/api/sUsers/getDashboardSummary/${cmp_id}`);
+
+  const { data, loading :isLoading } = useSelector((state) => state.dashboardSummary);
+
+
+  useEffect(() => {
+    dispatch(fetchDashboardSummary(cmp_id));
+  }, [dispatch, cmp_id]);
+  
+  
 
   useEffect(() => {
     if (data) {
       const {
-        data: {
+        
           sales,
           purchases,
           saleOrders,
@@ -41,7 +46,7 @@ const DashboardSummary = () => {
           cashOrBank,
           outstandingPayables,
           outstandingReceivables,
-        },
+        
       } = data;
 
       setSummaryData([
@@ -140,6 +145,7 @@ const DashboardSummary = () => {
         ))
       )}
     </div>
+
   );
 };
 

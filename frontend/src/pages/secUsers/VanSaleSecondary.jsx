@@ -26,6 +26,7 @@ import AddPartyTile from "../../components/secUsers/main/AddPartyTile";
 import AddItemTile from "../../components/secUsers/main/AddItemTile";
 import TitleDiv from "../../components/common/TitleDiv";
 import FooterButton from "../../components/secUsers/main/FooterButton";
+import { updateDashboardSummaryManually } from "../../../slices/dashboardSlices/fetchDashboardSummary";
 function VanSaleSecondary() {
   const [additional, setAdditional] = useState(false);
   const [godownname, setGodownname] = useState("");
@@ -413,6 +414,24 @@ function VanSaleSecondary() {
       );
 
       toast.success(res.data.message);
+
+         /// to update to summary in dashboard
+            dispatch(
+              updateDashboardSummaryManually({
+                voucher: "sales",
+                amount: formData.lastAmount,
+              })
+            );
+      
+            /// for updating receivables also
+      
+            dispatch(
+              updateDashboardSummaryManually({
+                voucher: "outstandingReceivables",
+                amount: formData.lastAmount,
+              })
+            );
+      
 
       navigate(`/sUsers/vanSaleDetails/${res.data.data._id}`);
       dispatch(removeAll());

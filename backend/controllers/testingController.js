@@ -364,8 +364,6 @@ export const createAccountGroups = async (req, res) => {
 
         await AccountGroup.insertMany(accountGroupsToInsert); // Bulk insert
       }
-    
-
     }
 
     res.status(200).json({
@@ -447,42 +445,89 @@ export const addAccountGroupIdToParties = async (req, res) => {
 /// adding account groups id to outstanding
 export const addAccountGroupIdToOutstanding = async (req, res) => {
   try {
-    const selfCompanies = await OragnizationModel.find({ type: "self" }).select("_id owner");
+    const selfCompanies = await OragnizationModel.find({ type: "self" }).select(
+      "_id owner"
+    );
 
     for (const company of selfCompanies) {
       const outstanding = await TallyData.find({ cmp_id: company._id });
 
-      const partyIds = outstanding.map(item => item.party_id).filter(Boolean);
+      const partyIds = outstanding.map((item) => item.party_id).filter(Boolean);
       const parties = await PartyModel.find({
         party_master_id: { $in: partyIds },
-        accountGroup: { $in: ["Sundry Debtors", "Sundry Creditors"] }
+        accountGroup: { $in: ["Sundry Debtors", "Sundry Creditors"] },
       }).select("party_master_id accountGroup accountGroup_id");
 
-      const partyMap = new Map(parties.map(party => [party.party_master_id.toString(), party]));
+      const partyMap = new Map(
+        parties.map((party) => [party.party_master_id.toString(), party])
+      );
 
       for (const item of outstanding) {
         const party = partyMap.get(item.party_id?.toString());
 
         if (
-          party && 
-          party.accountGroup && 
-          party.accountGroup_id && 
-          (!item.accountGroup || !item.accountGroup_id) 
+          party &&
+          party.accountGroup &&
+          party.accountGroup_id &&
+          (!item.accountGroup || !item.accountGroup_id)
         ) {
           await TallyData.updateOne(
             { _id: item._id },
-            { $set: { accountGroup: party.accountGroup, accountGroup_id: party.accountGroup_id } }
+            {
+              $set: {
+                accountGroup: party.accountGroup,
+                accountGroup_id: party.accountGroup_id,
+              },
+            }
           );
         }
       }
     }
 
-    res.status(200).json({ message: "Account groups added to outstanding records successfully" });
+    res
+      .status(200)
+      .json({
+        message: "Account groups added to outstanding records successfully",
+      });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Error in updating outstanding records" });
   }
 };
 
+///// update time stamps
 
+export const updateTimestamps = async (req, res) => {
+  try {
+    const result = await TallyData.updateMany(
+      // { cmp_id: "66b870a95387e8f388f9af6c" }, // Filter for a specific company
+      [
+        {
+          $set: {
+            updatedAt: {
+              $cond: {
+                if: { $gt: ["$createdAt", null] }, // If createdAt exists
+                then: new Date(), // Set updatedAt to the current timestamp
+                else: "$bill_date", // Otherwise, use bill_date
+              },
+            },
+            createdAt: {
+              $cond: {
+                if: { $gt: ["$createdAt", null] }, // If createdAt exists
+                then: "$createdAt", // Keep it unchanged
+                else: "$bill_date", // Otherwise, set it to bill_date
+              },
+            },
+          },
+        },
+      ]
+    );
 
+    result.modifiedCount > 0
+      ? res.status(200).json({ message: `Timestamps updated successfully: ${result.modifiedCount}` })
+      : res.status(200).json({ message: "No documents updated" });
+  } catch (error) {
+    console.error("Error updating timestamps:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
