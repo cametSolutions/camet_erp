@@ -129,7 +129,7 @@ function AdditemOfSale({
                 {/* {el?.product_name} */}
               </p>
               {el?.hasGodownOrBatch && (
-                <div className="flex flex-col">
+                <div className="flex flex-col font-normal">
                   <div className="flex">
                     <span>Net Amount :  </span>
                     <span>{el?.total || 0}</span>
@@ -162,9 +162,9 @@ function AdditemOfSale({
 
               {!el?.hasGodownOrBatch && (
                 <>
-                  <div className="flex gap-1 items-center ">
+                  <div className="flex gap-1 items-center font-normal ">
                     <p>
-                     <span>Mrp</span> : {el?.item_mrp || 0}
+                     <span>MRP</span> : {el?.item_mrp || 0}
                     </p>
                     |
                     <p>
@@ -176,13 +176,13 @@ function AdditemOfSale({
                     </p>
                     
                   </div>
-                  <div className="flex">
-                    <p className="text-red-500">STOCK :    </p>
+                  <div className="flex font-normal">
+                    <p className="text-red-500 ">STOCK :    </p>
                     <span>{el?.GodownList[0]?.balance_stock}</span>
                     <span className="text-[11px] ml-1 mt-[0.5px] "> / {el?.unit}</span>
                   </div>
-                  <div>
-                    <span>Total : </span>
+                  <div className="font-normal">
+                    <span >Total : </span>
                     <span>{el?.GodownList[0]?.individualTotal || 0}</span>
                   </div>
                 </>

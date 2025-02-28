@@ -116,7 +116,7 @@ function ProductListSecondary() {
 
   useEffect(() => {
     const calculateHeight = () => {
-      const newHeight = window.innerHeight - 117;
+      const newHeight = window.innerHeight - 95;
       setListHeight(newHeight);
     };
 
@@ -136,11 +136,10 @@ function ProductListSecondary() {
   const Row = ({ index, style }) => {
     const el = filteredProducts[index];
 
-    
     const adjustedStyle = {
       ...style,
       marginTop: "16px",
-      height: "135px",
+      height: "128px",
     };
 
     return (
@@ -154,45 +153,48 @@ function ProductListSecondary() {
             <p className="font-bold text-sm">{el?.product_name}</p>
           </div>
           <hr className="mt-4" />
-          <div className="flex justify-between items-center w-full gap-3 mt-4 text-sm font-semibold ">
+          <div className="flex justify-between items-center w-full gap-3 mt-4 text-sm  ">
             <div className="flex flex-col ">
               <div className=" flex   gap-2 text-sm ">
                 <div className="flex gap-2 text-nowrap">
-                  <p className=" text-gray-400 uppercase ">Hsn :</p>
-                  <p className=" text-gray-400"> {el?.hsn_code}</p>
+                  <p className=" text-gray-500 uppercase ">Hsn :</p>
+                  <p className=" text-gray-500"> {el?.hsn_code}</p>
                 </div>
                 <div className="flex gap-2 ">
-                  <p className=" text-gray-400">Tax :</p>
-                  <p className=" text-gray-400"> {`${el?.igst} %`}</p>
+                  <p className=" text-gray-500">Tax :</p>
+                  <p className=" text-gray-500"> {`${el?.igst} %`}</p>
                 </div>
               </div>
 
               {el?.item_mrp && (
                 <div className="flex gap-2 text-nowrap">
-                  <p className=" text-gray-400 uppercase ">Mrp :</p>
-                  <p className=" text-gray-400"> {el?.item_mrp}</p>
+                  <p className=" text-gray-500 uppercase ">Mrp :</p>
+                  <p className=" text-gray-500"> {el?.item_mrp}</p>
                 </div>
               )}
             </div>
 
             {/* buttons */}
-            <div
-              className={`
+
+            <div className="flex items-center ">
+              <div
+                className={`
                  ${type !== "self" ? "pointer-events-none opacity-50" : ""}  
 
 
-              flex gap-3 mt-2 px-4`}
-            >
-              <Link to={`/sUsers/editProduct/${el._id}`}>
-                <FaEdit className="text-blue-500" />
-              </Link>
+              flex gap-3  px-4`}
+              >
+                <Link to={`/sUsers/editProduct/${el._id}`}>
+                  <FaEdit className="text-blue-500" />
+                </Link>
 
-              <MdDelete
-                onClick={() => {
-                  handleDelete(el._id);
-                }}
-                className="text-red-500"
-              />
+                <MdDelete
+                  onClick={() => {
+                    handleDelete(el._id);
+                  }}
+                  className="text-red-500"
+                />
+              </div>
               <PiBarcode onClick={() => handlePrint(el)} />
             </div>
           </div>
@@ -246,10 +248,10 @@ function ProductListSecondary() {
 
         <div className="">
           <List
-            className=""
+            className="pb-4"
             height={listHeight} // Specify the height of your list
             itemCount={filteredProducts.length} // Specify the total number of items
-            itemSize={165} // Specify the height of each item
+            itemSize={140} // Specify the height of each item
           >
             {Row}
           </List>

@@ -19,7 +19,6 @@ function SearchGodown() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-
   const cpm_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
@@ -58,8 +57,8 @@ function SearchGodown() {
     if (search === "") {
       setFilteredGodowns(godowns);
     } else {
-      const filtered = godowns.filter((el) =>
-        el.partyName.toLowerCase().includes(search.toLowerCase())
+      const filtered = godowns?.filter((el) =>
+        el?.godown?.toLowerCase()?.includes(search.toLowerCase())
       );
       setFilteredGodowns(filtered);
     }

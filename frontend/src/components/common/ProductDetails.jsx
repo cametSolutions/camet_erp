@@ -58,7 +58,7 @@ console.log(details);
               )}
 
               {item?.expdt && (
-                <p className="text-red-400 font-semibold text-[10px] md:text-sm">
+                <p className="text-red-400 font-normal text-[10px] md:text-sm">
                   Expires in {item?.expdt}
                 </p>
               )}
@@ -70,7 +70,7 @@ console.log(details);
                       <>
                       
                         <p className="   text-xs md:text-sm">
-                         Mrp : {details?.item_mrp || 0} |
+                         MRP : {details?.item_mrp || 0} |
                         </p>
                         <p className="   text-xs md:text-sm  ml-1">
                          Price : {item?.selectedPriceRate || 0}
@@ -81,7 +81,7 @@ console.log(details);
                       </>
                     )}
                   </div>
-                  <p className="text-gray-500 font-semibold  text-sm md:text-sm ">
+                  <p className="text-gray-500 font-normal  text-sm md:text-sm ">
                     Stock: {item.balance_stock} /
                     <span className="text-black ml-1">{details?.unit || ""}</span>
                   </p>
