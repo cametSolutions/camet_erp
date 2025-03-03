@@ -2667,11 +2667,15 @@ export const addSubGroup = async (req, res) => {
   try {
     const { accountGroup, subGroup } = req?.body;
 
+     const generatedId = new mongoose.Types.ObjectId();
+
     const newSubGroup = new SubGroup({
-      accountGroup_id: new mongoose.Types.ObjectId(accountGroup),
+      accountGroup_id:accountGroup,
       subGroup: subGroup,
       cmp_id: cmp_id,
       Primary_user_id: req.owner,
+      subGroup_id: generatedId,
+      _id: generatedId,
     });
 
     await newSubGroup.save();

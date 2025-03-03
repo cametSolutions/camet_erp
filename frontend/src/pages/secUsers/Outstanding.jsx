@@ -242,7 +242,7 @@ function Outstanding() {
   );
 
   return (
-    <div className="h-screen overflow-hidden">
+    <div className="h-screen ">
       <div
         id="title-div"
         className="sticky top-0 flex flex-col z-30 bg-white shadow-lg "
@@ -343,7 +343,7 @@ function Outstanding() {
         <div
         // ref={containerRef}
         // style={{ height: `${listHeight}px` }}
-         className=" overflow-y-scroll mt-6 px-4 pb-10">
+         className=" mt-6 px-4 pb-10">
           {groupData.map((group) => (
             <div key={group._id} className="mb-4 font-bold">
               <button
