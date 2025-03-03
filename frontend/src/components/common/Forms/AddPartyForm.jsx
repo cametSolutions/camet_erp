@@ -1,14 +1,18 @@
 /* eslint-disable react/prop-types */
 import { useEffect, useState } from "react";
-import { accountGroups03 } from "../../../../constants/accountGroups";
 import { toast } from "react-toastify";
 import { useSelector } from "react-redux";
 import { statesData } from "../../../../constants/states.js";
 import { countries } from "../../../../constants/countries.js";
+import useFetch from "../../../customHook/useFetch.jsx";
 
 function AddPartyForm({ submitHandler, partyDetails = {}, userType }) {
-  const [tab, setTab] = useState("business");
+  // const [tab, setTab] = useState("business");
   const [accountGroup, setAccountGroup] = useState("");
+  const [accountGroup_id, setAccountGroup_id] = useState("");
+  const [subGroup, setSubGroup] = useState("");
+  const [subGroup_id, setSubGroup_id] = useState("");
+
   const [partyName, setPartyName] = useState("");
   const [mobileNumber, setMobileNumber] = useState("");
   const [emailID, setEmailID] = useState("");
@@ -34,12 +38,21 @@ function AddPartyForm({ submitHandler, partyDetails = {}, userType }) {
   const selectedOrganization =
     userType === "primaryUser" ? primarySelectedOrg : secondarySelectedOrg;
 
+  const { data: accountGroupList } = useFetch(
+    `/api/sUsers/getAccountGroups/${selectedOrganization._id}`
+  );
+  const { data: subGroupList } = useFetch(
+    `/api/sUsers/getSubGroup/${selectedOrganization._id}`
+  );
 
   useEffect(() => {
     // setCmp_id(companytId);
     if (Object.entries(partyDetails)?.length > 0) {
       const {
         accountGroup,
+        accountGroup_id,
+        subGroup,
+        subGroup_id,
         partyName,
         mobileNumber,
         emailID,
@@ -57,6 +70,9 @@ function AddPartyForm({ submitHandler, partyDetails = {}, userType }) {
       } = partyDetails;
 
       setAccountGroup(accountGroup);
+      setAccountGroup_id(accountGroup_id);
+      setSubGroup(subGroup);
+      setSubGroup_id(subGroup_id);
       setPartyName(partyName);
       setMobileNumber(mobileNumber);
       setEmailID(emailID);
@@ -71,48 +87,46 @@ function AddPartyForm({ submitHandler, partyDetails = {}, userType }) {
       setCountry(country);
       setState(state);
       setPin(pin);
-
     }
   }, [partyDetails]);
 
+  const handleAccountGroup = (value) => {
+    setAccountGroup_id(value);
+    const accountGroupName = accountGroupList?.data?.find(
+      (item) => item._id === value
+    );
+
+    if (accountGroupName) {
+      setAccountGroup(accountGroupName.accountGroup);
+    }
+    setSubGroup("");
+    setSubGroup_id("");
+  };
+  const handleSubGroup = (value) => {
+    setSubGroup_id(value);
+    const selectedSubGroup = subGroupList?.data?.find(
+      (item) => item._id === value
+    );
+
+    if (selectedSubGroup) {
+      setSubGroup(selectedSubGroup?.subGroup);
+    }
+  };
+
   const submitForm = async () => {
-    // let accGroupValidation = false;
-    // if (
-    //   accountGroup === "Sundry Creditors" ||
-    //   accountGroup === "Sundry Debtors"
-    // ) {
-    //   accGroupValidation = true;
-    // }
-    if (
-      [
-        accountGroup,
-        partyName,
-        // emailID,
-        // gstNo,
-        // panNo,
-        // billingAddress,
-        // openingBalanceType,
-        // shippingAddress,
-      ].some((field) => field.trim() === "")
-    ) {
+    if ([accountGroup, partyName].some((field) => field.trim() === "")) {
       toast.error("All fields are required");
       return;
     }
 
-    // if (accGroupValidation && (!emailID || !mobileNumber)) {
-    //   toast.error(
-    //     "Email ID and Mobile Number are required when Account Group is Sundry Creditors or Sundry Debtors"
-    //   );
-    //   return;
-    // }
-
-
-    
-    if (selectedOrganization?.country === "India" && mobileNumber &&  !/^\d{10}$/.test(mobileNumber)) {
+    if (
+      selectedOrganization?.country === "India" &&
+      mobileNumber &&
+      !/^\d{10}$/.test(mobileNumber)
+    ) {
       toast.error("Mobile number must be 10 digits");
       return;
     }
-
 
     const gstRegex = /^[0-9A-Za-z]{15}$/;
 
@@ -126,29 +140,9 @@ function AddPartyForm({ submitHandler, partyDetails = {}, userType }) {
       return;
     }
 
-
-    // if(!pin){
-    //   toast.error("Pin is required");
-    //   return;
-    // }
-  
-
-    // if (pin && country === "India" && !/^\d{6}$/.test(pin)) {
-    //   toast.error("Invalid PIN number");
-    //   return;
-    // }
-
-    // if(state === "") {
-    //   toast.error("State is required");
-    //   return;
-    // }
-
-
-
     const formData = {
-      // cpm_id,
-      // Secondary_user_id,
       accountGroup,
+      accountGroup_id,
       partyName,
       mobileNumber,
       emailID,
@@ -163,10 +157,13 @@ function AddPartyForm({ submitHandler, partyDetails = {}, userType }) {
       country,
       state,
       pin,
+      subGroup,
+      subGroup_id,
     };
 
     submitHandler(formData);
   };
+
 
   return (
     <div>
@@ -174,18 +171,7 @@ function AddPartyForm({ submitHandler, partyDetails = {}, userType }) {
         <div className="w-full lg:w-8/12 px-4 mx-auto  pb-[30px] mt-5  ">
           <div className="relative flex flex-col min-w-0 break-words w-full mb-6 shadow-lg rounded-lg bg-blueGray-100 border-0">
             <div className="rounded-t bg-white mb-0 px-6 py-2">
-              <div className="text-center flex justify-between">
-                {/* <h6 className="text-blueGray-700 text-xl font-bold">
-                    Organization Information
-                  </h6> */}
-                {/* <button
-                    className="bg-pink-500 text-white active:bg-pink-600 font-bold uppercase text-xs px-4 py-2 rounded shadow hover:shadow-md outline-none focus:outline-none mr-1 ease-linear transition-all duration-150 transform hover:scale-105"
-                    type="button"
-                    onClick={submitHandler}
-                  >
-                    Add
-                  </button> */}
-              </div>
+              <div className="text-center flex justify-between"></div>
             </div>
             <div className="flex-auto px-4 lg:px-10 py-10 pt-0">
               <form encType="multipart/form-data">
@@ -204,15 +190,44 @@ function AddPartyForm({ submitHandler, partyDetails = {}, userType }) {
                       <select
                         id="account-group"
                         className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                        value={accountGroup}
-                        onChange={(e) => setAccountGroup(e.target.value)}
+                        value={accountGroup_id}
+                        onChange={(e) => handleAccountGroup(e.target.value)}
                       >
                         <option value="">Select Account Group</option>
-                        {accountGroups03.map((group, index) => (
-                          <option key={index} value={group}>
-                            {group}
+                        {accountGroupList?.data?.map((group, index) => (
+                          <option key={index} value={group._id}>
+                            {group?.accountGroup}
                           </option>
                         ))}
+                      </select>
+                    </div>
+                  </div>
+                  <div className="w-full lg:w-6/12 px-4">
+                    <div className="relative w-full mb-3">
+                      <label
+                        className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
+                        htmlFor="account-group"
+                      >
+                        Sub Group
+                      </label>
+                      <select
+                        disabled={!accountGroup_id}
+                        id="sub-group"
+                        className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                        value={subGroup_id}
+                        onChange={(e) => handleSubGroup(e.target.value)}
+                      >
+                        <option value="">Select Sub Group</option>
+                        {subGroupList?.data
+                          ?.filter(
+                            (item) =>
+                              item.accountGroup_id?._id === accountGroup_id
+                          )
+                          ?.map((subGroup, index) => (
+                            <option key={index} value={subGroup._id}>
+                              {subGroup?.subGroup}
+                            </option>
+                          ))}
                       </select>
                     </div>
                   </div>
@@ -283,7 +298,7 @@ function AddPartyForm({ submitHandler, partyDetails = {}, userType }) {
                         className="border-0 px-3 mr-12 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                         onChange={(e) => {
                           setCountry(e.target.value);
-                         
+
                           setState("");
                         }}
                         value={country}
@@ -373,7 +388,7 @@ function AddPartyForm({ submitHandler, partyDetails = {}, userType }) {
                   </div>
                 </div>
 
-                {tab === "business" && (
+                {/* {tab === "business" && ( */}
                   <div className="flex flex-wrap mt-12">
                     <div className="w-full lg:w-6/12 px-4">
                       <div className="relative w-full mb-3">
@@ -443,9 +458,9 @@ function AddPartyForm({ submitHandler, partyDetails = {}, userType }) {
                       </div>
                     </div>
                   </div>
-                )}
+                {/* // )} */}
 
-                {tab === "credit" && (
+                {/* {tab === "credit" && (
                   <>
                     <div className="flex flex-wrap mt-12">
                       <div className="w-full lg:w-6/12 px-4">
@@ -532,7 +547,7 @@ function AddPartyForm({ submitHandler, partyDetails = {}, userType }) {
                       </div>
                     </div>
                   </>
-                )}
+                )} */}
 
                 <div className="flex items-center  gap-0 mt-4 m-4 relative "></div>
                 <button

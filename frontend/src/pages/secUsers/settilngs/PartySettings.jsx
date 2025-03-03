@@ -2,9 +2,19 @@
 import TitleDiv from "../../../components/common/TitleDiv";
 import SettingsCard from "../../../components/common/SettingsCard";
 import { FiCalendar, FiCreditCard, FiDollarSign, FiMapPin, FiTag, FiUsers  } from "react-icons/fi";
+import { FaLayerGroup } from "react-icons/fa";
+
 
 const PartySettings = () => {
     const settingsOptions = [
+        {
+          title: "Add Sub Group",
+          description: "Add Sub Group of your party",
+          icon: <FaLayerGroup />,
+          to: "/sUsers/addSubGroup",
+          active: true,
+          toggle: false,
+        },
         {
           title: "Party Settings",
           description: "Configure your party settings",

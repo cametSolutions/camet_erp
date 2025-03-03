@@ -150,12 +150,13 @@ export const fetchOutstandingTotal = async (req, res) => {
       let totalOutstandingReceivable = 0;
       
       ledgerData.forEach((item) => {
-        totalOutstandingDrCr += item.totalBillAmount;
+      
         if (item.classification === "Cr") {
           totalOutstandingPayable += item.totalBillAmount;
         } else {
           totalOutstandingReceivable += item.totalBillAmount;
         }
+        totalOutstandingDrCr = Math.abs( totalOutstandingReceivable-totalOutstandingPayable);
       });
 
       return res.status(200).json({

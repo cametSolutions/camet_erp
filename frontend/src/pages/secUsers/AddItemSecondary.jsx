@@ -19,7 +19,6 @@ import {
   changeCount,
   addPriceRate,
 } from "../../../slices/invoiceSecondary";
-import { HashLoader } from "react-spinners";
 import { FixedSizeList as List } from "react-window";
 import { Decimal } from "decimal.js";
 import SearchBar from "../../components/common/SearchBar";
@@ -449,13 +448,21 @@ function AddItemSecondary() {
             <div className="flex flex-col font-bold text-sm md:text-sm  gap-1 leading-normal">
               <p>{el.product_name}</p>
               <div className="flex gap-1 items-center">
-                <p>₹ {el.selectedPriceRate || 0}</p>{" "}
-                <span className="text-[10px] mt-1">/ {el?.unit}</span>
+                <p>
+                  <span>MRP</span> : {el?.item_mrp || 0}
+                </p>
+                | 
+
+                <p>Price : {el.selectedPriceRate || 0}</p>{" "}
               </div>
 
               <div className="flex">
                 <p className="text-red-500">STOCK : </p>
-                <span>{el.balance_stock}</span>
+                <span>{el.balance_stock}</span>{" "}
+                <span className="text-[11px] ml-1 mt-[0.5px] ">
+                  {" "}
+                  / {el?.unit}
+                </span>
               </div>
 
               <div>
@@ -619,8 +626,12 @@ function AddItemSecondary() {
           </List>
         )}
 
-        {item.length > 0 &&  (
-          <div className={` ${loader && "opacity-50 pointer-events-none"}  sticky bottom-0 bg-white  w-full flex justify-center p-3 border-t h-[70px`} >
+        {item.length > 0 && (
+          <div
+            className={` ${
+              loader && "opacity-50 pointer-events-none"
+            }  sticky bottom-0 bg-white  w-full flex justify-center p-3 border-t h-[70px`}
+          >
             <button
               onClick={continueHandler}
               className="bg-violet-700  w-[85%] text-ld font-bold text-white p-2 rounded-md"

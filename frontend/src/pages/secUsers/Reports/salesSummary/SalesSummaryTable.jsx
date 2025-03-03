@@ -473,7 +473,7 @@ function SalesSummaryTable() {
 
                   // saleObject.saleAmount += aggregation.totalIndividualTotal;
                 } else {
-                  const godown = h.GodownList.map((items) => {
+                  h.GodownList.map((items) => {
                     if (items.added) {
                       const { basePrice, taxAmount } = calculateTaxAndPrice(
                         h.isTaxInclusive,

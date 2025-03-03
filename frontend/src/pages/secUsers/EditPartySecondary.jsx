@@ -2,7 +2,6 @@
 import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import api from "../../api/api";
-import { useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { IoIosArrowRoundBack } from "react-icons/io";

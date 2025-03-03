@@ -248,9 +248,9 @@ function Outstanding() {
         className="sticky top-0 flex flex-col z-30 bg-white shadow-lg "
       >
         <div className="flex items-center justify-between w-full bg-[#012a4a] shadow-lg px-4 py-3">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 cursor-pointer">
             <IoIosArrowRoundBack
-              onClick={() => navigate("/sUsers/reports")}
+              onClick={() => navigate(-1,{ replace: true })}
               className="text-white text-3xl"
             />
             <p className="text-white text-lg font-bold">Outstanding</p>
@@ -269,7 +269,7 @@ function Outstanding() {
                 dispatch(addTab(e.target.value));
               }}
               value={selectedTab}
-              className="w-full bg-[#219ebc] text-white sm:max-w-sm md:max-w-sm text-sm font-bold py-2 px-3 cursor-pointer no-focus-box border-none !border-b"
+              className="w-full bg-[#219ebc] text-white sm:max-w-sm md:max-w-sm text-sm font-bold py-2 px-3 cursor-pointer no-focus-box outline-none border-none !border-b"
             >
               <option value="ledger">Ledger</option>
               <option value="payables">Payables</option>

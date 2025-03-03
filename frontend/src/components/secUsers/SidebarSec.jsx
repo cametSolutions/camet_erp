@@ -45,8 +45,8 @@ function SidebarSec({ TAB, showBar }) {
   const [tab, setTab] = useState(selectedTab);
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const prevOrg = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg
+  const { secSelectedOrg: prevOrg, refreshOrganizations } = useSelector(
+    (state) => state.secSelectedOrganization
   );
 
   const sidebarRef = useRef(null);
@@ -170,10 +170,11 @@ function SidebarSec({ TAB, showBar }) {
   }, [prevOrg, dispatch]);
 
   useEffect(() => {
-    if (!userData || !userData.name) {
-      getUserData();
-    }
-  }, [getUserData, userData]);
+    // if (!userData || !userData.name) {
+    //   getUserData();
+    // }
+    getUserData();
+  }, [refreshOrganizations]);
 
   useEffect(() => {
     if (window.innerWidth < 768) {
@@ -310,34 +311,6 @@ function SidebarSec({ TAB, showBar }) {
             )}
           </span>
         </Link>
-
-        {/* {item.subItems && expandedSections.inventory && (
-          <ul className="mt-2 space-y-2">
-            {item.subItems.map((subItem, subIndex) => (
-              <li
-                key={subIndex}
-                className={`${
-                  selectedSubTab === subItem.tab
-                    ? "text-white"
-                    : "text-gray-400"
-                } hover:text-white ml-4 rounded-md mt-5 px-4 py-2 flex items-center gap-4 text-sm font-medium`}
-              >
-                <Link
-                  className="flex items-center gap-3 mb-3"
-                  to={subItem.to}
-                  onClick={() => {
-                    handleSidebarItemClick(subItem.tab);
-                    setTab(item.tab);
-                    setSelectedSubTab(subItem.tab);
-                  }}
-                >
-                  {subItem.icon}
-                  <span>{subItem.label}</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )} */}
       </>
     );
   };

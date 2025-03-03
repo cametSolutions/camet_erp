@@ -515,7 +515,7 @@ export const cancelSale = async (req, res) => {
 
     /// if sale is created from order conversion then revert it
 
-    if(sale?.convertedFrom.length > 0){
+    if(sale?.convertedFrom?.length > 0){
       await reverseConversionStatusOfOrder(sale?.convertedFrom, session);
     }
 

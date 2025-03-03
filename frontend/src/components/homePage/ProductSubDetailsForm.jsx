@@ -15,8 +15,7 @@ const ProductSubDetailsForm = ({ tab, handleLoader }) => {
   const [reload, setReload] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const [currentPage, setCurrentPage] = useState(1);
-  const [postPerPage, setPostPerPage] = useState(5);
+
   const [edit, setEdit] = useState({
     id: "",
     enabled: false,
@@ -114,63 +113,63 @@ const ProductSubDetailsForm = ({ tab, handleLoader }) => {
     }
   };
 
-  const deleteSubDetails = async (id, type) => {
-    if (tab === "godown") {
-      const isDefaultGodown = data.find((d) => d._id === id)?.defaultGodown;
+    const deleteSubDetails = async (id, type) => {
+      if (tab === "godown") {
+        const isDefaultGodown = data.find((d) => d._id === id)?.defaultGodown;
 
-      if (isDefaultGodown) {
+        if (isDefaultGodown) {
+          const result = await Swal.fire({
+            title: "Cannot Delete",
+            text: "Cannot delete default godown",
+            icon: "warning",
+            confirmButtonText: "OK",
+          });
+          return;
+        }
+      }
+      try {
+        // Show a confirmation dialog
         const result = await Swal.fire({
-          title: "Cannot Delete",
-          text: "Cannot delete default godown",
+          title: "Are you sure?",
+          text: `You are about to delete this ${tab}. This action cannot be undone!`,
           icon: "warning",
-          confirmButtonText: "OK",
+          showCancelButton: true,
+          confirmButtonColor: "#3085d6",
+          cancelButtonColor: "#d33",
+          confirmButtonText: "Yes, delete it!",
         });
-        return;
-      }
-    }
-    try {
-      // Show a confirmation dialog
-      const result = await Swal.fire({
-        title: "Are you sure?",
-        text: `You are about to delete this ${tab}. This action cannot be undone!`,
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonColor: "#3085d6",
-        cancelButtonColor: "#d33",
-        confirmButtonText: "Yes, delete it!",
-      });
 
-      // If the user confirms the deletion
-      if (result.isConfirmed) {
-        setLoading(true);
-        handleLoader(true);
-        const res = await api.delete(
-          `/api/${user}/deleteProductSubDetails/${orgId}/${id}?type=${tab}`,
-          {
-            withCredentials: true,
-          }
+        // If the user confirms the deletion
+        if (result.isConfirmed) {
+          setLoading(true);
+          handleLoader(true);
+          const res = await api.delete(
+            `/api/${user}/deleteProductSubDetails/${orgId}/${id}?type=${tab}`,
+            {
+              withCredentials: true,
+            }
+          );
+
+          setReload(!reload);
+          // Show a success message
+          Swal.fire("Deleted!", `The ${tab} has been deleted.`, "success");
+
+          // You might want to update your local state here
+        }
+      } catch (error) {
+        console.log(error);
+
+        // Show an error message
+        Swal.fire(
+          "Error",
+          error.response?.data?.message || "An error occurred while deleting",
+          "error"
         );
-
-        setReload(!reload);
-        // Show a success message
-        Swal.fire("Deleted!", `The ${tab} has been deleted.`, "success");
-
-        // You might want to update your local state here
+      } finally {
+        setLoading(false);
+        handleLoader(false);
       }
-    } catch (error) {
-      console.log(error);
-
-      // Show an error message
-      Swal.fire(
-        "Error",
-        error.response?.data?.message || "An error occurred while deleting",
-        "error"
-      );
-    } finally {
-      setLoading(false);
-      handleLoader(false);
-    }
-  };
+    };
 
   const handleEdit = async (id, value) => {
     if (tab === "godown") {
