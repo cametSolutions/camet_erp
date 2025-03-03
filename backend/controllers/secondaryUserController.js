@@ -756,6 +756,7 @@ export const getProducts = async (req, res) => {
         __v: 1,
         GodownList: 1,
         batchEnabled: 1,
+        item_mrp:1
       },
     };
 

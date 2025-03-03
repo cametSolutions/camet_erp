@@ -3,7 +3,6 @@
 import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 
-
 const ProductDetails = ({
   details,
   setHeight,
@@ -15,9 +14,11 @@ const ProductDetails = ({
   heights,
   tab = "",
 }) => {
-
   const detailsRef = useRef();
   const batchOrGodownList = details?.GodownList;
+
+console.log(details);
+  
 
   useEffect(() => {
     if (detailsRef.current) {
@@ -26,7 +27,6 @@ const ProductDetails = ({
   }, [details, heights, setHeight]);
 
   const navigate = useNavigate();
-
 
   return (
     <div
@@ -41,9 +41,7 @@ const ProductDetails = ({
           >
             <div className="flex flex-col gap-1  ">
               {item?.batch && (
-                <p className="font-bold text-sm md:text-sm">
-                   {item?.batch}
-                </p>
+                <p className="font-bold text-sm md:text-sm">{item?.batch}</p>
               )}
 
               {/* <p className="font-bold text-xs md:text-sm">Batch {item?.batch}</p> */}
@@ -60,7 +58,7 @@ const ProductDetails = ({
               )}
 
               {item?.expdt && (
-                <p className="text-red-400 font-semibold text-[10px] md:text-sm">
+                <p className="text-red-400 font-normal text-[10px] md:text-sm">
                   Expires in {item?.expdt}
                 </p>
               )}
@@ -70,11 +68,12 @@ const ProductDetails = ({
                   <div className="flex items-center">
                     {tab !== "stockTransfer" && (
                       <>
+                      
                         <p className="   text-xs md:text-sm">
-                          ₹ {item?.selectedPriceRate || 0}/{" "}
-                          <span className="text-black">
-                            {details?.unit || ""}
-                          </span>
+                         MRP : {details?.item_mrp || 0} |
+                        </p>
+                        <p className="   text-xs md:text-sm  ml-1">
+                         Price : {item?.selectedPriceRate || 0}
                         </p>
                         <p className="  text-xs md:text-sm ml-2 font-semibold">
                           ( ₹ {item?.individualTotal} )
@@ -82,9 +81,9 @@ const ProductDetails = ({
                       </>
                     )}
                   </div>
-                  <p className="text-gray-500 font-semibold  text-sm md:text-sm ">
-                    {" "}
-                    Stock: {item.balance_stock}
+                  <p className="text-gray-500 font-normal  text-sm md:text-sm ">
+                    Stock: {item.balance_stock} /
+                    <span className="text-black ml-1">{details?.unit || ""}</span>
                   </p>
                 </>
               )}
@@ -115,11 +114,9 @@ const ProductDetails = ({
                                 godownName || "nil"
                               }/${index}`,
                               {
-                                state:{from:tab}
+                                state: { from: tab },
                               }
                             );
-
-                   
                           }}
                           className=" px-2 rounded-md border-violet-500 font-bold border-2 text-violet-500 text-xs"
                         >

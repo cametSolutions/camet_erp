@@ -66,6 +66,9 @@ const productSchema = new mongoose.Schema({
   purchase_cost: {
     type: String,
   },
+  item_mrp:{
+    type: Number,
+  },
   Priceleveles: {
     type: Array, // Array of strings
     default: [],

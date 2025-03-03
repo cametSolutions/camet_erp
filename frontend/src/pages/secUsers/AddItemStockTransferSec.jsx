@@ -9,9 +9,9 @@ import { useSelector } from "react-redux";
 import { useDispatch } from "react-redux";
 
 import {
-  setBrandInRedux,
-  setCategoryInRedux,
-  setSubCategoryInRedux,
+  // setBrandInRedux,
+  // setCategoryInRedux,
+  // setSubCategoryInRedux,
   addAllProducts,
   updateItem,
   addItem,
@@ -28,9 +28,7 @@ import { IoIosArrowUp } from "react-icons/io";
 
 function AddItemStockTransferSec() {
   const [item, setItem] = useState([]);
-  const [brands, setBrands] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [subCategories, setSubCategories] = useState([]);
+
   const [selectedBrand, setSelectedBrand] = useState("");
   const [selectedCategory, setseleCtedCategory] = useState("");
   const [selectedSubCategory, setSelectedSubCategory] = useState("");
@@ -54,7 +52,6 @@ function AddItemStockTransferSec() {
   const selectedGodownId = useSelector(
     (state) => state.stockTransferSecondary.selectedGodown.godown_id
   );
-  console.log(selectedGodownId);
 
   useEffect(() => {
     if (!selectedGodownId || selectedGodownId === "") {
@@ -89,7 +86,7 @@ function AddItemStockTransferSec() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const listRef = useRef(null);
-  const location = useLocation();
+  // const location = useLocation();
 
   // ///////////////////////////Godown name///////////////////////////////////
   // useEffect(() => {
@@ -197,16 +194,16 @@ function AddItemStockTransferSec() {
             }
           });
           setItem(updatedItems);
-          if (updatedItems.length > 0) {
-            fetchFilters();
-          }
+          // if (updatedItems.length > 0) {
+          //   fetchFilters();
+          // }
 
           // setRefresh((prevRefresh) => !prevRefresh);
         } else {
           setItem(productData);
-          if (productData.length > 0) {
-            fetchFilters();
-          }
+          // if (productData.length > 0) {
+          //   fetchFilters();
+          // }
           // setRefresh((prevRefresh) => !prevRefresh);
         }
 
@@ -250,48 +247,48 @@ function AddItemStockTransferSec() {
 
   //////////////////////////////orgId////////////////////////////////
 
-  const orgId = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg._id
-  );
+  // const orgId = useSelector(
+  //   (state) => state.secSelectedOrganization.secSelectedOrg._id
+  // );
 
-  const type = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg.type
-  );
+  // const type = useSelector(
+  //   (state) => state.secSelectedOrganization.secSelectedOrg.type
+  // );
 
   //////////////////////////////fetchFilters////////////////////////////////
 
   // useEffect(() => {
-  const fetchFilters = async () => {
-    try {
-      let res;
-      if (type == "self") {
-        res = await api.get(`/api/sUsers/fetchFilters/${orgId}`, {
-          withCredentials: true,
-        });
-      } else {
-        res = await api.get(`/api/sUsers/fetchAdditionalDetails/${orgId}`, {
-          withCredentials: true,
-        });
-      }
+  // const fetchFilters = async () => {
+  //   try {
+  //     let res;
+  //     if (type == "self") {
+  //       res = await api.get(`/api/sUsers/fetchFilters/${orgId}`, {
+  //         withCredentials: true,
+  //       });
+  //     } else {
+  //       res = await api.get(`/api/sUsers/fetchAdditionalDetails/${orgId}`, {
+  //         withCredentials: true,
+  //       });
+  //     }
 
-      if (type === "self") {
-        const { brands, categories, subcategories, priceLevels } =
-          res.data.data;
-        // setBrands(brands);
-        // setCategories(categories);
-        // setSubCategories(subcategories);
-        setPriceLevels(priceLevels);
-      } else {
-        const { brands, categories, subcategories } = res.data;
+  //     // if (type === "self") {
+  //     //   const { brands, categories, subcategories, priceLevels } =
+  //     //     res.data.data;
+  //     //   // setBrands(brands);
+  //     //   // setCategories(categories);
+  //     //   // setSubCategories(subcategories);
+  //     //   setPriceLevels(priceLevels);
+  //     // } else {
+  //     //   const { brands, categories, subcategories } = res.data;
 
-        // setBrands(brands);
-        // setCategories(categories);
-        // setSubCategories(subcategories);
-      }
-    } catch (error) {
-      console.log(error);
-    }
-  };
+  //     //   // setBrands(brands);
+  //     //   // setCategories(categories);
+  //     //   // setSubCategories(subcategories);
+  //     // }
+  //   } catch (error) {
+  //     console.log(error);
+  //   }
+  // };
   // fetchFilters();
   // }, [orgId, type]);
 
@@ -688,7 +685,7 @@ function AddItemStockTransferSec() {
 
   useEffect(() => {
     const calculateHeight = () => {
-      const newHeight = window.innerHeight - 250;
+      const newHeight = window.innerHeight - 170;
       setListHeight(newHeight);
     };
 
@@ -1001,7 +998,7 @@ function AddItemStockTransferSec() {
   return (
     <div className="">
       <div className="flex-1 bg-slate-50 h-screen   ">
-        <div className="sticky top-0 h-[165px] ">
+        <div className="sticky top-0 h-[100px] ">
           <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3  ">
             <div className="flex justify-between  items-center gap-2 ">
               <div className="flex items-center gap-2">
@@ -1019,92 +1016,8 @@ function AddItemStockTransferSec() {
               <p className="text-sm text-white">Showroom</p>
               </div> */}
           </div>
+          <SearchBar onType={searchData} />
 
-          <div className=" px-3 py-2 bg-white drop-shadow-lg  ">
-            <div className="flex justify-between  items-center"></div>
-            <div className="mt-2  md:w-1/2 ">
-              <div className="relative ">
-                <div className="absolute inset-y-0 start-0 flex items-center  pointer-events-none ">
-                  <svg
-                    className="w-4 h-4 text-gray-500 "
-                    aria-hidden="true"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      stroke="currentColor"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"
-                    />
-                  </svg>
-                </div>
-                <SearchBar onType={searchData} />
-              </div>
-            </div>
-          </div>
-
-          <div
-            className="bg-white text-sm font-semibold py-0 pb-1 px-2 flex items-center justify-evenly z-20 w-full gap-2  "
-            style={{ position: "relative", zIndex: "20" }}
-          >
-            <div className="w-4/12">
-              <select
-                value={selectedBrand}
-                onChange={(e) => {
-                  setSelectedBrand(e.target.value);
-                  dispatch(setBrandInRedux(e.target.value));
-                }}
-                className="full form-select block border-none  py-1.5 text-sm md:text-base font-normal text-gray-700 bg-white bg-clip-padding bg-no-repeat border rounded transition ease-in-out m-0 focus:ring-0 focus:border-none"
-              >
-                <option value="">Brands</option>
-                {brands.length > 0 &&
-                  brands.map((brand, index) => (
-                    <option key={index} value={brand}>
-                      {brand}
-                    </option>
-                  ))}
-              </select>
-            </div>
-
-            <div className="w-4/12">
-              <select
-                value={selectedCategory}
-                onChange={(e) => {
-                  setseleCtedCategory(e.target.value);
-                  dispatch(setCategoryInRedux(e.target.value));
-                }}
-                className="w-full   form-select block border-none  py-1.5 text-sm md:text-base font-normal text-gray-700 bg-white bg-clip-padding bg-no-repeat border rounded transition ease-in-out m-0 focus:ring-0 focus:border-none"
-              >
-                <option value="">Categories</option>
-                {categories.map((category, index) => (
-                  <option key={index} value={category}>
-                    {category}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="w-4/12">
-              <select
-                value={selectedSubCategory}
-                onChange={(e) => {
-                  setSelectedSubCategory(e.target.value);
-                  dispatch(setSubCategoryInRedux(e.target.value));
-                }}
-                className=" w-full  form-select block  py-1.5 text-sm md:text-base font-normal text-gray-700 bg-white bg-clip-padding bg-no-repeat border  border-none rounded transition ease-in-out m-0 focus:ring-0 focus:border-none "
-              >
-                <option value="">Subcategories</option>
-                {subCategories.map((el, index) => (
-                  <option key={index} value={el}>
-                    {el}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
           {/* <div type="button" className="flex  px-4 bg-white ">
             <p className="text-xs  p-0.5 px-1 text-black font-bold opacity-60 mb-2  ">
               {godownname}
@@ -1126,7 +1039,7 @@ function AddItemStockTransferSec() {
             style={{
               scrollbarWidth: "thin",
               // scrollbarColor: "transparent transparent",
-              marginTop: "6px",
+           
             }}
             className=""
             height={listHeight} // Specify the height of your list

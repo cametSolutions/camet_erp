@@ -255,7 +255,7 @@ router.put('/updateSalesItemUnitFields/:cmp_id',updateSalesItemUnitFields)
 router.post('/convertPrimaryToSecondary',convertPrimaryToSecondary)
 router.post('/createAccountGroups',createAccountGroups)
 router.post('/addAccountGroupIdToParties',addAccountGroupIdToParties)
-router.post('/addAccountGroupIdToOutstanding',addAccountGroupIdToOutstanding    )
+router.post('/addAccountGroupIdToOutstanding',addAccountGroupIdToOutstanding)
 
 
 
