@@ -29,6 +29,7 @@ import HeaderTile from "../../components/secUsers/main/HeaderTile";
 import AddPartyTile from "../../components/secUsers/main/AddPartyTile";
 import TitleDiv from "../../components/common/TitleDiv";
 import FooterButton from "../../components/secUsers/main/FooterButton";
+import { updateDashboardSummaryManually } from "../../../slices/dashboardSlices/fetchDashboardSummary";
 
 function InvoiceSecondary() {
   const cmp_id = useSelector(
@@ -367,8 +368,18 @@ function InvoiceSecondary() {
 
       // console.log(res.data);
       toast.success(res.data.message);
+   /// to update to summary in dashboard
+      dispatch(
+        updateDashboardSummaryManually({
+          voucher: "saleOrders",
+          amount: lastAmount || 0,
+        })
+      );
+
 
       navigate(`/sUsers/InvoiceDetails/${res.data.data._id}`);
+
+
 
       dispatch(removeAll());
     } catch (error) {
