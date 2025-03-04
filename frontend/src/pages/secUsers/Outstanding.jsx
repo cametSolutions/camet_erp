@@ -118,13 +118,14 @@ function Outstanding() {
         totalOutstandingReceivable,
         totalOutstandingDrCr,
       } = outstandingData;
+
       const notation =
         totalOutstandingReceivable > totalOutstandingPayable ? "Dr" : "Cr";
 
       dispatch(addGroupData(groupOutstandingData));
       dispatch(addGroupTotal(`${totalOutstandingDrCr} ${notation}`));
       setTotal(outstandingData?.totalOutstandingDrCr);
-      setGroupData(`${totalOutstandingDrCr} ${notation}`);
+      setGroupData(groupOutstandingData);
     } else if (selectedTab === "payables") {
       dispatch(addPayableData(outstandingData.outstandingData));
       dispatch(addPayableTotal(`${outstandingData.totalOutstanding} Cr`));
@@ -167,7 +168,6 @@ function Outstanding() {
   /// -------------for handling scroll -----------------------
 
   const handleScroll = () => {
-
     if (containerRef.current) {
       setScrollPosition(containerRef.current.scrollTop);
     }
@@ -194,7 +194,7 @@ function Outstanding() {
       const titleHeight = titleDiv ? titleDiv.offsetHeight : 50;
       const windowHeight = window.innerHeight;
       const availableHeight = windowHeight - titleHeight;
-      setListHeight(availableHeight-23);
+      setListHeight(availableHeight - 23);
     };
 
     updateHeight();
@@ -221,19 +221,24 @@ function Outstanding() {
     }));
   };
 
-  const handleNavigate = (party_id, party_name, totalBillAmount,classification) => {
+  const handleNavigate = (
+    party_id,
+    party_name,
+    totalBillAmount,
+    classification
+  ) => {
     dispatch(addExpandedGroups(expandedGroups));
     dispatch(addExpandedSubGroups(expandedSubGroups));
     navigate(`/sUsers/outstandingDetails/${party_id}`, {
-      state: { party_name, totalBillAmount, selectedTab,classification },
+      state: { party_name, totalBillAmount, selectedTab, classification },
     });
   };
 
   // ---------- Data Processing ----------
   const filterOutstanding = (data) => {
-    if (!data) return [];
+    if (!Array.isArray(data)) return []; // Ensure data is an array
     return data.filter((item) =>
-      item.party_name?.toLowerCase().includes(search.toLowerCase())
+      item.party_name?.toLowerCase()?.includes(search?.toLowerCase())
     );
   };
 
@@ -242,7 +247,7 @@ function Outstanding() {
   );
 
   return (
-    <div className="h-screen ">
+    <div className=" ">
       <div
         id="title-div"
         className="sticky top-0 flex flex-col z-30 bg-white shadow-lg "
@@ -250,7 +255,7 @@ function Outstanding() {
         <div className="flex items-center justify-between w-full bg-[#012a4a] shadow-lg px-4 py-3">
           <div className="flex items-center gap-2 cursor-pointer">
             <IoIosArrowRoundBack
-              onClick={() => navigate(-1,{ replace: true })}
+              onClick={() => navigate(-1, { replace: true })}
               className="text-white text-3xl"
             />
             <p className="text-white text-lg font-bold">Outstanding</p>
@@ -280,9 +285,10 @@ function Outstanding() {
 
           <div className=" text-center text-white flex justify-center items-center flex-col">
             <h2 className="text-3xl sm:text-4xl font-bold">
-              {   total && parseInt(total?.split(" ")[0])
-                .toFixed(2)
-                .concat(" ", total?.split(" ")[1])}
+              {total &&
+                parseInt(total?.split(" ")[0])
+                  .toFixed(2)
+                  .concat(" ", total?.split(" ")[1])}
             </h2>
             <Link to={`/sUsers/outstandingSummary`}>
               <button className="text-xs mt-4 font-bold opacity-90 underline hover:scale-105 transition-transform duration-300">
@@ -311,7 +317,12 @@ function Outstanding() {
             <div
               key={index}
               onClick={() =>
-                handleNavigate(el?._id, el?.party_name, el?.totalBillAmount ,el?.classification)
+                handleNavigate(
+                  el?._id,
+                  el?.party_name,
+                  el?.totalBillAmount,
+                  el?.classification
+                )
               }
               className="bg-[#f8ffff] rounded-md shadow-xl border border-gray-100 flex flex-col px-4 transition-all hover:translate-y-[1px] duration-150 transform ease-in-out"
             >
@@ -339,82 +350,114 @@ function Outstanding() {
 
       {/* Group View - Keeping the existing group view code */}
       {selectedTab === "group" && !loading && groupData?.length > 0 ? (
-        // ... (keeping the existing group view code unchanged)
-        <div
-        // ref={containerRef}
-        // style={{ height: `${listHeight}px` }}
-         className=" mt-6 px-4 pb-10">
+        <div className="mt-6 px-4 pb-10">
           {groupData.map((group) => (
             <div key={group._id} className="mb-4 font-bold">
               <button
-                onClick={() => toggleGroup(group?._id)}
-                className="w-full text-left  bg-[#f8ffff]  p-4 font-semibold rounded-xs shadow-md flex justify-between items-center transition-all hover:translate-y-[1px] duration-150 transform ease-in-out "
+                onClick={() => toggleGroup(group?.accountGroup_id)}
+                className="w-full text-left bg-blue-50 p-4 font-semibold   rounded-sm flex justify-between items-center transition-all hover:translate-y-[1px] duration-150 transform ease-in-out"
               >
                 <div className="flex items-center gap-3">
                   <FaAngleDown
                     className={`${
-                      expandedGroups[group?._id] &&
+                      expandedGroups[group?.accountGroup_id] &&
                       " transform translate duration-300 ease-in-out rotate-180"
                     }  mt-1`}
                   />
-                  <span className="font-bold text-gray-500">{group?._id}</span>
+                  <span className="font-bold text-gray-700">
+                    {group?.accountGroup}
+                  </span>
                 </div>
-                <span className="text-gray-600   font-bold">
-                  ₹{formatAmount(group?.totalAmount)}
+                <span className="text-gray-700 font-bold">
+                  ₹{formatAmount(group?.totalAmount)} {group?.classification}
                 </span>
               </button>
 
-              {expandedGroups[group?._id] &&
-                group?.subgroups.map((subgroup) => (
-                  <div key={subgroup?.group_name_id} className="ml-4  my-5">
-                    <button
-                      onClick={() => toggleSubGroup(subgroup?.group_name_id)}
-                      className="w-full text-left bg-slate-50 p-3  shadow-sm  flex justify-between items-center transition-all hover:translate-y-[1px] duration-150 transform ease-in-out "
-                    >
-                      <div className="flex items-center gap-3">
-                        <FaAngleDown
-                          className={`${
-                            expandedSubGroups[subgroup?.group_name_id] &&
-                            " transform translate duration-300 ease-in-out rotate-180"
-                          }  mt-1`}
-                        />
-                        <span className="font-medium text-sm">
-                          {subgroup?.group_name}
+              {expandedGroups[group?.accountGroup_id] && (
+                <>
+                  {/* Render Bills Without a Sub-Group */}
+                  {group.bills.length > 0 && (
+                    <div className="ml-4 my-5">
+                      {group.bills.map((bill, index) => (
+                        <div
+                          key={index}
+                          onClick={() =>
+                            handleNavigate(
+                              bill?.party_id,
+                              bill?.party_name,
+                              bill?.bill_pending_amt,
+                              bill?.classification
+                            )
+                          }
+                          className="bg-white p-3 flex justify-between items-center shadow-sm mb-2 border border-gray-200 cursor-pointer"
+                        >
+                          <p className="text-gray-700 text-sm font-semibold">
+                            {bill?.party_name}
+                          </p>
+                          <p className="text-gray-600 mt-1">
+                            ₹{formatAmount(bill.bill_pending_amt)}{" "}
+                            {bill?.classification}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Render Sub-Groups */}
+                  {group.subgroups.map((subgroup) => (
+                    <div key={subgroup?.subGroup_id} className="ml-4 my-5">
+                      <button
+                        onClick={() => toggleSubGroup(subgroup?.subGroup_id)}
+                        className="w-full text-left bg-blue-50 p-3 shadow-sm flex justify-between items-center transition-all hover:translate-y-[1px] duration-150 transform ease-in-out"
+                      >
+                        <div className="flex items-center gap-3">
+                          <FaAngleDown
+                            className={`${
+                              expandedSubGroups[subgroup?.subGroup_id] &&
+                              " transform translate duration-300 ease-in-out rotate-180"
+                            }  mt-1`}
+                          />
+                          <span className="font-medium text-sm">
+                            {subgroup?.subGroup}
+                          </span>
+                        </div>
+
+                        <span className="text-gray-600">
+                          ₹{formatAmount(subgroup?.totalAmount)}{" "}
+                          {group?.classification}
                         </span>
-                      </div>
+                      </button>
 
-                      <span className="text-gray-600">
-                        ₹{formatAmount(subgroup?.totalAmount)}
-                      </span>
-                    </button>
-
-                    {expandedSubGroups[subgroup?.group_name_id] && (
-                      <div className="ml-4 my-5">
-                        {subgroup.bills.map((bill, index) => (
-                          <div
-                            onClick={() =>
-                              handleNavigate(
-                                bill?.party_id,
-                                bill?.party_name,
-                                bill?.bill_pending_amt,
-                                bill?.classification
-                              )
-                            }
-                            key={index}
-                            className="bg-white p-3 flex justify-between rounded-md shadow-sm mb-2 border border-gray-100 cursor-pointer"
-                          >
-                            <p className=" text-gray-700 text-sm font-semibold">
-                              {bill?.party_name}
-                            </p>
-                            <p className="text-gray-600 mt-1">
-                              ₹{formatAmount(bill.bill_pending_amt)} {bill?.classification}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))}
+                      {expandedSubGroups[subgroup?.subGroup_id] && (
+                        <div className="ml-4 my-5">
+                          {subgroup.bills.map((bill, index) => (
+                            <div
+                              key={index}
+                              onClick={() =>
+                                handleNavigate(
+                                  bill?.party_id,
+                                  bill?.party_name,
+                                  bill?.bill_pending_amt,
+                                  bill?.classification
+                                )
+                              }
+                              className="bg-white p-3 flex justify-between rounded-md shadow-sm mb-2 border border-gray-100 cursor-pointer"
+                            >
+                              <p className="text-gray-700 text-sm font-semibold">
+                                {bill?.party_name}
+                              </p>
+                              <p className="text-gray-600 mt-1">
+                                ₹{formatAmount(bill.bill_pending_amt)}{" "}
+                                {bill?.classification}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </>
+              )}
             </div>
           ))}
         </div>
