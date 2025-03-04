@@ -417,6 +417,8 @@ export const updateTallyData = async (
       party_id: party?.party_master_id,
       accountGroup: party?.accountGroup,
       accountGroup_id: party?.accountGroup_id,
+      subGroup: party?.subGroup,
+      subGroup_id: party?.subGroup_id,
       bill_amount: Number(lastAmount),
       bill_date: new Date(),
       bill_pending_amt: Number(valueToUpdateInTally),
