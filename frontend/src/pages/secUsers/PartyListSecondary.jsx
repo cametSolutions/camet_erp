@@ -58,6 +58,9 @@ function PartyListSecondary() {
     }
   }, [search, parties, refresh]);
 
+
+
+
   const deleteHandler = async (id) => {
     // Show confirmation dialog
     const confirmation = await Swal.fire({

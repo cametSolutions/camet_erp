@@ -107,13 +107,13 @@ const AddSubGroup = () => {
   };
 
   const handleEdit = (id, subGroup, acc_id) => {
+    console.log(acc_id);
+    
     setEdit({
       id,
-
       enabled: true,
     });
     setValue(subGroup);
-
     setSelectedAccountGroup(acc_id);
   };
 
@@ -265,7 +265,7 @@ const AddSubGroup = () => {
                         handleEdit(
                           el._id,
                           el?.subGroup,
-                          el?.accountGroup_id?._id
+                          el?.accountGroup_id
                         )
                       }
                       className="text-blue-500"

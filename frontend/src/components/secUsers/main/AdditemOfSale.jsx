@@ -7,7 +7,6 @@ import { useNavigate } from "react-router-dom";
 import ProductDetails from "../../common/ProductDetails";
 import SearchBar from "../../common/SearchBar";
 import { MdOutlineQrCodeScanner } from "react-icons/md";
-import { HashLoader } from "react-spinners";
 import { VariableSizeList as List } from "react-window";
 import { IoAddCircleSharp } from "react-icons/io5";
 import { useMemo } from "react";
