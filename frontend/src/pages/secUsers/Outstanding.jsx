@@ -55,7 +55,6 @@ function Outstanding() {
   const [expandedGroups, setExpandedGroups] = useState({});
   const [expandedSubGroups, setExpandedSubGroups] = useState({});
   const [scrollPosition, setScrollPosition] = useState(0);
-  const [listHeight, setListHeight] = useState(0);
 
   // ---------- Data Fetching Logic ----------
   const shouldFetch =
@@ -163,9 +162,31 @@ function Outstanding() {
     groupDataFromRedux,
     payableDataFromRedux,
     receivableDataFromRedux,
+    scrollPositionFromRedux,
   ]);
 
   /// -------------for handling scroll -----------------------
+
+  //  scroll position restoration
+  useEffect(() => {
+    const restoreScrollPosition = () => {
+      if (
+        containerRef.current &&
+        typeof scrollPositionFromRedux === "number" &&
+        !isNaN(scrollPositionFromRedux)
+      ) {
+        // Use requestAnimationFrame to ensure the DOM is fully rendered
+        requestAnimationFrame(() => {
+          containerRef.current.scrollTop = scrollPositionFromRedux;
+        });
+      }
+    };
+
+    // Restore scroll position after a short delay to ensure content is loaded
+    const timeoutId = setTimeout(restoreScrollPosition, 100);
+
+    return () => clearTimeout(timeoutId);
+  }, [scrollPositionFromRedux]);
 
   const handleScroll = () => {
     if (containerRef.current) {
@@ -183,23 +204,6 @@ function Outstanding() {
         container.removeEventListener("scroll", handleScroll);
       }
     };
-  }, []);
-
-  console.log(scrollPosition);
-
-  /// -------------for handling list height -----------------------
-  useEffect(() => {
-    const updateHeight = () => {
-      const titleDiv = document.getElementById("title-div");
-      const titleHeight = titleDiv ? titleDiv.offsetHeight : 50;
-      const windowHeight = window.innerHeight;
-      const availableHeight = windowHeight - titleHeight;
-      setListHeight(availableHeight - 23);
-    };
-
-    updateHeight();
-    window.addEventListener("resize", updateHeight);
-    return () => window.removeEventListener("resize", updateHeight);
   }, []);
 
   // ---------- Event Handlers ----------
@@ -229,6 +233,7 @@ function Outstanding() {
   ) => {
     dispatch(addExpandedGroups(expandedGroups));
     dispatch(addExpandedSubGroups(expandedSubGroups));
+    dispatch(addScrollPosition(scrollPosition));
     navigate(`/sUsers/outstandingDetails/${party_id}`, {
       state: { party_name, totalBillAmount, selectedTab, classification },
     });
@@ -247,7 +252,7 @@ function Outstanding() {
   );
 
   return (
-    <div className=" ">
+    <div className="h-screen overflow-hidden flex flex-col ">
       <div
         id="title-div"
         className="sticky top-0 flex flex-col z-30 bg-white shadow-lg "
@@ -297,178 +302,182 @@ function Outstanding() {
             </Link>
           </div>
         </div>
-        {selectedTab !== "group" && <SearchBar onType={searchData} />}
+        {selectedTab !== "group" ? (
+          <SearchBar onType={searchData} />
+        ) : (
+          <div className="bg-white py-3 "></div>
+        )}
       </div>
 
       {loading && <CustomBarLoader />}
 
-      {/* Ledger/Payables/Receivables View */}
-      {(selectedTab === "ledger" ||
-        selectedTab === "payables" ||
-        selectedTab === "receivables") &&
-      !loading &&
-      finalData?.length > 0 ? (
-        <div
-          ref={containerRef}
-          style={{ height: `${listHeight}px` }}
-          className={` overflow-y-scroll  grid grid-cols-1 gap-4 mt-6 text-center pb-10 md:px-2 cursor-pointer`}
-        >
-          {finalData.map((el, index) => (
-            <div
-              key={index}
-              onClick={() =>
-                handleNavigate(
-                  el?._id,
-                  el?.party_name,
-                  el?.totalBillAmount,
-                  el?.classification
-                )
-              }
-              className="bg-[#f8ffff] rounded-md shadow-xl border border-gray-100 flex flex-col px-4 transition-all hover:translate-y-[1px] duration-150 transform ease-in-out"
-            >
-              <div className="flex justify-between items-center p-3 py-6">
-                <div className="px-2 w-[300px] flex justify-center items-start flex-col">
-                  <p className="font-bold text-sm text-left">{el.party_name}</p>
-                  {/* <p className="text-gray-400 text-xs mt-1">
-                    {el.classification === "Dr" ? "Receivable" : "Payable"}
-                  </p> */}
-                </div>
-                <div className="w-[200px] flex text-right flex-col">
-                  <div className="flex-col justify-center">
-                    <div className="flex justify-end">
-                      <p className="text-sm font-bold text-gray-500">
-                        ₹{formatAmount(el.totalBillAmount)} {el?.classification}
-                      </p>
+      <div ref={containerRef} className="flex flex-1 overflow-y-auto w-full">
+        {/* Ledger/Payables/Receivables View */}
+        {(selectedTab === "ledger" ||
+          selectedTab === "payables" ||
+          selectedTab === "receivables") &&
+        !loading &&
+        finalData?.length > 0 ? (
+          <div
+            className={`  grid grid-cols-1 gap-4 pt-2 text-center md:px-2 cursor-pointer w-full  `}
+          >
+            {finalData.map((el, index) => (
+              <div
+                key={index}
+                onClick={() =>
+                  handleNavigate(
+                    el?._id,
+                    el?.party_name,
+                    el?.totalBillAmount,
+                    el?.classification
+                  )
+                }
+                className="bg-[#f8ffff] rounded-md shadow-xl border border-gray-100 flex flex-col px-4 transition-all hover:translate-y-[1px] duration-150 transform ease-in-out"
+              >
+                <div className="flex justify-between items-center p-3 py-6">
+                  <div className="px-2 w-[300px] flex justify-center items-start flex-col">
+                    <p className="font-bold text-sm text-left">
+                      {el.party_name}
+                    </p>
+                  </div>
+                  <div className="w-[200px] flex text-right flex-col">
+                    <div className="flex-col justify-center">
+                      <div className="flex justify-end">
+                        <p className="text-sm font-bold text-gray-500">
+                          ₹{formatAmount(el.totalBillAmount)}{" "}
+                          {el?.classification}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-      ) : null}
-
-      {/* Group View - Keeping the existing group view code */}
-      {selectedTab === "group" && !loading && groupData?.length > 0 ? (
-        <div className="mt-6 px-4 pb-10">
-          {groupData.map((group) => (
-            <div key={group._id} className="mb-4 font-bold">
-              <button
-                onClick={() => toggleGroup(group?.accountGroup_id)}
-                className="w-full text-left bg-blue-50 p-4 font-semibold   rounded-sm flex justify-between items-center transition-all hover:translate-y-[1px] duration-150 transform ease-in-out"
-              >
-                <div className="flex items-center gap-3">
-                  <FaAngleDown
-                    className={`${
-                      expandedGroups[group?.accountGroup_id] &&
-                      " transform translate duration-300 ease-in-out rotate-180"
-                    }  mt-1`}
-                  />
-                  <span className="font-bold text-gray-700">
-                    {group?.accountGroup}
-                  </span>
-                </div>
-                <span className="text-gray-700 font-bold">
-                  ₹{formatAmount(group?.totalAmount)} {group?.classification}
-                </span>
-              </button>
-
-              {expandedGroups[group?.accountGroup_id] && (
-                <>
-                  {/* Render Bills Without a Sub-Group */}
-                  {group.bills.length > 0 && (
-                    <div className="ml-4 my-5">
-                      {group.bills.map((bill, index) => (
-                        <div
-                          key={index}
-                          onClick={() =>
-                            handleNavigate(
-                              bill?.party_id,
-                              bill?.party_name,
-                              bill?.bill_pending_amt,
-                              bill?.classification
-                            )
-                          }
-                          className="bg-white p-3 flex justify-between items-center shadow-sm mb-2 border border-gray-200 cursor-pointer"
-                        >
-                          <p className="text-gray-700 text-sm font-semibold">
-                            {bill?.party_name}
-                          </p>
-                          <p className="text-gray-600 mt-1">
-                            ₹{formatAmount(bill.bill_pending_amt)}{" "}
-                            {bill?.classification}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Render Sub-Groups */}
-                  {group.subgroups.map((subgroup) => (
-                    <div key={subgroup?.subGroup_id} className="ml-4 my-5">
-                      <button
-                        onClick={() => toggleSubGroup(subgroup?.subGroup_id)}
-                        className="w-full text-left bg-blue-50 p-3 shadow-sm flex justify-between items-center transition-all hover:translate-y-[1px] duration-150 transform ease-in-out"
-                      >
-                        <div className="flex items-center gap-3">
-                          <FaAngleDown
-                            className={`${
-                              expandedSubGroups[subgroup?.subGroup_id] &&
-                              " transform translate duration-300 ease-in-out rotate-180"
-                            }  mt-1`}
-                          />
-                          <span className="font-medium text-sm">
-                            {subgroup?.subGroup}
-                          </span>
-                        </div>
-
-                        <span className="text-gray-600">
-                          ₹{formatAmount(subgroup?.totalAmount)}{" "}
-                          {group?.classification}
-                        </span>
-                      </button>
-
-                      {expandedSubGroups[subgroup?.subGroup_id] && (
-                        <div className="ml-4 my-5">
-                          {subgroup.bills.map((bill, index) => (
-                            <div
-                              key={index}
-                              onClick={() =>
-                                handleNavigate(
-                                  bill?.party_id,
-                                  bill?.party_name,
-                                  bill?.bill_pending_amt,
-                                  bill?.classification
-                                )
-                              }
-                              className="bg-white p-3 flex justify-between rounded-md shadow-sm mb-2 border border-gray-100 cursor-pointer"
-                            >
-                              <p className="text-gray-700 text-sm font-semibold">
-                                {bill?.party_name}
-                              </p>
-                              <p className="text-gray-600 mt-1">
-                                ₹{formatAmount(bill.bill_pending_amt)}{" "}
-                                {bill?.classification}
-                              </p>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </>
-              )}
-            </div>
-          ))}
-        </div>
-      ) : (
-        !loading &&
-        selectedTab === "group" && (
-          <div className="flex justify-center items-center">
-            <p className="font-semibold text-lg">No Data Available</p>
+            ))}
           </div>
-        )
-      )}
+        ) : null}
+
+        {/* Group View - Keeping the existing group view code */}
+        {selectedTab === "group" && !loading && groupData?.length > 0 ? (
+          <div className="pt-4 px-4 pb-10  w-full">
+            {groupData.map((group) => (
+              <div key={group._id} className="mb-4 font-bold">
+                <button
+                  onClick={() => toggleGroup(group?.accountGroup_id)}
+                  className="w-full text-left bg-blue-50 p-4 font-semibold   rounded-sm flex justify-between items-center transition-all hover:translate-y-[1px] duration-150 transform ease-in-out"
+                >
+                  <div className="flex items-center gap-3">
+                    <FaAngleDown
+                      className={`${
+                        expandedGroups[group?.accountGroup_id] &&
+                        " transform translate duration-300 ease-in-out rotate-180"
+                      }  mt-1`}
+                    />
+                    <span className="font-bold text-gray-700">
+                      {group?.accountGroup}
+                    </span>
+                  </div>
+                  <span className="text-gray-700 font-bold">
+                    ₹{formatAmount(group?.totalAmount)} {group?.classification}
+                  </span>
+                </button>
+
+                {expandedGroups[group?.accountGroup_id] && (
+                  <>
+                    {/* Render Bills Without a Sub-Group */}
+                    {group.bills.length > 0 && (
+                      <div className="ml-4 my-5">
+                        {group.bills.map((bill, index) => (
+                          <div
+                            key={index}
+                            onClick={() =>
+                              handleNavigate(
+                                bill?.party_id,
+                                bill?.party_name,
+                                bill?.bill_pending_amt,
+                                bill?.classification
+                              )
+                            }
+                            className="bg-white p-3 flex justify-between items-center shadow-sm mb-2 border border-gray-200 cursor-pointer"
+                          >
+                            <p className="text-gray-700 text-sm font-semibold">
+                              {bill?.party_name}
+                            </p>
+                            <p className="text-gray-600 mt-1">
+                              ₹{formatAmount(bill.bill_pending_amt)}{" "}
+                              {bill?.classification}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Render Sub-Groups */}
+                    {group.subgroups.map((subgroup) => (
+                      <div key={subgroup?.subGroup_id} className="ml-4 my-5">
+                        <button
+                          onClick={() => toggleSubGroup(subgroup?.subGroup_id)}
+                          className="w-full text-left bg-blue-50 p-3 shadow-sm flex justify-between items-center transition-all hover:translate-y-[1px] duration-150 transform ease-in-out"
+                        >
+                          <div className="flex items-center gap-3">
+                            <FaAngleDown
+                              className={`${
+                                expandedSubGroups[subgroup?.subGroup_id] &&
+                                " transform translate duration-300 ease-in-out rotate-180"
+                              }  mt-1`}
+                            />
+                            <span className="font-medium text-sm">
+                              {subgroup?.subGroup}
+                            </span>
+                          </div>
+
+                          <span className="text-gray-600">
+                            ₹{formatAmount(subgroup?.totalAmount)}{" "}
+                            {group?.classification}
+                          </span>
+                        </button>
+
+                        {expandedSubGroups[subgroup?.subGroup_id] && (
+                          <div className="ml-4 my-5">
+                            {subgroup.bills.map((bill, index) => (
+                              <div
+                                key={index}
+                                onClick={() =>
+                                  handleNavigate(
+                                    bill?.party_id,
+                                    bill?.party_name,
+                                    bill?.bill_pending_amt,
+                                    bill?.classification
+                                  )
+                                }
+                                className="bg-white p-3 flex justify-between rounded-md shadow-sm mb-2 border border-gray-100 cursor-pointer"
+                              >
+                                <p className="text-gray-700 text-sm font-semibold">
+                                  {bill?.party_name}
+                                </p>
+                                <p className="text-gray-600 mt-1">
+                                  ₹{formatAmount(bill.bill_pending_amt)}{" "}
+                                  {bill?.classification}
+                                </p>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </>
+                )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          !loading &&
+          selectedTab === "group" && (
+            <div className="flex justify-center items-center">
+              <p className="font-semibold text-lg">No Data Available</p>
+            </div>
+          )
+        )}
+      </div>
     </div>
   );
 }

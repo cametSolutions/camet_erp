@@ -342,7 +342,7 @@ export const fetchOutstandingTotal = async (req, res) => {
           .flatMap((sg) => sg.bills);
 
         const totalAmount = group.totalAmount;
-        totalOutstandingDrCr += totalAmount;
+        // totalOutstandingDrCr += totalAmount;
 
         if (group.totalDr > group.totalCr) {
           totalOutstandingReceivable += totalAmount;
@@ -359,6 +359,9 @@ export const fetchOutstandingTotal = async (req, res) => {
           bills: directBills, // Bills without a sub-group go directly under the account group
         };
       });
+
+      // Ensure totalOutstandingDrCr is the absolute difference
+ totalOutstandingDrCr = Math.abs(totalOutstandingReceivable - totalOutstandingPayable);
 
       return res.status(200).json({
         outstandingData: finalGroupData,
