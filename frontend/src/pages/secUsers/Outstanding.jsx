@@ -168,7 +168,7 @@ function Outstanding() {
   /// -------------for handling scroll -----------------------
 
   //  scroll position restoration
-  useEffect(() => {
+  useEffect(() => { 
     const restoreScrollPosition = () => {
       if (
         containerRef.current &&
@@ -252,7 +252,7 @@ function Outstanding() {
   );
 
   return (
-    <div className="h-screen overflow-hidden flex flex-col ">
+    <div className="h-screen overflow-hidden flex flex-col pb-3   ">
       <div
         id="title-div"
         className="sticky top-0 flex flex-col z-30 bg-white shadow-lg "
@@ -311,7 +311,7 @@ function Outstanding() {
 
       {loading && <CustomBarLoader />}
 
-      <div ref={containerRef} className="flex flex-1 overflow-y-auto w-full">
+      <div ref={containerRef} className="flex flex-1 overflow-y-auto w-full  ">
         {/* Ledger/Payables/Receivables View */}
         {(selectedTab === "ledger" ||
           selectedTab === "payables" ||
@@ -358,9 +358,9 @@ function Outstanding() {
 
         {/* Group View - Keeping the existing group view code */}
         {selectedTab === "group" && !loading && groupData?.length > 0 ? (
-          <div className="pt-4 px-4 pb-10  w-full">
+          <div className="pt-4 px-4 pb-10  w-full ">
             {groupData.map((group) => (
-              <div key={group._id} className="mb-4 font-bold">
+              <div key={group._id} className="mb-4 font-bold last:mb-9">
                 <button
                   onClick={() => toggleGroup(group?.accountGroup_id)}
                   className="w-full text-left bg-blue-50 p-4 font-semibold   rounded-sm flex justify-between items-center transition-all hover:translate-y-[1px] duration-150 transform ease-in-out"
