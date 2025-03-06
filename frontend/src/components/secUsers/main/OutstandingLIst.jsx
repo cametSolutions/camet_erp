@@ -431,7 +431,9 @@ function OutstandingList({ loading, data, total, tab, process = "add" }) {
           );
         })}
 
-        <div className="md:hidden fixed bottom-0 p-4 left-0 w-full flex justify-center bg-white">
+        <div
+         onClick={handleNextClick} 
+        className="md:hidden fixed bottom-0 p-4 left-0 w-full flex justify-center bg-white">
           <div className="bg-violet-500 p-4 rounded-lg w-full text-white font-bold">
             Next
           </div>
