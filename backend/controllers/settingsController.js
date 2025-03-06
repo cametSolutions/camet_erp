@@ -636,9 +636,7 @@ export const updateTaxConfiguration = async (req, res) => {
     const voucher = req.query.voucher || "";
     const { addRateWithTax: value } = req.body; // Expecting a boolean value
 
-
-    console.log("value",value);
-    
+    console.log("value", value);
 
     // Validate inputs
     if (!cmp_id || !voucher) {
@@ -695,6 +693,11 @@ export const updateTaxConfiguration = async (req, res) => {
   }
 };
 
+/**
+ * @description Update ship to configuration for a company
+ * @route PUT /api/settings/updateShipToConfiguration/:cmp_id?voucher=
+ * @access Private
+ */
 export const updateShipToConfiguration = async (req, res) => {
   try {
     const cmp_id = req?.params?.cmp_id;
@@ -738,7 +741,6 @@ export const updateShipToConfiguration = async (req, res) => {
       [voucher]: value,
     };
 
-
     // Save the updated company
     await company.save();
 
@@ -754,3 +756,55 @@ export const updateShipToConfiguration = async (req, res) => {
     });
   }
 };
+
+/**
+ * @description Update a field in the first layer of a company's configuration
+ * @param {string} cmp_id Company ID
+ * @param {string} fieldToUpdate Name of the field to update
+ * @param {any} value New value for the field
+ * @returns {object} Updated company configuration
+ * @route PUT /api/settings/updateFirstLayerConfiguration/:cmp_id
+ * @access Private
+ */
+export const updateFirstLayerConfiguration = async (req, res) => {
+  const cmp_id = req?.params?.cmp_id;
+  const { fieldToUpdate, value } = req.body;
+
+  try {
+    // Validate inputs
+    if (!cmp_id || !fieldToUpdate || value === undefined) {
+      return res.status(400).json({
+        message: "Company ID, fieldToUpdate, and value are required",
+      });
+    }
+
+    // Find company and update configuration
+    const company = await OragnizationModel.findById(cmp_id);
+    if (!company) {
+      return res.status(404).json({ message: "Company not found" });
+    }
+
+    // Ensure configurations array exists and has at least one element
+    if (!company.configurations || company.configurations.length === 0) {
+      company.configurations = [{}];
+    }
+
+    // Update only the first element
+    company.configurations[0][fieldToUpdate] = value;
+
+    // Save the updated company
+    await company.save();
+
+    return res.status(200).json({
+      message: "Configuration updated successfully",
+      data: company,
+    });
+  } catch (error) {
+    console.error("Error updating configuration:", error);
+    return res.status(500).json({
+      message: "Internal server error",
+      error: error.message,
+    });
+  }
+};
+

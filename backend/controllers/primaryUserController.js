@@ -271,6 +271,7 @@ export const addOrganizations = async (req, res) => {
       bank: null,
       terms: [],
       enableBillToShipTo: true,
+      enableActualAndBilledQuantity: false,
       taxInclusive: false,
       addRateWithTax: {
         saleOrder: false,
