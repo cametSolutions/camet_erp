@@ -522,7 +522,7 @@ export const PartyList = async (req, res) => {
     // Fetch parties and secondary user concurrently
     const [partyList, secUser] = await Promise.all([
       PartyModel.find({ cmp_id, Primary_user_id }).select(
-        "_id partyName party_master_id billingAddress shippingAddress mobileNumber gstNo emailID pin country state accountGroup accountGroup_id"
+        "_id partyName party_master_id billingAddress shippingAddress mobileNumber gstNo emailID pin country state accountGroup accountGroup_id subGroup subGroup_id"
       ),
       SecondaryUser.findById(secUserId),
     ]);
@@ -2667,11 +2667,15 @@ export const addSubGroup = async (req, res) => {
   try {
     const { accountGroup, subGroup } = req?.body;
 
+     const generatedId = new mongoose.Types.ObjectId();
+
     const newSubGroup = new SubGroup({
-      accountGroup_id: new mongoose.Types.ObjectId(accountGroup),
+      accountGroup_id:accountGroup,
       subGroup: subGroup,
       cmp_id: cmp_id,
       Primary_user_id: req.owner,
+      subGroup_id: generatedId,
+      _id: generatedId,
     });
 
     await newSubGroup.save();

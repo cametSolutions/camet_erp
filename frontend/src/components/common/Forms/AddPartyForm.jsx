@@ -164,6 +164,9 @@ function AddPartyForm({ submitHandler, partyDetails = {}, userType }) {
     submitHandler(formData);
   };
 
+  
+// console.log(item.accountGroup_id);
+
 
   return (
     <div>
@@ -221,7 +224,7 @@ function AddPartyForm({ submitHandler, partyDetails = {}, userType }) {
                         {subGroupList?.data
                           ?.filter(
                             (item) =>
-                              item.accountGroup_id?._id === accountGroup_id
+                              item.accountGroup_id === accountGroup_id
                           )
                           ?.map((subGroup, index) => (
                             <option key={index} value={subGroup._id}>

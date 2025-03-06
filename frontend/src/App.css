@@ -272,8 +272,7 @@ input[type="date"]:hover {
 }
 
 @media print {
-  Hide everything by default 
-  */ body * {
+  Hide everything by default */ body * {
     display: none;
   }
 
@@ -295,24 +294,24 @@ input[type="date"]:hover {
   }
 }
 
-.no-focus-box{
-box-shadow: none !important;
-border-color: #b6b6b6 !important;
-
+.no-focus-box {
+  box-shadow: none !important;
+  border-color: #b6b6b6 !important;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
 }
 
-.no-focus-box-shadow{
-border-color: #b6b6b6 !important;
-
+.no-focus-box-shadow {
+  border-color: #b6b6b6 !important;
 }
-
 
 /* table {
   border-collapse: collapse;
   width: 100%;
   table-layout: fixed;
 } */
-th, td {
+th,
+td {
   /* border: 1px solid black; */
   padding-bottom: 2px;
   word-wrap: break-word;
@@ -331,14 +330,10 @@ tr {
   /* tr:last-child {
     page-break-after: always;
   } */
-  th, td {
+  th,
+  td {
     /* border: 1px solid black; */
     padding-bottom: 3px;
     word-wrap: break-word;
   }
 }
-
-
-
-
-

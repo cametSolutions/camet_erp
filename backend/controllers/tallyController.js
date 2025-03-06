@@ -6,9 +6,11 @@ import CashModel from "../models/cashModel.js";
 import partyModel from "../models/partyModel.js";
 import productModel from "../models/productModel.js";
 import AdditionalCharges from "../models/additionalChargesModel.js";
-import receipt from "../models/receiptModel.js";
+import AccountGroup from "../models/accountGroup.js";
+import SubGroup from "../models/subGroup.js";
 import { fetchData } from "../helpers/tallyHelper.js";
 import mongoose from "mongoose";
+import accountGroup from "../models/accountGroup.js";
 
 export const saveDataFromTally = async (req, res) => {
   try {
@@ -671,6 +673,123 @@ export const saveAdditionalChargesFromTally = async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 };
+
+// @desc for saving accountGroups from tally
+// route GET/api/tally/addAccountGroups
+
+export const addAccountGroups = async (req, res) => {
+  try {
+    const accountGroupsToSave = req?.body?.data;
+
+    // Validate data
+    if (!accountGroupsToSave || accountGroupsToSave.length === 0) {
+      return res.status(400).json({ error: "No data provided" });
+    }
+
+    // Extract user ID and company ID
+    const { Primary_user_id, cmp_id } = accountGroupsToSave[0];
+    const primaryUserId = new mongoose.Types.ObjectId(Primary_user_id);
+
+    // Delete previous records
+    await AccountGroup.deleteMany({ Primary_user_id: primaryUserId, cmp_id });
+
+    // Track inserted accountGroup_id to avoid duplicate inserts
+    const uniqueGroups = new Map();
+
+    const savedAccountGroups = await Promise.all(
+      accountGroupsToSave.map(async (group) => {
+        const key = `${group.cmp_id}-${group.accountGroup_id}-${group.Primary_user_id}`;
+        
+        // Skip duplicate records in the request
+        if (uniqueGroups.has(key)) return null;
+        uniqueGroups.set(key, true);
+
+        try {
+          return await AccountGroup.findOneAndUpdate(
+            {
+              cmp_id: group.cmp_id,
+              accountGroup_id: group.accountGroup_id,
+              Primary_user_id: new mongoose.Types.ObjectId(group.Primary_user_id),
+            },
+            group,
+            { new: true, upsert: true } // Insert if not found, update if exists
+          );
+        } catch (error) {
+          console.error("Error saving account group:", error);
+          return null; // Skip if there's an issue
+        }
+      })
+    );
+
+    res.status(201).json({
+      message: "Account groups saved successfully",
+      savedAccountGroups: savedAccountGroups.filter(Boolean), // Remove null values
+    });
+  } catch (error) {
+    console.error("Error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+// @desc for saving subGroups from tally
+// route GET/api/tally/addSubGroups
+
+export const addSubGroups = async (req, res) => {
+  try {
+    const subGroupsToSave = req?.body?.data;
+
+    // Validate data
+    if (!subGroupsToSave || subGroupsToSave.length === 0) {
+      return res.status(400).json({ error: "No data provided" });
+    }
+
+    // Extract user ID and company ID
+    const { Primary_user_id, cmp_id } = subGroupsToSave[0];
+    const primaryUserId = new mongoose.Types.ObjectId(Primary_user_id);
+
+    // Delete previous records
+    await SubGroup.deleteMany({ Primary_user_id: primaryUserId, cmp_id });
+
+    // Track inserted subGroup_id to avoid duplicate inserts
+    const uniqueSubGroups = new Map();
+
+    const savedSubGroups = await Promise.all(
+      subGroupsToSave.map(async (subGroup) => {
+        const key = `${subGroup.cmp_id}-${subGroup.subGroup_id}-${subGroup.Primary_user_id}`;
+        
+        // Skip duplicate records in the request
+        if (uniqueSubGroups.has(key)) return null;
+        uniqueSubGroups.set(key, true);
+
+        try {
+          return await SubGroup.findOneAndUpdate(
+            {
+              cmp_id: subGroup.cmp_id,
+              subGroup_id: subGroup.subGroup_id,
+              Primary_user_id: new mongoose.Types.ObjectId(subGroup.Primary_user_id),
+            },
+            subGroup,
+            { new: true, upsert: true } // Insert if not found, update if exists
+          );
+        } catch (error) {
+          console.error("Error saving sub-group:", error);
+          return null; // Skip if there's an issue
+        }
+      })
+    );
+
+    res.status(201).json({
+      message: "Sub-groups saved successfully",
+      savedSubGroups: savedSubGroups.filter(Boolean), // Remove null values
+    });
+  } catch (error) {
+    console.error("Error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+
+
 
 // // @desc for giving invoices to tally
 // // route GET/api/tally/giveInvoice
