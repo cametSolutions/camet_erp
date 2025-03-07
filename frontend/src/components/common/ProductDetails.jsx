@@ -17,7 +17,6 @@ const ProductDetails = ({
   const detailsRef = useRef();
   const batchOrGodownList = details?.GodownList;
 
-console.log(details);
   
 
   useEffect(() => {

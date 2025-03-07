@@ -62,7 +62,7 @@ function PartyStatement() {
   const isLoading = transactionLoading || balanceLoading;
 
   return (
-    <div className="flex flex-1 flex-col ">
+    <div className="flex flex-1 flex-col  ">
       <div className="sticky top-0 z-50 ">
         <TitleDiv title="Party Statement  " />
 

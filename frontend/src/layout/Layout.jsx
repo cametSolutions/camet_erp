@@ -48,7 +48,7 @@ const Layout = ({ children }) => {
         //   scrollbarWidth: "thin",
         //   scrollbarColor: "transparent transparent",
         // }}
-       className="flex h-screen">
+       className="flex h-screen ">
         {renderSidebar()}
         <main
        

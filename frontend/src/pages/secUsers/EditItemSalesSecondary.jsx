@@ -19,6 +19,7 @@ function EditItemSalesSecondary() {
     item,
     index,
     quantity,
+    actualQuantity,
     newPrice,
     totalAmount,
     selectedItem,
@@ -38,6 +39,7 @@ function EditItemSalesSecondary() {
           return {
             ...godown,
             count: Number(quantity) || 0,
+            actualCount: Number(actualQuantity) || 0,
             selectedPriceRate: Number(newPrice) || 0,
             discount: discountAmount || 0,
             // taxAmount: Number(taxAmount.toFixed(2)),
@@ -61,6 +63,16 @@ function EditItemSalesSecondary() {
           }
         }, 0)
       );
+      
+      newItem.actualCount= Number(
+        newGodownList?.reduce((acc, curr) => {
+          if (curr.added === true) {
+            return acc + curr.actualCount;
+          } else {
+            return acc;
+          }
+        }, 0)
+      );
 
       newItem.total = Number(
         newGodownList
@@ -76,7 +88,8 @@ function EditItemSalesSecondary() {
       // newItem.total = Number(totalAmount.toFixed(2));
       newItem.GodownList[0].individualTotal = Number(totalAmount.toFixed(2));
       newItem.total = Number(totalAmount.toFixed(2));
-      newItem.count = quantity || 0;
+      newItem.count = Number(quantity) || 0;
+      newItem.actualCount = Number(actualQuantity) || 0;
       newItem.isTaxInclusive = isTaxInclusive;
       newItem.discount = discountAmount;
       newItem.discountPercentage = discountPercentage;
