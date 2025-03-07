@@ -87,7 +87,7 @@ export const createSale = async (req, res) => {
     );
 
     const updatedItems = processSaleItems(items);
-    await handleSaleStockUpdates(updatedItems, false, session); // Include session
+    await handleSaleStockUpdates(updatedItems, session); // Include session
 
     const updateAdditionalCharge = additionalChargesFromRedux.map((charge) => {
       const { value, taxPercentage } = charge;
@@ -238,187 +238,187 @@ export const editSale = async (req, res) => {
 
       await revertSaleStockUpdates(existingSale.items, session);
 
-      const updatedItems = processSaleItems(
-        items,
-        priceLevelFromRedux,
-        additionalChargesFromRedux
-      );
-      await handleSaleStockUpdates(updatedItems, false, session);
+      // const updatedItems = processSaleItems(
+      //   items,
+      //   priceLevelFromRedux,
+      //   additionalChargesFromRedux
+      // );
+      // await handleSaleStockUpdates(updatedItems, false, session);
 
-      const updateData = {
-        selectedGodownId: selectedGodownId || existingSale.selectedGodownId,
-        selectedGodownName: selectedGodownName
-          ? selectedGodownName[0]
-          : existingSale.selectedGodownName,
-        serialNumber: existingSale.serialNumber,
-        cmp_id: orgId,
-        partyAccount: party?.partyName,
-        party,
-        despatchDetails,
-        items: updatedItems,
-        priceLevel: priceLevelFromRedux,
-        additionalCharges: additionalChargesFromRedux,
-        finalAmount: lastAmount,
-        Primary_user_id: req.owner,
-        Secondary_user_id: req.secondaryUserId,
-        salesNumber: salesNumber,
-        date: await formatToLocalDate(selectedDate, orgId, session),
-        createdAt: existingSale.createdAt,
-        paymentSplittingData,
-      };
+      // const updateData = {
+      //   selectedGodownId: selectedGodownId || existingSale.selectedGodownId,
+      //   selectedGodownName: selectedGodownName
+      //     ? selectedGodownName[0]
+      //     : existingSale.selectedGodownName,
+      //   serialNumber: existingSale.serialNumber,
+      //   cmp_id: orgId,
+      //   partyAccount: party?.partyName,
+      //   party,
+      //   despatchDetails,
+      //   items: updatedItems,
+      //   priceLevel: priceLevelFromRedux,
+      //   additionalCharges: additionalChargesFromRedux,
+      //   finalAmount: lastAmount,
+      //   Primary_user_id: req.owner,
+      //   Secondary_user_id: req.secondaryUserId,
+      //   salesNumber: salesNumber,
+      //   date: await formatToLocalDate(selectedDate, orgId, session),
+      //   createdAt: existingSale.createdAt,
+      //   paymentSplittingData,
+      // };
 
-      await model.findByIdAndUpdate(saleId, updateData, { new: true, session });
+      // await model.findByIdAndUpdate(saleId, updateData, { new: true, session });
 
-      //// update the settlement data ,so delete and recreate the settlement data
+      // //// update the settlement data ,so delete and recreate the settlement data
 
-      /// revert it
-      await revertSettlementData(
-        existingSale?.party,
-        orgId,
-        existingSale?.salesNumber,
-        existingSale?._id.toString(),
-        session
-      );
+      // /// revert it
+      // await revertSettlementData(
+      //   existingSale?.party,
+      //   orgId,
+      //   existingSale?.salesNumber,
+      //   existingSale?._id.toString(),
+      //   session
+      // );
 
-      /// recreate the settlement data
+      // /// recreate the settlement data
 
-      let valueToUpdateInTally = 0;
+      // let valueToUpdateInTally = 0;
 
-      if (
-        paymentSplittingData &&
-        Object.keys(paymentSplittingData).length > 0
-      ) {
-        valueToUpdateInTally = paymentSplittingData?.balanceAmount;
-      } else {
-        valueToUpdateInTally = lastAmount;
-      }
+      // if (
+      //   paymentSplittingData &&
+      //   Object.keys(paymentSplittingData).length > 0
+      // ) {
+      //   valueToUpdateInTally = paymentSplittingData?.balanceAmount;
+      // } else {
+      //   valueToUpdateInTally = lastAmount;
+      // }
 
-      ///save settlement data
-      await saveSettlementData(
-        party,
-        orgId,
-        "normal sale",
-        "sale",
-        updateData?.salesNumber,
-        saleId,
-        valueToUpdateInTally,
-        updateData?.date,
-        updateData?.party?.partyName,
-        session
-      );
+      // ///save settlement data
+      // await saveSettlementData(
+      //   party,
+      //   orgId,
+      //   "normal sale",
+      //   "sale",
+      //   updateData?.salesNumber,
+      //   saleId,
+      //   valueToUpdateInTally,
+      //   updateData?.date,
+      //   updateData?.party?.partyName,
+      //   session
+      // );
 
-      // ///updating the existing outstanding record by calculating the difference in bill value
+      // // ///updating the existing outstanding record by calculating the difference in bill value
 
-      const outstandingResult = await updateOutstandingBalance({
-        existingVoucher: existingSale,
-        newVoucherData: {
-          paymentSplittingData,
-          lastAmount,
-        },
-        orgId,
-        voucherNumber: salesNumber,
-        party,
-        session,
-        createdBy: req.owner,
-        transactionType: "sale",
-        secondaryMobile,
-      });
+      // const outstandingResult = await updateOutstandingBalance({
+      //   existingVoucher: existingSale,
+      //   newVoucherData: {
+      //     paymentSplittingData,
+      //     lastAmount,
+      //   },
+      //   orgId,
+      //   voucherNumber: salesNumber,
+      //   party,
+      //   session,
+      //   createdBy: req.owner,
+      //   transactionType: "sale",
+      //   secondaryMobile,
+      // });
 
-      //// updating the payment splitting data
-      ///first reverting the existing payment splitting data if it exists
+      // //// updating the payment splitting data
+      // ///first reverting the existing payment splitting data if it exists
 
-      if (existingSale?.paymentSplittingData?.splittingData) {
-        await revertPaymentSplittingDataInSources(
-          existingSale?.paymentSplittingData,
-          salesNumber,
-          saleId,
-          orgId,
-          session
-        );
-      }
+      // if (existingSale?.paymentSplittingData?.splittingData) {
+      //   await revertPaymentSplittingDataInSources(
+      //     existingSale?.paymentSplittingData,
+      //     salesNumber,
+      //     saleId,
+      //     orgId,
+      //     session
+      //   );
+      // }
 
-      //// recreating new the payment splitting data
+      // //// recreating new the payment splitting data
 
-      if (paymentSplittingData?.splittingData?.length > 0) {
-        const creditItem = paymentSplittingData.splittingData.find(
-          (item) => item.mode === "credit"
-        );
-        if (creditItem) {
-          // console.log("creditItem", creditItem);
+      // if (paymentSplittingData?.splittingData?.length > 0) {
+      //   const creditItem = paymentSplittingData.splittingData.find(
+      //     (item) => item.mode === "credit"
+      //   );
+      //   if (creditItem) {
+      //     // console.log("creditItem", creditItem);
 
-          const oldCreditAmount =
-            existingSale.paymentSplittingData?.splittingData?.find(
-              (item) => item.mode === "credit"
-            )?.amount || 0;
-          const newCreditAmount = creditItem.amount;
-          const diffCreditAmount =
-            Number(newCreditAmount) - Number(oldCreditAmount);
+      //     const oldCreditAmount =
+      //       existingSale.paymentSplittingData?.splittingData?.find(
+      //         (item) => item.mode === "credit"
+      //       )?.amount || 0;
+      //     const newCreditAmount = creditItem.amount;
+      //     const diffCreditAmount =
+      //       Number(newCreditAmount) - Number(oldCreditAmount);
 
-          const matchedOutStandingOfCredit = await TallyData.findOne({
-            cmp_id: orgId,
-            bill_no: salesNumber,
-            billId: existingSale?._id.toString(),
-            createdBy: "paymentSplitting",
-          }).session(session);
+      //     const matchedOutStandingOfCredit = await TallyData.findOne({
+      //       cmp_id: orgId,
+      //       bill_no: salesNumber,
+      //       billId: existingSale?._id.toString(),
+      //       createdBy: "paymentSplitting",
+      //     }).session(session);
 
-          if (matchedOutStandingOfCredit) {
-            const newOutstanding =
-              Number(matchedOutStandingOfCredit.bill_pending_amt || 0) +
-              diffCreditAmount;
+      //     if (matchedOutStandingOfCredit) {
+      //       const newOutstanding =
+      //         Number(matchedOutStandingOfCredit.bill_pending_amt || 0) +
+      //         diffCreditAmount;
 
-            paymentSplittingData.splittingData =
-              paymentSplittingData.splittingData.map((item) =>
-                item.mode === "credit"
-                  ? { ...item, amount: newOutstanding }
-                  : item
-              );
+      //       paymentSplittingData.splittingData =
+      //         paymentSplittingData.splittingData.map((item) =>
+      //           item.mode === "credit"
+      //             ? { ...item, amount: newOutstanding }
+      //             : item
+      //         );
 
-            await savePaymentSplittingDataInSources(
-              paymentSplittingData,
-              salesNumber,
-              saleId,
-              orgId,
-              req.owner,
-              secondaryMobile,
-              "sale",
-              updateData?.date,
-              updateData?.party?.partyName,
+      //       await savePaymentSplittingDataInSources(
+      //         paymentSplittingData,
+      //         salesNumber,
+      //         saleId,
+      //         orgId,
+      //         req.owner,
+      //         secondaryMobile,
+      //         "sale",
+      //         updateData?.date,
+      //         updateData?.party?.partyName,
 
-              session
-            );
-          } else {
-            await savePaymentSplittingDataInSources(
-              paymentSplittingData,
-              salesNumber,
-              saleId,
-              orgId,
-              req.owner,
-              secondaryMobile,
-              "sale",
-              updateData?.date,
-              updateData?.party?.partyName,
+      //         session
+      //       );
+      //     } else {
+      //       await savePaymentSplittingDataInSources(
+      //         paymentSplittingData,
+      //         salesNumber,
+      //         saleId,
+      //         orgId,
+      //         req.owner,
+      //         secondaryMobile,
+      //         "sale",
+      //         updateData?.date,
+      //         updateData?.party?.partyName,
 
-              session
-            );
-          }
-        } else {
-          await savePaymentSplittingDataInSources(
-            paymentSplittingData,
-            salesNumber,
-            saleId,
-            orgId,
-            req.owner,
-            secondaryMobile,
-            "sale",
-            updateData?.date,
-            updateData?.party?.partyName,
+      //         session
+      //       );
+      //     }
+      //   } else {
+      //     await savePaymentSplittingDataInSources(
+      //       paymentSplittingData,
+      //       salesNumber,
+      //       saleId,
+      //       orgId,
+      //       req.owner,
+      //       secondaryMobile,
+      //       "sale",
+      //       updateData?.date,
+      //       updateData?.party?.partyName,
 
-            session
-          );
-        }
-      }
+      //       session
+      //     );
+      //   }
+      // }
 
-      await session.commitTransaction();
+      // await session.commitTransaction();
       return res
         .status(200)
         .json({ success: true, message: "Sale edited successfully" });

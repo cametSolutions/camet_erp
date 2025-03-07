@@ -55,11 +55,11 @@ export const getSalesDetails = async (req, res) => {
 
     ////find the outstanding of the sale
     const outstandingOfSale = await OutstandingModel.findOne({
-      billId: saleDetails._id.toString(),
-      bill_no: saleDetails.salesNumber,
-      billId: saleDetails._id.toString(),
-      cmp_id: saleDetails.cmp_id,
-      Primary_user_id: saleDetails.Primary_user_id
+      billId: saleDetails?._id.toString(),
+      bill_no: saleDetails?.salesNumber,
+      billId: saleDetails?._id.toString(),
+      cmp_id: saleDetails?.cmp_id,
+      Primary_user_id: saleDetails?.Primary_user_id
     })
 
     let isEditable = true
