@@ -49,7 +49,7 @@ function EditItemForm({
 
       setQuantity(selectedGodown?.count || 1);
       if (enableActualAndBilledQuantity) {
-        setActualQuantity(selectedGodown?.actualCount || 1);
+        setActualQuantity(selectedGodown?.actualCount || selectedGodown?.count || 1);
       }else{
         setActualQuantity(selectedGodown?.count || 1);
       }
@@ -67,11 +67,13 @@ function EditItemForm({
         setDiscountPercentage(selectedGodown?.discountPercentage);
       }
     } else {
-      setNewPrice(selectedItem[0]?.GodownList[0]?.selectedPriceRate || 0);
+      setNewPrice(selectedItem[0]?.GodownList[0]?.selectedPriceRate || 1);
 
       setQuantity(selectedItem[0]?.count || 1);
+
+      
       if (enableActualAndBilledQuantity) {
-        setActualQuantity(selectedItem[0]?.actualCount || 0);
+        setActualQuantity(selectedItem[0]?.actualCount || selectedItem[0]?.count || 0);
       }else{
         setActualQuantity(selectedItem[0]?.count || 0);
       }

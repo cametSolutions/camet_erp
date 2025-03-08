@@ -132,9 +132,7 @@ export const handleSaleStockUpdates = async (
       3
     );
 
-    console.log("newBalanceStock", newBalanceStock);
-    
-
+  
     // Update product balance stock
     await productModel.updateOne(
       { _id: product._id },
@@ -146,11 +144,7 @@ export const handleSaleStockUpdates = async (
       for (const godown of item.GodownList) {
         // Use actualCount if available, otherwise fall back to count for each godown
         const godownCount =
-          godown.actualCount !== undefined ? godown.actualCount : godown.count;
-
-
-          console.log("godownCount", godownCount);
-          
+          godown.actualCount !== undefined ? godown.actualCount : godown.count;          
 
         if (godown.batch && !godown?.godown_id) {
           const godownIndex = product.GodownList.findIndex(
@@ -476,12 +470,10 @@ export const revertSaleStockUpdates = async (items, session) => {
       );
 
 
-      console.log("item", item);
-      console.log("itemCount", itemCount);
+
       
 
       const productBalanceStock = parseFloat(product.balance_stock);
-      console.log("productBalanceStock", productBalanceStock);
 
       const newBalanceStock = truncateToNDecimals(
         productBalanceStock + itemCount,
@@ -489,7 +481,6 @@ export const revertSaleStockUpdates = async (items, session) => {
       );
 
 
-      console.log("newBalanceStock", newBalanceStock);
       
 
       // Update product balance stock
