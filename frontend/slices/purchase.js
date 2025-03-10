@@ -45,7 +45,7 @@ export const purchaseSlice = createSlice({
       state.products = action.payload;
     },
     removeItem: (state, action) => {
-      const id = action.payload._id;
+      const id = action.payload;
       const index = state.items.findIndex((el) => el._id === id);
 
       state.items.splice(index, 1);
