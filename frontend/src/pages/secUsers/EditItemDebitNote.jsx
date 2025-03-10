@@ -2,17 +2,13 @@
 
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { updateItem } from "../../../slices/debitNote";
+import { removeItem, updateItem } from "../../../slices/debitNote";
 import EditItemForm from "../../components/secUsers/main/Forms/EditItemForm";
 
 function EditItemDebitNote() {
   const ItemsFromRedux = useSelector((state) => {
     return state.debitNote.items;
   });
-
-  console.log(ItemsFromRedux);
-  
-
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -21,6 +17,7 @@ function EditItemDebitNote() {
     item,
     index,
     quantity,
+    actualQuantity,
     newPrice,
     totalAmount,
     selectedItem,
@@ -37,6 +34,8 @@ function EditItemDebitNote() {
           return {
             ...godown,
             count: Number(quantity) || 0,
+            actualCount: Number(actualQuantity) || 0,
+            added: Number(quantity) <= 0 ? false : true,
             selectedPriceRate: Number(newPrice) || 0,
             discount: discountAmount || 0,
             // taxAmount: Number(taxAmount.toFixed(2)),
@@ -61,6 +60,20 @@ function EditItemDebitNote() {
         }, 0)
       );
 
+      if (newItem.count <= 0) {
+        dispatch(removeItem(item?._id));
+      }
+
+      newItem.actualCount = Number(
+        newGodownList?.reduce((acc, curr) => {
+          if (curr.added === true) {
+            return acc + curr.actualCount;
+          } else {
+            return acc;
+          }
+        }, 0)
+      );
+
       newItem.total = Number(
         newGodownList
           .reduce(
@@ -70,10 +83,15 @@ function EditItemDebitNote() {
           .toFixed(2)
       );
     } else {
+      if (parseInt(quantity) <= 0) {
+        dispatch(removeItem(item?._id));
+      }
       // newItem.total = Number(totalAmount.toFixed(2));
       newItem.GodownList[0].individualTotal = Number(totalAmount.toFixed(2));
       newItem.total = Number(totalAmount.toFixed(2));
       newItem.count = quantity || 0;
+      newItem.actualCount = Number(actualQuantity) || 0;
+
       const godownList = [...newItem.GodownList];
       godownList[0].selectedPriceRate = Number(newPrice) || 0;
       newItem.GodownList = godownList;

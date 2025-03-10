@@ -1,4 +1,4 @@
-import { createSlice } from "@reduxjs/toolkit"; 
+import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
   // selectedGodownName:"",
@@ -45,7 +45,8 @@ export const debitNoteSlice = createSlice({
       state.products = action.payload;
     },
     removeItem: (state, action) => {
-      const id = action.payload._id;
+      const id = action.payload;
+
       const index = state.items.findIndex((el) => el._id === id);
 
       state.items.splice(index, 1);
@@ -181,8 +182,6 @@ export const debitNoteSlice = createSlice({
       }
     },
 
- 
-
     removeGodownOrBatch: (state, action) => {
       const id = action.payload.id;
       const idx = action.payload.idx;
@@ -194,7 +193,6 @@ export const debitNoteSlice = createSlice({
         currentItem.GodownList[idx].count = 0;
         currentItem.GodownList[idx].count = 0;
         currentItem.GodownList[idx].individualTotal = 0;
-
 
         const newCount = currentItem.GodownList.reduce((acc, curr) => {
           if (curr.added) {
@@ -277,7 +275,7 @@ export const {
   addPriceRate,
   addNewAddress,
   addDespatchDetails,
-  changeDate
+  changeDate,
 } = debitNoteSlice.actions;
 
 export default debitNoteSlice.reducer;

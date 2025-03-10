@@ -2,7 +2,11 @@
 
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { updateItem, changeTaxInclusive } from "../../../slices/salesSecondary";
+import {
+  updateItem,
+  changeTaxInclusive,
+  removeItem,
+} from "../../../slices/salesSecondary";
 import EditItemForm from "../../components/secUsers/main/Forms/EditItemForm";
 
 function EditItemSalesSecondary() {
@@ -12,8 +16,6 @@ function EditItemSalesSecondary() {
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
-
-  
 
   const submitHandler = (
     item,
@@ -27,18 +29,23 @@ function EditItemSalesSecondary() {
     discountPercentage,
     type,
     igst,
-    isTaxInclusive,
+    isTaxInclusive
     // taxAmount
-
   ) => {
     const newItem = structuredClone(item);
 
     if (selectedItem[0]?.hasGodownOrBatch) {
+
+   
       const newGodownList = newItem.GodownList.map((godown, idx) => {
+       
         if (idx == index) {
+
+          
           return {
             ...godown,
             count: Number(quantity) || 0,
+            added:Number(quantity) <=0 ? false : true,
             actualCount: Number(actualQuantity) || 0,
             selectedPriceRate: Number(newPrice) || 0,
             discount: discountAmount || 0,
@@ -63,8 +70,13 @@ function EditItemSalesSecondary() {
           }
         }, 0)
       );
-      
-      newItem.actualCount= Number(
+
+      if(newItem.count <= 0){
+        dispatch(removeItem(item?._id));
+      }
+
+
+      newItem.actualCount = Number(
         newGodownList?.reduce((acc, curr) => {
           if (curr.added === true) {
             return acc + curr.actualCount;
@@ -85,6 +97,11 @@ function EditItemSalesSecondary() {
 
       newItem.isTaxInclusive = isTaxInclusive;
     } else {
+
+
+      if (parseInt(quantity) <= 0) {
+        dispatch(removeItem(item?._id));
+      }
       // newItem.total = Number(totalAmount.toFixed(2));
       newItem.GodownList[0].individualTotal = Number(totalAmount.toFixed(2));
       newItem.total = Number(totalAmount.toFixed(2));
@@ -104,12 +121,13 @@ function EditItemSalesSecondary() {
     }
 
     dispatch(changeTaxInclusive(selectedItem[0]?._id));
-    dispatch(updateItem({item:newItem,moveToTop:false}));
+    dispatch(updateItem({ item: newItem, moveToTop: false }));
 
     navigate(-1);
   };
 
   return (
+
     <EditItemForm
       submitHandler={submitHandler}
       ItemsFromRedux={ItemsFromRedux}
