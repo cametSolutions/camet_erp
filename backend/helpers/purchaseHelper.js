@@ -5,26 +5,27 @@ import TallyData from "../models/TallyData.js";
 import { formatToLocalDate, truncateToNDecimals } from "./helper.js";
 
 ///////////////////////// for stock update ////////////////////////////////
-export const handlePurchaseStockUpdates = async (items,session) => {
+export const handlePurchaseStockUpdates = async (items, session) => {
   const productUpdates = [];
   const godownUpdates = [];
 
   for (const item of items) {
-    const product = await productModel.findOne({ _id: item._id }).session(session);
+    const product = await productModel
+      .findOne({ _id: item._id })
+      .session(session);
     if (!product) {
       throw new Error(`Product not found for item ID: ${item._id}`);
     }
 
-    const itemCount = parseFloat(item.count);
+    // Use actualCount if available, otherwise fall back to count
+    const itemCount = parseFloat(
+      item.actualCount !== undefined ? item.actualCount : item.count
+    );
     const productBalanceStock = parseFloat(product.balance_stock);
     const newBalanceStock = truncateToNDecimals(
       productBalanceStock + (itemCount || 0),
       3
     );
-
-    console.log("itemCount: ", itemCount);
-    console.log("productBalanceStock: ", productBalanceStock);
-    console.log("newBalanceStock: ", newBalanceStock);
 
     productUpdates.push({
       updateOne: {
@@ -34,14 +35,12 @@ export const handlePurchaseStockUpdates = async (items,session) => {
     });
 
     if (item.hasGodownOrBatch) {
-      console.log("item.hasGodownOrBatch: ");
-
       for (const godown of item.GodownList) {
-        const godownCount = parseFloat(godown.count);
+        // Use actualCount if available, otherwise fall back to count for each godown
+        const godownCount =
+          godown.actualCount !== undefined ? godown.actualCount : godown.count;
 
         if (godown.newBatch) {
-          console.log("newBatch object: ", godown);
-
           if (godownCount > 0) {
             // Handle new batch logic
             const newBatchStock = truncateToNDecimals(godownCount, 3);
@@ -93,20 +92,17 @@ export const handlePurchaseStockUpdates = async (items,session) => {
             );
           }
         } else if (godown.batch && !godown.godown_id) {
-          console.log("batch only ");
           const godownIndex = product.GodownList.findIndex(
             (g) => g.batch === godown.batch
           );
 
-          if (godownIndex !== -1 && godown.count && godown.count > 0) {
+          if (godownIndex !== -1 && godownCount && godownCount > 0) {
             const currentGodownStock =
               product.GodownList[godownIndex].balance_stock || 0;
             const newGodownStock = truncateToNDecimals(
               currentGodownStock + godownCount,
               3
             );
-
-            console.log("newGodownStock: ", newGodownStock);
 
             godownUpdates.push({
               updateOne: {
@@ -118,21 +114,17 @@ export const handlePurchaseStockUpdates = async (items,session) => {
             });
           }
         } else if (godown.godown_id && godown.batch) {
-          console.log("godown_id and batch ");
           const godownIndex = product.GodownList.findIndex(
             (g) => g.batch === godown.batch && g.godown_id === godown.godown_id
           );
 
-          if (godownIndex !== -1 && godown.count && godown.count > 0) {
+          if (godownIndex !== -1 && godownCount && godownCount > 0) {
             const currentGodownStock =
               product.GodownList[godownIndex].balance_stock || 0;
             const newGodownStock = truncateToNDecimals(
               currentGodownStock + godownCount,
               3
             );
-
-            console.log("currentGodownStock: ", currentGodownStock);
-            console.log("newGodownStock: ", newGodownStock);
 
             godownUpdates.push({
               updateOne: {
@@ -150,20 +142,17 @@ export const handlePurchaseStockUpdates = async (items,session) => {
             });
           }
         } else if (godown.godown_id && !godown?.batch) {
-          console.log("godown_id only ");
           const godownIndex = product.GodownList.findIndex(
             (g) => g.godown_id === godown.godown_id
           );
 
-          if (godownIndex !== -1 && godown.count && godown.count > 0) {
+          if (godownIndex !== -1 && godownCount && godownCount > 0) {
             const currentGodownStock =
               product.GodownList[godownIndex].balance_stock || 0;
             const newGodownStock = truncateToNDecimals(
               currentGodownStock + godownCount,
               3
             );
-
-            console.log("newGodownStock: ", newGodownStock);
 
             godownUpdates.push({
               updateOne: {
@@ -198,9 +187,6 @@ export const handlePurchaseStockUpdates = async (items,session) => {
     }
   }
 
-  //   console.log("godownUpdates", godownUpdates);
-  //   console.log("productUpdates", productUpdates);
-
   await productModel.bulkWrite(productUpdates, { session });
   await productModel.bulkWrite(godownUpdates, { session });
 };
@@ -210,8 +196,7 @@ export const createPurchaseRecord = async (
   PurchaseNumber,
   updatedItems,
   updateAdditionalCharge,
-  session 
-
+  session
 ) => {
   try {
     const {
@@ -221,11 +206,8 @@ export const createPurchaseRecord = async (
       party,
       despatchDetails,
       lastAmount,
-      selectedDate
+      selectedDate,
     } = req.body;
-
-
-
 
     const Primary_user_id = req.owner;
     const Secondary_user_id = req.sUserId;
@@ -235,15 +217,13 @@ export const createPurchaseRecord = async (
     const lastPurchase = await model.findOne(
       {},
       {},
-      { sort: { serialNumber: -1 },session }
+      { sort: { serialNumber: -1 }, session }
     );
     let newSerialNumber = 1;
 
     if (lastPurchase && !isNaN(lastPurchase.serialNumber)) {
       newSerialNumber = lastPurchase.serialNumber + 1;
     }
-
-    console.log("PurchaseNumber: ", PurchaseNumber);
 
     const purchase = new model({
       selectedGodownId: selectedGodownId ?? "",
@@ -260,7 +240,7 @@ export const createPurchaseRecord = async (
       Primary_user_id,
       Secondary_user_id,
       PurchaseNumber,
-      date:await formatToLocalDate(selectedDate, orgId, session),
+      date: await formatToLocalDate(selectedDate, orgId, session),
       createdAt: new Date(),
     });
 
@@ -285,7 +265,6 @@ export const updatePurchaseNumber = async (orgId, secondaryUser, session) => {
 
     if (configuration) {
       purchaseConfig = true;
-
     }
     if (purchaseConfig === true) {
       const updatedConfiguration = secondaryUser.configurations.map(
@@ -305,7 +284,7 @@ export const updatePurchaseNumber = async (orgId, secondaryUser, session) => {
       await OragnizationModel.findByIdAndUpdate(
         orgId,
         { $inc: { purchaseNumber: 1 } },
-        { new: true,session }
+        { new: true, session }
       );
     }
   } catch (error) {
@@ -315,18 +294,24 @@ export const updatePurchaseNumber = async (orgId, secondaryUser, session) => {
 };
 
 // Revert purchase stock updates
-export const revertPurchaseStockUpdates = async (items,session) => {
+export const revertPurchaseStockUpdates = async (items, session) => {
   try {
     const productUpdates = [];
     const godownUpdates = [];
 
     for (const item of items) {
-      const product = await productModel.findOne({ _id: item._id }).session(session);
+      const product = await productModel
+        .findOne({ _id: item._id })
+        .session(session);
       if (!product) {
         throw new Error(`Product not found for item ID: ${item._id}`);
       }
 
-      const itemCount = parseFloat(item.count);
+      // Use actualCount if available, otherwise fall back to count
+      const itemCount = parseFloat(
+        item.actualCount !== undefined ? item.actualCount : item.count
+      );
+
       const productBalanceStock = parseFloat(product.balance_stock);
       const newBalanceStock = truncateToNDecimals(
         productBalanceStock - itemCount, // Revert stock by adding back
@@ -345,17 +330,22 @@ export const revertPurchaseStockUpdates = async (items,session) => {
       if (item.hasGodownOrBatch) {
         for (const godown of item.GodownList) {
           if (godown.batch && !godown?.godown_id) {
+            // Use actualCount if available, otherwise fall back to count for each godown
+            const godownCount =
+              godown.actualCount !== undefined
+                ? godown.actualCount
+                : godown.count;
             // Case: Batch only or Godown with Batch
             const godownIndex = product.GodownList.findIndex(
               (g) => g.batch === godown.batch
             );
 
             if (godownIndex !== -1) {
-              if (godown.count && godown.count > 0) {
+              if (godownCount && godownCount > 0) {
                 const currentGodownStock =
                   product.GodownList[godownIndex].balance_stock || 0;
                 const newGodownStock = truncateToNDecimals(
-                  currentGodownStock - godown.count, // Revert stock by adding back
+                  currentGodownStock - godownCount, // Revert stock by adding back
                   3
                 );
 
@@ -381,15 +371,13 @@ export const revertPurchaseStockUpdates = async (items,session) => {
             );
 
             if (godownIndex !== -1) {
-              if (godown.count && godown.count > 0) {
+              if (godownCount && godownCount > 0) {
                 const currentGodownStock =
                   product.GodownList[godownIndex].balance_stock || 0;
                 const newGodownStock = truncateToNDecimals(
-                  currentGodownStock - godown.count, // Revert stock by adding back
+                  currentGodownStock - godownCount, // Revert stock by adding back
                   3
                 );
-
-                console.log("newGodownStock", newGodownStock);
 
                 // Prepare godown update operation
                 godownUpdates.push({
@@ -416,12 +404,18 @@ export const revertPurchaseStockUpdates = async (items,session) => {
               (g) => g.godown_id === godown.godown_id
             );
 
+            // Use actualCount if available, otherwise fall back to count for each godown
+            const godownCount =
+              godown.actualCount !== undefined
+                ? godown.actualCount
+                : godown.count;
+
             if (godownIndex !== -1) {
-              if (godown.count && godown.count > 0) {
+              if (godownCount && godownCount > 0) {
                 const currentGodownStock =
                   product.GodownList[godownIndex].balance_stock || 0;
                 const newGodownStock = truncateToNDecimals(
-                  currentGodownStock - godown.count, // Revert stock by adding back
+                  currentGodownStock - godownCount, // Revert stock by adding back
                   3
                 );
 
@@ -446,7 +440,7 @@ export const revertPurchaseStockUpdates = async (items,session) => {
         product.GodownList = product.GodownList.map((godown) => {
           const currentGodownStock = Number(godown.balance_stock) || 0;
           const newGodownStock = truncateToNDecimals(
-            currentGodownStock - Number(item.count), // Revert stock by adding back
+            currentGodownStock - Number(itemCount), // Revert stock by adding back
             3
           );
           return {
@@ -466,17 +460,16 @@ export const revertPurchaseStockUpdates = async (items,session) => {
     }
 
     // Execute bulk operations to revert stock changes
-    await productModel.bulkWrite(productUpdates, {session});
-    await productModel.bulkWrite(godownUpdates,{session});
+    await productModel.bulkWrite(productUpdates, { session });
+    await productModel.bulkWrite(godownUpdates, { session });
   } catch (error) {
     console.error("Error reverting sale stock updates:", error);
     throw error;
   }
 };
 
-
 /// Update Tally Data
-export const  updateTallyData = async (
+export const updateTallyData = async (
   orgId,
   purchaseNumber,
   billId,
@@ -488,39 +481,37 @@ export const  updateTallyData = async (
 ) => {
   try {
     const billData = {
-        Primary_user_id,
-        bill_no: purchaseNumber,
-        billId:billId.toString(),
-        cmp_id: orgId,
-        party_id: party?.party_master_id,
-        accountGroup: party?.accountGroup,
-        accountGroup_id: party?.accountGroup_id,
-        subGroup: party?.subGroup,
-        subGroup_id: party?.subGroup_id,
-        bill_amount: lastAmount,
-        bill_date: new Date(),
-        bill_pending_amt: lastAmount,
-        email: party?.emailID,
-        mobile_no: party?.mobileNumber,
-        party_name: party?.partyName,
-        user_id: secondaryMobile || "null",
-        source: "purchase",
-        classification: "Cr",
-      };
+      Primary_user_id,
+      bill_no: purchaseNumber,
+      billId: billId.toString(),
+      cmp_id: orgId,
+      party_id: party?.party_master_id,
+      accountGroup: party?.accountGroup,
+      accountGroup_id: party?.accountGroup_id,
+      subGroup: party?.subGroup,
+      subGroup_id: party?.subGroup_id,
+      bill_amount: lastAmount,
+      bill_date: new Date(),
+      bill_pending_amt: lastAmount,
+      email: party?.emailID,
+      mobile_no: party?.mobileNumber,
+      party_name: party?.partyName,
+      user_id: secondaryMobile || "null",
+      source: "purchase",
+      classification: "Cr",
+    };
 
-    const tallyUpdate=await TallyData.findOneAndUpdate(
+    const tallyUpdate = await TallyData.findOneAndUpdate(
       {
         cmp_id: orgId,
         bill_no: purchaseNumber,
-        billId:billId.toString(),
+        billId: billId.toString(),
         Primary_user_id: Primary_user_id,
         party_id: party?.party_master_id,
       },
       billData,
-      { upsert: true, new: true,session }
+      { upsert: true, new: true, session }
     );
-
-    
   } catch (error) {
     console.error("Error updateTallyData sale stock updates:", error);
     throw error;
