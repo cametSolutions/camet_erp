@@ -17,14 +17,7 @@ import {
 } from "../../../slices/creditNote";
 import { Decimal } from "decimal.js";
 import AdditemOfSale from "../../components/secUsers/main/AdditemOfSale";
-// import { HashLoader } from "react-spinners";
-// import { VariableSizeList as List } from "react-window";
-// import SearchBar from "../../components/common/SearchBar";
-// import ProductDetails from "../../components/common/ProductDetails";
-// import { IoIosArrowDown } from "react-icons/io";
-// import { IoIosArrowUp } from "react-icons/io";
-// import { IoIosArrowRoundBack } from "react-icons/io";
-// import { MdOutlineQrCodeScanner } from "react-icons/md";
+
 
 function AddItemCreditNote() {
   const [item, setItem] = useState([]);
@@ -476,62 +469,61 @@ function AddItemCreditNote() {
 
   ///////////////////////////handleAddClick///////////////////////////////////
 
-console.log();
 
 
 
-  const handleAddClick = (_id, idx) => {
-    const updatedItems = item.map((item) => {
-      if (item._id === _id) {
-        const itemToUpdate = { ...item, GodownList: [...item.GodownList] };
-
-        if (itemToUpdate.GodownList[idx]) {
-          const currentBatchOrGodown = { ...itemToUpdate.GodownList[idx] };
-
-          currentBatchOrGodown.added = currentBatchOrGodown.added
-            ? !currentBatchOrGodown.added
-            : true;
-          currentBatchOrGodown.count = 1;
-          currentBatchOrGodown.actualCount = 1
-
-          // currentBatchOrGodown.IndividualTotal = totalData?.individualSubtotal;
-
-          itemToUpdate.GodownList[idx] = currentBatchOrGodown;
+   const handleAddClick = (_id, idx) => {
+      const updatedItems = item.map((item) => {
+        if (item._id === _id) {
+          const itemToUpdate = { ...item, GodownList: [...item.GodownList] };
+  
+          if (itemToUpdate.GodownList[idx]) {
+            const currentBatchOrGodown = { ...itemToUpdate.GodownList[idx] };
+  
+            currentBatchOrGodown.added = currentBatchOrGodown.added
+              ? !currentBatchOrGodown.added
+              : true;
+            currentBatchOrGodown.count = 1;
+            currentBatchOrGodown.actualCount = 1;
+  
+            // currentBatchOrGodown.IndividualTotal = totalData?.individualSubtotal;
+  
+            itemToUpdate.GodownList[idx] = currentBatchOrGodown;
+          }
+          itemToUpdate.count =
+            new Decimal(itemToUpdate.count || 0).add(1).toNumber() || 1;
+          itemToUpdate.actualCount = itemToUpdate?.count;
+  
+          const totalData = calculateTotal(itemToUpdate, selectedPriceLevel);
+          const updatedGodownListWithTotals = itemToUpdate.GodownList.map(
+            (godown, index) => ({
+              ...godown,
+              individualTotal:
+                totalData.individualTotals.find(({ index: i }) => i === index)
+                  ?.individualTotal || 0,
+            })
+          );
+          itemToUpdate.GodownList = updatedGodownListWithTotals;
+  
+          itemToUpdate.total = totalData?.total || 0;
+          itemToUpdate.added = true;
+  
+          dispatch(addItem(itemToUpdate));
+  
+          return itemToUpdate;
         }
-        itemToUpdate.count =
-          new Decimal(itemToUpdate.count || 0).add(1).toNumber() || 1;
-          itemToUpdate.actualCount =  itemToUpdate?.count
-
-        const totalData = calculateTotal(itemToUpdate, selectedPriceLevel);
-        const updatedGodownListWithTotals = itemToUpdate.GodownList.map(
-          (godown, index) => ({
-            ...godown,
-            individualTotal:
-              totalData.individualTotals.find(({ index: i }) => i === index)
-                ?.individualTotal || 0,
-          })
-        );
-        itemToUpdate.GodownList = updatedGodownListWithTotals;
-
-        itemToUpdate.total = totalData?.total || 0;
-        itemToUpdate.added = true;
-
-        dispatch(addItem(itemToUpdate));
-
-        return itemToUpdate;
+        return item;
+      });
+  
+      setItem(updatedItems);
+      if (
+        selectedPriceLevel === "" ||
+        selectedPriceLevel === undefined ||
+        priceLevels.length === 0
+      ) {
+        navigate(`/sUsers/editItemCreditNote/${_id}/${"nil"}/${idx}`);
       }
-      return item;
-    });
-
-    setItem(updatedItems);
-    if (
-      selectedPriceLevel === "" ||
-      selectedPriceLevel === undefined ||
-      priceLevels.length === 0
-    ) {
-      navigate(`/sUsers/editItemCreditNote/${_id}/${"nil"}/${idx}`);
-    }
-  };
+    };
 
   ///////////////////////////handleIncrement///////////////////////////////////
 
@@ -549,7 +541,6 @@ console.log();
           .toNumber();
         godownOrBatch.actualCount = godownOrBatch.count;
 
-
         // Update the specific godown/batch in the GodownList array
         const updatedGodownList = currentItem.GodownList.map((godown, index) =>
           index === godownIndex ? godownOrBatch : godown
@@ -564,9 +555,9 @@ console.log();
         const sumOfActualCounts = updatedGodownList.reduce(
           (sum, godown) => sum + (godown.actualCount || 0),
           0
-        )
+        );
         currentItem.count = sumOfCounts; // Update currentItem.count with the sum
-        currentItem.actualCount = sumOfActualCounts // Update currentItem.count with the sum
+        currentItem.actualCount = sumOfActualCounts; // Update currentItem.count with the sum
 
         // Calculate totals and update individual batch totals
         const totalData = calculateTotal(currentItem, selectedPriceLevel);
@@ -583,7 +574,7 @@ console.log();
       } else {
         // Increment the count of the currentItem by 1
         currentItem.count = new Decimal(currentItem.count).add(1).toNumber();
-        currentItem.actualCount = currentItem.count
+        currentItem.actualCount = currentItem.count;
 
         // Calculate totals and update individual total
         const totalData = calculateTotal(currentItem, selectedPriceLevel);
@@ -603,16 +594,21 @@ console.log();
     const updatedItems = item.map((item) => {
       if (item._id !== _id) return item; // Keep items unchanged if _id doesn't match
       const currentItem = structuredClone(item);
+
+      console.log(currentItem);
+      
       if (godownIndex !== null && currentItem.hasGodownOrBatch) {
         const godownOrBatch = { ...currentItem.GodownList[godownIndex] };
         godownOrBatch.count = new Decimal(godownOrBatch.count)
           .sub(1)
           .toNumber();
-        godownOrBatch.actualCount = godownOrBatch.count
 
+        godownOrBatch.actualCount = godownOrBatch.count;
 
         // Ensure count does not go below 0
-        if (godownOrBatch.count <= 0) godownOrBatch.added = false;
+        if (godownOrBatch.count <= 0) {
+          godownOrBatch.added = false;
+        }
 
         const updatedGodownList = currentItem.GodownList.map((godown, index) =>
           index === godownIndex ? godownOrBatch : godown
@@ -627,9 +623,9 @@ console.log();
         const sumOfActualCounts = updatedGodownList.reduce(
           (sum, godown) => sum + (godown.actualCount || 0),
           0
-        )
+        );
         currentItem.count = sumOfCounts;
-        currentItem.actualCount = sumOfActualCounts
+        currentItem.actualCount = sumOfActualCounts;
 
         currentItem.GodownList = updatedGodownList;
         const allAddedFalse = currentItem.GodownList.every(
@@ -653,10 +649,13 @@ console.log();
         currentItem.total = totalData.total; // Update the overall total
       } else {
         currentItem.count = new Decimal(currentItem.count).sub(1).toNumber();
-        currentItem.actualCount =currentItem.count
+        currentItem.actualCount = currentItem.count;
 
         // Ensure count does not go below 0
-        if (currentItem.count <= 0) currentItem.added = false;
+        if (currentItem.count <= 0) {
+          currentItem.added = false;
+          dispatch(removeItem(currentItem._id));
+        }
 
         // Calculate totals and update individual total
         const totalData = calculateTotal(currentItem, selectedPriceLevel);

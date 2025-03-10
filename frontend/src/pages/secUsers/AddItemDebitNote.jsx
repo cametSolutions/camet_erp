@@ -454,7 +454,6 @@ function AddItemDebitNote() {
 
   ///////////////////////////handleAddClick///////////////////////////////////
 
-  console.log();
 
   const handleAddClick = (_id, idx) => {
     const updatedItems = item.map((item) => {
@@ -505,7 +504,7 @@ function AddItemDebitNote() {
       selectedPriceLevel === undefined ||
       priceLevels.length === 0
     ) {
-      navigate(`/sUsers/editItemCreditNote/${_id}/${"nil"}/${idx}`);
+      navigate(`/sUsers/editItemDebitNote/${_id}/${"nil"}/${idx}`);
     }
   };
 

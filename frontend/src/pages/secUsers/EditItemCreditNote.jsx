@@ -2,7 +2,7 @@
 
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { updateItem } from "../../../slices/creditNote";
+import { updateItem ,removeItem} from "../../../slices/creditNote";
 import EditItemForm from "../../components/secUsers/main/Forms/EditItemForm";
 
 function EditItemCreditNote() {
@@ -14,17 +14,20 @@ function EditItemCreditNote() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const submitHandler = (
+ const submitHandler = (
     item,
     index,
     quantity,
+    actualQuantity,
     newPrice,
     totalAmount,
     selectedItem,
     discountAmount,
     discountPercentage,
     type,
-    igst
+    igst,
+    isTaxInclusive
+    // taxAmount
   ) => {
     const newItem = structuredClone(item);
 
@@ -34,6 +37,8 @@ function EditItemCreditNote() {
           return {
             ...godown,
             count: Number(quantity) || 0,
+            added: Number(quantity) <= 0 ? false : true,
+            actualCount: Number(actualQuantity) || 0,
             selectedPriceRate: Number(newPrice) || 0,
             discount: discountAmount || 0,
             // taxAmount: Number(taxAmount.toFixed(2)),
@@ -58,6 +63,20 @@ function EditItemCreditNote() {
         }, 0)
       );
 
+      if (newItem.count <= 0) {
+        dispatch(removeItem(item?._id));
+      }
+
+      newItem.actualCount = Number(
+        newGodownList?.reduce((acc, curr) => {
+          if (curr.added === true) {
+            return acc + curr.actualCount;
+          } else {
+            return acc;
+          }
+        }, 0)
+      );
+
       newItem.total = Number(
         newGodownList
           .reduce(
@@ -66,22 +85,35 @@ function EditItemCreditNote() {
           )
           .toFixed(2)
       );
+
+      newItem.isTaxInclusive = isTaxInclusive;
     } else {
+      if (parseInt(quantity) <= 0) {
+        dispatch(removeItem(item?._id));
+      }
       // newItem.total = Number(totalAmount.toFixed(2));
       newItem.GodownList[0].individualTotal = Number(totalAmount.toFixed(2));
       newItem.total = Number(totalAmount.toFixed(2));
-      newItem.count = quantity || 0;
-      const godownList = [...newItem.GodownList];
-      godownList[0].selectedPriceRate = Number(newPrice) || 0;
-      newItem.GodownList = godownList;
-      newItem.newGst = igst;
+      newItem.count = Number(quantity) || 0;
+      newItem.actualCount = Number(actualQuantity) || 0;
+      newItem.isTaxInclusive = isTaxInclusive;
       newItem.discount = discountAmount;
       newItem.discountPercentage = discountPercentage;
       newItem.discountType = type;
+
+      const godownList = [...newItem.GodownList];
+      // console.log(godownList);
+      godownList[0].selectedPriceRate = Number(newPrice) || 0;
+
+      newItem.GodownList = godownList;
+      newItem.newGst = igst;
     }
+
     dispatch(updateItem(newItem));
+
     navigate(-1);
   };
+
 
   return (
     <EditItemForm
