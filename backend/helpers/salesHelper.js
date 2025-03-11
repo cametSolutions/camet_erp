@@ -469,10 +469,6 @@ export const revertSaleStockUpdates = async (items, session) => {
         item.actualCount !== undefined ? item.actualCount : item.count
       );
 
-
-
-      
-
       const productBalanceStock = parseFloat(product.balance_stock);
 
       const newBalanceStock = truncateToNDecimals(

@@ -428,13 +428,14 @@ function AddItemPurchase() {
             ? !currentBatchOrGodown.added
             : true;
           currentBatchOrGodown.count = 1;
+          currentBatchOrGodown.actualCount = 1;
           // currentBatchOrGodown.IndividualTotal = totalData?.individualSubtotal;
 
           itemToUpdate.GodownList[idx] = currentBatchOrGodown;
         }
         itemToUpdate.count =
           new Decimal(itemToUpdate.count || 0).add(1).toNumber() || 1;
-
+          itemToUpdate.actualCount = itemToUpdate?.count;
         const totalData = calculateTotal(itemToUpdate);
         const updatedGodownListWithTotals = itemToUpdate.GodownList.map(
           (godown, index) => ({
@@ -474,6 +475,8 @@ function AddItemPurchase() {
         godownOrBatch.count = new Decimal(godownOrBatch.count)
           .add(1)
           .toNumber();
+        godownOrBatch.actualCount = godownOrBatch.count;
+
 
         // Update the specific godown/batch in the GodownList array
         const updatedGodownList = currentItem.GodownList.map((godown, index) =>
@@ -486,7 +489,13 @@ function AddItemPurchase() {
           (sum, godown) => sum + (godown.count || 0),
           0
         );
+
+        const sumOfActualCounts = updatedGodownList.reduce(
+          (sum, godown) => sum + (godown.actualCount || 0),
+          0
+        );
         currentItem.count = sumOfCounts; // Update currentItem.count with the sum
+        currentItem.actualCount = sumOfActualCounts; // Update currentItem.count with the sum
 
         // Calculate totals and update individual batch totals
         const totalData = calculateTotal(currentItem);
@@ -503,6 +512,7 @@ function AddItemPurchase() {
       } else {
         // Increment the count of the currentItem by 1
         currentItem.count = new Decimal(currentItem.count).add(1).toNumber();
+        currentItem.actualCount = currentItem.count;
 
         // Calculate totals and update individual total
         const totalData = calculateTotal(currentItem);
@@ -527,6 +537,13 @@ function AddItemPurchase() {
         godownOrBatch.count = new Decimal(godownOrBatch.count)
           .sub(1)
           .toNumber();
+        godownOrBatch.actualCount = godownOrBatch.count;
+
+          // Ensure count does not go below 0
+          if (godownOrBatch.count <= 0) {
+            godownOrBatch.added = false;
+          }
+  
 
         // Ensure count does not go below 0
         if (godownOrBatch.count <= 0) godownOrBatch.added = false;
@@ -540,7 +557,13 @@ function AddItemPurchase() {
           (sum, godown) => sum + (godown.count || 0),
           0
         );
+
+        const sumOfActualCounts = updatedGodownList.reduce(
+          (sum, godown) => sum + (godown.actualCount || 0),
+          0
+        );
         currentItem.count = sumOfCounts;
+        currentItem.actualCount = sumOfActualCounts;
         currentItem.GodownList = updatedGodownList;
         const allAddedFalse = currentItem.GodownList.every(
           (item) => item.added === false || item.added == undefined
@@ -563,9 +586,13 @@ function AddItemPurchase() {
         currentItem.total = totalData.total; // Update the overall total
       } else {
         currentItem.count = new Decimal(currentItem.count).sub(1).toNumber();
+        currentItem.actualCount = currentItem.count;
 
-        // Ensure count does not go below 0
-        if (currentItem.count <= 0) currentItem.added = false;
+         // Ensure count does not go below 0
+              if (currentItem.count <= 0) {
+                currentItem.added = false;
+                dispatch(removeItem(currentItem._id));
+              }
 
         // Calculate totals and update individual total
         const totalData = calculateTotal(currentItem);

@@ -53,12 +53,11 @@ function PendingOrders() {
   }, [transactionData]);
 
   const handleSelectAll = () => {
-    if (selectedOrders.size === transactionData?.data?.combined?.length) {
+    if (selectedOrders.size === filteredOrders.length) {
       setSelectedOrders(new Set());
       setSelectAll(false);
     } else {
-      const allOrderIds =
-        transactionData?.data?.combined?.map((order) => order._id) || [];
+      const allOrderIds = filteredOrders.map((order) => order._id) || [];
       setSelectedOrders(new Set(allOrderIds));
       setSelectAll(true);
     }
@@ -85,7 +84,7 @@ function PendingOrders() {
       window.alert("Select at least one order to convert");
     }
 
-    const selectedSaleOrders = transactionData?.data?.combined.filter((order) =>
+    const selectedSaleOrders = filteredOrders.filter((order) =>
       selectedOrders.has(order._id)
     );
 
@@ -107,12 +106,15 @@ function PendingOrders() {
     }
 
     const party = selectedSaleOrders[0].party;
+    console.log("selectedOrders", selectedOrders);
 
     // Combine all items and modify `GodownList[0].individualTotal`
     const allItems = selectedSaleOrders.reduce((acc, order) => {
       const updatedItems = order.items.map((item) => {
         // Create a deep clone of the item to avoid modifying the original object
         const clonedItem = structuredClone(item);
+
+        // console.log(clonedItem.product_name);
 
         if (clonedItem?.GodownList?.[0]) {
           // Add `total` to `GodownList[0].individualTotal`
@@ -180,10 +182,10 @@ function PendingOrders() {
         despatchDetails,
       })
     );
-    navigate("/sUsers/sales",{
-      state:{
-        from:"orderPending"
-      }
+    navigate("/sUsers/sales", {
+      state: {
+        from: "orderPending",
+      },
     });
   };
 
@@ -214,13 +216,7 @@ function PendingOrders() {
           )}
           <p>Select all</p>
         </div>
-        {/* <div>
-          Total : ₹
-          {parseFloat(
-            transactionData?.data?.totalTransactionAmount || 0
-          ).toLocaleString()}{" "}
-        </div> */}
-        {/* <div className="bg-white py-2 shadow-lg flex  justify-end px-2"> */}
+
         <button
           onClick={() => {
             handleConvertion();
@@ -230,26 +226,10 @@ function PendingOrders() {
           Convert
         </button>
       </div>
-      {/* </div> */}
-
-      {/* <div className="bg-white py-2 shadow-lg flex  justify-end px-2">
-        <button className="bg-blue-500 px-2.5 text-xs py-1.5  text-white rounded">
-          Convert
-        </button>
-      </div> */}
 
       <div className=" py-2">
         <div className="bg-white rounded-lg ">
           <div className="">
-            {/* <button 
-              onClick={handleSelectAll}
-              className="mb-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-            >
-              {selectedOrders.size === transactionData?.data?.combined?.length 
-                ? "Deselect All" 
-                : "Select All"}
-            </button> */}
-
             <div className="overflow-x-auto ">
               <table className="w-full border-collapse text-xs sm:text-sm  ">
                 <thead>
@@ -277,9 +257,14 @@ function PendingOrders() {
                       <td className="p-3 text-center">
                         {new Date(transaction.date).toLocaleDateString()}
                       </td>
-                      <td 
-                      onClick={()=>{navigate("/sUsers/InvoiceDetails/" + transaction._id)}}
-                      className="p-3 text-center hover:underline cursor-pointer">{transaction.voucherNumber}</td>
+                      <td
+                        onClick={() => {
+                          navigate("/sUsers/InvoiceDetails/" + transaction._id);
+                        }}
+                        className="p-3 text-center hover:underline cursor-pointer"
+                      >
+                        {transaction.voucherNumber}
+                      </td>
                       <td className="p-3 text-right ">
                         ₹
                         {parseFloat(transaction.enteredAmount).toLocaleString()}

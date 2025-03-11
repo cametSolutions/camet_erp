@@ -400,7 +400,7 @@ export const revertDebitNoteStockUpdates = async (items, session) => {
         product.GodownList = product.GodownList.map((godown) => {
           const currentGodownStock = Number(godown.balance_stock) || 0;
           const newGodownStock = truncateToNDecimals(
-            currentGodownStock + Number(item.count), // Revert stock by adding back
+            currentGodownStock + Number(itemCount), // Revert stock by adding back
             3
           );
           return {
