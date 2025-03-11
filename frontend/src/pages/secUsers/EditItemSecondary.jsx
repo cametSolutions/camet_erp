@@ -25,18 +25,30 @@ function EditItemSecondary() {
   const [taxAmount, setTaxAmount] = useState(0);
   const [discountPercentage, setDiscountPercentage] = useState(0);
   const [isTaxInclusive, setIsTaxInclusive] = useState(false);
+  const [actualQuantity, setActualQuantity] = useState("");
 
   const { id } = useParams();
   const navigate = useNavigate();
 
   const ItemsFromRedux = useSelector((state) => state.invoiceSecondary.items);
   const selectedItem = ItemsFromRedux.filter((el) => el._id === id);
+  const { configurations } = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg
+  );
+  const configuration = configurations[0];
+  const enableActualAndBilledQuantity =
+    configuration?.enableActualAndBilledQuantity || false;
 
   useEffect(() => {
     if (selectedItem[0]) {
       setItem(selectedItem[0]);
       setNewPrice(selectedItem[0]?.selectedPriceRate || 0);
       setQuantity(selectedItem[0]?.count || 1);
+      if (enableActualAndBilledQuantity) {
+        setActualQuantity(selectedItem[0]?.actualCount || 1);
+      } else {
+        setActualQuantity(selectedItem[0]?.count || 1);
+      }
       setUnit(selectedItem[0]?.unit);
       setIgst(selectedItem[0]?.igst);
       setIsTaxInclusive(selectedItem[0]?.isTaxInclusive || false);
@@ -46,9 +58,7 @@ function EditItemSecondary() {
         setType("amount");
         setDiscountPercentage(selectedItem[0]?.discountPercentage);
         setDiscountAmount(selectedItem[0]?.discount);
-      }else{
-
-        
+      } else {
         setDiscount(selectedItem[0]?.discountPercentage);
         setDiscountAmount(selectedItem[0]?.discount);
 
@@ -57,12 +67,6 @@ function EditItemSecondary() {
       }
     }
   }, [selectedItem[0]]);
-
-
-  console.log(isTaxInclusive);
-  
-
-  
 
   useEffect(() => {
     // Ensure all inputs are properly parsed
@@ -96,7 +100,6 @@ function EditItemSecondary() {
           ((discountValue / 100) * taxExclusivePrice).toFixed(2) // Calculate amount
         );
       }
-
 
       const discountedPrice = Number(
         (taxBasePrice - calculatedDiscountAmount).toFixed(2)
@@ -133,7 +136,6 @@ function EditItemSecondary() {
         );
       }
 
-
       const discountedPrice = Number(
         (taxExclusivePrice - calculatedDiscountAmount).toFixed(2)
       );
@@ -149,9 +151,64 @@ function EditItemSecondary() {
       setTaxExclusivePrice(taxExclusivePrice);
       setTaxAmount(taxAmount);
     }
-  }, [newPrice, quantity, discount, type, igst, isTaxInclusive,discountAmount,discountPercentage]);
+  }, [
+    newPrice,
+    quantity,
+    discount,
+    type,
+    igst,
+    isTaxInclusive,
+    discountAmount,
+    discountPercentage,
+  ]);
 
   const dispatch = useDispatch();
+
+  const handleBackClick = () => {
+    navigate(-1);
+  };
+
+  const handleDirectQuantityChange = (value) => {
+    if (
+      enableActualAndBilledQuantity &&
+      actualQuantity &&
+      Number(value) > actualQuantity
+    ) {
+      return;
+    }
+    if (value.includes(".")) {
+      // Split the value into parts before and after the decimal point
+      const parts = value.split(".");
+      // Check the length of the part after the decimal point
+      if (parts[1].length > 3) {
+        return;
+      }
+    }
+
+    setQuantity(value);
+
+    if (!enableActualAndBilledQuantity) {
+      setActualQuantity(value);
+    }
+    // setActualQuantity(value);
+  };
+  const handleActualQuantityChange = (value) => {
+    if (value.includes(".")) {
+      // Split the value into parts before and after the decimal point
+      const parts = value.split(".");
+      // Check the length of the part after the decimal point
+      if (parts[1].length > 3) {
+        return;
+      }
+    }
+
+    setActualQuantity(value);
+    setQuantity(value);
+  };
+
+  const changePrice = (price) => {
+    setNewPrice(price);
+  };
 
   const submitHandler = () => {
     const newItem = { ...item };
@@ -163,36 +220,13 @@ function EditItemSecondary() {
     newItem.discountPercentage = discountPercentage;
     newItem.newGst = igst;
     newItem.discountType = type;
+    newItem.actualCount = Number(actualQuantity) || 0;
 
     dispatch(changeIgstAndDiscount(newItem));
     dispatch(addPriceRate({ selectedPriceRate: Number(newPrice), _id: id }));
     handleBackClick();
   };
 
-  const handleBackClick = () => {
-    navigate(-1);
-  };
-
-  const changeQuantity = (quantity) => {
-    // Check if the quantity includes a dot (decimal point)
-    if (quantity.includes(".")) {
-      // Split the quantity into parts before and after the decimal point
-      const parts = quantity.split(".");
-      // Check the length of the part after the decimal point
-      if (parts[1].length > 3) {
-        return; // Prevent more than 3 decimal places
-      }
-      // If the length is valid, update the state with the formatted value
-      setQuantity(quantity);
-    } else {
-      // If there's no decimal point, just update the state with the current value
-      setQuantity(quantity);
-    }
-  };
-
-  const changePrice = (price) => {
-    setNewPrice(price);
-  };
   return (
     <div className="   ">
       <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex  items-center gap-2 sticky top-0 z-20 ">
@@ -235,43 +269,77 @@ function EditItemSecondary() {
 
                   {}
 
-                  {isTaxInclusive !== null && isTaxInclusive !== undefined && isTaxInclusive && (
-                    <div className="flex items-center gap-3 ml-1 ">
-                      <input
-                        type="checkbox"
-                        id="valueCheckbox"
-                        className="form-checkbox h-5 w-5 text-indigo-600 transition duration-150 ease-in-out"
-                        checked={isTaxInclusive === true}
-                        onChange={() => {
-                          setIsTaxInclusive(!isTaxInclusive);
-                        }}
-                      />
-                      <label
-                        className="block uppercase text-blueGray-600 text-xs font-bold"
-                        htmlFor="valueCheckbox"
-                      >
-                        Tax Inclusive
-                      </label>
-                    </div>
-                  )}
-
-                  <div className="flex items-center space-x-4">
-                    <div className="flex flex-col">
-                      <label className="leading-loose">Quantity</label>
-                      <div className=" relative focus-within:text-gray-600 text-gray-400">
+                  {isTaxInclusive !== null &&
+                    isTaxInclusive !== undefined &&
+                    isTaxInclusive && (
+                      <div className="flex items-center gap-3 ml-1 ">
                         <input
-                          // onChange={(e) => setQuantity(e.target.value)}
-                          onChange={(e) => {
-                            changeQuantity(e.target.value);
+                          type="checkbox"
+                          id="valueCheckbox"
+                          className="form-checkbox h-5 w-5 text-indigo-600 transition duration-150 ease-in-out"
+                          checked={isTaxInclusive === true}
+                          onChange={() => {
+                            setIsTaxInclusive(!isTaxInclusive);
                           }}
-                          value={quantity}
-                          type="number"
-                          className="input-number  pr-4 pl-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm border-gray-300 rounded-md focus:outline-none text-gray-600"
-                          placeholder="0"
                         />
-                        <div className="absolute left-3 top-2"></div>
+                        <label
+                          className="block uppercase text-blueGray-600 text-xs font-bold"
+                          htmlFor="valueCheckbox"
+                        >
+                          Tax Inclusive
+                        </label>
                       </div>
+                    )}
+                  <div
+                    className={`grid grid-cols-1 ${
+                      enableActualAndBilledQuantity
+                        ? "sm:grid-cols-1"
+                        : "sm:grid-cols-2"
+                    } gap-4 `}
+                  >
+                    {/* Quantity Input */}
+                    <div className="flex flex-row-reverse gap-8 ">
+                      <div className="flex flex-col">
+                        <label className="leading-loose">
+                          {enableActualAndBilledQuantity
+                            ? "Billed Quantity"
+                            : "Quantity"}
+                        </label>
+                        <div className="relative focus-within:text-gray-600 text-gray-400">
+                          <input
+                            onChange={(e) =>
+                              handleDirectQuantityChange(e.target.value)
+                            }
+                            value={quantity}
+                            type="number"
+                            className="input-number px-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm border-gray-300 rounded-md focus:outline-none text-gray-600"
+                            placeholder="0"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Billed Quantity (Only shows when enableActualAndBilledQuantity is false) */}
+                      {enableActualAndBilledQuantity && (
+                        <div className="flex flex-col">
+                          <label className="leading-loose">
+                            Actual Quantity
+                          </label>
+                          <div className="relative focus-within:text-gray-600 text-gray-400">
+                            <input
+                              onChange={(e) =>
+                                handleActualQuantityChange(e.target.value)
+                              }
+                              value={actualQuantity}
+                              type="number"
+                              className="input-number px-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm border-gray-300 rounded-md focus:outline-none text-gray-600"
+                              placeholder="0"
+                            />
+                          </div>
+                        </div>
+                      )}
                     </div>
+
+                    {/* Unit Input */}
                     <div className="flex flex-col">
                       <label className="leading-loose">Unit</label>
                       <div className="relative focus-within:text-gray-600 text-gray-400">
@@ -279,9 +347,8 @@ function EditItemSecondary() {
                           value={unit}
                           disabled
                           type="text"
-                          className="pr-4 pl-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm border-gray-300 rounded-md focus:outline-none text-gray-600"
+                          className="px-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm border-gray-300 rounded-md focus:outline-none text-gray-600 bg-gray-100"
                         />
-                        <div className="absolute left-3 top-2"></div>
                       </div>
                     </div>
                   </div>

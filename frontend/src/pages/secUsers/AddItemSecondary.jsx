@@ -269,6 +269,7 @@ function AddItemSecondary() {
       // Toggle the 'added' state of the item
       itemToUpdate.added = !itemToUpdate.added;
       itemToUpdate.count = 1;
+      itemToUpdate.actualCount = 1;
       // item.update.selectedPriceRate=
       const total = calculateTotal(itemToUpdate, selectedPriceLevel).toFixed(2);
       itemToUpdate.total = total;

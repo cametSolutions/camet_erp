@@ -479,9 +479,8 @@ function EditItemForm({
                           <p className="text-xs">Discount</p>
                           <div className="flex items-center gap-2">
                             <p className="text-xs">{`(${discountPercentage}) %`}</p>
-                            <p className="text-xs">{`₹ ${discountAmount?.toFixed(
-                              2
-                            )} `}</p>
+                            <p className="text-xs">{`₹ ${discountAmount ? Number(discountAmount).toFixed(2) : '0.00'}`}</p>
+
                           </div>
                         </div>
                       )}
