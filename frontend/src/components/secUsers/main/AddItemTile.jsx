@@ -28,7 +28,6 @@ function AddItemTile({
   urlToEditItem,
   convertedFrom = [],
 }) {
-  console.log("convertedFrom", convertedFrom);
 
   return (
     <div>
