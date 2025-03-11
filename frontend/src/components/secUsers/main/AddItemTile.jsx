@@ -99,7 +99,7 @@ function AddItemTile({
                       </p>
                       <p className="text-nowrap">
                         ₹{" "}
-                        {el?.GodownList.reduce((acc, curr) => {
+                        {Number(el?.GodownList.reduce((acc, curr) => {
                           if (el?.hasGodownOrBatch) {
                             if (curr?.added) {
                               return (acc += Number(
@@ -109,7 +109,7 @@ function AddItemTile({
                               return acc;
                             }
                           } else {
-                            console.log("curr", curr);
+                            // console.log("curr", curr);
 
                             return (
                               (acc += Number(
@@ -117,7 +117,7 @@ function AddItemTile({
                               )) || el?.total
                             );
                           }
-                        }, 0)?.toFixed(2)}
+                        }, 0))?.toFixed(2)}
                       </p>
                     </div>
                     <div className="flex gap-1 text-xs mt-1">
