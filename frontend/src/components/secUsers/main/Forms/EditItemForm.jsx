@@ -125,7 +125,7 @@ function EditItemForm({
       let calculatedDiscountAmount = 0;
       let calculatedDiscountPercentage = 0;
 
-      if (type === "amount") {
+      if (type === "amount" ) {
         calculatedDiscountAmount = discountValue; // Given discount value is treated as amount
         calculatedDiscountPercentage =
           Number(
