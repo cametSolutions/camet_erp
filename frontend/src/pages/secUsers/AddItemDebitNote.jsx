@@ -328,7 +328,6 @@ function AddItemDebitNote() {
             (priceLevelItem) => priceLevelItem.pricelevel === pricelevel
           )?.pricerate || 0;
 
-        console.log(priceRate);
 
         const reduxItem = itemsFromRedux.find((p) => p._id === item._id);
         // const reduxRate = reduxItem?.selectedPriceRate || null;
@@ -376,34 +375,59 @@ function AddItemDebitNote() {
 
     if (item.hasGodownOrBatch) {
       item.GodownList.forEach((godownOrBatch, index) => {
-        if (situation == "normal") {
+        if (situation === "normal") {
           priceRate = godownOrBatch.selectedPriceRate;
         }
-        let individualSubtotal = priceRate * Number(godownOrBatch.count) || 0;
-        let discountedSubtotal = individualSubtotal;
+        const quantity = Number(godownOrBatch.count) || 0;
+        const igstValue = Math.max(item.igst || 0, 0);
+
+        // Calculate base price based on tax inclusivity
+        let basePrice = priceRate * quantity;
+
+  
+
+        let taxBasePrice = basePrice;
+
+        // For tax inclusive prices, calculate the base price without tax
+        if (item?.isTaxInclusive) {
+          taxBasePrice = Number((basePrice / (1 + igstValue / 100)).toFixed(2));
+        }
+
+        // Calculate discount based on discountType
+        let discountedPrice = taxBasePrice;
+
+
 
         if (
-          godownOrBatch.discount !== 0 &&
-          godownOrBatch.discount !== undefined &&
-          godownOrBatch.discount !== ""
-        ) {
-          discountedSubtotal = discountedSubtotal - godownOrBatch.discount;
-        } else if (
+          godownOrBatch.discountType === "percentage" &&
           godownOrBatch.discountPercentage !== 0 &&
           godownOrBatch.discountPercentage !== undefined &&
           godownOrBatch.discountPercentage !== ""
         ) {
-          discountedSubtotal -=
-            (individualSubtotal * godownOrBatch.discountPercentage) / 100;
+          // Percentage discount
+
+          const discountAmount =
+            (taxBasePrice * godownOrBatch.discountPercentage) / 100;
+
+          discountedPrice = taxBasePrice - discountAmount;
+        } else if (
+          godownOrBatch.discount !== 0 &&
+          godownOrBatch.discount !== undefined &&
+          godownOrBatch.discount !== ""
+        ) {
+          // Fixed amount discount (default)
+          discountedPrice = taxBasePrice - godownOrBatch.discount;
         }
+        // Calculate tax amount
+        const taxAmount = discountedPrice * (igstValue / 100);
 
-        const gstAmount = (discountedSubtotal * (item.igst || 0)) / 100;
-
-        subtotal += discountedSubtotal + gstAmount;
-
-        const individualTotal = parseFloat(
-          (discountedSubtotal + gstAmount).toFixed(2)
+        // Calculate total including tax
+        const individualTotal = Math.max(
+          parseFloat((discountedPrice + taxAmount).toFixed(2)),
+          0
         );
+
+        subtotal += individualTotal;
 
         individualTotals.push({
           index,
@@ -412,30 +436,53 @@ function AddItemDebitNote() {
         });
       });
     } else {
-      if (situation == "normal") {
+      if (situation === "normal") {
         priceRate = item.GodownList[0].selectedPriceRate;
       }
-      let individualSubtotal = priceRate * Number(item.count);
-      let discountedSubtotal = individualSubtotal;
+      const quantity = Number(item.count);
+      const igstValue = Math.max(item.newGst || item.igst || 0, 0);
 
-      if (item.discount !== 0 && item.discount !== undefined) {
-        discountedSubtotal -= item.discount;
-      } else if (
+      // Calculate base price based on tax inclusivity
+      let basePrice = priceRate * quantity;
+      let taxBasePrice = basePrice;
+
+      // For tax inclusive prices, calculate the base price without tax
+      if (item?.isTaxInclusive) {
+        taxBasePrice = Number((basePrice / (1 + igstValue / 100)).toFixed(2));
+      }
+
+      // Calculate discount based on discountType
+      let discountedPrice = taxBasePrice;
+
+      if (
+        item.discountType === "percentage" &&
         item.discountPercentage !== 0 &&
         item.discountPercentage !== undefined
       ) {
-        discountedSubtotal -=
-          (individualSubtotal * item.discountPercentage) / 100;
+        // Percentage discount
+        const discountAmount = (taxBasePrice * item.discountPercentage) / 100;
+        console.log("Percentage discount:", discountAmount);
+        discountedPrice = taxBasePrice - discountAmount;
+      } else if (item.discount !== 0 && item.discount !== undefined) {
+        // Fixed amount discount (default)
+        console.log("Fixed amount discount:", item.discount);
+        discountedPrice = taxBasePrice - item.discount;
       }
 
-      const gstAmount =
-        (discountedSubtotal * (item.newGst || item.igst || 0)) / 100;
+      // Calculate tax amount
+      const taxAmount = discountedPrice * (igstValue / 100);
 
-      subtotal += discountedSubtotal + gstAmount;
 
-      const individualTotal = parseFloat(
-        (discountedSubtotal + gstAmount).toFixed(2)
+
+      // Calculate total including tax
+      const individualTotal = Math.max(
+        parseFloat((discountedPrice + taxAmount).toFixed(2)),
+        0
       );
+
+      // console.log( individualTotal);
+
+      subtotal += individualTotal;
 
       individualTotals.push({
         index: 0,
@@ -444,14 +491,13 @@ function AddItemDebitNote() {
       });
     }
 
-    subtotal = parseFloat(subtotal.toFixed(2));
+    subtotal = Math.max(parseFloat(subtotal.toFixed(2)), 0);
 
     return {
       individualTotals,
       total: subtotal,
     };
   };
-
   ///////////////////////////handleAddClick///////////////////////////////////
 
 
