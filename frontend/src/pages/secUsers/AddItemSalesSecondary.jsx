@@ -409,8 +409,7 @@ function AddItemSalesSecondary() {
         // Calculate base price based on tax inclusivity
         let basePrice = priceRate * quantity;
 
-        console.log(item.isTaxInclusive);
-        console.log(basePrice);
+  
 
         let taxBasePrice = basePrice;
 
@@ -422,9 +421,7 @@ function AddItemSalesSecondary() {
         // Calculate discount based on discountType
         let discountedPrice = taxBasePrice;
 
-        console.log(godownOrBatch.discountType);
-        console.log(godownOrBatch.discount);
-        console.log(godownOrBatch.discountPercentage);
+
 
         if (
           godownOrBatch.discountType === "percentage" &&
@@ -504,7 +501,7 @@ function AddItemSalesSecondary() {
 
       // Calculate total including tax
       const individualTotal = Math.max(
-        parseFloat(discountedPrice + taxAmount),
+        parseFloat((discountedPrice + taxAmount).toFixed(2)),
         0
       );
 

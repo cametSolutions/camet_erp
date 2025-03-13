@@ -40,8 +40,10 @@ function EditItemSalesSecondary() {
         (g) => g?.godown_id && !g?.batch
       );
 
+      console.log(index);
+
       const newGodownList = newItem.GodownList.map((godown, idx) => {
-        if (idx === index) {
+        if (idx == index) {
           return {
             ...godown,
             count: Number(quantity) || 0,
@@ -91,17 +93,10 @@ function EditItemSalesSecondary() {
             const discountedPrice = Number(
               (taxBasePrice - calculatedDiscountAmount)?.toFixed(2)
             );
-      
+
             ////final calculation
             const taxAmount = discountedPrice * (igst / 100);
-             individualTotal = Number(
-              (discountedPrice + taxAmount)?.toFixed(2)
-            );
-
-
-
-
-
+            individualTotal = Number((discountedPrice + taxAmount)?.toFixed(2));
           } else {
             const taxExclusivePrice = newPrice * (updatedGodown.count || 0);
 
@@ -124,20 +119,16 @@ function EditItemSalesSecondary() {
             const discountedPrice = Number(
               (taxExclusivePrice - calculatedDiscountAmount)?.toFixed(2)
             );
-      
+
             ////final calculation
             const taxAmount = discountedPrice * (igst / 100);
-             individualTotal = Number(
-              (discountedPrice + taxAmount)?.toFixed(2)
-            );
+            individualTotal = Number((discountedPrice + taxAmount)?.toFixed(2));
           }
-
-          console.log(individualTotal);
-          
 
           updatedGodown.discount = calculatedDiscountAmount;
           updatedGodown.discountPercentage = calculatedDiscountPercentage;
-          updatedGodown.individualTotal = Number(individualTotal) > 0 ? Number(individualTotal) : 0;
+          updatedGodown.individualTotal =
+            Number(individualTotal) > 0 ? Number(individualTotal) : 0;
 
           return updatedGodown;
         } else {
