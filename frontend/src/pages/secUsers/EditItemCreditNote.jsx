@@ -14,7 +14,7 @@ function EditItemCreditNote() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
- const submitHandler = (
+  const submitHandler = (
     item,
     index,
     quantity,
@@ -32,6 +32,12 @@ function EditItemCreditNote() {
     const newItem = structuredClone(item);
 
     if (selectedItem[0]?.hasGodownOrBatch) {
+      // Check if this is a godown-only item (no batches)
+      const isGodownOnlyItem = newItem.GodownList?.every(
+        (g) => g?.godown_id && !g?.batch
+      );
+
+
       const newGodownList = newItem.GodownList.map((godown, idx) => {
         if (idx == index) {
           return {
@@ -46,7 +52,83 @@ function EditItemCreditNote() {
             individualTotal: Number(totalAmount.toFixed(2)),
             discountType: type,
           };
+        } else if (isGodownOnlyItem) {
+          // Apply the logic from updateAllGodowns for other godowns when it's godown-only item
+          const updatedGodown = { ...godown };
+
+          // Only update godowns that are not the current one
+          updatedGodown.selectedPriceRate = Number(newPrice);
+          updatedGodown.discountType = type;
+          updatedGodown.isTaxInclusive = isTaxInclusive;
+
+          // Calculate discount amount and percentage based on tax inclusivity
+          let calculatedDiscountAmount = 0;
+          let calculatedDiscountPercentage = 0;
+          let individualTotal = 0;
+
+          if (isTaxInclusive) {
+            const taxInclusivePrice = newPrice * (updatedGodown.count || 0);
+            const taxBasePrice = Number(
+              (taxInclusivePrice / (1 + igst / 100)).toFixed(2)
+            );
+
+            if (type === "amount") {
+              calculatedDiscountAmount = discountAmount; // Treat as amount
+              calculatedDiscountPercentage =
+                taxBasePrice !== 0
+                  ? Number(((discountAmount / taxBasePrice) * 100).toFixed(2))
+                  : 0;
+            } else if (type === "percentage") {
+              calculatedDiscountPercentage = discountPercentage; // Treat as percentage
+              calculatedDiscountAmount =
+                Number(
+                  ((discountPercentage / 100) * taxBasePrice).toFixed(2)
+                ) || 0;
+            }
+
+            const discountedPrice = Number(
+              (taxBasePrice - calculatedDiscountAmount)?.toFixed(2)
+            );
+
+            ////final calculation
+            const taxAmount = discountedPrice * (igst / 100);
+            individualTotal = Number((discountedPrice + taxAmount)?.toFixed(2));
+          } else {
+            const taxExclusivePrice = newPrice * (updatedGodown.count || 0);
+
+            if (type === "amount") {
+              calculatedDiscountAmount = discountAmount;
+              calculatedDiscountPercentage =
+                taxExclusivePrice !== 0
+                  ? Number(
+                      ((discountAmount / taxExclusivePrice) * 100).toFixed(2)
+                    )
+                  : 0;
+            } else if (type === "percentage") {
+              calculatedDiscountPercentage = discountPercentage;
+              calculatedDiscountAmount =
+                Number(
+                  ((discountPercentage / 100) * taxExclusivePrice).toFixed(2)
+                ) || 0;
+            }
+
+            const discountedPrice = Number(
+              (taxExclusivePrice - calculatedDiscountAmount)?.toFixed(2)
+            );
+
+            ////final calculation
+            const taxAmount = discountedPrice * (igst / 100);
+            individualTotal = Number((discountedPrice + taxAmount)?.toFixed(2));
+          }
+
+          updatedGodown.discount = calculatedDiscountAmount;
+          updatedGodown.discountPercentage = calculatedDiscountPercentage;
+          updatedGodown.individualTotal =
+            Number(individualTotal) > 0 ? Number(individualTotal) : 0;
+
+          return updatedGodown;
         } else {
+          // Return unchanged if not current index and not a godown-only item
           return godown;
         }
       });
@@ -109,7 +191,7 @@ function EditItemCreditNote() {
       newItem.newGst = igst;
     }
 
-    dispatch(updateItem(newItem));
+    dispatch(updateItem(newItem));  
 
     navigate(-1);
   };

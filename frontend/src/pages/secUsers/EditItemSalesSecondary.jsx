@@ -40,7 +40,6 @@ function EditItemSalesSecondary() {
         (g) => g?.godown_id && !g?.batch
       );
 
-      console.log(index);
 
       const newGodownList = newItem.GodownList.map((godown, idx) => {
         if (idx == index) {
