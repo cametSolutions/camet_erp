@@ -364,8 +364,6 @@ export const createAccountGroups = async (req, res) => {
 
         await AccountGroup.insertMany(accountGroupsToInsert); // Bulk insert
       }
-    
-
     }
 
     res.status(200).json({
@@ -383,6 +381,8 @@ export const addAccountGroupIdToParties = async (req, res) => {
     const selfCompanies = await OragnizationModel.find({ type: "self" }).select(
       "_id"
     );
+
+    // console.log("selfCompanies", selfCompanies.map(item => item._id.toString()));
 
     for (const company of selfCompanies) {
       const sundryDebtor = await AccountGroup.findOne({
@@ -447,42 +447,52 @@ export const addAccountGroupIdToParties = async (req, res) => {
 /// adding account groups id to outstanding
 export const addAccountGroupIdToOutstanding = async (req, res) => {
   try {
-    const selfCompanies = await OragnizationModel.find({ type: "self" }).select("_id owner");
+    const selfCompanies = await OragnizationModel.find({ type: "self" }).select(
+      "_id owner"
+    );
 
     for (const company of selfCompanies) {
       const outstanding = await TallyData.find({ cmp_id: company._id });
 
-      const partyIds = outstanding.map(item => item.party_id).filter(Boolean);
+      const partyIds = outstanding.map((item) => item.party_id).filter(Boolean);
       const parties = await PartyModel.find({
         party_master_id: { $in: partyIds },
-        accountGroup: { $in: ["Sundry Debtors", "Sundry Creditors"] }
+        accountGroup: { $in: ["Sundry Debtors", "Sundry Creditors"] },
       }).select("party_master_id accountGroup accountGroup_id");
 
-      const partyMap = new Map(parties.map(party => [party.party_master_id.toString(), party]));
+      const partyMap = new Map(
+        parties.map((party) => [party.party_master_id.toString(), party])
+      );
 
       for (const item of outstanding) {
         const party = partyMap.get(item.party_id?.toString());
 
         if (
-          party && 
-          party.accountGroup && 
-          party.accountGroup_id && 
-          (!item.accountGroup || !item.accountGroup_id) 
+          party &&
+          party.accountGroup &&
+          party.accountGroup_id &&
+          (!item.accountGroup || !item.accountGroup_id)
         ) {
           await TallyData.updateOne(
             { _id: item._id },
-            { $set: { accountGroup: party.accountGroup, accountGroup_id: party.accountGroup_id } }
+            {
+              $set: {
+                accountGroup: party.accountGroup,
+                accountGroup_id: party.accountGroup_id,
+              },
+            }
           );
         }
       }
     }
 
-    res.status(200).json({ message: "Account groups added to outstanding records successfully" });
+    res
+      .status(200)
+      .json({
+        message: "Account groups added to outstanding records successfully",
+      });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Error in updating outstanding records" });
   }
 };
-
-
-
