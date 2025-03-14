@@ -6,6 +6,8 @@ const initialState = {
     storedSecOrg && storedSecOrg !== "undefined"
       ? JSON.parse(storedSecOrg)
       : null,
+
+    refreshOrganizations:false
 };
 
 const secSelectedOrganizationSlice = createSlice({
@@ -18,7 +20,7 @@ const secSelectedOrganizationSlice = createSlice({
       const org = JSON.stringify(action.payload);
       localStorage.setItem("secOrg", org);
     },
-    removeSecSelectedOrg: (state,) => {
+    removeSecSelectedOrg: (state) => {
       state.secSelectedOrg = "";
       localStorage.setItem("secOrg", "");
     },
@@ -26,8 +28,10 @@ const secSelectedOrganizationSlice = createSlice({
     updateConfiguration: (state, action) => {
       state.secSelectedOrg = action.payload;
       localStorage.setItem("secOrg", JSON.stringify(action.payload));
-
     },
+    refreshCompanies:(state)=>{
+      state.refreshOrganizations=!state.refreshOrganizations
+    }
   },
 });
 
@@ -35,5 +39,6 @@ export const {
   setSecSelectedOrganization,
   removeSecSelectedOrg,
   updateConfiguration,
+  refreshCompanies
 } = secSelectedOrganizationSlice.actions;
 export default secSelectedOrganizationSlice.reducer;

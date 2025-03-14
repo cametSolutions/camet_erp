@@ -36,8 +36,8 @@ function HeaderTile({
               }}
               type="date"
               // min={new Date().toISOString().split("T")[0]}
-              className="w-20 border-none cursor-pointer  "
-              style={{ boxShadow: "none", borderColor: "#b6b6b6" }}
+              className="w-20  cursor-pointer  "
+              // style={{ boxShadow: "none", borderColor: "#b6b6b6" }}
             />
           </div>
         </div>

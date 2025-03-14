@@ -6,24 +6,22 @@ import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 
-function AddAmountTile({ tab, party,process="add" }) {
+function AddAmountTile({ tab, party, process = "add" }) {
   const navigate = useNavigate();
 
-  const selectedRedux=tab==="receipt"?"receipt":"payment"
+  const selectedRedux = tab === "receipt" ? "receipt" : "payment";
 
-  const { totalBillAmount, enteredAmount } = useSelector(
+  const { enteredAmount, remainingAmount } = useSelector(
     (state) => state[selectedRedux]
   );
-
-  const isRemaining = totalBillAmount - enteredAmount >= 0 ? true : false;
 
   const handleNavigate = () => {
     if (Object.keys(party).length === 0) {
       toast.error("Select a party first");
       return;
-    } else if(process=="add") {
+    } else if (process == "add") {
       navigate(`/sUsers/${tab}/addAmount/${party.party_master_id}`);
-    }else if(process=="edit"){
+    } else if (process == "edit") {
       navigate(`/sUsers/${tab}/edit/addAmount/${party.party_master_id}`);
     }
   };
@@ -58,7 +56,7 @@ function AddAmountTile({ tab, party,process="add" }) {
             <div class="relative flex  items-center">
               <span class="absolute left-3 text-gray-600 text-sm">₹</span>
               <input
-              readOnly
+                readOnly
                 type="text"
                 value={enteredAmount}
                 placeholder="12,500"
@@ -75,11 +73,8 @@ function AddAmountTile({ tab, party,process="add" }) {
               Add More Bills
             </p>
             <p className="text-xs md:text-md font-semibold mr-1">
-              {isRemaining ? "Remaining Amount" : "Advance Amount"} :{" "}
-              <span className="text-red-500">
-                {" "}
-                ₹ {Math.abs(totalBillAmount - enteredAmount)}
-              </span>
+              Remaining Amount
+              <span className="text-red-500"> ₹ {remainingAmount}</span>
             </p>
           </section>
         </div>

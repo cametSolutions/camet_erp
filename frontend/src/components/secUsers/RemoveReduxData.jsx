@@ -3,6 +3,7 @@ import { removeAllSales } from "../../../slices/salesSecondary";
 import { removeAll as removeAllStock } from "../../../slices/stockTransferSecondary";
 import { removeAll as removeAllPurchase } from "../../../slices/purchase";
 import { removeAll as removeAllCredit } from "../../../slices/creditNote";
+import { removeAll as removeAllDebit } from "../../../slices/debitNote";
 import { removeAll as removeAllPayment } from "../../../slices/payment";
 import { removeAll as removeAllReceipt } from "../../../slices/receipt";
 import { removeAll as removeAllDate } from "../../../slices/filterSlices/date";
@@ -26,6 +27,7 @@ function RemoveReduxData() {
     dispatch(removeAllStock());
     dispatch(removeAllPurchase());
     dispatch(removeAllCredit());
+    dispatch(removeAllDebit());
     dispatch(removeAllPayment());
     dispatch(removeAllReceipt());
     dispatch(removeAllDate());

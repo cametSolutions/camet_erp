@@ -17,16 +17,15 @@ export const handleCreditNoteStockUpdates = async (items, session) => {
       throw new Error(`Product not found for item ID: ${item._id}`);
     }
 
-    const itemCount = parseFloat(item.count);
+    // Use actualCount if available, otherwise fall back to count
+    const itemCount = parseFloat(
+      item.actualCount !== undefined ? item.actualCount : item.count
+    );
     const productBalanceStock = parseFloat(product.balance_stock);
     const newBalanceStock = truncateToNDecimals(
       productBalanceStock + (itemCount || 0),
       3
     );
-
-    console.log("itemCount: ", itemCount);
-    console.log("productBalanceStock: ", productBalanceStock);
-    console.log("newBalanceStock: ", newBalanceStock);
 
     productUpdates.push({
       updateOne: {
@@ -36,10 +35,10 @@ export const handleCreditNoteStockUpdates = async (items, session) => {
     });
 
     if (item.hasGodownOrBatch) {
-      console.log("item.hasGodownOrBatch: ");
-
       for (const godown of item.GodownList) {
-        const godownCount = parseFloat(godown.count);
+        // Use actualCount if available, otherwise fall back to count for each godown
+        const godownCount =
+          godown.actualCount !== undefined ? godown.actualCount : godown.count;
 
         if (godown.batch && !godown.godown_id) {
           console.log("batch only ");
@@ -47,7 +46,7 @@ export const handleCreditNoteStockUpdates = async (items, session) => {
             (g) => g.batch === godown.batch
           );
 
-          if (godownIndex !== -1 && godown.count && godown.count > 0) {
+          if (godownIndex !== -1 && godownCount && godownCount > 0) {
             const currentGodownStock =
               product.GodownList[godownIndex].balance_stock || 0;
             const newGodownStock = truncateToNDecimals(
@@ -55,7 +54,6 @@ export const handleCreditNoteStockUpdates = async (items, session) => {
               3
             );
 
-            console.log("newGodownStock: ", newGodownStock);
 
             godownUpdates.push({
               updateOne: {
@@ -72,7 +70,7 @@ export const handleCreditNoteStockUpdates = async (items, session) => {
             (g) => g.batch === godown.batch && g.godown_id === godown.godown_id
           );
 
-          if (godownIndex !== -1 && godown.count && godown.count > 0) {
+          if (godownIndex !== -1 && godownCount && godownCount > 0) {
             const currentGodownStock =
               product.GodownList[godownIndex].balance_stock || 0;
             const newGodownStock = truncateToNDecimals(
@@ -80,8 +78,7 @@ export const handleCreditNoteStockUpdates = async (items, session) => {
               3
             );
 
-            console.log("currentGodownStock: ", currentGodownStock);
-            console.log("newGodownStock: ", newGodownStock);
+    
 
             godownUpdates.push({
               updateOne: {
@@ -104,7 +101,7 @@ export const handleCreditNoteStockUpdates = async (items, session) => {
             (g) => g.godown_id === godown.godown_id
           );
 
-          if (godownIndex !== -1 && godown.count && godown.count > 0) {
+          if (godownIndex !== -1 && godownCount  && godownCount  > 0) {
             const currentGodownStock =
               product.GodownList[godownIndex].balance_stock || 0;
             const newGodownStock = truncateToNDecimals(
@@ -112,7 +109,6 @@ export const handleCreditNoteStockUpdates = async (items, session) => {
               3
             );
 
-            console.log("newGodownStock: ", newGodownStock);
 
             godownUpdates.push({
               updateOne: {
@@ -270,7 +266,11 @@ export const revertCreditNoteStockUpdates = async (items, session) => {
         throw new Error(`Product not found for item ID: ${item._id}`);
       }
 
-      const itemCount = parseFloat(item.count);
+   
+        // Use actualCount if available, otherwise fall back to count
+        const itemCount = parseFloat(
+          item.actualCount !== undefined ? item.actualCount : item.count
+        );
       const productBalanceStock = parseFloat(product.balance_stock);
       const newBalanceStock = truncateToNDecimals(
         productBalanceStock - itemCount, // Revert stock by adding back
@@ -288,6 +288,10 @@ export const revertCreditNoteStockUpdates = async (items, session) => {
       // Revert godown and batch updates
       if (item.hasGodownOrBatch) {
         for (const godown of item.GodownList) {
+
+          
+           // Use actualCount if available, otherwise fall back to count for each godown
+           const godownCount = godown.actualCount !== undefined ? godown.actualCount : godown.count;
           if (godown.batch && !godown?.godown_id) {
             // Case: Batch only or Godown with Batch
             const godownIndex = product.GodownList.findIndex(
@@ -295,11 +299,11 @@ export const revertCreditNoteStockUpdates = async (items, session) => {
             );
 
             if (godownIndex !== -1) {
-              if (godown.count && godown.count > 0) {
+              if (godownCount && godownCount > 0) {
                 const currentGodownStock =
                   product.GodownList[godownIndex].balance_stock || 0;
                 const newGodownStock = truncateToNDecimals(
-                  currentGodownStock - godown.count, // Revert stock by adding back
+                  currentGodownStock - godownCount, // Revert stock by adding back
                   3
                 );
 
@@ -325,11 +329,11 @@ export const revertCreditNoteStockUpdates = async (items, session) => {
             );
 
             if (godownIndex !== -1) {
-              if (godown.count && godown.count > 0) {
+              if (godownCount && godownCount > 0) {
                 const currentGodownStock =
                   product.GodownList[godownIndex].balance_stock || 0;
                 const newGodownStock = truncateToNDecimals(
-                  currentGodownStock - godown.count, // Revert stock by adding back
+                  currentGodownStock - godownCount, // Revert stock by adding back
                   3
                 );
 
@@ -361,11 +365,11 @@ export const revertCreditNoteStockUpdates = async (items, session) => {
             );
 
             if (godownIndex !== -1) {
-              if (godown.count && godown.count > 0) {
+              if (godownCount && godownCount > 0) {
                 const currentGodownStock =
                   product.GodownList[godownIndex].balance_stock || 0;
                 const newGodownStock = truncateToNDecimals(
-                  currentGodownStock - godown.count, // Revert stock by adding back
+                  currentGodownStock - godownCount, // Revert stock by adding back
                   3
                 );
 
@@ -390,7 +394,7 @@ export const revertCreditNoteStockUpdates = async (items, session) => {
         product.GodownList = product.GodownList.map((godown) => {
           const currentGodownStock = Number(godown.balance_stock) || 0;
           const newGodownStock = truncateToNDecimals(
-            currentGodownStock - Number(item.count), // Revert stock by adding back
+            currentGodownStock - Number(itemCount), // Revert stock by adding back
             3
           );
           return {
@@ -437,6 +441,10 @@ export const updateTallyData = async (
       billId: billId.toString(),
       cmp_id: orgId,
       party_id: party?.party_master_id,
+      accountGroup: party?.accountGroup,
+      accountGroup_id: party?.accountGroup_id,
+      subGroup: party?.subGroup,
+      subGroup_id: party?.subGroup_id,
       bill_amount: lastAmount,
       bill_date: new Date(),
       bill_pending_amt: lastAmount,

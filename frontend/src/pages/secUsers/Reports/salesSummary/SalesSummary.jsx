@@ -1,4 +1,4 @@
-import  { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { BarLoader } from "react-spinners";
@@ -32,63 +32,165 @@ const SalesSummary = () => {
     }
   }, [salesSummaryData]);
 
-  // Calculate totals based on selected option
+  // Calculate totals and store relevant transactions based on selected option
   useEffect(() => {
-    const calculateTotals = () => {
+    const calculateTotalsWithTransactions = () => {
       if (!summaryData.length) return [];
   
-      const totals = new Map();
+      const totalsMap = new Map();
   
       if (selectedOption === "Ledger") {
         summaryData.forEach((item) => {
           if (!item.party?._id) return;
           const partyName = item.party.partyName;
-          const currentTotal = totals.get(partyName) || 0;
-          totals.set(partyName, currentTotal + (Number(item.finalAmount) || 0));
+          
+          // Get existing data or initialize
+          const existing = totalsMap.get(partyName) || { 
+            total: 0, 
+            transactions: [] 
+          };
+          
+          // Update total
+          existing.total += (Number(item.finalAmount) || 0);
+          
+          // Add transaction details using the requested format
+          existing.transactions.push({
+            voucherNumber: item.salesNumber || "N/A",
+            party_name: partyName,
+            date: item.date,
+            enteredAmount: Number(item.finalAmount) || 0,
+            _id: item._id,
+            isCancelled: false,
+            type:"Tax Invoice",
+          });
+          
+          totalsMap.set(partyName, existing);
         });
       } else if (selectedOption === "Stock Item") {
-        summaryData.forEach((item) => {
-          item.items?.forEach((it) => {
-            if (!it.product_name) return;
-            const currentTotal = totals.get(it.product_name) || 0;
-            totals.set(it.product_name, currentTotal + (it.total || 0));
+        // Create a map to organize transactions by product
+        const productTransactionsMap = new Map();
+        
+        summaryData.forEach((sale) => {
+          sale.items?.forEach((item) => {
+            if (!item.product_name) return;
+            
+            // Get existing data or initialize
+            const existing = totalsMap.get(item.product_name) || {
+              total: 0,
+              transactions: []
+            };
+            
+            // Update total
+            existing.total += (item.total || 0);
+            
+            // Track this product in this sale if not already tracked
+            const transactionKey = `${sale._id}-${item.product_name}`;
+            if (!productTransactionsMap.has(transactionKey)) {
+              existing.transactions.push({
+                voucherNumber: sale.salesNumber || "N/A",
+                party_name: sale.party?.partyName || "N/A",
+                date: sale.date,
+                enteredAmount: item.total || 0,
+                _id: sale._id,
+                product: item.product_name,
+                isCancelled: false,
+                type:"Tax Invoice"
+              });
+              productTransactionsMap.set(transactionKey, true);
+            }
+            
+            totalsMap.set(item.product_name, existing);
           });
         });
-      } 
-      
-      else if (selectedOption === "Stock Group") {
-        summaryData.forEach((item) => {
-          item.items?.forEach((h) => {
-            if (!h?.brand?._id) return;
-            const groupName = h.brand.name;
-            const currentTotal = totals.get(groupName) || 0;
-      
-            // Add the total of the item itself
-            const itemTotal = h.total || 0;
-      
-            totals.set(groupName, currentTotal + itemTotal);
+      } else if (selectedOption === "Stock Group") {
+        // Create a map to organize transactions by brand group
+        const brandTransactionsMap = new Map();
+        
+        summaryData.forEach((sale) => {
+          sale.items?.forEach((item) => {
+            if (!item?.brand?._id) return;
+            const groupName = item.brand.name;
+            
+            // Get existing data or initialize
+            const existing = totalsMap.get(groupName) || {
+              total: 0,
+              transactions: []
+            };
+            
+            // Update total
+            existing.total += (item.total || 0);
+            
+            // Track this brand in this sale if not already tracked
+            const transactionKey = `${sale._id}-${groupName}`;
+            if (!brandTransactionsMap.has(transactionKey)) {
+              existing.transactions.push({
+                voucherNumber: sale.salesNumber || "N/A",
+                party_name: sale.party?.partyName || "N/A",
+                date: sale.date,
+                enteredAmount: item.total || 0,
+                _id: sale._id,
+                brand: groupName,
+                isCancelled: false,
+                type:"Tax Invoice"
+              });
+              brandTransactionsMap.set(transactionKey, true);
+            }
+            
+            totalsMap.set(groupName, existing);
+          });
+        });
+      } else if (selectedOption === "Stock Category") {
+        // Create a map to organize transactions by category
+        const categoryTransactionsMap = new Map();
+        
+        summaryData.forEach((sale) => {
+          sale.items?.forEach((item) => {
+            if (!item?.category?._id) return;
+            const categoryName = item.category.name;
+            
+            // Get existing data or initialize
+            const existing = totalsMap.get(categoryName) || {
+              total: 0,
+              transactions: []
+            };
+            
+            // Update total
+            existing.total += (item.total || 0);
+            
+            // Track this category in this sale if not already tracked
+            const transactionKey = `${sale._id}-${categoryName}`;
+            if (!categoryTransactionsMap.has(transactionKey)) {
+              existing.transactions.push({
+                voucherNumber: sale.salesNumber || "N/A",
+                party_name: sale.party?.partyName || "N/A",
+                date: sale.date,
+                enteredAmount: item.total || 0,
+                _id: sale._id,
+                category: categoryName,
+                isCancelled: false,
+                type:"Tax Invoice"
+              });
+              categoryTransactionsMap.set(transactionKey, true);
+            }
+            
+            totalsMap.set(categoryName, existing);
           });
         });
       }
-      else if (selectedOption === "Stock Category") {
-        summaryData.forEach((item) => {
-          item.items?.forEach((h) => {
-            if (!h?.category?._id) return;
-            const categoryName = h.category.name;
-            const currentTotal = totals.get(categoryName) || 0;
       
-            // Add the total of the item itself
-            const itemTotal = h.total || 0;
-      
-            totals.set(categoryName, currentTotal + itemTotal);
-          });
-        });
-      }
-      return Array.from(totals).map(([name, total]) => ({ name, total }));
+      // Convert map to array
+      return Array.from(totalsMap).map(([name, data]) => ({ 
+        name, 
+        total: data.total,
+        transactions: data.transactions 
+      }));
     };
   
-    setProcessedSummary(calculateTotals());
+    setProcessedSummary(calculateTotalsWithTransactions());
   }, [summaryData, selectedOption]);
+
+
+  console.log("processedSummary", processedSummary);
   
 
   // Calculate total amount
@@ -96,20 +198,28 @@ const SalesSummary = () => {
     return processedSummary.reduce((sum, item) => sum + item.total, 0);
   }, [processedSummary]);
 
+  // Handle navigation to summary details page
   const handleNavigate = () => {
     navigate("/sUsers/salesSummaryDetails", {
       state: { summary: summaryData },
     });
   };
 
-  console.log(summaryData);
-  console.log(processedSummary);
-  
+  // Handle click on a specific summary item - navigate with transaction details
+  const handleItemClick = (item) => {
+    navigate("/sUsers/salesSummaryTransactions", {
+      state: { 
+        transactions: item.transactions,
+        title: `${selectedOption}: ${item.name}`,
+        total: item.total
+      },
+    });
+  };
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
       <div className="sticky top-0 z-50">
-        <TitleDiv title="Sales Summary" />
+        <TitleDiv title="Sales Summary" from="/sUsers/reports" />
         <section className="shadow-lg border-b">
           <SelectDate />
         </section>
@@ -154,6 +264,7 @@ const SalesSummary = () => {
             {processedSummary.map((item, index) => (
               <div
                 key={index}
+                onClick={() => handleItemClick(item)}
                 className="flex justify-between items-center p-4 py-6 bg-white shadow-md rounded-base cursor-pointer hover:-translate-y-0.5 transition-transform duration-300"
               >
                 <span className="text-gray-800 font-medium">{item.name}</span>

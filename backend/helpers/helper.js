@@ -270,3 +270,28 @@ export const getEmailService = (email) => {
   if (domain.includes("outlook")) return "outlook"
   return "smtp" // Default to SMTP if no known domain
 }
+
+
+/// for getting financial year
+export const getFinancialYearDates = () => {
+  const today = new Date();
+  const currentYear = today.getFullYear();
+  let startYear = currentYear;
+  let endYear = currentYear;
+
+  // If current month is January to March, financial year started in previous year
+  if (today.getMonth() < 3) {
+    startYear = currentYear - 1;
+  } else {
+    endYear = currentYear + 1;
+  }
+
+  // Create ISO date strings for start and end of financial year
+  const startDateStr = `${startYear}-04-01T00:00:00.000+00:00`;
+  const endDateStr = `${endYear}-03-31T23:59:59.999+00:00`;
+
+  return {
+    startDate: new Date(startDateStr),
+    endDate: new Date(endDateStr)
+  };
+};

@@ -21,7 +21,9 @@ export default function SelectBankModal({ showModal = true, setShowModal }) {
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
 
-  const { data, loading, error } = useFetch(`/api/pUsers/fetchBanks/${cmp_id}`);
+  
+
+  const { data, loading, error } = useFetch(`/api/sUsers/fetchBanks/${cmp_id}`);
 
   useEffect(() => {
     if (data) {

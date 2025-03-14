@@ -28,11 +28,11 @@ function PartyList() {
   const [filteredParty, setFilteredParty] = useState([]);
 
   const cpm_id = useSelector(
-    (state) => state.setSelectedOrganization.selectedOrg._id
+    (state) => state.setSelectedOrganization.selectedOrg?._id
   );
 
   const type = useSelector(
-    (state) => state.setSelectedOrganization.selectedOrg.type
+    (state) => state.setSelectedOrganization.selectedOrg?.type
   );
   const dispatch=useDispatch()
   const searchData = (data) => {

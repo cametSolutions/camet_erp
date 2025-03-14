@@ -87,7 +87,7 @@ export const createSale = async (req, res) => {
     );
 
     const updatedItems = processSaleItems(items);
-    await handleSaleStockUpdates(updatedItems, false, session); // Include session
+    await handleSaleStockUpdates(updatedItems, session); // Include session
 
     const updateAdditionalCharge = additionalChargesFromRedux.map((charge) => {
       const { value, taxPercentage } = charge;
@@ -243,7 +243,7 @@ export const editSale = async (req, res) => {
         priceLevelFromRedux,
         additionalChargesFromRedux
       );
-      await handleSaleStockUpdates(updatedItems, false, session);
+      await handleSaleStockUpdates(updatedItems, session);
 
       const updateData = {
         selectedGodownId: selectedGodownId || existingSale.selectedGodownId,

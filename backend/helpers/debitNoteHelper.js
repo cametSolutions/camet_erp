@@ -5,17 +5,22 @@ import OragnizationModel from "../models/OragnizationModel.js";
 import TallyData from "../models/TallyData.js";
 
 ///////////////////////// for stock update ////////////////////////////////
-export const handleDebitNoteStockUpdates = async (items,session) => {
+export const handleDebitNoteStockUpdates = async (items, session) => {
   const productUpdates = [];
   const godownUpdates = [];
 
   for (const item of items) {
-    const product = await productModel.findOne({ _id: item._id }).session(session);
+    const product = await productModel
+      .findOne({ _id: item._id })
+      .session(session);
     if (!product) {
       throw new Error(`Product not found for item ID: ${item._id}`);
     }
 
-    const itemCount = parseFloat(item.count);
+    // Use actualCount if available, otherwise fall back to count
+    const itemCount = parseFloat(
+      item.actualCount !== undefined ? item.actualCount : item.count
+    );
     const productBalanceStock = parseFloat(product.balance_stock);
     const newBalanceStock = truncateToNDecimals(
       productBalanceStock - (itemCount || 0),
@@ -34,18 +39,18 @@ export const handleDebitNoteStockUpdates = async (items,session) => {
     });
 
     if (item.hasGodownOrBatch) {
-      console.log("item.hasGodownOrBatch: ");
-
       for (const godown of item.GodownList) {
-        const godownCount = parseFloat(godown.count);
+        // Use actualCount if available, otherwise fall back to count for each godown
+        const godownCount =
+          godown.actualCount !== undefined ? godown.actualCount : godown.count;
 
-      if (godown.batch && !godown.godown_id) {
+        if (godown.batch && !godown.godown_id) {
           console.log("batch only ");
           const godownIndex = product.GodownList.findIndex(
             (g) => g.batch === godown.batch
           );
 
-          if (godownIndex !== -1 && godown.count && godown.count > 0) {
+          if (godownIndex !== -1 && godownCount && godownCount > 0) {
             const currentGodownStock =
               product.GodownList[godownIndex].balance_stock || 0;
             const newGodownStock = truncateToNDecimals(
@@ -53,7 +58,6 @@ export const handleDebitNoteStockUpdates = async (items,session) => {
               3
             );
 
-            console.log("newGodownStock: ", newGodownStock);
 
             godownUpdates.push({
               updateOne: {
@@ -70,7 +74,7 @@ export const handleDebitNoteStockUpdates = async (items,session) => {
             (g) => g.batch === godown.batch && g.godown_id === godown.godown_id
           );
 
-          if (godownIndex !== -1 && godown.count && godown.count > 0) {
+          if (godownIndex !== -1 && godownCount && godownCount > 0) {
             const currentGodownStock =
               product.GodownList[godownIndex].balance_stock || 0;
             const newGodownStock = truncateToNDecimals(
@@ -102,7 +106,7 @@ export const handleDebitNoteStockUpdates = async (items,session) => {
             (g) => g.godown_id === godown.godown_id
           );
 
-          if (godownIndex !== -1 && godown.count && godown.count > 0) {
+          if (godownIndex !== -1 && godownCount && godownCount > 0) {
             const currentGodownStock =
               product.GodownList[godownIndex].balance_stock || 0;
             const newGodownStock = truncateToNDecimals(
@@ -135,7 +139,7 @@ export const handleDebitNoteStockUpdates = async (items,session) => {
         );
         return { ...godown, balance_stock: newGodownStock };
       });
- 
+
       godownUpdates.push({
         updateOne: {
           filter: { _id: product._id },
@@ -148,19 +152,18 @@ export const handleDebitNoteStockUpdates = async (items,session) => {
   //   console.log("godownUpdates", godownUpdates);
   //   console.log("productUpdates", productUpdates);
 
-  await productModel.bulkWrite(productUpdates,{session});
-  await productModel.bulkWrite(godownUpdates,{session});
+  await productModel.bulkWrite(productUpdates, { session });
+  await productModel.bulkWrite(godownUpdates, { session });
 };
 // Helper function to create purchase record
 export const createDebitNoteRecord = async (
   req,
- debitNoteNumber,
+  debitNoteNumber,
   updatedItems,
   updateAdditionalCharge,
-  session 
+  session
 ) => {
   try {
-
     const {
       selectedGodownId,
       selectedGodownName,
@@ -168,9 +171,8 @@ export const createDebitNoteRecord = async (
       party,
       despatchDetails,
       lastAmount,
-      selectedDate
+      selectedDate,
     } = req.body;
-
 
     const Primary_user_id = req.owner;
     const Secondary_user_id = req.sUserId;
@@ -188,7 +190,6 @@ export const createDebitNoteRecord = async (
       newSerialNumber = lastPurchase.serialNumber + 1;
     }
 
-
     const debit = new model({
       selectedGodownId: selectedGodownId ?? "",
       selectedGodownName: selectedGodownName ? selectedGodownName[0] : "",
@@ -203,7 +204,7 @@ export const createDebitNoteRecord = async (
       finalAmount: lastAmount,
       Primary_user_id,
       Secondary_user_id,
-      date:await formatToLocalDate(selectedDate, orgId, session),
+      date: await formatToLocalDate(selectedDate, orgId, session),
       createdAt: new Date(),
     });
 
@@ -218,7 +219,7 @@ export const createDebitNoteRecord = async (
 
 // update purchase number
 
-  export const updateDebitNoteNumber = async (orgId, secondaryUser, session) => {
+export const updateDebitNoteNumber = async (orgId, secondaryUser, session) => {
   try {
     let debitNoteConfig = false;
 
@@ -227,8 +228,7 @@ export const createDebitNoteRecord = async (
     );
 
     if (configuration) {
-   
-        debitNoteConfig = true;
+      debitNoteConfig = true;
     }
 
     if (debitNoteConfig === true) {
@@ -244,12 +244,12 @@ export const createDebitNoteRecord = async (
         }
       );
       secondaryUser.configurations = updatedConfiguration;
-      await secondaryUser.save({session});
+      await secondaryUser.save({ session });
     } else {
       await OragnizationModel.findByIdAndUpdate(
         orgId,
         { $inc: { debitNoteNumber: 1 } },
-        { new: true ,session}
+        { new: true, session }
       );
     }
   } catch (error) {
@@ -260,18 +260,24 @@ export const createDebitNoteRecord = async (
 
 /// Revert stock updates
 
-export const revertDebitNoteStockUpdates = async (items,session) => {
+export const revertDebitNoteStockUpdates = async (items, session) => {
   try {
     const productUpdates = [];
     const godownUpdates = [];
 
     for (const item of items) {
-      const product = await productModel.findOne({ _id: item._id }).session(session);
+      const product = await productModel
+        .findOne({ _id: item._id })
+        .session(session);
       if (!product) {
         throw new Error(`Product not found for item ID: ${item._id}`);
       }
 
-      const itemCount = parseFloat(item.count);
+        // Use actualCount if available, otherwise fall back to count
+        const itemCount = parseFloat(
+          item.actualCount !== undefined ? item.actualCount : item.count
+        );
+  
       const productBalanceStock = parseFloat(product.balance_stock);
       const newBalanceStock = truncateToNDecimals(
         productBalanceStock + itemCount, // Revert stock by adding back
@@ -289,6 +295,9 @@ export const revertDebitNoteStockUpdates = async (items,session) => {
       // Revert godown and batch updates
       if (item.hasGodownOrBatch) {
         for (const godown of item.GodownList) {
+
+           // Use actualCount if available, otherwise fall back to count for each godown
+           const godownCount = godown.actualCount !== undefined ? godown.actualCount : godown.count;
           if (godown.batch && !godown?.godown_id) {
             // Case: Batch only or Godown with Batch
             const godownIndex = product.GodownList.findIndex(
@@ -296,11 +305,11 @@ export const revertDebitNoteStockUpdates = async (items,session) => {
             );
 
             if (godownIndex !== -1) {
-              if (godown.count && godown.count > 0) {
+              if (godownCount && godownCount > 0) {
                 const currentGodownStock =
                   product.GodownList[godownIndex].balance_stock || 0;
                 const newGodownStock = truncateToNDecimals(
-                  currentGodownStock + godown.count, // Revert stock by adding back
+                  currentGodownStock + godownCount, // Revert stock by adding back
                   3
                 );
 
@@ -326,11 +335,11 @@ export const revertDebitNoteStockUpdates = async (items,session) => {
             );
 
             if (godownIndex !== -1) {
-              if (godown.count && godown.count > 0) {
+              if (godownCount && godownCount > 0) {
                 const currentGodownStock =
                   product.GodownList[godownIndex].balance_stock || 0;
                 const newGodownStock = truncateToNDecimals(
-                  currentGodownStock + godown.count, // Revert stock by adding back
+                  currentGodownStock + godownCount, // Revert stock by adding back
                   3
                 );
 
@@ -362,11 +371,11 @@ export const revertDebitNoteStockUpdates = async (items,session) => {
             );
 
             if (godownIndex !== -1) {
-              if (godown.count && godown.count > 0) {
+              if (godownCount && godownCount > 0) {
                 const currentGodownStock =
                   product.GodownList[godownIndex].balance_stock || 0;
                 const newGodownStock = truncateToNDecimals(
-                  currentGodownStock + godown.count, // Revert stock by adding back
+                  currentGodownStock + godownCount, // Revert stock by adding back
                   3
                 );
 
@@ -391,7 +400,7 @@ export const revertDebitNoteStockUpdates = async (items,session) => {
         product.GodownList = product.GodownList.map((godown) => {
           const currentGodownStock = Number(godown.balance_stock) || 0;
           const newGodownStock = truncateToNDecimals(
-            currentGodownStock + Number(item.count), // Revert stock by adding back
+            currentGodownStock + Number(itemCount), // Revert stock by adding back
             3
           );
           return {
@@ -411,8 +420,8 @@ export const revertDebitNoteStockUpdates = async (items,session) => {
     }
 
     // Execute bulk operations to revert stock changes
-    await productModel.bulkWrite(productUpdates,{session});
-    await productModel.bulkWrite(godownUpdates,{session});
+    await productModel.bulkWrite(productUpdates, { session });
+    await productModel.bulkWrite(godownUpdates, { session });
   } catch (error) {
     console.error("Error reverting sale stock updates:", error);
     throw error;
@@ -420,10 +429,10 @@ export const revertDebitNoteStockUpdates = async (items,session) => {
 };
 
 /// Update Tally Data
-export const  updateTallyData = async (
+export const updateTallyData = async (
   orgId,
   debitNoteNumber,
-  billId, 
+  billId,
   Primary_user_id,
   party,
   lastAmount,
@@ -432,36 +441,39 @@ export const  updateTallyData = async (
 ) => {
   try {
     const billData = {
-        Primary_user_id,
-        bill_no: debitNoteNumber,
-        billId:billId.toString(),
-        cmp_id: orgId,
-        party_id: party?.party_master_id,
-        bill_amount: lastAmount,
-        bill_date: new Date(),
-        bill_pending_amt: lastAmount,
-        email: party?.emailID,
-        mobile_no: party?.mobileNumber,
-        party_name: party?.partyName,
-        user_id: secondaryMobile || "null",
-        source: "debitNote",
-        classification: "Dr",
-      };
+      Primary_user_id,
+      bill_no: debitNoteNumber,
+      billId: billId.toString(),
+      cmp_id: orgId,
+      party_id: party?.party_master_id,
+      accountGroup: party?.accountGroup,
+      accountGroup_id: party?.accountGroup_id,
+      subGroup: party?.subGroup,
+      subGroup_id: party?.subGroup_id,
+      bill_amount: lastAmount,
+      bill_date: new Date(),
+      bill_pending_amt: lastAmount,
+      email: party?.emailID,
+      mobile_no: party?.mobileNumber,
+      party_name: party?.partyName,
+      user_id: secondaryMobile || "null",
+      source: "debitNote",
+      classification: "Dr",
+    };
 
-    const tallyUpdate=await TallyData.findOneAndUpdate(
+    const tallyUpdate = await TallyData.findOneAndUpdate(
       {
         cmp_id: orgId,
         bill_no: debitNoteNumber,
-        billId:billId.toString(),
+        billId: billId.toString(),
         Primary_user_id: Primary_user_id,
         party_id: party?.party_master_id,
       },
       billData,
-      { upsert: true, new: true,session }
+      { upsert: true, new: true, session }
     );
 
-    console.log("tallyUpdate",tallyUpdate);
-    
+    console.log("tallyUpdate", tallyUpdate);
   } catch (error) {
     console.error("Error updateTallyData sale stock updates:", error);
     throw error;

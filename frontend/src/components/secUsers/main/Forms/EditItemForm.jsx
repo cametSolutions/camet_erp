@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import { MdModeEditOutline } from "react-icons/md";
+import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
 
 function EditItemForm({
@@ -14,6 +15,7 @@ function EditItemForm({
   const [item, setItem] = useState([]);
   const [newPrice, setNewPrice] = useState("");
   const [quantity, setQuantity] = useState("");
+  const [actualQuantity, setActualQuantity] = useState("");
   const [unit, setUnit] = useState("");
   // const [hsn, setHsn] = useState([]);
   const [igst, setIgst] = useState("");
@@ -29,10 +31,16 @@ function EditItemForm({
   const { id, index } = useParams();
 
   const navigate = useNavigate();
-
+  const dispatch=useDispatch()
   const selectedItem = ItemsFromRedux.filter((el) => el._id === id);
-
   const selectedGodown = selectedItem[0]?.GodownList[index];
+
+  const { configurations } = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg
+  );
+  const configuration = configurations[0];
+  const enableActualAndBilledQuantity =
+    configuration?.enableActualAndBilledQuantity || false;
 
   useEffect(() => {
     setItem(selectedItem[0]);
@@ -41,6 +49,11 @@ function EditItemForm({
       setNewPrice(selectedGodown?.selectedPriceRate || 0);
 
       setQuantity(selectedGodown?.count || 1);
+      if (enableActualAndBilledQuantity) {
+        setActualQuantity(selectedGodown?.actualCount || selectedGodown?.count || 1);
+      }else{
+        setActualQuantity(selectedGodown?.count || 1);
+      }
 
       if (selectedGodown?.discountType === "amount") {
         setDiscount(selectedGodown?.discount);
@@ -55,9 +68,16 @@ function EditItemForm({
         setDiscountPercentage(selectedGodown?.discountPercentage);
       }
     } else {
-      setNewPrice(selectedItem[0]?.GodownList[0]?.selectedPriceRate || 0);
+      setNewPrice(selectedItem[0]?.GodownList[0]?.selectedPriceRate || 1);
 
       setQuantity(selectedItem[0]?.count || 1);
+
+      
+      if (enableActualAndBilledQuantity) {
+        setActualQuantity(selectedItem[0]?.actualCount || selectedItem[0]?.count || 0);
+      }else{
+        setActualQuantity(selectedItem[0]?.count || 0);
+      }
 
       if (selectedItem[0]?.discountType === "amount") {
         setDiscount(selectedItem[0]?.discount);
@@ -75,16 +95,17 @@ function EditItemForm({
     setUnit(selectedItem[0]?.unit);
     setIgst(selectedItem[0]?.igst);
     if (taxInclusive) {
-      
       setIsTaxInclusive(selectedItem[0]?.isTaxInclusive);
     }
-  }, [selectedItem[0]]);
-
+  }, [selectedItem[0], enableActualAndBilledQuantity]);
 
   useEffect(() => {
     // Ensure all inputs are properly parsed
     const newPriceValue = parseFloat(newPrice) || 0;
-    const quantityValue = parseFloat(quantity) || 1;
+    // const quantityValue = enableActualAndBilledQuantity
+    //   ? parseFloat(actualQuantity) || 0
+    //   : parseFloat(quantity) || 0;
+    const quantityValue = parseFloat(quantity) || 0;
     const discountValue = parseFloat(discount) || 0;
     const igstValue = parseFloat(igst) || 0;
 
@@ -96,12 +117,15 @@ function EditItemForm({
         (taxInclusivePrice / (1 + igstValue / 100))?.toFixed(2)
       );
 
+    
+      
+
       /// Discount calculation
       /// Discount calculation
       let calculatedDiscountAmount = 0;
       let calculatedDiscountPercentage = 0;
 
-      if (type === "amount") {
+      if (type === "amount" ) {
         calculatedDiscountAmount = discountValue; // Given discount value is treated as amount
         calculatedDiscountPercentage =
           Number(
@@ -149,8 +173,6 @@ function EditItemForm({
         );
       }
 
-      console.log({ calculatedDiscountAmount, calculatedDiscountPercentage });
-
       const discountedPrice = Number(
         (taxExclusivePrice - calculatedDiscountAmount)?.toFixed(2)
       );
@@ -176,6 +198,7 @@ function EditItemForm({
     discountAmount,
     discountPercentage,
     taxExclusivePrice,
+    actualQuantity,
   ]);
 
   const handleBackClick = () => {
@@ -183,6 +206,13 @@ function EditItemForm({
   };
 
   const handleDirectQuantityChange = (value) => {
+    if (
+      enableActualAndBilledQuantity &&
+      actualQuantity &&
+      Number(value) > actualQuantity
+    ) {
+      return;
+    }
     if (value.includes(".")) {
       // Split the value into parts before and after the decimal point
       const parts = value.split(".");
@@ -193,13 +223,33 @@ function EditItemForm({
     }
 
     setQuantity(value);
+
+    if(!enableActualAndBilledQuantity){
+      setActualQuantity(value);
+    }
+    // setActualQuantity(value);
+  };
+  const handleActualQuantityChange = (value) => {
+    if (value.includes(".")) {
+      // Split the value into parts before and after the decimal point
+      const parts = value.split(".");
+      // Check the length of the part after the decimal point
+      if (parts[1].length > 3) {
+        return;
+      }
+    }
+
+    setActualQuantity(value);
+    setQuantity(value);
   };
 
   const submitFormData = () => {
+ 
     submitHandler(
       item,
       index,
       quantity,
+      actualQuantity,
       newPrice,
       totalAmount,
       selectedItem,
@@ -211,8 +261,6 @@ function EditItemForm({
       // taxAmount
     );
   };
-
-  console.log(isTaxInclusive);
 
   return (
     <div className=" ">
@@ -283,25 +331,56 @@ function EditItemForm({
                           </label>
                         </div>
                       )}
-
-                    <div className="flex items-center space-x-4">
-                      <div className="flex flex-col">
-                        <label className="leading-loose">Quantity</label>
-                        <div className="relative focus-within:text-gray-600 text-gray-400">
-                          <input
-                            // readOnly={selectedItem[0]?.GodownList?.length > 0 && godownName=="nil"}
-                            // onClick={openModalHandler}
-                            onChange={(e) => {
-                              handleDirectQuantityChange(e.target.value);
-                            }}
-                            value={quantity}
-                            type="number"
-                            className=" input-number pr-4 pl-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm border-gray-300 rounded-md focus:outline-none text-gray-600"
-                            placeholder="0"
-                          />
-                          <div className="absolute left-3 top-2"></div>
+                    <div
+                      className={`grid grid-cols-1 ${
+                        enableActualAndBilledQuantity
+                          ? "sm:grid-cols-1"
+                          : "sm:grid-cols-2"
+                      } gap-4 `}
+                    >
+                      {/* Quantity Input */}
+                      <div className="flex flex-row-reverse gap-8 ">
+                        <div className="flex flex-col">
+                          <label className="leading-loose">
+                            {enableActualAndBilledQuantity
+                              ? "Billed Quantity"
+                              : "Quantity"}
+                          </label>
+                          <div className="relative focus-within:text-gray-600 text-gray-400">
+                            <input
+                              onChange={(e) =>
+                                handleDirectQuantityChange(e.target.value)
+                              }
+                              value={quantity}
+                              type="number"
+                              className="input-number px-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm border-gray-300 rounded-md focus:outline-none text-gray-600"
+                              placeholder="0"
+                            />
+                          </div>
                         </div>
+
+                        {/* Billed Quantity (Only shows when enableActualAndBilledQuantity is false) */}
+                        {enableActualAndBilledQuantity && (
+                          <div className="flex flex-col">
+                            <label className="leading-loose">
+                              Actual Quantity
+                            </label>
+                            <div className="relative focus-within:text-gray-600 text-gray-400">
+                              <input
+                                onChange={(e) =>
+                                  handleActualQuantityChange(e.target.value)
+                                }
+                                value={actualQuantity}
+                                type="number"
+                                className="input-number px-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm border-gray-300 rounded-md focus:outline-none text-gray-600"
+                                placeholder="0"
+                              />
+                            </div>
+                          </div>
+                        )}
                       </div>
+
+                      {/* Unit Input */}
                       <div className="flex flex-col">
                         <label className="leading-loose">Unit</label>
                         <div className="relative focus-within:text-gray-600 text-gray-400">
@@ -309,12 +388,12 @@ function EditItemForm({
                             value={unit}
                             disabled
                             type="text"
-                            className="pr-4 pl-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm border-gray-300 rounded-md focus:outline-none text-gray-600"
+                            className="px-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm border-gray-300 rounded-md focus:outline-none text-gray-600 bg-gray-100"
                           />
-                          <div className="absolute left-3 top-2"></div>
                         </div>
                       </div>
                     </div>
+
                     <div className="flex items-center space-x-4">
                       <div className="flex flex-col">
                         <label className="leading-loose">Discount</label>
@@ -404,9 +483,8 @@ function EditItemForm({
                           <p className="text-xs">Discount</p>
                           <div className="flex items-center gap-2">
                             <p className="text-xs">{`(${discountPercentage}) %`}</p>
-                            <p className="text-xs">{`₹ ${discountAmount?.toFixed(
-                              2
-                            )} `}</p>
+                            <p className="text-xs">{`₹ ${discountAmount ? Number(discountAmount).toFixed(2) : '0.00'}`}</p>
+
                           </div>
                         </div>
                       )}

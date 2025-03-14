@@ -67,7 +67,6 @@ function EditPayment() {
     outstandingsRedux.length == 0 && `/api/sUsers/getPaymentDetails/${id}`
   );
 
-  // console.log("paymentDetailsRedux", paymentDetailsRedux);
 
   useEffect(() => {
     if (paymentDetailsOfPurchase) {
@@ -79,13 +78,15 @@ function EditPayment() {
         billData,
         totalBillAmount,
         enteredAmount,
-        // advanceAmount,
-        // remainingAmount,
+        advanceAmount,
+        remainingAmount,
         paymentMethod,
         paymentDetails,
         note,
         outstandings,
       } = paymentDetailsOfPurchase.payment;
+
+      
 
       if (id && !_idRedux) {
         dispatch(addReceiptId(id));
@@ -99,7 +100,6 @@ function EditPayment() {
         setSelectedDate(new Date(date));
         dispatch(changeDate(new Date(date).toISOString()));
       } else {
-        console.log("date not changed");
 
         setSelectedDate(dateRedux);
       }
@@ -109,7 +109,8 @@ function EditPayment() {
       }
       if (billData && billDataRedux.length == 0) {
         dispatch(
-          addSettlementData({ billData, totalBillAmount, enteredAmount })
+          addSettlementData({ billData, totalBillAmount, enteredAmount,   advanceAmount,
+            remainingAmount })
         );
       }
       if (totalBillAmount && !totalBillAmountRedux) {
@@ -264,7 +265,6 @@ function EditPayment() {
       }
     }
 
-    // console.log("formData", formData);
 
     // If validation passes, proceed with the form submission
     try {
@@ -275,7 +275,6 @@ function EditPayment() {
         withCredentials: true,
       });
 
-      console.log(res.data);
       toast.success(res.data.message);
 
       navigate(`/sUsers/payment/details/${res?.data?.payment._id}`);

@@ -18,8 +18,7 @@ import {
 import { Decimal } from "decimal.js";
 import AdditemOfSale from "../../components/secUsers/main/AdditemOfSale";
 
-
-function AddItemDebitNote () {
+function AddItemDebitNote() {
   const [item, setItem] = useState([]);
   const [selectedPriceLevel, setSelectedPriceLevel] = useState("");
   const [brands, setBrands] = useState([]);
@@ -58,8 +57,7 @@ function AddItemDebitNote () {
 
   ///////////////////////////filters FromRedux///////////////////////////////////
 
-  const brandFromRedux =
-    useSelector((state) => state.debitNote.brand) || "";
+  const brandFromRedux = useSelector((state) => state.debitNote.brand) || "";
   const categoryFromRedux =
     useSelector((state) => state.debitNote.category) || "";
   const subCategoryFromRedux =
@@ -207,11 +205,6 @@ function AddItemDebitNote () {
     setSelectedPriceLevel(priceLevelFromRedux);
   }, []);
 
-
-
-  
-  
-
   /////////////////////////scroll////////////////////////////
 
   useEffect(() => {
@@ -252,27 +245,25 @@ function AddItemDebitNote () {
       }
 
       if (type === "self") {
-
-        const { brands, categories, subcategories, priceLevels } =
-          res.data.data;
+        const {
+          //  brands, categories, subcategories,
+          priceLevels,
+        } = res.data.data;
         // setBrands(brands);
         // setCategories(categories);
         // setSubCategories(subcategories);
         setPriceLevels(priceLevels);
-      
-
 
         if (priceLevelFromRedux == "") {
-
           const defaultPriceLevel = priceLevels[0];
           setSelectedPriceLevel(defaultPriceLevel);
           dispatch(setPriceLevel(defaultPriceLevel));
         }
       } else {
-        
-
-        
-        const { priceLevels, brands, categories, subcategories } = res.data;
+        const {
+          priceLevels,
+          //  brands, categories, subcategories
+        } = res.data;
         console.log(priceLevels);
 
         // setBrands(brands);
@@ -315,8 +306,6 @@ function AddItemDebitNote () {
     });
   };
 
-  
-
   ///////////////////////////filter items call ///////////////////////////////////
 
   const filteredItems = useMemo(() => {
@@ -329,8 +318,6 @@ function AddItemDebitNote () {
     );
   }, [item, selectedBrand, selectedCategory, selectedSubCategory, search]);
 
-
-
   //////////////////////////////////////////addSelectedRate initially not in redux/////////////////////////////////////////////
 
   const addSelectedRate = (pricelevel) => {
@@ -341,8 +328,6 @@ function AddItemDebitNote () {
             (priceLevelItem) => priceLevelItem.pricelevel === pricelevel
           )?.pricerate || 0;
 
-          console.log(priceRate);
-          
 
         const reduxItem = itemsFromRedux.find((p) => p._id === item._id);
         // const reduxRate = reduxItem?.selectedPriceRate || null;
@@ -370,10 +355,9 @@ function AddItemDebitNote () {
     }
   };
 
-
   useEffect(() => {
     addSelectedRate(selectedPriceLevel);
-  }, [selectedPriceLevel, refresh,]);
+  }, [selectedPriceLevel, refresh]);
 
   ///////////////////////////calculateTotal///////////////////////////////////
 
@@ -391,34 +375,59 @@ function AddItemDebitNote () {
 
     if (item.hasGodownOrBatch) {
       item.GodownList.forEach((godownOrBatch, index) => {
-        if (situation == "normal") {
+        if (situation === "normal") {
           priceRate = godownOrBatch.selectedPriceRate;
         }
-        let individualSubtotal = priceRate * Number(godownOrBatch.count) || 0;
-        let discountedSubtotal = individualSubtotal;
+        const quantity = Number(godownOrBatch.count) || 0;
+        const igstValue = Math.max(item.igst || 0, 0);
+
+        // Calculate base price based on tax inclusivity
+        let basePrice = priceRate * quantity;
+
+  
+
+        let taxBasePrice = basePrice;
+
+        // For tax inclusive prices, calculate the base price without tax
+        if (item?.isTaxInclusive) {
+          taxBasePrice = Number((basePrice / (1 + igstValue / 100)).toFixed(2));
+        }
+
+        // Calculate discount based on discountType
+        let discountedPrice = taxBasePrice;
+
+
 
         if (
-          godownOrBatch.discount !== 0 &&
-          godownOrBatch.discount !== undefined &&
-          godownOrBatch.discount !== ""
-        ) {
-          discountedSubtotal = discountedSubtotal - godownOrBatch.discount;
-        } else if (
+          godownOrBatch.discountType === "percentage" &&
           godownOrBatch.discountPercentage !== 0 &&
           godownOrBatch.discountPercentage !== undefined &&
           godownOrBatch.discountPercentage !== ""
         ) {
-          discountedSubtotal -=
-            (individualSubtotal * godownOrBatch.discountPercentage) / 100;
+          // Percentage discount
+
+          const discountAmount =
+            (taxBasePrice * godownOrBatch.discountPercentage) / 100;
+
+          discountedPrice = taxBasePrice - discountAmount;
+        } else if (
+          godownOrBatch.discount !== 0 &&
+          godownOrBatch.discount !== undefined &&
+          godownOrBatch.discount !== ""
+        ) {
+          // Fixed amount discount (default)
+          discountedPrice = taxBasePrice - godownOrBatch.discount;
         }
+        // Calculate tax amount
+        const taxAmount = discountedPrice * (igstValue / 100);
 
-        const gstAmount = (discountedSubtotal * (item.igst || 0)) / 100;
-
-        subtotal += discountedSubtotal + gstAmount;
-
-        const individualTotal = parseFloat(
-          (discountedSubtotal + gstAmount).toFixed(2)
+        // Calculate total including tax
+        const individualTotal = Math.max(
+          parseFloat((discountedPrice + taxAmount).toFixed(2)),
+          0
         );
+
+        subtotal += individualTotal;
 
         individualTotals.push({
           index,
@@ -427,30 +436,53 @@ function AddItemDebitNote () {
         });
       });
     } else {
-      if (situation == "normal") {
+      if (situation === "normal") {
         priceRate = item.GodownList[0].selectedPriceRate;
       }
-      let individualSubtotal = priceRate * Number(item.count);
-      let discountedSubtotal = individualSubtotal;
+      const quantity = Number(item.count);
+      const igstValue = Math.max(item.newGst || item.igst || 0, 0);
 
-      if (item.discount !== 0 && item.discount !== undefined) {
-        discountedSubtotal -= item.discount;
-      } else if (
+      // Calculate base price based on tax inclusivity
+      let basePrice = priceRate * quantity;
+      let taxBasePrice = basePrice;
+
+      // For tax inclusive prices, calculate the base price without tax
+      if (item?.isTaxInclusive) {
+        taxBasePrice = Number((basePrice / (1 + igstValue / 100)).toFixed(2));
+      }
+
+      // Calculate discount based on discountType
+      let discountedPrice = taxBasePrice;
+
+      if (
+        item.discountType === "percentage" &&
         item.discountPercentage !== 0 &&
         item.discountPercentage !== undefined
       ) {
-        discountedSubtotal -=
-          (individualSubtotal * item.discountPercentage) / 100;
+        // Percentage discount
+        const discountAmount = (taxBasePrice * item.discountPercentage) / 100;
+        console.log("Percentage discount:", discountAmount);
+        discountedPrice = taxBasePrice - discountAmount;
+      } else if (item.discount !== 0 && item.discount !== undefined) {
+        // Fixed amount discount (default)
+        console.log("Fixed amount discount:", item.discount);
+        discountedPrice = taxBasePrice - item.discount;
       }
 
-      const gstAmount =
-        (discountedSubtotal * (item.newGst || item.igst || 0)) / 100;
+      // Calculate tax amount
+      const taxAmount = discountedPrice * (igstValue / 100);
 
-      subtotal += discountedSubtotal + gstAmount;
 
-      const individualTotal = parseFloat(
-        (discountedSubtotal + gstAmount).toFixed(2)
+
+      // Calculate total including tax
+      const individualTotal = Math.max(
+        parseFloat((discountedPrice + taxAmount).toFixed(2)),
+        0
       );
+
+      // console.log( individualTotal);
+
+      subtotal += individualTotal;
 
       individualTotals.push({
         index: 0,
@@ -459,18 +491,14 @@ function AddItemDebitNote () {
       });
     }
 
-    subtotal = parseFloat(subtotal.toFixed(2));
+    subtotal = Math.max(parseFloat(subtotal.toFixed(2)), 0);
 
     return {
       individualTotals,
       total: subtotal,
     };
   };
-
   ///////////////////////////handleAddClick///////////////////////////////////
-
-console.log();
-
 
 
   const handleAddClick = (_id, idx) => {
@@ -485,12 +513,15 @@ console.log();
             ? !currentBatchOrGodown.added
             : true;
           currentBatchOrGodown.count = 1;
+          currentBatchOrGodown.actualCount = 1;
+
           // currentBatchOrGodown.IndividualTotal = totalData?.individualSubtotal;
 
           itemToUpdate.GodownList[idx] = currentBatchOrGodown;
         }
         itemToUpdate.count =
           new Decimal(itemToUpdate.count || 0).add(1).toNumber() || 1;
+        itemToUpdate.actualCount = itemToUpdate?.count;
 
         const totalData = calculateTotal(itemToUpdate, selectedPriceLevel);
         const updatedGodownListWithTotals = itemToUpdate.GodownList.map(
@@ -519,7 +550,7 @@ console.log();
       selectedPriceLevel === undefined ||
       priceLevels.length === 0
     ) {
-      navigate(`/sUsers/editItemCreditNote/${_id}/${"nil"}/${idx}`);
+      navigate(`/sUsers/editItemDebitNote/${_id}/${"nil"}/${idx}`);
     }
   };
 
@@ -537,6 +568,7 @@ console.log();
         godownOrBatch.count = new Decimal(godownOrBatch.count)
           .add(1)
           .toNumber();
+        godownOrBatch.actualCount = godownOrBatch.count;
 
         // Update the specific godown/batch in the GodownList array
         const updatedGodownList = currentItem.GodownList.map((godown, index) =>
@@ -549,7 +581,12 @@ console.log();
           (sum, godown) => sum + (godown.count || 0),
           0
         );
+        const sumOfActualCounts = updatedGodownList.reduce(
+          (sum, godown) => sum + (godown.actualCount || 0),
+          0
+        );
         currentItem.count = sumOfCounts; // Update currentItem.count with the sum
+        currentItem.actualCount = sumOfActualCounts; // Update currentItem.count with the sum
 
         // Calculate totals and update individual batch totals
         const totalData = calculateTotal(currentItem, selectedPriceLevel);
@@ -566,6 +603,7 @@ console.log();
       } else {
         // Increment the count of the currentItem by 1
         currentItem.count = new Decimal(currentItem.count).add(1).toNumber();
+        currentItem.actualCount = currentItem.count;
 
         // Calculate totals and update individual total
         const totalData = calculateTotal(currentItem, selectedPriceLevel);
@@ -585,14 +623,21 @@ console.log();
     const updatedItems = item.map((item) => {
       if (item._id !== _id) return item; // Keep items unchanged if _id doesn't match
       const currentItem = structuredClone(item);
+
+      console.log(currentItem);
+      
       if (godownIndex !== null && currentItem.hasGodownOrBatch) {
         const godownOrBatch = { ...currentItem.GodownList[godownIndex] };
         godownOrBatch.count = new Decimal(godownOrBatch.count)
           .sub(1)
           .toNumber();
 
+        godownOrBatch.actualCount = godownOrBatch.count;
+
         // Ensure count does not go below 0
-        if (godownOrBatch.count <= 0) godownOrBatch.added = false;
+        if (godownOrBatch.count <= 0) {
+          godownOrBatch.added = false;
+        }
 
         const updatedGodownList = currentItem.GodownList.map((godown, index) =>
           index === godownIndex ? godownOrBatch : godown
@@ -603,7 +648,14 @@ console.log();
           (sum, godown) => sum + (godown.count || 0),
           0
         );
+
+        const sumOfActualCounts = updatedGodownList.reduce(
+          (sum, godown) => sum + (godown.actualCount || 0),
+          0
+        );
         currentItem.count = sumOfCounts;
+        currentItem.actualCount = sumOfActualCounts;
+
         currentItem.GodownList = updatedGodownList;
         const allAddedFalse = currentItem.GodownList.every(
           (item) => item.added === false || item.added == undefined
@@ -626,9 +678,13 @@ console.log();
         currentItem.total = totalData.total; // Update the overall total
       } else {
         currentItem.count = new Decimal(currentItem.count).sub(1).toNumber();
+        currentItem.actualCount = currentItem.count;
 
         // Ensure count does not go below 0
-        if (currentItem.count <= 0) currentItem.added = false;
+        if (currentItem.count <= 0) {
+          currentItem.added = false;
+          dispatch(removeItem(currentItem._id));
+        }
 
         // Calculate totals and update individual total
         const totalData = calculateTotal(currentItem, selectedPriceLevel);
@@ -721,10 +777,6 @@ console.log();
     navigate(-1);
   };
 
-
-
-
-
   /////////////////////expansion panel////////////////////
 
   const handleExpansion = (id) => {
@@ -739,10 +791,7 @@ console.log();
 
     // Update state with the new items array
     setItem(updatedItems);
-
-
   };
-
 
   useEffect(() => {
     if (listRef.current) {
@@ -772,12 +821,9 @@ console.log();
     });
   }, []);
 
-  
-
-
   return (
     <AdditemOfSale
-    tab={"debitNote"}
+      tab={"debitNote"}
       filteredItems={filteredItems}
       handleDecrement={handleDecrement}
       listRef={listRef}
@@ -815,4 +861,4 @@ console.log();
   );
 }
 
-export default AddItemDebitNote ;
+export default AddItemDebitNote;

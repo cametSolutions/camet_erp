@@ -28,7 +28,6 @@ function PartyStatement() {
     [cmp_id, party_id, start, end]
   );
 
-  
   const balanceUrl = useMemo(
     () =>
       `/api/sUsers/getOpeningBalances/${cmp_id}?party_id=${party_id}&startOfDayParam=${start}`,
@@ -63,7 +62,7 @@ function PartyStatement() {
   const isLoading = transactionLoading || balanceLoading;
 
   return (
-    <div className="flex flex-1 flex-col ">
+    <div className="flex flex-1 flex-col  ">
       <div className="sticky top-0 z-50 ">
         <TitleDiv title="Party Statement  " />
 
@@ -80,42 +79,27 @@ function PartyStatement() {
             <BarLoader color="#9900ff" width="100%" />
           </section>
         )}
-        <section>
-          <table className="w-full">
-            <thead>
-              <tr className="border-b bg-slate-200">
-                <th className="py-3 px-6 w-1/3 text-left text-gray-400 text-sm">
-                  Transactions
-                </th>
-                <th className="py-3 px-6 w-1/3 text-right text-gray-400 text-sm">
-                  Debit
-                </th>
-                <th className="py-3 px-6 w-1/3 text-right text-gray-400 text-sm">
-                  Credit
-                </th>
-              </tr>
-            </thead>
-          </table>
-        </section>
-
-        <section>
-          <table className="w-full">
-            <tr className="bg-slate-100 w-full">
-              <td className="p-3 px-6  w-1/3 text-left font-bold text-xs text-gray-700">
-                Opening Balance
-              </td>
-              <td className="py-3 px-6 w-1/3 text-right font-bold text-xs text-gray-500">
-                {openingBalances?.debitBalance >
-                  openingBalances?.creditBalance &&
-                  `₹ ${openingBalances?.debitBalance}`}
-              </td>
-              <td className="py-3 px-6 w-1/3 text-right font-bold text-xs text-gray-500">
-                {openingBalances?.creditBalance >
-                  openingBalances?.debitBalance &&
-                  `₹ ${openingBalances?.creditBalance}`}
-              </td>
-            </tr>
-          </table>
+        <section className="border-b bg-slate-300">
+          <div className="w-full overflow-x-auto ">
+            <table className="w-full">
+              <thead>
+                <tr className=" border-y">
+                  <th className="w-[45%] py-3.5 px-3 text-left text-xs font-bold text-gray-600">
+                    Transactions
+                  </th>
+                  <th className="w-[18%] py-3.5 px-3 text-right text-xs font-bold text-gray-600">
+                    Debit
+                  </th>
+                  <th className="w-[18%] py-3.5 px-3 text-right text-xs font-bold text-gray-600">
+                    Credit
+                  </th>
+                  <th className="w-[19%] py-3.5 px-3 text-right text-xs font-bold text-gray-600">
+                    Balance
+                  </th>
+                </tr>
+              </thead>
+            </table>
+          </div>
         </section>
       </div>
 

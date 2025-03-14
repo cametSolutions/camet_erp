@@ -49,19 +49,23 @@ export const paymentSlice = createSlice({
       state.enteredAmount = 0;
     },
     addSettlementData: (state, action) => {
-      const { billData, totalBillAmount, enteredAmount } = action.payload;
+      const { billData, totalBillAmount, enteredAmount,advanceAmount, remainingAmount } = action.payload;
+
+      
 
       state.billData = billData;
       state.totalBillAmount = totalBillAmount;
       state.enteredAmount = enteredAmount;
+      state.advanceAmount = advanceAmount || 0;
+      state.remainingAmount = remainingAmount || 0;
 
-      if (enteredAmount > totalBillAmount) {
-        state.advanceAmount = enteredAmount - totalBillAmount;
-        state.remainingAmount = 0;
-      } else {
-        state.advanceAmount = 0;
-        state.remainingAmount = totalBillAmount - enteredAmount;
-      }
+      // if (enteredAmount > totalBillAmount) {
+      //   state.advanceAmount = enteredAmount - totalBillAmount;
+      //   state.remainingAmount = 0;
+      // } else {
+      //   state.advanceAmount = 0;
+      //   state.remainingAmount = totalBillAmount - enteredAmount;
+      // }
     },
     addOutstandings: (state, action) => {
       state.outstandings = action.payload;

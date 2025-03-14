@@ -51,6 +51,11 @@ export const invoiceSliceSecondary = createSlice({
       const indexToUpdate = state.items.findIndex((el) => el._id === id);
       if (indexToUpdate !== -1) {
         state.items[indexToUpdate].count = newCount;
+        state.items[indexToUpdate].actualCount = newCount;
+      }
+
+      if (newCount <= 0 && indexToUpdate !== -1) {
+        state.items.splice(indexToUpdate, 1);
       }
     },
     changeTotal: (state, action) => {
@@ -77,13 +82,19 @@ export const invoiceSliceSecondary = createSlice({
       const igst = action.payload?.igst || 0;
       const discount = action.payload?.discount || 0;
       const count = action.payload?.count || 0;
+      const actualCount = action.payload?.actualCount || 0;
       const isTaxInclusive = action.payload?.isTaxInclusive || false;
       const discountType = action.payload?.discountType || false;
 
       const discountPercentage = action.payload?.discountPercentage || 0;
-      const newTotal = action.payload?.total.toFixed(2) || 0;
+      const newTotal = Number(action.payload?.total).toFixed(2) || 0;
 
       const indexToUpdate = state.items.findIndex((el) => el._id === id);
+
+      if (count <= 0 && indexToUpdate !== -1) {
+        state.items.splice(indexToUpdate, 1);
+        return;
+      }
       if (indexToUpdate !== -1) {
         state.items[indexToUpdate].total = newTotal;
         state.items[indexToUpdate].discount = discount;
@@ -92,6 +103,7 @@ export const invoiceSliceSecondary = createSlice({
         state.items[indexToUpdate].isTaxInclusive = isTaxInclusive;
         state.items[indexToUpdate].discountPercentage = discountPercentage;
         state.items[indexToUpdate].discountType = discountType;
+        state.items[indexToUpdate].actualCount = actualCount;
       }
     },
 
@@ -159,6 +171,16 @@ export const invoiceSliceSecondary = createSlice({
     changeDate: (state, action) => {
       state.date = action.payload;
     },
+
+    updateItem: (state, actions) => {
+      const { item } = actions.payload;
+
+      const index = state.items.findIndex((el) => el?._id === item?._id);
+
+      if (index !== -1) {
+        state.items[index] = item;
+      }
+    },
   },
 });
 
@@ -192,6 +214,7 @@ export const {
   addNewAddress,
   addDespatchDetails,
   changeDate,
+  updateItem,
 } = invoiceSliceSecondary.actions;
 
 export default invoiceSliceSecondary.reducer;

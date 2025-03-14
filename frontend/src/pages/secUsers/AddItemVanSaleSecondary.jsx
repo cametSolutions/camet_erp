@@ -11,9 +11,9 @@ import { useDispatch } from "react-redux";
 import { setPriceLevel } from "../../../slices/salesSecondary";
 import {
   changeTotal,
-  setBrandInRedux,
-  setCategoryInRedux,
-  setSubCategoryInRedux,
+  // setBrandInRedux,
+  // setCategoryInRedux,
+  // setSubCategoryInRedux,
   addAllProducts,
   updateItem,
 } from "../../../slices/salesSecondary";
@@ -90,14 +90,11 @@ function AddItemVanSaleSecondary() {
           withCredentials: true,
         });
 
-        
         setGodownname(godown.data?.data?.godownName || "");
-
-       
       } catch (error) {
         console.log(error);
         console.log(error.response);
-        
+
         navigate("/sUsers/vanSale");
         toast.error(error.response.data.message);
       }
@@ -108,10 +105,6 @@ function AddItemVanSaleSecondary() {
   const searchData = (data) => {
     setSearch(data);
   };
-
-
-
-  
 
   ///////////////////////////fetchProducts///////////////////////////////////
 
@@ -282,7 +275,9 @@ function AddItemVanSaleSecondary() {
       }
 
       if (type === "self") {
-        const { brands, categories, subcategories, priceLevels } =
+        const { 
+          // brands, categories, subcategories, 
+          priceLevels } =
           res.data.data;
         // setBrands(brands);
         // setCategories(categories);
@@ -295,7 +290,9 @@ function AddItemVanSaleSecondary() {
           dispatch(setPriceLevel(defaultPriceLevel));
         }
       } else {
-        const { priceLevels, brands, categories, subcategories } = res.data;
+        const { priceLevels,
+          //  brands, categories, subcategories 
+          } = res.data;
 
         // setBrands(brands);
         // setCategories(categories);
@@ -407,34 +404,55 @@ function AddItemVanSaleSecondary() {
 
     if (item.hasGodownOrBatch) {
       item.GodownList.forEach((godownOrBatch, index) => {
-        if (situation == "normal") {
+        if (situation === "normal") {
           priceRate = godownOrBatch.selectedPriceRate;
         }
-        let individualSubtotal = priceRate * Number(godownOrBatch.count) || 0;
-        let discountedSubtotal = individualSubtotal;
+        const quantity = Number(godownOrBatch.count) || 0;
+        const igstValue = Math.max(item.igst || 0, 0);
+
+        // Calculate base price based on tax inclusivity
+        let basePrice = priceRate * quantity;
+
+        let taxBasePrice = basePrice;
+
+        // For tax inclusive prices, calculate the base price without tax
+        if (item?.isTaxInclusive) {
+          taxBasePrice = Number((basePrice / (1 + igstValue / 100)).toFixed(2));
+        }
+
+        // Calculate discount based on discountType
+        let discountedPrice = taxBasePrice;
 
         if (
-          godownOrBatch.discount !== 0 &&
-          godownOrBatch.discount !== undefined &&
-          godownOrBatch.discount !== ""
-        ) {
-          discountedSubtotal = discountedSubtotal - godownOrBatch.discount;
-        } else if (
+          godownOrBatch.discountType === "percentage" &&
           godownOrBatch.discountPercentage !== 0 &&
           godownOrBatch.discountPercentage !== undefined &&
           godownOrBatch.discountPercentage !== ""
         ) {
-          discountedSubtotal -=
-            (individualSubtotal * godownOrBatch.discountPercentage) / 100;
+          // Percentage discount
+
+          const discountAmount =
+            (taxBasePrice * godownOrBatch.discountPercentage) / 100;
+
+          discountedPrice = taxBasePrice - discountAmount;
+        } else if (
+          godownOrBatch.discount !== 0 &&
+          godownOrBatch.discount !== undefined &&
+          godownOrBatch.discount !== ""
+        ) {
+          // Fixed amount discount (default)
+          discountedPrice = taxBasePrice - godownOrBatch.discount;
         }
+        // Calculate tax amount
+        const taxAmount = discountedPrice * (igstValue / 100);
 
-        const gstAmount = (discountedSubtotal * (item.igst || 0)) / 100;
-
-        subtotal += discountedSubtotal + gstAmount;
-
-        const individualTotal = parseFloat(
-          (discountedSubtotal + gstAmount).toFixed(2)
+        // Calculate total including tax
+        const individualTotal = Math.max(
+          parseFloat((discountedPrice + taxAmount).toFixed(2)),
+          0
         );
+
+        subtotal += individualTotal;
 
         individualTotals.push({
           index,
@@ -443,30 +461,51 @@ function AddItemVanSaleSecondary() {
         });
       });
     } else {
-      if (situation == "normal") {
+      if (situation === "normal") {
         priceRate = item.GodownList[0].selectedPriceRate;
       }
-      let individualSubtotal = priceRate * Number(item.count);
-      let discountedSubtotal = individualSubtotal;
+      const quantity = Number(item.count);
+      const igstValue = Math.max(item.newGst || item.igst || 0, 0);
 
-      if (item.discount !== 0 && item.discount !== undefined) {
-        discountedSubtotal -= item.discount;
-      } else if (
+      // Calculate base price based on tax inclusivity
+      let basePrice = priceRate * quantity;
+      let taxBasePrice = basePrice;
+
+      // For tax inclusive prices, calculate the base price without tax
+      if (item?.isTaxInclusive) {
+        taxBasePrice = Number((basePrice / (1 + igstValue / 100)).toFixed(2));
+      }
+
+      // Calculate discount based on discountType
+      let discountedPrice = taxBasePrice;
+
+      if (
+        item.discountType === "percentage" &&
         item.discountPercentage !== 0 &&
         item.discountPercentage !== undefined
       ) {
-        discountedSubtotal -=
-          (individualSubtotal * item.discountPercentage) / 100;
+        // Percentage discount
+        const discountAmount = (taxBasePrice * item.discountPercentage) / 100;
+        console.log("Percentage discount:", discountAmount);
+        discountedPrice = taxBasePrice - discountAmount;
+      } else if (item.discount !== 0 && item.discount !== undefined) {
+        // Fixed amount discount (default)
+        console.log("Fixed amount discount:", item.discount);
+        discountedPrice = taxBasePrice - item.discount;
       }
 
-      const gstAmount =
-        (discountedSubtotal * (item.newGst || item.igst || 0)) / 100;
+      // Calculate tax amount
+      const taxAmount = discountedPrice * (igstValue / 100);
 
-      subtotal += discountedSubtotal + gstAmount;
-
-      const individualTotal = parseFloat(
-        (discountedSubtotal + gstAmount).toFixed(2)
+      // Calculate total including tax
+      const individualTotal = Math.max(
+        parseFloat((discountedPrice + taxAmount).toFixed(2)),
+        0
       );
+
+      // console.log( individualTotal);
+
+      subtotal += individualTotal;
 
       individualTotals.push({
         index: 0,
@@ -475,7 +514,10 @@ function AddItemVanSaleSecondary() {
       });
     }
 
-    subtotal = parseFloat(subtotal.toFixed(2));
+    subtotal = Math.max(parseFloat(subtotal.toFixed(2)), 0);
+
+    console.log(individualTotals);
+    console.log(subtotal);
 
     return {
       individualTotals,
@@ -485,10 +527,10 @@ function AddItemVanSaleSecondary() {
 
   ///////////////////////////handleAddClick///////////////////////////////////
 
-  const handleAddClick = (_id, idx) => {
+  const handleAddClick = (_id, idx = 0) => {
     const updatedItems = item.map((item) => {
       if (item._id === _id) {
-        const itemToUpdate = structuredClone(item);
+        const itemToUpdate = { ...item, GodownList: [...item.GodownList] };
 
         if (itemToUpdate.GodownList[idx]) {
           const currentBatchOrGodown = { ...itemToUpdate.GodownList[idx] };
@@ -497,23 +539,16 @@ function AddItemVanSaleSecondary() {
             ? !currentBatchOrGodown.added
             : true;
           currentBatchOrGodown.count = 1;
+          currentBatchOrGodown.actualCount = 1;
           // currentBatchOrGodown.IndividualTotal = totalData?.individualSubtotal;
 
           itemToUpdate.GodownList[idx] = currentBatchOrGodown;
         }
-        if (
-          itemToUpdate.hasGodownOrBatch &&
-          itemToUpdate.GodownList.every((godown) => !godown.batch)
-        ) {
-          itemToUpdate.GodownList[0].count =
-            new Decimal(itemToUpdate.count || 0).add(1).toNumber() || 1;
-          itemToUpdate.GodownList[0].added = true;
-        }
         itemToUpdate.count =
-          new Decimal(itemToUpdate.count || 0).add(1).toNumber() || 1;
+          new Decimal(itemToUpdate?.count || 0).add(1)?.toNumber() || 1;
+        itemToUpdate.actualCount = itemToUpdate?.count;
 
         const totalData = calculateTotal(itemToUpdate, selectedPriceLevel);
-
         const updatedGodownListWithTotals = itemToUpdate.GodownList.map(
           (godown, index) => ({
             ...godown,
@@ -528,15 +563,19 @@ function AddItemVanSaleSecondary() {
         itemToUpdate.added = true;
 
         dispatch(addItem({ payload: itemToUpdate, moveToTop: false }));
-
         return itemToUpdate;
       }
+
       return item;
     });
 
     setItem(updatedItems);
-    if (selectedPriceLevel === "" || selectedPriceLevel===undefined || priceLevels.length===0 ) {
-      navigate(`/sUsers/editItemSales/${_id}/${godownname || "nil"}/${idx}`);
+    if (
+      selectedPriceLevel === "" ||
+      selectedPriceLevel === undefined ||
+      priceLevels.length === 0
+    ) {
+      navigate(`/sUsers/editItemSales/${_id}/${"nil"}/${idx}`);
     }
   };
 
@@ -545,9 +584,11 @@ function AddItemVanSaleSecondary() {
 
   ///////////////////////////handleIncrement///////////////////////////////////
 
-  const handleIncrement = (_id, godownIndex = null,moveToTop = false) => {
+  const handleIncrement = (_id, godownIndex = 0, moveToTop = false) => {
+    console.log(_id);
+
     const updatedItems = item.map((item) => {
-      if (item._id !== _id) return item; // Keep items unchanged if _id doesn't match
+      if (item?._id !== _id) return item; // Keep items unchanged if _id doesn't match
       const currentItem = structuredClone(item);
 
       if (currentItem?.hasGodownOrBatch && godownIndex !== null) {
@@ -557,6 +598,7 @@ function AddItemVanSaleSecondary() {
         godownOrBatch.count = new Decimal(godownOrBatch.count)
           .add(1)
           .toNumber();
+        godownOrBatch.actualCount = godownOrBatch.count;
 
         // Update the specific godown/batch in the GodownList array
         const updatedGodownList = currentItem.GodownList.map((godown, index) =>
@@ -569,7 +611,12 @@ function AddItemVanSaleSecondary() {
           (sum, godown) => sum + (godown.count || 0),
           0
         );
+        const sumOfActualCounts = updatedGodownList.reduce(
+          (sum, godown) => sum + (godown.actualCount || 0),
+          0
+        );
         currentItem.count = sumOfCounts; // Update currentItem.count with the sum
+        currentItem.actualCount = sumOfActualCounts; // Update currentItem.count with the sum
 
         // Calculate totals and update individual batch totals
         const totalData = calculateTotal(currentItem, selectedPriceLevel);
@@ -584,18 +631,9 @@ function AddItemVanSaleSecondary() {
         currentItem.GodownList = updatedGodownListWithTotals;
         currentItem.total = totalData.total; // Update the overall total
       } else {
-        if (
-          currentItem?.hasGodownOrBatch &&
-          currentItem?.GodownList.every((godown) => !godown.batch)
-        ) {
-          currentItem.GodownList[0].count = new Decimal(
-            currentItem.GodownList[0].count
-          )
-            .add(1)
-            .toNumber();
-        }
         // Increment the count of the currentItem by 1
         currentItem.count = new Decimal(currentItem.count).add(1).toNumber();
+        currentItem.actualCount = currentItem.count;
 
         // Calculate totals and update individual total
         const totalData = calculateTotal(currentItem, selectedPriceLevel);
@@ -607,22 +645,37 @@ function AddItemVanSaleSecondary() {
       return currentItem; // Return the updated currentItem
     });
 
-    setItem(updatedItems); // Update the state with the updated items
+    // Move the updated item to the top if moveToTop is true
+    if (moveToTop) {
+      const updatedItemIndex = updatedItems.findIndex((el) => el._id === _id);
+      if (updatedItemIndex !== -1) {
+        const [updatedItem] = updatedItems.splice(updatedItemIndex, 1);
+        setItem([updatedItem, ...updatedItems]); // Move the updated item to the top
+      } else {
+        setItem(updatedItems); // Otherwise, update the state as is
+      }
+    } else {
+      setItem(updatedItems); // Update the state with the updated items
+    } // Update the state with the updated items
   };
 
   ///////////////////////////handleDecrement///////////////////////////////////
-  const handleDecrement = (_id, godownIndex = null) => {
+  const handleDecrement = (_id, godownIndex = 0) => {
     const updatedItems = item.map((item) => {
       if (item._id !== _id) return item; // Keep items unchanged if _id doesn't match
       const currentItem = structuredClone(item);
+
       if (godownIndex !== null && currentItem.hasGodownOrBatch) {
         const godownOrBatch = { ...currentItem.GodownList[godownIndex] };
         godownOrBatch.count = new Decimal(godownOrBatch.count)
           .sub(1)
           .toNumber();
+        godownOrBatch.actualCount = godownOrBatch.count;
 
         // Ensure count does not go below 0
-        if (godownOrBatch.count <= 0) godownOrBatch.added = false;
+        if (godownOrBatch.count <= 0) {
+          godownOrBatch.added = false;
+        }
 
         const updatedGodownList = currentItem.GodownList.map((godown, index) =>
           index === godownIndex ? godownOrBatch : godown
@@ -633,7 +686,13 @@ function AddItemVanSaleSecondary() {
           (sum, godown) => sum + (godown.count || 0),
           0
         );
+
+        const sumOfActualCounts = updatedGodownList.reduce(
+          (sum, godown) => sum + (godown.actualCount || 0),
+          0
+        );
         currentItem.count = sumOfCounts;
+        currentItem.actualCount = sumOfActualCounts;
         currentItem.GodownList = updatedGodownList;
         const allAddedFalse = currentItem.GodownList.every(
           (item) => item.added === false || item.added == undefined
@@ -655,20 +714,14 @@ function AddItemVanSaleSecondary() {
         currentItem.GodownList = updatedGodownListWithTotals;
         currentItem.total = totalData.total; // Update the overall total
       } else {
-        if (
-          currentItem?.hasGodownOrBatch &&
-          currentItem?.GodownList.every((godown) => !godown.batch)
-        ) {
-          currentItem.GodownList[0].count = new Decimal(
-            currentItem.GodownList[0].count
-          )
-            .sub(1)
-            .toNumber();
-        }
         currentItem.count = new Decimal(currentItem.count).sub(1).toNumber();
+        currentItem.actualCount = currentItem.count;
 
         // Ensure count does not go below 0
-        if (currentItem.count <= 0) currentItem.added = false;
+        if (currentItem.count <= 0) {
+          currentItem.added = false;
+          dispatch(removeItem(currentItem._id));
+        }
 
         // Calculate totals and update individual total
         const totalData = calculateTotal(currentItem, selectedPriceLevel);
@@ -714,7 +767,10 @@ function AddItemVanSaleSecondary() {
         });
 
         dispatch(
-          updateItem({item:{ ...item, GodownList: updatedGodownList, total: total }, moveToTop: false})
+          updateItem({
+            item: { ...item, GodownList: updatedGodownList, total: total },
+            moveToTop: false,
+          })
         );
         return {
           ...item,
@@ -736,7 +792,6 @@ function AddItemVanSaleSecondary() {
     dispatch(setPriceLevel(selectedValue));
     handleTotalChangeWithPriceLevel(selectedValue);
   };
-
 
   ///////////////////////////react window ///////////////////////////////////
 
@@ -777,7 +832,6 @@ function AddItemVanSaleSecondary() {
     }
 
     // Log the updated items for debugging
-
 
     // Update state with the new items array
     setItem(updatedItems);
@@ -820,7 +874,6 @@ function AddItemVanSaleSecondary() {
     });
   }, []);
 
-
   const Row = ({ index, style }) => {
     const el = filteredItems[index];
     // const isExpanded = expandedProductId === el?._id;
@@ -852,7 +905,7 @@ function AddItemVanSaleSecondary() {
                   el?.hasGodownOrBatch ? "mt-1" : "mt-4"
                 } max-w-1/2`}
               >
-                {el.hasGodownOrBatch
+                {el?.hasGodownOrBatch
                   ? el?.product_name.length < 30
                     ? el?.product_name
                     : el?.product_name.slice(0, 50) + "..."
@@ -863,8 +916,8 @@ function AddItemVanSaleSecondary() {
               </p>
               {el?.hasGodownOrBatch &&
                 el.GodownList.some((godown) => godown.batch) && (
-                  <div className="flex flex-col">
-                    <div className="flex">
+                  <div className="flex flex-col font-normal">
+                    <div className="flex ">
                       <span>Net Amount : ₹ </span>
                       <span>{el?.total || 0}</span>
                     </div>
@@ -884,27 +937,25 @@ function AddItemVanSaleSecondary() {
               {el?.hasGodownOrBatch &&
                 el.GodownList.some((godown) => !godown.batch) && (
                   <>
-                    <div className="flex gap-1 items-center">
+                    <div className="flex gap-1 items-center font-normal ">
                       <p>
-                        ₹{" "}
-                        {
-                          // el?.Priceleveles?.find(
-                          //   (item) => item.pricelevel === selectedPriceLevel
-                          // )?.pricerate
-                          el?.GodownList[0]?.selectedPriceRate
-                        }{" "}
-                        /
-                      </p>{" "}
-                      <span className="text-[10px] mt-1">{el?.unit}</span>
+                        <span>MRP</span> : {el?.item_mrp || 0}
+                      </p>
+                      |
+                      <p>
+                        <span>Price </span>:{" "}
+                        {el?.GodownList[0]?.selectedPriceRate || 0}
+                      </p>
                     </div>
-                    <div className="flex">
-                      <p className="text-red-500">STOCK : </p>
-                      <span>{el?.GodownList[0]?.balance_stock}</span>
-                    </div>
-                    <div>
-                      <span>Total : ₹ </span>
-                      <span>{el?.GodownList[0]?.individualTotal || 0}</span>
-                    </div>
+                    <div className="flex font-normal">
+                    <p className="text-red-500 ">STOCK :    </p>
+                    <span>{el?.GodownList[0]?.balance_stock}</span>
+                    <span className="text-[11px] ml-1 mt-[0.5px] "> / {el?.unit}</span>
+                  </div>
+                  <div className="font-normal">
+                    <span >Total : </span>
+                    <span>{el?.GodownList[0]?.individualTotal || 0}</span>
+                  </div>
                   </>
                 )}
             </div>
@@ -1045,7 +1096,7 @@ function AddItemVanSaleSecondary() {
         {el?.isExpanded && (
           <div className=" bg-white">
             <ProductDetails
-            tab="Sales"
+              tab="Sales"
               heights={heights}
               handleIncrement={handleIncrement}
               handleDecrement={handleDecrement}
@@ -1103,11 +1154,9 @@ function AddItemVanSaleSecondary() {
           </div>
 
           <SearchBar onType={searchData} />
-         
-
 
           <Filter addAllProducts={addAllProducts} godownName={godownname} />
-       
+
           {/* <div type="button" className="flex  px-4 bg-white ">
             <p className="text-xs  p-0.5 px-1 text-black font-bold opacity-60 mb-2  ">
               {godownname}

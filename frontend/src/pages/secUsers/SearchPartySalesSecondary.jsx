@@ -90,6 +90,8 @@ function SearchPartySalesSecondary() {
     }
   }, [search, parties]);
 
+ 
+
   return (
     <div className=" ">
       <PartyList

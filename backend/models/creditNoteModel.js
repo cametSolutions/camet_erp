@@ -20,6 +20,7 @@ const creditNoteSchema = new mongoose.Schema(
     selectedGodownId:{ type: String,default:""},  
     cmp_id:{ type: String, required: true },
     partyAccount:{ type: String, required: true },
+
     party: { type: Object, required: true },
     priceLevel: { type: String },
     items: { type: Array, required: true },

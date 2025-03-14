@@ -38,6 +38,7 @@ function AddProductForm({
   const [selectedBrand, setSelectedBrand] = useState();
   const [selectedCategory, setSelectedCategory] = useState({});
   const [batchEnabled, setBatchEnabled] = useState(false);
+  const [item_mrp, setItem_mrp] = useState(0);
 
   const [selectedSubcategory, setSelectedSubcategory] = useState({});
   const [rows, setRows] = useState([{ id: "", pricelevel: "", pricerate: "" }]);
@@ -65,6 +66,7 @@ function AddProductForm({
         alt_unit_conversion,
         hsn_id,
         purchase_price,
+        item_mrp,
         purchase_cost,
         Priceleveles,
         GodownList,
@@ -79,6 +81,7 @@ function AddProductForm({
       setAlt_unit_conversion(alt_unit_conversion);
       setBalance_stock(balance_stock);
       setPurchase_price(purchase_price);
+      setItem_mrp(item_mrp);
       set_Purchase_stock(purchase_cost);
       setSelectedBrand(brand);
       setSelectedCategory(category);
@@ -432,6 +435,7 @@ function AddProductForm({
       alt_unit_conversion,
       hsn_code,
       purchase_price,
+      item_mrp,
       purchase_cost: purchase_stock,
       Priceleveles: levelNames,
       GodownList: getLocation(),
@@ -660,15 +664,33 @@ function AddProductForm({
                       className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
                       htmlfor="grid-password"
                     >
-                      purchase cost
+                      Purchase price
                     </label>
                     <input
-                      onChange={(e) => set_Purchase_stock(e.target.value)}
-                      value={purchase_stock}
+                      onChange={(e) => setPurchase_price(e.target.value)}
+                      value={purchase_price}
                       type="number"
                       min="0"
                       className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                      placeholder="Purchase stock"
+                      placeholder="Purchase price"
+                    />
+                  </div>
+                </div>
+                <div className="w-full lg:w-6/12 px-4 mt-3">
+                  <div className="relative w-full mb-3">
+                    <label
+                      className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
+                      htmlfor="grid-password"
+                    >
+                      MRP
+                    </label>
+                    <input
+                      onChange={(e) => setItem_mrp(e.target.value)}
+                      value={item_mrp}
+                      type="number"
+                      min="0"
+                      className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                      placeholder="MRP"
                     />
                   </div>
                 </div>

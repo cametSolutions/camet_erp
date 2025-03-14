@@ -1,119 +1,126 @@
-/* eslint-disable no-unsafe-optional-chaining */
 /* eslint-disable react/prop-types */
+
 import dayjs from "dayjs";
-
 const ReportTable = ({ data, loading, openingBalances }) => {
-  // Calculate total debit and credit amounts
-  const { totalDebit, totalCredit } = data?.reduce(
-    (totals, transaction) => {
-      if (
-        ["Debit Note", "Tax Invoice", "Payment"].includes(transaction?.type)
-      ) {
-        totals.totalDebit += Number(transaction?.balanceAmount);
-      } else if (
-        ["Purchase", "Receipt", "Credit Note"].includes(transaction?.type)
-      ) {
-        totals.totalCredit += Number(transaction?.balanceAmount);
-      }
-      return totals;
-    },
-    { totalDebit: 0, totalCredit: 0 }
-  );
+  const { debitBalance, creditBalance } = openingBalances;
+  let runningBalance =
+    debitBalance > creditBalance ? debitBalance : creditBalance;
 
-  // console.log("totalDebit :",totalDebit, "totalCredit :",totalCredit);
+  const transactionsWithBalance = data?.map((transaction) => {
+    const debitAmount = ["Debit Note", "Tax Invoice", "Payment"].includes(
+      transaction?.type
+    )
+      ? Number(transaction?.balanceAmount)
+      : 0;
 
-  const closingDebit = totalDebit + (openingBalances?.debitBalance || 0);
-  const closingCredit = totalCredit + (openingBalances?.creditBalance || 0);
+    const creditAmount = ["Purchase", "Receipt", "Credit Note"].includes(
+      transaction?.type
+    )
+      ? Number(transaction?.balanceAmount)
+      : 0;
 
-  const closingBalance = Math.abs(closingDebit - closingCredit);
+    runningBalance = runningBalance + debitAmount - creditAmount;
 
-  // console.log("closingDebit :",closingDebit, "closingCredit :",closingCredit);
-  // console.log("closingBalance :",closingBalance);
+    return {
+      ...transaction,
+      debitAmount,
+      creditAmount,
+      balance: runningBalance,
+    };
+  });
+
+  // Helper function to format balance with Dr/Cr
+  const formatBalanceWithType = (balance) => {
+    const absBalance = Math.abs(balance);
+    const type = balance >= 0 ? "Dr" : "Cr";
+    return `${absBalance} ${type}`;
+  };
 
   return (
-    <div className="w-full overflow-x-auto px-3 py-4 ">
+    <div className="w-full overflow-x-auto">
       <table className="w-full border-collapse">
-        {/* <thead>
-          <tr className="border-b bg-slate-200">
-            <th className="py-6 px-3 text-left text-gray-400 text-sm">
-              Transactions
-            </th>
-            <th className="py-6 px-3 text-right text-gray-400 text-sm">
-              Debit
-            </th>
-            <th className="py-6 px-3 text-right text-gray-400 text-sm">
-              Credit
-            </th>
+        <tbody>
+          {/* Opening Balance Row */}
+          <tr className="border-b">
+            <td className="w-[45%] py-2.5 px-3 text-left text-xs font-medium text-gray-600">
+              Opening Balance
+            </td>
+            <td className="w-[18%] py-2.5 px-3 text-right text-xs font-medium text-gray-600">
+              {openingBalances?.debitBalance > creditBalance
+                ? ` ${openingBalances?.debitBalance || 0}`
+                : " 0"}
+            </td>
+            <td className="w-[18%] py-2.5 px-3 text-right text-xs font-medium text-gray-600">
+              {creditBalance > debitBalance
+                ? ` ${creditBalance || 0}`
+                : " 0"}
+            </td>
+            <td className="w-[19%] py-2.5 px-3 text-right text-xs font-medium text-gray-600">
+              {formatBalanceWithType(debitBalance > creditBalance ? debitBalance : -creditBalance)}
+            </td>
           </tr>
-        </thead> */}
-        <tbody className="">
-          {/* Transaction Rows */}
-          {data?.map((transaction) => (
-            <tr
-              key={transaction._id}
-              className="border-b shadow-md cursor-pointer"
-            >
-              <td className="py-6 px-3 font-bold w-1/3">
+
+          {transactionsWithBalance?.map((transaction) => (
+            <tr key={transaction._id} className="border-b">
+              <td className="w-[45%] py-2.5 px-3 text-xs text-gray-600">
                 <div className="space-y-1">
-                  <div className="text-[10px]  flex gap-1 flex-col">
-                    <span className="text-gray-400">
+                  <div className="text-[10px] text-gray-400 font-semibold flex flex-col">
+                    <span className="text-violet-400">
                       #{transaction?.voucherNumber}
                     </span>
-                    <span className="text-violet-400">
-                      {dayjs(transaction?.date).format("DD/MM/YYYY")}
-                    </span>
+                    {dayjs(transaction?.date).format("DD/MM/YYYY")}
                   </div>
-                  <div className="font-bold text-[13px] text-gray-500">
-                    {transaction?.type}
-                  </div>
+                  <div className="font-medium">{transaction?.type}</div>
                   {transaction.paymentMode && (
                     <div className="text-[11px] text-gray-400">
-                      Payment Mode:{" "}
-                      <span className="text-[11px] text-gray-600">
-                        {transaction?.paymentMode}
-                      </span>
+                      Payment Mode: {transaction?.paymentMode}
                     </div>
                   )}
                 </div>
               </td>
-              <td className="py-6 px-3 text-right text-[11px] font-bold w-1/3">
-                {["Debit Note", "Tax Invoice", "Payment"].includes(
-                  transaction.type
-                ) ? (
+              <td className="w-[18%] py-2.5 px-3 text-right text-xs font-medium">
+                {transaction.debitAmount > 0 ? (
                   <span className="text-red-500">
-                    ₹ {transaction?.balanceAmount}
+                    {transaction.debitAmount}
                   </span>
                 ) : (
-                  "₹ 0"
+                  <span className="text-gray-500"> 0</span>
                 )}
               </td>
-              <td className="py-6 px-3 text-right text-[11px] font-bold w-1/3">
-                {["Purchase", "Receipt", "Credit Note"].includes(
-                  transaction.type
-                ) ? (
+              <td className="w-[18%] py-2.5 px-3 text-right text-xs font-medium">
+                {transaction.creditAmount > 0 ? (
                   <span className="text-green-500">
-                    ₹ {transaction?.balanceAmount}
+                    {transaction?.creditAmount}
                   </span>
                 ) : (
-                  "₹ 0"
+                  <span className="text-gray-500"> 0</span>
                 )}
+              </td>
+              <td className="w-[19%] py-2.5 px-3 text-right text-xs font-medium text-gray-600">
+                {formatBalanceWithType(transaction.balance)}
               </td>
             </tr>
           ))}
         </tbody>
 
-        {/* Closing balance row */}
         {!loading && data?.length > 0 && (
           <tfoot>
-            <tr className="bg-slate-100">
-              <td className="py-3 px-4 text-left font-bold text-xs text-gray-700">
+            <tr className="bg-slate-200 border-t">
+              <td className="w-[45%] py-2.5 px-3 text-left text-xs font-bold text-gray-600">
                 Closing Balance
               </td>
-              <td className="py-3 px-3 text-right font-bold text-xs text-gray-500">
-                {totalDebit > totalCredit && "₹ " + closingBalance}
+              <td className="w-[18%] py-2.5 px-3 text-right text-xs font-bold text-gray-600">
+                {runningBalance > 0
+                  ? ` ${runningBalance}`
+                  : " 0"}
               </td>
-              <td className="py-3 px-3 text-right font-bold text-xs text-gray-500">
-                {totalCredit > totalDebit && "₹ " + closingBalance}
+              <td className="w-[18%] py-2.5 px-3 text-right text-xs font-bold text-gray-600">
+                {runningBalance < 0
+                  ? ` ${Math.abs(runningBalance)}`
+                  : " 0"}
+              </td>
+              <td className="w-[19%] py-2.5 px-3 text-right text-xs font-bold text-gray-600">
+                {formatBalanceWithType(runningBalance)}
               </td>
             </tr>
           </tfoot>
@@ -121,8 +128,8 @@ const ReportTable = ({ data, loading, openingBalances }) => {
       </table>
 
       {!loading && data?.length === 0 && (
-        <div className="w-full py-5 px-4 rounded-sm text-xs font-bold text-gray-700 mt-6 flex justify-center">
-          OOps. No Transactions Found !!
+        <div className="w-full py-2.5 px-4 rounded-sm text-xs font-bold text-gray-700 mt-6 flex justify-center">
+          No Transactions Found
         </div>
       )}
     </div>

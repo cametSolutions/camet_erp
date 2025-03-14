@@ -55,11 +55,11 @@ export const getSalesDetails = async (req, res) => {
 
     ////find the outstanding of the sale
     const outstandingOfSale = await OutstandingModel.findOne({
-      billId: saleDetails._id.toString(),
-      bill_no: saleDetails.salesNumber,
-      billId: saleDetails._id.toString(),
-      cmp_id: saleDetails.cmp_id,
-      Primary_user_id: saleDetails.Primary_user_id
+      billId: saleDetails?._id.toString(),
+      bill_no: saleDetails?.salesNumber,
+      billId: saleDetails?._id.toString(),
+      cmp_id: saleDetails?.cmp_id,
+      Primary_user_id: saleDetails?.Primary_user_id
     })
 
     let isEditable = true
@@ -125,6 +125,7 @@ export const addProduct = async (req, res) => {
         alt_unit_conversion,
         // hsn_code,
         purchase_price,
+        item_mrp,
         purchase_cost,
         Priceleveles,
         GodownList
@@ -169,6 +170,7 @@ export const addProduct = async (req, res) => {
       hsn_code,
       purchase_price,
       purchase_cost,
+      item_mrp,
       Priceleveles,
       GodownList,
       cgst,
@@ -221,6 +223,7 @@ export const editProduct = async (req, res) => {
         alt_unit_conversion,
         // hsn_code,
         purchase_price,
+        item_mrp,
         purchase_cost,
         Priceleveles,
         GodownList,
@@ -262,6 +265,7 @@ export const editProduct = async (req, res) => {
       hsn_code,
       purchase_price,
       purchase_cost,
+      item_mrp,
       Priceleveles,
       GodownList,
       cgst,
