@@ -194,6 +194,27 @@ function SalesPdf({
     return newRate;
   };
 
+  const findGodownOnlyProductDiscount = (godownList) => {
+    // return null if have batch
+    if (godownList?.some((g) => g?.batch)) {
+      return null;
+    }
+  
+    let discountValue = 0;
+  
+    if (configurations?.showDiscountAmount) {
+      discountValue = godownList.reduce(
+        (acc, curr) => acc + Number(curr?.discount || 0),
+        0
+      );
+    } else {
+      discountValue = godownList[0]?.discountPercentage || 0;
+    }
+  
+    return `${discountValue}${configurations?.showDiscountAmount ? '' : '%'}`;
+  };
+  
+
   return (
     <div>
       {/* <style dangerouslySetInnerHTML={{ __html: `
@@ -324,7 +345,7 @@ function SalesPdf({
                           {configurations?.showDiscount && (
                             <td className=" text-black text-right pr-2">
                               {el?.hasGodownOrBatch === true
-                                ? null
+                                ? findGodownOnlyProductDiscount(el.GodownList)
                                 : el.GodownList && el.GodownList.length > 0
                                 ? configurations?.showDiscountAmount
                                   ? el?.discount || 0
@@ -336,13 +357,16 @@ function SalesPdf({
                           )}
 
                           {configurations?.showStockWiseTaxAmount && (
-                            <td className=" text-black text-right pr-2 font-bold">
-                              {el?.hasGodownOrBatch === true
-                                ? null
-                                : `  ${(
-                                    el?.total -
-                                    (el?.total * 100) /
-                                      (parseFloat(el.igst) + 100)
+                            <td className="text-black text-right pr-2 font-bold">
+                              {el?.hasGodownOrBatch
+                                ? el?.GodownList?.every(
+                                    (g) => g?.godown_id && !g?.batch
+                                  )
+                                  ? `${el?.igstAmt?.toFixed(2)}`
+                                  : null
+                                : `${(
+                                    (el?.total * parseFloat(el?.igst)) /
+                                    (parseFloat(el?.igst) + 100)
                                   )?.toFixed(2)}`}
                             </td>
                           )}
