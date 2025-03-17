@@ -15,7 +15,6 @@ const secSelectedOrganizationSlice = createSlice({
   initialState,
   reducers: {
     setSecSelectedOrganization: (state, action) => {
-      console.log(action.payload);
       state.secSelectedOrg = action.payload;
       const org = JSON.stringify(action.payload);
       localStorage.setItem("secOrg", org);

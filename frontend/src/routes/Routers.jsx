@@ -1,12 +1,6 @@
 
 import {Route,Routes} from 'react-router-dom'
-// import Register from '../pages/primaryUsers/Register'
-// import Login from '../pages/primaryUsers/Login'
-// import Home from '../pages/primaryUsers/Home'
-// import OrganizationList from '../components/homePage/OrganisationList'
-// import AdminLogin from '../pages/admin/AdminLogin'
-// import AdminHome from '../pages/admin/AdminHome'
-// import SecLogin from '../pages/secUsers/SecLogin'
+
 import SecHome from '../pages/secUsers/SecHome'
 import Outstanding from '../pages/secUsers/Outstanding'
 import OutstandingDetails from '../pages/secUsers/OutstandingDetails'
@@ -21,22 +15,14 @@ import OrganizationList from '../../src/pages/primaryUsers/OrganisationList'
 import AddSecUsers from '../pages/primaryUsers/AddSecUsers'
 import SecUsersList from '../pages/primaryUsers/SecUsersList'
 import ProtectedPriRoute from './ProtectedPriRoute'
-// import ProtectedAdmin from './ProtectedAdmin'
 import BankList from '../pages/primaryUsers/BankList'
-// import ForgotPasswordPrimary from '../pages/primaryUsers/ForgotPasswordPrimary'
-// import Otp from '../pages/primaryUsers/Otp'
-// import ResetPassword from '../pages/primaryUsers/ResetPassword'
-// import ForgotPasswordSec from '../pages/secUsers/ForgotPasswordSec'
-// import OtpSec from '../pages/secUsers/OtpSec'
-// import ResetPasswordSec from '../pages/secUsers/ResetPasswordSec'
+
 import ReceiptDetails from '../pages/primaryUsers/ReceiptDetails'
-// import SecReceptionDetails from '../pages/secUsers/ReceiptDetails'
 import Dashboard from '../pages/primaryUsers/Dashboard'
 import EditOrg from '../pages/primaryUsers/EditOrg'
 import DashboardSec from '../pages/secUsers/Dashboard'
 import AddParty from '../pages/primaryUsers/AddParty'
 import Hsn from '../pages/primaryUsers/Hsn'
-import AddProduct from '../pages/primaryUsers/AddProduct'
 import ProductList from '../pages/primaryUsers/ProductList'
 import EditProduct from '../pages/primaryUsers/EditProduct'
 import PartyList from '../pages/primaryUsers/PartyList'
@@ -234,7 +220,6 @@ const Routers = () => {
         <Route path='/pUsers/dashboard' element={<ProtectedPriRoute><Dashboard/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/addParty' element={<ProtectedPriRoute><AddParty/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/hsn' element={<ProtectedPriRoute><Hsn/></ProtectedPriRoute>}></Route>
-        <Route path='/pUsers/addProduct' element={<ProtectedPriRoute><AddProduct/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/productList' element={<ProtectedPriRoute><ProductList/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/editProduct/:id' element={<ProtectedPriRoute><EditProduct/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/partyList' element={<ProtectedPriRoute><PartyList/></ProtectedPriRoute>}></Route>
