@@ -621,11 +621,15 @@ export const addProductSubDetails = async (req, res) => {
     let Model
     let dataToSave
 
+    const generatedId = new mongoose.Types.ObjectId();
+
     switch (key) {
       case "brand":
         Model = Brand
         dataToSave = {
+          _id: generatedId,
           brand: subDetails[key],
+          brand_id: generatedId,
           cmp_id: orgId,
           Primary_user_id: req.pUserId || req.owner
         }
@@ -633,7 +637,9 @@ export const addProductSubDetails = async (req, res) => {
       case "category":
         Model = Category
         dataToSave = {
+          _id: generatedId,
           category: subDetails[key],
+          category_id: generatedId,
           cmp_id: orgId,
           Primary_user_id: req.pUserId || req.owner
         }
@@ -641,8 +647,10 @@ export const addProductSubDetails = async (req, res) => {
       case "subcategory":
         Model = Subcategory
         dataToSave = {
+          _id: generatedId,
           subcategory: subDetails[key],
           categoryId: subDetails.categoryId,
+          subcategory_id: generatedId,
           cmp_id: orgId,
           Primary_user_id: req.pUserId || req.owner
         }
@@ -650,7 +658,9 @@ export const addProductSubDetails = async (req, res) => {
       case "godown":
         Model = Godown
         dataToSave = {
+          _id: generatedId,
           godown: subDetails[key],
+          godown_id: generatedId,
           address: subDetails.address,
           cmp_id: orgId,
           Primary_user_id: req.pUserId || req.owner,
@@ -661,14 +671,22 @@ export const addProductSubDetails = async (req, res) => {
         const existingGodowns = await Godown.find({ cmp_id: orgId })
         if (existingGodowns.length === 0) {
           // Create default godown
+          const defaultGodownId= new mongoose.Types.ObjectId();
           const defaultGodown = new Godown({
+            _id: defaultGodownId,
+            godown_id: defaultGodownId,
             godown: "Default Godown",
-            address: "Default Address",
+            // address: "Default Address",
             cmp_id: orgId,
             Primary_user_id: req.pUserId || req.owner,
             defaultGodown: true
           })
           const savedDefaultGodown = await defaultGodown.save()
+          
+          /// add godownEnabled tag to company
+          const company = await OragnizationModel.findOne({ _id: orgId })
+          company.gdnEnabled = true
+          await company.save()
 
           // Update all products with the default godown
           const update = await productModel.updateMany(
@@ -686,7 +704,9 @@ export const addProductSubDetails = async (req, res) => {
       case "pricelevel":
         Model = PriceLevel
         dataToSave = {
+          _id: generatedId,
           pricelevel: subDetails[key],
+          pricelevel_id: generatedId,
           cmp_id: orgId,
           Primary_user_id: req.pUserId || req.owner
         }
@@ -718,6 +738,9 @@ export const getProductSubDetails = async (req, res) => {
     const { orgId } = req.params
     const { type } = req.query // 'type' can be 'brand', 'category', 'subcategory', 'godown', or 'pricelevel'
     const Primary_user_id = req.pUserId || req.owner
+
+    console.log( typeof(orgId));
+    
 
     let data
 

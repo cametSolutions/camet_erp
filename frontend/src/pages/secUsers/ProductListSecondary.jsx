@@ -17,6 +17,7 @@ import CustomBarLoader from "../../components/common/CustomBarLoader";
 import { useNavigate } from "react-router-dom";
 import { PiBarcode } from "react-icons/pi";
 import BarcodeModal from "../../components/common/BarcodeModal";
+import TitleDiv from "@/components/common/TitleDiv";
 
 function ProductListSecondary() {
   const [products, setProducts] = useState([]);
@@ -212,25 +213,15 @@ function ProductListSecondary() {
       />
       <div className="flex-1 bg-slate-50  h-screen overflow-hidden  ">
         <div className="sticky top-0 z-20 ">
-          <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3  flex justify-between items-center  ">
-            <div className="flex items-center justify-center gap-2">
-              <IoIosArrowRoundBack
-                onClick={() => navigate("/sUsers/dashboard")}
-                className="cursor-pointer text-3xl text-white "
-              />
-              <p className="text-white text-lg   font-bold ">Your Products</p>
-            </div>
-            {type === "self" && (
-              <div>
-                <Link to={"/sUsers/addProduct"}>
-                  <button className="flex items-center gap-2 text-white bg-[#40679E] px-2 py-1 rounded-md text-sm  hover:scale-105 duration-100 ease-in-out ">
-                    <IoIosAddCircle className="text-xl" />
-                    Add Products
-                  </button>
-                </Link>
-              </div>
-            )}
-          </div>
+          <TitleDiv
+            title="Your Products"
+            dropdownContents={[
+              {
+                title: "Add Products",
+                to: "/sUsers/addProduct",
+              },
+            ]}
+          />
 
           <SearchBar onType={searchData} />
         </div>

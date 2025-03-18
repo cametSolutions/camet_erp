@@ -136,8 +136,13 @@ function AddProductForm({
         setGodown(godowns);
         const defaultGodown = godowns.find((g) => g?.defaultGodown === true);
         // console.log(defaultGodown);
+
+        console.log(godowns);
+        console.log(locationRows);
+        
         if (defaultGodown) {
           setLocationRows([
+            
             {
               godown_id: defaultGodown?._id,
               godown: defaultGodown?.name,
@@ -146,6 +151,8 @@ function AddProductForm({
             },
           ]);
         }
+        console.log(locationRows);
+        
 
         // console.log(godowns);
 
@@ -442,8 +449,14 @@ function AddProductForm({
       batchEnabled,
     };
 
+    console.log(formData);
+    
+
     submitData(formData);
   };
+
+
+  
 
   return (
     <section className="  py-1 bg-blueGray-50">
@@ -658,24 +671,7 @@ function AddProductForm({
                     />
                   </div>
                 </div>
-                <div className="w-full lg:w-6/12 px-4 mt-3">
-                  <div className="relative w-full mb-3">
-                    <label
-                      className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
-                      htmlfor="grid-password"
-                    >
-                      Purchase price
-                    </label>
-                    <input
-                      onChange={(e) => setPurchase_price(e.target.value)}
-                      value={purchase_price}
-                      type="number"
-                      min="0"
-                      className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                      placeholder="Purchase price"
-                    />
-                  </div>
-                </div>
+              
                 <div className="w-full lg:w-6/12 px-4 mt-3">
                   <div className="relative w-full mb-3">
                     <label

@@ -134,6 +134,9 @@ export const getSecUserData = async (req, res) => {
       path: "organization",
       // select: "_id name",
     });
+
+    console.log("userData", userData);
+    
     if (userData) {
       return res
         .status(200)

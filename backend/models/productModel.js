@@ -6,7 +6,8 @@ const productSchema = new mongoose.Schema({
     required: true,
   },
   cmp_id: {
-    type: String,
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Organization",
     required: true,
   },
   product_code: {
@@ -26,13 +27,16 @@ const productSchema = new mongoose.Schema({
     ref: "SecondaryUser",
   },
   brand: {
-    type: Object,
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Brand",
   },
-  category: {
-    type: Object,
+  category:  {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Category",
   },
   sub_category: {
-    type: Object,
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Subcategory",
   },
   unit: {
     type: String,
@@ -66,7 +70,7 @@ const productSchema = new mongoose.Schema({
   purchase_cost: {
     type: String,
   },
-  item_mrp:{
+  item_mrp: {
     type: Number,
   },
   Priceleveles: {
@@ -105,6 +109,10 @@ const productSchema = new mongoose.Schema({
     type: String,
   },
   batchEnabled: {
+    type: Boolean,
+    default: false,
+  },
+  gdnEnabled: {
     type: Boolean,
     default: false,
   },
