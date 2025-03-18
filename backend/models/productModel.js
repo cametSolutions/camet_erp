@@ -57,10 +57,8 @@ const productSchema = new mongoose.Schema({
   pricelevelcount: {
     type: Number,
   },
-  hsn_code: {
-    type: String,
-  },
-  hsn_id: {
+
+  hsn: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Hsn",
   },
@@ -73,14 +71,37 @@ const productSchema = new mongoose.Schema({
   item_mrp: {
     type: Number,
   },
-  Priceleveles: {
-    type: Array, // Array of strings
-    default: [],
-  },
-  GodownList: {
-    type: Array,
-    default: [{ balance_stock: 0 }], // Array of objects with balance_stock
-  },
+  Priceleveles: [
+    {
+      pricelevel: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "PriceLevel", // Reference to the Pricelevel model
+        required: true,
+      },
+      pricerate: {
+        type: Number,
+        required: true,
+      },
+    },
+  ],
+  
+  GodownList: [
+    {
+      godown: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Godown", // Reference to the Godown model
+        required: true,
+      },
+      balance_stock: {
+        type: Number,
+        default: 0,
+      },
+      batch: {
+        type: String,
+      },
+    },
+  ],
+  
   cgst: {
     type: String,
   },

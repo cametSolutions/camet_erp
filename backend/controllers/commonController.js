@@ -138,16 +138,16 @@ export const addProduct = async (req, res) => {
     const hsnDetails = await hsnModel.findById(hsn_code)
 
     // Extract required fields from HSN details
-    let cgst, sgst, igst, cess, addl_cess, hsn_id
+    let cgst, sgst, igst, cess, addl_cess, hsn
     if (hsnDetails) {
-      ;({
+      ({
         igstRate: igst,
         cgstRate: cgst,
         sgstUtgstRate: sgst,
         onValue: cess,
         onQuantity: addl_cess,
-        hsn: hsn_code,
-        _id: hsn_id
+        // hsn: hsn_code,
+        _id: hsn
       } = hsnDetails)
     }
 
@@ -167,7 +167,7 @@ export const addProduct = async (req, res) => {
       alt_unit,
       unit_conversion,
       alt_unit_conversion,
-      hsn_code,
+      // hsn_code,
       purchase_price,
       purchase_cost,
       item_mrp,
@@ -178,10 +178,9 @@ export const addProduct = async (req, res) => {
       igst,
       cess,
       addl_cess,
-      hsn_id
+      hsn
     }
 
-    console.log("data to save in add product ", dataToSave)
 
     // Save the product
     const newProduct = await productModel.create(dataToSave)

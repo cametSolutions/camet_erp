@@ -12,7 +12,6 @@ const BarcodeModal = ({ isOpen, onClose, product }) => {
   const [barcodeList, setBarcodeList] = useState([]);
   
 
-  console.log("barcodeitemanme", barcodeItemName);
   
 
   const { _id: cmp_id, name: company_name } = useSelector(
