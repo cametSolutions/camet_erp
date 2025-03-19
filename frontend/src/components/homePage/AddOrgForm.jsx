@@ -10,7 +10,6 @@ import { statesData } from "../../../constants/states.js";
 import {
   countries,
 } from "../../../constants/countries.js";
-import { set } from "mongoose";
 // 
 function AddOrgForm({ onSubmit, orgData = {} }) {
   const [name, setName] = useState("");

@@ -5,19 +5,18 @@ import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import api from "../../api/api";
 import { toast } from "react-toastify";
-import { IoIosArrowRoundBack } from "react-icons/io";
-import { useNavigate, Link, useParams } from "react-router-dom";
-import SidebarSec from "../../components/secUsers/SidebarSec";
+import { useNavigate,  useParams } from "react-router-dom";
 import AddProductForm from "../../components/common/Forms/AddProductForm";
+import TitleDiv from "@/components/common/TitleDiv";
 
 function EditProductSecondary() {
   const { id } = useParams();
   const [productData, setProductData] = useState({});
-  const [isBatchEnabledInCompany, setIsBatchEnabledInCompany] = useState(false);
 
-  const orgId = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg._id
+  const {_id:orgId, batchEnabled:isBatchEnabledInCompany} = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg
   );
+
 
   ////fetching data for edit
   useEffect(() => {
@@ -35,33 +34,9 @@ function EditProductSecondary() {
     getProductDetails();
   }, [id]);
 
-  
-
   const navigate = useNavigate();
 
 
-  useEffect(() => {
-    const fetchSingleOrganization = async () => {
-      try {
-        const res = await api.get(
-          `/api/pUsers/getSingleOrganization/${orgId}`,
-          {
-            withCredentials: true,
-          }
-        );
-
-        const {batchEnabled : batchEnabledFromApi} = res.data.organizationData;
-        console.log(batchEnabledFromApi);
-        
-      
-        setIsBatchEnabledInCompany(batchEnabledFromApi)
-       
-      } catch (error) {
-        console.log(error);
-      }
-    };
-    fetchSingleOrganization();
-  }, [orgId]);
 
   const submitHandler = async (formData) => {
     try {
@@ -72,9 +47,8 @@ function EditProductSecondary() {
         withCredentials: true,
       });
 
-      console.log(res.data);
       toast.success(res.data.message);
-      navigate("/sUsers/productList");
+      navigate("/sUsers/productList",{replace:true});
     } catch (error) {
       toast.error(error.response.data.message);
       console.log(error);
@@ -82,22 +56,16 @@ function EditProductSecondary() {
   };
 
   return (
-    
-      <div className="flex-1">
-        <div className="bg-[#012A4A] sticky top-0 p-3 z-100 text-white text-lg font-bold flex items-center gap-3 z-20">
-          <Link to={"/sUsers/productList"}>
-            <IoIosArrowRoundBack className="block md:hidden text-3xl" />
-          </Link>
-          <p>Edit Product</p>
-        </div>
-        <AddProductForm
-          orgId={orgId}
-          submitData={submitHandler}
-          productData={productData}
-          userType="secondaryUser"
-          isBatchEnabledInCompany={isBatchEnabledInCompany}
-        />
-      </div>
+    <div className="flex-1">
+      <TitleDiv title="Edit Product" from="/sUsers/productList" />
+      <AddProductForm
+        orgId={orgId}
+        submitData={submitHandler}
+        productData={productData}
+        userType="secondaryUser"
+        isBatchEnabledInCompany={isBatchEnabledInCompany}
+      />
+    </div>
   );
 }
 

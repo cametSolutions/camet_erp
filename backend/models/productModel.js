@@ -76,7 +76,7 @@ const productSchema = new mongoose.Schema({
       pricelevel: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "PriceLevel", // Reference to the Pricelevel model
-        required: true,
+        // required: true,
       },
       pricerate: {
         type: Number,
@@ -90,7 +90,7 @@ const productSchema = new mongoose.Schema({
       godown: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Godown", // Reference to the Godown model
-        required: true,
+        // required: true,
       },
       balance_stock: {
         type: Number,

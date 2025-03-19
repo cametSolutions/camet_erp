@@ -135,7 +135,6 @@ export const getSecUserData = async (req, res) => {
       // select: "_id name",
     });
 
-    console.log("userData", userData);
     
     if (userData) {
       return res
@@ -719,11 +718,11 @@ export const getProducts = async (req, res) => {
 
     let matchStage = {
       $match: {
-        cmp_id: cmp_id,
-        Primary_user_id: Primary_user_id,
+        cmp_id: new mongoose.Types.ObjectId(cmp_id),
+        Primary_user_id: new mongoose.Types.ObjectId(Primary_user_id),
       },
     };
-
+    
     let selectedGodowns;
     if (isVanSale && configuration?.selectedVanSaleGodowns.length > 0) {
       selectedGodowns = configuration.selectedVanSaleGodowns;

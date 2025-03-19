@@ -8,7 +8,7 @@ import { registerPrimaryUser,login,addOrganizations,
   cancelTransaction,fetchBanks,bankList,
   sendOtp,submitOtp,resetPassword,getTransactionDetails,getSingleOrganization,
   editOrg,addParty,addDataToOrg,editDataInOrg,deleteDataInOrg,
-  fetchHsn,getProducts,deleteProduct,productDetails
+  fetchHsn,deleteProduct,productDetails
   ,PartyList,deleteParty,getSinglePartyDetails,editParty,
   fetchFilters,createInvoice,addBulkProducts,invoiceList,
 getBankDetails,getSecUserDetails,
@@ -23,7 +23,7 @@ getBankDetails,getSecUserDetails,
   import { cancelPurchase } from '../controllers/purchaseController.js';
 
 import {addProduct,editProduct,getCreditNoteDetails,transactions,fetchAdditionalCharges, getDebitNoteDetails,
-  getReceiptDetails,getPaymentDetails,getProductSubDetails,deleteProductSubDetails,editProductSubDetails,addProductSubDetails,addHsn,getSingleHsn,editHsn,deleteHsn,getSalesDetails,getPurchaseDetails,
+  getReceiptDetails,getPaymentDetails,getProductSubDetails,deleteProductSubDetails,editProductSubDetails,addHsn,getSingleHsn,editHsn,deleteHsn,getSalesDetails,getPurchaseDetails,
   updateMissingBillIds,addBank,editBank} from "../controllers/commonController.js";
 import { singleUpload } from '../multer/multer.js';
 import { primaryIsBlocked } from '../middlewares/isBlocked.js';
@@ -58,7 +58,7 @@ router.post('/deleteDataInOrg/:cmp_id',authPrimary,primaryIsBlocked,companyAuthe
 router.get('/fetchHsn/:cmp_id',authPrimary,primaryIsBlocked,fetchHsn)
 router.get('/fetchFilters/:cmp_id',authPrimary,primaryIsBlocked,companyAuthentication,fetchFilters)
 router.post('/addProduct',authPrimary,primaryIsBlocked,addProduct)
-router.get('/getProducts/:cmp_id',authPrimary,primaryIsBlocked,companyAuthentication,getProducts)
+// router.get('/getProducts/:cmp_id',authPrimary,primaryIsBlocked,companyAuthentication,getProducts)
 router.delete('/deleteProduct/:id',authPrimary,primaryIsBlocked,deleteProduct)
 router.get('/productDetails/:id',authPrimary,primaryIsBlocked,productDetails)
 router.post('/editProduct/:id',authPrimary,primaryIsBlocked,editProduct)
@@ -97,7 +97,6 @@ router.get("/godownProductFilter/:cmp_id/:godown_id",authPrimary,primaryIsBlocke
 router.get("/godownProductFilterSelf/:cmp_id/:godown_name",authPrimary,primaryIsBlocked,companyAuthentication,godownwiseProductsSelf)
 router.get("/additionalcharges/:cmp_id",authPrimary,primaryIsBlocked,companyAuthentication,fetchAdditionalCharges)
 router.get("/getPurchaseDetails/:id",authPrimary,primaryIsBlocked,getPurchaseDetails)
-router.post("/addProductSubDetails/:orgId",authPrimary,primaryIsBlocked,addProductSubDetails)
 router.get("/getProductSubDetails/:orgId",authPrimary,primaryIsBlocked,getProductSubDetails)
 router.delete("/deleteProductSubDetails/:orgId/:id",authPrimary,primaryIsBlocked,deleteProductSubDetails)
 router.put("/editProductSubDetails/:orgId/:id",authPrimary,primaryIsBlocked,editProductSubDetails)

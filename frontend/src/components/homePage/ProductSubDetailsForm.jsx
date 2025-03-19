@@ -5,9 +5,10 @@ import { FaEdit, FaTrash } from "react-icons/fa";
 import { toast } from "react-toastify";
 import api from "../../api/api";
 import Swal from "sweetalert2";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import Pagination from "../../components/common/Pagination";
 import { useLocation } from "react-router-dom";
+import { setSecSelectedOrganization } from "../../../slices/secSelectedOrgSlice";
 
 const ProductSubDetailsForm = ({ tab, handleLoader }) => {
   const [value, setValue] = useState("");
@@ -15,13 +16,13 @@ const ProductSubDetailsForm = ({ tab, handleLoader }) => {
   const [reload, setReload] = useState(false);
   const [loading, setLoading] = useState(false);
 
-
   const [edit, setEdit] = useState({
     id: "",
     enabled: false,
   });
 
   const location = useLocation();
+  const dispatch = useDispatch();
 
   // Call useSelector hooks unconditionally
   const selectedOrgId = useSelector(
@@ -102,6 +103,13 @@ const ProductSubDetailsForm = ({ tab, handleLoader }) => {
         }
       );
 
+      if (tab === "godown") {
+        const companyUpdate = res.data.companyUpdate;
+        if (companyUpdate) {
+          dispatch(setSecSelectedOrganization(companyUpdate));
+        }
+      }
+
       toast.success(res.data.message);
       setReload(!reload);
     } catch (error) {
@@ -113,63 +121,63 @@ const ProductSubDetailsForm = ({ tab, handleLoader }) => {
     }
   };
 
-    const deleteSubDetails = async (id, type) => {
-      if (tab === "godown") {
-        const isDefaultGodown = data.find((d) => d._id === id)?.defaultGodown;
+  const deleteSubDetails = async (id, type) => {
+    if (tab === "godown") {
+      const isDefaultGodown = data.find((d) => d._id === id)?.defaultGodown;
 
-        if (isDefaultGodown) {
-          const result = await Swal.fire({
-            title: "Cannot Delete",
-            text: "Cannot delete default godown",
-            icon: "warning",
-            confirmButtonText: "OK",
-          });
-          return;
-        }
-      }
-      try {
-        // Show a confirmation dialog
+      if (isDefaultGodown) {
         const result = await Swal.fire({
-          title: "Are you sure?",
-          text: `You are about to delete this ${tab}. This action cannot be undone!`,
+          title: "Cannot Delete",
+          text: "Cannot delete default godown",
           icon: "warning",
-          showCancelButton: true,
-          confirmButtonColor: "#3085d6",
-          cancelButtonColor: "#d33",
-          confirmButtonText: "Yes, delete it!",
+          confirmButtonText: "OK",
         });
-
-        // If the user confirms the deletion
-        if (result.isConfirmed) {
-          setLoading(true);
-          handleLoader(true);
-          const res = await api.delete(
-            `/api/${user}/deleteProductSubDetails/${orgId}/${id}?type=${tab}`,
-            {
-              withCredentials: true,
-            }
-          );
-
-          setReload(!reload);
-          // Show a success message
-          Swal.fire("Deleted!", `The ${tab} has been deleted.`, "success");
-
-          // You might want to update your local state here
-        }
-      } catch (error) {
-        console.log(error);
-
-        // Show an error message
-        Swal.fire(
-          "Error",
-          error.response?.data?.message || "An error occurred while deleting",
-          "error"
-        );
-      } finally {
-        setLoading(false);
-        handleLoader(false);
+        return;
       }
-    };
+    }
+    try {
+      // Show a confirmation dialog
+      const result = await Swal.fire({
+        title: "Are you sure?",
+        text: `You are about to delete this ${tab}. This action cannot be undone!`,
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Yes, delete it!",
+      });
+
+      // If the user confirms the deletion
+      if (result.isConfirmed) {
+        setLoading(true);
+        handleLoader(true);
+        const res = await api.delete(
+          `/api/${user}/deleteProductSubDetails/${orgId}/${id}?type=${tab}`,
+          {
+            withCredentials: true,
+          }
+        );
+
+        setReload(!reload);
+        // Show a success message
+        Swal.fire("Deleted!", `The ${tab} has been deleted.`, "success");
+
+        // You might want to update your local state here
+      }
+    } catch (error) {
+      console.log(error);
+
+      // Show an error message
+      Swal.fire(
+        "Error",
+        error.response?.data?.message || "An error occurred while deleting",
+        "error"
+      );
+    } finally {
+      setLoading(false);
+      handleLoader(false);
+    }
+  };
 
   const handleEdit = async (id, value) => {
     if (tab === "godown") {
@@ -252,7 +260,7 @@ const ProductSubDetailsForm = ({ tab, handleLoader }) => {
         </div>
         <div className="h-3 bg-gray-100 "></div>
       </div>
-      
+
       <section className="overflow-y-scroll h-[calc(100vh-273px)] px-4 scrollbar-thin ">
         <div className="mt-2">
           {data?.length > 0 && !loading ? (
@@ -271,7 +279,7 @@ const ProductSubDetailsForm = ({ tab, handleLoader }) => {
                       onClick={() => handleEdit(el._id, el[tab])}
                       className="text-blue-500"
                     >
-                      <FaEdit size={15}  />
+                      <FaEdit size={15} />
                     </p>
                   </div>
                   <div className=" cursor-pointer text-right ">

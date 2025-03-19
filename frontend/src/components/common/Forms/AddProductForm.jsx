@@ -10,6 +10,7 @@ import { MdPlaylistAdd } from "react-icons/md";
 import { toast } from "react-toastify";
 import api from "../../../api/api";
 import Swal from "sweetalert2";
+import { useSelector } from "react-redux";
 
 function AddProductForm({
   orgId,
@@ -36,22 +37,14 @@ function AddProductForm({
   const [godown, setGodown] = useState("");
   const [priceLevel, setPriceLevel] = useState([]);
   const [selectedBrand, setSelectedBrand] = useState();
-  const [selectedCategory, setSelectedCategory] = useState({});
+  const [selectedCategory, setSelectedCategory] = useState();
   const [batchEnabled, setBatchEnabled] = useState(false);
   const [item_mrp, setItem_mrp] = useState(0);
 
-  const [selectedSubcategory, setSelectedSubcategory] = useState({});
-  const [rows, setRows] = useState([{ pricelevel: "",  pricerate: "" }]);
+  const [selectedSubcategory, setSelectedSubcategory] = useState();
+  const [rows, setRows] = useState([{ pricelevel: "", pricerate: "" }]);
 
-  const [locationRows, setLocationRows] = useState([
-    { godown: "", balance_stock: "" },
-  ]);
-
-  console.log(rows);
-  console.log(locationRows);
-  console.log(productData);
-  
-
+  const [locationRows, setLocationRows] = useState([]);
 
   const [originalGodownList, setOriginalGodownList] = useState([]);
 
@@ -68,7 +61,7 @@ function AddProductForm({
         alt_unit,
         unit_conversion,
         alt_unit_conversion,
-        hsn :hsn_id ,
+        hsn: hsn_id,
         purchase_price,
         item_mrp,
         purchase_cost,
@@ -76,9 +69,6 @@ function AddProductForm({
         GodownList,
         batchEnabled,
       } = productData;
-
-      console.log(GodownList);
-      
 
       setProduct_name(product_name);
       setProduct_code(product_code);
@@ -96,10 +86,7 @@ function AddProductForm({
       if (Priceleveles?.length > 0) {
         setRows(Priceleveles);
       } else {
-        setRows(() => [
-          ...Priceleveles,
-          { pricelevel: "",  pricerate: "" },
-        ]);
+        setRows(() => [...Priceleveles, { pricelevel: "", pricerate: "" }]);
       }
 
       if (
@@ -118,6 +105,15 @@ function AddProductForm({
       }
     }
   }, [productData, isBatchEnabledInCompany]);
+
+  const gdnEnabled = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg.gdnEnabled
+  );
+
+
+  
+
+
 
   // api call to fetch all sub details
 
@@ -142,13 +138,10 @@ function AddProductForm({
 
         setGodown(godowns);
         const defaultGodown = godowns.find((g) => g?.defaultGodown === true);
-        console.log(defaultGodown);
+        // console.log(defaultGodown);
 
-    
-        
-        if (defaultGodown) {
+        if (defaultGodown && locationRows?.length === 0) {
           setLocationRows([
-            
             {
               godown: defaultGodown?._id || "",
               // godown: defaultGodown?.name,
@@ -156,8 +149,15 @@ function AddProductForm({
               // defaultGodown: true,
             },
           ]);
+        }else{
+          setLocationRows([
+            {
+              godown: "",
+              balance_stock: "",
+            },
+          ]);
+
         }
-        
 
         // console.log(godowns);
 
@@ -194,30 +194,23 @@ function AddProductForm({
       toast.error("Add Level name and Rate");
       return;
     }
-    setRows([...rows, { pricelevel: "",  pricerate: "" }]);
+    setRows([...rows, { pricelevel: "", pricerate: "" }]);
   };
 
   // console.log(rows);
   // console.log(priceLevel);
 
-
   const handleDeleteRow = (id) => {
     // console.log(id);
-    
-    if (rows?.length > 1) {
 
-      const filter=rows.filter((row) => row?.pricelevel !== id);
-      console.log(filter);
-      
+    if (rows?.length > 1) {
       setRows(rows.filter((row) => row?.pricelevel !== id));
     } else {
-      setRows([{ pricelevel: "",  pricerate: "" }]);
+      setRows([{ pricelevel: "", pricerate: "" }]);
     }
   };
 
   const handleLevelChange = (index, value) => {
-  
-
     const newRows = [...rows];
     newRows[index].pricelevel = value;
     setRows(newRows);
@@ -234,19 +227,20 @@ function AddProductForm({
   const handleAddLocationRow = () => {
     const lastRow = locationRows[locationRows?.length - 1];
 
-    
-    if (!lastRow?.godown || lastRow?.balance_stock < 0 || lastRow?.balance_stock === "") {
+    if (
+      !lastRow?.godown ||
+      lastRow?.balance_stock < 0 ||
+      lastRow?.balance_stock === ""
+    ) {
       toast.error("Add Location  and Stock");
       return;
     }
 
-    setLocationRows([...locationRows, {  balance_stock: "" }]);
+    setLocationRows([...locationRows, { balance_stock: "" }]);
   };
 
   const handleDeleteLocationRow = (id) => {
-    const isDefaultGodown = godown.find((g) => g?._id === id)?.defaultGodown;
-
-    console.log(isDefaultGodown);
+    const isDefaultGodown = godown.find((g) => g?.godown === id)?.defaultGodown;
 
     if (isDefaultGodown) {
       Swal.fire({
@@ -261,14 +255,11 @@ function AddProductForm({
     if (locationRows?.length > 1) {
       setLocationRows(locationRows.filter((row) => row?.godown !== id));
     } else {
-      setLocationRows([{ godown: "",  balance_stock: "" }]);
+      setLocationRows([{ godown: "", balance_stock: "" }]);
     }
   };
 
   const handleLocationChange = (index, value) => {
-
-    console.log(value);
-    
     const newRows = [...locationRows];
     newRows[index].godown = value;
     setLocationRows(newRows);
@@ -282,12 +273,7 @@ function AddProductForm({
 
   const submitHandler = async () => {
     // Check required fields
-    if (
-      !product_name.trim() ||
-      !unit ||
-      hsn_code?.length === 0 
-    
-    ) {
+    if (!product_name.trim() || !unit || hsn_code?.length === 0) {
       toast.error("Name, Unit, and HSN must be filled");
       return;
     }
@@ -302,14 +288,14 @@ function AddProductForm({
 
     let isError = false;
 
-    if (rows[0]?.id !== "" || rows[0]?.pricerate !== "") {
+    if (rows[0]?.pricelevel !== "" || rows[0]?.pricerate !== "") {
       rows.map((el) => {
         if (el?.pricerate === "") {
           toast.error("Rate must be filled");
           isError = true;
           return;
         }
-        if (el?.id === "") {
+        if (el?.pricelevel === "") {
           toast.error("Level name must be filled");
           isError = true;
           return;
@@ -322,10 +308,10 @@ function AddProductForm({
 
     isError = false;
 
-    console.log(locationRows);
-    
-
-    if (locationRows[0]?.godown !== "" || locationRows[0]?.balance_stock !== "") {
+    if (
+      locationRows[0]?.godown !== "" ||
+      locationRows[0]?.balance_stock !== ""
+    ) {
       locationRows.map((el) => {
         if (el?.balance_stock === "") {
           toast.error("stock must be filled");
@@ -345,7 +331,6 @@ function AddProductForm({
     }
 
     let locations;
-
 
     const godownListFirstItem = locationRows[0];
     if (
@@ -380,14 +365,10 @@ function AddProductForm({
 
       const noLocation = [{ balance_stock: 0 }];
 
-      console.log(locations);
-
       if (
         batchEnabled &&
         JSON.stringify(locations) === JSON.stringify(noLocation)
       ) {
-        console.log("batch enabled and equals no location");
-
         const finalLocations = [
           {
             batch: "Default batch",
@@ -400,8 +381,6 @@ function AddProductForm({
         batchEnabled &&
         JSON.stringify(locations) !== JSON.stringify(noLocation)
       ) {
-        console.log("batch enabled and not  equals no location");
-
         const finalLocations = locations.map((location) => {
           return {
             ...location,
@@ -414,8 +393,6 @@ function AddProductForm({
         !batchEnabled &&
         JSON.stringify(locations) !== JSON.stringify(noLocation)
       ) {
-        console.log("not batch enabled and not  equals no location");
-
         return locations.map((location) => {
           const { batch, ...rest } = location;
 
@@ -425,16 +402,12 @@ function AddProductForm({
         !batchEnabled &&
         JSON.stringify(locations) === JSON.stringify(noLocation)
       ) {
-        console.log("not batch enabled and   equals no location");
-
         return [
           {
             balance_stock: orginalStock,
           },
         ];
       } else {
-        console.log("heree");
-
         return locations;
       }
     };
@@ -444,8 +417,8 @@ function AddProductForm({
       cmp_id: orgId,
       product_name,
       product_code,
-      balance_stock : balance_stock || 0,
-      brand: selectedBrand, 
+      balance_stock: balance_stock || 0,
+      brand: selectedBrand,
       category: selectedCategory,
       sub_category: selectedSubcategory,
       unit,
@@ -459,16 +432,14 @@ function AddProductForm({
       Priceleveles: levelNames,
       GodownList: getLocation(),
       batchEnabled,
+      gdnEnabled,
     };
 
-    console.log(formData);
+    // console.log(formData);
     
 
     submitData(formData);
   };
-
-
-  
 
   return (
     <section className="  py-1 bg-blueGray-50">
@@ -683,7 +654,7 @@ function AddProductForm({
                     />
                   </div>
                 </div>
-              
+
                 <div className="w-full lg:w-6/12 px-4 mt-3">
                   <div className="relative w-full mb-3">
                     <label
@@ -727,7 +698,7 @@ function AddProductForm({
                       // );
                       setSelectedBrand(e.target.value); // Set the state with the entire brand object
                     }}
-                    value={selectedBrand?._id}
+                    value={selectedBrand}
                     id="brandSelect"
                     className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                   >
@@ -751,10 +722,9 @@ function AddProductForm({
                   </label>
                   <select
                     onChange={(e) => {
-                      
                       setSelectedCategory(e.target.value); // Set the state with the entire brand object
                     }}
-                    value={selectedCategory?._id}
+                    value={selectedCategory}
                     id="brandSelect"
                     className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                   >
@@ -782,7 +752,7 @@ function AddProductForm({
                       // );
                       setSelectedSubcategory(e.target.value); // Set the state with the entire brand object
                     }}
-                    value={selectedSubcategory?._id}
+                    value={selectedSubcategory}
                     id="brandSelect"
                     className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                   >
@@ -927,7 +897,10 @@ function AddProductForm({
                       <tr key={row?.id} className="border-b bg-[#EFF6FF] ">
                         <td className="px-4 py-2">
                           <select
-                            disabled={row?.godown===godown.find(el=>el?.defaultGodown)?._id}
+                            disabled={
+                              row?.godown ===
+                              godown.find((el) => el?.defaultGodown)?._id
+                            }
                             value={row?.godown}
                             onChange={(e) =>
                               handleLocationChange(index, e?.target?.value)
@@ -968,9 +941,7 @@ function AddProductForm({
                         </td>
                         <td className="px-4 py-2">
                           <button
-                            onClick={() =>
-                              handleDeleteLocationRow(row?.godown)
-                            }
+                            onClick={() => handleDeleteLocationRow(row?.godown)}
                             className="text-red-600 hover:text-red-800"
                           >
                             <MdDelete />

@@ -23,7 +23,6 @@ import EditOrg from '../pages/primaryUsers/EditOrg'
 import DashboardSec from '../pages/secUsers/Dashboard'
 import AddParty from '../pages/primaryUsers/AddParty'
 import Hsn from '../pages/primaryUsers/Hsn'
-import EditProduct from '../pages/primaryUsers/EditProduct'
 import EditParty from '../pages/primaryUsers/EditParty'
 
 
@@ -218,7 +217,6 @@ const Routers = () => {
         <Route path='/pUsers/dashboard' element={<ProtectedPriRoute><Dashboard/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/addParty' element={<ProtectedPriRoute><AddParty/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/hsn' element={<ProtectedPriRoute><Hsn/></ProtectedPriRoute>}></Route>
-        <Route path='/pUsers/editProduct/:id' element={<ProtectedPriRoute><EditProduct/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/editParty/:id' element={<ProtectedPriRoute><EditParty/></ProtectedPriRoute>}></Route>
 
      
