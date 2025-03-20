@@ -718,8 +718,8 @@ export const getProducts = async (req, res) => {
 
     let matchStage = {
       $match: {
-        cmp_id: new mongoose.Types.ObjectId(cmp_id),
         Primary_user_id: new mongoose.Types.ObjectId(Primary_user_id),
+        cmp_id:new mongoose.Types.ObjectId(cmp_id)  // without 'new'
       },
     };
     

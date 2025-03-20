@@ -63,10 +63,10 @@ const productSchema = new mongoose.Schema({
     ref: "Hsn",
   },
   purchase_price: {
-    type: String,
+    type: Number,
   },
   purchase_cost: {
-    type: String,
+    type: Number,
   },
   item_mrp: {
     type: Number,
@@ -103,32 +103,32 @@ const productSchema = new mongoose.Schema({
   ],
   
   cgst: {
-    type: String,
+    type: Number,
   },
   sgst: {
-    type: String,
+    type: Number,
   },
   igst: {
-    type: String,
+    type: Number,
   },
   cess: {
-    type: String,
+    type: Number,
   },
   addl_cess: {
-    type: String,
+    type: Number,
   },
   state_cess: {
-    type: String,
+    type: Number,
   },
   product_master_id: {
     type: String,
   },
-  subcategory_id: {
-    type: String,
-  },
-  brand_id: {
-    type: String,
-  },
+  // subcategory_id: {
+  //   type: String,
+  // },
+  // brand_id: {
+  //   type: String,
+  // },
   batchEnabled: {
     type: Boolean,
     default: false,

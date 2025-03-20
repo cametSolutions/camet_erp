@@ -1,5 +1,4 @@
 import TallyData from "../models/TallyData.js";
-import TransactionModel from "../models/TransactionModel.js";
 import BankDetailsModel from "../models/bankModel.js";
 import CashModel from "../models/cashModel.js";
 
@@ -10,7 +9,7 @@ import AccountGroup from "../models/accountGroup.js";
 import SubGroup from "../models/subGroup.js";
 import { fetchData } from "../helpers/tallyHelper.js";
 import mongoose from "mongoose";
-import accountGroup from "../models/accountGroup.js";
+import { Godown, PriceLevel,Brand,Category,Subcategory } from "../models/subDetails.js";
 
 export const saveDataFromTally = async (req, res) => {
   try {
@@ -203,6 +202,74 @@ export const addCashData = async (req, res) => {
 // @desc for saving products to tally
 // route GET/api/tally/giveTransaction
 
+// export const saveProductsFromTally = async (req, res) => {
+//   try {
+//     const productsToSave = req?.body?.data;
+
+//     if (!productsToSave || !productsToSave.length) {
+//       return res.status(400).json({ message: "No products to save" });
+//     }
+
+//     const savedProducts = await Promise.all(
+//       productsToSave.map(async (productItem) => {
+//         const { Primary_user_id, cmp_id, product_master_id } = productItem;
+//         let savedProduct;
+
+//         try {
+//           if (product_master_id) {
+//             const existingProduct = await productModel.findOne({
+//               Primary_user_id,
+//               cmp_id,
+//               product_master_id,
+//             });
+
+//             if (existingProduct) {
+//               // console.log("existingProduct", existingProduct.product_name)
+
+//               // Update the existing product
+//               savedProduct = await productModel.findOneAndUpdate(
+//                 {
+//                   Primary_user_id,
+//                   cmp_id,
+//                   product_master_id,
+//                 },
+//                 productItem,
+//                 { new: true }
+//               );
+//             }
+//           }
+
+//           // If no existing product was found or updated, create a new one
+//           if (!savedProduct) {
+//             const newProduct = new productModel(productItem);
+//             savedProduct = await newProduct.save();
+//           }
+
+//           return savedProduct;
+//         } catch (error) {
+//           console.error(
+//             `Error saving product with product_master_id ${product_master_id}:`,
+//             error
+//           );
+//           return null; // Return null if there is an error to continue processing other products
+//         }
+//       })
+//     );
+
+//     // Filter out any null values from the savedProducts array
+//     const successfulSaves = savedProducts.filter((product) => product !== null);
+
+//     res.status(201).json({
+//       message: "Products saved successfully",
+//       savedProducts: successfulSaves,
+//     });
+//   } catch (error) {
+//     console.error("Error:", error);
+//     res.status(500).json({ error: "Internal server error" });
+//   }
+// };
+
+
 export const saveProductsFromTally = async (req, res) => {
   try {
     const productsToSave = req?.body?.data;
@@ -211,64 +278,165 @@ export const saveProductsFromTally = async (req, res) => {
       return res.status(400).json({ message: "No products to save" });
     }
 
-    const savedProducts = await Promise.all(
-      productsToSave.map(async (productItem) => {
-        const { Primary_user_id, cmp_id, product_master_id } = productItem;
-        let savedProduct;
+    const cmp_id = productsToSave[0]?.cmp_id;
+    const Primary_user_id = productsToSave[0]?.Primary_user_id;
 
-        try {
-          if (product_master_id) {
-            const existingProduct = await productModel.findOne({
-              Primary_user_id,
-              cmp_id,
-              product_master_id,
-            });
+    // Extract all unique IDs from the products
+    const brandIds = [...new Set(productsToSave.filter(p => p.brand_id).map(p => p.brand_id))];
+    const categoryIds = [...new Set(productsToSave.filter(p => p.category_id).map(p => p.category_id))];
+    const subcategoryIds = [...new Set(productsToSave.filter(p => p.subcategory_id).map(p => p.subcategory_id))];
+    // const godownIds = [...new Set(productsToSave.filter(p => p.godown_id).map(p => p.godown_id))];
+    
+    // Extract all unique price level IDs from the arrays
+    const priceLevelIds = [...new Set(
+      productsToSave
+        .filter(p => p.Priceleveles && Array.isArray(p.Priceleveles))
+        .flatMap(p => p.Priceleveles.filter(pl => pl.pricelevel_id).map(pl => pl.pricelevel_id))
+    )];
 
-            if (existingProduct) {
-              // console.log("existingProduct", existingProduct.product_name)
 
-              // Update the existing product
-              savedProduct = await productModel.findOneAndUpdate(
-                {
-                  Primary_user_id,
-                  cmp_id,
-                  product_master_id,
-                },
-                productItem,
-                { new: true }
-              );
-            }
-          }
 
-          // If no existing product was found or updated, create a new one
-          if (!savedProduct) {
-            const newProduct = new productModel(productItem);
-            savedProduct = await newProduct.save();
-          }
+    // Fetch all references in parallel
+    const [brands, categories, subcategories, priceLevels] = await Promise.all([
+      brandIds.length > 0 ? Brand.find({ brand_id: { $in: brandIds }, cmp_id }) : [],
+      categoryIds.length > 0 ? Category.find({ category_id: { $in: categoryIds }, cmp_id }) : [],
+      subcategoryIds.length > 0 ? Subcategory.find({ subcategory_id: { $in: subcategoryIds }, cmp_id }) : [],
+      // godownIds.length > 0 ? Godown.find({ godown_id: { $in: godownIds }, cmp_id }) : [],
+      priceLevelIds.length > 0 ? PriceLevel.find({ pricelevel_id: { $in: priceLevelIds }, cmp_id }) : []
+      
+    ]);
 
-          return savedProduct;
-        } catch (error) {
-          console.error(
-            `Error saving product with product_master_id ${product_master_id}:`,
-            error
-          );
-          return null; // Return null if there is an error to continue processing other products
-        }
-      })
+
+    
+
+    // Create lookup maps for faster reference resolution
+    const brandMap = new Map(brands.map(b => [b.brand_id, b._id]));
+    const categoryMap = new Map(categories.map(c => [c.category_id, c._id]));
+    const subcategoryMap = new Map(subcategories.map(s => [s.subcategory_id, s._id]));
+    // const godownMap = new Map(godowns.map(g => [g.godown_id, g._id]));
+    const priceLevelMap = new Map(priceLevels.map(p => [p.pricelevel_id, p._id]));
+
+    // Get existing products in bulk to avoid multiple queries
+    const existingProductIds = productsToSave
+      .filter(p => p.product_master_id)
+      .map(p => p.product_master_id);
+
+    const existingProducts = existingProductIds.length > 0 
+      ? await productModel.find({ 
+          product_master_id: { $in: existingProductIds }, 
+          cmp_id, 
+          Primary_user_id 
+        })
+      : [];
+
+    const existingProductMap = new Map(
+      existingProducts.map(p => [p.product_master_id, p])
     );
 
-    // Filter out any null values from the savedProducts array
-    const successfulSaves = savedProducts.filter((product) => product !== null);
+    // Process products in batches
+    const BATCH_SIZE = 100;
+    const results = [];
+    
+    for (let i = 0; i < productsToSave.length; i += BATCH_SIZE) {
+      const batch = productsToSave.slice(i, i + BATCH_SIZE);
+      const batchOperations = batch.map(productItem => {
+        // Replace string IDs with MongoDB ObjectIds
+        const enhancedProduct = { ...productItem };
+        
+        if (productItem.brand_id && brandMap.has(productItem.brand_id)) {
+          enhancedProduct.brand = brandMap.get(productItem.brand_id);
+        }
+        
+        if (productItem.category_id && categoryMap.has(productItem.category_id)) {
+          enhancedProduct.category = categoryMap.get(productItem.category_id);
+        }
+        
+        if (productItem.subcategory_id && subcategoryMap.has(productItem.subcategory_id)) {
+          enhancedProduct.sub_category = subcategoryMap.get(productItem.subcategory_id);
+        }
+        
+        // if (productItem.godown_id && godownMap.has(productItem.godown_id)) {
+        //   enhancedProduct.godown = godownMap.get(productItem.godown_id);
+        // }
+        
+        // Process price levels array
+        if (productItem.Priceleveles && Array.isArray(productItem.Priceleveles)) {
+          enhancedProduct.Priceleveles = productItem.Priceleveles.map(priceLevel => {
+            const newPriceLevel = { ...priceLevel };
+            
+            if (priceLevel.pricelevel_id && priceLevelMap.has(priceLevel.pricelevel_id)) {
+              // Replace pricelevel_id with MongoDB ObjectId reference
+              newPriceLevel.pricelevel = priceLevelMap.get(priceLevel.pricelevel_id);
+              // Remove the string ID as it's not in our schema
+              delete newPriceLevel.pricelevel_id;
+            }
+            
+            return newPriceLevel;
+          });
+        }
+        
+        // Process godown list if present
+        // if (productItem.GodownList && Array.isArray(productItem.GodownList)) {
+        //   enhancedProduct.GodownList = productItem.GodownList.map(godownItem => {
+        //     const newGodownItem = { ...godownItem };
+            
+        //     if (godownItem.godown_id && godownMap.has(godownItem.godown_id)) {
+        //       // Replace godown_id with MongoDB ObjectId reference
+        //       newGodownItem.godown = godownMap.get(godownItem.godown_id);
+        //       // Remove the string ID as it's not in our schema
+        //       delete newGodownItem.godown_id;
+        //     }
+            
+        //     return newGodownItem;
+        //   });
+        // }
+        
+        // Check if product exists
+        if (productItem.product_master_id && existingProductMap.has(productItem.product_master_id)) {
+          // Update existing product
+          return productModel.findByIdAndUpdate(
+            existingProductMap.get(productItem.product_master_id)._id,
+            enhancedProduct,
+            { new: true }
+          );
+        } else {
+          // Create new product
+          return new productModel(enhancedProduct).save();
+        }
+      });
+      
+      // Execute batch operations
+      const batchResults = await Promise.allSettled(batchOperations);
+      
+      // Process results
+      batchResults.forEach((result, index) => {
+        if (result.status === 'fulfilled') {
+          results.push(result.value);
+        } else {
+          console.error(`Error saving product at index ${i + index}:`, result.reason);
+        }
+      });
+    }
+
+    // Count successful saves
+    const successfulSaves = results.filter(Boolean);
 
     res.status(201).json({
       message: "Products saved successfully",
-      savedProducts: successfulSaves,
+      savedCount: successfulSaves.length,
+      totalCount: productsToSave.length
     });
   } catch (error) {
     console.error("Error:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };
+
+
+
+
+
+
 
 // @desc for updating stocks of product
 // route GET/api/tally/master/item/updateStock
@@ -789,6 +957,118 @@ export const addSubGroups = async (req, res) => {
 };
 
 
+// @desc for saving subDetails of products from tally
+// route GET/api/tally/addSubDetails
+
+
+export const addSubDetails = async (req, res) => {
+  try {
+    const { data } = req.body;
+    
+    if (!Array.isArray(data)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Data must be an array' 
+      });
+    }
+    
+    // Determine which model to use based on the route
+    let Model;
+    let idField;
+    let nameField;
+    
+    if (req.path.includes('/addGodowns')) {
+      Model = Godown;
+      idField = 'godown_id';
+      nameField = 'godown';
+    } else if (req.path.includes('/addPriceLevels')) {
+      Model = PriceLevel;
+      idField = 'pricelevel_id';
+      nameField = 'pricelevel';
+    } else if (req.path.includes('/addBrands')) {
+      Model = Brand;
+      idField = 'brand_id';
+      nameField = 'brand';
+    } else if (req.path.includes('/addCategory')) {
+      Model = Category;
+      idField = 'category_id';
+      nameField = 'category';
+    } else if (req.path.includes('/addSubCategory')) {
+      Model = Subcategory;
+      idField = 'subcategory_id';
+      nameField = 'subcategory';
+    } else {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Invalid endpoint' 
+      });
+    }
+    
+    // Process each item in the data array
+    const results = await Promise.all(data.map(async (item) => {
+      // Check if all required fields are present
+      if (!item[nameField] || !item[idField] || !item.cmp_id || !item.Primary_user_id) {
+        return {
+          success: false,
+          message: `Missing required fields for ${nameField}`,
+          data: item
+        };
+      }
+      
+      try {
+        // Check if item already exists
+        const existingItem = await Model.findOne({ 
+          [idField]: item[idField],
+          cmp_id: item.cmp_id 
+        });
+        
+        if (existingItem) {
+          // Update existing item
+          await Model.findByIdAndUpdate(existingItem._id, item);
+          return {
+            success: true,
+            message: `${nameField} updated successfully`,
+            data: item
+          };
+        } else {
+          // Create new item
+          const newItem = new Model(item);
+          await newItem.save();
+          return {
+            success: true,
+            message: `${nameField} added successfully`,
+            data: newItem
+          };
+        }
+      } catch (error) {
+        return {
+          success: false,
+          message: `Error processing ${nameField}: ${error.message}`,
+          data: item
+        };
+      }
+    }));
+    
+    // Count successes and failures
+    const successCount = results.filter(result => result.success).length;
+    const failureCount = results.length - successCount;
+    
+    return res.status(200).json({
+      success: true,
+      message: `Added/Updated ${successCount} items, Failed ${failureCount} items`,
+      results
+    });
+    
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: `Error processing request: ${error.message}`
+    });
+  }
+};
+
+
+
 
 
 // // @desc for giving invoices to tally
@@ -850,3 +1130,7 @@ export const givePurchase = async (req, res) => {
   const serialNumber = req.params.SNo;
   return fetchData("purchase", cmp_id, serialNumber, res);
 };    
+
+
+
+

@@ -1309,50 +1309,7 @@ export const fetchFilters = async (req, res) => {
 // @desc getting product list
 // route get/api/pUsers/getProducts
 
-// export const getProducts = async (req, res) => {
-//   const Primary_user_id = req.pUserId;
-//   const cmp_id = req.params.cmp_id;
 
-//   try {
-//     const products = await productModel.find({
-//       Primary_user_id: Primary_user_id,
-//       cmp_id: cmp_id,
-//     });
-//     // const products = await productModel.aggregate([
-//     //   { $match: {  Primary_user_id: Primary_user_id,  cmp_id: cmp_id, } },
-//     //   // Add more stages as needed for your aggregation pipeline
-//     // ]);
-
-//     // console.log(products);
-
-//     if (products && products.length > 0) {
-//       // Add the check for GodownList
-//       const filteredProducts = [];
-//       for (let i = 0; i < products.length; i++) {
-//         const product = products[i];
-//         const hasGodownOrBatch = product.GodownList.some(
-//           (item) => item.godown || item.batch
-//         );
-//         filteredProducts.push({
-//           ...product?._doc, // Use _doc to get the plain JS object from the Mongoose document
-//           hasGodownOrBatch,
-//         });
-//       }
-//       return res.status(200).json({
-//         productData: filteredProducts,
-//         message: "Products fetched",
-//       });
-//     } else {
-//       return res.status(404).json({ message: "No products were found" });
-//     }
-//   } catch (error) {
-//     console.log(error);
-
-//     return res
-//       .status(500)
-//       .json({ success: false, message: "Internal server error, try again!" });
-//   }
-// };
 
 // @desc delete product from  product list
 // route delete/api/pUsers/deleteProduct
