@@ -212,6 +212,7 @@ export const addCorrespondingParty = async (
     const newParty = new partyModel({
       partyName: ledname,
       accountGroup: accountGroup,
+      accountGroup_id: masterId,
       cmp_id: cmp_id,
       Primary_user_id: Primary_user_id,
       party_master_id: masterId // Set this directly during creation

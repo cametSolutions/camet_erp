@@ -356,10 +356,12 @@ export const createSaleRecord = async (
     const model = req.query.vanSale === "true" ? vanSaleModel : salesModel;
 
     const lastSale = await model.findOne(
-      {},
-      {},
+      { cmp_id: orgId }, // Filter by cmp_id
+      { serialNumber: 1, _id: 0 }, // Project only serialNumber, exclude _id
       { sort: { serialNumber: -1 }, session }
     );
+
+    
     let newSerialNumber = 1;
 
     if (lastSale && !isNaN(lastSale.serialNumber)) {

@@ -2007,6 +2007,7 @@ export const addCash = async (req, res) => {
       cmp_id,
       "Cash-in-Hand",
       result._id,
+    
       session
     );
 

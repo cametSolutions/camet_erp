@@ -906,12 +906,12 @@ function AddItemVanSaleSecondary() {
                 } max-w-1/2`}
               >
                 {el?.hasGodownOrBatch
-                  ? el?.product_name.length < 30
+                  ? el?.product_name?.length < 30
                     ? el?.product_name
-                    : el?.product_name.slice(0, 50) + "..."
-                  : el?.product_name.length < 30
+                    : el?.product_name?.slice(0, 50) + "..."
+                  : el?.product_name?.length < 30
                   ? el?.product_name
-                  : el?.product_name.slice(0, 30) + "..."}
+                  : el?.product_name?.slice(0, 30) + "..."}
                 {/* {el?.product_name} */}
               </p>
               {el?.hasGodownOrBatch &&
