@@ -441,13 +441,11 @@ export const saveProductsFromTally = async (req, res) => {
 // @desc for updating stocks of product
 // route GET/api/tally/master/item/updateStock
 
+
 export const updateStock = async (req, res) => {
   try {
     // Validate request body
-    if (
-      !req.body?.data?.ItemGodowndetails ||
-      !Array.isArray(req.body.data.ItemGodowndetails)
-    ) {
+    if (!req.body?.data?.ItemGodowndetails || !Array.isArray(req.body.data.ItemGodowndetails)) {
       return res.status(400).json({
         success: false,
         message: "Invalid request format. ItemGodowndetails array is required",
@@ -461,38 +459,88 @@ export const updateStock = async (req, res) => {
       });
     }
 
-    const groupedGodowns = req.body.data.ItemGodowndetails.reduce(
-      (acc, item) => {
-        if (!item.product_master_id) {
-          throw new Error("product_master_id is required for each item");
-        }
-
-        const productId = item.product_master_id.toString();
-
-        if (!acc[productId]) {
-          acc[productId] = {
-            godowns: [],
-            product_name: item.product_name, // Store product name
-          };
-        }
-
-        acc[productId].godowns.push({
-          godown: item.godown,
-          godown_id: item.godown_id,
-          batch: item.batch,
-          mfgdt: item.mfgdt,
-          expdt: item.expdt,
-          balance_stock: item.balance_stock,
-          batchEnabled: item.batchEnabled,
-        });
-
-        return acc;
-      },
-      {}
-    );
-
-    // console.log("groupedGodowns", groupedGodowns);
+    // Extract common company and user IDs
+    const { cmp_id, Primary_user_id } = req.body.data.ItemGodowndetails[0];
     
+    if (!cmp_id || !Primary_user_id) {
+      return res.status(400).json({
+        success: false,
+        message: "Company ID and Primary user ID are required",
+      });
+    }
+
+    // Extract all unique godown_ids from the request
+    const godownIdsSet = new Set();
+    for (const item of req.body.data.ItemGodowndetails) {
+      if (item.godown_id) {
+        godownIdsSet.add(item.godown_id.toString());
+      }
+    }
+    
+    const godownIds = Array.from(godownIdsSet);
+    
+    // Fetch all required godowns in a single query to create a mapping
+    const godowns = await Godown.find(
+      { godown_id: { $in: godownIds } },
+      { _id: 1, godown_id: 1 }
+    );
+    
+    // Create a mapping of godown_id to MongoDB _id
+    const godownMapping = {};
+    godowns.forEach(godown => {
+      godownMapping[godown.godown_id.toString()] = godown._id;
+    });
+    
+    // Check if any godown_ids couldn't be found
+    const missingGodownIds = godownIds.filter(id => !godownMapping[id]);
+    if (missingGodownIds.length > 0) {
+      console.warn(`Warning: Could not find godowns with ids: ${missingGodownIds.join(', ')}`);
+    }
+
+    // Group items by product_master_id with improved validation
+    const groupedGodowns = {};
+    
+    for (const item of req.body.data.ItemGodowndetails) {
+      if (!item.product_master_id) {
+        return res.status(400).json({
+          success: false,
+          message: "product_master_id is required for each item",
+        });
+      }
+
+      const productId = item.product_master_id.toString();
+      
+      if (!groupedGodowns[productId]) {
+        groupedGodowns[productId] = {
+          godowns: [],
+          product_name: item.product_name,
+          // total_balance: 0,
+        };
+      }
+
+      // Get MongoDB _id for this godown or skip if not found
+      const godownObjectId = item.godown_id ? godownMapping[item.godown_id.toString()] : null;
+      
+      // Skip entries with invalid godown_id that couldn't be mapped to an actual godown
+      if (item.godown_id && !godownObjectId) {
+        console.warn(`Skipping entry with invalid godown_id: ${item.godown_id} for product: ${item.product_name || productId}`);
+        continue;
+      }
+
+      // Format godown data according to schema
+      const godownEntry = {
+        godown: godownObjectId, // Use the mapped MongoDB ObjectId
+        balance_stock: parseFloat(item.balance_stock) || 0,
+        batch: item.batchEnabled ? item.batch : null,
+      };
+      
+      // Add manufacturing and expiry dates if available
+      if (item.mfgdt) godownEntry.mfgdt = item.mfgdt
+      if (item.expdt) godownEntry.expdt = item.expdt
+
+      groupedGodowns[productId].godowns.push(godownEntry);
+      // groupedGodowns[productId].total_balance += godownEntry.balance_stock;
+    }
 
     if (Object.keys(groupedGodowns).length === 0) {
       return res.status(400).json({
@@ -501,67 +549,70 @@ export const updateStock = async (req, res) => {
       });
     }
 
-    // Create bulk write operations (overwrite always)
-    const bulkOps = Object.entries(groupedGodowns).map(
-      ([productMasterId, data]) => ({
-        updateOne: {
-          filter: {
-            product_master_id: productMasterId.toString(),
-            cmp_id: req.body.data.ItemGodowndetails[0].cmp_id,
-            Primary_user_id: new mongoose.Types.ObjectId(
-              req.body.data.ItemGodowndetails[0].Primary_user_id
-            ),
-          },
-          update: {
-            $set: {
-              GodownList: data.godowns,
-              // godownCount: data.godowns.reduce(
-              //   (sum, g) => sum + (parseInt(g.balance_stock) || 0),
-              //   0
-              // ),
+    // Prepare bulk operations with chunking for large datasets
+    const chunkSize = 500; // Adjust based on MongoDB performance
+    const productIds = Object.keys(groupedGodowns);
+    let bulkResults = [];
+
+    // Process in chunks to avoid overwhelming MongoDB
+    for (let i = 0; i < productIds.length; i += chunkSize) {
+      const chunk = productIds.slice(i, i + chunkSize);
+      
+      const bulkOps = chunk.map(productMasterId => {
+        const data = groupedGodowns[productMasterId];
+        
+        return {
+          updateOne: {
+            filter: {
+              product_master_id: productMasterId,
+              cmp_id: new mongoose.Types.ObjectId(cmp_id),
+              Primary_user_id: new mongoose.Types.ObjectId(Primary_user_id),
             },
+            update: {
+              $set: {
+                GodownList: data.godowns,
+                // godownCount: data.total_balance,
+                balance_stock: data.total_balance, // Update overall balance stock
+              },
+            },
+            upsert: true,
           },
-          upsert: true, // Ensure the record is created if it doesn't exist
-        },
-      })
-    );
+        };
+      });
 
-    // Execute bulk write operation
-    const result = await productModel.bulkWrite(bulkOps);
+      // Execute chunk's bulk write operation
+      const result = await productModel.bulkWrite(bulkOps, { ordered: false });
+      bulkResults.push(result);
+    }
 
-    // console.log(result);
-    // console.log("groupedGodowns", Object.keys(groupedGodowns).length);
+    // Calculate overall stats
+    const totalStats = bulkResults.reduce((acc, result) => {
+      acc.matchedCount += result.matchedCount || 0;
+      acc.modifiedCount += result.modifiedCount || 0;
+      acc.upsertedCount += result.upsertedCount || 0;
+      return acc;
+    }, { matchedCount: 0, modifiedCount: 0, upsertedCount: 0 });
 
-    // Fetch updated products details
-    const updatedProducts = await productModel.find(
-      {
-        product_master_id: {
-          $in: Object.keys(groupedGodowns),
-        },
-      },
-      {
-        product_name: 1,
-        product_master_id: 1,
-        // godownCount: 1
-      }
-    );
-
-    // console.log("updatedProducts", updatedProducts);
-    
-
-    // Create a summary of modifications
-    const modificationSummary = updatedProducts.map((product) => ({
-      product_id: product.product_master_id,
-      product_name: product.product_name || groupedGodowns[product.product_master_id]?.product_name || "Unknown", // Fallback for missing product_name
-      // updated_godown_count: product.godownCount,
-      // godowns: groupedGodowns[product.product_master_id.toString()]?.godowns || []
-    }));
+    // Get summary of modified products (limited to avoid large response)
+    const modificationSummary = Object.entries(groupedGodowns)
+      .slice(0, 50) // Limit to first 50 products for response
+      .map(([productId, data]) => ({
+        product_id: productId,
+        product_name: data.product_name || "Unknown",
+        updated_godown_count: data.godowns.length,
+        // total_stock: data.total_balance,
+      }));
 
     return res.status(200).json({
       success: true,
-      message: `Successfully processed ${result.matchedCount} products.`,
+      message: `Successfully processed ${productIds.length} products. Updated: ${totalStats.modifiedCount}, Added: ${totalStats.upsertedCount}`,
       modifiedProducts: modificationSummary,
-      bulkWriteResult: result,
+      totalRecordsProcessed: productIds.length,
+      godownsMapped: Object.keys(godownMapping).length,
+      godownsNotFound: missingGodownIds.length > 0 ? missingGodownIds : [],
+      ...(modificationSummary.length < productIds.length && {
+        note: `Showing summary for first ${modificationSummary.length} of ${productIds.length} products.`
+      })
     });
   } catch (error) {
     console.error("Error in updateStock:", error);
@@ -596,10 +647,7 @@ export const updateStock = async (req, res) => {
 export const updatePriceLevels = async (req, res) => {
   try {
     // Validate request body
-    if (
-      !req.body?.data?.Priceleveles ||
-      !Array.isArray(req.body.data.Priceleveles)
-    ) {
+    if (!req.body?.data?.Priceleveles || !Array.isArray(req.body.data.Priceleveles)) {
       return res.status(400).json({
         success: false,
         message: "Invalid request format. Priceleveles array is required",
@@ -613,92 +661,184 @@ export const updatePriceLevels = async (req, res) => {
       });
     }
 
-    // Group Priceleveles by product_master_id
-    const groupedPriceLevels = req.body.data.Priceleveles.reduce(
-      (acc, item) => {
-        if (!item.product_master_id) {
-          throw new Error("product_master_id is required for each price level");
-        }
-
-        const productId = item.product_master_id.toString();
-
-        if (!acc[productId]) {
-          acc[productId] = [];
-        }
-
-        acc[productId].push({
-          pricelevel: item.pricelevel,
-          pricerate: item.pricerate,
-          priceDisc: item.priceDisc,
-          applicabledt: item.applicabledt,
-        });
-
-        return acc;
-      },
-      {}
-    );
-
-    // Validate if there are products to update
-    if (Object.keys(groupedPriceLevels).length === 0) {
+    // Extract common company and user IDs
+    const { cmp_id, Primary_user_id } = req.body.data.Priceleveles[0];
+    
+    if (!cmp_id || !Primary_user_id) {
       return res.status(400).json({
         success: false,
-        message: "No valid price levels found to update",
+        message: "Company ID and Primary user ID are required",
       });
     }
 
-    // Create bulk write operations (overwrite always)
-    const bulkOps = Object.entries(groupedPriceLevels).map(
-      ([productMasterId, priceLevels]) => ({
-        updateOne: {
-          filter: {
-            product_master_id: productMasterId,
-            cmp_id: req.body.data.Priceleveles[0].cmp_id,
-            Primary_user_id: new mongoose.Types.ObjectId(
-              req.body.data.Priceleveles[0].Primary_user_id
-            ),
-          },
-          update: {
-            $set: {
-              Priceleveles: priceLevels,
-            },
-          },
-          upsert: true, // Create the document if it doesn't exist
-        },
-      })
-    );
+    // Extract all unique pricelevel_ids from the request
+    const priceLevelIdsSet = new Set();
 
-    // Execute bulk write operation
-    const result = await productModel.bulkWrite(bulkOps);
+    // console.log("priceLevelIdsSet",priceLevelIdsSet);
+    
+    for (const item of req.body.data.Priceleveles) {
+      if (item.pricelevel) {
 
-    // Fetch updated products for response
-    const updatedProducts = await productModel.find(
-      {
-        product_master_id: {
-          $in: Object.keys(groupedPriceLevels),
-        },
-      },
-      {
-        product_name: 1,
-        product_master_id: 1,
-        // Priceleveles: 1,
+        
+
+        priceLevelIdsSet.add(item.pricelevel.toString());
+
       }
-    );
+    }
+    
+    const priceLevelIds = Array.from(priceLevelIdsSet);
 
-    // Log updated products
-    // console.log("Updated Products:", updatedProducts);
+    
+    // Fetch all price levels in a single query to create a mapping
+    // Note: Assuming you have a PriceLevel model, if not, you may remove this part
+    let priceLevelMapping = {};
+    
+    try {
+      const priceLevels = await PriceLevel.find(
+        { pricelevel_id: { $in: priceLevelIds } },
+        { _id: 1 }
+      );
 
-    // Create a summary of modifications
-    const modificationSummary = updatedProducts.map((product) => ({
-      product_id: product.product_master_id,
-      product_name: product.product_name || "Unknown",
-      // priceLevels: product.Priceleveles || [],
-    }));
+    console.log("priceLevels",priceLevels);
+
+      
+      // Create a mapping of pricelevel_id to MongoDB _id
+      priceLevelMapping = priceLevels.reduce((mapping, level) => {
+        mapping[level._id.toString()] = level._id;
+        return mapping;
+      }, {});
+      
+      // Check if any pricelevel_ids couldn't be found
+      const missingPriceLevelIds = priceLevelIds.filter(id => !priceLevelMapping[id]);
+      if (missingPriceLevelIds.length > 0) {
+        console.warn(`Warning: Could not find price levels with ids: ${missingPriceLevelIds.join(', ')}`);
+      }
+    } catch (error) {
+      console.log("Error fetching price levels, will use direct IDs:", error.message);
+
+      
+      // Create direct mapping if fetching fails
+      priceLevelMapping = priceLevelIds.reduce((mapping, id) => {
+        mapping[id] = new mongoose.Types.ObjectId(id);
+        return mapping;
+      }, {});
+    }
+
+    // Group items by product_master_id with improved validation
+    const groupedProducts = {};
+    
+    for (const item of req.body.data.Priceleveles) {
+      if (!item.product_master_id) {
+        return res.status(400).json({
+          success: false,
+          message: "product_master_id is required for each item",
+        });
+      }
+
+      const productId = item.product_master_id.toString();
+      
+      if (!groupedProducts[productId]) {
+        groupedProducts[productId] = {
+          priceLevels: [],
+          product_name: item.product_name,
+        };
+      }
+
+      // Get MongoDB _id for this price level or use direct conversion
+      const priceLevelObjectId = item.pricelevel ? 
+        (priceLevelMapping[item.pricelevel.toString()])  : null;
+
+
+        console.log("priceLevelObjectId", priceLevelObjectId);
+        
+      
+      // Skip entries with invalid pricelevel_id
+      if (item.pricelevel && !priceLevelObjectId) {
+        console.warn(`Skipping entry with invalid pricelevel_id: ${item.pricelevel} for product: ${item.product_name || productId}`);
+        continue;
+      }
+
+      // Format price level data according to schema
+      const priceLevelEntry = {
+        pricelevel: priceLevelObjectId, // Use the mapped or converted MongoDB ObjectId
+        pricerate: parseFloat(item.pricerate) || 0,
+        priceDisc: parseFloat(item.priceDisc) || 0,
+      };
+      
+      // Add applicable date if available
+      if (item.applicabledt) priceLevelEntry.applicabledt = item.applicabledt;
+
+      groupedProducts[productId].priceLevels.push(priceLevelEntry);
+    }
+
+    if (Object.keys(groupedProducts).length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No valid products found to update",
+      });
+    }
+
+    // Prepare bulk operations with chunking for large datasets
+    const chunkSize = 500; // Adjust based on MongoDB performance
+    const productIds = Object.keys(groupedProducts);
+    let bulkResults = [];
+
+    // Process in chunks to avoid overwhelming MongoDB
+    for (let i = 0; i < productIds.length; i += chunkSize) {
+      const chunk = productIds.slice(i, i + chunkSize);
+      
+      const bulkOps = chunk.map(productMasterId => {
+        const data = groupedProducts[productMasterId];
+        
+        return {
+          updateOne: {
+            filter: {
+              product_master_id: productMasterId,
+              cmp_id: new mongoose.Types.ObjectId(cmp_id),
+              Primary_user_id: new mongoose.Types.ObjectId(Primary_user_id),
+            },
+            update: {
+              $set: {
+                Priceleveles: data.priceLevels,
+                pricelevelcount: data.priceLevels.length,
+              },
+            },
+            upsert: true,
+          },
+        };
+      });
+
+      // Execute chunk's bulk write operation
+      const result = await productModel.bulkWrite(bulkOps, { ordered: false });
+      bulkResults.push(result);
+    }
+
+    // Calculate overall stats
+    const totalStats = bulkResults.reduce((acc, result) => {
+      acc.matchedCount += result.matchedCount || 0;
+      acc.modifiedCount += result.modifiedCount || 0;
+      acc.upsertedCount += result.upsertedCount || 0;
+      return acc;
+    }, { matchedCount: 0, modifiedCount: 0, upsertedCount: 0 });
+
+    // Get summary of modified products (limited to avoid large response)
+    const modificationSummary = Object.entries(groupedProducts)
+      .slice(0, 50) // Limit to first 50 products for response
+      .map(([productId, data]) => ({
+        product_id: productId,
+        product_name: data.product_name || "Unknown",
+        updated_pricelevel_count: data.priceLevels.length,
+      }));
 
     return res.status(200).json({
       success: true,
-      message: `Successfully processed ${result.matchedCount} products.`,
+      message: `Successfully processed ${productIds.length} products. Updated: ${totalStats.modifiedCount}, Added: ${totalStats.upsertedCount}`,
       modifiedProducts: modificationSummary,
-      bulkWriteResult: result,
+      totalRecordsProcessed: productIds.length,
+      priceLevelsMapped: Object.keys(priceLevelMapping).length,
+      ...(modificationSummary.length < productIds.length && {
+        note: `Showing summary for first ${modificationSummary.length} of ${productIds.length} products.`
+      })
     });
   } catch (error) {
     console.error("Error in updatePriceLevels:", error);

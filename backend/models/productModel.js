@@ -30,7 +30,7 @@ const productSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "Brand",
   },
-  category:  {
+  category: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Category",
   },
@@ -51,9 +51,9 @@ const productSchema = new mongoose.Schema({
   alt_unit_conversion: {
     type: Number,
   },
-  godownCount: {
-    type: Number,
-  },
+  // godownCount: {
+  //   type: Number,
+  // },
   pricelevelcount: {
     type: Number,
   },
@@ -82,9 +82,16 @@ const productSchema = new mongoose.Schema({
         type: Number,
         required: true,
       },
+      priceDisc: {
+        type: Number,
+        default: 0,
+      },
+      applicabledt: {
+        type: String,
+      },
     },
   ],
-  
+
   GodownList: [
     {
       godown: {
@@ -99,9 +106,15 @@ const productSchema = new mongoose.Schema({
       batch: {
         type: String,
       },
+      mfgdt: {
+        type: String,
+      },
+      expdt: {
+        type: String,
+      },
     },
   ],
-  
+
   cgst: {
     type: Number,
   },
