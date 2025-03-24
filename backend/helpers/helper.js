@@ -6,10 +6,6 @@ import { Godown } from "../models/subDetails.js";
 import AccountGroup from "../models/accountGroup.js";
 
 
-
-
-
-
   // Default configurations for organization
   export const defaultConfigurations = [
     {

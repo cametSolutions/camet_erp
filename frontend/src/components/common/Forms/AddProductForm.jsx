@@ -40,13 +40,11 @@ function AddProductForm({
   const [selectedCategory, setSelectedCategory] = useState();
   const [batchEnabled, setBatchEnabled] = useState(false);
   const [item_mrp, setItem_mrp] = useState(0);
-
   const [selectedSubcategory, setSelectedSubcategory] = useState();
   const [rows, setRows] = useState([{ pricelevel: "", pricerate: "" }]);
-
   const [locationRows, setLocationRows] = useState([]);
-
   const [originalGodownList, setOriginalGodownList] = useState([]);
+  const [defaultGodown, setDefaultGodown] = useState(null);
 
   useEffect(() => {
     if (Object.keys(productData)?.length > 0) {
@@ -110,11 +108,6 @@ function AddProductForm({
     (state) => state.secSelectedOrganization.secSelectedOrg.gdnEnabled
   );
 
-
-  
-
-
-
   // api call to fetch all sub details
 
   useEffect(() => {
@@ -138,6 +131,7 @@ function AddProductForm({
 
         setGodown(godowns);
         const defaultGodown = godowns.find((g) => g?.defaultGodown === true);
+        setDefaultGodown(defaultGodown._id);
         // console.log(defaultGodown);
 
         if (defaultGodown && locationRows?.length === 0) {
@@ -149,14 +143,13 @@ function AddProductForm({
               // defaultGodown: true,
             },
           ]);
-        }else{
+        } else {
           setLocationRows([
             {
               godown: "",
               balance_stock: "",
             },
           ]);
-
         }
 
         // console.log(godowns);
@@ -171,8 +164,6 @@ function AddProductForm({
     fetchAllSubDetails();
     fetchHsn();
   }, [orgId]);
-
-  // console.log(locationRows);
 
   const fetchHsn = async () => {
     try {
@@ -240,7 +231,7 @@ function AddProductForm({
   };
 
   const handleDeleteLocationRow = (id) => {
-    const isDefaultGodown = godown.find((g) => g?.godown === id)?.defaultGodown;
+    const isDefaultGodown = godown.find((g) => g?._id === id)?.defaultGodown;
 
     if (isDefaultGodown) {
       Swal.fire({
@@ -361,55 +352,32 @@ function AddProductForm({
     }
 
     const getLocation = () => {
-      const orginalStock = originalGodownList[0]?.balance_stock;
 
-      const noLocation = [{ balance_stock: 0 }];
+      let noLocation;
 
-      if (
-        batchEnabled &&
-        JSON.stringify(locations) === JSON.stringify(noLocation)
-      ) {
-        const finalLocations = [
-          {
-            batch: "Default batch",
-            balance_stock: orginalStock,
-          },
-        ];
+      if (JSON.stringify(locations) === JSON.stringify(noLocation)) {
+        noLocation = true;
+      }
 
-        return finalLocations;
-      } else if (
-        batchEnabled &&
-        JSON.stringify(locations) !== JSON.stringify(noLocation)
-      ) {
-        const finalLocations = locations.map((location) => {
-          return {
-            ...location,
-            batch: "Default batch",
-          };
-        });
-
-        return finalLocations;
-      } else if (
-        !batchEnabled &&
-        JSON.stringify(locations) !== JSON.stringify(noLocation)
-      ) {
-        return locations.map((location) => {
-          const { batch, ...rest } = location;
-
-          return rest;
-        });
-      } else if (
-        !batchEnabled &&
-        JSON.stringify(locations) === JSON.stringify(noLocation)
-      ) {
+      if (noLocation) {
         return [
           {
-            balance_stock: orginalStock,
+            godown: defaultGodown,
+            batch: "Primary Batch",
+            balance_stock: 0,
           },
         ];
       } else {
-        return locations;
+        const updatedLocations = locations.map((location) => {
+          return {
+            ...location,
+            batch: "Primary Batch",
+          };
+        });
+
+        return updatedLocations;
       }
+
     };
 
     // Create form data
@@ -435,8 +403,7 @@ function AddProductForm({
       gdnEnabled,
     };
 
-    // console.log(formData);
-    
+    console.log(formData);
 
     submitData(formData);
   };
