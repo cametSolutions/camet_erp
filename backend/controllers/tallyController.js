@@ -9,7 +9,13 @@ import AccountGroup from "../models/accountGroup.js";
 import SubGroup from "../models/subGroup.js";
 import { fetchData } from "../helpers/tallyHelper.js";
 import mongoose from "mongoose";
-import { Godown, PriceLevel,Brand,Category,Subcategory } from "../models/subDetails.js";
+import {
+  Godown,
+  PriceLevel,
+  Brand,
+  Category,
+  Subcategory,
+} from "../models/subDetails.js";
 
 export const saveDataFromTally = async (req, res) => {
   try {
@@ -23,14 +29,11 @@ export const saveDataFromTally = async (req, res) => {
     // Use Promise.all to parallelize document creation or update
     const savedData = await Promise.all(
       dataToSave.map(async (dataItem) => {
+        // Add bill_no as billId if billId is not present
+        if (!dataItem.billId && dataItem.bill_no) {
+          dataItem.billId = dataItem.bill_no;
+        }
 
-
-           // Add bill_no as billId if billId is not present
-           if (!dataItem.billId && dataItem.bill_no) {
-            dataItem.billId = dataItem.bill_no;
-          }
-
-          
         // Use findOne to check if the document already exists
         const existingDocument = await TallyData.findOne({
           cmp_id: dataItem.cmp_id,
@@ -202,72 +205,6 @@ export const addCashData = async (req, res) => {
 // @desc for saving products to tally
 // route GET/api/tally/giveTransaction
 
-// export const saveProductsFromTally = async (req, res) => {
-//   try {
-//     const productsToSave = req?.body?.data;
-
-//     if (!productsToSave || !productsToSave.length) {
-//       return res.status(400).json({ message: "No products to save" });
-//     }
-
-//     const savedProducts = await Promise.all(
-//       productsToSave.map(async (productItem) => {
-//         const { Primary_user_id, cmp_id, product_master_id } = productItem;
-//         let savedProduct;
-
-//         try {
-//           if (product_master_id) {
-//             const existingProduct = await productModel.findOne({
-//               Primary_user_id,
-//               cmp_id,
-//               product_master_id,
-//             });
-
-//             if (existingProduct) {
-//               // console.log("existingProduct", existingProduct.product_name)
-
-//               // Update the existing product
-//               savedProduct = await productModel.findOneAndUpdate(
-//                 {
-//                   Primary_user_id,
-//                   cmp_id,
-//                   product_master_id,
-//                 },
-//                 productItem,
-//                 { new: true }
-//               );
-//             }
-//           }
-
-//           // If no existing product was found or updated, create a new one
-//           if (!savedProduct) {
-//             const newProduct = new productModel(productItem);
-//             savedProduct = await newProduct.save();
-//           }
-
-//           return savedProduct;
-//         } catch (error) {
-//           console.error(
-//             `Error saving product with product_master_id ${product_master_id}:`,
-//             error
-//           );
-//           return null; // Return null if there is an error to continue processing other products
-//         }
-//       })
-//     );
-
-//     // Filter out any null values from the savedProducts array
-//     const successfulSaves = savedProducts.filter((product) => product !== null);
-
-//     res.status(201).json({
-//       message: "Products saved successfully",
-//       savedProducts: successfulSaves,
-//     });
-//   } catch (error) {
-//     console.error("Error:", error);
-//     res.status(500).json({ error: "Internal server error" });
-//   }
-// };
 
 
 export const saveProductsFromTally = async (req, res) => {
@@ -281,118 +218,110 @@ export const saveProductsFromTally = async (req, res) => {
     const cmp_id = productsToSave[0]?.cmp_id;
     const Primary_user_id = productsToSave[0]?.Primary_user_id;
 
-    // Extract all unique IDs from the products
-    const brandIds = [...new Set(productsToSave.filter(p => p.brand_id).map(p => p.brand_id))];
-    const categoryIds = [...new Set(productsToSave.filter(p => p.category_id).map(p => p.category_id))];
-    const subcategoryIds = [...new Set(productsToSave.filter(p => p.subcategory_id).map(p => p.subcategory_id))];
-    // const godownIds = [...new Set(productsToSave.filter(p => p.godown_id).map(p => p.godown_id))];
+    // Find default godown first
+    const defaultGodown = await Godown.findOne({ cmp_id, defaultGodown: true });
     
-    // Extract all unique price level IDs from the arrays
-    const priceLevelIds = [...new Set(
-      productsToSave
-        .filter(p => p.Priceleveles && Array.isArray(p.Priceleveles))
-        .flatMap(p => p.Priceleveles.filter(pl => pl.pricelevel_id).map(pl => pl.pricelevel_id))
-    )];
+    // Return early if no default godown is found
+    if (!defaultGodown) {
+      return res.status(400).json({ 
+        message: "Default godown not found. Please set up a default godown before saving products." 
+      });
+    }
 
-
-
+    // Extract all unique IDs from the products
+    const brandIds = [
+      ...new Set(
+        productsToSave.filter((p) => p.brand_id).map((p) => p.brand_id)
+      ),
+    ];
+    const categoryIds = [
+      ...new Set(
+        productsToSave.filter((p) => p.category_id).map((p) => p.category_id)
+      ),
+    ];
+    const subcategoryIds = [
+      ...new Set(
+        productsToSave
+          .filter((p) => p.subcategory_id)
+          .map((p) => p.subcategory_id)
+      ),
+    ];
+    
     // Fetch all references in parallel
-    const [brands, categories, subcategories, priceLevels] = await Promise.all([
-      brandIds.length > 0 ? Brand.find({ brand_id: { $in: brandIds }, cmp_id }) : [],
-      categoryIds.length > 0 ? Category.find({ category_id: { $in: categoryIds }, cmp_id }) : [],
-      subcategoryIds.length > 0 ? Subcategory.find({ subcategory_id: { $in: subcategoryIds }, cmp_id }) : [],
-      // godownIds.length > 0 ? Godown.find({ godown_id: { $in: godownIds }, cmp_id }) : [],
-      priceLevelIds.length > 0 ? PriceLevel.find({ pricelevel_id: { $in: priceLevelIds }, cmp_id }) : []
-      
+    const [brands, categories, subcategories] = await Promise.all([
+      brandIds.length > 0
+        ? Brand.find({ brand_id: { $in: brandIds }, cmp_id })
+        : [],
+      categoryIds.length > 0
+        ? Category.find({ category_id: { $in: categoryIds }, cmp_id })
+        : [],
+      subcategoryIds.length > 0
+        ? Subcategory.find({ subcategory_id: { $in: subcategoryIds }, cmp_id })
+        : [],
     ]);
 
-
-    
-
     // Create lookup maps for faster reference resolution
-    const brandMap = new Map(brands.map(b => [b.brand_id, b._id]));
-    const categoryMap = new Map(categories.map(c => [c.category_id, c._id]));
-    const subcategoryMap = new Map(subcategories.map(s => [s.subcategory_id, s._id]));
-    // const godownMap = new Map(godowns.map(g => [g.godown_id, g._id]));
-    const priceLevelMap = new Map(priceLevels.map(p => [p.pricelevel_id, p._id]));
+    const brandMap = new Map(brands.map((b) => [b.brand_id, b._id]));
+    const categoryMap = new Map(categories.map((c) => [c.category_id, c._id]));
+    const subcategoryMap = new Map(
+      subcategories.map((s) => [s.subcategory_id, s._id])
+    );
 
     // Get existing products in bulk to avoid multiple queries
     const existingProductIds = productsToSave
-      .filter(p => p.product_master_id)
-      .map(p => p.product_master_id);
+      .filter((p) => p.product_master_id)
+      .map((p) => p.product_master_id);
 
-    const existingProducts = existingProductIds.length > 0 
-      ? await productModel.find({ 
-          product_master_id: { $in: existingProductIds }, 
-          cmp_id, 
-          Primary_user_id 
-        })
-      : [];
+    const existingProducts =
+      existingProductIds.length > 0
+        ? await productModel.find({
+            product_master_id: { $in: existingProductIds },
+            cmp_id,
+            Primary_user_id,
+          })
+        : [];
 
     const existingProductMap = new Map(
-      existingProducts.map(p => [p.product_master_id, p])
+      existingProducts.map((p) => [p.product_master_id, p])
     );
 
     // Process products in batches
     const BATCH_SIZE = 100;
     const results = [];
-    
+
     for (let i = 0; i < productsToSave.length; i += BATCH_SIZE) {
       const batch = productsToSave.slice(i, i + BATCH_SIZE);
-      const batchOperations = batch.map(productItem => {
+      const batchOperations = batch.map((productItem) => {
         // Replace string IDs with MongoDB ObjectIds
         const enhancedProduct = { ...productItem };
-        
-        if (productItem.brand_id && brandMap.has(productItem.brand_id)) {
-          enhancedProduct.brand = brandMap.get(productItem.brand_id);
-        }
-        
-        if (productItem.category_id && categoryMap.has(productItem.category_id)) {
-          enhancedProduct.category = categoryMap.get(productItem.category_id);
-        }
-        
-        if (productItem.subcategory_id && subcategoryMap.has(productItem.subcategory_id)) {
-          enhancedProduct.sub_category = subcategoryMap.get(productItem.subcategory_id);
-        }
-        
-        // if (productItem.godown_id && godownMap.has(productItem.godown_id)) {
-        //   enhancedProduct.godown = godownMap.get(productItem.godown_id);
-        // }
-        
-        // Process price levels array
-        if (productItem.Priceleveles && Array.isArray(productItem.Priceleveles)) {
-          enhancedProduct.Priceleveles = productItem.Priceleveles.map(priceLevel => {
-            const newPriceLevel = { ...priceLevel };
-            
-            if (priceLevel.pricelevel_id && priceLevelMap.has(priceLevel.pricelevel_id)) {
-              // Replace pricelevel_id with MongoDB ObjectId reference
-              newPriceLevel.pricelevel = priceLevelMap.get(priceLevel.pricelevel_id);
-              // Remove the string ID as it's not in our schema
-              delete newPriceLevel.pricelevel_id;
-            }
-            
-            return newPriceLevel;
-          });
-        }
-        
-        // Process godown list if present
-        // if (productItem.GodownList && Array.isArray(productItem.GodownList)) {
-        //   enhancedProduct.GodownList = productItem.GodownList.map(godownItem => {
-        //     const newGodownItem = { ...godownItem };
-            
-        //     if (godownItem.godown_id && godownMap.has(godownItem.godown_id)) {
-        //       // Replace godown_id with MongoDB ObjectId reference
-        //       newGodownItem.godown = godownMap.get(godownItem.godown_id);
-        //       // Remove the string ID as it's not in our schema
-        //       delete newGodownItem.godown_id;
-        //     }
-            
-        //     return newGodownItem;
-        //   });
-        // }
-        
+
+        // Set brand, category, and subcategory explicitly (either with a valid reference or null)
+        enhancedProduct.brand = productItem.brand_id && brandMap.has(productItem.brand_id) 
+          ? brandMap.get(productItem.brand_id) 
+          : null;
+
+        enhancedProduct.category = productItem.category_id && categoryMap.has(productItem.category_id) 
+          ? categoryMap.get(productItem.category_id) 
+          : null;
+
+        enhancedProduct.sub_category = productItem.subcategory_id && subcategoryMap.has(productItem.subcategory_id) 
+          ? subcategoryMap.get(productItem.subcategory_id) 
+          : null;
+
+        // Add default GodownList with Primary Batch
+        enhancedProduct.GodownList = [
+          {
+            godown: defaultGodown._id,
+            batch: "Primary Batch",
+            balance_stock: 0
+          }
+        ];
+
         // Check if product exists
-        if (productItem.product_master_id && existingProductMap.has(productItem.product_master_id)) {
+        if (
+          productItem.product_master_id &&
+          existingProductMap.has(productItem.product_master_id)
+        ) {
           // Update existing product
           return productModel.findByIdAndUpdate(
             existingProductMap.get(productItem.product_master_id)._id,
@@ -404,16 +333,19 @@ export const saveProductsFromTally = async (req, res) => {
           return new productModel(enhancedProduct).save();
         }
       });
-      
+
       // Execute batch operations
       const batchResults = await Promise.allSettled(batchOperations);
-      
+
       // Process results
       batchResults.forEach((result, index) => {
-        if (result.status === 'fulfilled') {
+        if (result.status === "fulfilled") {
           results.push(result.value);
         } else {
-          console.error(`Error saving product at index ${i + index}:`, result.reason);
+          console.error(
+            `Error saving product at index ${i + index}:`,
+            result.reason
+          );
         }
       });
     }
@@ -424,7 +356,7 @@ export const saveProductsFromTally = async (req, res) => {
     res.status(201).json({
       message: "Products saved successfully",
       savedCount: successfulSaves.length,
-      totalCount: productsToSave.length
+      totalCount: productsToSave.length,
     });
   } catch (error) {
     console.error("Error:", error);
@@ -432,20 +364,16 @@ export const saveProductsFromTally = async (req, res) => {
   }
 };
 
-
-
-
-
-
-
 // @desc for updating stocks of product
 // route GET/api/tally/master/item/updateStock
-
 
 export const updateStock = async (req, res) => {
   try {
     // Validate request body
-    if (!req.body?.data?.ItemGodowndetails || !Array.isArray(req.body.data.ItemGodowndetails)) {
+    if (
+      !req.body?.data?.ItemGodowndetails ||
+      !Array.isArray(req.body.data.ItemGodowndetails)
+    ) {
       return res.status(400).json({
         success: false,
         message: "Invalid request format. ItemGodowndetails array is required",
@@ -461,7 +389,7 @@ export const updateStock = async (req, res) => {
 
     // Extract common company and user IDs
     const { cmp_id, Primary_user_id } = req.body.data.ItemGodowndetails[0];
-    
+
     if (!cmp_id || !Primary_user_id) {
       return res.status(400).json({
         success: false,
@@ -476,30 +404,34 @@ export const updateStock = async (req, res) => {
         godownIdsSet.add(item.godown_id.toString());
       }
     }
-    
+
     const godownIds = Array.from(godownIdsSet);
-    
+
     // Fetch all required godowns in a single query to create a mapping
     const godowns = await Godown.find(
       { godown_id: { $in: godownIds } },
       { _id: 1, godown_id: 1 }
     );
-    
+
     // Create a mapping of godown_id to MongoDB _id
     const godownMapping = {};
-    godowns.forEach(godown => {
+    godowns.forEach((godown) => {
       godownMapping[godown.godown_id.toString()] = godown._id;
     });
-    
+
     // Check if any godown_ids couldn't be found
-    const missingGodownIds = godownIds.filter(id => !godownMapping[id]);
+    const missingGodownIds = godownIds.filter((id) => !godownMapping[id]);
     if (missingGodownIds.length > 0) {
-      console.warn(`Warning: Could not find godowns with ids: ${missingGodownIds.join(', ')}`);
+      console.warn(
+        `Warning: Could not find godowns with ids: ${missingGodownIds.join(
+          ", "
+        )}`
+      );
     }
 
     // Group items by product_master_id with improved validation
     const groupedGodowns = {};
-    
+
     for (const item of req.body.data.ItemGodowndetails) {
       if (!item.product_master_id) {
         return res.status(400).json({
@@ -509,7 +441,7 @@ export const updateStock = async (req, res) => {
       }
 
       const productId = item.product_master_id.toString();
-      
+
       if (!groupedGodowns[productId]) {
         groupedGodowns[productId] = {
           godowns: [],
@@ -519,11 +451,17 @@ export const updateStock = async (req, res) => {
       }
 
       // Get MongoDB _id for this godown or skip if not found
-      const godownObjectId = item.godown_id ? godownMapping[item.godown_id.toString()] : null;
-      
+      const godownObjectId = item.godown_id
+        ? godownMapping[item.godown_id.toString()]
+        : null;
+
       // Skip entries with invalid godown_id that couldn't be mapped to an actual godown
       if (item.godown_id && !godownObjectId) {
-        console.warn(`Skipping entry with invalid godown_id: ${item.godown_id} for product: ${item.product_name || productId}`);
+        console.warn(
+          `Skipping entry with invalid godown_id: ${
+            item.godown_id
+          } for product: ${item.product_name || productId}`
+        );
         continue;
       }
 
@@ -531,12 +469,13 @@ export const updateStock = async (req, res) => {
       const godownEntry = {
         godown: godownObjectId, // Use the mapped MongoDB ObjectId
         balance_stock: parseFloat(item.balance_stock) || 0,
-        batch: item.batchEnabled ? item.batch : null,
+        
       };
-      
-      // Add manufacturing and expiry dates if available
-      if (item.mfgdt) godownEntry.mfgdt = item.mfgdt
-      if (item.expdt) godownEntry.expdt = item.expdt
+
+      // Add batch, manufacturing and expiry dates if available
+      if (item.batch) godownEntry.batch = item.batch;
+      if (item.mfgdt) godownEntry.mfgdt = item.mfgdt;
+      if (item.expdt) godownEntry.expdt = item.expdt;
 
       groupedGodowns[productId].godowns.push(godownEntry);
       // groupedGodowns[productId].total_balance += godownEntry.balance_stock;
@@ -557,10 +496,10 @@ export const updateStock = async (req, res) => {
     // Process in chunks to avoid overwhelming MongoDB
     for (let i = 0; i < productIds.length; i += chunkSize) {
       const chunk = productIds.slice(i, i + chunkSize);
-      
-      const bulkOps = chunk.map(productMasterId => {
+
+      const bulkOps = chunk.map((productMasterId) => {
         const data = groupedGodowns[productMasterId];
-        
+
         return {
           updateOne: {
             filter: {
@@ -586,12 +525,15 @@ export const updateStock = async (req, res) => {
     }
 
     // Calculate overall stats
-    const totalStats = bulkResults.reduce((acc, result) => {
-      acc.matchedCount += result.matchedCount || 0;
-      acc.modifiedCount += result.modifiedCount || 0;
-      acc.upsertedCount += result.upsertedCount || 0;
-      return acc;
-    }, { matchedCount: 0, modifiedCount: 0, upsertedCount: 0 });
+    const totalStats = bulkResults.reduce(
+      (acc, result) => {
+        acc.matchedCount += result.matchedCount || 0;
+        acc.modifiedCount += result.modifiedCount || 0;
+        acc.upsertedCount += result.upsertedCount || 0;
+        return acc;
+      },
+      { matchedCount: 0, modifiedCount: 0, upsertedCount: 0 }
+    );
 
     // Get summary of modified products (limited to avoid large response)
     const modificationSummary = Object.entries(groupedGodowns)
@@ -611,8 +553,8 @@ export const updateStock = async (req, res) => {
       godownsMapped: Object.keys(godownMapping).length,
       godownsNotFound: missingGodownIds.length > 0 ? missingGodownIds : [],
       ...(modificationSummary.length < productIds.length && {
-        note: `Showing summary for first ${modificationSummary.length} of ${productIds.length} products.`
-      })
+        note: `Showing summary for first ${modificationSummary.length} of ${productIds.length} products.`,
+      }),
     });
   } catch (error) {
     console.error("Error in updateStock:", error);
@@ -647,7 +589,10 @@ export const updateStock = async (req, res) => {
 export const updatePriceLevels = async (req, res) => {
   try {
     // Validate request body
-    if (!req.body?.data?.Priceleveles || !Array.isArray(req.body.data.Priceleveles)) {
+    if (
+      !req.body?.data?.Priceleveles ||
+      !Array.isArray(req.body.data.Priceleveles)
+    ) {
       return res.status(400).json({
         success: false,
         message: "Invalid request format. Priceleveles array is required",
@@ -663,7 +608,7 @@ export const updatePriceLevels = async (req, res) => {
 
     // Extract common company and user IDs
     const { cmp_id, Primary_user_id } = req.body.data.Priceleveles[0];
-    
+
     if (!cmp_id || !Primary_user_id) {
       return res.status(400).json({
         success: false,
@@ -674,59 +619,69 @@ export const updatePriceLevels = async (req, res) => {
     // Extract all unique pricelevel_ids from the request
     const priceLevelIdsSet = new Set();
 
-    // console.log("priceLevelIdsSet",priceLevelIdsSet);
-    
     for (const item of req.body.data.Priceleveles) {
       if (item.pricelevel) {
-
-        
-
         priceLevelIdsSet.add(item.pricelevel.toString());
-
       }
     }
-    
+
     const priceLevelIds = Array.from(priceLevelIdsSet);
 
-    
+    console.log("priceLevelIds", priceLevelIds);
+
     // Fetch all price levels in a single query to create a mapping
-    // Note: Assuming you have a PriceLevel model, if not, you may remove this part
     let priceLevelMapping = {};
-    
+
     try {
-      const priceLevels = await PriceLevel.find(
-        { pricelevel_id: { $in: priceLevelIds } },
-        { _id: 1 }
-      );
+      // Note: Make sure this query matches your schema fields
+      // If your PriceLevel model has pricelevel_id field:
+      const priceLevels = await PriceLevel.find({
+        pricelevel_id: { $in: priceLevelIds },
+      });
 
-    console.log("priceLevels",priceLevels);
+      console.log("priceLevels", priceLevels);
 
-      
       // Create a mapping of pricelevel_id to MongoDB _id
+      // Make sure to use the correct field name from your schema
       priceLevelMapping = priceLevels.reduce((mapping, level) => {
-        mapping[level._id.toString()] = level._id;
+        // If your schema uses pricelevel_id as the field name:
+        mapping[level.pricelevel_id.toString()] = level._id;
         return mapping;
       }, {});
-      
+
+      console.log("priceLevelMapping", priceLevelMapping);
+
       // Check if any pricelevel_ids couldn't be found
-      const missingPriceLevelIds = priceLevelIds.filter(id => !priceLevelMapping[id]);
+      const missingPriceLevelIds = priceLevelIds.filter(
+        (id) => !priceLevelMapping[id]
+      );
       if (missingPriceLevelIds.length > 0) {
-        console.warn(`Warning: Could not find price levels with ids: ${missingPriceLevelIds.join(', ')}`);
+        console.warn(
+          `Warning: Could not find price levels with ids: ${missingPriceLevelIds.join(
+            ", "
+          )}`
+        );
       }
     } catch (error) {
-      console.log("Error fetching price levels, will use direct IDs:", error.message);
+      console.log(
+        "Error fetching price levels, will use direct IDs:",
+        error.message
+      );
 
-      
       // Create direct mapping if fetching fails
       priceLevelMapping = priceLevelIds.reduce((mapping, id) => {
-        mapping[id] = new mongoose.Types.ObjectId(id);
+        try {
+          mapping[id] = new mongoose.Types.ObjectId(id);
+        } catch (err) {
+          console.warn(`Invalid ObjectId format for price level: ${id}`);
+        }
         return mapping;
       }, {});
     }
 
     // Group items by product_master_id with improved validation
     const groupedProducts = {};
-    
+
     for (const item of req.body.data.Priceleveles) {
       if (!item.product_master_id) {
         return res.status(400).json({
@@ -736,35 +691,56 @@ export const updatePriceLevels = async (req, res) => {
       }
 
       const productId = item.product_master_id.toString();
-      
+
       if (!groupedProducts[productId]) {
         groupedProducts[productId] = {
           priceLevels: [],
-          product_name: item.product_name,
+          product_name: item.product_name || "Unknown",
         };
       }
 
-      // Get MongoDB _id for this price level or use direct conversion
-      const priceLevelObjectId = item.pricelevel ? 
-        (priceLevelMapping[item.pricelevel.toString()])  : null;
-
-
-        console.log("priceLevelObjectId", priceLevelObjectId);
-        
-      
-      // Skip entries with invalid pricelevel_id
-      if (item.pricelevel && !priceLevelObjectId) {
-        console.warn(`Skipping entry with invalid pricelevel_id: ${item.pricelevel} for product: ${item.product_name || productId}`);
+      // Skip items without pricelevel
+      if (!item.pricelevel) {
+        console.warn(
+          `Skipping entry without pricelevel for product: ${
+            item.product_name || productId
+          }`
+        );
         continue;
       }
 
+      // Get MongoDB _id for this price level using the mapping or create new ObjectId
+      let priceLevelObjectId;
+      const priceLevelKey = item.pricelevel.toString();
+
+      if (priceLevelMapping[priceLevelKey]) {
+        priceLevelObjectId = priceLevelMapping[priceLevelKey];
+      } else {
+        try {
+          // Try to convert the pricelevel to ObjectId directly
+          priceLevelObjectId = new mongoose.Types.ObjectId(priceLevelKey);
+        } catch (err) {
+          console.warn(
+            `Skipping entry with invalid pricelevel format: ${priceLevelKey}`
+          );
+          continue;
+        }
+      }
+
+      console.log(
+        "priceLevelObjectId for",
+        priceLevelKey,
+        ":",
+        priceLevelObjectId
+      );
+
       // Format price level data according to schema
       const priceLevelEntry = {
-        pricelevel: priceLevelObjectId, // Use the mapped or converted MongoDB ObjectId
+        pricelevel: priceLevelObjectId,
         pricerate: parseFloat(item.pricerate) || 0,
         priceDisc: parseFloat(item.priceDisc) || 0,
       };
-      
+
       // Add applicable date if available
       if (item.applicabledt) priceLevelEntry.applicabledt = item.applicabledt;
 
@@ -786,21 +762,38 @@ export const updatePriceLevels = async (req, res) => {
     // Process in chunks to avoid overwhelming MongoDB
     for (let i = 0; i < productIds.length; i += chunkSize) {
       const chunk = productIds.slice(i, i + chunkSize);
-      
-      const bulkOps = chunk.map(productMasterId => {
+
+      const bulkOps = chunk.map((productMasterId) => {
         const data = groupedProducts[productMasterId];
-        
+
+        // Ensure we have valid ObjectIds for the filter
+        let cmpObjectId, userObjectId;
+
+        try {
+          cmpObjectId = new mongoose.Types.ObjectId(cmp_id);
+        } catch (err) {
+          console.error(`Invalid company ID format: ${cmp_id}`);
+          cmpObjectId = cmp_id; // Use as-is if conversion fails
+        }
+
+        try {
+          userObjectId = new mongoose.Types.ObjectId(Primary_user_id);
+        } catch (err) {
+          console.error(`Invalid user ID format: ${Primary_user_id}`);
+          userObjectId = Primary_user_id; // Use as-is if conversion fails
+        }
+
         return {
           updateOne: {
             filter: {
               product_master_id: productMasterId,
-              cmp_id: new mongoose.Types.ObjectId(cmp_id),
-              Primary_user_id: new mongoose.Types.ObjectId(Primary_user_id),
+              cmp_id: cmpObjectId,
+              Primary_user_id: userObjectId,
             },
             update: {
               $set: {
                 Priceleveles: data.priceLevels,
-                pricelevelcount: data.priceLevels.length,
+                // pricelevelcount: data.priceLevels.length,
               },
             },
             upsert: true,
@@ -814,12 +807,15 @@ export const updatePriceLevels = async (req, res) => {
     }
 
     // Calculate overall stats
-    const totalStats = bulkResults.reduce((acc, result) => {
-      acc.matchedCount += result.matchedCount || 0;
-      acc.modifiedCount += result.modifiedCount || 0;
-      acc.upsertedCount += result.upsertedCount || 0;
-      return acc;
-    }, { matchedCount: 0, modifiedCount: 0, upsertedCount: 0 });
+    const totalStats = bulkResults.reduce(
+      (acc, result) => {
+        acc.matchedCount += result.matchedCount || 0;
+        acc.modifiedCount += result.modifiedCount || 0;
+        acc.upsertedCount += result.upsertedCount || 0;
+        return acc;
+      },
+      { matchedCount: 0, modifiedCount: 0, upsertedCount: 0 }
+    );
 
     // Get summary of modified products (limited to avoid large response)
     const modificationSummary = Object.entries(groupedProducts)
@@ -837,8 +833,8 @@ export const updatePriceLevels = async (req, res) => {
       totalRecordsProcessed: productIds.length,
       priceLevelsMapped: Object.keys(priceLevelMapping).length,
       ...(modificationSummary.length < productIds.length && {
-        note: `Showing summary for first ${modificationSummary.length} of ${productIds.length} products.`
-      })
+        note: `Showing summary for first ${modificationSummary.length} of ${productIds.length} products.`,
+      }),
     });
   } catch (error) {
     console.error("Error in updatePriceLevels:", error);
@@ -866,7 +862,6 @@ export const updatePriceLevels = async (req, res) => {
     });
   }
 };
-
 
 // @desc for saving parties/costumers from tally
 // route GET/api/tally/giveTransaction
@@ -1007,7 +1002,7 @@ export const addAccountGroups = async (req, res) => {
     const savedAccountGroups = await Promise.all(
       accountGroupsToSave.map(async (group) => {
         const key = `${group.cmp_id}-${group.accountGroup_id}-${group.Primary_user_id}`;
-        
+
         // Skip duplicate records in the request
         if (uniqueGroups.has(key)) return null;
         uniqueGroups.set(key, true);
@@ -1017,7 +1012,9 @@ export const addAccountGroups = async (req, res) => {
             {
               cmp_id: group.cmp_id,
               accountGroup_id: group.accountGroup_id,
-              Primary_user_id: new mongoose.Types.ObjectId(group.Primary_user_id),
+              Primary_user_id: new mongoose.Types.ObjectId(
+                group.Primary_user_id
+              ),
             },
             group,
             { new: true, upsert: true } // Insert if not found, update if exists
@@ -1064,7 +1061,7 @@ export const addSubGroups = async (req, res) => {
     const savedSubGroups = await Promise.all(
       subGroupsToSave.map(async (subGroup) => {
         const key = `${subGroup.cmp_id}-${subGroup.subGroup_id}-${subGroup.Primary_user_id}`;
-        
+
         // Skip duplicate records in the request
         if (uniqueSubGroups.has(key)) return null;
         uniqueSubGroups.set(key, true);
@@ -1074,7 +1071,9 @@ export const addSubGroups = async (req, res) => {
             {
               cmp_id: subGroup.cmp_id,
               subGroup_id: subGroup.subGroup_id,
-              Primary_user_id: new mongoose.Types.ObjectId(subGroup.Primary_user_id),
+              Primary_user_id: new mongoose.Types.ObjectId(
+                subGroup.Primary_user_id
+              ),
             },
             subGroup,
             { new: true, upsert: true } // Insert if not found, update if exists
@@ -1096,120 +1095,120 @@ export const addSubGroups = async (req, res) => {
   }
 };
 
-
 // @desc for saving subDetails of products from tally
 // route GET/api/tally/addSubDetails
-
 
 export const addSubDetails = async (req, res) => {
   try {
     const { data } = req.body;
-    
+
     if (!Array.isArray(data)) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Data must be an array' 
+      return res.status(400).json({
+        success: false,
+        message: "Data must be an array",
       });
     }
-    
+
     // Determine which model to use based on the route
     let Model;
     let idField;
     let nameField;
-    
-    if (req.path.includes('/addGodowns')) {
+
+    if (req.path.includes("/addGodowns")) {
       Model = Godown;
-      idField = 'godown_id';
-      nameField = 'godown';
-    } else if (req.path.includes('/addPriceLevels')) {
+      idField = "godown_id";
+      nameField = "godown";
+    } else if (req.path.includes("/addPriceLevels")) {
       Model = PriceLevel;
-      idField = 'pricelevel_id';
-      nameField = 'pricelevel';
-    } else if (req.path.includes('/addBrands')) {
+      idField = "pricelevel_id";
+      nameField = "pricelevel";
+    } else if (req.path.includes("/addBrands")) {
       Model = Brand;
-      idField = 'brand_id';
-      nameField = 'brand';
-    } else if (req.path.includes('/addCategory')) {
+      idField = "brand_id";
+      nameField = "brand";
+    } else if (req.path.includes("/addCategory")) {
       Model = Category;
-      idField = 'category_id';
-      nameField = 'category';
-    } else if (req.path.includes('/addSubCategory')) {
+      idField = "category_id";
+      nameField = "category";
+    } else if (req.path.includes("/addSubCategory")) {
       Model = Subcategory;
-      idField = 'subcategory_id';
-      nameField = 'subcategory';
+      idField = "subcategory_id";
+      nameField = "subcategory";
     } else {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Invalid endpoint' 
+      return res.status(400).json({
+        success: false,
+        message: "Invalid endpoint",
       });
     }
-    
+
     // Process each item in the data array
-    const results = await Promise.all(data.map(async (item) => {
-      // Check if all required fields are present
-      if (!item[nameField] || !item[idField] || !item.cmp_id || !item.Primary_user_id) {
-        return {
-          success: false,
-          message: `Missing required fields for ${nameField}`,
-          data: item
-        };
-      }
-      
-      try {
-        // Check if item already exists
-        const existingItem = await Model.findOne({ 
-          [idField]: item[idField],
-          cmp_id: item.cmp_id 
-        });
-        
-        if (existingItem) {
-          // Update existing item
-          await Model.findByIdAndUpdate(existingItem._id, item);
+    const results = await Promise.all(
+      data.map(async (item) => {
+        // Check if all required fields are present
+        if (
+          !item[nameField] ||
+          !item[idField] ||
+          !item.cmp_id ||
+          !item.Primary_user_id
+        ) {
           return {
-            success: true,
-            message: `${nameField} updated successfully`,
-            data: item
-          };
-        } else {
-          // Create new item
-          const newItem = new Model(item);
-          await newItem.save();
-          return {
-            success: true,
-            message: `${nameField} added successfully`,
-            data: newItem
+            success: false,
+            message: `Missing required fields for ${nameField}`,
+            data: item,
           };
         }
-      } catch (error) {
-        return {
-          success: false,
-          message: `Error processing ${nameField}: ${error.message}`,
-          data: item
-        };
-      }
-    }));
-    
+
+        try {
+          // Check if item already exists
+          const existingItem = await Model.findOne({
+            [idField]: item[idField],
+            cmp_id: item.cmp_id,
+          });
+
+          if (existingItem) {
+            // Update existing item
+            await Model.findByIdAndUpdate(existingItem._id, item);
+            return {
+              success: true,
+              message: `${nameField} updated successfully`,
+              data: item,
+            };
+          } else {
+            // Create new item
+            const newItem = new Model(item);
+            await newItem.save();
+            return {
+              success: true,
+              message: `${nameField} added successfully`,
+              data: newItem,
+            };
+          }
+        } catch (error) {
+          return {
+            success: false,
+            message: `Error processing ${nameField}: ${error.message}`,
+            data: item,
+          };
+        }
+      })
+    );
+
     // Count successes and failures
-    const successCount = results.filter(result => result.success).length;
+    const successCount = results.filter((result) => result.success).length;
     const failureCount = results.length - successCount;
-    
+
     return res.status(200).json({
       success: true,
       message: `Added/Updated ${successCount} items, Failed ${failureCount} items`,
-      results
+      results,
     });
-    
   } catch (error) {
     return res.status(500).json({
       success: false,
-      message: `Error processing request: ${error.message}`
+      message: `Error processing request: ${error.message}`,
     });
   }
 };
-
-
-
-
 
 // // @desc for giving invoices to tally
 // // route GET/api/tally/giveInvoice
@@ -1251,11 +1250,13 @@ export const getStockTransfers = async (req, res) => {
   const serialNumber = req.params.SNo;
   return fetchData("stockTransfers", cmp_id, serialNumber, res);
 };
+
 export const giveReceipts = async (req, res) => {
   const cmp_id = req.params.cmp_id;
   const serialNumber = req.params.SNo;
   return fetchData("receipt", cmp_id, serialNumber, res);
 };
+
 export const givePayments = async (req, res) => {
   const cmp_id = req.params.cmp_id;
   const serialNumber = req.params.SNo;
@@ -1269,8 +1270,4 @@ export const givePurchase = async (req, res) => {
   const cmp_id = req.params.cmp_id;
   const serialNumber = req.params.SNo;
   return fetchData("purchase", cmp_id, serialNumber, res);
-};    
-
-
-
-
+};

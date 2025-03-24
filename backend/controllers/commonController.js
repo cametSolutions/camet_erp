@@ -124,7 +124,7 @@ export const addProduct = async (req, res) => {
         alt_unit,
         unit_conversion,
         alt_unit_conversion,
-        // hsn_code,
+        hsn_code: hsn_id,
         purchase_price,
         item_mrp,
         purchase_cost,
@@ -133,13 +133,12 @@ export const addProduct = async (req, res) => {
       },
     } = req;
 
-    let hsn_code = req.body.hsn_code;
 
     // Fetch HSN details
-    const hsnDetails = await hsnModel.findById(hsn_code);
+    const hsnDetails = await hsnModel.findById(hsn_id);
 
     // Extract required fields from HSN details
-    let cgst, sgst, igst, cess, addl_cess, hsn;
+    let cgst, sgst, igst, cess, addl_cess, hsn_code;
     if (hsnDetails) {
       ({
         igstRate: igst,
@@ -147,8 +146,7 @@ export const addProduct = async (req, res) => {
         sgstUtgstRate: sgst,
         onValue: cess,
         onQuantity: addl_cess,
-        // hsn: hsn_code,
-        _id: hsn,
+        hsn: hsn_code,
       } = hsnDetails);
     }
 
@@ -169,7 +167,7 @@ export const addProduct = async (req, res) => {
       alt_unit,
       unit_conversion,
       alt_unit_conversion,
-      // hsn_code,
+      hsn_code,
       purchase_price,
       purchase_cost,
       item_mrp,
@@ -180,7 +178,6 @@ export const addProduct = async (req, res) => {
       igst,
       cess,
       addl_cess,
-      hsn,
     };
 
     // Save the product
@@ -221,7 +218,8 @@ export const editProduct = async (req, res) => {
         alt_unit,
         unit_conversion,
         alt_unit_conversion,
-        hsn_code,
+        hsn_code: hsn_id,
+        
         purchase_price,
         item_mrp,
         purchase_cost,
@@ -232,10 +230,10 @@ export const editProduct = async (req, res) => {
     } = req;
 
     // Fetch HSN details
-    const hsnDetails = await hsnModel.findById(hsn_code);
+    const hsnDetails = await hsnModel.findById(hsn_id);
 
     // Extract required fields from HSN details
-    let cgst, sgst, igst, cess, addl_cess, hsn;
+    let cgst, sgst, igst, cess, addl_cess, hsn_code;
     if (hsnDetails) {
       ({
         igstRate: igst,
@@ -243,7 +241,7 @@ export const editProduct = async (req, res) => {
         sgstUtgstRate: sgst,
         onValue: cess,
         onQuantity: addl_cess,
-        _id: hsn,
+        hsn: hsn_code,
       } = hsnDetails);
     }
 
@@ -260,7 +258,7 @@ export const editProduct = async (req, res) => {
       alt_unit,
       unit_conversion,
       alt_unit_conversion,
-      hsn,
+      hsn_code,
       purchase_price,
       purchase_cost,
       item_mrp,
@@ -724,36 +722,36 @@ export const addProductSubDetails = async (req, res) => {
         };
 
         // Check if this is the first godown for the company
-        const existingGodowns = await Godown.find({ cmp_id: orgId });
-        if (existingGodowns.length === 0) {
-          // Create default godown
-          const defaultGodownId = new mongoose.Types.ObjectId();
-          const defaultGodown = new Godown({
-            _id: defaultGodownId,
-            godown_id: defaultGodownId,
-            godown: "Default Godown",
-            // address: "Default Address",
-            cmp_id: orgId,
-            Primary_user_id: req.pUserId || req.owner,
-            defaultGodown: true,
-          });
-          const savedDefaultGodown = await defaultGodown.save();
+        // const existingGodowns = await Godown.find({ cmp_id: orgId });
+        // if (existingGodowns.length === 0) {
+        //   // Create default godown
+        //   const defaultGodownId = new mongoose.Types.ObjectId();
+        //   const defaultGodown = new Godown({
+        //     _id: defaultGodownId,
+        //     godown_id: defaultGodownId,
+        //     godown: "Default Godown",
+        //     // address: "Default Address",
+        //     cmp_id: orgId,
+        //     Primary_user_id: req.pUserId || req.owner,
+        //     defaultGodown: true,
+        //   });
+        //   const savedDefaultGodown = await defaultGodown.save();
 
-          company.gdnEnabled = true;
-          await company.save();
+        //   company.gdnEnabled = true;
+        //   await company.save();
 
-          // Update all products with the default godown
-          const update = await productModel.updateMany(
-            { cmp_id: orgId },
-            {
-              $set: {
-                "GodownList.$[].godown": savedDefaultGodown._id,
-                gdnEnabled: true, // ✅ Add this line to update gdnEnabled
-              },
-            }
-          );
+        //   // Update all products with the default godown
+        //   const update = await productModel.updateMany(
+        //     { cmp_id: orgId },
+        //     {
+        //       $set: {
+        //         "GodownList.$[].godown": savedDefaultGodown._id,
+        //         gdnEnabled: true, // ✅ Add this line to update gdnEnabled
+        //       },
+        //     }
+        //   );
           
-        }
+        // }
         break;
       case "pricelevel":
         Model = PriceLevel;

@@ -18,7 +18,12 @@ import invoiceModel from "../models/invoiceModel.js";
 import bankModel from "../models/bankModel.js";
 import salesModel from "../models/salesModel.js";
 import AdditionalChargesModel from "../models/additionalChargesModel.js";
-import { truncateToNDecimals } from "../helpers/helper.js";
+import {
+  createAccountGroupsForOrganization,
+  createDefaultGodownForOrganization,
+  defaultConfigurations,
+  truncateToNDecimals,
+} from "../helpers/helper.js";
 import purchaseModel from "../models/purchaseModel.js";
 import { Brand } from "../models/subDetails.js";
 import { Category } from "../models/subDetails.js";
@@ -265,97 +270,6 @@ export const addOrganizations = async (req, res) => {
   const session = await mongoose.startSession(); // Start a session
   session.startTransaction(); // Start the transaction
 
-  // Default configurations
-  const defaultConfigurations = [
-    {
-      bank: null,
-      terms: [],
-      enableBillToShipTo: true,
-      enableActualAndBilledQuantity: false,
-      taxInclusive: false,
-      addRateWithTax: {
-        saleOrder: false,
-        sale: false,
-      },
-      emailConfiguration: null,
-      despatchTitles: [
-        {
-          voucher: "saleOrder",
-          challanNo: "Challan No",
-          containerNo: "Container No",
-          despatchThrough: "Despatch Through",
-          destination: "Destination",
-          vehicleNo: "Vehicle No",
-          orderNo: "Order No",
-          termsOfPay: "Terms Of Pay",
-          termsOfDelivery: "Terms Of Delivery",
-        },
-        {
-          voucher: "sale",
-          challanNo: "Challan No",
-          containerNo: "Container No",
-          despatchThrough: "Despatch Through",
-          destination: "Destination",
-          vehicleNo: "Vehicle No",
-          orderNo: "Order No",
-          termsOfPay: "Terms Of Pay",
-          termsOfDelivery: "Terms Of Delivery",
-        },
-        {
-          voucher: "default",
-          challanNo: "Challan No",
-          containerNo: "Container No",
-          despatchThrough: "Despatch Through",
-          destination: "Destination",
-          vehicleNo: "Vehicle No",
-          orderNo: "Order No",
-          termsOfPay: "Terms Of Pay",
-          termsOfDelivery: "Terms Of Delivery",
-        },
-      ],
-      printConfiguration: [
-        {
-          voucher: "saleOrder",
-          printTitle: null,
-          showCompanyDetails: true,
-          showDiscount: false,
-          showDiscountAmount: true,
-          showHsn: false,
-          showTaxPercentage: false,
-          showInclTaxRate: false,
-          showTaxAnalysis: false,
-          showTeamsAndConditions: false,
-          showBankDetails: false,
-          showTaxAmount: true,
-          showStockWiseTaxAmount: true,
-          showRate: true,
-          showQuantity: true,
-          showStockWiseAmount: true,
-          showNetAmount: true,
-        },
-        {
-          voucher: "sale",
-          printTitle: null,
-          showCompanyDetails: true,
-          showDiscount: false,
-          showDiscountAmount: true,
-          showHsn: false,
-          showTaxPercentage: false,
-          showInclTaxRate: false,
-          showTaxAnalysis: false,
-          showTeamsAndConditions: false,
-          showBankDetails: false,
-          showTaxAmount: true,
-          showStockWiseTaxAmount: true,
-          showRate: true,
-          showQuantity: true,
-          showStockWiseAmount: true,
-          showNetAmount: true,
-        },
-      ],
-    },
-  ];
-
   try {
     // Create the organization
     const organization = await Organization.create(
@@ -416,29 +330,30 @@ export const addOrganizations = async (req, res) => {
         .json({ success: false, message: "User not found" });
     }
 
-    /// create account group for organization
+    // Create account groups using the helper function
+    const accountGroupsResult = await createAccountGroupsForOrganization({
+      type,
+      accountGroups: accountGroups03, // Make sure this variable is defined or imported
+      organizationId: organization[0]._id,
+      ownerId: owner,
+      session,
+    });
 
-    if (type === "self") {
-      if (Array.isArray(accountGroups03) && accountGroups03.length > 0) {
-        await Promise.all(
-          accountGroups03.map(async (group) => {
-            // Generate a new ObjectId
-            const generatedId = new mongoose.Types.ObjectId();
-    
-            const accountGroup = new AccountGroup({
-              accountGroup: group,
-              cmp_id: organization[0]._id,
-              Primary_user_id: owner,
-              accountGroup_id: generatedId.toString(), // Assign before saving
-              _id: generatedId, // Ensure _id and accountGroup_id are the same
-            });
-    
-            await accountGroup.save({ session }); // Save only once
-          })
-        );
-      }
+    // Create default godown using the helper function
+    const defaultGodown = await createDefaultGodownForOrganization({
+      organizationId: organization[0]._id,
+      ownerId: req.pUserId || owner, // Using owner as fallback if pUserId is not available
+      session,
+    });
+
+    if (!accountGroupsResult || !defaultGodown) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(400).json({
+        success: false,
+        message: "Failed to set up organization resources",
+      });
     }
-    
 
     // Commit the transaction
     await session.commitTransaction();
@@ -1305,11 +1220,8 @@ export const fetchFilters = async (req, res) => {
   }
 };
 
-
 // @desc getting product list
 // route get/api/pUsers/getProducts
-
-
 
 // @desc delete product from  product list
 // route delete/api/pUsers/deleteProduct

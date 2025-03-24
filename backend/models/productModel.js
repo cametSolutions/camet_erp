@@ -51,16 +51,9 @@ const productSchema = new mongoose.Schema({
   alt_unit_conversion: {
     type: Number,
   },
-  // godownCount: {
-  //   type: Number,
-  // },
-  pricelevelcount: {
-    type: Number,
-  },
 
-  hsn: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Hsn",
+  hsn_code: {
+    type: String,
   },
   purchase_price: {
     type: Number,
