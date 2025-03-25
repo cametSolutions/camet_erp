@@ -31,8 +31,7 @@ const organizationSchema = new mongoose.Schema(
     levelNames: { type: Array },
     locations: { type: Array },
     type: { type: String, default: "self" },
-    batchEnabled: { type: Boolean, default: false },
-    gdnEnabled: { type: Boolean, default: false },
+
     orderNumber: { type: Number, default: 1 },
     OrderNumberValue: { type: String },
     OrderNumberDetails: { type: Object },
@@ -63,6 +62,8 @@ const organizationSchema = new mongoose.Schema(
         bank: { type: mongoose.Schema.Types.ObjectId, ref: "BankDetails" },
         terms: { type: Array },
         enableBillToShipTo: { type: Boolean, default: true },
+        batchEnabled: { type: Boolean, default: false },
+        gdnEnabled: { type: Boolean, default: false },
         despatchDetails: { type: Object },
         taxInclusive: { type: Boolean, default: false },
         emailConfiguration: {

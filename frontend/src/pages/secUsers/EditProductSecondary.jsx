@@ -8,7 +8,6 @@ import { toast } from "react-toastify";
 import { useNavigate,  useParams } from "react-router-dom";
 import AddProductForm from "../../components/common/Forms/AddProductsForm";
 import TitleDiv from "@/components/common/TitleDiv";
-import { set } from "mongoose";
 
 function EditProductSecondary() {
   const { id } = useParams();
