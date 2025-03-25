@@ -3,9 +3,8 @@
 import { useSelector } from "react-redux";
 import api from "../../api/api";
 import { toast } from "react-toastify";
-import { IoIosArrowRoundBack } from "react-icons/io";
-import { useNavigate, Link } from "react-router-dom";
-import AddProductForm from "../../components/common/Forms/AddProductForm";
+import { useNavigate } from "react-router-dom";
+import AddProductForm from "../../components/common/Forms/AddProductsForm2";
 import TitleDiv from "@/components/common/TitleDiv";
 
 function AddProductSecondary() {

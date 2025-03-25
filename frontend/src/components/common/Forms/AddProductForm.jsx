@@ -43,8 +43,62 @@ function AddProductForm({
   const [selectedSubcategory, setSelectedSubcategory] = useState();
   const [rows, setRows] = useState([{ pricelevel: "", pricerate: "" }]);
   const [locationRows, setLocationRows] = useState([]);
-  const [originalGodownList, setOriginalGodownList] = useState([]);
   const [defaultGodown, setDefaultGodown] = useState(null);
+
+
+  useEffect(() => {
+    const fetchAllSubDetails = async () => {
+      try {
+        let res;
+        if (userType === "secondaryUser") {
+          res = await api.get(`/api/sUsers/getAllSubDetails/${orgId}`, {
+            withCredentials: true,
+          });
+        } else if (userType === "primaryUser") {
+          res = await api.get(`/api/pUsers/getAllSubDetails/${orgId}`, {
+            withCredentials: true,
+          });
+        }
+        const { brands, categories, subcategories, godowns, priceLevels } =
+          res.data.data;
+        setBrand(brands);
+        setCategory(categories);
+        setSubcategory(subcategories);
+
+        setGodown(godowns);
+        const defaultGodown = godowns.find((g) => g?.defaultGodown === true);
+        setDefaultGodown(defaultGodown._id);
+
+        if (defaultGodown && locationRows?.length === 0 ) {
+          
+          setLocationRows([
+            {
+              godown: defaultGodown?._id || "",
+              // godown: defaultGodown?.name,
+              balance_stock: 0,
+              // defaultGodown: true,
+            },
+          ]);
+        } else {
+
+          setLocationRows([
+            {
+              godown: "",
+              balance_stock: "",
+            },
+          ]);
+        }
+
+        setPriceLevel(priceLevels);
+      } catch (error) {
+        console.log(error);
+        toast.error(error.response.data.message);
+      }
+    };
+
+    fetchAllSubDetails();
+    fetchHsn();
+  }, [orgId]);
 
   useEffect(() => {
     if (Object.keys(productData)?.length > 0) {
@@ -87,15 +141,10 @@ function AddProductForm({
         setRows(() => [...Priceleveles, { pricelevel: "", pricerate: "" }]);
       }
 
-      if (
-        GodownList?.length === 1 &&
-        !GodownList[0]?.hasOwnProperty("godown")
-      ) {
-        setLocationRows([{ godown: "", balance_stock: "" }]);
-        setOriginalGodownList(GodownList);
-      } else {
-        setLocationRows(GodownList);
-      }
+      console.log(GodownList);
+      setLocationRows(GodownList);
+
+   
 
       setHsn_code(hsn_id);
       if (isBatchEnabledInCompany) {
@@ -108,62 +157,18 @@ function AddProductForm({
     (state) => state.secSelectedOrganization.secSelectedOrg.gdnEnabled
   );
 
-  // api call to fetch all sub details
 
-  useEffect(() => {
-    const fetchAllSubDetails = async () => {
-      try {
-        let res;
-        if (userType === "secondaryUser") {
-          res = await api.get(`/api/sUsers/getAllSubDetails/${orgId}`, {
-            withCredentials: true,
-          });
-        } else if (userType === "primaryUser") {
-          res = await api.get(`/api/pUsers/getAllSubDetails/${orgId}`, {
-            withCredentials: true,
-          });
-        }
-        const { brands, categories, subcategories, godowns, priceLevels } =
-          res.data.data;
-        setBrand(brands);
-        setCategory(categories);
-        setSubcategory(subcategories);
+  // useEffect(()=>{
 
-        setGodown(godowns);
-        const defaultGodown = godowns.find((g) => g?.defaultGodown === true);
-        setDefaultGodown(defaultGodown._id);
-        // console.log(defaultGodown);
 
-        if (defaultGodown && locationRows?.length === 0) {
-          setLocationRows([
-            {
-              godown: defaultGodown?._id || "",
-              // godown: defaultGodown?.name,
-              balance_stock: 0,
-              // defaultGodown: true,
-            },
-          ]);
-        } else {
-          setLocationRows([
-            {
-              godown: "",
-              balance_stock: "",
-            },
-          ]);
-        }
+  // }.[])
 
-        // console.log(godowns);
 
-        setPriceLevel(priceLevels);
-      } catch (error) {
-        console.log(error);
-        toast.error(error.response.data.message);
-      }
-    };
 
-    fetchAllSubDetails();
-    fetchHsn();
-  }, [orgId]);
+
+
+  console.log(locationRows);
+
 
   const fetchHsn = async () => {
     try {
@@ -172,8 +177,6 @@ function AddProductForm({
       });
 
       setHsn(res.data.data);
-
-      // console.log(res.data.organizationData);
     } catch (error) {
       console.log(error);
     }
@@ -188,12 +191,7 @@ function AddProductForm({
     setRows([...rows, { pricelevel: "", pricerate: "" }]);
   };
 
-  // console.log(rows);
-  // console.log(priceLevel);
-
   const handleDeleteRow = (id) => {
-    // console.log(id);
-
     if (rows?.length > 1) {
       setRows(rows.filter((row) => row?.pricelevel !== id));
     } else {
@@ -352,6 +350,9 @@ function AddProductForm({
     }
 
     const getLocation = () => {
+      if (!defaultGodown) {
+        toast.error("Your Default Godown is not Enabled");
+      }
 
       let noLocation;
 
@@ -377,7 +378,6 @@ function AddProductForm({
 
         return updatedLocations;
       }
-
     };
 
     // Create form data
@@ -407,6 +407,8 @@ function AddProductForm({
 
     submitData(formData);
   };
+
+  console.log(locationRows);
 
   return (
     <section className="  py-1 bg-blueGray-50">

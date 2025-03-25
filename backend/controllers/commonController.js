@@ -124,7 +124,12 @@ export const addProduct = async (req, res) => {
         alt_unit,
         unit_conversion,
         alt_unit_conversion,
-        hsn_code: hsn_id,
+        hsn_code,
+        cgst,
+        sgst,
+        igst,
+        cess,
+        addl_cess,
         purchase_price,
         item_mrp,
         purchase_cost,
@@ -133,22 +138,21 @@ export const addProduct = async (req, res) => {
       },
     } = req;
 
+    // // Fetch HSN details
+    // const hsnDetails = await hsnModel.findById(hsn_id);
 
-    // Fetch HSN details
-    const hsnDetails = await hsnModel.findById(hsn_id);
-
-    // Extract required fields from HSN details
-    let cgst, sgst, igst, cess, addl_cess, hsn_code;
-    if (hsnDetails) {
-      ({
-        igstRate: igst,
-        cgstRate: cgst,
-        sgstUtgstRate: sgst,
-        onValue: cess,
-        onQuantity: addl_cess,
-        hsn: hsn_code,
-      } = hsnDetails);
-    }
+    // // Extract required fields from HSN details
+    // let cgst, sgst, igst, cess, addl_cess, hsn_code;
+    // if (hsnDetails) {
+    //   ({
+    //     igstRate: igst,
+    //     cgstRate: cgst,
+    //     sgstUtgstRate: sgst,
+    //     onValue: cess,
+    //     onQuantity: addl_cess,
+    //     hsn: hsn_code,
+    //   } = hsnDetails);
+    // }
 
     // Prepare data to save
     const dataToSave = {
@@ -218,8 +222,12 @@ export const editProduct = async (req, res) => {
         alt_unit,
         unit_conversion,
         alt_unit_conversion,
-        hsn_code: hsn_id,
-        
+        hsn_code,
+        cgst,
+        sgst,
+        igst,
+        cess,
+        addl_cess,
         purchase_price,
         item_mrp,
         purchase_cost,
@@ -228,22 +236,6 @@ export const editProduct = async (req, res) => {
         batchEnabled,
       },
     } = req;
-
-    // Fetch HSN details
-    const hsnDetails = await hsnModel.findById(hsn_id);
-
-    // Extract required fields from HSN details
-    let cgst, sgst, igst, cess, addl_cess, hsn_code;
-    if (hsnDetails) {
-      ({
-        igstRate: igst,
-        cgstRate: cgst,
-        sgstUtgstRate: sgst,
-        onValue: cess,
-        onQuantity: addl_cess,
-        hsn: hsn_code,
-      } = hsnDetails);
-    }
 
     // Prepare data to save
     const dataToSave = {
@@ -750,7 +742,7 @@ export const addProductSubDetails = async (req, res) => {
         //       },
         //     }
         //   );
-          
+
         // }
         break;
       case "pricelevel":
@@ -764,18 +756,17 @@ export const addProductSubDetails = async (req, res) => {
         };
         break;
       default:
-        return res
-          .status(400)
-          .json({ message: "Invalid sub-detail type", });
+        return res.status(400).json({ message: "Invalid sub-detail type" });
     }
 
     const newSubDetail = new Model(dataToSave);
     await newSubDetail.save();
-    
-    const companyUpdate=key==="godown" ? company : null
 
-    res.status(201).json({ message: `${key} added successfully`, companyUpdate });
-    
+    const companyUpdate = key === "godown" ? company : null;
+
+    res
+      .status(201)
+      .json({ message: `${key} added successfully`, companyUpdate });
   } catch (error) {
     console.error("Error in addProductSubDetails:", error);
     res
@@ -2005,7 +1996,7 @@ export const addCash = async (req, res) => {
       cmp_id,
       "Cash-in-Hand",
       result._id,
-    
+
       session
     );
 
