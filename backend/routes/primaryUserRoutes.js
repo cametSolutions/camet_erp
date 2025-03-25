@@ -1,14 +1,14 @@
 import express from 'express';
 const router = express.Router();
 import { authPrimary } from '../middlewares/authPrimaryUsers.js';
-import { registerPrimaryUser,login,addOrganizations,
-  primaryUserLogout ,getPrimaryUserData,getOrganizations,
+import { registerPrimaryUser,login,
+  primaryUserLogout ,getPrimaryUserData,
   addSecUsers,fetchSecondaryUsers,
   fetchOutstandingTotal,fetchOutstandingDetails,confirmCollection,
   cancelTransaction,fetchBanks,bankList,
-  sendOtp,submitOtp,resetPassword,getTransactionDetails,getSingleOrganization,
-  editOrg,addParty,addDataToOrg,editDataInOrg,deleteDataInOrg,
-  fetchHsn,deleteProduct,productDetails
+  sendOtp,submitOtp,resetPassword,getTransactionDetails,
+  addParty,addDataToOrg,editDataInOrg,deleteDataInOrg,
+  fetchHsn
   ,PartyList,deleteParty,getSinglePartyDetails,editParty,
   fetchFilters,createInvoice,addBulkProducts,invoiceList,
 getBankDetails,getSecUserDetails,
@@ -22,22 +22,21 @@ getBankDetails,getSecUserDetails,
 
   import { cancelPurchase } from '../controllers/purchaseController.js';
 
-import {addProduct,editProduct,getCreditNoteDetails,transactions,fetchAdditionalCharges, getDebitNoteDetails,
+import {getCreditNoteDetails,transactions,fetchAdditionalCharges, getDebitNoteDetails,
   getReceiptDetails,getPaymentDetails,getProductSubDetails,deleteProductSubDetails,editProductSubDetails,addHsn,getSingleHsn,editHsn,deleteHsn,getSalesDetails,getPurchaseDetails,
   updateMissingBillIds,addBank,editBank} from "../controllers/commonController.js";
-import { singleUpload } from '../multer/multer.js';
 import { primaryIsBlocked } from '../middlewares/isBlocked.js';
 import { companyAuthentication } from '../middlewares/authCompany.js';
 import { getStockTransferDetails } from '../controllers/commonController.js';
 
 router.post('/register', registerPrimaryUser);
 router.post('/login', login);
-router.post('/addOrganizations', authPrimary,primaryIsBlocked,addOrganizations);
-router.post('/editOrg/:id', authPrimary,primaryIsBlocked,editOrg);
+// router.post('/addOrganizations', authPrimary,primaryIsBlocked,addOrganizations);
+// router.post('/editOrg/:id', authPrimary,primaryIsBlocked,editOrg);
 router.post('/primaryUserLogout', authPrimary,primaryIsBlocked,primaryUserLogout);
 router.get('/getPrimaryUserData', authPrimary,primaryIsBlocked,getPrimaryUserData);
-router.get('/getOrganizations', authPrimary,primaryIsBlocked,getOrganizations);
-router.get('/getSingleOrganization/:id', authPrimary,primaryIsBlocked,getSingleOrganization);
+// router.get('/getOrganizations', authPrimary,primaryIsBlocked,getOrganizations);
+// router.get('/getSingleOrganization/:id', authPrimary,primaryIsBlocked,getSingleOrganization);
 router.post('/addSecUsers', authPrimary,primaryIsBlocked,addSecUsers);
 router.get('/fetchSecondaryUsers', authPrimary,primaryIsBlocked,fetchSecondaryUsers);
 router.get('/fetchOutstandingTotal/:cmp_id', authPrimary,primaryIsBlocked,companyAuthentication,fetchOutstandingTotal);
@@ -57,11 +56,11 @@ router.post('/editDataInOrg/:cmp_id',authPrimary,primaryIsBlocked,companyAuthent
 router.post('/deleteDataInOrg/:cmp_id',authPrimary,primaryIsBlocked,companyAuthentication,deleteDataInOrg)
 router.get('/fetchHsn/:cmp_id',authPrimary,primaryIsBlocked,fetchHsn)
 router.get('/fetchFilters/:cmp_id',authPrimary,primaryIsBlocked,companyAuthentication,fetchFilters)
-router.post('/addProduct',authPrimary,primaryIsBlocked,addProduct)
+// router.post('/addProduct',authPrimary,primaryIsBlocked,addProduct)
 // router.get('/getProducts/:cmp_id',authPrimary,primaryIsBlocked,companyAuthentication,getProducts)
-router.delete('/deleteProduct/:id',authPrimary,primaryIsBlocked,deleteProduct)
-router.get('/productDetails/:id',authPrimary,primaryIsBlocked,productDetails)
-router.post('/editProduct/:id',authPrimary,primaryIsBlocked,editProduct)
+// router.delete('/deleteProduct/:id',authPrimary,primaryIsBlocked,deleteProduct)
+// router.get('/productDetails/:id',authPrimary,primaryIsBlocked,productDetails)
+// router.post('/editProduct/:id',authPrimary,primaryIsBlocked,editProduct)
 router.get('/PartyList/:cmp_id',authPrimary,primaryIsBlocked,companyAuthentication,PartyList)
 router.delete('/deleteParty/:id',authPrimary,primaryIsBlocked,deleteParty)
 router.get('/getSinglePartyDetails/:id',authPrimary,primaryIsBlocked,getSinglePartyDetails)

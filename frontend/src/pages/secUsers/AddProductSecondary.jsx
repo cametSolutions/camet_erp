@@ -4,7 +4,7 @@ import { useSelector } from "react-redux";
 import api from "../../api/api";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
-import AddProductForm from "../../components/common/Forms/AddProductsForm2";
+import AddProductForm from "../../components/common/Forms/AddProductsForm";
 import TitleDiv from "@/components/common/TitleDiv";
 
 function AddProductSecondary() {

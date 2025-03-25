@@ -10,7 +10,7 @@ import { useSelector } from "react-redux";
 import { units } from "../../../../constants/units";
 import api from "../../../api/api";
 
-function AddProductForm2({ orgId, submitData, productData = {}, userType }) {
+function AddProductForm({ orgId, submitData, productData = {}, userType }) {
   // State management
   const [tab, setTab] = useState("priceLevel");
   const [formState, setFormState] = useState({
@@ -25,14 +25,14 @@ function AddProductForm2({ orgId, submitData, productData = {}, userType }) {
     cgst: 0,
     sgst: 0,
     igst: 0,
-    cess:0,
-    addl_cess:0,
+    cess: 0,
+    addl_cess: 0,
     purchase_price: "",
     purchase_cost: "",
     item_mrp: 0,
-    selectedBrand: "",
-    selectedCategory: "",
-    selectedSubcategory: "",
+    selectedBrand: null,
+    selectedCategory: null,
+    selectedSubcategory: null,
     batchEnabled: false,
   });
 
@@ -45,9 +45,6 @@ function AddProductForm2({ orgId, submitData, productData = {}, userType }) {
     godown: "",
     priceLevel: [],
   });
-
-  console.log(optionsData.hsn);
-  // console.log(formState);
 
   // Dynamic table priceLevelRows
   const [priceLevelRows, setPriceLevelRows] = useState([
@@ -66,18 +63,14 @@ function AddProductForm2({ orgId, submitData, productData = {}, userType }) {
     const { name, value, type } = e.target;
 
     if (name === "hsn_code") {
-      // console.log(value);
       const hsnDetails = optionsData.hsn.find((hsn) => hsn?.hsn === value);
-      console.log(hsnDetails);
 
       if (hsnDetails) {
         const igst = Number(hsnDetails?.igstRate) || 0;
         const cgst = Number(hsnDetails?.cgstRate) || 0;
         const sgst = Number(hsnDetails?.sgstUtgstRate) || 0;
-        const cess= Number(hsnDetails?.onValue) || 0;
-        const addl_cess= Number(hsnDetails?.onQuantity) || 0;
-
-        // console.log(igst, cgst, sgst);
+        const cess = Number(hsnDetails?.onValue) || 0;
+        const addl_cess = Number(hsnDetails?.onQuantity) || 0;
 
         setFormState((prev) => ({
           ...prev,
@@ -86,7 +79,7 @@ function AddProductForm2({ orgId, submitData, productData = {}, userType }) {
           cgst,
           sgst,
           cess,
-          addl_cess
+          addl_cess,
         }));
       }
     } else {
@@ -153,14 +146,14 @@ function AddProductForm2({ orgId, submitData, productData = {}, userType }) {
         cgst: cgst || 0,
         sgst: sgst || 0,
         igst: igst || 0,
-        cess:cess || 0,
-        addl_cess:addl_cess || 0,
+        cess: cess || 0,
+        addl_cess: addl_cess || 0,
         purchase_price: purchase_price || "",
         purchase_cost: purchase_cost || "",
         item_mrp: item_mrp || 0,
-        selectedBrand: brand || "",
-        selectedCategory: category || "",
-        selectedSubcategory: sub_category || "",
+        selectedBrand: brand || null,
+        selectedCategory: category || null,
+        selectedSubcategory: sub_category || null,
         batchEnabled: isBatchEnabledInCompany ? batchEnabled : false,
       });
 
@@ -477,7 +470,7 @@ function AddProductForm2({ orgId, submitData, productData = {}, userType }) {
     if (!validateForm()) return;
 
     const formData = prepareFormData();
-    // console.log(formData);
+    console.log(formData);
     // Uncomment to actually submit the data
     submitData(formData);
   };
@@ -1039,4 +1032,4 @@ function AddProductForm2({ orgId, submitData, productData = {}, userType }) {
   );
 }
 
-export default AddProductForm2;
+export default AddProductForm;

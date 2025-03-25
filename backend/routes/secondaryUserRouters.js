@@ -3,10 +3,10 @@ const router = express.Router();
 import {login,getSecUserData,
     confirmCollection,logout,
     cancelTransaction,fetchBanks,sendOtp,
-    submitOtp,resetPassword,getTransactionDetails,PartyList,addParty,getProducts,invoiceList,getSinglePartyDetails,editParty,
+    submitOtp,resetPassword,getTransactionDetails,PartyList,addParty,invoiceList,getSinglePartyDetails,editParty,
     deleteParty,getSingleOrganization,fetchHsn,
-    addDataToOrg,editDataInOrg,deleteDataInOrg,
-    productDetails,deleteProduct,saveOrderNumber,
+    addDataToOrg,editDataInOrg,deleteDataInOrg
+    ,saveOrderNumber,
     getInvoiceDetails,fetchFilters,deleteAdditionalCharge,
     addAditionalCharge,EditAditionalCharge,addconfigurations
     ,saveSalesNumber,fetchAdditionalDetails,
@@ -23,14 +23,14 @@ import {login,getSecUserData,
     editSubGroup,
     addPartyOpening,
     getPartyOpening,
-    editPartyOpening
+    editPartyOpening,
    } from "../controllers/secondaryUserController.js"
  
 import { createPurchase,editPurchase,cancelPurchase } from '../controllers/purchaseController.js';
 import { createCreditNote,cancelCreditNote ,editCreditNote} from '../controllers/creditNoteController.js';
 import {createSale,editSale,cancelSale,} from '../controllers/saleController.js';
 import { cancelDebitNote, createDebitNote, editDebitNote } from '../controllers/debitNoteController.js';
-import { getStockTransferDetails,addProduct ,editProduct,getCreditNoteDetails,transactions,fetchAdditionalCharges, getDebitNoteDetails,getReceiptDetails,getPaymentDetails,getProductSubDetails,deleteProductSubDetails,editProductSubDetails,addProductSubDetails,addHsn,getSingleHsn,editHsn,deleteHsn,getSalesDetails,getPurchaseDetails,getOpeningBalances, findSourceBalance, findSourceDetails, findSourceTransactions, addBank, editBank, addCash, getBankDetails, getCashDetails, editCash, sendPdfViaEmail} from '../controllers/commonController.js';
+import { getStockTransferDetails,getCreditNoteDetails,transactions,fetchAdditionalCharges, getDebitNoteDetails,getReceiptDetails,getPaymentDetails,getProductSubDetails,deleteProductSubDetails,editProductSubDetails,addProductSubDetails,addHsn,getSingleHsn,editHsn,deleteHsn,getSalesDetails,getPurchaseDetails,getOpeningBalances, findSourceBalance, findSourceDetails, findSourceTransactions, addBank, editBank, addCash, getBankDetails, getCashDetails, editCash, sendPdfViaEmail} from '../controllers/commonController.js';
 import { authSecondary } from '../middlewares/authSecUsers.js';
 import { secondaryIsBlocked } from '../middlewares/isBlocked.js';
 import { companyAuthentication } from '../middlewares/authCompany.js';
@@ -43,10 +43,12 @@ import { addEmailConfiguration, getConfiguration, getBarcodeList, addBarcodeData
 import { updateSecondaryUserConfiguration } from '../helpers/saleOrderHelper.js';
 import { addAccountGroupIdToOutstanding, addAccountGroupIdToParties, convertPrimaryToSecondary, createAccountGroups, updateDateFieldsByCompany, updateSalesItemUnitFields, updateUnitFields } from '../controllers/testingController.js';
 import { authPrimary } from '../middlewares/authPrimaryUsers.js';
-import { addOrganizations, addSecondaryConfigurations, addSecUsers, editOrg, editSecUSer, fetchConfigurationCurrentNumber, fetchGodownsAndPriceLevels, fetchSecondaryUsers, getOrganizations, getSecUserDetails } from '../controllers/primaryUserController.js';
+import {  addSecondaryConfigurations, addSecUsers, editSecUSer, fetchConfigurationCurrentNumber, fetchGodownsAndPriceLevels, fetchSecondaryUsers, getSecUserDetails } from '../controllers/primaryUserController.js';
 
 import { getSummary } from "../controllers/summaryController.js"
 import { fetchOutstandingDetails, fetchOutstandingTotal, getOutstandingSummary } from '../controllers/outStandingController.js';
+import { addProduct, deleteProduct, productDetails,editProduct, getProducts } from '../controllers/productController.js';
+import { addOrganizations, editOrg, getOrganizations } from '../controllers/organizationController.js';
 
 router.post('/login',login)
 router.post('/sendOtp',sendOtp)
