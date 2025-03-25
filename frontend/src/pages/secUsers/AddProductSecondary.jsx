@@ -6,17 +6,19 @@ import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import AddProductForm from "../../components/common/Forms/AddProductsForm";
 import TitleDiv from "@/components/common/TitleDiv";
+import { useState } from "react";
 
 function AddProductSecondary() {
+  const [loading, setLoading] = useState(false);
 
-  const {_id:orgId, batchEnabled:isBatchEnabledInCompany} = useSelector(
+  const { _id: orgId } = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
   const navigate = useNavigate();
 
-
   const submitHandler = async (formData) => {
     try {
+      setLoading(true);
       const res = await api.post("/api/sUsers/addProduct", formData, {
         headers: {
           "Content-Type": "application/json",
@@ -29,19 +31,24 @@ function AddProductSecondary() {
     } catch (error) {
       toast.error(error.response.data.message);
       console.log(error);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <div className="flex-1">
-
-
-      <TitleDiv title="Add Product" from="/sUsers/productList"/>
+      <TitleDiv
+        title="Add Product"
+        from="/sUsers/productList"
+        loading={loading}
+      />
       <AddProductForm
         orgId={orgId}
         submitData={submitHandler}
         userType="secondaryUser"
-        isBatchEnabledInCompany={isBatchEnabledInCompany}
+        setLoading={setLoading}
+        loading={loading}
       />
     </div>
   );

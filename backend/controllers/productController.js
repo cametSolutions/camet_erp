@@ -36,6 +36,32 @@ export const addProduct = async (req, res) => {
       },
     } = req;
 
+    // Check for existing product by name and cmp_id
+    const existingProductByName = await productModel.findOne({
+      product_name: { $regex: new RegExp(`^${product_name}$`, "i") },
+      cmp_id,
+    });
+
+    // Check for existing product by code and cmp_id
+    const existingProductByCode = await productModel.findOne({
+      product_code: { $regex: new RegExp(`^${product_code}$`, "i") },
+      cmp_id,
+    });
+
+    if (existingProductByName) {
+      return res.status(400).json({
+        success: false,
+        message: "Product with this name already exists for this company.",
+      });
+    }
+
+    if (existingProductByCode) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Product with this product code already exists for this company.",
+      });
+    }
     // Prepare data to save
     const dataToSave = {
       cmp_id,
@@ -93,6 +119,7 @@ export const editProduct = async (req, res) => {
   try {
     const {
       body: {
+        cmp_id,
         product_name,
         product_code,
         balance_stock,
@@ -117,6 +144,25 @@ export const editProduct = async (req, res) => {
         batchEnabled,
       },
     } = req;
+
+    // Check for existing product by name and cmp_id
+    const existingProductByName = await productModel.findOne({
+      product_name: { $regex: new RegExp(`^${product_name}$`, "i") },
+      cmp_id,
+    });
+
+    // Check for existing product by code and cmp_id
+    const existingProductByCode = await productModel.findOne({
+      product_code: { $regex: new RegExp(`^${product_code}$`, "i") },
+      cmp_id,
+    });
+
+    if (existingProductByName) {
+      return res.status(400).json({
+        success: false,
+        message: "Product with this name already exists for this company.",
+      });
+    }
 
     // Prepare data to save
     const dataToSave = {

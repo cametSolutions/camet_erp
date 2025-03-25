@@ -8,12 +8,14 @@ import { toast } from "react-toastify";
 import { useNavigate,  useParams } from "react-router-dom";
 import AddProductForm from "../../components/common/Forms/AddProductsForm";
 import TitleDiv from "@/components/common/TitleDiv";
+import { set } from "mongoose";
 
 function EditProductSecondary() {
   const { id } = useParams();
   const [productData, setProductData] = useState({});
+  const [loading, setLoading] = useState(false);
 
-  const {_id:orgId, batchEnabled:isBatchEnabledInCompany} = useSelector(
+  const {_id:orgId} = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
 
@@ -21,7 +23,9 @@ function EditProductSecondary() {
   ////fetching data for edit
   useEffect(() => {
     const getProductDetails = async () => {
+
       try {
+        setLoading(true);
         const res = await api.get(`/api/sUsers/productDetails/${id}`, {
           withCredentials: true,
         });
@@ -29,6 +33,8 @@ function EditProductSecondary() {
         setProductData(res.data.data);
       } catch (error) {
         console.log(error);
+      }finally{
+        setLoading(false);
       }
     };
     getProductDetails();
@@ -40,6 +46,7 @@ function EditProductSecondary() {
 
   const submitHandler = async (formData) => {
     try {
+      setLoading(true);
       const res = await api.post(`/api/sUsers/editProduct/${id}`, formData, {
         headers: {
           "Content-Type": "application/json",
@@ -52,18 +59,21 @@ function EditProductSecondary() {
     } catch (error) {
       toast.error(error.response.data.message);
       console.log(error);
+    }finally{
+      setLoading(false);
     }
   };
 
   return (
     <div className="flex-1">
-      <TitleDiv title="Edit Product" from="/sUsers/productList" />
+      <TitleDiv title="Edit Product" from="/sUsers/productList" loading={loading}  />
       <AddProductForm
         orgId={orgId}
         submitData={submitHandler}
         productData={productData}
         userType="secondaryUser"
-        // isBatchEnabledInCompany={isBatchEnabledInCompany}
+        loading={loading}
+        setLoading={setLoading}
       />
     </div>
   );

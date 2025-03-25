@@ -10,7 +10,7 @@ import { useSelector } from "react-redux";
 import { units } from "../../../../constants/units";
 import api from "../../../api/api";
 
-function AddProductForm({ orgId, submitData, productData = {}, userType }) {
+function AddProductForm({ orgId, submitData, productData = {}, userType,setLoading=()=>{} ,loading}) {
   // State management
   const [tab, setTab] = useState("priceLevel");
   const [formState, setFormState] = useState({
@@ -107,8 +107,6 @@ function AddProductForm({ orgId, submitData, productData = {}, userType }) {
   // Initialize form data from productData
   useEffect(() => {
     if (Object.keys(productData)?.length > 0) {
-      console.log(productData);
-
       const {
         product_name,
         product_code,
@@ -180,6 +178,7 @@ function AddProductForm({ orgId, submitData, productData = {}, userType }) {
   // Fetch all required data
   const fetchAllData = useCallback(async () => {
     try {
+      setLoading(true);
       let subDetailsPromise;
       if (userType === "secondaryUser") {
         subDetailsPromise = api.get(`/api/sUsers/getAllSubDetails/${orgId}`, {
@@ -237,6 +236,8 @@ function AddProductForm({ orgId, submitData, productData = {}, userType }) {
     } catch (error) {
       console.error("Failed to fetch data:", error);
       toast.error(error.response?.data?.message || "Failed to load data");
+    } finally {
+      setLoading(false);
     }
   }, [orgId, userType, locationRows.length]);
 
@@ -470,7 +471,6 @@ function AddProductForm({ orgId, submitData, productData = {}, userType }) {
     if (!validateForm()) return;
 
     const formData = prepareFormData();
-    console.log(formData);
     // Uncomment to actually submit the data
     submitData(formData);
   };
@@ -531,7 +531,7 @@ function AddProductForm({ orgId, submitData, productData = {}, userType }) {
   };
 
   return (
-    <section className="py-1 bg-blueGray-50 shadow-xl w-full lg:w-10/12 flex flex-col items-center justify-center mx-auto">
+    <section className={` ${loading && "opacity-50 pointer-events-none"}  py-1 bg-blueGray-50 shadow-xl w-full lg:w-10/12 flex flex-col items-center justify-center mx-auto`}>
       <div className=" px-4 mx-auto mt-6  ">
         <div className="relative flex flex-col min-w-0 break-words w-full mb-6  rounded-lg bg-blueGray-100 border-0">
           <div className="rounded-t bg-white mb-0 px-6 py-6">
@@ -832,7 +832,7 @@ function AddProductForm({ orgId, submitData, productData = {}, userType }) {
       </div>
 
       {/* Price Level and Location Tabs */}
-      <div className=" px-4 sm:px-8 mx-auto ">
+      <div className={` ${loading && "opacity-50 pointer-events-none"}  px-4 sm:px-8 mx-auto`}>
         <div className="relative flex flex-col min-w-0 break-words w-full mb-6 shadow-lg rounded-lg bg-blueGray-100 border-0">
           <div className="rounded-t  mb-0 px-6 py-6">
             <div className="flex justify-center ">

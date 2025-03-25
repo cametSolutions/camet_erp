@@ -8,13 +8,10 @@ import { Link } from "react-router-dom";
 import { MdDelete } from "react-icons/md";
 import Swal from "sweetalert2";
 
-import { IoIosAddCircle, IoIosArrowRoundBack } from "react-icons/io";
 import { FixedSizeList as List } from "react-window";
 import { useSelector } from "react-redux";
 
 import SearchBar from "../../components/common/SearchBar";
-import CustomBarLoader from "../../components/common/CustomBarLoader";
-import { useNavigate } from "react-router-dom";
 import { PiBarcode } from "react-icons/pi";
 import BarcodeModal from "../../components/common/BarcodeModal";
 import TitleDiv from "@/components/common/TitleDiv";
@@ -37,7 +34,6 @@ function ProductListSecondary() {
     (state) => state.secSelectedOrganization.secSelectedOrg.type
   );
 
-  const navigate = useNavigate();
   const searchData = (data) => {
     setSearch(data);
   };
@@ -88,6 +84,7 @@ function ProductListSecondary() {
 
     // If user confirms deletion
     if (confirmation.isConfirmed) {
+      setLoader(true);
       try {
         const res = await api.delete(`/api/sUsers/deleteProduct/${id}`, {
           headers: {
@@ -111,6 +108,8 @@ function ProductListSecondary() {
       } catch (error) {
         toast.error(error.response.data.message);
         console.log(error);
+      } finally {
+        setLoader(false);
       }
     }
   };
@@ -214,6 +213,7 @@ function ProductListSecondary() {
       <div className="flex-1 bg-slate-50  h-screen overflow-hidden  ">
         <div className="sticky top-0 z-20 ">
           <TitleDiv
+            loading={loader}
             title="Your Products"
             dropdownContents={[
               {
@@ -227,8 +227,6 @@ function ProductListSecondary() {
         </div>
 
         {/* adding party */}
-
-        {loader && <CustomBarLoader />}
 
         {!loader && products.length === 0 && (
           <div className="flex justify-center items-center mt-20 overflow-hidden font-bold text-gray-500">
