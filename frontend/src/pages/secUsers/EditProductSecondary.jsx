@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import api from "../../api/api";
 import { toast } from "react-toastify";
-import { useNavigate,  useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import AddProductForm from "../../components/common/Forms/AddProductsForm";
 import TitleDiv from "@/components/common/TitleDiv";
 
@@ -14,15 +14,13 @@ function EditProductSecondary() {
   const [productData, setProductData] = useState({});
   const [loading, setLoading] = useState(false);
 
-  const {_id:orgId} = useSelector(
+  const { _id: orgId } = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
-
 
   ////fetching data for edit
   useEffect(() => {
     const getProductDetails = async () => {
-
       try {
         setLoading(true);
         const res = await api.get(`/api/sUsers/productDetails/${id}`, {
@@ -32,7 +30,7 @@ function EditProductSecondary() {
         setProductData(res.data.data);
       } catch (error) {
         console.log(error);
-      }finally{
+      } finally {
         setLoading(false);
       }
     };
@@ -40,8 +38,6 @@ function EditProductSecondary() {
   }, [id]);
 
   const navigate = useNavigate();
-
-
 
   const submitHandler = async (formData) => {
     try {
@@ -54,18 +50,22 @@ function EditProductSecondary() {
       });
 
       toast.success(res.data.message);
-      navigate("/sUsers/productList",{replace:true});
+      navigate("/sUsers/productList", { replace: true });
     } catch (error) {
       toast.error(error.response.data.message);
       console.log(error);
-    }finally{
+    } finally {
       setLoading(false);
     }
   };
 
   return (
     <div className="flex-1">
-      <TitleDiv title="Edit Product" from="/sUsers/productList" loading={loading}  />
+      <TitleDiv
+        title="Edit Product"
+        from="/sUsers/productList"
+        loading={loading}
+      />
       <AddProductForm
         orgId={orgId}
         submitData={submitHandler}

@@ -129,12 +129,7 @@ const productSchema = new mongoose.Schema({
   product_master_id: {
     type: String,
   },
-  // subcategory_id: {
-  //   type: String,
-  // },
-  // brand_id: {
-  //   type: String,
-  // },
+
   batchEnabled: {
     type: Boolean,
     default: false,

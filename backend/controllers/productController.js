@@ -142,17 +142,20 @@ export const editProduct = async (req, res) => {
         Priceleveles,
         GodownList,
         batchEnabled,
+        gdnEnabled
       },
     } = req;
 
     // Check for existing product by name and cmp_id
     const existingProductByName = await productModel.findOne({
+      _id: { $ne: productId }, // Exclude the current product
       product_name: { $regex: new RegExp(`^${product_name}$`, "i") },
       cmp_id,
     });
 
     // Check for existing product by code and cmp_id
     const existingProductByCode = await productModel.findOne({
+      _id: { $ne: productId }, // Exclude the current product
       product_code: { $regex: new RegExp(`^${product_code}$`, "i") },
       cmp_id,
     });
@@ -189,6 +192,7 @@ export const editProduct = async (req, res) => {
       cess,
       addl_cess,
       batchEnabled,
+      gdnEnabled
     };
 
     const updateProduct = await productModel.findOneAndUpdate(

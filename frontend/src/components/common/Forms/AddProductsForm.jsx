@@ -478,6 +478,9 @@ function AddProductForm({
     if (!validateForm()) return;
 
     const formData = prepareFormData();
+
+    console.log(formData);
+    
     // Uncomment to actually submit the data
     submitData(formData);
   };

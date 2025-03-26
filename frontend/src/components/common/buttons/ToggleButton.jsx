@@ -1,7 +1,7 @@
 /* eslint-disable react/prop-types */
 import { useState, useEffect } from "react";
 
-const ToggleButton = ({ isChecked, onToggle,option }) => {
+const ToggleButton = ({ isChecked, onToggle, option }) => {
   // Initial state based on the isChecked prop
   const [checked, setChecked] = useState(isChecked);
 
@@ -12,14 +12,16 @@ const ToggleButton = ({ isChecked, onToggle,option }) => {
 
   const handleCheckboxChange = () => {
     const newChecked = !checked;
-    setChecked(newChecked);
-    const data={
-      title:option.dbField,
-      
-      checked:newChecked
-    }
+    
+    const data = {
+      title: option.dbField,
+      checked: newChecked
+    };
+
     if (onToggle) {
-      onToggle(data); // Pass the updated value to the parent
+      // Pass the new state to the parent component
+      // The parent will handle the API call and only update the state if successful
+      onToggle(data);
     }
   };
 

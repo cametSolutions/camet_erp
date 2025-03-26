@@ -4,7 +4,6 @@ import { FiUsers, FiSave, FiPercent, FiInfo, FiFileText } from "react-icons/fi";
 import { GiBank } from "react-icons/gi";
 import { RiStockFill } from "react-icons/ri";
 import { MdOutlineAttachMoney } from "react-icons/md";
-import useFetch from "../../../../customHook/useFetch";
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import api from "../../../../api/api";
@@ -21,23 +20,22 @@ import { RiMoneyDollarCircleFill } from "react-icons/ri";
 const SaleOrderPrintConfiguration = () => {
   const [settings, setSettings] = useState([]);
   const [printTitleModal, setPrintTitleModal] = useState(false);
+  const [loading, setLoading] = useState(false);
+
   const dispatch = useDispatch();
 
   ///// redux and api call
-  const cmp_id = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg._id
+  const { _id: cmp_id, configurations } = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg
   );
-  const {
-    data: apiData,
-    loading,
-    refreshHook,
-  } = useFetch(
-    `/api/sUsers/getPrintingConfiguration/${cmp_id}?voucher=saleOrder`
-  );
-  const data = apiData?.data;
+
+  const saleOrderConfigurations = configurations[0]?.printConfiguration?.filter(
+    (item) => item?.voucher === "saleOrder"
+  )[0];
+
 
   useEffect(() => {
-    if (data) {
+    if (saleOrderConfigurations) {
       setSettings([
         {
           title: "Print Title",
@@ -56,7 +54,7 @@ const SaleOrderPrintConfiguration = () => {
           to: "/sUsers/EnableCompanyDetails",
           active: true,
           toggle: true,
-          toggleValue: data.showCompanyDetails,
+          toggleValue: saleOrderConfigurations.showCompanyDetails,
           dbField: "showCompanyDetails",
         },
         {
@@ -66,7 +64,7 @@ const SaleOrderPrintConfiguration = () => {
           to: "/sUsers/enableDiscount",
           active: true,
           toggle: true,
-          toggleValue: data.showDiscount,
+          toggleValue: saleOrderConfigurations.showDiscount,
           dbField: "showDiscount",
         },
         {
@@ -74,9 +72,9 @@ const SaleOrderPrintConfiguration = () => {
           description:"Show discount amount and hide percentage in the invoice",
           icon: <FaDollarSign />,
           to: "/sUsers/enableDiscount",
-          active: data?.showDiscount,
+          active: saleOrderConfigurations?.showDiscount,
           toggle: true,
-          toggleValue: data.showDiscountAmount,
+          toggleValue: saleOrderConfigurations.showDiscountAmount,
           dbField: "showDiscountAmount",
         },
         {
@@ -86,7 +84,7 @@ const SaleOrderPrintConfiguration = () => {
           to: "/sUsers/enableHSN",
           active: true,
           toggle: true,
-          toggleValue: data.showHsn,
+          toggleValue: saleOrderConfigurations.showHsn,
           dbField: "showHsn",
         },
         {
@@ -96,7 +94,7 @@ const SaleOrderPrintConfiguration = () => {
           to: "/sUsers/enableTaxPercentage",
           active: true,
           toggle: true,
-          toggleValue: data.showTaxPercentage,
+          toggleValue: saleOrderConfigurations.showTaxPercentage,
           dbField: "showTaxPercentage",
         },
         {
@@ -107,7 +105,7 @@ const SaleOrderPrintConfiguration = () => {
           to: "/sUsers/EnableStockWiseTaxAmount",
           active: true,
           toggle: true,
-          toggleValue: data.showInclTaxRate,
+          toggleValue: saleOrderConfigurations.showInclTaxRate,
           dbField: "showInclTaxRate",
         },
         {
@@ -117,7 +115,7 @@ const SaleOrderPrintConfiguration = () => {
           to: "/sUsers/enableTaxAnalysis",
           active: true,
           toggle: true,
-          toggleValue: data.showTaxAnalysis,
+          toggleValue: saleOrderConfigurations.showTaxAnalysis,
           dbField: "showTaxAnalysis",
         },
         {
@@ -127,7 +125,7 @@ const SaleOrderPrintConfiguration = () => {
           to: "/sUsers/EnableTaxAmount",
           active: true,
           toggle: true,
-          toggleValue: data.showStockWiseTaxAmount,
+          toggleValue: saleOrderConfigurations.showStockWiseTaxAmount,
           dbField: "showStockWiseTaxAmount",
         },
         {
@@ -137,7 +135,7 @@ const SaleOrderPrintConfiguration = () => {
           to: "/sUsers/EnableTaxAmount",
           active: true,
           toggle: true,
-          toggleValue: data.showTaxAmount,
+          toggleValue: saleOrderConfigurations.showTaxAmount,
           dbField: "showTaxAmount",
         },
         {
@@ -147,7 +145,7 @@ const SaleOrderPrintConfiguration = () => {
           to: "/sUsers/enableTeamsConditions",
           active: true,
           toggle: true,
-          toggleValue: data.showTeamsAndConditions,
+          toggleValue: saleOrderConfigurations.showTeamsAndConditions,
           dbField: "showTeamsAndConditions",
         },
         {
@@ -157,7 +155,7 @@ const SaleOrderPrintConfiguration = () => {
           to: "/sUsers/enableBankDetails",
           active: true,
           toggle: true,
-          toggleValue: data.showBankDetails,
+          toggleValue: saleOrderConfigurations.showBankDetails,
           dbField: "showBankDetails",
         },
         {
@@ -167,7 +165,7 @@ const SaleOrderPrintConfiguration = () => {
           to: "/sUsers/EnableTaxAmount",
           active: true,
           toggle: true,
-          toggleValue: data.showRate,
+          toggleValue: saleOrderConfigurations.showRate,
           dbField: "showRate",
         },
         {
@@ -177,7 +175,7 @@ const SaleOrderPrintConfiguration = () => {
           to: "/sUsers/EnableTaxAmount",
           active: true,
           toggle: true,
-          toggleValue: data.showQuantity,
+          toggleValue: saleOrderConfigurations.showQuantity,
           dbField: "showQuantity",
         },
         {
@@ -187,7 +185,7 @@ const SaleOrderPrintConfiguration = () => {
           to: "/sUsers/EnableTaxAmount",
           active: true,
           toggle: true,
-          toggleValue: data.showStockWiseAmount,
+          toggleValue: saleOrderConfigurations.showStockWiseAmount,
           dbField: "showStockWiseAmount",
         },
         {
@@ -197,13 +195,13 @@ const SaleOrderPrintConfiguration = () => {
           to: "/sUsers/EnableTaxAmount",
           active: true,
           toggle: true,
-          toggleValue: data.showNetAmount,
+          toggleValue: saleOrderConfigurations.showNetAmount,
           dbField: "showNetAmount",
         },
        
       ]);
     }
-  }, [data]);
+  }, [saleOrderConfigurations]);
 
   const handleToggleChange = async (newState) => {
     const apiData = {
@@ -213,6 +211,7 @@ const SaleOrderPrintConfiguration = () => {
     };
 
     try {
+      setLoading(true);
       const res = await api.put(
         `/api/sUsers/updateConfiguration/${cmp_id}`,
         apiData,
@@ -225,10 +224,11 @@ const SaleOrderPrintConfiguration = () => {
       );
       dispatch(updateConfiguration(res?.data?.data));
 
-      refreshHook();
     } catch (error) {
       toast.error(error.response.data.message);
       console.log(error);
+    }finally{
+      setLoading(false)
     }
   };
 
@@ -254,7 +254,6 @@ const SaleOrderPrintConfiguration = () => {
       dispatch(updateConfiguration(res?.data?.data));
       localStorage.setItem("secOrg", JSON.stringify(res.data.data));
 
-      refreshHook();
     } catch (error) {
       toast.error(error.response.data.message);
       console.log(error);
@@ -273,7 +272,7 @@ const SaleOrderPrintConfiguration = () => {
         isOpen={printTitleModal}
         onClose={() => setPrintTitleModal(false)}
         onSubmit={savePrintTitle}
-        data={data}
+        data={saleOrderConfigurations}
         loading={loading}
       />
       <div className="space-y-4 b-white p-4 mx-1">

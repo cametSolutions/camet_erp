@@ -1,4 +1,3 @@
-/* eslint-disable react/jsx-key */
 import TitleDiv from "../../../../components/common/TitleDiv";
 import SettingsCard from "../../../../components/common/SettingsCard";
 import {
@@ -14,12 +13,24 @@ import { toast } from "react-toastify";
 import { useDispatch, useSelector } from "react-redux";
 import { useEffect, useState } from "react";
 import { updateConfiguration } from "../../../../../slices/secSelectedOrgSlice";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const StockItem = () => {
   const [loading, setLoading] = useState(false);
   const [settingsOptions, setSettingsOptions] = useState([{}]);
+  const [showGodownAlert, setShowGodownAlert] = useState(false);
+  const [showGodownDeclineAlert, setShowGodownDeclineAlert] = useState(false);
+  const [pendingGodownToggle, setPendingGodownToggle] = useState(null);
 
-  ///// redux and api call
   const { _id: cmp_id, configurations } = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
@@ -45,13 +56,11 @@ const StockItem = () => {
         title: "Enable Location",
         description: "Enable location tracking for all vouchers",
         icon: <FiMapPin />,
-        // to: "/sUsers/godown",
         active: true,
         toggle: true,
         toggleValue: configurations[0].gdnEnabled,
         dbField: "gdnEnabled",
       },
-
       {
         title: "Enable Batch",
         description:
@@ -63,7 +72,6 @@ const StockItem = () => {
         toggleValue: configurations[0].batchEnabled,
         dbField: "batchEnabled",
       },
-
       {
         title: "Price Level",
         description: "Enable Multiple Price level for invoice",
@@ -92,8 +100,19 @@ const StockItem = () => {
   const dispatch = useDispatch();
 
   const handleToggleChange = async (newState) => {
-    // setLoading(true);
     const { title, checked } = newState;
+
+    // Special handling for godown enable
+    if (title === "gdnEnabled" && checked) {
+      setPendingGodownToggle(newState);
+      setShowGodownAlert(true);
+      return;
+    } else if (title === "gdnEnabled" && !checked) {
+      console.log("here");
+
+      setShowGodownDeclineAlert(true);
+      return;
+    }
 
     const apiData = {
       fieldToUpdate: title,
@@ -113,29 +132,135 @@ const StockItem = () => {
         }
       );
 
+      // Update configurations only after successful API call
       dispatch(updateConfiguration(res?.data?.data));
-
-      // refreshHook();
     } catch (error) {
-      toast.error(error.response.data.message);
-      console.log(error);
+      toast.error(error.response?.data?.message || "Failed to update setting");
+      console.error(error);
     } finally {
       setLoading(false);
     }
   };
 
+  const handleGodownConfirm = async () => {
+    if (pendingGodownToggle) {
+      try {
+        setLoading(true);
+        const apiData = {
+          fieldToUpdate: pendingGodownToggle.title,
+          value: pendingGodownToggle.checked,
+        };
+
+        const res = await api.put(
+          `/api/sUsers/updateFirstLayerConfiguration/${cmp_id}`,
+          apiData,
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+            withCredentials: true,
+          }
+        );
+
+        dispatch(updateConfiguration(res?.data?.data));
+      } catch (error) {
+        toast.error(error.response?.data?.message || "Failed to enable godown");
+        console.error(error);
+      } finally {
+        setLoading(false);
+        setShowGodownAlert(false);
+        setPendingGodownToggle(null);
+      }
+    }
+  };
+
+  const handleGodownCancel = () => {
+    setShowGodownAlert(false);
+    setPendingGodownToggle(null);
+  };
+
   return (
     <div className="bg-white">
       <TitleDiv title="Stock Item " from="/sUsers/settings" loading={loading} />
-      <div className="space-y-4 b-white p-4   mx-1">
+      <div className="space-y-4 b-white p-4 mx-1">
         {settingsOptions.map((option, index) => (
           <SettingsCard
+            key={index}
             option={option}
             index={index}
             handleToggleChangeFromParent={handleToggleChange}
           />
         ))}
       </div>
+
+      {showGodownAlert && (
+        <AlertDialog open={showGodownAlert} onOpenChange={setShowGodownAlert}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Enable Godown Tracking</AlertDialogTitle>
+              <AlertDialogDescription>
+                Once enabled, godown tracking will be applied to ALL products.
+                This action cannot be undone,and this will take few seconds. Are
+                you sure you want to proceed?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={handleGodownCancel}>
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction onClick={handleGodownConfirm}>
+                Continue
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
+
+      {showGodownAlert && (
+        <AlertDialog open={showGodownAlert} onOpenChange={setShowGodownAlert}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Enable Godown Tracking</AlertDialogTitle>
+              <AlertDialogDescription>
+                Once enabled, godown tracking will be applied to ALL products.
+                This action cannot be undone,and this will take few seconds. Are
+                you sure you want to proceed?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={handleGodownCancel}>
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction onClick={handleGodownConfirm}>
+                Continue
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
+
+      {showGodownDeclineAlert && (
+        <AlertDialog
+          open={showGodownDeclineAlert}
+          onOpenChange={setShowGodownDeclineAlert}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Enable Godown Tracking</AlertDialogTitle>
+              <AlertDialogDescription>
+                Disabling godown tracking is not allowed since enabling godown
+                is permanent and cannot be undone
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleGodownConfirm}>
+                Okey
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
     </div>
   );
 };

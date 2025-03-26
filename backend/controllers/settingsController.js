@@ -1,6 +1,7 @@
+import mongoose from "mongoose";
 import barcodeModel from "../models/barcodeModel.js";
 import OragnizationModel from "../models/OragnizationModel.js";
-import { updateDateFieldsByCompany } from "./testingController.js";
+import productModel from "../models/productModel.js";
 
 /**
  * @desc  add email configuration for a company
@@ -770,6 +771,8 @@ export const updateFirstLayerConfiguration = async (req, res) => {
   const cmp_id = req?.params?.cmp_id;
   const { fieldToUpdate, value } = req.body;
 
+  const session = await mongoose.startSession();
+  
   try {
     // Validate inputs
     if (!cmp_id || !fieldToUpdate || value === undefined) {
@@ -778,9 +781,14 @@ export const updateFirstLayerConfiguration = async (req, res) => {
       });
     }
 
+    // Start a transaction
+    await session.startTransaction();
+
     // Find company and update configuration
-    const company = await OragnizationModel.findById(cmp_id);
+    const company = await OragnizationModel.findById(cmp_id).session(session);
     if (!company) {
+      await session.abortTransaction();
+      session.endSession();
       return res.status(404).json({ message: "Company not found" });
     }
 
@@ -792,14 +800,42 @@ export const updateFirstLayerConfiguration = async (req, res) => {
     // Update only the first element
     company.configurations[0][fieldToUpdate] = value;
 
+    // Special handling for gdnEnabled
+    if (fieldToUpdate === 'gdnEnabled' && value === true) {
+
+      console.log("here");
+      
+      // Update all products for this company to enable godown
+      const result = await productModel.updateMany(
+        { cmp_id: cmp_id }, 
+        { $set: { gdnEnabled: true } },
+        { session }
+      );
+      console.log("result", result);
+
+
+    }
+
+    
+
     // Save the updated company
-    await company.save();
+    await company.save({ session });
+
+    // Commit the transaction
+    await session.commitTransaction();
+    session.endSession();
 
     return res.status(200).json({
       message: "Configuration updated successfully",
       data: company,
     });
   } catch (error) {
+    // Abort transaction if it's still active
+    if (session.inTransaction()) {
+      await session.abortTransaction();
+      session.endSession();
+    }
+
     console.error("Error updating configuration:", error);
     return res.status(500).json({
       message: "Internal server error",
@@ -807,4 +843,3 @@ export const updateFirstLayerConfiguration = async (req, res) => {
     });
   }
 };
-
