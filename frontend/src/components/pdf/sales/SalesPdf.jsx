@@ -37,6 +37,9 @@ function SalesPdf({
   ).find((item) => item.voucher === "sale");
 
   const calculateTotalTax = () => {
+
+    // console.log(data.items.map((el) => el?.totalCessAmount));
+    
     const individualTax = data?.items?.map(
       (el) => el?.total - (el?.total * 100) / (parseFloat(el.igst) + 100)
     );
@@ -56,9 +59,14 @@ function SalesPdf({
   };
 
   const calculateTaxAmount = (godownOrBatch, item) => {
-    const { selectedPriceRate, count, discount } = godownOrBatch;
+    let { selectedPriceRate, count, discount } = godownOrBatch;
     const { isTaxInclusive, igst } = item;
     const igstValue = parseFloat(igst) || 0;
+
+    if (!item.hasGodownOrBatch) {
+      count = item.count;
+      discount = item.discount;
+    }
 
     let basePrice = Number(selectedPriceRate * count);
     let taxBasePrice = 0;
@@ -81,22 +89,43 @@ function SalesPdf({
 
     return taxAmount;
   };
+  const calculateCessAmount = (godownOrBatch, item) => {
+    let { selectedPriceRate, count, discount } = godownOrBatch;
+    const { isTaxInclusive, igst,cess,addl_cess } = item;
+    const igstValue = parseFloat(igst) || 0;
+    const cessValue = parseFloat(cess) || 0;
+    const addl_cessValue = parseFloat(addl_cess) || 0;
 
-  //// for batch and godown
+    if (!item.hasGodownOrBatch) {
+      count = item.count || 0;
+      discount = item.discount || 0;
+    }
 
-  // const calculateDiscount = (rate, count, taxAmt, finalAmt, isTaxInclusive) => {
-  //   // Calculate the total price
-  //   const totalPrice = rate * count;
+    let basePrice = Number(selectedPriceRate * count);
+    let taxBasePrice = 0;
 
-  //   // Check if tax is inclusive
-  //   if (isTaxInclusive) {
-  //     // For tax-inclusive items, directly compare totalPrice and finalAmt
-  //     return (totalPrice === finalAmt ? 0 : totalPrice - finalAmt).toFixed(2);
-  //   } else {
-  //     // For non-tax-inclusive items
-  //     return (totalPrice - (finalAmt - taxAmt)).toFixed(2);
-  //   }
-  // };
+    if (isTaxInclusive) {
+      taxBasePrice = Number((basePrice / (1 + igstValue / 100)).toFixed(2));
+    } else {
+      taxBasePrice = basePrice;
+    }
+
+    let priceAfterDiscount = taxBasePrice;
+
+    if (discount) {
+      priceAfterDiscount = Number((taxBasePrice - discount).toFixed(2));
+    }
+
+    const cessAmount= Number(
+      ((priceAfterDiscount * cessValue) / 100).toFixed(2)
+    );
+
+    const addl_cessAmount= Number(count*addl_cessValue);
+
+    const totalCessAmount = Number(cessAmount + addl_cessAmount) || 0;
+    item.totalCessAmount = totalCessAmount || 0;
+    return totalCessAmount;
+  };
 
   useEffect(() => {
     if (data && data.items) {
@@ -244,6 +273,11 @@ function SalesPdf({
                       Tax %
                     </th>
                   )}
+                  {configurations?.showTaxPercentage && (
+                    <th className="text-gray-700 font-bold uppercase p-2">
+                      Cess %
+                    </th>
+                  )}
 
                   {configurations?.showQuantity && (
                     <th className="text-gray-700 font-bold uppercase p-2">
@@ -258,7 +292,7 @@ function SalesPdf({
                   {configurations?.showDiscount &&
                     configurations?.showDiscountAmount && (
                       <th className="text-gray-700 font-bold uppercase p-2">
-                        Disc
+                        Disc 
                       </th>
                     )}
                   {configurations?.showDiscount &&
@@ -270,6 +304,11 @@ function SalesPdf({
                   {configurations?.showStockWiseTaxAmount && (
                     <th className="text-gray-700 font-bold uppercase p-2">
                       Tax
+                    </th>
+                  )}
+                  {configurations?.showStockWiseTaxAmount && (
+                    <th className="text-gray-700 font-bold uppercase p-2">
+                      Cess
                     </th>
                   )}
                   {configurations?.showStockWiseAmount && (
@@ -302,6 +341,15 @@ function SalesPdf({
                             (!el?.hasGodownOrBatch ? (
                               <td className=" text-black text-right pr-2 ">
                                 {el?.igst}
+                              </td>
+                            ) : (
+                              <td></td>
+                            ))}
+
+                          {configurations?.showTaxPercentage &&
+                            (!el?.hasGodownOrBatch ? (
+                              <td className=" text-black text-right pr-2 ">
+                                {el?.cess} & {el?.addl_cess}/{el.unit}
                               </td>
                             ) : (
                               <td></td>
@@ -339,11 +387,14 @@ function SalesPdf({
                             <td className=" text-black text-right pr-2 font-bold">
                               {el?.hasGodownOrBatch === true
                                 ? null
-                                : `  ${(
-                                    el?.total -
-                                    (el?.total * 100) /
-                                      (parseFloat(el.igst) + 100)
-                                  )?.toFixed(2)}`}
+                                : calculateTaxAmount(el?.GodownList[0], el)}
+                            </td>
+                          )}
+                          {configurations?.showStockWiseTaxAmount && (
+                            <td className=" text-black text-right pr-2 font-bold">
+                              {el?.hasGodownOrBatch === true
+                                ? null
+                                : calculateCessAmount(el?.GodownList[0], el)}
                             </td>
                           )}
 
@@ -375,6 +426,11 @@ function SalesPdf({
                                 {configurations?.showTaxPercentage && (
                                   <td className=" text-black text-right pr-2  text-[8px]">
                                     {el?.igst}
+                                  </td>
+                                )}
+                                {configurations?.showTaxPercentage && (
+                                  <td className=" text-black text-right pr-2  text-[8px]">
+                                    {el?.cess} & {el?.addl_cess}/{el.unit}
                                   </td>
                                 )}
 
@@ -409,6 +465,11 @@ function SalesPdf({
                                     {calculateTaxAmount(godownOrBatch, el)}
                                   </td>
                                 )}
+                                {configurations?.showStockWiseTaxAmount && (
+                                  <td className="  text-end pr-2">
+                                    {calculateCessAmount(godownOrBatch, el)}
+                                  </td>
+                                )}
 
                                 {configurations?.showStockWiseAmount && (
                                   <td className=" text-end pr-1">
@@ -437,6 +498,9 @@ function SalesPdf({
                   {configurations?.showTaxPercentage && (
                     <td className="font-bold text-[9px] p-2"></td>
                   )}
+                  {configurations?.showTaxPercentage && (
+                    <td className="font-bold text-[9px] p-2"></td>
+                  )}
                   {configurations?.showRate && (
                     <td className="font-bold text-[9px] p-2"></td>
                   )}
@@ -454,6 +518,12 @@ function SalesPdf({
                     <td className="text-right pr-1 text-black font-bold text-[9px]">
                       {" "}
                       {calculateTotalTax()}
+                    </td>
+                  )}
+                  {configurations?.showStockWiseTaxAmount && (
+                    <td className="text-right pr-1 text-black font-bold text-[9px]">
+                      {" "}
+                      {/* {calculateTotalTax()} */}
                     </td>
                   )}
                   {}
