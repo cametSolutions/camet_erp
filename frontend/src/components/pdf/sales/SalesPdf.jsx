@@ -37,15 +37,11 @@ function SalesPdf({
   ).find((item) => item.voucher === "sale");
 
   const calculateTotalTax = () => {
-
-    // console.log(data.items.map((el) => el?.totalCessAmount));
-    
-    const individualTax = data?.items?.map(
-      (el) => el?.total - (el?.total * 100) / (parseFloat(el.igst) + 100)
+    const totalTax = data?.items?.reduce(
+      (acc, curr) => (acc += curr?.igstAmt || 0),
+      0
     );
-    const totalTax = individualTax
-      ?.reduce((acc, curr) => (acc += curr), 0)
-      .toFixed(2);
+
     return totalTax;
   };
 
@@ -91,7 +87,7 @@ function SalesPdf({
   };
   const calculateCessAmount = (godownOrBatch, item) => {
     let { selectedPriceRate, count, discount } = godownOrBatch;
-    const { isTaxInclusive, igst,cess,addl_cess } = item;
+    const { isTaxInclusive, igst, cess, addl_cess } = item;
     const igstValue = parseFloat(igst) || 0;
     const cessValue = parseFloat(cess) || 0;
     const addl_cessValue = parseFloat(addl_cess) || 0;
@@ -116,11 +112,11 @@ function SalesPdf({
       priceAfterDiscount = Number((taxBasePrice - discount).toFixed(2));
     }
 
-    const cessAmount= Number(
+    const cessAmount = Number(
       ((priceAfterDiscount * cessValue) / 100).toFixed(2)
     );
 
-    const addl_cessAmount= Number(count*addl_cessValue);
+    const addl_cessAmount = Number(count * addl_cessValue);
 
     const totalCessAmount = Number(cessAmount + addl_cessAmount) || 0;
     item.totalCessAmount = totalCessAmount || 0;
@@ -223,6 +219,13 @@ function SalesPdf({
     return newRate;
   };
 
+  // Check if this is a godown-only item (no batches)
+  const isGodownOnlyItem = (item) => {
+    const result = item?.GodownList?.every((g) => g?.godown_id && !g?.batch);
+
+    return result;
+  };
+
   return (
     <div>
       {/* <style dangerouslySetInnerHTML={{ __html: `
@@ -292,7 +295,7 @@ function SalesPdf({
                   {configurations?.showDiscount &&
                     configurations?.showDiscountAmount && (
                       <th className="text-gray-700 font-bold uppercase p-2">
-                        Disc 
+                        Disc
                       </th>
                     )}
                   {configurations?.showDiscount &&
@@ -342,6 +345,11 @@ function SalesPdf({
                               <td className=" text-black text-right pr-2 ">
                                 {el?.igst}
                               </td>
+                            ) : isGodownOnlyItem(el) ? (
+                              <td className=" text-black text-right pr-2 ">
+                                {" "}
+                                {el?.igst}
+                              </td>
                             ) : (
                               <td></td>
                             ))}
@@ -349,6 +357,11 @@ function SalesPdf({
                           {configurations?.showTaxPercentage &&
                             (!el?.hasGodownOrBatch ? (
                               <td className=" text-black text-right pr-2 ">
+                                {el?.cess} & {el?.addl_cess}/{el.unit}
+                              </td>
+                            ) : isGodownOnlyItem(el) ? (
+                              <td className=" text-black text-right pr-2 ">
+                                {" "}
                                 {el?.cess} & {el?.addl_cess}/{el.unit}
                               </td>
                             ) : (
@@ -386,15 +399,19 @@ function SalesPdf({
                           {configurations?.showStockWiseTaxAmount && (
                             <td className=" text-black text-right pr-2 font-bold">
                               {el?.hasGodownOrBatch === true
-                                ? null
-                                : calculateTaxAmount(el?.GodownList[0], el)}
+                                ? isGodownOnlyItem(el)
+                                  ? el?.igstAmt
+                                  : null
+                                : el?.igstAmt}
                             </td>
                           )}
                           {configurations?.showStockWiseTaxAmount && (
                             <td className=" text-black text-right pr-2 font-bold">
                               {el?.hasGodownOrBatch === true
-                                ? null
-                                : calculateCessAmount(el?.GodownList[0], el)}
+                                ? isGodownOnlyItem(el)
+                                  ? (el?.cessAmt || 0) + (el?.addl_cessAmt || 0)
+                                  : null
+                                : (el?.cessAmt || 0) + (el?.addl_cessAmt || 0)}
                             </td>
                           )}
 
@@ -501,15 +518,15 @@ function SalesPdf({
                   {configurations?.showTaxPercentage && (
                     <td className="font-bold text-[9px] p-2"></td>
                   )}
-                  {configurations?.showRate && (
-                    <td className="font-bold text-[9px] p-2"></td>
-                  )}
                   {configurations?.showQuantity && (
                     <td className="text-black text-[9px] ">
                       <p className="text-right pr-1 font-bold">
                         {calculateTotalQunatity()}/unit
                       </p>{" "}
                     </td>
+                  )}
+                  {configurations?.showRate && (
+                    <td className="font-bold text-[9px] p-2"></td>
                   )}
                   {configurations?.showDiscount && (
                     <td className="text-right pr-1 text-black font-bold text-[9px]"></td>
@@ -523,7 +540,8 @@ function SalesPdf({
                   {configurations?.showStockWiseTaxAmount && (
                     <td className="text-right pr-1 text-black font-bold text-[9px]">
                       {" "}
-                      {/* {calculateTotalTax()} */}
+                      
+                      {data?.items?.reduce((acc, el) => acc +(( el?.cessAmt || 0) +( el?.addl_cessAmt || 0)), 0)}
                     </td>
                   )}
                   {}

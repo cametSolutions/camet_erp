@@ -37,12 +37,11 @@ function SalesPdfNonInd({
   )?.find((item) => item.voucher === "sale");
 
   const calculateTotalTax = () => {
-    const individualTax = data?.items?.map(
-      (el) => el?.total - (el?.total * 100) / (parseFloat(el.igst) + 100)
+    const totalTax = data?.items?.reduce(
+      (acc, curr) => (acc += curr?.igstAmt || 0),
+      0
     );
-    const totalTax = individualTax
-      ?.reduce((acc, curr) => (acc += curr), 0)
-      .toFixed(2);
+
     return totalTax;
   };
 
@@ -82,21 +81,50 @@ function SalesPdfNonInd({
     return taxAmount;
   };
 
-  //// for batch and godown
+  const calculateCessAmount = (godownOrBatch, item) => {
+    let { selectedPriceRate, count, discount } = godownOrBatch;
+    const { isTaxInclusive, igst, cess, addl_cess } = item;
+    const igstValue = parseFloat(igst) || 0;
+    const cessValue = parseFloat(cess) || 0;
+    const addl_cessValue = parseFloat(addl_cess) || 0;
 
-  // const calculateDiscount = (rate, count, taxAmt, finalAmt, isTaxInclusive) => {
-  //   // Calculate the total price
-  //   const totalPrice = rate * count;
+    if (!item.hasGodownOrBatch) {
+      count = item.count || 0;
+      discount = item.discount || 0;
+    }
 
-  //   // Check if tax is inclusive
-  //   if (isTaxInclusive) {
-  //     // For tax-inclusive items, directly compare totalPrice and finalAmt
-  //     return (totalPrice === finalAmt ? 0 : totalPrice - finalAmt).toFixed(2);
-  //   } else {
-  //     // For non-tax-inclusive items
-  //     return (totalPrice - (finalAmt - taxAmt)).toFixed(2);
-  //   }
-  // };
+    let basePrice = Number(selectedPriceRate * count);
+    let taxBasePrice = 0;
+
+    if (isTaxInclusive) {
+      taxBasePrice = Number((basePrice / (1 + igstValue / 100)).toFixed(2));
+    } else {
+      taxBasePrice = basePrice;
+    }
+
+    let priceAfterDiscount = taxBasePrice;
+
+    if (discount) {
+      priceAfterDiscount = Number((taxBasePrice - discount).toFixed(2));
+    }
+
+    const cessAmount = Number(
+      ((priceAfterDiscount * cessValue) / 100).toFixed(2)
+    );
+
+    const addl_cessAmount = Number(count * addl_cessValue);
+
+    const totalCessAmount = Number(cessAmount + addl_cessAmount) || 0;
+    item.totalCessAmount = totalCessAmount || 0;
+    return totalCessAmount;
+  };
+
+  // Check if this is a godown-only item (no batches)
+  const isGodownOnlyItem = (item) => {
+    const result = item?.GodownList?.every((g) => g?.godown_id && !g?.batch);
+
+    return result;
+  };
 
   useEffect(() => {
     if (data && data.items) {
@@ -239,6 +267,11 @@ function SalesPdfNonInd({
                       Vat %
                     </th>
                   )}
+                  {configurations?.showTaxPercentage && (
+                    <th className="text-gray-700 font-bold uppercase p-2">
+                      Cess %
+                    </th>
+                  )}
                   {configurations?.showQuantity && (
                     <th className="text-gray-700 font-bold uppercase p-2">
                       Qty
@@ -267,6 +300,11 @@ function SalesPdfNonInd({
                       Vat
                     </th>
                   )}
+                  {configurations?.showStockWiseTaxAmount && (
+                    <th className="text-gray-700 font-bold uppercase p-2">
+                      Cess
+                    </th>
+                  )}
                   {configurations?.showStockWiseAmount && (
                     <th className="text-gray-700 font-bold uppercase p-2 pr-0 ">
                       Amount
@@ -290,15 +328,34 @@ function SalesPdfNonInd({
                               <td className=" text-black text-right pr-2 ">
                                 {el?.igst}
                               </td>
+                            ) : isGodownOnlyItem(el) ? (
+                              <td className=" text-black text-right pr-2 ">
+                                {" "}
+                                {el?.igst}
+                              </td>
                             ) : (
                               <td></td>
                             ))}
 
+                          {configurations?.showTaxPercentage &&
+                            (!el?.hasGodownOrBatch ? (
+                              <td className=" text-black text-right pr-2 ">
+                                {el?.cess} & {el?.addl_cess}/{el.unit}
+                              </td>
+                            ) : isGodownOnlyItem(el) ? (
+                              <td className=" text-black text-right pr-2 ">
+                                {" "}
+                                {el?.cess} & {el?.addl_cess}/{el.unit}
+                              </td>
+                            ) : (
+                              <td></td>
+                            ))}
                           {configurations?.showQuantity && (
                             <td className=" text-black text-right pr-2 font-bold">
                               {el?.count} {el?.unit.split("-")[0]}
                             </td>
                           )}
+
                           {configurations?.showRate && (
                             <td className=" text-black text-right pr-2 text-nowrap">
                               {findRate(
@@ -308,7 +365,6 @@ function SalesPdfNonInd({
                               )}
                             </td>
                           )}
-
                           {configurations?.showDiscount && (
                             <td className=" text-black text-right pr-2">
                               {el?.hasGodownOrBatch === true
@@ -326,12 +382,19 @@ function SalesPdfNonInd({
                           {configurations?.showStockWiseTaxAmount && (
                             <td className=" text-black text-right pr-2 font-bold">
                               {el?.hasGodownOrBatch === true
-                                ? null
-                                : `  ${(
-                                    el?.total -
-                                    (el?.total * 100) /
-                                      (parseFloat(el.igst) + 100)
-                                  )?.toFixed(2)}`}
+                                ? isGodownOnlyItem(el)
+                                  ? el?.igstAmt
+                                  : null
+                                : el?.igstAmt}
+                            </td>
+                          )}
+                          {configurations?.showStockWiseTaxAmount && (
+                            <td className=" text-black text-right pr-2 font-bold">
+                              {el?.hasGodownOrBatch === true
+                                ? isGodownOnlyItem(el)
+                                  ? (el?.cessAmt || 0) + (el?.addl_cessAmt || 0)
+                                  : null
+                                : (el?.cessAmt || 0) + (el?.addl_cessAmt || 0)}
                             </td>
                           )}
 
@@ -346,7 +409,7 @@ function SalesPdfNonInd({
                             return godownOrBatch.added &&
                               godownOrBatch.batch ? (
                               <tr key={idx} className={`bg-white text-[9px] `}>
-                                <td> </td>
+                                <td></td>
                                 <td className="">
                                   {godownOrBatch.batch && (
                                     <p className="ml-1.5  ">
@@ -360,6 +423,12 @@ function SalesPdfNonInd({
                                     {el?.igst}
                                   </td>
                                 )}
+                                {configurations?.showTaxPercentage && (
+                                  <td className=" text-black text-right pr-2  text-[8px]">
+                                    {el?.cess} & {el?.addl_cess}/{el.unit}
+                                  </td>
+                                )}
+
                                 {configurations?.showQuantity && (
                                   <td className="  flex justify-end pr-2">
                                     {godownOrBatch?.count} {el?.unit}
@@ -391,6 +460,12 @@ function SalesPdfNonInd({
                                     {calculateTaxAmount(godownOrBatch, el)}
                                   </td>
                                 )}
+                                {configurations?.showStockWiseTaxAmount && (
+                                  <td className="  text-end pr-2">
+                                    {calculateCessAmount(godownOrBatch, el)}
+                                  </td>
+                                )}
+
                                 {configurations?.showStockWiseAmount && (
                                   <td className=" text-end pr-1">
                                     <p>{godownOrBatch.individualTotal ?? 0}</p>
@@ -403,22 +478,20 @@ function SalesPdfNonInd({
                     );
                   })}
               </tbody>
-
               <tfoot className="">
                 <tr className="border-y  border-black bg-slate-200 py-6">
                   <td className="font-bold "></td>
-                  {configurations?.showStockWiseAmount && (
+                  {configurations?.showStockWiseAmount ? (
                     <td className="font-bold text-[9px] p-2">Subtotal</td>
-                  )}
-
+                  ) : (
+                    <td className="font-bold text-[9px] p-2"></td>
+                  )}{" "}
                   {configurations?.showTaxPercentage && (
                     <td className="font-bold text-[9px] p-2"></td>
                   )}
-
-                  {configurations?.showRate && (
+                  {configurations?.showTaxPercentage && (
                     <td className="font-bold text-[9px] p-2"></td>
                   )}
-
                   {configurations?.showQuantity && (
                     <td className="text-black text-[9px] ">
                       <p className="text-right pr-1 font-bold">
@@ -426,19 +499,25 @@ function SalesPdfNonInd({
                       </p>{" "}
                     </td>
                   )}
-
+                  {configurations?.showRate && (
+                    <td className="font-bold text-[9px] p-2"></td>
+                  )}
                   {configurations?.showDiscount && (
                     <td className="text-right pr-1 text-black font-bold text-[9px]"></td>
                   )}
-
                   {configurations?.showStockWiseTaxAmount && (
                     <td className="text-right pr-1 text-black font-bold text-[9px]">
                       {" "}
                       {calculateTotalTax()}
                     </td>
                   )}
+                  {configurations?.showStockWiseTaxAmount && (
+                    <td className="text-right pr-1 text-black font-bold text-[9px]">
+                      {" "}
+                      {/* {calculateTotalTax()} */}
+                    </td>
+                  )}
                   {}
-
                   {configurations?.showStockWiseAmount && (
                     <td className="text-right pr-1 text-black font-bold text-[9px]">
                       {subTotal}

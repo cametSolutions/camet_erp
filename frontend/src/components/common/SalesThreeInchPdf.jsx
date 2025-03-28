@@ -111,12 +111,10 @@ function SalesThreeInchPdf({
   }, [data]);
 
   const calculateTotalTax = () => {
-    const individualTax = data?.items?.map(
-      (el) => el?.total - (el?.total * 100) / (parseFloat(el.igst) + 100)
+    const totalTax = data?.items?.reduce(
+      (acc, curr) => (acc += curr?.igstAmt || 0),
+      0
     );
-    const totalTax = individualTax
-      ?.reduce((acc, curr) => (acc += curr), 0)
-      .toFixed(2);
 
     return totalTax;
   };
@@ -125,7 +123,7 @@ function SalesThreeInchPdf({
       // Ensure curr.cess is a number, defaulting to 0 if not
       curr.addl_cess = Number(curr?.addl_cess) || 0;
       // Add curr.cess to the accumulator
-      return acc + curr?.addl_cess;
+      return acc + curr?.addl_cessAmt;
     }, 0); // Initialize the accumulator with 0
   };
   const calculateStateTax = () => {
@@ -139,7 +137,7 @@ function SalesThreeInchPdf({
   const calculateCess = () => {
     return data?.items?.reduce((acc, curr) => {
       // Ensure curr.cess is a number, defaulting to 0 if not
-      curr.cess = Number(curr?.cess) || 0;
+      curr.cess = Number(curr?.cessAmt) || 0;
       // Add curr.cess to the accumulator
       return acc + curr?.cess;
     }, 0); // Initialize the accumulator with 0
@@ -185,7 +183,6 @@ function SalesThreeInchPdf({
     }
   }
 
-  console.log(voucherConfiguration);
 
   // console.log(address);
   return (
@@ -372,35 +369,7 @@ function SalesThreeInchPdf({
         </table>
 
         <div className="flex justify-end">
-          {/* <div className="mt-3 w-1/2 ">
-            {bank && Object.keys(bank).length > 0 ? (
-              <>
-          
-                <div
-                  style={{
-                    height: "auto",
-                    margin: "0 ",
-                    marginTop: "10px",
-                    maxWidth: 90,
-                    width: "100%",
-                  }}
-                >
-                  <QRCode
-                    size={300}
-                    style={{
-                      height: "auto",
-                      maxWidth: "100%",
-                      width: "100%",
-                    }}
-                    value={`upi://pay?pa=${bank?.upi_id}&am=${data?.finalAmount}`}
-                    viewBox={`0 0 256 256`}
-                  />
-                </div>
-              </>
-            ) : (
-              <div className="text-black font-semibold text-[10px] leading-5"></div>
-            )}
-          </div> */}
+         
           <div className=" mt-1  ">
             <div className="  flex flex-col items-end ">
               {selectedOrganization?.country === "India"

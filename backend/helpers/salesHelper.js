@@ -248,10 +248,12 @@ export const processSaleItems = (items) => {
     let cgstAmt = 0;
     let sgstAmt = 0;
     let igstAmt = 0;
+    let cessAmt = 0;
+    let addlCessAmt = 0;
 
     const igstValue = parseFloat(item.igst) || 0;
-
-    console.log("item?.hasGodownOrBatch ", item?.hasGodownOrBatch);
+    const cessValue = parseFloat(item.cess) || 0;
+    const addlCessValue = parseFloat(item.addl_cess) || 0;
 
     if (item?.hasGodownOrBatch) {
       const subTotals = item?.GodownList?.map((godown) => {
@@ -289,6 +291,15 @@ export const processSaleItems = (items) => {
           .toFixed(2)
       );
 
+      // Calculate cess amount 
+      cessAmt = parseFloat(((subTotal * cessValue) / 100).toFixed(2));
+      
+      // Calculate additional cess based on total count
+      const totalCount = item?.GodownList.reduce((acc, godown) => {
+        return godown?.added ? acc + (godown?.count || 0) : acc;
+      }, 0);
+      addlCessAmt = Number((totalCount * addlCessValue).toFixed(2));
+
       cgstAmt = parseFloat(((subTotal * Number(item.cgst)) / 100).toFixed(2));
       sgstAmt = parseFloat(((subTotal * Number(item.sgst)) / 100).toFixed(2));
       igstAmt = parseFloat(((subTotal * igstValue) / 100).toFixed(2));
@@ -306,24 +317,33 @@ export const processSaleItems = (items) => {
         basePrice = totalPrice1;
       }
 
-        if (item?.discount) {
-          priceAfterDiscount = basePrice - (item?.discount || 0);
-        } else {
-          priceAfterDiscount = basePrice;
-        }
+      if (item?.discount) {
+        priceAfterDiscount = basePrice - (item?.discount || 0);
+      } else {
+        priceAfterDiscount = basePrice;
+      }
 
-        subTotal = Number(priceAfterDiscount.toFixed(2));
-        cgstAmt = parseFloat(((subTotal * Number(item.cgst)) / 100).toFixed(2));
-        sgstAmt = parseFloat(((subTotal * Number(item.sgst)) / 100).toFixed(2));
-        igstAmt = parseFloat(((subTotal * igstValue) / 100).toFixed(2));
+      subTotal = Number(priceAfterDiscount.toFixed(2));
+      
+      // Calculate cess amount 
+      cessAmt = parseFloat(((subTotal * cessValue) / 100).toFixed(2));
+      
+      // Calculate additional cess based on count
+      addlCessAmt = Number((count * addlCessValue).toFixed(2));
 
+      cgstAmt = parseFloat(((subTotal * Number(item.cgst)) / 100).toFixed(2));
+      sgstAmt = parseFloat(((subTotal * Number(item.sgst)) / 100).toFixed(2));
+      igstAmt = parseFloat(((subTotal * igstValue) / 100).toFixed(2));
     }
+
     return {
       ...item,
       cgstAmt,
       sgstAmt,
       igstAmt,
       subTotal,
+      cessAmt: cessAmt,
+      addl_cessAmt: addlCessAmt,
     };
   });
 };
