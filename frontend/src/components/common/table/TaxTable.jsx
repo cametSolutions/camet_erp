@@ -5,7 +5,7 @@ const TaxTable = ({ products, org = {}, party = {} }) => {
 
   console.log("org",org?.state);
   console.log("party",party?.state);
-  
+   
   const consolidatedTaxData = useMemo(() => {
     if (products && products.length > 0) {
       const taxData = products.reduce((acc, product) => {
