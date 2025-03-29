@@ -2,14 +2,13 @@
 
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { updateItem ,removeItem} from "../../../slices/creditNote";
+import { updateItem, removeItem } from "../../../slices/creditNote";
 import EditItemForm from "../../components/secUsers/main/Forms/EditItemForm";
 
 function EditItemCreditNote() {
   const ItemsFromRedux = useSelector((state) => {
     return state.creditNote.items;
   });
-
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -27,6 +26,7 @@ function EditItemCreditNote() {
     type,
     igst,
     isTaxInclusive
+
     // taxAmount
   ) => {
     const newItem = structuredClone(item);
@@ -36,7 +36,6 @@ function EditItemCreditNote() {
       const isGodownOnlyItem = newItem.GodownList?.every(
         (g) => g?.godown_id && !g?.batch
       );
-
 
       const newGodownList = newItem.GodownList.map((godown, idx) => {
         if (idx == index) {
@@ -53,6 +52,8 @@ function EditItemCreditNote() {
             discountType: type,
           };
         } else if (isGodownOnlyItem) {
+          console.log("godown only item");
+
           // Apply the logic from updateAllGodowns for other godowns when it's godown-only item
           const updatedGodown = { ...godown };
 
@@ -90,9 +91,31 @@ function EditItemCreditNote() {
               (taxBasePrice - calculatedDiscountAmount)?.toFixed(2)
             );
 
+            //  Cess Calculation
+            let cessValue = 0;
+            let addlCessValue = 0;
+
+            console.log(cessValue);
+            console.log(addlCessValue);
+
+            if (item.cess && item.cess > 0) {
+              cessValue = discountedPrice * (item.cess / 100);
+            }
+
+            if (item.addl_cess && item.addl_cess > 0) {
+              addlCessValue = quantity * item.addl_cess;
+            }
+
+            console.log(cessValue);
+            console.log(addlCessValue);
+
+            const totalCessAmount = cessValue + addlCessValue;
+
             ////final calculation
             const taxAmount = discountedPrice * (igst / 100);
-            individualTotal = Number((discountedPrice + taxAmount)?.toFixed(2));
+            individualTotal = Number(
+              (discountedPrice + taxAmount + totalCessAmount)?.toFixed(2)
+            );
           } else {
             const taxExclusivePrice = newPrice * (updatedGodown.count || 0);
 
@@ -116,9 +139,31 @@ function EditItemCreditNote() {
               (taxExclusivePrice - calculatedDiscountAmount)?.toFixed(2)
             );
 
+            //  Cess Calculation
+            let cessValue = 0;
+            let addlCessValue = 0;
+
+            console.log(cessValue);
+            console.log(addlCessValue);
+
+            if (item.cess && item.cess > 0) {
+              cessValue = discountedPrice * (item.cess / 100);
+            }
+
+            if (item.addl_cess && item.addl_cess > 0) {
+              addlCessValue = quantity * item.addl_cess;
+            }
+
+            console.log(cessValue);
+            console.log(addlCessValue);
+
+            const totalCessAmount = cessValue + addlCessValue;
+
             ////final calculation
             const taxAmount = discountedPrice * (igst / 100);
-            individualTotal = Number((discountedPrice + taxAmount)?.toFixed(2));
+            individualTotal = Number(
+              (discountedPrice + taxAmount + totalCessAmount)?.toFixed(2)
+            );
           }
 
           updatedGodown.discount = calculatedDiscountAmount;
@@ -191,11 +236,10 @@ function EditItemCreditNote() {
       newItem.newGst = igst;
     }
 
-    dispatch(updateItem(newItem));  
+    dispatch(updateItem(newItem));
 
     navigate(-1);
   };
-
 
   return (
     <EditItemForm

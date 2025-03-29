@@ -50,7 +50,7 @@ function PdfFooterNonIndian({
 
           <div className="flex flex-col items-end text-[9px] text-black font-bold gap-1 mt-3">
             <p className={calculateTotalTax() > 0 ? "" : "hidden"}>
-              vat : {Number(calculateTotalTax() || 0)?.toFixed(2) || "0.00"}
+              VAT : {Number(calculateTotalTax() || 0)?.toFixed(2) || "0.00"}
             </p>
           
           </div>

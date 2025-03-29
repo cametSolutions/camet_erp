@@ -372,6 +372,7 @@ function AddItemDebitNote() {
 
     let subtotal = 0;
     let individualTotals = [];
+    let totalCess = 0; // Track total cess amount
 
     if (item.hasGodownOrBatch) {
       item.GodownList.forEach((godownOrBatch, index) => {
@@ -384,8 +385,6 @@ function AddItemDebitNote() {
         // Calculate base price based on tax inclusivity
         let basePrice = priceRate * quantity;
 
-  
-
         let taxBasePrice = basePrice;
 
         // For tax inclusive prices, calculate the base price without tax
@@ -396,8 +395,6 @@ function AddItemDebitNote() {
         // Calculate discount based on discountType
         let discountedPrice = taxBasePrice;
 
-
-
         if (
           godownOrBatch.discountType === "percentage" &&
           godownOrBatch.discountPercentage !== 0 &&
@@ -405,7 +402,6 @@ function AddItemDebitNote() {
           godownOrBatch.discountPercentage !== ""
         ) {
           // Percentage discount
-
           const discountAmount =
             (taxBasePrice * godownOrBatch.discountPercentage) / 100;
 
@@ -418,21 +414,41 @@ function AddItemDebitNote() {
           // Fixed amount discount (default)
           discountedPrice = taxBasePrice - godownOrBatch.discount;
         }
+
+        // Calculate cess amounts
+        let cessAmount = 0;
+        let additionalCessAmount = 0;
+
+        // Standard cess calculation
+        if (item.cess && item.cess > 0) {
+          cessAmount = discountedPrice * (item.cess / 100);
+        }
+
+        // Additional cess calculation
+        if (item.addl_cess && item.addl_cess > 0) {
+          additionalCessAmount = quantity * item.addl_cess;
+        }
+
+        // Combine cess amounts
+        const totalCessAmount = cessAmount + additionalCessAmount;
+
         // Calculate tax amount
         const taxAmount = discountedPrice * (igstValue / 100);
 
-        // Calculate total including tax
+        // Calculate total including tax and cess
         const individualTotal = Math.max(
-          parseFloat((discountedPrice + taxAmount).toFixed(2)),
+          parseFloat((discountedPrice + taxAmount + totalCessAmount).toFixed(2)),
           0
         );
 
         subtotal += individualTotal;
+        totalCess += totalCessAmount;
 
         individualTotals.push({
           index,
           batch: godownOrBatch.batch,
           individualTotal,
+          cessAmount: totalCessAmount
         });
       });
     } else {
@@ -461,33 +477,46 @@ function AddItemDebitNote() {
       ) {
         // Percentage discount
         const discountAmount = (taxBasePrice * item.discountPercentage) / 100;
-        console.log("Percentage discount:", discountAmount);
         discountedPrice = taxBasePrice - discountAmount;
       } else if (item.discount !== 0 && item.discount !== undefined) {
         // Fixed amount discount (default)
-        console.log("Fixed amount discount:", item.discount);
         discountedPrice = taxBasePrice - item.discount;
       }
+
+      // Calculate cess amounts
+      let cessAmount = 0;
+      let additionalCessAmount = 0;
+
+      // Standard cess calculation
+      if (item.cess && item.cess > 0) {
+        cessAmount = discountedPrice * (item.cess / 100);
+      }
+
+      // Additional cess calculation
+      if (item.addl_cess && item.addl_cess > 0) {
+        additionalCessAmount = quantity * item.addl_cess;
+      }
+
+      // Combine cess amounts
+      const totalCessAmount = cessAmount + additionalCessAmount;
 
       // Calculate tax amount
       const taxAmount = discountedPrice * (igstValue / 100);
 
-
-
-      // Calculate total including tax
+      // Calculate total including tax and cess
       const individualTotal = Math.max(
-        parseFloat((discountedPrice + taxAmount).toFixed(2)),
+        parseFloat((discountedPrice + taxAmount + totalCessAmount).toFixed(2)),
         0
       );
 
-      // console.log( individualTotal);
-
       subtotal += individualTotal;
+      totalCess += totalCessAmount;
 
       individualTotals.push({
         index: 0,
         batch: item.batch || "No batch",
         individualTotal,
+        cessAmount: totalCessAmount
       });
     }
 
@@ -496,8 +525,9 @@ function AddItemDebitNote() {
     return {
       individualTotals,
       total: subtotal,
+      totalCess: totalCess
     };
-  };
+};
   ///////////////////////////handleAddClick///////////////////////////////////
 
 

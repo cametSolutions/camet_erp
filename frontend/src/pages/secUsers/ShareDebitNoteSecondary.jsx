@@ -1,37 +1,104 @@
 import { useRef, useEffect, useState } from "react";
-import { useReactToPrint } from "react-to-print";
-import { IoIosArrowRoundBack } from "react-icons/io";
 import api from "../../api/api";
 import { useParams } from "react-router-dom";
 import { toast } from "react-toastify";
-import { MdPrint } from "react-icons/md";
-// import numberToWords from "number-to-words";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { useReactToPrint } from "react-to-print";
+import { FaFilePdf } from "react-icons/fa";
+import { BeatLoader } from "react-spinners";
+
 import SalesPdf from "../../components/common/SalesPdf";
 
 function ShareDebitNoteSecondary() {
   const [data, setData] = useState([]);
   const [org, setOrg] = useState([]);
-  // const [subTotal, setSubTotal] = useState("");
-  // const [additinalCharge, setAdditinalCharge] = useState("");
-  // const [inWords, setInWords] = useState("");
   const [bank, setBank] = useState([]);
-
+  const [loading, setLoading] = useState(true);
   const { id } = useParams();
 
   const contentToPrint = useRef(null);
+  const navigate = useNavigate();
+
+  // Setup print functionality using useReactToPrint
+  const handlePrint = useReactToPrint({
+    content: () => contentToPrint.current,
+    documentTitle: data.debitNoteNumber
+      ? `${data.debitNoteNumber}_${data._id.slice(-4)}`
+      : "Debit_Note",
+    pageStyle: `
+      @page {
+        size: A4;
+        margin: 0mm 10mm 9mm 10mm;
+      }
+
+      @media print {
+        body {
+          -webkit-print-color-adjust: exact;
+          font-family: 'Arial', sans-serif;
+        }
+
+        .pdf-page {
+          page-break-after: always;
+        }
+
+        .pdf-content {
+          font-size: 19px;
+        }
+
+        .print-md-layout {
+          display: flex;
+          flex-direction: row;
+          justify-content: space-between;
+          align-items: flex-start;
+          gap: 8px;
+          padding: 1rem 2rem;
+          width: 100%;
+        }
+
+        .bill-to, .ship-to {
+          width: 50%;
+          padding-right: 1rem;
+          border-right: 1px solid #e5e7eb;
+        }
+
+        .details-table {
+          width: 50%;
+          padding-left: 1rem;
+        }
+
+        .details-table td {
+          font-size: 11px;
+          color: #6b7280;
+        }
+
+        @media print {
+          .print-md-layout {
+            display: flex !important;
+            flex-direction: row !important;
+          }
+        }
+      }
+    `,
+    onAfterPrint: () => {
+      console.log("PDF printed successfully");
+      // Navigate back after printing completes
+      setTimeout(() => {
+        navigate(-1, { replace: true });
+      }, 500);
+    },
+    removeAfterPrint: true,
+  });
 
   useEffect(() => {
     const getTransactionDetails = async () => {
       try {
-        // Fetch invoice details
+        // Fetch debit note details
         const res = await api.get(`/api/sUsers/getDebitNoteDetails/${id}`, {
           withCredentials: true,
         });
 
         // Extract cmp_id from the response
-        const cmpId = res.data.data.cmp_id; // Assuming cmp_id is a property of the data
-        // Update the state with the cmp_id
+        const cmpId = res.data.data.cmp_id;
 
         // Fetch company details using the cmp_id
         const companyDetails = await api.get(
@@ -46,159 +113,71 @@ function ShareDebitNoteSecondary() {
         setBank(
           companyDetails?.data?.organizationData?.configurations[0]?.bank
         );
+
+        // Set loading to false after data is fetched
+        setLoading(false);
       } catch (error) {
         console.log(error);
         toast.error(error.response.data.message);
+        setLoading(false);
+
+        // Navigate back if there's an error
+        setTimeout(() => {
+          navigate(-1, { replace: true });
+        }, 2000);
       }
     };
 
     getTransactionDetails();
-  }, [id]);
+  }, [id, navigate]);
 
+  // Effect to trigger PDF printing once data is loaded
+  useEffect(() => {
+    if (!loading && data._id && contentToPrint.current) {
+      // Small delay to ensure the PDF component is fully rendered
+      const timer = setTimeout(() => {
+        // Trigger the print dialog automatically
+        handlePrint();
+      }, 1000);
 
-  //  console.log(org?.configurations[0]?.terms);
-
-  // useEffect(() => {
-  //   if (data && data.items) {
-  //     const subTotal = data.items
-  //       .reduce((acc, curr) => acc + parseFloat(curr?.total), 0)
-  //       .toFixed(2);
-  //     setSubTotal(subTotal);
-
-  //     const addiTionalCharge = data?.additionalCharges
-  //       ?.reduce((acc, curr) => {
-  //         let value = curr?.finalValue === "" ? 0 : parseFloat(curr.finalValue);
-  //         if (curr?.action === "add") {
-  //           return acc + value;
-  //         } else if (curr?.action === "sub") {
-  //           return acc - value;
-  //         }
-  //         return acc;
-  //       }, 0)
-
-  //       ?.toFixed(2);
-  //     setAdditinalCharge(addiTionalCharge);
-
-  //     const [integerPart, decimalPart] = data.finalAmount.toString().split(".");
-  //     const integerWords = numberToWords.toWords(parseInt(integerPart, 10));
-  //     const decimalWords = decimalPart
-  //       ? ` and ${numberToWords.toWords(parseInt(decimalPart, 10))} `
-  //       : " and Zero";
-  //     console.log(decimalWords);
-
-  //     const mergedWord = [
-  //       ...integerWords,
-  //       // " Rupees",
-  //       ...decimalWords,
-  //       // "Paisa",
-  //     ].join("");
-
-  //     setInWords(mergedWord);
-  //   }
-  // }, [data]);
-
-
-
-  const handlePrint = useReactToPrint({
-    content: () => contentToPrint.current,
-    // documentTitle: `Sales ${data.salesNumber}`,
-    pageStyle: `
-      @page {
-        size: A4;
-        margin: 0mm 10mm 9mm 10mm;
-      }
-  
-      @media print {
-        body {
-          -webkit-print-color-adjust: exact;
-          font-family: 'Arial', sans-serif;
-        }
-  
-        .pdf-page {
-          page-break-after: always;
-        }
-  
-        .pdf-content {
-          font-size: 19px;
-        }
-  
-        .print-md-layout {
-          display: flex;
-          flex-direction: row;
-          justify-content: space-between;
-          align-items: flex-start;
-          gap: 8px;
-          padding: 1rem 2rem;
-          width: 100%;
-        }
-  
-        .bill-to, .ship-to {
-          width: 50%;
-          padding-right: 1rem;
-          border-right: 1px solid #e5e7eb; /* Tailwind color gray-300 */
-        }
-  
-        .details-table {
-          width: 50%;
-          padding-left: 1rem;
-        }
-  
-        .details-table td {
-          font-size: 11px;
-          color: #6b7280; /* Tailwind color gray-500 */
-        }
-  
-        /* Force flex-row for print */
-        @media print {
-          .print-md-layout {
-            display: flex !important;
-            flex-direction: row !important;
-          }
-        }
-      }
-    `,
-    onAfterPrint: () => console.log("after printing..."),
-    removeAfterPrint: true,
-  });
-
-  console.log(data);
-  
-  
-
-
+      return () => clearTimeout(timer);
+    }
+  }, [loading, data._id, handlePrint]);
 
   return (
-    <div className="">
-   
-      <div className="">
-        <div className="bg-[#012a4a]   sticky top-0 p-3 px-5 text-white text-lg font-bold flex items-center gap-3  shadow-lg justify-between">
-          <div className="flex gap-2 ">
-            <Link to={`/sUsers/creditDetails/${id}`}>
-              <IoIosArrowRoundBack className="text-3xl" />
-            </Link>
-            <p>Share Your Credit</p>
-          </div>
-          <div>
-            <MdPrint
-              onClick={() => {
-                handlePrint(null, () => contentToPrint.current);
-              }}
-              className="text-xl cursor-pointer "
-            />
-          </div>
+    <div className="h-screen flex flex-col items-center justify-center bg-gray-100">
+      {/* Loading Screen */}
+      <div className="flex flex-col items-center justify-center gap-6">
+        <div className="text-6xl text-purple-600">
+          <FaFilePdf />
         </div>
+        <h1 className="text-2xl font-bold text-gray-700">
+          Preparing Your Debit Note
+        </h1>
+        <div className="mt-4">
+          <BeatLoader color="#9900ff" size={15} />
+        </div>
+        <p className="text-gray-500 mt-4 text-center max-w-md">
+          Your PDF is being generated. The print dialog will appear shortly.
+          <br />
+          Please wait...
+        </p>
+      </div>
 
-        <SalesPdf
-          contentToPrint={contentToPrint}
-          data={data}
-          org={org}
-          bank={bank}
-          // subTotal={subTotal}
-          // additinalCharge={additinalCharge}
-          // inWords={inWords}
-          userType="secondaryUser"
-          tab="debitNote"
-        />
+      {/* Hidden PDF Content */}
+      <div
+        style={{ position: "absolute", left: "-9999px", top: 0, opacity: 0 }}
+      >
+        <div>
+          <SalesPdf
+            contentToPrint={contentToPrint}
+            data={data}
+            org={org}
+            bank={bank}
+            userType="secondaryUser"
+            tab="debitNote"
+          />
+        </div>
       </div>
     </div>
   );
