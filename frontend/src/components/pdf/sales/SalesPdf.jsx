@@ -540,8 +540,11 @@ function SalesPdf({
                   {configurations?.showStockWiseTaxAmount && (
                     <td className="text-right pr-1 text-black font-bold text-[9px]">
                       {" "}
-                      
-                      {data?.items?.reduce((acc, el) => acc +(( el?.cessAmt || 0) +( el?.addl_cessAmt || 0)), 0)}
+                      {data?.items?.reduce(
+                        (acc, el) =>
+                          acc + ((el?.cessAmt || 0) + (el?.addl_cessAmt || 0)),
+                        0
+                      )}
                     </td>
                   )}
                   {}

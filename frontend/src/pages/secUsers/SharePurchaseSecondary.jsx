@@ -14,9 +14,7 @@ import PurchasePdfNonIndian from "../../components/pdf/purchase/nonIndian/Purcha
 function ShareSalesSecondary() {
   const [data, setData] = useState([]);
   const [org, setOrg] = useState([]);
-  // const [subTotal, setSubTotal] = useState("");
-  // const [additinalCharge, setAdditinalCharge] = useState("");
-  // const [inWords, setInWords] = useState("");
+
   const [bank, setBank] = useState([]);
 
   const { id } = useParams();

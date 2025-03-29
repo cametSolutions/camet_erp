@@ -1,22 +1,21 @@
 import { useRef, useEffect, useState } from "react";
-import { IoIosArrowRoundBack } from "react-icons/io";
 import api from "../../api/api";
 import { useParams } from "react-router-dom";
 import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
+import { useReactToPrint } from "react-to-print";
+import { FaFilePdf } from "react-icons/fa";
+import { BeatLoader } from "react-spinners"; // You can use any loader from react-spinners
 
 import SalesPdf from "../../components/pdf/sales/SalesPdf";
-import { useNavigate } from "react-router-dom";
-
-import ShareModal from "./settilngs/dataEntry/modals/ShareModal";
-import { IoShareSocial } from "react-icons/io5";
-import { useSelector } from "react-redux";
 import SalesPdfNonInd from "../../components/pdf/sales/nonIndian/SalesPdfNonInd";
 
 function ShareSalesSecondary() {
   const [data, setData] = useState([]);
   const [org, setOrg] = useState([]);
   const [bank, setBank] = useState([]);
-  const [showModal, setShowModal] = useState(false);
+  const [loading, setLoading] = useState(true);
   const { id } = useParams();
 
   const IsIndian =
@@ -27,6 +26,76 @@ function ShareSalesSecondary() {
   const contentToPrint = useRef(null);
   const navigate = useNavigate();
 
+  // Setup print functionality using useReactToPrint
+  const handlePrint = useReactToPrint({
+    content: () => contentToPrint.current,
+    documentTitle: data.salesNumber
+    ? `${data.salesNumber}_${data._id.slice(-4)}`
+    : "Sales_Invoice",
+    pageStyle: `
+      @page {
+        size: A4;
+        margin: 0mm 10mm 9mm 10mm;
+      }
+
+      @media print {
+        body {
+          -webkit-print-color-adjust: exact;
+          font-family: 'Arial', sans-serif;
+        }
+
+        .pdf-page {
+          page-break-after: always;
+        }
+
+        .pdf-content {
+          font-size: 19px;
+        }
+
+        .print-md-layout {
+          display: flex;
+          flex-direction: row;
+          justify-content: space-between;
+          align-items: flex-start;
+          gap: 8px;
+          padding: 1rem 2rem;
+          width: 100%;
+        }
+
+        .bill-to, .ship-to {
+          width: 50%;
+          padding-right: 1rem;
+          border-right: 1px solid #e5e7eb;
+        }
+
+        .details-table {
+          width: 50%;
+          padding-left: 1rem;
+        }
+
+        .details-table td {
+          font-size: 11px;
+          color: #6b7280;
+        }
+
+        @media print {
+          .print-md-layout {
+            display: flex !important;
+            flex-direction: row !important;
+          }
+        }
+      }
+    `,
+    onAfterPrint: () => {
+      console.log("PDF printed successfully");
+      // Navigate back after printing completes
+      setTimeout(() => {
+        navigate(-1, { replace: true });
+      }, 500);
+    },
+    removeAfterPrint: true,
+  });
+
   useEffect(() => {
     const getTransactionDetails = async () => {
       try {
@@ -36,8 +105,7 @@ function ShareSalesSecondary() {
         });
 
         // Extract cmp_id from the response
-        const cmpId = res.data.data.cmp_id; // Assuming cmp_id is a property of the data
-        // Update the state with the cmp_id
+        const cmpId = res.data.data.cmp_id;
 
         // Fetch company details using the cmp_id
         const companyDetails = await api.get(
@@ -52,64 +120,82 @@ function ShareSalesSecondary() {
         setBank(
           companyDetails?.data?.organizationData?.configurations[0]?.bank
         );
+
+        // Set loading to false after data is fetched
+        setLoading(false);
       } catch (error) {
         console.log(error);
         toast.error(error.response.data.message);
+        setLoading(false);
+
+        // Navigate back if there's an error
+        setTimeout(() => {
+          navigate(-1, { replace: true });
+        }, 2000);
       }
     };
 
     getTransactionDetails();
-  }, [id]);
+  }, [id, navigate]);
 
-  const handleNavigation = () => {
-    navigate(-1, { replace: true });
-  };
+  // Effect to trigger PDF printing once data is loaded
+  useEffect(() => {
+    if (!loading && data.salesNumber && contentToPrint.current) {
+      // Small delay to ensure the PDF component is fully rendered
+      const timer = setTimeout(() => {
+        // Trigger the print dialog automatically
+        handlePrint();
+      }, 1000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [loading, data.salesNumber, handlePrint]);
 
   return (
-    <div className="">
-      <div className="">
-        <div className="bg-[#012a4a]   sticky top-0 p-3 px-5 text-white text-lg font-bold flex items-center gap-3  shadow-lg justify-between">
-          <div className="flex gap-2 ">
-            <button onClick={handleNavigation}>
-              <IoIosArrowRoundBack className="text-3xl" />
-            </button>
-            <p>Share Your Sale</p>
-          </div>
-          <div className="flex">
-            <IoShareSocial
-              className="text-xl cursor-pointer"
-              onClick={() => setShowModal(true)}
-            />
-          </div>
+    <div className="h-screen  flex flex-col items-center justify-center bg-gray-100">
+      {/* Loading Screen */}
+      <div className="flex flex-col items-center justify-center gap-6">
+        <div className="text-6xl text-purple-600">
+          <FaFilePdf />
         </div>
+        <h1 className="text-2xl font-bold text-gray-700">
+          Preparing Your Sales Invoice
+        </h1>
+        <div className="mt-4">
+          <BeatLoader color="#9900ff" size={15} />
+        </div>
+        <p className="text-gray-500 mt-4 text-center max-w-md">
+          Your PDF is being generated. The print dialog will appear shortly.
+          <br />
+          Please wait...
+        </p>
+      </div>
 
-        <ShareModal
-          data={data}
-          org={org}
-          contentToPrint={contentToPrint}
-          showModal={showModal}
-          setShowModal={setShowModal}
-        />
-
-        {IsIndian ? (
-          <SalesPdf
-            contentToPrint={contentToPrint}
-            data={data}
-            org={org}
-            bank={bank}
-            userType="secondaryUser"
-            tab="sales"
-          />
-        ) : (
-          <SalesPdfNonInd
-            contentToPrint={contentToPrint}
-            data={data}
-            org={org}
-            bank={bank}
-            userType="secondaryUser"
-            tab="sales"
-          />
-        )}
+      {/* Hidden PDF Content */}
+      <div
+        style={{ position: "absolute", left: "-9999px", top: 0, opacity: 0 }}
+      >
+        <div>
+          {IsIndian ? (
+            <SalesPdf
+              contentToPrint={contentToPrint}
+              data={data}
+              org={org}
+              bank={bank}
+              userType="secondaryUser"
+              tab="sales"
+            />
+          ) : (
+            <SalesPdfNonInd
+              contentToPrint={contentToPrint}
+              data={data}
+              org={org}
+              bank={bank}
+              userType="secondaryUser"
+              tab="sales"
+            />
+          )}
+        </div>
       </div>
     </div>
   );

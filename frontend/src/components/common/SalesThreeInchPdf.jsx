@@ -7,7 +7,6 @@ function SalesThreeInchPdf({
   contentToPrint,
   data,
   org,
-
   userType,
   voucherNumber,
   tab,
@@ -25,8 +24,6 @@ function SalesThreeInchPdf({
   const voucherConfiguration = configurations?.find(
     (item) => item.voucher === tab
   );
-
-
 
   let pdfNumber;
 
@@ -182,7 +179,6 @@ function SalesThreeInchPdf({
       };
     }
   }
-
 
   // console.log(address);
   return (
@@ -347,11 +343,9 @@ function SalesThreeInchPdf({
             >
               {voucherConfiguration?.showStockWiseAmount ? (
                 <td className="py-1 text-black">Total</td>
-              ):(
+              ) : (
                 <td className="py-1 text-black"></td>
-              )
-            
-            }
+              )}
               {voucherConfiguration?.showQuantity && (
                 <td className="col-span-2 py-1 text-black text-center">
                   {data?.items?.reduce(
@@ -369,7 +363,6 @@ function SalesThreeInchPdf({
         </table>
 
         <div className="flex justify-end">
-         
           <div className=" mt-1  ">
             <div className="  flex flex-col items-end ">
               {selectedOrganization?.country === "India"

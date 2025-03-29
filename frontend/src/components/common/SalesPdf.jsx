@@ -66,47 +66,52 @@ function SalesPdf({
   const selectedOrganization =
     userType === "primaryUser" ? primarySelectedOrg : secondarySelectedOrg;
 
-  const calculateDiscountAmntOFNoBAtch = (el) => {
-    if (!el || !el.GodownList || !el.GodownList[0]) {
-      console.error("Invalid input data");
-      return 0;
-    }
+  // const calculateDiscountAmntOFNoBAtch = (el) => {
+  //   if (!el || !el.GodownList || !el.GodownList[0]) {
+  //     console.error("Invalid input data");
+  //     return 0;
+  //   }
 
-    const selectedPriceRate =
-      parseFloat(el.GodownList[0].selectedPriceRate) || 0;
-    const count = parseFloat(el.count) || 0;
-    const total = parseFloat(el.total) || 0;
-    const igst = parseFloat(el.igst) || 0;
-    const isTaxInclusive = el.isTaxInclusive || false; // Flag to check if price is tax-inclusive
+  //   const selectedPriceRate =
+  //     parseFloat(el.GodownList[0].selectedPriceRate) || 0;
+  //   const count = parseFloat(el.count) || 0;
+  //   const total = parseFloat(el.total) || 0;
+  //   const igst = parseFloat(el.igst) || 0;
+  //   const isTaxInclusive = el.isTaxInclusive || false; // Flag to check if price is tax-inclusive
 
-    // Calculate the total price before tax
-    const priceRateCount = selectedPriceRate * count;
+  //   // Calculate the total price before tax
+  //   const priceRateCount = selectedPriceRate * count;
 
-    // Check if tax is included or not
-    if (isTaxInclusive) {
-      // For tax-inclusive, compare totalPrice and finalAmt
-      // If they are equal, there's no discount. Otherwise, calculate the discount
-      const discount = (
-        priceRateCount === total ? 0 : priceRateCount - total
-      ).toFixed(2);
-      return parseFloat(discount);
-      // return 100;
-    } else {
-      // For tax-exclusive, adjust the total amount by subtracting igst
-      const priceWithoutTax = total - igst;
-      const discount = (priceRateCount - priceWithoutTax).toFixed(2);
-      return parseFloat(discount);
-      // return 200;
-    }
+  //   // Check if tax is included or not
+  //   if (isTaxInclusive) {
+  //     // For tax-inclusive, compare totalPrice and finalAmt
+  //     // If they are equal, there's no discount. Otherwise, calculate the discount
+  //     const discount = (
+  //       priceRateCount === total ? 0 : priceRateCount - total
+  //     ).toFixed(2);
+  //     return parseFloat(discount);
+  //     // return 100;
+  //   } else {
+  //     // For tax-exclusive, adjust the total amount by subtracting igst
+  //     const priceWithoutTax = total - igst;
+  //     const discount = (priceRateCount - priceWithoutTax).toFixed(2);
+  //     return parseFloat(discount);
+  //     // return 200;
+  //   }
+  // };
+
+  const isGodownOnlyItem = (item) => {
+    const result = item?.GodownList?.every((g) => g?.godown_id && !g?.batch);
+
+    return result;
   };
 
   const calculateTotalTax = () => {
-    const individualTax = data?.items?.map(
-      (el) => el?.total - (el?.total * 100) / (parseFloat(el.igst) + 100)
+    const totalTax = data?.items?.reduce(
+      (acc, curr) => (acc += curr?.igstAmt || 0),
+      0
     );
-    const totalTax = individualTax
-      ?.reduce((acc, curr) => (acc += curr), 0)
-      .toFixed(2);
+
     return totalTax;
   };
 
@@ -119,6 +124,76 @@ function SalesPdf({
     }, 0);
   };
 
+  const calculateTaxAmount = (godownOrBatch, item) => {
+    let { selectedPriceRate, count, discount } = godownOrBatch;
+    const { isTaxInclusive, igst } = item;
+    const igstValue = parseFloat(igst) || 0;
+
+    if (!item.hasGodownOrBatch) {
+      count = item.count;
+      discount = item.discount;
+    }
+
+    let basePrice = Number(selectedPriceRate * count);
+    let taxBasePrice = 0;
+
+    if (isTaxInclusive) {
+      taxBasePrice = Number((basePrice / (1 + igstValue / 100)).toFixed(2));
+    } else {
+      taxBasePrice = basePrice;
+    }
+
+    let priceAfterDiscount = taxBasePrice;
+
+    if (discount) {
+      priceAfterDiscount = Number((taxBasePrice - discount).toFixed(2));
+    }
+
+    const taxAmount = Number(
+      ((priceAfterDiscount * igstValue) / 100).toFixed(2)
+    );
+
+    return taxAmount;
+  };
+
+  const calculateCessAmount = (godownOrBatch, item) => {
+    let { selectedPriceRate, count, discount } = godownOrBatch;
+    const { isTaxInclusive, igst, cess, addl_cess } = item;
+    const igstValue = parseFloat(igst) || 0;
+    const cessValue = parseFloat(cess) || 0;
+    const addl_cessValue = parseFloat(addl_cess) || 0;
+
+    if (!item.hasGodownOrBatch) {
+      count = item.count || 0;
+      discount = item.discount || 0;
+    }
+
+    let basePrice = Number(selectedPriceRate * count);
+    let taxBasePrice = 0;
+
+    if (isTaxInclusive) {
+      taxBasePrice = Number((basePrice / (1 + igstValue / 100)).toFixed(2));
+    } else {
+      taxBasePrice = basePrice;
+    }
+
+    let priceAfterDiscount = taxBasePrice;
+
+    if (discount) {
+      priceAfterDiscount = Number((taxBasePrice - discount).toFixed(2));
+    }
+
+    const cessAmount = Number(
+      ((priceAfterDiscount * cessValue) / 100).toFixed(2)
+    );
+
+    const addl_cessAmount = Number(count * addl_cessValue);
+
+    const totalCessAmount = Number(cessAmount + addl_cessAmount) || 0;
+    item.totalCessAmount = totalCessAmount || 0;
+    return totalCessAmount;
+  };
+
   //// for batch and godown
 
   const calculateDiscount = (rate, count, taxAmt, finalAmt, isTaxInclusive) => {
@@ -128,7 +203,7 @@ function SalesPdf({
     // Check if tax is inclusive
     if (isTaxInclusive) {
       // For tax-inclusive items, directly compare totalPrice and finalAmt
-      return (totalPrice === finalAmt ? 0 : totalPrice - finalAmt).toFixed(2) ;
+      return (totalPrice === finalAmt ? 0 : totalPrice - finalAmt).toFixed(2);
     } else {
       // For non-tax-inclusive items
       return (totalPrice - (finalAmt - taxAmt)).toFixed(2);
@@ -262,6 +337,9 @@ function SalesPdf({
                   <th className="text-gray-700 font-bold uppercase py-2 px-1 ">
                     Tax %
                   </th>
+                  <th className="text-gray-700 font-bold uppercase p-2">
+                    Cess %
+                  </th>
                   <th className="text-gray-700 font-bold uppercase p-2">Qty</th>
                   <th className="text-gray-700 font-bold uppercase p-2">
                     Rate
@@ -269,8 +347,11 @@ function SalesPdf({
                   <th className="text-gray-700 font-bold uppercase p-2">
                     Disc
                   </th>
-                  
+
                   <th className="text-gray-700 font-bold uppercase p-2">Tax</th>
+                  <th className="text-gray-700 font-bold uppercase p-2">
+                    Cess
+                  </th>
                   <th className="text-gray-700 font-bold uppercase p-2 pr-0">
                     Amount
                   </th>
@@ -295,13 +376,24 @@ function SalesPdf({
                               </span>
                             )}
                             <br />
-                            
                           </td>
                           <td className="pt-2 text-black text-right pr-2  text-[8px]">
                             {el?.hsn_code}
                           </td>
+                          {!el?.hasGodownOrBatch ? (
+                            <td className=" text-black text-right pr-2 ">
+                              {el?.igst}
+                            </td>
+                          ) : isGodownOnlyItem(el) ? (
+                            <td className=" text-black text-right pr-2 ">
+                              {" "}
+                              {el?.igst}
+                            </td>
+                          ) : (
+                            <td></td>
+                          )}
                           <td className="pt-2 text-black text-right pr-2 ">
-                            {el?.igst}
+                            {el?.cess || 0}
                           </td>
                           <td className="pt-2 text-black text-right pr-2 font-bold">
                             {el?.count} {el?.unit.split("-")[0]}
@@ -319,46 +411,47 @@ function SalesPdf({
                           </td>
 
                           <td className="pt-2 text-black text-right pr-2">
-                            {
-                              el.GodownList &&
-                                el.GodownList.length > 0 &&
-                                calculateDiscountAmntOFNoBAtch(el) <0 ? ` ${0}` : ` ${calculateDiscountAmntOFNoBAtch(el)}`
-                            
-                            }
+                            {(el.GodownList &&
+                              el.GodownList.length > 0 &&
+                              el?.discount) ||
+                              0}
                           </td>
-                          <td className="pt-2 text-black text-right pr-2 font-bold">
-                            {`  ${(
-                              el?.total -
-                              (el?.total * 100) / (parseFloat(el.igst) + 100)
-                            )?.toFixed(2)}`}
-                          </td>
+                          {/* {el?.igstAmt || 0} */}
+
+                          {!el?.hasGodownOrBatch ? (
+                            <td className=" text-black text-right pr-2 ">
+                              {el?.igstAmt}
+                            </td>
+                          ) : isGodownOnlyItem(el) ? (
+                            <td className=" text-black text-right pr-2 ">
+                              {" "}
+                              {el?.igstAmt}
+                            </td>
+                          ) : (
+                            <td></td>
+                          )}
+
+                          {!el?.hasGodownOrBatch ? (
+                            <td className=" text-black text-right pr-2 ">
+                              {(el?.cessAmt || 0) + (el?.addl_cessAmt || 0)}
+                            </td>
+                          ) : isGodownOnlyItem(el) ? (
+                            <td className=" text-black text-right pr-2 ">
+                              {" "}
+                              {(el?.cessAmt || 0) + (el?.addl_cessAmt || 0)}
+                            </td>
+                          ) : (
+                            <td></td>
+                          )}
+                          {/* <td className="pt-2 text-black text-right pr-2 font-bold">
+                            {(el?.cessAmt || 0) + (el?.addl_cessAmt || 0)}
+                          </td> */}
                           <td className="pt-2 pr-1 text-black text-right font-bold">
                             {el?.total}
                           </td>
                         </tr>
                         {el.hasGodownOrBatch &&
                           el.GodownList.map((godownOrBatch, idx) => {
-                            const rate = godownOrBatch?.selectedPriceRate || 0;
-                            const taxAmt =
-                              Number(
-                                (
-                                  godownOrBatch?.individualTotal -
-                                  (godownOrBatch?.individualTotal * 100) /
-                                    (parseFloat(el.igst) + 100)
-                                )?.toFixed(2)
-                              ) || 0;
-                            const count = godownOrBatch?.count || 0;
-                            const finalAmt =
-                              Number(godownOrBatch?.individualTotal) || 0;
-                            // const discountAmount = ((rate * count + taxAmt) - Number(finalAmt)).toFixed(2);
-                            const discountAmount = calculateDiscount(
-                              rate,
-                              count,
-                              taxAmt,
-                              finalAmt,
-                              el?.isTaxInclusive
-                            ) || 0;
-
                             return godownOrBatch.added &&
                               godownOrBatch.batch ? (
                               <tr key={idx} className={`bg-white text-[9px] `}>
@@ -376,6 +469,9 @@ function SalesPdf({
                                 <td className="pt-2 text-black text-right pr-2 ">
                                   {el?.igst}
                                 </td>
+                                <td className="pt-2 text-black text-right pr-2 ">
+                                  {el?.cess || 0}
+                                </td>
                                 <td className="pt-2  flex justify-end pr-2">
                                   {godownOrBatch?.count} {el?.unit}
                                 </td>
@@ -384,18 +480,14 @@ function SalesPdf({
                                 </td>
 
                                 <td className="pt-2  pr-2 text-end">
-                                  {/* {` ${discountAmount}`} */}
-                                  {
-                                    ((Number(discountAmount)<0 ? 0: discountAmount) || 0)
-                                  }
+                                  {godownOrBatch?.discount || 0}
                                 </td>
 
                                 <td className="pt-2  text-black text-right pr-2">
-                                  {`${(
-                                    godownOrBatch?.individualTotal -
-                                    (godownOrBatch?.individualTotal * 100) /
-                                      (parseFloat(el.igst) + 100)
-                                  )?.toFixed(2)}` || " 0"}
+                                  {calculateTaxAmount(godownOrBatch, el)}
+                                </td>
+                                <td className="  text-end pr-2">
+                                  {calculateCessAmount(godownOrBatch, el)}
                                 </td>
                                 <td className="pt-2 text-end pr-1">
                                   <p>{godownOrBatch.individualTotal ?? 0}</p>
@@ -414,6 +506,7 @@ function SalesPdf({
                   <td className="font-bold text-[9px] p-2">Subtotal</td>
                   <td className="font-bold text-[9px] p-2"></td>
                   <td className="font-bold text-[9px] p-2"></td>
+                  <td className="font-bold text-[9px] p-2"></td>
                   <td className="text-black text-[9px] ">
                     <p className="text-right pr-1 font-bold">
                       {calculateTotalQunatity()}/unit
@@ -423,6 +516,14 @@ function SalesPdf({
                   <td className="text-right pr-1 text-black font-bold text-[9px]"></td>
                   <td className="text-right pr-1 text-black font-bold text-[9px]">
                     {calculateTotalTax()}
+                  </td>
+                  <td className="text-right pr-1 text-black font-bold text-[9px]">
+                    {" "}
+                    {data?.items?.reduce(
+                      (acc, el) =>
+                        acc + ((el?.cessAmt || 0) + (el?.addl_cessAmt || 0)),
+                      0
+                    )}
                   </td>
                   <td className="text-right pr-1 text-black font-bold text-[9px]">
                     {subTotal}
