@@ -30,8 +30,8 @@ function ShareSalesSecondary() {
   const handlePrint = useReactToPrint({
     content: () => contentToPrint.current,
     documentTitle: data.salesNumber
-    ? `${data.salesNumber}_${data._id.slice(-4)}`
-    : "Sales_Invoice",
+      ? `${data.salesNumber}_${data._id.slice(-4)}`
+      : "Sales_Invoice",
     pageStyle: `
       @page {
         size: A4;
