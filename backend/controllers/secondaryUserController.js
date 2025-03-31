@@ -513,18 +513,42 @@ export const getTransactionDetails = async (req, res) => {
 export const PartyList = async (req, res) => {
   const { cmp_id } = req.params;
   const { owner: Primary_user_id, sUserId: secUserId } = req;
-  const { outstanding, voucher } = req.query;
-
-  console.log("voucher", voucher);
-  console.log("Primary_user_id", Primary_user_id);
+  const { outstanding, voucher, page = 1, limit = 20, search = "" } = req.query;
 
   try {
+    // Pagination setup
+    const pageNum = parseInt(page);
+    const pageSize = parseInt(limit);
+    const skip = (pageNum - 1) * pageSize;
+
+    // Build search query
+    let searchQuery = {};
+    if (search) {
+      searchQuery = {
+        $or: [
+          { partyName: { $regex: search, $options: 'i' } },
+          { mobileNumber: { $regex: search, $options: 'i' } },
+          { accountGroup: { $regex: search, $options: 'i' } }
+        ]
+      };
+    }
+
+    // Combined query
+    const query = {
+      cmp_id,
+      Primary_user_id,
+      ...searchQuery
+    };
+
     // Fetch parties and secondary user concurrently
-    const [partyList, secUser] = await Promise.all([
-      PartyModel.find({ cmp_id, Primary_user_id }).select(
-        "_id partyName party_master_id billingAddress shippingAddress mobileNumber gstNo emailID pin country state accountGroup accountGroup_id subGroup subGroup_id"
-      ),
+    const [partyList, secUser, totalCount] = await Promise.all([
+      PartyModel.find(query)
+        .select("_id partyName party_master_id billingAddress shippingAddress mobileNumber gstNo emailID pin country state accountGroup accountGroup_id subGroup subGroup_id")
+        .skip(skip)
+        .limit(pageSize)
+        .lean(),
       SecondaryUser.findById(secUserId),
+      PartyModel.countDocuments(query)
     ]);
 
     if (!secUser) {
@@ -536,8 +560,6 @@ export const PartyList = async (req, res) => {
     );
     const vanSaleConfig = configuration?.vanSale || false;
 
-    let partyListWithOutstanding = partyList;
-
     // Determine the source values to match based on the voucher type
     let sourceMatch = {};
     if (voucher === "receipt") {
@@ -548,14 +570,16 @@ export const PartyList = async (req, res) => {
       sourceMatch = { source: "opening" };
     }
 
-    console.log(sourceMatch);
-
+    // Get outstanding data for these specific parties
+    const partyIds = partyList.map(party => party.party_master_id);
+    
     const partyOutstandingData = await TallyData.aggregate([
       {
         $match: {
           cmp_id,
           Primary_user_id: String(Primary_user_id),
           isCancelled: false,
+          party_id: { $in: partyIds },
           ...sourceMatch,
         },
       },
@@ -563,26 +587,26 @@ export const PartyList = async (req, res) => {
         $group: {
           _id: "$party_id",
           totalOutstanding: { $sum: "$bill_pending_amt" },
-          // latestBillDate: { $max: "$bill_date" },
+          latestBillDate: { $max: "$bill_date" },
         },
       },
       {
         $project: {
           _id: 0,
           party_id: "$_id",
-          partyName: 1,
           totalOutstanding: 1,
-          // latestBillDate: 1,
+          latestBillDate: 1,
         },
       },
     ]);
 
-    partyListWithOutstanding = partyList.map((party) => {
+    // Merge outstanding data with party data
+    const partyListWithOutstanding = partyList.map((party) => {
       const outstandingData = partyOutstandingData.find(
         (item) => item.party_id === party.party_master_id
       );
       return {
-        ...party.toObject(),
+        ...party,
         totalOutstanding: outstandingData?.totalOutstanding || 0,
         latestBillDate: outstandingData?.latestBillDate || null,
       };
@@ -592,6 +616,12 @@ export const PartyList = async (req, res) => {
       message: "Parties fetched",
       partyList: partyListWithOutstanding,
       vanSale: vanSaleConfig,
+      pagination: {
+        total: totalCount,
+        page: pageNum,
+        limit: pageSize,
+        totalPages: Math.ceil(totalCount / pageSize)
+      }
     });
   } catch (error) {
     console.error("Error in PartyList:", error.message);

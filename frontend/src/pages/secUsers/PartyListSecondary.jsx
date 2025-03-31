@@ -1,22 +1,14 @@
-/* eslint-disable react/prop-types */
-/* eslint-disable react/no-unknown-property */
-import { useEffect, useState } from "react";
-import api from "../../api/api";
-import { toast } from "react-toastify";
+import { useState } from "react";
 import { useSelector } from "react-redux";
 import Swal from "sweetalert2";
+import { toast } from "react-toastify";
 
-import SearchBar from "../../components/common/SearchBar";
 import PartyListComponent from "../../components/common/List/PartyListComponent";
-import CustomBarLoader from "../../components/common/CustomBarLoader";
 import TitleDiv from "../../components/common/TitleDiv";
+import api from "@/api/api";
 
 function PartyListSecondary() {
-  const [parties, setParties] = useState([]);
-  const [search, setSearch] = useState("");
   const [refresh, setRefresh] = useState(false);
-  const [loader, setLoader] = useState(false);
-  const [filteredParty, setFilteredParty] = useState([]);
 
   const cpm_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
@@ -24,42 +16,6 @@ function PartyListSecondary() {
   const type = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg.type
   );
-
-  const searchData = (data) => {
-    setSearch(data);
-  };
-
-  useEffect(() => {
-    setLoader(true);
-
-    const fetchParties = async () => {
-      try {
-        const res = await api.get(`/api/sUsers/PartyList/${cpm_id}`, {
-          withCredentials: true,
-        });
-
-        setParties(res.data.partyList);
-      } catch (error) {
-        console.log(error);
-      } finally {
-        setLoader(false);
-      }
-    };
-    fetchParties();
-  }, [cpm_id, refresh]);
-  useEffect(() => {
-    if (search === "") {
-      setFilteredParty(parties);
-    } else {
-      const filtered = parties.filter((el) =>
-        el.partyName.toLowerCase().includes(search.toLowerCase())
-      );
-      setFilteredParty(filtered);
-    }
-  }, [search, parties, refresh]);
-
-
-
 
   const deleteHandler = async (id) => {
     // Show confirmation dialog
@@ -94,22 +50,18 @@ function PartyListSecondary() {
           showConfirmButton: false,
         });
 
-        // Refresh the page
+        // Refresh the component
         setRefresh(!refresh);
       } catch (error) {
-        toast.error(error.response.data.message);
-        console.log(error);
+        toast.error(error.response?.data?.message || "An error occurred");
+        console.error(error);
       }
     }
   };
 
   return (
-    <div className=" bg-slate-50 h-screen overflow-hidden  ">
+    <div className="bg-slate-50 h-screen overflow-hidden">
       <div className="sticky top-0 z-20">
-    
-
-       
-
         <TitleDiv
           title="Your Customers"
           dropdownContents={[
@@ -123,25 +75,14 @@ function PartyListSecondary() {
             },
           ]}
         />
-
-        <SearchBar onType={searchData} />
       </div>
 
-      {/* adding party */}
-
-      {loader ? (
-        <CustomBarLoader color="#363ad6" />
-      ) : parties.length === 0 ? (
-        <div className="font-bold flex justify-center items-center mt-12 text-gray-500">
-          No Parties!!!
-        </div>
-      ) : (
-        <PartyListComponent
-          type={type}
-          filteredParty={filteredParty}
-          deleteHandler={deleteHandler}
-        />
-      )}
+      <PartyListComponent
+        type={type}
+        cpm_id={cpm_id}
+        deleteHandler={deleteHandler}
+        key={refresh} // This forces a re-render when refresh changes
+      />
     </div>
   );
 }
