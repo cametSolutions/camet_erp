@@ -56,7 +56,7 @@ function PdfFotterNonInd({
           {saleOrderConfiguration?.showTaxAmount && (
             <div className="flex flex-col items-end text-[9px] text-black font-bold gap-1 mt-3">
               <p className={calculateTotalTax() > 0 ? "" : "hidden"}>
-                Vat : {Number(calculateTotalTax())?.toFixed(2) || "0.00"}
+                VAT : {Number(calculateTotalTax())?.toFixed(2) || "0.00"}
               </p>
             </div>
           )}

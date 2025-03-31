@@ -23,7 +23,7 @@ function PdfFooter({
         {/* Left Div: Tax Table */}
 
         {saleOrderConfiguration?.showTaxAnalysis ? (
-          <TaxTable products={data?.items} />
+          <TaxTable products={data?.items} party={party} />
         ) : (
           <div></div>
         )}
@@ -60,7 +60,7 @@ function PdfFooter({
           )}
 
           {saleOrderConfiguration?.showTaxAmount &&
-            (org?.state === party?.state ? (
+            (org?.state === party?.state || !party?.state ? (
               <div className="flex flex-col items-end text-[9px] text-black font-bold gap-1 mt-3">
                 <p className={calculateTotalTax() > 0 ? "" : "hidden"}>
                   CGST : {(calculateTotalTax() / 2)?.toFixed(2) || "0.00"}
