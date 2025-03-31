@@ -5,6 +5,8 @@ const TaxTable = ({ products, org = {}, party = {} }) => {
   // New variable to handle state comparison
   const isSameState = org?.state === party?.state || !party?.state;
 
+  
+
   const consolidatedTaxData = useMemo(() => {
     if (products && products.length > 0) {
       const taxData = products.reduce((acc, product) => {
