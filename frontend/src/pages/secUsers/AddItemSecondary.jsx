@@ -63,27 +63,80 @@ function AddItemSecondary() {
 
   // Helper functions
   const calculateTotal = (item, selectedPriceLevel, situation = "normal") => {
-    let priceRate =
-      situation === "priceLevelChange"
-        ? item.Priceleveles.find(
-            (level) => level.pricelevel === selectedPriceLevel
-          )?.pricerate || 0
-        : item.selectedPriceRate || 0;
-
-    let subtotal = priceRate * item?.count;
-    let discountedSubtotal = subtotal;
-
-    if (item.discount) {
-      discountedSubtotal -= item?.discount;
-    } else if (item?.discountPercentage) {
-      discountedSubtotal -= (subtotal * item?.discountPercentage) / 100;
+    let priceRate = 0;
+    if (situation === "priceLevelChange") {
+      priceRate =
+        item.Priceleveles.find(
+          (level) => level.pricelevel === selectedPriceLevel
+        )?.pricerate || 0;
     }
 
-    const gstAmount = item?.isTaxInclusive
-      ? 0
-      : (discountedSubtotal * (item?.newGst || item?.igst || 0)) / 100;
+    let subtotal = 0;
+    let totalCess = 0; // Track total cess amount
 
-    return discountedSubtotal + gstAmount;
+    if (situation === "normal") {
+      priceRate = item.selectedPriceRate;
+    }
+    const quantity = Number(item.count);
+    const igstValue = Math.max(item.newGst || item.igst || 0, 0);
+
+    // Calculate base price based on tax inclusivity
+    let basePrice = priceRate * quantity;
+    let taxBasePrice = basePrice;
+
+    // For tax inclusive prices, calculate the base price without tax
+    if (item?.isTaxInclusive) {
+      taxBasePrice = Number((basePrice / (1 + igstValue / 100)).toFixed(2));
+    }
+
+    // Calculate discount based on discountType
+    let discountedPrice = taxBasePrice;
+
+    if (
+      item.discountType === "percentage" &&
+      item.discountPercentage !== 0 &&
+      item.discountPercentage !== undefined
+    ) {
+      // Percentage discount
+      const discountAmount = (taxBasePrice * item.discountPercentage) / 100;
+      discountedPrice = taxBasePrice - discountAmount;
+    } else if (item.discount !== 0 && item.discount !== undefined) {
+      // Fixed amount discount (default)
+      discountedPrice = taxBasePrice - item.discount;
+    }
+
+    // Calculate cess amounts
+    let cessAmount = 0;
+    let additionalCessAmount = 0;
+
+    // Standard cess calculation
+    if (item.cess && item.cess > 0) {
+      cessAmount = discountedPrice * (item.cess / 100);
+    }
+
+    // Additional cess calculation
+    if (item.addl_cess && item.addl_cess > 0) {
+      additionalCessAmount = quantity * item.addl_cess;
+    }
+
+    // Combine cess amounts
+    const totalCessAmount = cessAmount + additionalCessAmount;
+
+    // Calculate tax amount
+    const taxAmount = discountedPrice * (igstValue / 100);
+
+    // Calculate total including tax and cess
+    const individualTotal = Math.max(
+      parseFloat((discountedPrice + taxAmount + totalCessAmount).toFixed(2)),
+      0
+    );
+
+    subtotal += individualTotal;
+    totalCess += totalCessAmount;
+
+    subtotal = Math.max(parseFloat(subtotal), 0);
+
+    return subtotal;
   };
 
   const filterItems = (items, brand, category, subCategory, searchTerm) => {
@@ -452,9 +505,7 @@ function AddItemSecondary() {
                 <p>
                   <span>MRP</span> : {el?.item_mrp || 0}
                 </p>
-                | 
-
-                <p>Price : {el.selectedPriceRate || 0}</p>{" "}
+                |<p>Price : {el.selectedPriceRate || 0}</p>{" "}
               </div>
 
               <div className="flex">

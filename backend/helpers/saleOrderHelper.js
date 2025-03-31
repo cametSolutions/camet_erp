@@ -40,18 +40,28 @@ export const updateItemStockAndCalculatePrice = async (
   );
 
   // Calculate taxes
-  const { cgst = 0, sgst = 0, igst = 0, isTaxInclusive = false } = item;
+  const { 
+    cgst = 0, 
+    sgst = 0, 
+    igst = 0, 
+    cess = 0,          // Added cess percentage
+    addl_cess = 0,     // Added additional cess per unit
+    isTaxInclusive = false 
+  } = item;
+  
   let basePrice = totalPrice;
   let cgstAmt = 0;
   let sgstAmt = 0;
   let igstAmt = 0;
-  let subTotal = 0;//// after discount
+  let cessAmt = 0;      // Added cess amount
+  let addl_cessAmt = 0; // Added additional cess amount
+  let subTotal = 0;     // after discount
 
   if (isTaxInclusive) {
     const totalTaxPercentage = igst / 100;
     basePrice = totalPrice / (1 + totalTaxPercentage);
 
-    //  discount calulation
+    // Discount calculation
     let priceAfterDiscount = basePrice;
     if (item.discount || item.discountPercentage) {
       priceAfterDiscount = basePrice - item.discount;
@@ -61,15 +71,16 @@ export const updateItemStockAndCalculatePrice = async (
     cgstAmt = (priceAfterDiscount * cgst) / 100;
     sgstAmt = (priceAfterDiscount * sgst) / 100;
     igstAmt = (priceAfterDiscount * igst) / 100;
+    
+    // Calculate cess amount based on price after discount
+    cessAmt = (priceAfterDiscount * cess) / 100;
+    
+    // Calculate additional cess amount based on quantity
+    addl_cessAmt = itemCount * addl_cess;
+    
     subTotal = priceAfterDiscount;
-
-    // console.log("igstAmt", igstAmt);
-    // console.log("priceAfterDiscount", priceAfterDiscount);
-    // console.log("totalTaxPercentage", totalTaxPercentage);
-    // console.log("basePrice", basePrice);
-    // console.log("totalPrice", totalPrice);
   } else {
-    //  discount calulation
+    // Discount calculation
     let priceAfterDiscount = basePrice;
     if (item.discount || item.discountPercentage) {
       priceAfterDiscount = totalPrice - item.discount;
@@ -78,18 +89,15 @@ export const updateItemStockAndCalculatePrice = async (
     cgstAmt = (priceAfterDiscount * cgst) / 100;
     sgstAmt = (priceAfterDiscount * sgst) / 100;
     igstAmt = (priceAfterDiscount * igst) / 100;
+    
+    // Calculate cess amount based on price after discount
+    cessAmt = (priceAfterDiscount * cess) / 100;
+    
+    // Calculate additional cess amount based on quantity
+    addl_cessAmt = itemCount * addl_cess;
+    
     subTotal = priceAfterDiscount;
-
-    // console.log("igstAmt", igstAmt);
-    // console.log("priceAfterDiscount", priceAfterDiscount);
-    // console.log("totalPrice", totalPrice);
   }
-
-  // console.log("igstAmt", igstAmt);
-  // console.log("cgstAmt", cgstAmt);
-  // console.log("sgstAmt", sgstAmt);
-  // console.log("subTotal", subTotal);
-  
 
   return {
     ...item,
@@ -97,6 +105,8 @@ export const updateItemStockAndCalculatePrice = async (
     cgstAmt: parseFloat(cgstAmt.toFixed(2)),
     sgstAmt: parseFloat(sgstAmt.toFixed(2)),
     igstAmt: parseFloat(igstAmt.toFixed(2)),
+    cessAmt: parseFloat(cessAmt.toFixed(2)),         // Added cess amount
+    addl_cessAmt: parseFloat(addl_cessAmt.toFixed(2)), // Added additional cess amount
     subTotal: parseFloat((subTotal || 0).toFixed(2)),
   };
 };

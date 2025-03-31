@@ -386,7 +386,7 @@ function AddItemSalesSecondary() {
 
   ///////////////////////////calculateTotal///////////////////////////////////
 
-  const calculateTotal = (item, selectedPriceLevel, situation = "normal") => {
+const calculateTotal = (item, selectedPriceLevel, situation = "normal") => {
     let priceRate = 0;
     if (situation === "priceLevelChange") {
       priceRate =
