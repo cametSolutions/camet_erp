@@ -6,6 +6,7 @@ const initialState = {
   date: "",
   convertedFrom: [],
   products: [],
+  priceLevels:[],
   party: {},
   items: [],
   selectedPriceLevel: "",
@@ -44,6 +45,9 @@ export const salesSecondarySlice = createSlice({
 
     addAllProducts: (state, action) => {
       state.products = action.payload;
+    },
+    addAllPriceLevels: (state, action) => {
+      state.priceLevels = action.payload;
     },
 
     removeItem: (state, action) => {
@@ -436,6 +440,7 @@ export const {
   changeTaxInclusive,
   addOrderConversionDetails,
   addConvertedFrom,
+  addAllPriceLevels
   // updateAllGodowns
 } = salesSecondarySlice.actions;
 

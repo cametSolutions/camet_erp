@@ -205,6 +205,7 @@ import OutstandingSummary from '../pages/secUsers/OutstandingSummary'
 import AddSubGroup from '../pages/secUsers/settilngs/partySettings/AddSubGroup'
 import AddOpening from '@/pages/secUsers/openings/PartyOpening/AddOpening'
 import SalesSummaryTransactions from '@/pages/secUsers/Reports/salesSummary/SalesSummaryTransactions'
+import VoucherAddCount from '@/pages/dummy/VoucherAddCount'
 
 const Routers = () => {
   return (
@@ -310,7 +311,7 @@ const Routers = () => {
 
         <Route path='/sUsers/sales' element={<ProtectedSecRoute><SalesSecondary/></ProtectedSecRoute>}></Route>
          <Route path='/sUsers/searchPartySales' element={<ProtectedSecRoute><SearchParty/></ProtectedSecRoute>}></Route>
-        <Route path='/sUsers/addItemSales' element={<ProtectedSecRoute><AddItemSalesSecondary/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/addItemSales' element={<ProtectedSecRoute><VoucherAddCount/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/editItemSales/:id/:godownName/:index' element={<ProtectedSecRoute><EditItemSalesSecondary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/salesDetails/:id' element={<ProtectedSecRoute><SalesDetailsSecondary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/vanSaleDetails/:id' element={<ProtectedSecRoute><VanSaleDetailsSecondary/></ProtectedSecRoute>}></Route>

@@ -34,9 +34,6 @@ function AddItemSalesSecondary() {
   const [scrollPosition, setScrollPosition] = useState(0);
   const [refresh, setRefresh] = useState(false);
   const [isScanOn, setIsScanOn] = useState(false);
-  // const [scannedProducts, setScannedProducts] = useState([]);
-
-  // const [godownname, setGodownname] = useState("");
   const [heights, setHeights] = useState({});
 
   ///////////////////////////cpm_id///////////////////////////////////
@@ -806,51 +803,7 @@ const calculateTotal = (item, selectedPriceLevel, situation = "normal") => {
     setItem(updatedItems);
   };
 
-  // const handleTotalChangeWithPriceLevel = (pricelevel) => {
-  //   const updatedItems = filteredItems.map((item) => {
-  //     if (item.added === true) {
-  //       const { individualTotals, total } = calculateTotal(
-  //         item,
-  //         pricelevel,
-  //         "priceLevelChange"
-  //       )
-
-  //       dispatch(changeTotal({ ...item, total: total }))
-  //       const newPriceRate =
-  //         item?.Priceleveles.find(
-  //           (priceLevelItem) => priceLevelItem.pricelevel === pricelevel
-  //         )?.pricerate || 0
-
-  //       // if (item?.hasGodownOrBatch) {
-  //       const updatedGodownList = item?.GodownList.map((godown, idx) => {
-  //         return {
-  //           ...godown,
-  //           individualTotal:
-  //             individualTotals.find((el) => el.index === idx)
-  //               ?.individualTotal || 0,
-  //           selectedPriceRate: newPriceRate
-  //         }
-  //       })
-
-  //       dispatch(
-  //         updateItem({
-  //           item: { ...item, GodownList: updatedGodownList, total: total },
-  //           moveToTop: false
-  //         })
-  //       )
-
-  //       return {
-  //         ...item,
-  //         GodownList: updatedGodownList,
-  //         total: total
-  //       }
-  //     }
-  //     return item
-  //   })
-
-  //   setItem(updatedItems)
-  // }
-
+  
   ///////////////////////////handlePriceLevelChange///////////////////////////////////
 
   const handlePriceLevelChange = (e) => {
