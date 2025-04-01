@@ -45,7 +45,6 @@ function ProductListSecondary() {
 
   // Debounced search function
   const searchData = (data) => {
-
     // Clear any existing timeout
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
@@ -282,6 +281,8 @@ function ProductListSecondary() {
     );
   };
 
+  console.log(isLoading);
+
   return (
     <>
       <BarcodeModal
@@ -316,7 +317,7 @@ function ProductListSecondary() {
 
         {loader && <CustomBarLoader />}
 
-        {!loader && products.length === 0 && (
+        {!loader && !isLoading && products.length === 0 && (
           <div className="flex justify-center items-center mt-20 overflow-hidden font-bold text-gray-500">
             Oops!!.No Products Found
           </div>

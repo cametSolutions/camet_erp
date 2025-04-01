@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { FaEdit } from "react-icons/fa";
 import { MdDelete } from "react-icons/md";
 import { Link } from "react-router-dom";
@@ -10,8 +10,19 @@ import { toast } from "react-toastify";
 import api from "@/api/api";
 import CustomBarLoader from "../CustomBarLoader";
 import SearchBar from "../SearchBar";
+import { IoMdArrowDown } from "react-icons/io";
+import { formatAmount } from "../../../../../backend/helpers/helper";
+import { useSelector, useDispatch } from "react-redux";
+import { useNavigate, useLocation } from "react-router-dom";
+import { addParty as addPartySales } from "../../../../slices/salesSecondary";
+import { addParty as addPartySaleOrder } from "../../../../slices/invoiceSecondary";
+import { addParty as addPartyPurchase } from "../../../../slices/purchase";
+import { addParty as addPartyCreditNote } from "../../../../slices/creditNote";
+import { addParty as addPartyDebitNote } from "../../../../slices/debitNote";
+import { addParty as addPartyReceipt } from "../../../../slices/receipt";
+import { addParty as addPartyPurchasePayment } from "../../../../slices/payment";
 
-function PartyListComponent({ type, deleteHandler, user = "secondary", cpm_id }) {
+function PartyListComponent({ deleteHandler = () => {}, isVoucher = false }) {
   const [parties, setParties] = useState([]);
   const [filteredParties, setFilteredParties] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -19,12 +30,24 @@ function PartyListComponent({ type, deleteHandler, user = "secondary", cpm_id })
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [listHeight, setListHeight] = useState(0);
+  const debounceTimerRef = useRef(null);
   const PAGE_SIZE = 60;
+
+  const { _id: cmp_id, type } = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg
+  );
+
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const location = useLocation();
+
+  // console.log(location.pathname);
+  // console.log();
 
   // Calculate list height based on window size
   useEffect(() => {
     const calculateHeight = () => {
-      const newHeight = window.innerHeight - 108; // Adjusted for header and search bar
+      const newHeight = window.innerHeight - 107; // Adjusted for header and search bar
       setListHeight(newHeight);
     };
 
@@ -34,63 +57,77 @@ function PartyListComponent({ type, deleteHandler, user = "secondary", cpm_id })
   }, []);
 
   // Fetch data function
-  const fetchParties = useCallback(async (pageNum = 1, searchTerm = "") => {
-    if (pageNum === 1) setLoading(true);
-    
-    try {
-      const res = await api.get(`/api/sUsers/PartyList/${cpm_id}`, {
-        params: {
-          page: pageNum,
-          limit: PAGE_SIZE,
-          search: searchTerm
-        },
-        withCredentials: true,
-      });
+  const fetchParties = useCallback(
+    async (pageNum = 1, searchTerm = "") => {
+      if (pageNum === 1) setLoading(true);
 
-      const newParties = res.data.partyList;
-      
-      if (pageNum === 1) {
-        setParties(newParties);
-        setFilteredParties(newParties);
-      } else {
-        setParties(prevParties => [...prevParties, ...newParties]);
-        setFilteredParties(prevParties => [...prevParties, ...newParties]);
+      try {
+        setLoading(true);
+        const res = await api.get(`/api/sUsers/PartyList/${cmp_id}`, {
+          params: {
+            page: pageNum,
+            limit: PAGE_SIZE,
+            search: searchTerm,
+          },
+          withCredentials: true,
+        });
+
+        const newParties = res.data.partyList;
+
+        if (pageNum === 1) {
+          setParties(newParties);
+          setFilteredParties(newParties);
+        } else {
+          setParties((prevParties) => [...prevParties, ...newParties]);
+          setFilteredParties((prevParties) => [...prevParties, ...newParties]);
+        }
+
+        // Check if we've reached the end of the data
+        setHasMore(newParties.length === PAGE_SIZE);
+      } catch (error) {
+        console.error("Error fetching parties:", error);
+        toast.error("Failed to load customers. Please try again.");
+      } finally {
+        setLoading(false);
       }
-
-      // Check if we've reached the end of the data
-      setHasMore(newParties.length === PAGE_SIZE);
-    } catch (error) {
-      console.error("Error fetching parties:", error);
-      toast.error("Failed to load customers. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  }, [cpm_id]);
+    },
+    [cmp_id]
+  );
 
   // Initial data load
   useEffect(() => {
     fetchParties(1, search);
-  }, [fetchParties, cpm_id]);
+  }, [fetchParties, cmp_id]);
 
-  // Handle search
-  const handleSearch = useCallback((searchTerm) => {
-    setSearch(searchTerm);
-    
-    // Reset pagination when searching
-    setPage(1);
-    
-    if (searchTerm === "") {
-      // If search is cleared, reset to showing all parties
-      fetchParties(1, "");
-    } else {
-      // Debounce search for better performance
-      const timeoutId = setTimeout(() => {
+  // Handle search with improved debounce
+  const handleSearch = useCallback(
+    (searchTerm) => {
+      setSearch(searchTerm);
+
+      // Clear any existing timeout
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+
+      // Reset pagination when searching
+      setPage(1);
+
+      // Set debounced search
+      debounceTimerRef.current = setTimeout(() => {
         fetchParties(1, searchTerm);
-      }, 300);
-      
-      return () => clearTimeout(timeoutId);
-    }
-  }, [fetchParties]);
+      }, 400);
+    },
+    [fetchParties]
+  );
+
+  // Clean up debounce timer on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, []);
 
   // Load more data when scrolling
   const loadMoreItems = useCallback(() => {
@@ -103,6 +140,47 @@ function PartyListComponent({ type, deleteHandler, user = "secondary", cpm_id })
 
   // Is item loaded check for InfiniteLoader
   const isItemLoaded = (index) => index < filteredParties.length;
+
+  /// select handler
+  //// dispatch to correct redux state according to vouchers
+
+  const selectHandler = (el) => {
+    if (location.pathname === "/sUsers/partyStatement/partyList") {
+      navigate("/sUsers/partyStatement", { state: el });
+    } else if (location.pathname === "/sUsers/orderPending/partyList") {
+      navigate(`/sUsers/pendingOrders/${el?._id}`);
+    } else {
+      //// dispatch to the correct redux state
+      const { pathname } = location;
+      const endPath = pathname.split("/").pop();
+      console.log(endPath);
+
+      if (endPath === "searchPartySales") {
+        console.log("searchPartySales");
+        dispatch(addPartySales(el));
+      } else if (endPath === "searchParty") {
+        console.log("searchPartySaleOrder");
+        dispatch(addPartySaleOrder(el));
+      } else if (endPath === "searchPartyPurchase") {
+        console.log("searchPartyPurchase");
+        dispatch(addPartyPurchase(el));
+      } else if (endPath === "searchPartyPurchasePayment") {
+        console.log("searchPartyPurchasePayment");
+        dispatch(addPartyPurchasePayment(el));
+      } else if (endPath === "searchPartyReceipt") {
+        console.log("searchPartyReceipt");
+        dispatch(addPartyReceipt(el));
+      } else if (endPath === "searchPartyCreditNote") {
+        console.log("searchPartyCreditNote");
+        dispatch(addPartyCreditNote(el));
+      } else if (endPath === "searchPartyDebitNote") {
+        console.log("searchPartyDebitNote");
+        dispatch(addPartyDebitNote(el));
+      }
+
+      navigate(-1, { replace: true });
+    }
+  };
 
   // Row renderer
   const Row = ({ index, style }) => {
@@ -119,39 +197,33 @@ function PartyListComponent({ type, deleteHandler, user = "secondary", cpm_id })
     const el = filteredParties[index];
     const adjustedStyle = {
       ...style,
-      marginTop: "16px",
+      // marginTop: "16px",
       height: "130px",
     };
-    
+
     return (
       <div
         key={el._id}
         style={adjustedStyle}
-        className="bg-white p-4 pb-6 drop-shadow-lg mt-4 flex flex-col rounded-sm cursor-pointer hover:bg-slate-100 pr-7"
+        className="bg-white p-4 pb-6 drop-shadow-lg  flex flex-col rounded-sm cursor-pointer hover:bg-slate-100 pr-6"
       >
-        <div className="flex justify-between w-full gap-3">
-          <div>
-            <p className="font-bold text-sm">{el?.partyName}</p>
+        <div className="flex justify-between ">
+          <div className="overflow-hidden">
+            <p className="font-bold text-sm truncate">{el?.partyName}</p>
             {el.accountGroup && (
               <div className="flex">
-                <p className="font-medium mt-2 text-gray-500 text-sm">
+                <p className="font-medium mt-2 text-gray-500 text-sm truncate">
                   {el?.accountGroup}
                 </p>
               </div>
             )}
-            {el.totalOutstanding > 0 && (
-              <div className="mt-1">
-                <p className="text-xs font-semibold text-red-500">
-                  Outstanding: ₹{el.totalOutstanding.toLocaleString()}
-                </p>
-              </div>
-            )}
           </div>
-          <div className="flex justify-center items-center gap-4">
+          <div className="flex justify-center items-center gap-3 shrink-0">
             <CallIcon phoneNumber={el?.mobileNumber} size={18} color="green" />
-            <Link to={`/${user === "secondary" ? "sUsers" : "pUsers"}/editParty/${el._id}`}>
+            <Link to={`/sUsers/editParty/${el._id}`}>
               <FaEdit className="text-blue-500" />
             </Link>
+            {/* delete id only for self users */}
             {type === "self" && (
               <MdDelete
                 onClick={() => deleteHandler(el._id)}
@@ -160,21 +232,67 @@ function PartyListComponent({ type, deleteHandler, user = "secondary", cpm_id })
             )}
           </div>
         </div>
-        <div className="flex gap-2 text-nowrap text-sm mt-1">
-          <p className="font-semibold">Mobile:</p>
-          <p className="font-semibold text-gray-500">{el?.mobileNumber}</p>
+        <div className="flex gap-2 text-sm mt-1 overflow-hidden">
+          <p className="font-semibold shrink-0">Mobile:</p>
+          <p className="font-semibold text-gray-500 truncate ">
+            {el?.mobileNumber}
+          </p>
         </div>
-        <hr className="mt-6" />
+        {/* <hr className="mt-6" /> */}
+      </div>
+    );
+  };
+
+  /////// we are rendering the same page for vouchers and for showing just parties in the dashboard so we must maintain the ui changes
+
+  const voucherRow = ({ index, style }) => {
+    // Show loading placeholder if item isn't loaded yet
+    if (!isItemLoaded(index)) {
+      return (
+        <div style={style} className="bg-white p-4 animate-pulse">
+          <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+          <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+        </div>
+      );
+    }
+
+    const el = filteredParties[index];
+    const adjustedStyle = {
+      ...style,
+      height: "100px",
+    };
+
+    return (
+      <div
+        key={el._id}
+        style={adjustedStyle}
+        onClick={() => selectHandler(el)}
+        className="bg-white p-4 pb-6 drop-shadow-lg  flex flex-col rounded-sm cursor-pointer hover:bg-slate-100 pr-6"
+      >
+        <div className="flex justify-between ">
+          <div className="overflow-hidden">
+            <p className="font-bold text-sm truncate">{el?.partyName}</p>
+            <p className="font-medium text-gray-500 text-sm">Customer</p>
+          </div>
+          {el?.totalOutstanding && el?.totalOutstanding > 0 && (
+            <section>
+              <p className="font-medium text-gray-500 text-md mr-3 flex items-center gap-2">
+                <IoMdArrowDown color="green" />
+                {formatAmount(el?.totalOutstanding)}
+              </p>
+            </section>
+          )}
+        </div>
       </div>
     );
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full overflow-hidden">
       <div className="sticky top-0 z-10 bg-slate-50 pb-2">
         <SearchBar onType={handleSearch} />
       </div>
-      
+
       {loading && parties.length === 0 ? (
         <CustomBarLoader color="#363ad6" />
       ) : filteredParties.length === 0 ? (
@@ -182,10 +300,12 @@ function PartyListComponent({ type, deleteHandler, user = "secondary", cpm_id })
           No Customers Found
         </div>
       ) : (
-        <div style={{ height: listHeight, width: "100%" }}>
+        <div style={{ height: listHeight }}>
           <InfiniteLoader
             isItemLoaded={isItemLoaded}
-            itemCount={hasMore ? filteredParties.length + 1 : filteredParties.length}
+            itemCount={
+              hasMore ? filteredParties.length + 1 : filteredParties.length
+            }
             loadMoreItems={loadMoreItems}
             threshold={5}
           >
@@ -194,11 +314,14 @@ function PartyListComponent({ type, deleteHandler, user = "secondary", cpm_id })
                 ref={ref}
                 onItemsRendered={onItemsRendered}
                 height={listHeight}
-                itemCount={hasMore ? filteredParties.length + 1 : filteredParties.length}
-                itemSize={140}
+                itemCount={
+                  hasMore ? filteredParties.length + 1 : filteredParties.length
+                }
+                itemSize={isVoucher ? 110 : 140}
                 width="100%"
               >
-                {Row}
+                {/* {Row} */}
+                {isVoucher ? voucherRow : Row}
               </List>
             )}
           </InfiniteLoader>
