@@ -30,7 +30,7 @@ function VoucherProductLIst({
   //// for calculating the height of list
   useEffect(() => {
     const calculateHeight = () => {
-      const newHeight = window.innerHeight - 100;
+      const newHeight = window.innerHeight - 142;
       setListHeight(newHeight);
     };
 
@@ -65,14 +65,10 @@ function VoucherProductLIst({
 
   const getItemSize = (index) => {
     const product = items[index];
-
     const isExpanded = product?.isExpanded || false;
-
     const baseHeight = isExpanded ? heights[index] || 250 : 220; // Base height for unexpanded and expanded items
     const extraHeight = isExpanded ? 230 : 0; // Extra height for expanded items
-
     return baseHeight + extraHeight;
-    // return
   };
 
   // Filter items with balace stock zero for purchase only but not for normal no   batch and  no godown items
@@ -488,14 +484,15 @@ function VoucherProductLIst({
     const adjustedStyle = {
       ...style,
       marginTop: "6px",
-      height: "210px",
+      height: "190px",
+      
       // height: el?.hasGodownOrBatch ? "230px" : "180px",
     };
     return (
       <div
         style={adjustedStyle}
         key={index}
-        className="bg-white  py-2 pb-6  mt-0  rounded-sm cursor-pointer z-10  shadow-lg  "
+        className="bg-white border  py-2 pb-6  mt-0  rounded-sm cursor-pointer z-10  shadow-lg  "
       >
         <div className=" flex justify-between items-center p-4">
           <div className="flex items-start gap-3 md:gap-4  ">
@@ -729,7 +726,7 @@ function VoucherProductLIst({
               ref={listRef}
               style={{
                 scrollbarWidth: "thin",
-                paddingBottom: "45px",
+                paddingBottom: "2px",
                 zIndex: "10",
                 // scrollbarColor: "transparent transparent",
               }}

@@ -30,13 +30,13 @@ const ProductDetails = ({
   return (
     <div
       ref={detailsRef}
-      className={`product-details mb-6 mt-8 w-full shadow-lg p-3  `}
+      className={`product-details mb-6 mt-8 w-full shadow-lg p-3 bg-gray-50 border-4 `}
     >
       {batchOrGodownList.map((item, index) => (
         <>
           <div
             key={index}
-            className="mb-8 flex  justify-between items-center mt-3  px-[40px] md:px-[64px]"
+            className="mb-4 flex  justify-between items-center mt-3  px-[40px] md:px-[64px] "
           >
             <div className="flex flex-col gap-1  ">
               {item?.batch && (

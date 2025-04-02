@@ -7,13 +7,13 @@ import {
   addAllPriceLevels,
   setPriceLevel,
 } from "../../../slices/salesSecondary";
-import BarcodeScan from "@/components/secUsers/barcodeScanning/BarcodeScan";
+// import BarcodeScan from "@/components/secUsers/barcodeScanning/BarcodeScan";
 import SearchBar from "@/components/common/SearchBar";
 import VoucherProductLIst from "./VoucherProductLIst";
+import Filter from "@/components/secUsers/Filter";
 
 function VoucherAddCount() {
   const [items, setItems] = useState([]);
-  const [selectedPriceLevel, setSelectedPriceLevel] = useState("P2");
   // const [search, setSearch] = useState("");
   const [priceLevels, setPriceLevels] = useState([]);
   const [loader, setLoader] = useState(false);
@@ -175,7 +175,7 @@ function VoucherAddCount() {
         console.log(priceLevelsFromRedux);
 
         const defaultPriceLevel = priceLevels[0];
-        setSelectedPriceLevel(defaultPriceLevel);
+        // setSelectedPriceLevel(defaultPriceLevel);
         dispatch(setPriceLevel(defaultPriceLevel));
       } catch (error) {
         console.error("Error fetching filters:", error);
@@ -195,6 +195,9 @@ function VoucherAddCount() {
         productItem?.Priceleveles?.find(
           (priceLevelItem) => priceLevelItem.pricelevel === pricelevel
         )?.pricerate || 0;
+
+      console.log(pricelevel);
+      console.log(priceRate);
 
       // Find if there's a matching Redux items
       const reduxItem = itemsFromRedux.find((p) => p._id === productItem._id);
@@ -224,22 +227,17 @@ function VoucherAddCount() {
 
   // Second useEffect only for price rate updates - uses a simple function call instead of internal logic
   useEffect(() => {
-    addSelectedRate(selectedPriceLevel);
-  }, [selectedPriceLevel, refresh]);
+    // setSelectedPriceLevel(selectedPriceLevelFromRedux);
+    addSelectedRate(selectedPriceLevelFromRedux);
+  }, [selectedPriceLevelFromRedux, refresh]);
 
   return (
-    <div>
+    <div className="h-screen overflow-y-hidden">
       <TitleDiv title={"Add Item"} from="/sUsers/sales" />
       <SearchBar />
-      
-      <hr />
+      <Filter addAllProducts={addAllProducts} priceLevels={priceLevels} />
 
-      <VoucherProductLIst
-        items={items}
-        loader={loader}
-        setItems={setItems}
-        selectedPriceLevel={selectedPriceLevel}
-      />
+      <VoucherProductLIst items={items} loader={loader} setItems={setItems} />
     </div>
   );
 }
