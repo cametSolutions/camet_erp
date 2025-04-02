@@ -51,6 +51,14 @@ function VoucherProductLIst({
     }
   }, []);
 
+    useEffect(() => {
+      if (listRef.current) {
+        listRef.current.resetAfterIndex(0);
+      }
+  
+      // setSearch("");
+    }, [heights]);
+
   const setHeightOfProducts = useCallback((index, height) => {
     setHeights((prevHeights) => {
       if (prevHeights[index] !== height) {
@@ -66,7 +74,7 @@ function VoucherProductLIst({
   const getItemSize = (index) => {
     const product = items[index];
     const isExpanded = product?.isExpanded || false;
-    const baseHeight = isExpanded ? heights[index] || 250 : 220; // Base height for unexpanded and expanded items
+    const baseHeight = isExpanded ? heights[index] || 220 : product.hasGodownOrBatch ? 200 : 180; // Base height for unexpanded and expanded items
     const extraHeight = isExpanded ? 230 : 0; // Extra height for expanded items
     return baseHeight + extraHeight;
   };
@@ -484,15 +492,15 @@ function VoucherProductLIst({
     const adjustedStyle = {
       ...style,
       marginTop: "6px",
-      height: "190px",
+      // height: ,
       
-      // height: el?.hasGodownOrBatch ? "230px" : "180px",
+      height: el?.hasGodownOrBatch ? "190px" : "170px",
     };
     return (
       <div
         style={adjustedStyle}
         key={index}
-        className="bg-white border  py-2 pb-6  mt-0  rounded-sm cursor-pointer z-10  shadow-lg  "
+        className="bg-white border-2  py-2   mt-0  rounded-sm cursor-pointer z-10  shadow-lg  "
       >
         <div className=" flex justify-between items-center p-4">
           <div className="flex items-start gap-3 md:gap-4  ">
@@ -685,7 +693,7 @@ function VoucherProductLIst({
                 handleExpansion(el?._id);
                 setTimeout(() => listRef.current.resetAfterIndex(index), 0);
               }}
-              className="p-2 border-gray-300 border rounded-md w-full text-violet-500 mt-4 font-semibold flex items-center justify-center gap-3"
+              className="p-2 border-gray-300 border rounded-md w-full text-violet-500 mt-2 font-semibold flex items-center justify-center gap-3"
             >
               {el?.isExpanded ? "Hide Details" : "Show Details"}
 
@@ -726,7 +734,7 @@ function VoucherProductLIst({
               ref={listRef}
               style={{
                 scrollbarWidth: "thin",
-                paddingBottom: "2px",
+                paddingBottom: "20px",
                 zIndex: "10",
                 // scrollbarColor: "transparent transparent",
               }}

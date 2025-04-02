@@ -196,8 +196,7 @@ function VoucherAddCount() {
           (priceLevelItem) => priceLevelItem.pricelevel === pricelevel
         )?.pricerate || 0;
 
-      console.log(pricelevel);
-      console.log(priceRate);
+
 
       // Find if there's a matching Redux items
       const reduxItem = itemsFromRedux.find((p) => p._id === productItem._id);
@@ -237,7 +236,7 @@ function VoucherAddCount() {
       <SearchBar />
       <Filter addAllProducts={addAllProducts} priceLevels={priceLevels} />
 
-      <VoucherProductLIst items={items} loader={loader} setItems={setItems} />
+      <VoucherProductLIst items={items} loader={loader} setItems={setItems} selectedPriceLevel={selectedPriceLevelFromRedux} />
     </div>
   );
 }
