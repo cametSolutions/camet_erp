@@ -190,6 +190,9 @@ function ProductListSecondary() {
 
   // Load more items when reaching the end
   const loadMoreItems = () => {
+
+
+    
     if (!isLoading && hasMore) {
       return fetchProducts(page + 1, searchTerm);
     }

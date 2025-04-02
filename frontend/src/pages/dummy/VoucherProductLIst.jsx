@@ -12,12 +12,18 @@ import {
   removeItem,
   updateItem,
 } from "../../../slices/salesSecondary";
+import InfiniteLoader from "react-window-infinite-loader";
 function VoucherProductLIst({
   items,
   loader,
   tab = "Sales",
   setItems,
   selectedPriceLevel,
+  hasMore = { hasMore },
+  isLoading = { isLoading },
+  fetchProducts,
+  page = 1,
+  searchTerm = "",
 }) {
   const listRef = useRef(null);
   const [listHeight, setListHeight] = useState(0);
@@ -51,13 +57,13 @@ function VoucherProductLIst({
     }
   }, []);
 
-    useEffect(() => {
-      if (listRef.current) {
-        listRef.current.resetAfterIndex(0);
-      }
-  
-      // setSearch("");
-    }, [heights]);
+  useEffect(() => {
+    if (listRef.current) {
+      listRef.current.resetAfterIndex(0);
+    }
+
+    // setSearch("");
+  }, [heights]);
 
   const setHeightOfProducts = useCallback((index, height) => {
     setHeights((prevHeights) => {
@@ -74,7 +80,11 @@ function VoucherProductLIst({
   const getItemSize = (index) => {
     const product = items[index];
     const isExpanded = product?.isExpanded || false;
-    const baseHeight = isExpanded ? heights[index] || 220 : product.hasGodownOrBatch ? 200 : 180; // Base height for unexpanded and expanded items
+    const baseHeight = isExpanded
+      ? heights[index] || 220
+      : product?.hasGodownOrBatch
+      ? 200
+      : 180; // Base height for unexpanded and expanded items
     const extraHeight = isExpanded ? 230 : 0; // Extra height for expanded items
     return baseHeight + extraHeight;
   };
@@ -486,6 +496,24 @@ function VoucherProductLIst({
   };
 
   const Row = ({ index, style }) => {
+    if (!isItemLoaded(index)) {
+      return (
+        <div
+          style={style}
+          className="bg-white p-4 pb-6 drop-shadow-lg mt-4 flex flex-col rounded-sm"
+        >
+          <div className="animate-pulse flex space-x-4">
+            <div className="flex-1 space-y-4 py-1">
+              <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+              <div className="space-y-2">
+                <div className="h-4 bg-gray-200 rounded"></div>
+                <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
     const el = displayedItems[index];
 
     // const isExpanded = expandedProductId === el?._id;
@@ -493,7 +521,7 @@ function VoucherProductLIst({
       ...style,
       marginTop: "6px",
       // height: ,
-      
+
       height: el?.hasGodownOrBatch ? "190px" : "170px",
     };
     return (
@@ -721,40 +749,65 @@ function VoucherProductLIst({
     );
   };
 
+  const loadMoreItems = useCallback(() => {
+    if (!hasMore || isLoading) return Promise.resolve();
+    return fetchProducts(page + 1, searchTerm);
+  }, [hasMore, isLoading, fetchProducts, page, searchTerm]);
+
+  const isItemLoaded = (index) => index < items.length;
+
   return (
     <div>
-      {items.length === 0 ? (
+      {items.length === 0 && !loader ? (
         <div className="bg-white p-4 py-2 pb-6 mt-7 flex justify-center items-center rounded-sm cursor-pointer border-b-2 h-screen">
           <p>No products available</p>
         </div>
       ) : (
         !loader && (
           <div className="relative">
-            <List
-              ref={listRef}
-              style={{
-                scrollbarWidth: "thin",
-                paddingBottom: "20px",
-                zIndex: "10",
-                // scrollbarColor: "transparent transparent",
-              }}
-              className="z-0"
-              height={listHeight} // Specify the height of your list
-              itemCount={items.length} // Specify the total number of items
-              // itemSize={170} // Specify the height of each item
-              itemSize={getItemSize}
-              width="100%" // Specify the width of your list
-              initialScrollOffset={scrollPosition}
-              onScroll={({ scrollOffset }) => {
-                setScrollPosition(scrollOffset);
-                localStorage.setItem(
-                  "scrollPositionAddItemSales",
-                  scrollOffset.toString()
-                );
-              }}
+            <InfiniteLoader
+              isItemLoaded={isItemLoaded}
+              itemCount={hasMore ? items.length + 1 : items.length}
+              loadMoreItems={loadMoreItems}
+              threshold={10}
             >
-              {Row}
-            </List>
+              {({ onItemsRendered, ref }) => (
+                <List
+                  style={{
+                    scrollbarWidth: "thin",
+                    paddingBottom: "20px",
+                    zIndex: "10",
+                  }}
+                  className="z-0"
+                  height={listHeight}
+                  itemCount={hasMore ? items.length + 1 : items.length}
+                  itemSize={getItemSize}
+                  width="100%"
+                  initialScrollOffset={scrollPosition}
+                  onItemsRendered={({
+                    visibleStartIndex,
+                    visibleStopIndex,
+                  }) => {
+                    if (visibleStopIndex >= items.length - 1) {
+                      loadMoreItems();
+                    }
+                  }}
+                  onScroll={({ scrollOffset }) => {
+                    setScrollPosition(scrollOffset);
+                    localStorage.setItem(
+                      "scrollPositionAddItemSales",
+                      scrollOffset.toString()
+                    );
+                  }}
+                  ref={(listInstance) => {
+                    ref(listInstance);
+                    listRef.current = listInstance;
+                  }}
+                >
+                  {Row}
+                </List>
+              )}
+            </InfiniteLoader>
           </div>
         )
       )}
