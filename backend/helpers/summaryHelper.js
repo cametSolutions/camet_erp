@@ -1,12 +1,24 @@
-import salesModel from "../models/salesModel.js"
-export const aggregateSummary = async (model, matchCriteria, voucherNumber) => {
-  console.log("modelssss", model)
-  console.log("cretria", matchCriteria)
-  console.log("voucher", voucherNumber)
-  return  salesModel.aggregate([
-    { $match: matchCriteria }
+import salesModel from "../models/salesModel.js";
+export const aggregateSummary = async (
+  model,
+  matchCriteria,
+  numberField,
+  type
+) => {
+  try {
+    const results = await model.aggregate([{ $match: matchCriteria }]);
 
-  ])
+    // Add type to each result to identify its source if not already included in projection
+    if (!results[0]?.sourceType) {
+      return results.map((item) => ({
+        ...item,
+        sourceType: type,
+      }));
+    }
 
-  // console.log("resultttdddddd", a)
-}
+    return results;
+  } catch (error) {
+    console.error(`Error in aggregateSummary for ${type}:`, error.message);
+    return [];
+  }
+};
