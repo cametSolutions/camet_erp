@@ -17,14 +17,14 @@ function VoucherAddCount() {
   const [priceLevels, setPriceLevels] = useState([]);
   const [loader, setLoader] = useState(false);
   const [refresh, setRefresh] = useState(false);
-  const [isScanOn, setIsScanOn] = useState(false);
+  // const [isScanOn, setIsScanOn] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
   const searchTimeoutRef = useRef(null);
-  const limit = 50; // Number of products per page
+  const limit = 30; // Number of products per page
 
   const dispatch = useDispatch();
   const {
@@ -39,6 +39,8 @@ function VoucherAddCount() {
     selectedPriceLevel: selectedPriceLevelFromRedux,
     products: allProductsFromRedux,
     priceLevels: priceLevelsFromRedux,
+    page: pageNumberFromRedux,
+    hasMore: hasMoreFromRedux,
   } = useSelector((state) => state.salesSecondary);
 
   // Debounced search function
@@ -65,58 +67,108 @@ function VoucherAddCount() {
   }, []);
 
   // Fetch products with pagination
-  const fetchProducts = useCallback(
-    async (pageNumber = 1, searchTerm = "") => {
-      if (isLoading) return;
+// Fetch products with pagination
+const fetchProducts = useCallback(
+  async (pageNumber = 1, searchTerm = "") => {
+    // If data for this page exists in Redux, use it instead of API call
+    if (
+      pageNumberFromRedux >= pageNumber &&
+      allProductsFromRedux.length > 0
+    ) {
+      setItems(allProductsFromRedux);
+      setHasMore(hasMoreFromRedux);
+      processItemsWithRedux(allProductsFromRedux);
 
-      setLoader(pageNumber === 1);
+      setIsLoading(false);
+      return;
+    }
+    if (isLoading) return;
+    setLoader(pageNumber === 1);
 
-      try {
-        setIsLoading(true);
-
-        const params = new URLSearchParams({
-          page: pageNumber,
-          limit,
-          vanSale: false,
-          taxInclusive: taxInclusive,
-        });
-
-        if (searchTerm) {
-          params.append("search", searchTerm);
-        }
-
-
-        const res = await api.get(
-          `/api/sUsers/getProducts/${cmp_id}?${params}`,
-          {
-            withCredentials: true,
-          }
-        );
-
-        const productData = res.data.productData;
-
-        if (pageNumber === 1) {
-          setItems(productData);
-          dispatch(addAllProducts(productData));
-        } else {
-          setItems((prevItems) => [...prevItems, ...productData]);
-          dispatch(addAllProducts([...allProductsFromRedux, ...productData]));
-        }
-
-        setHasMore(res.data.pagination.hasMore);
-        setPage(pageNumber);
-
-        // Process items with Redux data
-        processItemsWithRedux(productData);
-      } catch (error) {
-        console.error("Error fetching products:", error);
-      } finally {
-        setIsLoading(false);
-        setLoader(false);
+    try {
+      setIsLoading(true);
+      // If data for this page exists in Redux, use it instead of API call
+      if (
+        pageNumberFromRedux >= pageNumber &&
+        allProductsFromRedux.length > 0
+      ) {
+        setItems(allProductsFromRedux);
+        setHasMore(hasMoreFromRedux);
+        return;
       }
-    },
-    [cmp_id]
-  );
+
+      const params = new URLSearchParams({
+        page: pageNumber,
+        limit,
+        vanSale: false,
+        taxInclusive: taxInclusive,
+      });
+
+      if (searchTerm) {
+        params.append("search", searchTerm);
+      }
+
+      const res = await api.get(
+        `/api/sUsers/getProducts/${cmp_id}?${params}`,
+        {
+          withCredentials: true,
+        }
+      );
+
+      const productData = res.data.productData;
+
+      // Add selected price rate to products before adding to Redux
+      const productsWithPriceRates = productData.map((productItem) => {
+        const priceRate =
+          productItem?.Priceleveles?.find(
+            (priceLevelItem) => priceLevelItem.pricelevel === selectedPriceLevelFromRedux
+          )?.pricerate || 0;
+
+        const updatedGodownList = productItem.GodownList.map((godownOrBatch) => ({
+          ...godownOrBatch,
+          selectedPriceRate: priceRate,
+        }));
+
+        return {
+          ...productItem,
+          GodownList: updatedGodownList,
+        };
+      });
+
+      if (pageNumber === 1) {
+        setItems(productsWithPriceRates);
+        dispatch(
+          addAllProducts({
+            products: productsWithPriceRates,
+            page: pageNumber,
+            hasMore: res.data.pagination.hasMore,
+          })
+        );
+      } else {
+        setItems((prevItems) => [...prevItems, ...productsWithPriceRates]);
+        dispatch(
+          addAllProducts({
+            products: productsWithPriceRates,
+            page: pageNumber,
+            hasMore: res.data.pagination.hasMore,
+          })
+        );
+      }
+
+      setHasMore(res.data.pagination.hasMore);
+      setPage(pageNumber);
+
+      // Process items with Redux data
+      processItemsWithRedux(productsWithPriceRates);
+    } catch (error) {
+      console.error("Error fetching products:", error);
+    } finally {
+      setIsLoading(false);
+      setLoader(false);
+    }
+  },
+  [cmp_id, selectedPriceLevelFromRedux]
+);
 
   // Process items with Redux data
   const processItemsWithRedux = (productData) => {
@@ -130,6 +182,8 @@ function VoucherAddCount() {
         const reduxItem = itemsFromRedux.find(
           (item) => item._id === product._id
         );
+
+        console.log("reduxItem", reduxItem);
 
         if (reduxItem.hasGodownOrBatch) {
           return updateItemWithBatchOrGodown(reduxItem, product);
@@ -182,6 +236,13 @@ function VoucherAddCount() {
 
     return { ...reduxItem, GodownList: updatedGodownList };
   };
+
+  //// on initial load sync page number with redux
+  useEffect(() => {
+    if (pageNumberFromRedux > 0) {
+      setPage(pageNumberFromRedux);
+    }
+  }, [pageNumberFromRedux]);
 
   // Initial load and search term changes
   useEffect(() => {
@@ -249,6 +310,8 @@ function VoucherAddCount() {
         GodownList: updatedGodownList,
       };
     });
+
+
 
     setItems(updatedItems);
   };

@@ -1,12 +1,12 @@
 import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
-  // selectedGodownName:"",
-  // selectedGodownId:"",
   date: "",
   convertedFrom: [],
   products: [],
-  priceLevels:[],
+  page: 1,
+  hasMore: true,
+  priceLevels: [],
   party: {},
   items: [],
   selectedPriceLevel: "",
@@ -24,8 +24,6 @@ const initialState = {
     destination: "",
     vehicleNo: "",
     orderNo: "",
-    // eWayNo: "",
-    // irnNo: "",
     termsOfPay: "",
     termsOfDelivery: "",
   },
@@ -44,8 +42,16 @@ export const salesSecondarySlice = createSlice({
     },
 
     addAllProducts: (state, action) => {
-      state.products = action.payload;
+      const { page, hasMore, products } = action.payload;
+      state.page = page;
+      state.hasMore = hasMore;
+      if (page === 1) {
+        state.products = products;
+      } else {
+        state.products = state.products.concat(products);
+      }
     },
+
     addAllPriceLevels: (state, action) => {
       state.priceLevels = action.payload;
     },
@@ -325,79 +331,6 @@ export const salesSecondarySlice = createSlice({
     addConvertedFrom: (state, action) => {
       state.convertedFrom = action.payload;
     },
-
-    // updateAllGodowns: (state, action) => {
-    
-    //   const {
-    //     _id,
-    //     index:currentInedex,
-    //     newPrice: selectedPriceRate,
-    //     discountAmount: discount,
-    //     discountPercentage,
-    //     type: discountType,
-    //     isTaxInclusive,
-    //     igst: igstValue,
-    //   } = action.payload;
-    
-    //   // Find the item by _id
-    //   const item = state.items.find((el) => el._id == _id);
-    //   if (!item) return;
-    
-    //   // Make sure it is godown only (every godown must have godown_id and no batch)
-    //   if (item.GodownList?.every((g) => g?.godown_id && !g?.batch)) {
-    //     // Update all godowns
-    //     item?.GodownList?.forEach((godown,index) => {
-    //       if (godown && index!== currentInedex) {
-    //         godown.selectedPriceRate = Number(selectedPriceRate);
-    //         godown.discountType = discountType;
-    //         godown.isTaxInclusive = isTaxInclusive;
-    
-    //         let calculatedDiscountAmount = 0;
-    //         let calculatedDiscountPercentage = 0;
-    
-    //         if (isTaxInclusive) {
-    //           const taxInclusivePrice = selectedPriceRate * (godown.count || 1);
-    //           const taxBasePrice = Number(
-    //             (taxInclusivePrice / (1 + igstValue / 100)).toFixed(2)
-    //           );
-    
-    //           if (discountType === 'amount') {
-    //             calculatedDiscountAmount = discount; // Treat as amount
-    //             calculatedDiscountPercentage =
-    //               Number(((discount / taxBasePrice) * 100).toFixed(2)) || 0;
-    //           } else if (discountType === 'percentage') {
-    //             calculatedDiscountPercentage = discountPercentage; // Treat as percentage
-    //             calculatedDiscountAmount = Number(
-    //               ((discountPercentage / 100) * taxBasePrice).toFixed(2)
-    //             );
-    //           }
-    //         } else {
-    //           const taxExclusivePrice = selectedPriceRate * (godown?.count || 1);
-    
-    //           if (discountType === 'amount') {
-    //             calculatedDiscountAmount = discount;
-    //             calculatedDiscountPercentage =
-    //               Number(((discount / taxExclusivePrice) * 100).toFixed(2)) || 0;
-    //           } else if (discountType === 'percentage') {
-    //             calculatedDiscountPercentage = discountPercentage;
-    //             calculatedDiscountAmount = Number(
-    //               ((discountPercentage / 100) * taxExclusivePrice).toFixed(2)
-    //             );
-    //           }
-    //         }
-    
-    //         godown.discount = calculatedDiscountAmount;
-    //         godown.discountPercentage = calculatedDiscountPercentage;
-    
-    //         console.log(godown);
-       
-    //       }
-    //     });
-    //   } else {
-    //     return;
-    //   }
-    // }
-    
   },
 });
 
@@ -440,7 +373,7 @@ export const {
   changeTaxInclusive,
   addOrderConversionDetails,
   addConvertedFrom,
-  addAllPriceLevels
+  addAllPriceLevels,
   // updateAllGodowns
 } = salesSecondarySlice.actions;
 

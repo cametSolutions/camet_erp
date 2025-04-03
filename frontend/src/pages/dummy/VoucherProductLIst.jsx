@@ -61,7 +61,6 @@ function VoucherProductLIst({
     if (listRef.current) {
       listRef.current.resetAfterIndex(0);
     }
-
     // setSearch("");
   }, [heights]);
 
@@ -785,6 +784,7 @@ function VoucherProductLIst({
                   width="100%"
                   initialScrollOffset={scrollPosition}
                   onItemsRendered={({
+                    // eslint-disable-next-line no-unused-vars
                     visibleStartIndex,
                     visibleStopIndex,
                   }) => {

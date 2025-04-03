@@ -1,12 +1,7 @@
 /* eslint-disable react/no-unescaped-entities */
 import { useEffect, useState, useMemo } from "react";
 import { useSelector } from "react-redux";
-import {
-  removeParty,
-  addAdditionalCharges,
-  // AddFinalAmount,
-  deleteRow,
-} from "../../../slices/salesSecondary";
+
 import { useDispatch } from "react-redux";
 
 import { toast } from "react-toastify";
@@ -18,6 +13,9 @@ import {
   removeItem,
   removeGodownOrBatch,
   changeDate,
+  removeParty,
+  addAdditionalCharges,
+  deleteRow,
 } from "../../../slices/salesSecondary";
 
 import DespatchDetails from "../../components/secUsers/DespatchDetails";
