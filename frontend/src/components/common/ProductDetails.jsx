@@ -7,7 +7,6 @@ const ProductDetails = ({
   details,
   setHeight,
   handleAddClick,
-  // selectedPriceLevel,
   handleIncrement,
   handleDecrement,
   godownName,
@@ -16,9 +15,6 @@ const ProductDetails = ({
 }) => {
   const detailsRef = useRef();
   const batchOrGodownList = details?.GodownList;
-
-  
-
   useEffect(() => {
     if (detailsRef.current) {
       setHeight(detailsRef.current.offsetHeight);
@@ -75,7 +71,7 @@ const ProductDetails = ({
                          Price : {item?.selectedPriceRate || 0}
                         </p>
                         <p className="  text-xs md:text-sm ml-2 font-semibold">
-                          ( ₹ {item?.individualTotal} )
+                          ( ₹ {item?.individualTotal||0} )
                         </p>
                       </>
                     )}

@@ -29,6 +29,7 @@ function VoucherProductLIst({
   const [listHeight, setListHeight] = useState(0);
   const [heights, setHeights] = useState({});
   const [scrollPosition, setScrollPosition] = useState(0);
+  const [refresh, setRefresh] = useState(false);
 
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -110,7 +111,10 @@ function VoucherProductLIst({
       });
     }
     return items;
-  }, [items, tab]);
+  }, [items, tab,refresh]);
+
+  console.log(items);
+  
 
   const handleExpansion = (id) => {
     const currentItems = [...items];
@@ -494,6 +498,67 @@ function VoucherProductLIst({
     setItems(updatedItems); // Update the state with the updated items
   };
 
+  const handleTotalChangeWithPriceLevel = (pricelevel) => {
+    console.log(selectedPriceLevel);
+
+    const updatedItems = items.map((item) => {
+      if (item.added === true) {
+        const { individualTotals, total } = calculateTotal(
+          item,
+          pricelevel,
+          "priceLevelChange"
+        );
+
+        // dispatch(changeTotal({ ...item, total: total }));
+        const newPriceRate =
+          item?.Priceleveles.find(
+            (priceLevelItem) => priceLevelItem.pricelevel === pricelevel
+          )?.pricerate || 0;
+
+        console.log(newPriceRate);
+        console.log(individualTotals);
+        console.log(total);
+
+        if (item?.hasGodownOrBatch) {
+          const updatedGodownList = item?.GodownList.map((godown, idx) => {
+            return {
+              ...godown,
+              individualTotal:
+                individualTotals.find((el) => el.index === idx)
+                  ?.individualTotal || 0,
+              selectedPriceRate: newPriceRate,
+            };
+          });
+
+          // dispatch(
+          //   updateItem({
+          //     item: { ...item, GodownList: updatedGodownList, total: total },
+          //     moveToTop: false,
+          //   })
+          // );
+          return {
+            ...item,
+            GodownList: updatedGodownList,
+            total: total,
+          };
+        }
+      }
+      return item;
+    });
+
+    console.log(updatedItems);
+    
+
+    setItems(updatedItems);
+    setRefresh(!refresh);
+  };
+
+  useEffect(() => {
+    if (selectedPriceLevel) {
+      handleTotalChangeWithPriceLevel(selectedPriceLevel);
+    }
+  }, [selectedPriceLevel]);
+
   const Row = ({ index, style }) => {
     if (!isItemLoaded(index)) {
       return (
@@ -735,7 +800,6 @@ function VoucherProductLIst({
               heights={heights}
               handleIncrement={handleIncrement}
               handleDecrement={handleDecrement}
-              //   selectedPriceLevel={selectedPriceLevel}
               handleAddClick={handleAddClick}
               godownName="nil"
               details={el}

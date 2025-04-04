@@ -336,6 +336,10 @@ export const salesSecondarySlice = createSlice({
     addConvertedFrom: (state, action) => {
       state.convertedFrom = action.payload;
     },
+
+    updateAllItem: (state, action) => {
+      state.items = action.payload;
+    },
   },
 });
 
@@ -379,8 +383,8 @@ export const {
   addOrderConversionDetails,
   addConvertedFrom,
   addAllPriceLevels,
-  addAllProductsOnly
-  // updateAllGodowns
+  addAllProductsOnly,
+  updateAllItem
 } = salesSecondarySlice.actions;
 
 export default salesSecondarySlice.reducer;
