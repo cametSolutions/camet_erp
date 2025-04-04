@@ -80,6 +80,7 @@ function PartyListSecondary() {
       <PartyListComponent
         type={type}
         cpm_id={cpm_id}
+        IsVoucher={false}
         deleteHandler={deleteHandler}
         key={refresh} // This forces a re-render when refresh changes
       />

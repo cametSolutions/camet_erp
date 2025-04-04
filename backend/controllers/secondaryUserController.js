@@ -730,8 +730,8 @@ export const getProducts = async (req, res) => {
   
   // Add pagination parameters
   const page = parseInt(req.query.page) || 1;
-  const limit = parseInt(req.query.limit) || 100;
-  const skip = (page - 1) * limit;
+  const limit = parseInt(req.query.limit) || 0;
+  const skip =limit >0 ? (page - 1) * limit :0
 
   const Primary_user_id = new mongoose.Types.ObjectId(req.owner);
 
@@ -894,11 +894,9 @@ export const getProducts = async (req, res) => {
       projectStage,
       addFieldsStage,
       filterEmptyGodownListStage,
-      // Add pagination stages
-      { $skip: skip },
-      { $limit: limit }
+      ...(limit > 0 ? [{ $skip: skip }] : []),
+      ...(limit > 0 ? [{ $limit: limit }] : [])
     ];
-
     // Conditionally add taxInclusive stage
     if (taxInclusive) {
       const addTaxInclusiveStage = {
