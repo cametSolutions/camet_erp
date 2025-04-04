@@ -52,6 +52,11 @@ export const salesSecondarySlice = createSlice({
       }
     },
 
+    addAllProductsOnly: (state, action) => {
+      state.products=action.payload
+    },
+
+
     addAllPriceLevels: (state, action) => {
       state.priceLevels = action.payload;
     },
@@ -374,6 +379,7 @@ export const {
   addOrderConversionDetails,
   addConvertedFrom,
   addAllPriceLevels,
+  addAllProductsOnly
   // updateAllGodowns
 } = salesSecondarySlice.actions;
 

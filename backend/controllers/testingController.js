@@ -486,13 +486,12 @@ export const addAccountGroupIdToOutstanding = async (req, res) => {
       }
     }
 
-    res
-      .status(200)
-      .json({
-        message: "Account groups added to outstanding records successfully",
-      });
+    res.status(200).json({
+      message: "Account groups added to outstanding records successfully",
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Error in updating outstanding records" });
   }
 };
+

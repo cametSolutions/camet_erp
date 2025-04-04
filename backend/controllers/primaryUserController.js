@@ -1279,6 +1279,9 @@ export const fetchHsn = async (req, res) => {
 // route get/api/pUsers/fetchHsn
 
 export const fetchFilters = async (req, res) => {
+
+  console.log("primary");
+  
   const cmp_id = req.params.cmp_id;
   const userId = req.pUserId;
   try {
@@ -1288,7 +1291,9 @@ export const fetchFilters = async (req, res) => {
       brands: filers.brands,
       categories: filers.categories,
       subcategories: filers.subcategories,
-      priceLevels: filers?.levelNames,
+      priceLevels: filers?.levelNames.sort((a, b) =>
+        a.toLowerCase().localeCompare(b.toLowerCase())
+      ),
     };
 
     if (filers) {

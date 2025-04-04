@@ -67,26 +67,9 @@ function VoucherAddCount() {
   }, []);
 
   // Fetch products with pagination
-// Fetch products with pagination
-const fetchProducts = useCallback(
-  async (pageNumber = 1, searchTerm = "") => {
-    // If data for this page exists in Redux, use it instead of API call
-    if (
-      pageNumberFromRedux >= pageNumber &&
-      allProductsFromRedux.length > 0
-    ) {
-      setItems(allProductsFromRedux);
-      setHasMore(hasMoreFromRedux);
-      processItemsWithRedux(allProductsFromRedux);
-
-      setIsLoading(false);
-      return;
-    }
-    if (isLoading) return;
-    setLoader(pageNumber === 1);
-
-    try {
-      setIsLoading(true);
+  // Fetch products with pagination
+  const fetchProducts = useCallback(
+    async (pageNumber = 1, searchTerm = "") => {
       // If data for this page exists in Redux, use it instead of API call
       if (
         pageNumberFromRedux >= pageNumber &&
@@ -94,81 +77,101 @@ const fetchProducts = useCallback(
       ) {
         setItems(allProductsFromRedux);
         setHasMore(hasMoreFromRedux);
+        processItemsWithRedux(allProductsFromRedux);
+
+        setIsLoading(false);
         return;
       }
+      if (isLoading) return;
+      setLoader(pageNumber === 1);
 
-      const params = new URLSearchParams({
-        page: pageNumber,
-        limit,
-        vanSale: false,
-        taxInclusive: taxInclusive,
-      });
-
-      if (searchTerm) {
-        params.append("search", searchTerm);
-      }
-
-      const res = await api.get(
-        `/api/sUsers/getProducts/${cmp_id}?${params}`,
-        {
-          withCredentials: true,
+      try {
+        setIsLoading(true);
+        // If data for this page exists in Redux, use it instead of API call
+        if (
+          pageNumberFromRedux >= pageNumber &&
+          allProductsFromRedux.length > 0
+        ) {
+          setItems(allProductsFromRedux);
+          setHasMore(hasMoreFromRedux);
+          return;
         }
-      );
 
-      const productData = res.data.productData;
+        const params = new URLSearchParams({
+          page: pageNumber,
+          limit,
+          vanSale: false,
+          taxInclusive: taxInclusive,
+        });
 
-      // Add selected price rate to products before adding to Redux
-      const productsWithPriceRates = productData.map((productItem) => {
-        const priceRate =
-          productItem?.Priceleveles?.find(
-            (priceLevelItem) => priceLevelItem.pricelevel === selectedPriceLevelFromRedux
-          )?.pricerate || 0;
+        if (searchTerm) {
+          params.append("search", searchTerm);
+        }
 
-        const updatedGodownList = productItem.GodownList.map((godownOrBatch) => ({
-          ...godownOrBatch,
-          selectedPriceRate: priceRate,
-        }));
-
-        return {
-          ...productItem,
-          GodownList: updatedGodownList,
-        };
-      });
-
-      if (pageNumber === 1) {
-        setItems(productsWithPriceRates);
-        dispatch(
-          addAllProducts({
-            products: productsWithPriceRates,
-            page: pageNumber,
-            hasMore: res.data.pagination.hasMore,
-          })
+        const res = await api.get(
+          `/api/sUsers/getProducts/${cmp_id}?${params}`,
+          {
+            withCredentials: true,
+          }
         );
-      } else {
-        setItems((prevItems) => [...prevItems, ...productsWithPriceRates]);
-        dispatch(
-          addAllProducts({
-            products: productsWithPriceRates,
-            page: pageNumber,
-            hasMore: res.data.pagination.hasMore,
-          })
-        );
+
+        const productData = res.data.productData;
+
+        // Add selected price rate to products before adding to Redux
+        const productsWithPriceRates = productData.map((productItem) => {
+          const priceRate =
+            productItem?.Priceleveles?.find(
+              (priceLevelItem) =>
+                priceLevelItem.pricelevel === selectedPriceLevelFromRedux
+            )?.pricerate || 0;
+
+          const updatedGodownList = productItem.GodownList.map(
+            (godownOrBatch) => ({
+              ...godownOrBatch,
+              selectedPriceRate: priceRate,
+            })
+          );
+
+          return {
+            ...productItem,
+            GodownList: updatedGodownList,
+          };
+        });
+
+        if (pageNumber === 1) {
+          setItems(productsWithPriceRates);
+          dispatch(
+            addAllProducts({
+              products: productsWithPriceRates,
+              page: pageNumber,
+              hasMore: res.data.pagination.hasMore,
+            })
+          );
+        } else {
+          setItems((prevItems) => [...prevItems, ...productsWithPriceRates]);
+          dispatch(
+            addAllProducts({
+              products: productsWithPriceRates,
+              page: pageNumber,
+              hasMore: res.data.pagination.hasMore,
+            })
+          );
+        }
+
+        setHasMore(res.data.pagination.hasMore);
+        setPage(pageNumber);
+
+        // Process items with Redux data
+        processItemsWithRedux(productsWithPriceRates);
+      } catch (error) {
+        console.error("Error fetching products:", error);
+      } finally {
+        setIsLoading(false);
+        setLoader(false);
       }
-
-      setHasMore(res.data.pagination.hasMore);
-      setPage(pageNumber);
-
-      // Process items with Redux data
-      processItemsWithRedux(productsWithPriceRates);
-    } catch (error) {
-      console.error("Error fetching products:", error);
-    } finally {
-      setIsLoading(false);
-      setLoader(false);
-    }
-  },
-  [cmp_id, selectedPriceLevelFromRedux]
-);
+    },
+    [cmp_id, selectedPriceLevelFromRedux]
+  );
 
   // Process items with Redux data
   const processItemsWithRedux = (productData) => {
@@ -310,8 +313,6 @@ const fetchProducts = useCallback(
         GodownList: updatedGodownList,
       };
     });
-
-
 
     setItems(updatedItems);
   };

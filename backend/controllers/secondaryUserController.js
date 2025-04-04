@@ -883,6 +883,7 @@ export const getProducts = async (req, res) => {
       projectStage,
       addFieldsStage,
       filterEmptyGodownListStage,
+      { $sort: { product_name: 1 } }, // sort alphabetically
       { $count: "total" }
     ];
     
@@ -1445,6 +1446,8 @@ export const getInvoiceDetails = async (req, res) => {
 };
 
 export const fetchFilters = async (req, res) => {
+  console.log("secondary");
+
   const cmp_id = req.params.cmp_id;
   try {
     const getFilters = async (model, field) => {
@@ -1458,11 +1461,16 @@ export const fetchFilters = async (req, res) => {
     const subcategories = await getFilters(Subcategory, "subcategory");
     const priceLevels = await getFilters(PriceLevel, "pricelevel");
 
+    // Sort price levels alphabetically (case-insensitive)
+    const sortedPriceLevels = [...priceLevels].sort((a, b) => 
+      a.toLowerCase().localeCompare(b.toLowerCase())
+    );
+
     const data = {
       brands: brands,
       categories: categories,
       subcategories: subcategories,
-      priceLevels: priceLevels,
+      // priceLevels: sortedPriceLevels, // Use the sorted array
     };
 
     if (Object.entries(data).length > 0) {
@@ -1760,15 +1768,23 @@ export const fetchAdditionalDetails = async (req, res) => {
       { $project: { _id: 0, subcategories: 1 } },
     ]);
 
+    // Determine which price levels to use
+    let priceLevels = [];
+    if (selectedPriceLevels && selectedPriceLevels.length > 0) {
+      priceLevels = [...selectedPriceLevels];
+    } else if (priceLevelsResult.length > 0) {
+      priceLevels = [...priceLevelsResult[0].pricelevels];
+    }
+
+    // Sort price levels alphabetically (case-insensitive)
+    const sortedPriceLevels = priceLevels.sort((a, b) => 
+      a.toLowerCase().localeCompare(b.toLowerCase())
+    );
+
     // Send the aggregated results back to the client
     res.json({
       message: "additional details fetched",
-      priceLevels:
-        selectedPriceLevels && selectedPriceLevels.length > 0
-          ? selectedPriceLevels
-          : priceLevelsResult.length > 0
-          ? priceLevelsResult[0].pricelevels
-          : [],
+      priceLevels: sortedPriceLevels,
       brands: brandResults[0]?.brands || [],
       categories: categoryResults[0]?.categories || [],
       subcategories: subCategoryResults[0]?.subcategories || [],
