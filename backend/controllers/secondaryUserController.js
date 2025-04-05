@@ -556,9 +556,22 @@ export const PartyList = async (req, res) => {
     }
 
     const configuration = secUser.configurations.find(
-      (config) => config.organization === cmp_id
+      (config) => config.organization == cmp_id
     );
     const vanSaleConfig = configuration?.vanSale || false;
+
+    let filteredPartyList = partyList;
+
+    // Filter parties by selectedVanSaleSubGroups if isSale is true
+    if (
+      isSale === "true" &&
+      configuration &&
+      configuration.selectedVanSaleSubGroups?.length > 0
+    ) {
+      filteredPartyList = partyList.filter((party) =>
+        configuration.selectedVanSaleSubGroups.includes(party.subGroup_id)
+      );
+    }
 
     // Determine the source values to match based on the voucher type
     let sourceMatch = {};
@@ -600,8 +613,7 @@ export const PartyList = async (req, res) => {
       },
     ]);
 
-    // Merge outstanding data with party data
-    const partyListWithOutstanding = partyList.map((party) => {
+    const partyListWithOutstanding = filteredPartyList.map((party) => {
       const outstandingData = partyOutstandingData.find(
         (item) => item.party_id === party.party_master_id
       );
@@ -798,7 +810,7 @@ export const getProducts = async (req, res) => {
         __v: 1,
         GodownList: 1,
         batchEnabled: 1,
-        item_mrp: 1
+        item_mrp: 1,
       },
     };
 
@@ -2726,10 +2738,10 @@ export const addSubGroup = async (req, res) => {
   try {
     const { accountGroup, subGroup } = req?.body;
 
-     const generatedId = new mongoose.Types.ObjectId();
+    const generatedId = new mongoose.Types.ObjectId();
 
     const newSubGroup = new SubGroup({
-      accountGroup_id:accountGroup,
+      accountGroup_id: accountGroup,
       subGroup: subGroup,
       cmp_id: cmp_id,
       Primary_user_id: req.owner,

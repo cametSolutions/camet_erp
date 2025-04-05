@@ -6,7 +6,7 @@ const subGroupSchema = new mongoose.Schema({
     required: true,
   },
   subGroup: { type: String, required: true },
-  subGroup_id: { type: String, required: true, unique: true },
+  subGroup_id: { type: String, required: true },
   cmp_id: {
     type: mongoose.Types.ObjectId,
     ref: "Organization",

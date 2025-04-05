@@ -32,6 +32,7 @@ const secondaryUserSchema = new mongoose.Schema(
         debitNoteConfiguration: { type: Object },
         vanSale: { type: Boolean },
         selectedVanSaleGodowns: { type: Array },
+        selectedVanSaleSubGroups: { type: Array },
         orderNumber: { type: Number },
         salesNumber: { type: Number },
         purchaseNumber: { type: Number },

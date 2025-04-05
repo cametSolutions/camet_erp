@@ -332,6 +332,7 @@ export const PartyListWithOrderPending = async (req, res) => {
   const { cmp_id } = req.params;
   const { owner: Primary_user_id, sUserId: secUserId } = req;
 
+
   try {
     // Fetch parties and orders concurrently
     const [partyList, orders] = await Promise.all([

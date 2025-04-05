@@ -6,11 +6,9 @@ import CashModel from "../models/cashModel.js";
 import partyModel from "../models/partyModel.js";
 import productModel from "../models/productModel.js";
 import AdditionalCharges from "../models/additionalChargesModel.js";
-import AccountGroup from "../models/accountGroup.js";
-import SubGroup from "../models/subGroup.js";
+import receipt from "../models/receiptModel.js";
 import { fetchData } from "../helpers/tallyHelper.js";
 import mongoose from "mongoose";
-import accountGroup from "../models/accountGroup.js";
 
 export const saveDataFromTally = async (req, res) => {
   try {
@@ -270,6 +268,153 @@ export const saveProductsFromTally = async (req, res) => {
 // @desc for updating stocks of product
 // route GET/api/tally/master/item/updateStock
 
+// export const updateStock = async (req, res) => {
+//   try {
+//     // Validate request body
+//     if (
+//       !req.body?.data?.ItemGodowndetails ||
+//       !Array.isArray(req.body.data.ItemGodowndetails)
+//     ) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Invalid request format. ItemGodowndetails array is required",
+//       });
+//     }
+
+//     if (req.body.data.ItemGodowndetails.length === 0) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "ItemGodowndetails array is empty",
+//       });
+//     }
+
+//     const groupedGodowns = req.body.data.ItemGodowndetails.reduce(
+//       (acc, item) => {
+//         if (!item.product_master_id) {
+//           throw new Error("product_master_id is required for each item");
+//         }
+
+//         const productId = item.product_master_id.toString();
+
+//         if (!acc[productId]) {
+//           acc[productId] = {
+//             godowns: [],
+//             product_name: item.product_name, // Store product name
+//           };
+//         }
+
+//         acc[productId].godowns.push({
+//           godown: item.godown,
+//           godown_id: item.godown_id,
+//           batch: item.batch,
+//           mfgdt: item.mfgdt,
+//           expdt: item.expdt,
+//           balance_stock: item.balance_stock,
+//           batchEnabled: item.batchEnabled,
+//         });
+
+//         return acc;
+//       },
+//       {}
+//     );
+
+//     // console.log("groupedGodowns", groupedGodowns);
+
+//     if (Object.keys(groupedGodowns).length === 0) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "No valid products found to update",
+//       });
+//     }
+
+//     // Create bulk write operations (overwrite always)
+//     const bulkOps = Object.entries(groupedGodowns).map(
+//       ([productMasterId, data]) => ({
+//         updateOne: {
+//           filter: {
+//             product_master_id: productMasterId.toString(),
+//             cmp_id: req.body.data.ItemGodowndetails[0].cmp_id,
+//             Primary_user_id: new mongoose.Types.ObjectId(
+//               req.body.data.ItemGodowndetails[0].Primary_user_id
+//             ),
+//           },
+//           update: {
+//             $set: {
+//               GodownList: data.godowns,
+//               // godownCount: data.godowns.reduce(
+//               //   (sum, g) => sum + (parseInt(g.balance_stock) || 0),
+//               //   0
+//               // ),
+//             },
+//           },
+//           upsert: true, // Ensure the record is created if it doesn't exist
+//         },
+//       })
+//     );
+
+//     // Execute bulk write operation
+//     const result = await productModel.bulkWrite(bulkOps);
+
+//     // console.log(result);
+//     // console.log("groupedGodowns", Object.keys(groupedGodowns).length);
+
+//     // Fetch updated products details
+//     const updatedProducts = await productModel.find(
+//       {
+//         product_master_id: {
+//           $in: Object.keys(groupedGodowns),
+//         },
+//       },
+//       {
+//         product_name: 1,
+//         product_master_id: 1,
+//         // godownCount: 1
+//       }
+//     );
+
+//     // console.log("updatedProducts", updatedProducts);
+
+//     // Create a summary of modifications
+//     const modificationSummary = updatedProducts.map((product) => ({
+//       product_id: product.product_master_id,
+//       product_name: product.product_name || groupedGodowns[product.product_master_id]?.product_name || "Unknown", // Fallback for missing product_name
+//       // updated_godown_count: product.godownCount,
+//       // godowns: groupedGodowns[product.product_master_id.toString()]?.godowns || []
+//     }));
+
+//     return res.status(200).json({
+//       success: true,
+//       message: `Successfully processed ${result.matchedCount} products.`,
+//       modifiedProducts: modificationSummary,
+//       bulkWriteResult: result,
+//     });
+//   } catch (error) {
+//     console.error("Error in updateStock:", error);
+
+//     if (error.name === "ValidationError") {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Validation error",
+//         error: error.message,
+//       });
+//     }
+
+//     if (error.name === "MongoError" || error.name === "MongoServerError") {
+//       return res.status(503).json({
+//         success: false,
+//         message: "Database error",
+//         error: error.message,
+//       });
+//     }
+
+//     return res.status(500).json({
+//       success: false,
+//       message: "An error occurred while updating stock",
+//       error: error.message,
+//     });
+//   }
+// };
+
 export const updateStock = async (req, res) => {
   try {
     // Validate request body
@@ -289,6 +434,9 @@ export const updateStock = async (req, res) => {
         message: "ItemGodowndetails array is empty",
       });
     }
+
+    // Get pushStock flag from request body, default to false if not provided
+    const pushStock = req.body.data.pushStock === "true";
 
     const groupedGodowns = req.body.data.ItemGodowndetails.reduce(
       (acc, item) => {
@@ -329,36 +477,94 @@ export const updateStock = async (req, res) => {
       });
     }
 
-    // Create bulk write operations (overwrite always)
-    const bulkOps = Object.entries(groupedGodowns).map(
-      ([productMasterId, data]) => ({
-        updateOne: {
-          filter: {
-            product_master_id: productMasterId.toString(),
-            cmp_id: req.body.data.ItemGodowndetails[0].cmp_id,
-            Primary_user_id: new mongoose.Types.ObjectId(
-              req.body.data.ItemGodowndetails[0].Primary_user_id
-            ),
-          },
-          update: {
-            $set: {
-              GodownList: data.godowns,
-              // godownCount: data.godowns.reduce(
-              //   (sum, g) => sum + (parseInt(g.balance_stock) || 0),
-              //   0
-              // ),
+    // Create bulk operations based on pushStock flag
+    const bulkOps = [];
+
+    for (const [productMasterId, data] of Object.entries(groupedGodowns)) {
+      const filter = {
+        product_master_id: productMasterId.toString(),
+        cmp_id: req.body.data.ItemGodowndetails[0].cmp_id,
+        Primary_user_id: new mongoose.Types.ObjectId(
+          req.body.data.ItemGodowndetails[0].Primary_user_id
+        ),
+      };
+
+      if (!pushStock) {
+        // Case 1: Simply replace the entire GodownList (original behavior)
+        bulkOps.push({
+          updateOne: {
+            filter,
+            update: {
+              $set: {
+                GodownList: data.godowns,
+              },
             },
+            upsert: true,
           },
-          upsert: true, // Ensure the record is created if it doesn't exist
-        },
-      })
-    );
+        });
+      } else {
+        // Case 2: Push new godowns and update existing ones
+        // For this we need to use an aggregation pipeline in the update
+        bulkOps.push({
+          updateOne: {
+            filter,
+            update: [
+              {
+                $set: {
+                  GodownList: {
+                    $cond: {
+                      if: { $eq: [{ $type: "$GodownList" }, "array"] },
+                      then: {
+                        $reduce: {
+                          input: data.godowns,
+                          initialValue: {
+                            // Start with existing godowns, filtering out those that will be updated
+                            existing: {
+                              $filter: {
+                                input: { $ifNull: ["$GodownList", []] },
+                                as: "existingGodown",
+                                cond: {
+                                  $not: [
+                                    {
+                                      $in: [
+                                        "$$existingGodown.godown_id",
+                                        data.godowns.map((g) => g.godown_id),
+                                      ],
+                                    },
+                                  ],
+                                },
+                              },
+                            },
+                            // New godowns will be accumulated here
+                            new: [],
+                          },
+                          in: {
+                            existing: "$$value.existing",
+                            new: { $concatArrays: ["$$value.new", ["$$this"]] },
+                          },
+                        },
+                      },
+                      else: { existing: [], new: data.godowns },
+                    },
+                  },
+                },
+              },
+              {
+                $set: {
+                  GodownList: {
+                    $concatArrays: ["$GodownList.existing", "$GodownList.new"],
+                  },
+                },
+              },
+            ],
+            upsert: true,
+          },
+        });
+      }
+    }
 
     // Execute bulk write operation
     const result = await productModel.bulkWrite(bulkOps);
-
-    // console.log(result);
-    // console.log("groupedGodowns", Object.keys(groupedGodowns).length);
 
     // Fetch updated products details
     const updatedProducts = await productModel.find(
@@ -370,7 +576,6 @@ export const updateStock = async (req, res) => {
       {
         product_name: 1,
         product_master_id: 1,
-        // godownCount: 1
       }
     );
 
@@ -389,7 +594,9 @@ export const updateStock = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: `Successfully processed ${result.matchedCount} products.`,
+      message: `Successfully processed ${result.matchedCount} products. ${
+        pushStock ? "(Push mode)" : "(Replace mode)"
+      }`,
       modifiedProducts: modificationSummary,
       bulkWriteResult: result,
     });

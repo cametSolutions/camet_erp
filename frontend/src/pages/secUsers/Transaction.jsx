@@ -4,7 +4,7 @@ import { useSelector } from "react-redux";
 
 import "react-datepicker/dist/react-datepicker.css";
 
-import SelectDate from    "../../components/Filters/SelectDate"
+import SelectDate from "../../components/Filters/SelectDate";
 import VoucherTypeFilter from "../../components/Filters/VoucherTypeFilter";
 import useFetch from "../../customHook/useFetch";
 import TransactionTable from "../../components/common/List/TranscationTable";
@@ -21,17 +21,22 @@ function Transaction() {
     (state) => state?.voucherType?.selectedVoucher
   );
 
+  const isAdmin =
+    JSON.parse(localStorage.getItem("sUserData")).role === "admin"
+      ? true
+      : false;
+
+  console.log(isAdmin);
+
   const transactionsUrl = useMemo(
     () =>
-      `/api/sUsers/transactions/${org?._id}?startOfDayParam=${start}&endOfDayParam=${end}&selectedVoucher=${selectedVoucher?.value}`,
+      `/api/sUsers/transactions/${org?._id}?startOfDayParam=${start}&endOfDayParam=${end}&selectedVoucher=${selectedVoucher?.value}&isAdmin=${isAdmin}`,
     [org?._id, start, end, selectedVoucher]
   );
 
   // Fetch data using custom hook
   const { data: transactionData, loading: transactionLoading } =
     useFetch(transactionsUrl);
-
-  console.log("transcationLoading", transactionLoading);
 
   const getDifference = (difference) => {
     setNetCashInHands(difference);
@@ -42,7 +47,6 @@ function Transaction() {
       <div className=" flex-1   ">
         <div className="sticky top-0 flex flex-col z-30 bg-white">
           <TitleDiv title="Daybook" />
-
 
           <section className="shadow-lg">
             <SelectDate />
