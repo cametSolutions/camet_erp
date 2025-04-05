@@ -7,37 +7,47 @@ import { IoAddCircleSharp } from "react-icons/io5";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { VariableSizeList as List } from "react-window";
+import InfiniteLoader from "react-window-infinite-loader";
 import {
   addItem,
   removeItem,
   updateItem,
 } from "../../../slices/salesSecondary";
-import InfiniteLoader from "react-window-infinite-loader";
-function VoucherProductLIst({
+
+/**
+   * VoucherProductList Component
+   * 
+
+   */
+export default function VoucherProductList({
   items,
   loader,
   tab = "Sales",
   setItems,
   selectedPriceLevel,
-  hasMore = { hasMore },
-  isLoading = { isLoading },
+  hasMore,
+  isLoading,
   fetchProducts,
   page = 1,
   searchTerm = "",
+  calculateTotal,
 }) {
+  // ========== REFS AND STATE ==========
   const listRef = useRef(null);
   const [listHeight, setListHeight] = useState(0);
   const [heights, setHeights] = useState({});
   const [scrollPosition, setScrollPosition] = useState(0);
-  const [refresh, setRefresh] = useState(false);
 
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  //// for calculating the height of list
+  // ========== LIST HEIGHT CALCULATION ==========
+  /**
+   * Calculate and set the height of the product list based on window size
+   */
   useEffect(() => {
     const calculateHeight = () => {
-      const newHeight = window.innerHeight - 142;
+      const newHeight = window.innerHeight - 210;
       setListHeight(newHeight);
     };
 
@@ -49,6 +59,10 @@ function VoucherProductLIst({
     return () => window.removeEventListener("resize", calculateHeight);
   }, []);
 
+  // ========== SCROLL POSITION PERSISTENCE ==========
+  /**
+   * Retrieve and set the scroll position from localStorage on component mount
+   */
   useEffect(() => {
     const storedScrollPosition = localStorage.getItem(
       "scrollPositionAddItemSales"
@@ -58,13 +72,20 @@ function VoucherProductLIst({
     }
   }, []);
 
+  /**
+   * Reset the list indices when heights change to ensure proper rendering
+   */
   useEffect(() => {
     if (listRef.current) {
       listRef.current.resetAfterIndex(0);
     }
-    // setSearch("");
   }, [heights]);
 
+  // ========== CALLBACKS AND ITEM HANDLING ==========
+  /**
+   * Set the height of a product item at a specific index
+   * Only updates if the height has changed to prevent unnecessary renders
+   */
   const setHeightOfProducts = useCallback((index, height) => {
     setHeights((prevHeights) => {
       if (prevHeights[index] !== height) {
@@ -77,6 +98,9 @@ function VoucherProductLIst({
     });
   }, []);
 
+  /**
+   * Calculate the size of an item based on its expanded state and properties
+   */
   const getItemSize = (index) => {
     const product = items[index];
     const isExpanded = product?.isExpanded || false;
@@ -89,7 +113,11 @@ function VoucherProductLIst({
     return baseHeight + extraHeight;
   };
 
-  // Filter items with balace stock zero for purchase only but not for normal no   batch and  no godown items
+  // ========== ITEM FILTERING ==========
+  /**
+   * Filter items based on tab type and stock balance
+   * For Purchase tab, filters out items with zero balance stock except for special cases
+   */
   const displayedItems = useMemo(() => {
     if (tab === "Purchase") {
       return items.map((item) => {
@@ -111,14 +139,14 @@ function VoucherProductLIst({
       });
     }
     return items;
-  }, [items, tab,refresh]);
+  }, [items, tab]);
 
-  console.log(items);
-  
-
+  // ========== EVENT HANDLERS ==========
+  /**
+   * Toggle the expanded state of an item
+   */
   const handleExpansion = (id) => {
     const currentItems = [...items];
-
     const updatedItems = structuredClone(currentItems);
     const index = updatedItems.findIndex((item) => item._id === id);
 
@@ -128,198 +156,40 @@ function VoucherProductLIst({
     setItems(updatedItems);
   };
 
-  const calculateTotal = (item, selectedPriceLevel, situation = "normal") => {
-    let priceRate = 0;
-    if (situation === "priceLevelChange") {
-      priceRate =
-        item.Priceleveles.find(
-          (level) => level.pricelevel === selectedPriceLevel
-        )?.pricerate || 0;
-    }
-
-    let subtotal = 0;
-    let individualTotals = [];
-    let totalCess = 0; // Track total cess amount
-
-    if (item.hasGodownOrBatch) {
-      item.GodownList.forEach((godownOrBatch, index) => {
-        if (situation === "normal") {
-          priceRate = godownOrBatch.selectedPriceRate;
-        }
-        const quantity = Number(godownOrBatch.count) || 0;
-        const igstValue = Math.max(item.igst || 0, 0);
-
-        // Calculate base price based on tax inclusivity
-        let basePrice = priceRate * quantity;
-
-        let taxBasePrice = basePrice;
-
-        // For tax inclusive prices, calculate the base price without tax
-        if (item?.isTaxInclusive) {
-          taxBasePrice = Number((basePrice / (1 + igstValue / 100)).toFixed(2));
-        }
-
-        // Calculate discount based on discountType
-        let discountedPrice = taxBasePrice;
-
-        if (
-          godownOrBatch.discountType === "percentage" &&
-          godownOrBatch.discountPercentage !== 0 &&
-          godownOrBatch.discountPercentage !== undefined &&
-          godownOrBatch.discountPercentage !== ""
-        ) {
-          // Percentage discount
-          const discountAmount =
-            (taxBasePrice * godownOrBatch.discountPercentage) / 100;
-
-          discountedPrice = taxBasePrice - discountAmount;
-        } else if (
-          godownOrBatch.discount !== 0 &&
-          godownOrBatch.discount !== undefined &&
-          godownOrBatch.discount !== ""
-        ) {
-          // Fixed amount discount (default)
-          discountedPrice = taxBasePrice - godownOrBatch.discount;
-        }
-
-        // Calculate cess amounts
-        let cessAmount = 0;
-        let additionalCessAmount = 0;
-
-        // Standard cess calculation
-        if (item.cess && item.cess > 0) {
-          cessAmount = discountedPrice * (item.cess / 100);
-        }
-
-        // Additional cess calculation
-        if (item.addl_cess && item.addl_cess > 0) {
-          additionalCessAmount = quantity * item.addl_cess;
-        }
-
-        // Combine cess amounts
-        const totalCessAmount = cessAmount + additionalCessAmount;
-
-        // Calculate tax amount
-        const taxAmount = discountedPrice * (igstValue / 100);
-
-        // Calculate total including tax and cess
-        const individualTotal = Math.max(
-          parseFloat(
-            (discountedPrice + taxAmount + totalCessAmount).toFixed(2)
-          ),
-          0
-        );
-
-        subtotal += individualTotal;
-        totalCess += totalCessAmount;
-
-        individualTotals.push({
-          index,
-          batch: godownOrBatch.batch,
-          individualTotal,
-          cessAmount: totalCessAmount,
-        });
-      });
-    } else {
-      if (situation === "normal") {
-        priceRate = item.GodownList[0].selectedPriceRate;
-      }
-      const quantity = Number(item.count);
-      const igstValue = Math.max(item.newGst || item.igst || 0, 0);
-
-      // Calculate base price based on tax inclusivity
-      let basePrice = priceRate * quantity;
-      let taxBasePrice = basePrice;
-
-      // For tax inclusive prices, calculate the base price without tax
-      if (item?.isTaxInclusive) {
-        taxBasePrice = Number((basePrice / (1 + igstValue / 100)).toFixed(2));
-      }
-
-      // Calculate discount based on discountType
-      let discountedPrice = taxBasePrice;
-
-      if (
-        item.discountType === "percentage" &&
-        item.discountPercentage !== 0 &&
-        item.discountPercentage !== undefined
-      ) {
-        // Percentage discount
-        const discountAmount = (taxBasePrice * item.discountPercentage) / 100;
-        discountedPrice = taxBasePrice - discountAmount;
-      } else if (item.discount !== 0 && item.discount !== undefined) {
-        // Fixed amount discount (default)
-        discountedPrice = taxBasePrice - item.discount;
-      }
-
-      // Calculate cess amounts
-      let cessAmount = 0;
-      let additionalCessAmount = 0;
-
-      // Standard cess calculation
-      if (item.cess && item.cess > 0) {
-        cessAmount = discountedPrice * (item.cess / 100);
-      }
-
-      // Additional cess calculation
-      if (item.addl_cess && item.addl_cess > 0) {
-        additionalCessAmount = quantity * item.addl_cess;
-      }
-
-      // Combine cess amounts
-      const totalCessAmount = cessAmount + additionalCessAmount;
-
-      // Calculate tax amount
-      const taxAmount = discountedPrice * (igstValue / 100);
-
-      // Calculate total including tax and cess
-      const individualTotal = Math.max(
-        parseFloat((discountedPrice + taxAmount + totalCessAmount).toFixed(2)),
-        0
-      );
-
-      subtotal += individualTotal;
-      totalCess += totalCessAmount;
-
-      individualTotals.push({
-        index: 0,
-        batch: item.batch || "No batch",
-        individualTotal,
-        cessAmount: totalCessAmount,
-      });
-    }
-
-    subtotal = Math.max(parseFloat(subtotal.toFixed(2)), 0);
-
-    return {
-      individualTotals,
-      total: subtotal,
-      totalCess: totalCess,
-    };
-  };
-
+  /**
+   * Handle adding a new product to the list
+   */
   const handleAddClick = (_id, idx) => {
     const updatedItems = items.map((item) => {
       if (item._id === _id) {
+        // Create a deep copy of the item with its GodownList
         const itemToUpdate = { ...item, GodownList: [...item.GodownList] };
 
         if (itemToUpdate.GodownList[idx]) {
           const currentBatchOrGodown = { ...itemToUpdate.GodownList[idx] };
 
+          // Toggle the added state or set to true if undefined
           currentBatchOrGodown.added = currentBatchOrGodown.added
             ? !currentBatchOrGodown.added
             : true;
+
+          // Initialize count values
           currentBatchOrGodown.count = 1;
           currentBatchOrGodown.actualCount = 1;
-          // currentBatchOrGodown.IndividualTotal = totalData?.individualSubtotal;
 
+          // Update the GodownList with the modified batch/godown
           itemToUpdate.GodownList[idx] = currentBatchOrGodown;
         }
+
+        // Update the overall item count
         itemToUpdate.count =
           new Decimal(itemToUpdate?.count || 0).add(1)?.toNumber() || 1;
         itemToUpdate.actualCount = itemToUpdate?.count;
 
+        // Calculate totals for the item
         const totalData = calculateTotal(itemToUpdate, selectedPriceLevel);
+
+        // Update individual totals for each godown/batch
         const updatedGodownListWithTotals = itemToUpdate.GodownList.map(
           (godown, index) => ({
             ...godown,
@@ -330,9 +200,11 @@ function VoucherProductLIst({
         );
         itemToUpdate.GodownList = updatedGodownListWithTotals;
 
+        // Update item total and added state
         itemToUpdate.total = totalData?.total || 0;
         itemToUpdate.added = true;
 
+        // Dispatch to Redux store
         dispatch(addItem({ payload: itemToUpdate, moveToTop: false }));
 
         return itemToUpdate;
@@ -340,33 +212,43 @@ function VoucherProductLIst({
       return item;
     });
 
+    // Update the items state
     setItems(updatedItems);
+
+    // Navigate to edit page if no price level is selected
     if (selectedPriceLevel === "" || selectedPriceLevel === undefined) {
       navigate(`/sUsers/editItemSales/${_id}/${"nil"}/${idx}`);
     }
   };
 
+  /**
+   * Increment the count of a product or specific godown/batch
+   *
+   */
   const handleIncrement = (_id, godownIndex = null, moveToTop = false) => {
     const updatedItems = items.map((item) => {
-      if (item._id !== _id) return item; // Keep items unchanged if _id doesn't match
+      if (item._id !== _id) return item; // Skip if not the target item
+
+      // Create a deep copy of the item
       const currentItem = structuredClone(item);
 
+      // Handle godown/batch specific increment
       if (currentItem?.hasGodownOrBatch && godownIndex !== null) {
         const godownOrBatch = { ...currentItem.GodownList[godownIndex] };
 
-        // If godownOrBatch.count is undefined, set it to 1, otherwise increment by 1
+        // Increment count with Decimal.js for precision
         godownOrBatch.count = new Decimal(godownOrBatch.count)
           .add(1)
           .toNumber();
         godownOrBatch.actualCount = godownOrBatch.count;
 
-        // Update the specific godown/batch in the GodownList array
+        // Update the specific godown/batch in the GodownList
         const updatedGodownList = currentItem.GodownList.map((godown, index) =>
           index === godownIndex ? godownOrBatch : godown
         );
         currentItem.GodownList = updatedGodownList;
 
-        // Calculate the sum of counts in the GodownList array
+        // Calculate the sum of all counts in the GodownList
         const sumOfCounts = updatedGodownList.reduce(
           (sum, godown) => sum + (godown.count || 0),
           0
@@ -375,8 +257,10 @@ function VoucherProductLIst({
           (sum, godown) => sum + (godown.actualCount || 0),
           0
         );
-        currentItem.count = sumOfCounts; // Update currentItem.count with the sum
-        currentItem.actualCount = sumOfActualCounts; // Update currentItem.count with the sum
+
+        // Update the item's overall counts
+        currentItem.count = sumOfCounts;
+        currentItem.actualCount = sumOfActualCounts;
 
         // Calculate totals and update individual batch totals
         const totalData = calculateTotal(currentItem, selectedPriceLevel);
@@ -391,72 +275,87 @@ function VoucherProductLIst({
         currentItem.GodownList = updatedGodownListWithTotals;
         currentItem.total = totalData.total; // Update the overall total
       } else {
-        // Increment the count of the currentItem by 1
+        // Handle simple item increment (no godown/batch)
         currentItem.count = new Decimal(currentItem.count).add(1).toNumber();
         currentItem.actualCount = currentItem.count;
 
-        // Calculate totals and update individual total
+        // Calculate totals and update
         const totalData = calculateTotal(currentItem, selectedPriceLevel);
         currentItem.total = totalData.total;
-        currentItem.GodownList[0].individualTotal = totalData?.total; // Update the overall total
+        currentItem.GodownList[0].individualTotal = totalData?.total;
       }
 
-      dispatch(updateItem({ item: currentItem, moveToTop })); // Log the updated currentItem
-      return currentItem; // Return the updated currentItem
+      // Dispatch the updated item to Redux
+      dispatch(updateItem({ item: currentItem, moveToTop }));
+      return currentItem;
     });
 
-    // Move the updated item to the top if moveToTop is true
+    // Handle moving the updated item to the top of the list if requested
     if (moveToTop) {
       const updatedItemIndex = updatedItems.findIndex((el) => el._id === _id);
       if (updatedItemIndex !== -1) {
         const [updatedItem] = updatedItems.splice(updatedItemIndex, 1);
-        setItems([updatedItem, ...updatedItems]); // Move the updated item to the top
+        setItems([updatedItem, ...updatedItems]); // Move to top
       } else {
-        setItems(updatedItems); // Otherwise, update the state as is
+        setItems(updatedItems);
       }
     } else {
-      setItems(updatedItems); // Update the state with the updated items
-    } // Update the state with the updated items
+      setItems(updatedItems);
+    }
   };
 
-  ///////////////////////////handleDecrement///////////////////////////////////
+  /**
+   * Decrement the count of a product or specific godown/batch
+   * Removes the item if count reaches zero
+   */
   const handleDecrement = (_id, godownIndex = null) => {
     const updatedItems = items.map((item) => {
-      if (item._id !== _id) return item; // Keep items unchanged if _id doesn't match
+      if (item._id !== _id) return item; // Skip if not the target item
+
+      // Create a deep copy of the item
       const currentItem = structuredClone(item);
 
+      // Handle godown/batch specific decrement
       if (godownIndex !== null && currentItem.hasGodownOrBatch) {
         const godownOrBatch = { ...currentItem.GodownList[godownIndex] };
+
+        // Decrement count with Decimal.js for precision
         godownOrBatch.count = new Decimal(godownOrBatch.count)
           .sub(1)
           .toNumber();
         godownOrBatch.actualCount = godownOrBatch.count;
 
-        // Ensure count does not go below 0
+        // Mark as not added if count reaches zero or below
         if (godownOrBatch.count <= 0) {
           godownOrBatch.added = false;
         }
 
+        // Update the specific godown/batch in the GodownList
         const updatedGodownList = currentItem.GodownList.map((godown, index) =>
           index === godownIndex ? godownOrBatch : godown
         );
 
-        // Calculate the sum of counts in GodownList
+        // Calculate the sum of all counts in the GodownList
         const sumOfCounts = updatedGodownList.reduce(
           (sum, godown) => sum + (godown.count || 0),
           0
         );
-
         const sumOfActualCounts = updatedGodownList.reduce(
           (sum, godown) => sum + (godown.actualCount || 0),
           0
         );
+
+        // Update the item's overall counts
         currentItem.count = sumOfCounts;
         currentItem.actualCount = sumOfActualCounts;
         currentItem.GodownList = updatedGodownList;
+
+        // Check if all godown/batch items are not added
         const allAddedFalse = currentItem.GodownList.every(
           (item) => item.added === false || item.added == undefined
         );
+
+        // Remove the item if none of its godown/batch items are added
         if (allAddedFalse) {
           dispatch(removeItem(currentItem._id));
         }
@@ -472,92 +371,50 @@ function VoucherProductLIst({
           })
         );
         currentItem.GodownList = updatedGodownListWithTotals;
-        currentItem.total = totalData.total; // Update the overall total
+        currentItem.total = totalData.total;
       } else {
+        // Handle simple item decrement (no godown/batch)
         currentItem.count = new Decimal(currentItem.count).sub(1).toNumber();
         currentItem.actualCount = currentItem.count;
 
-        // Ensure count does not go below 0
+        // Remove the item if count reaches zero or below
         if (currentItem.count <= 0) {
           currentItem.added = false;
           dispatch(removeItem(currentItem._id));
         }
 
-        // Calculate totals and update individual total
+        // Calculate totals and update
         const totalData = calculateTotal(currentItem, selectedPriceLevel);
-        // currentItem.individualTotal = totalData.total;
         currentItem.GodownList[0].individualTotal = totalData?.total;
-        currentItem.total = totalData.total; // Update the overall total
+        currentItem.total = totalData.total;
       }
 
-      dispatch(updateItem({ item: currentItem, moveToTop: false })); // Log the updated currentItem
-      // Log the updated currentItem
-      return currentItem; // Return the updated currentItem
+      // Dispatch the updated item to Redux
+      dispatch(updateItem({ item: currentItem, moveToTop: false }));
+      return currentItem;
     });
 
-    setItems(updatedItems); // Update the state with the updated items
-  };
-
-  const handleTotalChangeWithPriceLevel = (pricelevel) => {
-    console.log(selectedPriceLevel);
-
-    const updatedItems = items.map((item) => {
-      if (item.added === true) {
-        const { individualTotals, total } = calculateTotal(
-          item,
-          pricelevel,
-          "priceLevelChange"
-        );
-
-        // dispatch(changeTotal({ ...item, total: total }));
-        const newPriceRate =
-          item?.Priceleveles.find(
-            (priceLevelItem) => priceLevelItem.pricelevel === pricelevel
-          )?.pricerate || 0;
-
-        console.log(newPriceRate);
-        console.log(individualTotals);
-        console.log(total);
-
-        if (item?.hasGodownOrBatch) {
-          const updatedGodownList = item?.GodownList.map((godown, idx) => {
-            return {
-              ...godown,
-              individualTotal:
-                individualTotals.find((el) => el.index === idx)
-                  ?.individualTotal || 0,
-              selectedPriceRate: newPriceRate,
-            };
-          });
-
-          // dispatch(
-          //   updateItem({
-          //     item: { ...item, GodownList: updatedGodownList, total: total },
-          //     moveToTop: false,
-          //   })
-          // );
-          return {
-            ...item,
-            GodownList: updatedGodownList,
-            total: total,
-          };
-        }
-      }
-      return item;
-    });
-
-    console.log(updatedItems);
-    
-
+    // Update the items state
     setItems(updatedItems);
-    setRefresh(!refresh);
   };
 
-  useEffect(() => {
-    if (selectedPriceLevel) {
-      handleTotalChangeWithPriceLevel(selectedPriceLevel);
-    }
-  }, [selectedPriceLevel]);
+  // ========== INFINITE LOADING HANDLERS ==========
+  /**
+   * Load more items when the user scrolls to the bottom of the list
+   * Returns a promise that resolves when new items are loaded
+   */
+  const loadMoreItems = useCallback(() => {
+    if (!hasMore || isLoading) return Promise.resolve();
+    return fetchProducts(page + 1, searchTerm);
+  }, [hasMore, isLoading, fetchProducts, page, searchTerm]);
+
+  /**
+   * Check if an item at a specific index is loaded
+   */
+  const isItemLoaded = (index) => index < items.length;
+
+  // Function to render each item in the list would normally go here
+  // Additional component logic would continue...
 
   const Row = ({ index, style }) => {
     if (!isItemLoaded(index)) {
@@ -812,13 +669,6 @@ function VoucherProductLIst({
     );
   };
 
-  const loadMoreItems = useCallback(() => {
-    if (!hasMore || isLoading) return Promise.resolve();
-    return fetchProducts(page + 1, searchTerm);
-  }, [hasMore, isLoading, fetchProducts, page, searchTerm]);
-
-  const isItemLoaded = (index) => index < items.length;
-
   return (
     <div>
       {items.length === 0 && !loader ? (
@@ -879,4 +729,3 @@ function VoucherProductLIst({
   );
 }
 
-export default VoucherProductLIst;

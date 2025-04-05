@@ -62,9 +62,11 @@ export const salesSecondarySlice = createSlice({
     },
 
     removeItem: (state, action) => {
-      const id = action.payload;
+      const id = action.payload?._id;
+      
       const index = state.items.findIndex((el) => el._id === id);
-
+      console.log(index);
+      
       state.items.splice(index, 1);
     },
     changeCount: (state, action) => {

@@ -13,6 +13,13 @@ const ProductDetails = ({
   heights,
   tab = "",
 }) => {
+
+
+  
+
+
+
+
   const detailsRef = useRef();
   const batchOrGodownList = details?.GodownList;
   useEffect(() => {

@@ -12,10 +12,11 @@ import SearchBar from "@/components/common/SearchBar";
 import VoucherProductLIst from "./VoucherProductLIst";
 import Filter from "@/components/secUsers/Filter";
 import CustomBarLoader from "@/components/common/CustomBarLoader";
+import { useNavigate } from "react-router-dom";
 
 /**
  * VoucherAddCount Component
- * 
+ *
  * This component manages product selection for vouchers, handling:
  * - Product data loading with pagination and search
  * - Price level selection and application
@@ -40,11 +41,14 @@ function VoucherAddCount() {
   const searchTimeoutRef = useRef(null);
   const limit = 30; // Number of products per page
 
+  ////Navigation
+  const navigate=useNavigate();
+
   // ===================================
   // Redux Integration
   // ===================================
   const dispatch = useDispatch();
-  
+
   // Get organization data from Redux
   const {
     _id: cmp_id,
@@ -53,7 +57,7 @@ function VoucherAddCount() {
   } = useSelector((state) => state.secSelectedOrganization.secSelectedOrg);
   const { addRateWithTax } = configurations[0];
   const taxInclusive = addRateWithTax["sale"] || false;
-  
+
   // Get sales data from Redux
   const {
     items: itemsFromRedux,
@@ -67,7 +71,7 @@ function VoucherAddCount() {
   // ===================================
   // Search Functionality
   // ===================================
-  
+
   /**
    * Debounced search function
    * Waits 500ms after typing stops before applying search
@@ -97,7 +101,7 @@ function VoucherAddCount() {
   // ===================================
   // Data Fetching & Processing
   // ===================================
-  
+
   /**
    * Fetch products with pagination and search support
    * Uses cached data from Redux when available
@@ -110,9 +114,12 @@ function VoucherAddCount() {
 
       try {
         setIsLoading(true);
-        
+
         // Use cached data from Redux if available for this page
-        if (pageNumberFromRedux >= pageNumber && allProductsFromRedux.length > 0) {
+        if (
+          pageNumberFromRedux >= pageNumber &&
+          allProductsFromRedux.length > 0
+        ) {
           setItems(allProductsFromRedux);
           setHasMore(hasMoreFromRedux);
           processItemsWithRedux(allProductsFromRedux);
@@ -147,13 +154,16 @@ function VoucherAddCount() {
         const productsWithPriceRates = productData.map((productItem) => {
           const priceRate =
             productItem?.Priceleveles?.find(
-              (priceLevelItem) => priceLevelItem.pricelevel === selectedPriceLevelFromRedux
+              (priceLevelItem) =>
+                priceLevelItem.pricelevel === selectedPriceLevelFromRedux
             )?.pricerate || 0;
 
-          const updatedGodownList = productItem.GodownList.map((godownOrBatch) => ({
-            ...godownOrBatch,
-            selectedPriceRate: priceRate,
-          }));
+          const updatedGodownList = productItem.GodownList.map(
+            (godownOrBatch) => ({
+              ...godownOrBatch,
+              selectedPriceRate: priceRate,
+            })
+          );
 
           return {
             ...productItem,
@@ -190,8 +200,16 @@ function VoucherAddCount() {
         setLoader(false);
       }
     },
-    [cmp_id, selectedPriceLevelFromRedux, dispatch, pageNumberFromRedux, 
-     allProductsFromRedux, hasMoreFromRedux, isLoading, pricesLoaded]
+    [
+      cmp_id,
+      selectedPriceLevelFromRedux,
+      dispatch,
+      pageNumberFromRedux,
+      allProductsFromRedux,
+      hasMoreFromRedux,
+      isLoading,
+      pricesLoaded,
+    ]
   );
 
   /**
@@ -277,7 +295,7 @@ function VoucherAddCount() {
   // ===================================
   // Effects & Lifecycle Methods
   // ===================================
-  
+
   // Sync page number with Redux on initial load
   useEffect(() => {
     if (pageNumberFromRedux > 0) {
@@ -293,7 +311,7 @@ function VoucherAddCount() {
     const fetchFilters = async () => {
       try {
         setLoader(true);
-        
+
         // Use price levels from Redux if available
         if (priceLevelsFromRedux.length > 0) {
           setPriceLevels(priceLevelsFromRedux);
@@ -303,9 +321,10 @@ function VoucherAddCount() {
         }
 
         // Select API endpoint based on organization type
-        const endpoint = type === "self"
-          ? `/api/sUsers/fetchFilters/${cmp_id}`
-          : `/api/sUsers/fetchAdditionalDetails/${cmp_id}`;
+        const endpoint =
+          type === "self"
+            ? `/api/sUsers/fetchFilters/${cmp_id}`
+            : `/api/sUsers/fetchAdditionalDetails/${cmp_id}`;
 
         const res = await api.get(endpoint, { withCredentials: true });
         const data = type === "self" ? res.data.data : res.data;
@@ -318,7 +337,7 @@ function VoucherAddCount() {
         // Set default price level
         const defaultPriceLevel = priceLevels[0];
         dispatch(setPriceLevel(defaultPriceLevel));
-        
+
         setPricesLoaded(true);
         setLoader(false);
       } catch (error) {
@@ -348,36 +367,244 @@ function VoucherAddCount() {
    * Apply selected price level rates to all products
    * Updates displayed prices when price level changes
    */
+
+  const calculateTotal = (item, selectedPriceLevel, situation = "normal") => {
+    let priceRate = 0;
+    if (situation === "priceLevelChange") {
+      priceRate =
+        item.Priceleveles.find(
+          (level) => level.pricelevel === selectedPriceLevel
+        )?.pricerate || 0;
+    }
+
+    let subtotal = 0;
+    let individualTotals = [];
+    let totalCess = 0; // Track total cess amount
+
+    if (item.hasGodownOrBatch) {
+      item.GodownList.forEach((godownOrBatch, index) => {
+        if (situation === "normal") {
+          priceRate = godownOrBatch.selectedPriceRate;
+        }
+        const quantity = Number(godownOrBatch.count) || 0;
+        const igstValue = Math.max(item.igst || 0, 0);
+
+        // Calculate base price based on tax inclusivity
+        let basePrice = priceRate * quantity;
+
+        let taxBasePrice = basePrice;
+
+        // For tax inclusive prices, calculate the base price without tax
+        if (item?.isTaxInclusive) {
+          taxBasePrice = Number((basePrice / (1 + igstValue / 100)).toFixed(2));
+        }
+
+        // Calculate discount based on discountType
+        let discountedPrice = taxBasePrice;
+
+        if (
+          godownOrBatch.discountType === "percentage" &&
+          godownOrBatch.discountPercentage !== 0 &&
+          godownOrBatch.discountPercentage !== undefined &&
+          godownOrBatch.discountPercentage !== ""
+        ) {
+          // Percentage discount
+          const discountAmount =
+            (taxBasePrice * godownOrBatch.discountPercentage) / 100;
+
+          discountedPrice = taxBasePrice - discountAmount;
+        } else if (
+          godownOrBatch.discount !== 0 &&
+          godownOrBatch.discount !== undefined &&
+          godownOrBatch.discount !== ""
+        ) {
+          // Fixed amount discount (default)
+          discountedPrice = taxBasePrice - godownOrBatch.discount;
+        }
+
+        // Calculate cess amounts
+        let cessAmount = 0;
+        let additionalCessAmount = 0;
+
+        // Standard cess calculation
+        if (item.cess && item.cess > 0) {
+          cessAmount = discountedPrice * (item.cess / 100);
+        }
+
+        // Additional cess calculation
+        if (item.addl_cess && item.addl_cess > 0) {
+          additionalCessAmount = quantity * item.addl_cess;
+        }
+
+        // Combine cess amounts
+        const totalCessAmount = cessAmount + additionalCessAmount;
+
+        // Calculate tax amount
+        const taxAmount = discountedPrice * (igstValue / 100);
+
+        // Calculate total including tax and cess
+        const individualTotal = Math.max(
+          parseFloat(
+            (discountedPrice + taxAmount + totalCessAmount).toFixed(2)
+          ),
+          0
+        );
+
+        subtotal += individualTotal;
+        totalCess += totalCessAmount;
+
+        individualTotals.push({
+          index,
+          batch: godownOrBatch.batch,
+          individualTotal,
+          cessAmount: totalCessAmount,
+        });
+      });
+    } else {
+      if (situation === "normal") {
+        priceRate = item.GodownList[0].selectedPriceRate;
+      }
+      const quantity = Number(item.count);
+      const igstValue = Math.max(item.newGst || item.igst || 0, 0);
+
+      // Calculate base price based on tax inclusivity
+      let basePrice = priceRate * quantity;
+      let taxBasePrice = basePrice;
+
+      // For tax inclusive prices, calculate the base price without tax
+      if (item?.isTaxInclusive) {
+        taxBasePrice = Number((basePrice / (1 + igstValue / 100)).toFixed(2));
+      }
+
+      // Calculate discount based on discountType
+      let discountedPrice = taxBasePrice;
+
+      if (
+        item.discountType === "percentage" &&
+        item.discountPercentage !== 0 &&
+        item.discountPercentage !== undefined
+      ) {
+        // Percentage discount
+        const discountAmount = (taxBasePrice * item.discountPercentage) / 100;
+        discountedPrice = taxBasePrice - discountAmount;
+      } else if (item.discount !== 0 && item.discount !== undefined) {
+        // Fixed amount discount (default)
+        discountedPrice = taxBasePrice - item.discount;
+      }
+
+      // Calculate cess amounts
+      let cessAmount = 0;
+      let additionalCessAmount = 0;
+
+      // Standard cess calculation
+      if (item.cess && item.cess > 0) {
+        cessAmount = discountedPrice * (item.cess / 100);
+      }
+
+      // Additional cess calculation
+      if (item.addl_cess && item.addl_cess > 0) {
+        additionalCessAmount = quantity * item.addl_cess;
+      }
+
+      // Combine cess amounts
+      const totalCessAmount = cessAmount + additionalCessAmount;
+
+      // Calculate tax amount
+      const taxAmount = discountedPrice * (igstValue / 100);
+
+      // Calculate total including tax and cess
+      const individualTotal = Math.max(
+        parseFloat((discountedPrice + taxAmount + totalCessAmount).toFixed(2)),
+        0
+      );
+
+      subtotal += individualTotal;
+      totalCess += totalCessAmount;
+
+      individualTotals.push({
+        index: 0,
+        batch: item.batch || "No batch",
+        individualTotal,
+        cessAmount: totalCessAmount,
+      });
+    }
+
+    subtotal = Math.max(parseFloat(subtotal.toFixed(2)), 0);
+
+    return {
+      individualTotals,
+      total: subtotal,
+      totalCess: totalCess,
+    };
+  };
+
   const addSelectedRate = (pricelevel) => {
     if (!items || items.length === 0) return;
-  
-    const updatedItems = items.map((productItem) => {
-      const priceRate =
-        productItem?.Priceleveles?.find(
+
+    const updatedItems = items.map((item) => {
+      const newPriceRate =
+        item?.Priceleveles?.find(
           (priceLevelItem) => priceLevelItem.pricelevel === pricelevel
         )?.pricerate || 0;
-  
-      const updatedGodownList = productItem.GodownList.map((godownOrBatch) => ({
-        ...godownOrBatch,
-        selectedPriceRate: priceRate,
-      }));
-  
-      return {
-        ...productItem,
-        GodownList: updatedGodownList,
-      };
-    });
-  
-    setItems(updatedItems);
-  };
-  
 
+      // Clone the item deeply
+      const itemToUpdate = { ...item, GodownList: [...item.GodownList] };
+
+      // Update all godowns with new price rate
+      itemToUpdate.GodownList = itemToUpdate.GodownList.map((godown) => ({
+        ...godown,
+        selectedPriceRate: newPriceRate,
+      }));
+
+      // If the item is added, also calculate totals
+      if (item.added === true) {
+        const totalData = calculateTotal(
+          itemToUpdate,
+          pricelevel,
+          "priceLevelChange"
+        );
+
+        itemToUpdate.GodownList = itemToUpdate.GodownList.map(
+          (godown, idx) => ({
+            ...godown,
+            individualTotal:
+              totalData.individualTotals.find((el) => el.index === idx)
+                ?.individualTotal || 0,
+          })
+        );
+
+        itemToUpdate.total = totalData.total;
+      }
+
+      return itemToUpdate;
+    });
+
+    console.log("Price level change:", updatedItems);
+    setItems(updatedItems);
+    // if (!items || items.length === 0) return;
+
+    // const updatedItems = items.map((productItem) => {
+    //   const priceRate =
+    //     productItem?.Priceleveles?.find(
+    //       (priceLevelItem) => priceLevelItem.pricelevel === pricelevel
+    //     )?.pricerate || 0;
+
+    //   const updatedGodownList = productItem.GodownList.map((godownOrBatch) => ({
+    //     ...godownOrBatch,
+    //     selectedPriceRate: priceRate,
+    //   }));
+
+    //   return {
+    //     ...productItem,
+    //     GodownList: updatedGodownList,
+    //   };
+    // });
+
+    // setItems(updatedItems);
+  };
   // Update items when price level changes
-  
   useEffect(() => {
     if (pricesLoaded) {
-    console.log(selectedPriceLevelFromRedux);
-
       addSelectedRate(selectedPriceLevelFromRedux);
     }
   }, [selectedPriceLevelFromRedux, refresh, pricesLoaded]);
@@ -385,6 +612,7 @@ function VoucherAddCount() {
   // ===================================
   // Render Component
   // ===================================
+
   return (
     <div className="h-screen overflow-y-auto">
       <TitleDiv title={"Add Item"} from="/sUsers/sales" />
@@ -404,7 +632,19 @@ function VoucherAddCount() {
         fetchProducts={fetchProducts}
         searchTerm={searchTerm}
         setRefresh={setRefresh}
+        calculateTotal={calculateTotal}
       />
+
+      {items.length > 0 && !loader && (
+        <div className=" sticky bottom-0 bg-white  w-full flex justify-center p-3 border-t h-[70px] z-50 ">
+          <button
+            onClick={() => navigate(-1)}
+            className="bg-violet-700  w-full  text-ld font-bold text-white p-2 rounded-sm "
+          >
+            Continue
+          </button>
+        </div>
+      )}
     </div>
   );
 }

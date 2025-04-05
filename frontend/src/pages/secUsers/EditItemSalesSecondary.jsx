@@ -29,7 +29,7 @@ function EditItemSalesSecondary() {
     discountPercentage,
     type,
     igst,
-    isTaxInclusive,
+    isTaxInclusive
 
     // taxAmount
   ) => {
@@ -143,29 +143,31 @@ function EditItemSalesSecondary() {
               (taxExclusivePrice - calculatedDiscountAmount)?.toFixed(2)
             );
 
-             //  Cess Calculation
-             let cessValue = 0;
-             let addlCessValue = 0;
- 
-             console.log(cessValue);
-             console.log(addlCessValue);
- 
-             if (item.cess && item.cess > 0) {
-               cessValue = discountedPrice * (item.cess / 100);
-             }
- 
-             if (item.addl_cess && item.addl_cess > 0) {
-               addlCessValue = quantity * item.addl_cess;
-             }
- 
-             console.log(cessValue);
-             console.log(addlCessValue);
- 
-             const totalCessAmount = cessValue + addlCessValue;
+            //  Cess Calculation
+            let cessValue = 0;
+            let addlCessValue = 0;
+
+            console.log(cessValue);
+            console.log(addlCessValue);
+
+            if (item.cess && item.cess > 0) {
+              cessValue = discountedPrice * (item.cess / 100);
+            }
+
+            if (item.addl_cess && item.addl_cess > 0) {
+              addlCessValue = quantity * item.addl_cess;
+            }
+
+            console.log(cessValue);
+            console.log(addlCessValue);
+
+            const totalCessAmount = cessValue + addlCessValue;
 
             ////final calculation
             const taxAmount = discountedPrice * (igst / 100);
-            individualTotal = Number((discountedPrice + taxAmount+totalCessAmount)?.toFixed(2));
+            individualTotal = Number(
+              (discountedPrice + taxAmount + totalCessAmount)?.toFixed(2)
+            );
           }
 
           updatedGodown.discount = calculatedDiscountAmount;
