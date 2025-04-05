@@ -7,6 +7,7 @@ import { removeAll as removeAllDebit } from "../../../slices/debitNote";
 import { removeAll as removeAllPayment } from "../../../slices/payment";
 import { removeAll as removeAllReceipt } from "../../../slices/receipt";
 import { removeAll as removeAllDate } from "../../../slices/filterSlices/date";
+import { removeAll as removeAllUser } from "../../../slices/filterSlices/userFilter";
 import { removeAll as removeAllVoucherType } from "../../../slices/filterSlices/voucherType";
 import { removeAll as removeAllParty } from "../../../slices/filterSlices/partyFIlter";
 import { removeAll as removeAllStatus } from "../../../slices/filterSlices/statusFilter";
@@ -38,6 +39,7 @@ function RemoveReduxData() {
     dispatch(removeAllPaymentSplitting());
     dispatch(removeAllBarcode());
     dispatch(removeAllTally());
+    dispatch(removeAllUser());
   }, [dispatch]); // Adding dispatch to the dependency array
 
   return (

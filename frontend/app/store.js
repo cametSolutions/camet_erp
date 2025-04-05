@@ -18,6 +18,7 @@ import debitNote from "../slices/debitNote";
 import date from "../slices/filterSlices/date";
 import voucherType from "../slices/filterSlices/voucherType";
 import partyFilter from "../slices/filterSlices/partyFIlter";
+import userFilter from "../slices/filterSlices/userFilter";
 import statusFilter from "../slices/filterSlices/statusFilter";
 import companyFilter from "../slices/filterSlices/companyFilter";
 import summaryFilter from "../slices/filterSlices/summaryFilter";
@@ -46,6 +47,7 @@ export const store = configureStore({
     date: date,
     voucherType: voucherType,
     partyFilter: partyFilter,
+    userFilter: userFilter,
     statusFilter: statusFilter,
     partySlice,
     paymentSplitting,

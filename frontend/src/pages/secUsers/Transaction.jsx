@@ -10,6 +10,7 @@ import useFetch from "../../customHook/useFetch";
 import TransactionTable from "../../components/common/List/TranscationTable";
 import TitleDiv from "../../components/common/TitleDiv";
 import { BarLoader } from "react-spinners";
+import SecondaryUserFilter from "@/components/Filters/SecondaryUserFilter";
 
 function Transaction() {
   const [netCashInHands, setNetCashInHands] = useState(0);
@@ -20,18 +21,25 @@ function Transaction() {
   const selectedVoucher = useSelector(
     (state) => state?.voucherType?.selectedVoucher
   );
+  const selectedSecondaryUser = useSelector(
+    (state) => state?.userFilter?.selectedUser
+  );
 
   const isAdmin =
     JSON.parse(localStorage.getItem("sUserData")).role === "admin"
       ? true
       : false;
 
-  console.log(isAdmin);
-
   const transactionsUrl = useMemo(
     () =>
-      `/api/sUsers/transactions/${org?._id}?startOfDayParam=${start}&endOfDayParam=${end}&selectedVoucher=${selectedVoucher?.value}&isAdmin=${isAdmin}`,
-    [org?._id, start, end, selectedVoucher]
+      `/api/sUsers/transactions/${
+        org?._id
+      }?startOfDayParam=${start}&endOfDayParam=${end}&selectedVoucher=${
+        selectedVoucher?.value
+      }&isAdmin=${isAdmin}&selectedSecondaryUser=${
+        selectedSecondaryUser?._id || ""
+      }`,
+    [org?._id, start, end, selectedVoucher, selectedSecondaryUser]
   );
 
   // Fetch data using custom hook
@@ -56,7 +64,8 @@ function Transaction() {
             <VoucherTypeFilter />
           </section>
 
-          <section className="shadow-lg p-3 text-xs font-bold text-gray-500">
+          <section className="shadow-lg p-3 text-xs font-bold text-gray-500 flex items-center gap-5">
+            {isAdmin && <SecondaryUserFilter />}
             <p>
               Net Cash In Hand :{" "}
               {transactionLoading ? "Loading..." : netCashInHands || 0}

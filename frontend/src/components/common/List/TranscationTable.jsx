@@ -139,6 +139,12 @@ const TransactionTable = ({
                       <div className="text-gray-500 text-[0.7rem] font-bold mt-2">
                         {transaction?.type}
                       </div>
+                      <div className="text-gray-500 text-[0.7rem] font-bold mt-2 ">
+                        Created By:{" "}
+                        {transaction?.secondaryUserName.length > 15
+                          ? `${transaction?.secondaryUserName.slice(0, 15)}...`
+                          : transaction?.secondaryUserName}
+                      </div>
                     </td>
                     <td className="p-3 font-bold text-gray-500 text-right w-1/4">
                       {transaction?.enteredAmount}

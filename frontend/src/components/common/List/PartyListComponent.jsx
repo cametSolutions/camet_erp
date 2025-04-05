@@ -37,9 +37,13 @@ function PartyListComponent({ deleteHandler = () => {}, isVoucher = false }) {
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
 
+
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const location = useLocation();
+
+  const isSalePath = location.pathname === "/sUsers/searchPartySales";
+
 
   // console.log(location.pathname);
   // console.log();
@@ -63,7 +67,7 @@ function PartyListComponent({ deleteHandler = () => {}, isVoucher = false }) {
 
       try {
         setLoading(true);
-        const res = await api.get(`/api/sUsers/PartyList/${cmp_id}`, {
+        const res = await api.get(`/api/sUsers/PartyList/${cmp_id}?${isSalePath && "isSale=true"}`, {
           params: {
             page: pageNum,
             limit: PAGE_SIZE,
