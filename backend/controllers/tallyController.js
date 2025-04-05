@@ -24,14 +24,11 @@ export const saveDataFromTally = async (req, res) => {
     // Use Promise.all to parallelize document creation or update
     const savedData = await Promise.all(
       dataToSave.map(async (dataItem) => {
+        // Add bill_no as billId if billId is not present
+        if (!dataItem.billId && dataItem.bill_no) {
+          dataItem.billId = dataItem.bill_no;
+        }
 
-
-           // Add bill_no as billId if billId is not present
-           if (!dataItem.billId && dataItem.bill_no) {
-            dataItem.billId = dataItem.bill_no;
-          }
-
-          
         // Use findOne to check if the document already exists
         const existingDocument = await TallyData.findOne({
           cmp_id: dataItem.cmp_id,
@@ -324,7 +321,6 @@ export const updateStock = async (req, res) => {
     );
 
     // console.log("groupedGodowns", groupedGodowns);
-    
 
     if (Object.keys(groupedGodowns).length === 0) {
       return res.status(400).json({
@@ -379,12 +375,14 @@ export const updateStock = async (req, res) => {
     );
 
     // console.log("updatedProducts", updatedProducts);
-    
 
     // Create a summary of modifications
     const modificationSummary = updatedProducts.map((product) => ({
       product_id: product.product_master_id,
-      product_name: product.product_name || groupedGodowns[product.product_master_id]?.product_name || "Unknown", // Fallback for missing product_name
+      product_name:
+        product.product_name ||
+        groupedGodowns[product.product_master_id]?.product_name ||
+        "Unknown", // Fallback for missing product_name
       // updated_godown_count: product.godownCount,
       // godowns: groupedGodowns[product.product_master_id.toString()]?.godowns || []
     }));
@@ -559,7 +557,6 @@ export const updatePriceLevels = async (req, res) => {
   }
 };
 
-
 // @desc for saving parties/costumers from tally
 // route GET/api/tally/giveTransaction
 
@@ -699,7 +696,7 @@ export const addAccountGroups = async (req, res) => {
     const savedAccountGroups = await Promise.all(
       accountGroupsToSave.map(async (group) => {
         const key = `${group.cmp_id}-${group.accountGroup_id}-${group.Primary_user_id}`;
-        
+
         // Skip duplicate records in the request
         if (uniqueGroups.has(key)) return null;
         uniqueGroups.set(key, true);
@@ -709,7 +706,9 @@ export const addAccountGroups = async (req, res) => {
             {
               cmp_id: group.cmp_id,
               accountGroup_id: group.accountGroup_id,
-              Primary_user_id: new mongoose.Types.ObjectId(group.Primary_user_id),
+              Primary_user_id: new mongoose.Types.ObjectId(
+                group.Primary_user_id
+              ),
             },
             group,
             { new: true, upsert: true } // Insert if not found, update if exists
@@ -756,7 +755,7 @@ export const addSubGroups = async (req, res) => {
     const savedSubGroups = await Promise.all(
       subGroupsToSave.map(async (subGroup) => {
         const key = `${subGroup.cmp_id}-${subGroup.subGroup_id}-${subGroup.Primary_user_id}`;
-        
+
         // Skip duplicate records in the request
         if (uniqueSubGroups.has(key)) return null;
         uniqueSubGroups.set(key, true);
@@ -766,7 +765,9 @@ export const addSubGroups = async (req, res) => {
             {
               cmp_id: subGroup.cmp_id,
               subGroup_id: subGroup.subGroup_id,
-              Primary_user_id: new mongoose.Types.ObjectId(subGroup.Primary_user_id),
+              Primary_user_id: new mongoose.Types.ObjectId(
+                subGroup.Primary_user_id
+              ),
             },
             subGroup,
             { new: true, upsert: true } // Insert if not found, update if exists
@@ -788,6 +789,56 @@ export const addSubGroups = async (req, res) => {
   }
 };
 
+
+
+/**
+ * Clear stock for all products in the given company
+ * @param {string} cmp_id Company ID
+ */
+export const clearStock = async (req, res) => {
+  const cmp_id = req.params.cmp_id;
+
+  try {
+    const products = await productModel.find({
+      cmp_id: cmp_id,
+      "GodownList.balance_stock": { $ne: 0 },
+    });
+
+    const bulkOps = [];
+
+    for (const product of products) {
+      let updated = false;
+
+      const updatedGodownList = product.GodownList.map((item) => {
+        if (item.balance_stock !== 0) {
+          updated = true;
+          return { ...item, balance_stock: 0 };
+        }
+        return item;
+      });
+
+      if (updated) {
+        bulkOps.push({
+          updateOne: {
+            filter: { _id: product._id },
+            update: { $set: { GodownList: updatedGodownList } },
+          },
+        });
+      }
+    }
+
+    if (bulkOps.length > 0) {
+      await productModel.bulkWrite(bulkOps);
+    }
+
+    res.status(200).json({
+      message: `Stock cleared for ${bulkOps.length} products successfully`,
+    });
+  } catch (error) {
+    console.error("Error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
 
 
 
@@ -849,4 +900,4 @@ export const givePurchase = async (req, res) => {
   const cmp_id = req.params.cmp_id;
   const serialNumber = req.params.SNo;
   return fetchData("purchase", cmp_id, serialNumber, res);
-};    
+};
