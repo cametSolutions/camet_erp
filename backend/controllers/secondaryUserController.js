@@ -513,7 +513,8 @@ export const getTransactionDetails = async (req, res) => {
 export const PartyList = async (req, res) => {
   const { cmp_id } = req.params;
   const { owner: Primary_user_id, sUserId: secUserId } = req;
-  const { outstanding, voucher, page = 1, limit = 20, search = "" } = req.query;
+  const { outstanding, voucher, page = 1, limit = 20, search = "",
+    isSale  } = req.query;
 
   try {
     // Pagination setup
@@ -556,9 +557,29 @@ export const PartyList = async (req, res) => {
     }
 
     const configuration = secUser.configurations.find(
-      (config) => config.organization === cmp_id
+      (config) => config.organization == cmp_id
     );
     const vanSaleConfig = configuration?.vanSale || false;
+
+    let filteredPartyList = partyList;
+
+    // Filter parties by selectedVanSaleSubGroups if isSale is true
+
+
+
+
+    if (
+      isSale === "true" &&
+      configuration &&
+      configuration.selectedVanSaleSubGroups?.length > 0
+    ) {
+
+      console.log("heree");
+      
+      filteredPartyList = partyList.filter((party) =>
+        configuration.selectedVanSaleSubGroups.includes(party.subGroup_id)
+      );
+    }
 
     // Determine the source values to match based on the voucher type
     let sourceMatch = {};
@@ -571,7 +592,7 @@ export const PartyList = async (req, res) => {
     }
 
     // Get outstanding data for these specific parties
-    const partyIds = partyList.map(party => party.party_master_id);
+    const partyIds = filteredPartyList.map(party => party.party_master_id);
     
     const partyOutstandingData = await TallyData.aggregate([
       {
@@ -600,8 +621,7 @@ export const PartyList = async (req, res) => {
       },
     ]);
 
-    // Merge outstanding data with party data
-    const partyListWithOutstanding = partyList.map((party) => {
+    const partyListWithOutstanding = filteredPartyList.map((party) => {
       const outstandingData = partyOutstandingData.find(
         (item) => item.party_id === party.party_master_id
       );
@@ -730,8 +750,8 @@ export const getProducts = async (req, res) => {
   
   // Add pagination parameters
   const page = parseInt(req.query.page) || 1;
-  const limit = parseInt(req.query.limit) || 100;
-  const skip = (page - 1) * limit;
+  const limit = parseInt(req.query.limit) || 0;
+  const skip =limit >0 ? (page - 1) * limit :0
 
   const Primary_user_id = new mongoose.Types.ObjectId(req.owner);
 
@@ -798,7 +818,7 @@ export const getProducts = async (req, res) => {
         __v: 1,
         GodownList: 1,
         batchEnabled: 1,
-        item_mrp: 1
+        item_mrp: 1,
       },
     };
 
@@ -895,11 +915,9 @@ export const getProducts = async (req, res) => {
       projectStage,
       addFieldsStage,
       filterEmptyGodownListStage,
-      // Add pagination stages
-      { $skip: skip },
-      { $limit: limit }
+      ...(limit > 0 ? [{ $skip: skip }] : []),
+      ...(limit > 0 ? [{ $limit: limit }] : [])
     ];
-
     // Conditionally add taxInclusive stage
     if (taxInclusive) {
       const addTaxInclusiveStage = {
@@ -2744,10 +2762,10 @@ export const addSubGroup = async (req, res) => {
   try {
     const { accountGroup, subGroup } = req?.body;
 
-     const generatedId = new mongoose.Types.ObjectId();
+    const generatedId = new mongoose.Types.ObjectId();
 
     const newSubGroup = new SubGroup({
-      accountGroup_id:accountGroup,
+      accountGroup_id: accountGroup,
       subGroup: subGroup,
       cmp_id: cmp_id,
       Primary_user_id: req.owner,

@@ -89,6 +89,7 @@ export const aggregateTransactions = (
     isCancelled: 1,
     paymentMethod: 1,
     secondaryUserName: "$secondaryUser.name",
+    secondaryUser_id: "$secondaryUser._id",
     balanceAmount: {
       $toString: {
         $ifNull: [
@@ -149,7 +150,7 @@ export const aggregateTransactions = (
         localField: "Secondary_user_idObj",
         foreignField: "_id",
         as: "secondaryUser",
-        pipeline: [{ $project: { name: 1, _id: 0 } }],
+        pipeline: [{ $project: { name: 1, _id: 1 } }],
       },
     },
     { $unwind: { path: "$secondaryUser", preserveNullAndEmptyArrays: true } },
@@ -212,6 +213,7 @@ export const addCorrespondingParty = async (
     const newParty = new partyModel({
       partyName: ledname,
       accountGroup: accountGroup,
+      accountGroup_id: masterId,
       cmp_id: cmp_id,
       Primary_user_id: Primary_user_id,
       party_master_id: masterId // Set this directly during creation
