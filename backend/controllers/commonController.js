@@ -343,7 +343,10 @@ export const transactions = async (req, res) => {
     selectedVoucher,
     fullDetails = "false",
     ignore = "", // New parameter for collections to ignore
+    selectedSecondaryUser,
   } = req.query;
+
+  console.log("selectedSecondaryUser", selectedSecondaryUser);
 
   const isAdmin = req.query.isAdmin === "true" ? true : false;
 
@@ -398,12 +401,20 @@ export const transactions = async (req, res) => {
         },
       };
     }
-
+    // Apply user filtering:
+    // - If not an admin → filter with logged-in user's ID
+    // - If admin:
+    //    - If a secondary user is selected → filter with selected user's _id
+    //    - If no secondary user selected → don't apply user filter
     const matchCriteria = {
       ...dateFilter,
       cmp_id: cmp_id,
-      ...(userId && !isAdmin ? { Secondary_user_id: userId } : {}),
       ...(party_id ? { "party._id": party_id } : {}),
+      ...(!isAdmin
+        ? { Secondary_user_id: userId }
+        : selectedSecondaryUser
+        ? { Secondary_user_id: selectedSecondaryUser }
+        : {}),
     };
 
     // Define voucher type mappings

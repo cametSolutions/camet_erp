@@ -513,7 +513,8 @@ export const getTransactionDetails = async (req, res) => {
 export const PartyList = async (req, res) => {
   const { cmp_id } = req.params;
   const { owner: Primary_user_id, sUserId: secUserId } = req;
-  const { outstanding, voucher, page = 1, limit = 20, search = "" } = req.query;
+  const { outstanding, voucher, page = 1, limit = 20, search = "",
+    isSale  } = req.query;
 
   try {
     // Pagination setup
@@ -563,11 +564,18 @@ export const PartyList = async (req, res) => {
     let filteredPartyList = partyList;
 
     // Filter parties by selectedVanSaleSubGroups if isSale is true
+
+
+
+
     if (
       isSale === "true" &&
       configuration &&
       configuration.selectedVanSaleSubGroups?.length > 0
     ) {
+
+      console.log("heree");
+      
       filteredPartyList = partyList.filter((party) =>
         configuration.selectedVanSaleSubGroups.includes(party.subGroup_id)
       );
@@ -584,7 +592,7 @@ export const PartyList = async (req, res) => {
     }
 
     // Get outstanding data for these specific parties
-    const partyIds = partyList.map(party => party.party_master_id);
+    const partyIds = filteredPartyList.map(party => party.party_master_id);
     
     const partyOutstandingData = await TallyData.aggregate([
       {
