@@ -513,18 +513,42 @@ export const getTransactionDetails = async (req, res) => {
 export const PartyList = async (req, res) => {
   const { cmp_id } = req.params;
   const { owner: Primary_user_id, sUserId: secUserId } = req;
-  const { outstanding, voucher } = req.query;
-
-  console.log("voucher", voucher);
-  console.log("Primary_user_id", Primary_user_id);
+  const { outstanding, voucher, page = 1, limit = 20, search = "" } = req.query;
 
   try {
+    // Pagination setup
+    const pageNum = parseInt(page);
+    const pageSize = parseInt(limit);
+    const skip = (pageNum - 1) * pageSize;
+
+    // Build search query
+    let searchQuery = {};
+    if (search) {
+      searchQuery = {
+        $or: [
+          { partyName: { $regex: search, $options: 'i' } },
+          { mobileNumber: { $regex: search, $options: 'i' } },
+          { accountGroup: { $regex: search, $options: 'i' } }
+        ]
+      };
+    }
+
+    // Combined query
+    const query = {
+      cmp_id,
+      Primary_user_id,
+      ...searchQuery
+    };
+
     // Fetch parties and secondary user concurrently
-    const [partyList, secUser] = await Promise.all([
-      PartyModel.find({ cmp_id, Primary_user_id }).select(
-        "_id partyName party_master_id billingAddress shippingAddress mobileNumber gstNo emailID pin country state accountGroup accountGroup_id subGroup subGroup_id"
-      ),
+    const [partyList, secUser, totalCount] = await Promise.all([
+      PartyModel.find(query)
+        .select("_id partyName party_master_id billingAddress shippingAddress mobileNumber gstNo emailID pin country state accountGroup accountGroup_id subGroup subGroup_id")
+        .skip(skip)
+        .limit(pageSize)
+        .lean(),
       SecondaryUser.findById(secUserId),
+      PartyModel.countDocuments(query)
     ]);
 
     if (!secUser) {
@@ -536,8 +560,6 @@ export const PartyList = async (req, res) => {
     );
     const vanSaleConfig = configuration?.vanSale || false;
 
-    let partyListWithOutstanding = partyList;
-
     // Determine the source values to match based on the voucher type
     let sourceMatch = {};
     if (voucher === "receipt") {
@@ -548,14 +570,16 @@ export const PartyList = async (req, res) => {
       sourceMatch = { source: "opening" };
     }
 
-    console.log(sourceMatch);
-
+    // Get outstanding data for these specific parties
+    const partyIds = partyList.map(party => party.party_master_id);
+    
     const partyOutstandingData = await TallyData.aggregate([
       {
         $match: {
           cmp_id,
           Primary_user_id: String(Primary_user_id),
           isCancelled: false,
+          party_id: { $in: partyIds },
           ...sourceMatch,
         },
       },
@@ -563,26 +587,26 @@ export const PartyList = async (req, res) => {
         $group: {
           _id: "$party_id",
           totalOutstanding: { $sum: "$bill_pending_amt" },
-          // latestBillDate: { $max: "$bill_date" },
+          latestBillDate: { $max: "$bill_date" },
         },
       },
       {
         $project: {
           _id: 0,
           party_id: "$_id",
-          partyName: 1,
           totalOutstanding: 1,
-          // latestBillDate: 1,
+          latestBillDate: 1,
         },
       },
     ]);
 
-    partyListWithOutstanding = partyList.map((party) => {
+    // Merge outstanding data with party data
+    const partyListWithOutstanding = partyList.map((party) => {
       const outstandingData = partyOutstandingData.find(
         (item) => item.party_id === party.party_master_id
       );
       return {
-        ...party.toObject(),
+        ...party,
         totalOutstanding: outstandingData?.totalOutstanding || 0,
         latestBillDate: outstandingData?.latestBillDate || null,
       };
@@ -592,6 +616,12 @@ export const PartyList = async (req, res) => {
       message: "Parties fetched",
       partyList: partyListWithOutstanding,
       vanSale: vanSaleConfig,
+      pagination: {
+        total: totalCount,
+        page: pageNum,
+        limit: pageSize,
+        totalPages: Math.ceil(totalCount / pageSize)
+      }
     });
   } catch (error) {
     console.error("Error in PartyList:", error.message);
@@ -689,22 +719,24 @@ export const addParty = async (req, res) => {
 // route get/api/pUsers/
 
 export const getProducts = async (req, res) => {
-  // console.log("get prodtctys functyion")
   const Secondary_user_id = req.sUserId;
   const cmp_id = req.params.cmp_id;
   const taxInclusive = req.query.taxInclusive === "true";
   const vanSaleQuery = req.query.vanSale;
   const isVanSale = vanSaleQuery === "true";
-
   const excludeGodownId = req.query.excludeGodownId;
   const stockTransfer = req.query.stockTransfer;
+  const searchTerm = req.query.search || "";
+  
+  // Add pagination parameters
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 0;
+  const skip =limit >0 ? (page - 1) * limit :0
 
   const Primary_user_id = new mongoose.Types.ObjectId(req.owner);
 
   try {
     const secUser = await SecondaryUser.findById(Secondary_user_id);
-    // const company = await OragnizationModel.findById(cmp_id);
-    // const isTaxInclusive = company.configurations[0]?.taxInclusive || false;
 
     if (!secUser) {
       return res.status(404).json({ message: "Secondary user not found" });
@@ -714,12 +746,22 @@ export const getProducts = async (req, res) => {
       (item) => item.organization == cmp_id
     );
 
+    // Build the match stage with search functionality
     let matchStage = {
       $match: {
         cmp_id: cmp_id,
         Primary_user_id: Primary_user_id,
       },
     };
+    
+    // Add search condition if searchTerm is provided
+    if (searchTerm) {
+      matchStage.$match.$or = [
+        { product_name: { $regex: searchTerm, $options: 'i' } },
+        { hsn_code: { $regex: searchTerm, $options: 'i' } },
+        { product_code: { $regex: searchTerm, $options: 'i' } }
+      ];
+    }
 
     let selectedGodowns;
     if (isVanSale && configuration?.selectedVanSaleGodowns.length > 0) {
@@ -756,7 +798,7 @@ export const getProducts = async (req, res) => {
         __v: 1,
         GodownList: 1,
         batchEnabled: 1,
-        item_mrp:1
+        item_mrp: 1
       },
     };
 
@@ -805,7 +847,6 @@ export const getProducts = async (req, res) => {
       },
     };
 
-    // New stage to filter out products with empty GodownList
     const filterEmptyGodownListStage = {
       $match: {
         $expr: {
@@ -836,13 +877,26 @@ export const getProducts = async (req, res) => {
       },
     };
 
+    // Count total products for pagination info
+    const countPipeline = [
+      matchStage,
+      projectStage,
+      addFieldsStage,
+      filterEmptyGodownListStage,
+      { $count: "total" }
+    ];
+    
+    const countResult = await productModel.aggregate(countPipeline);
+    const totalProducts = countResult.length > 0 ? countResult[0].total : 0;
+
     const aggregationPipeline = [
       matchStage,
       projectStage,
       addFieldsStage,
       filterEmptyGodownListStage,
+      ...(limit > 0 ? [{ $skip: skip }] : []),
+      ...(limit > 0 ? [{ $limit: limit }] : [])
     ];
-
     // Conditionally add taxInclusive stage
     if (taxInclusive) {
       const addTaxInclusiveStage = {
@@ -858,6 +912,12 @@ export const getProducts = async (req, res) => {
     if (products && products.length > 0) {
       return res.status(200).json({
         productData: products,
+        pagination: {
+          total: totalProducts,
+          page,
+          limit,
+          hasMore: skip + products.length < totalProducts
+        },
         message: "Products fetched",
       });
     } else {
@@ -870,7 +930,6 @@ export const getProducts = async (req, res) => {
       .json({ success: false, message: "Internal server error, try again!" });
   }
 };
-
 // @desc get invoiceList
 // route get/api/pUsers/invoiceList;
 

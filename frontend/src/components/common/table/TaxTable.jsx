@@ -89,7 +89,7 @@ const TaxTable = ({ products, org = {}, party = {} }) => {
                     {tax?.taxRate}
                   </td>
                   <td className="p-0.5 text-center border border-gray-300">
-                    {tax?.cessRate}
+                    {tax?.cessRate} & {tax?.addlCessRate}/{tax?.unit}
                   </td>
                   {/* <td className="p-0.5 text-center border border-gray-300">
                     {tax?.addlCessRate}
@@ -112,7 +112,7 @@ const TaxTable = ({ products, org = {}, party = {} }) => {
                     </td>
                   )}
                   <td className="p-0.5 text-right border border-gray-300">
-                    {tax?.cess?.toFixed(2) } & {tax?.addlCessRate}/{tax?.unit}
+                    {tax?.cess?.toFixed(2) }
                   </td>
                   <td className="p-0.5 text-right border border-gray-300">
                     {tax?.addlCess?.toFixed(2)}
