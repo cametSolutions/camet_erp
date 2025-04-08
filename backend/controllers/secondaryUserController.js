@@ -513,8 +513,14 @@ export const getTransactionDetails = async (req, res) => {
 export const PartyList = async (req, res) => {
   const { cmp_id } = req.params;
   const { owner: Primary_user_id, sUserId: secUserId } = req;
-  const { outstanding, voucher, page = 1, limit = 20, search = "",
-    isSale  } = req.query;
+  const {
+    outstanding,
+    voucher,
+    page = 1,
+    limit = 20,
+    search = "",
+    isSale,
+  } = req.query;
 
   try {
     // Pagination setup
@@ -527,10 +533,10 @@ export const PartyList = async (req, res) => {
     if (search) {
       searchQuery = {
         $or: [
-          { partyName: { $regex: search, $options: 'i' } },
-          { mobileNumber: { $regex: search, $options: 'i' } },
-          { accountGroup: { $regex: search, $options: 'i' } }
-        ]
+          { partyName: { $regex: search, $options: "i" } },
+          { mobileNumber: { $regex: search, $options: "i" } },
+          { accountGroup: { $regex: search, $options: "i" } },
+        ],
       };
     }
 
@@ -538,18 +544,20 @@ export const PartyList = async (req, res) => {
     const query = {
       cmp_id,
       Primary_user_id,
-      ...searchQuery
+      ...searchQuery,
     };
 
     // Fetch parties and secondary user concurrently
     const [partyList, secUser, totalCount] = await Promise.all([
       PartyModel.find(query)
-        .select("_id partyName party_master_id billingAddress shippingAddress mobileNumber gstNo emailID pin country state accountGroup accountGroup_id subGroup subGroup_id")
+        .select(
+          "_id partyName party_master_id billingAddress shippingAddress mobileNumber gstNo emailID pin country state accountGroup accountGroup_id subGroup subGroup_id"
+        )
         .skip(skip)
         .limit(pageSize)
         .lean(),
       SecondaryUser.findById(secUserId),
-      PartyModel.countDocuments(query)
+      PartyModel.countDocuments(query),
     ]);
 
     if (!secUser) {
@@ -565,17 +573,13 @@ export const PartyList = async (req, res) => {
 
     // Filter parties by selectedVanSaleSubGroups if isSale is true
 
-
-
-
     if (
       isSale === "true" &&
       configuration &&
       configuration.selectedVanSaleSubGroups?.length > 0
     ) {
-
       console.log("heree");
-      
+
       filteredPartyList = partyList.filter((party) =>
         configuration.selectedVanSaleSubGroups.includes(party.subGroup_id)
       );
@@ -592,8 +596,8 @@ export const PartyList = async (req, res) => {
     }
 
     // Get outstanding data for these specific parties
-    const partyIds = filteredPartyList.map(party => party.party_master_id);
-    
+    const partyIds = filteredPartyList.map((party) => party.party_master_id);
+
     const partyOutstandingData = await TallyData.aggregate([
       {
         $match: {
@@ -640,8 +644,8 @@ export const PartyList = async (req, res) => {
         total: totalCount,
         page: pageNum,
         limit: pageSize,
-        totalPages: Math.ceil(totalCount / pageSize)
-      }
+        totalPages: Math.ceil(totalCount / pageSize),
+      },
     });
   } catch (error) {
     console.error("Error in PartyList:", error.message);
@@ -747,11 +751,11 @@ export const getProducts = async (req, res) => {
   const excludeGodownId = req.query.excludeGodownId;
   const stockTransfer = req.query.stockTransfer;
   const searchTerm = req.query.search || "";
-  
+
   // Add pagination parameters
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 0;
-  const skip =limit >0 ? (page - 1) * limit :0
+  const skip = limit > 0 ? (page - 1) * limit : 0;
 
   const Primary_user_id = new mongoose.Types.ObjectId(req.owner);
 
@@ -773,13 +777,13 @@ export const getProducts = async (req, res) => {
         Primary_user_id: Primary_user_id,
       },
     };
-    
+
     // Add search condition if searchTerm is provided
     if (searchTerm) {
       matchStage.$match.$or = [
-        { product_name: { $regex: searchTerm, $options: 'i' } },
-        { hsn_code: { $regex: searchTerm, $options: 'i' } },
-        { product_code: { $regex: searchTerm, $options: 'i' } }
+        { product_name: { $regex: searchTerm, $options: "i" } },
+        // { hsn_code: { $regex: searchTerm, $options: 'i' } },
+        { product_code: searchTerm },
       ];
     }
 
@@ -904,9 +908,9 @@ export const getProducts = async (req, res) => {
       addFieldsStage,
       filterEmptyGodownListStage,
       { $sort: { product_name: 1 } }, // sort alphabetically
-      { $count: "total" }
+      { $count: "total" },
     ];
-    
+
     const countResult = await productModel.aggregate(countPipeline);
     const totalProducts = countResult.length > 0 ? countResult[0].total : 0;
 
@@ -916,7 +920,7 @@ export const getProducts = async (req, res) => {
       addFieldsStage,
       filterEmptyGodownListStage,
       ...(limit > 0 ? [{ $skip: skip }] : []),
-      ...(limit > 0 ? [{ $limit: limit }] : [])
+      ...(limit > 0 ? [{ $limit: limit }] : []),
     ];
     // Conditionally add taxInclusive stage
     if (taxInclusive) {
@@ -937,7 +941,7 @@ export const getProducts = async (req, res) => {
           total: totalProducts,
           page,
           limit,
-          hasMore: skip + products.length < totalProducts
+          hasMore: skip + products.length < totalProducts,
         },
         message: "Products fetched",
       });
@@ -1480,7 +1484,7 @@ export const fetchFilters = async (req, res) => {
     const priceLevels = await getFilters(PriceLevel, "pricelevel");
 
     // Sort price levels alphabetically (case-insensitive)
-    const sortedPriceLevels = [...priceLevels].sort((a, b) => 
+    const sortedPriceLevels = [...priceLevels].sort((a, b) =>
       a.toLowerCase().localeCompare(b.toLowerCase())
     );
 
@@ -1795,7 +1799,7 @@ export const fetchAdditionalDetails = async (req, res) => {
     }
 
     // Sort price levels alphabetically (case-insensitive)
-    const sortedPriceLevels = priceLevels.sort((a, b) => 
+    const sortedPriceLevels = priceLevels.sort((a, b) =>
       a.toLowerCase().localeCompare(b.toLowerCase())
     );
 

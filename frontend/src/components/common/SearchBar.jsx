@@ -1,6 +1,7 @@
 /* eslint-disable react/prop-types */
 import { useState } from "react";
 import { CiSearch } from "react-icons/ci";
+import { IoIosCloseCircleOutline } from "react-icons/io";
 // import { IoIosCloseCircleOutline } from "react-icons/io";
 
 function SearchBar({ onType }) {
@@ -22,7 +23,7 @@ function SearchBar({ onType }) {
           placeholder="Search by name..."
         />
       </div>
-      {/* <button
+      <button
         onClick={() => {
           setSearch("");
           onType("");
@@ -33,7 +34,7 @@ function SearchBar({ onType }) {
         }  absolute end-[10px] top-1/2 transform -translate-y-1/2 text-gray-500  text-md px-2 py-1`}
       >
         <IoIosCloseCircleOutline />
-      </button> */}
+      </button>
     </div>
   );
 }
