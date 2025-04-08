@@ -7,12 +7,14 @@ import {
   addAllProducts,
   addAllPriceLevels,
   setPriceLevel,
+  updateItem,
 } from "../../../slices/salesSecondary";
 import SearchBar from "@/components/common/SearchBar";
 import VoucherProductLIst from "./VoucherProductLIst";
 import Filter from "@/components/secUsers/Filter";
 import CustomBarLoader from "@/components/common/CustomBarLoader";
 import { useNavigate } from "react-router-dom";
+import { store } from "../../../app/store";
 
 /**
  * VoucherAddCount Component
@@ -42,7 +44,7 @@ function VoucherAddCount() {
   const limit = 30; // Number of products per page
 
   ////Navigation
-  const navigate=useNavigate();
+  const navigate = useNavigate();
 
   // ===================================
   // Redux Integration
@@ -60,7 +62,7 @@ function VoucherAddCount() {
 
   // Get sales data from Redux
   const {
-    items: itemsFromRedux,
+    // items: itemsFromRedux,
     selectedPriceLevel: selectedPriceLevelFromRedux,
     products: allProductsFromRedux,
     priceLevels: priceLevelsFromRedux,
@@ -82,10 +84,26 @@ function VoucherAddCount() {
     }
 
     searchTimeoutRef.current = setTimeout(() => {
+      // First, update Redux to clear products
+      dispatch(
+        addAllProducts({
+          page: 0, // Set to 0 not 1
+          hasMore: true,
+          products: [],
+        })
+      );
+
+      // Then update component state
       setSearchTerm(data);
-      setPage(1); // Reset to first page on new search
+      setIsLoading(false);
+      setPage(1);
       setItems([]);
       setHasMore(true);
+
+      // Now fetch with a slight delay to ensure Redux state is updated
+      setTimeout(() => {
+        fetchProducts(1, data);
+      }, 0);
     }, 500);
   };
 
@@ -106,23 +124,27 @@ function VoucherAddCount() {
    * Fetch products with pagination and search support
    * Uses cached data from Redux when available
    */
+
   const fetchProducts = useCallback(
     async (pageNumber = 1, searchTerm = "") => {
       // Skip if already loading or price levels not yet loaded
       if (isLoading || !pricesLoaded) return;
+
       setLoader(pageNumber === 1);
 
       try {
         setIsLoading(true);
 
+        // Get the CURRENT Redux state rather than using the closure value
+        const currentReduxState = store.getState().salesSecondary;
+        const currentProducts = currentReduxState.products;
+        const currentPageNumber = currentReduxState.page;
+
         // Use cached data from Redux if available for this page
-        if (
-          pageNumberFromRedux >= pageNumber &&
-          allProductsFromRedux.length > 0
-        ) {
-          setItems(allProductsFromRedux);
+        if (currentPageNumber >= pageNumber && currentProducts.length > 0) {
+          setItems(currentProducts);
           setHasMore(hasMoreFromRedux);
-          processItemsWithRedux(allProductsFromRedux);
+          processItemsWithRedux();
           setIsLoading(false);
           setLoader(false);
           return;
@@ -134,6 +156,7 @@ function VoucherAddCount() {
           limit,
           vanSale: false,
           taxInclusive: taxInclusive,
+          // search: searchTerm,
         });
 
         if (searchTerm) {
@@ -173,8 +196,12 @@ function VoucherAddCount() {
 
         // Update state based on whether this is the first page or not
         if (pageNumber === 1) {
+          console.log(pageNumber);
+
+
           setItems(productsWithPriceRates);
         } else {
+          
           setItems((prevItems) => [...prevItems, ...productsWithPriceRates]);
         }
 
@@ -216,10 +243,14 @@ function VoucherAddCount() {
    * Update fetched products with any existing data from Redux
    * Ensures selected quantities and other user selections are preserved
    */
-  const processItemsWithRedux = (productData) => {
+  const processItemsWithRedux = () => {
+    // Get the CURRENT Redux state rather than using the closure value
+    const currentReduxState = store.getState().salesSecondary;
+    const itemsFromRedux = currentReduxState?.items || [];
+    const productsFromRedux = currentReduxState?.products || [];
     if (itemsFromRedux.length > 0) {
       const reduxItemIds = itemsFromRedux.map((item) => item?._id);
-      const processedItems = productData.map((product) => {
+      const processedItems = productsFromRedux.map((product) => {
         // Skip items not in Redux (not selected by user)
         if (!reduxItemIds.includes(product._id)) {
           return product;
@@ -302,7 +333,6 @@ function VoucherAddCount() {
       setPage(pageNumberFromRedux);
     }
   }, [pageNumberFromRedux]);
-
   /**
    * Fetch price levels from API or Redux
    * Price levels must be loaded before products can be fetched
@@ -349,25 +379,17 @@ function VoucherAddCount() {
     fetchFilters();
   }, [cmp_id, type, dispatch, priceLevelsFromRedux]);
 
-  // Fetch products only after price levels are loaded
-  useEffect(() => {
-    if (pricesLoaded) {
-      fetchProducts(1, searchTerm);
-    }
-  }, [fetchProducts, searchTerm, pricesLoaded]);
-
   // Handle search term changes by resetting pagination
   useEffect(() => {
-    if (pricesLoaded && searchTerm !== "") {
-      fetchProducts(1, searchTerm);
+    if (pricesLoaded) {
+      fetchProducts(1, "");
     }
-  }, [searchTerm, pricesLoaded]);
+  }, [pricesLoaded]);
 
   /**
    * Apply selected price level rates to all products
    * Updates displayed prices when price level changes
    */
-
   const calculateTotal = (item, selectedPriceLevel, situation = "normal") => {
     let priceRate = 0;
     if (situation === "priceLevelChange") {
@@ -574,33 +596,13 @@ function VoucherAddCount() {
         );
 
         itemToUpdate.total = totalData.total;
+        dispatch(updateItem({ item: itemToUpdate }));
       }
 
       return itemToUpdate;
     });
 
-    console.log("Price level change:", updatedItems);
     setItems(updatedItems);
-    // if (!items || items.length === 0) return;
-
-    // const updatedItems = items.map((productItem) => {
-    //   const priceRate =
-    //     productItem?.Priceleveles?.find(
-    //       (priceLevelItem) => priceLevelItem.pricelevel === pricelevel
-    //     )?.pricerate || 0;
-
-    //   const updatedGodownList = productItem.GodownList.map((godownOrBatch) => ({
-    //     ...godownOrBatch,
-    //     selectedPriceRate: priceRate,
-    //   }));
-
-    //   return {
-    //     ...productItem,
-    //     GodownList: updatedGodownList,
-    //   };
-    // });
-
-    // setItems(updatedItems);
   };
   // Update items when price level changes
   useEffect(() => {

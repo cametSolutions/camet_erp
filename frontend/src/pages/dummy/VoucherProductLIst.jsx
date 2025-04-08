@@ -67,6 +67,7 @@ export default function VoucherProductList({
     const storedScrollPosition = localStorage.getItem(
       "scrollPositionAddItemSales"
     );
+
     if (storedScrollPosition) {
       setScrollPosition(parseInt(storedScrollPosition, 10));
     }
@@ -411,7 +412,9 @@ export default function VoucherProductList({
   /**
    * Check if an item at a specific index is loaded
    */
-  const isItemLoaded = (index) => index < items.length;
+  const isItemLoaded = (index) => {
+    return index < displayedItems.length;
+  };
 
   // Function to render each item in the list would normally go here
   // Additional component logic would continue...
@@ -728,4 +731,3 @@ export default function VoucherProductList({
     </div>
   );
 }
-
