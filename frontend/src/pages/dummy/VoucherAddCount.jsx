@@ -760,7 +760,7 @@ function VoucherAddCount() {
         // Create a new object with updated properties
         const updatedItem = { ...existingItem, isExpanded: true };
         setItems([updatedItem, ...items]);
-        // listRef.current.resetAfterIndex(0);
+        listRef.current.resetAfterIndex(0);
       } else {
         // Add the scanned item to the top if it doesn't exist
         setItems((prevResults) => [scannedItem, ...prevResults]);
