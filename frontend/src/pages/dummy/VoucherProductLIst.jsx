@@ -1,7 +1,7 @@
 /* eslint-disable react/prop-types */
 import ProductDetails from "@/components/common/ProductDetails";
 import Decimal from "decimal.js";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { IoIosArrowDown, IoIosArrowUp } from "react-icons/io";
 import { IoAddCircleSharp } from "react-icons/io5";
 import { useDispatch } from "react-redux";
@@ -17,7 +17,6 @@ import {
 /**
    * VoucherProductList Component
    * 
-
    */
 export default function VoucherProductList({
   items,
@@ -31,13 +30,14 @@ export default function VoucherProductList({
   page = 1,
   searchTerm = "",
   calculateTotal,
+  handleIncrement,
+  isScanOn,
+  listRef
 }) {
   // ========== REFS AND STATE ==========
-  const listRef = useRef(null);
   const [listHeight, setListHeight] = useState(0);
   const [heights, setHeights] = useState({});
   const [scrollPosition, setScrollPosition] = useState(0);
-
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
@@ -121,7 +121,7 @@ export default function VoucherProductList({
    */
   const displayedItems = useMemo(() => {
     if (tab === "Purchase") {
-      return items.map((item) => {
+      return items?.map((item) => {
         const processedItem = {
           ...item,
           GodownList:
@@ -226,84 +226,84 @@ export default function VoucherProductList({
    * Increment the count of a product or specific godown/batch
    *
    */
-  const handleIncrement = (_id, godownIndex = null, moveToTop = false) => {
-    const updatedItems = items.map((item) => {
-      if (item._id !== _id) return item; // Skip if not the target item
+  // const handleIncrement = (_id, godownIndex = null, moveToTop = false) => {
+  //   const updatedItems = items.map((item) => {
+  //     if (item._id !== _id) return item; // Skip if not the target item
 
-      // Create a deep copy of the item
-      const currentItem = structuredClone(item);
+  //     // Create a deep copy of the item
+  //     const currentItem = structuredClone(item);
 
-      // Handle godown/batch specific increment
-      if (currentItem?.hasGodownOrBatch && godownIndex !== null) {
-        const godownOrBatch = { ...currentItem.GodownList[godownIndex] };
+  //     // Handle godown/batch specific increment
+  //     if (currentItem?.hasGodownOrBatch && godownIndex !== null) {
+  //       const godownOrBatch = { ...currentItem.GodownList[godownIndex] };
 
-        // Increment count with Decimal.js for precision
-        godownOrBatch.count = new Decimal(godownOrBatch.count)
-          .add(1)
-          .toNumber();
-        godownOrBatch.actualCount = godownOrBatch.count;
+  //       // Increment count with Decimal.js for precision
+  //       godownOrBatch.count = new Decimal(godownOrBatch.count)
+  //         .add(1)
+  //         .toNumber();
+  //       godownOrBatch.actualCount = godownOrBatch.count;
 
-        // Update the specific godown/batch in the GodownList
-        const updatedGodownList = currentItem.GodownList.map((godown, index) =>
-          index === godownIndex ? godownOrBatch : godown
-        );
-        currentItem.GodownList = updatedGodownList;
+  //       // Update the specific godown/batch in the GodownList
+  //       const updatedGodownList = currentItem.GodownList.map((godown, index) =>
+  //         index === godownIndex ? godownOrBatch : godown
+  //       );
+  //       currentItem.GodownList = updatedGodownList;
 
-        // Calculate the sum of all counts in the GodownList
-        const sumOfCounts = updatedGodownList.reduce(
-          (sum, godown) => sum + (godown.count || 0),
-          0
-        );
-        const sumOfActualCounts = updatedGodownList.reduce(
-          (sum, godown) => sum + (godown.actualCount || 0),
-          0
-        );
+  //       // Calculate the sum of all counts in the GodownList
+  //       const sumOfCounts = updatedGodownList.reduce(
+  //         (sum, godown) => sum + (godown.count || 0),
+  //         0
+  //       );
+  //       const sumOfActualCounts = updatedGodownList.reduce(
+  //         (sum, godown) => sum + (godown.actualCount || 0),
+  //         0
+  //       );
 
-        // Update the item's overall counts
-        currentItem.count = sumOfCounts;
-        currentItem.actualCount = sumOfActualCounts;
+  //       // Update the item's overall counts
+  //       currentItem.count = sumOfCounts;
+  //       currentItem.actualCount = sumOfActualCounts;
 
-        // Calculate totals and update individual batch totals
-        const totalData = calculateTotal(currentItem, selectedPriceLevel);
-        const updatedGodownListWithTotals = updatedGodownList.map(
-          (godown, index) => ({
-            ...godown,
-            individualTotal:
-              totalData.individualTotals.find(({ index: i }) => i === index)
-                ?.individualTotal || 0,
-          })
-        );
-        currentItem.GodownList = updatedGodownListWithTotals;
-        currentItem.total = totalData.total; // Update the overall total
-      } else {
-        // Handle simple item increment (no godown/batch)
-        currentItem.count = new Decimal(currentItem.count).add(1).toNumber();
-        currentItem.actualCount = currentItem.count;
+  //       // Calculate totals and update individual batch totals
+  //       const totalData = calculateTotal(currentItem, selectedPriceLevel);
+  //       const updatedGodownListWithTotals = updatedGodownList.map(
+  //         (godown, index) => ({
+  //           ...godown,
+  //           individualTotal:
+  //             totalData.individualTotals.find(({ index: i }) => i === index)
+  //               ?.individualTotal || 0,
+  //         })
+  //       );
+  //       currentItem.GodownList = updatedGodownListWithTotals;
+  //       currentItem.total = totalData.total; // Update the overall total
+  //     } else {
+  //       // Handle simple item increment (no godown/batch)
+  //       currentItem.count = new Decimal(currentItem.count).add(1).toNumber();
+  //       currentItem.actualCount = currentItem.count;
 
-        // Calculate totals and update
-        const totalData = calculateTotal(currentItem, selectedPriceLevel);
-        currentItem.total = totalData.total;
-        currentItem.GodownList[0].individualTotal = totalData?.total;
-      }
+  //       // Calculate totals and update
+  //       const totalData = calculateTotal(currentItem, selectedPriceLevel);
+  //       currentItem.total = totalData.total;
+  //       currentItem.GodownList[0].individualTotal = totalData?.total;
+  //     }
 
-      // Dispatch the updated item to Redux
-      dispatch(updateItem({ item: currentItem, moveToTop }));
-      return currentItem;
-    });
+  //     // Dispatch the updated item to Redux
+  //     dispatch(updateItem({ item: currentItem, moveToTop }));
+  //     return currentItem;
+  //   });
 
-    // Handle moving the updated item to the top of the list if requested
-    if (moveToTop) {
-      const updatedItemIndex = updatedItems.findIndex((el) => el._id === _id);
-      if (updatedItemIndex !== -1) {
-        const [updatedItem] = updatedItems.splice(updatedItemIndex, 1);
-        setItems([updatedItem, ...updatedItems]); // Move to top
-      } else {
-        setItems(updatedItems);
-      }
-    } else {
-      setItems(updatedItems);
-    }
-  };
+  //   // Handle moving the updated item to the top of the list if requested
+  //   if (moveToTop) {
+  //     const updatedItemIndex = updatedItems.findIndex((el) => el._id === _id);
+  //     if (updatedItemIndex !== -1) {
+  //       const [updatedItem] = updatedItems.splice(updatedItemIndex, 1);
+  //       setItems([updatedItem, ...updatedItems]); // Move to top
+  //     } else {
+  //       setItems(updatedItems);
+  //     }
+  //   } else {
+  //     setItems(updatedItems);
+  //   }
+  // };
 
   /**
    * Decrement the count of a product or specific godown/batch
@@ -405,7 +405,7 @@ export default function VoucherProductList({
    * Returns a promise that resolves when new items are loaded
    */
   const loadMoreItems = useCallback(() => {
-    if (!hasMore || isLoading) return Promise.resolve();
+    if (!hasMore || isLoading || isScanOn) return Promise.resolve();
     return fetchProducts(page + 1, searchTerm);
   }, [hasMore, isLoading, fetchProducts, page, searchTerm]);
 
@@ -420,7 +420,7 @@ export default function VoucherProductList({
   // Additional component logic would continue...
 
   const Row = ({ index, style }) => {
-    if (!isItemLoaded(index)) {
+    if (!isItemLoaded(index) && !isScanOn) {
       return (
         <div
           style={style}
@@ -675,7 +675,7 @@ export default function VoucherProductList({
   return (
     <div>
       {items.length === 0 && !loader ? (
-        <div className="bg-white p-4 py-2 pb-6 mt-7 flex justify-center items-center rounded-sm cursor-pointer border-b-2 h-screen">
+        <div className="bg-white p-4 py-2 pb-6 mt-7 flex justify-center items-center rounded-sm cursor-pointer  ">
           <p>No products available</p>
         </div>
       ) : (
@@ -683,10 +683,11 @@ export default function VoucherProductList({
           <div className="relative">
             <InfiniteLoader
               isItemLoaded={isItemLoaded}
-              itemCount={hasMore ? items.length + 1 : items.length}
+              itemCount={(hasMore && !isScanOn) ? items.length + 1 : items.length}
               loadMoreItems={loadMoreItems}
               threshold={10}
             >
+              {/* eslint-disable-next-line no-unused-vars */}
               {({ onItemsRendered, ref }) => (
                 <List
                   style={{
@@ -696,7 +697,7 @@ export default function VoucherProductList({
                   }}
                   className="z-0"
                   height={listHeight}
-                  itemCount={hasMore ? items.length + 1 : items.length}
+                  itemCount={(hasMore && !isScanOn) ? items.length + 1 : items.length}
                   itemSize={getItemSize}
                   width="100%"
                   initialScrollOffset={scrollPosition}

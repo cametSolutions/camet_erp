@@ -8,6 +8,7 @@ import {
   addAllPriceLevels,
   setPriceLevel,
   updateItem,
+  addItem,
 } from "../../../slices/salesSecondary";
 import SearchBar from "@/components/common/SearchBar";
 import VoucherProductLIst from "./VoucherProductLIst";
@@ -15,6 +16,9 @@ import Filter from "@/components/secUsers/Filter";
 import CustomBarLoader from "@/components/common/CustomBarLoader";
 import { useNavigate } from "react-router-dom";
 import { store } from "../../../app/store";
+import BarcodeScan from "@/components/secUsers/barcodeScanning/BarcodeScan";
+import Decimal from "decimal.js";
+import { MdOutlineQrCodeScanner } from "react-icons/md";
 
 /**
  * VoucherAddCount Component
@@ -38,6 +42,9 @@ function VoucherAddCount() {
   const [isLoading, setIsLoading] = useState(false); // Loading state for pagination
   const [searchTerm, setSearchTerm] = useState(""); // Current search term
   const [pricesLoaded, setPricesLoaded] = useState(false); // Whether price levels are loaded
+  const [isScanOn, setIsScanOn] = useState(false); // Barcode scanning state
+
+  const listRef = useRef(null);
 
   // Reference for search debounce
   const searchTimeoutRef = useRef(null);
@@ -62,7 +69,7 @@ function VoucherAddCount() {
 
   // Get sales data from Redux
   const {
-    // items: itemsFromRedux,
+    items: itemsFromRedux,
     selectedPriceLevel: selectedPriceLevelFromRedux,
     products: allProductsFromRedux,
     priceLevels: priceLevelsFromRedux,
@@ -196,12 +203,8 @@ function VoucherAddCount() {
 
         // Update state based on whether this is the first page or not
         if (pageNumber === 1) {
-          console.log(pageNumber);
-
-
           setItems(productsWithPriceRates);
         } else {
-          
           setItems((prevItems) => [...prevItems, ...productsWithPriceRates]);
         }
 
@@ -611,14 +614,203 @@ function VoucherAddCount() {
     }
   }, [selectedPriceLevelFromRedux, refresh, pricesLoaded]);
 
+  ("");
+
+  // ===================================
+  // Barcode Management
+  // ===================================
+
+  //// we are defining handle increment (which can be jst call it in child) in parent because we need to call it in parent for barcode scanning
+  const handleIncrement = (_id, godownIndex = null, moveToTop = false) => {
+    const updatedItems = items.map((item) => {
+      if (item._id !== _id) return item; // Skip if not the target item
+
+      // Create a deep copy of the item
+      const currentItem = structuredClone(item);
+
+      // Handle godown/batch specific increment
+      if (currentItem?.hasGodownOrBatch && godownIndex !== null) {
+        const godownOrBatch = { ...currentItem.GodownList[godownIndex] };
+
+        // Increment count with Decimal.js for precision
+        godownOrBatch.count = new Decimal(godownOrBatch.count)
+          .add(1)
+          .toNumber();
+        godownOrBatch.actualCount = godownOrBatch.count;
+
+        // Update the specific godown/batch in the GodownList
+        const updatedGodownList = currentItem.GodownList.map((godown, index) =>
+          index === godownIndex ? godownOrBatch : godown
+        );
+        currentItem.GodownList = updatedGodownList;
+
+        // Calculate the sum of all counts in the GodownList
+        const sumOfCounts = updatedGodownList.reduce(
+          (sum, godown) => sum + (godown.count || 0),
+          0
+        );
+        const sumOfActualCounts = updatedGodownList.reduce(
+          (sum, godown) => sum + (godown.actualCount || 0),
+          0
+        );
+
+        // Update the item's overall counts
+        currentItem.count = sumOfCounts;
+        currentItem.actualCount = sumOfActualCounts;
+
+        // Calculate totals and update individual batch totals
+        const totalData = calculateTotal(
+          currentItem,
+          selectedPriceLevelFromRedux
+        );
+        const updatedGodownListWithTotals = updatedGodownList.map(
+          (godown, index) => ({
+            ...godown,
+            individualTotal:
+              totalData.individualTotals.find(({ index: i }) => i === index)
+                ?.individualTotal || 0,
+          })
+        );
+        currentItem.GodownList = updatedGodownListWithTotals;
+        currentItem.total = totalData.total; // Update the overall total
+      } else {
+        // Handle simple item increment (no godown/batch)
+        currentItem.count = new Decimal(currentItem.count).add(1).toNumber();
+        currentItem.actualCount = currentItem.count;
+
+        // Calculate totals and update
+        const totalData = calculateTotal(
+          currentItem,
+          selectedPriceLevelFromRedux
+        );
+        currentItem.total = totalData.total;
+        currentItem.GodownList[0].individualTotal = totalData?.total;
+      }
+
+      // Dispatch the updated item to Redux
+      dispatch(updateItem({ item: currentItem, moveToTop }));
+      return currentItem;
+    });
+
+    // Handle moving the updated item to the top of the list if requested
+    if (moveToTop) {
+      const updatedItemIndex = updatedItems.findIndex((el) => el._id === _id);
+      if (updatedItemIndex !== -1) {
+        const [updatedItem] = updatedItems.splice(updatedItemIndex, 1);
+        setItems([updatedItem, ...updatedItems]); // Move to top
+      } else {
+        setItems(updatedItems);
+      }
+    } else {
+      setItems(updatedItems);
+    }
+  };
+
+  /// handling button click for toggling between scanning and not scanning
+
+  const handleBarcodeButtonClick = () => {
+    if (!isScanOn) {
+      setIsScanOn(true);
+      dispatch(
+        addAllProducts({
+          page: 1,
+          hasMore: true,
+          products: [],
+        })
+      );
+      setItems(itemsFromRedux);
+    } else {
+      setIsScanOn(false);
+      fetchProducts(1, "");
+    }
+  };
+
+  //// Handling barcode scanned products
+
+  const handleBarcodeScanProducts = (searchResult) => {
+    if (searchResult.length === 0) {
+      return;
+    }
+
+    let scannedItem = structuredClone(searchResult[0]);
+
+    // Finding price rate
+    const priceRate =
+      scannedItem?.Priceleveles?.find(
+        (priceLevelItem) =>
+          priceLevelItem.pricelevel === selectedPriceLevelFromRedux
+      )?.pricerate || 0;
+
+    if (scannedItem?.hasGodownOrBatch) {
+      scannedItem.isExpanded = true;
+      scannedItem?.GodownList.forEach(
+        (godown) => (godown.selectedPriceRate = priceRate)
+      );
+
+      // Check if the item already exists
+      let isItemExistIndex = items?.findIndex(
+        (el) => el._id === scannedItem._id
+      );
+
+      if (isItemExistIndex !== -1) {
+        // Move the existing item to the top
+        // Move the existing item to the top
+        const [existingItem] = items.splice(isItemExistIndex, 1);
+
+        // Create a new object with updated properties
+        const updatedItem = { ...existingItem, isExpanded: true };
+        setItems([updatedItem, ...items]);
+        // listRef.current.resetAfterIndex(0);
+      } else {
+        // Add the scanned item to the top if it doesn't exist
+        setItems((prevResults) => [scannedItem, ...prevResults]);
+      }
+    } else {
+      // Check if the item already exists
+      let isItemExistIndex = items?.findIndex(
+        (el) => el._id === scannedItem._id
+      );
+
+      if (isItemExistIndex !== -1) {
+        // Increment the count and move to the top
+        handleIncrement(scannedItem._id, null, true);
+      } else {
+        // Add the new item
+        scannedItem.added = true;
+        scannedItem.GodownList[0].selectedPriceRate = Number(priceRate);
+        scannedItem.GodownList[0].individualTotal = Number(priceRate);
+        scannedItem.count = 1;
+        scannedItem.total = Number(priceRate);
+        setItems((prevResults) => [scannedItem, ...prevResults]);
+        dispatch(addItem({ payload: scannedItem, moveToTop: true }));
+      }
+    }
+  };
+
   // ===================================
   // Render Component
   // ===================================
 
   return (
     <div className="h-screen overflow-y-auto">
-      <TitleDiv title={"Add Item"} from="/sUsers/sales" />
-      <SearchBar onType={searchData} />
+      <TitleDiv
+        title={"Add Item"}
+        from="/sUsers/sales"
+        rightSideContentOnClick={() => {
+          handleBarcodeButtonClick();
+        }}
+        rightSideContent={<MdOutlineQrCodeScanner size={20} />}
+      />
+      {/* <SearchBar onType={searchData} /> */}
+      {isScanOn ? (
+        <div className="relative z-50">
+          {" "}
+          {/* Added z-index */}
+          <BarcodeScan handleBarcodeScanProducts={handleBarcodeScanProducts} />
+        </div>
+      ) : (
+        <SearchBar onType={searchData} />
+      )}
       <Filter addAllProducts={addAllProducts} priceLevels={priceLevels} />
 
       {loader && <CustomBarLoader />}
@@ -635,6 +827,9 @@ function VoucherAddCount() {
         searchTerm={searchTerm}
         setRefresh={setRefresh}
         calculateTotal={calculateTotal}
+        handleIncrement={handleIncrement}
+        isScanOn={isScanOn}
+        listRef={listRef}
       />
 
       {items.length > 0 && !loader && (
