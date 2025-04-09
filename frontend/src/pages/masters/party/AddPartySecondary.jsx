@@ -1,17 +1,18 @@
 import { toast } from "react-toastify";
-import api from "../../api/api";
-import { IoIosArrowRoundBack } from "react-icons/io";
-import { Link, useLocation } from "react-router-dom";
+import api from "../../../api/api";
+import { useLocation } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
-import AddPartyForm from "../../components/common/Forms/AddPartyForm";
+import AddPartyForm from "./AddPartyForm";
 import { useSelector } from "react-redux";
+import TitleDiv from "@/components/common/TitleDiv";
+import { useState } from "react";
 
 function AddPartySecondary() {
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
   const from = location.state?.from;
-
 
   const companyId = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
@@ -19,9 +20,9 @@ function AddPartySecondary() {
 
   const submitHandler = async (formData) => {
     formData.cpm_id = companyId;
-    // console.log(formData);
 
     try {
+      setLoading(true);
       const res = await api.post("/api/sUsers/addParty", formData, {
         headers: {
           "Content-Type": "application/json",
@@ -31,26 +32,26 @@ function AddPartySecondary() {
 
       toast.success(res.data.message);
       if (from) {
-        navigate(from,{replace:true});
+        navigate(from, { replace: true });
       } else {
         navigate("/sUsers/partylist");
       }
     } catch (error) {
       toast.error(error.response.data.message);
       console.log(error);
+    } finally {
+      setLoading(false);
     }
   };
 
+  console.log(loading);
+  
+
   return (
     <div className=" ">
-      <div className="bg-[#012A4A] sticky top-0 p-3 z-100 text-white text-lg font-bold flex items-center gap-3 z-20">
-        <Link to={-1}>
-          <IoIosArrowRoundBack className="block  text-3xl" />
-        </Link>
-        <p>Add Party Details </p>
-      </div>
+      <TitleDiv title={"Add Party"} from="/sUsers/partylist" loading={loading} />
 
-      <AddPartyForm submitHandler={submitHandler}   userType ="secondary"/>
+      <AddPartyForm submitHandler={submitHandler} userType="secondary"  loading={loading} setLoading={setLoading} />
     </div>
   );
 }

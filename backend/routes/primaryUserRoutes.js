@@ -6,10 +6,9 @@ import { registerPrimaryUser,login,
   addSecUsers,fetchSecondaryUsers,
   fetchOutstandingTotal,fetchOutstandingDetails,confirmCollection,
   cancelTransaction,fetchBanks,bankList,
-  sendOtp,submitOtp,resetPassword,getTransactionDetails,
-  addParty,addDataToOrg,editDataInOrg,deleteDataInOrg,
-  fetchHsn
-  ,PartyList,deleteParty,getSinglePartyDetails,editParty,
+  sendOtp,submitOtp,resetPassword,getTransactionDetails
+  ,addDataToOrg,editDataInOrg,deleteDataInOrg,
+  fetchHsn,
   fetchFilters,createInvoice,addBulkProducts,invoiceList,
 getBankDetails,getSecUserDetails,
   editSecUSer,saveOrderNumber,getInvoiceDetails,editInvoice,addAditionalCharge,
@@ -49,7 +48,6 @@ router.get('/fetchBanks/:cmp_id',authPrimary,primaryIsBlocked,companyAuthenticat
 router.get('/bankList/:cmp_id',authPrimary,primaryIsBlocked,companyAuthentication,bankList)
 router.get('/getTransactionDetails/:id',authPrimary,primaryIsBlocked,getTransactionDetails)
 router.get('/getInvoiceDetails/:id',authPrimary,primaryIsBlocked,getInvoiceDetails)
-router.post('/addParty',authPrimary,primaryIsBlocked,addParty)
 router.post('/addHsn',authPrimary,primaryIsBlocked,addHsn)
 router.post('/addDataToOrg/:cmp_id',authPrimary,primaryIsBlocked,companyAuthentication,addDataToOrg)
 router.post('/editDataInOrg/:cmp_id',authPrimary,primaryIsBlocked,companyAuthentication,editDataInOrg)
@@ -61,11 +59,8 @@ router.get('/fetchFilters/:cmp_id',authPrimary,primaryIsBlocked,companyAuthentic
 // router.delete('/deleteProduct/:id',authPrimary,primaryIsBlocked,deleteProduct)
 // router.get('/productDetails/:id',authPrimary,primaryIsBlocked,productDetails)
 // router.post('/editProduct/:id',authPrimary,primaryIsBlocked,editProduct)
-router.get('/PartyList/:cmp_id',authPrimary,primaryIsBlocked,companyAuthentication,PartyList)
-router.delete('/deleteParty/:id',authPrimary,primaryIsBlocked,deleteParty)
-router.get('/getSinglePartyDetails/:id',authPrimary,primaryIsBlocked,getSinglePartyDetails)
-router.post('/editParty/:id',authPrimary,primaryIsBlocked,editParty)
-router.post('/editParty/:id',authPrimary,primaryIsBlocked,editParty)
+
+
 router.post('/createInvoice',authPrimary,primaryIsBlocked,createInvoice)
 router.post('/addBulkProducts',addBulkProducts)
 router.get('/invoiceList/:cmp_id',authPrimary,primaryIsBlocked,companyAuthentication,invoiceList)

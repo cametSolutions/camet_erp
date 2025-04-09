@@ -21,7 +21,6 @@ import ReceiptDetails from '../pages/primaryUsers/ReceiptDetails'
 import Dashboard from '../pages/primaryUsers/Dashboard'
 import EditOrg from '../pages/primaryUsers/EditOrg'
 import DashboardSec from '../pages/secUsers/Dashboard'
-import AddParty from '../pages/primaryUsers/AddParty'
 import Hsn from '../pages/primaryUsers/Hsn'
 
 
@@ -30,12 +29,12 @@ import RetailersList from '../pages/primaryUsers/RetailersList'
 import HsnList from '../pages/primaryUsers/HsnList'
 import EditHsn from '../pages/primaryUsers/EditHsn'
 import InvoiceSecondary from '../pages/secUsers/InvoiceSecondary'
-import PartyListSecondary from '../pages/secUsers/PartyListSecondary'
-import AddPartySecondary from '../pages/secUsers/AddPartySecondary'
+import PartyListSecondary from '../pages/masters/party/PartyListSecondary'
+import AddPartySecondary from '../pages/masters/party/AddPartySecondary'
 import ProductListSecondary from '../pages/secUsers/ProductListSecondary'
 import AddItemSecondary from '../pages/secUsers/AddItemSecondary'
 import EditItemSecondary from '../pages/secUsers/EditItemSecondary'
-import EditPartySecondary from '../pages/secUsers/EditPartySecondary'
+import EditPartySecondary from '../pages/masters/party/EditPartySecondary'
 import AddProductSecondary from '../pages/secUsers/AddProductSecondary'
 import EditProductSecondary from '../pages/secUsers/EditProductSecondary'
 import AddBank from '../pages/primaryUsers/AddBank'
@@ -209,7 +208,6 @@ const Routers = () => {
         <Route path='/pUsers/bankLIst' element={<ProtectedPriRoute><BankList/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/addBank' element={<ProtectedPriRoute><AddBank/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/dashboard' element={<ProtectedPriRoute><Dashboard/></ProtectedPriRoute>}></Route>
-        <Route path='/pUsers/addParty' element={<ProtectedPriRoute><AddParty/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/hsn' element={<ProtectedPriRoute><Hsn/></ProtectedPriRoute>}></Route>
 
 

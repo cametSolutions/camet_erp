@@ -3,8 +3,8 @@ import { useSelector } from "react-redux";
 import Swal from "sweetalert2";
 import { toast } from "react-toastify";
 
-import PartyListComponent from "../../components/common/List/PartyListComponent";
-import TitleDiv from "../../components/common/TitleDiv";
+import PartyListComponent from "./PartyListComponent";
+import TitleDiv from "../../../components/common/TitleDiv";
 import api from "@/api/api";
 
 function PartyListSecondary() {

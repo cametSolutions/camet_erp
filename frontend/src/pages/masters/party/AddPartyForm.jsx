@@ -6,13 +6,16 @@ import { statesData } from "../../../../constants/states.js";
 import { countries } from "../../../../constants/countries.js";
 import useFetch from "../../../customHook/useFetch.jsx";
 
-function AddPartyForm({ submitHandler, partyDetails = {}, userType }) {
+function AddPartyForm({
+  submitHandler,
+  partyDetails = {},
+  userType,
+  loading,
+  setLoading,
+}) {
   // const [tab, setTab] = useState("business");
   const [accountGroup, setAccountGroup] = useState("");
-  const [accountGroup_id, setAccountGroup_id] = useState("");
   const [subGroup, setSubGroup] = useState("");
-  const [subGroup_id, setSubGroup_id] = useState("");
-
   const [partyName, setPartyName] = useState("");
   const [mobileNumber, setMobileNumber] = useState("");
   const [emailID, setEmailID] = useState("");
@@ -38,12 +41,17 @@ function AddPartyForm({ submitHandler, partyDetails = {}, userType }) {
   const selectedOrganization =
     userType === "primaryUser" ? primarySelectedOrg : secondarySelectedOrg;
 
-  const { data: accountGroupList } = useFetch(
+  const { data: accountGroupList, loading: accountGroupLoading } = useFetch(
     `/api/sUsers/getAccountGroups/${selectedOrganization._id}`
   );
-  const { data: subGroupList } = useFetch(
+  const { data: subGroupList, loading: subGroupLoading } = useFetch(
     `/api/sUsers/getSubGroup/${selectedOrganization._id}`
   );
+
+  useEffect(() => {
+    const loading = accountGroupLoading || subGroupLoading;
+    setLoading(loading);
+  }, [accountGroupLoading, subGroupLoading]);
 
   useEffect(() => {
     // setCmp_id(companytId);
@@ -91,26 +99,11 @@ function AddPartyForm({ submitHandler, partyDetails = {}, userType }) {
   }, [partyDetails]);
 
   const handleAccountGroup = (value) => {
-    setAccountGroup_id(value);
-    const accountGroupName = accountGroupList?.data?.find(
-      (item) => item._id === value
-    );
-
-    if (accountGroupName) {
-      setAccountGroup(accountGroupName.accountGroup);
-    }
+    setAccountGroup(value);
     setSubGroup("");
-    setSubGroup_id("");
   };
   const handleSubGroup = (value) => {
-    setSubGroup_id(value);
-    const selectedSubGroup = subGroupList?.data?.find(
-      (item) => item._id === value
-    );
-
-    if (selectedSubGroup) {
-      setSubGroup(selectedSubGroup?.subGroup);
-    }
+    setSubGroup(value);
   };
 
   const submitForm = async () => {
@@ -142,7 +135,6 @@ function AddPartyForm({ submitHandler, partyDetails = {}, userType }) {
 
     const formData = {
       accountGroup,
-      accountGroup_id,
       partyName,
       mobileNumber,
       emailID,
@@ -158,14 +150,13 @@ function AddPartyForm({ submitHandler, partyDetails = {}, userType }) {
       state,
       pin,
       subGroup,
-      subGroup_id,
     };
 
-    submitHandler(formData);
-  };
+    console.log(formData);
+    
 
-  
-// console.log(item.accountGroup_id);
+    // submitHandler(formData);
+  };
 
 
   return (
@@ -193,7 +184,7 @@ function AddPartyForm({ submitHandler, partyDetails = {}, userType }) {
                       <select
                         id="account-group"
                         className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                        value={accountGroup_id}
+                        value={accountGroup}
                         onChange={(e) => handleAccountGroup(e.target.value)}
                       >
                         <option value="">Select Account Group</option>
@@ -214,17 +205,16 @@ function AddPartyForm({ submitHandler, partyDetails = {}, userType }) {
                         Sub Group
                       </label>
                       <select
-                        disabled={!accountGroup_id}
+                        disabled={!accountGroup}
                         id="sub-group"
                         className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                        value={subGroup_id}
+                        value={subGroup}
                         onChange={(e) => handleSubGroup(e.target.value)}
                       >
                         <option value="">Select Sub Group</option>
                         {subGroupList?.data
                           ?.filter(
-                            (item) =>
-                              item.accountGroup_id === accountGroup_id
+                            (item) => item.accountGroup_id === accountGroup
                           )
                           ?.map((subGroup, index) => (
                             <option key={index} value={subGroup._id}>
@@ -392,165 +382,75 @@ function AddPartyForm({ submitHandler, partyDetails = {}, userType }) {
                 </div>
 
                 {/* {tab === "business" && ( */}
-                  <div className="flex flex-wrap mt-12">
-                    <div className="w-full lg:w-6/12 px-4">
-                      <div className="relative w-full mb-3">
-                        <label
-                          className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
-                          htmlFor="grid-password"
-                        >
-                          Gst.No
-                        </label>
-                        <input
-                          type="text"
-                          className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                          value={gstNo}
-                          onChange={(e) => setGstNo(e.target.value)}
-                          placeholder="Gst.No"
-                        />
-                      </div>
-                    </div>
-                    <div className="w-full lg:w-6/12 px-4">
-                      <div className="relative w-full mb-3">
-                        <label
-                          className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
-                          htmlFor="grid-password"
-                        >
-                          Pan.No
-                        </label>
-                        <input
-                          type="text"
-                          className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                          value={panNo}
-                          onChange={(e) => setPanNo(e.target.value)}
-                          placeholder=" Pan.No"
-                        />
-                      </div>
-                    </div>
-                    <div className="w-full lg:w-6/12 px-4">
-                      <div className="relative w-full mb-3">
-                        <label
-                          className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
-                          htmlFor="grid-password"
-                        >
-                          Billing Address
-                        </label>
-                        <textarea
-                          value={billingAddress}
-                          onChange={(e) => setBillingAddress(e.target.value)}
-                          type="text"
-                          placeholder={`street address\nCity`}
-                          className="border-0 h-32 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                        />
-                      </div>
-                    </div>
-                    <div className="w-full lg:w-6/12 px-4">
-                      <div className="relative w-full mb-3">
-                        <label
-                          className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
-                          htmlFor="grid-password"
-                        >
-                          Shipping Address
-                        </label>
-                        <textarea
-                          value={shippingAddress}
-                          onChange={(e) => setShippingAddress(e.target.value)}
-                          placeholder={`street address\nCity`}
-                          className="border-0  h-32 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                        />
-                      </div>
+                <div className="flex flex-wrap mt-12">
+                  <div className="w-full lg:w-6/12 px-4">
+                    <div className="relative w-full mb-3">
+                      <label
+                        className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
+                        htmlFor="grid-password"
+                      >
+                        Gst.No
+                      </label>
+                      <input
+                        type="text"
+                        className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                        value={gstNo}
+                        onChange={(e) => setGstNo(e.target.value)}
+                        placeholder="Gst.No"
+                      />
                     </div>
                   </div>
-                {/* // )} */}
-
-                {/* {tab === "credit" && (
-                  <>
-                    <div className="flex flex-wrap mt-12">
-                      <div className="w-full lg:w-6/12 px-4">
-                        <div className="relative w-full mb-3">
-                          <label
-                            className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
-                            htmlFor="grid-password"
-                          >
-                            Credit Period
-                          </label>
-                          <input
-                            value={creditPeriod}
-                            onChange={(e) => setCreditPeriod(e.target.value)}
-                            type="number"
-                            className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                            placeholder=" Credit Period"
-                          />
-                        </div>
-                      </div>
-                      <div className="w-full lg:w-6/12 px-4">
-                        <div className="relative w-full mb-3">
-                          <label
-                            className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
-                            htmlFor="grid-password"
-                          >
-                            Credit Limit
-                          </label>
-                          <input
-                            value={creditLimit}
-                            onChange={(e) => setCreditLimit(e.target.value)}
-                            type="number"
-                            className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                            placeholder="  Credit Limit"
-                          />
-                        </div>
-                      </div>
+                  <div className="w-full lg:w-6/12 px-4">
+                    <div className="relative w-full mb-3">
+                      <label
+                        className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
+                        htmlFor="grid-password"
+                      >
+                        Pan.No
+                      </label>
+                      <input
+                        type="text"
+                        className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                        value={panNo}
+                        onChange={(e) => setPanNo(e.target.value)}
+                        placeholder=" Pan.No"
+                      />
                     </div>
-                    <hr className="mt-2 mb-4 border-b-1 border-blueGray-300" />
-                    <h3 className="text-blueGray-400 text-xs px-4 mt-3 mb-6 font-bold uppercase">
-                      Opening Balance
-                    </h3>
-
-                    <div className="flex flex-wrap mt-2">
-                      <div className="w-full lg:w-6/12 px-4">
-                        <div className="relative w-full mb-3">
-                          <label
-                            className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
-                            htmlFor="dr-cr"
-                          >
-                            DR/CR
-                          </label>
-                          <select
-                            value={openingBalanceType}
-                            onChange={(e) =>
-                              setOpeningBalanceType(e.target.value)
-                            }
-                            id="dr-cr"
-                            className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                          >
-                            <option value="">Select DR/CR</option>
-                            <option value="DR">DR</option>
-                            <option value="CR">CR</option>
-                          </select>
-                        </div>
-                      </div>
-                      <div className="w-full lg:w-6/12 px-4">
-                        <div className="relative w-full mb-3">
-                          <label
-                            className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
-                            htmlFor="grid-password"
-                          >
-                            Amount
-                          </label>
-                          <input
-                            value={openingBalanceAmount}
-                            onChange={(e) =>
-                              setOpeningBalanceAmount(e.target.value)
-                            }
-                            type="number"
-                            className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                            placeholder="Amount"
-                          />
-                        </div>
-                      </div>
+                  </div>
+                  <div className="w-full lg:w-6/12 px-4">
+                    <div className="relative w-full mb-3">
+                      <label
+                        className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
+                        htmlFor="grid-password"
+                      >
+                        Billing Address
+                      </label>
+                      <textarea
+                        value={billingAddress}
+                        onChange={(e) => setBillingAddress(e.target.value)}
+                        type="text"
+                        placeholder={`street address\nCity`}
+                        className="border-0 h-32 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                      />
                     </div>
-                  </>
-                )} */}
+                  </div>
+                  <div className="w-full lg:w-6/12 px-4">
+                    <div className="relative w-full mb-3">
+                      <label
+                        className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
+                        htmlFor="grid-password"
+                      >
+                        Shipping Address
+                      </label>
+                      <textarea
+                        value={shippingAddress}
+                        onChange={(e) => setShippingAddress(e.target.value)}
+                        placeholder={`street address\nCity`}
+                        className="border-0  h-32 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                      />
+                    </div>
+                  </div>
+                </div>
 
                 <div className="flex items-center  gap-0 mt-4 m-4 relative "></div>
                 <button

@@ -3,7 +3,7 @@ const router = express.Router();
 import {login,getSecUserData,
     confirmCollection,logout,
     cancelTransaction,fetchBanks,sendOtp,
-    submitOtp,resetPassword,getTransactionDetails,PartyList,addParty,invoiceList,getSinglePartyDetails,editParty,
+    submitOtp,resetPassword,getTransactionDetails,invoiceList,getSinglePartyDetails,editParty,
     deleteParty,getSingleOrganization,fetchHsn,
     addDataToOrg,editDataInOrg,deleteDataInOrg
     ,saveOrderNumber,
@@ -17,10 +17,6 @@ import {login,getSecUserData,
     getBankAndCashSources,
     getDashboardSummary,
     getAccountGroups,
-    addSubGroup,
-    getSubGroup,
-    deleteSubGroup,
-    editSubGroup,
     addPartyOpening,
     getPartyOpening,
     editPartyOpening,
@@ -49,6 +45,7 @@ import { getSummary } from "../controllers/summaryController.js"
 import { fetchOutstandingDetails, fetchOutstandingTotal, getOutstandingSummary } from '../controllers/outStandingController.js';
 import { addProduct, deleteProduct, productDetails,editProduct, getProducts } from '../controllers/productController.js';
 import { addOrganizations, editOrg, getOrganizations } from '../controllers/organizationController.js';
+import { addParty, addSubGroup, deleteSubGroup, editSubGroup, getSubGroup, PartyList } from '../controllers/partyController.js';
 
 router.post('/login',login)
 router.post('/sendOtp',sendOtp)

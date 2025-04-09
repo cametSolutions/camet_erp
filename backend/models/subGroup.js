@@ -1,8 +1,9 @@
 import mongoose from "mongoose";
 
 const subGroupSchema = new mongoose.Schema({
-  accountGroup_id: {
-    type: String,
+  accountGroup: {
+    type: mongoose.Types.ObjectId,
+    ref: "AccountGroup",
     required: true,
   },
   subGroup: { type: String, required: true },

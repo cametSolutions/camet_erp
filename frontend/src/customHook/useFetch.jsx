@@ -11,7 +11,7 @@ const useFetch = (url) => {
     if (!url) {
       return
     }
-    setLoading("loading...")
+    setLoading(true)
     setData(null)
     setError(null)
 

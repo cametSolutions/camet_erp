@@ -1,4 +1,4 @@
-import PartyListComponent from "@/components/common/List/PartyListComponent";
+import PartyListComponent from "@/pages/masters/party/PartyListComponent";
 import TitleDiv from "@/components/common/TitleDiv";
 
 function SearchParty() {

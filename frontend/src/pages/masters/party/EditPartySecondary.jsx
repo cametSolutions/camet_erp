@@ -1,10 +1,10 @@
 // import Sidebar from "../../components/homePage/Sidebar";
 import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
-import api from "../../api/api";
+import api from "../../../api/api";
 import { useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
-import AddPartyForm from "../../components/common/Forms/AddPartyForm";
+import AddPartyForm from "./AddPartyForm";
 import TitleDiv from "@/components/common/TitleDiv";
 // import SidebarSec from "../../components/secUsers/SidebarSec";
 

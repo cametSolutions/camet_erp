@@ -51,34 +51,6 @@ const AddSubGroup = () => {
     fetchData();
   }, [cmp_id]);
 
-  const handleSubmit = async (value) => {
-    if (value.trim() === "" || !selectedAccountGroup) {
-      toast.error("Please select an account group and enter a subgroup name.");
-      return;
-    }
-
-    const formData = {
-      accountGroup: selectedAccountGroup,
-      subGroup: value,
-    };
-
-    try {
-      setLoading(true);
-
-      await api.post(`/api/sUsers/addSubGroup/${cmp_id}`, formData, {
-        withCredentials: true,
-      });
-
-      setValue(""); // Clear input after submission
-      fetchData();
-    } catch (error) {
-      console.log(error);
-      toast.error(error.response?.data?.message || "Failed to add subgroup");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const editSubGroup = async (id, value) => {
     const formData = {
       accountGroup: selectedAccountGroup,
@@ -106,15 +78,13 @@ const AddSubGroup = () => {
     }
   };
 
-  const handleEdit = (id, subGroup, acc_id) => {
-    console.log(acc_id);
-    
+  const handleEdit = (id, subGroup, acc_grp_id) => {
     setEdit({
       id,
       enabled: true,
     });
     setValue(subGroup);
-    setSelectedAccountGroup(acc_id);
+    setSelectedAccountGroup(acc_grp_id);
   };
 
   const deleteSubDetails = async (id) => {
@@ -133,12 +103,9 @@ const AddSubGroup = () => {
       // If the user confirms the deletion
       if (result.isConfirmed) {
         setLoading(true);
-        const res = await api.delete(
-          `/api/sUsers/deleteSubGroup/${id}/${cmp_id}`,
-          {
-            withCredentials: true,
-          }
-        );
+        await api.delete(`/api/sUsers/deleteSubGroup/${id}/${cmp_id}`, {
+          withCredentials: true,
+        });
 
         // Show a success message
         Swal.fire("Deleted!", `The sub group has been deleted.`, "success");
@@ -155,6 +122,33 @@ const AddSubGroup = () => {
         error.response?.data?.message || "An error occurred while deleting",
         "error"
       );
+    } finally {
+      setLoading(false);
+    }
+  };
+  const handleSubmit = async (value) => {
+    if (value.trim() === "" || !selectedAccountGroup) {
+      toast.error("Please select an account group and enter a subgroup name.");
+      return;
+    }
+
+    const formData = {
+      accountGroup: selectedAccountGroup,
+      subGroup: value,
+    };
+
+    try {
+      setLoading(true);
+
+      await api.post(`/api/sUsers/addSubGroup/${cmp_id}`, formData, {
+        withCredentials: true,
+      });
+
+      setValue(""); // Clear input after submission
+      fetchData();
+    } catch (error) {
+      console.log(error);
+      toast.error(error.response?.data?.message || "Failed to add subgroup");
     } finally {
       setLoading(false);
     }
@@ -262,11 +256,7 @@ const AddSubGroup = () => {
                   <div className=" cursor-pointer text-center flex justify-center ">
                     <p
                       onClick={() =>
-                        handleEdit(
-                          el._id,
-                          el?.subGroup,
-                          el?.accountGroup_id
-                        )
+                        handleEdit(el._id, el?.subGroup, el?.accountGroup?._id)
                       }
                       className="text-blue-500"
                     >

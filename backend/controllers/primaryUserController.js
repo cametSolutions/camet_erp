@@ -711,79 +711,7 @@ export const getTransactionDetails = async (req, res) => {
   }
 };
 
-// @desc adding new Party
-// route POst/api/pUsers/addParty
-export const addParty = async (req, res) => {
-  try {
-    const {
-      cpm_id: cmp_id,
-      accountGroup,
-      partyName,
-      mobileNumber,
-      emailID,
-      gstNo,
-      panNo,
-      billingAddress,
-      shippingAddress,
-      creditPeriod,
-      creditLimit,
-      openingBalanceType,
-      openingBalanceAmount,
-      party_master_id, // Check if provided
-      country,
-      state,
-      pin,
-    } = req.body;
 
-    // Create a new party document with either the provided party_master_id or MongoDB generated _id
-    const party = new PartyModel({
-      cmp_id,
-      Primary_user_id: req?.pUserId,
-      accountGroup,
-      partyName,
-      mobileNumber,
-      emailID,
-      gstNo,
-      panNo,
-      billingAddress,
-      shippingAddress,
-      creditPeriod,
-      creditLimit,
-      openingBalanceType,
-      openingBalanceAmount,
-      country,
-      state,
-      pin,
-
-      party_master_id: party_master_id || undefined, // Allow Mongoose to assign _id if not provided
-    });
-
-    const result = await party.save();
-
-    // If party_master_id is not provided, use the MongoDB generated _id
-    if (!party_master_id) {
-      result.party_master_id = result._id.toString();
-      await result.save(); // Save the updated party with party_master_id set to _id
-    }
-
-    if (result) {
-      return res.status(200).json({
-        success: true,
-        message: "Party added successfully",
-      });
-    } else {
-      return res.status(400).json({
-        success: false,
-        message: "Party adding failed",
-      });
-    }
-  } catch (error) {
-    console.error(error);
-    return res
-      .status(500)
-      .json({ success: false, message: "Internal server error, try again!" });
-  }
-};
 
 // @desc adding new Hsn
 // route POst/api/pUsers/addHsn
@@ -1135,93 +1063,12 @@ export const editProduct = async (req, res) => {
   }
 };
 
-// @desc get party list
-// route get/api/pUsers/PartyList;
 
-export const PartyList = async (req, res) => {
-  const userId = req.pUserId;
-  const cmp_id = req.params.cmp_id;
-  try {
-    const partyList = await PartyModel.find({
-      Primary_user_id: userId,
-      cmp_id: cmp_id,
-    });
-    if (partyList) {
-      res
-        .status(200)
-        .json({ message: "parties fetched", partyList: partyList });
-    } else {
-      res.status(404).json({ message: "No parties found" });
-    }
-  } catch (error) {
-    res
-      .status(500)
-      .json({ success: false, message: "Internal server error, try again!" });
-  }
-};
 
-// @desc delete party
-// route delete/api/pUsers/deleteParty;
 
-export const deleteParty = async (req, res) => {
-  const partyId = req.params.id;
-  try {
-    const deletePartyFromList = await PartyModel.findByIdAndDelete(partyId);
-    if (deletePartyFromList) {
-      return res
-        .status(200)
-        .json({ success: true, message: "Party deleted successfully" });
-    } else {
-      return res
-        .status(400)
-        .json({ success: false, message: "Party deletion failed" });
-    }
-  } catch (error) {
-    console.error(error);
-    return res
-      .status(500)
-      .json({ success: false, message: "Internal server error, try again!" });
-  }
-};
 
-// @desc  getting a single party detail for edit
-// route get/api/pUsers/getSinglePartyDetails
 
-export const getSinglePartyDetails = async (req, res) => {
-  const partyId = req.params.id;
-  try {
-    const getSinglePartyDetails = await PartyModel.findById(partyId);
-    res.status(200).json({ success: true, data: getSinglePartyDetails });
-  } catch (error) {
-    console.error(error);
-    res
-      .status(500)
-      .json({ success: false, message: "Internal server error, try again!" });
-  }
-};
 
-// @desc  edit editParty details
-// route get/api/pUsers/editParty
-
-export const editParty = async (req, res) => {
-  const party_id = req.params.id;
-
-  try {
-    const updateParty = await PartyModel.findOneAndUpdate(
-      { _id: party_id },
-      req.body,
-      { new: true }
-    );
-    res.status(200).json({
-      success: true,
-      message: "Party updated successfully",
-      data: updateParty,
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false, message: "Internal Server Error" });
-  }
-};
 
 // @desc create in voice
 // route POST /api/pUsers/createInvoice
