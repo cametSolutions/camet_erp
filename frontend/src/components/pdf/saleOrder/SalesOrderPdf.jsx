@@ -12,7 +12,6 @@ function SalesOrderPdf({
   contentToPrint,
   bank,
   userType,
-  // printTitle,
 }) {
   const [subTotal, setSubTotal] = useState("");
   const [additinalCharge, setAdditinalCharge] = useState("");
@@ -93,6 +92,16 @@ function SalesOrderPdf({
       .toFixed(2);
     return totalTax;
   };
+  const calculateTotalCess = () => {
+    const totalCess = data?.items
+      ?.reduce(
+        (acc, curr) =>
+          (acc = acc + ((curr.cessAmt || 0) + (curr.addl_cessAmt || 0))),
+        0
+      )
+      .toFixed(2);
+    return totalCess;
+  };
 
   const calculateTotalQunatity = () => {
     return data?.items?.reduce((acc, curr) => {
@@ -102,32 +111,6 @@ function SalesOrderPdf({
       return acc + curr?.count;
     }, 0);
   };
-
-  // const calculateDiscount = (rate, count, taxAmt, finalAmt, isTaxInclusive) => {
-  //   // Calculate the total price
-  //   const totalPrice = rate * count;
-
-  //   // Calculate the discount amount
-  //   let discountAmount;
-
-  //   // Check if tax is inclusive
-  //   if (isTaxInclusive) {
-  //     // For tax-inclusive items, directly compare totalPrice and finalAmt
-  //     discountAmount = totalPrice === finalAmt ? 0 : totalPrice - finalAmt;
-  //   } else {
-  //     // For non-tax-inclusive items, adjust for tax
-  //     discountAmount = totalPrice - (finalAmt - taxAmt);
-  //   }
-
-  //   // Calculate discount percentage
-  //   const discountPercentage =
-  //     totalPrice !== 0 ? ((discountAmount / totalPrice) * 100).toFixed(2) : 0;
-
-  //   return {
-  //     discountAmount: discountAmount.toFixed(2),
-  //     discountPercentage: discountPercentage + "%",
-  //   };
-  // };
 
   let address;
 
@@ -207,6 +190,12 @@ function SalesOrderPdf({
                 <th className="text-gray-700 font-bold uppercase p-2">Tax %</th>
               )}
 
+              {saleOrderConfiguration?.showTaxPercentage && (
+                <th className="text-gray-700 font-bold uppercase p-2">
+                  Cess %
+                </th>
+              )}
+
               {saleOrderConfiguration?.showQuantity && (
                 <th className="text-gray-700 font-bold uppercase p-2">Qty</th>
               )}
@@ -227,6 +216,9 @@ function SalesOrderPdf({
                 )}
               {saleOrderConfiguration?.showStockWiseTaxAmount && (
                 <th className="text-gray-700 font-bold uppercase p-2">Tax</th>
+              )}
+              {saleOrderConfiguration?.showStockWiseTaxAmount && (
+                <th className="text-gray-700 font-bold uppercase p-2">Cess</th>
               )}
               {saleOrderConfiguration?.showStockWiseAmount && (
                 <th className="text-gray-700 font-bold uppercase p-2 pr-0 ">
@@ -266,7 +258,7 @@ function SalesOrderPdf({
                   rate = el?.selectedPriceRate;
                 }
 
-                const count = el?.count || 0;
+                el?.count || 0;
                 const finalAmt = Number(el?.total) || 0;
 
                 return (
@@ -289,6 +281,11 @@ function SalesOrderPdf({
                     {saleOrderConfiguration?.showTaxPercentage && (
                       <td className="py-1 text-black text-right pr-2">
                         {el?.igst || "0"}
+                      </td>
+                    )}
+                    {saleOrderConfiguration?.showTaxPercentage && (
+                      <td className="py-1 text-black text-right pr-2">
+                        {el?.cess || "0"}
                       </td>
                     )}
                     {saleOrderConfiguration?.showQuantity && (
@@ -321,6 +318,11 @@ function SalesOrderPdf({
                         {el?.igstAmt}
                       </td>
                     )}
+                    {saleOrderConfiguration?.showStockWiseTaxAmount && (
+                      <td className="py-1 text-black text-end pr-2">
+                        {(el?.cessAmt || 0) + (el?.addl_cessAmt || 0)}
+                      </td>
+                    )}
                     {saleOrderConfiguration?.showStockWiseAmount && (
                       <td className="py-1 text-black w-full text-right">
                         {" "}
@@ -346,6 +348,9 @@ function SalesOrderPdf({
               {saleOrderConfiguration?.showTaxPercentage && (
                 <td className="font-bold"></td>
               )}
+              {saleOrderConfiguration?.showTaxPercentage && (
+                <td className="font-bold"></td>
+              )}
               {saleOrderConfiguration?.showQuantity && (
                 <td className="text-black text-[9px] ">
                   <p className="text-right pr-1 font-bold">
@@ -362,6 +367,11 @@ function SalesOrderPdf({
               {saleOrderConfiguration?.showStockWiseTaxAmount && (
                 <td className="text-right pr-1 text-black font-bold text-[9px]">
                   {calculateTotalTax()}
+                </td>
+              )}
+              {saleOrderConfiguration?.showStockWiseTaxAmount && (
+                <td className="text-right pr-1 text-black font-bold text-[9px]">
+                  {calculateTotalCess()}
                 </td>
               )}
               {saleOrderConfiguration?.showStockWiseAmount && (

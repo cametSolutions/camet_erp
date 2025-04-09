@@ -61,52 +61,7 @@ function ThreeInchVanSaleSec() {
 
   console.log(data);
 
-  //  console.log(org?.configurations[0]?.terms);
 
-  // useEffect(() => {
-  //   if (data && data.items) {
-  //     const subTotal = data.items
-  //       .reduce((acc, curr) => acc + parseFloat(curr?.total), 0)
-  //       .toFixed(2);
-  //     setSubTotal(subTotal);
-
-  //     const addiTionalCharge = data?.additionalCharges
-  //       ?.reduce((acc, curr) => {
-  //         let value = curr?.finalValue === "" ? 0 : parseFloat(curr.finalValue);
-  //         if (curr?.action === "add") {
-  //           return acc + value;
-  //         } else if (curr?.action === "sub") {
-  //           return acc - value;
-  //         }
-  //         return acc;
-  //       }, 0)
-
-  //       ?.toFixed(2);
-  //     setAdditinalCharge(addiTionalCharge);
-
-  //     const finalAmount = data.finalAmount;
-  //     console.log(finalAmount);
-
-  //     // setFinalAmount(finalAmount);
-
-  //     const [integerPart, decimalPart] = finalAmount.toString().split(".");
-  //     const integerWords = numberToWords.toWords(parseInt(integerPart, 10));
-  //     console.log(integerWords);
-  //     const decimalWords = decimalPart
-  //       ? ` and ${numberToWords.toWords(parseInt(decimalPart, 10))} `
-  //       : " and Zero";
-  //     console.log(decimalWords);
-
-  //     const mergedWord = [
-  //       ...integerWords,
-  //       // " Rupees",
-  //       ...decimalWords,
-  //       // "Paisa",
-  //     ].join("");
-
-  //     setInWords(mergedWord);
-  //   }
-  // }, [data]);
 
 
 
@@ -146,7 +101,7 @@ function ThreeInchVanSaleSec() {
         bank={bank}
         // additinalCharge={additinalCharge}
         // inWords={inWords}
-        tab="vanSale"
+        tab="sale"
       />
     </div> 
   

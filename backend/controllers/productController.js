@@ -264,14 +264,19 @@ export const getProducts = async (req, res) => {
   const taxInclusive = req.query.taxInclusive === "true";
   const vanSaleQuery = req.query.vanSale;
   const isVanSale = vanSaleQuery === "true";
-
   const excludeGodownId = req.query.excludeGodownId;
   const stockTransfer = req.query.stockTransfer;
+  const searchTerm = req.query.search || "";
+
+  // Add pagination parameters
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 0;
+  const skip = limit > 0 ? (page - 1) * limit : 0;
 
   const Primary_user_id = new mongoose.Types.ObjectId(req.owner);
 
   try {
-    const secUser = await secondaryUserModel.findById(Secondary_user_id);
+    const secUser = await SecondaryUser.findById(Secondary_user_id);
 
     if (!secUser) {
       return res.status(404).json({ message: "Secondary user not found" });
@@ -281,12 +286,22 @@ export const getProducts = async (req, res) => {
       (item) => item.organization == cmp_id
     );
 
+    // Build the match stage with search functionality
     let matchStage = {
       $match: {
-        Primary_user_id: new mongoose.Types.ObjectId(Primary_user_id),
-        cmp_id: new mongoose.Types.ObjectId(cmp_id), // without 'new'
+        cmp_id: cmp_id,
+        Primary_user_id: Primary_user_id,
       },
     };
+
+    // Add search condition if searchTerm is provided
+    if (searchTerm) {
+      matchStage.$match.$or = [
+        { product_name: { $regex: searchTerm, $options: "i" } },
+        // { hsn_code: { $regex: searchTerm, $options: 'i' } },
+        { product_code: searchTerm },
+      ];
+    }
 
     let selectedGodowns;
     if (isVanSale && configuration?.selectedVanSaleGodowns.length > 0) {
@@ -372,7 +387,6 @@ export const getProducts = async (req, res) => {
       },
     };
 
-    // New stage to filter out products with empty GodownList
     const filterEmptyGodownListStage = {
       $match: {
         $expr: {
@@ -403,13 +417,27 @@ export const getProducts = async (req, res) => {
       },
     };
 
+    // Count total products for pagination info
+    const countPipeline = [
+      matchStage,
+      projectStage,
+      addFieldsStage,
+      filterEmptyGodownListStage,
+      { $sort: { product_name: 1 } }, // sort alphabetically
+      { $count: "total" },
+    ];
+
+    const countResult = await productModel.aggregate(countPipeline);
+    const totalProducts = countResult.length > 0 ? countResult[0].total : 0;
+
     const aggregationPipeline = [
       matchStage,
       projectStage,
       addFieldsStage,
       filterEmptyGodownListStage,
+      ...(limit > 0 ? [{ $skip: skip }] : []),
+      ...(limit > 0 ? [{ $limit: limit }] : []),
     ];
-
     // Conditionally add taxInclusive stage
     if (taxInclusive) {
       const addTaxInclusiveStage = {
@@ -425,6 +453,12 @@ export const getProducts = async (req, res) => {
     if (products && products.length > 0) {
       return res.status(200).json({
         productData: products,
+        pagination: {
+          total: totalProducts,
+          page,
+          limit,
+          hasMore: skip + products.length < totalProducts,
+        },
         message: "Products fetched",
       });
     } else {

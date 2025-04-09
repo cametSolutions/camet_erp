@@ -23,7 +23,6 @@ import EditOrg from '../pages/primaryUsers/EditOrg'
 import DashboardSec from '../pages/secUsers/Dashboard'
 import AddParty from '../pages/primaryUsers/AddParty'
 import Hsn from '../pages/primaryUsers/Hsn'
-import EditParty from '../pages/primaryUsers/EditParty'
 
 
 import Demo from '../pages/secUsers/Demo'
@@ -31,7 +30,6 @@ import RetailersList from '../pages/primaryUsers/RetailersList'
 import HsnList from '../pages/primaryUsers/HsnList'
 import EditHsn from '../pages/primaryUsers/EditHsn'
 import InvoiceSecondary from '../pages/secUsers/InvoiceSecondary'
-import SearchPartySecondary from '../pages/secUsers/SearchPartySecondary'
 import PartyListSecondary from '../pages/secUsers/PartyListSecondary'
 import AddPartySecondary from '../pages/secUsers/AddPartySecondary'
 import ProductListSecondary from '../pages/secUsers/ProductListSecondary'
@@ -65,7 +63,7 @@ import InventorySecondaryUser from '../pages/secUsers/InventorySecondaryUser'
 import SalesDetails from '../pages/primaryUsers/SalesDetails'
 import ShareSales from '../pages/primaryUsers/ShareSales'
 import SalesSecondary from '../pages/secUsers/SalesSecondary'
-import SearchPartySalesSecondary from '../pages/secUsers/SearchPartySalesSecondary'
+import SearchParty from '../pages/secUsers/SearchParty'
 import AddItemSalesSecondary from '../pages/secUsers/AddItemSalesSecondary'
 import SalesDetailsSecondary from '../pages/secUsers/SalesDetailsSecondary'
 import EditItemSalesSecondary from '../pages/secUsers/EditItemSalesSecondary'
@@ -79,7 +77,6 @@ import ServerError from '../pages/errorPages/ServerError'
 import ThreeInchSales from '../pages/primaryUsers/ThreeInchSales'
 import ThreeInchSalesSec from '../pages/secUsers/ThreeInchSalesSec'
  import Purchase from '../pages/secUsers/Purchase'
-import SearchPartyPurchase from '../pages/secUsers/SearchPartyPurchase'
 import AddItemPurchase from '../pages/secUsers/AddItemPurchase'
 import EditItemPurchase from '../pages/secUsers/EditItemPurchase'
 import PurchaseDetailsSecondary from '../pages/secUsers/PurchaseDetailsSecondary'
@@ -119,12 +116,9 @@ import ReceiptPrintOutPrimary from '../pages/primaryUsers/ReceiptPrintOut'
 import EditPurchase from '../pages/secUsers/EditPurchase'
 import SelectVouchers from '../pages/secUsers/SelectVouchers'
 import Receipt from '../pages/secUsers/Receipt'
-import SearchPartyReciept from '../pages/secUsers/SearchPartyReciept'
 import OutstandingListOfReceipt from '../pages/secUsers/OutstandingListOfReceipt'
 import PurchasePayment from '../pages/secUsers/PurchasePayment'
-import SearchPartyPayment from '../pages/secUsers/SearchPartyPayment'
 import CreditNote from '../pages/secUsers/CreditNote'
-import SearchPartyCreditNote from '../pages/secUsers/SearchPartyCreditNote'
 import BillToCreditNote from '../pages/secUsers/BillToCreditNote'
 import AddItemCreditNote from '../pages/secUsers/AddItemCreditNote'
 import EditItemCreditNote from '../pages/secUsers/EditItemCreditNote'
@@ -134,7 +128,6 @@ import ShareCreditNoteSecondary from '../pages/secUsers/ShareCreditNoteSecondary
 import CreditNoteDetailsPrimary from '../pages/primaryUsers/CreditNoteDetailsPrimary'
 import ShareCreditNotePrimary from '../pages/primaryUsers/ShareCreditNotePrimary'
 import DebitNote from '../pages/secUsers/DebitNote'
-import SearchPartyDebitNote from '../pages/secUsers/SearchPartyDebitNote'
 import BillToDebitNote from '../pages/secUsers/BillToDebitNote'
 import AddItemDebitNote from '../pages/secUsers/AddItemDebitNote'
 import EditItemDebitNote from '../pages/secUsers/EditItemDebitNote'
@@ -195,6 +188,7 @@ import OutstandingSummary from '../pages/secUsers/OutstandingSummary'
 import AddSubGroup from '../pages/secUsers/settilngs/partySettings/AddSubGroup'
 import AddOpening from '@/pages/secUsers/openings/PartyOpening/AddOpening'
 import SalesSummaryTransactions from '@/pages/secUsers/Reports/salesSummary/SalesSummaryTransactions'
+import VoucherAddCount from '@/pages/dummy/VoucherAddCount'
 
 const Routers = () => {
   return (
@@ -217,7 +211,7 @@ const Routers = () => {
         <Route path='/pUsers/dashboard' element={<ProtectedPriRoute><Dashboard/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/addParty' element={<ProtectedPriRoute><AddParty/></ProtectedPriRoute>}></Route>
         <Route path='/pUsers/hsn' element={<ProtectedPriRoute><Hsn/></ProtectedPriRoute>}></Route>
-        <Route path='/pUsers/editParty/:id' element={<ProtectedPriRoute><EditParty/></ProtectedPriRoute>}></Route>
+
 
      
         <Route path='/pUsers/demo' element={<ProtectedPriRoute><Demo/></ProtectedPriRoute>}></Route>
@@ -275,7 +269,7 @@ const Routers = () => {
         {/* <Route path='/sUsers/receiptDetails/:id' element={<ProtectedSecRoute><SecReceptionDetails/></ProtectedSecRoute>}></Route> */}
         <Route path='/sUsers/dashboard' element={<ProtectedSecRoute><DashboardSec/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/invoice' element={<ProtectedSecRoute><InvoiceSecondary/></ProtectedSecRoute>}></Route>
-        <Route path='/sUsers/searchParty' element={<ProtectedSecRoute><SearchPartySecondary/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/searchParty' element={<ProtectedSecRoute><SearchParty/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/partyList' element={<ProtectedSecRoute><PartyListSecondary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/addParty' element={<ProtectedSecRoute><AddPartySecondary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/productList' element={<ProtectedSecRoute><ProductListSecondary/></ProtectedSecRoute>}></Route>
@@ -296,8 +290,8 @@ const Routers = () => {
         <Route path='/sUsers/Inventory' element={<ProtectedSecRoute><InventorySecondaryUser/></ProtectedSecRoute>}></Route>
 
         <Route path='/sUsers/sales' element={<ProtectedSecRoute><SalesSecondary/></ProtectedSecRoute>}></Route>
-         <Route path='/sUsers/searchPartySales' element={<ProtectedSecRoute><SearchPartySalesSecondary/></ProtectedSecRoute>}></Route>
-        <Route path='/sUsers/addItemSales' element={<ProtectedSecRoute><AddItemSalesSecondary/></ProtectedSecRoute>}></Route>
+         <Route path='/sUsers/searchPartySales' element={<ProtectedSecRoute><SearchParty/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/addItemSales' element={<ProtectedSecRoute><VoucherAddCount/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/editItemSales/:id/:godownName/:index' element={<ProtectedSecRoute><EditItemSalesSecondary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/salesDetails/:id' element={<ProtectedSecRoute><SalesDetailsSecondary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/vanSaleDetails/:id' element={<ProtectedSecRoute><VanSaleDetailsSecondary/></ProtectedSecRoute>}></Route>
@@ -311,7 +305,7 @@ const Routers = () => {
        
        {/* purchase */}
         <Route path='/sUsers/purchase' element={<ProtectedSecRoute><Purchase/></ProtectedSecRoute>}></Route> 
-        <Route path='/sUsers/searchPartyPurchase' element={<ProtectedSecRoute><SearchPartyPurchase/></ProtectedSecRoute>}></Route> 
+        <Route path='/sUsers/searchPartyPurchase' element={<ProtectedSecRoute><SearchParty/></ProtectedSecRoute>}></Route> 
         <Route path='/sUsers/addItemPurchase' element={<ProtectedSecRoute><AddItemPurchase/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/billToPurchase/:id' element={<ProtectedSecRoute><BillToPurchase/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/editItemPurchase/:id/:godownName/:index' element={<ProtectedSecRoute><EditItemPurchase/></ProtectedSecRoute>}></Route> 
@@ -343,7 +337,7 @@ const Routers = () => {
 
         {/* receipt */}
         <Route path='/sUsers/receipt' element={<ProtectedSecRoute><Receipt/></ProtectedSecRoute>}></Route>
-        <Route path='/sUsers/searchPartyReceipt' element={<ProtectedSecRoute><SearchPartyReciept/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/searchPartyReceipt' element={<ProtectedSecRoute><SearchParty/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/receipt/addAmount/:party_id' element={<ProtectedSecRoute><OutstandingListOfReceipt/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/receipt/sourceList/:source' element={<ProtectedSecRoute><SourceList/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/receipt/details/:id' element={<ProtectedSecRoute><ReceiptDetailsOfSale/></ProtectedSecRoute>}></Route>
@@ -354,7 +348,7 @@ const Routers = () => {
 
         {/* payment */}
         <Route path='/sUsers/paymentPurchase' element={<ProtectedSecRoute><PurchasePayment/></ProtectedSecRoute>}></Route>
-        <Route path='/sUsers/searchPartyPurchasePayment' element={<ProtectedSecRoute><SearchPartyPayment/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/searchPartyPurchasePayment' element={<ProtectedSecRoute><SearchParty/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/purchase/addAmount/:party_id' element={<ProtectedSecRoute><OutstandingListOfPayment/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/payment/sourceList/:source' element={<ProtectedSecRoute><SourceList/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/payment/details/:id' element={<ProtectedSecRoute><PaymtentDetails/></ProtectedSecRoute>}></Route>
@@ -365,7 +359,7 @@ const Routers = () => {
 {/* bank payment */}
          {/* creditNote */}
         <Route path='/sUsers/creditNote' element={<ProtectedSecRoute><CreditNote/></ProtectedSecRoute>}></Route>
-        <Route path='/sUsers/searchPartyCreditNote' element={<ProtectedSecRoute><SearchPartyCreditNote/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/searchPartyCreditNote' element={<ProtectedSecRoute><SearchParty/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/billToCreditNote/:id' element={<ProtectedSecRoute><BillToCreditNote/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/addItemCreditNote' element={<ProtectedSecRoute><AddItemCreditNote/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/editItemCreditNote/:id/:godownName/:index' element={<ProtectedSecRoute><EditItemCreditNote/></ProtectedSecRoute>}></Route>
@@ -375,7 +369,7 @@ const Routers = () => {
 
          {/* debitNote */}
         <Route path='/sUsers/debitNote' element={<ProtectedSecRoute><DebitNote/></ProtectedSecRoute>}></Route>
-        <Route path='/sUsers/searchPartyDebitNote' element={<ProtectedSecRoute><SearchPartyDebitNote/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/searchPartyDebitNote' element={<ProtectedSecRoute><SearchParty/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/billToDebitNote/:id' element={<ProtectedSecRoute><BillToDebitNote/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/addItemDebitNote' element={<ProtectedSecRoute><AddItemDebitNote/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/editItemDebitNote/:id/:godownName/:index' element={<ProtectedSecRoute><EditItemDebitNote/></ProtectedSecRoute>}></Route>
@@ -407,7 +401,7 @@ const Routers = () => {
         {/* party statement  */}
 
         {/* we are using the same page of party list of sales to avoid page repetition */}
-        <Route path='/sUsers/partyStatement/partyList' element={<ProtectedSecRoute><SearchPartySalesSecondary/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/partyStatement/partyList' element={<ProtectedSecRoute><SearchParty/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/partyStatement' element={<ProtectedSecRoute><PartyStatement/></ProtectedSecRoute>}></Route>
 
 
@@ -472,7 +466,7 @@ const Routers = () => {
         <Route path='/sUsers/salePrintConfiguration' element={<ProtectedSecRoute><SalePrintConfiguration/></ProtectedSecRoute>}></Route>
 
       {/* order pending */}
-      <Route path='/sUsers/orderPending/partyList' element={<ProtectedSecRoute><SearchPartySalesSecondary/></ProtectedSecRoute>}></Route>
+      <Route path='/sUsers/orderPending/partyList' element={<ProtectedSecRoute><SearchParty/></ProtectedSecRoute>}></Route>
       <Route path='/sUsers/pendingOrders/:partyId' element={<ProtectedSecRoute><PendingOrders/></ProtectedSecRoute>}></Route>
 
 

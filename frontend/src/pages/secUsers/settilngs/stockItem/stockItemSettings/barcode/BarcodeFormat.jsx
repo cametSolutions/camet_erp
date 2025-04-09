@@ -11,6 +11,7 @@ import { useNavigate } from "react-router-dom";
 import SelectedBarcode from "./SelectedBarcode";
 
 const labelOptions = [
+  { value: "_id", label: "Product ID" },
   { value: "companyName", label: "Company Name" },
   { value: "productName", label: "Product Name" },
   { value: "productCode", label: "Product Code" },

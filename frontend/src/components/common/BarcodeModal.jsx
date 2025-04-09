@@ -10,6 +10,10 @@ const BarcodeModal = ({ isOpen, onClose, product }) => {
   const [splCode, setSplCode] = useState("");
   const [barcodeItemName, setBarcodeItemName] = useState("");
   const [barcodeList, setBarcodeList] = useState([]);
+
+
+  console.log(product);
+  
   
 
   
@@ -43,10 +47,12 @@ const BarcodeModal = ({ isOpen, onClose, product }) => {
       const productName = product?.product_name;
       const companyName = company_name;
       const productCode = product?.product_code;
+      const productId=product?._id
 
       // Replace placeholders in format1 and format2 with actual values
       const format1WithValues = currentBarcode.format1
         .replace(/\${productName}/g, productName)
+        .replace(/\${_id}/g, productId)
         .replace(/\${productCode}/g, productCode)
         .replace(/\${companyName}/g, companyName)
         .replace(/\${mrp}/g, mrp)

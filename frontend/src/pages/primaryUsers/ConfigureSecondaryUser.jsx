@@ -11,6 +11,9 @@ function ConfigureSecondaryUser() {
   const [selectedPriceLevels, setSelectedPriceLevels] = useState([]);
   const [selectedGodowns, setSelectedGodowns] = useState([]);
   const [selectedVanSaleGodowns, setSelectedVanSaleGodowns] = useState([]);
+  const [vanSaleSubGroups, setvanSaleSubGroups] = useState([]);
+  const [selectedVanSaleSubGroups, setSelectedVanSaleSubGroups] = useState([]);
+
   const [vanSaleGodownName, setVanSaleGodownName] = useState("");
   const [selectedConfig, setSelectedConfig] = useState("sales");
   const [vanSale, setVanSale] = useState(false);
@@ -51,6 +54,7 @@ function ConfigureSecondaryUser() {
         setGodowns(res.data.data.godowns);
         setPriceLevels(res.data.data.priceLevels);
         setVanSaleGodownName(res.data.data.godowns[0]?.godown);
+        setvanSaleSubGroups(res.data.data.subGroups);
       } catch (error) {
         console.log(error);
         toast.error(error.response.data.message);
@@ -80,10 +84,12 @@ function ConfigureSecondaryUser() {
 
         const updateConfig = (setter, number) => {
           if (number) {
-            setter((prev) => [{
-              ...prev[0],
-              currentNumber: number,
-            }]);
+            setter((prev) => [
+              {
+                ...prev[0],
+                currentNumber: number,
+              },
+            ]);
           }
         };
 
@@ -112,7 +118,10 @@ function ConfigureSecondaryUser() {
           withCredentials: true,
         });
         const fullConfigurations = res?.data?.data?.configurations;
-        const configurations = new Array(fullConfigurations.find((item) => item.organization === id)) || [];
+        const configurations =
+          new Array(
+            fullConfigurations.find((item) => item.organization === id)
+          ) || [];
 
         if (configurations?.length > 0) {
           const {
@@ -125,6 +134,7 @@ function ConfigureSecondaryUser() {
             vanSaleConfiguration,
             purchaseConfiguration,
             selectedVanSaleGodowns,
+            selectedVanSaleSubGroups,
             stockTransferConfiguration,
             creditNoteConfiguration,
             debitNoteConfiguration,
@@ -132,18 +142,43 @@ function ConfigureSecondaryUser() {
           } = configurations[0];
 
           setSelectedGodowns(selectedGodowns || []);
+          setSelectedVanSaleSubGroups(
+            selectedVanSaleSubGroups || []
+          )
           setSelectedPriceLevels(selectedPriceLevels || []);
-          setSalesOrder(salesOrderConfiguration ? [salesOrderConfiguration] : initialConfig);
+          setSalesOrder(
+            salesOrderConfiguration ? [salesOrderConfiguration] : initialConfig
+          );
           setSales(salesConfiguration ? [salesConfiguration] : initialConfig);
-          setReceipt(receiptConfiguration ? [receiptConfiguration] : initialConfig);
-          setPayment(paymentConfiguration ? [paymentConfiguration] : initialConfig);
+          setReceipt(
+            receiptConfiguration ? [receiptConfiguration] : initialConfig
+          );
+          setPayment(
+            paymentConfiguration ? [paymentConfiguration] : initialConfig
+          );
           setVanSale(vanSale || false);
-          setPurchase(purchaseConfiguration ? [purchaseConfiguration] : initialConfig);
-          setVanSaleConfig(vanSaleConfiguration ? [vanSaleConfiguration] : initialConfig);
-          setSelectedVanSaleGodowns(selectedVanSaleGodowns?.length > 0 ? [selectedVanSaleGodowns[0]] : []);
-          setStockTransfer(stockTransferConfiguration ? [stockTransferConfiguration] : initialConfig);
-          setCreditNote(creditNoteConfiguration ? [creditNoteConfiguration] : initialConfig);
-          setDebitNote(debitNoteConfiguration ? [debitNoteConfiguration] : initialConfig);
+          setPurchase(
+            purchaseConfiguration ? [purchaseConfiguration] : initialConfig
+          );
+          setVanSaleConfig(
+            vanSaleConfiguration ? [vanSaleConfiguration] : initialConfig
+          );
+          setSelectedVanSaleGodowns(
+            selectedVanSaleGodowns?.length > 0
+              ? [selectedVanSaleGodowns[0]]
+              : []
+          );
+          setStockTransfer(
+            stockTransferConfiguration
+              ? [stockTransferConfiguration]
+              : initialConfig
+          );
+          setCreditNote(
+            creditNoteConfiguration ? [creditNoteConfiguration] : initialConfig
+          );
+          setDebitNote(
+            debitNoteConfiguration ? [debitNoteConfiguration] : initialConfig
+          );
         }
       } catch (error) {
         console.log(error);
@@ -170,7 +205,7 @@ function ConfigureSecondaryUser() {
     }[section];
 
     if (updateFunction) {
-      updateFunction((prev) => [{...prev[0], [field]: value}]);
+      updateFunction((prev) => [{ ...prev[0], [field]: value }]);
     } else {
       console.error("Invalid section");
     }
@@ -197,16 +232,23 @@ function ConfigureSecondaryUser() {
       priceLevel: setSelectedPriceLevels,
       godown: setSelectedGodowns,
       vanSaleGodown: setSelectedVanSaleGodowns,
+      vanSaleSubGroup: setSelectedVanSaleSubGroups,
     }[type];
 
+    console.log(type);
+
     if (updateFunction) {
-      updateFunction(prev => 
-        checked 
-          ? (type === 'vanSaleGodown' ? [value] : [...prev, value])
-          : prev.filter(item => item !== value)
+      updateFunction((prev) =>
+        checked
+          ? type === "vanSaleGodown"
+            ? [value]
+            : [...prev, value]
+          : prev.filter((item) => item !== value)
       );
     }
   };
+
+  console.log(selectedVanSaleSubGroups);
 
   const formatFieldName = (fieldName) => {
     const words = fieldName.split(/(?=[A-Z])/);
@@ -305,11 +347,12 @@ function ConfigureSecondaryUser() {
       creditNoteConfiguration: creditNote[0],
       debitNoteConfiguration: debitNote[0],
       selectedVanSaleGodowns,
+      selectedVanSaleSubGroups,
       vanSaleConfiguration: {
         ...vanSaleConfig[0],
         vanSaleGodownName:
-          godowns?.find((el) => el?.id == selectedVanSaleGodowns[0])
-            ?.godown || "",
+          godowns?.find((el) => el?.id == selectedVanSaleGodowns[0])?.godown ||
+          "",
       },
       vanSale: vanSale,
     };
@@ -336,6 +379,9 @@ function ConfigureSecondaryUser() {
       toast.error(allErrors[0]);
       return;
     }
+
+    console.log(formData);
+    
 
     try {
       const res = await api.post(
@@ -541,7 +587,8 @@ function ConfigureSecondaryUser() {
               </div>
             </div>
 
-            {(selectedConfig !== "receipt" && selectedConfig !== "payment") &&
+            {selectedConfig !== "receipt" &&
+              selectedConfig !== "payment" &&
               selectedConfig !== "stockTransfer" && (
                 <section className="px-4">
                   <hr className="mt-5 border-b-1 border-blueGray-300" />
@@ -600,7 +647,7 @@ function ConfigureSecondaryUser() {
                        
                          space-y-2 `}
                       >
-                        {selectedConfig === "vanSale" ? (
+                        {(selectedConfig === "vanSale") ? (
                           godowns?.length > 0 ? (
                             godowns?.map((item, index) => (
                               <div key={index} className="flex items-center">
@@ -663,6 +710,51 @@ function ConfigureSecondaryUser() {
                         )}
                       </div>
                     </div>
+                    {(selectedConfig === "vanSale" || selectedConfig === "sales" ) && (
+                      <div className="lg:col-span-1">
+                        <h6 className="text-blueGray-400 text-sm mb-4 font-bold uppercase">
+                          Sub Groups
+                        </h6>
+                        <div
+                          className={` 
+                       
+                         space-y-2 `}
+                        >
+                          {vanSaleSubGroups?.length > 0 ? (
+                            vanSaleSubGroups?.map((item, index) => (
+                              <div key={index} className="flex items-center">
+                                <input
+                                  type="checkbox"
+                                  id={`godownCheckbox${index}`}
+                                  value={item?.subGroup_id}
+                                  checked={selectedVanSaleSubGroups.includes(
+                                    item?.subGroup_id
+                                  )}
+                                  onChange={(e) =>
+                                    handleCheckboxChange(
+                                      "vanSaleSubGroup",
+                                      e.target.value,
+                                      e.target.checked
+                                    )
+                                  }
+                                  className="mr-2"
+                                />
+                                <label
+                                  htmlFor={`godownCheckbox${index}`}
+                                  className="text-blueGray-600"
+                                >
+                                  {item?.subGroup}
+                                </label>
+                              </div>
+                            ))
+                          ) : (
+                            <p className="text-blueGray-600">
+                              No Sub Groups added
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <hr className="mt-5 border-b-1 border-blueGray-300" />

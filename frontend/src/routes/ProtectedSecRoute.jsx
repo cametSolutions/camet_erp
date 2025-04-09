@@ -9,7 +9,7 @@ function ProtectedSecRoute({ children }) {
 
   if (secUserData == null) {
     // Use Navigate component within a returned JSX expression
-    return <Navigate to={'/sUsers/login'} />;
+    return <Navigate to={"/sUsers/login"} />;
   }
 
   return (

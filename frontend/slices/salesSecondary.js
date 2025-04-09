@@ -1,11 +1,12 @@
 import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
-  // selectedGodownName:"",
-  // selectedGodownId:"",
   date: "",
   convertedFrom: [],
   products: [],
+  page: 1,
+  hasMore: true,
+  priceLevels: [],
   party: {},
   items: [],
   selectedPriceLevel: "",
@@ -23,8 +24,6 @@ const initialState = {
     destination: "",
     vehicleNo: "",
     orderNo: "",
-    // eWayNo: "",
-    // irnNo: "",
     termsOfPay: "",
     termsOfDelivery: "",
   },
@@ -43,13 +42,31 @@ export const salesSecondarySlice = createSlice({
     },
 
     addAllProducts: (state, action) => {
-      state.products = action.payload;
+      const { page, hasMore, products } = action.payload;
+      state.page = page;
+      state.hasMore = hasMore;
+      if (page === 1) {
+        state.products = products;
+      } else {
+        state.products = state.products.concat(products);
+      }
+    },
+
+    addAllProductsOnly: (state, action) => {
+      state.products=action.payload
+    },
+
+
+    addAllPriceLevels: (state, action) => {
+      state.priceLevels = action.payload;
     },
 
     removeItem: (state, action) => {
-      const id = action.payload;
+      const id = action.payload?._id;
+      
       const index = state.items.findIndex((el) => el._id === id);
-
+      console.log(index);
+      
       state.items.splice(index, 1);
     },
     changeCount: (state, action) => {
@@ -322,78 +339,9 @@ export const salesSecondarySlice = createSlice({
       state.convertedFrom = action.payload;
     },
 
-    // updateAllGodowns: (state, action) => {
-    
-    //   const {
-    //     _id,
-    //     index:currentInedex,
-    //     newPrice: selectedPriceRate,
-    //     discountAmount: discount,
-    //     discountPercentage,
-    //     type: discountType,
-    //     isTaxInclusive,
-    //     igst: igstValue,
-    //   } = action.payload;
-    
-    //   // Find the item by _id
-    //   const item = state.items.find((el) => el._id == _id);
-    //   if (!item) return;
-    
-    //   // Make sure it is godown only (every godown must have godown_id and no batch)
-    //   if (item.GodownList?.every((g) => g?.godown_id && !g?.batch)) {
-    //     // Update all godowns
-    //     item?.GodownList?.forEach((godown,index) => {
-    //       if (godown && index!== currentInedex) {
-    //         godown.selectedPriceRate = Number(selectedPriceRate);
-    //         godown.discountType = discountType;
-    //         godown.isTaxInclusive = isTaxInclusive;
-    
-    //         let calculatedDiscountAmount = 0;
-    //         let calculatedDiscountPercentage = 0;
-    
-    //         if (isTaxInclusive) {
-    //           const taxInclusivePrice = selectedPriceRate * (godown.count || 1);
-    //           const taxBasePrice = Number(
-    //             (taxInclusivePrice / (1 + igstValue / 100)).toFixed(2)
-    //           );
-    
-    //           if (discountType === 'amount') {
-    //             calculatedDiscountAmount = discount; // Treat as amount
-    //             calculatedDiscountPercentage =
-    //               Number(((discount / taxBasePrice) * 100).toFixed(2)) || 0;
-    //           } else if (discountType === 'percentage') {
-    //             calculatedDiscountPercentage = discountPercentage; // Treat as percentage
-    //             calculatedDiscountAmount = Number(
-    //               ((discountPercentage / 100) * taxBasePrice).toFixed(2)
-    //             );
-    //           }
-    //         } else {
-    //           const taxExclusivePrice = selectedPriceRate * (godown?.count || 1);
-    
-    //           if (discountType === 'amount') {
-    //             calculatedDiscountAmount = discount;
-    //             calculatedDiscountPercentage =
-    //               Number(((discount / taxExclusivePrice) * 100).toFixed(2)) || 0;
-    //           } else if (discountType === 'percentage') {
-    //             calculatedDiscountPercentage = discountPercentage;
-    //             calculatedDiscountAmount = Number(
-    //               ((discountPercentage / 100) * taxExclusivePrice).toFixed(2)
-    //             );
-    //           }
-    //         }
-    
-    //         godown.discount = calculatedDiscountAmount;
-    //         godown.discountPercentage = calculatedDiscountPercentage;
-    
-    //         console.log(godown);
-       
-    //       }
-    //     });
-    //   } else {
-    //     return;
-    //   }
-    // }
-    
+    updateAllItem: (state, action) => {
+      state.items = action.payload;
+    },
   },
 });
 
@@ -436,7 +384,9 @@ export const {
   changeTaxInclusive,
   addOrderConversionDetails,
   addConvertedFrom,
-  // updateAllGodowns
+  addAllPriceLevels,
+  addAllProductsOnly,
+  updateAllItem
 } = salesSecondarySlice.actions;
 
 export default salesSecondarySlice.reducer;

@@ -17,12 +17,16 @@ function EditItemSecondary() {
   const [quantity, setQuantity] = useState("");
   const [unit, setUnit] = useState("");
   const [igst, setIgst] = useState("");
+  const [cess, setCess] = useState("");
+  const [addlCess, setAddlCess] = useState("");
   const [discount, setDiscount] = useState("");
   const [type, setType] = useState("amount");
   const [taxExclusivePrice, setTaxExclusivePrice] = useState(0);
   const [totalAmount, setTotalAmount] = useState(0);
   const [discountAmount, setDiscountAmount] = useState(0);
   const [taxAmount, setTaxAmount] = useState(0);
+  const [cessAmount, setCessAmount] = useState(0);
+  const [addlCessAmount, setAddlCessAmount] = useState(0);
   const [discountPercentage, setDiscountPercentage] = useState(0);
   const [isTaxInclusive, setIsTaxInclusive] = useState(false);
   const [actualQuantity, setActualQuantity] = useState("");
@@ -51,6 +55,8 @@ function EditItemSecondary() {
       }
       setUnit(selectedItem[0]?.unit);
       setIgst(selectedItem[0]?.igst);
+      setCess(selectedItem[0]?.cess || 0);
+      setAddlCess(selectedItem[0]?.addl_cess || 0);
       setIsTaxInclusive(selectedItem[0]?.isTaxInclusive || false);
 
       if (selectedItem[0]?.discountType === "amount") {
@@ -74,16 +80,19 @@ function EditItemSecondary() {
     const quantityValue = parseFloat(quantity) || 1;
     const discountValue = parseFloat(discount) || 0;
     const igstValue = parseFloat(igst) || 0;
+    const cessValue = parseFloat(cess) || 0;
+    const addlCessValue = parseFloat(addlCess) || 0;
 
     ///////////////// for tax inclusive and exclusive //////////////
 
     if (isTaxInclusive) {
       const taxInclusivePrice = newPriceValue * quantityValue;
+      // Calculate base price excluding all taxes
+      const totalTaxRate = igstValue + cessValue;
       const taxBasePrice = Number(
-        (taxInclusivePrice / (1 + igstValue / 100)).toFixed(2)
+        (taxInclusivePrice / (1 + totalTaxRate / 100)).toFixed(2)
       );
 
-      /// Discount calculation
       /// Discount calculation
       let calculatedDiscountAmount = 0;
       let calculatedDiscountPercentage = 0;
@@ -92,12 +101,12 @@ function EditItemSecondary() {
         calculatedDiscountAmount = discountValue; // Given discount value is treated as amount
         calculatedDiscountPercentage =
           Number(
-            ((discountValue / taxExclusivePrice) * 100).toFixed(2) // Calculate percentage
+            ((discountValue / taxBasePrice) * 100).toFixed(2) // Calculate percentage
           ) || 0;
       } else if (type === "percentage") {
         calculatedDiscountPercentage = discountValue; // Given discount value is treated as percentage
         calculatedDiscountAmount = Number(
-          ((discountValue / 100) * taxExclusivePrice).toFixed(2) // Calculate amount
+          ((discountValue / 100) * taxBasePrice).toFixed(2) // Calculate amount
         );
       }
 
@@ -106,16 +115,26 @@ function EditItemSecondary() {
       );
 
       ////final calculation
-      const taxAmount = discountedPrice * (igstValue / 100);
+      const igstAmount = discountedPrice * (igstValue / 100);
+      const calculatedCessAmount = discountedPrice * (cessValue / 100);
+      const calculatedAddlCessAmount = quantityValue * addlCessValue;
+
       const totalPayableAmount = Number(
-        (discountedPrice + taxAmount).toFixed(2)
+        (
+          discountedPrice +
+          igstAmount +
+          calculatedCessAmount +
+          calculatedAddlCessAmount
+        ).toFixed(2)
       );
 
       setTotalAmount(totalPayableAmount);
       setDiscountAmount(calculatedDiscountAmount);
       setDiscountPercentage(calculatedDiscountPercentage);
       setTaxExclusivePrice(taxBasePrice);
-      setTaxAmount(taxAmount);
+      setTaxAmount(igstAmount);
+      setCessAmount(calculatedCessAmount);
+      setAddlCessAmount(calculatedAddlCessAmount);
     } else {
       const taxExclusivePrice = newPriceValue * quantityValue;
 
@@ -141,15 +160,26 @@ function EditItemSecondary() {
       );
 
       ////final calculation
-      const taxAmount = discountedPrice * (igstValue / 100);
+      const igstAmount = discountedPrice * (igstValue / 100);
+      const calculatedCessAmount = discountedPrice * (cessValue / 100);
+      const calculatedAddlCessAmount = quantityValue * addlCessValue;
+
       const totalPayableAmount = Number(
-        (discountedPrice + taxAmount).toFixed(2)
+        (
+          discountedPrice +
+          igstAmount +
+          calculatedCessAmount +
+          calculatedAddlCessAmount
+        ).toFixed(2)
       );
+
       setTotalAmount(totalPayableAmount);
       setDiscountAmount(calculatedDiscountAmount);
       setDiscountPercentage(calculatedDiscountPercentage);
       setTaxExclusivePrice(taxExclusivePrice);
-      setTaxAmount(taxAmount);
+      setTaxAmount(igstAmount);
+      setCessAmount(calculatedCessAmount);
+      setAddlCessAmount(calculatedAddlCessAmount);
     }
   }, [
     newPrice,
@@ -157,6 +187,8 @@ function EditItemSecondary() {
     discount,
     type,
     igst,
+    cess,
+    addlCess,
     isTaxInclusive,
     discountAmount,
     discountPercentage,
@@ -190,8 +222,8 @@ function EditItemSecondary() {
     if (!enableActualAndBilledQuantity) {
       setActualQuantity(value);
     }
-    // setActualQuantity(value);
   };
+
   const handleActualQuantityChange = (value) => {
     if (value.includes(".")) {
       // Split the value into parts before and after the decimal point
@@ -221,6 +253,10 @@ function EditItemSecondary() {
     newItem.newGst = igst;
     newItem.discountType = type;
     newItem.actualCount = Number(actualQuantity) || 0;
+    newItem.cess = Number(cess) || 0;
+    newItem.addl_cess = Number(addlCess) || 0;
+    newItem.cessAmount = cessAmount;
+    newItem.addlCessAmount = addlCessAmount;
 
     dispatch(changeIgstAndDiscount(newItem));
     dispatch(addPriceRate({ selectedPriceRate: Number(newPrice), _id: id }));
@@ -259,15 +295,12 @@ function EditItemSecondary() {
                       onChange={(e) => {
                         changePrice(e.target.value);
                       }}
-                      // disabled
                       value={newPrice}
                       type="number"
                       className=" input-number px-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm border-gray-300 rounded-md focus:outline-none text-gray-600"
                       placeholder="0"
                     />
                   </div>
-
-                  {}
 
                   {isTaxInclusive !== null &&
                     isTaxInclusive !== undefined &&
@@ -448,6 +481,24 @@ function EditItemSecondary() {
                         <p className="text-xs">{`₹ ${taxAmount.toFixed(2)}`}</p>
                       </div>
                     </div>
+
+                    <div className="flex justify-between">
+                      <p className="text-xs">Cess</p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-xs">{`( ${cess} % )`}</p>
+                        <p className="text-xs">{`₹ ${cessAmount.toFixed(
+                          2
+                        )}`}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-between">
+                      <p className="text-xs">Additional Cess</p>
+                      <p className="text-xs">{`₹ ${addlCessAmount.toFixed(
+                        2
+                      )}`}</p>
+                    </div>
+
                     <div className="flex justify-between font-bold text-black">
                       <p className="text-sm">Total amount</p>
                       <p className="text-xs">{totalAmount.toFixed(2)}</p>

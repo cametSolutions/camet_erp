@@ -66,39 +66,39 @@ function PurchasePdf({
   const selectedOrganization =
     userType === "primaryUser" ? primarySelectedOrg : secondarySelectedOrg;
 
-  const calculateDiscountAmntOFNoBAtch = (el) => {
-    if (!el || !el.GodownList || !el.GodownList[0]) {
-      console.error("Invalid input data");
-      return 0;
-    }
+  // const calculateDiscountAmntOFNoBAtch = (el) => {
+  //   if (!el || !el.GodownList || !el.GodownList[0]) {
+  //     console.error("Invalid input data");
+  //     return 0;
+  //   }
 
-    const selectedPriceRate =
-      parseFloat(el.GodownList[0].selectedPriceRate) || 0;
-    const count = parseFloat(el.count) || 0;
-    const total = parseFloat(el.total) || 0;
-    const igst = parseFloat(el.igst) || 0;
-    const isTaxInclusive = el.isTaxInclusive || false; // Flag to check if price is tax-inclusive
+  //   const selectedPriceRate =
+  //     parseFloat(el.GodownList[0].selectedPriceRate) || 0;
+  //   const count = parseFloat(el.count) || 0;
+  //   const total = parseFloat(el.total) || 0;
+  //   const igst = parseFloat(el.igst) || 0;
+  //   const isTaxInclusive = el.isTaxInclusive || false; // Flag to check if price is tax-inclusive
 
-    // Calculate the total price before tax
-    const priceRateCount = selectedPriceRate * count;
+  //   // Calculate the total price before tax
+  //   const priceRateCount = selectedPriceRate * count;
 
-    // Check if tax is included or not
-    if (isTaxInclusive) {
-      // For tax-inclusive, compare totalPrice and finalAmt
-      // If they are equal, there's no discount. Otherwise, calculate the discount
-      const discount = (
-        priceRateCount === total ? 0 : priceRateCount - total
-      ).toFixed(2);
-      return parseFloat(discount);
-      // return 100;
-    } else {
-      // For tax-exclusive, adjust the total amount by subtracting igst
-      const priceWithoutTax = total - igst;
-      const discount = (priceRateCount - priceWithoutTax).toFixed(2);
-      return parseFloat(discount);
-      // return 200;
-    }
-  };
+  //   // Check if tax is included or not
+  //   if (isTaxInclusive) {
+  //     // For tax-inclusive, compare totalPrice and finalAmt
+  //     // If they are equal, there's no discount. Otherwise, calculate the discount
+  //     const discount = (
+  //       priceRateCount === total ? 0 : priceRateCount - total
+  //     ).toFixed(2);
+  //     return parseFloat(discount);
+  //     // return 100;
+  //   } else {
+  //     // For tax-exclusive, adjust the total amount by subtracting igst
+  //     const priceWithoutTax = total - igst;
+  //     const discount = (priceRateCount - priceWithoutTax).toFixed(2);
+  //     return parseFloat(discount);
+  //     // return 200;
+  //   }
+  // };
 
   const calculateTotalTax = () => {
     const individualTax = data?.items?.map(
@@ -108,6 +108,82 @@ function PurchasePdf({
       ?.reduce((acc, curr) => (acc += curr), 0)
       .toFixed(2);
     return totalTax;
+  };
+
+  const calculateCessAmount = (godownOrBatch, item) => {
+    let { selectedPriceRate, count, discount } = godownOrBatch;
+    const { isTaxInclusive, igst, cess, addl_cess } = item;
+    const igstValue = parseFloat(igst) || 0;
+    const cessValue = parseFloat(cess) || 0;
+    const addl_cessValue = parseFloat(addl_cess) || 0;
+
+    if (!item.hasGodownOrBatch) {
+      count = item.count || 0;
+      discount = item.discount || 0;
+    }
+
+    let basePrice = Number(selectedPriceRate * count);
+    let taxBasePrice = 0;
+
+    if (isTaxInclusive) {
+      taxBasePrice = Number((basePrice / (1 + igstValue / 100)).toFixed(2));
+    } else {
+      taxBasePrice = basePrice;
+    }
+
+    let priceAfterDiscount = taxBasePrice;
+
+    if (discount) {
+      priceAfterDiscount = Number((taxBasePrice - discount).toFixed(2));
+    }
+
+    const cessAmount = Number(
+      ((priceAfterDiscount * cessValue) / 100).toFixed(2)
+    );
+
+    const addl_cessAmount = Number(count * addl_cessValue);
+
+    const totalCessAmount = Number(cessAmount + addl_cessAmount) || 0;
+    item.totalCessAmount = totalCessAmount || 0;
+    return totalCessAmount;
+  };
+
+  const calculateTaxAmount = (godownOrBatch, item) => {
+    let { selectedPriceRate, count, discount } = godownOrBatch;
+    const { isTaxInclusive, igst } = item;
+    const igstValue = parseFloat(igst) || 0;
+
+    if (!item.hasGodownOrBatch) {
+      count = item.count;
+      discount = item.discount;
+    }
+
+    let basePrice = Number(selectedPriceRate * count);
+    let taxBasePrice = 0;
+
+    if (isTaxInclusive) {
+      taxBasePrice = Number((basePrice / (1 + igstValue / 100)).toFixed(2));
+    } else {
+      taxBasePrice = basePrice;
+    }
+
+    let priceAfterDiscount = taxBasePrice;
+
+    if (discount) {
+      priceAfterDiscount = Number((taxBasePrice - discount).toFixed(2));
+    }
+
+    const taxAmount = Number(
+      ((priceAfterDiscount * igstValue) / 100).toFixed(2)
+    );
+
+    return taxAmount;
+  };
+
+  const isGodownOnlyItem = (item) => {
+    const result = item?.GodownList?.every((g) => g?.godown_id && !g?.batch);
+
+    return result;
   };
 
   const calculateTotalQunatity = () => {
@@ -247,20 +323,23 @@ function PurchasePdf({
             <table className="w-full text-left bg-slate-200">
               <thead
                 className=" 
-               border-y border-black text-[10px] text-right no-repeat-header "
+                    border-y border-black text-[10px] text-right no-repeat-header "
               >
                 <tr>
-                  <th className="text-gray-700 font-bold uppercase  px-1 text-left">
+                  <th className="text-gray-700 font-bold uppercase py-2 px-1 text-left">
                     No
                   </th>
-                  <th className="text-gray-700 font-bold uppercase  px-1 text-left">
+                  <th className="text-gray-700 font-bold uppercase py-2 px-1 text-left">
                     Items
                   </th>
-                  <th className="text-gray-700 font-bold uppercase  px-1 ">
+                  <th className="text-gray-700 font-bold uppercase py-2 px-1 ">
                     Hsn
                   </th>
-                  <th className="text-gray-700 font-bold uppercase  px-1 ">
+                  <th className="text-gray-700 font-bold uppercase py-2 px-1 ">
                     Tax %
+                  </th>
+                  <th className="text-gray-700 font-bold uppercase p-2">
+                    Cess %
                   </th>
                   <th className="text-gray-700 font-bold uppercase p-2">Qty</th>
                   <th className="text-gray-700 font-bold uppercase p-2">
@@ -271,6 +350,9 @@ function PurchasePdf({
                   </th>
 
                   <th className="text-gray-700 font-bold uppercase p-2">Tax</th>
+                  <th className="text-gray-700 font-bold uppercase p-2">
+                    Cess
+                  </th>
                   <th className="text-gray-700 font-bold uppercase p-2 pr-0">
                     Amount
                   </th>
@@ -281,78 +363,96 @@ function PurchasePdf({
                   data?.items.map((el, index) => {
                     return (
                       <React.Fragment key={index}>
-                        <tr className={`text-[9px] bg-white `}>
+                        <tr className={`text-[9px] bg-white  `}>
                           <td className="w-2  ">{index + 1}</td>
-                          <td className="pt-1  text-black pr-2 font-bold">
+                          <td
+                            className={`  ${
+                              data?.items?.length === index + 1 ? "" : ""
+                            }    text-black pr-2 font-bold `}
+                          >
                             {el.product_name}{" "}
+                            {el?.igst && (
+                              <span className="text-gray-400 ">
+                                ({el?.igst}%)
+                              </span>
+                            )}
+                            <br />
+                          </td>
+                          <td className="pt-2 text-black text-right pr-2  text-[8px]">
+                            {el?.hsn_code}
                           </td>
                           {!el?.hasGodownOrBatch ? (
-                            <td className=" text-black text-right pr-2">
-                              {el?.hsn_code || ""}
-                            </td>
-                          ) : (
-                            <td className=" text-black text-right pr-2"></td>
-                          )}
-                          {!el?.hasGodownOrBatch ? (
                             <td className=" text-black text-right pr-2 ">
+                              {el?.igst}
+                            </td>
+                          ) : isGodownOnlyItem(el) ? (
+                            <td className=" text-black text-right pr-2 ">
+                              {" "}
                               {el?.igst}
                             </td>
                           ) : (
                             <td></td>
                           )}
-                          <td className="pt-1 text-black text-right pr-2 font-bold">
+                          <td className="pt-2 text-black text-right pr-2 ">
+                            {el?.cess || 0}
+                          </td>
+                          <td className="pt-2 text-black text-right pr-2 font-bold">
                             {el?.count} {el?.unit.split("-")[0]}
                           </td>
 
-                          <td className="pt-1 text-black text-right pr-2 text-nowrap">
-                            {el.GodownList[0]?.selectedPriceRate || 0}
+                          <td className="pt-2 text-black text-right pr-2 text-nowrap">
+                            {(!el.hasGodownOrBatch ||
+                              (el.hasGodownOrBatch &&
+                                el.GodownList &&
+                                el.GodownList.length > 0 &&
+                                el.GodownList.every(
+                                  (godown) => godown.godown_id && !godown.batch
+                                ))) &&
+                              `  ${el.GodownList[0]?.selectedPriceRate || 0}`}
                           </td>
 
-                          <td className="text-black text-right pr-2">
-                            {el?.hasGodownOrBatch
-                              ? null
-                              : el?.discountPercentage !== undefined
-                              ? `${el.discountPercentage} %`
-                              : "0 %"}
+                          <td className="pt-2 text-black text-right pr-2">
+                            {(el.GodownList &&
+                              el.GodownList.length > 0 &&
+                              el?.discount) ||
+                              0}
                           </td>
+                          {/* {el?.igstAmt || 0} */}
 
-                          <td className=" text-black text-right pr-2 font-bold">
-                            {el?.hasGodownOrBatch === true
-                              ? null
-                              : `  ${(
-                                  el?.total -
-                                  (el?.total * 100) /
-                                    (parseFloat(el.igst) + 100)
-                                )?.toFixed(2)}`}
-                          </td>
-                          <td className="pt-1 pr-1 text-black text-right font-bold">
+                          {!el?.hasGodownOrBatch ? (
+                            <td className=" text-black text-right pr-2 ">
+                              {el?.igstAmt}
+                            </td>
+                          ) : isGodownOnlyItem(el) ? (
+                            <td className=" text-black text-right pr-2 ">
+                              {" "}
+                              {el?.igstAmt}
+                            </td>
+                          ) : (
+                            <td></td>
+                          )}
+
+                          {!el?.hasGodownOrBatch ? (
+                            <td className=" text-black text-right pr-2 ">
+                              {(el?.cessAmt || 0) + (el?.addl_cessAmt || 0)}
+                            </td>
+                          ) : isGodownOnlyItem(el) ? (
+                            <td className=" text-black text-right pr-2 ">
+                              {" "}
+                              {(el?.cessAmt || 0) + (el?.addl_cessAmt || 0)}
+                            </td>
+                          ) : (
+                            <td></td>
+                          )}
+                          {/* <td className="pt-2 text-black text-right pr-2 font-bold">
+                                 {(el?.cessAmt || 0) + (el?.addl_cessAmt || 0)}
+                               </td> */}
+                          <td className="pt-2 pr-1 text-black text-right font-bold">
                             {el?.total}
                           </td>
                         </tr>
                         {el.hasGodownOrBatch &&
                           el.GodownList.map((godownOrBatch, idx) => {
-                            // const rate = godownOrBatch?.selectedPriceRate || 0;
-                            // const taxAmt =
-                            //   Number(
-                            //     (
-                            //       godownOrBatch?.individualTotal -
-                            //       (godownOrBatch?.individualTotal * 100) /
-                            //         (parseFloat(el.igst) + 100)
-                            //     )?.toFixed(2)
-                            //   ) || 0;
-                            // const count = godownOrBatch?.count || 0;
-                            // const finalAmt =
-                            //   Number(godownOrBatch?.individualTotal) || 0;
-                            // const discountAmount = ((rate * count + taxAmt) - Number(finalAmt)).toFixed(2);
-                            // const discountAmount =
-                            //   calculateDiscount(
-                            //     rate,
-                            //     count,
-                            //     taxAmt,
-                            //     finalAmt,
-                            //     el?.isTaxInclusive
-                            //   ) || 0;
-
                             return godownOrBatch.added &&
                               godownOrBatch.batch ? (
                               <tr key={idx} className={`bg-white text-[9px] `}>
@@ -364,34 +464,33 @@ function PurchasePdf({
                                     </p>
                                   )}
                                 </td>
-                                <td className="pt-1 text-black text-right pr-2  text-[8px]">
+                                <td className="pt-2 text-black text-right pr-2  text-[8px]">
                                   {el?.hsn_code}
                                 </td>
-                                <td className="pt-1 text-black text-right pr-2 ">
+                                <td className="pt-2 text-black text-right pr-2 ">
                                   {el?.igst}
                                 </td>
-                                <td className="pt-1  flex justify-end pr-2">
+                                <td className="pt-2 text-black text-right pr-2 ">
+                                  {el?.cess || 0}
+                                </td>
+                                <td className="pt-2  flex justify-end pr-2">
                                   {godownOrBatch?.count} {el?.unit}
                                 </td>
-                                <td className="pt-1  text-end pr-2">
+                                <td className="pt-2  text-end pr-2">
                                   {godownOrBatch?.selectedPriceRate || 0}
                                 </td>
 
-                                <td className="pt-1  pr-2 text-end">
-                                  {godownOrBatch?.discountPercentage !==
-                                  undefined
-                                    ? godownOrBatch?.discountPercentage + " %"
-                                    : "0 %"}
+                                <td className="pt-2  pr-2 text-end">
+                                  {godownOrBatch?.discount || 0}
                                 </td>
 
-                                <td className="pt-1  text-black text-right pr-2">
-                                  {`${(
-                                    godownOrBatch?.individualTotal -
-                                    (godownOrBatch?.individualTotal * 100) /
-                                      (parseFloat(el.igst) + 100)
-                                  )?.toFixed(2)}` || " 0"}
+                                <td className="pt-2  text-black text-right pr-2">
+                                  {calculateTaxAmount(godownOrBatch, el)}
                                 </td>
-                                <td className="pt-1 text-end pr-1">
+                                <td className="  text-end pr-2">
+                                  {calculateCessAmount(godownOrBatch, el)}
+                                </td>
+                                <td className="pt-2 text-end pr-1">
                                   <p>{godownOrBatch.individualTotal ?? 0}</p>
                                 </td>
                               </tr>
@@ -408,6 +507,7 @@ function PurchasePdf({
                   <td className="font-bold text-[9px] p-2">Subtotal</td>
                   <td className="font-bold text-[9px] p-2"></td>
                   <td className="font-bold text-[9px] p-2"></td>
+                  <td className="font-bold text-[9px] p-2"></td>
                   <td className="text-black text-[9px] ">
                     <p className="text-right pr-1 font-bold">
                       {calculateTotalQunatity()}/unit
@@ -417,6 +517,14 @@ function PurchasePdf({
                   <td className="text-right pr-1 text-black font-bold text-[9px]"></td>
                   <td className="text-right pr-1 text-black font-bold text-[9px]">
                     {calculateTotalTax()}
+                  </td>
+                  <td className="text-right pr-1 text-black font-bold text-[9px]">
+                    {" "}
+                    {data?.items?.reduce(
+                      (acc, el) =>
+                        acc + ((el?.cessAmt || 0) + (el?.addl_cessAmt || 0)),
+                      0
+                    )}
                   </td>
                   <td className="text-right pr-1 text-black font-bold text-[9px]">
                     {subTotal}

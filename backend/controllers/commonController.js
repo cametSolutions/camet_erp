@@ -104,8 +104,6 @@ export const getStockTransferDetails = async (req, res) => {
   }
 };
 
-
-
 // @desc to  get details of credit note
 // route get/api/sUsers/getCreditNoteDetails
 export const getCreditNoteDetails = async (req, res) => {
@@ -157,7 +155,12 @@ export const transactions = async (req, res) => {
     selectedVoucher,
     fullDetails = "false",
     ignore = "", // New parameter for collections to ignore
+    selectedSecondaryUser,
   } = req.query;
+
+  console.log("selectedSecondaryUser", selectedSecondaryUser);
+
+  const isAdmin = req.query.isAdmin === "true" ? true : false;
 
   let returnFullDetails = false;
   if (fullDetails === "true") {
@@ -210,12 +213,20 @@ export const transactions = async (req, res) => {
         },
       };
     }
-
+    // Apply user filtering:
+    // - If not an admin → filter with logged-in user's ID
+    // - If admin:
+    //    - If a secondary user is selected → filter with selected user's _id
+    //    - If no secondary user selected → don't apply user filter
     const matchCriteria = {
       ...dateFilter,
       cmp_id: cmp_id,
-      ...(userId ? { Secondary_user_id: userId } : {}),
       ...(party_id ? { "party._id": party_id } : {}),
+      ...(!isAdmin
+        ? { Secondary_user_id: userId }
+        : selectedSecondaryUser
+        ? { Secondary_user_id: selectedSecondaryUser }
+        : {}),
     };
 
     // Define voucher type mappings
@@ -317,7 +328,7 @@ export const transactions = async (req, res) => {
           model,
           {
             ...matchCriteria,
-            ...(userId ? { Secondary_user_id: userId } : {}),
+            ...(userId && !isAdmin ? { Secondary_user_id: userId } : {}),
           },
           type,
           numberField,
@@ -539,37 +550,6 @@ export const addProductSubDetails = async (req, res) => {
           defaultGodown: false,
         };
 
-        // Check if this is the first godown for the company
-        // const existingGodowns = await Godown.find({ cmp_id: orgId });
-        // if (existingGodowns.length === 0) {
-        //   // Create default godown
-        //   const defaultGodownId = new mongoose.Types.ObjectId();
-        //   const defaultGodown = new Godown({
-        //     _id: defaultGodownId,
-        //     godown_id: defaultGodownId,
-        //     godown: "Default Godown",
-        //     // address: "Default Address",
-        //     cmp_id: orgId,
-        //     Primary_user_id: req.pUserId || req.owner,
-        //     defaultGodown: true,
-        //   });
-        //   const savedDefaultGodown = await defaultGodown.save();
-
-        //   company.gdnEnabled = true;
-        //   await company.save();
-
-        //   // Update all products with the default godown
-        //   const update = await productModel.updateMany(
-        //     { cmp_id: orgId },
-        //     {
-        //       $set: {
-        //         "GodownList.$[].godown": savedDefaultGodown._id,
-        //         gdnEnabled: true, // ✅ Add this line to update gdnEnabled
-        //       },
-        //     }
-        //   );
-
-        // }
         break;
       case "pricelevel":
         Model = PriceLevel;
@@ -612,8 +592,6 @@ export const getProductSubDetails = async (req, res) => {
     const { orgId } = req.params;
     const { type } = req.query; // 'type' can be 'brand', 'category', 'subcategory', 'godown', or 'pricelevel'
     const Primary_user_id = req.pUserId || req.owner;
-
-    console.log(typeof orgId);
 
     let data;
 

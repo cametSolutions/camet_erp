@@ -33,7 +33,7 @@ import creditNoteModel from "../models/creditNoteModel.js";
 import debitNoteModel from "../models/debitNoteModel.js";
 import paymentModel from "../models/paymentModel.js";
 import ReceiptModel from "../models/receiptModel.js";
-
+import partyModel from "../models/partyModel.js";
 
 // @desc Register Primary user
 // route POST/api/pUsers/register
@@ -971,6 +971,9 @@ export const fetchHsn = async (req, res) => {
 // route get/api/pUsers/fetchHsn
 
 export const fetchFilters = async (req, res) => {
+
+  console.log("primary");
+  
   const cmp_id = req.params.cmp_id;
   const userId = req.pUserId;
   try {
@@ -980,7 +983,9 @@ export const fetchFilters = async (req, res) => {
       brands: filers.brands,
       categories: filers.categories,
       subcategories: filers.subcategories,
-      priceLevels: filers?.levelNames,
+      priceLevels: filers?.levelNames.sort((a, b) =>
+        a.toLowerCase().localeCompare(b.toLowerCase())
+      ),
     };
 
     if (filers) {
@@ -2115,7 +2120,7 @@ export const fetchGodownsAndPriceLevels = async (req, res) => {
   const cmp_id = req.params.cmp_id;
 
   try {
-    // First, collect all price levels across products
+    // Fetch unique price levels from products
     const priceLevelsResult = await productModel.aggregate([
       {
         $match: {
@@ -2131,14 +2136,13 @@ export const fetchGodownsAndPriceLevels = async (req, res) => {
       },
       {
         $group: {
-          _id: "$Priceleveles.pricelevel", // Group by price level
-          // Assuming you want to take the first pricerate as an example
+          _id: "$Priceleveles.pricelevel",
           priceRate: { $first: "$Priceleveles.pricerate" },
         },
       },
     ]);
 
-    // Then, collect godowns as before
+    // Fetch unique godowns from products
     const godownsResult = await productModel.aggregate([
       {
         $match: {
@@ -2155,12 +2159,37 @@ export const fetchGodownsAndPriceLevels = async (req, res) => {
       {
         $group: {
           _id: "$GodownList.godown_id",
-          godown: { $addToSet: "$GodownList.godown" }, // Collect unique cmp_id values for each godown
+          godown: { $addToSet: "$GodownList.godown" },
         },
       },
       { $match: { _id: { $ne: null } } },
     ]);
 
+    console.log("Primary_user_id", Primary_user_id);
+    
+
+    // Fetch unique subgroups from parties
+    const subGroupsResult = await partyModel.aggregate([
+      {
+        $match: {
+          Primary_user_id: Primary_user_id.toString(),
+          cmp_id: cmp_id,
+          subGroup_id: { $exists: true, $ne: null, $ne: "" },
+        },
+      },
+      {
+        $group: {
+          _id: "$subGroup_id",
+          subGroup: { $first: "$subGroup" }, // Taking the first occurrence
+        },
+      },
+    ]);
+
+
+    console.log("subGroupsResult", subGroupsResult);
+    
+
+    // Formatting results
     const godownsWithPriceLevels = godownsResult.map((item) => ({
       id: item._id,
       godown: item.godown,
@@ -2171,15 +2200,24 @@ export const fetchGodownsAndPriceLevels = async (req, res) => {
       priceRate: item.priceRate,
     }));
 
+    const uniqueSubGroups = subGroupsResult.map((item) => ({
+      subGroup_id: item._id,
+      subGroup: item.subGroup,
+    }));
+
     res.status(200).json({
-      message: "Godowns and Unique Price Levels fetched",
+      message: "Godowns, Unique Price Levels, and Sub Groups fetched",
       data: {
         godowns: godownsWithPriceLevels,
         priceLevels: uniquePriceLevels,
+        subGroups: uniqueSubGroups,
       },
     });
   } catch (error) {
-    console.error("Error fetching godowns and pricelevel:", error);
+    console.error(
+      "Error fetching godowns, price levels, and sub groups:",
+      error
+    );
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
@@ -2283,6 +2321,7 @@ export const addSecondaryConfigurations = async (req, res) => {
       debitNoteConfiguration,
       purchaseConfiguration,
       selectedVanSaleGodowns,
+      selectedVanSaleSubGroups,
       vanSale,
     } = req.body;
     let { selectedGodowns } = req.body;
@@ -2316,6 +2355,7 @@ export const addSecondaryConfigurations = async (req, res) => {
       debitNoteConfiguration,
       vanSaleConfiguration,
       selectedVanSaleGodowns,
+      selectedVanSaleSubGroups,
       vanSale,
     };
 

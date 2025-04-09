@@ -31,22 +31,27 @@ function SearchPartySalesSecondary() {
   };
 
   let url;
-  let pendingPartyList=false;
+  let pendingPartyList = false;
 
   if (location.pathname === "/sUsers/orderPending/partyList") {
     url = "/api/sUsers/PartyListWithOrderPending";
-    pendingPartyList=true
+    pendingPartyList = true;
   } else {
     url = "/api/sUsers/PartyList";
   }
+
+  const isSalePath = location.pathname === "/sUsers/searchPartySales";
 
   useEffect(() => {
     if (url) {
       const fetchParties = async () => {
         try {
-          const res = await api.get(`${url}/${cpm_id}`, {
-            withCredentials: true,
-          });
+          const res = await api.get(
+            `${url}/${cpm_id}?${isSalePath && "isSale=true"}`,
+            {
+              withCredentials: true,
+            }
+          );
 
           setParties(res.data.partyList);
           dispatch(addAllParties(res.data.partyList));
@@ -89,8 +94,6 @@ function SearchPartySalesSecondary() {
       setFilteredParties(filtered);
     }
   }, [search, parties]);
-
- 
 
   return (
     <div className=" ">

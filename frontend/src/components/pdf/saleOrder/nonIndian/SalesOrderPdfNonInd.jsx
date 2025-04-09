@@ -103,6 +103,18 @@ function SalesOrderPdfNonInd({
     }, 0);
   };
 
+  const calculateTotalCess = () => {
+    const totalCess = data?.items
+      ?.reduce(
+        (acc, curr) =>
+          (acc = acc + ((curr.cessAmt || 0) + (curr.addl_cessAmt || 0))),
+        0
+      )
+      .toFixed(2);
+    return totalCess;
+  };
+
+
   // const calculateDiscount = (rate, count, taxAmt, finalAmt, isTaxInclusive) => {
   //   // Calculate the total price
   //   const totalPrice = rate * count;
@@ -199,9 +211,16 @@ function SalesOrderPdfNonInd({
               <th className="text-gray-700 font-bold uppercase  px-1 text-left">
                 Items
               </th>
+             
 
               {saleOrderConfiguration?.showTaxPercentage && (
                 <th className="text-gray-700 font-bold uppercase p-2">Vat %</th>
+              )}
+
+              {saleOrderConfiguration?.showTaxPercentage && (
+                <th className="text-gray-700 font-bold uppercase p-2">
+                  Cess %
+                </th>
               )}
 
               {saleOrderConfiguration?.showQuantity && (
@@ -224,6 +243,9 @@ function SalesOrderPdfNonInd({
                 )}
               {saleOrderConfiguration?.showStockWiseTaxAmount && (
                 <th className="text-gray-700 font-bold uppercase p-2">Vat</th>
+              )}
+              {saleOrderConfiguration?.showStockWiseTaxAmount && (
+                <th className="text-gray-700 font-bold uppercase p-2">Cess</th>
               )}
               {saleOrderConfiguration?.showStockWiseAmount && (
                 <th className="text-gray-700 font-bold uppercase p-2 pr-0 ">
@@ -263,7 +285,7 @@ function SalesOrderPdfNonInd({
                   rate = el?.selectedPriceRate;
                 }
 
-                const count = el?.count || 0;
+                el?.count || 0;
                 const finalAmt = Number(el?.total) || 0;
 
                 return (
@@ -277,9 +299,15 @@ function SalesOrderPdfNonInd({
                       {el.product_name} <br />
                     </td>
 
+                  
                     {saleOrderConfiguration?.showTaxPercentage && (
                       <td className="py-1 text-black text-right pr-2">
                         {el?.igst || "0"}
+                      </td>
+                    )}
+                    {saleOrderConfiguration?.showTaxPercentage && (
+                      <td className="py-1 text-black text-right pr-2">
+                        {el?.cess || "0"}
                       </td>
                     )}
                     {saleOrderConfiguration?.showQuantity && (
@@ -312,7 +340,11 @@ function SalesOrderPdfNonInd({
                         {el?.igstAmt}
                       </td>
                     )}
-
+                    {saleOrderConfiguration?.showStockWiseTaxAmount && (
+                      <td className="py-1 text-black text-end pr-2">
+                        {(el?.cessAmt || 0) + (el?.addl_cessAmt || 0)}
+                      </td>
+                    )}
                     {saleOrderConfiguration?.showStockWiseAmount && (
                       <td className="py-1 text-black w-full text-right">
                         {" "}
@@ -332,6 +364,10 @@ function SalesOrderPdfNonInd({
               ) : (
                 <td className="font-bold text-[9px] p-2"></td>
               )}{" "}
+             
+              {saleOrderConfiguration?.showTaxPercentage && (
+                <td className="font-bold"></td>
+              )}
               {saleOrderConfiguration?.showTaxPercentage && (
                 <td className="font-bold"></td>
               )}
@@ -351,6 +387,11 @@ function SalesOrderPdfNonInd({
               {saleOrderConfiguration?.showStockWiseTaxAmount && (
                 <td className="text-right pr-1 text-black font-bold text-[9px]">
                   {calculateTotalTax()}
+                </td>
+              )}
+              {saleOrderConfiguration?.showStockWiseTaxAmount && (
+                <td className="text-right pr-1 text-black font-bold text-[9px]">
+                  {calculateTotalCess()}
                 </td>
               )}
               {saleOrderConfiguration?.showStockWiseAmount && (
