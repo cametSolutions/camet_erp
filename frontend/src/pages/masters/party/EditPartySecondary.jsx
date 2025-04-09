@@ -10,6 +10,7 @@ import TitleDiv from "@/components/common/TitleDiv";
 
 function EditPartySecondary() {
   const [partyDetails, setPartyDetails] = useState({});
+  const [loading, setLoading] = useState(false);
 
   const { id } = useParams();
   const navigate = useNavigate();
@@ -34,6 +35,7 @@ function EditPartySecondary() {
 
   const submitHandler = async (formData) => {
     try {
+      setLoading(true);
       const res = await api.post(`/api/sUsers/editParty/${id}`, formData, {
         headers: {
           "Content-Type": "application/json",
@@ -46,6 +48,8 @@ function EditPartySecondary() {
     } catch (error) {
       toast.error(error.response.data.message);
       console.log(error);
+    }finally{
+      setLoading(false)
     }
   };
 
@@ -56,6 +60,7 @@ function EditPartySecondary() {
         submitHandler={submitHandler}
         partyDetails={partyDetails}
         userType="secondary"
+        loading={loading} setLoading={setLoading} 
       />
     </div>
   );

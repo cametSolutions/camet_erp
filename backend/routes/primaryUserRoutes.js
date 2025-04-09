@@ -54,11 +54,7 @@ router.post('/editDataInOrg/:cmp_id',authPrimary,primaryIsBlocked,companyAuthent
 router.post('/deleteDataInOrg/:cmp_id',authPrimary,primaryIsBlocked,companyAuthentication,deleteDataInOrg)
 router.get('/fetchHsn/:cmp_id',authPrimary,primaryIsBlocked,fetchHsn)
 router.get('/fetchFilters/:cmp_id',authPrimary,primaryIsBlocked,companyAuthentication,fetchFilters)
-// router.post('/addProduct',authPrimary,primaryIsBlocked,addProduct)
-// router.get('/getProducts/:cmp_id',authPrimary,primaryIsBlocked,companyAuthentication,getProducts)
-// router.delete('/deleteProduct/:id',authPrimary,primaryIsBlocked,deleteProduct)
-// router.get('/productDetails/:id',authPrimary,primaryIsBlocked,productDetails)
-// router.post('/editProduct/:id',authPrimary,primaryIsBlocked,editProduct)
+
 
 
 router.post('/createInvoice',authPrimary,primaryIsBlocked,createInvoice)

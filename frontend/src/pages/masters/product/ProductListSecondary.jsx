@@ -1,7 +1,7 @@
 /* eslint-disable react/prop-types */
 /* eslint-disable react/no-unknown-property */
 import { useEffect, useState, useCallback, useRef } from "react";
-import api from "../../api/api";
+import api from "../../../api/api";
 import { toast } from "react-toastify";
 import { FaEdit } from "react-icons/fa";
 import { Link } from "react-router-dom";
@@ -12,11 +12,10 @@ import { FixedSizeList as List } from "react-window";
 import InfiniteLoader from "react-window-infinite-loader";
 import { useSelector } from "react-redux";
 
-import SearchBar from "../../components/common/SearchBar";
+import SearchBar from "../../../components/common/SearchBar";
 import { PiBarcode } from "react-icons/pi";
-import BarcodeModal from "../../components/common/BarcodeModal";
+import BarcodeModal from "../../../components/common/BarcodeModal";
 import TitleDiv from "@/components/common/TitleDiv";
-import CustomBarLoader from "@/components/common/CustomBarLoader";
 
 function ProductListSecondary() {
   const [products, setProducts] = useState([]);
@@ -103,6 +102,7 @@ function ProductListSecondary() {
         setPage(pageNumber);
       } catch (error) {
         console.log(error);
+        setHasMore(false);
         // toast.error("Failed to load products");
       } finally {
         setIsLoading(false);
@@ -196,9 +196,11 @@ function ProductListSecondary() {
     return Promise.resolve();
   };
 
+  
+
   const Row = ({ index, style }) => {
     // Return a loading placeholder if the item is not loaded yet
-    if (!isItemLoaded(index)) {
+    if (!isItemLoaded(index) ) {
       return (
         <div
           style={style}
@@ -281,6 +283,9 @@ function ProductListSecondary() {
     );
   };
 
+  console.log(hasMore);
+  
+
   return (
     <>
       <BarcodeModal
@@ -304,7 +309,6 @@ function ProductListSecondary() {
           <SearchBar onType={searchData} />
         </div>
 
-        {loader && <CustomBarLoader />}
 
         {!loader && !isLoading && products.length === 0 && (
           <div className="flex justify-center items-center mt-20 overflow-hidden font-bold text-gray-500">

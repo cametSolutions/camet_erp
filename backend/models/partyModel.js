@@ -1,10 +1,17 @@
 import mongoose from "mongoose";
 
 const partySchema = new mongoose.Schema({
-  Primary_user_id: { type: String, required: true },
-  Secondary_user_id: { type: String },
-  cmp_id: { type: String, required: true },
-  accountGroup: {
+  Primary_user_id: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "PrimaryUser",
+    required: true,
+  },
+  Secondary_user_id: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "SecondaryUser",
+  },
+  cmp_id: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", required: true },
+  accountGroup: { 
     type: mongoose.Schema.Types.ObjectId,
     ref: "AccountGroup",
     required: true,

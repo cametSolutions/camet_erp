@@ -6,7 +6,7 @@ import { useSelector } from "react-redux";
 import api from "../../api/api";
 import { toast } from "react-toastify";
 import { useNavigate, useParams } from "react-router-dom";
-import AddProductForm from "../../components/common/Forms/AddProductsForm";
+import AddProductForm from "../masters/product/AddProductsForm";
 import TitleDiv from "@/components/common/TitleDiv";
 
 function EditProductSecondary() {

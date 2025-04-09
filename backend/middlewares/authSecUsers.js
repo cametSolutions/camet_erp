@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken";
 import secondaryUserModel from "../models/secondaryUserModel.js";
 
-export const authSecondary = async (req, res, next) => {
+export const  authSecondary = async (req, res, next) => {
   let token;
   token = req.cookies.jwt_secondary;
 

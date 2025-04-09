@@ -10,6 +10,7 @@ import TallyData from "../models/TallyData.js";
 export const PartyList = async (req, res) => {
   const { cmp_id } = req.params;
   const { owner: Primary_user_id, sUserId: secUserId } = req;
+
   const {
     outstanding,
     voucher,
@@ -28,25 +29,28 @@ export const PartyList = async (req, res) => {
     // Build search query
     let searchQuery = {};
     if (search) {
+      const regex = new RegExp(search, "i");
+    
       searchQuery = {
         $or: [
-          { partyName: { $regex: search, $options: "i" } },
-          { mobileNumber: { $regex: search, $options: "i" } },
-          { accountGroup: { $regex: search, $options: "i" } },
-        ],
+          { partyName: regex },
+          { mobileNumber: typeof search === 'string' ? regex : undefined },
+          // { accountGroup: regex },
+        ].filter(Boolean), // removes undefined if any
       };
     }
 
     // Combined query
     const query = {
-      cmp_id,
+      cmp_id: new mongoose.Types.ObjectId(cmp_id),
       Primary_user_id,
       ...searchQuery,
     };
 
     // Fetch parties and secondary user concurrently
     const [partyList, secUser, totalCount] = await Promise.all([
-      partyModel.find(query)
+      partyModel
+        .find(query)
         .select(
           "_id partyName party_master_id billingAddress shippingAddress mobileNumber gstNo emailID pin country state accountGroup accountGroup_id subGroup subGroup_id"
         )
@@ -75,8 +79,6 @@ export const PartyList = async (req, res) => {
       configuration &&
       configuration.selectedVanSaleSubGroups?.length > 0
     ) {
-      console.log("heree");
-
       filteredPartyList = partyList.filter((party) =>
         configuration.selectedVanSaleSubGroups.includes(party.subGroup_id)
       );
@@ -145,11 +147,10 @@ export const PartyList = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error in PartyList:", error.message);
+    console.error("Error in PartyList:", error);
     res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
-
 
 // @desc adding new Party
 // route POst/api/pUsers/addParty
@@ -157,7 +158,6 @@ export const addParty = async (req, res) => {
   try {
     const {
       cpm_id: cmp_id,
-      // Secondary_user_id,
       accountGroup,
       subGroup,
       partyName,
@@ -177,12 +177,7 @@ export const addParty = async (req, res) => {
       party_master_id, // Check if provided
     } = req.body;
 
-    const Secondary_user_id = req?.sUserId;
-
-    const Primary_user = await SecondaryUser.findById(Secondary_user_id);
-    const Primary_user_id = await Primary_user.primaryUser;
-
-    const party = new PartyModel({
+    const party = new partyModel({
       cmp_id,
       Primary_user_id: req.owner,
       Secondary_user_id: req.sUserId,
@@ -303,8 +298,6 @@ export const addSubGroup = async (req, res) => {
   }
 };
 
-
-
 /**
  * @desc   Delete sub group
  * @route  DELETE /api/sUsers/deleteSubGroup/:subGroupId
@@ -335,9 +328,7 @@ export const editSubGroup = async (req, res) => {
   try {
     const subGroupId = req.params.subGroupId;
 
-
     const updateData = req.body;
-
 
     const existingSubGroup = await SubGroup.findById(
       new mongoose.Types.ObjectId(subGroupId)

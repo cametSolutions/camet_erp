@@ -9,7 +9,6 @@ import { useDispatch } from "react-redux";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import { useNavigate } from "react-router-dom";
 import CustomBarLoader from "../../components/common/CustomBarLoader";
-import { RiDeleteBin5Fill } from "react-icons/ri";
 
 function OrganisationList() {
   const [organizations, setOrganizations] = useState([]);

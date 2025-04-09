@@ -1,10 +1,10 @@
 /* eslint-disable react/no-unknown-property */
 /* eslint-disable react/jsx-no-target-blank */
 import { useSelector } from "react-redux";
-import api from "../../api/api";
+import api from "../../../api/api";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
-import AddProductForm from "../../components/common/Forms/AddProductsForm";
+import AddProductForm from "./AddProductsForm";
 import TitleDiv from "@/components/common/TitleDiv";
 import { useState } from "react";
 

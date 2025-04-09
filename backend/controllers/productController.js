@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 import productModel from "../models/productModel.js";
-import secondaryUserModel from "../models/secondaryUserModel.js";
+import SecondaryUser from "../models/secondaryUserModel.js";
 
 // @desc adding new Product
 // route POst/api/pUsers/addProduct

@@ -58,9 +58,7 @@ function AddPartyForm({
     if (Object.entries(partyDetails)?.length > 0) {
       const {
         accountGroup,
-        accountGroup_id,
         subGroup,
-        subGroup_id,
         partyName,
         mobileNumber,
         emailID,
@@ -78,9 +76,7 @@ function AddPartyForm({
       } = partyDetails;
 
       setAccountGroup(accountGroup);
-      setAccountGroup_id(accountGroup_id);
       setSubGroup(subGroup);
-      setSubGroup_id(subGroup_id);
       setPartyName(partyName);
       setMobileNumber(mobileNumber);
       setEmailID(emailID);
@@ -152,16 +148,16 @@ function AddPartyForm({
       subGroup,
     };
 
-    console.log(formData);
-    
-
-    // submitHandler(formData);
+    submitHandler(formData);
   };
-
 
   return (
     <div>
-      <section className=" bg-blueGray-50 ">
+      <section
+        className={` ${
+          loading && "opacity-50 pointer-events-none"
+        }  bg-blueGray-50`}
+      >
         <div className="w-full lg:w-8/12 px-4 mx-auto  pb-[30px] mt-5  ">
           <div className="relative flex flex-col min-w-0 break-words w-full mb-6 shadow-lg rounded-lg bg-blueGray-100 border-0">
             <div className="rounded-t bg-white mb-0 px-6 py-2">
@@ -214,7 +210,7 @@ function AddPartyForm({
                         <option value="">Select Sub Group</option>
                         {subGroupList?.data
                           ?.filter(
-                            (item) => item.accountGroup_id === accountGroup
+                            (item) => item.accountGroup?._id === accountGroup
                           )
                           ?.map((subGroup, index) => (
                             <option key={index} value={subGroup._id}>
@@ -454,6 +450,7 @@ function AddPartyForm({
 
                 <div className="flex items-center  gap-0 mt-4 m-4 relative "></div>
                 <button
+                  disabled={loading}
                   className="bg-pink-500 mt-4 ml-4 w-20 text-white active:bg-pink-600 font-bold uppercase text-xs px-4 py-2 rounded shadow hover:shadow-md outline-none focus:outline-none mr-1 ease-linear transition-all duration-150 transform hover:scale-105"
                   type="button"
                   onClick={submitForm}

@@ -67,7 +67,7 @@ export default function FilterContent() {
          
             value="item-1">
               <AccordionTrigger>Price Levels</AccordionTrigger>
-              {priceLevels.map((level, index) => (
+              {priceLevels?.map((level, index) => (
                 <AccordionContent key={index}>
                   <div
                     onClick={() => handlePriceLevelSelection(level)}
