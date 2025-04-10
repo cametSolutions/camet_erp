@@ -15,6 +15,7 @@ import {
   Category,
   Subcategory,
 } from "../models/subDetails.js";
+import accountGroupModel from "../models/accountGroup.js";
 
 export const saveDataFromTally = async (req, res) => {
   try {
@@ -866,7 +867,6 @@ export const updatePriceLevels = async (req, res) => {
 
 export const savePartyFromTally = async (req, res) => {
   try {
-    // console.log("body", req.body);
     const partyToSave = req?.body?.data;
 
     // Check if partyToSave is defined and has elements
@@ -877,41 +877,96 @@ export const savePartyFromTally = async (req, res) => {
     // Extract primary user id and company id from the first product
     const { Primary_user_id, cmp_id } = partyToSave[0];
 
-    // Delete existing documents with the same primary user id and company id
-    await partyModel.deleteMany({ Primary_user_id, cmp_id });
+    // Fetch account groups and sub-groups in parallel
+    const [accountGroups, subGroups] = await Promise.all([
+      accountGroupModel.find(
+        { Primary_user_id, cmp_id },
+        { accountGroup_id: 1, _id: 1 }
+      ).lean(),
+      subGroupModel.find(
+        { Primary_user_id, cmp_id },
+        { subGroup_id: 1, _id: 1 }
+      ).lean()
+    ]);
 
-    // Loop through each product to save
-    const savedParty = await Promise.all(
-      partyToSave.map(async (party) => {
-        // Check if the product already exists
-        const existingParty = await partyModel.findOne({
-          cmp_id: party.cmp_id,
-          partyName: party.partyName,
-          Primary_user_id: party.Primary_user_id,
-        });
-
-        // console.log("existingParty", existingParty);
-
-        // If the product doesn't exist, create a new one; otherwise, update it
-        if (!existingParty) {
-          const newParty = new partyModel(party);
-          return await newParty.save();
-        } else {
-          // Update the existing product
-          return await partyModel.findOneAndUpdate(
-            {
-              cmp_id: party.cmp_id,
-              partyName: party.partyName,
-              Primary_user_id: party.Primary_user_id,
-            },
-            party,
-            { new: true }
-          );
-        }
-      })
+    // Create efficient maps using object literals
+    const accountGroupMap = Object.fromEntries(
+      accountGroups.map(group => [group.accountGroup_id, group._id])
+    );
+    
+    const subGroupMap = Object.fromEntries(
+      subGroups.map(group => [group.subGroup_id, group._id])
     );
 
-    res.status(201).json({ message: "Party saved successfully", savedParty });
+    // Process parties in memory for efficiency
+    // Use object instead of Set for faster lookups with potentially large datasets
+    const processedPartyMasterIds = {};
+    
+    const validParties = [];
+    for (const party of partyToSave) {
+      // Skip entries without party_master_id or already processed entries
+      if (!party.party_master_id || processedPartyMasterIds[party.party_master_id]) {
+        continue;
+      }
+      
+      // Skip if required account mappings are missing
+      if (party.accountGroup_id && !accountGroupMap[party.accountGroup_id]) {
+        continue;
+      }
+      
+      // Mark as processed
+      processedPartyMasterIds[party.party_master_id] = true;
+      
+      // Create a new object instead of modifying the original to avoid reference issues
+      const partyToInsert = {...party};
+      
+      // Enhance party with ObjectId references
+      if (partyToInsert.accountGroup_id) {
+        partyToInsert.accountGroup = accountGroupMap[partyToInsert.accountGroup_id];
+      }
+      
+      if (partyToInsert.subGroup_id && subGroupMap[partyToInsert.subGroup_id]) {
+        partyToInsert.subGroup = subGroupMap[partyToInsert.subGroup_id];
+      }
+      
+      validParties.push(partyToInsert);
+    }
+
+    // Batch operations for better performance
+    // Use sessions to ensure atomicity
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    
+    try {
+      // Delete all existing parties in one operation
+      await partyModel.deleteMany({ Primary_user_id, cmp_id }, { session });
+      
+      // Batch insert all valid parties
+      let savedParty = [];
+      if (validParties.length > 0) {
+        // Insert in batches of 500 to avoid overwhelming the database
+        const batchSize = 500;
+        for (let i = 0; i < validParties.length; i += batchSize) {
+          const batch = validParties.slice(i, i + batchSize);
+          const result = await partyModel.insertMany(batch, { session });
+          savedParty = savedParty.concat(result);
+        }
+      }
+      
+      await session.commitTransaction();
+      
+      res.status(201).json({
+        message: "Party saved successfully",
+        processedCount: validParties.length,
+        skippedCount: partyToSave.length - validParties.length
+      });
+    } catch (error) {
+      // If an error occurs, abort the transaction
+      await session.abortTransaction();
+      throw error;
+    } finally {
+      session.endSession();
+    }
   } catch (error) {
     console.error("Error:", error);
     res.status(500).json({ error: "Internal server error" });

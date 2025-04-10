@@ -27,14 +27,14 @@ const partySchema = new mongoose.Schema({
   pricelevel: { type: String },
   state_reference: { type: String },
   pincode: { type: String },
-  party_master_id: { type: String },
+  party_master_id: { type: String,required: true },
   panNo: { type: String },
   billingAddress: { type: String },
   shippingAddress: { type: String },
   creditPeriod: { type: String },
   creditLimit: { type: String },
   openingBalanceType: { type: String },
-  openingBalanceAmount: { type: String },
+  openingBalanceAmount: { type: Number },
 });
 
 export default mongoose.model("Party", partySchema);

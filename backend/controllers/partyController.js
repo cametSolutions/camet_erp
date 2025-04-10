@@ -177,7 +177,10 @@ export const addParty = async (req, res) => {
       party_master_id, // Check if provided
     } = req.body;
 
+    const generatedId = new mongoose.Types.ObjectId();
+
     const party = new partyModel({
+      _id: generatedId,
       cmp_id,
       Primary_user_id: req.owner,
       Secondary_user_id: req.sUserId,
@@ -197,7 +200,7 @@ export const addParty = async (req, res) => {
       country,
       state,
       pin,
-      party_master_id: party_master_id || undefined, // Allow Mongoose to assign _id if not provided
+      party_master_id: generatedId, 
     });
 
     const result = await party.save();
