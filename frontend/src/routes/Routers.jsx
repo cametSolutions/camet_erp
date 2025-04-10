@@ -1,29 +1,14 @@
 
 import {Route,Routes} from 'react-router-dom'
-
 import SecHome from '../pages/secUsers/SecHome'
 import Outstanding from '../pages/secUsers/Outstanding'
 import OutstandingDetails from '../pages/secUsers/OutstandingDetails'
-import PrOutstandingDetails from '../pages/primaryUsers/PrOutstandingDetails ' 
 import PaymentSec from '../pages/secUsers/Payment'
-import PaymentPri from '../pages/primaryUsers/Payment'
 import ProtectedSecRoute from './ProtectedSecRoute'
 import Transaction from '../pages/secUsers/Transaction'
-import PriTransaction from '../pages/primaryUsers/Transaction'
-import AddOrganisation from '../pages/primaryUsers/AddOrganisation'
-import OrganizationList from '../../src/pages/primaryUsers/OrganisationList'
-import AddSecUsers from '../pages/primaryUsers/AddSecUsers'
-import SecUsersList from '../pages/primaryUsers/SecUsersList'
-import ProtectedPriRoute from './ProtectedPriRoute'
-import BankList from '../pages/primaryUsers/BankList'
-
-import ReceiptDetails from '../pages/primaryUsers/ReceiptDetails'
-import Dashboard from '../pages/primaryUsers/Dashboard'
 import EditOrg from '../pages/primaryUsers/EditOrg'
 import DashboardSec from '../pages/secUsers/Dashboard'
 import Hsn from '../pages/primaryUsers/Hsn'
-
-
 import Demo from '../pages/secUsers/Demo'
 import RetailersList from '../pages/primaryUsers/RetailersList'
 import HsnList from '../pages/primaryUsers/HsnList'
@@ -38,53 +23,34 @@ import EditPartySecondary from '../pages/masters/party/EditPartySecondary'
 import AddProductSecondary from '../pages/masters/product/AddProductSecondary'
 import EditProductSecondary from '../pages/secUsers/EditProductSecondary'
 import AddBank from '../pages/primaryUsers/AddBank'
-// import EditBank from '../pages/primaryUsers/EditBank'
 import EditSecUsers from '../pages/primaryUsers/EditSecUsers'
-import InvoiceDetails from '../pages/primaryUsers/InvoiceDetails'
-import ShareInvoice from '../pages/primaryUsers/ShareInvoice'
 import InvoiceDetailsSecondary from '../pages/secUsers/InvoiceDetailsSecondary'
 import EditInvoiceSecondary from '../pages/secUsers/EditInvoiceSecondary'
 import ShareInvoiceSecondary from '../pages/secUsers/ShareInvoiceSecondary'
-import AdditionalCharges from '../pages/primaryUsers/AdditionalCharges'
-import AddChargesList from '../pages/primaryUsers/AddChargesList'
-import EditAdditionalCharges from '../pages/primaryUsers/EditAdditionalCharges'
-
-import OrderConfigurations from '../pages/primaryUsers/OrderConfigurations'
 import AddChargesListSecondary from '../pages/secUsers/AddChargesListSecondary'
 import AdditionalChargesSecondary from '../pages/secUsers/AdditionalChargesSecondary'
 import EditAdditionalChargesSecondary from '../pages/secUsers/EditAdditionalChargesSecondary'
 import OrderConfigurationsSecondary from '../pages/secUsers/OrderConfigurationsSecondary'
-
 // inventory 
-import InventoryPrimaryUser from '../pages/primaryUsers/InventoryPrimaryUser'
 import InventorySecondaryUser from '../pages/secUsers/InventorySecondaryUser'
-// import SelectDefaultModal from '../../constants/components/SelectDefaultModal'
-import SalesDetails from '../pages/primaryUsers/SalesDetails'
-import ShareSales from '../pages/primaryUsers/ShareSales'
 import SalesSecondary from '../pages/secUsers/SalesSecondary'
 import SearchParty from '../pages/secUsers/SearchParty'
-import AddItemSalesSecondary from '../pages/secUsers/AddItemSalesSecondary'
 import SalesDetailsSecondary from '../pages/secUsers/SalesDetailsSecondary'
 import EditItemSalesSecondary from '../pages/secUsers/EditItemSalesSecondary'
 import ShareSalesSecondary from '../pages/secUsers/ShareSalesSecondary'
 import ConfigureSecondaryUser from '../pages/primaryUsers/ConfigureSecondaryUser'
-
 // Error Page
 import ErrorPage from '../pages/errorPages/Notfound'
 import Notfound from '../pages/errorPages/Notfound'
 import ServerError from '../pages/errorPages/ServerError'
-import ThreeInchSales from '../pages/primaryUsers/ThreeInchSales'
 import ThreeInchSalesSec from '../pages/secUsers/ThreeInchSalesSec'
  import Purchase from '../pages/secUsers/Purchase'
 import AddItemPurchase from '../pages/secUsers/AddItemPurchase'
 import EditItemPurchase from '../pages/secUsers/EditItemPurchase'
 import PurchaseDetailsSecondary from '../pages/secUsers/PurchaseDetailsSecondary'
 import SharePurchaseSecondary from '../pages/secUsers/SharePurchaseSecondary'
-import PurchaseDetailsPrimary from '../pages/primaryUsers/PurchaseDetailsPrimary'
-import SharePurchasePrimary from '../pages/primaryUsers/SharePurchasePrimary'
 import EditSale from '../pages/secUsers/EditSale'
 import ThreeInchInvoiceSec from '../pages/secUsers/ThreeInchInvoiceSec'
-import ThreeInchInvoice from '../pages/primaryUsers/ThreeInchInvoice'
 import BillToSales from '../pages/secUsers/BillToSales'
 import BillToSalesOrder from '../pages/secUsers/BillToSalesOrder'
 import AddBrand from '../pages/primaryUsers/AddBrand'
@@ -97,21 +63,17 @@ import AddItemVanSaleSecondary from '../pages/secUsers/AddItemVanSaleSecondary'
 import VanSaleDetailsSecondary from '../pages/secUsers/VanSaleDetailsSecondary '
 import ShareVanSaleSecondary from '../pages/secUsers/ShareVanSaleSecondary'
 import ThreeInchVanSaleSec from '../pages/secUsers/ThreeInchVanSaleSec'
-import VanSaleDetails from '../pages/primaryUsers/VanSaleDetails '
-import ShareVanSale from '../pages/primaryUsers/ShareVanSale'
-import ThreeInchVanSale from '../pages/primaryUsers/ThreeInchVanSale '
 import EditVanSale from '../pages/secUsers/EditVanSale'
 import StockTransferSecondary from '../pages/secUsers/StockTransferSecondary'
 import SearchGodown from '../pages/secUsers/SearchGodown'
 import AddItemStockTransferSec from '../pages/secUsers/AddItemStockTransferSec'
 import StockTransferDetailsSecondary from '../pages/secUsers/StockTransferDetailsSecondary'
 import EditStockTransferSecondary from '../pages/secUsers/EditStockTransferSecondary'
-import StockTransferDetailsPrimary from '../pages/primaryUsers/StockTransferDetailsPrimary'
+// import StockTransferDetailsPrimary from '../pages/primaryUsers/StockTransferDetailsPrimary'
 import BillToPurchase from '../pages/secUsers/BillToPurchase'
 import EditItemStockTransfer from '../pages/secUsers/EditItemStockTransfer'
 import AddbatchInPurchase from '../pages/secUsers/AddbatchInPurchase'
 import ReceiptPrintOut from '../pages/secUsers/ReceiptPrintOut'
-import ReceiptPrintOutPrimary from '../pages/primaryUsers/ReceiptPrintOut'
 import EditPurchase from '../pages/secUsers/EditPurchase'
 import SelectVouchers from '../pages/secUsers/SelectVouchers'
 import Receipt from '../pages/secUsers/Receipt'
@@ -124,8 +86,6 @@ import EditItemCreditNote from '../pages/secUsers/EditItemCreditNote'
 import CreditNoteDetailsSecondary from '../pages/secUsers/CreditNoteDetailsSecondary'
 import EditCreditNote from '../pages/secUsers/EditCreditNote'
 import ShareCreditNoteSecondary from '../pages/secUsers/ShareCreditNoteSecondary'
-import CreditNoteDetailsPrimary from '../pages/primaryUsers/CreditNoteDetailsPrimary'
-import ShareCreditNotePrimary from '../pages/primaryUsers/ShareCreditNotePrimary'
 import DebitNote from '../pages/secUsers/DebitNote'
 import BillToDebitNote from '../pages/secUsers/BillToDebitNote'
 import AddItemDebitNote from '../pages/secUsers/AddItemDebitNote'
@@ -133,14 +93,10 @@ import EditItemDebitNote from '../pages/secUsers/EditItemDebitNote'
 import DebitNoteDetailsSecondary from '../pages/secUsers/DebitNoteDetailsSecondary'
 import EditDebitNote from '../pages/secUsers/EditDebitNote'
 import ShareDebitNoteSecondary from '../pages/secUsers/ShareDebitNoteSecondary'
-import DebitNoteDetailsPrimary from '../pages/primaryUsers/DebitNoteDetailsPrimary'
-import ShareDebitNotePrimary from '../pages/primaryUsers/ShareDebitNotePrimary'
 import OutstandingListOfPayment from '../pages/secUsers/OutstandingListOfPayment'
 import ReceiptDetailsOfSale from '../pages/secUsers/ReceiptDetails'
 import PaymtentDetails from '../pages/secUsers/PaymtentDetails'
 import PaymentPrintOut from '../pages/secUsers/PaymentPrintOut'
-import PaymtentDetailsPrimary from '../pages/primaryUsers/PaymtentDetailsPrimary'
-import ReceiptDetailsPrimary from '../pages/primaryUsers/ReceiptDetailsPrimary'
 import EditReceipt from '../pages/secUsers/EditReceipt'
 import OutstandingListOfReceiptForEdit from '../pages/secUsers/OutstandingListOfReceiptForEdit'
 import EditPayment from '../pages/secUsers/EditPayment'
@@ -181,85 +137,20 @@ import DespatchTitleSettings from '../pages/secUsers/settilngs/dataEntry/invoice
 import TermsAndConditionSettings from '../pages/secUsers/settilngs/dataEntry/invoiceAndOrderCommon/TermsAndConditionSettings'
 import BarcodeScan from '../components/secUsers/barcodeScanning/BarcodeScan'
 import PendingOrders from '../pages/secUsers/orderPendings/PendingOrders'
-// import SaleSummaryTable from '../pages/secUsers/Reports/salesSummary/SalesSummaryTable'
 import SalesSummaryTable from '../pages/secUsers/Reports/salesSummary/SalesSummaryTable'
 import OutstandingSummary from '../pages/secUsers/OutstandingSummary'
 import AddSubGroup from '../pages/secUsers/settilngs/partySettings/AddSubGroup'
 import AddOpening from '@/pages/secUsers/openings/PartyOpening/AddOpening'
 import SalesSummaryTransactions from '@/pages/secUsers/Reports/salesSummary/SalesSummaryTransactions'
 import VoucherAddCount from '@/pages/dummy/VoucherAddCount'
+import AddOrganisation from '../pages/primaryUsers/AddOrganisation'
+import OrganizationList from '../../src/pages/primaryUsers/OrganisationList'
+import AddSecUsers from '../pages/primaryUsers/AddSecUsers'
 
 const Routers = () => {
   return (
     <Routes>
       <Route path='*' element={<Notfound/>}></Route>
-
-        <Route path='/pUsers/addOrganization' element={<ProtectedPriRoute><AddOrganisation/></ProtectedPriRoute>}></Route>
-        <Route path='/pUsers/editOrg/:id' element={<ProtectedPriRoute><EditOrg/></ProtectedPriRoute>}></Route>
-        <Route path='/pUsers/organizationList' element={<ProtectedPriRoute><OrganizationList/></ProtectedPriRoute>}></Route>
-        <Route path='/pUsers/addSecUsers' element={<ProtectedPriRoute><AddSecUsers/></ProtectedPriRoute>}></Route>
-        <Route path='/pUsers/secUsersList' element={<ProtectedPriRoute><SecUsersList/></ProtectedPriRoute>}></Route>
-        <Route path='/pUsers/retailers' element={<ProtectedPriRoute><RetailersList/></ProtectedPriRoute>}></Route>
-
-        <Route path='/pUsers/payment' element={<ProtectedPriRoute><PaymentPri/></ProtectedPriRoute>}></Route>
-        <Route path='/pUsers/outstandingDetails/:party_id/:cmp_id/:total' element={<ProtectedPriRoute>< PrOutstandingDetails/></ProtectedPriRoute>}></Route>
-        <Route path='/pUsers/transaction' element={<ProtectedPriRoute><PriTransaction /></ProtectedPriRoute>}></Route>
-        <Route path='/pUsers/receiptDetails/:id' element={<ProtectedPriRoute><ReceiptDetails/></ProtectedPriRoute>}></Route>
-        <Route path='/pUsers/bankLIst' element={<ProtectedPriRoute><BankList/></ProtectedPriRoute>}></Route>
-        <Route path='/pUsers/addBank' element={<ProtectedPriRoute><AddBank/></ProtectedPriRoute>}></Route>
-        <Route path='/pUsers/dashboard' element={<ProtectedPriRoute><Dashboard/></ProtectedPriRoute>}></Route>
-        <Route path='/pUsers/hsn' element={<ProtectedPriRoute><Hsn/></ProtectedPriRoute>}></Route>
-
-
-     
-        <Route path='/pUsers/demo' element={<ProtectedPriRoute><Demo/></ProtectedPriRoute>}></Route>
-        <Route path='/pUsers/hsnList' element={<ProtectedPriRoute><HsnList/></ProtectedPriRoute>}></Route>
-        <Route path='/pUsers/editHsn/:id' element={<ProtectedPriRoute><EditHsn/></ProtectedPriRoute>}></Route>
-        {/* <Route path='/pUsers/editBank/:id' element={<ProtectedPriRoute><EditBank/></ProtectedPriRoute>}></Route>s */}
-        <Route path='/pUsers/editUser/:id' element={<ProtectedPriRoute><EditSecUsers/></ProtectedPriRoute>}></Route>
-        <Route path='/pUsers/InvoiceDetails/:id' element={<ProtectedPriRoute><InvoiceDetails/></ProtectedPriRoute>}></Route>
-        <Route path='/pUsers/shareInvoice/:id' element={<ProtectedPriRoute><ShareInvoice/></ProtectedPriRoute>}></Route>
-        <Route path='/pUsers/additionalCharges' element={<ProtectedPriRoute><AdditionalCharges/></ProtectedPriRoute>}></Route>
-        <Route path='/pUsers/additionalChargesList' element={<ProtectedPriRoute><AddChargesList/></ProtectedPriRoute>}></Route>
-        <Route path='/pUsers/editAdditionalCharge/:id' element={<ProtectedPriRoute><EditAdditionalCharges/></ProtectedPriRoute>}></Route>
-        <Route path='/pUsers/OrderConfigurations' element={<ProtectedPriRoute><OrderConfigurations/></ProtectedPriRoute>}></Route>
-
-        {/* <Route path='/pUsers/modal' element={<ProtectedPriRoute><SelectDefaultModal/></ProtectedPriRoute>}></Route> */}
-        <Route path='/pUsers/salesDetails/:id' element={<ProtectedPriRoute><SalesDetails/></ProtectedPriRoute>}></Route>
-        <Route path='/pUsers/vanSaleDetails/:id' element={<ProtectedPriRoute><VanSaleDetails/></ProtectedPriRoute>}></Route>
-        <Route path='/pUsers/shareSalesThreeInch/:id' element={<ProtectedPriRoute><ThreeInchSales/></ProtectedPriRoute>}></Route>
-        <Route path='/pUsers/shareVanSaleThreeInch/:id' element={<ProtectedPriRoute><ThreeInchVanSale/></ProtectedPriRoute>}></Route>
-
-        <Route path='/pUsers/shareSales/:id' element={<ProtectedPriRoute><ShareSales/></ProtectedPriRoute>}></Route>
-        <Route path='/pUsers/shareVanSale/:id' element={<ProtectedPriRoute><ShareVanSale/></ProtectedPriRoute>}></Route>
-        <Route path='/pUsers/configureSecondaryUser/:id/:userId/:cmp_name' element={<ProtectedPriRoute><ConfigureSecondaryUser/></ProtectedPriRoute>}></Route>
-        <Route path='/pUsers/Inventory' element={<ProtectedPriRoute><InventoryPrimaryUser/></ProtectedPriRoute>}></Route>
-        <Route path='/pUsers/purchaseDetails/:id' element={<ProtectedPriRoute><PurchaseDetailsPrimary/></ProtectedPriRoute>}></Route>
-        <Route path='/pUsers/sharePurchase/:id' element={<ProtectedPriRoute><SharePurchasePrimary/></ProtectedPriRoute>}></Route>
-        <Route path='/pUsers/shareInvoiceThreeInch/:id' element={<ProtectedPriRoute><ThreeInchInvoice/></ProtectedPriRoute>}></Route> 
-        <Route path='/pUsers/brand' element={<ProtectedPriRoute><AddBrand/></ProtectedPriRoute>}></Route> 
-        <Route path='/pUsers/category' element={<ProtectedPriRoute><AddCategory/></ProtectedPriRoute>}></Route> 
-        <Route path='/pUsers/subcategory' element={<ProtectedPriRoute><AddSubCategory/></ProtectedPriRoute>}></Route> 
-        <Route path='/pUsers/godown' element={<ProtectedPriRoute><AddGodown/></ProtectedPriRoute>}></Route> 
-        <Route path='/pUsers/pricelevel' element={<ProtectedPriRoute><AddPriceLevel/></ProtectedPriRoute>}></Route> 
-        <Route path='/pUsers/stockTransferDetails/:id' element={<ProtectedPriRoute><StockTransferDetailsPrimary/></ProtectedPriRoute>}></Route>
-        <Route path='/pUsers/ReceiptPrint' element={<ProtectedPriRoute><ReceiptPrintOutPrimary/></ProtectedPriRoute>}></Route>  
-
-         {/* creditNote */}
-        <Route path='/pUsers/creditDetails/:id' element={<ProtectedPriRoute><CreditNoteDetailsPrimary/></ProtectedPriRoute>}></Route>
-        <Route path='/pUsers/shareCreditNote/:id' element={<ProtectedPriRoute><ShareCreditNotePrimary/></ProtectedPriRoute>}></Route> 
-         {/* debitNote */}
-        <Route path='/pUsers/debitDetails/:id' element={<ProtectedPriRoute><DebitNoteDetailsPrimary/></ProtectedPriRoute>}></Route>
-        <Route path='/pUsers/shareDebitNote/:id' element={<ProtectedPriRoute><ShareDebitNotePrimary/></ProtectedPriRoute>}></Route> 
-         {/* payment */}
-         <Route path='/pUsers/payment/details/:id' element={<ProtectedPriRoute><PaymtentDetailsPrimary/></ProtectedPriRoute>}></Route>
-         <Route path='/pUsers/paymentPrintOut' element={<ProtectedPriRoute><PaymentPrintOut/></ProtectedPriRoute>}></Route>
-          {/* receipt */}
-          <Route path='/pUsers/receipt/details/:id' element={<ProtectedSecRoute><ReceiptDetailsPrimary/></ProtectedSecRoute>}></Route>
-          <Route path='/pUsers/receiptPrintOut' element={<ProtectedSecRoute><ReceiptPrintOut/></ProtectedSecRoute>}></Route>
-
-
-
         <Route path='/sUsers/home' element={<ProtectedSecRoute><SecHome/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/outstandingDetails/:party_id' element={<ProtectedSecRoute><OutstandingDetails/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/payment' element={<ProtectedSecRoute><PaymentSec/></ProtectedSecRoute>}></Route>

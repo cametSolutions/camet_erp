@@ -135,6 +135,7 @@ function VoucherAddCount() {
   const fetchProducts = useCallback(
     async (pageNumber = 1, searchTerm = "") => {
       // Skip if already loading or price levels not yet loaded
+
       if (isLoading || !pricesLoaded) return;
 
       setLoader(pageNumber === 1);

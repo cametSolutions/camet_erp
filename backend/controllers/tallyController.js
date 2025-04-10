@@ -1,11 +1,11 @@
 import TallyData from "../models/TallyData.js";
 import BankDetailsModel from "../models/bankModel.js";
 import CashModel from "../models/cashModel.js";
-
 import partyModel from "../models/partyModel.js";
 import productModel from "../models/productModel.js";
+import AccountGroup from "../models/accountGroup.js";
+import subGroupModel from "../models/subGroup.js";
 import AdditionalCharges from "../models/additionalChargesModel.js";
-import receipt from "../models/receiptModel.js";
 import { fetchData } from "../helpers/tallyHelper.js";
 import mongoose from "mongoose";
 import {
@@ -204,8 +204,6 @@ export const addCashData = async (req, res) => {
 // @desc for saving products to tally
 // route GET/api/tally/giveTransaction
 
-
-
 export const saveProductsFromTally = async (req, res) => {
   try {
     const productsToSave = req?.body?.data;
@@ -219,11 +217,12 @@ export const saveProductsFromTally = async (req, res) => {
 
     // Find default godown first
     const defaultGodown = await Godown.findOne({ cmp_id, defaultGodown: true });
-    
+
     // Return early if no default godown is found
     if (!defaultGodown) {
-      return res.status(400).json({ 
-        message: "Default godown not found. Please set up a default godown before saving products." 
+      return res.status(400).json({
+        message:
+          "Default godown not found. Please set up a default godown before saving products.",
       });
     }
 
@@ -245,7 +244,7 @@ export const saveProductsFromTally = async (req, res) => {
           .map((p) => p.subcategory_id)
       ),
     ];
-    
+
     // Fetch all references in parallel
     const [brands, categories, subcategories] = await Promise.all([
       brandIds.length > 0
@@ -295,25 +294,29 @@ export const saveProductsFromTally = async (req, res) => {
         const enhancedProduct = { ...productItem };
 
         // Set brand, category, and subcategory explicitly (either with a valid reference or null)
-        enhancedProduct.brand = productItem.brand_id && brandMap.has(productItem.brand_id) 
-          ? brandMap.get(productItem.brand_id) 
-          : null;
+        enhancedProduct.brand =
+          productItem.brand_id && brandMap.has(productItem.brand_id)
+            ? brandMap.get(productItem.brand_id)
+            : null;
 
-        enhancedProduct.category = productItem.category_id && categoryMap.has(productItem.category_id) 
-          ? categoryMap.get(productItem.category_id) 
-          : null;
+        enhancedProduct.category =
+          productItem.category_id && categoryMap.has(productItem.category_id)
+            ? categoryMap.get(productItem.category_id)
+            : null;
 
-        enhancedProduct.sub_category = productItem.subcategory_id && subcategoryMap.has(productItem.subcategory_id) 
-          ? subcategoryMap.get(productItem.subcategory_id) 
-          : null;
+        enhancedProduct.sub_category =
+          productItem.subcategory_id &&
+          subcategoryMap.has(productItem.subcategory_id)
+            ? subcategoryMap.get(productItem.subcategory_id)
+            : null;
 
         // Add default GodownList with Primary Batch
         enhancedProduct.GodownList = [
           {
             godown: defaultGodown._id,
             batch: "Primary Batch",
-            balance_stock: 0
-          }
+            balance_stock: 0,
+          },
         ];
 
         // Check if product exists
@@ -362,156 +365,6 @@ export const saveProductsFromTally = async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 };
-
-// @desc for updating stocks of product
-// route GET/api/tally/master/item/updateStock
-
-// export const updateStock = async (req, res) => {
-//   try {
-//     // Validate request body
-//     if (
-//       !req.body?.data?.ItemGodowndetails ||
-//       !Array.isArray(req.body.data.ItemGodowndetails)
-//     ) {
-//       return res.status(400).json({
-//         success: false,
-//         message: "Invalid request format. ItemGodowndetails array is required",
-//       });
-//     }
-
-//     if (req.body.data.ItemGodowndetails.length === 0) {
-//       return res.status(400).json({
-//         success: false,
-//         message: "ItemGodowndetails array is empty",
-//       });
-//     }
-
-//     const groupedGodowns = req.body.data.ItemGodowndetails.reduce(
-//       (acc, item) => {
-//         if (!item.product_master_id) {
-//           throw new Error("product_master_id is required for each item");
-//         }
-
-//         const productId = item.product_master_id.toString();
-
-//         if (!acc[productId]) {
-//           acc[productId] = {
-//             godowns: [],
-//             product_name: item.product_name, // Store product name
-//           };
-//         }
-
-//         acc[productId].godowns.push({
-//           godown: item.godown,
-//           godown_id: item.godown_id,
-//           batch: item.batch,
-//           mfgdt: item.mfgdt,
-//           expdt: item.expdt,
-//           balance_stock: item.balance_stock,
-//           batchEnabled: item.batchEnabled,
-//         });
-
-//         return acc;
-//       },
-//       {}
-//     );
-
-//     // console.log("groupedGodowns", groupedGodowns);
-
-//     if (Object.keys(groupedGodowns).length === 0) {
-//       return res.status(400).json({
-//         success: false,
-//         message: "No valid products found to update",
-//       });
-//     }
-
-//     // Create bulk write operations (overwrite always)
-//     const bulkOps = Object.entries(groupedGodowns).map(
-//       ([productMasterId, data]) => ({
-//         updateOne: {
-//           filter: {
-//             product_master_id: productMasterId.toString(),
-//             cmp_id: req.body.data.ItemGodowndetails[0].cmp_id,
-//             Primary_user_id: new mongoose.Types.ObjectId(
-//               req.body.data.ItemGodowndetails[0].Primary_user_id
-//             ),
-//           },
-//           update: {
-//             $set: {
-//               GodownList: data.godowns,
-//               // godownCount: data.godowns.reduce(
-//               //   (sum, g) => sum + (parseInt(g.balance_stock) || 0),
-//               //   0
-//               // ),
-//             },
-//           },
-//           upsert: true, // Ensure the record is created if it doesn't exist
-//         },
-//       })
-//     );
-
-//     // Execute bulk write operation
-//     const result = await productModel.bulkWrite(bulkOps);
-
-//     // console.log(result);
-//     // console.log("groupedGodowns", Object.keys(groupedGodowns).length);
-
-//     // Fetch updated products details
-//     const updatedProducts = await productModel.find(
-//       {
-//         product_master_id: {
-//           $in: Object.keys(groupedGodowns),
-//         },
-//       },
-//       {
-//         product_name: 1,
-//         product_master_id: 1,
-//         // godownCount: 1
-//       }
-//     );
-
-//     // console.log("updatedProducts", updatedProducts);
-
-//     // Create a summary of modifications
-//     const modificationSummary = updatedProducts.map((product) => ({
-//       product_id: product.product_master_id,
-//       product_name: product.product_name || groupedGodowns[product.product_master_id]?.product_name || "Unknown", // Fallback for missing product_name
-//       // updated_godown_count: product.godownCount,
-//       // godowns: groupedGodowns[product.product_master_id.toString()]?.godowns || []
-//     }));
-
-//     return res.status(200).json({
-//       success: true,
-//       message: `Successfully processed ${result.matchedCount} products.`,
-//       modifiedProducts: modificationSummary,
-//       bulkWriteResult: result,
-//     });
-//   } catch (error) {
-//     console.error("Error in updateStock:", error);
-
-//     if (error.name === "ValidationError") {
-//       return res.status(400).json({
-//         success: false,
-//         message: "Validation error",
-//         error: error.message,
-//       });
-//     }
-
-//     if (error.name === "MongoError" || error.name === "MongoServerError") {
-//       return res.status(503).json({
-//         success: false,
-//         message: "Database error",
-//         error: error.message,
-//       });
-//     }
-
-//     return res.status(500).json({
-//       success: false,
-//       message: "An error occurred while updating stock",
-//       error: error.message,
-//     });
-//   }
-// };
 
 export const updateStock = async (req, res) => {
   try {
@@ -615,7 +468,6 @@ export const updateStock = async (req, res) => {
       const godownEntry = {
         godown: godownObjectId, // Use the mapped MongoDB ObjectId
         balance_stock: parseFloat(item.balance_stock) || 0,
-        
       };
 
       // Add batch, manufacturing and expiry dates if available
@@ -1199,7 +1051,7 @@ export const addSubGroups = async (req, res) => {
     const primaryUserId = new mongoose.Types.ObjectId(Primary_user_id);
 
     // Delete previous records
-    await SubGroup.deleteMany({ Primary_user_id: primaryUserId, cmp_id });
+    await subGroupModel.deleteMany({ Primary_user_id: primaryUserId, cmp_id });
 
     // Track inserted subGroup_id to avoid duplicate inserts
     const uniqueSubGroups = new Map();
@@ -1212,8 +1064,26 @@ export const addSubGroups = async (req, res) => {
         if (uniqueSubGroups.has(key)) return null;
         uniqueSubGroups.set(key, true);
 
+        // find corresponding accountGroup
+        const accountGroup = await AccountGroup.findOne({
+          cmp_id: subGroup.cmp_id,
+          accountGroup_id: subGroup.accountGroup_id,
+          Primary_user_id: new mongoose.Types.ObjectId(
+            subGroup.Primary_user_id
+          ),
+        });
+
+        if (!accountGroup) {
+          console.error(
+            `Account group not found for subGroup: ${subGroup.subGroup_id}`
+          );
+          return null; // Skip if account group is not found
+        }
+
+        subGroup.accountGroup = accountGroup._id;
+
         try {
-          return await SubGroup.findOneAndUpdate(
+          return await subGroupModel.findOneAndUpdate(
             {
               cmp_id: subGroup.cmp_id,
               subGroup_id: subGroup.subGroup_id,
