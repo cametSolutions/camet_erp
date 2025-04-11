@@ -68,85 +68,42 @@ export const saveDataFromTally = async (req, res) => {
 export const addBankData = async (req, res) => {
   try {
     const bankDetailsArray = req.body.bankdetails;
+    
+    if (!bankDetailsArray || !bankDetailsArray.length) {
+      return res.status(400).json({
+        status: false,
+        message: "No bank details provided"
+      });
+    }
 
     const { Primary_user_id, cmp_id } = bankDetailsArray[0];
 
+    // Delete all existing banks for this user and company
     await BankDetailsModel.deleteMany({ Primary_user_id, cmp_id });
 
-    // Loop through each bank detail in the array
+    // Check for duplicate bank_id within the incoming data
+    const uniqueBankDetails = [];
+    const seenBankIds = new Set();
+    
     for (const bankDetail of bankDetailsArray) {
-      const {
-        cmp_id,
-        Primary_user_id,
-        bank_ledname,
-        acholder_name,
-        bank_id,
-        ac_no,
-        ifsc,
-        swift_code,
-        bank_name,
-        branch,
-        upi_id,
-        bsr_code,
-        client_code,
-      } = bankDetail;
-
-      // Check if the same data already exists
-      const existingData = await BankDetailsModel.findOne({
-        cmp_id,
-        Primary_user_id,
-        bank_ledname,
-        acholder_name,
-        bank_id,
-        ac_no,
-        ifsc,
-        swift_code,
-        bank_name,
-        branch,
-        upi_id,
-        bsr_code,
-        client_code,
-      });
-
-      if (existingData) {
-        // If data exists, update the existing document
-        const updatedData = await BankDetailsModel.findOneAndUpdate(
-          {
-            cmp_id,
-            Primary_user_id,
-            bank_ledname,
-            acholder_name,
-            bank_id,
-            ac_no,
-            ifsc,
-            swift_code,
-            bank_name,
-            branch,
-            upi_id,
-            bsr_code,
-            client_code,
-          },
-          bankDetail,
-          { new: true }
-        );
-
-        // console.log('Bank data updated:', updatedData);
-      } else {
-        // If data doesn't exist, create a new document
-        const newBankData = await BankDetailsModel.create(bankDetail);
-
-        // console.log('Bank data added:', newBankData);
+      if (!seenBankIds.has(bankDetail.bank_id)) {
+        seenBankIds.add(bankDetail.bank_id);
+        uniqueBankDetails.push(bankDetail);
       }
     }
 
+    // Insert all unique bank details at once
+    await BankDetailsModel.insertMany(uniqueBankDetails);
+
     return res.status(200).json({
-      message: "Bank data added/updated successfully",
+      status: true,
+      message: "Bank data added successfully"
     });
   } catch (error) {
     console.error(error);
     return res.status(500).json({
       status: false,
-      message: "Internal server error",
+      message: "Internal server error"
     });
   }
 };
@@ -155,49 +112,41 @@ export const addCashData = async (req, res) => {
   try {
     const cashDetailsArray = req.body.cashdetails;
 
+    if (!cashDetailsArray || !cashDetailsArray.length) {
+      return res.status(400).json({
+        status: false,
+        message: "No cash details provided"
+      });
+    }
+
     const { Primary_user_id, cmp_id } = cashDetailsArray[0];
 
+    // Delete all existing cash entries for this user and company
     await CashModel.deleteMany({ Primary_user_id, cmp_id });
 
-    // Loop through each bank detail in the array
-    for (const cashDetails of cashDetailsArray) {
-      const { cmp_id, Primary_user_id, cash_ledname, cash_id, cash_grpname } =
-        cashDetails;
-
-      // Check if the same data already exists
-      const existingData = await CashModel.findOne({
-        cmp_id,
-        Primary_user_id,
-        cash_id,
-      });
-
-      if (existingData) {
-        // If data exists, update the existing document
-        const updatedData = await CashModel.findOneAndUpdate(
-          {
-            cmp_id,
-            Primary_user_id,
-            cash_id,
-          },
-          cashDetails,
-          { new: true }
-        );
-
-        // console.log('Bank data updated:', updatedData);
-      } else {
-        // If data doesn't exist, create a new document
-        const newCashData = await CashModel.create(cashDetails);
+    // Check for duplicate cash_id within the incoming data
+    const uniqueCashDetails = [];
+    const seenCashIds = new Set();
+    
+    for (const cashDetail of cashDetailsArray) {
+      if (!seenCashIds.has(cashDetail.cash_id)) {
+        seenCashIds.add(cashDetail.cash_id);
+        uniqueCashDetails.push(cashDetail);
       }
     }
 
+    // Insert all unique cash details at once
+    await CashModel.insertMany(uniqueCashDetails);
+
     return res.status(200).json({
-      message: "Cash data added/updated successfully",
+      status: true,
+      message: "Cash data added successfully"
     });
   } catch (error) {
     console.error(error);
     return res.status(500).json({
       status: false,
-      message: "Internal server error",
+      message: "Internal server error"
     });
   }
 };
@@ -879,56 +828,58 @@ export const savePartyFromTally = async (req, res) => {
 
     // Fetch account groups and sub-groups in parallel
     const [accountGroups, subGroups] = await Promise.all([
-      accountGroupModel.find(
-        { Primary_user_id, cmp_id },
-        { accountGroup_id: 1, _id: 1 }
-      ).lean(),
-      subGroupModel.find(
-        { Primary_user_id, cmp_id },
-        { subGroup_id: 1, _id: 1 }
-      ).lean()
+      accountGroupModel
+        .find({ Primary_user_id, cmp_id }, { accountGroup_id: 1, _id: 1 })
+        .lean(),
+      subGroupModel
+        .find({ Primary_user_id, cmp_id }, { subGroup_id: 1, _id: 1 })
+        .lean(),
     ]);
 
     // Create efficient maps using object literals
     const accountGroupMap = Object.fromEntries(
-      accountGroups.map(group => [group.accountGroup_id, group._id])
+      accountGroups.map((group) => [group.accountGroup_id, group._id])
     );
-    
+
     const subGroupMap = Object.fromEntries(
-      subGroups.map(group => [group.subGroup_id, group._id])
+      subGroups.map((group) => [group.subGroup_id, group._id])
     );
 
     // Process parties in memory for efficiency
     // Use object instead of Set for faster lookups with potentially large datasets
     const processedPartyMasterIds = {};
-    
+
     const validParties = [];
     for (const party of partyToSave) {
       // Skip entries without party_master_id or already processed entries
-      if (!party.party_master_id || processedPartyMasterIds[party.party_master_id]) {
+      if (
+        !party.party_master_id ||
+        processedPartyMasterIds[party.party_master_id]
+      ) {
         continue;
       }
-      
+
       // Skip if required account mappings are missing
       if (party.accountGroup_id && !accountGroupMap[party.accountGroup_id]) {
         continue;
       }
-      
+
       // Mark as processed
       processedPartyMasterIds[party.party_master_id] = true;
-      
+
       // Create a new object instead of modifying the original to avoid reference issues
-      const partyToInsert = {...party};
-      
+      const partyToInsert = { ...party };
+
       // Enhance party with ObjectId references
       if (partyToInsert.accountGroup_id) {
-        partyToInsert.accountGroup = accountGroupMap[partyToInsert.accountGroup_id];
+        partyToInsert.accountGroup =
+          accountGroupMap[partyToInsert.accountGroup_id];
       }
-      
+
       if (partyToInsert.subGroup_id && subGroupMap[partyToInsert.subGroup_id]) {
         partyToInsert.subGroup = subGroupMap[partyToInsert.subGroup_id];
       }
-      
+
       validParties.push(partyToInsert);
     }
 
@@ -936,11 +887,11 @@ export const savePartyFromTally = async (req, res) => {
     // Use sessions to ensure atomicity
     const session = await mongoose.startSession();
     session.startTransaction();
-    
+
     try {
       // Delete all existing parties in one operation
       await partyModel.deleteMany({ Primary_user_id, cmp_id }, { session });
-      
+
       // Batch insert all valid parties
       let savedParty = [];
       if (validParties.length > 0) {
@@ -952,13 +903,13 @@ export const savePartyFromTally = async (req, res) => {
           savedParty = savedParty.concat(result);
         }
       }
-      
+
       await session.commitTransaction();
-      
+
       res.status(201).json({
         message: "Party saved successfully",
         processedCount: validParties.length,
-        skippedCount: partyToSave.length - validParties.length
+        skippedCount: partyToSave.length - validParties.length,
       });
     } catch (error) {
       // If an error occurs, abort the transaction

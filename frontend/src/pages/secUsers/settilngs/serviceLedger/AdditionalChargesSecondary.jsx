@@ -132,7 +132,7 @@ function AdditionalChargesSecondary() {
         from="/sUsers/additionalChargesList"
       />
 
-      <div className="flex-1 h-screen overflow-y-scroll">
+      <form className="flex-1 h-screen overflow-y-scroll">
         <div className="w-full lg:w-8/12 px-4 mx-auto pb-8 mt-5">
           <div className="relative flex flex-col min-w-0 break-words w-full mb-6 shadow-lg rounded-lg bg-blueGray-100 border-0">
             <div className="rounded-t bg-white mb-0 px-4 py-2">
@@ -199,7 +199,7 @@ function AdditionalChargesSecondary() {
                 </div>
                 <button
                   className="bg-pink-500 mt-4 ml-4 w-20 text-white active:bg-pink-600 font-bold uppercase text-xs px-4 py-2 rounded shadow hover:shadow-md outline-none focus:outline-none mr-1 ease-linear transition-all duration-150 transform hover:scale-105"
-                  type="button"
+                  type="submit"
                   onClick={submitHandler}
                   disabled={loading}
                 >
@@ -209,7 +209,7 @@ function AdditionalChargesSecondary() {
             </div>
           </div>
         </div>
-      </div>
+      </form>
     </div>
   );
 }
