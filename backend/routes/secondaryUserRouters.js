@@ -7,8 +7,8 @@ import {login,getSecUserData,
     deleteParty,getSingleOrganization,fetchHsn,
     addDataToOrg,editDataInOrg,deleteDataInOrg
     ,saveOrderNumber,
-    getInvoiceDetails,fetchFilters,deleteAdditionalCharge,
-    addAditionalCharge,EditAditionalCharge,addconfigurations
+    getInvoiceDetails,fetchFilters
+    ,addconfigurations
     ,saveSalesNumber,fetchAdditionalDetails,
     fetchConfigurationNumber,findSecondaryUserGodowns,findPrimaryUserGodownsSelf,
     godownwiseProducts,godownwiseProductsSelf,
@@ -26,7 +26,7 @@ import { createPurchase,editPurchase,cancelPurchase } from '../controllers/purch
 import { createCreditNote,cancelCreditNote ,editCreditNote} from '../controllers/creditNoteController.js';
 import {createSale,editSale,cancelSale,} from '../controllers/saleController.js';
 import { cancelDebitNote, createDebitNote, editDebitNote } from '../controllers/debitNoteController.js';
-import { getStockTransferDetails,getCreditNoteDetails,transactions,fetchAdditionalCharges, getDebitNoteDetails,getReceiptDetails,getPaymentDetails,getProductSubDetails,deleteProductSubDetails,editProductSubDetails,addProductSubDetails,addHsn,getSingleHsn,editHsn,deleteHsn,getSalesDetails,getPurchaseDetails,getOpeningBalances, sendPdfViaEmail} from '../controllers/commonController.js';
+import { getStockTransferDetails,getCreditNoteDetails,transactions, getDebitNoteDetails,getReceiptDetails,getPaymentDetails,getProductSubDetails,deleteProductSubDetails,editProductSubDetails,addProductSubDetails,addHsn,getSingleHsn,editHsn,deleteHsn,getSalesDetails,getPurchaseDetails,getOpeningBalances, sendPdfViaEmail} from '../controllers/commonController.js';
 import { authSecondary } from '../middlewares/authSecUsers.js';
 import { secondaryIsBlocked } from '../middlewares/isBlocked.js';
 import { companyAuthentication } from '../middlewares/authCompany.js';
@@ -47,6 +47,7 @@ import { addProduct, deleteProduct, productDetails,editProduct, getProducts } fr
 import { addOrganizations, editOrg, getOrganizations } from '../controllers/organizationController.js';
 import { addParty, addSubGroup, deleteSubGroup, editSubGroup, getSubGroup, PartyList } from '../controllers/partyController.js';
 import { addBank, addCash, editBank, editCash, findSourceBalance, findSourceDetails, findSourceTransactions, getBankDetails, getCashDetails } from '../controllers/bankAndCashController.js';
+import { addAditionalCharge, deleteAdditionalCharge, EditAditionalCharge, fetchAdditionalCharges, fetchSingleAdditionalCharge } from '../controllers/additionalChargeContoller.js';
 
 router.post('/login',login)
 router.post('/sendOtp',sendOtp)
@@ -86,7 +87,7 @@ router.get('/fetchFilters/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthe
 router.post('/addAditionalCharge/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,addAditionalCharge)
 
 router.delete('/deleteAdditionalCharge/:id/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,deleteAdditionalCharge)
-router.post('/EditAditionalCharge/:cmp_id/:id',authSecondary,secondaryIsBlocked,companyAuthentication,EditAditionalCharge)
+router.put('/EditAditionalCharge/:id/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,EditAditionalCharge)
 router.post('/addconfigurations/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,addconfigurations)
 router.post('/createSale',authSecondary,secondaryIsBlocked,createSale)
 router.get('/getSalesDetails/:id',authSecondary,secondaryIsBlocked,getSalesDetails)
@@ -98,6 +99,7 @@ router.get("/getGodownsSelf/:cmp_id",authSecondary,secondaryIsBlocked,companyAut
 router.get("/godownProductFilter/:cmp_id/:godown_id",authSecondary,companyAuthentication,secondaryIsBlocked,godownwiseProducts)
 router.get("/godownProductFilterSelf/:cmp_id/:godown_name",authSecondary,secondaryIsBlocked,companyAuthentication,godownwiseProductsSelf)
 router.get("/additionalcharges/:cmp_id",authSecondary,secondaryIsBlocked,companyAuthentication,fetchAdditionalCharges)
+router.get("/fetchSingleAdditionalCharge/:id/:cmp_id",authSecondary,secondaryIsBlocked,companyAuthentication,fetchSingleAdditionalCharge)
 router.get("/godownsName/:cmp_id",authSecondary,secondaryIsBlocked,companyAuthentication,findGodownsNames)
 router.get('/getPurchaseDetails/:id',authSecondary,secondaryIsBlocked,getPurchaseDetails)
 router.post('/editSale/:id',authSecondary,secondaryIsBlocked,editSale)

@@ -1,40 +1,82 @@
 import { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
-import api from "../../api/api";
+import api from "../../../../api/api";
 import { toast } from "react-toastify";
-import { useNavigate } from "react-router-dom";
-import { IoIosArrowRoundBack } from "react-icons/io";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useDispatch } from "react-redux";
-import { removeAll } from "../../../slices/invoiceSecondary";
+import { removeAll } from "../../../../../slices/invoiceSecondary";
+import TitleDiv from "@/components/common/TitleDiv";
 
 function AdditionalChargesSecondary() {
   const [name, setName] = useState("");
   const [hsn, setHsn] = useState("");
   const [taxPercentage, setTaxPercentage] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
 
   const cmp_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const location = useLocation();
+  const { id } = useParams();
+
+  // Determine if we're in edit mode
+  useEffect(() => {
+    if (location?.pathname?.includes("editAdditionalCharge")) {
+      setIsEditMode(true);
+      fetchChargeDetails();
+    }
+  }, [location, id, cmp_id]);
+
+  // Fetch charge details for edit mode
+  const fetchChargeDetails = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get(
+        `/api/sUsers/fetchSingleAdditionalCharge/${id}/${cmp_id}`,
+        {
+          withCredentials: true,
+        }
+      );
+
+      if (response.data && response.data.additionalCharge) {
+        const { name, hsn, taxPercentage } = response.data.additionalCharge;
+        setName(name || "");
+        setHsn(hsn || "");
+        setTaxPercentage(taxPercentage || "");
+      }
+    } catch (error) {
+      toast.error("Failed to fetch charge details");
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     dispatch(removeAll());
   }, []);
 
-  const submitHandler = async () => {
+  const validateForm = () => {
     if (!name.trim()) {
-      toast.error("Fill Name and Bank");
-      return;
+      toast.error("Fill Name field");
+      return false;
     }
     if (name.length > 30) {
-      toast.error("Name be at most 30 characters");
-      return;
+      toast.error("Name must be at most 30 characters");
+      return false;
     }
     if (hsn.length > 15) {
-      toast.error("HSN be at most 30 characters");
-      return;
+      toast.error("HSN must be at most 15 characters");
+      return false;
     }
+    return true;
+  };
+
+  const submitHandler = async () => {
+    if (!validateForm()) return;
 
     const formData = {
       name,
@@ -43,45 +85,55 @@ function AdditionalChargesSecondary() {
     };
 
     try {
-      const res = await api.post(
-        `/api/sUsers/addAditionalCharge/${cmp_id}`,
-        formData,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-          withCredentials: true,
-        }
-      );
+      setLoading(true);
+      let res;
+
+      if (isEditMode) {
+        // Update existing charge
+        res = await api.put(
+          `/api/sUsers/EditAditionalCharge/${id}/${cmp_id}`,
+          formData,
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+            withCredentials: true,
+          }
+        );
+      } else {
+        // Add new charge
+        res = await api.post(
+          `/api/sUsers/addAditionalCharge/${cmp_id}`,
+          formData,
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+            withCredentials: true,
+          }
+        );
+      }
 
       toast.success(res.data.message);
       navigate("/sUsers/additionalChargesList");
     } catch (error) {
-      toast.error(error.response.data.message);
-      console.log(error);
+      toast.error(error.response?.data?.message || "An error occurred");
+      console.error(error);
+    } finally {
+      setLoading(false);
     }
   };
 
-
   return (
-    <div className="flex">
-      {/* <div className="">
-        <SidebarSec TAB={"additionalCharge"} />
-      </div> */}
-      <div className=" flex-1 h-screen overflow-y-scroll">
-        <div className="bg-[#201450] sticky top-0 p-3 z-100 text-white text-lg font-bold flex items-center gap-3 z-20">
-          <IoIosArrowRoundBack
-            onClick={() => {
-              navigate("/sUsers/additionalChargesList");
-            }}
-            className="text-3xl cursor-pointer"
-          />
-          <p>Add Addional Charge</p>
-        </div>
+    <div className="flex flex-col">
+      <TitleDiv
+        loading={loading}
+        title={isEditMode ? "Edit Charges" : "Add Charges"}
+        from="/sUsers/additionalChargesList"
+      />
 
-        {/* form  */}
-
-        <div className="w-full lg:w-8/12 px-4 mx-auto pb-[30px] mt-5 ">
+      <div className="flex-1 h-screen overflow-y-scroll">
+        <div className="w-full lg:w-8/12 px-4 mx-auto pb-8 mt-5">
           <div className="relative flex flex-col min-w-0 break-words w-full mb-6 shadow-lg rounded-lg bg-blueGray-100 border-0">
             <div className="rounded-t bg-white mb-0 px-4 py-2">
               <div className="text-center flex justify-between">
@@ -149,8 +201,9 @@ function AdditionalChargesSecondary() {
                   className="bg-pink-500 mt-4 ml-4 w-20 text-white active:bg-pink-600 font-bold uppercase text-xs px-4 py-2 rounded shadow hover:shadow-md outline-none focus:outline-none mr-1 ease-linear transition-all duration-150 transform hover:scale-105"
                   type="button"
                   onClick={submitHandler}
+                  disabled={loading}
                 >
-                  Update
+                  {isEditMode ? "Update" : "Submit"}
                 </button>
               </form>
             </div>

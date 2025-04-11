@@ -11,8 +11,8 @@ import { registerPrimaryUser,login,
   fetchHsn,
   fetchFilters,createInvoice,addBulkProducts,invoiceList,
 getBankDetails,getSecUserDetails,
-  editSecUSer,saveOrderNumber,getInvoiceDetails,editInvoice,addAditionalCharge,
-  deleteAdditionalCharge,EditAditionalCharge,addconfigurations,
+  editSecUSer,saveOrderNumber,getInvoiceDetails,editInvoice,
+addconfigurations,
   createSale,saveSalesNumber,fetchGodownsAndPriceLevels,fetchAdditionalDetails,
   addSecondaryConfigurations,findPrimaryUserGodowns,findPrimaryUserGodownsSelf,
   godownwiseProducts,godownwiseProductsSelf,
@@ -21,7 +21,7 @@ getBankDetails,getSecUserDetails,
 
   import { cancelPurchase } from '../controllers/purchaseController.js';
 
-import {getCreditNoteDetails,transactions,fetchAdditionalCharges, getDebitNoteDetails,
+import {getCreditNoteDetails,transactions, getDebitNoteDetails,
   getReceiptDetails,getPaymentDetails,getProductSubDetails,deleteProductSubDetails,editProductSubDetails,addHsn,getSingleHsn,editHsn,deleteHsn,getSalesDetails,getPurchaseDetails,
   updateMissingBillIds} from "../controllers/commonController.js";
 import { primaryIsBlocked } from '../middlewares/isBlocked.js';
@@ -71,9 +71,6 @@ router.post('/editSecUSer/:id',authPrimary,primaryIsBlocked,editSecUSer)
 router.post('/saveOrderNumber/:cmp_id',authPrimary,primaryIsBlocked,companyAuthentication,saveOrderNumber)
 router.get('/getInvoiceDetails/:id',authPrimary,primaryIsBlocked,getInvoiceDetails)
 router.post('/editInvoice/:id',authPrimary,primaryIsBlocked,editInvoice)
-router.post('/addAditionalCharge/:cmp_id',authPrimary,primaryIsBlocked,companyAuthentication,addAditionalCharge)
-router.delete('/deleteAdditionalCharge/:id/:cmp_id',authPrimary,primaryIsBlocked,companyAuthentication,deleteAdditionalCharge)
-router.post('/EditAditionalCharge/:cmp_id/:id',authPrimary,primaryIsBlocked,companyAuthentication,EditAditionalCharge)
 router.post('/addconfigurations/:cmp_id',authPrimary,primaryIsBlocked,companyAuthentication,addconfigurations)
 router.post('/createSale',authPrimary,primaryIsBlocked,createSale)
 router.post('/saveSalesNumber/:cmp_id',authPrimary,primaryIsBlocked,companyAuthentication,saveSalesNumber)
@@ -85,7 +82,6 @@ router.get("/getGodowns/:cmp_id",authPrimary,primaryIsBlocked,companyAuthenticat
 router.get("/getGodownsSelf/:cmp_id",authPrimary,primaryIsBlocked,companyAuthentication,findPrimaryUserGodownsSelf)
 router.get("/godownProductFilter/:cmp_id/:godown_id",authPrimary,primaryIsBlocked,companyAuthentication,godownwiseProducts)
 router.get("/godownProductFilterSelf/:cmp_id/:godown_name",authPrimary,primaryIsBlocked,companyAuthentication,godownwiseProductsSelf)
-router.get("/additionalcharges/:cmp_id",authPrimary,primaryIsBlocked,companyAuthentication,fetchAdditionalCharges)
 router.get("/getPurchaseDetails/:id",authPrimary,primaryIsBlocked,getPurchaseDetails)
 router.get("/getProductSubDetails/:orgId",authPrimary,primaryIsBlocked,getProductSubDetails)
 router.delete("/deleteProductSubDetails/:orgId/:id",authPrimary,primaryIsBlocked,deleteProductSubDetails)

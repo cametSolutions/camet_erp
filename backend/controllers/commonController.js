@@ -368,33 +368,7 @@ export const transactions = async (req, res) => {
   }
 };
 
-// @desc to  get additional charges
-// route get/api/sUsers/additionalCharges
 
-export const fetchAdditionalCharges = async (req, res) => {
-  try {
-    const cmp_id = req.params.cmp_id;
-    const pUser = req.pUserId || req.owner;
-
-    const company = await Oragnization.findById(cmp_id);
-    const type = company.type;
-    let aditionalDetails;
-
-    if (type === "self") {
-      aditionalDetails = company?.additionalCharges;
-    } else {
-      aditionalDetails = await AdditionalChargesModel.find({
-        cmp_id: cmp_id,
-        Primary_user_id: pUser,
-      });
-    }
-
-    res.json(aditionalDetails);
-  } catch (error) {
-    console.error("Error fetching godownwise products:", error);
-    res.status(500).json({ error: "Internal Server Error" });
-  }
-};
 
 // @desc to  get details of debit note
 // route get/api/sUsers/getCreditNoteDetails

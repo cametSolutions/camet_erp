@@ -3,6 +3,7 @@
 /* eslint-disable no-undef */
 import { IoIosArrowRoundBack } from "react-icons/io";
 import { Link, useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux"; // Added missing import
 import CustomBarLoader from "./CustomBarLoader";
 import {
   DropdownMenu,
@@ -31,9 +32,14 @@ function TitleDiv({
       navigate(-1, { replace: true });
     }
   };
+
+  const { type } = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg
+  );
+
   return (
     <div className="sticky top-0 z-50 ">
-      <div className="  bg-[#012a4a] text-white  p-3 flex items-center gap-3 text-lg justify-between   ">
+      <div className="bg-[#012a4a] text-white p-3 flex items-center gap-3 text-lg justify-between">
         <div className="flex items-center justify-center gap-2">
           <IoIosArrowRoundBack
             onClick={handleNavigate}
@@ -59,16 +65,31 @@ function TitleDiv({
             <DropdownMenuContent className="mr-4 bg-[#012a4a] text-white text-xs p-2">
               <DropdownMenuLabel>My Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              {dropdownContents.map((item, index) => (
-                <Link key={index} to={item.to}>
-                  <DropdownMenuItem
-                    className="cursor-pointer"
-                    onClick={item.onClick}
+              {dropdownContents.map((item, index) => {
+                // Determine if this item should be disabled
+                const isDisabled = item?.typeSpecific && type !== "self";
+
+                return (
+                  <Link
+                    key={index}
+                    to={item.to}
+                    style={
+                      isDisabled
+                        ? { pointerEvents: "none", opacity: "0.5" }
+                        : {}
+                    }
                   >
-                    {item.title}
-                  </DropdownMenuItem>
-                </Link>
-              ))}
+                    <DropdownMenuItem
+                      className={`${
+                        isDisabled ? "cursor-not-allowed" : "cursor-pointer"
+                      }`}
+                      onClick={isDisabled ? undefined : item.onClick}
+                    >
+                      {item.title}
+                    </DropdownMenuItem>
+                  </Link>
+                );
+              })}
             </DropdownMenuContent>
           </DropdownMenu>
         )}

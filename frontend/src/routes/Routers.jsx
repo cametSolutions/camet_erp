@@ -27,9 +27,8 @@ import EditSecUsers from '../pages/primaryUsers/EditSecUsers'
 import InvoiceDetailsSecondary from '../pages/secUsers/InvoiceDetailsSecondary'
 import EditInvoiceSecondary from '../pages/secUsers/EditInvoiceSecondary'
 import ShareInvoiceSecondary from '../pages/secUsers/ShareInvoiceSecondary'
-import AddChargesListSecondary from '../pages/secUsers/AddChargesListSecondary'
-import AdditionalChargesSecondary from '../pages/secUsers/AdditionalChargesSecondary'
-import EditAdditionalChargesSecondary from '../pages/secUsers/EditAdditionalChargesSecondary'
+import AddChargesListSecondary from '../pages/secUsers/settilngs/serviceLedger/AddChargesListSecondary'
+import AdditionalChargesSecondary from '../pages/secUsers/settilngs/serviceLedger/AdditionalChargesSecondary'
 import OrderConfigurationsSecondary from '../pages/secUsers/OrderConfigurationsSecondary'
 // inventory 
 import InventorySecondaryUser from '../pages/secUsers/InventorySecondaryUser'
@@ -174,7 +173,7 @@ const Routers = () => {
 
         <Route path='/sUsers/additionalChargesList' element={<ProtectedSecRoute><AddChargesListSecondary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/additionalCharges' element={<ProtectedSecRoute><AdditionalChargesSecondary/></ProtectedSecRoute>}></Route>
-        <Route path='/sUsers/editAdditionalCharge/:id' element={<ProtectedSecRoute><EditAdditionalChargesSecondary/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/editAdditionalCharge/:id' element={<ProtectedSecRoute><AdditionalChargesSecondary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/OrderConfigurations' element={<ProtectedSecRoute><OrderConfigurationsSecondary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/Inventory' element={<ProtectedSecRoute><InventorySecondaryUser/></ProtectedSecRoute>}></Route>
 

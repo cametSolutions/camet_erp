@@ -18,9 +18,7 @@ import invoiceModel from "../models/invoiceModel.js";
 import bankModel from "../models/bankModel.js";
 import salesModel from "../models/salesModel.js";
 import AdditionalChargesModel from "../models/additionalChargesModel.js";
-import {
-  truncateToNDecimals,
-} from "../helpers/helper.js";
+import { truncateToNDecimals } from "../helpers/helper.js";
 import purchaseModel from "../models/purchaseModel.js";
 import { Brand } from "../models/subDetails.js";
 import { Category } from "../models/subDetails.js";
@@ -229,8 +227,6 @@ export const getPrimaryUserData = async (req, res) => {
       .json({ status: false, message: "internal sever error" });
   }
 };
-
-
 
 // @desc adding secondary users
 // route GET/api/pUsers/addSecUsers
@@ -711,8 +707,6 @@ export const getTransactionDetails = async (req, res) => {
   }
 };
 
-
-
 // @desc adding new Hsn
 // route POst/api/pUsers/addHsn
 export const addHsn = async (req, res) => {
@@ -899,9 +893,8 @@ export const fetchHsn = async (req, res) => {
 // route get/api/pUsers/fetchHsn
 
 export const fetchFilters = async (req, res) => {
-
   console.log("primary");
-  
+
   const cmp_id = req.params.cmp_id;
   const userId = req.pUserId;
   try {
@@ -1062,13 +1055,6 @@ export const editProduct = async (req, res) => {
     res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
-
-
-
-
-
-
-
 
 // @desc create in voice
 // route POST /api/pUsers/createInvoice
@@ -1545,134 +1531,6 @@ export const editInvoice = async (req, res) => {
   }
 };
 
-// @desc adding additional charges in orgData
-// route POST /api/pUsers/addAdditionalCharge
-
-export const addAditionalCharge = async (req, res) => {
-  const cmp_id = req.params.cmp_id;
-  try {
-    const org = await OragnizationModel.findById(cmp_id);
-    if (!org) {
-      res.status(404).json({ message: "Organization not found" });
-    }
-
-    const chargeExist = org.additionalCharges.some(
-      (charge) => charge.name === req.body.name
-    );
-    if (chargeExist) {
-      return res.status(400).json({
-        success: false,
-        message: "Additional charge with the same name already exists",
-      });
-    }
-
-    org.additionalCharges.push(req.body);
-    await org.save();
-    return res.status(200).json({
-      success: true,
-      message: "Additional charge added successfully",
-      data: org,
-    });
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({
-      success: false,
-      message: "Internal server error, try again!",
-      error: error.message, // Include error message for debugging
-    });
-  }
-};
-
-// @desc delete AdditionalCharge
-// route get/api/pUsers/deleteAdditionalCharge
-
-export const deleteAdditionalCharge = async (req, res) => {
-  try {
-    const id = req.params.id;
-    const addlId = new mongoose.Types.ObjectId(id);
-
-    // console.log(addlId);
-
-    const cmp_id = req.params.cmp_id;
-    const org = await OragnizationModel.findById(cmp_id);
-    // console.log("org", org);
-
-    const indexToDelete = org.additionalCharges.findIndex((item) =>
-      item._id.equals(addlId)
-    );
-    // console.log("indexToDelete", indexToDelete);
-
-    if (indexToDelete !== -1) {
-      org.additionalCharges.splice(indexToDelete, 1);
-      // Save the updated document
-      await org.save();
-
-      return res.status(200).json({
-        success: true,
-        message: "Additional charge deleted successfully.",
-      });
-    } else {
-      return res.status(404).json({
-        success: false,
-        message: "Additional charge not found.",
-      });
-    }
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({
-      success: false,
-      message: "Internal server error, try again!",
-    });
-  }
-};
-
-// @desc update AdditionalCharge
-// route get/api/pUsers/EditAditionalCharge
-
-export const EditAditionalCharge = async (req, res) => {
-  try {
-    const id = req.params.id;
-    const addlId = new mongoose.Types.ObjectId(id);
-
-    const cmp_id = req.params.cmp_id;
-    const org = await OragnizationModel.findById(cmp_id);
-
-    const indexToUpdate = org.additionalCharges.findIndex((item) =>
-      item._id.equals(addlId)
-    );
-
-    if (indexToUpdate !== -1) {
-      // Assuming req.body contains the updated fields for the additional charge
-      const updatedFields = req.body;
-
-      // Update the additional charge with the new values
-      org.additionalCharges[indexToUpdate] = {
-        ...org.additionalCharges[indexToUpdate],
-        ...updatedFields,
-      };
-
-      // Save the updated document
-      await org.save();
-
-      return res.status(200).json({
-        success: true,
-        message: "Additional charge updated successfully.",
-      });
-    } else {
-      return res.status(404).json({
-        success: false,
-        message: "Additional charge not found.",
-      });
-    }
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({
-      success: false,
-      message: "Internal server error, try again!",
-    });
-  }
-};
-
 // @desc update AdditionalCharge
 // route get/api/pUsers/addTermsAndConditions
 
@@ -2013,7 +1871,6 @@ export const fetchGodownsAndPriceLevels = async (req, res) => {
     ]);
 
     console.log("Primary_user_id", Primary_user_id);
-    
 
     // Fetch unique subgroups from parties
     const subGroupsResult = await partyModel.aggregate([
@@ -2032,9 +1889,7 @@ export const fetchGodownsAndPriceLevels = async (req, res) => {
       },
     ]);
 
-
     console.log("subGroupsResult", subGroupsResult);
-    
 
     // Formatting results
     const godownsWithPriceLevels = godownsResult.map((item) => ({
