@@ -1,8 +1,16 @@
 import mongoose from "mongoose";
 
 const BankDetailsSchema = new mongoose.Schema({
-  cmp_id: { type: String , required: true },
-  Primary_user_id: { type: String, required: true },
+  cmp_id: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Organization",
+    required: true,
+  },
+  Primary_user_id: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "PrimaryUser",
+    required: true,
+  },
   bank_ledname: { type: String , required: true },
   bank_grpname: { type: String },
   bank_childgrpname: { type: String },

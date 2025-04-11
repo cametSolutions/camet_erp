@@ -48,6 +48,8 @@ function AddPartyForm({
     `/api/sUsers/getSubGroup/${selectedOrganization._id}`
   );
 
+  const validAccountGroups = ["Sundry Creditors", "Sundry Debtors"];
+
   useEffect(() => {
     const loading = accountGroupLoading || subGroupLoading;
     setLoading(loading);
@@ -184,11 +186,15 @@ function AddPartyForm({
                         onChange={(e) => handleAccountGroup(e.target.value)}
                       >
                         <option value="">Select Account Group</option>
-                        {accountGroupList?.data?.map((group, index) => (
-                          <option key={index} value={group._id}>
-                            {group?.accountGroup}
-                          </option>
-                        ))}
+                        {accountGroupList?.data
+                          ?.filter((item) =>
+                            validAccountGroups.includes(item.accountGroup)
+                          )
+                          .map((group, index) => (
+                            <option key={index} value={group._id}>
+                              {group?.accountGroup}
+                            </option>
+                          ))}
                       </select>
                     </div>
                   </div>

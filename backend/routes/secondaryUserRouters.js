@@ -26,7 +26,7 @@ import { createPurchase,editPurchase,cancelPurchase } from '../controllers/purch
 import { createCreditNote,cancelCreditNote ,editCreditNote} from '../controllers/creditNoteController.js';
 import {createSale,editSale,cancelSale,} from '../controllers/saleController.js';
 import { cancelDebitNote, createDebitNote, editDebitNote } from '../controllers/debitNoteController.js';
-import { getStockTransferDetails,getCreditNoteDetails,transactions,fetchAdditionalCharges, getDebitNoteDetails,getReceiptDetails,getPaymentDetails,getProductSubDetails,deleteProductSubDetails,editProductSubDetails,addProductSubDetails,addHsn,getSingleHsn,editHsn,deleteHsn,getSalesDetails,getPurchaseDetails,getOpeningBalances, findSourceBalance, findSourceDetails, findSourceTransactions, addBank, editBank, addCash, getBankDetails, getCashDetails, editCash, sendPdfViaEmail} from '../controllers/commonController.js';
+import { getStockTransferDetails,getCreditNoteDetails,transactions,fetchAdditionalCharges, getDebitNoteDetails,getReceiptDetails,getPaymentDetails,getProductSubDetails,deleteProductSubDetails,editProductSubDetails,addProductSubDetails,addHsn,getSingleHsn,editHsn,deleteHsn,getSalesDetails,getPurchaseDetails,getOpeningBalances, sendPdfViaEmail} from '../controllers/commonController.js';
 import { authSecondary } from '../middlewares/authSecUsers.js';
 import { secondaryIsBlocked } from '../middlewares/isBlocked.js';
 import { companyAuthentication } from '../middlewares/authCompany.js';
@@ -46,6 +46,7 @@ import { fetchOutstandingDetails, fetchOutstandingTotal, getOutstandingSummary }
 import { addProduct, deleteProduct, productDetails,editProduct, getProducts } from '../controllers/productController.js';
 import { addOrganizations, editOrg, getOrganizations } from '../controllers/organizationController.js';
 import { addParty, addSubGroup, deleteSubGroup, editSubGroup, getSubGroup, PartyList } from '../controllers/partyController.js';
+import { addBank, addCash, editBank, editCash, findSourceBalance, findSourceDetails, findSourceTransactions, getBankDetails, getCashDetails } from '../controllers/bankAndCashController.js';
 
 router.post('/login',login)
 router.post('/sendOtp',sendOtp)

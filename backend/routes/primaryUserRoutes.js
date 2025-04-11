@@ -23,7 +23,7 @@ getBankDetails,getSecUserDetails,
 
 import {getCreditNoteDetails,transactions,fetchAdditionalCharges, getDebitNoteDetails,
   getReceiptDetails,getPaymentDetails,getProductSubDetails,deleteProductSubDetails,editProductSubDetails,addHsn,getSingleHsn,editHsn,deleteHsn,getSalesDetails,getPurchaseDetails,
-  updateMissingBillIds,addBank,editBank} from "../controllers/commonController.js";
+  updateMissingBillIds} from "../controllers/commonController.js";
 import { primaryIsBlocked } from '../middlewares/isBlocked.js';
 import { companyAuthentication } from '../middlewares/authCompany.js';
 import { getStockTransferDetails } from '../controllers/commonController.js';
@@ -63,9 +63,9 @@ router.get('/invoiceList/:cmp_id',authPrimary,primaryIsBlocked,companyAuthentica
 router.delete('/deleteHsn/:id',authPrimary,primaryIsBlocked,deleteHsn)
 router.get('/getSingleHsn/:hsnId',authPrimary,primaryIsBlocked,getSingleHsn)
 router.post('/editHsn/:hsnId',authPrimary,primaryIsBlocked,editHsn)
-router.post('/addBank',authPrimary,primaryIsBlocked,addBank)
-router.get('/getBankDetails/:id',authPrimary,primaryIsBlocked,getBankDetails)
-router.post('/editBank/:bank_id',authPrimary,primaryIsBlocked,editBank)
+// router.post('/addBank',authPrimary,primaryIsBlocked,addBank)
+// router.get('/getBankDetails/:id',authPrimary,primaryIsBlocked,getBankDetails)
+// router.post('/editBank/:bank_id',authPrimary,primaryIsBlocked,editBank)
 router.get('/getSecUserDetails/:id',authPrimary,primaryIsBlocked,getSecUserDetails)
 router.post('/editSecUSer/:id',authPrimary,primaryIsBlocked,editSecUSer)
 router.post('/saveOrderNumber/:cmp_id',authPrimary,primaryIsBlocked,companyAuthentication,saveOrderNumber)

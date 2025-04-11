@@ -38,4 +38,7 @@ export const accountGroups02 = [
 export const accountGroups03 = [
   "Sundry Creditors",
   "Sundry Debtors",
+  "Cash-in-Hand",
+  "Bank Accounts",
+  "Bank OD A/c"
 ];

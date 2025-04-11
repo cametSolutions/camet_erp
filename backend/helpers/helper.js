@@ -106,8 +106,6 @@ export const createAccountGroupsForOrganization = async ({
   ownerId,
   session,
 }) => {
-  console.log("organizationId", organizationId);
-
   try {
     if (type === "self") {
       if (Array.isArray(accountGroups) && accountGroups.length > 0) {
@@ -363,11 +361,17 @@ export const addCorrespondingParty = async (
   masterId,
   session
 ) => {
+  const accountGroupDetails = await AccountGroup.findOne({
+    accountGroup: accountGroup,
+    cmp_id: cmp_id,
+  });
   try {
+    if (!accountGroupDetails) {
+      throw new Error("Account group not found");
+    }
     const newParty = new partyModel({
       partyName: ledname,
-      accountGroup: accountGroup,
-      accountGroup_id: masterId,
+      accountGroup: accountGroupDetails?._id,
       cmp_id: cmp_id,
       Primary_user_id: Primary_user_id,
       party_master_id: masterId, // Set this directly during creation
