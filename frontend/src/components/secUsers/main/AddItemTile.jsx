@@ -27,6 +27,7 @@ function AddItemTile({
   urlToAddItem,
   urlToEditItem,
   convertedFrom = [],
+  from=""
 }) {
 
   return (
@@ -207,7 +208,7 @@ function AddItemTile({
                                           godownname === "" ? "nil" : godownname
                                         }/${idx}`,
                                         {
-                                          state: { from: type },
+                                          state: { from: from },
                                         }
                                       );
                                     }}
@@ -261,7 +262,7 @@ function AddItemTile({
                                   godownname === "" ? "nil" : godownname
                                 }/null`,
                                 {
-                                  state: { from: "sales" },
+                                  state: { from: from },
                                 }
                               );
                             }}

@@ -13,11 +13,10 @@ const ProductDetails = ({
   godownName,
   heights,
   tab = "",
+  from = "",
 }) => {
   const detailsRef = useRef();
   const batchOrGodownList = details?.GodownList;
-
-  
 
   useEffect(() => {
     if (detailsRef.current) {
@@ -67,12 +66,11 @@ const ProductDetails = ({
                   <div className="flex items-center">
                     {tab !== "stockTransfer" && (
                       <>
-                      
                         <p className="   text-xs md:text-sm">
-                         MRP : {details?.item_mrp || 0} |
+                          MRP : {details?.item_mrp || 0} |
                         </p>
                         <p className="   text-xs md:text-sm  ml-1">
-                         Price : {item?.selectedPriceRate || 0}
+                          Price : {item?.selectedPriceRate || 0}
                         </p>
                         <p className="  text-xs md:text-sm ml-2 font-semibold">
                           ( ₹ {item?.individualTotal} )
@@ -82,7 +80,9 @@ const ProductDetails = ({
                   </div>
                   <p className="text-gray-500 font-normal  text-sm md:text-sm ">
                     Stock: {item.balance_stock} /
-                    <span className="text-black ml-1">{details?.unit || ""}</span>
+                    <span className="text-black ml-1">
+                      {details?.unit || ""}
+                    </span>
                   </p>
                 </>
               )}
@@ -113,7 +113,10 @@ const ProductDetails = ({
                                 godownName || "nil"
                               }/${index}`,
                               {
-                                state: { from: tab },
+                                state: {
+                                  from: from,
+                                  maxCountLimit: item?.balance_stock,
+                                },
                               }
                             );
                           }}

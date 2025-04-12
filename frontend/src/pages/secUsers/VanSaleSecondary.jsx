@@ -494,6 +494,7 @@ function VanSaleSecondary() {
             setAdditional={setAdditional}
             urlToAddItem="/sUsers/addItemVanSale"
             urlToEditItem="/sUsers/editItemSales"
+            from="vanSales"
           />
 
           <div className="flex justify-between bg-white mt-2 p-3">

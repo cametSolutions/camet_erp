@@ -11,6 +11,8 @@ function EditItemForm({
   ItemsFromRedux,
   from,
   taxInclusive = false,
+  checkNegativeBlocking = false,
+  maxCountLimit=0
 }) {
   const [item, setItem] = useState([]);
   const [newPrice, setNewPrice] = useState("");
@@ -26,7 +28,7 @@ function EditItemForm({
   const [discountPercentage, setDiscountPercentage] = useState(0);
   const [isTaxInclusive, setIsTaxInclusive] = useState(false);
   const [taxAmount, setTaxAmount] = useState(0);
-  
+
   // New states for cess
   const [cess, setCess] = useState(0);
   const [additionalCess, setAdditionalCess] = useState(0);
@@ -36,7 +38,6 @@ function EditItemForm({
   const { id, index } = useParams();
 
   const navigate = useNavigate();
-  const dispatch = useDispatch();
   const selectedItem = ItemsFromRedux.filter((el) => el._id === id);
   const selectedGodown = selectedItem[0]?.GodownList[index];
 
@@ -55,7 +56,9 @@ function EditItemForm({
 
       setQuantity(selectedGodown?.count || 1);
       if (enableActualAndBilledQuantity) {
-        setActualQuantity(selectedGodown?.actualCount || selectedGodown?.count || 1);
+        setActualQuantity(
+          selectedGodown?.actualCount || selectedGodown?.count || 1
+        );
       } else {
         setActualQuantity(selectedGodown?.count || 1);
       }
@@ -78,7 +81,9 @@ function EditItemForm({
       setQuantity(selectedItem[0]?.count || 1);
 
       if (enableActualAndBilledQuantity) {
-        setActualQuantity(selectedItem[0]?.actualCount || selectedItem[0]?.count || 0);
+        setActualQuantity(
+          selectedItem[0]?.actualCount || selectedItem[0]?.count || 0
+        );
       } else {
         setActualQuantity(selectedItem[0]?.count || 0);
       }
@@ -99,9 +104,7 @@ function EditItemForm({
     setUnit(selectedItem[0]?.unit);
     setIgst(selectedItem[0]?.igst);
 
-    console.log(selectedItem[0]);
-    
-    
+
     // Set cess and additional cess
     setCess(selectedItem[0]?.cess || 0);
     setAdditionalCess(selectedItem[0]?.addl_cess || 0);
@@ -135,9 +138,7 @@ function EditItemForm({
       if (type === "amount") {
         calculatedDiscountAmount = discountValue;
         calculatedDiscountPercentage =
-          Number(
-            ((discountValue / taxExclusivePrice) * 100)?.toFixed(2)
-          ) || 0;
+          Number(((discountValue / taxExclusivePrice) * 100)?.toFixed(2)) || 0;
       } else if (type === "percentage") {
         calculatedDiscountPercentage = discountValue;
         calculatedDiscountAmount = Number(
@@ -160,7 +161,12 @@ function EditItemForm({
       ////final calculation
       const taxAmount = discountedPrice * (igstValue / 100);
       const totalPayableAmount = Number(
-        (discountedPrice + taxAmount + baseCalculatedCessAmount + calculatedAdditionalCessAmount)?.toFixed(2)
+        (
+          discountedPrice +
+          taxAmount +
+          baseCalculatedCessAmount +
+          calculatedAdditionalCessAmount
+        )?.toFixed(2)
       );
 
       setTotalAmount(totalPayableAmount);
@@ -168,7 +174,7 @@ function EditItemForm({
       setDiscountPercentage(calculatedDiscountPercentage);
       setTaxExclusivePrice(taxBasePrice);
       setTaxAmount(taxAmount);
-      
+
       // Set cess amounts
       setCessAmount(baseCalculatedCessAmount);
       setAdditionalCessAmount(calculatedAdditionalCessAmount);
@@ -182,9 +188,7 @@ function EditItemForm({
       if (type === "amount") {
         calculatedDiscountAmount = discountValue;
         calculatedDiscountPercentage =
-          Number(
-            ((discountValue / taxExclusivePrice) * 100)?.toFixed(2)
-          ) || 0;
+          Number(((discountValue / taxExclusivePrice) * 100)?.toFixed(2)) || 0;
       } else if (type === "percentage") {
         calculatedDiscountPercentage = discountValue;
         calculatedDiscountAmount = Number(
@@ -207,7 +211,12 @@ function EditItemForm({
       ////final calculation
       const taxAmount = discountedPrice * (igstValue / 100);
       const totalPayableAmount = Number(
-        (discountedPrice + taxAmount + baseCalculatedCessAmount + calculatedAdditionalCessAmount)?.toFixed(2)
+        (
+          discountedPrice +
+          taxAmount +
+          baseCalculatedCessAmount +
+          calculatedAdditionalCessAmount
+        )?.toFixed(2)
       );
 
       setTotalAmount(totalPayableAmount);
@@ -215,7 +224,7 @@ function EditItemForm({
       setDiscountPercentage(calculatedDiscountPercentage);
       setTaxExclusivePrice(taxExclusivePrice);
       setTaxAmount(taxAmount);
-      
+
       // Set cess amounts
       setCessAmount(baseCalculatedCessAmount);
       setAdditionalCessAmount(calculatedAdditionalCessAmount);
@@ -232,7 +241,7 @@ function EditItemForm({
     taxExclusivePrice,
     actualQuantity,
     cess,
-    additionalCess
+    additionalCess,
   ]);
 
   const handleBackClick = () => {
@@ -240,11 +249,7 @@ function EditItemForm({
   };
 
   const handleDirectQuantityChange = (value) => {
-    if (
-      enableActualAndBilledQuantity &&
-      actualQuantity &&
-      Number(value) > actualQuantity
-    ) {
+    if (enableActualAndBilledQuantity && Number(value) > actualQuantity) {
       return;
     }
     if (value.includes(".")) {
@@ -256,7 +261,7 @@ function EditItemForm({
 
     setQuantity(value);
 
-    if(!enableActualAndBilledQuantity){
+    if (!enableActualAndBilledQuantity) {
       setActualQuantity(value);
     }
   };
@@ -267,6 +272,16 @@ function EditItemForm({
       if (parts[1].length > 3) {
         return;
       }
+    }
+
+    console.log(selectedGodown);
+    
+
+    if (
+      checkNegativeBlocking &&
+      Number(value) > selectedGodown?.balance_stock
+    ) {
+      return;
     }
 
     setActualQuantity(value);
@@ -292,9 +307,6 @@ function EditItemForm({
     );
   };
 
-
-  console.log(additionalCess);
-  
   return (
     <div className=" ">
       <div className=" h-screen  flex-1">
@@ -509,7 +521,11 @@ function EditItemForm({
                           <p className="text-xs">Discount</p>
                           <div className="flex items-center gap-2">
                             <p className="text-xs">{`(${discountPercentage}) %`}</p>
-                            <p className="text-xs">{`₹ ${discountAmount ? Number(discountAmount).toFixed(2) : '0.00'}`}</p>
+                            <p className="text-xs">{`₹ ${
+                              discountAmount
+                                ? Number(discountAmount).toFixed(2)
+                                : "0.00"
+                            }`}</p>
                           </div>
                         </div>
                       )}
@@ -532,7 +548,9 @@ function EditItemForm({
                               <p className="text-xs">Cess</p>
                               <div className="flex items-center gap-2">
                                 <p className="text-xs">{`( ${cess} % )`}</p>
-                                <p className="text-xs">{`₹ ${cessAmount?.toFixed(2)}`}</p>
+                                <p className="text-xs">{`₹ ${cessAmount?.toFixed(
+                                  2
+                                )}`}</p>
                               </div>
                             </div>
                           )}
@@ -540,7 +558,9 @@ function EditItemForm({
                             <div className="flex justify-between">
                               <p className="text-xs">Additional Cess</p>
                               <div className="flex items-center gap-2">
-                                <p className="text-xs">{`₹ ${additionalCessAmount?.toFixed(2)}`}</p>
+                                <p className="text-xs">{`₹ ${additionalCessAmount?.toFixed(
+                                  2
+                                )}`}</p>
                               </div>
                             </div>
                           )}

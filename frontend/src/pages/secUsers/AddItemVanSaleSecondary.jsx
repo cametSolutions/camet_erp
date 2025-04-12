@@ -11,9 +11,6 @@ import { useDispatch } from "react-redux";
 import { setPriceLevel } from "../../../slices/salesSecondary";
 import {
   changeTotal,
-  // setBrandInRedux,
-  // setCategoryInRedux,
-  // setSubCategoryInRedux,
   addAllProducts,
   updateItem,
 } from "../../../slices/salesSecondary";
@@ -30,9 +27,9 @@ import Filter from "../../components/secUsers/Filter";
 function AddItemVanSaleSecondary() {
   const [item, setItem] = useState([]);
   const [selectedPriceLevel, setSelectedPriceLevel] = useState("");
-  const [brands, setBrands] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [subCategories, setSubCategories] = useState([]);
+  // const [brands, setBrands] = useState([]);
+  // const [categories, setCategories] = useState([]);
+  // const [subCategories, setSubCategories] = useState([]);
   const [selectedBrand, setSelectedBrand] = useState("");
   const [selectedCategory, setseleCtedCategory] = useState("");
   const [selectedSubCategory, setSelectedSubCategory] = useState("");
@@ -48,9 +45,11 @@ function AddItemVanSaleSecondary() {
 
   ///////////////////////////cpm_id///////////////////////////////////
 
-  const cpm_id = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg._id
+  const { _id: cpm_id, configurations } = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg
   );
+
+  const { enableNegativeStockBlockForVanInvoice } = configurations[0];
   ///////////////////////////get height from redux///////////////////////////////////
   // const heightsFromRedux = useSelector((state) => state.salesSecondary.heights);
 
@@ -156,7 +155,7 @@ function AddItemVanSaleSecondary() {
                     if (matchedGodown) {
                       return {
                         ...godown,
-                        balance_stock: matchedGodown.balance_stock,
+                        balance_stock: matchedGodown.balance_stock+ godown?.count || 0,
                       };
                     } else {
                       return godown;
@@ -191,6 +190,7 @@ function AddItemVanSaleSecondary() {
             }
           });
           setItem(updatedItems);
+          
           if (updatedItems.length > 0) {
             fetchFilters();
           }
@@ -275,10 +275,10 @@ function AddItemVanSaleSecondary() {
       }
 
       if (type === "self") {
-        const { 
-          // brands, categories, subcategories, 
-          priceLevels } =
-          res.data.data;
+        const {
+          // brands, categories, subcategories,
+          priceLevels,
+        } = res.data.data;
         // setBrands(brands);
         // setCategories(categories);
         // setSubCategories(subcategories);
@@ -290,9 +290,10 @@ function AddItemVanSaleSecondary() {
           dispatch(setPriceLevel(defaultPriceLevel));
         }
       } else {
-        const { priceLevels,
-          //  brands, categories, subcategories 
-          } = res.data;
+        const {
+          priceLevels,
+          //  brands, categories, subcategories
+        } = res.data;
 
         // setBrands(brands);
         // setCategories(categories);
@@ -466,7 +467,9 @@ function AddItemVanSaleSecondary() {
 
         // Calculate total including tax and cess
         const individualTotal = Math.max(
-          parseFloat((discountedPrice + taxAmount + totalCessAmount).toFixed(2)),
+          parseFloat(
+            (discountedPrice + taxAmount + totalCessAmount).toFixed(2)
+          ),
           0
         );
 
@@ -477,7 +480,7 @@ function AddItemVanSaleSecondary() {
           index,
           batch: godownOrBatch.batch,
           individualTotal,
-          cessAmount: totalCessAmount
+          cessAmount: totalCessAmount,
         });
       });
     } else {
@@ -545,7 +548,7 @@ function AddItemVanSaleSecondary() {
         index: 0,
         batch: item.batch || "No batch",
         individualTotal,
-        cessAmount: totalCessAmount
+        cessAmount: totalCessAmount,
       });
     }
 
@@ -554,9 +557,9 @@ function AddItemVanSaleSecondary() {
     return {
       individualTotals,
       total: subtotal,
-      totalCess: totalCess
+      totalCess: totalCess,
     };
-};
+  };
 
   ///////////////////////////handleAddClick///////////////////////////////////
 
@@ -568,11 +571,28 @@ function AddItemVanSaleSecondary() {
         if (itemToUpdate.GodownList[idx]) {
           const currentBatchOrGodown = { ...itemToUpdate.GodownList[idx] };
 
-          currentBatchOrGodown.added = currentBatchOrGodown.added
-            ? !currentBatchOrGodown.added
-            : true;
-          currentBatchOrGodown.count = 1;
-          currentBatchOrGodown.actualCount = 1;
+          const balance_stock = currentBatchOrGodown.balance_stock;
+
+          console.log("balance_stock", balance_stock);
+
+          if (enableNegativeStockBlockForVanInvoice) {
+            if (balance_stock >= 1) {
+              currentBatchOrGodown.added = currentBatchOrGodown.added
+                ? !currentBatchOrGodown.added
+                : true;
+              currentBatchOrGodown.count = 1;
+              currentBatchOrGodown.actualCount = 1;
+            } else {
+              return itemToUpdate;
+            }
+          } else {
+            currentBatchOrGodown.added = currentBatchOrGodown.added
+              ? !currentBatchOrGodown.added
+              : true;
+            currentBatchOrGodown.count = 1;
+            currentBatchOrGodown.actualCount = 1;
+          }
+
           // currentBatchOrGodown.IndividualTotal = totalData?.individualSubtotal;
 
           itemToUpdate.GodownList[idx] = currentBatchOrGodown;
@@ -618,8 +638,6 @@ function AddItemVanSaleSecondary() {
   ///////////////////////////handleIncrement///////////////////////////////////
 
   const handleIncrement = (_id, godownIndex = 0, moveToTop = false) => {
-    console.log(_id);
-
     const updatedItems = item.map((item) => {
       if (item?._id !== _id) return item; // Keep items unchanged if _id doesn't match
       const currentItem = structuredClone(item);
@@ -628,10 +646,17 @@ function AddItemVanSaleSecondary() {
         const godownOrBatch = { ...currentItem.GodownList[godownIndex] };
 
         // If godownOrBatch.count is undefined, set it to 1, otherwise increment by 1
-        godownOrBatch.count = new Decimal(godownOrBatch.count)
-          .add(1)
-          .toNumber();
+
+        const balance_stock = godownOrBatch.balance_stock;
+        const newCount = new Decimal(godownOrBatch.count).add(1).toNumber();
         godownOrBatch.actualCount = godownOrBatch.count;
+
+        if (enableNegativeStockBlockForVanInvoice && balance_stock < newCount) {
+          return item;
+        } else {
+          godownOrBatch.count = newCount;
+          godownOrBatch.actualCount = newCount;
+        }
 
         // Update the specific godown/batch in the GodownList array
         const updatedGodownList = currentItem.GodownList.map((godown, index) =>
@@ -915,6 +940,8 @@ function AddItemVanSaleSecondary() {
       marginTop: "6px",
       height: "200px",
     };
+
+    
     return (
       <div
         style={adjustedStyle}
@@ -981,14 +1008,17 @@ function AddItemVanSaleSecondary() {
                       </p>
                     </div>
                     <div className="flex font-normal">
-                    <p className="text-red-500 ">STOCK :    </p>
-                    <span>{el?.GodownList[0]?.balance_stock}</span>
-                    <span className="text-[11px] ml-1 mt-[0.5px] "> / {el?.unit}</span>
-                  </div>
-                  <div className="font-normal">
-                    <span >Total : </span>
-                    <span>{el?.GodownList[0]?.individualTotal || 0}</span>
-                  </div>
+                      <p className="text-red-500 ">STOCK : </p>
+                      <span>{el?.GodownList[0]?.balance_stock}</span>
+                      <span className="text-[11px] ml-1 mt-[0.5px] ">
+                        {" "}
+                        / {el?.unit}
+                      </span>
+                    </div>
+                    <div className="font-normal">
+                      <span>Total : </span>
+                      <span>{el?.GodownList[0]?.individualTotal || 0}</span>
+                    </div>
                   </>
                 )}
             </div>
@@ -1022,7 +1052,8 @@ function AddItemVanSaleSecondary() {
                       }/0`,
                       {
                         state: {
-                          from: "editItemSales",
+                          from: "vanSales",
+                          maxCountLimit:el?.balance_stock,
                           id: location?.state?.id,
                         },
                       }
@@ -1138,6 +1169,7 @@ function AddItemVanSaleSecondary() {
               godownName={godownname}
               details={el}
               setHeight={(height) => setHeight(index, height)}
+              from="vanSales"
             />
           </div>
         )}

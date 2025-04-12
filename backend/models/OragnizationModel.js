@@ -72,6 +72,10 @@ const organizationSchema = new mongoose.Schema(
           type: Boolean,
           default: false,
         },
+        enableNegativeStockBlockForVanInvoice: {
+          type: Boolean,
+          default: false,
+        },
         addRateWithTax: {
           type: Object,
           default: {
