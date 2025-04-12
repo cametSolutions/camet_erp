@@ -10,8 +10,8 @@ import {
 import EditItemForm from "../../components/secUsers/main/Forms/EditItemForm";
 
 function EditItemSalesSecondary() {
-  const ItemsFromRedux = useSelector((state) => {
-    return state.salesSecondary.items;
+  const { items: ItemsFromRedux, voucherType } = useSelector((state) => {
+    return state.salesSecondary;
   });
 
   const { configurations } = useSelector(
@@ -24,9 +24,8 @@ function EditItemSalesSecondary() {
   const navigate = useNavigate();
   const location = useLocation();
   const checkNegativeBlocking =
-    enableNegativeStockBlockForVanInvoice && location.state.from === "vanSales";
+(    enableNegativeStockBlockForVanInvoice && voucherType === "vanSale") || false; 
   const maxCountLimit = location.state.maxCountLimit;
-
 
   const submitHandler = (
     item,

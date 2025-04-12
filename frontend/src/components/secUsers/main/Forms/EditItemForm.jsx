@@ -12,7 +12,6 @@ function EditItemForm({
   from,
   taxInclusive = false,
   checkNegativeBlocking = false,
-  maxCountLimit=0
 }) {
   const [item, setItem] = useState([]);
   const [newPrice, setNewPrice] = useState("");

@@ -6,6 +6,7 @@ import {
   addAdditionalCharges,
   AddFinalAmount,
   deleteRow,
+  addVoucherType,
 } from "../../../slices/salesSecondary";
 import { useDispatch } from "react-redux";
 
@@ -56,9 +57,12 @@ function VanSaleSecondary() {
   const despatchDetails = useSelector(
     (state) => state.salesSecondary.despatchDetails
   );
+  const dispatch = useDispatch();
 
   ////dataLoading////
   // Helper function to manage dataLoading state
+
+
   const incrementLoading = () => setDataLoading((prev) => prev + 1);
   const decrementLoading = () => setDataLoading((prev) => prev - 1);
 
@@ -88,6 +92,8 @@ function VanSaleSecondary() {
     if (date) {
       setSelectedDate(date);
     }
+
+    dispatch(addVoucherType("vanSale"));
   }, []);
 
   useEffect(() => {
@@ -196,6 +202,8 @@ function VanSaleSecondary() {
     fetchGodownname();
   }, []);
 
+  
+
   const [rows, setRows] = useState(
     additionalChargesFromRedux.length > 0
       ? additionalChargesFromRedux
@@ -220,7 +228,6 @@ function VanSaleSecondary() {
     }
   }, []);
   const [subTotal, setSubTotal] = useState(0);
-  const dispatch = useDispatch();
 
   const handleAddRow = () => {
     const hasEmptyValue = rows.some((row) => row.value === "");

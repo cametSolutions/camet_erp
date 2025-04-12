@@ -55,24 +55,18 @@ function AddItemVanSaleSecondary() {
 
   ///////////////////////////itemsFromRedux///////////////////////////////////
 
-  const itemsFromRedux = useSelector((state) => state.salesSecondary.items);
+  const {
+    items: itemsFromRedux,
+    selectedPriceLevel: priceLevelFromRedux,
+    products: allProductsFromRedux,
+    voucherType,
+    brand: brandFromRedux,
+    category: categoryFromRedux,
+    subcategory: subCategoryFromRedux,
+  } = useSelector((state) => state.salesSecondary);
 
-  ///////////////////////////priceLevelFromRedux///////////////////////////////////
+  
 
-  const priceLevelFromRedux =
-    useSelector((state) => state.salesSecondary.selectedPriceLevel) || "";
-
-  const allProductsFromRedux =
-    useSelector((state) => state.salesSecondary.products) || [];
-
-  ///////////////////////////filters FromRedux///////////////////////////////////
-
-  const brandFromRedux =
-    useSelector((state) => state.salesSecondary.brand) || "";
-  const categoryFromRedux =
-    useSelector((state) => state.salesSecondary.category) || "";
-  const subCategoryFromRedux =
-    useSelector((state) => state.salesSecondary.subcategory) || "";
 
   ///////////////////////////navigate dispatch///////////////////////////////////
 
@@ -155,7 +149,8 @@ function AddItemVanSaleSecondary() {
                     if (matchedGodown) {
                       return {
                         ...godown,
-                        balance_stock: matchedGodown.balance_stock+ godown?.count || 0,
+                        balance_stock:
+                          matchedGodown.balance_stock 
                       };
                     } else {
                       return godown;
@@ -190,7 +185,7 @@ function AddItemVanSaleSecondary() {
             }
           });
           setItem(updatedItems);
-          
+
           if (updatedItems.length > 0) {
             fetchFilters();
           }
@@ -575,7 +570,7 @@ function AddItemVanSaleSecondary() {
 
           console.log("balance_stock", balance_stock);
 
-          if (enableNegativeStockBlockForVanInvoice) {
+          if (enableNegativeStockBlockForVanInvoice && voucherType === "vanSale") {
             if (balance_stock >= 1) {
               currentBatchOrGodown.added = currentBatchOrGodown.added
                 ? !currentBatchOrGodown.added
@@ -651,7 +646,7 @@ function AddItemVanSaleSecondary() {
         const newCount = new Decimal(godownOrBatch.count).add(1).toNumber();
         godownOrBatch.actualCount = godownOrBatch.count;
 
-        if (enableNegativeStockBlockForVanInvoice && balance_stock < newCount) {
+        if (enableNegativeStockBlockForVanInvoice && balance_stock < newCount && voucherType === "vanSale") {
           return item;
         } else {
           godownOrBatch.count = newCount;
@@ -941,7 +936,6 @@ function AddItemVanSaleSecondary() {
       height: "200px",
     };
 
-    
     return (
       <div
         style={adjustedStyle}
@@ -1053,7 +1047,7 @@ function AddItemVanSaleSecondary() {
                       {
                         state: {
                           from: "vanSales",
-                          maxCountLimit:el?.balance_stock,
+                          maxCountLimit: el?.balance_stock,
                           id: location?.state?.id,
                         },
                       }

@@ -1,8 +1,8 @@
 import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
-  // selectedGodownName:"",
-  // selectedGodownId:"",
+
+  voucherType:"",
   date: "",
   convertedFrom: [],
   products: [],
@@ -34,6 +34,10 @@ export const salesSecondarySlice = createSlice({
   name: "salesSecondary",
   initialState,
   reducers: {
+
+    addVoucherType: (state, action) => {
+      state.voucherType = action.payload
+    },
     addParty: (state, action) => {
       state.party = action.payload;
       state.newBillToShipTo = {};
@@ -436,6 +440,7 @@ export const {
   changeTaxInclusive,
   addOrderConversionDetails,
   addConvertedFrom,
+  addVoucherType
   // updateAllGodowns
 } = salesSecondarySlice.actions;
 
