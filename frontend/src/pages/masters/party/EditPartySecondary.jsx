@@ -48,19 +48,31 @@ function EditPartySecondary() {
     } catch (error) {
       toast.error(error.response.data.message);
       console.log(error);
-    }finally{
-      setLoading(false)
+    } finally {
+      setLoading(false);
     }
   };
 
+  const accountGroupName = partyDetails?.accountGroup?.accountGroup;
+  /// don't allow edit if account group is other than sundry debtor or creditor
+  const allowEditing =
+    accountGroupName === "Sundry Debtors" ||
+    accountGroupName === "Sundry Creditors";
+
   return (
     <div className="">
-      <TitleDiv title={"Edit Party"} from="/sUsers/partylist" />
+      <TitleDiv
+        title={"Edit Party"}
+        from="/sUsers/partylist"
+        loading={loading}
+      />
       <AddPartyForm
         submitHandler={submitHandler}
         partyDetails={partyDetails}
         userType="secondary"
-        loading={loading} setLoading={setLoading} 
+        loading={loading}
+        setLoading={setLoading}
+        allowEditing={allowEditing}
       />
     </div>
   );

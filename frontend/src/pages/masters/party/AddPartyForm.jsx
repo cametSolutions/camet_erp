@@ -12,6 +12,7 @@ function AddPartyForm({
   userType,
   loading,
   setLoading,
+  allowEditing=true
 }) {
   // const [tab, setTab] = useState("business");
   const [accountGroup, setAccountGroup] = useState("");
@@ -77,7 +78,7 @@ function AddPartyForm({
         pin,
       } = partyDetails;
 
-      setAccountGroup(accountGroup);
+      setAccountGroup(accountGroup?._id);
       setSubGroup(subGroup);
       setPartyName(partyName);
       setMobileNumber(mobileNumber);
@@ -153,8 +154,10 @@ function AddPartyForm({
     submitHandler(formData);
   };
 
+  
+
   return (
-    <div>
+    <div className={`${!allowEditing && "pointer-events-none opacity-50"}`}>
       <section
         className={` ${
           loading && "opacity-50 pointer-events-none"

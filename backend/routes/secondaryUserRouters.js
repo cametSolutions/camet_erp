@@ -3,8 +3,8 @@ const router = express.Router();
 import {login,getSecUserData,
     confirmCollection,logout,
     cancelTransaction,fetchBanks,sendOtp,
-    submitOtp,resetPassword,getTransactionDetails,invoiceList,getSinglePartyDetails,editParty,
-    deleteParty,getSingleOrganization,fetchHsn,
+    submitOtp,resetPassword,getTransactionDetails,invoiceList
+    ,getSingleOrganization,fetchHsn,
     addDataToOrg,editDataInOrg,deleteDataInOrg
     ,saveOrderNumber,
     getInvoiceDetails,fetchFilters
@@ -26,7 +26,7 @@ import { createPurchase,editPurchase,cancelPurchase } from '../controllers/purch
 import { createCreditNote,cancelCreditNote ,editCreditNote} from '../controllers/creditNoteController.js';
 import {createSale,editSale,cancelSale,} from '../controllers/saleController.js';
 import { cancelDebitNote, createDebitNote, editDebitNote } from '../controllers/debitNoteController.js';
-import { getStockTransferDetails,getCreditNoteDetails,transactions, getDebitNoteDetails,getReceiptDetails,getPaymentDetails,getProductSubDetails,deleteProductSubDetails,editProductSubDetails,addProductSubDetails,addHsn,getSingleHsn,editHsn,deleteHsn,getSalesDetails,getPurchaseDetails,getOpeningBalances, sendPdfViaEmail} from '../controllers/commonController.js';
+import { getStockTransferDetails,getCreditNoteDetails,transactions, getDebitNoteDetails,getReceiptDetails,getPaymentDetails,addHsn,getSingleHsn,editHsn,deleteHsn,getSalesDetails,getPurchaseDetails,getOpeningBalances, sendPdfViaEmail} from '../controllers/commonController.js';
 import { authSecondary } from '../middlewares/authSecUsers.js';
 import { secondaryIsBlocked } from '../middlewares/isBlocked.js';
 import { companyAuthentication } from '../middlewares/authCompany.js';
@@ -43,9 +43,9 @@ import {  addSecondaryConfigurations, addSecUsers, editSecUSer, fetchConfigurati
 
 import { getSummary } from "../controllers/summaryController.js"
 import { fetchOutstandingDetails, fetchOutstandingTotal, getOutstandingSummary } from '../controllers/outStandingController.js';
-import { addProduct, deleteProduct, productDetails,editProduct, getProducts } from '../controllers/productController.js';
+import { addProduct, deleteProduct, productDetails,editProduct, getProducts, addProductSubDetails, getProductSubDetails, deleteProductSubDetails, editProductSubDetails } from '../controllers/productController.js';
 import { addOrganizations, editOrg, getOrganizations } from '../controllers/organizationController.js';
-import { addParty, addSubGroup, deleteSubGroup, editSubGroup, getSubGroup, PartyList } from '../controllers/partyController.js';
+import { addParty, addSubGroup, deleteParty, deleteSubGroup, editParty, editSubGroup, getSinglePartyDetails, getSubGroup, PartyList } from '../controllers/partyController.js';
 import { addBankEntry, addCash,  editBankEntry, editCash, findSourceBalance, findSourceDetails, findSourceTransactions, getBankEntryDetails, getCashDetails } from '../controllers/bankAndCashController.js';
 import { addAditionalCharge, deleteAdditionalCharge, EditAditionalCharge, fetchAdditionalCharges, fetchSingleAdditionalCharge } from '../controllers/additionalChargeContoller.js';
 
