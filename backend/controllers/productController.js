@@ -1,7 +1,13 @@
-import mongoose from "mongoose";
+import mongoose, { Types } from "mongoose";
 import productModel from "../models/productModel.js";
 import SecondaryUser from "../models/secondaryUserModel.js";
-import { Brand, Category, Godown, PriceLevel, Subcategory } from "../models/subDetails.js";
+import {
+  Brand,
+  Category,
+  Godown,
+  PriceLevel,
+  Subcategory,
+} from "../models/subDetails.js";
 import OragnizationModel from "../models/OragnizationModel.js";
 
 // @desc adding new Product
@@ -144,7 +150,7 @@ export const editProduct = async (req, res) => {
         Priceleveles,
         GodownList,
         batchEnabled,
-        gdnEnabled
+        gdnEnabled,
       },
     } = req;
 
@@ -194,7 +200,7 @@ export const editProduct = async (req, res) => {
       cess,
       addl_cess,
       batchEnabled,
-      gdnEnabled
+      gdnEnabled,
     };
 
     const updateProduct = await productModel.findOneAndUpdate(
@@ -291,8 +297,8 @@ export const getProducts = async (req, res) => {
     // Build the match stage with search functionality
     let matchStage = {
       $match: {
-        cmp_id: cmp_id,
-        Primary_user_id: Primary_user_id,
+        cmp_id: new mongoose.Types.ObjectId(cmp_id),
+        Primary_user_id: new mongoose.Types.ObjectId(Primary_user_id),
       },
     };
 
@@ -473,7 +479,6 @@ export const getProducts = async (req, res) => {
       .json({ success: false, message: "Internal server error, try again!" });
   }
 };
-
 
 /**
  * @desc  adding subDetails of product such as brand category subcategory etc

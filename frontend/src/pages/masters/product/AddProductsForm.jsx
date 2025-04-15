@@ -14,9 +14,9 @@ function AddProductForm({
   orgId,
   submitData,
   productData = {},
-  userType,
   setLoading = () => {},
   loading,
+  process="add"
 }) {
   // State management
   const [tab, setTab] = useState("priceLevel");
@@ -139,6 +139,7 @@ function AddProductForm({
         batchEnabled,
       } = productData;
 
+
       setFormState({
         product_name: product_name || "",
         product_code: product_code || "",
@@ -169,6 +170,8 @@ function AddProductForm({
         setPriceLevelRows([{ pricelevel: "", pricerate: "" }]);
       }
       if (GodownList.length > 0) {
+        console.log(GodownList);
+
         setLocationRows(GodownList);
       } else {
         setLocationRows([
@@ -186,16 +189,13 @@ function AddProductForm({
   const fetchAllData = useCallback(async () => {
     try {
       setLoading(true);
-      let subDetailsPromise;
-      if (userType === "secondaryUser") {
-        subDetailsPromise = api.get(`/api/sUsers/getAllSubDetails/${orgId}`, {
+
+      const subDetailsPromise = api.get(
+        `/api/sUsers/getAllSubDetails/${orgId}`,
+        {
           withCredentials: true,
-        });
-      } else if (userType === "primaryUser") {
-        subDetailsPromise = api.get(`/api/pUsers/getAllSubDetails/${orgId}`, {
-          withCredentials: true,
-        });
-      }
+        }
+      );
 
       const hsnResPromise = api.get(`/api/sUsers/fetchHsn/${orgId}`, {
         withCredentials: true,
@@ -224,7 +224,9 @@ function AddProductForm({
         setDefaultGodown(defaultGodown._id);
 
         // Initialize location rows with default godown if empty
-        if (locationRows?.length === 0) {
+        if (locationRows?.length === 0 && process=="add") {
+          console.log("here");
+
           setLocationRows([
             {
               godown: defaultGodown?._id || "",
@@ -233,6 +235,8 @@ function AddProductForm({
           ]);
         }
       } else {
+        console.log("here");
+
         setLocationRows([{ godown: "", balance_stock: "" }]);
       }
 
@@ -246,7 +250,7 @@ function AddProductForm({
     } finally {
       setLoading(false);
     }
-  }, [orgId, userType, locationRows.length]);
+  }, [orgId]);
 
   useEffect(() => {
     fetchAllData();
@@ -479,8 +483,6 @@ function AddProductForm({
 
     const formData = prepareFormData();
 
-    console.log(formData);
-    
     // Uncomment to actually submit the data
     submitData(formData);
   };
@@ -539,6 +541,9 @@ function AddProductForm({
       </div>
     );
   };
+
+  console.log(locationRows);
+  console.log(optionsData);
 
   return (
     <section

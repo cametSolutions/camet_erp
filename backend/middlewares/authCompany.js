@@ -2,6 +2,7 @@ import Organization from "../models/OragnizationModel.js";
 
 export const companyAuthentication = async (req, res, next) => {
     const cmp_id = req.params.cmp_id;
+    
     try {
         const companyData = await Organization.findById(cmp_id);
         if (companyData.isBlocked == false) {

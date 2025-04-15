@@ -35,7 +35,6 @@ export const PartyList = async (req, res) => {
         $or: [
           { partyName: regex },
           { mobileNumber: typeof search === "string" ? regex : undefined },
-          // { accountGroup: regex },
         ].filter(Boolean), // removes undefined if any
       };
     }
@@ -48,22 +47,56 @@ export const PartyList = async (req, res) => {
     };
 
     // Fetch parties and secondary user concurrently
-    const [partyList, secUser, totalCount] = await Promise.all([
-      partyModel
-        .find(query)
-        .select(
-          "_id partyName party_master_id billingAddress shippingAddress mobileNumber gstNo emailID pin country state accountGroup accountGroup_id subGroup subGroup_id"
-        )
-        .skip(skip)
-        .limit(pageSize)
-        .lean(),
-      secondaryUserModel.findById(secUserId),
+    const [totalCount, secUser] = await Promise.all([
       partyModel.countDocuments(query),
+      secondaryUserModel.findById(secUserId),
     ]);
 
     if (!secUser) {
       return res.status(404).json({ message: "Secondary user not found" });
     }
+
+    // Use aggregation to populate accountGroup and subGroup fields
+    const partyList = await partyModel.aggregate([
+      { $match: query },
+      { $skip: skip },
+      { $limit: pageSize },
+      {
+        $lookup: {
+          from: "accountgroups", // Collection name is "accountgroups" based on your model
+          localField: "accountGroup",
+          foreignField: "_id", // This should match with your schema
+          as: "accountGroupData",
+        },
+      },
+
+      {
+        $addFields: {
+          accountGroupName: {
+            $arrayElemAt: ["$accountGroupData.accountGroup", 0],
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          partyName: 1,
+          party_master_id: 1,
+          billingAddress: 1,
+          shippingAddress: 1,
+          mobileNumber: 1,
+          gstNo: 1,
+          emailID: 1,
+          pin: 1,
+          country: 1,
+          state: 1,
+          accountGroup: "$accountGroupName", // Rename to match original structure
+          accountGroup_id: 1,
+          subGroup: "$subGroupName", // Rename to match original structure
+          subGroup_id: 1,
+        },
+      },
+    ]);
 
     const configuration = secUser.configurations.find(
       (config) => config.organization == cmp_id
@@ -73,7 +106,6 @@ export const PartyList = async (req, res) => {
     let filteredPartyList = partyList;
 
     // Filter parties by selectedVanSaleSubGroups if isSale is true
-
     if (
       isSale === "true" &&
       configuration &&
@@ -178,6 +210,7 @@ export const addParty = async (req, res) => {
     } = req.body;
 
     const generatedId = new mongoose.Types.ObjectId();
+    const cleanSubGroup=subGroup === "" ? undefined : subGroup;
 
     const party = new partyModel({
       _id: generatedId,
@@ -185,7 +218,7 @@ export const addParty = async (req, res) => {
       Primary_user_id: req.owner,
       Secondary_user_id: req.sUserId,
       accountGroup,
-      subGroup,
+      subGroup :cleanSubGroup,
       partyName,
       mobileNumber,
       emailID,
@@ -248,7 +281,6 @@ export const getSinglePartyDetails = async (req, res) => {
       .json({ success: false, message: "Internal server error, try again!" });
   }
 };
-
 
 // @desc  edit editParty details
 // route get/api/pUsers/editParty

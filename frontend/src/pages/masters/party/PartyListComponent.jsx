@@ -37,13 +37,22 @@ function PartyListComponent({ deleteHandler = () => {}, isVoucher = false }) {
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
 
-
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const location = useLocation();
 
   const isSalePath = location.pathname === "/sUsers/searchPartySales";
 
+  const allowAlteration = (accountGroup) => {
+    if (
+      accountGroup === "Sundry Debtors" ||
+      accountGroup === "Sundry Creditors"
+    ) {
+      return true;
+    } else {
+      return false;
+    }
+  };
 
   // console.log(location.pathname);
   // console.log();
@@ -67,14 +76,17 @@ function PartyListComponent({ deleteHandler = () => {}, isVoucher = false }) {
 
       try {
         setLoading(true);
-        const res = await api.get(`/api/sUsers/PartyList/${cmp_id}?${isSalePath && "isSale=true"}`, {
-          params: {
-            page: pageNum,
-            limit: PAGE_SIZE,
-            search: searchTerm,
-          },
-          withCredentials: true,
-        });
+        const res = await api.get(
+          `/api/sUsers/PartyList/${cmp_id}?${isSalePath && "isSale=true"}`,
+          {
+            params: {
+              page: pageNum,
+              limit: PAGE_SIZE,
+              search: searchTerm,
+            },
+            withCredentials: true,
+          }
+        );
 
         const newParties = res.data.partyList;
 
@@ -225,15 +237,16 @@ function PartyListComponent({ deleteHandler = () => {}, isVoucher = false }) {
           <div className="flex justify-center items-center gap-3 shrink-0">
             <CallIcon phoneNumber={el?.mobileNumber} size={18} color="green" />
             <Link to={`/sUsers/editParty/${el._id}`}>
-              <FaEdit className="text-blue-500" />
+              <FaEdit className={` ${type === "self" && !allowAlteration(el?.accountGroup) && "pointer-events-none opacity-50"}  text-blue-500`} />
             </Link>
             {/* delete id only for self users */}
-            {type === "self" && (
+            {/* {type === "self" && allowAlteration(el?.accountGroup) && ( */}
               <MdDelete
+              
                 onClick={() => deleteHandler(el._id)}
-                className="text-red-500"
+                className={` ${type === "self" && !allowAlteration(el?.accountGroup) && "pointer-events-none opacity-50"}  text-red-500`}
               />
-            )}
+            {/* // )} */}
           </div>
         </div>
         <div className="flex gap-2 text-sm mt-1 overflow-hidden">
