@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import cashModel from "../models/cashModel.js";
 import { addCorrespondingParty, editCorrespondingParty } from "../helpers/helper.js";
 import bankModel from "../models/bankModel.js";
+import BankOdModel from "../models/bankOdModel.js";
 import { startOfDay, endOfDay, parseISO } from "date-fns";
 
 
@@ -136,6 +137,10 @@ export const findSourceDetails = async (req, res) => {
         break;
       case "bankBalance":
         model = bankModel;
+        nameField = "bank_ledname";
+        break;
+      case "bankOd":
+        model = BankOdModel;
         nameField = "bank_ledname";
         break;
       default:
@@ -531,7 +536,7 @@ export const getCashDetails = async (req, res) => {
 };
 
 // @desc  edit edit bank details
-// route get/api/pUsers/editBank
+// route get/api/sUsers/editBank
 
 export const editCash = async (req, res) => {
   const cash_id = req.params.cash_id;
@@ -577,8 +582,175 @@ export const editCash = async (req, res) => {
 // @desc  Add bank
 // route post/api/sUsers/addBank
 
-export const addBank = async (req, res) => {
-    const {
+// export const addBank = async (req, res) => {
+//     const {
+//       acholder_name,
+//       ac_no,
+//       ifsc,
+//       bank_name,
+//       branch,
+//       upi_id,
+//       cmp_id,
+//       bank_opening,
+//     } = req.body;
+//     const Primary_user_id = req.pUserId || req.owner;
+//     const bank_ledname = bank_name;
+  
+//     try {
+//       const session = await mongoose.startSession();
+//       session.startTransaction();
+//       const bank = await bankModel({
+//         acholder_name,
+//         ac_no,
+//         ifsc,
+//         bank_name,
+//         branch,
+//         upi_id,
+//         cmp_id,
+//         Primary_user_id,
+//         bank_ledname,
+//         bank_opening,
+//       });
+  
+//       const result = await bank.save();
+  
+//       result.bank_id = result._id;
+//       await result.save({ session });
+  
+//       await addCorrespondingParty(
+//         bank_name,
+//         Primary_user_id,
+//         cmp_id,
+//         "Bank Accounts",
+//         result._id,
+//         session
+//       );
+  
+//       await session.commitTransaction();
+//       session.endSession();
+//       return res.status(200).json({
+//         success: true,
+//         message: "Bank added successfully",
+//         data: result,
+//       });
+//     } catch (error) {
+//       console.error(error);
+//       return res
+//         .status(500)
+//         .json({ success: false, message: "Internal server error, try again!" });
+//     }
+//   };
+//   // @desc Edit bank details
+//   // route post/api/sUsers/editBank
+  
+//   export const editBank = async (req, res) => {
+//     const bank_id = req.params.bank_id;
+  
+//     const session = await mongoose.startSession();
+//     session.startTransaction();
+  
+//     try {
+//       const udatedBank = await bankModel.findOneAndUpdate(
+//         { _id: bank_id },
+//         req.body,
+//         { new: true }
+//       );
+  
+//       udatedBank.bank_id = udatedBank._id;
+//       udatedBank.bank_ledname = udatedBank.bank_name;
+//       udatedBank.save({ session });
+  
+//       //// update corresponding party
+//       await editCorrespondingParty(
+//         udatedBank.bank_ledname,
+//         udatedBank.Primary_user_id,
+//         udatedBank.cmp_id,
+//         "Bank Accounts",
+//         udatedBank._id,
+//         session
+//       );
+  
+//       await session.commitTransaction();
+//       session.endSession();
+  
+//       res.status(200).json({
+//         success: true,
+//         message: "Bank updated successfully",
+//         data: udatedBank,
+//       });
+//     } catch (error) {
+//       await session.abortTransaction();
+//       session.endSession();
+//       console.error(error);
+//       res.status(500).json({ success: false, message: "Internal Server Error" });
+//     }
+//   };
+  
+//     // @desc Get bank details
+//   // route get/api/sUsers/getBankDetails
+//   export const getBankDetails = async (req, res) => {
+//     try {
+//       const bankId = req?.params?.bank_id;
+//       if (!bankId) {
+//         return res
+//           .status(400)
+//           .json({ success: false, message: "Bank ID is required" });
+//       }
+  
+//       const bankDetails = await bankModel.findById(bankId);
+  
+//       if (!bankDetails) {
+//         return res
+//           .status(404)
+//           .json({ success: false, message: "Bank details not found" });
+//       }
+  
+//       return res.status(200).json({ success: true, data: bankDetails });
+//     } catch (error) {
+//       console.error(`Error fetching bank details: ${error.message}`);
+  
+//       return res
+//         .status(500)
+//         .json({ success: false, message: "Internal server error, try again!" });
+//     }
+//   };
+
+
+// Helper function to determine which model to use based on the route
+const getModelAndType = (req) => {
+  const isOD = req.path.toLowerCase().includes('od');
+  return {
+    model: isOD ? BankOdModel : bankModel,
+    type: isOD ? "Bank OD A/c" : "Bank Accounts",
+    name: isOD ? "Bank OD" : "Bank"
+  };
+};
+
+// @desc Add a new bank or bank OD
+// @route POST /api/sUsers/addBank/:cmp_id or /api/sUsers/addBankOD/:cmp_id
+export const addBankEntry = async (req, res) => {
+  const {
+    acholder_name,
+    ac_no,
+    ifsc,
+    bank_name,
+    branch,
+    upi_id,
+    cmp_id,
+    bank_opening,
+    // od_limit // Optional, only for OD
+  } = req.body;
+  
+  const Primary_user_id = req.pUserId || req.owner;
+  const bank_ledname = bank_name;
+  const { model, type, name } = getModelAndType(req);
+
+  try {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    
+    // Create basic bank data object
+    const bankData = {
       acholder_name,
       ac_no,
       ifsc,
@@ -586,126 +758,150 @@ export const addBank = async (req, res) => {
       branch,
       upi_id,
       cmp_id,
-      bank_opening,
-    } = req.body;
-    const Primary_user_id = req.pUserId || req.owner;
-    const bank_ledname = bank_name;
-  
-    try {
-      const session = await mongoose.startSession();
-      session.startTransaction();
-      const bank = await bankModel({
-        acholder_name,
-        ac_no,
-        ifsc,
-        bank_name,
-        branch,
-        upi_id,
-        cmp_id,
-        Primary_user_id,
-        bank_ledname,
-        bank_opening,
-      });
-  
-      const result = await bank.save();
-  
-      result.bank_id = result._id;
-      await result.save({ session });
-  
-      await addCorrespondingParty(
-        bank_name,
-        Primary_user_id,
-        cmp_id,
-        "Bank Accounts",
-        result._id,
-        session
-      );
-  
-      await session.commitTransaction();
-      session.endSession();
-      return res.status(200).json({
-        success: true,
-        message: "Bank added successfully",
-        data: result,
-      });
-    } catch (error) {
-      console.error(error);
-      return res
-        .status(500)
-        .json({ success: false, message: "Internal server error, try again!" });
-    }
-  };
-  // @desc Edit bank details
-  // route post/api/sUsers/editBank
-  
-  export const editBank = async (req, res) => {
-    const bank_id = req.params.bank_id;
-  
-    const session = await mongoose.startSession();
-    session.startTransaction();
-  
-    try {
-      const udatedBank = await bankModel.findOneAndUpdate(
-        { _id: bank_id },
-        req.body,
-        { new: true }
-      );
-  
-      udatedBank.bank_id = udatedBank._id;
-      udatedBank.bank_ledname = udatedBank.bank_name;
-      udatedBank.save({ session });
-  
-      //// update corresponding party
-      await editCorrespondingParty(
-        udatedBank.bank_ledname,
-        udatedBank.Primary_user_id,
-        udatedBank.cmp_id,
-        "Bank Accounts",
-        udatedBank._id,
-        session
-      );
-  
-      await session.commitTransaction();
-      session.endSession();
-  
-      res.status(200).json({
-        success: true,
-        message: "Bank updated successfully",
-        data: udatedBank,
-      });
-    } catch (error) {
+      Primary_user_id,
+      bank_ledname,
+      bank_opening
+    };
+    
+    // Add OD specific fields if it's an OD entry
+    // if (type === "Bank OD Accounts" && od_limit) {
+    //   bankData.od_limit = od_limit;
+    // }
+    
+    const bank = await model(bankData);
+    const result = await bank.save({ session });
+
+    result.bank_id = result._id;
+    await result.save({ session });
+
+    await addCorrespondingParty(
+      bank_name,
+      Primary_user_id,
+      cmp_id,
+      type,
+      result._id,
+      session
+    );
+
+    await session.commitTransaction();
+    session.endSession();
+    
+    return res.status(200).json({
+      success: true,
+      message: `${name} added successfully`,
+      data: result,
+    });
+  } catch (error) {
+    console.error(error);
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error, try again!" });
+  }
+};
+
+// @desc Edit bank or bank OD details
+// @route PUT /api/sUsers/editBank/:cmp_id/:bank_id or /api/sUsers/editBankOD/:cmp_id/:bank_id
+export const editBankEntry = async (req, res) => {
+  const bank_id = req.params.bank_id;
+  const { model, type, name } = getModelAndType(req);
+
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    const updatedEntry = await model.findOneAndUpdate(
+      { _id: bank_id },
+      req.body,
+      { new: true, session }
+    );
+
+    if (!updatedEntry) {
       await session.abortTransaction();
       session.endSession();
-      console.error(error);
-      res.status(500).json({ success: false, message: "Internal Server Error" });
+      return res.status(404).json({ 
+        success: false, 
+        message: `${name} not found` 
+      });
     }
-  };
-  
-    // @desc Get bank details
-  // route get/api/sUsers/getBankDetails
-  export const getBankDetails = async (req, res) => {
-    try {
-      const bankId = req?.params?.bank_id;
-      if (!bankId) {
-        return res
-          .status(400)
-          .json({ success: false, message: "Bank ID is required" });
-      }
-  
-      const bankDetails = await bankModel.findById(bankId);
-  
-      if (!bankDetails) {
-        return res
-          .status(404)
-          .json({ success: false, message: "Bank details not found" });
-      }
-  
-      return res.status(200).json({ success: true, data: bankDetails });
-    } catch (error) {
-      console.error(`Error fetching bank details: ${error.message}`);
-  
+
+    updatedEntry.bank_id = updatedEntry._id;
+    updatedEntry.bank_ledname = updatedEntry.bank_name;
+    await updatedEntry.save({ session });
+
+    // Update corresponding party
+    await editCorrespondingParty(
+      updatedEntry.bank_ledname,
+      updatedEntry.Primary_user_id,
+      updatedEntry.cmp_id,
+      type,
+      updatedEntry._id,
+      session
+    );
+
+    await session.commitTransaction();
+    session.endSession();
+
+    res.status(200).json({
+      success: true,
+      message: `${name} updated successfully`,
+      data: updatedEntry,
+    });
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    console.error(error);
+    res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
+};
+
+// @desc Get bank or bank OD details
+// @route GET /api/sUsers/getBankDetails/:cmp_id/:bank_id or /api/sUsers/getBankODDetails/:cmp_id/:bank_id
+export const getBankEntryDetails = async (req, res) => {
+  try {
+    const bankId = req?.params?.bank_id;
+    const { model, name } = getModelAndType(req);
+    
+    if (!bankId) {
       return res
-        .status(500)
-        .json({ success: false, message: "Internal server error, try again!" });
+        .status(400)
+        .json({ success: false, message: `${name} ID is required` });
     }
-  };
+
+    const entryDetails = await model.findById(bankId);
+
+    if (!entryDetails) {
+      return res
+        .status(404)
+        .json({ success: false, message: `${name} details not found` });
+    }
+
+    return res.status(200).json({ success: true, data: entryDetails });
+  } catch (error) {
+    console.error(`Error fetching ${getModelAndType(req).name.toLowerCase()} details: ${error.message}`);
+
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error, try again!" });
+  }
+};
+
+// @desc Get all banks or bank ODs for a company
+// @route GET /api/sUsers/getAllBanks/:cmp_id or /api/sUsers/getAllBankODs/:cmp_id
+// export const getAllBankEntries = async (req, res) => {
+//   try {
+//     const cmp_id = req.params.cmp_id;
+//     const { model } = getModelAndType(req);
+    
+//     const entries = await model.find({ cmp_id });
+    
+//     return res.status(200).json({
+//       success: true,
+//       data: entries
+//     });
+//   } catch (error) {
+//     console.error(`Error fetching ${getModelAndType(req).name.toLowerCase()} entries: ${error.message}`);
+//     return res
+//       .status(500)
+//       .json({ success: false, message: "Internal server error, try again!" });
+//   }
+// };

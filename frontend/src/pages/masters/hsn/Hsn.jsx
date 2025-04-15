@@ -2,9 +2,9 @@
 import { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
-import api from "../../api/api";
+import api from "../../../api/api";
 import { useNavigate } from "react-router-dom";
-import HsnForm from "../../components/common/Forms/HsnForm";
+import HsnForm from "../../../components/common/Forms/HsnForm";
 import { useLocation } from "react-router-dom";
 
 // import "./hsn.css";

@@ -1,14 +1,14 @@
 import { useEffect, useState } from "react";
-import api from "../../api/api";
+import api from "../../../api/api";
 import { toast } from "react-toastify";
 import { FaEdit } from "react-icons/fa";
 import { Link } from "react-router-dom";
-import { removeAll } from "../../../slices/invoice";
-import { removeAllSales } from "../../../slices/sales";
+import { removeAll } from "../../../../slices/invoice";
+import { removeAllSales } from "../../../../slices/sales";
 import { useDispatch } from "react-redux";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import { useNavigate } from "react-router-dom";
-import CustomBarLoader from "../../components/common/CustomBarLoader";
+import CustomBarLoader from "../../../components/common/CustomBarLoader";
 
 function OrganisationList() {
   const [organizations, setOrganizations] = useState([]);

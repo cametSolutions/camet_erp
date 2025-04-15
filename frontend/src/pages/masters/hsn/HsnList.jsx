@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
-import api from "../../api/api";
-import Pagination from "../../components/common/Pagination";
+import api from "../../../api/api";
+import Pagination from "../../../components/common/Pagination";
 import { FaEdit } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { MdDelete } from "react-icons/md";
 import Swal from "sweetalert2";
-import { removeAll } from "../../../slices/invoice";
-import { removeAllSales } from "../../../slices/sales";
+import { removeAll } from "../../../../slices/invoice";
+import { removeAllSales } from "../../../../slices/sales";
 import { useDispatch } from "react-redux";
 import { useLocation } from "react-router-dom";
 import { IoIosArrowRoundBack } from "react-icons/io";

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import api from "../../api/api";
+import api from "../../../api/api";
 import { toast } from "react-toastify";
 import { Link } from "react-router-dom";
 import { IoIosArrowRoundBack } from "react-icons/io";

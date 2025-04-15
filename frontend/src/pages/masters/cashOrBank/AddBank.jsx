@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 // import Sidebar from "../../components/homePage/Sidebar.jsx";
-import api from "../../api/api.js";
+import api from "../../../api/api.js";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
-import FindUserAndCompany from "../../components/Filters/FindUserAndCompany.jsx";
 import { useLocation, useParams } from "react-router-dom";
-import TitleDiv from "../../components/common/TitleDiv.jsx";
+import TitleDiv from "../../../components/common/TitleDiv.jsx";
+import { useSelector } from "react-redux";
 
 const AddBank = () => {
   const [acholderName, setAcholderName] = useState("");
@@ -15,14 +15,16 @@ const AddBank = () => {
   const [branch, setBranch] = useState("");
   const [upiId, setUpiId] = useState("");
   const [bank_opening, setBank_opening] = useState(0);
-  const [userAndCompanyData, setUserAndCompanyData] = useState(null);
   const [process, setProcess] = useState("add");
   const [loading, setLoading] = useState(false);
 
   const location = useLocation();
   const { id } = useParams();
 
-  console.log("userAndCompanyData", userAndCompanyData?.org?._id);
+  const cmp_id = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg._id
+  );
+
 
   useEffect(() => {
     if (location.pathname.includes("editBank")) {
@@ -37,9 +39,8 @@ const AddBank = () => {
       setLoading(true);
       const fetchSingleBank = async () => {
         try {
-          // const res = await api.get(`/api/sUsers/getBankDetails/${id}`, {
           const res = await api.get(
-            `/api/${userAndCompanyData?.pathUrl}/getBankDetails/${userAndCompanyData?.org?._id}/${id}`,
+            `/api/sUers/getBankDetails/${cmp_id}/${id}`,
             {
               withCredentials: true,
             }
@@ -93,15 +94,15 @@ const AddBank = () => {
       branch,
       upi_id: upiId,
       bank_opening: bank_opening || 0,
-      cmp_id: userAndCompanyData.org._id,
+      cmp_id: cmp_id
     };
 
     try {
       const method = process === "add" ? "POST" : "PUT";
       const url =
         process === "add"
-          ? `/api/${userAndCompanyData?.pathUrl}/addBank/${userAndCompanyData?.org?._id}`
-          : `/api/${userAndCompanyData?.pathUrl}/editBank/${userAndCompanyData?.org?._id}/${id}`;
+          ? `/api/sUsers/addBank/${cmp_id}`
+          : `/api/sUsers/editBank/${cmp_id}/${id}`;
 
       // console.log("bankData", bankData);
 
@@ -123,13 +124,10 @@ const AddBank = () => {
     }
   };
 
-  const handleUserAndCompanyData = (data) => {
-    setUserAndCompanyData(data);
-  };
+
 
   return (
     <div className=" ">
-      <FindUserAndCompany getUserAndCompany={handleUserAndCompanyData} />
 
       <section className=" bg-blueGray-50 ">
         <TitleDiv title="Add Bank " loading={loading} />

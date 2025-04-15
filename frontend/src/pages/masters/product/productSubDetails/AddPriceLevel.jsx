@@ -1,6 +1,6 @@
-import ProductSubDetailsForm from "../../components/homePage/ProductSubDetailsForm";
+import ProductSubDetailsForm from "../../../../components/homePage/ProductSubDetailsForm";
 import { useState } from "react";
-import TitleDiv from "../../components/common/TitleDiv";
+import TitleDiv from "../../../../components/common/TitleDiv";
 
 function AddPriceLevel() {
   const [loading, setLoading] = useState(false);

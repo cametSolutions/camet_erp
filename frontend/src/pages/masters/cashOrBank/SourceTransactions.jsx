@@ -1,9 +1,9 @@
 import { useParams } from "react-router-dom";
-import useFetch from "../../../../customHook/useFetch";
+import useFetch from "../../../customHook/useFetch";
 import { useSelector } from "react-redux";
-import TitleDiv from "../../../../components/common/TitleDiv";
-import SelectDate from "../../../../components/Filters/SelectDate";
-import DashboardTransaction from "../../../../components/common/DashboardTransaction";
+import TitleDiv from "../../../components/common/TitleDiv";
+import SelectDate from "../../../components/Filters/SelectDate";
+import DashboardTransaction from "../../../components/common/DashboardTransaction";
 import { MdDoNotDisturbOnTotalSilence } from "react-icons/md";
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";

@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 // import Sidebar from "../../components/homePage/Sidebar.jsx";
-import api from "../../api/api.js";
+import api from "../../../api/api.js";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
-import FindUserAndCompany from "../../components/Filters/FindUserAndCompany.jsx";
+import FindUserAndCompany from "../../../components/Filters/FindUserAndCompany.jsx";
 import { useLocation, useParams } from "react-router-dom";
-import TitleDiv from "../../components/common/TitleDiv.jsx";
+import TitleDiv from "../../../components/common/TitleDiv.jsx";
 
 const AddCash = () => {
   const [cash_ledname, setCashLedname] = useState("");

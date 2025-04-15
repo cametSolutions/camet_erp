@@ -1,7 +1,7 @@
-import TitleDiv from "../../../../components/common/TitleDiv";
-import SelectDate from "../../../../components/Filters/SelectDate";
+import TitleDiv from "../../../components/common/TitleDiv";
+import SelectDate from "../../../components/Filters/SelectDate";
 import { useNavigate, useParams } from "react-router-dom";
-import useFetch from "../../../../customHook/useFetch";
+import useFetch from "../../../customHook/useFetch";
 import { useSelector } from "react-redux";
 import { useEffect, useState } from "react";
 import { MdAddLink } from "react-icons/md";
@@ -80,7 +80,9 @@ const BalanceDetails = () => {
           <div className=" w-full flex justify-end pr-3  text-white mt-4 gap-1 font-bold cursor-pointer  ">
             {/* {type === "self" && ( */}
             <button
-              onClick={() => navigate(`/sUsers/add${label}`)}
+              onClick={() =>
+                navigate(`/sUsers/add${label.replace(/\s+/g, "")}`)
+              }
               className="flex items-center gap-1 shadow-xl  p-1 px-2 rounded-lg  hover:translate-y-0.5 ease-out duration-150"
             >
               <MdAddLink size={20} />
@@ -100,11 +102,8 @@ const BalanceDetails = () => {
             <p className="text-sm mt-4 font-bold opacity-90">{title}</p>
           </div>
         </div>
-        <div className="bg-white h-2 shadow-lg">
-
-        </div>
+        <div className="bg-white h-2 shadow-lg"></div>
       </div>
-
 
       <div className="flex flex-col gap-3 z-10">
         {/* Balance Details Card */}
@@ -120,7 +119,7 @@ const BalanceDetails = () => {
                     <aside>
                       <span
                         onClick={() => {
-                          navigate(`/sUsers/edit${label}/${item._id}`);
+                          navigate(`/sUsers/edit${label.replace(/\s+/g, '')}/${item._id}`);
                         }}
                         className="text-gray-700 hover:scale-110  "
                       >

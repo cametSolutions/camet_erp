@@ -68,7 +68,7 @@ export const EditAditionalCharge = async (req, res) => {
 };
 
 // @desc delete AdditionalCharge
-// route get/api/pUsers/deleteAdditionalCharge
+// route get/api/sUsers/deleteAdditionalCharge
 
 export const deleteAdditionalCharge = async (req, res) => {
   try {

@@ -1,15 +1,15 @@
 import { useEffect, useState } from "react";
-import api from "../../api/api";
+import api from "../../../api/api";
 import { toast } from "react-toastify";
 import { FaEdit, FaPhone } from "react-icons/fa";
 import { Link } from "react-router-dom";
-import { removeAll } from "../../../slices/invoice";
-import { removeAllSales } from "../../../slices/sales";
+import { removeAll } from "../../../../slices/invoice";
+import { removeAllSales } from "../../../../slices/sales";
 import { useDispatch, useSelector } from "react-redux";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import { MdEmail } from "react-icons/md";
-import CustomBarLoader from "../../components/common/CustomBarLoader";
-import CompanyFilter from "../../components/Filters/CompanyFilter";
+import CustomBarLoader from "../../../components/common/CustomBarLoader";
+import CompanyFilter from "../../../components/Filters/CompanyFilter";
 
 function RetailersList() {
   const [secondaryUsers, setSecondaryUsers] = useState([]);

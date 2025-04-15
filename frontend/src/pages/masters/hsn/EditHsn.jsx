@@ -3,10 +3,10 @@
 import { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
-import api from "../../api/api";
+import api from "../../../api/api";
 import { useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
-import HsnForm from "../../components/common/Forms/HsnForm";
+import HsnForm from "../../../components/common/Forms/HsnForm";
 import { useLocation } from "react-router-dom";
 
 
@@ -25,7 +25,6 @@ function EditHsn() {
   const [cpm_id, setCmp_id] = useState("");
   const [isRevisedChargeApplicable, setIsRevisedChargeApplicable] =
     useState(false);
-  const [hsnData, setHsnData] = useState([]);
   const [rows, setRows] = useState([
     {
       greaterThan: "0",
@@ -51,7 +50,6 @@ function EditHsn() {
           withCredentials: true,
         });
 
-        setHsnData(res.data.data);
         const {
           hsn,
           description,

@@ -1,7 +1,7 @@
-import api from "../../api/api";
+import api from "../../../api/api";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
-import SecUserCreationForm from "../../components/common/Forms/SecUserCreationForm";
+import SecUserCreationForm from "../../../components/common/Forms/SecUserCreationForm";
 
 function AddSecUsers() {
   const navigate = useNavigate();

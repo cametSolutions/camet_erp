@@ -521,7 +521,7 @@ export const getOrganizationsAdmin = async (req, res) => {
 };
 
 // @desc get Primary user organization list
-// route GET/api/pUsers/getOrganizations
+// route GET/api/admin/getOrganizations
 export const getOrganizations = async (req, res) => {
   try {
     const organizations = await Organization.find({});
@@ -544,7 +544,7 @@ export const getOrganizations = async (req, res) => {
 };
 
 // @desc get secondary users list
-// route GET/api/pUsers/fetchSecondaryUsers
+// route GET/api/admin/fetchSecondaryUsers
 
 export const fetchSecondaryUsers = async (req, res) => {
   try {

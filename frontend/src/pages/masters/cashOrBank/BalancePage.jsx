@@ -1,7 +1,7 @@
-import TitleDiv from "../../../../components/common/TitleDiv";
-import SelectDate from "../../../../components/Filters/SelectDate";
+import TitleDiv from "../../../components/common/TitleDiv";
+import SelectDate from "../../../components/Filters/SelectDate";
 import { useNavigate } from "react-router-dom";
-import useFetch from "../../../../customHook/useFetch";
+import useFetch from "../../../customHook/useFetch";
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 

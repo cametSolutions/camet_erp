@@ -46,7 +46,7 @@ import { fetchOutstandingDetails, fetchOutstandingTotal, getOutstandingSummary }
 import { addProduct, deleteProduct, productDetails,editProduct, getProducts } from '../controllers/productController.js';
 import { addOrganizations, editOrg, getOrganizations } from '../controllers/organizationController.js';
 import { addParty, addSubGroup, deleteSubGroup, editSubGroup, getSubGroup, PartyList } from '../controllers/partyController.js';
-import { addBank, addCash, editBank, editCash, findSourceBalance, findSourceDetails, findSourceTransactions, getBankDetails, getCashDetails } from '../controllers/bankAndCashController.js';
+import { addBankEntry, addCash,  editBankEntry, editCash, findSourceBalance, findSourceDetails, findSourceTransactions, getBankEntryDetails, getCashDetails } from '../controllers/bankAndCashController.js';
 import { addAditionalCharge, deleteAdditionalCharge, EditAditionalCharge, fetchAdditionalCharges, fetchSingleAdditionalCharge } from '../controllers/additionalChargeContoller.js';
 
 router.post('/login',login)
@@ -159,9 +159,12 @@ router.get('/getOpeningBalances/:cmp_id',authSecondary,secondaryIsBlocked,compan
 router.get('/findSourceBalance/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,findSourceBalance)
 router.get('/findSourceDetails/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,findSourceDetails)
 router.get('/findSourceTransactions/:cmp_id/:id',authSecondary,secondaryIsBlocked,companyAuthentication,findSourceTransactions)
-router.post('/addBank/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,addBank)
-router.put('/editBank/:cmp_id/:bank_id',authSecondary,secondaryIsBlocked,companyAuthentication,editBank)
-router.get('/getBankDetails/:cmp_id/:bank_id',authSecondary,secondaryIsBlocked,companyAuthentication,getBankDetails)
+router.post('/addBank/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,addBankEntry)
+router.post('/addBankOD/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,addBankEntry)
+router.put('/editBank/:cmp_id/:bank_id',authSecondary,secondaryIsBlocked,companyAuthentication,editBankEntry)
+router.put('/editBankOD/:cmp_id/:bank_id',authSecondary,secondaryIsBlocked,companyAuthentication,editBankEntry)
+router.get('/getBankDetails/:cmp_id/:bank_id',authSecondary,secondaryIsBlocked,companyAuthentication,getBankEntryDetails)
+router.get('/getBankODDetails/:cmp_id/:bank_id',authSecondary,secondaryIsBlocked,companyAuthentication,getBankEntryDetails)
 router.post('/addCash/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,addCash)
 router.get('/getCashDetails/:cmp_id/:cash_id',authSecondary,secondaryIsBlocked,companyAuthentication,getCashDetails)
 router.put('/editCash/:cmp_id/:cash_id',authSecondary,secondaryIsBlocked,companyAuthentication,editCash)

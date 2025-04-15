@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
-import api from "../../api/api.js";
+import api from "../../../api/api.js";
 import { toast } from "react-toastify";
 import { useParams, useNavigate } from "react-router-dom";
-import AddOrgForm from "../../components/homePage/AddOrgForm.jsx";
+import AddOrgForm from "../../../components/homePage/AddOrgForm.jsx";
 import { useDispatch } from "react-redux";
-import { setSecSelectedOrganization } from "../../../slices/secSelectedOrgSlice.js";
+import { setSecSelectedOrganization } from "../../../../slices/secSelectedOrgSlice.js";
 
 import { useSelector } from "react-redux";
-import TitleDiv from "../../components/common/TitleDiv.jsx";
+import TitleDiv from "../../../components/common/TitleDiv.jsx";
 
 const EditOrg = () => {
   const cmp_id = useSelector(

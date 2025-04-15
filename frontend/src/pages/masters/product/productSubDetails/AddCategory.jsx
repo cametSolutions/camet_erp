@@ -1,5 +1,5 @@
-import ProductSubDetailsForm from "../../components/homePage/ProductSubDetailsForm";
-import TitleDiv from "../../components/common/TitleDiv";
+import ProductSubDetailsForm from "../../../../components/homePage/ProductSubDetailsForm";
+import TitleDiv from "../../../../components/common/TitleDiv";
 import { useState } from "react";
 
 function AddCategory() {
