@@ -3,9 +3,6 @@ import api from "../../../api/api";
 import { toast } from "react-toastify";
 import { FaEdit } from "react-icons/fa";
 import { Link } from "react-router-dom";
-import { removeAll } from "../../../../slices/invoice";
-import { removeAllSales } from "../../../../slices/sales";
-import { useDispatch } from "react-redux";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import { useNavigate } from "react-router-dom";
 import CustomBarLoader from "../../../components/common/CustomBarLoader";
@@ -13,7 +10,6 @@ import CustomBarLoader from "../../../components/common/CustomBarLoader";
 function OrganisationList() {
   const [organizations, setOrganizations] = useState([]);
   const [loading, setLoading] = useState(false);
-  const dispatch = useDispatch();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -32,8 +28,6 @@ function OrganisationList() {
       }
     };
     fetchOrganiszations();
-    dispatch(removeAll());
-    dispatch(removeAllSales());
   }, []);
 
   return (

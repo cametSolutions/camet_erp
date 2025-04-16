@@ -61,10 +61,8 @@ function AddProductForm({
   const [defaultGodown, setDefaultGodown] = useState(null);
 
   // Get godown enable status from Redux store
-  const { gdnEnabled, batchEnabled: isBatchEnabledInCompany } = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg?.configurations[0]
-  );
-
+  const { gdnEnabled = false, batchEnabled: isBatchEnabledInCompany = false } =
+    useSelector((state) => state.secSelectedOrganization.secSelectedOrg);
 
   // Handle input change
   const handleInputChange = (e) => {
@@ -170,7 +168,6 @@ function AddProductForm({
         setPriceLevelRows([{ pricelevel: "", pricerate: "" }]);
       }
       if (GodownList.length > 0) {
-
         setLocationRows(GodownList);
       } else {
         setLocationRows([
@@ -287,6 +284,9 @@ function AddProductForm({
 
   // Location table handlers
   const handleAddLocationRow = () => {
+    if (!gdnEnabled) {
+      return;
+    }
     const lastRow = locationRows[locationRows?.length - 1];
     if (
       !lastRow?.godown ||
@@ -1017,9 +1017,12 @@ function AddProductForm({
                     ))}
                   </tbody>
                 </table>
+
                 <button
                   onClick={handleAddLocationRow}
-                  className="mt-4 px-3 py-1 bg-green-500 text-white rounded"
+                  className={`${
+                    !gdnEnabled && "pointer-events-none opacity-55"
+                  }   mt-4 px-3 py-1 bg-green-500 text-white rounded`}
                 >
                   <MdPlaylistAdd />
                 </button>

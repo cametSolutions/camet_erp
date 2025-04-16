@@ -1136,13 +1136,9 @@ export const addSubDetails = async (req, res) => {
     let idField;
     let nameField;
 
-    if (req.path.includes("/addGodowns")) {
-      Model = Godown;
-      idField = "godown_id";
-      nameField = "godown";
-    } else if (req.path.includes("/addPriceLevels")) {
+    if (req.path.includes("/addPriceLevels")) {
       Model = PriceLevel;
-      idField = "pricelevel_id";
+      idField = "pricelevel_id"; // This will be optional for price levels
       nameField = "pricelevel";
     } else if (req.path.includes("/addBrands")) {
       Model = Brand;
@@ -1163,66 +1159,126 @@ export const addSubDetails = async (req, res) => {
       });
     }
 
+    // Arrays to track items
+    const results = [];
+    const skippedItems = [];
+    
     // Process each item in the data array
-    const results = await Promise.all(
-      data.map(async (item) => {
-        // Check if all required fields are present
-        if (
-          !item[nameField] ||
-          !item[idField] ||
-          !item.cmp_id ||
-          !item.Primary_user_id
-        ) {
-          return {
-            success: false,
-            message: `Missing required fields for ${nameField}`,
-            data: item,
-          };
-        }
+    for (const item of data) {
+      // Special handling for price levels where ID is optional
+      const isPriceLevel = req.path.includes("/addPriceLevels");
+      
+      // Check if required ID field is missing (except for price levels)
+      if (!isPriceLevel && !item[idField]) {
+        skippedItems.push({
+          data: item,
+          reason: `Missing ${idField}`
+        });
+        continue;
+      }
+      
+      if (!item.Primary_user_id) {
+        skippedItems.push({
+          data: item,
+          reason: "Missing Primary_user_id"
+        });
+        continue;
+      }
+      
+      if (!item.cmp_id) {
+        skippedItems.push({
+          data: item,
+          reason: "Missing cmp_id"
+        });
+        continue;
+      }
+      
+      if (!item[nameField]) {
+        skippedItems.push({
+          data: item,
+          reason: `Missing ${nameField}`
+        });
+        continue;
+      }
 
-        try {
-          // Check if item already exists
-          const existingItem = await Model.findOne({
-            [idField]: item[idField],
-            cmp_id: item.cmp_id,
+      try {
+        // For price levels with no ID, check if same name exists
+        if (isPriceLevel && !item[idField]) {
+          // Check if price level with same name exists for this company
+          const existingPriceLevel = await Model.findOne({
+            [nameField]: item[nameField],
+            cmp_id: item.cmp_id
           });
 
-          if (existingItem) {
-            // Update existing item
-            await Model.findByIdAndUpdate(existingItem._id, item);
-            return {
+          if (existingPriceLevel) {
+            // Update existing price level with same name
+            await Model.findByIdAndUpdate(existingPriceLevel._id, item);
+            results.push({
               success: true,
               message: `${nameField} updated successfully`,
               data: item,
-            };
+            });
           } else {
-            // Create new item
+            // Create new price level
             const newItem = new Model(item);
             await newItem.save();
-            return {
+            results.push({
               success: true,
               message: `${nameField} added successfully`,
               data: newItem,
-            };
+            });
           }
-        } catch (error) {
-          return {
-            success: false,
-            message: `Error processing ${nameField}: ${error.message}`,
-            data: item,
-          };
+          continue;
         }
-      })
-    );
 
-    // Count successes and failures
+        // For other models or price levels with ID, check if item exists by ID
+        const existingItem = await Model.findOne({
+          [idField]: item[idField],
+          cmp_id: item.cmp_id,
+        });
+
+        if (existingItem) {
+          // Update existing item
+          await Model.findByIdAndUpdate(existingItem._id, item);
+          results.push({
+            success: true,
+            message: `${nameField} updated successfully`,
+            data: item,
+          });
+        } else {
+          // Create new item
+          const newItem = new Model(item);
+          await newItem.save();
+          results.push({
+            success: true,
+            message: `${nameField} added successfully`,
+            data: newItem,
+          });
+        }
+      } catch (error) {
+        results.push({
+          success: false,
+          message: `Error processing ${nameField}: ${error.message}`,
+          data: item,
+        });
+      }
+    }
+
+    // Count successes, failures, and skipped items
     const successCount = results.filter((result) => result.success).length;
     const failureCount = results.length - successCount;
+    const skippedCount = skippedItems.length;
 
     return res.status(200).json({
       success: true,
-      message: `Added/Updated ${successCount} items, Failed ${failureCount} items`,
+      message: `Added/Updated ${successCount} items, Failed ${failureCount} items, Skipped ${skippedCount} items`,
       results,
+      skipped: skippedItems,
+      counts: {
+        success: successCount,
+        failed: failureCount,
+        skipped: skippedCount
+      }
     });
   } catch (error) {
     return res.status(500).json({

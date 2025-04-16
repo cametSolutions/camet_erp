@@ -63,7 +63,7 @@ const godownScheme = new mongoose.Schema({
 
 const priceLevelSchema = new mongoose.Schema({
   pricelevel: { type: String, required: true },
-  pricelevel_id: { type: String, required: true, index: true }, // Add index: true here
+  pricelevel_id: { type: String }, // Add index: true here
   cmp_id: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Organization",
