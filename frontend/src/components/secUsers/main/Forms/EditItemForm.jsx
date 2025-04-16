@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import { MdModeEditOutline } from "react-icons/md";
-import { useDispatch, useSelector } from "react-redux";
+import {  useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
 
 function EditItemForm({
@@ -257,6 +257,15 @@ function EditItemForm({
         return;
       }
     }
+
+    
+    if (
+      checkNegativeBlocking &&
+      Number(value) > selectedGodown?.balance_stock
+    ) {
+      return;
+    }
+
 
     setQuantity(value);
 
