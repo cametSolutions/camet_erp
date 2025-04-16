@@ -162,157 +162,199 @@ export const saveProductsFromTally = async (req, res) => {
       return res.status(400).json({ message: "No products to save" });
     }
 
-    const cmp_id = productsToSave[0]?.cmp_id;
-    const Primary_user_id = productsToSave[0]?.Primary_user_id;
+    // Track results efficiently with counters instead of large arrays
+    const results = {
+      success: [],
+      failure: [],
+      skipped: []
+    };
 
-    // Find default godown first
+    // Single-pass check for required fields and create valid products array
+    const validProducts = [];
+    
+    for (const product of productsToSave) {
+      // Check for missing required fields
+      if (!product.product_master_id || !product.cmp_id || !product.Primary_user_id || !product.product_name) {
+        results.skipped.push({
+          id: product.product_master_id || "unknown",
+          name: product.product_name || "unnamed",
+          reason: !product.cmp_id 
+            ? "Missing cmp_id" 
+            : !product.Primary_user_id 
+              ? "Missing Primary_user_id"
+              : !product.product_master_id
+                ? "Missing product_master_id"
+                : "Missing product_name"
+        });
+        continue;
+      }
+      
+      validProducts.push(product);
+    }
+    
+    // If there are no valid products after filtering, return early
+    if (validProducts.length === 0) {
+      return res.status(200).json({
+        message: "No valid products to process",
+        counts: {
+          success: 0,
+          failure: 0,
+          skipped: results.skipped.length,
+          total: productsToSave.length
+        },
+        skipped: results.skipped
+      });
+    }
+
+    const cmp_id = validProducts[0].cmp_id;
+    const Primary_user_id = validProducts[0].Primary_user_id;
+
+    // Find default godown - critical operation
     const defaultGodown = await Godown.findOne({ cmp_id, defaultGodown: true });
 
-    // Return early if no default godown is found
     if (!defaultGodown) {
       return res.status(400).json({
-        message:
-          "Default godown not found. Please set up a default godown before saving products.",
+        message: "Default godown not found. Please set up a default godown before saving products."
       });
     }
 
-    // Extract all unique IDs from the products
-    const brandIds = [
-      ...new Set(
-        productsToSave.filter((p) => p.brand_id).map((p) => p.brand_id)
-      ),
-    ];
-    const categoryIds = [
-      ...new Set(
-        productsToSave.filter((p) => p.category_id).map((p) => p.category_id)
-      ),
-    ];
-    const subcategoryIds = [
-      ...new Set(
-        productsToSave
-          .filter((p) => p.subcategory_id)
-          .map((p) => p.subcategory_id)
-      ),
-    ];
+    // Extract unique IDs efficiently using object hash instead of Set
+    const brandIdMap = {};
+    const categoryIdMap = {};
+    const subcategoryIdMap = {};
+    const existingProductIds = [];
 
-    // Fetch all references in parallel
-    const [brands, categories, subcategories] = await Promise.all([
-      brandIds.length > 0
-        ? Brand.find({ brand_id: { $in: brandIds }, cmp_id })
-        : [],
-      categoryIds.length > 0
-        ? Category.find({ category_id: { $in: categoryIds }, cmp_id })
-        : [],
-      subcategoryIds.length > 0
-        ? Subcategory.find({ subcategory_id: { $in: subcategoryIds }, cmp_id })
-        : [],
+    // Single pass to collect all IDs
+    for (const product of validProducts) {
+      if (product.brand_id) brandIdMap[product.brand_id] = true;
+      if (product.category_id) categoryIdMap[product.category_id] = true;
+      if (product.subcategory_id) subcategoryIdMap[product.subcategory_id] = true;
+      existingProductIds.push(product.product_master_id);
+    }
+
+    // Convert to arrays
+    const brandIds = Object.keys(brandIdMap);
+    const categoryIds = Object.keys(categoryIdMap);
+    const subcategoryIds = Object.keys(subcategoryIdMap);
+
+    // Parallel fetch all reference data
+    const [brands, categories, subcategories, existingProducts] = await Promise.all([
+      brandIds.length > 0 ? Brand.find({ brand_id: { $in: brandIds }, cmp_id }) : [],
+      categoryIds.length > 0 ? Category.find({ category_id: { $in: categoryIds }, cmp_id }) : [],
+      subcategoryIds.length > 0 ? Subcategory.find({ subcategory_id: { $in: subcategoryIds }, cmp_id }) : [],
+      productModel.find({ product_master_id: { $in: existingProductIds }, cmp_id, Primary_user_id })
     ]);
 
-    // Create lookup maps for faster reference resolution
-    const brandMap = new Map(brands.map((b) => [b.brand_id, b._id]));
-    const categoryMap = new Map(categories.map((c) => [c.category_id, c._id]));
-    const subcategoryMap = new Map(
-      subcategories.map((s) => [s.subcategory_id, s._id])
-    );
+    console.log(brands);
+    
 
-    // Get existing products in bulk to avoid multiple queries
-    const existingProductIds = productsToSave
-      .filter((p) => p.product_master_id)
-      .map((p) => p.product_master_id);
+    // Create lookup maps - use plain objects for better performance with large datasets
+    const brandMap = {};
+    const categoryMap = {};
+    const subcategoryMap = {};
+    const existingProductMap = {};
 
-    const existingProducts =
-      existingProductIds.length > 0
-        ? await productModel.find({
-            product_master_id: { $in: existingProductIds },
-            cmp_id,
-            Primary_user_id,
-          })
-        : [];
+    brands.forEach(b => brandMap[b.brand_id] = b._id);
+    categories.forEach(c => categoryMap[c.category_id] = c._id);
+    subcategories.forEach(s => subcategoryMap[s.subcategory_id] = s._id);
+    existingProducts.forEach(p => existingProductMap[p.product_master_id] = p);
 
-    const existingProductMap = new Map(
-      existingProducts.map((p) => [p.product_master_id, p])
-    );
-
-    // Process products in batches
-    const BATCH_SIZE = 100;
-    const results = [];
-
-    for (let i = 0; i < productsToSave.length; i += BATCH_SIZE) {
-      const batch = productsToSave.slice(i, i + BATCH_SIZE);
-      const batchOperations = batch.map((productItem) => {
-        // Replace string IDs with MongoDB ObjectIds
-        const enhancedProduct = { ...productItem };
-
-        // Set brand, category, and subcategory explicitly (either with a valid reference or null)
-        enhancedProduct.brand =
-          productItem.brand_id && brandMap.has(productItem.brand_id)
-            ? brandMap.get(productItem.brand_id)
-            : null;
-
-        enhancedProduct.category =
-          productItem.category_id && categoryMap.has(productItem.category_id)
-            ? categoryMap.get(productItem.category_id)
-            : null;
-
-        enhancedProduct.sub_category =
-          productItem.subcategory_id &&
-          subcategoryMap.has(productItem.subcategory_id)
-            ? subcategoryMap.get(productItem.subcategory_id)
-            : null;
-
-        // Add default GodownList with Primary Batch
-        enhancedProduct.GodownList = [
-          {
-            godown: defaultGodown._id,
-            batch: "Primary Batch",
-            balance_stock: 0,
-          },
-        ];
-
-        // Check if product exists
-        if (
-          productItem.product_master_id &&
-          existingProductMap.has(productItem.product_master_id)
-        ) {
-          // Update existing product
-          return productModel.findByIdAndUpdate(
-            existingProductMap.get(productItem.product_master_id)._id,
-            enhancedProduct,
-            { new: true }
-          );
-        } else {
-          // Create new product
-          return new productModel(enhancedProduct).save();
-        }
-      });
-
-      // Execute batch operations
-      const batchResults = await Promise.allSettled(batchOperations);
-
-      // Process results
-      batchResults.forEach((result, index) => {
-        if (result.status === "fulfilled") {
-          results.push(result.value);
-        } else {
-          console.error(
-            `Error saving product at index ${i + index}:`,
-            result.reason
-          );
-        }
-      });
+    // Process in larger batches for better throughput
+    const BATCH_SIZE = 200; // Increased batch size
+    const operations = [];
+    
+    // Pre-process all products and build operations array
+    for (const product of validProducts) {
+      const enhancedProduct = { ...product };
+      
+      // Set references
+      enhancedProduct.brand = product.brand_id && brandMap[product.brand_id] ? brandMap[product.brand_id] : null;
+      enhancedProduct.category = product.category_id && categoryMap[product.category_id] ? categoryMap[product.category_id] : null;
+      enhancedProduct.sub_category = product.subcategory_id && subcategoryMap[product.subcategory_id] ? subcategoryMap[product.subcategory_id] : null;
+      
+      // Add default GodownList
+      enhancedProduct.GodownList = [{
+        godown: defaultGodown._id,
+        batch: "Primary Batch",
+        balance_stock: 0
+      }];
+      
+      const existingProduct = existingProductMap[product.product_master_id];
+      
+      if (existingProduct) {
+        operations.push({
+          type: 'update',
+          product: enhancedProduct,
+          id: existingProduct._id
+        });
+      } else {
+        operations.push({
+          type: 'create',
+          product: enhancedProduct
+        });
+      }
     }
-
-    // Count successful saves
-    const successfulSaves = results.filter(Boolean);
-
+    
+    // Execute batches
+    let processedCount = 0;
+    
+    for (let i = 0; i < operations.length; i += BATCH_SIZE) {
+      const batchOps = operations.slice(i, i + BATCH_SIZE);
+      const batchPromises = [];
+      
+      for (const op of batchOps) {
+        if (op.type === 'update') {
+          batchPromises.push(
+            productModel.findByIdAndUpdate(op.id, op.product, { new: true })
+              .then(result => ({ success: true, result, operation: 'updated' }))
+              .catch(error => ({ success: false, error: error.message, productId: op.product.product_master_id }))
+          );
+        } else {
+          batchPromises.push(
+            new productModel(op.product).save()
+              .then(result => ({ success: true, result, operation: 'created' }))
+              .catch(error => ({ success: false, error: error.message, productId: op.product.product_master_id }))
+          );
+        }
+      }
+      
+      const batchResults = await Promise.all(batchPromises);
+      
+      // Process results
+      for (const result of batchResults) {
+        if (result.success) {
+          // For very large datasets, just count successes instead of storing all data
+          processedCount++;
+          // Only store minimal information for success cases
+          results.success.push({
+            id: result.result.product_master_id,
+            operation: result.operation
+          });
+        } else {
+          results.failure.push({
+            id: result.productId,
+            error: result.error
+          });
+        }
+      }
+    }
+    
     res.status(201).json({
-      message: "Products saved successfully",
-      savedCount: successfulSaves.length,
-      totalCount: productsToSave.length,
+      message: "Products processing completed",
+      counts: {
+        success: results.success.length,
+        failure: results.failure.length,
+        skipped: results.skipped.length,
+        total: productsToSave.length
+      },
+      skipped: results.skipped
     });
   } catch (error) {
     console.error("Error:", error);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({ 
+      error: "Internal server error",
+      message: error.message
+    });
   }
 };
 
