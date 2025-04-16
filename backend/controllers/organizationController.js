@@ -28,7 +28,7 @@ export const addOrganizations = async (req, res) => {
     username,
     password,
     type,
-    batchEnabled,
+    batchEnabled = false,
     industry,
     printTitle,
     currency,
@@ -40,6 +40,9 @@ export const addOrganizations = async (req, res) => {
   const owner = req.owner;
   const session = await mongoose.startSession(); // Start a session
   session.startTransaction(); // Start the transaction
+
+  console.log("batchEnabled", batchEnabled);
+  
 
   try {
     // Create the organization

@@ -16,7 +16,7 @@ function AddProductForm({
   productData = {},
   setLoading = () => {},
   loading,
-  process="add"
+  process = "add",
 }) {
   // State management
   const [tab, setTab] = useState("priceLevel");
@@ -139,7 +139,6 @@ function AddProductForm({
         batchEnabled,
       } = productData;
 
-
       setFormState({
         product_name: product_name || "",
         product_code: product_code || "",
@@ -224,7 +223,7 @@ function AddProductForm({
         setDefaultGodown(defaultGodown._id);
 
         // Initialize location rows with default godown if empty
-        if (locationRows?.length === 0 && process=="add") {
+        if (locationRows?.length === 0 && process == "add") {
           console.log("here");
 
           setLocationRows([
@@ -561,7 +560,7 @@ function AddProductForm({
             </div>
           </div>
 
-          <div className="flex-auto px-4 lg:px-10 py-10 pt-0">
+          <div className="flex-auto px-4 lg:px-10  pt-0">
             <form>
               <div className="flex flex-wrap">
                 {/* Product Name */}
@@ -853,193 +852,184 @@ function AddProductForm({
       {/* Price Level and Location Tabs */}
       <div
         className={` ${
-          loading && "opacity-50 pointer-events-none"
+          loading && "opacity-50 pointer-events-none "
         }  px-4 sm:px-8 mx-auto`}
       >
-        <div className="relative flex flex-col min-w-0 break-words w-full mb-6 shadow-lg rounded-lg bg-blueGray-100 border-0">
-          <div className="rounded-t  mb-0 px-6 py-6">
-            <div className="flex justify-center ">
-              <div className="mt-[10px]  border-b border-solid border-[#0066ff43]  ">
-                <button
-                  type="button"
-                  onClick={() => setTab("priceLevel")}
-                  className={` ${
-                    tab === "priceLevel" && "border-b border-solid border-black"
-                  } py-2 px-5 mr-10   text-[16px] leading-7 text-headingColor font-semibold `}
-                >
-                  Price Level
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setTab("location")}
-                  className={` ${
-                    tab === "location" && "border-b border-solid border-black"
-                  } py-2 px-5  text-[16px] leading-7 text-headingColor font-semibold `}
-                >
-                  Location
-                </button>
-              </div>
+        <div className="relative flex flex-col min-w-0 break-words w-full mb-6 pb-3 shadow-lg rounded-lg bg-blueGray-100 border-0">
+          <div className="flex start mx-10 ">
+            <div className="mt-[10px]  border-b border-solid border-[#0066ff43]  ">
+              <button
+                type="button"
+                onClick={() => setTab("priceLevel")}
+                className={` ${
+                  tab === "priceLevel" && "border-b border-solid border-black"
+                } py-2 px-5 mr-10   text-[16px] leading-7 text-headingColor font-semibold `}
+              >
+                Price Level
+              </button>
+              <button
+                type="button"
+                onClick={() => setTab("location")}
+                className={` ${
+                  tab === "location" && "border-b border-solid border-black"
+                } py-2 px-5  text-[16px] leading-7 text-headingColor font-semibold `}
+              >
+                Location
+              </button>
             </div>
           </div>
 
           {/* Tab Content */}
-          <div className="flex-auto px-4 lg:px-10 py-10 pt-0">
+          <div className="flex-auto px-4 lg:px-10 pt-0">
             {tab === "priceLevel" && (
-              <div className="p-2 md:p-6">
-                <div className="container mx-auto mt-8">
-                  <table className="table-fixed w-full bg-white shadow-md rounded-lg ">
-                    <thead className="bg-[#f7f7f7] border">
-                      <tr>
-                        <th className="w-1/2 px-4 py-1">Level Name</th>
-                        <th className="w-1/2 px-4 py-1">Rate</th>
-                        <th className="  w-2/12 px-4 py-1"></th>
+              <div className="container mx-auto mt-2">
+                <table className="table-fixed w-full bg-white shadow-md  ">
+                  <thead className="bg-[#EFF6FF] border">
+                    <tr>
+                      <th className="w-1/2 px-4 py-1 border-r">Level Name</th>
+                      <th className="w-1/2 px-4 py-1 border-r">Rate</th>
+                      <th className="  w-2/12 px-4 py-1"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {priceLevelRows?.map((row, index) => (
+                      <tr key={row?.id} className="border w-full ">
+                        <td className="px-4 py-2 border-r w-4/5">
+                          <select
+                            value={row?.pricelevel}
+                            onChange={(e) => {
+                              return handleLevelChange(index, e.target.value);
+                            }}
+                            className="  block w-full  px-4  rounded-md  text-sm focus:outline-none border-none"
+                            style={{
+                              boxShadow: "none",
+                              borderColor: "#b6b6b6",
+                            }}
+                          >
+                            {/* Options for dropdown */}
+                            <option value="">Select Level</option>
+                            {optionsData.priceLevel?.map((el) => (
+                              <option key={el?._id} value={el?._id}>
+                                {el?.name}
+                              </option>
+                            ))}
+                          </select>
+                        </td>
+                        <td className="px-4 border-r w-2/5 ">
+                          <input
+                            type="number"
+                            value={row?.pricerate}
+                            onChange={(e) =>
+                              handleRateChange(index, e?.target?.value)
+                            }
+                            className="w-full  text-center py-1 px-4 border  border-gray-400  border-x-0 border-t-0  text-sm focus:outline-none"
+                            style={{
+                              boxShadow: "none",
+                              borderColor: "#b6b6b6",
+                            }}
+                          />
+                        </td>
+                        <td className="px-4 sm:px-10  py-2  w-1/5">
+                          <button
+                            onClick={() => handleDeleteRow(row?.pricelevel)}
+                            className="text-red-600 hover:text-red-800"
+                          >
+                            <MdDelete />
+                          </button>
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody>
-                      {priceLevelRows?.map((row, index) => (
-                        <tr key={row?.id} className="border-b bg-[#EFF6FF] ">
-                          <td className="px-4 py-2">
-                            <select
-                              value={row?.pricelevel}
-                              onChange={(e) => {
-                                return handleLevelChange(index, e.target.value);
-                              }}
-                              className="  block w-full  px-4  rounded-md bg-[#EFF6FF] text-sm focus:outline-none border-none"
-                              style={{
-                                boxShadow: "none",
-                                borderColor: "#b6b6b6",
-                              }}
-                            >
-                              {/* Options for dropdown */}
-                              <option value="">Select Level</option>
-                              {optionsData.priceLevel?.map((el) => (
-                                <option key={el?._id} value={el?._id}>
-                                  {el?.name}
-                                </option>
-                              ))}
-                            </select>
-                          </td>
-                          <td className="px-4 ">
-                            <input
-                              type="number"
-                              value={row?.pricerate}
-                              onChange={(e) =>
-                                handleRateChange(index, e?.target?.value)
-                              }
-                              className="w-full  text-center py-1 px-4 border bg-[#EFF6FF] border-gray-400  border-x-0 border-t-0  text-sm focus:outline-none"
-                              style={{
-                                boxShadow: "none",
-                                borderColor: "#b6b6b6",
-                              }}
-                            />
-                          </td>
-                          <td className="px-4 py-2">
-                            <button
-                              onClick={() => handleDeleteRow(row?.pricelevel)}
-                              className="text-red-600 hover:text-red-800"
-                            >
-                              <MdDelete />
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                  <button
-                    onClick={handleAddRow}
-                    className="mt-4 px-3  py-1 bg-green-500 text-white rounded"
-                  >
-                    <MdPlaylistAdd />
-                  </button>
-                </div>
+                    ))}
+                  </tbody>
+                </table>
+                <button
+                  onClick={handleAddRow}
+                  className="mt-4 px-3  py-1 bg-green-500 text-white rounded"
+                >
+                  <MdPlaylistAdd />
+                </button>
               </div>
             )}
 
             {tab === "location" && (
-              <div className="p-2 md:p-6">
-                <div className="container mx-auto mt-8">
-                  <table className="table-fixed w-full bg-white shadow-md rounded-lg ">
-                    <thead className="bg-[#f7f7f7] border">
-                      <tr>
-                        <th className="w-1/2 px-4 py-1">Location</th>
-                        <th className="w-1/2 px-4 py-1">Stock</th>
-                        <th className="  w-2/12 px-4 py-1"></th>
+              <div className="container mx-auto mt-2">
+                <table className="table-fixed w-full bg-white shadow-md rounded-lg ">
+                  <thead className="bg-[#EFF6FF] border">
+                    <tr>
+                      <th className="w-1/2 px-4 py-1 border-r">Location</th>
+                      <th className="w-1/2 px-4 py-1 border-r">Stock</th>
+                      <th className="  w-2/12 px-4 py-1"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {locationRows?.map((row, index) => (
+                      <tr key={row?.id} className="border-b  ">
+                        <td className="px-4 py-2 border-r">
+                          <select
+                            disabled={
+                              row?.godown ===
+                              optionsData.godown.find((el) => el?.defaultGodown)
+                                ?._id
+                            }
+                            value={row?.godown}
+                            onChange={(e) =>
+                              handleLocationChange(index, e?.target?.value)
+                            }
+                            className="block w-full  px-4  rounded-md  text-sm focus:outline-none border-none"
+                            style={{
+                              boxShadow: "none",
+                              borderColor: "#b6b6b6",
+                            }}
+                          >
+                            {/* Options for dropdown */}
+                            <option value="">Select Location</option>
+                            {optionsData.godown?.map((el, index) => (
+                              <option
+                                disabled={el?.defaultGodown}
+                                key={index}
+                                value={el?._id}
+                              >
+                                {el?.name}
+                              </option>
+                            ))}
+                          </select>
+                        </td>
+                        <td className="px-4  border-r">
+                          <input
+                            type="number"
+                            // min="0"
+                            value={row?.balance_stock}
+                            onChange={(e) =>
+                              handleLocationRateChange(index, e?.target.value)
+                            }
+                            className="w-full  text-center py-1 px-4 border  border-gray-400  border-x-0 border-t-0  text-sm focus:outline-none"
+                            style={{
+                              boxShadow: "none",
+                              borderColor: "#b6b6b6",
+                            }}
+                          />
+                        </td>
+                        <td className="px-4 sm:px-10 py-2 border-r">
+                          <button
+                            onClick={() => handleDeleteLocationRow(row?.godown)}
+                            className="text-red-600 hover:text-red-800"
+                          >
+                            <MdDelete />
+                          </button>
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody>
-                      {locationRows?.map((row, index) => (
-                        <tr key={row?.id} className="border-b bg-[#EFF6FF] ">
-                          <td className="px-4 py-2">
-                            <select
-                              disabled={
-                                row?.godown ===
-                                optionsData.godown.find(
-                                  (el) => el?.defaultGodown
-                                )?._id
-                              }
-                              value={row?.godown}
-                              onChange={(e) =>
-                                handleLocationChange(index, e?.target?.value)
-                              }
-                              className="block w-full  px-4  rounded-md bg-[#EFF6FF] text-sm focus:outline-none border-none"
-                              style={{
-                                boxShadow: "none",
-                                borderColor: "#b6b6b6",
-                              }}
-                            >
-                              {/* Options for dropdown */}
-                              <option value="">Select Location</option>
-                              {optionsData.godown?.map((el, index) => (
-                                <option
-                                  disabled={el?.defaultGodown}
-                                  key={index}
-                                  value={el?._id}
-                                >
-                                  {el?.name}
-                                </option>
-                              ))}
-                            </select>
-                          </td>
-                          <td className="px-4 ">
-                            <input
-                              type="number"
-                              // min="0"
-                              value={row?.balance_stock}
-                              onChange={(e) =>
-                                handleLocationRateChange(index, e?.target.value)
-                              }
-                              className="w-full  text-center py-1 px-4 border bg-[#EFF6FF] border-gray-400  border-x-0 border-t-0  text-sm focus:outline-none"
-                              style={{
-                                boxShadow: "none",
-                                borderColor: "#b6b6b6",
-                              }}
-                            />
-                          </td>
-                          <td className="px-4 py-2">
-                            <button
-                              onClick={() =>
-                                handleDeleteLocationRow(row?.godown)
-                              }
-                              className="text-red-600 hover:text-red-800"
-                            >
-                              <MdDelete />
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                  <button
-                    onClick={handleAddLocationRow}
-                    className="mt-4 px-3 py-1 bg-green-500 text-white rounded"
-                  >
-                    <MdPlaylistAdd />
-                  </button>
-                </div>
+                    ))}
+                  </tbody>
+                </table>
+                <button
+                  onClick={handleAddLocationRow}
+                  className="mt-4 px-3 py-1 bg-green-500 text-white rounded"
+                >
+                  <MdPlaylistAdd />
+                </button>
               </div>
             )}
 
-            <div className="p-2 pb-3 md:p-5 flex justify-end md:justify-start">
+            <div className="py-3 flex justify-end ">
               <button
                 onClick={submitHandler}
                 className="bg-pink-500 text-white active:bg-pink-600 font-bold uppercase text-xs px-4 py-2 rounded shadow hover:shadow-md outline-none focus:outline-none mr-1 ease-linear transition-all duration-150"
