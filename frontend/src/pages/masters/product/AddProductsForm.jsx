@@ -65,6 +65,7 @@ function AddProductForm({
     (state) => state.secSelectedOrganization.secSelectedOrg?.configurations[0]
   );
 
+
   // Handle input change
   const handleInputChange = (e) => {
     const { name, value, type } = e.target;
@@ -169,7 +170,6 @@ function AddProductForm({
         setPriceLevelRows([{ pricelevel: "", pricerate: "" }]);
       }
       if (GodownList.length > 0) {
-        console.log(GodownList);
 
         setLocationRows(GodownList);
       } else {
@@ -540,9 +540,6 @@ function AddProductForm({
       </div>
     );
   };
-
-  console.log(locationRows);
-  console.log(optionsData);
 
   return (
     <section
