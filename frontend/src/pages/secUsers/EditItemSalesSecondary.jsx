@@ -1,6 +1,6 @@
 /* eslint-disable react/no-unknown-property */
 
-import { useLocation, useNavigate } from "react-router-dom";
+import {  useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import {
   updateItem,
@@ -22,10 +22,9 @@ function EditItemSalesSecondary() {
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const location = useLocation();
   const checkNegativeBlocking =
-(    enableNegativeStockBlockForVanInvoice && voucherType === "vanSale") || false; 
-  const maxCountLimit = location.state.maxCountLimit;
+    (enableNegativeStockBlockForVanInvoice && voucherType === "vanSale") ||
+    false;
 
   const submitHandler = (
     item,
@@ -263,7 +262,6 @@ function EditItemSalesSecondary() {
       from="sales"
       taxInclusive={true}
       checkNegativeBlocking={checkNegativeBlocking}
-      maxCountLimit={maxCountLimit || 0}
     />
   );
 }
