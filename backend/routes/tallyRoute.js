@@ -19,6 +19,7 @@ import {
   addAccountGroups,
   addSubGroups,
   addSubDetails,
+  addGodowns,
 } from "../controllers/tallyController.js";
 
 const router = express.Router();
@@ -34,7 +35,7 @@ router.post("/master/addCharges", saveAdditionalChargesFromTally);
 router.post("/master/addAccountGroups", addAccountGroups);
 router.post("/master/addSubGroups", addSubGroups);
 /// sub details of product
-router.post("/master/addGodowns", addSubDetails);
+router.post("/master/addGodowns", addGodowns);
 router.post("/master/addPriceLevels", addSubDetails);
 router.post("/master/addBrands", addSubDetails);
 router.post("/master/addCategory", addSubDetails);

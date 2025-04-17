@@ -548,7 +548,7 @@ export const addProductSubDetails = async (req, res) => {
         dataToSave = {
           _id: generatedId,
           pricelevel: subDetails[key],
-          pricelevel_id: generatedId,
+          // pricelevel_id: generatedId,
           cmp_id: orgId,
           Primary_user_id: req.pUserId || req.owner,
         };
