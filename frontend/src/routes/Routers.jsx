@@ -140,11 +140,13 @@ import OutstandingSummary from '../pages/secUsers/OutstandingSummary'
 import AddSubGroup from '../pages/secUsers/settilngs/partySettings/AddSubGroup'
 import AddOpening from '@/pages/secUsers/openings/PartyOpening/AddOpening'
 import SalesSummaryTransactions from '@/pages/secUsers/Reports/salesSummary/SalesSummaryTransactions'
-import VoucherAddCount from '@/pages/dummy/VoucherAddCount'
+import VoucherAddCount from '@/pages/voucher/VoucherAddCount'
 import AddOrganisation from '../pages/masters/organization/AddOrganisation'
 import OrganizationList from '../pages/masters/organization/OrganisationList'
 import AddSecUsers from '../pages/masters/secondaryUsers/AddSecUsers'
 import BankingManagement from '@/pages/masters/cashOrBank/BankingManagement'
+import VoucherInitalPage from '@/pages/voucher/voucherInitialPage'
+import VoucherInitialPage from '@/pages/voucher/voucherInitialPage'
 
 const Routers = () => {
   return (
@@ -177,7 +179,7 @@ const Routers = () => {
         <Route path='/sUsers/OrderConfigurations' element={<ProtectedSecRoute><OrderConfigurationsSecondary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/Inventory' element={<ProtectedSecRoute><InventorySecondaryUser/></ProtectedSecRoute>}></Route>
 
-        <Route path='/sUsers/sales' element={<ProtectedSecRoute><SalesSecondary/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/sales' element={<ProtectedSecRoute><VoucherInitialPage/></ProtectedSecRoute>}></Route>
          <Route path='/sUsers/searchPartySales' element={<ProtectedSecRoute><SearchParty/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/addItemSales' element={<ProtectedSecRoute><VoucherAddCount/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/editItemSales/:id/:godownName/:index' element={<ProtectedSecRoute><EditItemSalesSecondary/></ProtectedSecRoute>}></Route>

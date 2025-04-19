@@ -13,7 +13,7 @@ const AdditionalChargesSchema = new mongoose.Schema({
   },
   name: { type: String },
   hsn: { type: String },
-  taxPercentage: { type: String },
+  taxPercentage: { type: Number },
   master_id: { type: String },
   exp_grpname: { type: String },
   exp_childgrpname: { type: String },

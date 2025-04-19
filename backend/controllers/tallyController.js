@@ -266,8 +266,6 @@ export const saveProductsFromTally = async (req, res) => {
         }),
       ]);
 
-    console.log(brands);
-
     // Create lookup maps - use plain objects for better performance with large datasets
     const brandMap = {};
     const categoryMap = {};
@@ -429,6 +427,9 @@ export const updateStock = async (req, res) => {
       });
     }
 
+    // Check if pushStock option is provided
+    const pushStock = req.body.data.pushStock === "true";
+
     // Extract common company and user IDs
     const { cmp_id, Primary_user_id } = req.body.data.ItemGodowndetails[0];
 
@@ -472,7 +473,8 @@ export const updateStock = async (req, res) => {
     }
 
     // Group items by product_master_id with improved validation
-    const groupedGodowns = {};
+    const groupedProducts = {};
+    const skippedItems = [];
 
     for (const item of req.body.data.ItemGodowndetails) {
       if (!item.product_master_id) {
@@ -484,11 +486,10 @@ export const updateStock = async (req, res) => {
 
       const productId = item.product_master_id.toString();
 
-      if (!groupedGodowns[productId]) {
-        groupedGodowns[productId] = {
+      if (!groupedProducts[productId]) {
+        groupedProducts[productId] = {
           godowns: [],
-          product_name: item.product_name,
-          // total_balance: 0,
+          product_name: item.product_name || "Unknown",
         };
       }
 
@@ -499,11 +500,13 @@ export const updateStock = async (req, res) => {
 
       // Skip entries with invalid godown_id that couldn't be mapped to an actual godown
       if (item.godown_id && !godownObjectId) {
-        console.warn(
-          `Skipping entry with invalid godown_id: ${
-            item.godown_id
-          } for product: ${item.product_name || productId}`
-        );
+        const skippedItem = {
+          product_id: productId,
+          product_name: item.product_name || "Unknown",
+          godown_id: item.godown_id,
+          reason: "Invalid godown_id - godown not found",
+        };
+        skippedItems.push(skippedItem);
         continue;
       }
 
@@ -518,51 +521,143 @@ export const updateStock = async (req, res) => {
       if (item.mfgdt) godownEntry.mfgdt = item.mfgdt;
       if (item.expdt) godownEntry.expdt = item.expdt;
 
-      groupedGodowns[productId].godowns.push(godownEntry);
-      // groupedGodowns[productId].total_balance += godownEntry.balance_stock;
+      groupedProducts[productId].godowns.push(godownEntry);
     }
 
-    if (Object.keys(groupedGodowns).length === 0) {
+    if (Object.keys(groupedProducts).length === 0) {
       return res.status(400).json({
         success: false,
         message: "No valid products found to update",
+        skippedItems: skippedItems,
       });
     }
 
+    // Create MongoDB ObjectIds for company and user
+    const companyId = new mongoose.Types.ObjectId(cmp_id);
+    const userId = new mongoose.Types.ObjectId(Primary_user_id);
+
     // Prepare bulk operations with chunking for large datasets
     const chunkSize = 500; // Adjust based on MongoDB performance
-    const productIds = Object.keys(groupedGodowns);
+    const productIds = Object.keys(groupedProducts);
     let bulkResults = [];
 
-    // Process in chunks to avoid overwhelming MongoDB
-    for (let i = 0; i < productIds.length; i += chunkSize) {
-      const chunk = productIds.slice(i, i + chunkSize);
+    if (pushStock) {
+      console.log("Push stock is true, merging godowns");
 
-      const bulkOps = chunk.map((productMasterId) => {
-        const data = groupedGodowns[productMasterId];
+      // If pushStock is true, we need to fetch existing data and merge
+      // Process products one by one to merge godowns
+      for (const productId of productIds) {
+        const data = groupedProducts[productId];
+        const productData = await productModel.findOne({
+          product_master_id: productId,
+          cmp_id: companyId,
+          Primary_user_id: userId,
+        });
 
-        return {
-          updateOne: {
-            filter: {
-              product_master_id: productMasterId,
-              cmp_id: new mongoose.Types.ObjectId(cmp_id),
-              Primary_user_id: new mongoose.Types.ObjectId(Primary_user_id),
+        if (productData) {
+          // If product exists, we need to merge godowns
+          const existingGodowns = productData.GodownList || [];
+          const newGodowns = data.godowns;
+
+          // Create a map of existing godowns by their ID for faster lookup
+          const existingGodownMap = {};
+          existingGodowns.forEach((g) => {
+            if (g.godown) {
+              existingGodownMap[g.godown.toString()] = true;
+            }
+          });
+
+          // Create array with all godowns
+          let mergedGodowns = [...existingGodowns];
+
+          // Add new godowns, replacing any that have the same godown ID
+          for (const newGodown of newGodowns) {
+            if (newGodown.godown) {
+              const godownId = newGodown.godown.toString();
+
+              // Check if this godown exists
+              if (existingGodownMap[godownId]) {
+                // Replace existing godown with the same ID
+                const index = mergedGodowns.findIndex(
+                  (g) => g.godown && g.godown.toString() === godownId
+                );
+                if (index !== -1) {
+                  mergedGodowns[index] = newGodown;
+                }
+              } else {
+                // Add new godown
+                mergedGodowns.push(newGodown);
+              }
+            }
+          }
+
+          // Update product with merged godowns
+          await productModel.updateOne(
+            {
+              product_master_id: productId,
+              cmp_id: companyId,
+              Primary_user_id: userId,
             },
-            update: {
+            {
               $set: {
-                GodownList: data.godowns,
-                // godownCount: data.total_balance,
-                balance_stock: data.total_balance, // Update overall balance stock
+                GodownList: mergedGodowns,
+                product_name: data.product_name,
               },
-            },
-            upsert: true,
-          },
-        };
-      });
+            }
+          );
+        } else {
+          // If product doesn't exist yet, create it with new godowns
+          await productModel.create({
+            product_master_id: productId,
+            cmp_id: companyId,
+            Primary_user_id: userId,
+            GodownList: data.godowns,
+            product_name: data.product_name,
+          });
+        }
+      }
 
-      // Execute chunk's bulk write operation
-      const result = await productModel.bulkWrite(bulkOps, { ordered: false });
-      bulkResults.push(result);
+      // For pushStock=true, we're not using bulkWrite so set a simple result
+      bulkResults = [
+        {
+          matchedCount: productIds.length,
+          modifiedCount: productIds.length,
+          upsertedCount: 0,
+        },
+      ];
+    } else {
+      // For pushStock=false, use the original bulk operation logic
+      // Process in chunks to avoid overwhelming MongoDB
+      for (let i = 0; i < productIds.length; i += chunkSize) {
+        const chunk = productIds.slice(i, i + chunkSize);
+
+        const bulkOps = chunk.map((productMasterId) => {
+          const data = groupedProducts[productMasterId];
+
+          return {
+            updateOne: {
+              filter: {
+                product_master_id: productMasterId,
+                cmp_id: companyId,
+                Primary_user_id: userId,
+              },
+              update: {
+                $set: {
+                  GodownList: data.godowns,
+                  // product_name: data.product_name
+                },
+              },
+              upsert: true,
+            },
+          };
+        });
+
+        // Execute chunk's bulk write operation
+        const result = await productModel.bulkWrite(bulkOps, {
+          ordered: false,
+        });
+        bulkResults.push(result);
+      }
     }
 
     // Calculate overall stats
@@ -577,22 +672,23 @@ export const updateStock = async (req, res) => {
     );
 
     // Get summary of modified products (limited to avoid large response)
-    const modificationSummary = Object.entries(groupedGodowns)
+    const modificationSummary = Object.entries(groupedProducts)
       .slice(0, 50) // Limit to first 50 products for response
       .map(([productId, data]) => ({
         product_id: productId,
-        product_name: data.product_name || "Unknown",
+        product_name: data.product_name,
         updated_godown_count: data.godowns.length,
-        // total_stock: data.total_balance,
       }));
 
     return res.status(200).json({
       success: true,
-      message: `Successfully processed ${productIds.length} products. Updated: ${totalStats.modifiedCount}, Added: ${totalStats.upsertedCount}`,
+      message: `Successfully processed ${productIds.length} products with pushStock=${pushStock}. Updated: ${totalStats.modifiedCount}, Added: ${totalStats.upsertedCount}`,
       modifiedProducts: modificationSummary,
       totalRecordsProcessed: productIds.length,
       godownsMapped: Object.keys(godownMapping).length,
       godownsNotFound: missingGodownIds.length > 0 ? missingGodownIds : [],
+      skippedItems: skippedItems.length > 0 ? skippedItems : undefined,
+      mode: pushStock ? "merge" : "replace",
       ...(modificationSummary.length < productIds.length && {
         note: `Showing summary for first ${modificationSummary.length} of ${productIds.length} products.`,
       }),
@@ -748,10 +844,8 @@ export const updatePriceLevels = async (req, res) => {
           update: {
             $set: {
               Priceleveles: data.priceLevels,
-              product_name: data.product_name,
             },
           },
-          upsert: true,
         },
       })
     );
@@ -760,25 +854,22 @@ export const updatePriceLevels = async (req, res) => {
     const result = await productModel.bulkWrite(bulkOps, { ordered: false });
 
     // Prepare summary (limited to first 50)
-    const modificationSummary = Object.entries(productsToUpdate)
-      .slice(0, 50)
-      .map(([productId, data]) => ({
+    const modificationSummary = Object.entries(productsToUpdate).map(
+      ([productId, data]) => ({
         product_id: productId,
         product_name: data.product_name,
         updated_pricelevel_count: data.priceLevels.length,
-      }));
+      })
+    );
 
     return res.status(200).json({
       success: true,
       message: `Processed ${
         Object.keys(productsToUpdate).length
-      } products. Updated: ${result.modifiedCount}, Added: ${
-        result.upsertedCount
-      }`,
+      } products. Updated: ${result.modifiedCount}`,
+
       modifiedProducts: modificationSummary,
       totalRecordsProcessed: Object.keys(productsToUpdate).length,
-      priceLevelsMapped: Object.keys(priceLevelMap).length,
-      unmappedPriceLevels,
       ...(skippedItems.length > 0 && { skippedItems }),
       ...(modificationSummary.length < Object.keys(productsToUpdate).length && {
         note: `Showing summary for first ${modificationSummary.length} of ${
@@ -1286,7 +1377,6 @@ export const addSubDetails = async (req, res) => {
   }
 };
 
-
 export const addGodowns = async (req, res) => {
   try {
     const { data } = req.body;
@@ -1305,17 +1395,20 @@ export const addGodowns = async (req, res) => {
     // Check if any default godown already exists in the collection
     const existingDefaultGodown = await Godown.findOne({
       cmp_id: data[0]?.cmp_id,
-      defaultGodown: true
+      defaultGodown: true,
     });
 
     // If no default godown exists, check if one is provided in the request
-    const hasDefaultGodownInRequest = data.some(item => item.defaultGodown === true);
+    const hasDefaultGodownInRequest = data.some(
+      (item) => item.defaultGodown === true
+    );
 
     // If no default godown exists in DB and none provided in request, return error
     if (!existingDefaultGodown && !hasDefaultGodownInRequest) {
       return res.status(400).json({
         success: false,
-        message: "At least one godown must be set as default (defaultGodown: true)",
+        message:
+          "At least one godown must be set as default (defaultGodown: true)",
       });
     }
 
@@ -1370,15 +1463,20 @@ export const addGodowns = async (req, res) => {
 
         if (existingItem) {
           // If this is the existing default godown, ensure we don't change its default status
-          if (existingDefaultGodown && existingItem._id.toString() === existingDefaultGodown._id.toString()) {
+          if (
+            existingDefaultGodown &&
+            existingItem._id.toString() === existingDefaultGodown._id.toString()
+          ) {
             item.defaultGodown = true; // Force keep it as default
           }
-          
+
           // Update existing item
           await Godown.findByIdAndUpdate(existingItem._id, item);
           results.push({
             success: true,
-            message: `Godown updated successfully${item.defaultGodown ? ' (maintained as default)' : ''}`,
+            message: `Godown updated successfully${
+              item.defaultGodown ? " (maintained as default)" : ""
+            }`,
             data: item,
           });
         } else {
@@ -1387,13 +1485,15 @@ export const addGodowns = async (req, res) => {
             // Make this the default
             item.defaultGodown = true;
           }
-          
+
           // Create new item
           const newItem = new Godown(item);
           await newItem.save();
           results.push({
             success: true,
-            message: `Godown added successfully${item.defaultGodown ? ' (set as default)' : ''}`,
+            message: `Godown added successfully${
+              item.defaultGodown ? " (set as default)" : ""
+            }`,
             data: newItem,
           });
         }
