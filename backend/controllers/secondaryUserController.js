@@ -13,10 +13,8 @@ import AccountGroup from "../models/accountGroup.js";
 import SubGroup from "../models/subGroup.js";
 import OragnizationModel from "../models/OragnizationModel.js";
 import Organization from "../models/OragnizationModel.js";
-import AdditionalChargesModel from "../models/additionalChargesModel.js";
 import {
   getFinancialYearDates,
-  truncateToNDecimals,
 } from "../helpers/helper.js";
 import { Brand } from "../models/subDetails.js";
 import { Category } from "../models/subDetails.js";
@@ -754,10 +752,12 @@ export const fetchFilters = async (req, res) => {
   try {
     const getFilters = async (model, field) => {
       const filters = await model.find({ cmp_id: cmp_id });
-      return filters.map((item) => item[field]); // Extract the specific field
+      return filters.map((item) => ({
+        _id: item._id,
+        name: item[field],
+      }));
     };
 
-    // Await the results and extract the desired field
     const brands = await getFilters(Brand, "brand");
     const categories = await getFilters(Category, "category");
     const subcategories = await getFilters(Subcategory, "subcategory");
@@ -765,18 +765,18 @@ export const fetchFilters = async (req, res) => {
 
     // Sort price levels alphabetically (case-insensitive)
     const sortedPriceLevels = [...priceLevels].sort((a, b) =>
-      a.toLowerCase().localeCompare(b.toLowerCase())
+      a.name.toLowerCase().localeCompare(b.name.toLowerCase())
     );
 
     const data = {
-      brands: brands,
-      categories: categories,
-      subcategories: subcategories,
-      // priceLevels: sortedPriceLevels, // Use the sorted array
+      brands,
+      categories,
+      subcategories,
+      priceLevels: sortedPriceLevels,
     };
 
     if (Object.entries(data).length > 0) {
-      return res.status(200).json({ message: "Filters fetched", data: data });
+      return res.status(200).json({ message: "Filters fetched", data });
     } else {
       return res.status(404).json({ message: "Filters not found" });
     }
@@ -787,6 +787,7 @@ export const fetchFilters = async (req, res) => {
       .json({ status: false, message: "Internal server error" });
   }
 };
+
 
 
 // @desc update AdditionalCharge

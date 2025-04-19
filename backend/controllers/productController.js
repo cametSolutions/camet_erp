@@ -267,205 +267,168 @@ export const deleteProduct = async (req, res) => {
 // route get/api/pUsers/
 
 export const getProducts = async (req, res) => {
+  // Extract request parameters
   const Secondary_user_id = req.sUserId;
   const cmp_id = req.params.cmp_id;
   const taxInclusive = req.query.taxInclusive === "true";
   const vanSaleQuery = req.query.vanSale;
   const isVanSale = vanSaleQuery === "true";
   const excludeGodownId = req.query.excludeGodownId;
-  const stockTransfer = req.query.stockTransfer;
   const searchTerm = req.query.search || "";
 
-  // Add pagination parameters
+  // Pagination parameters
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 0;
   const skip = limit > 0 ? (page - 1) * limit : 0;
 
-  const Primary_user_id = new mongoose.Types.ObjectId(req.owner);
+  const Primary_user_id = req.owner;
 
   try {
+    // Check if secondary user exists
     const secUser = await SecondaryUser.findById(Secondary_user_id);
-
     if (!secUser) {
       return res.status(404).json({ message: "Secondary user not found" });
     }
 
+    // Get user configurations for the specified organization
     const configuration = secUser.configurations.find(
       (item) => item.organization == cmp_id
     );
 
-    // Build the match stage with search functionality
-    let matchStage = {
-      $match: {
-        cmp_id: new mongoose.Types.ObjectId(cmp_id),
-        Primary_user_id: new mongoose.Types.ObjectId(Primary_user_id),
-      },
+    // Build filter object for query
+    const filter = {
+      cmp_id: cmp_id,
+      Primary_user_id: Primary_user_id,
     };
 
-    // Add search condition if searchTerm is provided
+    // Add search functionality if search term is provided
     if (searchTerm) {
-      matchStage.$match.$or = [
+      filter.$or = [
         { product_name: { $regex: searchTerm, $options: "i" } },
-        // { hsn_code: { $regex: searchTerm, $options: 'i' } },
         { product_code: searchTerm },
       ];
     }
 
-    let selectedGodowns;
-    if (isVanSale && configuration?.selectedVanSaleGodowns.length > 0) {
+    // Determine which godowns to select based on configuration
+    let selectedGodowns = [];
+    if (isVanSale && configuration?.selectedVanSaleGodowns?.length > 0) {
       selectedGodowns = configuration.selectedVanSaleGodowns;
-    } else if (!isVanSale && configuration && configuration.selectedGodowns) {
+      filter["GodownList.godown_id"] = { $in: selectedGodowns };
+    } else if (!isVanSale && configuration?.selectedGodowns?.length > 0) {
       selectedGodowns = configuration.selectedGodowns;
+      filter["GodownList.godown_id"] = { $in: selectedGodowns };
     }
 
-    let projectStage = {
-      $project: {
-        product_name: 1,
-        cmp_id: 1,
-        product_code: 1,
-        balance_stock: 1,
-        Primary_user_id: 1,
-        brand: 1,
-        category: 1,
-        sub_category: 1,
-        unit: 1,
-        alt_unit: 1,
-        unit_conversion: 1,
-        alt_unit_conversion: 1,
-        hsn_code: 1,
-        purchase_price: 1,
-        purchase_cost: 1,
-        Priceleveles: 1,
-        cgst: 1,
-        sgst: 1,
-        igst: 1,
-        cess: 1,
-        addl_cess: 1,
-        state_cess: 1,
-        product_master_id: 1,
-        __v: 1,
-        GodownList: 1,
-        batchEnabled: 1,
-        item_mrp: 1,
-      },
-    };
-
-    if (
-      selectedGodowns &&
-      selectedGodowns.length > 0 &&
-      stockTransfer !== "true"
-    ) {
-      matchStage.$match["GodownList.godown_id"] = { $in: selectedGodowns };
-
-      projectStage.$project.GodownList = {
-        $filter: {
-          input: "$GodownList",
-          as: "godown",
-          cond: { $in: ["$$godown.godown_id", selectedGodowns] },
-        },
-      };
-    }
-
+    // If excluding a specific godown, add to filter
     if (excludeGodownId) {
-      projectStage.$project.GodownList = {
-        $filter: {
-          input: "$GodownList",
-          as: "godown",
-          cond: { $ne: ["$$godown.godown_id", excludeGodownId] },
-        },
-      };
+      filter["GodownList.godown_id"] = { $ne: excludeGodownId };
     }
 
-    const addFieldsStage = {
-      $addFields: {
-        hasGodownOrBatch: {
-          $anyElementTrue: {
-            $map: {
-              input: "$GodownList",
-              as: "godown",
-              in: {
-                $or: [
-                  { $ifNull: ["$$godown.godown", false] },
-                  { $ifNull: ["$$godown.batch", false] },
-                ],
-              },
-            },
-          },
-        },
-      },
-    };
+    // Count total products matching the filter
+    const totalProducts = await productModel.countDocuments(filter);
 
-    const filterEmptyGodownListStage = {
-      $match: {
-        $expr: {
-          $cond: {
-            if: { $eq: [excludeGodownId, null] },
-            then: { $gt: [{ $size: "$GodownList" }, 0] },
-            else: {
-              $and: [
-                { $gt: [{ $size: "$GodownList" }, 0] },
-                {
-                  $anyElementTrue: {
-                    $map: {
-                      input: "$GodownList",
-                      as: "godown",
-                      in: {
-                        $and: [
-                          { $ifNull: ["$$godown.godown", false] },
-                          { $ifNull: ["$$godown.godown_id", false] },
-                        ],
-                      },
-                    },
-                  },
-                },
-              ],
-            },
-          },
-        },
-      },
-    };
+    // Create basic query
+    let query = productModel.find(filter);
 
-    // Count total products for pagination info
-    const countPipeline = [
-      matchStage,
-      projectStage,
-      addFieldsStage,
-      filterEmptyGodownListStage,
-      { $sort: { product_name: 1 } }, // sort alphabetically
-      { $count: "total" },
-    ];
-
-    const countResult = await productModel.aggregate(countPipeline);
-    const totalProducts = countResult.length > 0 ? countResult[0].total : 0;
-
-    const aggregationPipeline = [
-      matchStage,
-      projectStage,
-      addFieldsStage,
-      filterEmptyGodownListStage,
-      ...(limit > 0 ? [{ $skip: skip }] : []),
-      ...(limit > 0 ? [{ $limit: limit }] : []),
-    ];
-    // Conditionally add taxInclusive stage
-    if (taxInclusive) {
-      const addTaxInclusiveStage = {
-        $addFields: {
-          isTaxInclusive: true,
-        },
-      };
-      aggregationPipeline.push(addTaxInclusiveStage);
+    // Apply pagination if limit is specified
+    if (limit > 0) {
+      query = query.skip(skip).limit(limit);
     }
 
-    const products = await productModel.aggregate(aggregationPipeline);
+    // Sort products by name
+    query = query.sort({ product_name: 1 });
 
-    if (products && products.length > 0) {
+    // Execute query and populate relations
+    let products = await query
+      .populate({
+        path: "GodownList.godown",
+        model: "Godown",
+      })
+      .populate({
+        path: "Priceleveles.pricelevel",
+        model: "PriceLevel",
+      });
+
+    // Transform products to flatten nested structures
+    const transformedProducts = products.map((product) => {
+      // Convert to plain object
+      const productObject = product.toObject();
+
+      // Check if product has batch enabled or godown enabled
+      const batchEnabled = productObject.batchEnabled === true;
+      const gdnEnabled = productObject.gdnEnabled === true;
+
+      // Add hasGodownOrBatch property based on batch and godown enabled status
+      productObject.hasGodownOrBatch = batchEnabled || gdnEnabled;
+
+      // Flatten GodownList items
+      if (productObject.GodownList && productObject.GodownList.length > 0) {
+        productObject.GodownList = productObject.GodownList.map(
+          (godownItem) => {
+            // Skip if no godown reference
+            if (!godownItem.godown) return godownItem;
+
+            // Flatten godown properties into parent object
+            const flattenedGodownItem = {
+              ...godownItem,
+              // Copy all properties from godown object
+              godown: godownItem.godown.godown,
+              godown_id: godownItem.godown.godown_id,
+              defaultGodown: godownItem.godown.defaultGodown,
+              // Remove the nested godown object
+            };
+
+            return flattenedGodownItem;
+          }
+        );
+      }
+
+      // Flatten PriceLevels items
+      if (productObject.Priceleveles && productObject.Priceleveles.length > 0) {
+
+        
+        console.log("priceLevel", productObject.Priceleveles)
+        productObject.Priceleveles = productObject.Priceleveles.map(
+          
+          (priceLevel) => {
+            // Skip if no pricelevel reference
+            if (!priceLevel.pricelevel) return priceLevel;
+
+            // Create a flattened price level by extracting all properties from the nested object
+            const flattenedPriceLevel = {
+              // Include original price level properties (except the nested pricelevel object)
+              ...priceLevel,
+              // Copy properties directly from the nested pricelevel object
+              _id: priceLevel.pricelevel._id,
+              pricelevel: priceLevel?.pricelevel?.pricelevel,
+        
+            };
+
+            // Remove the nested pricelevel object
+            delete flattenedPriceLevel.pricelevel;
+
+            return flattenedPriceLevel;
+          }
+        );
+      }
+
+      // Add tax inclusive flag if requested
+      if (taxInclusive) {
+        productObject.isTaxInclusive = true;
+      }
+
+      return productObject;
+    });
+
+    // Return response based on results
+    if (transformedProducts && transformedProducts.length > 0) {
       return res.status(200).json({
-        productData: products,
+        productData: transformedProducts,
         pagination: {
           total: totalProducts,
           page,
           limit,
-          hasMore: skip + products.length < totalProducts,
+          hasMore: skip + transformedProducts.length < totalProducts,
         },
         message: "Products fetched",
       });
@@ -473,10 +436,11 @@ export const getProducts = async (req, res) => {
       return res.status(404).json({ message: "No products were found" });
     }
   } catch (error) {
-    console.log(error);
-    return res
-      .status(500)
-      .json({ success: false, message: "Internal server error, try again!" });
+    console.error(error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error, try again!",
+    });
   }
 };
 

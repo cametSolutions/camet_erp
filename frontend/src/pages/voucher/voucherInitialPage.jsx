@@ -1,23 +1,21 @@
 /* eslint-disable react/no-unescaped-entities */
-import { useEffect, useState, useMemo } from "react";
-import { useSelector } from "react-redux";
-
-import { useDispatch } from "react-redux";
-
+import { useEffect, useState, useMemo, useCallback } from "react";
+import { useSelector, useDispatch } from "react-redux";
 import { toast } from "react-toastify";
 import { useNavigate, useLocation } from "react-router-dom";
 import api from "../../api/api";
 import {
   removeAll,
-  removeAdditionalCharge,
   removeItem,
   removeGodownOrBatch,
   changeDate,
   removeParty,
   addAdditionalCharges,
   deleteRow,
+  addAllAdditionalCharges,
+  addVoucherType,
+  addVoucherNumber,
 } from "../../../slices/voucherSlices/commonVoucherSlice";
-
 import DespatchDetails from "../../components/secUsers/DespatchDetails";
 import HeaderTile from "../../components/secUsers/main/HeaderTile";
 import AddPartyTile from "../../components/secUsers/main/AddPartyTile";
@@ -27,189 +25,245 @@ import FooterButton from "../../components/secUsers/main/FooterButton";
 import TitleDiv from "../../components/common/TitleDiv";
 
 function VoucherInitialPage() {
-  const [additional, setAdditional] = useState(false);
-  const [salesNumber, setSalesNumber] = useState("");
-  const [dataLoading, setDataLoading] = useState(0);
-  const [loading, setLoading] = useState(false);
-  const [submitLoading, setSubmitLoading] = useState(false);
-  const [additionalChargesFromCompany, setAdditionalChargesFromCompany] =
-    useState([]);
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  const date = useSelector((state) => state.salesSecondary.date);
-  const [selectedDate, setSelectedDate] = useState(new Date());
+  // to find the current voucher
+  const getVoucherType = () => {
+    if (voucherTypeFromRedux) return;
+    const pathname = location.pathname;
+    let currentVoucher;
+    if (pathname === "/sUsers/sales") {
+      currentVoucher = "sale";
+    } else {
+      currentVoucher = "saleOrder";
+    }
 
-  const {
-    additionalCharges: additionalChargesFromRedux = [],
-    convertedFrom = [],
-  } = useSelector((state) => state.salesSecondary);
+    dispatch(addVoucherType(currentVoucher));
+  };
 
-  const { _id: cmp_id, type } = useSelector(
+  // Redux selectors
+  const { _id: cmp_id } = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
-
-  const despatchDetails = useSelector(
-    (state) => state.salesSecondary.despatchDetails
-  );
+  const {
+    date,
+    party,
+    items,
+    despatchDetails,
+    heights: batchHeights,
+    selectedPriceLevel: priceLevelFromRedux = "",
+    voucherType: voucherTypeFromRedux,
+    voucherNumber: voucherNumberFromRedux,
+    allAdditionalCharges: allAdditionalChargesFromRedux,
+  } = useSelector((state) => state.commonVoucherSlice);
 
   const paymentSplittingReduxData = useSelector(
     (state) => state?.paymentSplitting?.paymentSplittingData
   );
 
-  const location = useLocation();
+  const {
+    additionalCharges: additionalChargesFromRedux = [],
+    convertedFrom = [],
+  } = useSelector((state) => state.commonVoucherSlice);
 
-  ////dataLoading////
-  // Helper function to manage dataLoading state
-  const incrementLoading = () => setDataLoading((prev) => prev + 1);
-  const decrementLoading = () => setDataLoading((prev) => prev - 1);
-
-  useEffect(() => {
-    const getAdditionalCharges = async () => {
-      incrementLoading();
-
-      try {
-        const res = await api.get(`/api/sUsers/additionalcharges/${cmp_id}`, {
-          withCredentials: true,
-        });
-        // console.log(res.data);
-        setAdditionalChargesFromCompany(res.data);
-      } catch (error) {
-        console.log(error);
-        toast.error(error.response.data.message);
-      } finally {
-        decrementLoading();
-      }
-    };
-    if (type != "self") {
-      getAdditionalCharges();
-    }
-  }, []);
-
-  useEffect(() => {
-    localStorage.removeItem("scrollPositionAddItemSales");
-    if (date) {
-      setSelectedDate(date);
-    }
-  }, []);
-
-  useEffect(() => {
-    const fetchConfigurationNumber = async () => {
-      incrementLoading();
-      try {
-        const res = await api.get(
-          `/api/sUsers/fetchConfigurationNumber/${cmp_id}/sales`,
-
-          {
-            withCredentials: true,
-          }
-        );
-
-        // console.log(res.data);
-        if (res.data.message === "default") {
-          const { configurationNumber } = res.data;
-          setSalesNumber(configurationNumber);
-          return;
-        }
-        const { configDetails, configurationNumber } = res.data;
-
-        if (configDetails) {
-          const { widthOfNumericalPart, prefixDetails, suffixDetails } =
-            configDetails;
-          const newOrderNumber = configurationNumber.toString();
-
-          const padedNumber = newOrderNumber.padStart(widthOfNumericalPart, 0);
-          const finalOrderNumber = [prefixDetails, padedNumber, suffixDetails]
-            .filter(Boolean)
-            .join("-");
-          setSalesNumber(finalOrderNumber);
-        } else {
-          setSalesNumber(salesNumber);
-        }
-      } catch (error) {
-        console.log(error);
-      } finally {
-        decrementLoading();
-      }
-    };
-
-    // console.log(salesNumber);
-
-    fetchConfigurationNumber();
-  }, []);
-
-  const [rows, setRows] = useState(
+  // Component state
+  const [isLoading, setIsLoading] = useState(false);
+  const [submitLoading, setSubmitLoading] = useState(false);
+  // eslint-disable-next-line no-unused-vars
+  const [showAdditionalCharges, setShowAdditionalCharges] = useState(
     additionalChargesFromRedux.length > 0
-      ? additionalChargesFromRedux
-      : additionalChargesFromCompany.length > 0
-      ? [
-          {
-            option: additionalChargesFromCompany[0].name,
+  );
+  const [voucherNumber, setVoucherNumber] = useState("");
+  const [selectedDate, setSelectedDate] = useState(
+    date ? new Date(date) : new Date()
+  );
+  const [additionalChargesFromCompany, setAdditionalChargesFromCompany] =
+    useState([]);
+  const [rows, setRows] = useState([]);
+
+  // Calculated values
+  const subTotal = useMemo(() => {
+    return items.reduce((acc, curr) => acc + (parseFloat(curr.total) || 0), 0);
+  }, [items]);
+
+  const additionalChargesTotal = useMemo(() => {
+    return rows.reduce((acc, curr) => {
+      let value = curr.finalValue === "" ? 0 : parseFloat(curr.finalValue);
+      return curr.action === "add" ? acc + value : acc - value;
+    }, 0);
+  }, [rows]);
+
+  const totalAmount = useMemo(() => {
+    const totalAmountNotRounded = parseFloat(subTotal) + additionalChargesTotal;
+    return Math.round(totalAmountNotRounded);
+  }, [subTotal, additionalChargesTotal]);
+
+  // API calls wrapped in promises
+  const fetchData = useCallback(async () => {
+    setIsLoading(true);
+
+    try {
+      // Prepare promises conditionally
+      const promises = [];
+
+      // Additional Charges
+      let additionalCharges = allAdditionalChargesFromRedux;
+      if (!additionalCharges || additionalCharges.length === 0) {
+        promises.push(
+          api.get(`/api/sUsers/additionalcharges/${cmp_id}`, {
+            withCredentials: true,
+          })
+        );
+      } else {
+        setAdditionalChargesFromCompany(additionalCharges);
+        if (additionalCharges.length > 0) {
+          const initialRow = {
+            option: additionalCharges[0].name,
             value: "",
             action: "add",
-            taxPercentage: additionalChargesFromCompany[0].taxPercentage,
-            hsn: additionalChargesFromCompany[0].hsn,
-            _id: additionalChargesFromCompany[0]._id,
+            taxPercentage: additionalCharges[0].taxPercentage,
+            hsn: additionalCharges[0].hsn,
+            _id: additionalCharges[0]._id,
             finalValue: "",
-          },
-        ]
-      : [] // Fallback to an empty array if additionalChargesFromCompany is also empty
-  );
+          };
+          setRows([initialRow]);
+        } else {
+          setRows(allAdditionalChargesFromRedux);
+        }
+      }
 
-  useEffect(() => {
-    if (additionalChargesFromRedux.length > 0) {
-      setAdditional(true);
+      // Configuration Number
+      if (!voucherNumberFromRedux) {
+        promises.push(
+          api.get(`/api/sUsers/fetchConfigurationNumber/${cmp_id}/sales`, {
+            withCredentials: true,
+          })
+        );
+      } else {
+        setVoucherNumber(voucherNumberFromRedux);
+      }
+
+      const responses = await Promise.all(promises);
+
+      // Handle additional charges response if fetched
+      if (responses[0] && !allAdditionalChargesFromRedux?.length) {
+        const additionalChargesResponse = responses[0];
+        additionalCharges =
+          additionalChargesResponse.data?.additionalCharges || [];
+        setAdditionalChargesFromCompany(additionalCharges);
+        dispatch(addAllAdditionalCharges(additionalCharges));
+
+        if (additionalCharges.length > 0) {
+          const initialRow = {
+            option: additionalCharges[0].name,
+            value: "",
+            action: "add",
+            taxPercentage: additionalCharges[0].taxPercentage,
+            hsn: additionalCharges[0].hsn,
+            _id: additionalCharges[0]._id,
+            finalValue: "",
+          };
+          setRows([initialRow]);
+        }
+      }
+
+      // Handle configuration number response if fetched
+      const configResponseIndex = allAdditionalChargesFromRedux?.length ? 0 : 1;
+
+      if (responses[configResponseIndex]) {
+        const configData = responses[configResponseIndex].data;
+
+        if (configData.message === "default") {
+          const voucherNumber = configData.configurationNumber;
+          setVoucherNumber(voucherNumber);
+          dispatch(addVoucherNumber(voucherNumber));
+        } else {
+          const { configDetails, configurationNumber } = configData;
+          if (configDetails) {
+            const { widthOfNumericalPart, prefixDetails, suffixDetails } =
+              configDetails;
+            const paddedNumber = configurationNumber
+              .toString()
+              .padStart(widthOfNumericalPart, 0);
+            const finalOrderNumber = [
+              prefixDetails,
+              paddedNumber,
+              suffixDetails,
+            ]
+              .filter(Boolean)
+              .join("-");
+            setVoucherNumber(finalOrderNumber);
+            dispatch(addVoucherNumber(finalOrderNumber));
+          } else {
+            setVoucherNumber(configurationNumber);
+            dispatch(addVoucherNumber(configurationNumber));
+          }
+        }
+      }
+    } catch (error) {
+      console.log(error);
+      toast.error(error.response?.data?.message || "Error fetching data");
+    } finally {
+      setIsLoading(false);
     }
-  }, []);
-  const [subTotal, setSubTotal] = useState(0);
-  const dispatch = useDispatch();
+  }, [cmp_id]);
 
+  // Initialize component
+  useEffect(() => {
+    getVoucherType();
+    if (!date) dispatch(changeDate(selectedDate));
+    localStorage.removeItem("scrollPositionAddItemSales");
+    fetchData();
+  }, [fetchData]);
+
+  // Row manipulation handlers
   const handleAddRow = () => {
-    const hasEmptyValue = rows.some((row) => row.value === "");
-    // console.log(hasEmptyValue);
-    if (hasEmptyValue) {
+    if (rows.some((row) => row.value === "")) {
       toast.error("Please add a value.");
       return;
     }
 
-    setRows([
-      ...rows,
-      {
-        option: additionalChargesFromCompany[0]?.name,
-        value: "",
-        action: "add",
-        taxPercentage: additionalChargesFromCompany[0]?.taxPercentage,
-        hsn: additionalChargesFromCompany[0]?.hsn,
-        _id: additionalChargesFromCompany[0]?._id,
-        finalValue: "",
-      },
-    ]);
+    if (additionalChargesFromCompany.length === 0) return;
+
+    const newRow = {
+      option: additionalChargesFromCompany[0].name,
+      value: "",
+      action: "add",
+      taxPercentage: additionalChargesFromCompany[0].taxPercentage,
+      hsn: additionalChargesFromCompany[0].hsn,
+      _id: additionalChargesFromCompany[0]._id,
+      finalValue: "",
+    };
+
+    setRows((prevRows) => [...prevRows, newRow]);
   };
 
   const handleLevelChange = (index, id) => {
     const selectedOption = additionalChargesFromCompany.find(
       (option) => option._id === id
     );
-    // console.log(selectedOption);
+    if (!selectedOption) return;
 
     const newRows = [...rows];
-    newRows[index] = {
+    const updatedRow = {
       ...newRows[index],
-      option: selectedOption?.name,
-      taxPercentage: selectedOption?.taxPercentage,
-      hsn: selectedOption?.hsn,
-      _id: selectedOption?._id,
+      option: selectedOption.name,
+      taxPercentage: selectedOption.taxPercentage,
+      hsn: selectedOption.hsn,
+      _id: selectedOption._id,
       finalValue: "",
     };
-    // console.log(newRows);
+
+    newRows[index] = updatedRow;
     setRows(newRows);
-
-    dispatch(addAdditionalCharges({ index, row: newRows[index] }));
+    dispatch(addAdditionalCharges({ index, row: updatedRow }));
   };
-
-  // console.log(rows);
 
   const handleRateChange = (index, value) => {
     const newRows = [...rows];
-    let updatedRow = { ...newRows[index], value: value }; // Create a new object with the updated value
+    let updatedRow = { ...newRows[index], value };
 
     if (updatedRow.taxPercentage && updatedRow.taxPercentage !== "") {
       const taxAmount =
@@ -218,6 +272,7 @@ function VoucherInitialPage() {
     } else {
       updatedRow.finalValue = parseFloat(value);
     }
+
     newRows[index] = updatedRow;
     setRows(newRows);
     dispatch(addAdditionalCharges({ index, row: updatedRow }));
@@ -225,57 +280,19 @@ function VoucherInitialPage() {
 
   const actionChange = (index, value) => {
     const newRows = [...rows];
-    const updatedRow = { ...newRows[index], action: value }; // Create a new object with the updated action
-    newRows[index] = updatedRow; // Replace the old row with the updated one in the newRows array
+    const updatedRow = { ...newRows[index], action: value };
+    newRows[index] = updatedRow;
     setRows(newRows);
     dispatch(addAdditionalCharges({ index, row: updatedRow }));
   };
 
   const handleDeleteRow = (index) => {
-    const newRows = rows.filter((_, i) => i !== index); // Create a new array without the deleted row
-    setRows(newRows);
-    dispatch(deleteRow(index)); // You need to create an action to handle row deletion in Redux
+    setRows((prevRows) => prevRows.filter((_, i) => i !== index));
+    dispatch(deleteRow(index));
   };
-  const party = useSelector((state) => state.salesSecondary.party);
-  const items = useSelector((state) => state.salesSecondary.items);
-  const priceLevelFromRedux =
-    useSelector((state) => state.salesSecondary.selectedPriceLevel) || "";
-  const batchHeights = useSelector((state) => state.salesSecondary.heights);
 
-  useEffect(() => {
-    const subTotal = items.reduce((acc, curr) => {
-      return (acc = acc + (parseFloat(curr.total) || 0));
-    }, 0);
-    setSubTotal(subTotal);
-
-    // console.log ("subTotal", subTotal);
-  }, [items]);
-
-  const additionalChargesTotal = useMemo(() => {
-    return rows.reduce((acc, curr) => {
-      let value = curr.finalValue === "" ? 0 : parseFloat(curr.finalValue);
-      if (curr.action === "add") {
-        return acc + value;
-      } else if (curr.action === "sub") {
-        return acc - value;
-      }
-      return acc;
-    }, 0);
-  }, [rows]);
-
-  // console.log("additionalChargesTotal", additionalChargesTotal);
-  const totalAmountNotRounded =
-    parseFloat(subTotal) + additionalChargesTotal || parseFloat(subTotal);
-  const totalAmount = Math.round(totalAmountNotRounded);
-
-  // console.log("totalAmount", totalAmount);
-
-  // console.log(totalAmount);
-
-  const navigate = useNavigate();
-
+  // Navigation and form handlers
   const handleAddItem = () => {
-    // console.log(Object.keys(party).length);
     if (Object.keys(party).length === 0) {
       toast.error("Select a party first");
       return;
@@ -283,113 +300,91 @@ function VoucherInitialPage() {
     navigate("/sUsers/addItemSales");
   };
 
-  const cancelHandler = () => {
-    setAdditional(false);
-    dispatch(removeAdditionalCharge());
-    setRows([
-      {
-        option: additionalChargesFromCompany[0].name,
-        value: "",
-        action: "add",
-        taxPercentage: additionalChargesFromCompany[0].taxPercentage,
-        hsn: additionalChargesFromCompany[0].hsn,
-      },
-    ]);
-  };
+  // const cancelAdditionalCharges = () => {
+  //   setShowAdditionalCharges(false);
+  //   dispatch(removeAdditionalCharge());
+
+  //   if (additionalChargesFromCompany.length > 0) {
+  //     setRows([{
+  //       option: additionalChargesFromCompany[0].name,
+  //       value: "",
+  //       action: "add",
+  //       taxPercentage: additionalChargesFromCompany[0].taxPercentage,
+  //       hsn: additionalChargesFromCompany[0].hsn,
+  //       _id: additionalChargesFromCompany[0]._id,
+  //       finalValue: "",
+  //     }]);
+  //   } else {
+  //     setRows([]);
+  //   }
+  // };
 
   const submitHandler = async () => {
-    setSubmitLoading(true);
-    if (Object.keys(party).length == 0) {
+    // Validation
+    if (Object.keys(party).length === 0) {
       toast.error("Add a party first");
-      setSubmitLoading(false);
       return;
     }
-    if (items.length == 0) {
+
+    if (items.length === 0) {
       toast.error("Add at least an item");
-      setSubmitLoading(false);
-
       return;
     }
 
-    if (additional) {
-      const hasEmptyValue = rows.some((row) => row.value === "");
-      if (hasEmptyValue) {
+    if (showAdditionalCharges) {
+      if (rows.some((row) => row.value === "")) {
         toast.error("Please add a value.");
-        setSubmitLoading(false);
         return;
       }
-      const hasNagetiveValue = rows.some((row) => parseFloat(row.value) < 0);
-      if (hasNagetiveValue) {
+
+      if (rows.some((row) => parseFloat(row.value) < 0)) {
         toast.error("Please add a positive value");
-        setSubmitLoading(false);
-
         return;
       }
     }
 
-    const lastAmount = totalAmount.toFixed(2);
-
-    // dispatch(AddFinalAmount(lastAmount));
-
-    const formData = {
-      party,
-      items,
-      despatchDetails,
-      priceLevelFromRedux,
-      additionalChargesFromRedux,
-      lastAmount,
-      cmp_id,
-      salesNumber,
-      batchHeights,
-      selectedDate,
-      convertedFrom,
-    };
-
-    if (Object.keys(paymentSplittingReduxData).length !== 0) {
-      formData.paymentSplittingData = paymentSplittingReduxData;
-      // formData.balanceAmount=paymentSplittingReduxData?.balanceAmount;
-    } else {
-      formData.paymentSplittingData = {};
-    }
-
-    // console.log(formData);
+    setSubmitLoading(true);
 
     try {
+      const formData = {
+        party,
+        items,
+        despatchDetails,
+        priceLevelFromRedux,
+        additionalChargesFromRedux: rows,
+        lastAmount: totalAmount.toFixed(2),
+        cmp_id,
+        voucherNumber,
+        batchHeights,
+        selectedDate,
+        convertedFrom,
+        paymentSplittingData:
+          Object.keys(paymentSplittingReduxData).length !== 0
+            ? paymentSplittingReduxData
+            : {},
+      };
+
       const res = await api.post(
         `/api/sUsers/createSale?vanSale=${false}`,
         formData,
         {
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           withCredentials: true,
         }
       );
 
-      // console.log(res.data);
       toast.success(res.data.message);
-
       navigate(`/sUsers/salesDetails/${res.data.data._id}`, {
-        state: {
-          from: location?.state?.from || "null",
-        },
+        state: { from: location?.state?.from || "null" },
       });
       dispatch(removeAll());
     } catch (error) {
-      toast.error(error.response.data.message);
+      toast.error(error.response?.data?.message || "Error creating sale");
       console.log(error);
     } finally {
       setSubmitLoading(false);
     }
   };
-
-  useEffect(() => {
-    if (dataLoading > 0) {
-      setLoading(true);
-    } else {
-      setLoading(false);
-    }
-  }, [dataLoading]);
 
   return (
     <div className="mb-14 sm:mb-0">
@@ -397,15 +392,15 @@ function VoucherInitialPage() {
         <TitleDiv
           title="Sales"
           // from={`/sUsers/selectVouchers`}
-          loading={loading || submitLoading}
+          loading={isLoading || submitLoading}
         />
 
-        <div className={`${loading ? "pointer-events-none opacity-70" : ""}`}>
+        <div className={`${isLoading ? "pointer-events-none opacity-70" : ""}`}>
           {/* invoiec date */}
 
           <HeaderTile
-            title={"Sale"}
-            number={salesNumber}
+            title={voucherTypeFromRedux}
+            number={voucherNumber}
             selectedDate={selectedDate}
             setSelectedDate={setSelectedDate}
             dispatch={dispatch}
@@ -413,7 +408,7 @@ function VoucherInitialPage() {
             submitHandler={submitHandler}
             removeAll={removeAll}
             tab="add"
-            loading={submitLoading}
+            isLoading={submitLoading}
           />
           {/* adding party */}
 
@@ -442,8 +437,8 @@ function VoucherInitialPage() {
             godownname={""}
             subTotal={subTotal}
             type="sale"
-            additional={additional}
-            cancelHandler={cancelHandler}
+            // additional={additional}
+            // cancelHandler={cancelHandler}
             rows={rows}
             handleDeleteRow={handleDeleteRow}
             handleLevelChange={handleLevelChange}
@@ -451,7 +446,7 @@ function VoucherInitialPage() {
             actionChange={actionChange}
             handleRateChange={handleRateChange}
             handleAddRow={handleAddRow}
-            setAdditional={setAdditional}
+            // setAdditional={setAdditional}
             convertedFrom={convertedFrom}
             urlToAddItem="/sUsers/addItemSales"
             urlToEditItem="/sUsers/editItemSales"
@@ -479,7 +474,7 @@ function VoucherInitialPage() {
             submitHandler={submitHandler}
             tab="add"
             title="Sale"
-            loading={submitLoading || loading}
+            isLoading={submitLoading || isLoading}
           />
         </div>
       </div>

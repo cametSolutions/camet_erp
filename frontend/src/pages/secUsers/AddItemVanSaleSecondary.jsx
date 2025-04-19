@@ -25,7 +25,7 @@ import SearchBar from "../../components/common/SearchBar";
 import ProductDetails from "../../components/common/ProductDetails";
 import { IoIosArrowDown } from "react-icons/io";
 import { IoIosArrowUp } from "react-icons/io";
-import Filter from "../../components/secUsers/Filter";
+import Filter from "../voucher/Filter";
 
 function AddItemVanSaleSecondary() {
   const [item, setItem] = useState([]);

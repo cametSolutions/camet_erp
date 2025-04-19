@@ -1082,50 +1082,94 @@ export const addAccountGroups = async (req, res) => {
       return res.status(400).json({ error: "No data provided" });
     }
 
-    // Extract user ID and company ID
-    const { Primary_user_id, cmp_id } = accountGroupsToSave[0];
-    const primaryUserId = new mongoose.Types.ObjectId(Primary_user_id);
-
-    // Delete previous records
-    await AccountGroup.deleteMany({ Primary_user_id: primaryUserId, cmp_id });
-
-    // Track inserted accountGroup_id to avoid duplicate inserts
+    // Track processed and failed operations
     const uniqueGroups = new Map();
+    const results = {
+      successful: [],
+      failed: [],
+      skipped: []
+    };
 
-    const savedAccountGroups = await Promise.all(
+    // Process each account group
+    await Promise.all(
       accountGroupsToSave.map(async (group) => {
         const key = `${group.cmp_id}-${group.accountGroup_id}-${group.Primary_user_id}`;
 
         // Skip duplicate records in the request
-        if (uniqueGroups.has(key)) return null;
+        if (uniqueGroups.has(key)) {
+          results.skipped.push({
+            accountGroup_id: group.accountGroup_id,
+            reason: "Duplicate in request"
+          });
+          return;
+        }
         uniqueGroups.set(key, true);
 
         try {
-          return await AccountGroup.findOneAndUpdate(
-            {
-              cmp_id: group.cmp_id,
+          // Convert Primary_user_id to ObjectId if it's a string
+          if (typeof group.Primary_user_id === 'string') {
+            group.Primary_user_id = new mongoose.Types.ObjectId(group.Primary_user_id);
+          }
+
+          // First check if an account group with this ID already exists
+          const existingGroup = await AccountGroup.findOne({
+            accountGroup_id: group.accountGroup_id
+          });
+
+          if (existingGroup) {
+            // Update the existing document
+            const updatedGroup = await AccountGroup.findByIdAndUpdate(
+              existingGroup._id,
+              group,
+              { 
+                new: true, 
+                runValidators: true
+              }
+            );
+
+            results.successful.push({
               accountGroup_id: group.accountGroup_id,
-              Primary_user_id: new mongoose.Types.ObjectId(
-                group.Primary_user_id
-              ),
-            },
-            group,
-            { new: true, upsert: true } // Insert if not found, update if exists
-          );
+              _id: updatedGroup._id,
+              isNew: false
+            });
+          } else {
+            // Create a new document
+            const newGroup = new AccountGroup(group);
+            await newGroup.save();
+
+            results.successful.push({
+              accountGroup_id: group.accountGroup_id,
+              _id: newGroup._id,
+              isNew: true
+            });
+          }
         } catch (error) {
-          console.error("Error saving account group:", error);
-          return null; // Skip if there's an issue
+          console.error(`Error processing account group ${group.accountGroup_id}:`, error);
+          results.failed.push({
+            accountGroup_id: group.accountGroup_id,
+            error: error.message || "Unknown error"
+          });
         }
       })
     );
 
+    // Return detailed response
     res.status(201).json({
-      message: "Account groups saved successfully",
-      savedAccountGroups: savedAccountGroups.filter(Boolean), // Remove null values
+      message: "Account groups processing completed",
+      summary: {
+        total: accountGroupsToSave.length,
+        successful: results.successful.length,
+        failed: results.failed.length,
+        skipped: results.skipped.length
+      },
+      results
     });
   } catch (error) {
-    console.error("Error:", error);
-    res.status(500).json({ error: "Internal server error" });
+    console.error("Error in addAccountGroups:", error);
+    res.status(500).json({ 
+      error: "Internal server error", 
+      message: error.message 
+    });
   }
 };
 
@@ -1141,68 +1185,113 @@ export const addSubGroups = async (req, res) => {
       return res.status(400).json({ error: "No data provided" });
     }
 
-    // Extract user ID and company ID
-    const { Primary_user_id, cmp_id } = subGroupsToSave[0];
-    const primaryUserId = new mongoose.Types.ObjectId(Primary_user_id);
-
-    // Delete previous records
-    await subGroupModel.deleteMany({ Primary_user_id: primaryUserId, cmp_id });
-
-    // Track inserted subGroup_id to avoid duplicate inserts
+    // Track processed and failed operations
     const uniqueSubGroups = new Map();
+    const results = {
+      successful: [],
+      failed: [],
+      skipped: []
+    };
 
-    const savedSubGroups = await Promise.all(
+    // Process each subgroup
+    await Promise.all(
       subGroupsToSave.map(async (subGroup) => {
         const key = `${subGroup.cmp_id}-${subGroup.subGroup_id}-${subGroup.Primary_user_id}`;
 
         // Skip duplicate records in the request
-        if (uniqueSubGroups.has(key)) return null;
+        if (uniqueSubGroups.has(key)) {
+          results.skipped.push({
+            subGroup_id: subGroup.subGroup_id,
+            reason: "Duplicate in request"
+          });
+          return;
+        }
         uniqueSubGroups.set(key, true);
 
-        // find corresponding accountGroup
-        const accountGroup = await AccountGroup.findOne({
-          cmp_id: subGroup.cmp_id,
-          accountGroup_id: subGroup.accountGroup_id,
-          Primary_user_id: new mongoose.Types.ObjectId(
-            subGroup.Primary_user_id
-          ),
-        });
-
-        if (!accountGroup) {
-          console.error(
-            `Account group not found for subGroup: ${subGroup.subGroup_id}`
-          );
-          return null; // Skip if account group is not found
-        }
-
-        subGroup.accountGroup = accountGroup._id;
-
         try {
-          return await subGroupModel.findOneAndUpdate(
-            {
-              cmp_id: subGroup.cmp_id,
+          // Convert Primary_user_id to ObjectId if it's a string
+          if (typeof subGroup.Primary_user_id === 'string') {
+            subGroup.Primary_user_id = new mongoose.Types.ObjectId(subGroup.Primary_user_id);
+          }
+
+          // Find corresponding accountGroup
+          const accountGroup = await AccountGroup.findOne({
+            cmp_id: subGroup.cmp_id,
+            accountGroup_id: subGroup.accountGroup_id,
+            Primary_user_id: subGroup.Primary_user_id,
+          });
+
+          if (!accountGroup) {
+            results.failed.push({
               subGroup_id: subGroup.subGroup_id,
-              Primary_user_id: new mongoose.Types.ObjectId(
-                subGroup.Primary_user_id
-              ),
-            },
-            subGroup,
-            { new: true, upsert: true } // Insert if not found, update if exists
-          );
+              error: `Account group not found with ID: ${subGroup.accountGroup_id}`
+            });
+            return;
+          }
+
+          subGroup.accountGroup = accountGroup._id;
+
+          // First check if a subgroup with this ID already exists
+          const existingSubGroup = await subGroupModel.findOne({
+            subGroup_id: subGroup.subGroup_id
+          });
+
+          let savedSubGroup;
+          
+          if (existingSubGroup) {
+            // Update the existing document
+            savedSubGroup = await subGroupModel.findByIdAndUpdate(
+              existingSubGroup._id,
+              subGroup,
+              { 
+                new: true, 
+                runValidators: true
+              }
+            );
+
+            results.successful.push({
+              subGroup_id: subGroup.subGroup_id,
+              _id: savedSubGroup._id,
+              isNew: false
+            });
+          } else {
+            // Create a new document
+            const newSubGroup = new subGroupModel(subGroup);
+            savedSubGroup = await newSubGroup.save();
+
+            results.successful.push({
+              subGroup_id: subGroup.subGroup_id,
+              _id: savedSubGroup._id,
+              isNew: true
+            });
+          }
         } catch (error) {
-          console.error("Error saving sub-group:", error);
-          return null; // Skip if there's an issue
+          console.error(`Error processing subgroup ${subGroup.subGroup_id}:`, error);
+          results.failed.push({
+            subGroup_id: subGroup.subGroup_id,
+            error: error.message || "Unknown error"
+          });
         }
       })
     );
 
+    // Return detailed response
     res.status(201).json({
-      message: "Sub-groups saved successfully",
-      savedSubGroups: savedSubGroups.filter(Boolean), // Remove null values
+      message: "Sub-groups processing completed",
+      summary: {
+        total: subGroupsToSave.length,
+        successful: results.successful.length,
+        failed: results.failed.length,
+        skipped: results.skipped.length
+      },
+      results
     });
   } catch (error) {
-    console.error("Error:", error);
-    res.status(500).json({ error: "Internal server error" });
+    console.error("Error in addSubGroups:", error);
+    res.status(500).json({ 
+      error: "Internal server error", 
+      message: error.message 
+    });
   }
 };
 

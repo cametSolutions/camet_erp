@@ -14,13 +14,14 @@ import { IoMdArrowDown } from "react-icons/io";
 import { formatAmount } from "../../../../../backend/helpers/helper";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate, useLocation } from "react-router-dom";
-import { addParty as addPartySales } from "../../../../slices/salesSecondary";
-import { addParty as addPartySaleOrder } from "../../../../slices/invoiceSecondary";
-import { addParty as addPartyPurchase } from "../../../../slices/purchase";
-import { addParty as addPartyCreditNote } from "../../../../slices/creditNote";
-import { addParty as addPartyDebitNote } from "../../../../slices/debitNote";
-import { addParty as addPartyReceipt } from "../../../../slices/receipt";
-import { addParty as addPartyPurchasePayment } from "../../../../slices/payment";
+import { addParty } from "../../../../slices/voucherSlices/commonVoucherSlice";
+// import { addParty as addPartySales } from "../../../../slices/salesSecondary";
+// import { addParty as addPartySaleOrder } from "../../../../slices/invoiceSecondary";
+// import { addParty as addPartyPurchase } from "../../../../slices/purchase";
+// import { addParty as addPartyCreditNote } from "../../../../slices/creditNote";
+// import { addParty as addPartyDebitNote } from "../../../../slices/debitNote";
+// import { addParty as addPartyReceipt } from "../../../../slices/receipt";
+// import { addParty as addPartyPurchasePayment } from "../../../../slices/payment";
 
 function PartyListComponent({ deleteHandler = () => {}, isVoucher = false }) {
   const [parties, setParties] = useState([]);
@@ -167,32 +168,33 @@ function PartyListComponent({ deleteHandler = () => {}, isVoucher = false }) {
       navigate(`/sUsers/pendingOrders/${el?._id}`);
     } else {
       //// dispatch to the correct redux state
-      const { pathname } = location;
-      const endPath = pathname.split("/").pop();
-      console.log(endPath);
+      dispatch(addParty(el));
+      // const { pathname } = location;
+      // const endPath = pathname.split("/").pop();
+      // console.log(endPath);
 
-      if (endPath === "searchPartySales") {
-        console.log("searchPartySales");
-        dispatch(addPartySales(el));
-      } else if (endPath === "searchParty") {
-        console.log("searchPartySaleOrder");
-        dispatch(addPartySaleOrder(el));
-      } else if (endPath === "searchPartyPurchase") {
-        console.log("searchPartyPurchase");
-        dispatch(addPartyPurchase(el));
-      } else if (endPath === "searchPartyPurchasePayment") {
-        console.log("searchPartyPurchasePayment");
-        dispatch(addPartyPurchasePayment(el));
-      } else if (endPath === "searchPartyReceipt") {
-        console.log("searchPartyReceipt");
-        dispatch(addPartyReceipt(el));
-      } else if (endPath === "searchPartyCreditNote") {
-        console.log("searchPartyCreditNote");
-        dispatch(addPartyCreditNote(el));
-      } else if (endPath === "searchPartyDebitNote") {
-        console.log("searchPartyDebitNote");
-        dispatch(addPartyDebitNote(el));
-      }
+      // if (endPath === "searchPartySales") {
+      //   console.log("searchPartySales");
+      //   dispatch(addPartySales(el));
+      // } else if (endPath === "searchParty") {
+      //   console.log("searchPartySaleOrder");
+      //   dispatch(addPartySaleOrder(el));
+      // } else if (endPath === "searchPartyPurchase") {
+      //   console.log("searchPartyPurchase");
+      //   dispatch(addPartyPurchase(el));
+      // } else if (endPath === "searchPartyPurchasePayment") {
+      //   console.log("searchPartyPurchasePayment");
+      //   dispatch(addPartyPurchasePayment(el));
+      // } else if (endPath === "searchPartyReceipt") {
+      //   console.log("searchPartyReceipt");
+      //   dispatch(addPartyReceipt(el));
+      // } else if (endPath === "searchPartyCreditNote") {
+      //   console.log("searchPartyCreditNote");
+      //   dispatch(addPartyCreditNote(el));
+      // } else if (endPath === "searchPartyDebitNote") {
+      //   console.log("searchPartyDebitNote");
+      //   dispatch(addPartyDebitNote(el));
+      // }
 
       navigate(-1, { replace: true });
     }
@@ -237,15 +239,24 @@ function PartyListComponent({ deleteHandler = () => {}, isVoucher = false }) {
           <div className="flex justify-center items-center gap-3 shrink-0">
             <CallIcon phoneNumber={el?.mobileNumber} size={18} color="green" />
             <Link to={`/sUsers/editParty/${el._id}`}>
-              <FaEdit className={` ${type === "self" && !allowAlteration(el?.accountGroup) && "pointer-events-none opacity-50"}  text-blue-500`} />
+              <FaEdit
+                className={` ${
+                  type === "self" &&
+                  !allowAlteration(el?.accountGroup) &&
+                  "pointer-events-none opacity-50"
+                }  text-blue-500`}
+              />
             </Link>
             {/* delete id only for self users */}
             {/* {type === "self" && allowAlteration(el?.accountGroup) && ( */}
-              <MdDelete
-              
-                onClick={() => deleteHandler(el._id)}
-                className={` ${type === "self" && !allowAlteration(el?.accountGroup) && "pointer-events-none opacity-50"}  text-red-500`}
-              />
+            <MdDelete
+              onClick={() => deleteHandler(el._id)}
+              className={` ${
+                type === "self" &&
+                !allowAlteration(el?.accountGroup) &&
+                "pointer-events-none opacity-50"
+              }  text-red-500`}
+            />
             {/* // )} */}
           </div>
         </div>

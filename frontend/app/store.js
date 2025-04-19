@@ -25,6 +25,7 @@ import summaryFilter from "../slices/filterSlices/summaryFilter";
 import partySlice from "../slices/partySlice";
 import paymentSplitting from "../slices/filterSlices/paymentSplitting/paymentSplitting"
 import barcode from "../slices/barcodeSlice";
+import  commonVoucherSlice  from "../slices/voucherSlices/commonVoucherSlice";
 
 export const store = configureStore({
   reducer: {
@@ -53,6 +54,7 @@ export const store = configureStore({
     paymentSplitting,
     barcode,
     companyFilter,
-    summaryFilter
+    summaryFilter,
+    commonVoucherSlice
   },
 });

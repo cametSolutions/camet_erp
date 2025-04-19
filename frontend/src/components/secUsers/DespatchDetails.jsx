@@ -3,36 +3,38 @@
 import { useState, useCallback, useEffect } from "react";
 import { IoMdAdd } from "react-icons/io";
 import _ from "lodash";
-import { addDespatchDetails as addInSales } from "../../../slices/salesSecondary";
-import { addDespatchDetails as addInOrder } from "../../../slices/invoiceSecondary";
-import { addDespatchDetails as addInPurchase } from "../../../slices/purchase";
-import { addDespatchDetails as addInCreditNote } from "../../../slices/creditNote";
-import { addDespatchDetails as addInDebitNote } from "../../../slices/debitNote";
+// import { addDespatchDetails as addInSales } from "../../../slices/salesSecondary";
+// import { addDespatchDetails as addInOrder } from "../../../slices/invoiceSecondary";
+// import { addDespatchDetails as addInPurchase } from "../../../slices/purchase";
+// import { addDespatchDetails as addInCreditNote } from "../../../slices/creditNote";
+// import { addDespatchDetails as addInDebitNote } from "../../../slices/debitNote";
+import { addDespatchDetails } from "../../../slices/voucherSlices/commonVoucherSlice";
 import { useDispatch, useSelector } from "react-redux";
 import api from "../../api/api";
 
 function DespatchDetails({ tab }) {
-  const despatchDetails = useSelector((state) =>
-    tab === "sale"
-      ? state.salesSecondary.despatchDetails
-      : tab === "purchase"
-      ? state.purchase.despatchDetails
-      : tab === "creditNote"
-      ? state.creditNote.despatchDetails
-      : tab === "debitNote"
-      ? state.debitNote.despatchDetails
-      : state.invoiceSecondary.despatchDetails
+  const despatchDetails = useSelector(
+    (state) => state?.commonVoucherSlice.despatchDetails
+    // tab === "sale"
+    //   ? state.salesSecondary.despatchDetails
+    //   : tab === "purchase"
+    //   ? state.purchase.despatchDetails
+    //   : tab === "creditNote"
+    //   ? state.creditNote.despatchDetails
+    //   : tab === "debitNote"
+    //   ? state.debitNote.despatchDetails
+    //   : state.invoiceSecondary.despatchDetails
   );
 
   /// find voucher to get corresponding despatch details from configurations
 
   let voucher;
-  if(tab==="sale") {
-    voucher="sale";
-  }else if(tab==="order") {
-    voucher="saleOrder";
-  }else{
-    voucher="default";
+  if (tab === "sale") {
+    voucher = "sale";
+  } else if (tab === "order") {
+    voucher = "saleOrder";
+  } else {
+    voucher = "default";
   }
 
   const [formValues, setFormValues] = useState({});
@@ -53,13 +55,10 @@ function DespatchDetails({ tab }) {
         const company = res?.data?.organizationData;
 
         if (company && company.configurations.length > 0) {
-
           const despatchTitles = company.configurations[0].despatchTitles.find(
             (config) => config.voucher === voucher
           );
           setDisplayTitles(despatchTitles);
-
-     
         }
       } catch (error) {
         console.log(error);
@@ -80,31 +79,31 @@ function DespatchDetails({ tab }) {
 
   const debouncedDispatch = useCallback(
     _.debounce((newFormValues) => {
-      let selectedDispatch;
-      switch (tab) {
-        case "sale":
-          selectedDispatch = addInSales;
-          break;
+      // let selectedDispatch;
+      // switch (tab) {
+      //   case "sale":
+      //     selectedDispatch = addInSales;
+      //     break;
 
-        case "order":
-          selectedDispatch = addInOrder;
-          break;
+      //   case "order":
+      //     selectedDispatch = addInOrder;
+      //     break;
 
-        case "purchase":
-          selectedDispatch = addInPurchase;
-          break;
-        case "creditNote":
-          selectedDispatch = addInCreditNote;
-          break;
+      //   case "purchase":
+      //     selectedDispatch = addInPurchase;
+      //     break;
+      //   case "creditNote":
+      //     selectedDispatch = addInCreditNote;
+      //     break;
 
-        case "debitNote":
-          selectedDispatch = addInDebitNote;
-          break;
+      //   case "debitNote":
+      //     selectedDispatch = addInDebitNote;
+      //     break;
 
-        default:
-          break;
-      }
-      dispatch(selectedDispatch(newFormValues));
+      //   default:
+      //     break;
+      // }
+      dispatch(addDespatchDetails(newFormValues));
       return;
     }, 500),
     []
@@ -147,6 +146,7 @@ function DespatchDetails({ tab }) {
     return str.charAt(0).toUpperCase() + str.slice(1);
   }
 
+  // eslint-disable-next-line no-unused-vars
   const { title, ...rest } = formValues;
 
   return (

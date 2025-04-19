@@ -1,5 +1,6 @@
 import { removeAll } from "../../../slices/invoiceSecondary";
 import { removeAllSales } from "../../../slices/salesSecondary";
+import { removeAllSales as removeAllForCommonVoucher } from "../../../slices/voucherSlices/commonVoucherSlice";
 import { removeAll as removeAllStock } from "../../../slices/stockTransferSecondary";
 import { removeAll as removeAllPurchase } from "../../../slices/purchase";
 import { removeAll as removeAllCredit } from "../../../slices/creditNote";
@@ -40,6 +41,7 @@ function RemoveReduxData() {
     dispatch(removeAllBarcode());
     dispatch(removeAllTally());
     dispatch(removeAllUser());
+    dispatch(removeAllForCommonVoucher());
   }, [dispatch]); // Adding dispatch to the dependency array
 
   return (

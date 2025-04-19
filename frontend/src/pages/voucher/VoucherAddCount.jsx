@@ -9,10 +9,10 @@ import {
   setPriceLevel,
   updateItem,
   addItem,
-} from "../../../slices/salesSecondary";
+} from "../../../slices/voucherSlices/commonVoucherSlice";
 import SearchBar from "@/components/common/SearchBar";
 import VoucherProductLIst from "./VoucherProductLIst";
-import Filter from "@/components/secUsers/Filter";
+import Filter from "@/pages/voucher/Filter";
 import CustomBarLoader from "@/components/common/CustomBarLoader";
 import { useNavigate } from "react-router-dom";
 import { store } from "../../../app/store";
@@ -75,7 +75,7 @@ function VoucherAddCount() {
     priceLevels: priceLevelsFromRedux,
     page: pageNumberFromRedux,
     hasMore: hasMoreFromRedux,
-  } = useSelector((state) => state.salesSecondary);
+  } = useSelector((state) => state.commonVoucherSlice);
 
   // ===================================
   // Search Functionality
@@ -144,7 +144,7 @@ function VoucherAddCount() {
         setIsLoading(true);
 
         // Get the CURRENT Redux state rather than using the closure value
-        const currentReduxState = store.getState().salesSecondary;
+        const currentReduxState = store.getState().commonVoucherSlice;
         const currentProducts = currentReduxState.products;
         const currentPageNumber = currentReduxState.page;
 
@@ -186,7 +186,7 @@ function VoucherAddCount() {
           const priceRate =
             productItem?.Priceleveles?.find(
               (priceLevelItem) =>
-                priceLevelItem.pricelevel === selectedPriceLevelFromRedux
+                priceLevelItem.pricelevel === selectedPriceLevelFromRedux?._id
             )?.pricerate || 0;
 
           const updatedGodownList = productItem.GodownList.map(
@@ -249,7 +249,7 @@ function VoucherAddCount() {
    */
   const processItemsWithRedux = () => {
     // Get the CURRENT Redux state rather than using the closure value
-    const currentReduxState = store.getState().salesSecondary;
+    const currentReduxState = store.getState().commonVoucherSlice;
     const itemsFromRedux = currentReduxState?.items || [];
     const productsFromRedux = currentReduxState?.products || [];
     if (itemsFromRedux.length > 0) {
@@ -355,14 +355,14 @@ function VoucherAddCount() {
         }
 
         // Select API endpoint based on organization type
-        const endpoint =
-          type === "self"
-            ? `/api/sUsers/fetchFilters/${cmp_id}`
-            : `/api/sUsers/fetchAdditionalDetails/${cmp_id}`;
+        const endpoint = `/api/sUsers/fetchFilters/${cmp_id}`;
 
         const res = await api.get(endpoint, { withCredentials: true });
-        const data = type === "self" ? res.data.data : res.data;
-        const { priceLevels } = data;
+        
+      
+        const { priceLevels } = res?.data?.data || [];
+
+        
 
         // Update state and Redux
         setPriceLevels(priceLevels);
@@ -370,6 +370,7 @@ function VoucherAddCount() {
 
         // Set default price level
         const defaultPriceLevel = priceLevels[0];
+        
         dispatch(setPriceLevel(defaultPriceLevel));
 
         setPricesLoaded(true);
@@ -791,6 +792,9 @@ function VoucherAddCount() {
   // ===================================
   // Render Component
   // ===================================
+
+  console.log(priceLevels);
+  
 
   return (
     <div className="h-screen overflow-y-auto">

@@ -2,6 +2,7 @@ import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
   voucherNumber: "",
+  voucherType: "",
   date: "",
   convertedFrom: [],
   products: [],
@@ -12,6 +13,7 @@ const initialState = {
   items: [],
   selectedPriceLevel: "",
   additionalCharges: [],
+  allAdditionalCharges: [],
   finalAmount: 0,
   persistScrollId: "",
   brand: "",
@@ -342,6 +344,16 @@ export const commonVoucherSlice = createSlice({
     updateAllItem: (state, action) => {
       state.items = action.payload;
     },
+
+    addVoucherType: (state, action) => {
+      state.voucherType = action.payload;
+    },
+    addAllAdditionalCharges: (state, action) => {
+      state.allAdditionalCharges = action.payload;
+    },
+    addVoucherNumber: (state, action) => {
+      state.voucherNumber = action.payload;
+    }
   },
 });
 
@@ -387,6 +399,9 @@ export const {
   addAllPriceLevels,
   addAllProductsOnly,
   updateAllItem,
+  addAllAdditionalCharges,
+  addVoucherType,
+  addVoucherNumber
 } = commonVoucherSlice.actions;
 
 export default commonVoucherSlice.reducer;

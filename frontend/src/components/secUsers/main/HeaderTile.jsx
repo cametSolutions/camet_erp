@@ -1,6 +1,5 @@
 /* eslint-disable react/prop-types */
 import { IoIosAddCircle } from "react-icons/io";
-import CustomBarLoader from "../../common/CustomBarLoader";
 
 function HeaderTile({
   title,
@@ -14,14 +13,14 @@ function HeaderTile({
   tab,
   loading,
 }) {
+
+  const titleText=title.split("")[0]?.toUpperCase()?.concat(title.slice(1)) ||"Title"
   return (
     <div>
-    
-
       <div className="flex justify-between  p-4 bg-white drop-shadow-lg items-center text-xs md:text-base ">
         <div className=" flex flex-col gap-1 justify-center">
           <p className="text-md font-semibold text-violet-400">
-            {title} #{number}
+            {titleText} #{number}
           </p>
 
           <div className="flex items-center">
@@ -46,13 +45,15 @@ function HeaderTile({
             <div className="hidden sm:block">
               <button
                 onClick={submitHandler}
-                className= {` ${loading && "pointer-events-none opacity-80"} bottom-0 text-white bg-violet-700  w-full rounded-md  p-2 flex items-center justify-center gap-2 hover_scale cursor-pointer `}
+                className={` ${
+                  loading && "pointer-events-none opacity-80"
+                } bottom-0 text-white bg-violet-700  w-full rounded-md  p-2 flex items-center justify-center gap-2 hover_scale cursor-pointer `}
               >
                 <IoIosAddCircle className="text-2xl" />
                 {title === "Stock Transfer" ? (
                   <p>Transfer Stock</p>
                 ) : (
-                  <p>{tab === "add" ? `Generate ${title}` : `Edit ${title}`}</p>
+                  <p>{tab === "add" ? `Generate ${titleText}` : `Edit ${titleText}`}</p>
                 )}
               </button>
             </div>

@@ -10,7 +10,7 @@ import { MdOutlineQrCodeScanner } from "react-icons/md";
 import { VariableSizeList as List } from "react-window";
 import { IoAddCircleSharp } from "react-icons/io5";
 import { useMemo } from "react";
-import Filter from "../Filter";
+import Filter from "../../../pages/voucher/Filter";
 import BarcodeScan from "../barcodeScanning/BarcodeScan";
 import CustomBarLoader from "../../common/CustomBarLoader";
 

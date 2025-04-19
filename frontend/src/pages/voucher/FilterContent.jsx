@@ -13,7 +13,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { IoFilterSharp } from "react-icons/io5";
-import { setPriceLevel } from "../../../../slices/salesSecondary";
+import { setPriceLevel } from "../../../slices/salesSecondary";
 import { useDispatch, useSelector } from "react-redux";
 
 export default function FilterContent() {

@@ -2,9 +2,12 @@
 import { MdAddCircle } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
-import FilterContent from "./vouchers/FilterContent";
+import FilterContent from "./FilterContent";
 
 function Filter({ addAllProducts, godownName, priceLevels }) {
+
+  console.log(priceLevels);
+  
   const dispatch = useDispatch();
 
   const navigate = useNavigate();
