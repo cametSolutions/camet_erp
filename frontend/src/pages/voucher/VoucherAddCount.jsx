@@ -186,7 +186,7 @@ function VoucherAddCount() {
           const priceRate =
             productItem?.Priceleveles?.find(
               (priceLevelItem) =>
-                priceLevelItem.pricelevel === selectedPriceLevelFromRedux?._id
+                priceLevelItem._id === selectedPriceLevelFromRedux?._id
             )?.pricerate || 0;
 
           const updatedGodownList = productItem.GodownList.map(
@@ -358,11 +358,8 @@ function VoucherAddCount() {
         const endpoint = `/api/sUsers/fetchFilters/${cmp_id}`;
 
         const res = await api.get(endpoint, { withCredentials: true });
-        
-      
-        const { priceLevels } = res?.data?.data || [];
 
-        
+        const { priceLevels } = res?.data?.data || [];
 
         // Update state and Redux
         setPriceLevels(priceLevels);
@@ -370,7 +367,7 @@ function VoucherAddCount() {
 
         // Set default price level
         const defaultPriceLevel = priceLevels[0];
-        
+
         dispatch(setPriceLevel(defaultPriceLevel));
 
         setPricesLoaded(true);
@@ -399,100 +396,27 @@ function VoucherAddCount() {
     let priceRate = 0;
     if (situation === "priceLevelChange") {
       priceRate =
-        item.Priceleveles.find(
-          (level) => level.pricelevel === selectedPriceLevel
-        )?.pricerate || 0;
+        item.Priceleveles.find((level) => level._id === selectedPriceLevel?._id)
+          ?.pricerate || 0;
     }
 
     let subtotal = 0;
     let individualTotals = [];
-    let totalCess = 0; // Track total cess amount
+    let totalCess = 0; // Track total standard cess amount
+    let totalAdditionalCess = 0; // Track total additional cess amount
+    let totalCgstAmt = 0; // Track total CGST amount
+    let totalSgstAmt = 0; // Track total SGST amount
+    let totalIgstAmt = 0; // Track total IGST amount
+    let totalTaxableAmount = 0; // Track total taxable amount (before tax)
 
-    if (item.hasGodownOrBatch) {
-      item.GodownList.forEach((godownOrBatch, index) => {
-        if (situation === "normal") {
-          priceRate = godownOrBatch.selectedPriceRate;
-        }
-        const quantity = Number(godownOrBatch.count) || 0;
-        const igstValue = Math.max(item.igst || 0, 0);
-
-        // Calculate base price based on tax inclusivity
-        let basePrice = priceRate * quantity;
-
-        let taxBasePrice = basePrice;
-
-        // For tax inclusive prices, calculate the base price without tax
-        if (item?.isTaxInclusive) {
-          taxBasePrice = Number((basePrice / (1 + igstValue / 100)).toFixed(2));
-        }
-
-        // Calculate discount based on discountType
-        let discountedPrice = taxBasePrice;
-
-        if (
-          godownOrBatch.discountType === "percentage" &&
-          godownOrBatch.discountPercentage !== 0 &&
-          godownOrBatch.discountPercentage !== undefined &&
-          godownOrBatch.discountPercentage !== ""
-        ) {
-          // Percentage discount
-          const discountAmount =
-            (taxBasePrice * godownOrBatch.discountPercentage) / 100;
-
-          discountedPrice = taxBasePrice - discountAmount;
-        } else if (
-          godownOrBatch.discount !== 0 &&
-          godownOrBatch.discount !== undefined &&
-          godownOrBatch.discount !== ""
-        ) {
-          // Fixed amount discount (default)
-          discountedPrice = taxBasePrice - godownOrBatch.discount;
-        }
-
-        // Calculate cess amounts
-        let cessAmount = 0;
-        let additionalCessAmount = 0;
-
-        // Standard cess calculation
-        if (item.cess && item.cess > 0) {
-          cessAmount = discountedPrice * (item.cess / 100);
-        }
-
-        // Additional cess calculation
-        if (item.addl_cess && item.addl_cess > 0) {
-          additionalCessAmount = quantity * item.addl_cess;
-        }
-
-        // Combine cess amounts
-        const totalCessAmount = cessAmount + additionalCessAmount;
-
-        // Calculate tax amount
-        const taxAmount = discountedPrice * (igstValue / 100);
-
-        // Calculate total including tax and cess
-        const individualTotal = Math.max(
-          parseFloat(
-            (discountedPrice + taxAmount + totalCessAmount).toFixed(2)
-          ),
-          0
-        );
-
-        subtotal += individualTotal;
-        totalCess += totalCessAmount;
-
-        individualTotals.push({
-          index,
-          batch: godownOrBatch.batch,
-          individualTotal,
-          cessAmount: totalCessAmount,
-        });
-      });
-    } else {
+    item.GodownList.forEach((godownOrBatch, index) => {
       if (situation === "normal") {
-        priceRate = item.GodownList[0].selectedPriceRate;
+        priceRate = godownOrBatch.selectedPriceRate;
       }
-      const quantity = Number(item.count);
-      const igstValue = Math.max(item.newGst || item.igst || 0, 0);
+      const quantity = Number(godownOrBatch.count) || 0;
+      const igstValue = Math.max(item.igst || 0, 0);
+      const cgstValue = Math.max(item.cgst || 0, 0);
+      const sgstValue = Math.max(item.sgst || 0, 0);
 
       // Calculate base price based on tax inclusivity
       let basePrice = priceRate * quantity;
@@ -500,24 +424,48 @@ function VoucherAddCount() {
 
       // For tax inclusive prices, calculate the base price without tax
       if (item?.isTaxInclusive) {
-        taxBasePrice = Number((basePrice / (1 + igstValue / 100)).toFixed(2));
+        // Use total tax rate (IGST or CGST+SGST)
+        const totalTaxRate = igstValue || 0
+        taxBasePrice = Number(
+          (basePrice / (1 + totalTaxRate / 100)).toFixed(2)
+        );
       }
 
       // Calculate discount based on discountType
       let discountedPrice = taxBasePrice;
+      let discountAmount = 0;
+      let discountPercentage = 0;
 
       if (
-        item.discountType === "percentage" &&
-        item.discountPercentage !== 0 &&
-        item.discountPercentage !== undefined
+        godownOrBatch.discountType === "percentage" &&
+        godownOrBatch.discountPercentage !== 0 &&
+        godownOrBatch.discountPercentage !== undefined &&
+        godownOrBatch.discountPercentage !== ""
       ) {
         // Percentage discount
-        const discountAmount = (taxBasePrice * item.discountPercentage) / 100;
+        discountPercentage = Number(godownOrBatch.discountPercentage) || 0;
+        discountAmount = Number(
+          ((taxBasePrice * discountPercentage) / 100).toFixed(2)
+        );
         discountedPrice = taxBasePrice - discountAmount;
-      } else if (item.discount !== 0 && item.discount !== undefined) {
+      } else if (
+        godownOrBatch.discount !== 0 &&
+        godownOrBatch.discount !== undefined &&
+        godownOrBatch.discount !== ""
+      ) {
         // Fixed amount discount (default)
-        discountedPrice = taxBasePrice - item.discount;
+        discountAmount = Number(godownOrBatch.discount) || 0;
+        // Calculate the equivalent percentage
+        discountPercentage =
+          taxBasePrice > 0
+            ? Number(((discountAmount / taxBasePrice) * 100).toFixed(2))
+            : 0;
+        discountedPrice = taxBasePrice - discountAmount;
       }
+
+      // This is the taxable amount (price after discount, before tax)
+      const taxableAmount = discountedPrice;
+      totalTaxableAmount += taxableAmount;
 
       // Calculate cess amounts
       let cessAmount = 0;
@@ -525,43 +473,99 @@ function VoucherAddCount() {
 
       // Standard cess calculation
       if (item.cess && item.cess > 0) {
-        cessAmount = discountedPrice * (item.cess / 100);
+        cessAmount = Number((taxableAmount * (item.cess / 100)).toFixed(2));
       }
 
-      // Additional cess calculation
+      // Additional cess calculation - calculated as quantity * addl_cess
       if (item.addl_cess && item.addl_cess > 0) {
-        additionalCessAmount = quantity * item.addl_cess;
+        additionalCessAmount = Number((quantity * item.addl_cess).toFixed(2));
       }
 
       // Combine cess amounts
-      const totalCessAmount = cessAmount + additionalCessAmount;
+      const totalCessAmount = Number(
+        (cessAmount + additionalCessAmount).toFixed(2)
+      );
 
-      // Calculate tax amount
-      const taxAmount = discountedPrice * (igstValue / 100);
+      // Calculate tax amounts
+      let cgstAmt = 0;
+      let sgstAmt = 0;
+      let igstAmt = 0;
+
+      igstAmt = Number((taxableAmount * (igstValue / 100)).toFixed(2));
+      cgstAmt = Number((taxableAmount * (cgstValue / 100)).toFixed(2));
+      sgstAmt = Number((taxableAmount * (sgstValue / 100)).toFixed(2));
+
+      // Calculate total tax amount
+      // const taxAmount = Number((cgstAmt + sgstAmt + igstAmt).toFixed(2));
 
       // Calculate total including tax and cess
       const individualTotal = Math.max(
-        parseFloat((discountedPrice + taxAmount + totalCessAmount).toFixed(2)),
+        Number((taxableAmount + igstAmt + totalCessAmount).toFixed(2)),
         0
       );
 
       subtotal += individualTotal;
-      totalCess += totalCessAmount;
+      totalCess += cessAmount;
+      totalAdditionalCess += additionalCessAmount;
+      totalCgstAmt += cgstAmt;
+      totalSgstAmt += sgstAmt;
+      totalIgstAmt += igstAmt;
 
       individualTotals.push({
-        index: 0,
-        batch: item.batch || "No batch",
-        individualTotal,
-        cessAmount: totalCessAmount,
+        index,
+        basePrice: taxBasePrice, // Original price × quantity before discount
+        discountAmount, // Discount amount
+        discountPercentage, // Discount percentage
+        discountType:
+          godownOrBatch.discountType ||
+          (godownOrBatch.discount
+            ? "amount"
+            : godownOrBatch.discountPercentage
+            ? "percentage"
+            : "none"),
+        taxableAmount, // Amount after discount, before tax (basis for tax calculation)
+        cgstValue, // CGST percentage
+        sgstValue, // SGST percentage
+        igstValue, // IGST percentage
+        cgstAmt, // CGST amount
+        sgstAmt, // SGST amount
+        igstAmt, // IGST amount
+        cessAmount, // Standard cess amount (percentage based)
+        additionalCessAmount, // Additional cess amount (quantity based)
+        individualTotal, // Final amount including taxes and cess
+        quantity, // Quantity
+        // rate: priceRate, // Unit price
       });
-    }
+    });
 
     subtotal = Math.max(parseFloat(subtotal.toFixed(2)), 0);
+    totalCgstAmt = parseFloat(totalCgstAmt.toFixed(2));
+    totalSgstAmt = parseFloat(totalSgstAmt.toFixed(2));
+    totalIgstAmt = parseFloat(totalIgstAmt.toFixed(2));
+    totalCess = parseFloat(totalCess.toFixed(2));
+    totalAdditionalCess = parseFloat(totalAdditionalCess.toFixed(2));
+    totalTaxableAmount = parseFloat(totalTaxableAmount.toFixed(2));
+
+    console.log("subtotal:", subtotal);
+    console.log("totalCgstAmt:", totalCgstAmt);
+    console.log("totalSgstAmt:", totalSgstAmt);
+    console.log("totalIgstAmt:", totalIgstAmt);
+    console.log("totalCess:", totalCess);
+    console.log("totalAdditionalCess:", totalAdditionalCess);
+    console.log("totalTaxableAmount:", totalTaxableAmount);
+    console.log("individualTotals:", individualTotals);
 
     return {
-      individualTotals,
-      total: subtotal,
-      totalCess: totalCess,
+      individualTotals, // Detailed breakdown of each godown/batch
+      total: subtotal, // Grand total including all taxes and cess
+      totalTaxableAmount, // Total amount on which tax is calculated
+      totalCess, // Total standard cess amount
+      totalAdditionalCess, // Total additional cess amount
+      totalCessAmount: totalCess + totalAdditionalCess, // Combined total cess
+      totalCgstAmt, // Total CGST amount
+      totalSgstAmt, // Total SGST amount
+      totalIgstAmt, // Total IGST amount
+      totalTaxAmount: totalCgstAmt + totalSgstAmt + totalIgstAmt, // Total tax amount (convenience field)
     };
   };
 
@@ -571,7 +575,7 @@ function VoucherAddCount() {
     const updatedItems = items.map((item) => {
       const newPriceRate =
         item?.Priceleveles?.find(
-          (priceLevelItem) => priceLevelItem.pricelevel === pricelevel
+          (priceLevelItem) => priceLevelItem?._id === pricelevel?._id
         )?.pricerate || 0;
 
       // Clone the item deeply
@@ -591,16 +595,32 @@ function VoucherAddCount() {
           "priceLevelChange"
         );
 
-        itemToUpdate.GodownList = itemToUpdate.GodownList.map(
-          (godown, idx) => ({
-            ...godown,
-            individualTotal:
-              totalData.individualTotals.find((el) => el.index === idx)
-                ?.individualTotal || 0,
-          })
-        );
+        itemToUpdate.GodownList = itemToUpdate.GodownList.map((godown, idx) => {
+          const matching = totalData.individualTotals.find(
+            (el) => el.index === idx
+          );
 
-        itemToUpdate.total = totalData.total;
+          if (!matching) {
+            return {
+              ...godown,
+              individualTotal: 0,
+            };
+          }
+
+          const { index: _, quantity: __, ...rest } = matching;
+
+          return {
+            ...godown,
+            ...rest,
+          };
+        });
+
+        itemToUpdate.total = totalData?.total || 0;
+        itemToUpdate.totalCgstAmt = totalData?.totalCgstAmt || 0;
+        itemToUpdate.totalSgstAmt = totalData?.totalSgstAmt || 0;
+        itemToUpdate.totalIgstAmt = totalData?.totalIgstAmt || 0;
+        itemToUpdate.totalCess = totalData?.totalCess || 0;
+        itemToUpdate.totalAdditionalCess = totalData?.totalAdditionalCess || 0;
         dispatch(updateItem({ item: itemToUpdate }));
       }
 
@@ -623,15 +643,14 @@ function VoucherAddCount() {
   // ===================================
 
   //// we are defining handle increment (which can be jst call it in child) in parent because we need to call it in parent for barcode scanning
-  const handleIncrement = (_id, godownIndex = null, moveToTop = false) => {
+  const handleIncrement = (_id, godownIndex = 0, moveToTop = false) => {
     const updatedItems = items.map((item) => {
       if (item._id !== _id) return item; // Skip if not the target item
 
       // Create a deep copy of the item
       const currentItem = structuredClone(item);
-
       // Handle godown/batch specific increment
-      if (currentItem?.hasGodownOrBatch && godownIndex !== null) {
+      if (godownIndex !== null) {
         const godownOrBatch = { ...currentItem.GodownList[godownIndex] };
 
         // Increment count with Decimal.js for precision
@@ -657,8 +676,8 @@ function VoucherAddCount() {
         );
 
         // Update the item's overall counts
-        currentItem.count = sumOfCounts;
-        currentItem.actualCount = sumOfActualCounts;
+        currentItem.totalCount = sumOfCounts;
+        currentItem.totalActualCount = sumOfActualCounts;
 
         // Calculate totals and update individual batch totals
         const totalData = calculateTotal(
@@ -666,27 +685,36 @@ function VoucherAddCount() {
           selectedPriceLevelFromRedux
         );
         const updatedGodownListWithTotals = updatedGodownList.map(
-          (godown, index) => ({
-            ...godown,
-            individualTotal:
-              totalData.individualTotals.find(({ index: i }) => i === index)
-                ?.individualTotal || 0,
-          })
-        );
-        currentItem.GodownList = updatedGodownListWithTotals;
-        currentItem.total = totalData.total; // Update the overall total
-      } else {
-        // Handle simple item increment (no godown/batch)
-        currentItem.count = new Decimal(currentItem.count).add(1).toNumber();
-        currentItem.actualCount = currentItem.count;
+          (godown, index) => {
+            const matching = totalData.individualTotals.find(
+              ({ index: i }) => i === index
+            );
 
-        // Calculate totals and update
-        const totalData = calculateTotal(
-          currentItem,
-          selectedPriceLevelFromRedux
+            if (!matching) {
+              return {
+                ...godown,
+                individualTotal: 0,
+              };
+            }
+
+            const { index: _, quantity: __, ...rest } = matching;
+
+            return {
+              ...godown,
+              ...rest,
+            };
+          }
         );
-        currentItem.total = totalData.total;
-        currentItem.GodownList[0].individualTotal = totalData?.total;
+
+        currentItem.GodownList = updatedGodownListWithTotals;
+        currentItem.total = totalData?.total || 0;
+        currentItem.totalCgstAmt = totalData?.totalCgstAmt || 0;
+        currentItem.totalSgstAmt = totalData?.totalSgstAmt || 0;
+        currentItem.totalIgstAmt = totalData?.totalIgstAmt || 0;
+        currentItem.totalCess = totalData?.totalCess || 0;
+        currentItem.totalAdditionalCess = totalData?.totalAdditionalCess || 0;
+      } else {
+        return currentItem; // If no godownIndex is provided, return the item as is
       }
 
       // Dispatch the updated item to Redux
@@ -740,7 +768,7 @@ function VoucherAddCount() {
     const priceRate =
       scannedItem?.Priceleveles?.find(
         (priceLevelItem) =>
-          priceLevelItem.pricelevel === selectedPriceLevelFromRedux
+          priceLevelItem?._id === selectedPriceLevelFromRedux?._id
       )?.pricerate || 0;
 
     if (scannedItem?.hasGodownOrBatch) {
@@ -792,9 +820,6 @@ function VoucherAddCount() {
   // ===================================
   // Render Component
   // ===================================
-
-  console.log(priceLevels);
-  
 
   return (
     <div className="h-screen overflow-y-auto">

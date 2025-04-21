@@ -13,13 +13,13 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { IoFilterSharp } from "react-icons/io5";
-import { setPriceLevel } from "../../../slices/salesSecondary";
+import { setPriceLevel } from "../../../slices/voucherSlices/commonVoucherSlice";
 import { useDispatch, useSelector } from "react-redux";
 
 export default function FilterContent() {
   const dispatch = useDispatch();
   const { selectedPriceLevel, priceLevels } = useSelector(
-    (state) => state.salesSecondary
+    (state) => state.commonVoucherSlice
   );
 
   const [accordionValue, setAccordionValue] = useState("");
@@ -36,6 +36,8 @@ export default function FilterContent() {
     dispatch(setPriceLevel(pricelevel));
     setIsSheetOpen(false);
   };
+
+  
 
   
 
@@ -75,7 +77,7 @@ export default function FilterContent() {
                       selectedPriceLevel === level ? "bg-slate-200" : ""
                     } hover:bg-slate-200 mb-1 p-2 cursor-pointer`}
                   >
-                    {level}
+                    {level?.name}
                   </div>
                 </AccordionContent>
               ))}

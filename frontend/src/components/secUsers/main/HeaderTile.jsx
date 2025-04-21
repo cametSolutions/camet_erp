@@ -31,7 +31,7 @@ function HeaderTile({
             <input
               onChange={(e) => {
                 setSelectedDate(e.target.value);
-                dispatch(changeDate(new Date(e.target.value)));
+                dispatch(changeDate(e.target.value));
               }}
               type="date"
               // min={new Date().toISOString().split("T")[0]}

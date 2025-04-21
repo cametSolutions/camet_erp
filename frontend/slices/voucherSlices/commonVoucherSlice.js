@@ -285,7 +285,11 @@ export const commonVoucherSlice = createSlice({
       };
     },
     changeDate: (state, action) => {
-      state.date = action.payload;
+      // Convert Date object to ISO string if it's a Date, otherwise use the payload as is
+      state.date =
+        action.payload instanceof Date
+          ? action.payload.toISOString()
+          : action.payload;
     },
 
     changeTaxInclusive: (state, action) => {
@@ -353,7 +357,7 @@ export const commonVoucherSlice = createSlice({
     },
     addVoucherNumber: (state, action) => {
       state.voucherNumber = action.payload;
-    }
+    },
   },
 });
 
@@ -401,7 +405,7 @@ export const {
   updateAllItem,
   addAllAdditionalCharges,
   addVoucherType,
-  addVoucherNumber
+  addVoucherNumber,
 } = commonVoucherSlice.actions;
 
 export default commonVoucherSlice.reducer;

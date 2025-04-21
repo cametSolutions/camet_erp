@@ -5,11 +5,7 @@ import { useDispatch } from "react-redux";
 import FilterContent from "./FilterContent";
 
 function Filter({ addAllProducts, godownName, priceLevels }) {
-
-  console.log(priceLevels);
-  
   const dispatch = useDispatch();
-
   const navigate = useNavigate();
 
   const handleAddProduct = () => {

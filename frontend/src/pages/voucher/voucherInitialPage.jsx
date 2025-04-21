@@ -213,7 +213,7 @@ function VoucherInitialPage() {
   // Initialize component
   useEffect(() => {
     getVoucherType();
-    if (!date) dispatch(changeDate(selectedDate));
+    if (!date) dispatch(changeDate(JSON.stringify(selectedDate)));
     localStorage.removeItem("scrollPositionAddItemSales");
     fetchData();
   }, [fetchData]);

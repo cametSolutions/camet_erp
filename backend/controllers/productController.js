@@ -385,11 +385,7 @@ export const getProducts = async (req, res) => {
 
       // Flatten PriceLevels items
       if (productObject.Priceleveles && productObject.Priceleveles.length > 0) {
-
-        
-        console.log("priceLevel", productObject.Priceleveles)
         productObject.Priceleveles = productObject.Priceleveles.map(
-          
           (priceLevel) => {
             // Skip if no pricelevel reference
             if (!priceLevel.pricelevel) return priceLevel;
@@ -401,11 +397,7 @@ export const getProducts = async (req, res) => {
               // Copy properties directly from the nested pricelevel object
               _id: priceLevel.pricelevel._id,
               pricelevel: priceLevel?.pricelevel?.pricelevel,
-        
             };
-
-            // Remove the nested pricelevel object
-            delete flattenedPriceLevel.pricelevel;
 
             return flattenedPriceLevel;
           }
