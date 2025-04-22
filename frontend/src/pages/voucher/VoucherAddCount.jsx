@@ -393,6 +393,8 @@ function VoucherAddCount() {
    * Updates displayed prices when price level changes
    */
   const calculateTotal = (item, selectedPriceLevel, situation = "normal") => {
+    console.log(item, selectedPriceLevel, situation);
+
     let priceRate = 0;
     if (situation === "priceLevelChange") {
       priceRate =
@@ -402,8 +404,8 @@ function VoucherAddCount() {
 
     let subtotal = 0;
     let individualTotals = [];
-    let totalCess = 0; // Track total standard cess amount
-    let totalAdditionalCess = 0; // Track total additional cess amount
+    let totalCessAmt = 0; // Track total standard cess amount
+    let totalAdditionalCessAmt = 0; // Track total additional cess amount
     let totalCgstAmt = 0; // Track total CGST amount
     let totalSgstAmt = 0; // Track total SGST amount
     let totalIgstAmt = 0; // Track total IGST amount
@@ -425,7 +427,7 @@ function VoucherAddCount() {
       // For tax inclusive prices, calculate the base price without tax
       if (item?.isTaxInclusive) {
         // Use total tax rate (IGST or CGST+SGST)
-        const totalTaxRate = igstValue || 0
+        const totalTaxRate = igstValue || 0;
         taxBasePrice = Number(
           (basePrice / (1 + totalTaxRate / 100)).toFixed(2)
         );
@@ -436,32 +438,16 @@ function VoucherAddCount() {
       let discountAmount = 0;
       let discountPercentage = 0;
 
-      if (
-        godownOrBatch.discountType === "percentage" &&
-        godownOrBatch.discountPercentage !== 0 &&
-        godownOrBatch.discountPercentage !== undefined &&
-        godownOrBatch.discountPercentage !== ""
-      ) {
-        // Percentage discount
-        discountPercentage = Number(godownOrBatch.discountPercentage) || 0;
-        discountAmount = Number(
-          ((taxBasePrice * discountPercentage) / 100).toFixed(2)
-        );
-        discountedPrice = taxBasePrice - discountAmount;
-      } else if (
-        godownOrBatch.discount !== 0 &&
-        godownOrBatch.discount !== undefined &&
-        godownOrBatch.discount !== ""
-      ) {
-        // Fixed amount discount (default)
-        discountAmount = Number(godownOrBatch.discount) || 0;
-        // Calculate the equivalent percentage
-        discountPercentage =
-          taxBasePrice > 0
-            ? Number(((discountAmount / taxBasePrice) * 100).toFixed(2))
-            : 0;
-        discountedPrice = taxBasePrice - discountAmount;
-      }
+      // Fixed amount discount (default)
+      discountAmount = Number(godownOrBatch.discountAmount) || 0;
+      // Calculate the equivalent percentage
+      discountPercentage =
+        taxBasePrice > 0
+          ? Number(((discountAmount / taxBasePrice) * 100).toFixed(2))
+          : 0;
+      discountedPrice = taxBasePrice - discountAmount;
+
+      console.log(discountAmount);
 
       // This is the taxable amount (price after discount, before tax)
       const taxableAmount = discountedPrice;
@@ -505,8 +491,8 @@ function VoucherAddCount() {
       );
 
       subtotal += individualTotal;
-      totalCess += cessAmount;
-      totalAdditionalCess += additionalCessAmount;
+      totalCessAmt += cessAmount;
+      totalAdditionalCessAmt += additionalCessAmount;
       totalCgstAmt += cgstAmt;
       totalSgstAmt += sgstAmt;
       totalIgstAmt += igstAmt;
@@ -527,6 +513,8 @@ function VoucherAddCount() {
         cgstValue, // CGST percentage
         sgstValue, // SGST percentage
         igstValue, // IGST percentage
+        cessValue: item.cess || 0, // Standard cess percentage
+        addlCessValue: item.addl_cess || 0, // Additional cess per quantity
         cgstAmt, // CGST amount
         sgstAmt, // SGST amount
         igstAmt, // IGST amount
@@ -542,26 +530,17 @@ function VoucherAddCount() {
     totalCgstAmt = parseFloat(totalCgstAmt.toFixed(2));
     totalSgstAmt = parseFloat(totalSgstAmt.toFixed(2));
     totalIgstAmt = parseFloat(totalIgstAmt.toFixed(2));
-    totalCess = parseFloat(totalCess.toFixed(2));
-    totalAdditionalCess = parseFloat(totalAdditionalCess.toFixed(2));
+    totalCessAmt = parseFloat(totalCessAmt.toFixed(2));
+    totalAdditionalCessAmt = parseFloat(totalAdditionalCessAmt.toFixed(2));
     totalTaxableAmount = parseFloat(totalTaxableAmount.toFixed(2));
-
-    console.log("subtotal:", subtotal);
-    console.log("totalCgstAmt:", totalCgstAmt);
-    console.log("totalSgstAmt:", totalSgstAmt);
-    console.log("totalIgstAmt:", totalIgstAmt);
-    console.log("totalCess:", totalCess);
-    console.log("totalAdditionalCess:", totalAdditionalCess);
-    console.log("totalTaxableAmount:", totalTaxableAmount);
-    console.log("individualTotals:", individualTotals);
 
     return {
       individualTotals, // Detailed breakdown of each godown/batch
       total: subtotal, // Grand total including all taxes and cess
       totalTaxableAmount, // Total amount on which tax is calculated
-      totalCess, // Total standard cess amount
-      totalAdditionalCess, // Total additional cess amount
-      totalCessAmount: totalCess + totalAdditionalCess, // Combined total cess
+      totalCessAmt, // Total standard cess amount
+      totalAdditionalCessAmt, // Total additional cess amount
+      totalCessAmount: totalCessAmt + totalAdditionalCessAmt, // Combined total cess
       totalCgstAmt, // Total CGST amount
       totalSgstAmt, // Total SGST amount
       totalIgstAmt, // Total IGST amount
@@ -607,6 +586,7 @@ function VoucherAddCount() {
             };
           }
 
+          // eslint-disable-next-line no-unused-vars
           const { index: _, quantity: __, ...rest } = matching;
 
           return {
@@ -619,8 +599,9 @@ function VoucherAddCount() {
         itemToUpdate.totalCgstAmt = totalData?.totalCgstAmt || 0;
         itemToUpdate.totalSgstAmt = totalData?.totalSgstAmt || 0;
         itemToUpdate.totalIgstAmt = totalData?.totalIgstAmt || 0;
-        itemToUpdate.totalCess = totalData?.totalCess || 0;
-        itemToUpdate.totalAdditionalCess = totalData?.totalAdditionalCess || 0;
+        itemToUpdate.totalCessAmt = totalData?.totalCessAmt || 0;
+        itemToUpdate.totalAdditionalCessAmt =
+          totalData?.totalAdditionalCessAmt || 0;
         dispatch(updateItem({ item: itemToUpdate }));
       }
 
@@ -697,6 +678,7 @@ function VoucherAddCount() {
               };
             }
 
+            // eslint-disable-next-line no-unused-vars
             const { index: _, quantity: __, ...rest } = matching;
 
             return {
@@ -711,14 +693,17 @@ function VoucherAddCount() {
         currentItem.totalCgstAmt = totalData?.totalCgstAmt || 0;
         currentItem.totalSgstAmt = totalData?.totalSgstAmt || 0;
         currentItem.totalIgstAmt = totalData?.totalIgstAmt || 0;
-        currentItem.totalCess = totalData?.totalCess || 0;
-        currentItem.totalAdditionalCess = totalData?.totalAdditionalCess || 0;
+        currentItem.totalCessAmt = totalData?.totalCessAmt || 0;
+        currentItem.totalAdditionalCessAmt =
+          totalData?.totalAdditionalCessAmt || 0;
       } else {
         return currentItem; // If no godownIndex is provided, return the item as is
       }
 
+      console.log(currentItem);
+
       // Dispatch the updated item to Redux
-      dispatch(updateItem({ item: currentItem, moveToTop }));
+      // dispatch(updateItem({ item: currentItem, moveToTop }));
       return currentItem;
     });
 

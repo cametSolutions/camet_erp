@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 /* eslint-disable react/prop-types */
 import ProductDetails from "@/components/common/ProductDetails";
 import Decimal from "decimal.js";
@@ -202,6 +203,7 @@ export default function VoucherProductList({
             if (!matching) return godown;
 
             // Destructure to exclude `index` and spread the rest
+            // eslint-disable-next-line no-unused-vars
             const { index: _, quantity: __, ...rest } = matching;
 
             return {

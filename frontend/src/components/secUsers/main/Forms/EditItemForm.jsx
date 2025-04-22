@@ -3,11 +3,13 @@
 import { useEffect, useState } from "react";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import { MdModeEditOutline } from "react-icons/md";
-import {  useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
+import { updateItem } from "../../../../../slices/voucherSlices/commonVoucherSlice";
+import { useDispatch } from "react-redux";
 
 function EditItemForm({
-  submitHandler,
+  // submitHandler,
   ItemsFromRedux,
   from,
   taxInclusive = false,
@@ -26,19 +28,50 @@ function EditItemForm({
   const [discountPercentage, setDiscountPercentage] = useState(0);
   const [isTaxInclusive, setIsTaxInclusive] = useState(false);
   const [taxAmount, setTaxAmount] = useState(0);
-  
-  // New states for cess
+
+  // Tax related states
   const [cess, setCess] = useState(0);
+  const [cgst, setCgst] = useState(0);
+  const [sgst, setSgst] = useState(0);
   const [additionalCess, setAdditionalCess] = useState(0);
   const [cessAmount, setCessAmount] = useState(0);
   const [additionalCessAmount, setAdditionalCessAmount] = useState(0);
+  const [totalCessAmount, setTotalCessAmount] = useState(0);
 
-  const { id, index } = useParams();
+  // Tax calculation amounts
+  const [cgstAmount, setCgstAmount] = useState(0);
+  const [sgstAmount, setSgstAmount] = useState(0);
+  const [igstAmount, setIgstAmount] = useState(0);
+  const [taxableAmount, setTaxableAmount] = useState(0);
 
+  // New variables to match your requirements
+  const [basePrice, setBasePrice] = useState(0);
+  const [cessValue, setCessValue] = useState(0);
+  const [addlCessValue, setAddlCessValue] = useState(0);
+  const [discountType, setDiscountType] = useState("none");
+  const [cgstValue, setCgstValue] = useState(0);
+  const [sgstValue, setSgstValue] = useState(0);
+  const [igstValue, setIgstValue] = useState(0);
+  const [individualTotal, setIndividualTotal] = useState(0);
+
+  const { id } = useParams();
+  let { index } = useParams();
+  if (
+    index === undefined ||
+    index === null ||
+    index === "" ||
+    index === "null"
+  ) {
+    index = 0;
+  }
   const navigate = useNavigate();
-  // const dispatch = useDispatch();
+  const dispatch = useDispatch();
+
   const selectedItem = ItemsFromRedux.filter((el) => el._id === id);
-  const selectedGodown = selectedItem[0]?.GodownList[index];
+  const selectedGodown =
+    index !== "null"
+      ? selectedItem[0]?.GodownList[index]
+      : selectedItem[0]?.GodownList[0];
 
   const { configurations } = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg
@@ -47,192 +80,284 @@ function EditItemForm({
   const enableActualAndBilledQuantity =
     configuration?.enableActualAndBilledQuantity || false;
 
+  const calculateTotal = (item, selectedPriceLevel, situation = "normal") => {
+    let priceRate = 0;
+    if (situation === "priceLevelChange") {
+      priceRate =
+        item.Priceleveles.find((level) => level._id === selectedPriceLevel?._id)
+          ?.pricerate || 0;
+    }
+
+    let subtotal = 0;
+    let individualTotals = [];
+    let totalCess = 0;
+    let totalAdditionalCess = 0;
+    let totalCgstAmt = 0;
+    let totalSgstAmt = 0;
+    let totalIgstAmt = 0;
+    let totalTaxableAmount = 0;
+
+    item.GodownList.forEach((godownOrBatch, index) => {
+      if (situation === "normal") {
+        priceRate = godownOrBatch.selectedPriceRate;
+      }
+      const quantity = Number(godownOrBatch.count) || 0;
+      const igstValue = Math.max(item.igst || 0, 0);
+      const cgstValue = Math.max(item.cgst || 0, 0);
+      const sgstValue = Math.max(item.sgst || 0, 0);
+
+      // Calculate base price based on tax inclusivity
+      let basePrice = priceRate * quantity;
+      let taxBasePrice = basePrice;
+
+      // For tax inclusive prices, calculate the base price without tax
+      if (item?.isTaxInclusive) {
+        // Use total tax rate (IGST or CGST+SGST)
+        const totalTaxRate = igstValue || 0;
+        taxBasePrice = Number(
+          (basePrice / (1 + totalTaxRate / 100)).toFixed(2)
+        );
+      }
+
+      // Calculate discount based on discountType
+      let discountedPrice = taxBasePrice;
+      let discountAmount = 0;
+      let discountPercentage = 0;
+      let discountType = "none";
+
+      if (
+        godownOrBatch.discountType === "percentage" &&
+        godownOrBatch.discountPercentage !== 0 &&
+        godownOrBatch.discountPercentage !== undefined &&
+        godownOrBatch.discountPercentage !== ""
+      ) {
+        // Percentage discount
+        discountType = "percentage";
+        discountPercentage = Number(godownOrBatch.discountPercentage) || 0;
+        discountAmount = Number(
+          ((taxBasePrice * discountPercentage) / 100).toFixed(2)
+        );
+        discountedPrice = taxBasePrice - discountAmount;
+      } else if (
+        godownOrBatch.discountAmount !== 0 &&
+        godownOrBatch.discount !== undefined &&
+        godownOrBatch.discount !== ""
+      ) {
+        // Fixed amount discount (default)
+        discountType = "amount";
+        discountAmount = Number(godownOrBatch.discount) || 0;
+        // Calculate the equivalent percentage
+        discountPercentage =
+          taxBasePrice > 0
+            ? Number(((discountAmount / taxBasePrice) * 100).toFixed(2))
+            : 0;
+        discountedPrice = taxBasePrice - discountAmount;
+      }
+
+      // This is the taxable amount (price after discount, before tax)
+      const taxableAmount = discountedPrice;
+
+      // Calculate cess amounts
+      let cessAmount = 0;
+      let additionalCessAmount = 0;
+      const cessValue = item.cess || 0;
+      const addlCessValue = item.addl_cess || 0;
+
+      // Standard cess calculation
+      if (cessValue > 0) {
+        cessAmount = Number((taxableAmount * (cessValue / 100)).toFixed(2));
+      }
+
+      // Additional cess calculation - calculated as quantity * addl_cess
+      if (addlCessValue > 0) {
+        additionalCessAmount = Number((quantity * addlCessValue).toFixed(2));
+      }
+
+      // Combine cess amounts
+      const totalCessAmount = Number(
+        (cessAmount + additionalCessAmount).toFixed(2)
+      );
+
+      // Calculate tax amounts
+      let cgstAmt = 0;
+      let sgstAmt = 0;
+      let igstAmt = 0;
+
+      igstAmt = Number((taxableAmount * (igstValue / 100)).toFixed(2));
+      cgstAmt = Number((taxableAmount * (cgstValue / 100)).toFixed(2));
+      sgstAmt = Number((taxableAmount * (sgstValue / 100)).toFixed(2));
+
+      // Calculate total including tax and cess
+      const individualTotal = Math.max(
+        Number((taxableAmount + igstAmt + totalCessAmount).toFixed(2)),
+        0
+      );
+
+      subtotal += individualTotal;
+      totalCess += cessAmount;
+      totalAdditionalCess += additionalCessAmount;
+      totalCgstAmt += cgstAmt;
+      totalSgstAmt += sgstAmt;
+      totalIgstAmt += igstAmt;
+      totalTaxableAmount += taxableAmount;
+
+      individualTotals.push({
+        index,
+        basePrice: taxBasePrice, // Original price × quantity before discount
+        discountAmount, // Discount amount
+        discountPercentage, // Discount percentage
+        discountType,
+        taxableAmount, // Amount after discount, before tax (basis for tax calculation)
+        cgstValue, // CGST percentage
+        sgstValue, // SGST percentage
+        igstValue, // IGST percentage
+        cessValue, // Standard cess percentage
+        addlCessValue, // Additional cess per quantity
+        cgstAmt, // CGST amount
+        sgstAmt, // SGST amount
+        igstAmt, // IGST amount
+        cessAmount, // Standard cess amount (percentage based)
+        additionalCessAmount, // Additional cess amount (quantity based)
+        individualTotal, // Final amount including taxes and cess
+        quantity, // Quantity
+      });
+    });
+
+    subtotal = Math.max(parseFloat(subtotal.toFixed(2)), 0);
+    totalCgstAmt = parseFloat(totalCgstAmt.toFixed(2));
+    totalSgstAmt = parseFloat(totalSgstAmt.toFixed(2));
+    totalIgstAmt = parseFloat(totalIgstAmt.toFixed(2));
+    totalCess = parseFloat(totalCess.toFixed(2));
+    totalAdditionalCess = parseFloat(totalAdditionalCess.toFixed(2));
+    totalTaxableAmount = parseFloat(totalTaxableAmount.toFixed(2));
+
+    return {
+      individualTotals, // Detailed breakdown of each godown/batch
+      total: subtotal, // Grand total including all taxes and cess
+      totalTaxableAmount, // Total amount on which tax is calculated
+      totalCess, // Total standard cess amount
+      totalAdditionalCess, // Total additional cess amount
+      totalCessAmount: totalCess + totalAdditionalCess, // Combined total cess
+      totalCgstAmt, // Total CGST amount
+      totalSgstAmt, // Total SGST amount
+      totalIgstAmt, // Total IGST amount
+      totalTaxAmount: totalIgstAmt, // Total tax amount (convenience field)
+    };
+  };
+
   useEffect(() => {
     setItem(selectedItem[0]);
 
-    if (selectedItem[0]?.hasGodownOrBatch) {
+    if (selectedItem) {
       setNewPrice(selectedGodown?.selectedPriceRate || 0);
-
       setQuantity(selectedGodown?.count || 1);
+
       if (enableActualAndBilledQuantity) {
-        setActualQuantity(selectedGodown?.actualCount || selectedGodown?.count || 1);
+        setActualQuantity(
+          selectedGodown?.actualCount || selectedGodown?.count || 1
+        );
       } else {
         setActualQuantity(selectedGodown?.count || 1);
       }
 
+      // Set discount information
       if (selectedGodown?.discountType === "amount") {
-        setDiscount(selectedGodown?.discount);
+        // setDiscount(selectedGodown?.discount);
         setType("amount");
+        setDiscountType("amount");
         setDiscountPercentage(selectedGodown?.discountPercentage);
         setDiscountAmount(selectedGodown?.discount);
-      } else {
-        setDiscount(selectedGodown?.discountPercentage);
+      } else if (selectedGodown?.discountType === "percentage") {
+        // setDiscount(selectedGodown?.discountPercentage);
         setDiscountAmount(selectedGodown?.discount);
-
         setType("percentage");
+        setDiscountType("percentage");
         setDiscountPercentage(selectedGodown?.discountPercentage);
-      }
-    } else {
-      setNewPrice(selectedItem[0]?.GodownList[0]?.selectedPriceRate || 1);
-
-      setQuantity(selectedItem[0]?.count || 1);
-
-      if (enableActualAndBilledQuantity) {
-        setActualQuantity(selectedItem[0]?.actualCount || selectedItem[0]?.count || 0);
       } else {
-        setActualQuantity(selectedItem[0]?.count || 0);
-      }
-
-      if (selectedItem[0]?.discountType === "amount") {
-        setDiscount(selectedItem[0]?.discount);
-        setType("amount");
-        setDiscountPercentage(selectedItem[0]?.discountPercentage);
-        setDiscountAmount(selectedItem[0]?.discount);
-      } else {
-        setDiscount(selectedItem[0]?.discountPercentage);
-        setDiscountAmount(selectedItem[0]?.discount);
-
-        setType("percentage");
-        setDiscountPercentage(selectedItem[0]?.discountPercentage);
+        setDiscountType("none");
       }
     }
+
     setUnit(selectedItem[0]?.unit);
     setIgst(selectedItem[0]?.igst);
+    setIgstValue(selectedItem[0]?.igst || 0);
 
-    console.log(selectedItem[0]);
-    
-    
-    // Set cess and additional cess
+    // Set tax-related values
     setCess(selectedItem[0]?.cess || 0);
+    setCessValue(selectedItem[0]?.cess || 0);
+    setCgst(selectedItem[0]?.cgst || 0);
+    setCgstValue(selectedItem[0]?.cgst || 0);
+    setSgst(selectedItem[0]?.sgst || 0);
+    setSgstValue(selectedItem[0]?.sgst || 0);
     setAdditionalCess(selectedItem[0]?.addl_cess || 0);
+    setAddlCessValue(selectedItem[0]?.addl_cess || 0);
 
     if (taxInclusive) {
-      setIsTaxInclusive(selectedItem[0]?.isTaxInclusive);
+      setIsTaxInclusive(selectedItem[0]?.isTaxInclusive || false);
     }
   }, [selectedItem[0], enableActualAndBilledQuantity]);
 
   useEffect(() => {
-    // Ensure all inputs are properly parsed
-    const newPriceValue = parseFloat(newPrice) || 0;
-    const quantityValue = parseFloat(quantity) || 0;
-    const discountValue = parseFloat(discount) || 0;
-    const igstValue = parseFloat(igst) || 0;
-    const cessValue = parseFloat(cess) || 0;
-    const additionalCessValue = parseFloat(additionalCess) || 0;
+    // Create a mock item object with structure needed for calculateTotal
+    const mockItem = {
+      Priceleveles: [],
+      GodownList: [
+        {
+          count: quantity,
+          selectedPriceRate: parseFloat(newPrice) || 0,
+          discountType: type,
+          discount: type === "amount" ? discount : "",
+          discountPercentage: type === "percentage" ? discount : "",
+        },
+      ],
+      igst: parseFloat(igst) || 0,
+      cgst: parseFloat(cgst) || 0,
+      sgst: parseFloat(sgst) || 0,
+      cess: parseFloat(cess) || 0,
+      addl_cess: parseFloat(additionalCess) || 0,
+      isTaxInclusive: isTaxInclusive,
+    };
 
-    ///////////////// for tax inclusive and exclusive //////////////
+    // Get result from calculateTotal function
+    const result = calculateTotal(mockItem, null, "normal");
+    const totals = result.individualTotals[0];
 
-    if (isTaxInclusive) {
-      const taxInclusivePrice = newPriceValue * quantityValue;
-      const taxBasePrice = Number(
-        (taxInclusivePrice / (1 + igstValue / 100))?.toFixed(2)
-      );
+    // Update all state values from the calculated result
+    setTotalAmount(result.total);
+    setBasePrice(totals.basePrice);
+    setDiscountAmount(totals.discountAmount);
+    setDiscountPercentage(totals.discountPercentage);
+    setDiscountType(totals.discountType);
+    setTaxExclusivePrice(totals.basePrice);
+    setTaxableAmount(totals.taxableAmount);
+    setTaxAmount(result.totalTaxAmount);
 
-      /// Discount calculation
-      let calculatedDiscountAmount = 0;
-      let calculatedDiscountPercentage = 0;
+    // Tax specific values
+    setCgstValue(totals.cgstValue);
+    setSgstValue(totals.sgstValue);
+    setIgstValue(totals.igstValue);
+    setCessValue(totals.cessValue);
+    setAddlCessValue(totals.addlCessValue);
 
-      if (type === "amount") {
-        calculatedDiscountAmount = discountValue;
-        calculatedDiscountPercentage =
-          Number(
-            ((discountValue / taxExclusivePrice) * 100)?.toFixed(2)
-          ) || 0;
-      } else if (type === "percentage") {
-        calculatedDiscountPercentage = discountValue;
-        calculatedDiscountAmount = Number(
-          ((discountValue / 100) * taxExclusivePrice)?.toFixed(2)
-        );
-      }
-
-      const discountedPrice = Number(
-        (taxBasePrice - calculatedDiscountAmount)?.toFixed(2)
-      );
-
-      // Cess calculations
-      const baseCalculatedCessAmount = Number(
-        (discountedPrice * (cessValue / 100))?.toFixed(2)
-      );
-      const calculatedAdditionalCessAmount = Number(
-        (quantityValue * additionalCessValue)?.toFixed(2)
-      );
-
-      ////final calculation
-      const taxAmount = discountedPrice * (igstValue / 100);
-      const totalPayableAmount = Number(
-        (discountedPrice + taxAmount + baseCalculatedCessAmount + calculatedAdditionalCessAmount)?.toFixed(2)
-      );
-
-      setTotalAmount(totalPayableAmount);
-      setDiscountAmount(calculatedDiscountAmount);
-      setDiscountPercentage(calculatedDiscountPercentage);
-      setTaxExclusivePrice(taxBasePrice);
-      setTaxAmount(taxAmount);
-      
-      // Set cess amounts
-      setCessAmount(baseCalculatedCessAmount);
-      setAdditionalCessAmount(calculatedAdditionalCessAmount);
-    } else {
-      const taxExclusivePrice = newPriceValue * quantityValue;
-
-      /// Discount calculation
-      let calculatedDiscountAmount = 0;
-      let calculatedDiscountPercentage = 0;
-
-      if (type === "amount") {
-        calculatedDiscountAmount = discountValue;
-        calculatedDiscountPercentage =
-          Number(
-            ((discountValue / taxExclusivePrice) * 100)?.toFixed(2)
-          ) || 0;
-      } else if (type === "percentage") {
-        calculatedDiscountPercentage = discountValue;
-        calculatedDiscountAmount = Number(
-          ((discountValue / 100) * taxExclusivePrice)?.toFixed(2)
-        );
-      }
-
-      const discountedPrice = Number(
-        (taxExclusivePrice - calculatedDiscountAmount)?.toFixed(2)
-      );
-
-      // Cess calculations
-      const baseCalculatedCessAmount = Number(
-        (discountedPrice * (cessValue / 100))?.toFixed(2)
-      );
-      const calculatedAdditionalCessAmount = Number(
-        (quantityValue * additionalCessValue)?.toFixed(2)
-      );
-
-      ////final calculation
-      const taxAmount = discountedPrice * (igstValue / 100);
-      const totalPayableAmount = Number(
-        (discountedPrice + taxAmount + baseCalculatedCessAmount + calculatedAdditionalCessAmount)?.toFixed(2)
-      );
-
-      setTotalAmount(totalPayableAmount);
-      setDiscountAmount(calculatedDiscountAmount);
-      setDiscountPercentage(calculatedDiscountPercentage);
-      setTaxExclusivePrice(taxExclusivePrice);
-      setTaxAmount(taxAmount);
-      
-      // Set cess amounts
-      setCessAmount(baseCalculatedCessAmount);
-      setAdditionalCessAmount(calculatedAdditionalCessAmount);
-    }
+    // Tax amounts
+    setCessAmount(result.totalCess);
+    setAdditionalCessAmount(result.totalAdditionalCess);
+    setTotalCessAmount(result.totalCessAmount);
+    setCgstAmount(result.totalCgstAmt);
+    setSgstAmount(result.totalSgstAmt);
+    setIgstAmount(result.totalIgstAmt);
+    setIndividualTotal(totals.individualTotal);
   }, [
     newPrice,
     quantity,
     discount,
     type,
     igst,
+    cgst,
+    sgst,
     isTaxInclusive,
-    discountAmount,
-    discountPercentage,
-    taxExclusivePrice,
-    actualQuantity,
     cess,
-    additionalCess
+    additionalCess,
   ]);
 
   const handleBackClick = () => {
@@ -256,7 +381,7 @@ function EditItemForm({
 
     setQuantity(value);
 
-    if(!enableActualAndBilledQuantity){
+    if (!enableActualAndBilledQuantity) {
       setActualQuantity(value);
     }
   };
@@ -274,40 +399,213 @@ function EditItemForm({
   };
 
   const submitFormData = () => {
-    submitHandler(
-      item,
-      index,
-      quantity,
-      actualQuantity,
-      newPrice,
-      totalAmount,
-      selectedItem,
-      discountAmount,
-      discountPercentage,
-      type,
-      igst,
-      isTaxInclusive,
-      cessAmount,
-      additionalCessAmount
-    );
+    // Create a copy of the current item
+    const updatedItem = { ...item };
+    //// if it as godown Only item we need to update all godowns with this current price rate and discount
+    //// other wise no problem
+    // Check if we need to update all godowns
+    const shouldUpdateAllGodowns =
+      updatedItem.gdnEnabled === true &&
+      updatedItem.hasGodownOrBatch === true &&
+      updatedItem.batchEnabled !== true;
+
+    if (shouldUpdateAllGodowns) {
+      // Get the new rate and discount settings
+      const newRate = parseFloat(newPrice);
+      const newDiscountType = type;
+      const newDiscountValue = discount;
+
+      // Update all godowns in the GodownList
+      updatedItem.GodownList = updatedItem.GodownList.map(
+        (godown, godownIndex) => {
+          // Preserve specific fields that should not be changed
+          const preservedFields = {
+            godown: godown.godown,
+            balance_stock: godown.balance_stock,
+            _id: godown._id,
+            godown_id: godown.godown_id,
+            defaultGodown: godown.defaultGodown,
+            added: godown.added,
+          };
+
+          // If this is the current godown index, use the new quantity values
+          const godownQty =
+            godownIndex === parseInt(index) ? quantity : godown.count;
+          const godownActualQty =
+            godownIndex === parseInt(index)
+              ? actualQuantity
+              : godown.actualCount;
+
+          // Calculate base price using this godown's quantity
+          const godownBasePrice = godownQty * newRate;
+
+          // Calculate discount amount based on the discount type
+          let godownDiscountAmount = 0;
+          let godownDiscountPercentage = 0;
+
+          if (newDiscountType === "percentage") {
+            godownDiscountPercentage = parseFloat(newDiscountValue) || 0;
+            godownDiscountAmount =
+              (godownBasePrice * godownDiscountPercentage) / 100;
+          } else if (newDiscountType === "amount") {
+            godownDiscountAmount = parseFloat(newDiscountValue) || 0;
+            godownDiscountPercentage =
+              godownBasePrice > 0
+                ? (godownDiscountAmount / godownBasePrice) * 100
+                : 0;
+          }
+
+          // Calculate taxable amount (price after discount)
+          const godownTaxableAmount = Math.max(
+            godownBasePrice - godownDiscountAmount,
+            0
+          );
+
+          // Calculate tax amounts
+          const godownIgstAmount = (godownTaxableAmount * igstValue) / 100;
+          const godownCgstAmount = (godownTaxableAmount * cgstValue) / 100;
+          const godownSgstAmount = (godownTaxableAmount * sgstValue) / 100;
+
+          // Calculate cess
+          const godownCessAmount = (godownTaxableAmount * cessValue) / 100;
+          const godownAddlCessAmount = godownQty * addlCessValue;
+          const godownTotalCessAmount = godownCessAmount + godownAddlCessAmount;
+
+          // Calculate individual total
+          const godownIndividualTotal =
+            godownTaxableAmount + godownIgstAmount + godownTotalCessAmount;
+
+          // Return the updated godown
+          return {
+            ...godown,
+            // Preserve original quantities or use new ones if this is the current index
+            count: godownQty,
+            actualCount: godownActualQty,
+
+            // Update with new values
+            selectedPriceRate: newRate,
+            discountType: newDiscountType,
+            discountAmount: discountAmount,
+            discountPercentage: discountPercentage,
+            // discount: newDiscountType === "amount" ? godownDiscountAmount : 0,
+            // discountPercentage: newDiscountType === "percentage" ? godownDiscountPercentage : 0,
+            taxInclusive: isTaxInclusive,
+
+            // Recalculated values
+            basePrice: godownBasePrice,
+            taxableAmount: godownTaxableAmount,
+
+            // Tax values (percentages)
+            igstValue,
+            cgstValue,
+            sgstValue,
+            cessValue,
+            addlCessValue,
+
+            // Recalculated tax amounts
+            igstAmount: godownIgstAmount,
+            cgstAmount: godownCgstAmount,
+            sgstAmount: godownSgstAmount,
+            cessAmount: godownCessAmount,
+            additionalCessAmount: godownAddlCessAmount,
+            totalCessAmount: godownTotalCessAmount,
+
+            // Final total
+            individualTotal: godownIndividualTotal,
+
+            // Preserve the specific fields
+            ...preservedFields,
+          };
+        }
+      );
+    } else {
+      console.log("herer");
+
+      // Just update the godown at the specified index
+      const godownToUpdate = { ...updatedItem.GodownList[index] };
+
+      // Preserve specific fields that should not be changed
+      const preservedFields = {
+        godown: godownToUpdate.godown,
+        balance_stock: godownToUpdate.balance_stock,
+        _id: godownToUpdate._id,
+        godown_id: godownToUpdate.godown_id,
+        defaultGodown: godownToUpdate.defaultGodown,
+        added: godownToUpdate.added,
+      };
+
+      console.log(
+        newPrice,
+        quantity,
+        actualQuantity,
+        discountAmount,
+        discountPercentage
+      );
+
+      // Update with new values while preserving specified fields
+      const updatedGodown = {
+        ...godownToUpdate,
+        // Update with new values
+        count: quantity,
+        actualCount: actualQuantity,
+        selectedPriceRate: parseFloat(newPrice),
+        discountAmount: discountAmount,
+        discountPercentage: discountPercentage,
+        // discount: type === "amount" ? discountAmount : 0,
+        // discountPercentage: type === "percentage" ? discountPercentage : 0,
+        discountType: type,
+        taxInclusive: isTaxInclusive,
+        basePrice: basePrice,
+        taxableAmount: taxableAmount,
+        individualTotal: individualTotal,
+
+        // Tax related fields
+        igstValue: igstValue,
+        cgstValue: cgstValue,
+        sgstValue: sgstValue,
+        cessValue: cessValue,
+        addlCessValue: addlCessValue,
+
+        igstAmount: igstAmount,
+        cgstAmount: cgstAmount,
+        sgstAmount: sgstAmount,
+        cessAmount: cessAmount,
+        additionalCessAmount: additionalCessAmount,
+        totalCessAmount: totalCessAmount,
+
+        // Preserve the specific fields
+        ...preservedFields,
+      };
+
+      console.log(index);
+
+      // Update the godown at the specified index
+      // Replace the godown at the specified index immutably
+      updatedItem.GodownList = updatedItem.GodownList.map((godown, i) =>
+        i === parseInt(index) ? updatedGodown : godown
+      );
+    }
+
+    console.log("Updated Item:", updatedItem);
+
+    // Create a complete tax data object to submit
+    dispatch(updateItem({ item: updatedItem, moveToTop: false }));
+    navigate(-1, { replace: true });
   };
 
-
-  console.log(additionalCess);
-  
   return (
-    <div className=" ">
-      <div className=" h-screen  flex-1">
-        <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex  items-center gap-2 sticky top-0 z-20 ">
+    <div>
+      <div className="h-screen flex-1">
+        <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex items-center gap-2 sticky top-0 z-20">
           <IoIosArrowRoundBack
             onClick={handleBackClick}
             className="text-3xl text-white cursor-pointer"
           />
-          <p className="text-white text-lg   font-bold ">Edit Item</p>
+          <p className="text-white text-lg font-bold">Edit Item</p>
         </div>
-        <div className="min-h-screen bg-gray-100  flex flex-col justify-center ">
-          <div className="relative  md:py-4  sm:max-w-xl sm:mx-auto">
-            <div className="relative px-4 py-10 bg-white mx-5 md:mx-0 shadow  sm:p-10">
+        <div className="min-h-screen bg-gray-100 flex flex-col justify-center">
+          <div className="relative md:py-4 sm:max-w-xl sm:mx-auto">
+            <div className="relative px-4 py-10 bg-white mx-5 md:mx-0 shadow sm:p-10">
               <div className="max-w-md mx-auto">
                 <div className="flex items-center space-x-5">
                   <div className="h-14 w-14 bg-yellow-200 rounded-full flex flex-shrink-0 justify-center items-center text-yellow-500 text-2xl font-mono">
@@ -330,7 +628,7 @@ function EditItemForm({
                         }}
                         value={newPrice}
                         type="number"
-                        className={` ${
+                        className={`${
                           from === "stockTransfer"
                             ? "pointer-events-none"
                             : "pointer-events-auto"
@@ -342,7 +640,7 @@ function EditItemForm({
                     {taxInclusive &&
                       isTaxInclusive !== null &&
                       isTaxInclusive !== undefined && (
-                        <div className="flex items-center gap-3 ml-1 ">
+                        <div className="flex items-center gap-3 ml-1">
                           <input
                             type="checkbox"
                             id="valueCheckbox"
@@ -353,8 +651,8 @@ function EditItemForm({
                             }}
                           />
                           <label
-                            className="block uppercase text-blueGray-600 text-xs font-bold "
-                            htmlFor="termsInput"
+                            className="block uppercase text-blueGray-600 text-xs font-bold"
+                            htmlFor="valueCheckbox"
                           >
                             Tax Inclusive
                           </label>
@@ -365,9 +663,9 @@ function EditItemForm({
                         enableActualAndBilledQuantity
                           ? "sm:grid-cols-1"
                           : "sm:grid-cols-2"
-                      } gap-4 `}
+                      } gap-4`}
                     >
-                      <div className="flex flex-row-reverse gap-8 ">
+                      <div className="flex flex-row-reverse gap-8">
                         <div className="flex flex-col">
                           <label className="leading-loose">
                             {enableActualAndBilledQuantity
@@ -437,11 +735,11 @@ function EditItemForm({
                             value={discount}
                             onChange={(e) => setDiscount(e.target.value)}
                             type="text"
-                            className={`   ${
+                            className={`${
                               from === "stockTransfer"
                                 ? "pointer-events-none"
                                 : "pointer-events-auto"
-                            }    pr-4 pl-10 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm border-gray-300 rounded-md focus:outline-none text-gray-600`}
+                            } pr-4 pl-10 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm border-gray-300 rounded-md focus:outline-none text-gray-600`}
                             placeholder=""
                           />
                         </div>
@@ -449,21 +747,22 @@ function EditItemForm({
                       <button
                         onClick={() => {
                           setType("percentage");
+                          setDiscountType("percentage");
                         }}
-                        className={` ${
+                        className={`${
                           type === "percentage"
                             ? "bg-violet-200 border-2 border-violet-500 font-semibold"
                             : ""
                         } p-1 bg-gray-300 md:rounded-xl mt-8 md:px-3 text-sm md:text-md px-2 rounded-lg py-2`}
                       >
-                        {" "}
                         Percentage
                       </button>
                       <button
                         onClick={() => {
                           setType("amount");
+                          setDiscountType("amount");
                         }}
-                        className={` ${
+                        className={`${
                           type === "amount"
                             ? "bg-violet-200 border-2 border-violet-500 font-semibold"
                             : ""
@@ -477,28 +776,30 @@ function EditItemForm({
                       <label className="leading-loose">Tax Rate</label>
                       <input
                         disabled
-                        value={` Tax @ ${igst} %`}
+                        value={`Tax @ ${igst} %`}
                         type="text"
                         className="px-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm border-gray-300 rounded-md focus:outline-none text-gray-600"
-                        placeholder="Event title"
                       />
                     </div>
 
                     <div className="bg-slate-200 p-3 font-semibold flex flex-col gap-2 text-gray-500">
                       <div className="flex justify-between">
-                        <p className="text-xs">Tax Exclusive Price</p>
-                        <p className="text-xs">
-                          {" "}
-                          {taxExclusivePrice?.toFixed(2)}
-                        </p>
+                        <p className="text-xs">Base Price</p>
+                        <p className="text-xs">₹ {basePrice?.toFixed(2)}</p>
                       </div>
+
+                      {/* <div className="flex justify-between">
+                        <p className="text-xs">Tax Exclusive Price</p>
+                        <p className="text-xs">₹ {taxExclusivePrice?.toFixed(2)}</p>
+                      </div> */}
+
                       {type === "amount" ? (
                         <div className="flex justify-between">
                           <p className="text-xs">Discount</p>
                           <div className="flex items-center gap-2">
                             <p className="text-xs">{`(${parseFloat(
                               discountPercentage
-                            )?.toFixed(2)} % ) `}</p>
+                            )?.toFixed(2)} %)`}</p>
                             <p className="text-xs">{`₹ ${discountAmount?.toFixed(
                               2
                             )}`}</p>
@@ -508,21 +809,33 @@ function EditItemForm({
                         <div className="flex justify-between">
                           <p className="text-xs">Discount</p>
                           <div className="flex items-center gap-2">
-                            <p className="text-xs">{`(${discountPercentage}) %`}</p>
-                            <p className="text-xs">{`₹ ${discountAmount ? Number(discountAmount).toFixed(2) : '0.00'}`}</p>
+                            <p className="text-xs">{`(${discountPercentage} %)`}</p>
+                            <p className="text-xs">{`₹ ${
+                              discountAmount
+                                ? Number(discountAmount).toFixed(2)
+                                : "0.00"
+                            }`}</p>
                           </div>
                         </div>
                       )}
 
                       <div className="flex justify-between">
-                        <p className="text-xs">Tax Rate</p>
-                        <div className="flex items-center gap-2">
-                          <p className="text-xs">{`( ${igst} % )`}</p>
-                          <p className="text-xs">{`₹ ${taxAmount?.toFixed(
-                            2
-                          )}`}</p>
-                        </div>
+                        <p className="text-xs">Taxable Amount</p>
+                        <p className="text-xs">₹ {taxableAmount?.toFixed(2)}</p>
                       </div>
+
+                      {/* IGST */}
+                      {igstValue > 0 && (
+                        <div className="flex justify-between">
+                          <p className="text-xs">Tax </p>
+                          <div className="flex items-center gap-2">
+                            <p className="text-xs">{`(${igstValue} %)`}</p>
+                            <p className="text-xs">{`₹ ${igstAmount?.toFixed(
+                              2
+                            )}`}</p>
+                          </div>
+                        </div>
+                      )}
 
                       {/* New sections for Cess */}
                       {(cess > 0 || additionalCess > 0) && (
@@ -532,7 +845,9 @@ function EditItemForm({
                               <p className="text-xs">Cess</p>
                               <div className="flex items-center gap-2">
                                 <p className="text-xs">{`( ${cess} % )`}</p>
-                                <p className="text-xs">{`₹ ${cessAmount?.toFixed(2)}`}</p>
+                                <p className="text-xs">{`₹ ${cessAmount?.toFixed(
+                                  2
+                                )}`}</p>
                               </div>
                             </div>
                           )}
@@ -540,7 +855,9 @@ function EditItemForm({
                             <div className="flex justify-between">
                               <p className="text-xs">Additional Cess</p>
                               <div className="flex items-center gap-2">
-                                <p className="text-xs">{`₹ ${additionalCessAmount?.toFixed(2)}`}</p>
+                                <p className="text-xs">{`₹ ${additionalCessAmount?.toFixed(
+                                  2
+                                )}`}</p>
                               </div>
                             </div>
                           )}
