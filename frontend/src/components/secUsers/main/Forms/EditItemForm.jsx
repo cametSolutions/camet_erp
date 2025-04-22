@@ -384,14 +384,15 @@ function EditItemForm({
       }
     }
 
-    setQuantity(value);
+    setQuantity(Number(value))
 
     if (!enableActualAndBilledQuantity) {
-      setActualQuantity(value);
+      setActualQuantity(Number(value))
     }
   };
 
   const handleActualQuantityChange = (value) => {
+    
     if (value.includes(".")) {
       const parts = value.split(".");
       if (parts[1].length > 3) {
@@ -399,8 +400,8 @@ function EditItemForm({
       }
     }
 
-    setActualQuantity(value);
-    setQuantity(value);
+    setActualQuantity(Number(value));
+    setQuantity(Number(value));
   };
 
   const submitFormData = () => {
@@ -589,6 +590,11 @@ function EditItemForm({
     updatedItem.totalIgstAmt=godownList.reduce((acc, item) => acc + item.igstAmount, 0);
     updatedItem.totalCessAmt=godownList.reduce((acc, item) => acc + item.cessAmount, 0);
     updatedItem.totalAddlCessAmt=godownList.reduce((acc, item) => acc + item.additionalCessAmount, 0);
+    updateItem.totalCount=godownList.reduce((acc, item) => acc + item.count, 0);
+    updatedItem.totalActualCount=godownList.reduce((acc, item) => acc + item.actualCount, 0);
+
+    console.log(godownList.reduce((acc, item) => acc + item.count, 0));
+    
     
     // Create a complete tax data object to submit
     dispatch(updateItem({ item: updatedItem, moveToTop: false }));
