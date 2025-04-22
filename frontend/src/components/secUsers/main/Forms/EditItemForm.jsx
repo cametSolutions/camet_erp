@@ -248,6 +248,9 @@ function EditItemForm({
   useEffect(() => {
     setItem(selectedItem[0]);
 
+    console.log(selectedGodown);
+    
+
     if (selectedItem) {
       setNewPrice(selectedGodown?.selectedPriceRate || 0);
       setQuantity(selectedGodown?.count || 1);
@@ -267,12 +270,14 @@ function EditItemForm({
         setDiscountType("amount");
         setDiscountPercentage(selectedGodown?.discountPercentage);
         setDiscountAmount(selectedGodown?.discount);
+        setDiscount(selectedGodown?.discountAmount);
       } else if (selectedGodown?.discountType === "percentage") {
         // setDiscount(selectedGodown?.discountPercentage);
         setDiscountAmount(selectedGodown?.discount);
         setType("percentage");
         setDiscountType("percentage");
         setDiscountPercentage(selectedGodown?.discountPercentage);
+        setDiscount(selectedGodown?.discountPercentage);
       } else {
         setDiscountType("none");
       }
@@ -296,6 +301,11 @@ function EditItemForm({
       setIsTaxInclusive(selectedItem[0]?.isTaxInclusive || false);
     }
   }, [selectedItem[0], enableActualAndBilledQuantity]);
+
+
+
+  console.log(discount);
+  
 
   useEffect(() => {
     // Create a mock item object with structure needed for calculateTotal

@@ -700,10 +700,8 @@ function VoucherAddCount() {
         return currentItem; // If no godownIndex is provided, return the item as is
       }
 
-      console.log(currentItem);
-
       // Dispatch the updated item to Redux
-      // dispatch(updateItem({ item: currentItem, moveToTop }));
+      dispatch(updateItem({ item: currentItem, moveToTop }));
       return currentItem;
     });
 
