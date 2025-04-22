@@ -1,28 +1,22 @@
 /* eslint-disable react/no-unknown-property */
 
 import { useNavigate } from "react-router-dom";
-import {  useDispatch, useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { updateItem } from "../../../slices/stockTransferSecondary";
 import EditItemForm from "../../components/secUsers/main/Forms/EditItemForm";
 
 function EditItemStockTransfer() {
+  const ItemsFromRedux = useSelector((state) => {
+    return state.stockTransferSecondary.items;
+  });
 
-  const ItemsFromRedux = useSelector((state)=>{
-    return state.stockTransferSecondary.items
-  })
-
-  console.log(ItemsFromRedux);
-  
   const dispatch = useDispatch();
-  const navigate=useNavigate();
+  const navigate = useNavigate();
 
-  const submitHandler = (item, index, quantity, newPrice, totalAmount, selectedItem,discountAmount,discountPercentage, type,igst) => {
-    console.log(item);
+  const submitHandler = (item, index, quantity) => {
     const newItem = structuredClone(item);
 
-    console.log(newPrice); // Deep copy to avoid mutation
-
-    if (selectedItem[0]?.hasGodownOrBatch) {
+    if (item?.hasGodownOrBatch) {
       console.log("haii");
       const newGodownList = newItem.GodownList.map((godown, idx) => {
         if (idx == index) {
@@ -30,11 +24,11 @@ function EditItemStockTransfer() {
           return {
             ...godown,
             count: Number(quantity) || 0,
-            selectedPriceRate: Number(newPrice) || 0,
-            discount: type === "amount" ? discountAmount : "",
-            discountPercentage:
-              type === "amount" ? "" : parseFloat(discountPercentage),
-            individualTotal: Number(totalAmount.toFixed(2)),
+            selectedPriceRate: 0,
+            discount: 0,
+            discountPercentage: 0,
+            added: true,
+            individualTotal: 0,
           };
         } else {
           return godown;
@@ -42,65 +36,56 @@ function EditItemStockTransfer() {
       });
 
       newItem.GodownList = newGodownList;
-      newItem.count = Number(
-        newGodownList
-          ?.reduce((acc, curr) => (acc += curr?.count || 0), 0)
-          .toFixed(2)
-      );
 
       newItem.count = Number(
         newGodownList?.reduce((acc, curr) => {
           if (curr.added === true) {
-            console.log("haii");
             return acc + curr.count;
           } else {
-            console.log("haii");
-
             return acc;
           }
         }, 0)
       );
 
-      console.log(newItem.count);
-      newItem.total = Number(
-        newGodownList
-          .reduce(
-            (acc, curr) => acc + (curr?.added ? curr.individualTotal : 0 || 0),
-            0
-          )
-          .toFixed(2)
-      );
+      newItem.total = 0
       console.log(newItem.total);
       console.log(newItem);
     } else {
-      // newItem.total = Number(totalAmount.toFixed(2));
-      newItem.GodownList[0].individualTotal = Number(totalAmount.toFixed(2));
-      newItem.total = Number(totalAmount.toFixed(2));
-      newItem.count = quantity || 0;
-      const godownList = [...newItem.GodownList];
-      console.log(godownList);
-      godownList[0].selectedPriceRate = Number(newPrice) || 0;
-
-      newItem.GodownList = godownList;
-      newItem.newGst = igst;
-      if (type === "amount") {
-        newItem.discount = discountAmount;
-        newItem.discountPercentage = "";
-      } else {
-        newItem.discount = "";
-        newItem.discountPercentage = parseFloat(discountPercentage);
-      }
+      return;
     }
 
+    // else {
+    //   console.log(",jxdhf");
 
-      dispatch(updateItem(newItem));
+    //   // newItem.total = Number(totalAmount.toFixed(2));
+    //   newItem.GodownList[0].individualTotal = Number(totalAmount.toFixed(2));
+    //   newItem.total = Number(totalAmount.toFixed(2));
+    //   newItem.count = quantity || 0;
+    //   const godownList = [...newItem.GodownList];
+    //   godownList[0].selectedPriceRate = Number(newPrice) || 0;
+
+    //   newItem.GodownList = godownList;
+    //   newItem.newGst = igst;
+    //   if (type === "amount") {
+    //     newItem.discount = discountAmount;
+    //     newItem.discountPercentage = "";
+    //   } else {
+    //     newItem.discount = "";
+    //     newItem.discountPercentage = parseFloat(discountPercentage);
+    //   }
+    // }
+
+    dispatch(updateItem(newItem));
 
     navigate(-1);
   };
-  
 
   return (
-<EditItemForm submitHandler={submitHandler} ItemsFromRedux={ItemsFromRedux} from="stockTransfer"/>
+    <EditItemForm
+      submitHandler={submitHandler}
+      ItemsFromRedux={ItemsFromRedux}
+      from="stockTransfer"
+    />
   );
 }
 

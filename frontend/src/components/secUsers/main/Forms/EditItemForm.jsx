@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import { MdModeEditOutline } from "react-icons/md";
-import {  useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
 
 function EditItemForm({
@@ -102,7 +102,6 @@ function EditItemForm({
     }
     setUnit(selectedItem[0]?.unit);
     setIgst(selectedItem[0]?.igst);
-
 
     // Set cess and additional cess
     setCess(selectedItem[0]?.cess || 0);
@@ -258,14 +257,12 @@ function EditItemForm({
       }
     }
 
-    
     if (
       checkNegativeBlocking &&
       Number(value) > selectedGodown?.balance_stock
     ) {
       return;
     }
-
 
     setQuantity(value);
 
@@ -283,7 +280,6 @@ function EditItemForm({
     }
 
     console.log(selectedGodown);
-    
 
     if (
       checkNegativeBlocking &&
@@ -577,7 +573,11 @@ function EditItemForm({
 
                       <div className="flex justify-between font-bold text-black">
                         <p className="text-sm">Total amount</p>
-                        <p className="text-xs">{totalAmount?.toFixed(2)}</p>
+                        <p className="text-xs">
+                          {from === "stockTransfer"
+                            ? "₹ 0"
+                            : `₹ ${totalAmount?.toFixed(2)}` || "0.00"}
+                        </p>
                       </div>
                     </div>
                   </div>

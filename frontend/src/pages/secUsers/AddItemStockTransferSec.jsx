@@ -88,22 +88,6 @@ function AddItemStockTransferSec() {
   const listRef = useRef(null);
   // const location = useLocation();
 
-  // ///////////////////////////Godown name///////////////////////////////////
-  // useEffect(() => {
-  //   const fetchGodownname = async () => {
-  //     try {
-  //       const godown = await api.get(`/api/sUsers/godownsName/${cpm_id}`, {
-  //         withCredentials: true,
-  //       });
-  //       setGodownname(godown.data || "");
-  //       // setGodownname("")
-  //     } catch (error) {
-  //       console.log(error);
-  //       toast.error(error.message);
-  //     }
-  //   };
-  //   fetchGodownname();
-  // }, []);
 
   const searchData = (data) => {
     setSearch(data);
@@ -243,54 +227,9 @@ function AddItemStockTransferSec() {
     }
   }, []);
 
-  ///////////////////////////sdo persisting of products///////////////////////////////////
 
-  //////////////////////////////orgId////////////////////////////////
 
-  // const orgId = useSelector(
-  //   (state) => state.secSelectedOrganization.secSelectedOrg._id
-  // );
 
-  // const type = useSelector(
-  //   (state) => state.secSelectedOrganization.secSelectedOrg.type
-  // );
-
-  //////////////////////////////fetchFilters////////////////////////////////
-
-  // useEffect(() => {
-  // const fetchFilters = async () => {
-  //   try {
-  //     let res;
-  //     if (type == "self") {
-  //       res = await api.get(`/api/sUsers/fetchFilters/${orgId}`, {
-  //         withCredentials: true,
-  //       });
-  //     } else {
-  //       res = await api.get(`/api/sUsers/fetchAdditionalDetails/${orgId}`, {
-  //         withCredentials: true,
-  //       });
-  //     }
-
-  //     // if (type === "self") {
-  //     //   const { brands, categories, subcategories, priceLevels } =
-  //     //     res.data.data;
-  //     //   // setBrands(brands);
-  //     //   // setCategories(categories);
-  //     //   // setSubCategories(subcategories);
-  //     //   setPriceLevels(priceLevels);
-  //     // } else {
-  //     //   const { brands, categories, subcategories } = res.data;
-
-  //     //   // setBrands(brands);
-  //     //   // setCategories(categories);
-  //     //   // setSubCategories(subcategories);
-  //     // }
-  //   } catch (error) {
-  //     console.log(error);
-  //   }
-  // };
-  // fetchFilters();
-  // }, [orgId, type]);
 
   ///////////////////////////filter items///////////////////////////////////
 
@@ -330,138 +269,8 @@ function AddItemStockTransferSec() {
 
   //////////////////////////////////////////addSelectedRate initially not in redux/////////////////////////////////////////////
 
-  // const addSelectedRate = (pricelevel) => {
-  //   if (item?.length > 0) {
-  //     const updatedItems = filteredItems.map((item) => {
-  //       const priceRate =
-  //         item?.Priceleveles?.find(
-  //           (priceLevelItem) => priceLevelItem.pricelevel === pricelevel
-  //         )?.pricerate || 0;
 
-  //       const reduxItem = itemsFromRedux.find((p) => p._id === item._id);
-  //       // const reduxRate = reduxItem?.selectedPriceRate || null;
-
-  //       // if (item?.hasGodownOrBatch) {
-  //       const updatedGodownList = item.GodownList.map(
-  //         (godownOrBatch, index) => {
-  //           const reduxRateOfGodown =
-  //             reduxItem?.GodownList?.[index]?.selectedPriceRate;
-  //           return {
-  //             ...godownOrBatch,
-  //             selectedPriceRate:
-  //               reduxRateOfGodown !== undefined ? reduxRateOfGodown : priceRate,
-  //           };
-  //         }
-  //       );
-
-  //       return {
-  //         ...item,
-  //         GodownList: updatedGodownList,
-  //       };
-  //     });
-
-  //     setItem(updatedItems);
-  //   }
-  // };
-
-  console.log(item);
-
-  // useEffect(() => {
-  //   addSelectedRate(selectedPriceLevel);
-  // }, [selectedPriceLevel, refresh]);
-
-  ///////////////////////////calculateTotal///////////////////////////////////
-
-  // const calculateTotal = (item, selectedPriceLevel, situation = "normal") => {
-  //   let priceRate = 0;
-  //   if (situation === "priceLevelChange") {
-  //     priceRate =
-  //       item.Priceleveles.find(
-  //         (level) => level.pricelevel === selectedPriceLevel
-  //       )?.pricerate || 0;
-  //   }
-
-  //   let subtotal = 0;
-  //   let individualTotals = [];
-
-  //   if (item.hasGodownOrBatch) {
-  //     item.GodownList.forEach((godownOrBatch, index) => {
-  //       if (situation == "normal") {
-  //         priceRate = godownOrBatch.selectedPriceRate;
-  //       }
-  //       let individualSubtotal = priceRate * Number(godownOrBatch.count) || 0;
-  //       let discountedSubtotal = individualSubtotal;
-
-  //       if (
-  //         godownOrBatch.discount !== 0 &&
-  //         godownOrBatch.discount !== undefined &&
-  //         godownOrBatch.discount !== ""
-  //       ) {
-  //         discountedSubtotal = discountedSubtotal - godownOrBatch.discount;
-  //       } else if (
-  //         godownOrBatch.discountPercentage !== 0 &&
-  //         godownOrBatch.discountPercentage !== undefined &&
-  //         godownOrBatch.discountPercentage !== ""
-  //       ) {
-  //         discountedSubtotal -=
-  //           (individualSubtotal * godownOrBatch.discountPercentage) / 100;
-  //       }
-
-  //       const gstAmount = (discountedSubtotal * (item.igst || 0)) / 100;
-
-  //       subtotal += discountedSubtotal + gstAmount;
-
-  //       const individualTotal = parseFloat(
-  //         (discountedSubtotal + gstAmount).toFixed(2)
-  //       );
-
-  //       individualTotals.push({
-  //         index,
-  //         batch: godownOrBatch.batch,
-  //         individualTotal,
-  //       });
-  //     });
-  //   } else {
-  //     if (situation == "normal") {
-  //       priceRate = item.GodownList[0].selectedPriceRate;
-  //     }
-  //     let individualSubtotal = priceRate * Number(item.count);
-  //     let discountedSubtotal = individualSubtotal;
-
-  //     if (item.discount !== 0 && item.discount !== undefined) {
-  //       discountedSubtotal -= item.discount;
-  //     } else if (
-  //       item.discountPercentage !== 0 &&
-  //       item.discountPercentage !== undefined
-  //     ) {
-  //       discountedSubtotal -=
-  //         (individualSubtotal * item.discountPercentage) / 100;
-  //     }
-
-  //     const gstAmount =
-  //       (discountedSubtotal * (item.newGst || item.igst || 0)) / 100;
-
-  //     subtotal += discountedSubtotal + gstAmount;
-
-  //     const individualTotal = parseFloat(
-  //       (discountedSubtotal + gstAmount).toFixed(2)
-  //     );
-
-  //     individualTotals.push({
-  //       index: 0,
-  //       batch: item.batch || "No batch",
-  //       individualTotal,
-  //     });
-  //   }
-
-  //   subtotal = parseFloat(subtotal.toFixed(2));
-
-  //   return {
-  //     individualTotals,
-  //     total: subtotal,
-  //   };
-  // };
-
+  console.log(item);  
   ///////////////////////////handleAddClick///////////////////////////////////
 
   const handleAddClick = (_id, idx) => {
@@ -614,11 +423,7 @@ function AddItemStockTransferSec() {
         // Ensure count does not go below 0
         if (currentItem.count <= 0) currentItem.added = false;
 
-        // Calculate totals and update individual total
-        // const totalData = calculateTotal(currentItem, selectedPriceLevel);
-        // currentItem.individualTotal = totalData.total;
-        // currentItem.GodownList[0].individualTotal = totalData?.total;
-        // currentItem.total = totalData.total; // Update the overall total
+
       }
 
       dispatch(updateItem(currentItem)); // Log the updated currentItem
@@ -629,57 +434,6 @@ function AddItemStockTransferSec() {
     setItem(updatedItems); // Update the state with the updated items
   };
 
-  ///////////////////////////handleTotalChangeWithPriceLevel///////////////////////////////////
-
-  const handleTotalChangeWithPriceLevel = (pricelevel) => {
-    const updatedItems = filteredItems.map((item) => {
-      if (item.added === true) {
-        const { individualTotals, total } = calculateTotal(
-          item,
-          pricelevel,
-          "priceLevelChange"
-        );
-
-        dispatch(changeTotal({ ...item, total: total }));
-        const newPriceRate =
-          item?.Priceleveles.find(
-            (priceLevelItem) => priceLevelItem.pricelevel === pricelevel
-          )?.pricerate || 0;
-
-        // if (item?.hasGodownOrBatch) {
-        const updatedGodownList = item?.GodownList.map((godown, idx) => {
-          return {
-            ...godown,
-            individualTotal:
-              individualTotals.find((el) => el.index === idx)
-                ?.individualTotal || 0,
-            selectedPriceRate: newPriceRate,
-          };
-        });
-
-        dispatch(
-          updateItem({ ...item, GodownList: updatedGodownList, total: total })
-        );
-        return {
-          ...item,
-          GodownList: updatedGodownList,
-          total: total,
-        };
-      }
-      return item;
-    });
-
-    setItem(updatedItems);
-  };
-
-  // function truncateToNDecimals(num, n) {
-  //   const parts = num.toString().split(".");
-  //   if (parts.length === 1) return num; // No decimal part
-  //   parts[1] = parts[1].substring(0, n); // Truncate the decimal part
-  //   return parseFloat(parts.join("."));
-  // }
-
-  ///////////////////////////react window ///////////////////////////////////
 
   /////////////////////////// calculateHeight ///////////////////////////////////
 
@@ -845,120 +599,6 @@ function AddItemStockTransferSec() {
             </div>
           </div>
 
-          {/* {el?.hasGodownOrBatch && (
-            <div className="mt-1">
-              <span className="text-gray-500 text-xs md:text-sm  ">
-                Stock :{" "}
-              </span>
-              <span className="font-bold text-xs md:text-sm ">
-                {el?.GodownList.reduce(
-                  (acc, curr) => (acc += curr.balance_stock),
-                  0
-                ) || 0}
-              </span>
-            </div>
-          )} */}
-
-          {/* {el?.added && el?.count && !el?.hasGodownOrBatch > 0 ? (
-            <div className="flex items-center flex-col gap-2">
-   
-
-              {!el?.hasGodownOrBatch && (
-                <>
-                  <button
-                    onClick={() => {
-                      navigate(
-                        `/sUsers/editItemSales/${el?._id}/${
-                           "nil"
-                        }/null`,
-                        {
-                          state: {
-                            from: "editItemSales",
-                            id: location?.state?.id,
-                          },
-                        }
-                      );
-                      // saveScrollPosition();
-                    }}
-                    type="button"
-                    className="  mt-3  px-2 py-1  rounded-md border-violet-500 font-bold border  text-violet-500 text-xs"
-                  >
-                    Edit
-                  </button>
-                  <div
-                    className="py-2 px-3 inline-block bg-white  "
-                    data-hs-input-number
-                  >
-                    <div className="flex items-center gap-x-1.5">
-                      <button
-                        onClick={() => handleDecrement(el?._id)}
-                        type="button"
-                        className="size-6 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-md border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none"
-                        data-hs-input-number-decrement
-                      >
-                        <svg
-                          className="flex-shrink-0 size-3.5"
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="24"
-                          height="24"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <path d="M5 12h14" />
-                        </svg>
-                      </button>
-                      <input
-                        className="p-0 w-12 bg-transparent border-0 text-gray-800 text-center focus:ring-0 "
-                        type="text"
-                        disabled
-                        value={el?.count ? el?.count : 0} // Display the count from the state
-                        data-hs-input-number-input
-                      />
-                      <button
-                        onClick={() => {
-                          handleIncrement(el?._id);
-                        }}
-                        type="button"
-                        className="size-6 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-md border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none "
-                        data-hs-input-number-increment
-                      >
-                        <svg
-                          className="flex-shrink-0 size-3.5"
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="24"
-                          height="24"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <path d="M5 12h14" />
-                          <path d="M12 5v14" />
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-          ) : (
-            !el?.hasGodownOrBatch && (
-              <div
-                onClick={() => {
-                  handleAddClick(el?._id);
-                }}
-                className="px-4 py-2 rounded-md border-violet-500 font-bold border-2 text-violet-500 text-xs"
-              >
-                Add
-              </div>
-            )
-          )} */}
         </div>
         {el?.hasGodownOrBatch && (
           <div className="px-6">
