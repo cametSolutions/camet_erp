@@ -22,12 +22,12 @@ function EditItemForm({
   const [igst, setIgst] = useState("");
   const [discount, setDiscount] = useState("");
   const [type, setType] = useState("amount");
-  const [taxExclusivePrice, setTaxExclusivePrice] = useState(0);
+  // const [taxExclusivePrice, setTaxExclusivePrice] = useState(0);
   const [totalAmount, setTotalAmount] = useState(0);
   const [discountAmount, setDiscountAmount] = useState(0);
   const [discountPercentage, setDiscountPercentage] = useState(0);
   const [isTaxInclusive, setIsTaxInclusive] = useState(false);
-  const [taxAmount, setTaxAmount] = useState(0);
+  // const [taxAmount, setTaxAmount] = useState(0);
 
   // Tax related states
   const [cess, setCess] = useState(0);
@@ -48,7 +48,7 @@ function EditItemForm({
   const [basePrice, setBasePrice] = useState(0);
   const [cessValue, setCessValue] = useState(0);
   const [addlCessValue, setAddlCessValue] = useState(0);
-  const [discountType, setDiscountType] = useState("none");
+  // const [discountType, setDiscountType] = useState("none");
   const [cgstValue, setCgstValue] = useState(0);
   const [sgstValue, setSgstValue] = useState(0);
   const [igstValue, setIgstValue] = useState(0);
@@ -216,10 +216,11 @@ function EditItemForm({
         cgstAmt, // CGST amount
         sgstAmt, // SGST amount
         igstAmt, // IGST amount
-        cessAmount, // Standard cess amount (percentage based)
-        additionalCessAmount, // Additional cess amount (quantity based)
+        cessAmt: cessAmount, // Standard cess amount (percentage based)
+        addlCessAmt: additionalCessAmount, // Additional cess amount (quantity based)
         individualTotal, // Final amount including taxes and cess
         quantity, // Quantity
+        taxInclusive, // Tax inclusive flag
       });
     });
 
@@ -248,9 +249,6 @@ function EditItemForm({
   useEffect(() => {
     setItem(selectedItem[0]);
 
-    console.log(selectedGodown);
-    
-
     if (selectedItem) {
       setNewPrice(selectedGodown?.selectedPriceRate || 0);
       setQuantity(selectedGodown?.count || 1);
@@ -267,7 +265,7 @@ function EditItemForm({
       if (selectedGodown?.discountType === "amount") {
         // setDiscount(selectedGodown?.discount);
         setType("amount");
-        setDiscountType("amount");
+        // setDiscountType("amount");
         setDiscountPercentage(selectedGodown?.discountPercentage);
         setDiscountAmount(selectedGodown?.discount);
         setDiscount(selectedGodown?.discountAmount);
@@ -275,18 +273,18 @@ function EditItemForm({
         // setDiscount(selectedGodown?.discountPercentage);
         setDiscountAmount(selectedGodown?.discount);
         setType("percentage");
-        setDiscountType("percentage");
+        // setDiscountType("percentage");
         setDiscountPercentage(selectedGodown?.discountPercentage);
         setDiscount(selectedGodown?.discountPercentage);
       } else {
-        setDiscountType("none");
+        // setDiscountType("none");
+        setType("percentage");
       }
     }
 
     setUnit(selectedItem[0]?.unit);
     setIgst(selectedItem[0]?.igst);
     setIgstValue(selectedItem[0]?.igst || 0);
-
     // Set tax-related values
     setCess(selectedItem[0]?.cess || 0);
     setCessValue(selectedItem[0]?.cess || 0);
@@ -297,15 +295,12 @@ function EditItemForm({
     setAdditionalCess(selectedItem[0]?.addl_cess || 0);
     setAddlCessValue(selectedItem[0]?.addl_cess || 0);
 
+
     if (taxInclusive) {
-      setIsTaxInclusive(selectedItem[0]?.isTaxInclusive || false);
+      setIsTaxInclusive(selectedGodown?.isTaxInclusive || false);
     }
   }, [selectedItem[0], enableActualAndBilledQuantity]);
 
-
-
-  console.log(discount);
-  
 
   useEffect(() => {
     // Create a mock item object with structure needed for calculateTotal
@@ -337,10 +332,10 @@ function EditItemForm({
     setBasePrice(totals.basePrice);
     setDiscountAmount(totals.discountAmount);
     setDiscountPercentage(totals.discountPercentage);
-    setDiscountType(totals.discountType);
-    setTaxExclusivePrice(totals.basePrice);
+    // setDiscountType(totals.discountType);
+    // setTaxExclusivePrice(totals.basePrice);
     setTaxableAmount(totals.taxableAmount);
-    setTaxAmount(result.totalTaxAmount);
+    // setTaxAmount(result.totalTaxAmount);
 
     // Tax specific values
     setCgstValue(totals.cgstValue);
@@ -499,7 +494,7 @@ function EditItemForm({
             discountPercentage: discountPercentage,
             // discount: newDiscountType === "amount" ? godownDiscountAmount : 0,
             // discountPercentage: newDiscountType === "percentage" ? godownDiscountPercentage : 0,
-            taxInclusive: isTaxInclusive,
+            isTaxInclusive: isTaxInclusive,
 
             // Recalculated values
             basePrice: godownBasePrice,
@@ -529,7 +524,6 @@ function EditItemForm({
         }
       );
     } else {
-      console.log("herer");
 
       // Just update the godown at the specified index
       const godownToUpdate = { ...updatedItem.GodownList[index] };
@@ -544,13 +538,7 @@ function EditItemForm({
         added: godownToUpdate.added,
       };
 
-      console.log(
-        newPrice,
-        quantity,
-        actualQuantity,
-        discountAmount,
-        discountPercentage
-      );
+
 
       // Update with new values while preserving specified fields
       const updatedGodown = {
@@ -564,7 +552,7 @@ function EditItemForm({
         // discount: type === "amount" ? discountAmount : 0,
         // discountPercentage: type === "percentage" ? discountPercentage : 0,
         discountType: type,
-        taxInclusive: isTaxInclusive,
+        isTaxInclusive: isTaxInclusive,
         basePrice: basePrice,
         taxableAmount: taxableAmount,
         individualTotal: individualTotal,
@@ -587,8 +575,6 @@ function EditItemForm({
         ...preservedFields,
       };
 
-      console.log(index);
-
       // Update the godown at the specified index
       // Replace the godown at the specified index immutably
       updatedItem.GodownList = updatedItem.GodownList.map((godown, i) =>
@@ -596,8 +582,14 @@ function EditItemForm({
       );
     }
 
-    console.log("Updated Item:", updatedItem);
-
+    const godownList=updatedItem.GodownList
+    updatedItem.taxInclusive = isTaxInclusive;
+    updatedItem.totalCgstAmt=godownList.reduce((acc, item) => acc + item.cgstAmount, 0);
+    updatedItem.totalSgstAmt=godownList.reduce((acc, item) => acc + item.sgstAmount, 0);
+    updatedItem.totalIgstAmt=godownList.reduce((acc, item) => acc + item.igstAmount, 0);
+    updatedItem.totalCessAmt=godownList.reduce((acc, item) => acc + item.cessAmount, 0);
+    updatedItem.totalAddlCessAmt=godownList.reduce((acc, item) => acc + item.additionalCessAmount, 0);
+    
     // Create a complete tax data object to submit
     dispatch(updateItem({ item: updatedItem, moveToTop: false }));
     navigate(-1, { replace: true });
@@ -757,7 +749,7 @@ function EditItemForm({
                       <button
                         onClick={() => {
                           setType("percentage");
-                          setDiscountType("percentage");
+                          // setDiscountType("percentage");
                         }}
                         className={`${
                           type === "percentage"
@@ -770,7 +762,7 @@ function EditItemForm({
                       <button
                         onClick={() => {
                           setType("amount");
-                          setDiscountType("amount");
+                          // setDiscountType("amount");
                         }}
                         className={`${
                           type === "amount"

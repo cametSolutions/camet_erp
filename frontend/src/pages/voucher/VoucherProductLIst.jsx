@@ -219,8 +219,8 @@ export default function VoucherProductList({
         itemToUpdate.totalCgstAmt = totalData?.totalCgstAmt || 0;
         itemToUpdate.totalSgstAmt = totalData?.totalSgstAmt || 0;
         itemToUpdate.totalIgstAmt = totalData?.totalIgstAmt || 0;
-        itemToUpdate.totalCess = totalData?.totalCess || 0;
-        itemToUpdate.totalAdditionalCess = totalData?.totalAdditionalCess || 0;
+        itemToUpdate.totalCessAmt = totalData?.totalCessAmt || 0;
+        itemToUpdate.totalAddlCessAmt = totalData?.totalAdditionalCessAmt || 0;
         itemToUpdate.added = true;
 
         // Dispatch to Redux store
@@ -319,14 +319,15 @@ export default function VoucherProductList({
             };
           }
         );
+        
 
         currentItem.GodownList = updatedGodownListWithTotals;
         currentItem.total = totalData?.total || 0;
         currentItem.totalCgstAmt = totalData?.totalCgstAmt || 0;
         currentItem.totalSgstAmt = totalData?.totalSgstAmt || 0;
         currentItem.totalIgstAmt = totalData?.totalIgstAmt || 0;
-        currentItem.totalCess = totalData?.totalCess || 0;
-        currentItem.totalAdditionalCess = totalData?.totalAdditionalCess || 0;
+        currentItem.totalCessAmt = totalData?.totalCessAmt || 0;
+        currentItem.totalAddlCessAmt = totalData?.totalAdditionalCessAmt || 0;
       } else {
         return currentItem; // If no godownIndex, return the item as is
       }
