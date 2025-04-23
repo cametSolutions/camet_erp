@@ -63,11 +63,6 @@ export const updateSalesNumber = async (
       await secondaryUser.save({ session });
     } else {
       if (configuration && configuration.salesConfiguration) {
-        // const allFieldsFilled = Object.entries(configuration.salesConfiguration)
-        //   .filter(([key]) => key !== "startingNumber")
-        //   .every(([_, value]) => value !== "");
-
-        // if (allFieldsFilled) {
         salesNumber = (configuration.salesNumber || 0) + 1;
 
         // console.log("salesNumber", salesNumber);
@@ -102,7 +97,6 @@ export const updateSalesNumber = async (
         );
       }
     }
-
     return salesNumber;
   } catch (error) {
     console.error("Error updateSalesNumber sale stock updates:", error);
@@ -110,10 +104,7 @@ export const updateSalesNumber = async (
   }
 };
 
-export const handleSaleStockUpdates = async (
-  items,
-  session
-) => {
+export const handleSaleStockUpdates = async (items, session) => {
   for (const item of items) {
     const product = await productModel
       .findOne({ _id: item._id })
@@ -124,7 +115,7 @@ export const handleSaleStockUpdates = async (
 
     // Use actualCount if available, otherwise fall back to count
     const itemCount = parseFloat(
-      item.actualCount !== undefined ? item.actualCount : item.count
+      item.actualCount !== undefined ? item.totalActualCount : item.totalCount
     );
     const productBalanceStock = parseFloat(product.balance_stock);
     const newBalanceStock = truncateToNDecimals(
@@ -132,7 +123,6 @@ export const handleSaleStockUpdates = async (
       3
     );
 
-  
     // Update product balance stock
     await productModel.updateOne(
       { _id: product._id },
@@ -144,7 +134,7 @@ export const handleSaleStockUpdates = async (
       for (const godown of item.GodownList) {
         // Use actualCount if available, otherwise fall back to count for each godown
         const godownCount =
-          godown.actualCount !== undefined ? godown.actualCount : godown.count;          
+          godown.actualCount !== undefined ? godown.actualCount : godown.count;
 
         if (godown.batch && !godown?.godown_id) {
           const godownIndex = product.GodownList.findIndex(
@@ -223,7 +213,7 @@ export const handleSaleStockUpdates = async (
       product.GodownList = product.GodownList.map((godown) => {
         const currentGodownStock = Number(godown.balance_stock) || 0;
         const newGodownStock = truncateToNDecimals(
-          Number(currentGodownStock) -  Number(itemCount),
+          Number(currentGodownStock) - Number(itemCount),
           3
         );
         return { ...godown, balance_stock: newGodownStock };
@@ -291,9 +281,9 @@ export const processSaleItems = (items) => {
           .toFixed(2)
       );
 
-      // Calculate cess amount 
+      // Calculate cess amount
       cessAmt = parseFloat(((subTotal * cessValue) / 100).toFixed(2));
-      
+
       // Calculate additional cess based on total count
       const totalCount = item?.GodownList.reduce((acc, godown) => {
         return godown?.added ? acc + (godown?.count || 0) : acc;
@@ -324,10 +314,10 @@ export const processSaleItems = (items) => {
       }
 
       subTotal = Number(priceAfterDiscount.toFixed(2));
-      
-      // Calculate cess amount 
+
+      // Calculate cess amount
       cessAmt = parseFloat(((subTotal * cessValue) / 100).toFixed(2));
-      
+
       // Calculate additional cess based on count
       addlCessAmt = Number((count * addlCessValue).toFixed(2));
 
@@ -352,9 +342,7 @@ export const createSaleRecord = async (
   req,
   salesNumber,
   updatedItems,
-
   updateAdditionalCharge,
-
   session
 ) => {
   try {
@@ -364,7 +352,7 @@ export const createSaleRecord = async (
       orgId,
       party,
       despatchDetails,
-      lastAmount,
+      finalAmount ,
       selectedDate,
       paymentSplittingData,
       convertedFrom = [],
@@ -381,7 +369,6 @@ export const createSaleRecord = async (
       { sort: { serialNumber: -1 }, session }
     );
 
-    
     let newSerialNumber = 1;
 
     if (lastSale && !isNaN(lastSale.serialNumber)) {
@@ -397,9 +384,9 @@ export const createSaleRecord = async (
       party,
       despatchDetails,
       items: updatedItems,
-      priceLevel: req.body.priceLevelFromRedux,
+      selectedPriceLevel: req.body.priceLevelFromRedux,
       additionalCharges: updateAdditionalCharge,
-      finalAmount: lastAmount,
+      finalAmount,
       Primary_user_id,
       Secondary_user_id,
       salesNumber,
@@ -483,9 +470,6 @@ export const revertSaleStockUpdates = async (items, session) => {
         throw new Error(`Product not found for item ID: ${item._id}`);
       }
 
-
-      
-
       // Use actualCount if available, otherwise fall back to count
       const itemCount = parseFloat(
         item.actualCount !== undefined ? item.actualCount : item.count
@@ -498,9 +482,6 @@ export const revertSaleStockUpdates = async (items, session) => {
         3
       );
 
-
-      
-
       // Update product balance stock
       await productModel.updateOne(
         { _id: product._id },
@@ -511,8 +492,11 @@ export const revertSaleStockUpdates = async (items, session) => {
       // Revert godown and batch updates
       if (item.hasGodownOrBatch) {
         for (const godown of item.GodownList) {
-             // Use actualCount if available, otherwise fall back to count for each godown
-             const godownCount = godown.actualCount !== undefined ? godown.actualCount : godown.count;
+          // Use actualCount if available, otherwise fall back to count for each godown
+          const godownCount =
+            godown.actualCount !== undefined
+              ? godown.actualCount
+              : godown.count;
           if (godown.batch && !godown?.godown_id) {
             const godownIndex = product.GodownList.findIndex(
               (g) => g.batch === godown.batch
@@ -601,7 +585,6 @@ export const revertSaleStockUpdates = async (items, session) => {
         });
 
         console.log("product.GodownList", product.GodownList);
-        
 
         await productModel.updateOne(
           { _id: product._id },

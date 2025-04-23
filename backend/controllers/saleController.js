@@ -37,7 +37,7 @@ export const createSale = async (req, res) => {
       additionalChargesFromRedux,
       salesNumber,
       party,
-      lastAmount,
+       finalAmount:lastAmount,
       paymentSplittingData,
       selectedDate,
       convertedFrom = [],
@@ -45,6 +45,8 @@ export const createSale = async (req, res) => {
 
     const Secondary_user_id = req.sUserId;
 
+
+    /// check if the sales number already exists in the database
     const NumberExistence = await checkForNumberExistence(
       req.query.vanSale === "true" ? vanSaleModel : salesModel,
       "salesNumber",
@@ -53,6 +55,7 @@ export const createSale = async (req, res) => {
       session
     );
 
+  /// if sales number already exists then abort the transaction and return error
     if (NumberExistence) {
       await session.abortTransaction();
       session.endSession();
@@ -86,8 +89,11 @@ export const createSale = async (req, res) => {
       session
     );
 
-    const updatedItems = processSaleItems(items);
-    await handleSaleStockUpdates(updatedItems, session); // Include session
+
+    
+
+    // const updatedItems = processSaleItems(items);
+    await handleSaleStockUpdates(items, session); // Include session
 
     const updateAdditionalCharge = additionalChargesFromRedux.map((charge) => {
       const { value, taxPercentage } = charge;
@@ -100,7 +106,7 @@ export const createSale = async (req, res) => {
     const result = await createSaleRecord(
       req,
       salesNumber,
-      updatedItems,
+      items,
       updateAdditionalCharge,
       session // Pass session
     );

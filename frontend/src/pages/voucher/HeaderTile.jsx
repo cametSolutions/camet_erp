@@ -19,8 +19,8 @@ function HeaderTile({
     <div>
       <div className="flex justify-between  p-4 bg-white drop-shadow-lg items-center text-xs md:text-base ">
         <div className=" flex flex-col gap-1 justify-center">
-          <p className="text-md font-semibold text-violet-400">
-            {titleText} #{number}
+          <p className="text-sm font-semibold text-violet-400">
+            {titleText} No:#{number}
           </p>
 
           <div className="flex items-center">

@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import TallyData from "../models/TallyData.js";
 
 /**
@@ -114,9 +115,15 @@ export const fetchOutstandingTotal = async (req, res) => {
 
   try {
     if (type === "ledger") {
+      const matchStage = {
+        $match: {
+          cmp_id: new mongoose.Types.ObjectId(cmp_id),
+          Primary_user_id: new mongoose.Types.ObjectId(Primary_user_id),
+        },
+      };
       // Original ledger-wise data logic
       const ledgerData = await TallyData.aggregate([
-        { $match: { cmp_id, Primary_user_id } },
+        matchStage,
         {
           $group: {
             _id: "$party_id",
@@ -228,12 +235,14 @@ export const fetchOutstandingTotal = async (req, res) => {
 
     if (type === "group") {
       const groupData = await TallyData.aggregate([
-        { $match: { 
-          cmp_id, 
-          Primary_user_id ,
-          accountGroup_id:{$ne:null},// Exclude documents with null accountGroup_id
-          accountGroup:{$ne:null}// Exclude documents with null accountGroup
-        } },
+        {
+          $match: {
+            cmp_id,
+            Primary_user_id,
+            accountGroup_id: { $ne: null }, // Exclude documents with null accountGroup_id
+            accountGroup: { $ne: null }, // Exclude documents with null accountGroup
+          },
+        },
         {
           $group: {
             _id: {
@@ -361,7 +370,9 @@ export const fetchOutstandingTotal = async (req, res) => {
       });
 
       // Ensure totalOutstandingDrCr is the absolute difference
- totalOutstandingDrCr = Math.abs(totalOutstandingReceivable - totalOutstandingPayable);
+      totalOutstandingDrCr = Math.abs(
+        totalOutstandingReceivable - totalOutstandingPayable
+      );
 
       return res.status(200).json({
         outstandingData: finalGroupData,
@@ -374,6 +385,8 @@ export const fetchOutstandingTotal = async (req, res) => {
 
     return res.status(400).json({ message: "Invalid type parameter provided" });
   } catch (error) {
+    console.log(error);
+    
     return res.status(500).json({
       success: false,
       message: "Internal server error, try again!",

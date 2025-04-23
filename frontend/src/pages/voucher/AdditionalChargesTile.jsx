@@ -12,7 +12,7 @@ import {
 } from "../../../slices/voucherSlices/commonVoucherSlice";
 import { toast } from "react-toastify";
 
-export default function AdditionalChargesTile({ type, subTotal }) {
+export default function AdditionalChargesTile({ type, subTotal,setOpenAdditionalTile,openAdditionalTile }) {
   const {
     allAdditionalCharges: allAdditionalChargesFromRedux,
     additionalCharges: additionalChargesFromRedux,
@@ -22,7 +22,6 @@ export default function AdditionalChargesTile({ type, subTotal }) {
   const defaultCharge = allAdditionalChargesFromRedux?.[0];
   const dispatch = useDispatch();
 
-  const [openAdditionalTile, setOpenAdditionalTile] = useState(false);
   const [rows, setRows] = useState(() => {
     if (additionalChargesFromRedux.length > 0)
       return additionalChargesFromRedux;

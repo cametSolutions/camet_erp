@@ -2,8 +2,12 @@ import mongoose from "mongoose";
 
 const tallySchema = new mongoose.Schema({
     // serialNo:{type:Number,required:true,unique:true},
-    cmp_id: { type: String, required: true },
-    Primary_user_id: { type: String, required: true },
+    Primary_user_id: {
+      type: mongoose.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    cmp_id: { type: mongoose.Types.ObjectId, ref: "Company", required: true },
     party_name: { type: String, required: true },
     alias: { type: String },
     party_id: { type: String, required: true },

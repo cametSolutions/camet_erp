@@ -34,7 +34,7 @@ function VoucherInitialPage() {
     const pathname = location.pathname;
     let currentVoucher;
     if (pathname === "/sUsers/sales") {
-      currentVoucher = "sale";
+      currentVoucher = "sales";
     } else {
       currentVoucher = "saleOrder";
     }
@@ -51,7 +51,8 @@ function VoucherInitialPage() {
     party,
     items,
     despatchDetails,
-    heights: batchHeights,
+    // heights: batchHeights,
+    voucherType,
     selectedPriceLevel: priceLevelFromRedux = "",
     voucherType: voucherTypeFromRedux,
     voucherNumber: voucherNumberFromRedux,
@@ -59,9 +60,9 @@ function VoucherInitialPage() {
     finalAmount: totalAmount,
   } = useSelector((state) => state.commonVoucherSlice);
 
-  const paymentSplittingReduxData = useSelector(
-    (state) => state?.paymentSplitting?.paymentSplittingData
-  );
+  // const paymentSplittingReduxData = useSelector(
+  //   (state) => state?.paymentSplitting?.paymentSplittingData
+  // );
 
   const {
     additionalCharges: additionalChargesFromRedux = [],
@@ -76,10 +77,13 @@ function VoucherInitialPage() {
     additionalChargesFromRedux.length > 0
   );
   const [voucherNumber, setVoucherNumber] = useState("");
-  const [selectedDate, setSelectedDate] = useState(
-    date ? new Date(date) : new Date()
-  );
+  const [selectedDate, setSelectedDate] = useState(() => {
+    const parsedDate = new Date(date);
+    return isNaN(parsedDate.getTime()) ? new Date() : parsedDate;
+  });
+  
 
+  const [openAdditionalTile, setOpenAdditionalTile] = useState(false);
 
   // Calculated values
   const subTotal = useMemo(() => {
@@ -195,26 +199,49 @@ function VoucherInitialPage() {
       return;
     }
 
+    if (openAdditionalTile) {
+      const hasEmptyValue = additionalChargesFromRedux.some(
+        (row) => row.value === ""
+      );
+      if (hasEmptyValue) {
+        toast.error("Please add a value.");
+        setSubmitLoading(false);
+        return;
+      }
+      const hasNagetiveValue = additionalChargesFromRedux.some(
+        (row) => parseFloat(row.value) < 0
+      );
+      if (hasNagetiveValue) {
+        toast.error("Please add a positive value");
+        setSubmitLoading(false);
+
+        return;
+      }
+    }
+
     setSubmitLoading(true);
 
     try {
       const formData = {
+        selectedDate:new Date(selectedDate).toISOString(),
+        voucherType,
+        [`${voucherType}Number`]:voucherNumber,
+        orgId:cmp_id,
+        finalAmount: Number(totalAmount.toFixed(2)),
         party,
         items,
         despatchDetails,
-        priceLevelFromRedux,
-        // additionalChargesFromRedux: rows,
-        lastAmount: totalAmount.toFixed(2),
-        cmp_id,
-        voucherNumber,
-        batchHeights,
-        selectedDate,
-        convertedFrom,
-        paymentSplittingData:
-          Object.keys(paymentSplittingReduxData).length !== 0
-            ? paymentSplittingReduxData
-            : {},
+         priceLevelFromRedux,
+         additionalChargesFromRedux,
+        // batchHeights,
+        // convertedFrom,
+        // paymentSplittingData:
+        //   Object.keys(paymentSplittingReduxData).length !== 0
+        //     ? paymentSplittingReduxData
+        //     : {},
       };
+
+      console.log(formData);
 
       const res = await api.post(
         `/api/sUsers/createSale?vanSale=${false}`,
@@ -275,7 +302,7 @@ function VoucherInitialPage() {
 
           {/* Despatch details */}
 
-          <DespatchDetails tab={"sale"} />
+          <DespatchDetails tab={"sales"} />
 
           {/* adding items */}
 
@@ -294,7 +321,12 @@ function VoucherInitialPage() {
             urlToEditItem="/sUsers/editItemSales"
           />
 
-          <AdditionalChargesTile type={"sale"} subTotal={subTotal} />
+          <AdditionalChargesTile
+            type={"sale"}
+            subTotal={subTotal}
+            setOpenAdditionalTile={setOpenAdditionalTile}
+            openAdditionalTile={openAdditionalTile}
+          />
 
           <div className="flex justify-between items-center bg-white mt-2 p-3">
             <p className="font-bold text-md">Total Amount</p>
