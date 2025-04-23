@@ -436,14 +436,24 @@ function VoucherAddCount() {
       let discountedPrice = taxBasePrice;
       let discountAmount = 0;
       let discountPercentage = 0;
+      let discountType = godownOrBatch.discountType || "none";
 
-      // Fixed amount discount (default)
-      discountAmount = Number(godownOrBatch.discountAmount) || 0;
-      // Calculate the equivalent percentage
-      discountPercentage =
-        taxBasePrice > 0
-          ? Number(((discountAmount / taxBasePrice) * 100).toFixed(2))
-          : 0;
+      if (discountType === "percentage" && godownOrBatch.discountPercentage) {
+        // Percentage discount - the percentage stays the same, amount is calculated
+        discountPercentage = Number(godownOrBatch.discountPercentage) || 0;
+        discountAmount = Number(
+          ((taxBasePrice * discountPercentage) / 100).toFixed(2)
+        );
+      } else if (discountType === "amount" && godownOrBatch.discountAmount) {
+        // Fixed amount discount - the amount stays the same, percentage is calculated
+        discountAmount = Number(godownOrBatch.discountAmount) || 0;
+        // Calculate the equivalent percentage
+        discountPercentage =
+          taxBasePrice > 0
+            ? Number(((discountAmount / taxBasePrice) * 100).toFixed(2))
+            : 0;
+      }
+
       discountedPrice = taxBasePrice - discountAmount;
 
       // This is the taxable amount (price after discount, before tax)

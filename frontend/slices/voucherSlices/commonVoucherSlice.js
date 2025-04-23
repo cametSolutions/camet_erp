@@ -64,7 +64,7 @@ export const commonVoucherSlice = createSlice({
     },
 
     removeItem: (state, action) => {
-      const id = action.payload?._id;
+      const id = action.payload;
 
       const index = state.items.findIndex((el) => el._id === id);
       console.log(index);

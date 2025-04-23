@@ -76,15 +76,15 @@ function AddItemTile({
               </Link>
             </div>
             {items.map((el, index) => (
-              <>
+              <div key={index}>
                 <div
-                  key={index}
+                 
                   className="py-3 mt-0 px-5 md:px-6 bg-white flex items-center gap-1.5 md:gap-4"
                 >
                   {!el?.hasGodownOrBatch && (
                     <div
                       onClick={() => {
-                        dispatch(removeItem(el));
+                        dispatch(removeItem(el?._id));
                       }}
                       className="text-gray-500 text-sm cursor-pointer"
                     >
@@ -275,7 +275,7 @@ function AddItemTile({
                   </div>
                 </div>
                 <hr />
-              </>
+              </div>
             ))}
           </div>
           {type !== "stockTransfer" && (
