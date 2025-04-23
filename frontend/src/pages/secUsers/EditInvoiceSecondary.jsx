@@ -34,10 +34,10 @@ import {
 } from "../../../slices/invoiceSecondary";
 import { useParams } from "react-router-dom";
 import { PiAddressBookFill } from "react-icons/pi";
-import DespatchDetails from "../../components/secUsers/DespatchDetails";
+import DespatchDetails from "../voucher/DespatchDetails";
 import TitleDiv from "../../components/common/TitleDiv";
-import HeaderTile from "../../components/secUsers/main/HeaderTile";
-import FooterButton from "../../components/secUsers/main/FooterButton";
+import HeaderTile from "../voucher/HeaderTile";
+import FooterButton from "../voucher/FooterButton";
 
 function EditInvoiceSecondary() {
   const cmp_id = useSelector(

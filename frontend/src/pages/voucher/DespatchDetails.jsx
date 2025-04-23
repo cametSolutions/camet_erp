@@ -3,27 +3,12 @@
 import { useState, useCallback, useEffect } from "react";
 import { IoMdAdd } from "react-icons/io";
 import _ from "lodash";
-// import { addDespatchDetails as addInSales } from "../../../slices/salesSecondary";
-// import { addDespatchDetails as addInOrder } from "../../../slices/invoiceSecondary";
-// import { addDespatchDetails as addInPurchase } from "../../../slices/purchase";
-// import { addDespatchDetails as addInCreditNote } from "../../../slices/creditNote";
-// import { addDespatchDetails as addInDebitNote } from "../../../slices/debitNote";
 import { addDespatchDetails } from "../../../slices/voucherSlices/commonVoucherSlice";
 import { useDispatch, useSelector } from "react-redux";
-import api from "../../api/api";
 
 function DespatchDetails({ tab }) {
   const despatchDetails = useSelector(
     (state) => state?.commonVoucherSlice.despatchDetails
-    // tab === "sale"
-    //   ? state.salesSecondary.despatchDetails
-    //   : tab === "purchase"
-    //   ? state.purchase.despatchDetails
-    //   : tab === "creditNote"
-    //   ? state.creditNote.despatchDetails
-    //   : tab === "debitNote"
-    //   ? state.debitNote.despatchDetails
-    //   : state.invoiceSecondary.despatchDetails
   );
 
   /// find voucher to get corresponding despatch details from configurations
@@ -39,33 +24,26 @@ function DespatchDetails({ tab }) {
 
   const [formValues, setFormValues] = useState({});
   const [displayTitles, setDisplayTitles] = useState({});
-  const cmp_id = useSelector(
-    (state) => state?.secSelectedOrganization?.secSelectedOrg?._id
+  const companyDetails = useSelector(
+    (state) => state?.secSelectedOrganization?.secSelectedOrg
   );
 
   useEffect(() => {
-    const getSingleOrganization = async () => {
-      try {
-        const res = await api.get(
-          `/api/sUsers/getSingleOrganization/${cmp_id}`,
-          {
-            withCredentials: true,
-          }
-        );
-        const company = res?.data?.organizationData;
-
-        if (company && company.configurations.length > 0) {
-          const despatchTitles = company.configurations[0].despatchTitles.find(
-            (config) => config.voucher === voucher
-          );
-          setDisplayTitles(despatchTitles);
-        }
-      } catch (error) {
-        console.log(error);
+    if (companyDetails && companyDetails.configurations.length > 0) {
+      const despatchTitles = companyDetails.configurations[0].despatchTitles.find(
+        (config) => config.voucher === voucher
+      );
+  
+      console.log("despatchTitles", despatchTitles);
+  
+      if (despatchTitles) {
+        setDisplayTitles(despatchTitles);
       }
-    };
-    getSingleOrganization();
-  }, [cmp_id]);
+    }
+  }, [companyDetails, voucher]);
+  
+
+
 
   useEffect(() => {
     if (despatchDetails) {
@@ -151,13 +129,7 @@ function DespatchDetails({ tab }) {
 
   return (
     <div>
-      {/* <div
-        onClick={() => setOpen(!open)}
-        className="bg-white mt-2 flex gap-2 items-center p-4 cursor-pointer"
-      >
-        <p className="text-sm font-bold">Despatch Details</p>
-        {open ? <MdKeyboardArrowUp /> : <MdKeyboardArrowDown />}
-      </div> */}
+
       <div className="p-4 bg-white mt-3 shadow-lg">
         <div className="flex items-center mb-2 gap-2 ">
           <p className="font-bold uppercase text-xs">Details</p>

@@ -19,12 +19,12 @@ import {
   removeGodownOrBatch,
   changeDate,
 } from "../../../slices/purchase";
-import HeaderTile from "../../components/secUsers/main/HeaderTile";
-import AddPartyTile from "../../components/secUsers/main/AddPartyTile";
-import DespatchDetails from "../../components/secUsers/DespatchDetails";
-import AddItemTile from "../../components/secUsers/main/AddItemTile";
+import HeaderTile from "../voucher/HeaderTile";
+import AddPartyTile from "../voucher/AddPartyTile";
+import DespatchDetails from "../voucher/DespatchDetails";
+import AddItemTile from "../voucher/AddItemTile";
 import TitleDiv from "../../components/common/TitleDiv";
-import FooterButton from "../../components/secUsers/main/FooterButton";
+import FooterButton from "../voucher/FooterButton";
 
 function Purchase() {
   const [additional, setAdditional] = useState(false);

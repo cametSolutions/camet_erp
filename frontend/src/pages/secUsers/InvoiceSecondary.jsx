@@ -24,11 +24,11 @@ import {
   removeAdditionalCharge,
   removeItem,
 } from "../../../slices/invoiceSecondary";
-import DespatchDetails from "../../components/secUsers/DespatchDetails";
-import HeaderTile from "../../components/secUsers/main/HeaderTile";
-import AddPartyTile from "../../components/secUsers/main/AddPartyTile";
+import DespatchDetails from "../voucher/DespatchDetails";
+import HeaderTile from "../voucher/HeaderTile";
+import AddPartyTile from "../voucher/AddPartyTile";
 import TitleDiv from "../../components/common/TitleDiv";
-import FooterButton from "../../components/secUsers/main/FooterButton";
+import FooterButton from "../voucher/FooterButton";
 
 function InvoiceSecondary() {
   const cmp_id = useSelector(

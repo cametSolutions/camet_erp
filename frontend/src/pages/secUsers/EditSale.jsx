@@ -24,14 +24,14 @@ import { toast } from "react-toastify";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../../api/api";
 
-import DespatchDetails from "../../components/secUsers/DespatchDetails";
-import HeaderTile from "../../components/secUsers/main/HeaderTile";
-import AddPartyTile from "../../components/secUsers/main/AddPartyTile";
-import AddItemTile from "../../components/secUsers/main/AddItemTile";
+import DespatchDetails from "../voucher/DespatchDetails";
+import HeaderTile from "../voucher/HeaderTile";
+import AddPartyTile from "../voucher/AddPartyTile";
+import AddItemTile from "../voucher/AddItemTile";
 import { addPaymentSplittingData } from "../../../slices/filterSlices/paymentSplitting/paymentSplitting";
 import PaymentSplittingIcon from "../../components/secUsers/main/paymentSplitting/PaymentSplittingIcon";
 import TitleDiv from "../../components/common/TitleDiv";
-import FooterButton from "../../components/secUsers/main/FooterButton";
+import FooterButton from "../voucher/FooterButton";
 
 function EditSale() {
   ////////////////////////////////state//////////////////////////////////////////////////////

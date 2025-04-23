@@ -18,12 +18,12 @@ import {
   deleteRow,
 } from "../../../slices/salesSecondary";
 
-import DespatchDetails from "../../components/secUsers/DespatchDetails";
-import HeaderTile from "../../components/secUsers/main/HeaderTile";
-import AddPartyTile from "../../components/secUsers/main/AddPartyTile";
-import AddItemTile from "../../components/secUsers/main/AddItemTile";
+import DespatchDetails from "../voucher/DespatchDetails";
+import HeaderTile from "../voucher/HeaderTile";
+import AddPartyTile from "../voucher/AddPartyTile";
+import AddItemTile from "../voucher/AddItemTile";
 import PaymentSplittingIcon from "../../components/secUsers/main/paymentSplitting/PaymentSplittingIcon";
-import FooterButton from "../../components/secUsers/main/FooterButton";
+import FooterButton from "../voucher/FooterButton";
 import TitleDiv from "../../components/common/TitleDiv";
 
 function SalesSecondary() {
@@ -325,19 +325,19 @@ function SalesSecondary() {
     navigate("/sUsers/addItemSales");
   };
 
-  const cancelHandler = () => {
-    setAdditional(false);
-    dispatch(removeAdditionalCharge());
-    setRows([
-      {
-        option: additionalChragesFromCompany[0].name,
-        value: "",
-        action: "add",
-        taxPercentage: additionalChragesFromCompany[0].taxPercentage,
-        hsn: additionalChragesFromCompany[0].hsn,
-      },
-    ]);
-  };
+    const cancelHandler = () => {
+      setAdditional(false);
+      dispatch(removeAdditionalCharge());
+      setRows([
+        {
+          option: additionalChragesFromCompany[0].name,
+          value: "",
+          action: "add",
+          taxPercentage: additionalChragesFromCompany[0].taxPercentage,
+          hsn: additionalChragesFromCompany[0].hsn,
+        },
+      ]);
+    };
 
   const submitHandler = async () => {
     setSubmitLoading(true);

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import api from "../../api/api";
-import HeaderTile from "../../components/secUsers/main/HeaderTile";
+import HeaderTile from "../voucher/HeaderTile";
 import { useDispatch } from "react-redux";
 import {
   addReceiptNumber,
@@ -9,13 +9,13 @@ import {
   removeAll,
   removeParty,
 } from "../../../slices/receipt";
-import AddPartyTile from "../../components/secUsers/main/AddPartyTile";
+import AddPartyTile from "../voucher/AddPartyTile";
 import AddAmountTile from "../../components/secUsers/main/AddAmountTile";
 import PaymentModeTile from "../../components/secUsers/main/PaymentModeTile";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import TitleDiv from "../../components/common/TitleDiv";
-import FooterButton from "../../components/secUsers/main/FooterButton";
+import FooterButton from "../voucher/FooterButton";
 
 function Receipt() {
   // ////////////////dispatch

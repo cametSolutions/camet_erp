@@ -10,19 +10,18 @@ import {
   removeGodownOrBatch,
   changeDate,
   removeParty,
-  addAdditionalCharges,
-  deleteRow,
-  addAllAdditionalCharges,
   addVoucherType,
   addVoucherNumber,
+  addAllAdditionalCharges,
 } from "../../../slices/voucherSlices/commonVoucherSlice";
-import DespatchDetails from "../../components/secUsers/DespatchDetails";
-import HeaderTile from "../../components/secUsers/main/HeaderTile";
-import AddPartyTile from "../../components/secUsers/main/AddPartyTile";
-import AddItemTile from "../../components/secUsers/main/AddItemTile";
-import PaymentSplittingIcon from "../../components/secUsers/main/paymentSplitting/PaymentSplittingIcon";
-import FooterButton from "../../components/secUsers/main/FooterButton";
+import DespatchDetails from "./DespatchDetails";
+import HeaderTile from "./HeaderTile";
+import AddPartyTile from "./AddPartyTile";
+import AddItemTile from "./AddItemTile";
+// import PaymentSplittingIcon from "../../components/secUsers/main/paymentSplitting/PaymentSplittingIcon";
+import FooterButton from "./FooterButton";
 import TitleDiv from "../../components/common/TitleDiv";
+import AdditionalChargesTile from "./AdditionalChargesTile";
 
 function VoucherInitialPage() {
   const dispatch = useDispatch();
@@ -57,6 +56,7 @@ function VoucherInitialPage() {
     voucherType: voucherTypeFromRedux,
     voucherNumber: voucherNumberFromRedux,
     allAdditionalCharges: allAdditionalChargesFromRedux,
+    finalAmount: totalAmount,
   } = useSelector((state) => state.commonVoucherSlice);
 
   const paymentSplittingReduxData = useSelector(
@@ -79,26 +79,12 @@ function VoucherInitialPage() {
   const [selectedDate, setSelectedDate] = useState(
     date ? new Date(date) : new Date()
   );
-  const [additionalChargesFromCompany, setAdditionalChargesFromCompany] =
-    useState([]);
-  const [rows, setRows] = useState([]);
+
 
   // Calculated values
   const subTotal = useMemo(() => {
     return items.reduce((acc, curr) => acc + (parseFloat(curr.total) || 0), 0);
   }, [items]);
-
-  const additionalChargesTotal = useMemo(() => {
-    return rows.reduce((acc, curr) => {
-      let value = curr.finalValue === "" ? 0 : parseFloat(curr.finalValue);
-      return curr.action === "add" ? acc + value : acc - value;
-    }, 0);
-  }, [rows]);
-
-  const totalAmount = useMemo(() => {
-    const totalAmountNotRounded = parseFloat(subTotal) + additionalChargesTotal;
-    return Math.round(totalAmountNotRounded);
-  }, [subTotal, additionalChargesTotal]);
 
   // API calls wrapped in promises
   const fetchData = useCallback(async () => {
@@ -116,22 +102,6 @@ function VoucherInitialPage() {
             withCredentials: true,
           })
         );
-      } else {
-        setAdditionalChargesFromCompany(additionalCharges);
-        if (additionalCharges.length > 0) {
-          const initialRow = {
-            option: additionalCharges[0].name,
-            value: "",
-            action: "add",
-            taxPercentage: additionalCharges[0].taxPercentage,
-            hsn: additionalCharges[0].hsn,
-            _id: additionalCharges[0]._id,
-            finalValue: "",
-          };
-          setRows([initialRow]);
-        } else {
-          setRows(allAdditionalChargesFromRedux);
-        }
       }
 
       // Configuration Number
@@ -152,21 +122,7 @@ function VoucherInitialPage() {
         const additionalChargesResponse = responses[0];
         additionalCharges =
           additionalChargesResponse.data?.additionalCharges || [];
-        setAdditionalChargesFromCompany(additionalCharges);
         dispatch(addAllAdditionalCharges(additionalCharges));
-
-        if (additionalCharges.length > 0) {
-          const initialRow = {
-            option: additionalCharges[0].name,
-            value: "",
-            action: "add",
-            taxPercentage: additionalCharges[0].taxPercentage,
-            hsn: additionalCharges[0].hsn,
-            _id: additionalCharges[0]._id,
-            finalValue: "",
-          };
-          setRows([initialRow]);
-        }
       }
 
       // Handle configuration number response if fetched
@@ -218,79 +174,6 @@ function VoucherInitialPage() {
     fetchData();
   }, [fetchData]);
 
-  // Row manipulation handlers
-  const handleAddRow = () => {
-    if (rows.some((row) => row.value === "")) {
-      toast.error("Please add a value.");
-      return;
-    }
-
-    if (additionalChargesFromCompany.length === 0) return;
-
-    const newRow = {
-      option: additionalChargesFromCompany[0].name,
-      value: "",
-      action: "add",
-      taxPercentage: additionalChargesFromCompany[0].taxPercentage,
-      hsn: additionalChargesFromCompany[0].hsn,
-      _id: additionalChargesFromCompany[0]._id,
-      finalValue: "",
-    };
-
-    setRows((prevRows) => [...prevRows, newRow]);
-  };
-
-  const handleLevelChange = (index, id) => {
-    const selectedOption = additionalChargesFromCompany.find(
-      (option) => option._id === id
-    );
-    if (!selectedOption) return;
-
-    const newRows = [...rows];
-    const updatedRow = {
-      ...newRows[index],
-      option: selectedOption.name,
-      taxPercentage: selectedOption.taxPercentage,
-      hsn: selectedOption.hsn,
-      _id: selectedOption._id,
-      finalValue: "",
-    };
-
-    newRows[index] = updatedRow;
-    setRows(newRows);
-    dispatch(addAdditionalCharges({ index, row: updatedRow }));
-  };
-
-  const handleRateChange = (index, value) => {
-    const newRows = [...rows];
-    let updatedRow = { ...newRows[index], value };
-
-    if (updatedRow.taxPercentage && updatedRow.taxPercentage !== "") {
-      const taxAmount =
-        (parseFloat(value) * parseFloat(updatedRow.taxPercentage)) / 100;
-      updatedRow.finalValue = parseFloat(value) + taxAmount;
-    } else {
-      updatedRow.finalValue = parseFloat(value);
-    }
-
-    newRows[index] = updatedRow;
-    setRows(newRows);
-    dispatch(addAdditionalCharges({ index, row: updatedRow }));
-  };
-
-  const actionChange = (index, value) => {
-    const newRows = [...rows];
-    const updatedRow = { ...newRows[index], action: value };
-    newRows[index] = updatedRow;
-    setRows(newRows);
-    dispatch(addAdditionalCharges({ index, row: updatedRow }));
-  };
-
-  const handleDeleteRow = (index) => {
-    setRows((prevRows) => prevRows.filter((_, i) => i !== index));
-    dispatch(deleteRow(index));
-  };
-
   // Navigation and form handlers
   const handleAddItem = () => {
     if (Object.keys(party).length === 0) {
@@ -299,25 +182,6 @@ function VoucherInitialPage() {
     }
     navigate("/sUsers/addItemSales");
   };
-
-  // const cancelAdditionalCharges = () => {
-  //   setShowAdditionalCharges(false);
-  //   dispatch(removeAdditionalCharge());
-
-  //   if (additionalChargesFromCompany.length > 0) {
-  //     setRows([{
-  //       option: additionalChargesFromCompany[0].name,
-  //       value: "",
-  //       action: "add",
-  //       taxPercentage: additionalChargesFromCompany[0].taxPercentage,
-  //       hsn: additionalChargesFromCompany[0].hsn,
-  //       _id: additionalChargesFromCompany[0]._id,
-  //       finalValue: "",
-  //     }]);
-  //   } else {
-  //     setRows([]);
-  //   }
-  // };
 
   const submitHandler = async () => {
     // Validation
@@ -331,18 +195,6 @@ function VoucherInitialPage() {
       return;
     }
 
-    if (showAdditionalCharges) {
-      if (rows.some((row) => row.value === "")) {
-        toast.error("Please add a value.");
-        return;
-      }
-
-      if (rows.some((row) => parseFloat(row.value) < 0)) {
-        toast.error("Please add a positive value");
-        return;
-      }
-    }
-
     setSubmitLoading(true);
 
     try {
@@ -351,7 +203,7 @@ function VoucherInitialPage() {
         items,
         despatchDetails,
         priceLevelFromRedux,
-        additionalChargesFromRedux: rows,
+        // additionalChargesFromRedux: rows,
         lastAmount: totalAmount.toFixed(2),
         cmp_id,
         voucherNumber,
@@ -437,20 +289,12 @@ function VoucherInitialPage() {
             godownname={""}
             subTotal={subTotal}
             type="sale"
-            // additional={additional}
-            // cancelHandler={cancelHandler}
-            rows={rows}
-            handleDeleteRow={handleDeleteRow}
-            handleLevelChange={handleLevelChange}
-            additionalChargesFromCompany={additionalChargesFromCompany}
-            actionChange={actionChange}
-            handleRateChange={handleRateChange}
-            handleAddRow={handleAddRow}
-            // setAdditional={setAdditional}
             convertedFrom={convertedFrom}
             urlToAddItem="/sUsers/addItemSales"
             urlToEditItem="/sUsers/editItemSales"
           />
+
+          <AdditionalChargesTile type={"sale"} subTotal={subTotal} />
 
           <div className="flex justify-between items-center bg-white mt-2 p-3">
             <p className="font-bold text-md">Total Amount</p>
@@ -462,13 +306,13 @@ function VoucherInitialPage() {
             </div>
           </div>
 
-          {items.length > 0 && totalAmount > 0 && (
+          {/* {items.length > 0 && totalAmount > 0 && (
             <PaymentSplittingIcon
               totalAmount={totalAmount}
               party={party}
               voucherType="sale"
             />
-          )}
+          )} */}
 
           <FooterButton
             submitHandler={submitHandler}

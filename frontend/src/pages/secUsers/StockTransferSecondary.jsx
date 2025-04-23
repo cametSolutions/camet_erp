@@ -17,11 +17,11 @@ import {
   AddFinalAmount,
 } from "../../../slices/stockTransferSecondary";
 
-import HeaderTile from "../../components/secUsers/main/HeaderTile";
-import AddItemTile from "../../components/secUsers/main/AddItemTile";
+import HeaderTile from "../voucher/HeaderTile";
+import AddItemTile from "../voucher/AddItemTile";
 import AddGodown from "../../components/secUsers/AddGodown";
 import TitleDiv from "../../components/common/TitleDiv";
-import FooterButton from "../../components/secUsers/main/FooterButton";
+import FooterButton from "../voucher/FooterButton";
 function StockTransferSecondary() {
   const [stockTransferNumber, setStockTransferNumber] = useState("");
   const [loading, setLoading] = useState(false);
