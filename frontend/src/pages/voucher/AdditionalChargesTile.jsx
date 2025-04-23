@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { FiMinus } from "react-icons/fi";
 import { IoIosArrowDown, IoMdAdd } from "react-icons/io";
 import { MdCancel, MdPlaylistAdd } from "react-icons/md";
@@ -16,6 +16,7 @@ export default function AdditionalChargesTile({ type, subTotal }) {
   const {
     allAdditionalCharges: allAdditionalChargesFromRedux,
     additionalCharges: additionalChargesFromRedux,
+    items: itemsFromRedux,
   } = useSelector((state) => state.commonVoucherSlice);
 
   const defaultCharge = allAdditionalChargesFromRedux?.[0];
@@ -42,6 +43,23 @@ export default function AdditionalChargesTile({ type, subTotal }) {
     }
     return [];
   });
+
+  useEffect(() => {
+    if (itemsFromRedux.length <= 0) {
+      setOpenAdditionalTile(false);
+      setRows([
+        {
+          option: defaultCharge?.name,
+          value: "",
+          action: "add",
+          taxPercentage: defaultCharge?.taxPercentage,
+          hsn: defaultCharge?.hsn,
+          _id: defaultCharge?._id,
+          finalValue: "",
+        },
+      ]);
+    }
+  }, [itemsFromRedux]);
 
   const handleAddRow = () => {
     const hasEmptyValue = rows.some((row) => row.value === "");
