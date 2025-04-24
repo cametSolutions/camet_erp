@@ -69,6 +69,7 @@ const salesSchema = new Schema(
     voucherNumber: { type: Number },
     convertedFrom: { type: Array, default: [] },
     serialNumber: { type: Number },
+    userLevelSerialNumber : { type: Number },
     salesNumber: { type: String, required: true },
     Primary_user_id: {
       type: Schema.Types.ObjectId,

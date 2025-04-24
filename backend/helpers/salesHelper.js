@@ -4,7 +4,6 @@ import TallyData from "../models/TallyData.js";
 import vanSaleModel from "../models/vanSaleModel.js";
 import OrganizationModel from "../models/OragnizationModel.js";
 import { formatToLocalDate, truncateToNDecimals } from "./helper.js";
-import { login } from "../controllers/secondaryUserController.js";
 import cashModel from "../models/cashModel.js";
 import bankModel from "../models/bankModel.js";
 import partyModel from "../models/partyModel.js";
@@ -407,10 +406,31 @@ export const createSaleRecord = async (
       newSerialNumber = lastSale.serialNumber + 1;
     }
 
+
+    const lastUserSale = await model.findOne(
+      {
+        cmp_id: orgId,
+        Secondary_user_id: req.sUserId, // Filter by user
+      },
+      { userLevelSerialNumber: 1, _id: 0 }, // Project only the user-level serial
+      { sort: { userLevelSerialNumber: -1 }, session }
+    );
+    
+    let newUserLevelSerial = 1;
+    
+    if (lastUserSale && !isNaN(lastUserSale.userLevelSerialNumber)) {
+      newUserLevelSerial = lastUserSale.userLevelSerialNumber + 1;
+    }
+    
+
+
+    
+
     const sales = new model({
       selectedGodownId: selectedGodownId ?? "",
       selectedGodownName: selectedGodownName ? selectedGodownName[0] : "",
       serialNumber: newSerialNumber,
+      userLevelSerialNumber: newUserLevelSerial,
       cmp_id: orgId,
       partyAccount: party?.partyName,
       party,

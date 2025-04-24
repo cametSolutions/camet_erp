@@ -55,13 +55,13 @@ export const createSale = async (req, res) => {
     );
 
     /// if sales number already exists then abort the transaction and return error
-    // if (NumberExistence) {
-    //   await session.abortTransaction();
-    //   session.endSession();
-    //   return res.status(400).json({
-    //     message: "Sales with the same number already exists",
-    //   });
-    // }
+    if (NumberExistence) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(400).json({
+        message: "Sales with the same number already exists",
+      });
+    }
 
     const secondaryUser = await secondaryUserModel
       .findById(Secondary_user_id)
