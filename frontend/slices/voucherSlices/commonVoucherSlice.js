@@ -8,7 +8,7 @@ const initialState = {
   products: [],
   page: 1,
   hasMore: true,
-  priceLevels: [],
+  priceLevels:null,
   party: {},
   items: [],
   selectedPriceLevel: "",

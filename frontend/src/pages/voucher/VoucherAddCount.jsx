@@ -347,7 +347,7 @@ function VoucherAddCount() {
         setLoader(true);
 
         // Use price levels from Redux if available
-        if (priceLevelsFromRedux.length > 0) {
+        if (priceLevelsFromRedux !== null) {
           setPriceLevels(priceLevelsFromRedux);
           setPricesLoaded(true);
           setLoader(false);
