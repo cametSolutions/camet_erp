@@ -372,6 +372,7 @@ export const getProducts = async (req, res) => {
             const flattenedGodownItem = {
               ...godownItem,
               // Copy all properties from godown object
+              godownMongoDbId: godownItem.godown._id,
               godown: godownItem.godown.godown,
               godown_id: godownItem.godown.godown_id,
               defaultGodown: godownItem.godown.defaultGodown,

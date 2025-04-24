@@ -115,7 +115,9 @@ export const handleSaleStockUpdates = async (items, session) => {
 
     // Use actualCount if available, otherwise fall back to count
     const itemCount = parseFloat(
-      item.actualCount !== undefined ? item.totalActualCount : item.totalCount
+      item.totalActualCount !== undefined
+        ? item.totalActualCount
+        : item.totalCount
     );
     const productBalanceStock = parseFloat(product.balance_stock);
     const newBalanceStock = truncateToNDecimals(
@@ -134,8 +136,11 @@ export const handleSaleStockUpdates = async (items, session) => {
       for (const godown of item.GodownList) {
         // Use actualCount if available, otherwise fall back to count for each godown
         const godownCount =
-          godown.actualCount !== undefined ? godown.actualCount : godown.count;
+          (godown.actualCount !== undefined
+            ? godown.actualCount
+            : godown.count) || 0;
 
+        ////// handling  batch only updates
         if (godown.batch && !godown?.godown_id) {
           const godownIndex = product.GodownList.findIndex(
             (g) => g.batch === godown.batch
@@ -157,10 +162,18 @@ export const handleSaleStockUpdates = async (items, session) => {
               { session }
             );
           }
-        } else if (godown.godown_id && godown.batch) {
+        }
+        ////// handling  batch and godown updates
+        else if (godown.godown_id && godown.batch) {
+          console.log("here");
+
           const godownIndex = product.GodownList.findIndex(
-            (g) => g.batch === godown.batch && g.godown_id === godown.godown_id
+            (g) =>
+              g.batch === godown.batch &&
+              g.godown.toString() == godown.godownMongoDbId
           );
+
+          console.log("godownIndex", godownIndex);
 
           if (godownIndex !== -1 && godownCount && godownCount > 0) {
             const currentGodownStock =
@@ -169,7 +182,6 @@ export const handleSaleStockUpdates = async (items, session) => {
               currentGodownStock - godownCount,
               3
             );
-
             await productModel.updateOne(
               { _id: product._id },
               {
@@ -178,7 +190,9 @@ export const handleSaleStockUpdates = async (items, session) => {
               {
                 arrayFilters: [
                   {
-                    "elem.godown_id": godown.godown_id,
+                    "elem.godown": new mongoose.Types.ObjectId(
+                      godown.godownMongoDbId
+                    ),
                     "elem.batch": godown.batch,
                   },
                 ],
@@ -186,9 +200,12 @@ export const handleSaleStockUpdates = async (items, session) => {
               }
             );
           }
-        } else if (godown.godown_id && !godown?.batch) {
+        }
+
+        ////// handling  godown only  updates
+        else if (godown.godown_id && !godown?.batch) {
           const godownIndex = product.GodownList.findIndex(
-            (g) => g.godown_id === godown.godown_id
+            (g) => g.godown.toString() === godown.godownMongoDbId
           );
 
           if (godownIndex !== -1 && godownCount && godownCount > 0) {
@@ -200,7 +217,12 @@ export const handleSaleStockUpdates = async (items, session) => {
             );
 
             await productModel.updateOne(
-              { _id: product._id, "GodownList.godown_id": godown.godown_id },
+              {
+                _id: product._id,
+                "GodownList.godown": new mongoose.Types.ObjectId(
+                  godown.godownMongoDbId
+                ),
+              },
               {
                 $set: { "GodownList.$.balance_stock": newGodownStock },
               },
@@ -212,10 +234,20 @@ export const handleSaleStockUpdates = async (items, session) => {
     } else {
       product.GodownList = product.GodownList.map((godown) => {
         const currentGodownStock = Number(godown.balance_stock) || 0;
+
+        console.log(godown, "godown");
+
+        const currentGodown = item?.GodownList[0];
+
+        const godownCount =
+          (currentGodown.actualCount !== undefined
+            ? currentGodown.actualCount
+            : currentGodown.count) || 0;
         const newGodownStock = truncateToNDecimals(
-          Number(currentGodownStock) - Number(itemCount),
+          Number(currentGodownStock) - Number(godownCount),
           3
         );
+
         return { ...godown, balance_stock: newGodownStock };
       });
 
@@ -352,7 +384,7 @@ export const createSaleRecord = async (
       orgId,
       party,
       despatchDetails,
-      finalAmount ,
+      finalAmount,
       selectedDate,
       paymentSplittingData,
       convertedFrom = [],

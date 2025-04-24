@@ -37,14 +37,13 @@ export const createSale = async (req, res) => {
       additionalChargesFromRedux,
       salesNumber,
       party,
-       finalAmount:lastAmount,
+      finalAmount: lastAmount,
       paymentSplittingData,
       selectedDate,
       convertedFrom = [],
     } = req.body;
 
     const Secondary_user_id = req.sUserId;
-
 
     /// check if the sales number already exists in the database
     const NumberExistence = await checkForNumberExistence(
@@ -55,14 +54,14 @@ export const createSale = async (req, res) => {
       session
     );
 
-  /// if sales number already exists then abort the transaction and return error
-    if (NumberExistence) {
-      await session.abortTransaction();
-      session.endSession();
-      return res.status(400).json({
-        message: "Sales with the same number already exists",
-      });
-    }
+    /// if sales number already exists then abort the transaction and return error
+    // if (NumberExistence) {
+    //   await session.abortTransaction();
+    //   session.endSession();
+    //   return res.status(400).json({
+    //     message: "Sales with the same number already exists",
+    //   });
+    // }
 
     const secondaryUser = await secondaryUserModel
       .findById(Secondary_user_id)
@@ -89,9 +88,6 @@ export const createSale = async (req, res) => {
       session
     );
 
-
-    
-
     // const updatedItems = processSaleItems(items);
     await handleSaleStockUpdates(items, session); // Include session
 
@@ -112,7 +108,8 @@ export const createSale = async (req, res) => {
     );
 
     /// add conversion status in sale order if the sale is converted from order
-    if(convertedFrom.length > 0) await changeConversionStatusOfOrder(convertedFrom, session);
+    if (convertedFrom.length > 0)
+      await changeConversionStatusOfOrder(convertedFrom, session);
 
     let valueToUpdateInTally = 0;
 
@@ -485,8 +482,6 @@ export const cancelSale = async (req, res) => {
     // Revert stock updates
     await revertSaleStockUpdates(sale.items, session); // Ensure stock updates use session
 
-
-
     // Update sale status
     sale.isCancelled = true;
     await (vanSaleQuery === "true"
@@ -518,10 +513,9 @@ export const cancelSale = async (req, res) => {
       session
     );
 
-
     /// if sale is created from order conversion then revert it
 
-    if(sale?.convertedFrom?.length > 0){
+    if (sale?.convertedFrom?.length > 0) {
       await reverseConversionStatusOfOrder(sale?.convertedFrom, session);
     }
 
