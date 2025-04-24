@@ -32,6 +32,7 @@ import debitNoteModel from "../models/debitNoteModel.js";
 import paymentModel from "../models/paymentModel.js";
 import ReceiptModel from "../models/receiptModel.js";
 import partyModel from "../models/partyModel.js";
+import subGroup from "../models/subGroup.js";
 
 // @desc Register Primary user
 // route POST/api/pUsers/register
@@ -373,8 +374,6 @@ export const resetPassword = async (req, res) => {
   }
 };
 
-
-
 // @desc Get secuser details by ID
 // @route GET /api/pUsers/getSecUserDetails/:id
 export const getSecUserDetails = async (req, res) => {
@@ -442,94 +441,27 @@ export const fetchGodownsAndPriceLevels = async (req, res) => {
   const cmp_id = req.params.cmp_id;
 
   try {
+    const cmp_idObj = new mongoose.Types.ObjectId(cmp_id);
+    const primaryUserIdObj = new mongoose.Types.ObjectId(Primary_user_id);
     // Fetch unique price levels from products
-    const priceLevelsResult = await productModel.aggregate([
-      {
-        $match: {
-          Primary_user_id: new mongoose.Types.ObjectId(Primary_user_id),
-          cmp_id: cmp_id,
-        },
-      },
-      { $unwind: "$Priceleveles" },
-      {
-        $match: {
-          "Priceleveles.pricelevel": { $exists: true, $ne: null, $ne: "" },
-        },
-      },
-      {
-        $group: {
-          _id: "$Priceleveles.pricelevel",
-          priceRate: { $first: "$Priceleveles.pricerate" },
-        },
-      },
-    ]);
+    const [priceLevelsResult, godownsResult, subGroupsResult] =
+      await Promise.all([
+        PriceLevel.find({
+          cmp_id: cmp_idObj,
+          Primary_user_id: primaryUserIdObj,
+        }),
+        Godown.find({ cmp_id: cmp_idObj, Primary_user_id: primaryUserIdObj }),
+        subGroup.find({ cmp_id: cmp_idObj, Primary_user_id: primaryUserIdObj }),
+      ]);
 
-    // Fetch unique godowns from products
-    const godownsResult = await productModel.aggregate([
-      {
-        $match: {
-          Primary_user_id: new mongoose.Types.ObjectId(Primary_user_id),
-          cmp_id: cmp_id,
-        },
-      },
-      { $unwind: "$GodownList" },
-      {
-        $match: {
-          "GodownList.godown_id": { $exists: true, $ne: null, $ne: "" },
-        },
-      },
-      {
-        $group: {
-          _id: "$GodownList.godown_id",
-          godown: { $addToSet: "$GodownList.godown" },
-        },
-      },
-      { $match: { _id: { $ne: null } } },
-    ]);
-
-    console.log("Primary_user_id", Primary_user_id);
-
-    // Fetch unique subgroups from parties
-    const subGroupsResult = await partyModel.aggregate([
-      {
-        $match: {
-          Primary_user_id: Primary_user_id.toString(),
-          cmp_id: cmp_id,
-          subGroup_id: { $exists: true, $ne: null, $ne: "" },
-        },
-      },
-      {
-        $group: {
-          _id: "$subGroup_id",
-          subGroup: { $first: "$subGroup" }, // Taking the first occurrence
-        },
-      },
-    ]);
-
-    console.log("subGroupsResult", subGroupsResult);
-
-    // Formatting results
-    const godownsWithPriceLevels = godownsResult.map((item) => ({
-      id: item._id,
-      godown: item.godown,
-    }));
-
-    const uniquePriceLevels = priceLevelsResult.map((item) => ({
-      priceLevel: item._id,
-      priceRate: item.priceRate,
-    }));
-
-    const uniqueSubGroups = subGroupsResult.map((item) => ({
-      subGroup_id: item._id,
-      subGroup: item.subGroup,
-    }));
+    console.log(priceLevelsResult, "priceLevelsResult");
 
     res.status(200).json({
       message: "Godowns, Unique Price Levels, and Sub Groups fetched",
       data: {
-        godowns: godownsWithPriceLevels,
-        priceLevels: uniquePriceLevels,
-        subGroups: uniqueSubGroups,
+        godowns: godownsResult,
+        priceLevels: priceLevelsResult,
+        subGroups: subGroupsResult,
       },
     });
   } catch (error) {
@@ -540,7 +472,6 @@ export const fetchGodownsAndPriceLevels = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
-
 
 // @desc  adding configurations for secondary
 // route post/api/pUsers/addSecondaryConfigurations

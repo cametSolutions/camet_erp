@@ -228,6 +228,8 @@ function ConfigureSecondaryUser() {
   };
 
   const handleCheckboxChange = (type, value, checked) => {
+    console.log(value, checked);
+    
     const updateFunction = {
       priceLevel: setSelectedPriceLevels,
       godown: setSelectedGodowns,
@@ -248,7 +250,6 @@ function ConfigureSecondaryUser() {
     }
   };
 
-  console.log(selectedVanSaleSubGroups);
 
   const formatFieldName = (fieldName) => {
     const words = fieldName.split(/(?=[A-Z])/);
@@ -401,6 +402,10 @@ function ConfigureSecondaryUser() {
       console.log(error);
     }
   };
+
+
+  console.log(priceLevels);
+  
 
   return (
     <div className="flex-1   ">
@@ -607,7 +612,7 @@ function ConfigureSecondaryUser() {
                               <input
                                 type="checkbox"
                                 id={`priceLevelCheckbox${index}`}
-                                value={item?.priceLevel}
+                                value={item?.pricelevel}
                                 checked={selectedPriceLevels.includes(
                                   item?.priceLevel
                                 )}
@@ -624,7 +629,7 @@ function ConfigureSecondaryUser() {
                                 htmlFor={`priceLevelCheckbox${index}`}
                                 className="text-blueGray-600"
                               >
-                                {item?.priceLevel}
+                                {item?.pricelevel}
                               </label>
                             </div>
                           ))
@@ -654,9 +659,9 @@ function ConfigureSecondaryUser() {
                                 <input
                                   type="checkbox"
                                   id={`godownCheckbox${index}`}
-                                  value={item?.id}
+                                  value={item?._id}
                                   checked={selectedVanSaleGodowns.includes(
-                                    item?.id
+                                    item?._id
                                   )}
                                   onChange={(e) =>
                                     handleCheckboxChange(
