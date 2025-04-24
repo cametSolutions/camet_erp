@@ -158,7 +158,6 @@ export const transactions = async (req, res) => {
     selectedSecondaryUser,
   } = req.query;
 
-
   const isAdmin = req.query.isAdmin === "true" ? true : false;
 
   let returnFullDetails = false;
@@ -217,14 +216,21 @@ export const transactions = async (req, res) => {
     // - If admin:
     //    - If a secondary user is selected → filter with selected user's _id
     //    - If no secondary user selected → don't apply user filter
+
     const matchCriteria = {
-      ...dateFilter,
-      cmp_id: cmp_id,
-      ...(party_id ? { "party._id": party_id } : {}),
+      // ...dateFilter,
+      cmp_id: new mongoose.Types.ObjectId(cmp_id),
+      ...(party_id
+        ? { "party._id": new mongoose.Types.ObjectId(party_id) }
+        : {}),
       ...(!isAdmin
-        ? { Secondary_user_id: userId }
+        ? { Secondary_user_id: new mongoose.Types.ObjectId(userId) }
         : selectedSecondaryUser
-        ? { Secondary_user_id: selectedSecondaryUser }
+        ? {
+            Secondary_user_id: new mongoose.Types.ObjectId(
+              selectedSecondaryUser
+            ),
+          }
         : {}),
     };
 
@@ -327,7 +333,7 @@ export const transactions = async (req, res) => {
           model,
           {
             ...matchCriteria,
-            ...(userId && !isAdmin ? { Secondary_user_id: userId } : {}),
+            // ...(userId && !isAdmin ? { Secondary_user_id: userId } : {}),
           },
           type,
           numberField,
@@ -366,8 +372,6 @@ export const transactions = async (req, res) => {
     });
   }
 };
-
-
 
 // @desc to  get details of debit note
 // route get/api/sUsers/getCreditNoteDetails
@@ -461,8 +465,6 @@ export const getPaymentDetails = async (req, res) => {
   }
 };
 
-
-
 // @desc adding new Hsn
 // route POst/api/pUsers/addHsn
 export const addHsn = async (req, res) => {
@@ -519,8 +521,6 @@ export const addHsn = async (req, res) => {
       .json({ success: false, message: "Internal server error, try again!" });
   }
 };
-
-
 
 export const getSingleHsn = async (req, res) => {
   const id = req.params.hsnId;
@@ -914,8 +914,6 @@ export const updateMissingBillIds = async (req, res) => {
     });
   }
 };
-
-
 
 export const sendPdfViaEmail = async (req, res) => {
   try {

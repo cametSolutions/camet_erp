@@ -226,6 +226,8 @@ export const aggregateTransactions = (
   voucherNumber,
   returnFullDetails
 ) => {
+
+  
   // Define base projection fields that are always included
   const baseProjection = {
     voucherNumber: `$${voucherNumber}`,
