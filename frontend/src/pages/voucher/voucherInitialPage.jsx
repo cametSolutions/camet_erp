@@ -41,6 +41,20 @@ function VoucherInitialPage() {
     dispatch(addVoucherType(currentVoucher));
   };
 
+  /// to get voucher number name
+
+  const getVoucherNumberTitle = () => {
+    if (!voucherTypeFromRedux) return "";
+    if (
+      voucherTypeFromRedux === "sales" ||
+      voucherTypeFromRedux === "vanSale"
+    ) {
+      return "salesNumber";
+    } else {
+      return voucherTypeFromRedux + "Number";
+    }
+  };
+
   // Redux selectors
   const { _id: cmp_id } = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg
@@ -99,7 +113,7 @@ function VoucherInitialPage() {
 
       // Additional Charges
       let additionalCharges = allAdditionalChargesFromRedux;
-      if (!additionalCharges || additionalCharges.length === 0) {
+      if (additionalCharges && additionalCharges.length === 0) {
         apiRequests.additionalChargesRequest = api.get(
           `/api/sUsers/additionalcharges/${cmp_id}`,
           { withCredentials: true }
@@ -107,9 +121,9 @@ function VoucherInitialPage() {
       }
 
       // Configuration Number
-      if (!voucherNumberFromRedux) {
+      if (!voucherNumberFromRedux && voucherTypeFromRedux) {
         apiRequests.configNumberRequest = api.get(
-          `/api/sUsers/fetchConfigurationNumber/${cmp_id}/sales`,
+          `/api/sUsers/fetchConfigurationNumber/${cmp_id}/${voucherTypeFromRedux}`,
           { withCredentials: true }
         );
       } else {
@@ -196,7 +210,7 @@ function VoucherInitialPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [cmp_id, voucherType]);
+  }, [cmp_id, voucherTypeFromRedux]);
 
   // Initialize component
   useEffect(() => {
@@ -248,12 +262,13 @@ function VoucherInitialPage() {
     }
 
     setSubmitLoading(true);
+    const voucherNumberTitle = getVoucherNumberTitle();
 
     try {
       const formData = {
         selectedDate: new Date(selectedDate).toISOString(),
         voucherType,
-        [`${voucherType}Number`]: voucherNumber,
+        [voucherNumberTitle]: voucherNumber,
         orgId: cmp_id,
         finalAmount: Number(totalAmount.toFixed(2)),
         party,
@@ -261,6 +276,7 @@ function VoucherInitialPage() {
         despatchDetails,
         priceLevelFromRedux,
         additionalChargesFromRedux,
+        selectedGodownDetails: vanSaleGodownFromRedux
         // batchHeights,
         // convertedFrom,
         // paymentSplittingData:
@@ -270,7 +286,9 @@ function VoucherInitialPage() {
       };
 
       const res = await api.post(
-        `/api/sUsers/createSale?vanSale=${false}`,
+        `/api/sUsers/createSale?vanSale=${
+          voucherTypeFromRedux === "vanSale" ? true : false
+        }`,
         formData,
         {
           headers: { "Content-Type": "application/json" },

@@ -75,6 +75,7 @@ function VoucherAddCount() {
     priceLevels: priceLevelsFromRedux,
     page: pageNumberFromRedux,
     hasMore: hasMoreFromRedux,
+    voucherType: voucherTypeFromRedux,
   } = useSelector((state) => state.commonVoucherSlice);
 
   // ===================================
@@ -162,7 +163,7 @@ function VoucherAddCount() {
         const params = new URLSearchParams({
           page: pageNumber,
           limit,
-          vanSale: false,
+          vanSale: voucherTypeFromRedux === "vanSale" ? true : false,
           taxInclusive: taxInclusive,
           // search: searchTerm,
         });

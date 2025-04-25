@@ -960,6 +960,7 @@ export const fetchAdditionalDetails = async (req, res) => {
 export const fetchConfigurationNumber = async (req, res) => {
   const { cmp_id, title } = req.params;
 
+
   const secUserId = req.sUserId;
 
   try {

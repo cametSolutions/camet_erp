@@ -57,7 +57,10 @@ export default function FilterContent() {
         {voucherType === "vanSale" && (
           <SheetHeader>
             <SheetDescription className="text-xs font-bold px-5 py-1  text-gray-600 bg-gray-100">
-              {vanSaleGodown?.godownName}
+              Godown:{" "}
+              {(vanSaleGodown?.godownName.length > 15
+                ? vanSaleGodown?.godownName.slice(0, 15) + "..."
+                : vanSaleGodown?.godownName) || "No Godown Configured"}
             </SheetDescription>
           </SheetHeader>
         )}

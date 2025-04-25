@@ -69,7 +69,7 @@ const salesSchema = new Schema(
     voucherNumber: { type: Number },
     convertedFrom: { type: Array, default: [] },
     serialNumber: { type: Number },
-    userLevelSerialNumber : { type: Number },
+    userLevelSerialNumber: { type: Number },
     salesNumber: { type: String, required: true },
     Primary_user_id: {
       type: Schema.Types.ObjectId,
@@ -78,8 +78,10 @@ const salesSchema = new Schema(
     },
     cmp_id: { type: Schema.Types.ObjectId, ref: "Company", required: true },
     Secondary_user_id: { type: Schema.Types.ObjectId, ref: "User" },
-    selectedGodownName: { type: String, default: "" },
-    selectedGodownId: { type: String, default: "" },
+    selectedGodownDetails: {
+      godownName: { type: String, default: null },
+      godownId: { type: Schema.Types.ObjectId, ref: "Godown", default: null },
+    },
 
     partyAccount: { type: String, required: true },
 
@@ -230,12 +232,6 @@ const salesSchema = new Schema(
     finalAmount: { type: Number, required: true },
     paymentSplittingData: { type: Object },
     isCancelled: { type: Boolean, default: false },
-    batchHeights: { type: Object },
-    // createdAt: {
-    //   type: Date,
-    //   default: Date.now,
-    //   immutable: false
-    // }
   },
   {
     timestamps: true,
@@ -245,7 +241,11 @@ const salesSchema = new Schema(
 salesSchema.index({ cmp_id: 1 });
 salesSchema.index({ Secondary_user_id: 1 });
 salesSchema.index({ cmp_id: 1, serialNumber: -1 });
-salesSchema.index({ cmp_id: 1, Secondary_user_id: 1, userLevelSerialNumber: -1 });
+salesSchema.index({
+  cmp_id: 1,
+  Secondary_user_id: 1,
+  userLevelSerialNumber: -1,
+});
 salesSchema.index({ date: 1 });
 salesSchema.index({ "party._id": 1 });
 

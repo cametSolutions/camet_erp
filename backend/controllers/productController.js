@@ -313,20 +313,22 @@ export const getProducts = async (req, res) => {
     let selectedGodowns = [];
     if (isVanSale && configuration?.selectedVanSaleGodowns?.length > 0) {
       selectedGodowns = configuration.selectedVanSaleGodowns;
-      filter["GodownList.godown_id"] = { $in: selectedGodowns };
+      filter["GodownList.godown"] = { $in: selectedGodowns };
     } else if (!isVanSale && configuration?.selectedGodowns?.length > 0) {
       selectedGodowns = configuration.selectedGodowns;
-      filter["GodownList.godown_id"] = { $in: selectedGodowns };
+      filter["GodownList.godown"] = { $in: selectedGodowns };
     }
 
     // If excluding a specific godown, add to filter
     if (excludeGodownId) {
-      filter["GodownList.godown_id"] = { $ne: excludeGodownId };
+      filter["GodownList.godown"] = { $ne: excludeGodownId };
     }
 
     // Count total products matching the filter
     const totalProducts = await productModel.countDocuments(filter);
 
+    console.log("filter", filter);
+    
     // Create basic query
     let query = productModel.find(filter);
 
@@ -349,7 +351,7 @@ export const getProducts = async (req, res) => {
         model: "PriceLevel",
       });
 
-    // Transform products to flatten nested structures
+    // Transform products to flatten nested structures and filter godowns
     const transformedProducts = products.map((product) => {
       // Convert to plain object
       const productObject = product.toObject();
@@ -361,27 +363,43 @@ export const getProducts = async (req, res) => {
       // Add hasGodownOrBatch property based on batch and godown enabled status
       productObject.hasGodownOrBatch = batchEnabled || gdnEnabled;
 
-      // Flatten GodownList items
+      // Filter and flatten GodownList items
       if (productObject.GodownList && productObject.GodownList.length > 0) {
-        productObject.GodownList = productObject.GodownList.map(
-          (godownItem) => {
-            // Skip if no godown reference
-            if (!godownItem.godown) return godownItem;
+        // Filter godowns to only include those that match the selected godowns
+        let filteredGodownList = productObject.GodownList;
+        
+        if (selectedGodowns.length > 0) {
+          filteredGodownList = productObject.GodownList.filter(godownItem => 
+            godownItem.godown && selectedGodowns.some(id => 
+              id.toString() === godownItem.godown._id.toString()
+            )
+          );
+        }
+        
+        if (excludeGodownId) {
+          filteredGodownList = filteredGodownList.filter(godownItem => 
+            !godownItem.godown || godownItem.godown._id.toString() !== excludeGodownId.toString()
+          );
+        }
 
-            // Flatten godown properties into parent object
-            const flattenedGodownItem = {
-              ...godownItem,
-              // Copy all properties from godown object
-              godownMongoDbId: godownItem.godown._id,
-              godown: godownItem.godown.godown,
-              godown_id: godownItem.godown.godown_id,
-              defaultGodown: godownItem.godown.defaultGodown,
-              // Remove the nested godown object
-            };
+        // Flatten the filtered godowns
+        productObject.GodownList = filteredGodownList.map(godownItem => {
+          // Skip if no godown reference
+          if (!godownItem.godown) return godownItem;
 
-            return flattenedGodownItem;
-          }
-        );
+          // Flatten godown properties into parent object
+          const flattenedGodownItem = {
+            ...godownItem,
+            // Copy all properties from godown object
+            godownMongoDbId: godownItem.godown._id,
+            godown: godownItem.godown.godown,
+            godown_id: godownItem.godown.godown_id,
+            defaultGodown: godownItem.godown.defaultGodown,
+            // Remove the nested godown object
+          };
+
+          return flattenedGodownItem;
+        });
       }
 
       // Flatten PriceLevels items

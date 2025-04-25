@@ -44,6 +44,7 @@ export const updateSalesNumber = async (
 ) => {
   try {
     let salesNumber = 1;
+  const   selectedVoucherNumberTitle= vanSaleQuery==="true"?"vanSalesNumber":"salesNumber"
 
     if (vanSaleQuery === "true") {
       // Increment vanSalesNumber for secondaryUser
@@ -91,7 +92,7 @@ export const updateSalesNumber = async (
       } else {
         await OrganizationModel.findByIdAndUpdate(
           orgId,
-          { $inc: { salesNumber: 1 } },
+          { $inc: { selectedVoucherNumberTitle: 1 } },
           { new: true, session } // Use session here
         );
       }
@@ -378,8 +379,7 @@ export const createSaleRecord = async (
 ) => {
   try {
     const {
-      selectedGodownId,
-      selectedGodownName,
+      selectedGodownDetails,
       orgId,
       party,
       despatchDetails,
@@ -387,6 +387,7 @@ export const createSaleRecord = async (
       selectedDate,
       paymentSplittingData,
       convertedFrom = [],
+      voucherType
     } = req.body;
 
     const Primary_user_id = req.owner;
@@ -427,9 +428,9 @@ export const createSaleRecord = async (
     
 
     const sales = new model({
-      selectedGodownId: selectedGodownId ?? "",
-      selectedGodownName: selectedGodownName ? selectedGodownName[0] : "",
+      selectedGodownDetails,
       serialNumber: newSerialNumber,
+      voucherType,
       userLevelSerialNumber: newUserLevelSerial,
       cmp_id: orgId,
       partyAccount: party?.partyName,
