@@ -9,7 +9,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import SwallFireForPdf from "../../components/common/SwallFireForPdf";
 import SalesOrderProductDetails from "../../components/common/SalesOrderProductDetails";
 import CancelButton from "../../components/common/CancelButton";
-import VoucherDetailsHeader from "../../components/common/VoucherDetailsHeader";
+import VoucherDetailsHeader from "../voucher/voucherDetails/VoucherDetailsHeader";
 
 function InvoiceDetailsSecondary() {
   const [data, setData] = useState("");

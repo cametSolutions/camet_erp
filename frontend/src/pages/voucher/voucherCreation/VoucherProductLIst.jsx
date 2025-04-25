@@ -13,7 +13,7 @@ import {
   addItem,
   removeItem,
   updateItem,
-} from "../../../slices/voucherSlices/commonVoucherSlice";
+} from "../../../../slices/voucherSlices/commonVoucherSlice";
 
 /**
  * VoucherProductList Component

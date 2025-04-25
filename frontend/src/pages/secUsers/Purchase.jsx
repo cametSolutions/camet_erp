@@ -19,12 +19,12 @@ import {
   removeGodownOrBatch,
   changeDate,
 } from "../../../slices/purchase";
-import HeaderTile from "../voucher/HeaderTile";
-import AddPartyTile from "../voucher/AddPartyTile";
-import DespatchDetails from "../voucher/DespatchDetails";
-import AddItemTile from "../voucher/AddItemTile";
+import HeaderTile from "../voucher/voucherCreation/HeaderTile";
+import AddPartyTile from "../voucher/voucherCreation/AddPartyTile";
+import DespatchDetails from "../voucher/voucherCreation/DespatchDetails";
+import AddItemTile from "../voucher/voucherCreation/AddItemTile";
 import TitleDiv from "../../components/common/TitleDiv";
-import FooterButton from "../voucher/FooterButton";
+import FooterButton from "../voucher/voucherCreation/FooterButton";
 
 function Purchase() {
   const [additional, setAdditional] = useState(false);

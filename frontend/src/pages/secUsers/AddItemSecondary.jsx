@@ -23,7 +23,7 @@ import { FixedSizeList as List } from "react-window";
 import { Decimal } from "decimal.js";
 import SearchBar from "../../components/common/SearchBar";
 import CustomBarLoader from "../../components/common/CustomBarLoader";
-import Filter from "../voucher/Filter";
+import Filter from "../voucher/voucherCreation/Filter";
 
 function AddItemSecondary() {
   const [item, setItem] = useState([]);

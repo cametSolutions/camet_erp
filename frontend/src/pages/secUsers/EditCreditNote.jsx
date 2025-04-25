@@ -25,11 +25,11 @@ import { toast } from "react-toastify";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../../api/api";
 
-import DespatchDetails from "../voucher/DespatchDetails";
-import HeaderTile from "../voucher/HeaderTile";
-import AddPartyTile from "../voucher/AddPartyTile";
-import AddItemTile from "../voucher/AddItemTile";
-import FooterButton from "../voucher/FooterButton";
+import DespatchDetails from "../voucher/voucherCreation/DespatchDetails";
+import HeaderTile from "../voucher/voucherCreation/HeaderTile";
+import AddPartyTile from "../voucher/voucherCreation/AddPartyTile";
+import AddItemTile from "../voucher/voucherCreation/AddItemTile";
+import FooterButton from "../voucher/voucherCreation/FooterButton";
 import TitleDiv from "../../components/common/TitleDiv";
 
 function EditCreditNote() {

@@ -1,8 +1,8 @@
 /* eslint-disable react/prop-types */
 import { MdTextsms } from "react-icons/md";
-import SwallFireForPdf from "./SwallFireForPdf";
+import SwallFireForPdf from "../../../components/common/SwallFireForPdf";
 import { FaEdit } from "react-icons/fa";
-import CancelButton from "./CancelButton";
+import CancelButton from "../../../components/common/CancelButton";
 import dayjs from "dayjs";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
@@ -15,6 +15,7 @@ function VoucherDetailsHeader({
   number,
   tab,
 }) {
+  // eslint-disable-next-line no-unused-vars
   const [refresh, setRefresh] = useState(false);
   const navigate = useNavigate();
 

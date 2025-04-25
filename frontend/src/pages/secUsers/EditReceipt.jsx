@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import api from "../../api/api";
-import HeaderTile from "../voucher/HeaderTile";
+import HeaderTile from "../voucher/voucherCreation/HeaderTile";
 import { useDispatch } from "react-redux";
 import {
   addReceiptNumber,
@@ -22,7 +22,7 @@ import {
   addReceiptId,
   // addIsNoteOpen,
 } from "../../../slices/receipt";
-import AddPartyTile from "../voucher/AddPartyTile";
+import AddPartyTile from "../voucher/voucherCreation/AddPartyTile";
 import AddAmountTile from "../../components/secUsers/main/AddAmountTile";
 import PaymentModeTile from "../../components/secUsers/main/PaymentModeTile";
 import { toast } from "react-toastify";
@@ -30,7 +30,7 @@ import { useNavigate } from "react-router-dom";
 import useFetch from "../../customHook/useFetch";
 import { useParams } from "react-router-dom";
 import TitleDiv from "../../components/common/TitleDiv";
-import FooterButton from "../voucher/FooterButton";
+import FooterButton from "../voucher/voucherCreation/FooterButton";
 
 function EditReceipt() {
   const { id } = useParams();

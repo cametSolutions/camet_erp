@@ -9,7 +9,7 @@ import {
   removeAdditionalCharge,
   deleteRow,
   setFinalAmount,
-} from "../../../slices/voucherSlices/commonVoucherSlice";
+} from "../../../../slices/voucherSlices/commonVoucherSlice";
 import { toast } from "react-toastify";
 
 export default function AdditionalChargesTile({ type, subTotal,setOpenAdditionalTile,openAdditionalTile }) {

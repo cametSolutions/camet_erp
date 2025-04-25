@@ -3,7 +3,7 @@ import { useEffect, useState, useMemo, useCallback } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { toast } from "react-toastify";
 import { useNavigate, useLocation } from "react-router-dom";
-import api from "../../api/api";
+import api from "../../../api/api";
 import {
   removeAll,
   removeItem,
@@ -14,14 +14,14 @@ import {
   addVoucherNumber,
   addAllAdditionalCharges,
   addVansSaleGodown,
-} from "../../../slices/voucherSlices/commonVoucherSlice";
+} from "../../../../slices/voucherSlices/commonVoucherSlice";
 import DespatchDetails from "./DespatchDetails";
 import HeaderTile from "./HeaderTile";
 import AddPartyTile from "./AddPartyTile";
 import AddItemTile from "./AddItemTile";
 // import PaymentSplittingIcon from "../../components/secUsers/main/paymentSplitting/PaymentSplittingIcon";
 import FooterButton from "./FooterButton";
-import TitleDiv from "../../components/common/TitleDiv";
+import TitleDiv from "../../../components/common/TitleDiv";
 import AdditionalChargesTile from "./AdditionalChargesTile";
 
 function VoucherInitialPage() {

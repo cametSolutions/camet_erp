@@ -1,0 +1,113 @@
+
+import { MdTextsms } from "react-icons/md";
+import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
+
+import { FaEdit } from "react-icons/fa";
+import { useNavigate, useLocation } from "react-router-dom";
+import SalesProductDetails from "./SalesProductDetails";
+import SwallFireForPdf from "../../../components/common/SwallFireForPdf";
+import CancelButton from "../../../components/common/CancelButton";
+import VoucherDetailsHeader from "./VoucherDetailsHeader";
+import PaymentSplittingDetails from "../../../components/secUsers/main/paymentSplitting/PaymentSplittingDetails";
+import VoucherDetailsParty from "./VoucherDetailsParty";
+import useFetch from "@/customHook/useFetch";
+import TitleDiv from "@/components/common/TitleDiv";
+
+function VoucherDetails() {
+  const [data, setData] = useState("");
+  const [refresh, setRefresh] = useState(false);
+
+  const { id } = useParams();
+  const navigate = useNavigate();
+  // const location = useLocation();
+
+  const { data: voucherDetails, loading } = useFetch(
+    `/api/sUsers/getSalesDetails/${id}`
+  );
+  useEffect(() => {
+    if (voucherDetails) {
+      setData(voucherDetails.data);
+    }
+  }, [voucherDetails]);
+
+
+
+  const reFetch = () => {
+    setRefresh(!refresh);
+  };
+
+
+  const handleEdit = () => {
+    if (data?.isEditable === false) {
+      alert(
+        "You can't edit this voucher since it has been used to generate receipts or payments"
+      );
+      return;
+    }
+    navigate(`/sUsers/editSale/${data?._id}`);
+  };
+
+  return (
+    <div className="bg-[rgb(244,246,254)] flex-1  relative  pb-[70px] md:pb-0  ">
+      {/* headinh section  */}
+      <TitleDiv title={"Voucher Details"} loading={loading} />
+      {/* headinh section  */}
+
+      <VoucherDetailsHeader
+        data={data}
+        reFetchParent={reFetch}
+        editLink={`/sUsers/editSale/${data?._id}`}
+        user={"secondary"}
+        number={data?.salesNumber}
+        tab={"Sales"}
+      />
+
+      <VoucherDetailsParty data={data} />
+
+      <SalesProductDetails
+        data={data}
+        items={data?.items}
+        priceLevel={data?.priceLevel}
+        additionalCharges={data?.additionalCharges}
+        paymentSplittingData={data?.paymentSplittingData}
+      />
+
+      {data?.paymentSplittingData &&
+        data?.paymentSplittingData?.splittingData?.length > 0 && (
+          <PaymentSplittingDetails data={data?.paymentSplittingData} />
+        )}
+
+      {/* payment method */}
+
+      <div className=" block md:hidden z-0 ">
+        <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 flex justify-center p-4 gap-12 text-lg text-violet-500  ">
+          <CancelButton
+            id={data._id}
+            tab="Sales"
+            isCancelled={data?.isCancelled}
+            reFetch={reFetch}
+            isEditable={data?.isEditable}
+          />
+
+          <div
+            onClick={handleEdit}
+            className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer"
+          >
+            <FaEdit className="text-blue-500" />
+            <p className="text-black font-bold text-sm">Edit</p>
+          </div>
+          {/* <Link to={`/sUsers/shareSales/${data._id}`}> */}
+          <SwallFireForPdf data={data} />
+
+          <div className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer">
+            <MdTextsms className="text-green-500" />
+            <p className="text-black font-bold text-sm">Sms</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default VoucherDetails;

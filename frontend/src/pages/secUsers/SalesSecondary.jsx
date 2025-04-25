@@ -18,12 +18,12 @@ import {
   deleteRow,
 } from "../../../slices/salesSecondary";
 
-import DespatchDetails from "../voucher/DespatchDetails";
-import HeaderTile from "../voucher/HeaderTile";
-import AddPartyTile from "../voucher/AddPartyTile";
-import AddItemTile from "../voucher/AddItemTile";
+import DespatchDetails from "../voucher/voucherCreation/DespatchDetails";
+import HeaderTile from "../voucher/voucherCreation/HeaderTile";
+import AddPartyTile from "../voucher/voucherCreation/AddPartyTile";
+import AddItemTile from "../voucher/voucherCreation/AddItemTile";
 import PaymentSplittingIcon from "../../components/secUsers/main/paymentSplitting/PaymentSplittingIcon";
-import FooterButton from "../voucher/FooterButton";
+import FooterButton from "../voucher/voucherCreation/FooterButton";
 import TitleDiv from "../../components/common/TitleDiv";
 
 function SalesSecondary() {

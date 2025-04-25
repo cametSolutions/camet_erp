@@ -31,7 +31,7 @@ import AdditionalChargesSecondary from '../pages/secUsers/settilngs/serviceLedge
 import OrderConfigurationsSecondary from '../pages/secUsers/OrderConfigurationsSecondary'
 // inventory 
 import InventorySecondaryUser from '../pages/secUsers/InventorySecondaryUser'
-import SalesSecondary from '../pages/secUsers/SalesSecondary'
+// import SalesSecondary from '../pages/secUsers/SalesSecondary'
 import SearchParty from '../pages/secUsers/SearchParty'
 import SalesDetailsSecondary from '../pages/secUsers/SalesDetailsSecondary'
 import EditItemSalesSecondary from '../pages/secUsers/EditItemSalesSecondary'
@@ -56,8 +56,6 @@ import AddCategory from '../pages/masters/product/productSubDetails/AddCategory'
 import AddSubCategory from '../pages/masters/product/productSubDetails/AddSubCategory'
 import AddGodown from '../pages/masters/product/productSubDetails/AddGodown'
 import AddPriceLevel from '../pages/masters/product/productSubDetails/AddPriceLevel'
-import VanSaleSecondary from '../pages/secUsers/VanSaleSecondary'
-import AddItemVanSaleSecondary from '../pages/secUsers/AddItemVanSaleSecondary'
 import VanSaleDetailsSecondary from '../pages/secUsers/VanSaleDetailsSecondary '
 import ShareVanSaleSecondary from '../pages/secUsers/ShareVanSaleSecondary'
 import ThreeInchVanSaleSec from '../pages/secUsers/ThreeInchVanSaleSec'
@@ -140,13 +138,14 @@ import OutstandingSummary from '../pages/secUsers/OutstandingSummary'
 import AddSubGroup from '../pages/secUsers/settilngs/partySettings/AddSubGroup'
 import AddOpening from '@/pages/secUsers/openings/PartyOpening/AddOpening'
 import SalesSummaryTransactions from '@/pages/secUsers/Reports/salesSummary/SalesSummaryTransactions'
-import VoucherAddCount from '@/pages/voucher/VoucherAddCount'
+import VoucherAddCount from '@/pages/voucher/voucherCreation/VoucherAddCount'
 import AddOrganisation from '../pages/masters/organization/AddOrganisation'
 import OrganizationList from '../pages/masters/organization/OrganisationList'
 import AddSecUsers from '../pages/masters/secondaryUsers/AddSecUsers'
 import BankingManagement from '@/pages/masters/cashOrBank/BankingManagement'
-import VoucherInitalPage from '@/pages/voucher/voucherInitialPage'
-import VoucherInitialPage from '@/pages/voucher/voucherInitialPage'
+import VoucherInitalPage from '@/pages/voucher/voucherCreation/voucherInitialPage'
+import VoucherInitialPage from '@/pages/voucher/voucherCreation/voucherInitialPage'
+import VoucherDetails from '@/pages/voucher/voucherDetails/VoucherDetails'
 
 const Routers = () => {
   return (
@@ -183,7 +182,7 @@ const Routers = () => {
          <Route path='/sUsers/searchPartySales' element={<ProtectedSecRoute><SearchParty/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/addItemSales' element={<ProtectedSecRoute><VoucherAddCount/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/editItemSales/:id/:godownName/:index' element={<ProtectedSecRoute><EditItemSalesSecondary/></ProtectedSecRoute>}></Route>
-        <Route path='/sUsers/salesDetails/:id' element={<ProtectedSecRoute><SalesDetailsSecondary/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/salesDetails/:id' element={<ProtectedSecRoute><VoucherDetails/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/vanSaleDetails/:id' element={<ProtectedSecRoute><VanSaleDetailsSecondary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/shareSales/:id' element={<ProtectedSecRoute><ShareSalesSecondary/></ProtectedSecRoute>}></Route> 
         <Route path='/sUsers/shareVanSale/:id' element={<ProtectedSecRoute><ShareVanSaleSecondary/></ProtectedSecRoute>}></Route> 
@@ -212,7 +211,6 @@ const Routers = () => {
         <Route path='/sUsers/billToSales/:id' element={<ProtectedSecRoute><BillToSales/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/billToSalesOrder/:id' element={<ProtectedSecRoute><BillToSalesOrder/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/vanSale' element={<ProtectedSecRoute><VoucherInitalPage/></ProtectedSecRoute>}></Route>
-        <Route path='/sUsers/addItemVanSale' element={<ProtectedSecRoute><AddItemVanSaleSecondary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/stockTransfer' element={<ProtectedSecRoute><StockTransferSecondary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/searchGodown' element={<ProtectedSecRoute><SearchGodown/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/addItemStockTransfer' element={<ProtectedSecRoute><AddItemStockTransferSec/></ProtectedSecRoute>}></Route>

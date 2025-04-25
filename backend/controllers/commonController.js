@@ -42,47 +42,48 @@ export const getSalesDetails = async (req, res) => {
   const vanSaleQuery = req.query.vanSale;
 
   const isVanSale = vanSaleQuery === "true";
-
-  let model;
-  if (isVanSale) {
-    model = vanSaleModel;
-  } else {
-    model = salesModel;
-  }
+  const model = isVanSale ? vanSaleModel : salesModel;
 
   try {
-    const saleDetails = await model.findById(saleId).lean();
+    const saleDetails = await model
+      .findById(saleId)
+      .populate({
+        path: "party._id",
+        select: "partyName", // get only the name or other fields as needed
 
-    ////find the outstanding of the sale
+      })
+      .populate({
+        path: "items._id",
+        select: "product_name", // populate item details
+      })
+      .populate({
+        path: "items.GodownList.godownMongoDbId",
+        select: "godown", // populate godown name
+      })
+      .lean();
+
+    if (!saleDetails) {
+      return res.status(404).json({ error: "Sale not found" });
+    }
+
+    // Find the outstanding for this sale
     const outstandingOfSale = await OutstandingModel.findOne({
-      billId: saleDetails?._id.toString(),
-      bill_no: saleDetails?.salesNumber,
-      billId: saleDetails?._id.toString(),
-      cmp_id: saleDetails?.cmp_id,
-      Primary_user_id: saleDetails?.Primary_user_id,
+      billId: saleDetails._id.toString(),
+      bill_no: saleDetails.salesNumber,
+      cmp_id: saleDetails.cmp_id,
+      Primary_user_id: saleDetails.Primary_user_id,
     });
 
-    let isEditable = true;
-
-    if (outstandingOfSale) {
-      isEditable =
-        outstandingOfSale?.appliedReceipts?.length == 0 ? true : false;
-    }
-
+    const isEditable = !outstandingOfSale || outstandingOfSale?.appliedReceipts?.length === 0;
     saleDetails.isEditable = isEditable;
 
-    if (saleDetails) {
-      res
-        .status(200)
-        .json({ message: "Sales details fetched", data: saleDetails });
-    } else {
-      res.status(404).json({ error: "Sale not found" });
-    }
+    res.status(200).json({ message: "Sales details fetched", data: saleDetails });
   } catch (error) {
     console.error("Error fetching sale details:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
 
 // @desc to  get stock transfer details
 // route get/api/sUsers/getStockTransferDetails;

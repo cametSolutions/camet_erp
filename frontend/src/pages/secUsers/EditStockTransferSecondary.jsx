@@ -20,11 +20,11 @@ import {
   addAllItems,
 } from "../../../slices/stockTransferSecondary";
 
-import HeaderTile from "../voucher/HeaderTile";
-import AddItemTile from "../voucher/AddItemTile";
+import HeaderTile from "../voucher/voucherCreation/HeaderTile";
+import AddItemTile from "../voucher/voucherCreation/AddItemTile";
 import AddGodown from "../../components/secUsers/AddGodown";
 import TitleDiv from "../../components/common/TitleDiv";
-import FooterButton from "../voucher/FooterButton";
+import FooterButton from "../voucher/voucherCreation/FooterButton";
 function EditStockTransferSecondary() {
   // const [salesNumber, setSalesNumber] = useState("");
 

@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { IoMdAdd } from "react-icons/io";
 import _ from "lodash";
-import { addDespatchDetails } from "../../../slices/voucherSlices/commonVoucherSlice";
+import { addDespatchDetails } from "../../../../slices/voucherSlices/commonVoucherSlice";
 import { useDispatch, useSelector } from "react-redux";
 
 function DespatchDetails({ tab }) {

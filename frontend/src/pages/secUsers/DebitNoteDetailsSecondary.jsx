@@ -7,10 +7,10 @@ import api from "../../api/api";
 import { toast } from "react-toastify";
 import { FaEdit } from "react-icons/fa";
 import { useLocation, useNavigate } from "react-router-dom";
-import SalesProductDetails from "../../components/common/SalesProductDetails";
+import SalesProductDetails from "../voucher/voucherDetails/SalesProductDetails";
 import SwallFireForPdf from "../../components/common/SwallFireForPdf";
 import CancelButton from "../../components/common/CancelButton";
-import VoucherDetailsHeader from "../../components/common/VoucherDetailsHeader";
+import VoucherDetailsHeader from "../voucher/voucherDetails/VoucherDetailsHeader";
 
 function DebitNoteDetailsSecondary() {
   const [data, setData] = useState("");

@@ -14,7 +14,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { IoFilterSharp } from "react-icons/io5";
-import { setPriceLevel } from "../../../slices/voucherSlices/commonVoucherSlice";
+import { setPriceLevel } from "../../../../slices/voucherSlices/commonVoucherSlice";
 import { useDispatch, useSelector } from "react-redux";
 
 export default function FilterContent() {

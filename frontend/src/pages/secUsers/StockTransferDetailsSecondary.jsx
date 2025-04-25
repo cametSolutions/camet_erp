@@ -7,8 +7,8 @@ import api from "../../api/api";
 import { toast } from "react-toastify";
 import { FaEdit } from "react-icons/fa";
 import { useLocation, useNavigate } from "react-router-dom";
-import SalesProductDetails from "../../components/common/SalesProductDetails";
-import VoucherDetailsHeader from "../../components/common/VoucherDetailsHeader";
+import SalesProductDetails from "../voucher/voucherDetails/SalesProductDetails";
+import VoucherDetailsHeader from "../voucher/voucherDetails/VoucherDetailsHeader";
 
 function StockTransferDetailsSecondary() {
   const [data, setData] = useState("");

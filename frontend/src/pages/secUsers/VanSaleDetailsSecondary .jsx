@@ -7,9 +7,9 @@ import { toast } from "react-toastify";
 import dayjs from "dayjs";
 import { FaEdit } from "react-icons/fa";
 import { useLocation, useNavigate } from "react-router-dom";
-import SalesProductDetails from "../../components/common/SalesProductDetails";
+import SalesProductDetails from "../voucher/voucherDetails/SalesProductDetails";
 import SwallFireForPdf from "../../components/common/SwallFireForPdf";
-import VoucherDetailsHeader from "../../components/common/VoucherDetailsHeader";
+import VoucherDetailsHeader from "../voucher/voucherDetails/VoucherDetailsHeader";
 import CancelButton from "../../components/common/CancelButton";
 
 function VanSaleDetailsSecondary() {
