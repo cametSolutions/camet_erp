@@ -30,6 +30,8 @@ const initialState = {
     termsOfPay: "",
     termsOfDelivery: "",
   },
+  /// godown Details for van sales
+  vanSaleGodown:{}
 };
 
 export const commonVoucherSlice = createSlice({
@@ -358,6 +360,9 @@ export const commonVoucherSlice = createSlice({
     addVoucherNumber: (state, action) => {
       state.voucherNumber = action.payload;
     },
+    addVansSaleGodown: (state, action) => {
+      state.vanSaleGodown = action.payload;
+    }
   },
 });
 
@@ -406,6 +411,7 @@ export const {
   addAllAdditionalCharges,
   addVoucherType,
   addVoucherNumber,
+  addVansSaleGodown
 } = commonVoucherSlice.actions;
 
 export default commonVoucherSlice.reducer;

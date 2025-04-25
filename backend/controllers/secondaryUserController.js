@@ -13,9 +13,7 @@ import AccountGroup from "../models/accountGroup.js";
 import SubGroup from "../models/subGroup.js";
 import OragnizationModel from "../models/OragnizationModel.js";
 import Organization from "../models/OragnizationModel.js";
-import {
-  getFinancialYearDates,
-} from "../helpers/helper.js";
+import { getFinancialYearDates } from "../helpers/helper.js";
 import { Brand } from "../models/subDetails.js";
 import { Category } from "../models/subDetails.js";
 import { Subcategory } from "../models/subDetails.js";
@@ -133,7 +131,6 @@ export const getSecUserData = async (req, res) => {
       // select: "_id name",
     });
 
-    
     if (userData) {
       return res
         .status(200)
@@ -507,11 +504,6 @@ export const getTransactionDetails = async (req, res) => {
   }
 };
 
-
-
-
-
-
 // @desc get invoiceList
 // route get/api/pUsers/invoiceList;
 
@@ -538,11 +530,6 @@ export const invoiceList = async (req, res) => {
       .json({ success: false, message: "Internal server error, try again!" });
   }
 };
-
-
-
-
-
 
 // @desc get organization detail foe edit
 // route GET/api/pUsers/getOrganizations
@@ -694,12 +681,6 @@ export const deleteDataInOrg = async (req, res) => {
   }
 };
 
-
-
-
-
-
-
 // @desc   saveOrderNumber
 // route post/api/pUsers/saveOrderNumber/cmp_id
 
@@ -787,8 +768,6 @@ export const fetchFilters = async (req, res) => {
       .json({ status: false, message: "Internal server error" });
   }
 };
-
-
 
 // @desc update AdditionalCharge
 // route get/api/sUsers/addconfigurations
@@ -1272,37 +1251,45 @@ export const godownwiseProductsSelf = async (req, res) => {
 export const findGodownsNames = async (req, res) => {
   const cmp_id = req.params.cmp_id;
   const selectedUser = req.sUserId;
+
   try {
     const secUser = await SecondaryUser.findById(selectedUser);
     if (!secUser) {
-      return res.status(404).json({ message: "Secondary user not found" });
+      return res.status(404).json({ message: "Secondary user not found", data: null });
     }
 
     const configuration = secUser.configurations.find(
       (item) => item.organization == cmp_id
     );
 
-    if (configuration) {
-      const { vanSaleConfiguration } = configuration;
-      const godownName = vanSaleConfiguration.vanSaleGodownName;
-      const godownId = configuration.selectedVanSaleGodowns[0];
-
-      const data = {
-        godownName,
-        godownId,
-      };
-      console.log("data", data);
-
-      res.status(200).json({ message: "godown details fetched", data: data });
-    } else {
-      res
+    if (!configuration || !configuration.selectedVanSaleGodowns?.length) {
+      return res
         .status(404)
         .json({ message: "No configuration found for van sale", data: null });
     }
+
+    const godownId = configuration.selectedVanSaleGodowns[0];
+    const godownDetails = await Godown.findById(godownId).select("godown");
+
+    if (!godownDetails) {
+      return res
+        .status(404)
+        .json({ message: "Godown details not found", data: null });
+    }
+
+    const { godown: godownName } = godownDetails;
+
+    const data = {
+      godownId,
+      godownName,
+    };
+
+    res.status(200).json({ message: "godown details fetched", data });
   } catch (error) {
-    res.status(500).json({ message: "internal server error" });
+    res.status(500).json({ message: "Internal server error", data: null });
   }
 };
+
 
 // @desc get brands, categories, subcategories, godowns, priceLevels
 // route get/api/sUsers/getAllSubDetails
@@ -1912,8 +1899,6 @@ export const getAccountGroups = async (req, res) => {
     });
   }
 };
-
-
 
 /**
  * @desc   Add party opening balance

@@ -1,7 +1,7 @@
 /* eslint-disable react/prop-types */
 /* eslint-disable react/jsx-key */
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import sale from "../../../assets/images/sale.png";
 
 import creditNote from "../../../assets/images/creditNote.png";
@@ -33,6 +33,7 @@ const salesTiles = [
     to: "/sUsers/sales",
     active: true,
     subtitle: "Record sales transactions",
+    voucherType: "sales",
   },
   {
     title: "Receipt",
@@ -40,6 +41,7 @@ const salesTiles = [
     to: "/sUsers/receipt ",
     active: true,
     subtitle: "Track received payments",
+    voucherType: "receipt",
   },
   {
     title: "Credit Note",
@@ -47,6 +49,7 @@ const salesTiles = [
     to: "/sUsers/creditNote",
     active: true,
     subtitle: "Issue and track credit adjustments",
+    voucherType: "creditNote",
   },
   {
     title: "Perfoma Invoice",
@@ -54,6 +57,7 @@ const salesTiles = [
     to: "/sUsers/creditnote",
     active: false,
     subtitle: "Draft pre-invoice documents",
+    voucherType: "performaInvoice",
   },
   {
     title: "Quotation",
@@ -61,6 +65,7 @@ const salesTiles = [
     to: "/sUsers/invoice",
     active: true,
     subtitle: "Document and track client quotations",
+    voucherType: "saleOrder",
   },
   // Commented out tiles can be uncommented if needed
 ];
@@ -72,6 +77,7 @@ const purchaseTiles = [
     to: "/sUsers/purchase",
     active: true,
     subtitle: "Track and document your purchases",
+    voucherType: "purchase",
   },
   {
     title: "Payment",
@@ -79,6 +85,7 @@ const purchaseTiles = [
     to: "/sUsers/paymentPurchase",
     active: true,
     subtitle: "Record all payment outflows",
+    voucherType: "payment",
   },
   {
     title: "Debit Note",
@@ -86,6 +93,7 @@ const purchaseTiles = [
     to: "/sUsers/debitNote",
     active: true,
     subtitle: "Adjust and manage account debits",
+    voucherType: "debitNote",
   },
 
   // Commented out tiles can be uncommented if needed
@@ -97,6 +105,7 @@ const others = [
     to: "/sUsers/sales",
     active: false,
     subtitle: "Track and document your purchases",
+    voucherType: "expense",
   },
   {
     title: "Van Sale",
@@ -104,6 +113,7 @@ const others = [
     to: "/sUsers/vanSale",
     active: true,
     subtitle: "Document sales made during van routes",
+    voucherType: "vanSale",
   },
   {
     title: "Stock Transfer",
@@ -111,6 +121,7 @@ const others = [
     to: "/sUsers/stockTransfer",
     active: true,
     subtitle: "Track inventory transfers between locations",
+    voucherType: "stockTransfer",
   },
   {
     title: "Order Pending",
@@ -118,11 +129,11 @@ const others = [
     to: "/sUsers/orderPending/partyList",
     active: true,
     subtitle: "Convert pending orders to sales",
+    voucherType: "orderPending",
   },
 
   // Commented out tiles can be uncommented if needed
 ];
-
 
 const popular = [
   {
@@ -181,41 +192,54 @@ const popular = [
     active: true,
     subtitle: "Manage inventory records",
   },
-  
 ];
 
 const VoucherCards = ({ tab }) => {
   const [selectedTab, setSelectedTab] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (tab === "sales") {
       setSelectedTab(salesTiles);
     } else if (tab === "purchase") {
       setSelectedTab(purchaseTiles);
-    } 
-    else if (tab === "popular") {
+    } else if (tab === "popular") {
       setSelectedTab(popular);
-    } 
-    else {
+    } else {
       setSelectedTab(others);
     }
     // Add more conditions here if you have other tabs
   }, [tab]);
 
+  const handleNavigate = (item) => {
+    if (item.active) {
+      navigate(item.to, {
+        state: {
+          voucherType: item.voucherType,
+        },
+      });
+    } else {
+      alert("This feature is not available yet.");
+    }
+  };
+
   const CardContent = ({ item }) => (
-    <div className="bg-slate-50 cursor-pointer flex gap-6 items-center p-3 md:p-4 hover:bg-slate-100 hover:shadow-lg transition-all duration-300 ease-in-out transform hover:-translate-y-1">
+    <div
+      onClick={() => handleNavigate(item)}
+      className="relative bg-slate-50 cursor-pointer flex gap-6 items-center p-3 md:p-4 hover:bg-slate-100 hover:shadow-lg transition-all duration-300 ease-in-out transform hover:-translate-y-1"
+    >
       {!item.active && (
-        <div className="absolute top-0 right-0 bg-[#7ecbaa] text-white  text-xs  font-bold px-1 py-1  md:px-2 md:py-1 rounded-bl-md flex justify-center items-center">
-          <IoAlertCircle className="w-4 h-4 inline-block " />
+        <div className="absolute top-0 right-0 bg-[#7ecbaa] text-white text-xs font-bold px-1 py-1 md:px-2 md:py-1 rounded-bl-md flex justify-center items-center">
+          <IoAlertCircle className="w-4 h-4 inline-block" />
         </div>
       )}
 
       <aside>
         <div className="bg-white p-2 rounded-lg flex justify-center items-center w-12 h-12 md:w-16 md:h-16 shadow-lg">
-          <img src={item.icon} alt={item.title} className="" />
+          <img src={item.icon} alt={item.title} />
         </div>
       </aside>
-      <main className="">
+      <main>
         <h1 className="text-gray-700 md:text-lg font-medium">{item.title}</h1>
         <p className="text-sm md:text-md text-gray-500 mt-1">{item.subtitle}</p>
       </main>
@@ -227,9 +251,7 @@ const VoucherCards = ({ tab }) => {
       {selectedTab &&
         selectedTab.map((item, index) =>
           item.active ? (
-            <Link key={index} to={item.to}>
-              <CardContent item={item} />
-            </Link>
+            <CardContent key={index} item={item} />
           ) : (
             <div key={index} className="">
               <CardContent item={item} />

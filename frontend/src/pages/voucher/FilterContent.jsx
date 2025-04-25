@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
@@ -18,9 +19,10 @@ import { useDispatch, useSelector } from "react-redux";
 
 export default function FilterContent() {
   const dispatch = useDispatch();
-  const { selectedPriceLevel, priceLevels } = useSelector(
-    (state) => state.commonVoucherSlice
-  );
+  const { selectedPriceLevel, priceLevels, vanSaleGodown, voucherType } =
+    useSelector((state) => state.commonVoucherSlice);
+
+  console.log(vanSaleGodown, voucherType);
 
   const [accordionValue, setAccordionValue] = useState("");
   const [isSheetOpen, setIsSheetOpen] = useState(false);
@@ -37,10 +39,6 @@ export default function FilterContent() {
     setIsSheetOpen(false);
   };
 
-  
-
-  
-
   return (
     <Sheet
       open={isSheetOpen}
@@ -51,23 +49,29 @@ export default function FilterContent() {
         <aside>
           <IoFilterSharp className="" />
         </aside>
-       <p> Filter</p>
+        <p> Filter</p>
       </SheetTrigger>
-      <SheetContent className="!h-screen !overflow-y-scroll">
-        <SheetHeader>
-          <SheetTitle>Filter Your Products</SheetTitle>
+      <SheetContent className="!h-screen !overflow-y-scroll p-0">
+        <SheetTitle className="p-5">Filter Your Products</SheetTitle>
 
+        {voucherType === "vanSale" && (
+          <SheetHeader>
+            <SheetDescription className="text-xs font-bold px-5 py-1  text-gray-600 bg-gray-100">
+              {vanSaleGodown?.godownName}
+            </SheetDescription>
+          </SheetHeader>
+        )}
+
+        <div className="p-5">
           {/* Price Levels Accordion */}
           <Accordion
+            className=""
             type="single"
             collapsible
             value={accordionValue}
             onValueChange={setAccordionValue}
-           
           >
-            <AccordionItem 
-         
-            value="item-1">
+            <AccordionItem value="item-1">
               <AccordionTrigger>Price Levels</AccordionTrigger>
               {priceLevels?.map((level, index) => (
                 <AccordionContent key={index}>
@@ -85,7 +89,7 @@ export default function FilterContent() {
           </Accordion>
 
           {/* Other Filters */}
-          <Accordion    disabled type="single" collapsible>
+          <Accordion disabled type="single" collapsible>
             <AccordionItem value="item-2">
               <AccordionTrigger>Brand</AccordionTrigger>
               <AccordionContent>
@@ -95,7 +99,7 @@ export default function FilterContent() {
             </AccordionItem>
           </Accordion>
 
-          <Accordion    disabled type="single" collapsible>
+          <Accordion disabled type="single" collapsible>
             <AccordionItem value="item-3">
               <AccordionTrigger>Category</AccordionTrigger>
               <AccordionContent>
@@ -105,7 +109,7 @@ export default function FilterContent() {
             </AccordionItem>
           </Accordion>
 
-          <Accordion    disabled type="single" collapsible>
+          <Accordion disabled type="single" collapsible>
             <AccordionItem value="item-4">
               <AccordionTrigger>Subcategory</AccordionTrigger>
               <AccordionContent>
@@ -114,7 +118,7 @@ export default function FilterContent() {
               </AccordionContent>
             </AccordionItem>
           </Accordion>
-        </SheetHeader>
+        </div>
       </SheetContent>
     </Sheet>
   );

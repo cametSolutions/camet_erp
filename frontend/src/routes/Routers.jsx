@@ -211,7 +211,7 @@ const Routers = () => {
         <Route path='/sUsers/editVanSale/:id' element={<ProtectedSecRoute><EditVanSale/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/billToSales/:id' element={<ProtectedSecRoute><BillToSales/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/billToSalesOrder/:id' element={<ProtectedSecRoute><BillToSalesOrder/></ProtectedSecRoute>}></Route>
-        <Route path='/sUsers/vanSale' element={<ProtectedSecRoute><VanSaleSecondary/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/vanSale' element={<ProtectedSecRoute><VoucherInitalPage/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/addItemVanSale' element={<ProtectedSecRoute><AddItemVanSaleSecondary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/stockTransfer' element={<ProtectedSecRoute><StockTransferSecondary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/searchGodown' element={<ProtectedSecRoute><SearchGodown/></ProtectedSecRoute>}></Route>

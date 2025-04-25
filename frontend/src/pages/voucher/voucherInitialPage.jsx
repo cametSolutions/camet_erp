@@ -13,6 +13,7 @@ import {
   addVoucherType,
   addVoucherNumber,
   addAllAdditionalCharges,
+  addVansSaleGodown,
 } from "../../../slices/voucherSlices/commonVoucherSlice";
 import DespatchDetails from "./DespatchDetails";
 import HeaderTile from "./HeaderTile";
@@ -31,14 +32,12 @@ function VoucherInitialPage() {
   // to find the current voucher
   const getVoucherType = () => {
     if (voucherTypeFromRedux) return;
-    const pathname = location.pathname;
-    let currentVoucher;
-    if (pathname === "/sUsers/sales") {
-      currentVoucher = "sales";
-    } else {
-      currentVoucher = "saleOrder";
+    /// if the voucherType is not present in redux then we will take it from the location state
+    /// voucher type is assigned from the select voucher page to this page
+    let currentVoucher = "sales";
+    if (location && location.state && location.state.voucherType) {
+      currentVoucher = location.state.voucherType;
     }
-
     dispatch(addVoucherType(currentVoucher));
   };
 
@@ -58,6 +57,7 @@ function VoucherInitialPage() {
     voucherNumber: voucherNumberFromRedux,
     allAdditionalCharges: allAdditionalChargesFromRedux,
     finalAmount: totalAmount,
+    vanSaleGodown: vanSaleGodownFromRedux,
   } = useSelector((state) => state.commonVoucherSlice);
 
   // const paymentSplittingReduxData = useSelector(
@@ -81,7 +81,6 @@ function VoucherInitialPage() {
     const parsedDate = new Date(date);
     return isNaN(parsedDate.getTime()) ? new Date() : parsedDate;
   });
-  
 
   const [openAdditionalTile, setOpenAdditionalTile] = useState(false);
 
@@ -95,45 +94,58 @@ function VoucherInitialPage() {
     setIsLoading(true);
 
     try {
-      // Prepare promises conditionally
-      const promises = [];
+      // Initialize API requests container with names
+      const apiRequests = {};
 
       // Additional Charges
       let additionalCharges = allAdditionalChargesFromRedux;
       if (!additionalCharges || additionalCharges.length === 0) {
-        promises.push(
-          api.get(`/api/sUsers/additionalcharges/${cmp_id}`, {
-            withCredentials: true,
-          })
+        apiRequests.additionalChargesRequest = api.get(
+          `/api/sUsers/additionalcharges/${cmp_id}`,
+          { withCredentials: true }
         );
       }
 
       // Configuration Number
       if (!voucherNumberFromRedux) {
-        promises.push(
-          api.get(`/api/sUsers/fetchConfigurationNumber/${cmp_id}/sales`, {
-            withCredentials: true,
-          })
+        apiRequests.configNumberRequest = api.get(
+          `/api/sUsers/fetchConfigurationNumber/${cmp_id}/sales`,
+          { withCredentials: true }
         );
       } else {
         setVoucherNumber(voucherNumberFromRedux);
       }
 
-      const responses = await Promise.all(promises);
+      // Add godownsName API call if voucher type is 'vanSale'
+      if (
+        voucherType === "vanSale" &&
+        Object.keys(vanSaleGodownFromRedux).length === 0
+      ) {
+        apiRequests.godownsRequest = api.get(
+          `/api/sUsers/godownsName/${cmp_id}`,
+          { withCredentials: true }
+        );
+      }
 
-      // Handle additional charges response if fetched
-      if (responses[0] && !allAdditionalChargesFromRedux?.length) {
-        const additionalChargesResponse = responses[0];
+      // Execute all API requests in parallel
+      const responseData = await Promise.all(Object.values(apiRequests));
+
+      // Map responses back to their request names
+      const responses = {};
+      Object.keys(apiRequests).forEach((key, index) => {
+        responses[key] = responseData[index];
+      });
+
+      // Process Additional Charges
+      if (responses.additionalChargesRequest) {
         additionalCharges =
-          additionalChargesResponse.data?.additionalCharges || [];
+          responses.additionalChargesRequest.data?.additionalCharges || [];
         dispatch(addAllAdditionalCharges(additionalCharges));
       }
 
-      // Handle configuration number response if fetched
-      const configResponseIndex = allAdditionalChargesFromRedux?.length ? 0 : 1;
-
-      if (responses[configResponseIndex]) {
-        const configData = responses[configResponseIndex].data;
+      // Process Configuration Number
+      if (responses.configNumberRequest) {
+        const configData = responses.configNumberRequest.data;
 
         if (configData.message === "default") {
           const voucherNumber = configData.configurationNumber;
@@ -162,13 +174,29 @@ function VoucherInitialPage() {
           }
         }
       }
+
+      // Process Godowns data if requested
+      if (
+        responses.godownsRequest &&
+        voucherType === "vanSale" &&
+        Object.keys(vanSaleGodownFromRedux).length === 0
+      ) {
+        const godownsData = responses.godownsRequest.data;
+
+        if (godownsData?.data === null) {
+          navigate("/sUsers/selectVouchers");
+          toast.error("No godown is configured");
+          return;
+        }
+        dispatch(addVansSaleGodown(godownsData?.data || {}));
+      }
     } catch (error) {
       console.log(error);
       toast.error(error.response?.data?.message || "Error fetching data");
     } finally {
       setIsLoading(false);
     }
-  }, [cmp_id]);
+  }, [cmp_id, voucherType]);
 
   // Initialize component
   useEffect(() => {
@@ -223,16 +251,16 @@ function VoucherInitialPage() {
 
     try {
       const formData = {
-        selectedDate:new Date(selectedDate).toISOString(),
+        selectedDate: new Date(selectedDate).toISOString(),
         voucherType,
-        [`${voucherType}Number`]:voucherNumber,
-        orgId:cmp_id,
+        [`${voucherType}Number`]: voucherNumber,
+        orgId: cmp_id,
         finalAmount: Number(totalAmount.toFixed(2)),
         party,
         items,
         despatchDetails,
-         priceLevelFromRedux,
-         additionalChargesFromRedux,
+        priceLevelFromRedux,
+        additionalChargesFromRedux,
         // batchHeights,
         // convertedFrom,
         // paymentSplittingData:
@@ -240,8 +268,6 @@ function VoucherInitialPage() {
         //     ? paymentSplittingReduxData
         //     : {},
       };
-
-      console.log(formData);
 
       const res = await api.post(
         `/api/sUsers/createSale?vanSale=${false}`,
