@@ -34,55 +34,6 @@ import OragnizationModel from "../models/OragnizationModel.js";
 import nodemailer from "nodemailer";
 import barcodeModel from "../models/barcodeModel.js";
 
-// @desc toget the details of transaction or sale
-// route get/api/sUsers/getSalesDetails
-
-export const getSalesDetails = async (req, res) => {
-  const saleId = req.params.id;
-  const vanSaleQuery = req.query.vanSale;
-
-  const isVanSale = vanSaleQuery === "true";
-  const model = isVanSale ? vanSaleModel : salesModel;
-
-  try {
-    const saleDetails = await model
-      .findById(saleId)
-      .populate({
-        path: "party._id",
-        select: "partyName", // get only the name or other fields as needed
-
-      })
-      .populate({
-        path: "items._id",
-        select: "product_name", // populate item details
-      })
-      .populate({
-        path: "items.GodownList.godownMongoDbId",
-        select: "godown", // populate godown name
-      })
-      .lean();
-
-    if (!saleDetails) {
-      return res.status(404).json({ error: "Sale not found" });
-    }
-
-    // Find the outstanding for this sale
-    const outstandingOfSale = await OutstandingModel.findOne({
-      billId: saleDetails._id.toString(),
-      bill_no: saleDetails.salesNumber,
-      cmp_id: saleDetails.cmp_id,
-      Primary_user_id: saleDetails.Primary_user_id,
-    });
-
-    const isEditable = !outstandingOfSale || outstandingOfSale?.appliedReceipts?.length === 0;
-    saleDetails.isEditable = isEditable;
-
-    res.status(200).json({ message: "Sales details fetched", data: saleDetails });
-  } catch (error) {
-    console.error("Error fetching sale details:", error);
-    res.status(500).json({ error: "Internal Server Error" });
-  }
-};
 
 
 // @desc to  get stock transfer details
@@ -346,7 +297,7 @@ export const transactions = async (req, res) => {
 
     const combined = results
       .flat()
-      .sort((a, b) => new Date(b.date) - new Date(a.date));
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
     const totalTransactionAmount = combined.reduce((sum, transaction) => {
       const amount = Number(transaction.enteredAmount) || 0;

@@ -14,6 +14,12 @@ import {
   addVoucherNumber,
   addAllAdditionalCharges,
   addVansSaleGodown,
+  addMode,
+  addParty,
+  setItem,
+  addDespatchDetails,
+  setAdditionalCharges,
+  setFinalAmount,
 } from "../../../../slices/voucherSlices/commonVoucherSlice";
 import DespatchDetails from "./DespatchDetails";
 import HeaderTile from "./HeaderTile";
@@ -24,7 +30,7 @@ import FooterButton from "./FooterButton";
 import TitleDiv from "../../../components/common/TitleDiv";
 import AdditionalChargesTile from "./AdditionalChargesTile";
 
-function VoucherInitialPage() {
+function VoucherInitialPageEdit() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
@@ -34,11 +40,19 @@ function VoucherInitialPage() {
     if (voucherTypeFromRedux) return;
     /// if the voucherType is not present in redux then we will take it from the location state
     /// voucher type is assigned from the select voucher page to this page
+
     let currentVoucher = "sales";
-    if (location && location.state && location.state.voucherType) {
-      currentVoucher = location.state.voucherType;
+    let Mode = "create";
+
+    console.log("location", location.state);
+
+    const { voucherType, mode } = location.state || {};
+    if (location && location.state && voucherType) {
+      currentVoucher = voucherType;
+      Mode = mode;
     }
     dispatch(addVoucherType(currentVoucher));
+    dispatch(addMode(Mode));
   };
 
   /// to get voucher number name
@@ -72,6 +86,11 @@ function VoucherInitialPage() {
     allAdditionalCharges: allAdditionalChargesFromRedux,
     finalAmount: totalAmount,
     vanSaleGodown: vanSaleGodownFromRedux,
+    items: itemsFromRedux,
+    party: partyFromRedux,
+    despatchDetails: despatchDetailsFromRedux,
+    finalAmount: finalAmountFromRedux,
+    date: dateFromRedux,
   } = useSelector((state) => state.commonVoucherSlice);
 
   // const paymentSplittingReduxData = useSelector(
@@ -107,102 +126,86 @@ function VoucherInitialPage() {
   const fetchData = useCallback(async () => {
     setIsLoading(true);
 
+    const voucherNumberTitle = getVoucherNumberTitle();
+    console.log("voucherNumberTitle", voucherNumberTitle);
+
+    const {
+      date: selectedDateFromState,
+      voucherType: voucherTypeFromState,
+      // convertedFrom: convertedFromFromState,
+      [voucherNumberTitle]: voucherNumberFromState,
+      selectedGodownDetails: selectedGodownDetailsFromState,
+      party: partyFromState,
+      items: itemsFromState,
+      despatchDetails: despatchDetailsFromState,
+      additionalCharges: additionalChargesFromState,
+      finalAmount: finalAmountFromState,
+    } = location.state.data || {};
+
     try {
-      // Initialize API requests container with names
-      const apiRequests = {};
-
-      // Additional Charges
-      let additionalCharges = allAdditionalChargesFromRedux;
-      if (additionalCharges && additionalCharges.length === 0) {
-        apiRequests.additionalChargesRequest = api.get(
-          `/api/sUsers/additionalcharges/${cmp_id}`,
-          { withCredentials: true }
-        );
-      }
-
-      // Configuration Number
+      //  Populate Voucher Configuration Number for location state
       if (!voucherNumberFromRedux && voucherTypeFromRedux) {
-        apiRequests.configNumberRequest = api.get(
-          `/api/sUsers/fetchConfigurationNumber/${cmp_id}/${voucherTypeFromRedux}`,
-          { withCredentials: true }
-        );
+        dispatch(addVoucherNumber(voucherNumberFromState));
+        dispatch(addVoucherType(voucherTypeFromState));
+        setVoucherNumber(voucherNumberFromState);
       } else {
         setVoucherNumber(voucherNumberFromRedux);
       }
 
-      // Add godownsName API call if voucher type is 'vanSale'
+      /// populate date from location state
+
+      if (selectedDateFromState && !dateFromRedux) {
+        setSelectedDate(new Date(selectedDateFromState).toISOString());
+        dispatch(changeDate(selectedDateFromState));
+      }else{
+        setSelectedDate(new Date(dateFromRedux).toISOString());
+      }
+
+      /// populate party from location state
+      if (Object.keys(partyFromState).length > 0 && Object.keys(partyFromRedux).length === 0) {
+        dispatch(addParty(partyFromState));
+      }
+
+      /// populate items from location state
+      if (itemsFromState.length > 0 && itemsFromRedux.length === 0) {
+        dispatch(setItem(itemsFromState));
+      }else{
+        dispatch(setItem(itemsFromRedux));
+      }
+
+      //// populate despatch details from location state
+      if (
+        Object.keys(despatchDetailsFromState).length > 0 &&
+        Object.values(despatchDetailsFromRedux).every((item) => item === "")
+      ) {
+        dispatch(addDespatchDetails(despatchDetailsFromState));
+      }
+      /// populate additional charges from location state
+      if (additionalChargesFromState.length > 0 && additionalChargesFromRedux.length=== 0) {
+        dispatch(setAdditionalCharges(additionalChargesFromState));
+      }
+
+      /// populate final amount from location state
+      if (finalAmountFromState && finalAmountFromRedux==0 ) {
+        dispatch(setFinalAmount(finalAmountFromState));
+      }
+      // Add godownsName to Redux if voucher type is 'vanSale'
       if (
         voucherType === "vanSale" &&
         Object.keys(vanSaleGodownFromRedux).length === 0
       ) {
-        apiRequests.godownsRequest = api.get(
-          `/api/sUsers/godownsName/${cmp_id}`,
+        dispatch(addVansSaleGodown(selectedGodownDetailsFromState || {}));
+      }
+
+      // Get additional charges only if needed
+      if (allAdditionalChargesFromRedux.length === 0) {
+        const response = await api.get(
+          `/api/sUsers/additionalcharges/${cmp_id}`,
           { withCredentials: true }
         );
-      }
 
-      // Execute all API requests in parallel
-      const responseData = await Promise.all(Object.values(apiRequests));
-
-      // Map responses back to their request names
-      const responses = {};
-      Object.keys(apiRequests).forEach((key, index) => {
-        responses[key] = responseData[index];
-      });
-
-      // Process Additional Charges
-      if (responses.additionalChargesRequest) {
-        additionalCharges =
-          responses.additionalChargesRequest.data?.additionalCharges || [];
+        const additionalCharges = response.data?.additionalCharges || [];
         dispatch(addAllAdditionalCharges(additionalCharges));
-      }
-
-      // Process Configuration Number
-      if (responses.configNumberRequest) {
-        const configData = responses.configNumberRequest.data;
-
-        if (configData.message === "default") {
-          const voucherNumber = configData.configurationNumber;
-          setVoucherNumber(voucherNumber);
-          dispatch(addVoucherNumber(voucherNumber));
-        } else {
-          const { configDetails, configurationNumber } = configData;
-          if (configDetails) {
-            const { widthOfNumericalPart, prefixDetails, suffixDetails } =
-              configDetails;
-            const paddedNumber = configurationNumber
-              .toString()
-              .padStart(widthOfNumericalPart, 0);
-            const finalOrderNumber = [
-              prefixDetails,
-              paddedNumber,
-              suffixDetails,
-            ]
-              .filter(Boolean)
-              .join("-");
-            setVoucherNumber(finalOrderNumber);
-            dispatch(addVoucherNumber(finalOrderNumber));
-          } else {
-            setVoucherNumber(configurationNumber);
-            dispatch(addVoucherNumber(configurationNumber));
-          }
-        }
-      }
-
-      // Process Godowns data if requested
-      if (
-        responses.godownsRequest &&
-        voucherType === "vanSale" &&
-        Object.keys(vanSaleGodownFromRedux).length === 0
-      ) {
-        const godownsData = responses.godownsRequest.data;
-
-        if (godownsData?.data === null) {
-          navigate("/sUsers/selectVouchers");
-          toast.error("No godown is configured");
-          return;
-        }
-        dispatch(addVansSaleGodown(godownsData?.data || {}));
       }
     } catch (error) {
       console.log(error);
@@ -210,7 +213,7 @@ function VoucherInitialPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [cmp_id, voucherTypeFromRedux]);
+  }, [cmp_id, voucherTypeFromRedux, location]);
 
   // Initialize component
   useEffect(() => {
@@ -276,7 +279,7 @@ function VoucherInitialPage() {
         despatchDetails,
         priceLevelFromRedux,
         additionalChargesFromRedux,
-        selectedGodownDetails: vanSaleGodownFromRedux
+        selectedGodownDetails: vanSaleGodownFromRedux,
         // batchHeights,
         // convertedFrom,
         // paymentSplittingData:
@@ -330,7 +333,6 @@ function VoucherInitialPage() {
             changeDate={changeDate}
             submitHandler={submitHandler}
             removeAll={removeAll}
-            tab="add"
             isLoading={submitLoading}
           />
           {/* adding party */}
@@ -402,4 +404,4 @@ function VoucherInitialPage() {
   );
 }
 
-export default VoucherInitialPage;
+export default VoucherInitialPageEdit;

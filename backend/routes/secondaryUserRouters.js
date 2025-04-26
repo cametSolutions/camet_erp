@@ -24,9 +24,9 @@ import {login,getSecUserData,
  
 import { createPurchase,editPurchase,cancelPurchase } from '../controllers/purchaseController.js';
 import { createCreditNote,cancelCreditNote ,editCreditNote} from '../controllers/creditNoteController.js';
-import {createSale,editSale,cancelSale,} from '../controllers/saleController.js';
+import {createSale,editSale,cancelSale, getSalesDetails,} from '../controllers/saleController.js';
 import { cancelDebitNote, createDebitNote, editDebitNote } from '../controllers/debitNoteController.js';
-import { getStockTransferDetails,getCreditNoteDetails,transactions, getDebitNoteDetails,getReceiptDetails,getPaymentDetails,addHsn,getSingleHsn,editHsn,deleteHsn,getSalesDetails,getPurchaseDetails,getOpeningBalances, sendPdfViaEmail} from '../controllers/commonController.js';
+import { getStockTransferDetails,getCreditNoteDetails,transactions, getDebitNoteDetails,getReceiptDetails,getPaymentDetails,addHsn,getSingleHsn,editHsn,deleteHsn,getPurchaseDetails,getOpeningBalances, sendPdfViaEmail} from '../controllers/commonController.js';
 import { authSecondary } from '../middlewares/authSecUsers.js';
 import { secondaryIsBlocked } from '../middlewares/isBlocked.js';
 import { companyAuthentication } from '../middlewares/authCompany.js';

@@ -551,3 +551,93 @@ export const cancelSale = async (req, res) => {
     });
   }
 };
+
+// @desc toget the details of transaction or sale
+// route get/api/sUsers/getSalesDetails
+
+export const getSalesDetails = async (req, res) => {
+  const saleId = req.params.id;
+  const vanSaleQuery = req.query.vanSale;
+
+  const isVanSale = vanSaleQuery === "true";
+  const model = isVanSale ? vanSaleModel : salesModel;
+
+  try {
+    // First, get the sale details with populated references
+    let saleDetails = await model
+      .findById(saleId)
+      .populate({
+        path: "party._id",
+        select: "partyName", // get only the name or other fields as needed
+      })
+      .populate({
+        path: "items._id",
+        select: "product_name", // populate item details
+      })
+      .populate({
+        path: "items.GodownList.godownMongoDbId",
+        select: "godown", // populate godown name
+      })
+      .lean();
+
+    if (!saleDetails) {
+      return res.status(404).json({ error: "Sale not found" });
+    }
+
+    // Update the party name if it exists and restore original ID structure
+    if (saleDetails.party?._id?.partyName) {
+      // Update the party name with the latest value
+      saleDetails.partyAccount = saleDetails.party._id.partyName;
+      saleDetails.party.partyName = saleDetails.party._id.partyName;
+      
+      // Restore ID to original format
+      const partyId = saleDetails.party._id._id;
+      saleDetails.party._id = partyId;
+    }
+
+    // Update product names in items array
+    if (saleDetails.items && saleDetails.items.length > 0) {
+      saleDetails.items.forEach(item => {
+        if (item._id?.product_name) {
+          // Update the product name with the latest value
+          item.product_name = item._id.product_name;
+          
+          // Restore ID to original format
+          const itemId = item._id._id;
+          item._id = itemId;
+        }
+        
+        // Update godown names in GodownList array
+        if (item.GodownList && item.GodownList.length > 0) {
+          item.GodownList.forEach(godown => {
+            if (godown.godownMongoDbId?.godown) {
+              // Update the godown name with the latest value
+              godown.godown = godown.godownMongoDbId.godown;
+              
+              // Restore ID to original format
+              const godownId = godown.godownMongoDbId._id;
+              godown.godownMongoDbId = godownId;
+            }
+          });
+        }
+      });
+    }
+
+    // Find the outstanding for this sale
+    const outstandingOfSale = await TallyData.findOne({
+      billId: saleDetails._id.toString(),
+      bill_no: saleDetails.salesNumber,
+      cmp_id: saleDetails.cmp_id,
+      Primary_user_id: saleDetails.Primary_user_id,
+    });
+
+    const isEditable = !outstandingOfSale || outstandingOfSale?.appliedReceipts?.length === 0;
+    saleDetails.isEditable = isEditable;
+
+    res.status(200).json({ message: "Sales details fetched", data: saleDetails });
+  } catch (error) {
+    console.error("Error fetching sale details:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+

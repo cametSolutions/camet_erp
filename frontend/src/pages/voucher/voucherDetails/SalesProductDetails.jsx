@@ -15,7 +15,7 @@ function SalesProductDetails({
   const additionalChargesTotal = parseInt(additionalCharges?.reduce((acc, curr) => acc + curr?.finalValue, 0) || 0).toFixed(2);
   
   return (
-    <div className="rounded-lg overflow-hidden shadow-sm w-full max-w-full">
+    <div className="rounded-lg overflow-hidden shadow-sm w-full max-w-full pb-5">
       {/* Summary Card */}
       <div className="p-3 sm:p-4 bg-white border-b">
         <h3 className="text-sm font-bold mb-3">Summary</h3>
@@ -78,7 +78,7 @@ function SalesProductDetails({
               {items.map((item, index) => (
                 <div key={index} className="p-2 sm:p-3">
                   <div className="flex justify-between mb-1">
-                    <h4 className="font-medium text-xs">{item?._id?.product_name}</h4>
+                    <h4 className="font-medium text-xs">{item?.product_name}</h4>
                     <p className="font-medium text-xs">₹ {item.total ?? 0}</p>
                   </div>
                   
@@ -108,7 +108,7 @@ function SalesProductDetails({
                             
                             {godownOrBatch.godown && (
                               <div className="flex flex-wrap justify-between mb-1">
-                                <p className="text-violet-600 font-medium">Godown: {godownOrBatch?.godownMongoDbId?.godown}</p>
+                                <p className="text-violet-600 font-medium">Godown: {godownOrBatch?.godown}</p>
                                 <p className="w-full sm:w-auto text-right sm:text-left">
                                   {godownOrBatch.count} {item.unit} × ₹{godownOrBatch?.selectedPriceRate || 0}
                                 </p>

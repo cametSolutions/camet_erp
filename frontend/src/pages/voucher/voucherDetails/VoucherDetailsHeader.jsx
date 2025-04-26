@@ -37,7 +37,13 @@ function VoucherDetailsHeader({
       );
       return;
     }
-    navigate(editLink);
+    navigate(`/sUsers/edit${data?.voucherType}/${data?._id}`, {
+      state: {
+        mode: "edit ",
+        voucherType: data?.voucherType,
+        data: data,
+      },
+    });
   };
 
   // Define when to show buttons or just the share button
@@ -47,7 +53,7 @@ function VoucherDetailsHeader({
 
   return (
     <div>
-      <div className="bg-white p-4 mt-3 flex justify-between items-center">
+      <div className="bg-white px-4 mt-3 flex justify-between items-center">
         <div className=" ">
           <p className="text-sm text-violet-500 font-semibold ">
             ID #{number || ""}

@@ -1,4 +1,3 @@
-
 import { MdTextsms } from "react-icons/md";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
@@ -20,23 +19,38 @@ function VoucherDetails() {
 
   const { id } = useParams();
   const navigate = useNavigate();
-  // const location = useLocation();
+  const location = useLocation();
+
+
+  const getEndPoint = () => {
+    const pathName = location.pathname.split("/")[2];
+    if (pathName === "vanSaleDetails" || pathName === "salesDetails") {
+      return "getSalesDetails";
+    } else {
+      return "getSalesDetails";
+    }
+  };
+
+  const params = {};
+  if (location.pathname.split("/")[2] === "vanSaleDetails") {
+    params.vanSale = true;
+  }
+
+  const endPoint = getEndPoint();
 
   const { data: voucherDetails, loading } = useFetch(
-    `/api/sUsers/getSalesDetails/${id}`
+    endPoint ? `/api/sUsers/${endPoint}/${id}` : null,
+    params
   );
   useEffect(() => {
     if (voucherDetails) {
       setData(voucherDetails.data);
     }
-  }, [voucherDetails]);
-
-
+  }, [voucherDetails, endPoint]);
 
   const reFetch = () => {
     setRefresh(!refresh);
   };
-
 
   const handleEdit = () => {
     if (data?.isEditable === false) {
@@ -54,58 +68,62 @@ function VoucherDetails() {
       <TitleDiv title={"Voucher Details"} loading={loading} />
       {/* headinh section  */}
 
-      <VoucherDetailsHeader
-        data={data}
-        reFetchParent={reFetch}
-        editLink={`/sUsers/editSale/${data?._id}`}
-        user={"secondary"}
-        number={data?.salesNumber}
-        tab={"Sales"}
-      />
-
-      <VoucherDetailsParty data={data} />
-
-      <SalesProductDetails
-        data={data}
-        items={data?.items}
-        priceLevel={data?.priceLevel}
-        additionalCharges={data?.additionalCharges}
-        paymentSplittingData={data?.paymentSplittingData}
-      />
-
-      {data?.paymentSplittingData &&
-        data?.paymentSplittingData?.splittingData?.length > 0 && (
-          <PaymentSplittingDetails data={data?.paymentSplittingData} />
-        )}
-
-      {/* payment method */}
-
-      <div className=" block md:hidden z-0 ">
-        <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 flex justify-center p-4 gap-12 text-lg text-violet-500  ">
-          <CancelButton
-            id={data._id}
-            tab="Sales"
-            isCancelled={data?.isCancelled}
-            reFetch={reFetch}
-            isEditable={data?.isEditable}
+      {!loading && (
+        <div>
+          <VoucherDetailsHeader
+            data={data}
+            reFetchParent={reFetch}
+            editLink={`/sUsers/editSale/${data?._id}`}
+            user={"secondary"}
+            number={data?.salesNumber}
+            tab={"Sales"}
           />
 
-          <div
-            onClick={handleEdit}
-            className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer"
-          >
-            <FaEdit className="text-blue-500" />
-            <p className="text-black font-bold text-sm">Edit</p>
-          </div>
-          {/* <Link to={`/sUsers/shareSales/${data._id}`}> */}
-          <SwallFireForPdf data={data} />
+          <VoucherDetailsParty data={data} />
 
-          <div className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer">
-            <MdTextsms className="text-green-500" />
-            <p className="text-black font-bold text-sm">Sms</p>
+          <SalesProductDetails
+            data={data}
+            items={data?.items}
+            priceLevel={data?.priceLevel}
+            additionalCharges={data?.additionalCharges}
+            paymentSplittingData={data?.paymentSplittingData}
+          />
+
+          {data?.paymentSplittingData &&
+            data?.paymentSplittingData?.splittingData?.length > 0 && (
+              <PaymentSplittingDetails data={data?.paymentSplittingData} />
+            )}
+
+          {/* payment method */}
+
+          <div className=" block md:hidden z-0 ">
+            <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 flex justify-center p-4 gap-12 text-lg text-violet-500  ">
+              <CancelButton
+                id={data._id}
+                tab="Sales"
+                isCancelled={data?.isCancelled}
+                reFetch={reFetch}
+                isEditable={data?.isEditable}
+              />
+
+              <div
+                onClick={handleEdit}
+                className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer"
+              >
+                <FaEdit className="text-blue-500" />
+                <p className="text-black font-bold text-sm">Edit</p>
+              </div>
+              {/* <Link to={`/sUsers/shareSales/${data._id}`}> */}
+              <SwallFireForPdf data={data} />
+
+              <div className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer">
+                <MdTextsms className="text-green-500" />
+                <p className="text-black font-bold text-sm">Sms</p>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

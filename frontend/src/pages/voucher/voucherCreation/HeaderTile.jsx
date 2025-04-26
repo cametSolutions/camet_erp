@@ -1,5 +1,6 @@
 /* eslint-disable react/prop-types */
 import { IoIosAddCircle } from "react-icons/io";
+import { useSelector } from "react-redux";
 
 function HeaderTile({
   title,
@@ -10,11 +11,12 @@ function HeaderTile({
   changeDate,
   submitHandler,
   removeAll,
-  tab,
   loading,
 }) {
+  const { mode } = useSelector((state) => state.commonVoucherSlice);
 
-  const titleText=title.split("")[0]?.toUpperCase()?.concat(title.slice(1)) ||"Title"
+  const titleText =
+    title.split("")[0]?.toUpperCase()?.concat(title.slice(1)) || "Title";
   return (
     <div>
       <div className="flex justify-between  p-4 bg-white drop-shadow-lg items-center text-xs md:text-base ">
@@ -53,7 +55,11 @@ function HeaderTile({
                 {title === "Stock Transfer" ? (
                   <p>Transfer Stock</p>
                 ) : (
-                  <p>{tab === "add" ? `Generate ${titleText}` : `Edit ${titleText}`}</p>
+                  <p>
+                    {mode === "create"
+                      ? `Generate ${titleText}`
+                      : `Edit ${titleText}`}
+                  </p>
                 )}
               </button>
             </div>

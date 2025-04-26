@@ -3,7 +3,7 @@ import { FaUser } from "react-icons/fa";
 import { MdPhone } from "react-icons/md";
 
 export default function VoucherDetailsParty({ data }) {
-  const partyName = data?.party?._id?.partyName || "N/A";
+  const partyName = data?.party?.partyName || "N/A";
   const mobileNumber =
     data?.party?.mobileNumber !== "null" ? data?.party?.mobileNumber : "";
 

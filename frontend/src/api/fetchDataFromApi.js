@@ -1,9 +1,10 @@
 import api from "./api";
 
-export const fetchDataFromApi = async (url) => {
+export const fetchDataFromApi = async (url,params) => {
   try {
     const { data } = await api.get(url, {
       withCredentials: true,
+      params:params,
     });
     return data;
   } catch (error) {

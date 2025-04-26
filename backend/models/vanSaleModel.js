@@ -128,9 +128,9 @@ const vanSaleSchema = new Schema(
 
         GodownList: [
           {
+            godownMongoDbId: { type: Schema.Types.ObjectId, ref: "Godown" },
             godown: { type: String },
             balance_stock: { type: Number },
-            _id: { type: Schema.Types.ObjectId, ref: "Godown" },
             godown_id: { type: String },
             defaultGodown: { type: Boolean },
             selectedPriceRate: { type: Number },

@@ -146,6 +146,7 @@ import BankingManagement from '@/pages/masters/cashOrBank/BankingManagement'
 import VoucherInitalPage from '@/pages/voucher/voucherCreation/voucherInitialPage'
 import VoucherInitialPage from '@/pages/voucher/voucherCreation/voucherInitialPage'
 import VoucherDetails from '@/pages/voucher/voucherDetails/VoucherDetails'
+import VoucherInitialPageEdit from '@/pages/voucher/voucherCreation/voucherInitialPageEdit'
 
 const Routers = () => {
   return (
@@ -183,7 +184,7 @@ const Routers = () => {
         <Route path='/sUsers/addItemSales' element={<ProtectedSecRoute><VoucherAddCount/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/editItemSales/:id/:godownName/:index' element={<ProtectedSecRoute><EditItemSalesSecondary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/salesDetails/:id' element={<ProtectedSecRoute><VoucherDetails/></ProtectedSecRoute>}></Route>
-        <Route path='/sUsers/vanSaleDetails/:id' element={<ProtectedSecRoute><VanSaleDetailsSecondary/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/vanSaleDetails/:id' element={<ProtectedSecRoute><VoucherDetails/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/shareSales/:id' element={<ProtectedSecRoute><ShareSalesSecondary/></ProtectedSecRoute>}></Route> 
         <Route path='/sUsers/shareVanSale/:id' element={<ProtectedSecRoute><ShareVanSaleSecondary/></ProtectedSecRoute>}></Route> 
         <Route path='/sUsers/shareSalesThreeInch/:id' element={<ProtectedSecRoute><ThreeInchSalesSec/></ProtectedSecRoute>}></Route> 
@@ -206,7 +207,7 @@ const Routers = () => {
        
        
        
-        <Route path='/sUsers/editSale/:id' element={<ProtectedSecRoute><EditSale/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/editsales/:id' element={<ProtectedSecRoute><VoucherInitialPageEdit/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/editVanSale/:id' element={<ProtectedSecRoute><EditVanSale/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/billToSales/:id' element={<ProtectedSecRoute><BillToSales/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/billToSalesOrder/:id' element={<ProtectedSecRoute><BillToSalesOrder/></ProtectedSecRoute>}></Route>

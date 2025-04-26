@@ -221,7 +221,7 @@ function AddItemTile({
                               Qty <span className="text-xs">x</span> Rate
                             </p>
                             <p className="text-nowrap">
-                              {el.count} {el.unit} X{" "}
+                              {el.GodownList[0]?.count} {el.unit} X{" "}
                               {el?.GodownList[0]?.selectedPriceRate || 0}
                             </p>
                           </div>
