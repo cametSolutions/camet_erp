@@ -202,15 +202,15 @@ const RETRY_DELAY_MS = 1000;
 export const editSale = async (req, res) => {
   const saleId = req.params.id;
   const {
-    selectedGodownId,
-    selectedGodownName,
+    // selectedGodownId,
+    // selectedGodownName,
     orgId,
     party,
     items,
     despatchDetails,
     priceLevelFromRedux,
     additionalChargesFromRedux,
-    lastAmount,
+    finalAmount:lastAmount,
     salesNumber,
     selectedDate,
     paymentSplittingData = {},
@@ -241,24 +241,25 @@ export const editSale = async (req, res) => {
 
       await revertSaleStockUpdates(existingSale.items, session);
 
-      const updatedItems = processSaleItems(
-        items,
-        priceLevelFromRedux,
-        additionalChargesFromRedux
-      );
-      await handleSaleStockUpdates(updatedItems, session);
+      // const updatedItems = processSaleItems(
+      //   items,
+      //   priceLevelFromRedux,
+      //   additionalChargesFromRedux
+      // );
+      await handleSaleStockUpdates(items, session);
 
       const updateData = {
-        selectedGodownId: selectedGodownId || existingSale.selectedGodownId,
-        selectedGodownName: selectedGodownName
-          ? selectedGodownName[0]
-          : existingSale.selectedGodownName,
+        // selectedGodownId: selectedGodownId || existingSale.selectedGodownId,
+        // selectedGodownName: selectedGodownName
+        //   ? selectedGodownName[0]
+        //   : existingSale.selectedGodownName,
+        _id:existingSale._id,
         serialNumber: existingSale.serialNumber,
         cmp_id: orgId,
         partyAccount: party?.partyName,
         party,
         despatchDetails,
-        items: updatedItems,
+        items,
         priceLevel: priceLevelFromRedux,
         additionalCharges: additionalChargesFromRedux,
         finalAmount: lastAmount,
@@ -340,91 +341,93 @@ export const editSale = async (req, res) => {
         );
       }
 
-      //// recreating new the payment splitting data
+      // recreating new the payment splitting data
 
-      if (paymentSplittingData?.splittingData?.length > 0) {
-        const creditItem = paymentSplittingData.splittingData.find(
-          (item) => item.mode === "credit"
-        );
-        if (creditItem) {
-          // console.log("creditItem", creditItem);
+      // / need to do /// commenting for now
 
-          const oldCreditAmount =
-            existingSale.paymentSplittingData?.splittingData?.find(
-              (item) => item.mode === "credit"
-            )?.amount || 0;
-          const newCreditAmount = creditItem.amount;
-          const diffCreditAmount =
-            Number(newCreditAmount) - Number(oldCreditAmount);
+      // if (paymentSplittingData?.splittingData?.length > 0) {
+      //   const creditItem = paymentSplittingData.splittingData.find(
+      //     (item) => item.mode === "credit"
+      //   );
+      //   if (creditItem) {
+      //     // console.log("creditItem", creditItem);
 
-          const matchedOutStandingOfCredit = await TallyData.findOne({
-            cmp_id: orgId,
-            bill_no: salesNumber,
-            billId: existingSale?._id.toString(),
-            createdBy: "paymentSplitting",
-          }).session(session);
+      //     const oldCreditAmount =
+      //       existingSale.paymentSplittingData?.splittingData?.find(
+      //         (item) => item.mode === "credit"
+      //       )?.amount || 0;
+      //     const newCreditAmount = creditItem.amount;
+      //     const diffCreditAmount =
+      //       Number(newCreditAmount) - Number(oldCreditAmount);
 
-          if (matchedOutStandingOfCredit) {
-            const newOutstanding =
-              Number(matchedOutStandingOfCredit.bill_pending_amt || 0) +
-              diffCreditAmount;
+      //     const matchedOutStandingOfCredit = await TallyData.findOne({
+      //       cmp_id: orgId,
+      //       bill_no: salesNumber,
+      //       billId: existingSale?._id.toString(),
+      //       createdBy: "paymentSplitting",
+      //     }).session(session);
 
-            paymentSplittingData.splittingData =
-              paymentSplittingData.splittingData.map((item) =>
-                item.mode === "credit"
-                  ? { ...item, amount: newOutstanding }
-                  : item
-              );
+      //     if (matchedOutStandingOfCredit) {
+      //       const newOutstanding =
+      //         Number(matchedOutStandingOfCredit.bill_pending_amt || 0) +
+      //         diffCreditAmount;
 
-            await savePaymentSplittingDataInSources(
-              paymentSplittingData,
-              salesNumber,
-              saleId,
-              orgId,
-              req.owner,
-              secondaryMobile,
-              "sale",
-              updateData?.date,
-              updateData?.party?.partyName,
+      //       paymentSplittingData.splittingData =
+      //         paymentSplittingData.splittingData.map((item) =>
+      //           item.mode === "credit"
+      //             ? { ...item, amount: newOutstanding }
+      //             : item
+      //         );
 
-              session
-            );
-          } else {
-            await savePaymentSplittingDataInSources(
-              paymentSplittingData,
-              salesNumber,
-              saleId,
-              orgId,
-              req.owner,
-              secondaryMobile,
-              "sale",
-              updateData?.date,
-              updateData?.party?.partyName,
+      //       await savePaymentSplittingDataInSources(
+      //         paymentSplittingData,
+      //         salesNumber,
+      //         saleId,
+      //         orgId,
+      //         req.owner,
+      //         secondaryMobile,
+      //         "sale",
+      //         updateData?.date,
+      //         updateData?.party?.partyName,
 
-              session
-            );
-          }
-        } else {
-          await savePaymentSplittingDataInSources(
-            paymentSplittingData,
-            salesNumber,
-            saleId,
-            orgId,
-            req.owner,
-            secondaryMobile,
-            "sale",
-            updateData?.date,
-            updateData?.party?.partyName,
+      //         session
+      //       );
+      //     } else {
+      //       await savePaymentSplittingDataInSources(
+      //         paymentSplittingData,
+      //         salesNumber,
+      //         saleId,
+      //         orgId,
+      //         req.owner,
+      //         secondaryMobile,
+      //         "sale",
+      //         updateData?.date,
+      //         updateData?.party?.partyName,
 
-            session
-          );
-        }
-      }
+      //         session
+      //       );
+      //     }
+      //   } else {
+      //     await savePaymentSplittingDataInSources(
+      //       paymentSplittingData,
+      //       salesNumber,
+      //       saleId,
+      //       orgId,
+      //       req.owner,
+      //       secondaryMobile,
+      //       "sale",
+      //       updateData?.date,
+      //       updateData?.party?.partyName,
+
+      //       session
+      //     );
+      //   }
+      // }
 
       await session.commitTransaction();
       return res
         .status(200)
-        .json({ success: true, message: "Sale edited successfully" });
+        .json({ success: true, message: "Sale edited successfully", data: updateData });
     } catch (error) {
       await session.abortTransaction();
       console.error("Error editing sale:", error);

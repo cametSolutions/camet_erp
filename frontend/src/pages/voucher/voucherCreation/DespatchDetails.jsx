@@ -30,20 +30,16 @@ function DespatchDetails({ tab }) {
 
   useEffect(() => {
     if (companyDetails && companyDetails.configurations.length > 0) {
-      const despatchTitles = companyDetails.configurations[0].despatchTitles.find(
-        (config) => config.voucher === voucher
-      );
-  
-      console.log("despatchTitles", despatchTitles);
-  
+      const despatchTitles =
+        companyDetails.configurations[0].despatchTitles.find(
+          (config) => config.voucher === voucher
+        );
+
       if (despatchTitles) {
         setDisplayTitles(despatchTitles);
       }
     }
   }, [companyDetails, voucher]);
-  
-
-
 
   useEffect(() => {
     if (despatchDetails) {
@@ -129,7 +125,6 @@ function DespatchDetails({ tab }) {
 
   return (
     <div>
-
       <div className="p-4 bg-white mt-3 shadow-lg">
         <div className="flex items-center mb-2 gap-2 ">
           <p className="font-bold uppercase text-xs">Details</p>

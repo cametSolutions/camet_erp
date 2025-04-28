@@ -19,16 +19,20 @@ export default function AdditionalChargesTile({ type, subTotal,setOpenAdditional
     items: itemsFromRedux,
   } = useSelector((state) => state.commonVoucherSlice);
 
+  
+
   const defaultCharge = allAdditionalChargesFromRedux?.[0];
   const dispatch = useDispatch();
 
-  const [rows, setRows] = useState(() => {
-    if (additionalChargesFromRedux.length > 0)
-      return additionalChargesFromRedux;
+  const [rows, setRows] = useState([]);
 
-    if (defaultCharge) {
+  useEffect(() => {
+    if (additionalChargesFromRedux.length > 0) {
+      setRows(additionalChargesFromRedux);
+      setOpenAdditionalTile(true);
+    } else if (defaultCharge) {
       const { name: option, taxPercentage, hsn, _id } = defaultCharge;
-      return [
+      setRows([
         {
           option,
           value: "",
@@ -38,10 +42,9 @@ export default function AdditionalChargesTile({ type, subTotal,setOpenAdditional
           _id,
           finalValue: "",
         },
-      ];
+      ]);
     }
-    return [];
-  });
+  }, [additionalChargesFromRedux, defaultCharge]);
 
   useEffect(() => {
     if (itemsFromRedux.length <= 0) {

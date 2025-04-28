@@ -133,6 +133,15 @@ const vanSaleSchema = new Schema(
             balance_stock: { type: Number },
             godown_id: { type: String },
             defaultGodown: { type: Boolean },
+            batch: {
+              type: String,
+            },
+            mfgdt: {
+              type: String,
+            },
+            expdt: {
+              type: String,
+            },
             selectedPriceRate: { type: Number },
             added: { type: Boolean },
             count: { type: Number },

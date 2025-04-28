@@ -4,6 +4,7 @@ const initialState = {
   voucherNumber: "",
   voucherType: "",
   mode:"create",
+  initialized: false,
   date: "",
   convertedFrom: [],
   products: [],
@@ -366,6 +367,9 @@ export const commonVoucherSlice = createSlice({
     },
     addMode: (state, action) => {
       state.mode = action.payload;
+    },
+    setInitialized: (state, action) => {
+      state.initialized = action.payload;
     }
   },
 });
@@ -416,7 +420,8 @@ export const {
   addVoucherType,
   addVoucherNumber,
   addVansSaleGodown,
-  addMode
+  addMode,
+  setInitialized
 } = commonVoucherSlice.actions;
 
 export default commonVoucherSlice.reducer;

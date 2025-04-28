@@ -55,6 +55,7 @@ function VoucherInitialPage() {
     }
   };
 
+
   // Redux selectors
   const { _id: cmp_id } = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg
@@ -214,7 +215,11 @@ function VoucherInitialPage() {
 
   // Initialize component
   useEffect(() => {
+
+    
     getVoucherType();
+
+
     if (!date) dispatch(changeDate(JSON.stringify(selectedDate)));
     localStorage.removeItem("scrollPositionAddItemSales");
     fetchData();
@@ -276,7 +281,7 @@ function VoucherInitialPage() {
         despatchDetails,
         priceLevelFromRedux,
         additionalChargesFromRedux,
-        selectedGodownDetails: vanSaleGodownFromRedux
+        selectedGodownDetails: vanSaleGodownFromRedux,
         // batchHeights,
         // convertedFrom,
         // paymentSplittingData:

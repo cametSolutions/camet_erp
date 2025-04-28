@@ -19,7 +19,7 @@ function AddItemTile({
 }) {
   return (
     <div>
-      {items.length == 0 && (
+      {items?.length == 0 && (
         <div className="bg-white p-4 pb-6  drop-shadow-lg mt-2 md:mt-3">
           <div className="flex gap-2 ">
             <p className="font-bold uppercase text-sm">Items</p>
@@ -113,8 +113,9 @@ function AddItemTile({
                     {el.hasGodownOrBatch ? (
                       el.GodownList.map((godownOrBatch, idx) =>
                         godownOrBatch.added ? (
-                          <>
-                            <div key={idx} className="flex items-center gap-2">
+                          <div key={idx}>
+                            
+                            <div  className="flex items-center gap-2">
                               <MdCancel
                                 onClick={() => {
                                   dispatch(
@@ -210,7 +211,7 @@ function AddItemTile({
                                 </div>
                               </div>
                             </div>
-                          </>
+                          </div>
                         ) : null
                       )
                     ) : (
@@ -226,14 +227,14 @@ function AddItemTile({
                             </p>
                           </div>
 
-                          {(el.discount > 0 || el.discountPercentage > 0) && (
+                          {(el?.GodownList[0]?.discount > 0 || el?.GodownList[0]?.discountPercentage > 0) && (
                             <div className="flex justify-between">
                               <p className="text-nowrap">Discount</p>
                               <div className="flex items-center">
                                 <p className="text-nowrap">
-                                  {el.discount > 0
-                                    ? `₹ ${el.discount}`
-                                    : `${el.discountPercentage}%`}
+                                  {el?.GodownList[0]?.discount > 0
+                                    ? `₹ ${el?.GodownList[0]?.discount}`
+                                    : `${el?.GodownList[0]?.discountPercentage}%`}
                                 </p>
                               </div>
                             </div>

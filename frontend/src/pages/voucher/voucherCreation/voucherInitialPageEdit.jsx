@@ -20,6 +20,7 @@ import {
   addDespatchDetails,
   setAdditionalCharges,
   setFinalAmount,
+  setInitialized,
 } from "../../../../slices/voucherSlices/commonVoucherSlice";
 import DespatchDetails from "./DespatchDetails";
 import HeaderTile from "./HeaderTile";
@@ -35,6 +36,31 @@ function VoucherInitialPageEdit() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Redux selectors
+  const { _id: cmp_id } = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg
+  );
+  const {
+    date,
+    party,
+    items,
+    despatchDetails,
+    // heights: batchHeights,
+    voucherType,
+    selectedPriceLevel: priceLevelFromRedux = "",
+    voucherType: voucherTypeFromRedux,
+    voucherNumber: voucherNumberFromRedux,
+    allAdditionalCharges: allAdditionalChargesFromRedux,
+    finalAmount: totalAmount,
+    vanSaleGodown: vanSaleGodownFromRedux,
+    items: itemsFromRedux,
+    party: partyFromRedux,
+    despatchDetails: despatchDetailsFromRedux,
+    finalAmount: finalAmountFromRedux,
+    date: dateFromRedux,
+    initialized: initializedFromRedux,
+  } = useSelector((state) => state.commonVoucherSlice);
+
   // to find the current voucher
   const getVoucherType = () => {
     if (voucherTypeFromRedux) return;
@@ -43,8 +69,6 @@ function VoucherInitialPageEdit() {
 
     let currentVoucher = "sales";
     let Mode = "create";
-
-    console.log("location", location.state);
 
     const { voucherType, mode } = location.state || {};
     if (location && location.state && voucherType) {
@@ -69,33 +93,7 @@ function VoucherInitialPageEdit() {
     }
   };
 
-  // Redux selectors
-  const { _id: cmp_id } = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg
-  );
-  const {
-    date,
-    party,
-    items,
-    despatchDetails,
-    // heights: batchHeights,
-    voucherType,
-    selectedPriceLevel: priceLevelFromRedux = "",
-    voucherType: voucherTypeFromRedux,
-    voucherNumber: voucherNumberFromRedux,
-    allAdditionalCharges: allAdditionalChargesFromRedux,
-    finalAmount: totalAmount,
-    vanSaleGodown: vanSaleGodownFromRedux,
-    items: itemsFromRedux,
-    party: partyFromRedux,
-    despatchDetails: despatchDetailsFromRedux,
-    finalAmount: finalAmountFromRedux,
-    date: dateFromRedux,
-  } = useSelector((state) => state.commonVoucherSlice);
-
-  // const paymentSplittingReduxData = useSelector(
-  //   (state) => state?.paymentSplitting?.paymentSplittingData
-  // );
+  /// to get api end point  edit of voucher
 
   const {
     additionalCharges: additionalChargesFromRedux = [],
@@ -116,18 +114,21 @@ function VoucherInitialPageEdit() {
   });
 
   const [openAdditionalTile, setOpenAdditionalTile] = useState(false);
+  const [voucherId, setVoucherId] = useState(null);
 
   // Calculated values
   const subTotal = useMemo(() => {
-    return items.reduce((acc, curr) => acc + (parseFloat(curr.total) || 0), 0);
-  }, [items]);
+    return itemsFromRedux?.reduce(
+      (acc, curr) => acc + (parseFloat(curr.total) || 0),
+      0
+    );
+  }, [itemsFromRedux]);
 
   // API calls wrapped in promises
   const fetchData = useCallback(async () => {
     setIsLoading(true);
 
     const voucherNumberTitle = getVoucherNumberTitle();
-    console.log("voucherNumberTitle", voucherNumberTitle);
 
     const {
       date: selectedDateFromState,
@@ -140,9 +141,13 @@ function VoucherInitialPageEdit() {
       despatchDetails: despatchDetailsFromState,
       additionalCharges: additionalChargesFromState,
       finalAmount: finalAmountFromState,
+      _id: voucherIdFromState,
     } = location.state.data || {};
 
     try {
+      if (voucherIdFromState) {
+        setVoucherId(voucherIdFromState);
+      }
       //  Populate Voucher Configuration Number for location state
       if (!voucherNumberFromRedux && voucherTypeFromRedux) {
         dispatch(addVoucherNumber(voucherNumberFromState));
@@ -157,19 +162,22 @@ function VoucherInitialPageEdit() {
       if (selectedDateFromState && !dateFromRedux) {
         setSelectedDate(new Date(selectedDateFromState).toISOString());
         dispatch(changeDate(selectedDateFromState));
-      }else{
+      } else {
         setSelectedDate(new Date(dateFromRedux).toISOString());
       }
 
       /// populate party from location state
-      if (Object.keys(partyFromState).length > 0 && Object.keys(partyFromRedux).length === 0) {
+      if (
+        Object.keys(partyFromState).length > 0 &&
+        Object.keys(partyFromRedux).length === 0
+      ) {
         dispatch(addParty(partyFromState));
       }
 
       /// populate items from location state
-      if (itemsFromState.length > 0 && itemsFromRedux.length === 0) {
+      if (itemsFromState.length > 0 && itemsFromRedux.length === 0 && !initializedFromRedux) {
         dispatch(setItem(itemsFromState));
-      }else{
+      } else {
         dispatch(setItem(itemsFromRedux));
       }
 
@@ -181,12 +189,16 @@ function VoucherInitialPageEdit() {
         dispatch(addDespatchDetails(despatchDetailsFromState));
       }
       /// populate additional charges from location state
-      if (additionalChargesFromState.length > 0 && additionalChargesFromRedux.length=== 0) {
+      if (
+        additionalChargesFromState.length > 0 &&
+        additionalChargesFromRedux.length === 0
+        && !initializedFromRedux
+      ) {
         dispatch(setAdditionalCharges(additionalChargesFromState));
       }
 
       /// populate final amount from location state
-      if (finalAmountFromState && finalAmountFromRedux==0 ) {
+      if (finalAmountFromState && finalAmountFromRedux == 0) {
         dispatch(setFinalAmount(finalAmountFromState));
       }
       // Add godownsName to Redux if voucher type is 'vanSale'
@@ -207,6 +219,13 @@ function VoucherInitialPageEdit() {
         const additionalCharges = response.data?.additionalCharges || [];
         dispatch(addAllAdditionalCharges(additionalCharges));
       }
+
+      if(!initializedFromRedux) {
+        dispatch(setInitialized(true));
+      }
+
+
+
     } catch (error) {
       console.log(error);
       toast.error(error.response?.data?.message || "Error fetching data");
@@ -288,8 +307,12 @@ function VoucherInitialPageEdit() {
         //     : {},
       };
 
+
+      console.log("formData", formData);
+      
+
       const res = await api.post(
-        `/api/sUsers/createSale?vanSale=${
+        `/api/sUsers/edit${voucherTypeFromRedux}/${voucherId}?vanSale=${
           voucherTypeFromRedux === "vanSale" ? true : false
         }`,
         formData,

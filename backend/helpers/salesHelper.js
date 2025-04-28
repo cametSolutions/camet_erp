@@ -44,7 +44,8 @@ export const updateSalesNumber = async (
 ) => {
   try {
     let salesNumber = 1;
-  const   selectedVoucherNumberTitle= vanSaleQuery==="true"?"vanSalesNumber":"salesNumber"
+    const selectedVoucherNumberTitle =
+      vanSaleQuery === "true" ? "vanSalesNumber" : "salesNumber";
 
     if (vanSaleQuery === "true") {
       // Increment vanSalesNumber for secondaryUser
@@ -165,15 +166,11 @@ export const handleSaleStockUpdates = async (items, session) => {
         }
         ////// handling  batch and godown updates
         else if (godown.godown_id && godown.batch) {
-          console.log("here");
-
           const godownIndex = product.GodownList.findIndex(
             (g) =>
               g.batch === godown.batch &&
               g.godown.toString() == godown.godownMongoDbId
           );
-
-          console.log("godownIndex", godownIndex);
 
           if (godownIndex !== -1 && godownCount && godownCount > 0) {
             const currentGodownStock =
@@ -205,7 +202,7 @@ export const handleSaleStockUpdates = async (items, session) => {
         ////// handling  godown only  updates
         else if (godown.godown_id && !godown?.batch) {
           const godownIndex = product.GodownList.findIndex(
-            (g) => g.godown.toString() === godown.godownMongoDbId
+            (g) => g.godown.toString() == godown.godownMongoDbId
           );
 
           if (godownIndex !== -1 && godownCount && godownCount > 0) {
@@ -234,8 +231,6 @@ export const handleSaleStockUpdates = async (items, session) => {
     } else {
       product.GodownList = product.GodownList.map((godown) => {
         const currentGodownStock = Number(godown.balance_stock) || 0;
-
-        console.log(godown, "godown");
 
         const currentGodown = item?.GodownList[0];
 
@@ -387,7 +382,7 @@ export const createSaleRecord = async (
       selectedDate,
       paymentSplittingData,
       convertedFrom = [],
-      voucherType
+      voucherType,
     } = req.body;
 
     const Primary_user_id = req.owner;
@@ -407,7 +402,6 @@ export const createSaleRecord = async (
       newSerialNumber = lastSale.serialNumber + 1;
     }
 
-
     const lastUserSale = await model.findOne(
       {
         cmp_id: orgId,
@@ -416,16 +410,12 @@ export const createSaleRecord = async (
       { userLevelSerialNumber: 1, _id: 0 }, // Project only the user-level serial
       { sort: { userLevelSerialNumber: -1 }, session }
     );
-    
+
     let newUserLevelSerial = 1;
-    
+
     if (lastUserSale && !isNaN(lastUserSale.userLevelSerialNumber)) {
       newUserLevelSerial = lastUserSale.userLevelSerialNumber + 1;
     }
-    
-
-
-    
 
     const sales = new model({
       selectedGodownDetails,
@@ -514,6 +504,8 @@ export const updateTallyData = async (
 
 export const revertSaleStockUpdates = async (items, session) => {
   try {
+    console.log("items", items.length);
+    
     for (const item of items) {
       const product = await productModel
         .findOne({ _id: item._id })
@@ -523,17 +515,27 @@ export const revertSaleStockUpdates = async (items, session) => {
         throw new Error(`Product not found for item ID: ${item._id}`);
       }
 
+      // console.log("product", product);
+
+
       // Use actualCount if available, otherwise fall back to count
       const itemCount = parseFloat(
-        item.actualCount !== undefined ? item.actualCount : item.count
+        item.totalActualCount !== undefined
+          ? item.totalActualCount
+          : item.totalCount
       );
 
       const productBalanceStock = parseFloat(product.balance_stock);
+
+      console.log("productBalanceStock saleble", productBalanceStock);
+      console.log("itemCount", itemCount);
 
       const newBalanceStock = truncateToNDecimals(
         productBalanceStock + itemCount,
         3
       );
+
+      console.log("newBalanceStock", newBalanceStock);
 
       // Update product balance stock
       await productModel.updateOne(
@@ -563,6 +565,8 @@ export const revertSaleStockUpdates = async (items, session) => {
                 3
               );
 
+              console.log("new GodownStock b", newGodownStock);
+
               await productModel.updateOne(
                 { _id: product._id, "GodownList.batch": godown.batch },
                 {
@@ -574,8 +578,11 @@ export const revertSaleStockUpdates = async (items, session) => {
           } else if (godown.godown_id && godown.batch) {
             const godownIndex = product.GodownList.findIndex(
               (g) =>
-                g.batch === godown.batch && g.godown_id === godown.godown_id
+                g.batch === godown.batch &&
+                g.godown.toString() == godown.godownMongoDbId
             );
+
+            console.log("godownIndex gb", godownIndex);
 
             if (godownIndex !== -1 && godownCount && godownCount > 0) {
               const currentGodownStock =
@@ -584,6 +591,7 @@ export const revertSaleStockUpdates = async (items, session) => {
                 currentGodownStock + godownCount,
                 3
               );
+              console.log("new GodownStock", newGodownStock);
 
               await productModel.updateOne(
                 { _id: product._id },
@@ -593,7 +601,9 @@ export const revertSaleStockUpdates = async (items, session) => {
                 {
                   arrayFilters: [
                     {
-                      "elem.godown_id": godown.godown_id,
+                      "elem.godown": new mongoose.Types.ObjectId(
+                        godown.godownMongoDbId
+                      ),
                       "elem.batch": godown.batch,
                     },
                   ],
@@ -602,9 +612,13 @@ export const revertSaleStockUpdates = async (items, session) => {
               );
             }
           } else if (godown.godown_id && !godown?.batch) {
+            
             const godownIndex = product.GodownList.findIndex(
-              (g) => g.godown_id === godown.godown_id
+              (g) => g.godown.toString() == godown.godownMongoDbId
             );
+
+            console.log("godownIndex g only", godownIndex);
+           
 
             if (godownIndex !== -1 && godownCount && godownCount > 0) {
               const currentGodownStock =
@@ -614,8 +628,15 @@ export const revertSaleStockUpdates = async (items, session) => {
                 3
               );
 
+              console.log("new GodownStock g only", newGodownStock);
+
               await productModel.updateOne(
-                { _id: product._id, "GodownList.godown_id": godown.godown_id },
+                {
+                  _id: product._id,
+                  "GodownList.godown": new mongoose.Types.ObjectId(
+                    godown.godownMongoDbId
+                  ),
+                },
                 {
                   $set: { "GodownList.$.balance_stock": newGodownStock },
                 },
@@ -627,17 +648,22 @@ export const revertSaleStockUpdates = async (items, session) => {
       } else {
         product.GodownList = product.GodownList.map((godown) => {
           const currentGodownStock = Number(godown.balance_stock) || 0;
+          console.log("currentGodownStock", currentGodownStock);
+
+          const currentGodown = item?.GodownList[0];
+
+          const godownCount =
+            (currentGodown.actualCount !== undefined
+              ? currentGodown.actualCount
+              : currentGodown.count) || 0;
           const newGodownStock = truncateToNDecimals(
-            currentGodownStock + Number(itemCount),
+            Number(currentGodownStock) + Number(godownCount),
             3
           );
-          return {
-            ...godown,
-            balance_stock: newGodownStock,
-          };
-        });
+          console.log("new GodownStock nothing", newGodownStock);
 
-        console.log("product.GodownList", product.GodownList);
+          return { ...godown, balance_stock: newGodownStock };
+        });
 
         await productModel.updateOne(
           { _id: product._id },
@@ -878,6 +904,8 @@ export const updateOutstandingBalance = async ({
   transactionType,
   secondaryMobile,
 }) => {
+
+  
   // Calculate old bill balance
   let oldBillBalance;
   if (

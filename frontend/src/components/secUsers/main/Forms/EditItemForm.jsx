@@ -569,7 +569,7 @@ function EditItemForm({
       );
     }
   
-    console.log(updatedItem);
+    // console.log(updatedItem);
   
     const godownList = updatedItem.GodownList;
     updatedItem.taxInclusive = isTaxInclusive;
@@ -580,6 +580,7 @@ function EditItemForm({
     updatedItem.totalAddlCessAmt = godownList.reduce((acc, item) => acc + (item.additionalCessAmount || 0), 0);
     updatedItem.totalCount = godownList.reduce((acc, item) => acc + (item.count || 0), 0);
     updatedItem.totalActualCount = godownList.reduce((acc, item) => acc + (item.actualCount || 0), 0);
+    updatedItem.total=updatedItem?.GodownList?.reduce((acc, item) => acc + (item.individualTotal || 0), 0);
   
     // Uncomment these lines when ready to dispatch the action
     dispatch(updateItem({ item: updatedItem, moveToTop: false }));

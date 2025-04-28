@@ -89,7 +89,7 @@ function SalesProductDetails({
                         <span>({item.igst}%)</span>
                       </div>
                       <div className="text-right">
-                        {item.count} {item.unit} × ₹{item?.GodownList?.[0]?.selectedPriceRate || 0}
+                        {item?.GodownList?.[0]?.count} {item.unit} × ₹{item?.GodownList?.[0]?.selectedPriceRate || 0}
                       </div>
                     </div>
                     
