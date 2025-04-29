@@ -247,12 +247,12 @@ const Routers = () => {
 
 {/* bank payment */}
          {/* creditNote */}
-        <Route path='/sUsers/creditNote' element={<ProtectedSecRoute><CreditNote/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/creditNote' element={<ProtectedSecRoute><VoucherInitalPage/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/searchPartyCreditNote' element={<ProtectedSecRoute><SearchParty/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/billToCreditNote/:id' element={<ProtectedSecRoute><BillToCreditNote/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/addItemCreditNote' element={<ProtectedSecRoute><AddItemCreditNote/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/editItemCreditNote/:id/:godownName/:index' element={<ProtectedSecRoute><EditItemCreditNote/></ProtectedSecRoute>}></Route>
-        <Route path='/sUsers/creditDetails/:id' element={<ProtectedSecRoute><CreditNoteDetailsSecondary/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/creditNoteDetails/:id' element={<ProtectedSecRoute><VoucherDetails/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/editCreditNote/:id' element={<ProtectedSecRoute><EditCreditNote/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/shareCreditNote/:id' element={<ProtectedSecRoute><ShareCreditNoteSecondary/></ProtectedSecRoute>}></Route> 
 

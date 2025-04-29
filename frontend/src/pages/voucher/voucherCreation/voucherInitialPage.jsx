@@ -55,7 +55,6 @@ function VoucherInitialPage() {
     }
   };
 
-
   // Redux selectors
   const { _id: cmp_id } = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg
@@ -73,16 +72,23 @@ function VoucherInitialPage() {
     allAdditionalCharges: allAdditionalChargesFromRedux,
     finalAmount: totalAmount,
     vanSaleGodown: vanSaleGodownFromRedux,
+    additionalCharges: additionalChargesFromRedux = [],
+    convertedFrom = [],
   } = useSelector((state) => state.commonVoucherSlice);
 
   // const paymentSplittingReduxData = useSelector(
   //   (state) => state?.paymentSplitting?.paymentSplittingData
   // );
 
-  const {
-    additionalCharges: additionalChargesFromRedux = [],
-    convertedFrom = [],
-  } = useSelector((state) => state.commonVoucherSlice);
+  const getApiEndPoint = () => {
+    if (voucherTypeFromRedux) {
+      return `create${voucherTypeFromRedux
+        ?.split("")[0]
+        ?.toUpperCase()}${voucherTypeFromRedux?.split("")?.slice(1).join("")}`;
+    } else {
+      return null;
+    }
+  };
 
   // Component state
   const [isLoading, setIsLoading] = useState(false);
@@ -215,10 +221,7 @@ function VoucherInitialPage() {
 
   // Initialize component
   useEffect(() => {
-
-    
     getVoucherType();
-
 
     if (!date) dispatch(changeDate(JSON.stringify(selectedDate)));
     localStorage.removeItem("scrollPositionAddItemSales");
@@ -290,10 +293,18 @@ function VoucherInitialPage() {
         //     : {},
       };
 
+      const endPoint = getApiEndPoint();
+      let params = {};
+      if (voucherTypeFromRedux === "vanSale") {
+        params = {
+          vanSale: true,
+        };
+      }
+
+      console.log(endPoint);
+
       const res = await api.post(
-        `/api/sUsers/createSale?vanSale=${
-          voucherTypeFromRedux === "vanSale" ? true : false
-        }`,
+        `/api/sUsers/${endPoint}?${new URLSearchParams(params)}`,
         formData,
         {
           headers: { "Content-Type": "application/json" },

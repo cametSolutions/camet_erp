@@ -35,7 +35,7 @@ const DashboardTransaction = ({ filteredData, userType, from }) => {
         "Van Sale": `${baseRoute}/vanSaleDetails/${id}`,
         Purchase: `${baseRoute}/purchaseDetails/${id}`,
         "Stock Transfer": `${baseRoute}/stockTransferDetails/${id}`,
-        "Credit Note": `${baseRoute}/creditDetails/${id}`,
+        "Credit Note": `${baseRoute}/creditNoteDetails/${id}`,
         "Debit Note": `${baseRoute}/debitDetails/${id}`,
         default: `${baseRoute}/InvoiceDetails/${id}`,
       };

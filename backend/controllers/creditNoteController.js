@@ -26,17 +26,17 @@ export const createCreditNote = async (req, res) => {
   session.startTransaction();
   try {
     const {
-      selectedGodownId,
-      selectedGodownName,
       orgId,
       party,
       items,
       despatchDetails,
       additionalChargesFromRedux,
-      lastAmount,
+      finalAmount:lastAmount,
       creditNoteNumber,
       selectedDate,
     } = req.body;
+
+    
 
     const Secondary_user_id = req.sUserId;
 
@@ -70,7 +70,7 @@ export const createCreditNote = async (req, res) => {
     }
 
     await handleCreditNoteStockUpdates(items, session);
-    const updatedItems = await processCreditNoteItems(items);
+    // const updatedItems = await processCreditNoteItems(items);
     const updatedCreditNoteNumber = await updateCreditNoteNumber(
       orgId,
       secondaryUser,
@@ -88,7 +88,7 @@ export const createCreditNote = async (req, res) => {
     const result = await createCreditNoteRecord(
       req,
       creditNoteNumber,
-      updatedItems,
+      items,
       updateAdditionalCharge,
       session
     );
@@ -248,8 +248,6 @@ export const editCreditNote = async (req, res) => {
   try {
     const creditNoteId = req.params.id; // Assuming saleId is passed in the URL parameters
     const {
-      selectedGodownId,
-      selectedGodownName,
       orgId,
       party,
       items,

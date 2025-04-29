@@ -76,6 +76,7 @@ function ProductListSecondary() {
         const params = new URLSearchParams({
           page: pageNumber,
           limit,
+          
         });
 
         if (searchTerm) {

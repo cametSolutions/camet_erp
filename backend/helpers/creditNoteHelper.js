@@ -3,6 +3,7 @@ import creditNoteModel from "../models/creditNoteModel.js";
 import { formatToLocalDate, truncateToNDecimals } from "./helper.js";
 import OragnizationModel from "../models/OragnizationModel.js";
 import TallyData from "../models/TallyData.js";
+import mongoose from "mongoose";
 
 ///////////////////////// for stock update ////////////////////////////////
 export const handleCreditNoteStockUpdates = async (items, session) => {
@@ -54,7 +55,6 @@ export const handleCreditNoteStockUpdates = async (items, session) => {
               3
             );
 
-
             godownUpdates.push({
               updateOne: {
                 filter: { _id: product._id, "GodownList.batch": godown.batch },
@@ -67,7 +67,9 @@ export const handleCreditNoteStockUpdates = async (items, session) => {
         } else if (godown.godown_id && godown.batch) {
           console.log("godown_id and batch ");
           const godownIndex = product.GodownList.findIndex(
-            (g) => g.batch === godown.batch && g.godown_id === godown.godown_id
+            (g) =>
+              g.batch === godown.batch &&
+              g.godown.toString() == godown.godownMongoDbId
           );
 
           if (godownIndex !== -1 && godownCount && godownCount > 0) {
@@ -78,8 +80,6 @@ export const handleCreditNoteStockUpdates = async (items, session) => {
               3
             );
 
-    
-
             godownUpdates.push({
               updateOne: {
                 filter: { _id: product._id },
@@ -88,7 +88,9 @@ export const handleCreditNoteStockUpdates = async (items, session) => {
                 },
                 arrayFilters: [
                   {
-                    "elem.godown_id": godown.godown_id,
+                    "elem.godown": new mongoose.Types.ObjectId(
+                      godown.godownMongoDbId
+                    ),
                     "elem.batch": godown.batch,
                   },
                 ],
@@ -98,10 +100,9 @@ export const handleCreditNoteStockUpdates = async (items, session) => {
         } else if (godown.godown_id && !godown?.batch) {
           console.log("godown_id only ");
           const godownIndex = product.GodownList.findIndex(
-            (g) => g.godown_id === godown.godown_id
+            (g) => g.godown.toString() == godown.godownMongoDbId
           );
-
-          if (godownIndex !== -1 && godownCount  && godownCount  > 0) {
+          if (godownIndex !== -1 && godownCount && godownCount > 0) {
             const currentGodownStock =
               product.GodownList[godownIndex].balance_stock || 0;
             const newGodownStock = truncateToNDecimals(
@@ -109,12 +110,13 @@ export const handleCreditNoteStockUpdates = async (items, session) => {
               3
             );
 
-
             godownUpdates.push({
               updateOne: {
                 filter: {
                   _id: product._id,
-                  "GodownList.godown_id": godown.godown_id,
+                  "GodownList.godown": new mongoose.Types.ObjectId(
+                    godown.godownMongoDbId
+                  ),
                 },
                 update: {
                   $set: { "GodownList.$.balance_stock": newGodownStock },
@@ -127,8 +129,16 @@ export const handleCreditNoteStockUpdates = async (items, session) => {
     } else {
       product.GodownList = product.GodownList.map((godown) => {
         const currentGodownStock = Number(godown.balance_stock) || 0;
+
+        const currentGodown = item?.GodownList[0];
+
+        const godownCount =
+          (currentGodown.actualCount !== undefined
+            ? currentGodown.actualCount
+            : currentGodown.count) || 0;
+
         const newGodownStock = truncateToNDecimals(
-          currentGodownStock + itemCount,
+          Number(currentGodownStock) + Number(godownCount),
           3
         );
         return { ...godown, balance_stock: newGodownStock };
@@ -143,13 +153,10 @@ export const handleCreditNoteStockUpdates = async (items, session) => {
     }
   }
 
-  //   console.log("godownUpdates", godownUpdates);
-  //   console.log("productUpdates", productUpdates);
-
   await productModel.bulkWrite(productUpdates, { session });
   await productModel.bulkWrite(godownUpdates, { session });
 };
-// Helper function to create purchase record
+// Helper function to create creditNote record
 export const createCreditNoteRecord = async (
   req,
   creditNoteNumber,
@@ -164,27 +171,29 @@ export const createCreditNoteRecord = async (
       orgId,
       party,
       despatchDetails,
-      lastAmount,
+      finalAmount: lastAmount,
       selectedDate,
     } = req.body;
+
+    console.log("lastAmount", lastAmount);
 
     const Primary_user_id = req.owner;
     const Secondary_user_id = req.sUserId;
 
     const model = creditNoteModel;
 
-    const lastPurchase = await model.findOne(
+    const lastCreditNote = await model.findOne(
       {},
       {},
       { sort: { serialNumber: -1 }, session }
     );
     let newSerialNumber = 1;
 
-    if (lastPurchase && !isNaN(lastPurchase.serialNumber)) {
-      newSerialNumber = lastPurchase.serialNumber + 1;
+    if (lastCreditNote && !isNaN(lastCreditNote.serialNumber)) {
+      newSerialNumber = lastCreditNote.serialNumber + 1;
     }
 
-    const purchase = new model({
+    const creditNote = new model({
       selectedGodownId: selectedGodownId ?? "",
       selectedGodownName: selectedGodownName ? selectedGodownName[0] : "",
       serialNumber: newSerialNumber,
@@ -203,7 +212,7 @@ export const createCreditNoteRecord = async (
       createdAt: new Date(),
     });
 
-    const result = await purchase.save({ session });
+    const result = await creditNote.save({ session });
 
     return result;
   } catch (error) {
@@ -212,7 +221,7 @@ export const createCreditNoteRecord = async (
   }
 };
 
-// update purchase number
+// update creditNote number
 
 export const updateCreditNoteNumber = async (orgId, secondaryUser, session) => {
   try {
@@ -266,11 +275,10 @@ export const revertCreditNoteStockUpdates = async (items, session) => {
         throw new Error(`Product not found for item ID: ${item._id}`);
       }
 
-   
-        // Use actualCount if available, otherwise fall back to count
-        const itemCount = parseFloat(
-          item.actualCount !== undefined ? item.actualCount : item.count
-        );
+      // Use actualCount if available, otherwise fall back to count
+      const itemCount = parseFloat(
+        item.actualCount !== undefined ? item.actualCount : item.count
+      );
       const productBalanceStock = parseFloat(product.balance_stock);
       const newBalanceStock = truncateToNDecimals(
         productBalanceStock - itemCount, // Revert stock by adding back
@@ -288,10 +296,11 @@ export const revertCreditNoteStockUpdates = async (items, session) => {
       // Revert godown and batch updates
       if (item.hasGodownOrBatch) {
         for (const godown of item.GodownList) {
-
-          
-           // Use actualCount if available, otherwise fall back to count for each godown
-           const godownCount = godown.actualCount !== undefined ? godown.actualCount : godown.count;
+          // Use actualCount if available, otherwise fall back to count for each godown
+          const godownCount =
+            godown.actualCount !== undefined
+              ? godown.actualCount
+              : godown.count;
           if (godown.batch && !godown?.godown_id) {
             // Case: Batch only or Godown with Batch
             const godownIndex = product.GodownList.findIndex(

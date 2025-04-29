@@ -12,6 +12,7 @@ import PaymentSplittingDetails from "../../../components/secUsers/main/paymentSp
 import VoucherDetailsParty from "./VoucherDetailsParty";
 import useFetch from "@/customHook/useFetch";
 import TitleDiv from "@/components/common/TitleDiv";
+import { get } from "mongoose";
 
 function VoucherDetails() {
   const [data, setData] = useState("");
@@ -25,7 +26,7 @@ function VoucherDetails() {
     if (pathName === "vanSaleDetails" || pathName === "salesDetails") {
       return "getSalesDetails";
     } else {
-      return "getSalesDetails";
+      return `get${pathName}`;
     }
   };
 
@@ -45,6 +46,30 @@ function VoucherDetails() {
       setData(voucherDetails.data);
     }
   }, [voucherDetails, endPoint]);
+
+  const getVoucherNumberTitle = () => {
+    let voucherTypeGlobal;
+    if (voucherDetails) {
+      const {
+        data: { voucherType },
+      } = voucherDetails;
+
+      console.log(voucherType);
+
+      voucherTypeGlobal = voucherType;
+    } else {
+      voucherTypeGlobal = "";
+    }
+
+    if (!voucherTypeGlobal) return "";
+    if (voucherTypeGlobal === "sales" || voucherTypeGlobal === "vanSale") {
+      return "salesNumber";
+    } else {
+      return voucherTypeGlobal + "Number";
+    }
+  };
+
+  console.log(getVoucherNumberTitle());
 
   const reFetch = () => {
     setRefresh(!refresh);
@@ -73,7 +98,7 @@ function VoucherDetails() {
             reFetchParent={reFetch}
             editLink={`/sUsers/editSale/${data?._id}`}
             user={"secondary"}
-            number={data?.salesNumber}
+            number={data?.[getVoucherNumberTitle()]}
             tab={"Sales"}
           />
 
