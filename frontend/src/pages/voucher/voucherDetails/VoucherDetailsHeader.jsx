@@ -6,6 +6,8 @@ import CancelButton from "../../../components/common/CancelButton";
 import dayjs from "dayjs";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { removeAll } from "../../../../slices/voucherSlices/commonVoucherSlice";
+import { useDispatch } from "react-redux";
 
 function VoucherDetailsHeader({
   data,
@@ -18,6 +20,7 @@ function VoucherDetailsHeader({
   // eslint-disable-next-line no-unused-vars
   const [refresh, setRefresh] = useState(false);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const reFetch = () => {
     reFetchParent(!refresh);
@@ -37,6 +40,8 @@ function VoucherDetailsHeader({
       );
       return;
     }
+    dispatch(removeAll());
+
     navigate(`/sUsers/edit${data?.voucherType}/${data?._id}`, {
       state: {
         mode: "edit ",

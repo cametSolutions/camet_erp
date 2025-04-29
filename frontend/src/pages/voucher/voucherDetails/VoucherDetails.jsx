@@ -16,11 +16,9 @@ import TitleDiv from "@/components/common/TitleDiv";
 function VoucherDetails() {
   const [data, setData] = useState("");
   const [refresh, setRefresh] = useState(false);
-
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-
 
   const getEndPoint = () => {
     const pathName = location.pathname.split("/")[2];

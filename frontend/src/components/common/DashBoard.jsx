@@ -22,6 +22,8 @@ function DashBoard({
 }) {
   const [tab, setTab] = useState("transactions")
 
+  
+
   return (
     <div className="overflow-hidden h-screen">
       <div className="sticky top-0   h-[100px] ">

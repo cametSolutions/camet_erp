@@ -103,6 +103,7 @@ router.get("/fetchSingleAdditionalCharge/:id/:cmp_id",authSecondary,secondaryIsB
 router.get("/godownsName/:cmp_id",authSecondary,secondaryIsBlocked,companyAuthentication,findGodownsNames)
 router.get('/getPurchaseDetails/:id',authSecondary,secondaryIsBlocked,getPurchaseDetails)
 router.post('/editsales/:id',authSecondary,secondaryIsBlocked,editSale)
+router.post('/editvanSale/:id',authSecondary,secondaryIsBlocked,editSale)
 router.get("/getAllSubDetails/:orgId",authSecondary,secondaryIsBlocked,getAllSubDetails)
 router.get("/fetchGodowns/:cmp_id",authSecondary,secondaryIsBlocked,fetchGodowns)
 router.post("/createStockTransfer",authSecondary,secondaryIsBlocked,createStockTransfer)

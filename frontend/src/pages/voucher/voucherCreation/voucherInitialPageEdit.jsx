@@ -158,12 +158,28 @@ function VoucherInitialPageEdit() {
       }
 
       /// populate date from location state
-
       if (selectedDateFromState && !dateFromRedux) {
-        setSelectedDate(new Date(selectedDateFromState).toISOString());
-        dispatch(changeDate(selectedDateFromState));
-      } else {
-        setSelectedDate(new Date(dateFromRedux).toISOString());
+        // Validate date before converting to ISO string
+        const parsedDate = new Date(selectedDateFromState);
+
+        if (!isNaN(parsedDate.getTime())) {
+          setSelectedDate(parsedDate);
+          dispatch(changeDate(JSON.stringify(parsedDate)));
+        } else {
+          // Use current date as fallback if date is invalid
+          const currentDate = new Date();
+          setSelectedDate(currentDate);
+          dispatch(changeDate(JSON.stringify(currentDate)));
+        }
+      } else if (dateFromRedux) {
+        const parsedDate = new Date(JSON.parse(dateFromRedux));
+
+        if (!isNaN(parsedDate.getTime())) {
+          setSelectedDate(parsedDate);
+        } else {
+          // Use current date as fallback
+          setSelectedDate(new Date());
+        }
       }
 
       /// populate party from location state
@@ -175,7 +191,11 @@ function VoucherInitialPageEdit() {
       }
 
       /// populate items from location state
-      if (itemsFromState.length > 0 && itemsFromRedux.length === 0 && !initializedFromRedux) {
+      if (
+        itemsFromState.length > 0 &&
+        itemsFromRedux.length === 0 &&
+        !initializedFromRedux
+      ) {
         dispatch(setItem(itemsFromState));
       } else {
         dispatch(setItem(itemsFromRedux));
@@ -191,8 +211,8 @@ function VoucherInitialPageEdit() {
       /// populate additional charges from location state
       if (
         additionalChargesFromState.length > 0 &&
-        additionalChargesFromRedux.length === 0
-        && !initializedFromRedux
+        additionalChargesFromRedux.length === 0 &&
+        !initializedFromRedux
       ) {
         dispatch(setAdditionalCharges(additionalChargesFromState));
       }
@@ -220,12 +240,9 @@ function VoucherInitialPageEdit() {
         dispatch(addAllAdditionalCharges(additionalCharges));
       }
 
-      if(!initializedFromRedux) {
+      if (!initializedFromRedux) {
         dispatch(setInitialized(true));
       }
-
-
-
     } catch (error) {
       console.log(error);
       toast.error(error.response?.data?.message || "Error fetching data");
@@ -234,7 +251,7 @@ function VoucherInitialPageEdit() {
     }
   }, [cmp_id, voucherTypeFromRedux, location]);
 
-  // Initialize component
+  ///// Initialize component
   useEffect(() => {
     getVoucherType();
     if (!date) dispatch(changeDate(JSON.stringify(selectedDate)));
@@ -286,9 +303,18 @@ function VoucherInitialPageEdit() {
     setSubmitLoading(true);
     const voucherNumberTitle = getVoucherNumberTitle();
 
+    // Ensure we have a valid date before converting to ISO string
+    let dateToSubmit;
+    try {
+      dateToSubmit = new Date(selectedDate).toISOString();
+    } catch (error) {
+      console.error("Invalid date format:", error);
+      dateToSubmit = new Date().toISOString(); // Fallback to current date
+    }
+
     try {
       const formData = {
-        selectedDate: new Date(selectedDate).toISOString(),
+        selectedDate: dateToSubmit,
         voucherType,
         [voucherNumberTitle]: voucherNumber,
         orgId: cmp_id,
@@ -307,10 +333,6 @@ function VoucherInitialPageEdit() {
         //     : {},
       };
 
-
-      console.log("formData", formData);
-      
-
       const res = await api.post(
         `/api/sUsers/edit${voucherTypeFromRedux}/${voucherId}?vanSale=${
           voucherTypeFromRedux === "vanSale" ? true : false
@@ -323,10 +345,16 @@ function VoucherInitialPageEdit() {
       );
 
       toast.success(res.data.message);
-      navigate(`/sUsers/${voucherTypeFromRedux}Details/${res.data.data._id}`, {
-        state: { from: location?.state?.from || "null" },
-      });
       dispatch(removeAll());
+      setTimeout(() => {
+        navigate(
+          `/sUsers/${voucherTypeFromRedux}Details/${res.data.data._id}`,
+          {
+            state: { from: location?.state?.from || "null" },
+            replace: true, // Use replace instead of push to prevent back navigation issues
+          }
+        );
+      }, 100); // Small delay to ensure Redux state is cleared
     } catch (error) {
       toast.error(error.response?.data?.message || "Error creating sale");
       console.log(error);

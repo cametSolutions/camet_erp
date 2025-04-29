@@ -13,6 +13,18 @@ function SalesProductDetails({
   
   const subtotal = parseInt(data?.items?.reduce((acc, curr) => acc + curr?.total, 0) || 0).toFixed(2);
   const additionalChargesTotal = parseInt(additionalCharges?.reduce((acc, curr) => acc + curr?.finalValue, 0) || 0).toFixed(2);
+
+
+  const getDiscountValue = (godown) => {
+    const { discountType, discountAmount, discountPercentage } = godown;
+
+    if (discountType === "amount") {
+      return `₹ ${discountAmount}` || "0";
+    } else {
+      return `${discountPercentage} %` || "0 %";
+    }
+  };
+
   
   return (
     <div className="rounded-lg overflow-hidden shadow-sm w-full max-w-full pb-5">
@@ -119,9 +131,8 @@ function SalesProductDetails({
                               <div className="flex justify-between mb-1">
                                 <p>Discount</p>
                                 <p>
-                                  {godownOrBatch.discount > 0
-                                    ? `₹ ${godownOrBatch.discount}`
-                                    : `${godownOrBatch.discountPercentage}%`}
+                                {getDiscountValue(godownOrBatch)}
+
                                 </p>
                               </div>
                             )}
@@ -134,13 +145,12 @@ function SalesProductDetails({
                         ))}
                       </div>
                     ) : (
-                      (item.discount > 0 || item.discountPercentage > 0) && (
+                      (item?.GodownList[0]?.discount > 0 || item?.GodownList[0]?.discountPercentage > 0) && (
                         <div className="flex justify-between">
                           <p>Discount</p>
                           <p>
-                            {item.discount > 0
-                              ? `₹ ${item.discount}`
-                              : `${item.discountPercentage}%`}
+                          {getDiscountValue(item.GodownList[0])}
+                           
                           </p>
                         </div>
                       )

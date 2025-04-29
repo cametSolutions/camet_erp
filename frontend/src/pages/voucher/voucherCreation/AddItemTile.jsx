@@ -17,6 +17,16 @@ function AddItemTile({
   urlToEditItem,
   convertedFrom = [],
 }) {
+  const getDiscountValue = (godown) => {
+    const { discountType, discountAmount, discountPercentage } = godown;
+
+    if (discountType === "amount") {
+      return `₹ ${discountAmount}` || "0";
+    } else {
+      return `${discountPercentage} %` || "0 %";
+    }
+  };
+
   return (
     <div>
       {items?.length == 0 && (
@@ -114,8 +124,7 @@ function AddItemTile({
                       el.GodownList.map((godownOrBatch, idx) =>
                         godownOrBatch.added ? (
                           <div key={idx}>
-                            
-                            <div  className="flex items-center gap-2">
+                            <div className="flex items-center gap-2">
                               <MdCancel
                                 onClick={() => {
                                   dispatch(
@@ -173,9 +182,10 @@ function AddItemTile({
                                       <p className="text-nowrap">Discount</p>
                                       <div className="flex items-center">
                                         <p className="text-nowrap">
-                                          {godownOrBatch.discount > 0
+                                          {getDiscountValue(godownOrBatch)}
+                                          {/* {godownOrBatch.discount > 0
                                             ? `₹ ${godownOrBatch.discount}`
-                                            : `${godownOrBatch.discountPercentage}%`}
+                                            : `${godownOrBatch.discountPercentage}%`} */}
                                         </p>
                                       </div>
                                     </div>
@@ -227,14 +237,13 @@ function AddItemTile({
                             </p>
                           </div>
 
-                          {(el?.GodownList[0]?.discount > 0 || el?.GodownList[0]?.discountPercentage > 0) && (
+                          {(el?.GodownList[0]?.discount > 0 ||
+                            el?.GodownList[0]?.discountPercentage > 0) && (
                             <div className="flex justify-between">
                               <p className="text-nowrap">Discount</p>
                               <div className="flex items-center">
                                 <p className="text-nowrap">
-                                  {el?.GodownList[0]?.discount > 0
-                                    ? `₹ ${el?.GodownList[0]?.discount}`
-                                    : `${el?.GodownList[0]?.discountPercentage}%`}
+                                  {getDiscountValue(el.GodownList[0])}
                                 </p>
                               </div>
                             </div>
