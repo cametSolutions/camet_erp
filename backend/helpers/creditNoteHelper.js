@@ -126,7 +126,9 @@ export const handleCreditNoteStockUpdates = async (items, session) => {
           }
         }
       }
-    } else {
+    } 
+    
+    else {
       product.GodownList = product.GodownList.map((godown) => {
         const currentGodownStock = Number(godown.balance_stock) || 0;
 

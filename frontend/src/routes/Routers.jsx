@@ -257,12 +257,12 @@ const Routers = () => {
         <Route path='/sUsers/shareCreditNote/:id' element={<ProtectedSecRoute><ShareCreditNoteSecondary/></ProtectedSecRoute>}></Route> 
 
          {/* debitNote */}
-        <Route path='/sUsers/debitNote' element={<ProtectedSecRoute><DebitNote/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/debitNote' element={<ProtectedSecRoute><VoucherInitalPage/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/searchPartyDebitNote' element={<ProtectedSecRoute><SearchParty/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/billToDebitNote/:id' element={<ProtectedSecRoute><BillToDebitNote/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/addItemDebitNote' element={<ProtectedSecRoute><AddItemDebitNote/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/editItemDebitNote/:id/:godownName/:index' element={<ProtectedSecRoute><EditItemDebitNote/></ProtectedSecRoute>}></Route>
-        <Route path='/sUsers/debitDetails/:id' element={<ProtectedSecRoute><DebitNoteDetailsSecondary/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/debitNoteDetails/:id' element={<ProtectedSecRoute><VoucherDetails/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/editDebitNote/:id' element={<ProtectedSecRoute><EditDebitNote/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/shareDebitNote/:id' element={<ProtectedSecRoute><ShareDebitNoteSecondary/></ProtectedSecRoute>}></Route> 
 

@@ -3,6 +3,7 @@ import debitNoteModel from "../models/debitNoteModel.js";
 import { formatToLocalDate, truncateToNDecimals } from "./helper.js";
 import OragnizationModel from "../models/OragnizationModel.js";
 import TallyData from "../models/TallyData.js";
+import mongoose from "mongoose";
 
 ///////////////////////// for stock update ////////////////////////////////
 export const handleDebitNoteStockUpdates = async (items, session) => {
@@ -58,7 +59,6 @@ export const handleDebitNoteStockUpdates = async (items, session) => {
               3
             );
 
-
             godownUpdates.push({
               updateOne: {
                 filter: { _id: product._id, "GodownList.batch": godown.batch },
@@ -71,9 +71,10 @@ export const handleDebitNoteStockUpdates = async (items, session) => {
         } else if (godown.godown_id && godown.batch) {
           console.log("godown_id and batch ");
           const godownIndex = product.GodownList.findIndex(
-            (g) => g.batch === godown.batch && g.godown_id === godown.godown_id
+            (g) =>
+              g.batch === godown.batch &&
+              g.godown.toString() == godown.godownMongoDbId
           );
-
           if (godownIndex !== -1 && godownCount && godownCount > 0) {
             const currentGodownStock =
               product.GodownList[godownIndex].balance_stock || 0;
@@ -93,7 +94,9 @@ export const handleDebitNoteStockUpdates = async (items, session) => {
                 },
                 arrayFilters: [
                   {
-                    "elem.godown_id": godown.godown_id,
+                    "elem.godown": new mongoose.Types.ObjectId(
+                      godown.godownMongoDbId
+                    ),
                     "elem.batch": godown.batch,
                   },
                 ],
@@ -103,7 +106,7 @@ export const handleDebitNoteStockUpdates = async (items, session) => {
         } else if (godown.godown_id && !godown?.batch) {
           console.log("godown_id only ");
           const godownIndex = product.GodownList.findIndex(
-            (g) => g.godown_id === godown.godown_id
+            (g) => g.godown.toString() == godown.godownMongoDbId
           );
 
           if (godownIndex !== -1 && godownCount && godownCount > 0) {
@@ -120,7 +123,9 @@ export const handleDebitNoteStockUpdates = async (items, session) => {
               updateOne: {
                 filter: {
                   _id: product._id,
-                  "GodownList.godown_id": godown.godown_id,
+                  "GodownList.godown": new mongoose.Types.ObjectId(
+                    godown.godownMongoDbId
+                  ),
                 },
                 update: {
                   $set: { "GodownList.$.balance_stock": newGodownStock },
@@ -130,11 +135,21 @@ export const handleDebitNoteStockUpdates = async (items, session) => {
           }
         }
       }
-    } else {
+    } 
+    
+    else {
       product.GodownList = product.GodownList.map((godown) => {
         const currentGodownStock = Number(godown.balance_stock) || 0;
+
+        const currentGodown = item?.GodownList[0];
+
+        const godownCount =
+          (currentGodown.actualCount !== undefined
+            ? currentGodown.actualCount
+            : currentGodown.count) || 0;
+
         const newGodownStock = truncateToNDecimals(
-          currentGodownStock - itemCount,
+          Number(currentGodownStock) - Number(godownCount),
           3
         );
         return { ...godown, balance_stock: newGodownStock };
@@ -170,7 +185,7 @@ export const createDebitNoteRecord = async (
       orgId,
       party,
       despatchDetails,
-      lastAmount,
+      finalAmount:lastAmount,
       selectedDate,
     } = req.body;
 
@@ -273,11 +288,11 @@ export const revertDebitNoteStockUpdates = async (items, session) => {
         throw new Error(`Product not found for item ID: ${item._id}`);
       }
 
-        // Use actualCount if available, otherwise fall back to count
-        const itemCount = parseFloat(
-          item.actualCount !== undefined ? item.actualCount : item.count
-        );
-  
+      // Use actualCount if available, otherwise fall back to count
+      const itemCount = parseFloat(
+        item.actualCount !== undefined ? item.actualCount : item.count
+      );
+
       const productBalanceStock = parseFloat(product.balance_stock);
       const newBalanceStock = truncateToNDecimals(
         productBalanceStock + itemCount, // Revert stock by adding back
@@ -295,9 +310,11 @@ export const revertDebitNoteStockUpdates = async (items, session) => {
       // Revert godown and batch updates
       if (item.hasGodownOrBatch) {
         for (const godown of item.GodownList) {
-
-           // Use actualCount if available, otherwise fall back to count for each godown
-           const godownCount = godown.actualCount !== undefined ? godown.actualCount : godown.count;
+          // Use actualCount if available, otherwise fall back to count for each godown
+          const godownCount =
+            godown.actualCount !== undefined
+              ? godown.actualCount
+              : godown.count;
           if (godown.batch && !godown?.godown_id) {
             // Case: Batch only or Godown with Batch
             const godownIndex = product.GodownList.findIndex(

@@ -31,7 +31,7 @@ export const createDebitNote = async (req, res) => {
       orgId,
       items,
       additionalChargesFromRedux,
-      lastAmount,
+      finalAmount: lastAmount,
       debitNoteNumber,
     } = req.body;
     // debitNoteNumber,
@@ -68,7 +68,7 @@ export const createDebitNote = async (req, res) => {
     }
 
     await handleDebitNoteStockUpdates(items, session);
-    const updatedItems = await processDebitNoteItems(items);
+    // const updatedItems = await processDebitNoteItems(items);
     const updateDebitNoteVoucherNumber = await updateDebitNoteNumber(
       orgId,
       secondaryUser,
@@ -86,7 +86,7 @@ export const createDebitNote = async (req, res) => {
     const result = await createDebitNoteRecord(
       req,
       debitNoteNumber,
-      updatedItems,
+      items,
       updateAdditionalCharge,
       session // Pass session
     );
