@@ -1,24 +1,28 @@
-import { MdTextsms } from "react-icons/md";
+// import { MdTextsms } from "react-icons/md";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 
-import { FaEdit } from "react-icons/fa";
-import { useNavigate, useLocation } from "react-router-dom";
+// import { FaEdit } from "react-icons/fa";
+import {
+  // useNavigate,
+  useLocation,
+} from "react-router-dom";
 import SalesProductDetails from "./SalesProductDetails";
-import SwallFireForPdf from "../../../components/common/SwallFireForPdf";
-import CancelButton from "../../../components/common/CancelButton";
+// import SwallFireForPdf from "../../../components/common/SwallFireForPdf";
+// import CancelButton from "../../../components/common/CancelButton";
 import VoucherDetailsHeader from "./VoucherDetailsHeader";
 import PaymentSplittingDetails from "../../../components/secUsers/main/paymentSplitting/PaymentSplittingDetails";
 import VoucherDetailsParty from "./VoucherDetailsParty";
 import useFetch from "@/customHook/useFetch";
 import TitleDiv from "@/components/common/TitleDiv";
 import { formatVoucherType } from "../../../../utils/formatVoucherType";
+import VoucherDetailsActionButtons from "./actionButtons/VoucherDetailsActionButtons";
 
 function VoucherDetails() {
   const [data, setData] = useState("");
   const [refresh, setRefresh] = useState(false);
   const { id } = useParams();
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
   const location = useLocation();
 
   const getEndPoint = () => {
@@ -71,20 +75,23 @@ function VoucherDetails() {
     setRefresh(!refresh);
   };
 
-  const handleEdit = () => {
-    if (data?.isEditable === false) {
-      alert(
-        "You can't edit this voucher since it has been used to generate receipts or payments"
-      );
-      return;
-    }
-    navigate(`/sUsers/editSale/${data?._id}`);
-  };
+  // const handleEdit = () => {
+  //   if (data?.isEditable === false) {
+  //     alert(
+  //       "You can't edit this voucher since it has been used to generate receipts or payments"
+  //     );
+  //     return;
+  //   }
+  //   navigate(`/sUsers/editSale/${data?._id}`);
+  // };
 
   return (
     <div className="bg-[rgb(244,246,254)] flex-1  relative  pb-[70px] md:pb-0  ">
       {/* headinh section  */}
-      <TitleDiv title={formatVoucherType(data?.voucherType)+" Details"} loading={loading} />
+      <TitleDiv
+        title={(formatVoucherType(data?.voucherType) + " Details") || "Voucher Details"}
+        loading={loading}
+      />
       {/* headinh section  */}
 
       {!loading && (
@@ -94,8 +101,9 @@ function VoucherDetails() {
             reFetchParent={reFetch}
             editLink={`/sUsers/editSale/${data?._id}`}
             user={"secondary"}
-            number={data?.[getVoucherNumberTitle()]}
+            number={data?.[getVoucherNumberTitle()] }
             tab={"Sales"}
+            reFetch={reFetch}
           />
 
           <VoucherDetailsParty data={data} />
@@ -115,9 +123,9 @@ function VoucherDetails() {
 
           {/* payment method */}
 
-          <div className=" block md:hidden z-0 ">
+          <div className=" block sm:hidden z-0 ">
             <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 flex justify-center p-4 gap-12 text-lg text-violet-500  ">
-              <CancelButton
+              {/* <CancelButton
                 id={data._id}
                 tab="Sales"
                 isCancelled={data?.isCancelled}
@@ -132,13 +140,16 @@ function VoucherDetails() {
                 <FaEdit className="text-blue-500" />
                 <p className="text-black font-bold text-sm">Edit</p>
               </div>
-              {/* <Link to={`/sUsers/shareSales/${data._id}`}> */}
               <SwallFireForPdf data={data} />
 
               <div className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer">
                 <MdTextsms className="text-green-500" />
                 <p className="text-black font-bold text-sm">Sms</p>
-              </div>
+              </div> */}
+
+              <VoucherDetailsActionButtons
+                data={data}
+              />
             </div>
           </div>
         </div>

@@ -1,0 +1,102 @@
+/* eslint-disable react/prop-types */
+
+import { PiShareFatFill } from "react-icons/pi";
+import { MdEdit, MdSms } from "react-icons/md";
+import CancelButton from "@/components/common/CancelButton";
+import { useNavigate } from "react-router-dom";
+
+export default function VoucherDetailsActionButtons({ data }) {
+  const navigate = useNavigate();
+
+  const {
+    id,
+    tab,
+    isCancelled,
+    reFetch,
+    vanSale = false,
+    isEditable,
+    isConverted = false,
+    voucherType,
+  } = data || {};
+
+  const handleEditClick = () => {
+    if (!voucherType) return;
+    navigate(`/sUsers/edit${voucherType}/${id}`, {
+      state: {
+        mode: "edit ",
+        voucherType: voucherType,
+        data: data,
+      },
+    });
+  };
+
+  const handleShareClick = () => {
+    // Implement share functionality
+    console.log("Share clicked");
+  };
+
+  const handleSmsClick = () => {
+    // Implement SMS functionality
+    console.log("SMS clicked");
+  };
+
+  // Array of action buttons with their icons, titles, and handlers
+  const actions = [
+    {
+      icon: MdEdit,
+      title: "Edit",
+      color: "text-blue-500",
+      active: true,
+      onClick: handleEditClick,
+    },
+    {
+      icon: PiShareFatFill,
+      title: "Share",
+      color: "text-green-500",
+      active: true,
+      onClick: handleShareClick,
+    },
+    {
+      icon: MdSms,
+      title: "Sms",
+      color: "text-yellow-500",
+      active: true,
+      onClick: handleSmsClick,
+    },
+  ];
+
+  return (
+    <div className="flex flex-col items-center">
+      <div className="flex justify-center space-x-8">
+        <CancelButton
+          id={id}
+          tab={tab}
+          isCancelled={isCancelled}
+          reFetch={reFetch}
+          vanSale={vanSale}
+          isEditable={isEditable}
+          isConverted={isConverted}
+        />
+
+        {actions.map((action, index) => {
+          if (!action.active) return null;
+          const Icon = action.icon;
+          return (
+            <div
+              key={index}
+              onClick={action.onClick}
+              className="flex flex-col items-center cursor-pointer hover:opacity-80 transition-opacity"
+            >
+              <div
+                className={`p-2 rounded-full bg-gray-100 mb-2 ${action.color}`}
+              >
+                <Icon size={18} />
+              </div>
+              <span className="text-[10px] font-bold">{action.title}</span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}

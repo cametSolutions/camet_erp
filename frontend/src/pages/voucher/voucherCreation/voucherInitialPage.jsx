@@ -332,7 +332,7 @@ function VoucherInitialPage() {
     <div className="mb-14 sm:mb-0">
       <div className="flex-1 bg-slate-100 h -screen ">
         <TitleDiv
-          title={formatVoucherType(voucherTypeFromRedux)}
+          title={formatVoucherType(voucherTypeFromRedux)} 
           // from={`/sUsers/selectVouchers`}
           loading={isLoading || submitLoading}
         />
