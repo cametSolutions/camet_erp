@@ -33,7 +33,6 @@ import OrderConfigurationsSecondary from '../pages/secUsers/OrderConfigurationsS
 import InventorySecondaryUser from '../pages/secUsers/InventorySecondaryUser'
 // import SalesSecondary from '../pages/secUsers/SalesSecondary'
 import SearchParty from '../pages/secUsers/SearchParty'
-import SalesDetailsSecondary from '../pages/secUsers/SalesDetailsSecondary'
 import EditItemSalesSecondary from '../pages/secUsers/EditItemSalesSecondary'
 import ShareSalesSecondary from '../pages/secUsers/ShareSalesSecondary'
 import ConfigureSecondaryUser from '../pages/masters/secondaryUsers/ConfigureSecondaryUser'
@@ -56,7 +55,6 @@ import AddCategory from '../pages/masters/product/productSubDetails/AddCategory'
 import AddSubCategory from '../pages/masters/product/productSubDetails/AddSubCategory'
 import AddGodown from '../pages/masters/product/productSubDetails/AddGodown'
 import AddPriceLevel from '../pages/masters/product/productSubDetails/AddPriceLevel'
-import VanSaleDetailsSecondary from '../pages/secUsers/VanSaleDetailsSecondary '
 import ShareVanSaleSecondary from '../pages/secUsers/ShareVanSaleSecondary'
 import ThreeInchVanSaleSec from '../pages/secUsers/ThreeInchVanSaleSec'
 import EditVanSale from '../pages/secUsers/EditVanSale'
@@ -75,19 +73,13 @@ import SelectVouchers from '../pages/secUsers/SelectVouchers'
 import Receipt from '../pages/secUsers/Receipt'
 import OutstandingListOfReceipt from '../pages/secUsers/OutstandingListOfReceipt'
 import PurchasePayment from '../pages/secUsers/PurchasePayment'
-import CreditNote from '../pages/secUsers/CreditNote'
 import BillToCreditNote from '../pages/secUsers/BillToCreditNote'
 import AddItemCreditNote from '../pages/secUsers/AddItemCreditNote'
 import EditItemCreditNote from '../pages/secUsers/EditItemCreditNote'
-import CreditNoteDetailsSecondary from '../pages/secUsers/CreditNoteDetailsSecondary'
-import EditCreditNote from '../pages/secUsers/EditCreditNote'
 import ShareCreditNoteSecondary from '../pages/secUsers/ShareCreditNoteSecondary'
-import DebitNote from '../pages/secUsers/DebitNote'
 import BillToDebitNote from '../pages/secUsers/BillToDebitNote'
 import AddItemDebitNote from '../pages/secUsers/AddItemDebitNote'
 import EditItemDebitNote from '../pages/secUsers/EditItemDebitNote'
-import DebitNoteDetailsSecondary from '../pages/secUsers/DebitNoteDetailsSecondary'
-import EditDebitNote from '../pages/secUsers/EditDebitNote'
 import ShareDebitNoteSecondary from '../pages/secUsers/ShareDebitNoteSecondary'
 import OutstandingListOfPayment from '../pages/secUsers/OutstandingListOfPayment'
 import ReceiptDetailsOfSale from '../pages/secUsers/ReceiptDetails'
@@ -253,7 +245,7 @@ const Routers = () => {
         <Route path='/sUsers/addItemCreditNote' element={<ProtectedSecRoute><AddItemCreditNote/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/editItemCreditNote/:id/:godownName/:index' element={<ProtectedSecRoute><EditItemCreditNote/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/creditNoteDetails/:id' element={<ProtectedSecRoute><VoucherDetails/></ProtectedSecRoute>}></Route>
-        <Route path='/sUsers/editCreditNote/:id' element={<ProtectedSecRoute><EditCreditNote/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/editCreditNote/:id' element={<ProtectedSecRoute><VoucherInitialPageEdit/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/shareCreditNote/:id' element={<ProtectedSecRoute><ShareCreditNoteSecondary/></ProtectedSecRoute>}></Route> 
 
          {/* debitNote */}
@@ -263,7 +255,7 @@ const Routers = () => {
         <Route path='/sUsers/addItemDebitNote' element={<ProtectedSecRoute><AddItemDebitNote/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/editItemDebitNote/:id/:godownName/:index' element={<ProtectedSecRoute><EditItemDebitNote/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/debitNoteDetails/:id' element={<ProtectedSecRoute><VoucherDetails/></ProtectedSecRoute>}></Route>
-        <Route path='/sUsers/editDebitNote/:id' element={<ProtectedSecRoute><EditDebitNote/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/editDebitNote/:id' element={<ProtectedSecRoute><VoucherInitialPageEdit/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/shareDebitNote/:id' element={<ProtectedSecRoute><ShareDebitNoteSecondary/></ProtectedSecRoute>}></Route> 
 
         {/* inventory secondary */}

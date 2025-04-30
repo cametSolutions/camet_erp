@@ -20,7 +20,7 @@ export const handleCreditNoteStockUpdates = async (items, session) => {
 
     // Use actualCount if available, otherwise fall back to count
     const itemCount = parseFloat(
-      item.actualCount !== undefined ? item.actualCount : item.count
+      item.totalActualCount !== undefined ? item?.totalActualCount : item?.totalCount
     );
     const productBalanceStock = parseFloat(product.balance_stock);
     const newBalanceStock = truncateToNDecimals(
@@ -279,7 +279,7 @@ export const revertCreditNoteStockUpdates = async (items, session) => {
 
       // Use actualCount if available, otherwise fall back to count
       const itemCount = parseFloat(
-        item.actualCount !== undefined ? item.actualCount : item.count
+        item.totalActualCount !== undefined ? item?.totalActualCount : item?.totalCount
       );
       const productBalanceStock = parseFloat(product.balance_stock);
       const newBalanceStock = truncateToNDecimals(
@@ -336,9 +336,9 @@ export const revertCreditNoteStockUpdates = async (items, session) => {
             // Case: Godown with Batch
             const godownIndex = product.GodownList.findIndex(
               (g) =>
-                g.batch === godown.batch && g.godown_id === godown.godown_id
+                g.batch === godown.batch &&
+                g.godown.toString() == godown.godownMongoDbId
             );
-
             if (godownIndex !== -1) {
               if (godownCount && godownCount > 0) {
                 const currentGodownStock =
@@ -361,7 +361,9 @@ export const revertCreditNoteStockUpdates = async (items, session) => {
                     },
                     arrayFilters: [
                       {
-                        "elem.godown_id": godown.godown_id,
+                        "elem.godown": new mongoose.Types.ObjectId(
+                          godown.godownMongoDbId
+                        ),
                         "elem.batch": godown.batch,
                       },
                     ],
@@ -372,7 +374,7 @@ export const revertCreditNoteStockUpdates = async (items, session) => {
           } else if (godown.godown_id && !godown?.batch) {
             // Case: Godown only
             const godownIndex = product.GodownList.findIndex(
-              (g) => g.godown_id === godown.godown_id
+              (g) => g.godown.toString() == godown.godownMongoDbId
             );
 
             if (godownIndex !== -1) {
@@ -389,7 +391,9 @@ export const revertCreditNoteStockUpdates = async (items, session) => {
                   updateOne: {
                     filter: {
                       _id: product._id,
-                      "GodownList.godown_id": godown.godown_id,
+                      "GodownList.godown": new mongoose.Types.ObjectId(
+                        godown.godownMongoDbId
+                      ),
                     },
                     update: {
                       $set: { "GodownList.$.balance_stock": newGodownStock },
@@ -404,14 +408,19 @@ export const revertCreditNoteStockUpdates = async (items, session) => {
         // Case: No Godown
         product.GodownList = product.GodownList.map((godown) => {
           const currentGodownStock = Number(godown.balance_stock) || 0;
+  
+          const currentGodown = item?.GodownList[0];
+  
+          const godownCount =
+            (currentGodown.actualCount !== undefined
+              ? currentGodown.actualCount
+              : currentGodown.count) || 0;
+  
           const newGodownStock = truncateToNDecimals(
-            currentGodownStock - Number(itemCount), // Revert stock by adding back
+            Number(currentGodownStock) - Number(godownCount),
             3
           );
-          return {
-            ...godown,
-            balance_stock: newGodownStock,
-          };
+          return { ...godown, balance_stock: newGodownStock };
         });
 
         // Prepare godown update operation

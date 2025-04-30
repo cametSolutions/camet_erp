@@ -228,7 +228,7 @@ export const editDebitNote = async (req, res) => {
       items,
       despatchDetails,
       additionalChargesFromRedux,
-      lastAmount,
+      finalAmount: lastAmount,
       debitNoteNumber,
       selectedDate,
     } = req.body;
@@ -246,12 +246,12 @@ export const editDebitNote = async (req, res) => {
 
     await revertDebitNoteStockUpdates(existingDebitNote.items, session);
 
-    const updatedItems = await processDebitNoteItems(
-      items,
-      additionalChargesFromRedux
-    );
+    // const updatedItems = await processDebitNoteItems(
+    //   items,
+    //   additionalChargesFromRedux
+    // );
 
-    await handleDebitNoteStockUpdates(updatedItems, session);
+    await handleDebitNoteStockUpdates(items, session);
 
     const updateData = {
       selectedGodownId: selectedGodownId ?? "",
@@ -261,13 +261,13 @@ export const editDebitNote = async (req, res) => {
       partyAccount: party?.partyName,
       party,
       despatchDetails,
-      items: updatedItems,
+      items,
       additionalCharges: additionalChargesFromRedux,
       finalAmount: lastAmount,
       Primary_user_id: req.owner,
       Secondary_user_id: req.secondaryUserId,
       debitNoteNumber: debitNoteNumber,
-      date:await formatToLocalDate(selectedDate, orgId, session),
+      date: await formatToLocalDate(selectedDate, orgId, session),
       createdAt: existingDebitNote.createdAt,
     };
 
@@ -275,7 +275,6 @@ export const editDebitNote = async (req, res) => {
       new: true,
       session,
     });
-
 
     /// revert settlement data
     await revertSettlementData(
@@ -301,7 +300,6 @@ export const editDebitNote = async (req, res) => {
       updateData?.party?.partyName,
       session
     );
-
 
     //// edit outstanding
 
@@ -331,6 +329,7 @@ export const editDebitNote = async (req, res) => {
     res.status(200).json({
       success: true,
       message: "Debit Note edited successfully",
+      data: existingDebitNote,
     });
   } catch (error) {
     await session.abortTransaction();

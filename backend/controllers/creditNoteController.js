@@ -253,7 +253,7 @@ export const editCreditNote = async (req, res) => {
       items,
       despatchDetails,
       additionalChargesFromRedux,
-      lastAmount,
+      finalAmount:lastAmount,
       creditNoteNumber,
       selectedDate,
     } = req.body;
@@ -272,12 +272,12 @@ export const editCreditNote = async (req, res) => {
     // Revert existing stock updates
     await revertCreditNoteStockUpdates(existingCreditNote.items, session);
     // Process new sale items and update stock
-    const updatedItems = await processCreditNoteItems(
-      items,
-      additionalChargesFromRedux
-    );
+    // const updatedItems = await processCreditNoteItems(
+    //   items,
+    //   additionalChargesFromRedux
+    // );
 
-    await handleCreditNoteStockUpdates(updatedItems, session);
+    await handleCreditNoteStockUpdates(items, session);
 
     // Update existing sale record
     const updateData = {
@@ -288,7 +288,7 @@ export const editCreditNote = async (req, res) => {
       partyAccount: party?.partyName,
       party,
       despatchDetails,
-      items: updatedItems,
+      items,
       additionalCharges: additionalChargesFromRedux,
       finalAmount: lastAmount,
       Primary_user_id: req.owner,
@@ -387,7 +387,8 @@ export const editCreditNote = async (req, res) => {
     session.endSession();
     res.status(200).json({
       success: true,
-      message: "purchase edited successfully",
+      message: "Credit note edited successfully",
+      data: existingCreditNote,
     });
   } catch (error) {
     await session.abortTransaction();
