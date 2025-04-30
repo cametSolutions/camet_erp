@@ -12,7 +12,7 @@ import PaymentSplittingDetails from "../../../components/secUsers/main/paymentSp
 import VoucherDetailsParty from "./VoucherDetailsParty";
 import useFetch from "@/customHook/useFetch";
 import TitleDiv from "@/components/common/TitleDiv";
-import { get } from "mongoose";
+import { formatVoucherType } from "../../../../utils/formatVoucherType";
 
 function VoucherDetails() {
   const [data, setData] = useState("");
@@ -54,8 +54,6 @@ function VoucherDetails() {
         data: { voucherType },
       } = voucherDetails;
 
-      console.log(voucherType);
-
       voucherTypeGlobal = voucherType;
     } else {
       voucherTypeGlobal = "";
@@ -68,8 +66,6 @@ function VoucherDetails() {
       return voucherTypeGlobal + "Number";
     }
   };
-
-  console.log(getVoucherNumberTitle());
 
   const reFetch = () => {
     setRefresh(!refresh);
@@ -88,7 +84,7 @@ function VoucherDetails() {
   return (
     <div className="bg-[rgb(244,246,254)] flex-1  relative  pb-[70px] md:pb-0  ">
       {/* headinh section  */}
-      <TitleDiv title={"Voucher Details"} loading={loading} />
+      <TitleDiv title={formatVoucherType(data?.voucherType)+" Details"} loading={loading} />
       {/* headinh section  */}
 
       {!loading && (

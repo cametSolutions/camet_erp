@@ -125,12 +125,16 @@ function EditItemForm({
       let discountPercentage = 0;
       let discountType = "none";
 
+
+
       if (
         godownOrBatch.discountType === "percentage" &&
         godownOrBatch.discountPercentage !== 0 &&
         godownOrBatch.discountPercentage !== undefined &&
         godownOrBatch.discountPercentage !== ""
       ) {
+
+        
         // Percentage discount
         discountType = "percentage";
         discountPercentage = Number(godownOrBatch.discountPercentage) || 0;
@@ -140,12 +144,14 @@ function EditItemForm({
         discountedPrice = taxBasePrice - discountAmount;
       } else if (
         godownOrBatch.discountAmount !== 0 &&
-        godownOrBatch.discount !== undefined &&
-        godownOrBatch.discount !== ""
+        godownOrBatch.discountAmount !== undefined &&
+        godownOrBatch.discountAmount !== ""
       ) {
+
+
         // Fixed amount discount (default)
         discountType = "amount";
-        discountAmount = Number(godownOrBatch.discount) || 0;
+        discountAmount = Number(godownOrBatch.discountAmount) || 0;
         // Calculate the equivalent percentage
         discountPercentage =
           taxBasePrice > 0
@@ -311,7 +317,7 @@ function EditItemForm({
           count: quantity,
           selectedPriceRate: parseFloat(newPrice) || 0,
           discountType: type,
-          discount: type === "amount" ? discount : "",
+          discountAmount: type === "amount" ? discount : "",
           discountPercentage: type === "percentage" ? discount : "",
         },
       ],
@@ -440,7 +446,7 @@ function EditItemForm({
             actualCount: godownActualQty,
             selectedPriceRate: newRate,
             discountType: newDiscountType,
-            discount: newDiscountType === "amount" ? newDiscountValue : "",
+            discountAmount: newDiscountType === "amount" ? newDiscountValue : "",
             discountPercentage: newDiscountType === "percentage" ? newDiscountValue : "",
           };
         }),
@@ -451,9 +457,13 @@ function EditItemForm({
         addl_cess: parseFloat(additionalCess) || 0,
         isTaxInclusive: isTaxInclusive,
       };
+
+
+      
   
       // Calculate totals for all godowns
       const result = calculateTotal(mockItem, null, "normal");
+
       
       // Update each godown with the calculated values
       updatedItem.GodownList = updatedItem.GodownList.map((godown, godownIndex) => {
@@ -569,7 +579,6 @@ function EditItemForm({
       );
     }
   
-    // console.log(updatedItem);
   
     const godownList = updatedItem.GodownList;
     updatedItem.taxInclusive = isTaxInclusive;
@@ -581,6 +590,8 @@ function EditItemForm({
     updatedItem.totalCount = godownList.reduce((acc, item) => acc + (item.count || 0), 0);
     updatedItem.totalActualCount = godownList.reduce((acc, item) => acc + (item.actualCount || 0), 0);
     updatedItem.total=updatedItem?.GodownList?.reduce((acc, item) => acc + (item.individualTotal || 0), 0);
+
+    
   
     // Uncomment these lines when ready to dispatch the action
     dispatch(updateItem({ item: updatedItem, moveToTop: false }));

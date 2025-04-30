@@ -23,6 +23,7 @@ import AddItemTile from "./AddItemTile";
 import FooterButton from "./FooterButton";
 import TitleDiv from "../../../components/common/TitleDiv";
 import AdditionalChargesTile from "./AdditionalChargesTile";
+import { formatVoucherType } from "../../../../utils/formatVoucherType";
 
 function VoucherInitialPage() {
   const dispatch = useDispatch();
@@ -54,6 +55,8 @@ function VoucherInitialPage() {
       return voucherTypeFromRedux + "Number";
     }
   };
+
+
 
   // Redux selectors
   const { _id: cmp_id } = useSelector(
@@ -329,7 +332,7 @@ function VoucherInitialPage() {
     <div className="mb-14 sm:mb-0">
       <div className="flex-1 bg-slate-100 h -screen ">
         <TitleDiv
-          title="Sales"
+          title={formatVoucherType(voucherTypeFromRedux)}
           // from={`/sUsers/selectVouchers`}
           loading={isLoading || submitLoading}
         />
@@ -338,7 +341,7 @@ function VoucherInitialPage() {
           {/* invoiec date */}
 
           <HeaderTile
-            title={voucherTypeFromRedux}
+            title={formatVoucherType(voucherTypeFromRedux)}
             number={voucherNumber}
             selectedDate={selectedDate}
             setSelectedDate={setSelectedDate}
