@@ -2,8 +2,8 @@
 
 // const creditNoteSchema = new mongoose.Schema(
 //   {
-//     date: { 
-//       type: Date, 
+//     date: {
+//       type: Date,
 //       required: true,
 //       set: function(value) {
 //         // Set the time to 00:00:00.000
@@ -17,7 +17,7 @@
 //     Primary_user_id: { type: String, required: true },
 //     Secondary_user_id: { type: String },
 //     selectedGodownName:{ type: String,default:"" },
-//     selectedGodownId:{ type: String,default:""},  
+//     selectedGodownId:{ type: String,default:""},
 //     cmp_id:{ type: String, required: true },
 //     partyAccount:{ type: String, required: true },
 
@@ -47,7 +47,6 @@
 // );
 // export default mongoose.model("CreditNote", creditNoteSchema);
 
-
 import mongoose from "mongoose";
 const { Schema } = mongoose;
 
@@ -64,7 +63,7 @@ const creditNoteSchema = new Schema(
       },
     },
     selectedDate: { type: String },
-    voucherType: { type: String,default:"creditNote" },
+    voucherType: { type: String, default: "creditNote" },
     voucherNumber: { type: Number },
     convertedFrom: { type: Array, default: [] },
     serialNumber: { type: Number },
@@ -88,6 +87,15 @@ const creditNoteSchema = new Schema(
     party: {
       _id: { type: Schema.Types.ObjectId, ref: "Party" },
       partyName: { type: String },
+
+      accountGroupName: { type: String },
+      accountGroup_id: {
+        type: mongoose.Types.ObjectId,
+        ref: "AccountGroup",
+        required: true,
+      },
+      subGroupName: { type: String },
+      subGroup_id: { type: mongoose.Schema.Types.ObjectId, ref: "SubGroup" },
       mobileNumber: { type: String },
       country: { type: String },
       state: { type: String },
@@ -258,4 +266,3 @@ creditNoteSchema.index({ date: 1 });
 creditNoteSchema.index({ "party._id": 1 });
 
 export default mongoose.model("CreditNote", creditNoteSchema);
-

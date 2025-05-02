@@ -5,14 +5,12 @@ import { MdEdit, MdSms } from "react-icons/md";
 import CancelButton from "@/components/common/CancelButton";
 import { useNavigate } from "react-router-dom";
 
-export default function VoucherDetailsActionButtons({ data }) {
+export default function VoucherDetailsActionButtons({ data, reFetch }) {
   const navigate = useNavigate();
 
   const {
-    id,
-    tab,
+    _id,
     isCancelled,
-    reFetch,
     vanSale = false,
     isEditable,
     isConverted = false,
@@ -21,7 +19,7 @@ export default function VoucherDetailsActionButtons({ data }) {
 
   const handleEditClick = () => {
     if (!voucherType) return;
-    navigate(`/sUsers/edit${voucherType}/${id}`, {
+    navigate(`/sUsers/edit${voucherType}/${_id}`, {
       state: {
         mode: "edit ",
         voucherType: voucherType,
@@ -66,11 +64,15 @@ export default function VoucherDetailsActionButtons({ data }) {
   ];
 
   return (
-    <div className="flex flex-col items-center">
+    <div
+      className={` ${
+        isCancelled && "opacity-60 pointer-events-none"
+      }  flex flex-col items-center`}
+    >
       <div className="flex justify-center space-x-8">
         <CancelButton
-          id={id}
-          tab={tab}
+          id={_id}
+          voucherType={voucherType}
           isCancelled={isCancelled}
           reFetch={reFetch}
           vanSale={vanSale}

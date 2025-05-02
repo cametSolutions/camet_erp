@@ -41,10 +41,11 @@ function VoucherDetails() {
 
   const endPoint = getEndPoint();
 
-  const { data: voucherDetails, loading } = useFetch(
-    endPoint ? `/api/sUsers/${endPoint}/${id}` : null,
-    params
-  );
+  const {
+    data: voucherDetails,
+    loading,
+    refreshHook,
+  } = useFetch(endPoint ? `/api/sUsers/${endPoint}/${id}` : null, params);
   useEffect(() => {
     if (voucherDetails) {
       setData(voucherDetails.data);
@@ -89,7 +90,9 @@ function VoucherDetails() {
     <div className="bg-[rgb(244,246,254)] flex-1  relative  pb-[70px] md:pb-0  ">
       {/* headinh section  */}
       <TitleDiv
-        title={(formatVoucherType(data?.voucherType) + " Details") || "Voucher Details"}
+        title={
+          formatVoucherType(data?.voucherType) + " Details" || "Voucher Details"
+        }
         loading={loading}
       />
       {/* headinh section  */}
@@ -101,9 +104,9 @@ function VoucherDetails() {
             reFetchParent={reFetch}
             editLink={`/sUsers/editSale/${data?._id}`}
             user={"secondary"}
-            number={data?.[getVoucherNumberTitle()] }
+            number={data?.[getVoucherNumberTitle()]}
             tab={"Sales"}
-            reFetch={reFetch}
+            reFetch={refreshHook}
           />
 
           <VoucherDetailsParty data={data} />
@@ -149,6 +152,7 @@ function VoucherDetails() {
 
               <VoucherDetailsActionButtons
                 data={data}
+                reFetch={refreshHook}
               />
             </div>
           </div>

@@ -1,57 +1,13 @@
 /* eslint-disable react/prop-types */
-// import { MdTextsms } from "react-icons/md";
-// import SwallFireForPdf from "../../../components/common/SwallFireForPdf";
-// import { FaEdit } from "react-icons/fa";
-// import CancelButton from "../../../components/common/CancelButton";
+
 import dayjs from "dayjs";
-// import { useNavigate } from "react-router-dom";
 import { useState } from "react";
-// import { removeAll } from "../../../../slices/voucherSlices/commonVoucherSlice";
-// import { useDispatch } from "react-redux";
 import VoucherDetailsActionButtons from "./actionButtons/VoucherDetailsActionButtons";
 
-function VoucherDetailsHeader({
-  data,
-  // reFetchParent,
-  // editLink,
-  user,
-  number,
-  tab,
-  reFetch,
-}) {
+function VoucherDetailsHeader({ data, user, number, tab, reFetch }) {
   // eslint-disable-next-line no-unused-vars
   const [refresh, setRefresh] = useState(false);
-  // const navigate = useNavigate();
-  // const dispatch = useDispatch();
 
-  // const reFetch = () => {
-  //   reFetchParent(!refresh);
-  // };
-
-  // const handleNavigate = () => {
-  //   if (data?.isEditable === false) {
-  //     alert(
-  //       "You can't edit this voucher since it has been used to generate receipts or payments"
-  //     );
-  //     return;
-  //   }
-
-  //   if (data?.isConverted !== undefined && data?.isConverted === true) {
-  //     window.alert(
-  //       "You can't edit this voucher since it has been  converted to sales"
-  //     );
-  //     return;
-  //   }
-  //   dispatch(removeAll());
-
-  //   navigate(`/sUsers/edit${data?.voucherType}/${data?._id}`, {
-  //     state: {
-  //       mode: "edit ",
-  //       voucherType: data?.voucherType,
-  //       data: data,
-  //     },
-  //   });
-  // };
 
   // Define when to show buttons or just the share button
   const showAllButtons = user === "secondary";
@@ -115,7 +71,7 @@ function VoucherDetailsHeader({
           //   </div>
           // </div>
           <div className="hidden sm:block">
-            <VoucherDetailsActionButtons data={data} />
+            <VoucherDetailsActionButtons data={data} reFetch={reFetch} />
           </div>
         )}
       </div>

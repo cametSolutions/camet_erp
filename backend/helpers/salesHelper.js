@@ -1050,7 +1050,7 @@ export const revertSettlementData = async (
   session
 ) => {
   try {
-    const accountGroup = party?.accountGroup;
+    const accountGroup = party?.accountGroupName;
 
     if (!accountGroup) {
       throw new Error("Invalid account group");

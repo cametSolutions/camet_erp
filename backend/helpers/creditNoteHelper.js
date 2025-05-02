@@ -265,6 +265,9 @@ export const updateCreditNoteNumber = async (orgId, secondaryUser, session) => {
 };
 
 export const revertCreditNoteStockUpdates = async (items, session) => {
+
+  console.log("reached here");
+  
   try {
     const productUpdates = [];
     const godownUpdates = [];
