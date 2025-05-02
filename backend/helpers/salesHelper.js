@@ -458,29 +458,34 @@ export const updateTallyData = async (
   secondaryMobile,
   session,
   valueToUpdateInTally,
-  createdBy = ""
+  selectedDate,
+  voucherType,
+  classification
 ) => {
+  if (
+    party.accountGroupName === "Sundry Debtors" ||
+    party.accountGroup === "Sundry Creditors"
+  ) {
+    return;
+  }
   try {
     const billData = {
       Primary_user_id: Primary_user_id,
       bill_no: salesNumber,
       billId: billId.toString(),
       cmp_id: orgId,
-      party_id: party?.party_master_id,
-      accountGroup: party?.accountGroup,
-      accountGroup_id: party?.accountGroup_id,
-      subGroup: party?.subGroup,
-      subGroup_id: party?.subGroup_id,
+      party_id: party?._id,
+      accountGroup: party?.accountGroup_id,
+      subGroup: party?.subGroup_id,
       bill_amount: Number(lastAmount),
-      bill_date: new Date(),
+      bill_date: new Date(selectedDate),
       bill_pending_amt: Number(valueToUpdateInTally),
       email: party?.emailID,
       mobile_no: party?.mobileNumber,
       party_name: party?.partyName,
       user_id: secondaryMobile || "null",
-      source: "sale",
-      classification: "Dr",
-      createdBy,
+      source: voucherType,
+      classification,
     };
 
     const tallyUpdate = await TallyData.findOneAndUpdate(
@@ -489,7 +494,7 @@ export const updateTallyData = async (
         bill_no: salesNumber,
         billId: billId.toString(),
         Primary_user_id: Primary_user_id,
-        party_id: party?.party_master_id,
+        party_id: party?._id,
       },
       { $set: billData },
       { upsert: true, new: true, session }
@@ -505,7 +510,7 @@ export const updateTallyData = async (
 export const revertSaleStockUpdates = async (items, session) => {
   try {
     console.log("items", items.length);
-    
+
     for (const item of items) {
       const product = await productModel
         .findOne({ _id: item._id })
@@ -516,7 +521,6 @@ export const revertSaleStockUpdates = async (items, session) => {
       }
 
       // console.log("product", product);
-
 
       // Use actualCount if available, otherwise fall back to count
       const itemCount = parseFloat(
@@ -612,13 +616,11 @@ export const revertSaleStockUpdates = async (items, session) => {
               );
             }
           } else if (godown.godown_id && !godown?.batch) {
-            
             const godownIndex = product.GodownList.findIndex(
               (g) => g.godown.toString() == godown.godownMongoDbId
             );
 
             console.log("godownIndex g only", godownIndex);
-           
 
             if (godownIndex !== -1 && godownCount && godownCount > 0) {
               const currentGodownStock =
@@ -904,8 +906,6 @@ export const updateOutstandingBalance = async ({
   transactionType,
   secondaryMobile,
 }) => {
-
-  
   // Calculate old bill balance
   let oldBillBalance;
   if (
@@ -986,7 +986,7 @@ export const saveSettlementData = async (
   session
 ) => {
   try {
-    const accountGroup = party?.accountGroup;
+    const accountGroup = party?.accountGroupName;
 
     if (!accountGroup) {
       throw new Error("Invalid account group");

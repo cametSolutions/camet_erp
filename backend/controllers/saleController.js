@@ -29,6 +29,7 @@ import { formatToLocalDate } from "../helpers/helper.js";
 
 export const createSale = async (req, res) => {
   const session = await mongoose.startSession();
+
   session.startTransaction();
   try {
     const {
@@ -40,6 +41,8 @@ export const createSale = async (req, res) => {
       finalAmount: lastAmount,
       paymentSplittingData,
       selectedDate,
+      voucherType,
+
       convertedFrom = [],
     } = req.body;
 
@@ -134,25 +137,22 @@ export const createSale = async (req, res) => {
       session
     );
 
-    if (
-      party.accountGroup === "Sundry Debtors" ||
-      party.accountGroup === "Sundry Creditors"
-    ) {
-      const Primary_user_id = req.owner;
+    const Primary_user_id = req.owner;
 
-      await updateTallyData(
-        orgId,
-        salesNumber,
-        result._id,
-        Primary_user_id,
-        party,
-        lastAmount,
-        secondaryMobile,
-        session,
-        valueToUpdateInTally,
-        "sale"
-      );
-    }
+    await updateTallyData(
+      orgId,
+      salesNumber,
+      result._id,
+      Primary_user_id,
+      party,
+      lastAmount,
+      secondaryMobile,
+      session,
+      valueToUpdateInTally,
+      selectedDate,
+      voucherType,
+      "Dr"
+    );
 
     ////save payment splitting data in bank or cash model also
 
@@ -210,7 +210,7 @@ export const editSale = async (req, res) => {
     despatchDetails,
     priceLevelFromRedux,
     additionalChargesFromRedux,
-    finalAmount:lastAmount,
+    finalAmount: lastAmount,
     salesNumber,
     selectedDate,
     paymentSplittingData = {},
@@ -253,7 +253,7 @@ export const editSale = async (req, res) => {
         // selectedGodownName: selectedGodownName
         //   ? selectedGodownName[0]
         //   : existingSale.selectedGodownName,
-        _id:existingSale._id,
+        _id: existingSale._id,
         serialNumber: existingSale.serialNumber,
         cmp_id: orgId,
         partyAccount: party?.partyName,
@@ -425,9 +425,11 @@ export const editSale = async (req, res) => {
       // }
 
       await session.commitTransaction();
-      return res
-        .status(200)
-        .json({ success: true, message: "Sale edited successfully", data: updateData });
+      return res.status(200).json({
+        success: true,
+        message: "Sale edited successfully",
+        data: updateData,
+      });
     } catch (error) {
       await session.abortTransaction();
       console.error("Error editing sale:", error);
@@ -592,7 +594,7 @@ export const getSalesDetails = async (req, res) => {
       // Update the party name with the latest value
       saleDetails.partyAccount = saleDetails.party._id.partyName;
       saleDetails.party.partyName = saleDetails.party._id.partyName;
-      
+
       // Restore ID to original format
       const partyId = saleDetails.party._id._id;
       saleDetails.party._id = partyId;
@@ -600,23 +602,23 @@ export const getSalesDetails = async (req, res) => {
 
     // Update product names in items array
     if (saleDetails.items && saleDetails.items.length > 0) {
-      saleDetails.items.forEach(item => {
+      saleDetails.items.forEach((item) => {
         if (item._id?.product_name) {
           // Update the product name with the latest value
           item.product_name = item._id.product_name;
-          
+
           // Restore ID to original format
           const itemId = item._id._id;
           item._id = itemId;
         }
-        
+
         // Update godown names in GodownList array
         if (item.GodownList && item.GodownList.length > 0) {
-          item.GodownList.forEach(godown => {
+          item.GodownList.forEach((godown) => {
             if (godown.godownMongoDbId?.godown) {
               // Update the godown name with the latest value
               godown.godown = godown.godownMongoDbId.godown;
-              
+
               // Restore ID to original format
               const godownId = godown.godownMongoDbId._id;
               godown.godownMongoDbId = godownId;
@@ -634,13 +636,15 @@ export const getSalesDetails = async (req, res) => {
       Primary_user_id: saleDetails.Primary_user_id,
     });
 
-    const isEditable = !outstandingOfSale || outstandingOfSale?.appliedReceipts?.length === 0;
+    const isEditable =
+      !outstandingOfSale || outstandingOfSale?.appliedReceipts?.length === 0;
     saleDetails.isEditable = isEditable;
 
-    res.status(200).json({ message: "Sales details fetched", data: saleDetails });
+    res
+      .status(200)
+      .json({ message: "Sales details fetched", data: saleDetails });
   } catch (error) {
     console.error("Error fetching sale details:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
-

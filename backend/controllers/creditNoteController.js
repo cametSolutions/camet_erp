@@ -4,13 +4,14 @@ import {
   handleCreditNoteStockUpdates,
   updateCreditNoteNumber,
   revertCreditNoteStockUpdates,
-  updateTallyData,
+  // updateTallyData,
 } from "../helpers/creditNoteHelper.js";
 import {
   processSaleItems as processCreditNoteItems,
   revertSettlementData,
   saveSettlementData,
   updateOutstandingBalance,
+  updateTallyData,
 } from "../helpers/salesHelper.js";
 
 import { checkForNumberExistence } from "../helpers/secondaryHelper.js";
@@ -31,12 +32,11 @@ export const createCreditNote = async (req, res) => {
       items,
       despatchDetails,
       additionalChargesFromRedux,
-      finalAmount:lastAmount,
+      finalAmount: lastAmount,
       creditNoteNumber,
       selectedDate,
+      voucherType,
     } = req.body;
-
-    
 
     const Secondary_user_id = req.sUserId;
 
@@ -107,21 +107,20 @@ export const createCreditNote = async (req, res) => {
       session
     );
 
-    if (
-      party.accountGroup === "Sundry Debtors" ||
-      party.accountGroup === "Sundry Creditors"
-    ) {
-      await updateTallyData(
-        orgId,
-        creditNoteNumber,
-        result._id,
-        req.owner,
-        party,
-        lastAmount,
-        secondaryMobile,
-        session // Pass session if needed
-      );
-    }
+    await updateTallyData(
+      orgId,
+      creditNoteNumber,
+      result._id,
+      req.owner,
+      party,
+      lastAmount,
+      secondaryMobile,
+      session,
+      lastAmount, ///valueToUpdateInTally is also last amount
+      selectedDate,
+      voucherType,
+      "Cr"
+    );
 
     await session.commitTransaction();
     session.endSession();
@@ -253,7 +252,7 @@ export const editCreditNote = async (req, res) => {
       items,
       despatchDetails,
       additionalChargesFromRedux,
-      finalAmount:lastAmount,
+      finalAmount: lastAmount,
       creditNoteNumber,
       selectedDate,
     } = req.body;

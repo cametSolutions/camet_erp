@@ -4,13 +4,14 @@ import {
   handleDebitNoteStockUpdates,
   revertDebitNoteStockUpdates,
   updateDebitNoteNumber,
-  updateTallyData,
+  // updateTallyData,
 } from "../helpers/debitNoteHelper.js";
 import {
   processSaleItems as processDebitNoteItems,
   revertSettlementData,
   saveSettlementData,
   updateOutstandingBalance,
+  updateTallyData,
 } from "../helpers/salesHelper.js";
 
 import { checkForNumberExistence } from "../helpers/secondaryHelper.js";
@@ -33,6 +34,8 @@ export const createDebitNote = async (req, res) => {
       additionalChargesFromRedux,
       finalAmount: lastAmount,
       debitNoteNumber,
+      selectedDate,
+      voucherType
     } = req.body;
     // debitNoteNumber,
 
@@ -105,21 +108,20 @@ export const createDebitNote = async (req, res) => {
       session
     );
 
-    if (
-      party.accountGroup === "Sundry Debtors" ||
-      party.accountGroup === "Sundry Creditors"
-    ) {
-      await updateTallyData(
-        orgId,
-        debitNoteNumber,
-        result._id,
-        req.owner,
-        party,
-        lastAmount,
-        secondaryMobile,
-        session // Pass session if needed
-      );
-    }
+    await updateTallyData(
+      orgId,
+      debitNoteNumber,
+      result._id,
+      req.owner,
+      party,
+      lastAmount,
+      secondaryMobile,
+      session,
+      lastAmount, ///valueToUpdateInTally is also last amount
+      selectedDate,
+      voucherType,
+      "Dr"
+    );
 
     await session.commitTransaction();
     session.endSession();

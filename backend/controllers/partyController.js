@@ -61,22 +61,30 @@ export const PartyList = async (req, res) => {
       { $match: query },
       { $skip: skip },
       { $limit: pageSize },
+    
+      // Lookup for accountGroup
       {
         $lookup: {
-          from: "accountgroups", // Collection name is "accountgroups" based on your model
+          from: "accountgroups",
           localField: "accountGroup",
-          foreignField: "_id", // This should match with your schema
+          foreignField: "_id",
           as: "accountGroupData",
         },
       },
-
+      { $unwind: { path: "$accountGroupData", preserveNullAndEmptyArrays: true } },
+    
+      // Lookup for subGroup
       {
-        $addFields: {
-          accountGroupName: {
-            $arrayElemAt: ["$accountGroupData.accountGroup", 0],
-          },
+        $lookup: {
+          from: "subgroups",
+          localField: "subGroup",
+          foreignField: "_id",
+          as: "subGroupData",
         },
       },
+      { $unwind: { path: "$subGroupData", preserveNullAndEmptyArrays: true } },
+    
+      // Flatten fields
       {
         $project: {
           _id: 1,
@@ -90,13 +98,15 @@ export const PartyList = async (req, res) => {
           pin: 1,
           country: 1,
           state: 1,
-          accountGroup: "$accountGroupName", // Rename to match original structure
-          accountGroup_id: 1,
-          subGroup: "$subGroupName", // Rename to match original structure
-          subGroup_id: 1,
+          accountGroupName: "$accountGroupData.accountGroup",
+          accountGroup_id: "$accountGroupData._id",
+          subGroupName: "$subGroupData.subGroup",
+          subGroup_id: "$subGroupData._id",
         },
       },
     ]);
+    
+    
 
     const configuration = secUser.configurations.find(
       (config) => config.organization == cmp_id
