@@ -21,8 +21,8 @@ import VoucherDetailsActionButtons from "./actionButtons/VoucherDetailsActionBut
 function VoucherDetails() {
   const [data, setData] = useState("");
   const [refresh, setRefresh] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
   const { id } = useParams();
-  // const navigate = useNavigate();
   const location = useLocation();
 
   const getEndPoint = () => {
@@ -86,6 +86,8 @@ function VoucherDetails() {
   //   navigate(`/sUsers/editSale/${data?._id}`);
   // };
 
+
+  const wholeLoading=loading || actionLoading
   return (
     <div className="bg-[rgb(244,246,254)] flex-1  relative  pb-[70px] md:pb-0  ">
       {/* headinh section  */}
@@ -93,7 +95,7 @@ function VoucherDetails() {
         title={
           formatVoucherType(data?.voucherType) + " Details" || "Voucher Details"
         }
-        loading={loading}
+        loading={wholeLoading}
       />
       {/* headinh section  */}
 
@@ -107,6 +109,9 @@ function VoucherDetails() {
             number={data?.[getVoucherNumberTitle()]}
             tab={"Sales"}
             reFetch={refreshHook}
+            setActionLoading={setActionLoading}
+            actionLoading={actionLoading}
+            
           />
 
           <VoucherDetailsParty data={data} />
@@ -153,6 +158,9 @@ function VoucherDetails() {
               <VoucherDetailsActionButtons
                 data={data}
                 reFetch={refreshHook}
+                setActionLoading={setActionLoading}
+            actionLoading={actionLoading}
+
               />
             </div>
           </div>

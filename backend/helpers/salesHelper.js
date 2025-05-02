@@ -934,7 +934,7 @@ export const updateOutstandingBalance = async ({
 
   // Find existing outstanding record
   const matchedOutStanding = await TallyData.findOne({
-    party_id: existingVoucher?.party?.party_master_id,
+    party_id: existingVoucher?.party?._id,
     cmp_id: orgId,
     bill_no: voucherNumber,
     billId: existingVoucher?._id.toString(),

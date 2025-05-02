@@ -4,7 +4,7 @@ import dayjs from "dayjs";
 import { useState } from "react";
 import VoucherDetailsActionButtons from "./actionButtons/VoucherDetailsActionButtons";
 
-function VoucherDetailsHeader({ data, user, number, tab, reFetch }) {
+function VoucherDetailsHeader({ data, user, number, tab, reFetch,setActionLoading ,actionLoading}) {
   // eslint-disable-next-line no-unused-vars
   const [refresh, setRefresh] = useState(false);
 
@@ -71,7 +71,7 @@ function VoucherDetailsHeader({ data, user, number, tab, reFetch }) {
           //   </div>
           // </div>
           <div className="hidden sm:block">
-            <VoucherDetailsActionButtons data={data} reFetch={reFetch} />
+            <VoucherDetailsActionButtons data={data} reFetch={reFetch} setActionLoading={setActionLoading} actionLoading={actionLoading}/>
           </div>
         )}
       </div>

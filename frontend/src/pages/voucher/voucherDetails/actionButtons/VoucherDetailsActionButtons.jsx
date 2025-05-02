@@ -5,7 +5,13 @@ import { MdEdit, MdSms } from "react-icons/md";
 import CancelButton from "@/components/common/CancelButton";
 import { useNavigate } from "react-router-dom";
 
-export default function VoucherDetailsActionButtons({ data, reFetch }) {
+export default function VoucherDetailsActionButtons({
+  data,
+  reFetch,
+  setActionLoading,
+  actionLoading
+
+}) {
   const navigate = useNavigate();
 
   const {
@@ -78,6 +84,8 @@ export default function VoucherDetailsActionButtons({ data, reFetch }) {
           vanSale={vanSale}
           isEditable={isEditable}
           isConverted={isConverted}
+          setActionLoading={setActionLoading}
+          actionLoading={actionLoading}
         />
 
         {actions.map((action, index) => {

@@ -1,6 +1,5 @@
 /* eslint-disable react/no-unescaped-entities */
 
-
 /* eslint-disable react/prop-types */
 import { useState } from "react";
 import { MdCancel } from "react-icons/md";
@@ -22,13 +21,13 @@ import {
 function CancelButton({
   id,
   voucherType,
-  // isCancelled,
-  reFetch,
   vanSale = false,
   isEditable,
   isConverted = false,
+  setActionLoading,
+  reFetch,
+  actionLoading,
 }) {
-  const [refresh, setRefresh] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   if (voucherType === "vanSale") {
@@ -56,6 +55,7 @@ function CancelButton({
 
   const handleConfirmCancel = async () => {
     try {
+      setActionLoading(true);
       await api.post(
         `/api/sUsers/cancel${voucherType}/${id}?vanSale=${vanSale}`,
         {},
@@ -65,10 +65,12 @@ function CancelButton({
       );
 
       toast.success("Your file has been cancelled successfully");
-      reFetch(!refresh);
+      reFetch();
     } catch (error) {
       console.log(error);
       toast.error(error.response?.data?.message || "Failed to cancel");
+    } finally {
+      setActionLoading(false);
     }
 
     // Close the dialog
@@ -76,7 +78,7 @@ function CancelButton({
   };
 
   return (
-    <div>
+    <div className={`${actionLoading ? "pointer-events-none opacity-50" : ""}`}>
       <div
         onClick={handleCancelClick}
         className="flex flex-col items-center cursor-pointer hover:opacity-80 transition-opacity"
