@@ -349,6 +349,7 @@ export const editCreditNote = async (req, res) => {
       createdBy: req.owner,
       transactionType: "creditNote",
       secondaryMobile,
+      selectedDate,
     });
 
     // const newBillValue = Number(lastAmount);

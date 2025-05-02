@@ -1,18 +1,20 @@
 /* eslint-disable react/prop-types */
-
+import { useState } from "react";
 import { PiShareFatFill } from "react-icons/pi";
 import { MdEdit, MdSms } from "react-icons/md";
 import CancelButton from "@/components/common/CancelButton";
 import { useNavigate } from "react-router-dom";
+import RemoveReduxData from "@/components/secUsers/RemoveReduxData";
+import { ShareAlertDialog } from "./ShareAlertDialog";
 
 export default function VoucherDetailsActionButtons({
   data,
   reFetch,
   setActionLoading,
-  actionLoading
-
+  actionLoading,
 }) {
   const navigate = useNavigate();
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
 
   const {
     _id,
@@ -25,6 +27,7 @@ export default function VoucherDetailsActionButtons({
 
   const handleEditClick = () => {
     if (!voucherType) return;
+
     navigate(`/sUsers/edit${voucherType}/${_id}`, {
       state: {
         mode: "edit ",
@@ -35,8 +38,7 @@ export default function VoucherDetailsActionButtons({
   };
 
   const handleShareClick = () => {
-    // Implement share functionality
-    console.log("Share clicked");
+    setShareDialogOpen(true);
   };
 
   const handleSmsClick = () => {
@@ -75,6 +77,16 @@ export default function VoucherDetailsActionButtons({
         isCancelled && "opacity-60 pointer-events-none"
       }  flex flex-col items-center`}
     >
+      {/* some redux data is persisted in redux store so to remove it */}
+      <RemoveReduxData />
+      
+      {/* Share Dialog Component */}
+      <ShareAlertDialog 
+        open={shareDialogOpen} 
+        setOpen={setShareDialogOpen}
+        voucherId={_id}
+      />
+      
       <div className="flex justify-center space-x-8">
         <CancelButton
           id={_id}

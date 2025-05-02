@@ -202,8 +202,6 @@ const RETRY_DELAY_MS = 1000;
 export const editSale = async (req, res) => {
   const saleId = req.params.id;
   const {
-    // selectedGodownId,
-    // selectedGodownName,
     orgId,
     party,
     items,
@@ -326,6 +324,7 @@ export const editSale = async (req, res) => {
         createdBy: req.owner,
         transactionType: "sale",
         secondaryMobile,
+        selectedDate,
       });
 
       //// updating the payment splitting data

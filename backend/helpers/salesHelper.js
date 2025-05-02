@@ -905,6 +905,7 @@ export const updateOutstandingBalance = async ({
   createdBy,
   transactionType,
   secondaryMobile,
+  selectedDate,
 }) => {
   // Calculate old bill balance
   let oldBillBalance;
@@ -936,9 +937,10 @@ export const updateOutstandingBalance = async ({
   const matchedOutStanding = await TallyData.findOne({
     party_id: existingVoucher?.party?._id,
     cmp_id: orgId,
-    bill_no: voucherNumber,
     billId: existingVoucher?._id.toString(),
   }).session(session);
+
+  console.log("matchedOutStanding", matchedOutStanding);
 
   // Calculate value to update in tally
   const valueToUpdateInTally =
@@ -953,24 +955,38 @@ export const updateOutstandingBalance = async ({
   }
 
   // Create new outstanding record if applicable
-  let updatedTallyData = null;
-  if (
-    party.accountGroup === "Sundry Debtors" ||
-    party.accountGroup === "Sundry Creditors"
-  ) {
-    updatedTallyData = await updateTallyData(
-      orgId,
-      voucherNumber,
-      existingVoucher._id,
-      createdBy,
-      party,
-      newVoucherData?.lastAmount,
-      secondaryMobile,
-      session,
-      valueToUpdateInTally,
-      transactionType
-    );
-  }
+  // let updatedTallyData = null;
+  // if (
+  //   party.accountGroup === "Sundry Debtors" ||
+  //   party.accountGroup === "Sundry Creditors"
+  // ) {
+  const updatedTallyData = await updateTallyData(
+    orgId,
+    voucherNumber,
+    existingVoucher._id,
+    existingVoucher.Primary_user_id,
+    party,
+    newVoucherData?.lastAmount,
+    secondaryMobile,
+    session,
+    valueToUpdateInTally,
+    selectedDate,
+    existingVoucher?.voucherType
+
+    // orgId,
+    // salesNumber,
+    // result._id,
+    // Primary_user_id,
+    // party,
+    // lastAmount,
+    // secondaryMobile,
+    // session,
+    // valueToUpdateInTally,
+    // selectedDate,
+    // voucherType,
+    // "Dr"
+  );
+  // }
 };
 
 export const saveSettlementData = async (

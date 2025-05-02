@@ -106,7 +106,7 @@ function CancelButton({
               onClick={handleConfirmCancel}
               className="bg-red-500 hover:bg-red-600 text-white"
             >
-              Yes, Cancel it!
+              Cancel it!
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

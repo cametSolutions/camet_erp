@@ -323,6 +323,7 @@ export const editDebitNote = async (req, res) => {
       createdBy: req.owner,
       transactionType: "debitNote",
       secondaryMobile,
+      selectedDate
     });
 
     await session.commitTransaction();
