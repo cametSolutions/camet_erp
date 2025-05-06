@@ -16,13 +16,12 @@ import EditHsn from '../pages/masters/hsn/EditHsn'
 import PartyListSecondary from '../pages/masters/party/PartyListSecondary'
 import AddPartySecondary from '../pages/masters/party/AddPartySecondary'
 import ProductListSecondary from '../pages/masters/product/ProductListSecondary'
-import AddItemSecondary from '../pages/secUsers/AddItemSecondary'
-import EditItemSecondary from '../pages/secUsers/EditItemSecondary'
+// import AddItemSecondary from '../pages/secUsers/AddItemSecondary'
+// import EditItemSecondary from '../pages/secUsers/EditItemSecondary'
 import EditPartySecondary from '../pages/masters/party/EditPartySecondary'
 import AddProductSecondary from '../pages/masters/product/AddProductSecondary'
 import EditProductSecondary from '../pages/masters/product/EditProductSecondary'
 import EditSecUsers from '../pages/masters/secondaryUsers/EditSecUsers'
-import EditInvoiceSecondary from '../pages/secUsers/EditInvoiceSecondary'
 import ShareInvoiceSecondary from '../pages/secUsers/ShareInvoiceSecondary'
 import AddChargesListSecondary from '../pages/secUsers/settilngs/serviceLedger/AddChargesListSecondary'
 import AdditionalChargesSecondary from '../pages/secUsers/settilngs/serviceLedger/AdditionalChargesSecondary'
@@ -72,12 +71,12 @@ import Receipt from '../pages/secUsers/Receipt'
 import OutstandingListOfReceipt from '../pages/secUsers/OutstandingListOfReceipt'
 import PurchasePayment from '../pages/secUsers/PurchasePayment'
 import BillToCreditNote from '../pages/secUsers/BillToCreditNote'
-import AddItemCreditNote from '../pages/secUsers/AddItemCreditNote'
-import EditItemCreditNote from '../pages/secUsers/EditItemCreditNote'
+// import AddItemCreditNote from '../pages/secUsers/AddItemCreditNote'
+// import EditItemCreditNote from '../pages/secUsers/EditItemCreditNote'
 import ShareCreditNoteSecondary from '../pages/secUsers/ShareCreditNoteSecondary'
 import BillToDebitNote from '../pages/secUsers/BillToDebitNote'
-import AddItemDebitNote from '../pages/secUsers/AddItemDebitNote'
-import EditItemDebitNote from '../pages/secUsers/EditItemDebitNote'
+// import AddItemDebitNote from '../pages/secUsers/AddItemDebitNote'
+// import EditItemDebitNote from '../pages/secUsers/EditItemDebitNote'
 import ShareDebitNoteSecondary from '../pages/secUsers/ShareDebitNoteSecondary'
 import OutstandingListOfPayment from '../pages/secUsers/OutstandingListOfPayment'
 import ReceiptDetailsOfSale from '../pages/secUsers/ReceiptDetails'
@@ -153,8 +152,7 @@ const Routers = () => {
         <Route path='/sUsers/partyList' element={<ProtectedSecRoute><PartyListSecondary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/addParty' element={<ProtectedSecRoute><AddPartySecondary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/productList' element={<ProtectedSecRoute><ProductListSecondary/></ProtectedSecRoute>}></Route>
-        <Route path='/sUsers/addItem' element={<ProtectedSecRoute><AddItemSecondary/></ProtectedSecRoute>}></Route>
-        <Route path='/sUsers/editItem/:id' element={<ProtectedSecRoute><EditItemSecondary/></ProtectedSecRoute>}></Route>
+
         <Route path='/sUsers/editParty/:id' element={<ProtectedSecRoute><EditPartySecondary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/addProduct' element={<ProtectedSecRoute><AddProductSecondary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/editProduct/:id' element={<ProtectedSecRoute><EditProductSecondary/></ProtectedSecRoute>}></Route>
@@ -240,8 +238,7 @@ const Routers = () => {
         <Route path='/sUsers/creditNote' element={<ProtectedSecRoute><VoucherInitalPage/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/searchPartyCreditNote' element={<ProtectedSecRoute><SearchParty/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/billToCreditNote/:id' element={<ProtectedSecRoute><BillToCreditNote/></ProtectedSecRoute>}></Route>
-        <Route path='/sUsers/addItemCreditNote' element={<ProtectedSecRoute><AddItemCreditNote/></ProtectedSecRoute>}></Route>
-        <Route path='/sUsers/editItemCreditNote/:id/:godownName/:index' element={<ProtectedSecRoute><EditItemCreditNote/></ProtectedSecRoute>}></Route>
+ 
         <Route path='/sUsers/creditNoteDetails/:id' element={<ProtectedSecRoute><VoucherDetails/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/editCreditNote/:id' element={<ProtectedSecRoute><VoucherInitialPageEdit/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/shareCreditNote/:id' element={<ProtectedSecRoute><ShareCreditNoteSecondary/></ProtectedSecRoute>}></Route> 
@@ -250,8 +247,7 @@ const Routers = () => {
         <Route path='/sUsers/debitNote' element={<ProtectedSecRoute><VoucherInitalPage/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/searchPartyDebitNote' element={<ProtectedSecRoute><SearchParty/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/billToDebitNote/:id' element={<ProtectedSecRoute><BillToDebitNote/></ProtectedSecRoute>}></Route>
-        <Route path='/sUsers/addItemDebitNote' element={<ProtectedSecRoute><AddItemDebitNote/></ProtectedSecRoute>}></Route>
-        <Route path='/sUsers/editItemDebitNote/:id/:godownName/:index' element={<ProtectedSecRoute><EditItemDebitNote/></ProtectedSecRoute>}></Route>
+
         <Route path='/sUsers/debitNoteDetails/:id' element={<ProtectedSecRoute><VoucherDetails/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/editDebitNote/:id' element={<ProtectedSecRoute><VoucherInitialPageEdit/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/shareDebitNote/:id' element={<ProtectedSecRoute><ShareDebitNoteSecondary/></ProtectedSecRoute>}></Route> 
