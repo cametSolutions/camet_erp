@@ -350,38 +350,10 @@ export const editCreditNote = async (req, res) => {
       transactionType: "creditNote",
       secondaryMobile,
       selectedDate,
+      classification:"Cr"
     });
 
-    // const newBillValue = Number(lastAmount);
-    // const oldBillValue = Number(existingCreditNote.finalAmount);
-    // const diffBillValue = newBillValue - oldBillValue;
 
-    // const matchedOutStanding = await TallyData.findOne({
-    //   party_id: party?.party_master_id,
-    //   cmp_id: orgId,
-    //   bill_no: creditNoteNumber,
-    //   billId: existingCreditNote._id.toString(),
-    // }).session(session);
-
-    // if (matchedOutStanding) {
-    //   const newOutstanding =
-    //     Number(matchedOutStanding?.bill_pending_amt) + diffBillValue;
-
-    //   // console.log("newOutstanding",newOutstanding);
-
-    //   const outStandingUpdateResult = await TallyData.updateOne(
-    //     {
-    //       party_id: party?.party_master_id,
-    //       cmp_id: orgId,
-    //       bill_no: creditNoteNumber,
-    //       billId: existingCreditNote._id.toString(),
-    //     },
-    //     {
-    //       $set: { bill_pending_amt: newOutstanding, bill_amount: newBillValue },
-    //     },
-    //     { new: true, session }
-    //   );
-    // }
 
     await session.commitTransaction();
     session.endSession();
@@ -403,3 +375,82 @@ export const editCreditNote = async (req, res) => {
     await session.endSession();
   }
 };
+
+
+// @desc to  get details of credit note
+// route get/api/sUsers/getCreditNoteDetails
+export const getCreditNoteDetails = async (req, res) => {
+  try {
+    const id = req.params.id;
+
+    const details = await creditNoteModel
+      .findById(id)
+      .populate({
+        path: "party._id",
+        select: "partyName",
+      })
+      .populate({
+        path: "items._id",
+        select: "product_name balance_stock",
+      })
+      .populate({
+        path: "items.GodownList.godownMongoDbId",
+        select: "godown",
+      })
+      .lean();
+
+    if (!details) {
+      return res.status(404).json({ error: "Credit Note Details not found" });
+    }
+
+    // Populate party name and restore _id
+    if (details.party?._id?.partyName) {
+      details.partyAccount = details.party._id.partyName;
+      details.party.partyName = details.party._id.partyName;
+      const partyId = details.party._id._id;
+      details.party._id = partyId;
+    }
+
+    // Populate item and godown details
+    if (details.items && details.items.length > 0) {
+      details.items.forEach((item) => {
+        if (item._id?.product_name) {
+          item.product_name = item._id.product_name;
+          item.balance_stock = item._id.balance_stock;
+          item._id = item._id._id;
+        }
+
+        if (item.GodownList && item.GodownList.length > 0) {
+          item.GodownList.forEach((godown) => {
+            if (godown.godownMongoDbId?.godown) {
+              godown.godown = godown.godownMongoDbId.godown;
+              godown.godownMongoDbId = godown.godownMongoDbId._id;
+            }
+          });
+        }
+      });
+    }
+
+    // Check if the credit note is editable
+    const outstandingOfCreditNote = await TallyData.findOne({
+      billId: details._id.toString(),
+      bill_no: details.creditNoteNumber,
+      cmp_id: details.cmp_id,
+      Primary_user_id: details.Primary_user_id,
+    });
+
+    const isEditable =
+      !outstandingOfCreditNote ||
+      outstandingOfCreditNote?.appliedPayments?.length === 0;
+
+    details.isEditable = isEditable;
+
+    res
+      .status(200)
+      .json({ message: "Credit Note Details fetched", data: details });
+  } catch (error) {
+    console.error("Error in getting Credit Note:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+

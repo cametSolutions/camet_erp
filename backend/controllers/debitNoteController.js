@@ -323,7 +323,9 @@ export const editDebitNote = async (req, res) => {
       createdBy: req.owner,
       transactionType: "debitNote",
       secondaryMobile,
-      selectedDate
+      selectedDate,
+      classification:"Dr"
+
     });
 
     await session.commitTransaction();
@@ -346,3 +348,83 @@ export const editDebitNote = async (req, res) => {
     await session.endSession();
   }
 };
+
+
+
+// @desc to  get details of debit note
+// route get/api/sUsers/getCreditNoteDetails
+export const getDebitNoteDetails = async (req, res) => {
+  try {
+    const id = req.params.id;
+
+    const details = await debitNoteModel
+      .findById(id)
+      .populate({
+        path: "party._id",
+        select: "partyName",
+      })
+      .populate({
+        path: "items._id",
+        select: "product_name balance_stock",
+      })
+      .populate({
+        path: "items.GodownList.godownMongoDbId",
+        select: "godown",
+      })
+      .lean();
+
+    if (!details) {
+      return res.status(404).json({ error: "Debit Note Details not found" });
+    }
+
+    // Update party name and restore _id
+    if (details.party?._id?.partyName) {
+      details.partyAccount = details.party._id.partyName;
+      details.party.partyName = details.party._id.partyName;
+      const partyId = details.party._id._id;
+      details.party._id = partyId;
+    }
+
+    // Update item and godown details
+    if (details.items && details.items.length > 0) {
+      details.items.forEach((item) => {
+        if (item._id?.product_name) {
+          item.product_name = item._id.product_name;
+          item.balance_stock = item._id.balance_stock;
+          item._id = item._id._id;
+        }
+
+        if (item.GodownList && item.GodownList.length > 0) {
+          item.GodownList.forEach((godown) => {
+            if (godown.godownMongoDbId?.godown) {
+              godown.godown = godown.godownMongoDbId.godown;
+              godown.godownMongoDbId = godown.godownMongoDbId._id;
+            }
+          });
+        }
+      });
+    }
+
+    // Check if the debit note is editable
+    const outstandingOfDebitNote = await TallyData.findOne({
+      billId: details._id.toString(),
+      bill_no: details.debitNoteNumber,
+      cmp_id: details.cmp_id,
+      Primary_user_id: details.Primary_user_id,
+    });
+
+    const isEditable =
+      !outstandingOfDebitNote ||
+      outstandingOfDebitNote?.appliedReceipts?.length === 0;
+
+    details.isEditable = isEditable;
+
+    res
+      .status(200)
+      .json({ message: "Debit Note Details fetched", data: details });
+  } catch (error) {
+    console.error("Error in getting Debit Note:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+``

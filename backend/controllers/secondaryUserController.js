@@ -707,25 +707,6 @@ export const saveOrderNumber = async (req, res) => {
 // @desc toget the details of transaction or receipt
 // route get/api/sUsers/getTransactionDetails
 
-export const getInvoiceDetails = async (req, res) => {
-  const invoiceId = req.params.id;
-
-  try {
-    const invoiceDetails = await invoiceModel.findById(invoiceId);
-
-    if (invoiceDetails) {
-      res
-        .status(200)
-        .json({ message: "Invoice details fetched", data: invoiceDetails });
-    } else {
-      res.status(404).json({ error: "Invoice not found" });
-    }
-  } catch (error) {
-    console.error("Error fetching receipt details:", error);
-    res.status(500).json({ error: "Internal Server Error" });
-  }
-};
-
 export const fetchFilters = async (req, res) => {
   console.log("secondary");
 
@@ -988,7 +969,7 @@ export const fetchConfigurationNumber = async (req, res) => {
 
       const configs = {
         sales: configuration.salesConfiguration,
-        salesOrder: configuration.salesOrderConfiguration,
+        saleOrder: configuration.salesOrderConfiguration,
         purchase: configuration.purchaseConfiguration,
         receipt: configuration.receiptConfiguration,
         payment: configuration.paymentConfiguration,
@@ -1005,7 +986,7 @@ export const fetchConfigurationNumber = async (req, res) => {
       if (configuration) {
         const numbers = {
           sales: configuration.salesNumber,
-          salesOrder: configuration.orderNumber,
+          saleOrder: configuration.orderNumber,
           purchase: configuration.purchaseNumber,
           vanSale: configuration.vanSalesNumber,
           stockTransfer: configuration.stockTransferNumber,
@@ -1018,7 +999,7 @@ export const fetchConfigurationNumber = async (req, res) => {
       } else {
         const companyNumbers = {
           sales: company.salesNumber,
-          salesOrder: company.orderNumber,
+          saleOrder: company.orderNumber,
           purchase: company.purchaseNumber,
           vanSale: company.vanSalesNumber,
           stockTransfer: company.stockTransferNumber,

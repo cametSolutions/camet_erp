@@ -906,6 +906,7 @@ export const updateOutstandingBalance = async ({
   transactionType,
   secondaryMobile,
   selectedDate,
+  classification
 }) => {
   // Calculate old bill balance
   let oldBillBalance;
@@ -954,12 +955,7 @@ export const updateOutstandingBalance = async ({
     await TallyData.findByIdAndDelete(matchedOutStanding._id).session(session);
   }
 
-  // Create new outstanding record if applicable
-  // let updatedTallyData = null;
-  // if (
-  //   party.accountGroup === "Sundry Debtors" ||
-  //   party.accountGroup === "Sundry Creditors"
-  // ) {
+
   const updatedTallyData = await updateTallyData(
     orgId,
     voucherNumber,
@@ -971,22 +967,10 @@ export const updateOutstandingBalance = async ({
     session,
     valueToUpdateInTally,
     selectedDate,
-    existingVoucher?.voucherType
+    existingVoucher?.voucherType,
+    classification
 
-    // orgId,
-    // salesNumber,
-    // result._id,
-    // Primary_user_id,
-    // party,
-    // lastAmount,
-    // secondaryMobile,
-    // session,
-    // valueToUpdateInTally,
-    // selectedDate,
-    // voucherType,
-    // "Dr"
   );
-  // }
 };
 
 export const saveSettlementData = async (

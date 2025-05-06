@@ -172,6 +172,13 @@ function VoucherAddCount() {
           params.append("search", searchTerm);
         }
 
+        ///// if voucher Type is sale order ,then we don not need to differentiate between has godown or batch or not
+        //// all are considered as normal no godown and batch products so add it in params
+
+        if (voucherTypeFromRedux === "saleOrder") {
+          params.append("saleOrder", true);
+        }
+
         // Fetch products from API
         const res = await api.get(
           `/api/sUsers/getProducts/${cmp_id}?${params}`,

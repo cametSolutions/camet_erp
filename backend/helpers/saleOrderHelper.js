@@ -23,7 +23,7 @@ export const updateItemStockAndCalculatePrice = async (
   const selectedPrice = item?.selectedPriceRate || 0;
   let totalPrice = selectedPrice * (item.count || 1) || 0;
 
-  const itemCount = parseFloat(item.count);
+  const itemCount = parseFloat(item.totalActualCount || item.totalCount || 0);
   const product = await productModel.findById(item._id).session(session);
   if (!product) throw new Error(`Product with ID ${item._id} not found`);
 
@@ -39,76 +39,7 @@ export const updateItemStockAndCalculatePrice = async (
     { session }
   );
 
-  // Calculate taxes
-  const { 
-    cgst = 0, 
-    sgst = 0, 
-    igst = 0, 
-    cess = 0,          // Added cess percentage
-    addl_cess = 0,     // Added additional cess per unit
-    isTaxInclusive = false 
-  } = item;
-  
-  let basePrice = totalPrice;
-  let cgstAmt = 0;
-  let sgstAmt = 0;
-  let igstAmt = 0;
-  let cessAmt = 0;      // Added cess amount
-  let addl_cessAmt = 0; // Added additional cess amount
-  let subTotal = 0;     // after discount
-
-  if (isTaxInclusive) {
-    const totalTaxPercentage = igst / 100;
-    basePrice = totalPrice / (1 + totalTaxPercentage);
-
-    // Discount calculation
-    let priceAfterDiscount = basePrice;
-    if (item.discount || item.discountPercentage) {
-      priceAfterDiscount = basePrice - item.discount;
-    }
-
-    // Calculate the tax amounts
-    cgstAmt = (priceAfterDiscount * cgst) / 100;
-    sgstAmt = (priceAfterDiscount * sgst) / 100;
-    igstAmt = (priceAfterDiscount * igst) / 100;
-    
-    // Calculate cess amount based on price after discount
-    cessAmt = (priceAfterDiscount * cess) / 100;
-    
-    // Calculate additional cess amount based on quantity
-    addl_cessAmt = itemCount * addl_cess;
-    
-    subTotal = priceAfterDiscount;
-  } else {
-    // Discount calculation
-    let priceAfterDiscount = basePrice;
-    if (item.discount || item.discountPercentage) {
-      priceAfterDiscount = totalPrice - item.discount;
-    }
-
-    cgstAmt = (priceAfterDiscount * cgst) / 100;
-    sgstAmt = (priceAfterDiscount * sgst) / 100;
-    igstAmt = (priceAfterDiscount * igst) / 100;
-    
-    // Calculate cess amount based on price after discount
-    cessAmt = (priceAfterDiscount * cess) / 100;
-    
-    // Calculate additional cess amount based on quantity
-    addl_cessAmt = itemCount * addl_cess;
-    
-    subTotal = priceAfterDiscount;
-  }
-
-  return {
-    ...item,
-    selectedPrice,
-    cgstAmt: parseFloat(cgstAmt.toFixed(2)),
-    sgstAmt: parseFloat(sgstAmt.toFixed(2)),
-    igstAmt: parseFloat(igstAmt.toFixed(2)),
-    cessAmt: parseFloat(cessAmt.toFixed(2)),         // Added cess amount
-    addl_cessAmt: parseFloat(addl_cessAmt.toFixed(2)), // Added additional cess amount
-    subTotal: parseFloat((subTotal || 0).toFixed(2)),
-  };
+  return item;
 };
 
 // Helper to calculate additional charges with taxes
@@ -163,8 +94,13 @@ export const revertStockChanges = async (invoice, session) => {
       throw new Error(`Product with ID ${item._id} not found`);
     }
 
+    const itemCount = parseFloat(item.totalActualCount || item.totalCount || 0);
+
+    console.log("itemCount", itemCount);
+    
+
     const newBalanceStock = truncateToNDecimals(
-      parseFloat(product.balance_stock) + parseFloat(item.count),
+      parseFloat(product.balance_stock) + parseFloat(itemCount),
       3
     );
 

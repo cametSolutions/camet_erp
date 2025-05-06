@@ -56,43 +56,7 @@ export const getStockTransferDetails = async (req, res) => {
   }
 };
 
-// @desc to  get details of credit note
-// route get/api/sUsers/getCreditNoteDetails
-export const getCreditNoteDetails = async (req, res) => {
-  try {
-    const id = req.params.id;
 
-    const details = await creditNoteModel.findById(id).lean();
-
-    if (details) {
-      ////find the outstanding of the sale
-      const outstandingOfCreditNote = await OutstandingModel.findOne({
-        billId: details._id.toString(),
-        bill_no: details.creditNoteNumber,
-        cmp_id: details.cmp_id,
-        Primary_user_id: details.Primary_user_id,
-      });
-
-      let isEditable = true;
-
-      if (outstandingOfCreditNote) {
-        isEditable =
-          outstandingOfCreditNote?.appliedPayments?.length == 0 ? true : false;
-      }
-
-      details.isEditable = isEditable;
-
-      res
-        .status(200)
-        .json({ message: "Credit Note Details fetched", data: details });
-    } else {
-      res.status(404).json({ error: "Credit Note Details not found" });
-    }
-  } catch (error) {
-    console.error("Error in getting Credit Note:", error);
-    res.status(500).json({ error: "Internal Server Error" });
-  }
-};
 
 // @desc to  get transactions
 // route get/api/sUsers/transactions
@@ -325,41 +289,6 @@ export const transactions = async (req, res) => {
   }
 };
 
-// @desc to  get details of debit note
-// route get/api/sUsers/getCreditNoteDetails
-export const getDebitNoteDetails = async (req, res) => {
-  try {
-    const id = req.params.id;
-
-    const details = await debitNoteModel.findById(id).lean();
-    if (details) {
-      ////find the outstanding of the sale
-      const outstandingOfCreditNote = await OutstandingModel.findOne({
-        billId: details._id.toString(),
-        bill_no: details.debitNoteNumber,
-        cmp_id: details.cmp_id,
-        Primary_user_id: details.Primary_user_id,
-      });
-
-      let isEditable = true;
-
-      if (outstandingOfCreditNote) {
-        isEditable =
-          outstandingOfCreditNote?.appliedReceipts?.length == 0 ? true : false;
-      }
-
-      details.isEditable = isEditable;
-      res
-        .status(200)
-        .json({ message: "Debit Note Details fetched", data: details });
-    } else {
-      res.status(404).json({ error: "Debit Note Details not found" });
-    }
-  } catch (error) {
-    console.error("Error in getting Debit Note:", error);
-    res.status(500).json({ error: "Internal Server Error" });
-  }
-};
 
 /**
  * @desc  get receipt details

@@ -37,8 +37,8 @@ export const createInvoice = async (req, res) => {
           items,
           priceLevelFromRedux,
           additionalChargesFromRedux,
-          lastAmount,
-          orderNumber,
+          finalAmount: lastAmount,
+          saleOrderNumber:orderNumber,
           despatchDetails,
           selectedDate,
         } = req.body;
@@ -151,7 +151,7 @@ export const editInvoice = async (req, res) => {
         items,
         priceLevelFromRedux,
         additionalChargesFromRedux,
-        lastAmount,
+        finalAmount:lastAmount,
         orderNumber,
         despatchDetails,
         selectedDate,
@@ -226,7 +226,7 @@ export const editInvoice = async (req, res) => {
 
       // Handle write conflict or transient transaction errors
       if (
-        error.codeName === "WriteConflict" ||
+        error.codeName === "WriteConflict" || 
         error.errorLabels.has("TransientTransactionError")
       ) {
         retries -= 1;
@@ -321,6 +321,89 @@ export const cancelSalesOrder = async (req, res) => {
     });
   }
 };
+
+
+/**
+ * @desc get invoice details
+ * @route GET/api/sUsers/getInvoiceDetails/:id
+ * @access Public
+ */
+
+
+export const getInvoiceDetails = async (req, res) => {
+  const invoiceId = req.params.id;
+
+  try {
+    // Fetch invoice with necessary population
+    let invoiceDetails = await invoiceModel
+      .findById(invoiceId)
+      .populate({
+        path: "party._id",
+        select: "partyName", // Populate party name
+      })
+      .populate({
+        path: "items._id",
+        select: "product_name balance_stock", // Populate product name
+      })
+      .populate({
+        path: "items.GodownList.godownMongoDbId",
+        select: "godown", // Populate godown name
+      })
+      .lean();
+
+
+
+
+    if (!invoiceDetails) {
+      return res.status(404).json({ error: "Invoice not found" });
+    }
+
+    // Update party name and fix _id
+    if (invoiceDetails.party?._id?.partyName) {
+      invoiceDetails.partyAccount = invoiceDetails.party._id.partyName;
+      invoiceDetails.party.partyName = invoiceDetails.party._id.partyName;
+      invoiceDetails.party._id = invoiceDetails.party._id._id; // Restore original ID
+    }
+
+    // Update item and godown details
+    if (invoiceDetails.items && invoiceDetails.items.length > 0) {
+      invoiceDetails.items.forEach((item) => {
+
+        console.log("itemfgd", item._id);
+        
+        if (item._id?.product_name) {
+          console.log("here")
+          item.product_name = item._id.product_name;
+          item.balance_stock = item._id.balance_stock;
+          item._id = item._id._id;
+        }
+
+        console.log(item?.product_name);
+        console.log(item?.balance_stock);
+        
+
+        if (item.GodownList && item.GodownList.length > 0) {
+          item.GodownList.forEach((godown) => {
+            if (godown.godownMongoDbId?.godown) {
+              godown.godown = godown.godownMongoDbId.godown;
+              godown.godownMongoDbId = godown.godownMongoDbId._id;
+            }
+          });
+        }
+      });
+    }
+
+    res.status(200).json({
+      message: "Invoice details fetched",
+      data: invoiceDetails,
+    });
+  } catch (error) {
+    console.error("Error fetching invoice details:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+
 
 /**
  * @desc finding party List with total amount of sale orders

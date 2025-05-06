@@ -6,8 +6,8 @@ import {login,getSecUserData,
     submitOtp,resetPassword,getTransactionDetails,invoiceList
     ,getSingleOrganization,fetchHsn,
     addDataToOrg,editDataInOrg,deleteDataInOrg
-    ,saveOrderNumber,
-    getInvoiceDetails,fetchFilters
+    ,saveOrderNumber
+    ,fetchFilters
     ,addconfigurations
     ,saveSalesNumber,fetchAdditionalDetails,
     fetchConfigurationNumber,findSecondaryUserGodowns,findPrimaryUserGodownsSelf,
@@ -23,16 +23,16 @@ import {login,getSecUserData,
    } from "../controllers/secondaryUserController.js"
  
 import { createPurchase,editPurchase,cancelPurchase } from '../controllers/purchaseController.js';
-import { createCreditNote,cancelCreditNote ,editCreditNote} from '../controllers/creditNoteController.js';
+import { createCreditNote,cancelCreditNote ,editCreditNote, getCreditNoteDetails} from '../controllers/creditNoteController.js';
 import {createSale,editSale,cancelSale, getSalesDetails,} from '../controllers/saleController.js';
-import { cancelDebitNote, createDebitNote, editDebitNote } from '../controllers/debitNoteController.js';
-import { getStockTransferDetails,getCreditNoteDetails,transactions, getDebitNoteDetails,getReceiptDetails,getPaymentDetails,addHsn,getSingleHsn,editHsn,deleteHsn,getPurchaseDetails,getOpeningBalances, sendPdfViaEmail} from '../controllers/commonController.js';
+import { cancelDebitNote, createDebitNote, editDebitNote, getDebitNoteDetails } from '../controllers/debitNoteController.js';
+import { getStockTransferDetails,transactions,getReceiptDetails,getPaymentDetails,addHsn,getSingleHsn,editHsn,deleteHsn,getPurchaseDetails,getOpeningBalances, sendPdfViaEmail} from '../controllers/commonController.js';
 import { authSecondary } from '../middlewares/authSecUsers.js';
 import { secondaryIsBlocked } from '../middlewares/isBlocked.js';
 import { companyAuthentication } from '../middlewares/authCompany.js';
 import { createReceipt,cancelReceipt,editReceipt } from '../controllers/receiptController.js';
 import { createPayment,cancelPayment, editPayment } from '../controllers/paymentController.js';
-import { createInvoice,editInvoice,cancelSalesOrder, PartyListWithOrderPending } from '../controllers/saleOrderController.js';
+import { createInvoice,editInvoice,cancelSalesOrder, PartyListWithOrderPending, getInvoiceDetails } from '../controllers/saleOrderController.js';
 import { createStockTransfer,editStockTransfer, cancelStockTransfer } from '../controllers/stockTransferController.js';
 import { addBankPaymentDetails } from '../../frontend/slices/payment.js';
 import { addEmailConfiguration, getConfiguration, getBarcodeList, addBarcodeData, editBarcodeData, deleteBarcode, getSingleBarcodeData, getPrintingConfiguration, updateConfiguration, getDespatchTitles, updateDespatchTitles, getTermsAndConditions, updateTermsAndConditions, updateBankAccount, updateTaxConfiguration, updateShipToConfiguration, updateFirstLayerConfiguration } from '../controllers/settingsController.js';
@@ -66,7 +66,7 @@ router.get('/fetchBanks/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthent
 router.get('/PartyList/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,PartyList)
 router.post('/addParty',authSecondary,secondaryIsBlocked,addParty)
 router.get('/getProducts/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,getProducts)
-router.post('/createInvoice',authSecondary,secondaryIsBlocked,createInvoice)
+router.post('/createSaleOrder',authSecondary,secondaryIsBlocked,createInvoice)
 router.get('/invoiceList/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,invoiceList)
 router.get('/getSinglePartyDetails/:id',authSecondary,secondaryIsBlocked,getSinglePartyDetails)
 router.post('/editParty/:id',authSecondary,secondaryIsBlocked,editParty)
@@ -81,8 +81,8 @@ router.get('/productDetails/:id',authSecondary,secondaryIsBlocked,productDetails
 router.post('/editProduct/:id',authSecondary,secondaryIsBlocked,editProduct)
 router.delete('/deleteProduct/:id',authSecondary,secondaryIsBlocked,deleteProduct)
 router.post('/saveOrderNumber/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,saveOrderNumber)
-router.get('/getInvoiceDetails/:id',authSecondary,secondaryIsBlocked,getInvoiceDetails)
-router.post('/editInvoice/:id',authSecondary,secondaryIsBlocked,editInvoice)
+router.get('/getSaleOrderDetails/:id',authSecondary,secondaryIsBlocked,getInvoiceDetails)
+router.post('/editSaleOrder/:id',authSecondary,secondaryIsBlocked,editInvoice)
 router.get('/fetchFilters/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,fetchFilters)
 router.post('/addAditionalCharge/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,addAditionalCharge)
 

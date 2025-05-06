@@ -67,6 +67,9 @@ function VoucherDetails() {
     if (!voucherTypeGlobal) return "";
     if (voucherTypeGlobal === "sales" || voucherTypeGlobal === "vanSale") {
       return "salesNumber";
+    }
+    if (voucherTypeGlobal === "saleOrder") {
+      return "orderNumber";
     } else {
       return voucherTypeGlobal + "Number";
     }
@@ -75,8 +78,6 @@ function VoucherDetails() {
   const reFetch = () => {
     setRefresh(!refresh);
   };
-
-  
 
   // const handleEdit = () => {
   //   if (data?.isEditable === false) {
@@ -88,8 +89,7 @@ function VoucherDetails() {
   //   navigate(`/sUsers/editSale/${data?._id}`);
   // };
 
-
-  const wholeLoading=loading || actionLoading
+  const wholeLoading = loading || actionLoading;
   return (
     <div className="bg-[rgb(244,246,254)] flex-1  relative  pb-[70px] md:pb-0  ">
       {/* headinh section  */}
@@ -113,7 +113,6 @@ function VoucherDetails() {
             reFetch={refreshHook}
             setActionLoading={setActionLoading}
             actionLoading={actionLoading}
-            
           />
 
           <VoucherDetailsParty data={data} />
@@ -161,8 +160,7 @@ function VoucherDetails() {
                 data={data}
                 reFetch={refreshHook}
                 setActionLoading={setActionLoading}
-            actionLoading={actionLoading}
-
+                actionLoading={actionLoading}
               />
             </div>
           </div>

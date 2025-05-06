@@ -89,6 +89,9 @@ function VoucherInitialPageEdit() {
       voucherTypeFromRedux === "vanSale"
     ) {
       return "salesNumber";
+    }
+    if (voucherTypeFromRedux === "saleOrder") {
+      return "orderNumber";
     } else {
       return voucherTypeFromRedux + "Number";
     }

@@ -5,7 +5,7 @@ import Decimal from "decimal.js";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { IoIosArrowDown, IoIosArrowUp } from "react-icons/io";
 import { IoAddCircleSharp } from "react-icons/io5";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { VariableSizeList as List } from "react-window";
 import InfiniteLoader from "react-window-infinite-loader";
@@ -41,6 +41,11 @@ export default function VoucherProductList({
   const [scrollPosition, setScrollPosition] = useState(0);
   const navigate = useNavigate();
   const dispatch = useDispatch();
+
+  ///// Fetching data from redux
+  const { voucherType: voucherTypeFromRedux } = useSelector(
+    (state) => state.commonVoucherSlice
+  );
 
   // ========== LIST HEIGHT CALCULATION ==========
   /**
@@ -319,7 +324,6 @@ export default function VoucherProductList({
             };
           }
         );
-        
 
         currentItem.GodownList = updatedGodownListWithTotals;
         currentItem.total = totalData?.total || 0;
@@ -358,8 +362,26 @@ export default function VoucherProductList({
     return index < displayedItems.length;
   };
 
-  // Function to render each item in the list would normally go here
-  // Additional component logic would continue...
+  /**
+   * to get item wise stock according to voucher
+   */
+
+  const getItemWiseStock = (item) => {
+
+    console.log(voucherTypeFromRedux);
+    
+    if (voucherTypeFromRedux === "saleOrder") {
+      return item?.balance_stock || 0;
+    } else {
+      const sumOfStock =
+        item?.GodownList.reduce(
+          (acc, curr) => (acc += Number(curr?.balance_stock)),
+          0
+        ) || 0;
+
+      return sumOfStock;
+    }
+  };
 
   const Row = ({ index, style }) => {
     if (!isItemLoaded(index) && !isScanOn) {
@@ -431,11 +453,11 @@ export default function VoucherProductList({
                   <span className="text-gray-500 text-xs md:text-sm  ">
                     Stock :
                     <span>
-                      {" "}
-                      {el?.GodownList.reduce(
-                        (acc, curr) => (acc += Number(curr?.balance_stock)),
-                        0
-                      ) || 0}
+
+                      {
+                        getItemWiseStock(el)
+                      }
+                    
                     </span>
                     {el?.batchEnabled && tab === "Purchase" && (
                       <div
@@ -468,7 +490,7 @@ export default function VoucherProductList({
                   </div>
                   <div className="flex font-normal">
                     <p className="text-red-500 ">STOCK : </p>
-                    <span>{el?.GodownList[0]?.balance_stock}</span>
+                    <span>{getItemWiseStock(el)}</span>
                     <span className="text-[11px] ml-1 mt-[0.5px] ">
                       {" "}
                       / {el?.unit}

@@ -94,7 +94,7 @@ const TransactionTable = ({
         "Stock Transfer": `${baseRoute}/stockTransferDetails/${id}`,
         "Credit Note": `${baseRoute}/creditDetails/${id}`,
         "Debit Note": `${baseRoute}/debitDetails/${id}`,
-        default: `${baseRoute}/InvoiceDetails/${id}`,
+        default: `${baseRoute}/saleOrderDetails/${id}`,
       };
       return routes[type] || routes.default;
     },

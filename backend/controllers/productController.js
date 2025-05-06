@@ -275,6 +275,7 @@ export const getProducts = async (req, res) => {
   const isVanSale = vanSaleQuery === "true";
   const excludeGodownId = req.query.excludeGodownId;
   const searchTerm = req.query.search || "";
+  const isSaleOrder = req.query.saleOrder === "true";
 
   // Pagination parameters
   const page = parseInt(req.query.page) || 1;
@@ -328,7 +329,7 @@ export const getProducts = async (req, res) => {
     const totalProducts = await productModel.countDocuments(filter);
 
     console.log("filter", filter);
-    
+
     // Create basic query
     let query = productModel.find(filter);
 
@@ -360,30 +361,40 @@ export const getProducts = async (req, res) => {
       const batchEnabled = productObject.batchEnabled === true;
       const gdnEnabled = productObject.gdnEnabled === true;
 
-      // Add hasGodownOrBatch property based on batch and godown enabled status
-      productObject.hasGodownOrBatch = batchEnabled || gdnEnabled;
+      if (isSaleOrder) {
+        // Add hasGodownOrBatch property is always false in sale order since we are not any details of product in sale order
+
+        productObject.hasGodownOrBatch = false;
+      } else {
+        // Add hasGodownOrBatch property based on batch and godown enabled status
+        productObject.hasGodownOrBatch = batchEnabled || gdnEnabled;
+      }
 
       // Filter and flatten GodownList items
       if (productObject.GodownList && productObject.GodownList.length > 0) {
         // Filter godowns to only include those that match the selected godowns
         let filteredGodownList = productObject.GodownList;
-        
+
         if (selectedGodowns.length > 0) {
-          filteredGodownList = productObject.GodownList.filter(godownItem => 
-            godownItem.godown && selectedGodowns.some(id => 
-              id.toString() === godownItem.godown._id.toString()
-            )
+          filteredGodownList = productObject.GodownList.filter(
+            (godownItem) =>
+              godownItem.godown &&
+              selectedGodowns.some(
+                (id) => id.toString() === godownItem.godown._id.toString()
+              )
           );
         }
-        
+
         if (excludeGodownId) {
-          filteredGodownList = filteredGodownList.filter(godownItem => 
-            !godownItem.godown || godownItem.godown._id.toString() !== excludeGodownId.toString()
+          filteredGodownList = filteredGodownList.filter(
+            (godownItem) =>
+              !godownItem.godown ||
+              godownItem.godown._id.toString() !== excludeGodownId.toString()
           );
         }
 
         // Flatten the filtered godowns
-        productObject.GodownList = filteredGodownList.map(godownItem => {
+        productObject.GodownList = filteredGodownList.map((godownItem) => {
           // Skip if no godown reference
           if (!godownItem.godown) return godownItem;
 
