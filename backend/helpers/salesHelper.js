@@ -142,7 +142,7 @@ export const handleSaleStockUpdates = async (items, session) => {
             : godown.count) || 0;
 
         ////// handling  batch only updates
-        if (godown.batch && !godown?.godown_id) {
+        if (item?.batchEnabled && !item?.gdnEnabled) {
           const godownIndex = product.GodownList.findIndex(
             (g) => g.batch === godown.batch
           );
@@ -165,7 +165,7 @@ export const handleSaleStockUpdates = async (items, session) => {
           }
         }
         ////// handling  batch and godown updates
-        else if (godown.godown_id && godown.batch) {
+        else if(item?.batchEnabled && item?.gdnEnabled) {
           const godownIndex = product.GodownList.findIndex(
             (g) =>
               g.batch === godown.batch &&
@@ -200,7 +200,7 @@ export const handleSaleStockUpdates = async (items, session) => {
         }
 
         ////// handling  godown only  updates
-        else if (godown.godown_id && !godown?.batch) {
+        else if (!item?.batchEnabled && item?.gdnEnabled) {
           const godownIndex = product.GodownList.findIndex(
             (g) => g.godown.toString() == godown.godownMongoDbId
           );
@@ -556,7 +556,7 @@ export const revertSaleStockUpdates = async (items, session) => {
             godown.actualCount !== undefined
               ? godown.actualCount
               : godown.count;
-          if (godown.batch && !godown?.godown_id) {
+          if (item?.batchEnabled && !item?.gdnEnabled) {
             const godownIndex = product.GodownList.findIndex(
               (g) => g.batch === godown.batch
             );
@@ -579,7 +579,7 @@ export const revertSaleStockUpdates = async (items, session) => {
                 { session }
               );
             }
-          } else if (godown.godown_id && godown.batch) {
+          } else if (item?.batchEnabled && item?.gdnEnabled) {
             const godownIndex = product.GodownList.findIndex(
               (g) =>
                 g.batch === godown.batch &&

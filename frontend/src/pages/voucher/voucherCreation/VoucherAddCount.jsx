@@ -293,15 +293,15 @@ function VoucherAddCount() {
       let matchedGodown;
 
       // Find matching godown/batch based on different identifiers
-      if (godown.batch && !godown.godown_id) {
+      if (reduxItem?.batchEnabled && !reduxItem?.gdnEnabled) {
         matchedGodown = product?.GodownList?.find(
           (g) => g?.batch === godown?.batch
         );
-      } else if (godown.godown_id && !godown.batch) {
+      } else if (!reduxItem?.batchEnabled && reduxItem?.gdnEnabled) {
         matchedGodown = product?.GodownList?.find(
           (g) => g?.godown_id === godown?.godown_id
         );
-      } else if (godown.godown_id && godown.batch) {
+      } else if (reduxItem?.batchEnabled && reduxItem?.gdnEnabled) {
         matchedGodown = product?.GodownList?.find(
           (g) =>
             g?.godown_id === godown?.godown_id && g?.batch === godown?.batch

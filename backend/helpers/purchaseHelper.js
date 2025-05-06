@@ -91,7 +91,7 @@ export const handlePurchaseStockUpdates = async (items, session) => {
               `Skipping new batch for godown as count is not greater than zero: ${godownCount}`
             );
           }
-        } else if (godown.batch && !godown.godown_id) {
+        } else if (item?.batchEnabled && !item?.gdnEnabled) {
           const godownIndex = product.GodownList.findIndex(
             (g) => g.batch === godown.batch
           );
@@ -113,7 +113,7 @@ export const handlePurchaseStockUpdates = async (items, session) => {
               },
             });
           }
-        } else if (godown.godown_id && godown.batch) {
+        } else if (item?.batchEnabled && item?.gdnEnabled) {
           const godownIndex = product.GodownList.findIndex(
             (g) => g.batch === godown.batch && g.godown_id === godown.godown_id
           );
@@ -141,7 +141,7 @@ export const handlePurchaseStockUpdates = async (items, session) => {
               },
             });
           }
-        } else if (godown.godown_id && !godown?.batch) {
+        } else if (!item?.batchEnabled && item?.gdnEnabled) {
           const godownIndex = product.GodownList.findIndex(
             (g) => g.godown_id === godown.godown_id
           );
@@ -329,7 +329,7 @@ export const revertPurchaseStockUpdates = async (items, session) => {
       // Revert godown and batch updates
       if (item.hasGodownOrBatch) {
         for (const godown of item.GodownList) {
-          if (godown.batch && !godown?.godown_id) {
+          if (item?.batchEnabled && !item?.gdnEnabled) {
             // Use actualCount if available, otherwise fall back to count for each godown
             const godownCount =
               godown.actualCount !== undefined
@@ -363,7 +363,7 @@ export const revertPurchaseStockUpdates = async (items, session) => {
                 });
               }
             }
-          } else if (godown.godown_id && godown.batch) {
+          } else if (item?.batchEnabled && item?.gdnEnabled) {
             // Case: Godown with Batch
             const godownIndex = product.GodownList.findIndex(
               (g) =>
@@ -398,7 +398,7 @@ export const revertPurchaseStockUpdates = async (items, session) => {
                 });
               }
             }
-          } else if (godown.godown_id && !godown?.batch) {
+          } else if (!item?.batchEnabled && item?.gdnEnabled) {
             // Case: Godown only
             const godownIndex = product.GodownList.findIndex(
               (g) => g.godown_id === godown.godown_id

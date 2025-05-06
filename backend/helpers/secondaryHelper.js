@@ -762,7 +762,7 @@ export const revertStockUpdatesSales = async (items) => {
       // Process godown and batch updates
       if (item.hasGodownOrBatch) {
         for (const godown of item.GodownList) {
-          if (godown.batch && !godown?.godown_id) {
+          if (item?.batchEnabled && !item?.gdnEnabled) {
             // Batch only
             const godownIndex = product.GodownList.findIndex(
               (g) => g.batch === godown.batch

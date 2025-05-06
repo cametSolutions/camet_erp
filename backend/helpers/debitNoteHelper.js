@@ -20,7 +20,9 @@ export const handleDebitNoteStockUpdates = async (items, session) => {
 
     // Use actualCount if available, otherwise fall back to count
     const itemCount = parseFloat(
-      item?.totalActualCount !== undefined ? item?.totalActualCount : item?.totalCount
+      item?.totalActualCount !== undefined
+        ? item?.totalActualCount
+        : item?.totalCount
     );
     const productBalanceStock = parseFloat(product.balance_stock);
     const newBalanceStock = truncateToNDecimals(
@@ -45,7 +47,7 @@ export const handleDebitNoteStockUpdates = async (items, session) => {
         const godownCount =
           godown.actualCount !== undefined ? godown.actualCount : godown.count;
 
-        if (godown.batch && !godown.godown_id) {
+        if (item?.batchEnabled && !item?.gdnEnabled) {
           console.log("batch only ");
           const godownIndex = product.GodownList.findIndex(
             (g) => g.batch === godown.batch
@@ -68,7 +70,7 @@ export const handleDebitNoteStockUpdates = async (items, session) => {
               },
             });
           }
-        } else if (godown.godown_id && godown.batch) {
+        } else if (item?.batchEnabled && item?.gdnEnabled) {
           const godownIndex = product.GodownList.findIndex(
             (g) =>
               g.batch === godown.batch &&
@@ -102,7 +104,7 @@ export const handleDebitNoteStockUpdates = async (items, session) => {
               },
             });
           }
-        } else if (godown.godown_id && !godown?.batch) {
+        } else if (!item?.batchEnabled && item?.gdnEnabled) {
           const godownIndex = product.GodownList.findIndex(
             (g) => g.godown.toString() == godown.godownMongoDbId
           );
@@ -133,9 +135,7 @@ export const handleDebitNoteStockUpdates = async (items, session) => {
           }
         }
       }
-    } 
-    
-    else {
+    } else {
       product.GodownList = product.GodownList.map((godown) => {
         const currentGodownStock = Number(godown.balance_stock) || 0;
 
@@ -183,7 +183,7 @@ export const createDebitNoteRecord = async (
       orgId,
       party,
       despatchDetails,
-      finalAmount:lastAmount,
+      finalAmount: lastAmount,
       selectedDate,
     } = req.body;
 
@@ -288,7 +288,9 @@ export const revertDebitNoteStockUpdates = async (items, session) => {
 
       // Use actualCount if available, otherwise fall back to count
       const itemCount = parseFloat(
-        item?.totalActualCount !== undefined ? item?.totalActualCount : item?.totalCount
+        item?.totalActualCount !== undefined
+          ? item?.totalActualCount
+          : item?.totalCount
       );
       const productBalanceStock = parseFloat(product.balance_stock);
       const newBalanceStock = truncateToNDecimals(
@@ -312,7 +314,7 @@ export const revertDebitNoteStockUpdates = async (items, session) => {
             godown.actualCount !== undefined
               ? godown.actualCount
               : godown.count;
-          if (godown.batch && !godown?.godown_id) {
+          if (item?.batchEnabled && !item?.gdnEnabled) {
             // Case: Batch only or Godown with Batch
             const godownIndex = product.GodownList.findIndex(
               (g) => g.batch === godown.batch
@@ -341,7 +343,7 @@ export const revertDebitNoteStockUpdates = async (items, session) => {
                 });
               }
             }
-          } else if (godown.godown_id && godown.batch) {
+          } else if (item?.batchEnabled && item?.gdnEnabled) {
             // Case: Godown with Batch
             const godownIndex = product.GodownList.findIndex(
               (g) =>
@@ -380,7 +382,7 @@ export const revertDebitNoteStockUpdates = async (items, session) => {
                 });
               }
             }
-          } else if (godown.godown_id && !godown?.batch) {
+          } else if (!item?.batchEnabled && item?.gdnEnabled) {
             // Case: Godown only
             const godownIndex = product.GodownList.findIndex(
               (g) => g.godown.toString() == godown.godownMongoDbId
@@ -400,9 +402,9 @@ export const revertDebitNoteStockUpdates = async (items, session) => {
                   updateOne: {
                     filter: {
                       _id: product._id,
-                     "GodownList.godown": new mongoose.Types.ObjectId(
-                    godown.godownMongoDbId
-                  ),
+                      "GodownList.godown": new mongoose.Types.ObjectId(
+                        godown.godownMongoDbId
+                      ),
                     },
                     update: {
                       $set: { "GodownList.$.balance_stock": newGodownStock },
@@ -417,14 +419,14 @@ export const revertDebitNoteStockUpdates = async (items, session) => {
         // Case: No Godown
         product.GodownList = product.GodownList.map((godown) => {
           const currentGodownStock = Number(godown.balance_stock) || 0;
-  
+
           const currentGodown = item?.GodownList[0];
-  
+
           const godownCount =
             (currentGodown.actualCount !== undefined
               ? currentGodown.actualCount
               : currentGodown.count) || 0;
-  
+
           const newGodownStock = truncateToNDecimals(
             Number(currentGodownStock) + Number(godownCount),
             3
@@ -450,5 +452,3 @@ export const revertDebitNoteStockUpdates = async (items, session) => {
     throw error;
   }
 };
-
-

@@ -325,6 +325,7 @@ export const editSale = async (req, res) => {
         transactionType: "sale",
         secondaryMobile,
         selectedDate,
+        classification:"Dr"
       });
 
       //// updating the payment splitting data
