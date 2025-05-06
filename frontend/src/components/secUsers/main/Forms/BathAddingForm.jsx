@@ -1,87 +1,52 @@
-/* eslint-disable no-prototype-builtins */
 /* eslint-disable react/prop-types */
 import { useEffect, useState } from "react";
-import { z } from "zod";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { useSelector } from "react-redux";
 import api from "../../../../api/api";
 
-const schema = z.object({
-  batchName: z.string().min(1, "Batch name is required"),
-  price: z
-    .string()
-    .min(1, "Price is required")
-    .refine(
-      (val) => !isNaN(parseFloat(val)) && parseFloat(val) > 0,
-      "Price must be a positive number"
-    ),
-  expDate: z
-    .date()
-    .refine(
-      (date) => date > new Date(),
-      "Expiration date must be in the future"
-    ),
-  manufDate: z
-    .date()
-    .refine(
-      (date) => date <= new Date(),
-      "Manufacture date cannot be in the future"
-    ),
-  openingStock: z
-    .string()
-    .min(1, "Opening stock is required")
-    .refine(
-      (val) => !isNaN(parseInt(val)) && parseInt(val) >= 0,
-      "Opening stock cannot be negative"
-    ),
-  quantity: z
-    .string()
-    .min(1, "Quantity is required")
-    .refine(
-      (val) => !isNaN(parseInt(val)) && parseInt(val) > 0,
-      "Quantity must be a positive number"
-    ),
-    godown: z
-    .string()
-    .min(1, "Godown is required")
-    .refine((val) => val !== "" && val !== undefined, "Godown selection is required")
-    
-    // .optional(),
-  // godown_id can be added here if you need to validate it
-});
-
-function BathAddingForm({ onSave }) {
+function BathAddingForm({ onSave ,product}) {
   const [formData, setFormData] = useState({
     batchName: "",
-    price: "",
     expDate: new Date(),
     manufDate: new Date(),
     openingStock: "0",
-    quantity: "",
     godown: "",
     godown_id: "",
+    godownMongoDbId: "",
+    selectedPriceRate: 0,
   });
 
-
-  console.log(formData.godown);
-  
-
+  const [errors, setErrors] = useState({});
   const [godowns, setGodowns] = useState([]);
 
   const orgId = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
 
+  const selectedPriceLevelFromRedux = useSelector(
+    (state) => state.commonVoucherSlice?.selectedPriceLevel
+  );
+
+  
+  const selectedPriceRate=product?.Priceleveles?.find(
+    (priceLevelItem) => priceLevelItem._id === selectedPriceLevelFromRedux?._id
+  )?.pricerate;
+
+  
+
+  
+  
+
+  // Fetch godowns
   const getSubDetails = async () => {
     try {
       const res = await api.get(
-        `/api/pUsers/getProductSubDetails/${orgId}?type=${"godown"}`,
+        `/api/sUsers/getProductSubDetails/${orgId}?type=${"godown"}`,
         {
           withCredentials: true,
         }
       );
-
       setGodowns(res.data.data);
     } catch (error) {
       console.log(error);
@@ -92,23 +57,35 @@ function BathAddingForm({ onSave }) {
     getSubDetails();
   }, [orgId]);
 
-  const [errors, setErrors] = useState({});
-
+  // Simple validation function for each field
   const validateField = (name, value) => {
-
-    console.log(name,value);
-    
-    try {
-      const fieldSchema = schema.shape[name];
-      fieldSchema.parse(value);
-      return "";
-    } catch (error) {
-      return error.errors[0].message;
+    switch (name) {
+      case "batchName":
+        return value.trim() === "" ? "Batch name is required" : "";
+      case "expDate":
+        return value > new Date()
+          ? ""
+          : "Expiration date must be in the future";
+      case "manufDate":
+        return value <= new Date()
+          ? ""
+          : "Manufacture date cannot be in the future";
+      case "openingStock": {
+        const stock = parseInt(value);
+        if (isNaN(stock)) return "Opening stock must be a number";
+        if (stock < 0) return "Opening stock cannot be negative";
+        return "";
+      }
+      case "godown":
+        return godowns.length > 0 && value.trim() === ""
+          ? "Godown is required"
+          : "";
+      default:
+        return "";
     }
   };
 
-  // console.log(godowns);
-
+  // Handle input changes
   const handleChange = (e) => {
     const { name, value } = e.target;
 
@@ -117,33 +94,25 @@ function BathAddingForm({ onSave }) {
 
       setFormData((prev) => ({
         ...prev,
-        godown: selectedGodown?.godown,
+        godown: selectedGodown?.godown || "",
         godown_id: selectedGodown?._id || "",
+        godownMongoDbId: selectedGodown?._id || "",
       }));
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
 
-    // Validate godown only if there are godowns available
-    if (name === "godown" && godowns.length > 0) {
-      const errorMessage = validateField(name, value);
-      setErrors((prev) => ({
-        ...prev,
-        [name]: errorMessage,
-      }));
-    } else if (schema.shape.hasOwnProperty(name)) {
-      const errorMessage = validateField(name, value);
-      setErrors((prev) => ({
-        ...prev,
-        [name]: errorMessage,
-      }));
-    }
+    // Validate the field
+    const errorMessage = validateField(name, name === "godown" ? value : value);
+    setErrors((prev) => ({
+      ...prev,
+      [name]: errorMessage,
+    }));
   };
 
-
+  // Handle date changes
   const handleDateChange = (date, name) => {
     setFormData((prev) => ({ ...prev, [name]: date }));
-
     const errorMessage = validateField(name, date);
     setErrors((prev) => ({
       ...prev,
@@ -151,54 +120,41 @@ function BathAddingForm({ onSave }) {
     }));
   };
 
+  // Validate all fields before submission
   const validate = () => {
     const newErrors = {};
-  
-    // Conditionally add validation for the 'godown' field if godowns.length > 0
-    if (godowns.length > 0) {
-      console.log("here");
-      
-      const errorMessage = validateField("godown", formData.godown);
-      console.log(errorMessage);
-      
+
+    // Validate each field
+    Object.entries(formData).forEach(([key, value]) => {
+      const errorMessage = validateField(key, value);
       if (errorMessage) {
-        newErrors["godown"] = errorMessage;
-      }
-    }
-  
-    // Validate other fields
-    Object.keys(formData).forEach((key) => {
-      // Skip 'godown' since it's already handled above
-      if (key !== "godown" && schema.shape.hasOwnProperty(key)) {
-        const errorMessage = validateField(key, formData[key]);
-        if (errorMessage) {
-          newErrors[key] = errorMessage;
-        }
+        newErrors[key] = errorMessage;
       }
     });
-  
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  // console.log(errors);/
-  
-  
+  // console.log(formData);
 
+  // Handle form submission
   const handleSubmit = (e) => {
     e.preventDefault();
     if (validate()) {
 
-      // console.log(formData);
-      
-      onSave(formData);
+
+      onSave({
+        ...formData,
+        selectedPriceRate,
+      });
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col justify-center sm:py-12">
+    <div className="min-h-screen bg-gray-100 flex flex-col justify-center">
       <div className="relative py-3 sm:w-[500px] sm:mx-auto">
-        <div className="relative px-4 py-10 bg-white mx-3 md:mx-0 shadow rounded-3xl sm:p-10">
+        <div className="relative px-4 py-10 bg-white mx-3 md:mx-0 shadow rounded-md sm:p-10">
           <div className="max-w-md mx-auto">
             <div className="flex items-center space-x-5">
               <div className="h-14 w-14 bg-yellow-200 rounded-full flex flex-shrink-0 justify-center items-center text-yellow-500 text-2xl font-mono">
@@ -233,7 +189,11 @@ function BathAddingForm({ onSave }) {
                   )}
                 </div>
 
-                <div className={` ${godowns.length === 0 ? "hidden" : ""} flex flex-col`}>
+                <div
+                  className={`${
+                    godowns.length === 0 ? "hidden" : ""
+                  } flex flex-col`}
+                >
                   <label className="leading-loose">Select Godown</label>
                   <select
                     name="godown"
@@ -252,20 +212,7 @@ function BathAddingForm({ onSave }) {
                     <p className="text-red-500 text-sm mt-1">{errors.godown}</p>
                   )}
                 </div>
-                <div className="flex flex-col">
-                  <label className="leading-loose">Price</label>
-                  <input
-                    type="number"
-                    name="price"
-                    value={formData.price}
-                    onChange={handleChange}
-                    className="px-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm border-gray-300 rounded-md focus:outline-none text-gray-600"
-                    placeholder="Price"
-                  />
-                  {errors.price && (
-                    <p className="text-red-500 text-sm mt-1">{errors.price}</p>
-                  )}
-                </div>
+
                 <div className="flex flex-col sm:flex-row sm:gap-3">
                   <div className="flex flex-col sm:w-1/2">
                     <label className="leading-loose">Expiration Date</label>
@@ -297,7 +244,7 @@ function BathAddingForm({ onSave }) {
                 <div className="flex flex-col">
                   <label className="leading-loose">Opening Stock</label>
                   <input
-                  disabled
+                    disabled
                     type="number"
                     name="openingStock"
                     value={formData.openingStock}
@@ -308,22 +255,6 @@ function BathAddingForm({ onSave }) {
                   {errors.openingStock && (
                     <p className="text-red-500 text-sm mt-1">
                       {errors.openingStock}
-                    </p>
-                  )}
-                </div>
-                <div className="flex flex-col">
-                  <label className="leading-loose">Quantity</label>
-                  <input
-                    type="number"
-                    name="quantity"
-                    value={formData.quantity}
-                    onChange={handleChange}
-                    className="px-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm border-gray-300 rounded-md focus:outline-none text-gray-600"
-                    placeholder="Quantity"
-                  />
-                  {errors.quantity && (
-                    <p className="text-red-500 text-sm mt-1">
-                      {errors.quantity}
                     </p>
                   )}
                 </div>

@@ -374,7 +374,18 @@ function VoucherAddCount() {
         dispatch(addAllPriceLevels(priceLevels));
 
         // Set default price level
-        const defaultPriceLevel = priceLevels[0];
+        let defaultPriceLevel;
+
+        // purchase does not need the price level ,it is manually typed
+
+        if (voucherTypeFromRedux === "purchase") {
+          defaultPriceLevel = {
+            _id: null,
+            name: null,
+          };
+        } else {
+          defaultPriceLevel = priceLevels[0];
+        }
 
         dispatch(setPriceLevel(defaultPriceLevel));
 

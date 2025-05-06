@@ -201,9 +201,7 @@ function AddItemTile({
                                   <p
                                     onClick={() => {
                                       navigate(
-                                        `${urlToEditItem}/${el._id}/${
-                                          godownname === "" ? "nil" : godownname
-                                        }/${idx}`,
+                                        `${urlToEditItem}/${el._id}/${idx}`,
                                         {
                                           state: { from: type },
                                         }
@@ -254,9 +252,7 @@ function AddItemTile({
                           <p
                             onClick={() => {
                               navigate(
-                                `${urlToEditItem}/${el._id}/${
-                                  godownname === "" ? "nil" : godownname
-                                }/null`,
+                                `${urlToEditItem}/${el._id}/null`,
                                 {
                                   state: { from: "sales" },
                                 }

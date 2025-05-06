@@ -600,7 +600,7 @@ const calculateTotal = (item, selectedPriceLevel, situation = "normal") => {
       selectedPriceLevel === undefined ||
       priceLevels.length === 0
     ) {
-      navigate(`/sUsers/editItemSales/${_id}/${"nil"}/${idx}`);
+      navigate(`/sUsers/editItemSales/${_id}/${idx}`);
     }
   };
 

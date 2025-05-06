@@ -13,13 +13,6 @@ const ProductDetails = ({
   heights,
   tab = "",
 }) => {
-
-
-  
-
-
-
-
   const detailsRef = useRef();
   const batchOrGodownList = details?.GodownList;
   useEffect(() => {
@@ -70,22 +63,23 @@ const ProductDetails = ({
                   <div className="flex items-center">
                     {tab !== "stockTransfer" && (
                       <>
-                      
                         <p className="   text-xs md:text-sm">
-                         MRP : {details?.item_mrp || 0} |
+                          MRP : {details?.item_mrp || 0} |
                         </p>
                         <p className="   text-xs md:text-sm  ml-1">
-                         Price : {item?.selectedPriceRate || 0}
+                          Price : {item?.selectedPriceRate || 0}
                         </p>
                         <p className="  text-xs md:text-sm ml-2 font-semibold">
-                          ( ₹ {item?.individualTotal||0} )
+                          ( ₹ {item?.individualTotal || 0} )
                         </p>
                       </>
                     )}
                   </div>
                   <p className="text-gray-500 font-normal  text-sm md:text-sm ">
                     Stock: {item.balance_stock} /
-                    <span className="text-black ml-1">{details?.unit || ""}</span>
+                    <span className="text-black ml-1">
+                      {details?.unit || ""}
+                    </span>
                   </p>
                 </>
               )}
@@ -112,9 +106,7 @@ const ProductDetails = ({
                         <button
                           onClick={() => {
                             navigate(
-                              `/sUsers/editItem${tab}/${details?._id}/${
-                                godownName || "nil"
-                              }/${index}`,
+                              `/sUsers/editItem${tab}/${details?._id}/${index}`,
                               {
                                 state: { from: tab },
                               }

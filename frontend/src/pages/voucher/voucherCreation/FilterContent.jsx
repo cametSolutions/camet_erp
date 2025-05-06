@@ -66,30 +66,35 @@ export default function FilterContent() {
         )}
 
         <div className="p-5">
-          {/* Price Levels Accordion */}
-          <Accordion
-            className=""
-            type="single"
-            collapsible
-            value={accordionValue}
-            onValueChange={setAccordionValue}
-          >
-            <AccordionItem value="item-1">
-              <AccordionTrigger>Price Levels</AccordionTrigger>
-              {priceLevels?.map((level, index) => (
-                <AccordionContent key={index}>
-                  <div
-                    onClick={() => handlePriceLevelSelection(level)}
-                    className={` ${
-                      selectedPriceLevel === level ? "bg-slate-200" : ""
-                    } hover:bg-slate-200 mb-1 p-2 cursor-pointer`}
-                  >
-                    {level?.name}
-                  </div>
-                </AccordionContent>
-              ))}
-            </AccordionItem>
-          </Accordion>
+          {/* if voucher is price level no need to show price level */}
+
+          {voucherType !== "purchase" && (
+            // {/* Price Levels Accordion */}
+
+            <Accordion
+              className=""
+              type="single"
+              collapsible
+              value={accordionValue}
+              onValueChange={setAccordionValue}
+            >
+              <AccordionItem value="item-1">
+                <AccordionTrigger>Price Levels</AccordionTrigger>
+                {priceLevels?.map((level, index) => (
+                  <AccordionContent key={index}>
+                    <div
+                      onClick={() => handlePriceLevelSelection(level)}
+                      className={` ${
+                        selectedPriceLevel === level ? "bg-slate-200" : ""
+                      } hover:bg-slate-200 mb-1 p-2 cursor-pointer`}
+                    >
+                      {level?.name}
+                    </div>
+                  </AccordionContent>
+                ))}
+              </AccordionItem>
+            </Accordion>
+          )}
 
           {/* Other Filters */}
           <Accordion disabled type="single" collapsible>

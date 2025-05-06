@@ -239,9 +239,10 @@ export default function VoucherProductList({
     // Update the items state
     setItems(updatedItems);
 
+
     // Navigate to edit page if no price level is selected
-    if (selectedPriceLevel === "" || selectedPriceLevel === undefined) {
-      navigate(`/sUsers/editItemSales/${_id}/${"nil"}/${idx}`);
+    if (selectedPriceLevel?._id === null) {
+      navigate(`/sUsers/editItemSales/${_id}/${idx}`);
     }
   };
 
@@ -367,9 +368,6 @@ export default function VoucherProductList({
    */
 
   const getItemWiseStock = (item) => {
-
-    console.log(voucherTypeFromRedux);
-    
     if (voucherTypeFromRedux === "saleOrder") {
       return item?.balance_stock || 0;
     } else {
@@ -418,7 +416,11 @@ export default function VoucherProductList({
         key={index}
         className="bg-white border-2  py-2   mt-0  rounded-sm cursor-pointer z-10  shadow-lg  "
       >
-        <div className=" flex justify-between items-center p-4">
+        <div
+          className={`flex justify-between items-center px-4 pt-4  ${
+            !el?.batchEnabled ? "pb-4" : "pb-2"
+          } `}
+        >
           <div className="flex items-start gap-3 md:gap-4  ">
             <div
               className={`w-10 ${
@@ -450,28 +452,22 @@ export default function VoucherProductList({
                     <span>Net Amount : </span>
                     <span>{el?.total || 0}</span>
                   </div>
-                  <span className="text-gray-500 text-xs md:text-sm  ">
-                    Stock :
-                    <span>
-
-                      {
-                        getItemWiseStock(el)
-                      }
-                    
-                    </span>
-                    {el?.batchEnabled && tab === "Purchase" && (
-                      <div
-                        onClick={() => {
-                          navigate(`/sUsers/addBatchPurchase/${el?._id}`);
-                        }}
-                        className=" mt-3 flex items-center gap-1 rounded-md border-none  font-bold border-2 text-green-500 text-md"
-                      >
-                        <span>
-                          <IoAddCircleSharp color="blue" size={15} />
-                        </span>
-                        Add batches
-                      </div>
-                    )}
+                  <span className="text-gray-500 text-xs md:text-sm mt-1  ">
+                    Stock :<span>{getItemWiseStock(el)}</span>
+                    {el?.batchEnabled &&
+                      voucherTypeFromRedux === "purchase" && (
+                        <div
+                          onClick={() => {
+                            navigate(`/sUsers/addBatchPurchase/${el?._id}`);
+                          }}
+                          className="mt-1  flex items-center gap-1 rounded-md border-none  font-bold border-2 text-[#00B881] text-md"
+                        >
+                          <span className="font-normal">
+                            <IoAddCircleSharp color="blue" size={15} />
+                          </span>
+                          <p className="font-semibold text-xs"> Add batches</p>
+                        </div>
+                      )}
                   </span>
                 </div>
               )}
@@ -513,15 +509,12 @@ export default function VoucherProductList({
                 <>
                   <button
                     onClick={() => {
-                      navigate(
-                        `/sUsers/editItem${tab}/${el?._id}/${"nil"}/null`,
-                        {
-                          state: {
-                            from: tab,
-                            id: location?.state?.id,
-                          },
-                        }
-                      );
+                      navigate(`/sUsers/editItem${tab}/${el?._id}/null`, {
+                        state: {
+                          from: tab,
+                          id: location?.state?.id,
+                        },
+                      });
                     }}
                     type="button"
                     className="  mt-3  px-2 py-1  rounded-md border-violet-500 font-bold border  text-violet-500 text-xs"

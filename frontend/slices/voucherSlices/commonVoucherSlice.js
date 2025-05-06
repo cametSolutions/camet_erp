@@ -3,14 +3,14 @@ import { createSlice } from "@reduxjs/toolkit";
 const initialState = {
   voucherNumber: "",
   voucherType: "",
-  mode:"create",
+  mode: "create",
   initialized: false,
   date: "",
   convertedFrom: [],
   products: [],
   page: 1,
   hasMore: true,
-  priceLevels:null,
+  priceLevels: null,
   party: {},
   items: [],
   selectedPriceLevel: "",
@@ -33,7 +33,7 @@ const initialState = {
     termsOfDelivery: "",
   },
   /// godown Details for van sales
-  vanSaleGodown:{}
+  vanSaleGodown: {},
 };
 
 export const commonVoucherSlice = createSlice({
@@ -370,7 +370,57 @@ export const commonVoucherSlice = createSlice({
     },
     setInitialized: (state, action) => {
       state.initialized = action.payload;
-    }
+    },
+
+    addBatch: (state, action) => {
+      const { _id, GodownList } = action.payload;
+
+      // Find the current product and current item
+      const currentProduct = state.products.find((el) => el?._id === _id);
+      const currentItem = state.items.find((el) => el._id === _id);
+
+      if (currentProduct) {
+        // Check if the batch already exists in the current product's GodownList
+        const existingBatchIndex = currentProduct.GodownList.findIndex(
+          (batch) =>
+            batch.batch === GodownList[0]?.batch &&
+            batch.godownMongoDbId === GodownList[0]?.godownMongoDbId
+        );
+
+        if (existingBatchIndex !== -1) {
+          // Overwrite the existing batch
+          currentProduct.GodownList[existingBatchIndex] = GodownList[0];
+        } else {
+          // Add the new batch if it doesn't already exist
+          currentProduct.GodownList.unshift(GodownList[0]);
+        }
+
+        currentProduct.isExpanded = true;
+        currentProduct.isExpanded = true;
+      }
+
+      if (currentItem) {
+        // Check if the batch already exists in the current item's GodownList
+        const existingBatchIndex = currentItem.GodownList.findIndex(
+          (batch) =>
+            batch.batch === GodownList[0]?.batch &&
+            batch.godownMongoDbId === GodownList[0]?.godownMongoDbId
+        );
+
+        if (existingBatchIndex !== -1) {
+          // Overwrite the existing batch
+          currentItem.GodownList[existingBatchIndex] = GodownList[0];
+        } else {
+          // Add the new batch if it doesn't already exist
+          currentItem.GodownList.unshift(GodownList[0]);
+        }
+
+        currentItem.added = true;
+        currentItem.isExpanded = true;
+      } else {
+        state.items.push(currentProduct);
+      }
+    },
   },
 });
 
@@ -421,7 +471,8 @@ export const {
   addVoucherNumber,
   addVansSaleGodown,
   addMode,
-  setInitialized
+  setInitialized,
+  addBatch,
 } = commonVoucherSlice.actions;
 
 export default commonVoucherSlice.reducer;
