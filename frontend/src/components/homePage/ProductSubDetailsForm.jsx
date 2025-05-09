@@ -78,19 +78,6 @@ const ProductSubDetailsForm = ({ tab, handleLoader }) => {
     const formData = {
       [tab]: value,
     };
-    // if (tab === "godown" && data.length === 0) {
-    //   const result = await Swal.fire({
-    //     title: "Adding First Godown",
-    //     text: "Adding your first godown will automatically create a Default godown. This default will be included in your GodownList and applied across all products.",
-    //     icon: "info",
-    //     confirmButtonText: "Proceed",
-    //     showCancelButton: true,
-    //   });
-
-    //   if (result.isDismissed) {
-    //     return; // Exit if the user cancels the action
-    //   }
-    // }
 
     try {
       setLoading(true);
@@ -239,7 +226,11 @@ const ProductSubDetailsForm = ({ tab, handleLoader }) => {
             type="text"
             onKeyDown={(e) => {
               if (e.key === "Enter") {
-                handleSubmit(value);
+                if (edit?.enabled) {
+                  editSubDetails(edit.id, value);
+                } else {
+                  handleSubmit(value);
+                }
               }
             }}
             placeholder={`Enter your ${tab} name `}

@@ -41,6 +41,7 @@ export default function VoucherProductList({
   const [scrollPosition, setScrollPosition] = useState(0);
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const [loadingIndex, setLoadingIndex] = useState(null);
 
   ///// Fetching data from redux
   const { voucherType: voucherTypeFromRedux } = useSelector(
@@ -239,7 +240,6 @@ export default function VoucherProductList({
     // Update the items state
     setItems(updatedItems);
 
-
     // Navigate to edit page if no price level is selected
     if (selectedPriceLevel?._id === null) {
       navigate(`/sUsers/editItemSales/${_id}/${idx}`);
@@ -344,6 +344,71 @@ export default function VoucherProductList({
 
     // Update the items state
     setItems(updatedItems);
+  };
+
+  /**
+   * Remove a specific batch which is added while creating purchase
+   * Only for purchase
+   */
+
+  const handleRemoveBatch = (_id, index) => {
+    setLoadingIndex(index); // show loader for the clicked index
+
+    setTimeout(() => {
+      const currentItems = [...items];
+      const updatedItems = structuredClone(currentItems);
+      const itemIndex = updatedItems.findIndex((item) => item._id === _id);
+
+      if (
+        itemIndex === -1 ||
+        !Array.isArray(updatedItems[itemIndex].GodownList) ||
+        index >= updatedItems[itemIndex].GodownList.length
+      ) {
+        // setLoadingIndex(null); // reset loader index even on failure
+        return;
+      }
+
+      // Extract item reference to avoid repetition
+      const item = updatedItems[itemIndex];
+      const currentBatch = item.GodownList[index];
+      const {
+        count = 0,
+        actualCount = 0,
+        individualTotal = 0,
+        cgstAmount = 0,
+        igstAmount = 0,
+        cessAmount = 0,
+        sgstAmount = 0,
+        additionalCessAmount = 0,
+      } = currentBatch || {};
+
+      // Update all the totals on the referenced item
+      item.totalCount -= count;
+      item.totalActualCount -= actualCount;
+      item.total -= individualTotal;
+      item.totalCgstAmt -= cgstAmount;
+      item.totalSgstAmt -= sgstAmount;
+      item.totalIgstAmt -= igstAmount;
+      item.totalCessAmt -= cessAmount;
+      item.totalAddlCessAmt -= additionalCessAmount;
+
+      // Remove the batch from the GodownList
+      item.GodownList.splice(index, 1);
+
+      if (
+        item?.GodownList?.every(
+          (godown) => godown.added === false || godown.added == undefined
+        )
+      ) {
+        item.added = false;
+      }
+      dispatch(updateItem({ item: item, moveToTop: false }));
+
+      // Update the items state
+      setItems(updatedItems);
+
+      setLoadingIndex(null); // stop loader after .5 sec
+    }, 500);
   };
 
   // ========== INFINITE LOADING HANDLERS ==========
@@ -458,9 +523,13 @@ export default function VoucherProductList({
                       voucherTypeFromRedux === "purchase" && (
                         <div
                           onClick={() => {
-                            navigate(`/sUsers/addBatchPurchase/${el?._id}`);
+                            navigate(`/sUsers/addBatchPurchase/${el?._id}`, {
+                              state: {
+                                item: el,
+                              },
+                            });
                           }}
-                          className="mt-1  flex items-center gap-1 rounded-md border-none  font-bold border-2 text-[#00B881] text-md"
+                          className="mt-1.5  flex items-center gap-1 rounded-md border-none  font-bold border-2 text-[#00B881] text-md"
                         >
                           <span className="font-normal">
                             <IoAddCircleSharp color="blue" size={15} />
@@ -628,6 +697,8 @@ export default function VoucherProductList({
               details={el}
               setHeight={(height) => setHeightOfProducts(index, height)}
               tab={tab}
+              handleRemoveBatch={handleRemoveBatch}
+              loadingIndex={loadingIndex}
             />
           </div>
         )}

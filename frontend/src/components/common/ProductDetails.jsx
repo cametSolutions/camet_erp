@@ -1,6 +1,8 @@
 /* eslint-disable react/no-unknown-property */
 /* eslint-disable react/prop-types */
-import { useEffect, useRef } from "react";
+import { CircleX, LoaderCircle } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 
 const ProductDetails = ({
@@ -9,9 +11,11 @@ const ProductDetails = ({
   handleAddClick,
   handleIncrement,
   handleDecrement,
-  godownName,
+  // godownName,
+  handleRemoveBatch,
   heights,
   tab = "",
+  loadingIndex
 }) => {
   const detailsRef = useRef();
   const batchOrGodownList = details?.GodownList;
@@ -22,6 +26,9 @@ const ProductDetails = ({
   }, [details, heights, setHeight]);
 
   const navigate = useNavigate();
+  // const dispatch = useDispatch();
+
+
 
   return (
     <div
@@ -29,32 +36,44 @@ const ProductDetails = ({
       className={`product-details mb-6 mt-8 w-full shadow-lg p-3 bg-gray-50 border-2 `}
     >
       {batchOrGodownList.map((item, index) => (
-        <>
-          <div
-            key={index}
-            className="mb-4 flex  justify-between items-center mt-3  px-[40px] md:px-[64px] "
-          >
-            <div className="flex flex-col gap-1  ">
+        <div key={index}>
+          <div className="mb-4 flex justify-between items-center mt-3 px-[40px] md:px-[64px] relative">
+            {item?.newBatch &&
+              (loadingIndex === index ? (
+                <button className="animate-spin absolute left-2 top-10 w-6 h-6 rounded-full text-gray-500 flex items-center justify-center">
+                  <LoaderCircle size={18} strokeWidth={2} />
+                </button>
+              ) : (
+                <button
+                  disabled={loadingIndex !== null}
+                  onClick={() => handleRemoveBatch(details?._id, index)}
+                  className="absolute left-2 top-10 w-6 h-6 rounded-full text-gray-500 flex items-center justify-center hover:text-black"
+                >
+                  <CircleX size={18} strokeWidth={2} />
+                </button>
+              ))}
+
+            <div className="flex flex-col gap-1">
               {item?.batch && (
                 <p className="font-bold text-sm md:text-sm">{item?.batch}</p>
               )}
 
               {/* <p className="font-bold text-xs md:text-sm">Batch {item?.batch}</p> */}
               {item?.godown && item?.batch && (
-                <p className="text-gray-500  text-sm md:text-xs">
+                <p className="text-gray-500 text-sm md:text-xs">
                   ( {item.godown} )
                 </p>
               )}
 
               {item?.godown && !item?.batch && (
-                <p className="text-black font-bold  text-sm md:text-sm">
+                <p className="text-black font-bold text-sm md:text-sm">
                   {item.godown}
                 </p>
               )}
 
               {item?.expdt && (
                 <p className="text-red-400 font-normal text-[10px] md:text-sm">
-                  Expires in {item?.expdt}
+                  Expires in {new Date(item.expdt).toLocaleDateString()}
                 </p>
               )}
 
@@ -63,19 +82,19 @@ const ProductDetails = ({
                   <div className="flex items-center">
                     {tab !== "stockTransfer" && (
                       <>
-                        <p className="   text-xs md:text-sm">
+                        <p className="text-xs md:text-sm">
                           MRP : {details?.item_mrp || 0} |
                         </p>
-                        <p className="   text-xs md:text-sm  ml-1">
+                        <p className="text-xs md:text-sm ml-1">
                           Price : {item?.selectedPriceRate || 0}
                         </p>
-                        <p className="  text-xs md:text-sm ml-2 font-semibold">
+                        <p className="text-xs md:text-sm ml-2 font-semibold">
                           ( ₹ {item?.individualTotal || 0} )
                         </p>
                       </>
                     )}
                   </div>
-                  <p className="text-gray-500 font-normal  text-sm md:text-sm ">
+                  <p className="text-gray-500 font-normal text-sm md:text-sm">
                     Stock: {item.balance_stock} /
                     <span className="text-black ml-1">
                       {details?.unit || ""}
@@ -112,7 +131,7 @@ const ProductDetails = ({
                               }
                             );
                           }}
-                          className=" px-2 rounded-md border-violet-500 font-bold border-2 text-violet-500 text-xs"
+                          className="px-2 rounded-md border-violet-500 font-bold border-2 text-violet-500 text-xs"
                         >
                           Edit
                         </button>
@@ -123,7 +142,7 @@ const ProductDetails = ({
                             handleDecrement(details?._id, index);
                           }}
                           id="decrement-btn"
-                          className="flex justify-center items-center w-4  h-4  rounded-full text-white focus:outline-none bg-gray-400 hover:bg-gray-500"
+                          className="flex justify-center items-center w-4 h-4 rounded-full text-white focus:outline-none bg-gray-400 hover:bg-gray-500"
                         >
                           {/* -ve button */}
                           <svg
@@ -134,9 +153,9 @@ const ProductDetails = ({
                             xmlns="http://www.w3.org/2000/svg"
                           >
                             <path
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                              stroke-width="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
                               d="M20 12H4"
                             ></path>
                           </svg>
@@ -161,9 +180,9 @@ const ProductDetails = ({
                             xmlns="http://www.w3.org/2000/svg"
                           >
                             <path
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                              stroke-width="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
                               d="M12 6v12M6 12h12"
                             ></path>
                           </svg>
@@ -173,15 +192,15 @@ const ProductDetails = ({
                   )}
                 </div>
               ) : (
-                <p className="text-gray-500 font-semibold  text-[9px] md:text-sm ">
+                <p className="text-gray-500 font-semibold text-[9px] md:text-sm">
                   {" "}
                   Stock: {item.balance_stock}
                 </p>
               )}
             </div>
           </div>
-          <hr className="   border-slate-300 mx-2 " />
-        </>
+          <hr className="border-slate-300 mx-2" />
+        </div>
       ))}
     </div>
   );

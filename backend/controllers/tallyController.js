@@ -1380,40 +1380,32 @@ export const addSubDetails = async (req, res) => {
       }
 
       try {
-        // For price levels with no ID, check if same name exists
-        if (isPriceLevel && !item[idField]) {
-          // Check if price level with same name exists for this company
-          const existingPriceLevel = await Model.findOne({
-            [nameField]: item[nameField],
-            cmp_id: item.cmp_id,
-          });
-
-          if (existingPriceLevel) {
-            // Update existing price level with same name
-            await Model.findByIdAndUpdate(existingPriceLevel._id, item);
-            results.push({
-              success: true,
-              message: `${nameField} updated successfully`,
-              data: item,
-            });
-          } else {
-            // Create new price level
-            const newItem = new Model(item);
-            await newItem.save();
-            results.push({
-              success: true,
-              message: `${nameField} added successfully`,
-              data: newItem,
+        let existingItem = null;
+        
+        // For price levels, check if item exists by ID (if provided) or by name
+        if (isPriceLevel) {
+          if (item[idField]) {
+            // If ID is provided, check by ID first
+            existingItem = await Model.findOne({
+              [idField]: item[idField],
+              cmp_id: item.cmp_id,
             });
           }
-          continue;
+          
+          // If no ID or no item found by ID, check by name
+          if (!existingItem) {
+            existingItem = await Model.findOne({
+              [nameField]: item[nameField],
+              cmp_id: item.cmp_id,
+            });
+          }
+        } else {
+          // For other models, check by ID only
+          existingItem = await Model.findOne({
+            [idField]: item[idField],
+            cmp_id: item.cmp_id,
+          });
         }
-
-        // For other models or price levels with ID, check if item exists by ID
-        const existingItem = await Model.findOne({
-          [idField]: item[idField],
-          cmp_id: item.cmp_id,
-        });
 
         if (existingItem) {
           // Update existing item

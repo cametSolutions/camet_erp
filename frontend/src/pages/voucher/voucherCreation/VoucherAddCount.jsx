@@ -541,11 +541,11 @@ function VoucherAddCount() {
         igstValue, // IGST percentage
         cessValue: item.cess || 0, // Standard cess percentage
         addlCessValue: item.addl_cess || 0, // Additional cess per quantity
-        cgstAmt, // CGST amount
-        sgstAmt, // SGST amount
-        igstAmt, // IGST amount
-        cessAmt: cessAmount, // Standard cess amount (percentage based)
-        addlCessAmt: additionalCessAmount, // Additional cess amount (quantity based)
+        cgstAmount:cgstAmt, // CGST amount
+        sgstAmount: sgstAmt, // SGST amount
+        igstAmount:igstAmt, // IGST amount
+        cessAmount: cessAmount, // Standard cess amount (percentage based)
+        additionalCessAmount, // Additional cess amount (quantity based)
         individualTotal, // Final amount including taxes and cess
         quantity, // Quantity
         isTaxInclusive: item?.isTaxInclusive || false, // Tax inclusive flag

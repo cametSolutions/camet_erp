@@ -32,7 +32,7 @@ export const createPurchase = async (req, res) => {
       items,
       despatchDetails,
       additionalChargesFromRedux,
-      lastAmount,
+      finalAmount:lastAmount,
       purchaseNumber,
       selectedDate,
     } = req.body;
@@ -69,7 +69,7 @@ export const createPurchase = async (req, res) => {
     }
 
     await handlePurchaseStockUpdates(items, session);
-    const updatedItems = await processPurchaseItems(items);
+    // const updatedItems = await processPurchaseItems(items);
     const updatedPurchaseNumber = await updatePurchaseNumber(
       orgId,
       secondaryUser,
@@ -87,7 +87,7 @@ export const createPurchase = async (req, res) => {
     const result = await createPurchaseRecord(
       req,
       purchaseNumber,
-      updatedItems,
+      items,
       updateAdditionalCharge,
       session
     );

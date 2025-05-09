@@ -270,7 +270,7 @@ export const getProducts = async (req, res) => {
   // Extract request parameters
   const Secondary_user_id = req.sUserId;
   const cmp_id = req.params.cmp_id;
-  const taxInclusive = req.query.taxInclusive === "true";
+  // const taxInclusive = req.query.taxInclusive === "true";
   const vanSaleQuery = req.query.vanSale;
   const isVanSale = vanSaleQuery === "true";
   const excludeGodownId = req.query.excludeGodownId;
@@ -435,9 +435,9 @@ export const getProducts = async (req, res) => {
       }
 
       // Add tax inclusive flag if requested
-      if (taxInclusive) {
-        productObject.isTaxInclusive = true;
-      }
+      // if (taxInclusive) {
+      //   productObject.isTaxInclusive = true;
+      // }
 
       return productObject;
     });

@@ -301,6 +301,8 @@ function EditItemForm({
     setAdditionalCess(selectedItem[0]?.addl_cess || 0);
     setAddlCessValue(selectedItem[0]?.addl_cess || 0);
 
+    // log
+
 
     if (taxInclusive) {
       setIsTaxInclusive(selectedGodown?.isTaxInclusive || selectedItem[0]?.isTaxInclusive);

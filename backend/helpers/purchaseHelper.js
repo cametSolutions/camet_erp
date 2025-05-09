@@ -167,6 +167,8 @@ export const handlePurchaseStockUpdates = async (items, session) => {
             });
           }
         }
+
+        
       }
     } else {
       product.GodownList = product.GodownList.map((godown) => {
@@ -205,7 +207,7 @@ export const createPurchaseRecord = async (
       orgId,
       party,
       despatchDetails,
-      lastAmount,
+      finalAmount:lastAmount,
       selectedDate,
     } = req.body;
 

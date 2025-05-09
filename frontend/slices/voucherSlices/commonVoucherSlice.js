@@ -226,13 +226,20 @@ export const commonVoucherSlice = createSlice({
 
       if (index !== -1) {
         state.items[index] = item;
-
-        if (moveToTop) {
-          // Remove the item from its current position and move it to the top
-          const [updatedItem] = state.items.splice(index, 1);
-
-          state.items.unshift(updatedItem);
+        const currentItem = state.items[index];
+        if (
+          currentItem?.GodownList?.every(
+            (el) => el.added === false || el.added == undefined
+          )
+        ) {
+          //// remove that item from item array
+          state.items.splice(index, 1);
         }
+      }
+      if (moveToTop) {
+        // Remove the item from its current position and move it to the top
+        const [updatedItem] = state.items.splice(index, 1);
+        state.items.unshift(updatedItem);
       }
     },
 
@@ -243,38 +250,70 @@ export const commonVoucherSlice = createSlice({
       const index = state.items.findIndex((el) => el._id === id);
       if (index !== -1) {
         const currentItem = state.items[index];
-        currentItem.GodownList[idx].added = false;
-        currentItem.GodownList[idx].count = 0;
-        currentItem.GodownList[idx].count = 0;
-        currentItem.GodownList[idx].individualTotal = 0;
+        const currentBatch = currentItem.GodownList[idx];
+        const {
+          count = 0,
+          actualCount = 0,
+          individualTotal = 0,
+          cgstAmount = 0,
+          sgstAmount = 0,
+          igstAmount = 0,
+          cessAmount = 0,
+          additionalCessAmount = 0,
+        } = currentBatch || {};
 
-        const newCount = currentItem.GodownList.reduce((acc, curr) => {
-          if (curr.added) {
-            return acc + curr.count;
-          } else {
-            return acc;
-          }
-        }, 0);
+        // Update all the totals on the referenced item
+        currentItem.totalCount -= count;
+        currentItem.totalActualCount -= actualCount;
+        currentItem.total -= individualTotal;
+        currentItem.totalCgstAmt -= cgstAmount;
+        currentItem.totalSgstAmt -= sgstAmount;
+        currentItem.totalIgstAmt -= igstAmount;
+        currentItem.totalCessAmt -= cessAmount;
+        currentItem.totalAddlCessAmt -= additionalCessAmount;
 
-        const newTotal = currentItem.GodownList.reduce((acc, curr) => {
-          if (curr.added) {
-            return acc + curr.individualTotal;
-          } else {
-            return acc;
-          }
-        }, 0);
+        currentItem.GodownList.splice(idx, 1);
 
-        currentItem.count = newCount;
-        currentItem.total = newTotal;
-
-        const allAddedFalse = currentItem.GodownList.every(
-          (item) => item.added === false || item.added == undefined
-        );
-
-        // If allAddedFalse is true, set currentItem.added to false
-        if (allAddedFalse) {
+        if (
+          currentItem?.GodownList?.every(
+            (godown) => godown.added === false || godown.added == undefined
+          )
+        ) {
           state.items.splice(index, 1);
         }
+
+        // currentItem.GodownList[idx].added = false;
+        // currentItem.GodownList[idx].actualCount = 0;
+        // currentItem.GodownList[idx].count = 0;
+        // currentItem.GodownList[idx].individualTotal = 0;
+
+        // const newCount = currentItem.GodownList.reduce((acc, curr) => {
+        //   if (curr.added) {
+        //     return acc + curr.count;
+        //   } else {
+        //     return acc;
+        //   }
+        // }, 0);
+
+        // const newTotal = currentItem.GodownList.reduce((acc, curr) => {
+        //   if (curr.added) {
+        //     return acc + curr.individualTotal;
+        //   } else {
+        //     return acc;
+        //   }
+        // }, 0);
+
+        // currentItem.count = newCount;
+        // currentItem.total = newTotal;
+
+        // const allAddedFalse = currentItem.GodownList.every(
+        //   (item) => item.added === false || item.added == undefined
+        // );
+
+        // // If allAddedFalse is true, set currentItem.added to false
+        // if (allAddedFalse) {
+        //   state.items.splice(index, 1);
+        // }
       }
     },
 
