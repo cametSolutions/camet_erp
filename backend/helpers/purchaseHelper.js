@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import OragnizationModel from "../models/OragnizationModel.js";
 import productModel from "../models/productModel.js";
 import purchaseModel from "../models/purchaseModel.js";
@@ -45,40 +46,52 @@ export const handlePurchaseStockUpdates = async (items, session) => {
             // Handle new batch logic
             const newBatchStock = truncateToNDecimals(godownCount, 3);
             const newGodownEntry = {
-              batch: godown.batch,
-              balance_stock: newBatchStock,
-              mfgdt: godown.mfgdt,
-              expdt: godown.expdt,
+              batch: godown?.batch,
+              balance_stock: godownCount || 0,
+              mfgdt: godown?.mfgdt,
+              expdt: godown?.expdt,
             };
 
-            if (godown.godown_id) {
-              newGodownEntry.godown_id = godown.godown_id;
-              newGodownEntry.godown = godown.godown;
+            if (godown.godownMongoDbId) {
+              newGodownEntry.godown = godown?.godownMongoDbId;
             }
 
-            const existingBatchIndex = product.GodownList.findIndex(
-              (g) =>
-                g.batch === godown.batch &&
-                (!godown.godown_id || g.godown_id === godown.godown_id)
-            );
+            const existingBatchIndex = product.GodownList.findIndex((g) => {
+              if (godown.godownMongoDbId) {
+                return (
+                  g.batch === godown.batch &&
+                  g.godown.toString() === godown.godownMongoDbId.toString()
+                );
+              } else {
+                return g.batch === godown.batch;
+              }
+            });
 
-            if (existingBatchIndex !== -1) {
-              // Overwrite existing batch, add the balance_stock instead of replacing it
-
-              const existingGodown = product.GodownList[existingBatchIndex];
-              const updatedStock = truncateToNDecimals(
-                existingGodown.balance_stock + newBatchStock,
-                3
-              );
-              product.GodownList[existingBatchIndex] = {
-                ...existingGodown,
-                ...newGodownEntry,
-                balance_stock: updatedStock,
-              };
-            } else {
-              // Add new batch
+            if (existingBatchIndex === -1) {
               product.GodownList.push(newGodownEntry);
+            } else {
+              throw new Error(
+                `Batch already exists for product: ${product._id}`
+              );
             }
+
+            // if (existingBatchIndex !== -1) {
+            //   // Overwrite existing batch, add the balance_stock instead of replacing it
+
+            //   const existingGodown = product.GodownList[existingBatchIndex];
+            //   const updatedStock = truncateToNDecimals(
+            //     existingGodown.balance_stock + newBatchStock,
+            //     3
+            //   );
+            //   product.GodownList[existingBatchIndex] = {
+            //     ...existingGodown,
+            //     ...newGodownEntry,
+            //     balance_stock: updatedStock,
+            //   };
+            // } else {
+            //   // Add new batch
+            //   product.GodownList.push(newGodownEntry);
+            // }
 
             godownUpdates.push({
               updateOne: {
@@ -115,7 +128,9 @@ export const handlePurchaseStockUpdates = async (items, session) => {
           }
         } else if (item?.batchEnabled && item?.gdnEnabled) {
           const godownIndex = product.GodownList.findIndex(
-            (g) => g.batch === godown.batch && g.godown_id === godown.godown_id
+            (g) =>
+              g.batch === godown.batch &&
+              g?.godown?.toString() === godown?.godownMongoDbId?.toString()
           );
 
           if (godownIndex !== -1 && godownCount && godownCount > 0) {
@@ -134,7 +149,9 @@ export const handlePurchaseStockUpdates = async (items, session) => {
                 },
                 arrayFilters: [
                   {
-                    "elem.godown_id": godown.godown_id,
+                    "elem.godown": new mongoose.Types.ObjectId(
+                      godown.godownMongoDbId
+                    ),
                     "elem.batch": godown.batch,
                   },
                 ],
@@ -143,7 +160,7 @@ export const handlePurchaseStockUpdates = async (items, session) => {
           }
         } else if (!item?.batchEnabled && item?.gdnEnabled) {
           const godownIndex = product.GodownList.findIndex(
-            (g) => g.godown_id === godown.godown_id
+            (g) => g.godown.toString() == godown.godownMongoDbId
           );
 
           if (godownIndex !== -1 && godownCount && godownCount > 0) {
@@ -158,7 +175,9 @@ export const handlePurchaseStockUpdates = async (items, session) => {
               updateOne: {
                 filter: {
                   _id: product._id,
-                  "GodownList.godown_id": godown.godown_id,
+                  "GodownList.godown": new mongoose.Types.ObjectId(
+                    godown.godownMongoDbId
+                  ),
                 },
                 update: {
                   $set: { "GodownList.$.balance_stock": newGodownStock },
@@ -167,16 +186,21 @@ export const handlePurchaseStockUpdates = async (items, session) => {
             });
           }
         }
-
-        
       }
     } else {
       product.GodownList = product.GodownList.map((godown) => {
         const currentGodownStock = Number(godown.balance_stock) || 0;
+        const currentGodown = item?.GodownList[0];
+
+        const godownCount =
+          (currentGodown.actualCount !== undefined
+            ? currentGodown.actualCount
+            : currentGodown.count) || 0;
         const newGodownStock = truncateToNDecimals(
-          currentGodownStock + itemCount,
+          Number(currentGodownStock) + Number(godownCount),
           3
         );
+
         return { ...godown, balance_stock: newGodownStock };
       });
 
@@ -207,7 +231,7 @@ export const createPurchaseRecord = async (
       orgId,
       party,
       despatchDetails,
-      finalAmount:lastAmount,
+      finalAmount: lastAmount,
       selectedDate,
     } = req.body;
 
