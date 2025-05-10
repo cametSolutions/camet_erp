@@ -187,10 +187,10 @@ const Routers = () => {
         <Route path='/sUsers/addItemPurchase' element={<ProtectedSecRoute><AddItemPurchase/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/billToPurchase/:id' element={<ProtectedSecRoute><BillToPurchase/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/editItemPurchase/:id/:godownName/:index' element={<ProtectedSecRoute><EditItemPurchase/></ProtectedSecRoute>}></Route> 
-        <Route path='/sUsers/purchaseDetails/:id' element={<ProtectedSecRoute><PurchaseDetailsSecondary/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/purchaseDetails/:id' element={<ProtectedSecRoute><VoucherDetails/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/sharePurchase/:id' element={<ProtectedSecRoute><SharePurchaseSecondary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/addBatchPurchase/:id' element={<ProtectedSecRoute><AddbatchInPurchase/></ProtectedSecRoute>}></Route>
-        <Route path='/sUsers/editPurchase/:id' element={<ProtectedSecRoute><EditPurchase/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/editPurchase/:id' element={<ProtectedSecRoute><VoucherInitialPageEdit/></ProtectedSecRoute>}></Route>
        
        
        

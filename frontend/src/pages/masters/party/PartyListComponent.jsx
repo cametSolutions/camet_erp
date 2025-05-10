@@ -15,13 +15,7 @@ import { formatAmount } from "../../../../../backend/helpers/helper";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate, useLocation } from "react-router-dom";
 import { addParty } from "../../../../slices/voucherSlices/commonVoucherSlice";
-// import { addParty as addPartySales } from "../../../../slices/salesSecondary";
-// import { addParty as addPartySaleOrder } from "../../../../slices/invoiceSecondary";
-// import { addParty as addPartyPurchase } from "../../../../slices/purchase";
-// import { addParty as addPartyCreditNote } from "../../../../slices/creditNote";
-// import { addParty as addPartyDebitNote } from "../../../../slices/debitNote";
-// import { addParty as addPartyReceipt } from "../../../../slices/receipt";
-// import { addParty as addPartyPurchasePayment } from "../../../../slices/payment";
+
 
 function PartyListComponent({ deleteHandler = () => {}, isVoucher = false }) {
   const [parties, setParties] = useState([]);
@@ -38,16 +32,21 @@ function PartyListComponent({ deleteHandler = () => {}, isVoucher = false }) {
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
 
+  
+
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const location = useLocation();
 
   const isSalePath = location.pathname === "/sUsers/searchPartySales";
 
-  const allowAlteration = (accountGroup) => {
+  const allowAlteration = (accountGroupName) => {
+
+    console.log(accountGroupName);
+    
     if (
-      accountGroup === "Sundry Debtors" ||
-      accountGroup === "Sundry Creditors"
+      accountGroupName === "Sundry Debtors" ||
+      accountGroupName === "Sundry Creditors"
     ) {
       return true;
     } else {
@@ -242,7 +241,7 @@ function PartyListComponent({ deleteHandler = () => {}, isVoucher = false }) {
               <FaEdit
                 className={` ${
                   type === "self" &&
-                  !allowAlteration(el?.accountGroup) &&
+                  !allowAlteration(el?.accountGroupName) &&
                   "pointer-events-none opacity-50"
                 }  text-blue-500`}
               />
@@ -253,7 +252,7 @@ function PartyListComponent({ deleteHandler = () => {}, isVoucher = false }) {
               onClick={() => deleteHandler(el._id)}
               className={` ${
                 type === "self" &&
-                !allowAlteration(el?.accountGroup) &&
+                !allowAlteration(el?.accountGroupName) &&
                 "pointer-events-none opacity-50"
               }  text-red-500`}
             />
@@ -285,6 +284,8 @@ function PartyListComponent({ deleteHandler = () => {}, isVoucher = false }) {
     }
 
     const el = filteredParties[index];
+
+    
     const adjustedStyle = {
       ...style,
       height: "100px",
@@ -314,6 +315,8 @@ function PartyListComponent({ deleteHandler = () => {}, isVoucher = false }) {
       </div>
     );
   };
+
+  
 
   return (
     <div className="flex flex-col h-full overflow-hidden">

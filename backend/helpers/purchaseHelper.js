@@ -6,7 +6,12 @@ import TallyData from "../models/TallyData.js";
 import { formatToLocalDate, truncateToNDecimals } from "./helper.js";
 
 ///////////////////////// for stock update ////////////////////////////////
-export const handlePurchaseStockUpdates = async (items, session) => {
+export const handlePurchaseStockUpdates = async (
+  items,
+  session,
+  purchaseNumber,
+  purchase_id
+) => {
   const productUpdates = [];
   const godownUpdates = [];
 
@@ -20,7 +25,7 @@ export const handlePurchaseStockUpdates = async (items, session) => {
 
     // Use actualCount if available, otherwise fall back to count
     const itemCount = parseFloat(
-      item.actualCount !== undefined ? item.actualCount : item.count
+      item.actualCount !== undefined ? item.totalActualCount : item.totalCount
     );
     const productBalanceStock = parseFloat(product.balance_stock);
     const newBalanceStock = truncateToNDecimals(
@@ -50,6 +55,17 @@ export const handlePurchaseStockUpdates = async (items, session) => {
               balance_stock: godownCount || 0,
               mfgdt: godown?.mfgdt,
               expdt: godown?.expdt,
+              supplierName: godown?.supplierName,
+              voucherNumber: godown?.voucherNumber,
+              purchase_price: godown?.purchase_price,
+              purchase_cost: godown?.purchase_cost,
+              hsn_code: godown?.hsn_code,
+              mrp: godown?.mrp,
+              created_by: {
+                voucherType: "purchase",
+                voucherNumber: purchaseNumber,
+                voucher_id: purchase_id,
+              },
             };
 
             if (godown.godownMongoDbId) {
@@ -74,24 +90,6 @@ export const handlePurchaseStockUpdates = async (items, session) => {
                 `Batch already exists for product: ${product._id}`
               );
             }
-
-            // if (existingBatchIndex !== -1) {
-            //   // Overwrite existing batch, add the balance_stock instead of replacing it
-
-            //   const existingGodown = product.GodownList[existingBatchIndex];
-            //   const updatedStock = truncateToNDecimals(
-            //     existingGodown.balance_stock + newBatchStock,
-            //     3
-            //   );
-            //   product.GodownList[existingBatchIndex] = {
-            //     ...existingGodown,
-            //     ...newGodownEntry,
-            //     balance_stock: updatedStock,
-            //   };
-            // } else {
-            //   // Add new batch
-            //   product.GodownList.push(newGodownEntry);
-            // }
 
             godownUpdates.push({
               updateOne: {
@@ -222,7 +220,8 @@ export const createPurchaseRecord = async (
   PurchaseNumber,
   updatedItems,
   updateAdditionalCharge,
-  session
+  session,
+  purchase_id
 ) => {
   try {
     const {
@@ -252,6 +251,7 @@ export const createPurchaseRecord = async (
     }
 
     const purchase = new model({
+      _id: new mongoose.Types.ObjectId(purchase_id),
       selectedGodownId: selectedGodownId ?? "",
       selectedGodownName: selectedGodownName ? selectedGodownName[0] : "",
       serialNumber: newSerialNumber,
@@ -335,10 +335,10 @@ export const revertPurchaseStockUpdates = async (items, session) => {
 
       // Use actualCount if available, otherwise fall back to count
       const itemCount = parseFloat(
-        item.actualCount !== undefined ? item.actualCount : item.count
+        item.actualCount !== undefined ? item.totalActualCount : item.totalCount
       );
 
-      const productBalanceStock = parseFloat(product.balance_stock);
+      const productBalanceStock = parseFloat(product?.balance_stock);
       const newBalanceStock = truncateToNDecimals(
         productBalanceStock - itemCount, // Revert stock by adding back
         3
@@ -355,12 +355,12 @@ export const revertPurchaseStockUpdates = async (items, session) => {
       // Revert godown and batch updates
       if (item.hasGodownOrBatch) {
         for (const godown of item.GodownList) {
+          // Use actualCount if available, otherwise fall back to count for each godown
+          const godownCount =
+            godown.actualCount !== undefined
+              ? godown.actualCount
+              : godown.count;
           if (item?.batchEnabled && !item?.gdnEnabled) {
-            // Use actualCount if available, otherwise fall back to count for each godown
-            const godownCount =
-              godown.actualCount !== undefined
-                ? godown.actualCount
-                : godown.count;
             // Case: Batch only or Godown with Batch
             const godownIndex = product.GodownList.findIndex(
               (g) => g.batch === godown.batch
@@ -393,9 +393,9 @@ export const revertPurchaseStockUpdates = async (items, session) => {
             // Case: Godown with Batch
             const godownIndex = product.GodownList.findIndex(
               (g) =>
-                g.batch === godown.batch && g.godown_id === godown.godown_id
+                g.batch === godown.batch &&
+                g?.godown?.toString() === godown?.godownMongoDbId?.toString()
             );
-
             if (godownIndex !== -1) {
               if (godownCount && godownCount > 0) {
                 const currentGodownStock =
@@ -416,7 +416,9 @@ export const revertPurchaseStockUpdates = async (items, session) => {
                     },
                     arrayFilters: [
                       {
-                        "elem.godown_id": godown.godown_id,
+                        "elem.godown": new mongoose.Types.ObjectId(
+                          godown.godownMongoDbId
+                        ),
                         "elem.batch": godown.batch,
                       },
                     ],
@@ -427,7 +429,7 @@ export const revertPurchaseStockUpdates = async (items, session) => {
           } else if (!item?.batchEnabled && item?.gdnEnabled) {
             // Case: Godown only
             const godownIndex = product.GodownList.findIndex(
-              (g) => g.godown_id === godown.godown_id
+              (g) => g.godown.toString() == godown.godownMongoDbId
             );
 
             // Use actualCount if available, otherwise fall back to count for each godown
@@ -449,8 +451,9 @@ export const revertPurchaseStockUpdates = async (items, session) => {
                 godownUpdates.push({
                   updateOne: {
                     filter: {
-                      _id: product._id,
-                      "GodownList.godown_id": godown.godown_id,
+                      "GodownList.godown": new mongoose.Types.ObjectId(
+                        godown.godownMongoDbId
+                      ),
                     },
                     update: {
                       $set: { "GodownList.$.balance_stock": newGodownStock },
@@ -465,16 +468,19 @@ export const revertPurchaseStockUpdates = async (items, session) => {
         // Case: No Godown
         product.GodownList = product.GodownList.map((godown) => {
           const currentGodownStock = Number(godown.balance_stock) || 0;
+          const currentGodown = item?.GodownList[0];
+
+          const godownCount =
+            (currentGodown.actualCount !== undefined
+              ? currentGodown.actualCount
+              : currentGodown.count) || 0;
           const newGodownStock = truncateToNDecimals(
-            currentGodownStock - Number(itemCount), // Revert stock by adding back
+            Number(currentGodownStock) - Number(godownCount),
             3
           );
-          return {
-            ...godown,
-            balance_stock: newGodownStock,
-          };
-        });
 
+          return { ...godown, balance_stock: newGodownStock };
+        });
         // Prepare godown update operation
         godownUpdates.push({
           updateOne: {
@@ -542,4 +548,61 @@ export const updateTallyData = async (
     console.error("Error updateTallyData sale stock updates:", error);
     throw error;
   }
+};
+
+/// remove new batch which are added during creating purchase
+
+export const removeNewBatchCreatedByThisPurchase = async (
+  existingPurchase,
+  session
+) => {
+  const purchase_id = existingPurchase._id;
+  const items = existingPurchase.items;
+
+  const productUpdates = [];
+
+  /// first find the items with new batch
+
+  const newBatchProductIds = [];
+
+  for (const item of items) {
+    for (const godown of item?.GodownList) {
+      if (godown.newBatch && godown.newBatch == true) {
+        newBatchProductIds.push(item._id);
+      }
+    }
+  }
+
+  /// then find the products with new batch
+  const products = await productModel
+    .find({ _id: { $in: newBatchProductIds } })
+    .session(session);
+
+  /// in the Godown list of the products remove the new batch by matching the purchase_id with voucher_id in the created_by Object in the Godown list array and remove it
+  for (const product of products) {
+    console.log("purchase_id", purchase_id);
+
+    const newBatchIndex = product.GodownList.findIndex(
+      (g) => g?.created_by.voucher_id?.toString() == purchase_id.toString()
+    );
+
+    console.log("newBatchIndex", newBatchIndex);
+    
+
+    const newBatch = product.GodownList[newBatchIndex];
+    console.log("newBatch", newBatch);
+
+    if (newBatchIndex !== -1) {
+      product.GodownList.splice(newBatchIndex, 1);
+      productUpdates.push({
+        updateOne: {
+          filter: { _id: product._id },
+          update: { $set: { GodownList: product.GodownList } },
+        },
+      });
+    }
+  }
+
+  /// then update the products
+  await productModel.bulkWrite(productUpdates, { session });
 };

@@ -105,6 +105,33 @@ const productSchema = new mongoose.Schema({
       expdt: {
         type: String,
       },
+      supplierName: {
+        type: String,
+      },
+      voucherNumber: {
+        type: String,
+      },
+      purchase_price: {
+        type: Number,
+      },
+      purchase_cost: {
+        type: Number,
+      },
+      mrp: {
+        type: Number,
+      },
+      created_by: {
+        voucherType: {
+          type: String,
+        },
+        voucherNumber: {
+          type: String,
+        },
+        voucher_id: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "purchase",
+        },
+      },
     },
   ],
 

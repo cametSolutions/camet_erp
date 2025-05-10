@@ -5,13 +5,14 @@ import {
   handlePurchaseStockUpdates,
   updatePurchaseNumber,
   revertPurchaseStockUpdates,
-  updateTallyData,
+  removeNewBatchCreatedByThisPurchase,
 } from "../helpers/purchaseHelper.js";
 import {
   processSaleItems as processPurchaseItems,
   revertSettlementData,
   saveSettlementData,
   updateOutstandingBalance,
+  updateTallyData,
 } from "../helpers/salesHelper.js";
 import { checkForNumberExistence } from "../helpers/secondaryHelper.js";
 import purchaseModel from "../models/purchaseModel.js";
@@ -21,8 +22,11 @@ import TallyData from "../models/TallyData.js";
 // @desc create purchase
 // route GET/api/sUsers/createPurchase
 export const createPurchase = async (req, res) => {
+
   const session = await mongoose.startSession();
   session.startTransaction();
+  const purchase_id = new mongoose.Types.ObjectId();
+
   try {
     const {
       selectedGodownId,
@@ -35,6 +39,7 @@ export const createPurchase = async (req, res) => {
       finalAmount:lastAmount,
       purchaseNumber,
       selectedDate,
+      
     } = req.body;
 
     const Secondary_user_id = req.sUserId;
@@ -68,7 +73,7 @@ export const createPurchase = async (req, res) => {
         .json({ success: false, message: "Secondary user not found" });
     }
 
-    await handlePurchaseStockUpdates(items, session);
+    await handlePurchaseStockUpdates(items, session,purchaseNumber,purchase_id);
     // const updatedItems = await processPurchaseItems(items);
     const updatedPurchaseNumber = await updatePurchaseNumber(
       orgId,
@@ -89,7 +94,8 @@ export const createPurchase = async (req, res) => {
       purchaseNumber,
       items,
       updateAdditionalCharge,
-      session
+      session,
+      purchase_id
     );
 
     ///save settlement data
@@ -106,10 +112,7 @@ export const createPurchase = async (req, res) => {
       session
     );
 
-    if (
-      party.accountGroup === "Sundry Debtors" ||
-      party.accountGroup === "Sundry Creditors"
-    ) {
+ 
       await updateTallyData(
         orgId,
         purchaseNumber,
@@ -118,9 +121,13 @@ export const createPurchase = async (req, res) => {
         party,
         lastAmount,
         secondaryMobile,
-        session // Pass session if needed
+        session ,// Pass session if needed
+        lastAmount,
+        selectedDate,
+        "purchase",
+       "Cr"
       );
-    }
+    
 
     await session.commitTransaction();
     session.endSession();
@@ -160,7 +167,7 @@ export const editPurchase = async (req, res) => {
       items,
       despatchDetails,
       additionalChargesFromRedux,
-      lastAmount,
+      finalAmount:lastAmount,
       purchaseNumber,
       selectedDate,
     } = req.body;
@@ -179,12 +186,12 @@ export const editPurchase = async (req, res) => {
     // Revert existing stock updates
     await revertPurchaseStockUpdates(existingPurchase.items, session);
     // Process new sale items and update stock
-    const updatedItems = processPurchaseItems(
-      items,
-      additionalChargesFromRedux
-    );
+    // const updatedItems = processPurchaseItems(
+    //   items,
+    //   additionalChargesFromRedux
+    // );
 
-    await handlePurchaseStockUpdates(updatedItems, session);
+    await handlePurchaseStockUpdates(items, session);
 
     // Update existing sale record
     const updateData = {
@@ -195,14 +202,13 @@ export const editPurchase = async (req, res) => {
       partyAccount: party?.partyName,
       party,
       despatchDetails,
-      items: updatedItems,
+      items,
       additionalCharges: additionalChargesFromRedux,
       finalAmount: lastAmount,
       Primary_user_id: req.owner,
       Secondary_user_id: req.secondaryUserId,
       purchaseNumber: purchaseNumber,
       date: await formatToLocalDate(selectedDate, orgId, session),
-
       createdAt: existingPurchase.createdAt,
     };
 
@@ -308,6 +314,12 @@ export const cancelPurchase = async (req, res) => {
 
       // Revert existing stock updates
       await revertPurchaseStockUpdates(existingPurchase.items, session);
+
+      await removeNewBatchCreatedByThisPurchase(
+        existingPurchase,
+        session,
+
+      );
 
       //// revert settlement data
       /// revert it

@@ -64,7 +64,7 @@ const purchaseSchema = new Schema(
       },
     },
     selectedDate: { type: String },
-    voucherType: { type: String },
+    voucherType: { type: String ,default:"purchase"},
     voucherNumber: { type: Number },
     convertedFrom: { type: Array, default: [] },
     serialNumber: { type: Number },
