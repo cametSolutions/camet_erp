@@ -47,6 +47,9 @@ export const handlePurchaseStockUpdates = async (
           godown.actualCount !== undefined ? godown.actualCount : godown.count;
 
         if (godown.newBatch) {
+
+          console.log("godown.batch", godown.batch);
+          
           if (godownCount > 0) {
             // Handle new batch logic
             const newBatchStock = truncateToNDecimals(godownCount, 3);
@@ -71,6 +74,10 @@ export const handlePurchaseStockUpdates = async (
             if (godown.godownMongoDbId) {
               newGodownEntry.godown = godown?.godownMongoDbId;
             }
+
+
+            console.log("newGodownEntry", newGodownEntry);
+            
 
             const existingBatchIndex = product.GodownList.findIndex((g) => {
               if (godown.godownMongoDbId) {
@@ -561,39 +568,50 @@ export const removeNewBatchCreatedByThisPurchase = async (
 
   const productUpdates = [];
 
-  /// first find the items with new batch
-
+  // First find the items with new batch
   const newBatchProductIds = [];
 
   for (const item of items) {
-    for (const godown of item?.GodownList) {
-      if (godown.newBatch && godown.newBatch == true) {
+    for (const godown of item?.GodownList || []) {
+      if (godown.newBatch && godown.newBatch === true) {
         newBatchProductIds.push(item._id);
+        break; // Once we find a new batch for this item, we can add its ID and move on
       }
     }
   }
 
-  /// then find the products with new batch
+  if (newBatchProductIds.length === 0) {
+    console.log("No new batches found for this purchase");
+    return; // Early return if no new batches
+  }
+
+  // Then find the products with new batch
   const products = await productModel
     .find({ _id: { $in: newBatchProductIds } })
     .session(session);
 
-  /// in the Godown list of the products remove the new batch by matching the purchase_id with voucher_id in the created_by Object in the Godown list array and remove it
+  console.log(`Found ${products.length} products with new batches to update`);
+
+  // For each product, remove ALL godown entries that match this purchase_id
   for (const product of products) {
-    console.log("purchase_id", purchase_id);
-
-    const newBatchIndex = product.GodownList.findIndex(
-      (g) => g?.created_by.voucher_id?.toString() == purchase_id.toString()
-    );
-
-    console.log("newBatchIndex", newBatchIndex);
+    const originalLength = product.GodownList?.length || 0;
     
+    // Filter out all batches created by this purchase
+    product.GodownList = product.GodownList.filter(godown => {
+      return godown?.created_by?.voucher_id?.toString() !== purchase_id.toString();
+    });
 
-    const newBatch = product.GodownList[newBatchIndex];
-    console.log("newBatch", newBatch);
+    console.log( product.GodownList);
+    
+    
+    const removedCount = originalLength - product.GodownList.length;
 
-    if (newBatchIndex !== -1) {
-      product.GodownList.splice(newBatchIndex, 1);
+    console.log("removedCount",removedCount);
+
+    
+    if (removedCount > 0) {
+      console.log(`Removed ${removedCount} batches from product ${product._id}`);
+      
       productUpdates.push({
         updateOne: {
           filter: { _id: product._id },
@@ -603,6 +621,11 @@ export const removeNewBatchCreatedByThisPurchase = async (
     }
   }
 
-  /// then update the products
-  await productModel.bulkWrite(productUpdates, { session });
+  // Then update the products
+  if (productUpdates.length > 0) {
+    const result = await productModel.bulkWrite(productUpdates, { session });
+    console.log(`Updated ${result.modifiedCount} products`);
+  } else {
+    console.log("No products needed updating");
+  }
 };

@@ -299,13 +299,15 @@ function VoucherAddCount() {
         );
       } else if (!reduxItem?.batchEnabled && reduxItem?.gdnEnabled) {
         matchedGodown = product?.GodownList?.find(
-          (g) => g?.godown_id === godown?.godown_id
+          (g) => g?.godownMongoDbId === godown?.godownMongoDbId
         );
       } else if (reduxItem?.batchEnabled && reduxItem?.gdnEnabled) {
         matchedGodown = product?.GodownList?.find(
           (g) =>
-            g?.godown_id === godown?.godown_id && g?.batch === godown?.batch
+            g?.godownMongoDbId === godown?.godownMongoDbId && g?.batch === godown?.batch
         );
+
+        
       }
 
       // Update balance stock if match found

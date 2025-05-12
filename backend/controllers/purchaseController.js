@@ -22,7 +22,6 @@ import TallyData from "../models/TallyData.js";
 // @desc create purchase
 // route GET/api/sUsers/createPurchase
 export const createPurchase = async (req, res) => {
-
   const session = await mongoose.startSession();
   session.startTransaction();
   const purchase_id = new mongoose.Types.ObjectId();
@@ -36,10 +35,9 @@ export const createPurchase = async (req, res) => {
       items,
       despatchDetails,
       additionalChargesFromRedux,
-      finalAmount:lastAmount,
+      finalAmount: lastAmount,
       purchaseNumber,
       selectedDate,
-      
     } = req.body;
 
     const Secondary_user_id = req.sUserId;
@@ -73,7 +71,12 @@ export const createPurchase = async (req, res) => {
         .json({ success: false, message: "Secondary user not found" });
     }
 
-    await handlePurchaseStockUpdates(items, session,purchaseNumber,purchase_id);
+    await handlePurchaseStockUpdates(
+      items,
+      session,
+      purchaseNumber,
+      purchase_id
+    );
     // const updatedItems = await processPurchaseItems(items);
     const updatedPurchaseNumber = await updatePurchaseNumber(
       orgId,
@@ -112,22 +115,20 @@ export const createPurchase = async (req, res) => {
       session
     );
 
- 
-      await updateTallyData(
-        orgId,
-        purchaseNumber,
-        result._id,
-        req.owner,
-        party,
-        lastAmount,
-        secondaryMobile,
-        session ,// Pass session if needed
-        lastAmount,
-        selectedDate,
-        "purchase",
-       "Cr"
-      );
-    
+    await updateTallyData(
+      orgId,
+      purchaseNumber,
+      result._id,
+      req.owner,
+      party,
+      lastAmount,
+      secondaryMobile,
+      session, // Pass session if needed
+      lastAmount,
+      selectedDate,
+      "purchase",
+      "Cr"
+    );
 
     await session.commitTransaction();
     session.endSession();
@@ -167,7 +168,7 @@ export const editPurchase = async (req, res) => {
       items,
       despatchDetails,
       additionalChargesFromRedux,
-      finalAmount:lastAmount,
+      finalAmount: lastAmount,
       purchaseNumber,
       selectedDate,
     } = req.body;
@@ -184,14 +185,10 @@ export const editPurchase = async (req, res) => {
     }
 
     // Revert existing stock updates
+    await removeNewBatchCreatedByThisPurchase(existingPurchase, session);
     await revertPurchaseStockUpdates(existingPurchase.items, session);
-    // Process new sale items and update stock
-    // const updatedItems = processPurchaseItems(
-    //   items,
-    //   additionalChargesFromRedux
-    // );
-
-    await handlePurchaseStockUpdates(items, session);
+    await handlePurchaseStockUpdates(items, session,  existingPurchase?.purchaseNumber,
+      existingPurchase?._id);
 
     // Update existing sale record
     const updateData = {
@@ -263,6 +260,8 @@ export const editPurchase = async (req, res) => {
       createdBy: req.owner,
       transactionType: "purchase",
       secondaryMobile,
+      selectedDate,
+      classification: "Cr",
     });
 
     await session.commitTransaction();
@@ -313,13 +312,9 @@ export const cancelPurchase = async (req, res) => {
       }
 
       // Revert existing stock updates
+      await removeNewBatchCreatedByThisPurchase(existingPurchase, session);
       await revertPurchaseStockUpdates(existingPurchase.items, session);
 
-      await removeNewBatchCreatedByThisPurchase(
-        existingPurchase,
-        session,
-
-      );
 
       //// revert settlement data
       /// revert it
