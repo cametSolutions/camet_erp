@@ -269,6 +269,7 @@ export const editPurchase = async (req, res) => {
     res.status(200).json({
       success: true,
       message: "purchase edited successfully",
+      data:existingPurchase
     });
   } catch (error) {
     await session.abortTransaction();

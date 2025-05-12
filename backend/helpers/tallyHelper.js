@@ -6,6 +6,7 @@ import stockTransferModel from "../models/stockTransferModel.js";
 import TransactionModel from "../models/TransactionModel.js";
 import vanSaleModel from "../models/vanSaleModel.js";
 import purchaseModel from "../models/purchaseModel.js";
+import mongoose from "mongoose";
 
 export const fetchData = async (type, cmp_id, serialNumber, res) => {
   let model;
@@ -42,7 +43,7 @@ export const fetchData = async (type, cmp_id, serialNumber, res) => {
   try {
     const data = await model
       .find({
-        cmp_id: cmp_id,
+        cmp_id: new mongoose.Types.ObjectId(cmp_id),
         serialNumber: { $gt: serialNumber },
       })
       .lean();

@@ -64,6 +64,7 @@ export const handlePurchaseStockUpdates = async (
               purchase_cost: godown?.purchase_cost,
               hsn_code: godown?.hsn_code,
               mrp: godown?.mrp,
+              newBatch: true,
               created_by: {
                 voucherType: "purchase",
                 voucherNumber: purchaseNumber,

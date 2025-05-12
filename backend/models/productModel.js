@@ -120,6 +120,9 @@ const productSchema = new mongoose.Schema({
       mrp: {
         type: Number,
       },
+      newBatch: {
+        type: Boolean,
+      },
       created_by: {
         voucherType: {
           type: String,
