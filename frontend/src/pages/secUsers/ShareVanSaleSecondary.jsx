@@ -30,8 +30,8 @@ function ShareVanSaleSecondary() {
   const handlePrint = useReactToPrint({
     content: () => contentToPrint.current,
     documentTitle: data.salesNumber
-    ? `${data.salesNumber}_${data._id.slice(-4)}`
-    : "Sales_Invoice",
+      ? `${data.salesNumber}_${data._id.slice(-4)}`
+      : "Sales_Invoice",
     pageStyle: `
       @page {
         size: A4;
@@ -157,7 +157,7 @@ function ShareVanSaleSecondary() {
   return (
     <div className="h-screen  flex flex-col items-center justify-center bg-gray-100">
       {/* Loading Screen */}
-      <div className="flex flex-col items-center justify-center gap-6">
+      {/* <div className="flex flex-col items-center justify-center gap-6">
         <div className="text-6xl text-purple-600">
           <FaFilePdf />
         </div>
@@ -172,11 +172,13 @@ function ShareVanSaleSecondary() {
           <br />
           Please wait...
         </p>
-      </div>
+      </div> */}
 
       {/* Hidden PDF Content */}
       <div
-        style={{ position: "absolute", left: "-9999px", top: 0, opacity: 0 }}
+        style={{ width: "100%", height: "100%" }}
+
+        // style={{ position: "absolute", left: "-9999px", top: 0, opacity: 0 }}
       >
         <div>
           {IsIndian ? (

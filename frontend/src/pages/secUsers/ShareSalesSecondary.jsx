@@ -154,7 +154,7 @@ function ShareSalesSecondary() {
   return (
     <div className="h-screen  flex flex-col items-center justify-center bg-gray-100">
       {/* Loading Screen */}
-      <div className="flex flex-col items-center justify-center gap-6">
+      {/* <div className="flex flex-col items-center justify-center gap-6">
         <div className="text-6xl text-purple-600">
           <FaFilePdf />
         </div>
@@ -169,11 +169,13 @@ function ShareSalesSecondary() {
           <br />
           Please wait...
         </p>
-      </div>
+      </div> */}
 
       {/* Hidden PDF Content */}
       <div
-        style={{ position: "absolute", left: "-9999px", top: 0, opacity: 0 }}
+
+      style={{width:"100%" ,height:"100%"}}
+        // style={{ position: "absolute", left: "-9999px", top: 0, opacity: 0 }}
       >
         <div>
           {IsIndian ? (
