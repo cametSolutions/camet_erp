@@ -33,9 +33,9 @@ function TitleDiv({
     }
   };
 
-  const { type } = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg
-  );
+  const { type } =
+    useSelector((state) => state?.secSelectedOrganization?.secSelectedOrg) ||
+    "self";
 
   return (
     <div className="sticky top-0 z-50 ">
