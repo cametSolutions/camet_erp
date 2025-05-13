@@ -5,8 +5,8 @@ import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useReactToPrint } from "react-to-print";
-import { FaFilePdf } from "react-icons/fa";
-import { BeatLoader } from "react-spinners"; // You can use any loader from react-spinners
+import { FaFilePdf, FaPrint } from "react-icons/fa";
+import { BeatLoader } from "react-spinners";
 
 import SalesPdf from "../../components/pdf/sales/SalesPdf";
 import SalesPdfNonInd from "../../components/pdf/sales/nonIndian/SalesPdfNonInd";
@@ -88,10 +88,6 @@ function ShareSalesSecondary() {
     `,
     onAfterPrint: () => {
       console.log("PDF printed successfully");
-      // Navigate back after printing completes
-      setTimeout(() => {
-        navigate(-1, { replace: true });
-      }, 500);
     },
     removeAfterPrint: true,
   });
@@ -125,7 +121,7 @@ function ShareSalesSecondary() {
         setLoading(false);
       } catch (error) {
         console.log(error);
-        toast.error(error.response.data.message);
+        toast.error(error.response?.data?.message || "Failed to load data");
         setLoading(false);
 
         // Navigate back if there's an error
@@ -138,67 +134,77 @@ function ShareSalesSecondary() {
     getTransactionDetails();
   }, [id, navigate]);
 
-  // Effect to trigger PDF printing once data is loaded
-  useEffect(() => {
-    if (!loading && data.salesNumber && contentToPrint.current) {
-      // Small delay to ensure the PDF component is fully rendered
-      const timer = setTimeout(() => {
-        // Trigger the print dialog automatically
-        handlePrint();
-      }, 1000);
-
-      return () => clearTimeout(timer);
-    }
-  }, [loading, data.salesNumber, handlePrint]);
+  // Function to handle navigation back
+  const handleGoBack = () => {
+    navigate(-1, { replace: true });
+  };
 
   return (
-    <div className="h-screen  flex flex-col items-center justify-center bg-gray-100">
-      {/* Loading Screen */}
-      {/* <div className="flex flex-col items-center justify-center gap-6">
-        <div className="text-6xl text-purple-600">
-          <FaFilePdf />
+    <div className="min-h-screen flex flex-col items-center bg-gray-100 p-4">
+      {loading ? (
+        // Loading Screen
+        <div className="flex flex-col items-center justify-center gap-6 h-screen">
+          <div className="text-6xl text-purple-600">
+            <FaFilePdf />
+          </div>
+          <h1 className="text-2xl font-bold text-gray-700">
+            Preparing Your Sales Invoice
+          </h1>
+          <div className="mt-4">
+            <BeatLoader color="#9900ff" size={15} />
+          </div>
+          <p className="text-gray-500 mt-4 text-center max-w-md">
+            Your PDF is being generated. Please wait...
+          </p>
         </div>
-        <h1 className="text-2xl font-bold text-gray-700">
-          Preparing Your Sales Invoice
-        </h1>
-        <div className="mt-4">
-          <BeatLoader color="#9900ff" size={15} />
+      ) : (
+        // Content after loading
+        <div className="w-full max-w-5xl bg-white shadow-lg rounded-lg overflow-hidden">
+          {/* Controls bar */}
+          <div className="bg-gray-800 text-white p-4 flex justify-between items-center">
+            <h2 className="text-xl font-semibold">
+              {data.salesNumber || "Sales Invoice"}
+            </h2>
+            <div className="flex gap-3">
+              <button
+                onClick={handlePrint}
+                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md transition-colors"
+              >
+                <FaPrint /> Print Invoice
+              </button>
+              <button
+                onClick={handleGoBack}
+                className="bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded-md transition-colors"
+              >
+                Back
+              </button>
+            </div>
+          </div>
+          
+          {/* PDF Content */}
+          <div className="p-4">
+            {IsIndian ? (
+              <SalesPdf
+                contentToPrint={contentToPrint}
+                data={data}
+                org={org}
+                bank={bank}
+                userType="secondaryUser"
+                tab="sales"
+              />
+            ) : (
+              <SalesPdfNonInd
+                contentToPrint={contentToPrint}
+                data={data}
+                org={org}
+                bank={bank}
+                userType="secondaryUser"
+                tab="sales"
+              />
+            )}
+          </div>
         </div>
-        <p className="text-gray-500 mt-4 text-center max-w-md">
-          Your PDF is being generated. The print dialog will appear shortly.
-          <br />
-          Please wait...
-        </p>
-      </div> */}
-
-      {/* Hidden PDF Content */}
-      <div
-
-      style={{width:"100%" ,height:"100%"}}
-        // style={{ position: "absolute", left: "-9999px", top: 0, opacity: 0 }}
-      >
-        <div>
-          {IsIndian ? (
-            <SalesPdf
-              contentToPrint={contentToPrint}
-              data={data}
-              org={org}
-              bank={bank}
-              userType="secondaryUser"
-              tab="sales"
-            />
-          ) : (
-            <SalesPdfNonInd
-              contentToPrint={contentToPrint}
-              data={data}
-              org={org}
-              bank={bank}
-              userType="secondaryUser"
-              tab="sales"
-            />
-          )}
-        </div>
-      </div>
+      )}
     </div>
   );
 }
