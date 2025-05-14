@@ -141,7 +141,6 @@ const DashboardTransaction = ({ filteredData, userType, from }) => {
     [typeColors, getNavigationPath, handleTransactionClick]
   );
 
-  console.log(filteredData, "filteredData");
 
   const memoizedData = useMemo(() => filteredData, [filteredData]);
 

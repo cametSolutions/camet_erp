@@ -76,6 +76,9 @@ export const transactions = async (req, res) => {
 
   const isAdmin = req.query.isAdmin === "true" ? true : false;
 
+  console.log("isAdmin", isAdmin);
+  
+
   let returnFullDetails = false;
   if (fullDetails === "true") {
     returnFullDetails = true;

@@ -19,7 +19,11 @@ function Dashboard() {
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
 
-  // const dispatch = useDispatch();
+  const isAdmin =
+    JSON.parse(localStorage.getItem("sUserData")).role === "admin"
+      ? true
+      : false;
+
 
   const { handleToggleSidebar } = useSidebar();
 
@@ -29,7 +33,7 @@ function Dashboard() {
         setLoader(true);
         try {
           const res = await api.get(
-            `/api/sUsers/transactions/${org._id}?todayOnly=true`,
+            `/api/sUsers/transactions/${org._id}?todayOnly=true&isAdmin=${isAdmin}`,
             {
               withCredentials: true,
             }
@@ -41,7 +45,7 @@ function Dashboard() {
         } catch (error) {
           console.log(error);
           setData([]);
-        }finally {
+        } finally {
           setLoader(false);
         }
       };
@@ -53,7 +57,6 @@ function Dashboard() {
 
   // Filter data based on today's date
   const filteredData = data?.filter((item) => {
-
     const createdAtDate = new Date(item?.date);
 
     return createdAtDate.toDateString() === today.toDateString();
