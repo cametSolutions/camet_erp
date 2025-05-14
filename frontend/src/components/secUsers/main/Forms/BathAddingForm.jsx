@@ -27,10 +27,10 @@ function BatchAddingForm({ from, taxInclusive = false }) {
   });
   const [manufactureDate, setManufactureDate] = useState(new Date());
   // const [openingStock, setOpeningStock] = useState(0);
-  const [mrp, setMrp] = useState(0);
+  const [mrp, setMrp] = useState("");
 
   // Price and quantity calculations
-  const [newPrice, setNewPrice] = useState(0);
+  const [newPrice, setNewPrice] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [actualQuantity, setActualQuantity] = useState(1);
   const [unit, setUnit] = useState("");
@@ -179,7 +179,7 @@ function BatchAddingForm({ from, taxInclusive = false }) {
 
       // Additional cess calculation - calculated as quantity * addl_cess
       if (addlCessValue > 0) {
-        additionalCessAmount = Number((quantity * addlCessValue).toFixed(2));
+        additionalCessAmount = Number((Number(quantity) * addlCessValue).toFixed(2));
       }
 
       // Combine cess amounts
@@ -311,7 +311,7 @@ function BatchAddingForm({ from, taxInclusive = false }) {
       Priceleveles: [],
       GodownList: [
         {
-          count: quantity,
+          count: Number(quantity),
           selectedPriceRate: parseFloat(newPrice) || 0,
           discountType: type,
           discountAmount: type === "amount" ? discount : "",
@@ -370,11 +370,7 @@ function BatchAddingForm({ from, taxInclusive = false }) {
   };
 
   const handleDirectQuantityChange = (value) => {
-    if (
-      enableActualAndBilledQuantity &&
-      actualQuantity &&
-      Number(value) > actualQuantity
-    ) {
+    if (enableActualAndBilledQuantity && Number(value) > Number(actualQuantity || 0)) {
       return;
     }
     if (value.includes(".")) {
@@ -384,10 +380,10 @@ function BatchAddingForm({ from, taxInclusive = false }) {
       }
     }
 
-    setQuantity(Number(value));
+    setQuantity(value);
 
     if (!enableActualAndBilledQuantity) {
-      setActualQuantity(Number(value));
+      setActualQuantity(value);
     }
   };
 
@@ -399,8 +395,8 @@ function BatchAddingForm({ from, taxInclusive = false }) {
       }
     }
 
-    setActualQuantity(Number(value));
-    setQuantity(Number(value));
+    setActualQuantity(value);
+    setQuantity(value);
   };
 
   const validateForm = () => {
@@ -467,18 +463,21 @@ function BatchAddingForm({ from, taxInclusive = false }) {
       expdt: expirationDate.toLocaleDateString(),
       mfgdt: manufactureDate.toLocaleDateString(),
       // openingStock: openingStock,
-      mrp: mrp,
+      mrp: Number(mrp || 0),
       newBatch: true,
       supplierName: partyName || null,
       voucherNumber: voucherNumberFromRedux,
       purchase_price,
       purchase_cost,
       hsn_code,
-      godown:(selectedItem?.gdnEnabled && currentGodown)? currentGodown.godown : null,
-      godownMongoDbId:(selectedItem?.gdnEnabled && selectedGodown)? selectedGodown : null,
-      godown_id: (selectedItem?.gdnEnabled && selectedGodown)? selectedGodown : null,
-      count: quantity,
-      actualCount: actualQuantity,
+      godown:
+        selectedItem?.gdnEnabled && currentGodown ? currentGodown.godown : null,
+      godownMongoDbId:
+        selectedItem?.gdnEnabled && selectedGodown ? selectedGodown : null,
+      godown_id:
+        selectedItem?.gdnEnabled && selectedGodown ? selectedGodown : null,
+      count: Number(quantity || 0),
+      actualCount:Number (actualQuantity || 0),
       selectedPriceRate: parseFloat(newPrice),
       discountAmount: discountAmount,
       discountPercentage: discountPercentage,
@@ -500,7 +499,7 @@ function BatchAddingForm({ from, taxInclusive = false }) {
       // totalCessAmount: totalCessAmount,
       defaultGodown: currentGodown?.defaultGodown || false,
       added: true,
-      balance_stock: actualQuantity ?? quantity ?? 0,
+      balance_stock: Number(actualQuantity || 0) ?? Number(quantity || 0) ?? 0,
     };
 
     // If there's no GodownList, create one
@@ -645,11 +644,11 @@ function BatchAddingForm({ from, taxInclusive = false }) {
                       <div className="flex flex-col flex-1">
                         <label className="leading-loose">MRP</label>
                         <input
-                          onChange={(e) => setMrp(Number(e.target.value))}
+                          onChange={(e) => setMrp(e.target.value)}
                           value={mrp}
                           type="number"
                           className="px-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm border-gray-300 rounded-md focus:outline-none text-gray-600"
-                          placeholder=""
+                          placeholder="0"
                         />
                       </div>
                     </div>

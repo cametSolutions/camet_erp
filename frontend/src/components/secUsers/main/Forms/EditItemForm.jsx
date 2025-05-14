@@ -125,16 +125,12 @@ function EditItemForm({
       let discountPercentage = 0;
       let discountType = "none";
 
-
-
       if (
         godownOrBatch.discountType === "percentage" &&
         godownOrBatch.discountPercentage !== 0 &&
         godownOrBatch.discountPercentage !== undefined &&
         godownOrBatch.discountPercentage !== ""
       ) {
-
-        
         // Percentage discount
         discountType = "percentage";
         discountPercentage = Number(godownOrBatch.discountPercentage) || 0;
@@ -147,8 +143,6 @@ function EditItemForm({
         godownOrBatch.discountAmount !== undefined &&
         godownOrBatch.discountAmount !== ""
       ) {
-
-
         // Fixed amount discount (default)
         discountType = "amount";
         discountAmount = Number(godownOrBatch.discountAmount) || 0;
@@ -303,12 +297,12 @@ function EditItemForm({
 
     // log
 
-
     if (taxInclusive) {
-      setIsTaxInclusive(selectedGodown?.isTaxInclusive || selectedItem[0]?.isTaxInclusive);
+      setIsTaxInclusive(
+        selectedGodown?.isTaxInclusive || selectedItem[0]?.isTaxInclusive
+      );
     }
   }, [selectedItem[0], enableActualAndBilledQuantity]);
-
 
   useEffect(() => {
     // Create a mock item object with structure needed for calculateTotal
@@ -380,8 +374,8 @@ function EditItemForm({
   const handleDirectQuantityChange = (value) => {
     if (
       enableActualAndBilledQuantity &&
-      actualQuantity &&
-      Number(value) > actualQuantity
+      // actualQuantity &&
+      Number(value) > Number(actualQuantity)
     ) {
       return;
     }
@@ -392,15 +386,14 @@ function EditItemForm({
       }
     }
 
-    setQuantity(Number(value))
+    setQuantity(value);
 
     if (!enableActualAndBilledQuantity) {
-      setActualQuantity(Number(value))
+      setActualQuantity(value);
     }
   };
 
   const handleActualQuantityChange = (value) => {
-    
     if (value.includes(".")) {
       const parts = value.split(".");
       if (parts[1].length > 3) {
@@ -408,28 +401,28 @@ function EditItemForm({
       }
     }
 
-    setActualQuantity(Number(value));
-    setQuantity(Number(value));
+    setActualQuantity(value);
+    setQuantity(value);
   };
 
   const submitFormData = () => {
     // Create a copy of the current item
     const updatedItem = { ...item };
-    
+
     // Check if we need to update all godowns
     const shouldUpdateAllGodowns =
       updatedItem.gdnEnabled === true &&
       updatedItem.hasGodownOrBatch === true &&
       updatedItem.batchEnabled !== true;
-  
+
     if (shouldUpdateAllGodowns) {
       console.log("here in all godown update");
-      
+
       // Get the new rate and discount settings
       const newRate = parseFloat(newPrice);
       const newDiscountType = type;
       const newDiscountValue = discount;
-  
+
       // Create a temporary mock item with the updated values for calculation
       const mockItem = {
         Priceleveles: [],
@@ -441,15 +434,17 @@ function EditItemForm({
             godownIndex === parseInt(index)
               ? actualQuantity
               : godown.actualCount || godown.count || 0;
-              
+
           return {
             ...godown,
             count: godownQty,
             actualCount: godownActualQty,
             selectedPriceRate: newRate,
             discountType: newDiscountType,
-            discountAmount: newDiscountType === "amount" ? newDiscountValue : "",
-            discountPercentage: newDiscountType === "percentage" ? newDiscountValue : "",
+            discountAmount:
+              newDiscountType === "amount" ? newDiscountValue : "",
+            discountPercentage:
+              newDiscountType === "percentage" ? newDiscountValue : "",
           };
         }),
         igst: parseFloat(igst) || 0,
@@ -460,78 +455,77 @@ function EditItemForm({
         isTaxInclusive: isTaxInclusive,
       };
 
-
-      
-  
       // Calculate totals for all godowns
       const result = calculateTotal(mockItem, null, "normal");
 
-      
       // Update each godown with the calculated values
-      updatedItem.GodownList = updatedItem.GodownList.map((godown, godownIndex) => {
-        // Preserve specific fields that should not be changed
-        const preservedFields = {
-          godown: godown.godown,
-          balance_stock: godown.balance_stock,
-          _id: godown._id,
-          godown_id: godown.godown_id,
-          defaultGodown: godown.defaultGodown,
-          added: godown.added,
-        };
-  
-        // Get calculated values from the result
-        const calculatedValues = result.individualTotals[godownIndex];
-        
-        // If this is the current godown index, use the new quantity values
-        const godownQty =
-          godownIndex === parseInt(index) ? quantity : godown.count || 0;
-        const godownActualQty =
-          godownIndex === parseInt(index)
-            ? actualQuantity
-            : godown.actualCount || godown.count || 0;
-  
-        // Return the updated godown
-        return {
-          ...godown,
-          // Quantities
-          count: godownQty,
-          actualCount: godownActualQty,
-          
-          // Update with new common values
-          selectedPriceRate: newRate,
-          discountType: newDiscountType,
-          discountAmount: calculatedValues.discountAmount,
-          discountPercentage: calculatedValues.discountPercentage,
-          isTaxInclusive: isTaxInclusive,
-          
-          // Values from calculation
-          basePrice: calculatedValues.basePrice,
-          taxableAmount: calculatedValues.taxableAmount,
-          individualTotal: calculatedValues.individualTotal,
-          
-          // Tax related fields (percentages)
-          igstValue: calculatedValues.igstValue,
-          cgstValue: calculatedValues.cgstValue,
-          sgstValue: calculatedValues.sgstValue,
-          cessValue: calculatedValues.cessValue,
-          addlCessValue: calculatedValues.addlCessValue,
-          
-          // Tax related fields (amounts)
-          igstAmount: calculatedValues.igstAmt,
-          cgstAmount: calculatedValues.cgstAmt,
-          sgstAmount: calculatedValues.sgstAmt,
-          cessAmount: calculatedValues.cessAmt,
-          additionalCessAmount: calculatedValues.addlCessAmt,
-          totalCessAmount: calculatedValues.cessAmt + calculatedValues.addlCessAmt,
-          
-          // Preserve the specific fields
-          ...preservedFields,
-        };
-      });
+      updatedItem.GodownList = updatedItem.GodownList.map(
+        (godown, godownIndex) => {
+          // Preserve specific fields that should not be changed
+          const preservedFields = {
+            godown: godown.godown,
+            balance_stock: godown.balance_stock,
+            _id: godown._id,
+            godown_id: godown.godown_id,
+            defaultGodown: godown.defaultGodown,
+            added: godown.added,
+          };
+
+          // Get calculated values from the result
+          const calculatedValues = result.individualTotals[godownIndex];
+
+          // If this is the current godown index, use the new quantity values
+          const godownQty =
+            godownIndex === parseInt(index) ? quantity : godown.count || 0;
+          const godownActualQty =
+            godownIndex === parseInt(index)
+              ? actualQuantity
+              : godown.actualCount || godown.count || 0;
+
+          // Return the updated godown
+          return {
+            ...godown,
+            // Quantities
+            count: godownQty,
+            actualCount: godownActualQty,
+
+            // Update with new common values
+            selectedPriceRate: newRate,
+            discountType: newDiscountType,
+            discountAmount: calculatedValues.discountAmount,
+            discountPercentage: calculatedValues.discountPercentage,
+            isTaxInclusive: isTaxInclusive,
+
+            // Values from calculation
+            basePrice: calculatedValues.basePrice,
+            taxableAmount: calculatedValues.taxableAmount,
+            individualTotal: calculatedValues.individualTotal,
+
+            // Tax related fields (percentages)
+            igstValue: calculatedValues.igstValue,
+            cgstValue: calculatedValues.cgstValue,
+            sgstValue: calculatedValues.sgstValue,
+            cessValue: calculatedValues.cessValue,
+            addlCessValue: calculatedValues.addlCessValue,
+
+            // Tax related fields (amounts)
+            igstAmount: calculatedValues.igstAmt,
+            cgstAmount: calculatedValues.cgstAmt,
+            sgstAmount: calculatedValues.sgstAmt,
+            cessAmount: calculatedValues.cessAmt,
+            additionalCessAmount: calculatedValues.addlCessAmt,
+            totalCessAmount:
+              calculatedValues.cessAmt + calculatedValues.addlCessAmt,
+
+            // Preserve the specific fields
+            ...preservedFields,
+          };
+        }
+      );
     } else {
       // Just update the godown at the specified index
       const godownToUpdate = { ...updatedItem.GodownList[index] };
-  
+
       // Preserve specific fields that should not be changed
       const preservedFields = {
         godown: godownToUpdate.godown,
@@ -541,13 +535,13 @@ function EditItemForm({
         defaultGodown: godownToUpdate.defaultGodown,
         added: godownToUpdate.added,
       };
-  
+
       // Update with new values while preserving specified fields
       const updatedGodown = {
         ...godownToUpdate,
         // Update with new values
-        count: quantity,
-        actualCount: actualQuantity,
+        count: Number(quantity || 0),
+        actualCount: Number(actualQuantity || 0),
         selectedPriceRate: parseFloat(newPrice),
         discountAmount: discountAmount,
         discountPercentage: discountPercentage,
@@ -556,45 +550,66 @@ function EditItemForm({
         basePrice: basePrice,
         taxableAmount: taxableAmount,
         individualTotal: individualTotal,
-  
+
         // Tax related fields
         igstValue: igstValue,
         cgstValue: cgstValue,
         sgstValue: sgstValue,
         cessValue: cessValue,
         addlCessValue: addlCessValue,
-  
+
         igstAmount: igstAmount,
         cgstAmount: cgstAmount,
         sgstAmount: sgstAmount,
         cessAmount: cessAmount,
         additionalCessAmount: additionalCessAmount,
         totalCessAmount: totalCessAmount,
-  
+
         // Preserve the specific fields
         ...preservedFields,
       };
-  
+
       // Update the godown at the specified index immutably
       updatedItem.GodownList = updatedItem.GodownList.map((godown, i) =>
         i === parseInt(index) ? updatedGodown : godown
       );
     }
-  
-  
+
     const godownList = updatedItem.GodownList;
     updatedItem.taxInclusive = isTaxInclusive;
-    updatedItem.totalCgstAmt = godownList.reduce((acc, item) => acc + (item.cgstAmount || 0), 0);
-    updatedItem.totalSgstAmt = godownList.reduce((acc, item) => acc + (item.sgstAmount || 0), 0);
-    updatedItem.totalIgstAmt = godownList.reduce((acc, item) => acc + (item.igstAmount || 0), 0);
-    updatedItem.totalCessAmt = godownList.reduce((acc, item) => acc + (item.cessAmount || 0), 0);
-    updatedItem.totalAddlCessAmt = godownList.reduce((acc, item) => acc + (item.additionalCessAmount || 0), 0);
-    updatedItem.totalCount = godownList.reduce((acc, item) => acc + (item.count || 0), 0);
-    updatedItem.totalActualCount = godownList.reduce((acc, item) => acc + (item.actualCount || 0), 0);
-    updatedItem.total=updatedItem?.GodownList?.reduce((acc, item) => acc + (item.individualTotal || 0), 0);
+    updatedItem.totalCgstAmt = godownList.reduce(
+      (acc, item) => acc + (item.cgstAmount || 0),
+      0
+    );
+    updatedItem.totalSgstAmt = godownList.reduce(
+      (acc, item) => acc + (item.sgstAmount || 0),
+      0
+    );
+    updatedItem.totalIgstAmt = godownList.reduce(
+      (acc, item) => acc + (item.igstAmount || 0),
+      0
+    );
+    updatedItem.totalCessAmt = godownList.reduce(
+      (acc, item) => acc + (item.cessAmount || 0),
+      0
+    );
+    updatedItem.totalAddlCessAmt = godownList.reduce(
+      (acc, item) => acc + (item.additionalCessAmount || 0),
+      0
+    );
+    updatedItem.totalCount = godownList.reduce(
+      (acc, item) => acc + (item.count || 0),
+      0
+    );
+    updatedItem.totalActualCount = godownList.reduce(
+      (acc, item) => acc + (item.actualCount || 0),
+      0
+    );
+    updatedItem.total = updatedItem?.GodownList?.reduce(
+      (acc, item) => acc + (item.individualTotal || 0),
+      0
+    );
 
-    
-  
     // Uncomment these lines when ready to dispatch the action
     dispatch(updateItem({ item: updatedItem, moveToTop: false }));
     navigate(-1, { replace: true });
