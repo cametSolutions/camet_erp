@@ -10,6 +10,8 @@ import { IoIosArrowRoundBack } from "react-icons/io";
 import { MdEmail } from "react-icons/md";
 import CustomBarLoader from "../../../components/common/CustomBarLoader";
 import CompanyFilter from "../../../components/Filters/CompanyFilter";
+import { RiUser2Fill } from "react-icons/ri";
+
 
 function RetailersList() {
   const [secondaryUsers, setSecondaryUsers] = useState([]);
@@ -95,6 +97,10 @@ function RetailersList() {
                     <div className="flex items-center mt-1 text-gray-500 text-xs">
                       <FaPhone className=" mr-1 " />
                       <span>{user.mobile}</span>
+                    </div>
+                    <div className="flex items-center mt-1 text-gray-500 text-xs">
+                      <RiUser2Fill className=" mr-1 " />
+                      <span>{user?._id}</span>
                     </div>
                   </div>
                   <div className="flex items-center space-x-3">

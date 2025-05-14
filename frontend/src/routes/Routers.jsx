@@ -38,10 +38,8 @@ import ErrorPage from '../pages/errorPages/Notfound'
 import Notfound from '../pages/errorPages/Notfound'
 import ServerError from '../pages/errorPages/ServerError'
 import ThreeInchSalesSec from '../pages/secUsers/ThreeInchSalesSec'
- import Purchase from '../pages/secUsers/Purchase'
 import AddItemPurchase from '../pages/secUsers/AddItemPurchase'
 import EditItemPurchase from '../pages/secUsers/EditItemPurchase'
-import PurchaseDetailsSecondary from '../pages/secUsers/PurchaseDetailsSecondary'
 import SharePurchaseSecondary from '../pages/secUsers/SharePurchaseSecondary'
 import EditSale from '../pages/secUsers/EditSale'
 import ThreeInchInvoiceSec from '../pages/secUsers/ThreeInchInvoiceSec'
@@ -65,7 +63,6 @@ import BillToPurchase from '../pages/secUsers/BillToPurchase'
 import EditItemStockTransfer from '../pages/secUsers/EditItemStockTransfer'
 import AddbatchInPurchase from '../pages/secUsers/AddbatchInPurchase'
 import ReceiptPrintOut from '../pages/secUsers/ReceiptPrintOut'
-import EditPurchase from '../pages/secUsers/EditPurchase'
 import SelectVouchers from '../pages/secUsers/SelectVouchers'
 import Receipt from '../pages/secUsers/Receipt'
 import OutstandingListOfReceipt from '../pages/secUsers/OutstandingListOfReceipt'
@@ -136,6 +133,7 @@ import VoucherInitalPage from '@/pages/voucher/voucherCreation/voucherInitialPag
 import VoucherInitialPage from '@/pages/voucher/voucherCreation/voucherInitialPage'
 import VoucherDetails from '@/pages/voucher/voucherDetails/VoucherDetails'
 import VoucherInitialPageEdit from '@/pages/voucher/voucherCreation/voucherInitialPageEdit'
+import AccVoucherInitialPage from '@/pages/accountingVoucher/voucherCreation/AccVoucherInitialPage'
 
 const Routers = () => {
   return (
@@ -213,7 +211,7 @@ const Routers = () => {
 
 
         {/* receipt */}
-        <Route path='/sUsers/receipt' element={<ProtectedSecRoute><Receipt/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/receipt' element={<ProtectedSecRoute><AccVoucherInitialPage/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/searchPartyReceipt' element={<ProtectedSecRoute><SearchParty/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/receipt/addAmount/:party_id' element={<ProtectedSecRoute><OutstandingListOfReceipt/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/receipt/sourceList/:source' element={<ProtectedSecRoute><SourceList/></ProtectedSecRoute>}></Route>

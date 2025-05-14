@@ -3,8 +3,8 @@
 // const purchaseSchema = new mongoose.Schema(
 //   {
 
-//     date: { 
-//       type: Date, 
+//     date: {
+//       type: Date,
 //       required: true,
 //       set: function(value) {
 //         // Set the time to 00:00:00.000
@@ -45,9 +45,6 @@
 // );
 // export default mongoose.model("Purchase", purchaseSchema);
 
-
-
-
 import mongoose from "mongoose";
 const { Schema } = mongoose;
 
@@ -64,7 +61,7 @@ const purchaseSchema = new Schema(
       },
     },
     selectedDate: { type: String },
-    voucherType: { type: String ,default:"purchase"},
+    voucherType: { type: String, default: "purchase" },
     voucherNumber: { type: Number },
     convertedFrom: { type: Array, default: [] },
     serialNumber: { type: Number },
@@ -150,7 +147,7 @@ const purchaseSchema = new Schema(
               type: String,
             },
             mrp: { type: Number },
-            newBatch: { type: Boolean,default:false  },
+            newBatch: { type: Boolean, default: false },
             supplierName: { type: String },
             voucherNumber: { type: Number },
             purchase_price: { type: Number },
@@ -185,6 +182,7 @@ const purchaseSchema = new Schema(
             totalCessAmount: { type: Number },
           },
         ],
+        hsn_code: { type: String },
 
         cgst: { type: Number },
         sgst: { type: Number },
@@ -273,4 +271,3 @@ purchaseSchema.index({ date: 1 });
 purchaseSchema.index({ "party._id": 1 });
 
 export default mongoose.model("Purchase", purchaseSchema);
-

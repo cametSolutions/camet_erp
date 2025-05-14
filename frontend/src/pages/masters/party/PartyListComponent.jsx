@@ -15,7 +15,7 @@ import { formatAmount } from "../../../../../backend/helpers/helper";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate, useLocation } from "react-router-dom";
 import { addParty } from "../../../../slices/voucherSlices/commonVoucherSlice";
-
+import { addParty as addPartyInAccountingVouchers } from "../../../../slices/voucherSlices/commonAccountingVoucherSlice";
 
 function PartyListComponent({ deleteHandler = () => {}, isVoucher = false }) {
   const [parties, setParties] = useState([]);
@@ -32,18 +32,23 @@ function PartyListComponent({ deleteHandler = () => {}, isVoucher = false }) {
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
 
-  
-
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const location = useLocation();
 
-  const isSalePath = location.pathname === "/sUsers/searchPartySales";
+  const getVoucherType = () => {
+    if (location.pathname === "/sUsers/searchPartyReceipt") {
+      return "receipt";
+    } else if (location.pathname === "/sUsers/searchPartySales") {
+      return "sale";
+    } else {
+      return "sale";
+    }
+  };
 
   const allowAlteration = (accountGroupName) => {
-
     console.log(accountGroupName);
-    
+
     if (
       accountGroupName === "Sundry Debtors" ||
       accountGroupName === "Sundry Creditors"
@@ -53,9 +58,6 @@ function PartyListComponent({ deleteHandler = () => {}, isVoucher = false }) {
       return false;
     }
   };
-
-  // console.log(location.pathname);
-  // console.log();
 
   // Calculate list height based on window size
   useEffect(() => {
@@ -77,7 +79,7 @@ function PartyListComponent({ deleteHandler = () => {}, isVoucher = false }) {
       try {
         setLoading(true);
         const res = await api.get(
-          `/api/sUsers/PartyList/${cmp_id}?${isSalePath && "isSale=true"}`,
+          `/api/sUsers/PartyList/${cmp_id}?voucher=${getVoucherType()}`,
           {
             params: {
               page: pageNum,
@@ -161,39 +163,19 @@ function PartyListComponent({ deleteHandler = () => {}, isVoucher = false }) {
   //// dispatch to correct redux state according to vouchers
 
   const selectHandler = (el) => {
+
+    const voucherType = getVoucherType();
     if (location.pathname === "/sUsers/partyStatement/partyList") {
       navigate("/sUsers/partyStatement", { state: el });
     } else if (location.pathname === "/sUsers/orderPending/partyList") {
       navigate(`/sUsers/pendingOrders/${el?._id}`);
+    } else if (voucherType === "receipt") {
+      dispatch(addPartyInAccountingVouchers(el));
+
+      navigate(-1, { replace: true });
     } else {
       //// dispatch to the correct redux state
       dispatch(addParty(el));
-      // const { pathname } = location;
-      // const endPath = pathname.split("/").pop();
-      // console.log(endPath);
-
-      // if (endPath === "searchPartySales") {
-      //   console.log("searchPartySales");
-      //   dispatch(addPartySales(el));
-      // } else if (endPath === "searchParty") {
-      //   console.log("searchPartySaleOrder");
-      //   dispatch(addPartySaleOrder(el));
-      // } else if (endPath === "searchPartyPurchase") {
-      //   console.log("searchPartyPurchase");
-      //   dispatch(addPartyPurchase(el));
-      // } else if (endPath === "searchPartyPurchasePayment") {
-      //   console.log("searchPartyPurchasePayment");
-      //   dispatch(addPartyPurchasePayment(el));
-      // } else if (endPath === "searchPartyReceipt") {
-      //   console.log("searchPartyReceipt");
-      //   dispatch(addPartyReceipt(el));
-      // } else if (endPath === "searchPartyCreditNote") {
-      //   console.log("searchPartyCreditNote");
-      //   dispatch(addPartyCreditNote(el));
-      // } else if (endPath === "searchPartyDebitNote") {
-      //   console.log("searchPartyDebitNote");
-      //   dispatch(addPartyDebitNote(el));
-      // }
 
       navigate(-1, { replace: true });
     }
@@ -285,7 +267,6 @@ function PartyListComponent({ deleteHandler = () => {}, isVoucher = false }) {
 
     const el = filteredParties[index];
 
-    
     const adjustedStyle = {
       ...style,
       height: "100px",
@@ -315,8 +296,6 @@ function PartyListComponent({ deleteHandler = () => {}, isVoucher = false }) {
       </div>
     );
   };
-
-  
 
   return (
     <div className="flex flex-col h-full overflow-hidden">

@@ -131,6 +131,7 @@ const creditNoteSchema = new Schema(
             totalCessAmount: { type: Number },
           },
         ],
+        hsn_code: { type: String },
 
         cgst: { type: Number },
         sgst: { type: Number },

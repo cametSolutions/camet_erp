@@ -1,5 +1,3 @@
-
-
 import mongoose from "mongoose";
 const { Schema } = mongoose;
 
@@ -130,7 +128,7 @@ const salesSchema = new Schema(
             totalCessAmount: { type: Number },
           },
         ],
-
+        hsn_code: { type: String },
         cgst: { type: Number },
         sgst: { type: Number },
         igst: { type: Number },

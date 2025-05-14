@@ -11,14 +11,7 @@ export const PartyList = async (req, res) => {
   const { cmp_id } = req.params;
   const { owner: Primary_user_id, sUserId: secUserId } = req;
 
-  const {
-    outstanding,
-    voucher,
-    page = 1,
-    limit = 20,
-    search = "",
-    isSale,
-  } = req.query;
+  const { voucher, page = 1, limit = 20, search = "" } = req.query;
 
   try {
     // Pagination setup
@@ -61,7 +54,7 @@ export const PartyList = async (req, res) => {
       { $match: query },
       { $skip: skip },
       { $limit: pageSize },
-    
+
       // Lookup for accountGroup
       {
         $lookup: {
@@ -71,8 +64,13 @@ export const PartyList = async (req, res) => {
           as: "accountGroupData",
         },
       },
-      { $unwind: { path: "$accountGroupData", preserveNullAndEmptyArrays: true } },
-    
+      {
+        $unwind: {
+          path: "$accountGroupData",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+
       // Lookup for subGroup
       {
         $lookup: {
@@ -83,7 +81,7 @@ export const PartyList = async (req, res) => {
         },
       },
       { $unwind: { path: "$subGroupData", preserveNullAndEmptyArrays: true } },
-    
+
       // Flatten fields
       {
         $project: {
@@ -105,8 +103,6 @@ export const PartyList = async (req, res) => {
         },
       },
     ]);
-    
-    
 
     const configuration = secUser.configurations.find(
       (config) => config.organization == cmp_id
@@ -117,7 +113,7 @@ export const PartyList = async (req, res) => {
 
     // Filter parties by selectedVanSaleSubGroups if isSale is true
     if (
-      isSale === "true" &&
+      voucher === "sale" &&
       configuration &&
       configuration.selectedVanSaleSubGroups?.length > 0
     ) {
@@ -137,13 +133,13 @@ export const PartyList = async (req, res) => {
     }
 
     // Get outstanding data for these specific parties
-    const partyIds = filteredPartyList.map((party) => party.party_master_id);
+    const partyIds = filteredPartyList.map((party) => party?._id);
 
     const partyOutstandingData = await TallyData.aggregate([
       {
         $match: {
-          cmp_id,
-          Primary_user_id: String(Primary_user_id),
+          cmp_id: new mongoose.Types.ObjectId(cmp_id),
+          Primary_user_id: Primary_user_id,
           isCancelled: false,
           party_id: { $in: partyIds },
           ...sourceMatch,
@@ -167,9 +163,11 @@ export const PartyList = async (req, res) => {
     ]);
 
     const partyListWithOutstanding = filteredPartyList.map((party) => {
+
       const outstandingData = partyOutstandingData.find(
-        (item) => item.party_id === party.party_master_id
+        (item) => String(item.party_id) === String(party?._id)
       );
+
       return {
         ...party,
         totalOutstanding: outstandingData?.totalOutstanding || 0,
@@ -220,7 +218,7 @@ export const addParty = async (req, res) => {
     } = req.body;
 
     const generatedId = new mongoose.Types.ObjectId();
-    const cleanSubGroup=subGroup === "" ? undefined : subGroup;
+    const cleanSubGroup = subGroup === "" ? undefined : subGroup;
 
     const party = new partyModel({
       _id: generatedId,
@@ -228,7 +226,7 @@ export const addParty = async (req, res) => {
       Primary_user_id: req.owner,
       Secondary_user_id: req.sUserId,
       accountGroup,
-      subGroup :cleanSubGroup,
+      subGroup: cleanSubGroup,
       partyName,
       mobileNumber,
       emailID,

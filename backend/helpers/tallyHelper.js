@@ -8,7 +8,7 @@ import vanSaleModel from "../models/vanSaleModel.js";
 import purchaseModel from "../models/purchaseModel.js";
 import mongoose from "mongoose";
 
-export const fetchData = async (type, cmp_id, serialNumber, res) => {
+export const fetchData = async (type, cmp_id, serialNumber, res, userId) => {
   let model;
   switch (type) {
     case "invoices":
@@ -20,10 +20,9 @@ export const fetchData = async (type, cmp_id, serialNumber, res) => {
     case "vanSales":
       model = vanSaleModel;
       break;
-
-      case "purchase":
-        model = purchaseModel;
-        break;
+    case "purchase":
+      model = purchaseModel;
+      break;
     case "transactions":
       model = TransactionModel;
       break;
@@ -40,13 +39,30 @@ export const fetchData = async (type, cmp_id, serialNumber, res) => {
       return res.status(400).json({ message: "Invalid type parameter" });
   }
 
+  console.log(type, userId);
+
   try {
-    const data = await model
-      .find({
-        cmp_id: new mongoose.Types.ObjectId(cmp_id),
-        serialNumber: { $gt: serialNumber },
-      })
-      .lean();
+    let query = {
+      cmp_id: new mongoose.Types.ObjectId(cmp_id),
+    };
+
+    // Special case for vanSales when userId is present
+    if (type === "vanSales" && userId) {
+      // Use userLevelSerialNumber for vanSales with userId
+      if (serialNumber) {
+        query.userLevelSerialNumber = { $gt: serialNumber };
+        query.Secondary_user_id = new mongoose.Types.ObjectId(userId);
+      }
+    } else {
+      // Default behavior for all other cases
+      if (serialNumber) {
+        query.serialNumber = { $gt: serialNumber };
+      }
+    }
+
+    console.log("query", query);
+
+    const data = await model.find(query).lean();
 
     if (data.length === 0) {
       return res.status(404).json({ message: `${type} not found` });
@@ -65,7 +81,7 @@ export const fetchData = async (type, cmp_id, serialNumber, res) => {
     }
 
     // For other document types, process GodownList and Priceleveles
-    const processedData = data.map(document => {
+    const processedData = data.map((document) => {
       // Skip processing if no items array
       if (!Array.isArray(document.items)) {
         return document;
@@ -73,13 +89,13 @@ export const fetchData = async (type, cmp_id, serialNumber, res) => {
 
       return {
         ...document,
-        items: document.items.map(item => {
+        items: document.items.map((item) => {
           const processedItem = { ...item };
 
           // Filter Priceleveles array to match document's priceLevel
           if (Array.isArray(item.Priceleveles) && document.priceLevel) {
             processedItem.Priceleveles = item.Priceleveles.filter(
-              price => price.pricelevel === document.priceLevel
+              (price) => price.pricelevel === document.priceLevel
             );
           }
 
@@ -87,13 +103,13 @@ export const fetchData = async (type, cmp_id, serialNumber, res) => {
           if (Array.isArray(item.GodownList)) {
             if (item.hasGodownOrBatch === true) {
               processedItem.GodownList = item.GodownList.filter(
-                godown => godown.added === true
+                (godown) => godown.added === true
               );
             }
           }
 
           return processedItem;
-        })
+        }),
       };
     });
 
@@ -101,7 +117,6 @@ export const fetchData = async (type, cmp_id, serialNumber, res) => {
       message: `${type} fetched`,
       data: processedData,
     });
-
   } catch (error) {
     console.error(error);
     return res.status(500).json({

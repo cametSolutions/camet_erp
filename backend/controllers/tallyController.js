@@ -1634,7 +1634,8 @@ export const giveSales = async (req, res) => {
 export const giveVanSales = async (req, res) => {
   const cmp_id = req.params.cmp_id;
   const serialNumber = req.params.SNo;
-  return fetchData("vanSales", cmp_id, serialNumber, res);
+  const userId=req.query.userId
+  return fetchData("vanSales", cmp_id, serialNumber, res,userId);
 };
 
 // @desc for giving transactions to tally

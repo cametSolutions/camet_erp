@@ -1,26 +1,43 @@
 /* eslint-disable react/prop-types */
-import { IoIosAddCircle } from 'react-icons/io'
+import { IoIosAddCircle } from "react-icons/io";
+import { useSelector } from "react-redux";
 
-function FooterButton({submitHandler,tab,title,loading}) {
+function FooterButton({ submitHandler,  title, loading }) {
+  const { mode } = useSelector((state) => state.commonVoucherSlice);
+
+  
+
+  const titleText =
+    title.split("")[0]?.toUpperCase()?.concat(title.slice(1)) || "Title";
+
+
+    console.log(title);
+    
   return (
     <div>
-          <div className="  sm:hidden  fixed bottom-0 left-0 w-full bg-white shadow-lg z-50  ">
-          <div className="flex justify-center overflow-hidden w-full">
+      <div className="  sm:hidden  fixed bottom-0 left-0 w-full bg-white shadow-lg z-50  ">
+        <div className="flex justify-center overflow-hidden w-full">
           <button
-                onClick={submitHandler}
-                className= {` ${loading && "pointer-events-none opacity-80"} bottom-0 text-white bg-violet-700  w-full  p-2 py-3 flex items-center justify-center gap-2 hover_scale cursor-pointer `}
-              >
-                <IoIosAddCircle className="text-2xl" />
-                {title === "Stock Transfer" ? (
-                  <p>Transfer Stock</p>
-                ) : (
-                  <p>{tab === "add" ? `Generate ${title}` : `Edit ${title}`}</p>
-                )}
-              </button>
-          </div>
+            onClick={submitHandler}
+            className={` ${
+              loading && "pointer-events-none opacity-80"
+            } bottom-0 text-white bg-violet-700  w-full  p-2 py-3 flex items-center justify-center gap-2 hover_scale cursor-pointer `}
+          >
+            <IoIosAddCircle className="text-2xl" />
+            {title === "Stock Transfer" ? (
+              <p>Transfer Stock</p>
+            ) : (
+              <p>
+                {mode === "create"
+                  ? `Generate ${titleText}`
+                  : `Edit ${titleText}`}
+              </p>
+            )}
+          </button>
         </div>
+      </div>
     </div>
-  )
+  );
 }
 
-export default FooterButton
+export default FooterButton;

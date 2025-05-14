@@ -449,8 +449,7 @@ function VoucherInitialPageEdit() {
 
           <FooterButton
             submitHandler={submitHandler}
-            tab="add"
-            title="Sale"
+            title={formatVoucherType(voucherTypeFromRedux)}
             isLoading={submitLoading || isLoading}
           />
         </div>

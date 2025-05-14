@@ -5,16 +5,16 @@ import secSelectedOrgReducer from "../slices/secSelectedOrgSlice";
 import settlementDataReducer from "../slices/settlementDataSlice";
 import prSettlementDataReducer from "../slices/prSettlementDataSlice";
 import adminDataReducer from "../slices/adminData";
-import invoice from "../slices/invoice";
-import invoiceSecondary from "../slices/invoiceSecondary";
-import sales from "../slices/sales";
-import purchase from "../slices/purchase";
-import salesSecondary from "../slices/salesSecondary";
+// import invoice from "../slices/invoice";
+// import invoiceSecondary from "../slices/invoiceSecondary";
+// import sales from "../slices/sales";
+// import purchase from "../slices/purchase";
+// import salesSecondary from "../slices/salesSecondary";
 import stockTransferSecondary from "../slices/stockTransferSecondary";
 import receipt from "../slices/receipt";
 import payment from "../slices/payment";
-import creditNote from "../slices/creditNote";
-import debitNote from "../slices/debitNote";
+// import creditNote from "../slices/creditNote";
+// import debitNote from "../slices/debitNote";
 import date from "../slices/filterSlices/date";
 import voucherType from "../slices/filterSlices/voucherType";
 import partyFilter from "../slices/filterSlices/partyFIlter";
@@ -26,6 +26,7 @@ import partySlice from "../slices/partySlice";
 import paymentSplitting from "../slices/filterSlices/paymentSplitting/paymentSplitting"
 import barcode from "../slices/barcodeSlice";
 import  commonVoucherSlice  from "../slices/voucherSlices/commonVoucherSlice";
+import  commonAccountingVoucherSlice  from "../slices/voucherSlices/commonAccountingVoucherSlice";
 
 export const store = configureStore({
   reducer: {
@@ -35,16 +36,16 @@ export const store = configureStore({
     settlementData: settlementDataReducer,
     prSettlementData: prSettlementDataReducer,
     adminData: adminDataReducer,
-    invoice: invoice,
-    invoiceSecondary: invoiceSecondary,
-    sales: sales,
-    salesSecondary: salesSecondary,
-    purchase: purchase,
+    // invoice: invoice,
+    // invoiceSecondary: invoiceSecondary,
+    // sales: sales,
+    // salesSecondary: salesSecondary,
+    // purchase: purchase,
     stockTransferSecondary: stockTransferSecondary,
     receipt: receipt,
     payment: payment,
-    creditNote: creditNote,
-    debitNote: debitNote,
+    // creditNote: creditNote,
+    // debitNote: debitNote,
     date: date,
     voucherType: voucherType,
     partyFilter: partyFilter,
@@ -55,6 +56,7 @@ export const store = configureStore({
     barcode,
     companyFilter,
     summaryFilter,
-    commonVoucherSlice
+    commonVoucherSlice,
+    commonAccountingVoucherSlice
   },
 });
