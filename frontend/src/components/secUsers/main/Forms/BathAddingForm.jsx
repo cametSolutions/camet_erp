@@ -179,7 +179,9 @@ function BatchAddingForm({ from, taxInclusive = false }) {
 
       // Additional cess calculation - calculated as quantity * addl_cess
       if (addlCessValue > 0) {
-        additionalCessAmount = Number((Number(quantity) * addlCessValue).toFixed(2));
+        additionalCessAmount = Number(
+          (Number(quantity) * addlCessValue).toFixed(2)
+        );
       }
 
       // Combine cess amounts
@@ -370,7 +372,10 @@ function BatchAddingForm({ from, taxInclusive = false }) {
   };
 
   const handleDirectQuantityChange = (value) => {
-    if (enableActualAndBilledQuantity && Number(value) > Number(actualQuantity || 0)) {
+    if (
+      enableActualAndBilledQuantity &&
+      Number(value) > Number(actualQuantity || 0)
+    ) {
       return;
     }
     if (value.includes(".")) {
@@ -477,7 +482,7 @@ function BatchAddingForm({ from, taxInclusive = false }) {
       godown_id:
         selectedItem?.gdnEnabled && selectedGodown ? selectedGodown : null,
       count: Number(quantity || 0),
-      actualCount:Number (actualQuantity || 0),
+      actualCount: Number(actualQuantity || 0),
       selectedPriceRate: parseFloat(newPrice),
       discountAmount: discountAmount,
       discountPercentage: discountPercentage,
