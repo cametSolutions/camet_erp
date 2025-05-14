@@ -1,5 +1,5 @@
 /* eslint-disable react/no-unescaped-entities */
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { toast } from "react-toastify";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -29,6 +29,7 @@ function VoucherInitialPage() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
+  const isMounted = useRef(true);
 
   // to find the current voucher
   const getVoucherType = () => {
@@ -76,10 +77,6 @@ function VoucherInitialPage() {
     additionalCharges: additionalChargesFromRedux = [],
     convertedFrom = [],
   } = useSelector((state) => state.commonVoucherSlice);
-
-  // const paymentSplittingReduxData = useSelector(
-  //   (state) => state?.paymentSplitting?.paymentSplittingData
-  // );
 
   const getApiEndPoint = () => {
     if (voucherTypeFromRedux) {
@@ -135,7 +132,9 @@ function VoucherInitialPage() {
           { withCredentials: true }
         );
       } else {
-        setVoucherNumber(voucherNumberFromRedux);
+        if (isMounted.current) {
+          setVoucherNumber(voucherNumberFromRedux);
+        }
       }
 
       // Add godownsName API call if voucher type is 'vanSale'
@@ -159,7 +158,7 @@ function VoucherInitialPage() {
       });
 
       // Process Additional Charges
-      if (responses.additionalChargesRequest) {
+      if (responses.additionalChargesRequest && isMounted.current) {
         additionalCharges =
           responses.additionalChargesRequest.data?.additionalCharges || [];
         dispatch(addAllAdditionalCharges(additionalCharges));
@@ -169,7 +168,7 @@ function VoucherInitialPage() {
       if (responses.configNumberRequest) {
         const configData = responses.configNumberRequest.data;
 
-        if (configData.message === "default") {
+        if (configData.message === "default" && isMounted.current) {
           const voucherNumber = configData.configurationNumber;
           setVoucherNumber(voucherNumber);
           dispatch(addVoucherNumber(voucherNumber));
@@ -189,7 +188,9 @@ function VoucherInitialPage() {
               .filter(Boolean)
               .join("-");
             setVoucherNumber(finalOrderNumber);
-            dispatch(addVoucherNumber(finalOrderNumber));
+            if (isMounted.current) {
+              dispatch(addVoucherNumber(finalOrderNumber));
+            }
           } else {
             setVoucherNumber(configurationNumber);
             dispatch(addVoucherNumber(configurationNumber));
@@ -201,7 +202,8 @@ function VoucherInitialPage() {
       if (
         responses.godownsRequest &&
         voucherType === "vanSale" &&
-        Object.keys(vanSaleGodownFromRedux).length === 0
+        Object.keys(vanSaleGodownFromRedux).length === 0 &&
+        isMounted.current
       ) {
         const godownsData = responses.godownsRequest.data;
 
@@ -227,6 +229,10 @@ function VoucherInitialPage() {
     if (!date) dispatch(changeDate(JSON.stringify(selectedDate)));
     localStorage.removeItem("scrollPositionAddItemSales");
     fetchData();
+
+    return () => {
+      isMounted.current = false;
+    };
   }, [fetchData]);
 
   // Navigation and form handlers
