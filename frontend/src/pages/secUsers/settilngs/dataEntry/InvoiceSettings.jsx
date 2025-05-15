@@ -5,6 +5,7 @@ import {
   TbReceiptTax,
   TbLock,
   TbFileText,
+  TbTruck,
   TbEdit,
 } from "react-icons/tb";
 import TitleDiv from "../../../../components/common/TitleDiv";
@@ -14,15 +15,13 @@ import api from "../../../../api/api";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import { updateConfiguration } from "../../../../../slices/secSelectedOrgSlice";
-import { PiVan } from "react-icons/pi";
-import { FaRegAddressBook } from "react-icons/fa";
 
 const InvoiceSettings = () => {
   const [loading, setLoading] = useState(false);
   const [settings, setSettings] = useState([]);
 
   const { _id: cmp_id, configurations } = useSelector(
-    (state) => state?.secSelectedOrganization?.secSelectedOrg
+    (state) => state.secSelectedOrganization.secSelectedOrg
   );
 
   useEffect(() => {
@@ -53,30 +52,18 @@ const InvoiceSettings = () => {
           active: true,
           toggle: true,
           dbField: "addRateWithTax",
-          toggleValue: addRateWithTax || false,
+          toggleValue: addRateWithTax["sale"] || false,
         },
         {
           title: "Enable Ship to Bill on Invoice",
           description:
             "Enable this option to include 'Ship to Bill' details on the invoice",
-          icon: <FaRegAddressBook />,
+          icon: <TbTruck />,
           to: "/invoiceSettings/enableShipToBill",
-          toggleValue: enableShipTo || false,
+          toggleValue: enableShipTo["sale"] || false,
           dbField: "enableShipTo",
           active: true,
           toggle: true,
-        },
-
-        {
-          title: "Enable Negative stock block for VAN Invoice",
-          description: "Enable it to prevent add entries with negative stock",
-          icon: <PiVan />,
-          active: true,
-          modal: false,
-          toggle: true,
-          dbField: "enableNegativeStockBlockForVanInvoice",
-          toggleValue:
-            configurations[0].enableNegativeStockBlockForVanInvoice || false,
         },
         {
           title: "Disable Rate for an Item",
@@ -115,16 +102,14 @@ const InvoiceSettings = () => {
     let url;
     switch (title) {
       case "addRateWithTax":
-        // url = "/updateTaxConfiguration";
-        url = "/updateFirstLayerConfiguration";
+        url = "/updateTaxConfiguration";
         break;
       case "enableShipTo":
-        // url = "/updateShipToConfiguration";
-        url = "/updateFirstLayerConfiguration";
+        url = "/updateShipToConfiguration";
         break;
 
       default:
-        url = "/updateFirstLayerConfiguration";
+        url = "";
         break;
     }
 
@@ -134,6 +119,8 @@ const InvoiceSettings = () => {
   const dispatch = useDispatch();
 
   const handleToggleChangeFromParent = async (data) => {
+    console.log(data);
+
     const url = getUrl(data?.title);
 
     if (url) {
@@ -141,17 +128,14 @@ const InvoiceSettings = () => {
         setLoading(true);
         const res = await api.put(
           `/api/sUsers/${url}/${cmp_id}?voucher=sale`,
-          {
-            fieldToUpdate: data?.title,
-            value: data?.checked,
-          },
-          // { [data?.title]: data?.checked },
+          { [data?.title]: data?.checked },
           {
             withCredentials: true,
           }
         );
 
-        dispatch(updateConfiguration(res?.data?.data));
+        dispatch(updateConfiguration(res?.data?.updatedConfig));
+        toast.success(res.data.message);
       } catch (error) {
         console.log(error);
         toast.error(error.response.data.message);
