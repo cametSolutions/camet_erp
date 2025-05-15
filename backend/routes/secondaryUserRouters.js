@@ -43,7 +43,7 @@ import { addEmailConfiguration, getConfiguration, getBarcodeList, addBarcodeData
 import { updateSecondaryUserConfiguration } from '../helpers/saleOrderHelper.js';
 import { addAccountGroupIdToOutstanding, addAccountGroupIdToParties, convertPrimaryToSecondary, createAccountGroups, updateDateFieldsByCompany, updateSalesItemUnitFields, updateUnitFields } from '../controllers/testingController.js';
 import { authPrimary } from '../middlewares/authPrimaryUsers.js';
-import { addOrganizations, addSecondaryConfigurations, addSecUsers, editOrg, editSecUSer, fetchConfigurationCurrentNumber, fetchGodownsAndPriceLevels, fetchSecondaryUsers, getOrganizations, getSecUserDetails } from '../controllers/primaryUserController.js';
+import { accountGroupAndSubGroupForIntegrated, addOrganizations, addSecondaryConfigurations, addSecUsers, editOrg, editSecUSer, fetchConfigurationCurrentNumber, fetchGodownsAndPriceLevels, fetchSecondaryUsers, getOrganizations, getSecUserDetails } from '../controllers/primaryUserController.js';
 
 import { getSummary } from "../controllers/summaryController.js"
 import { fetchOutstandingDetails, fetchOutstandingTotal, getOutstandingSummary } from '../controllers/outStandingController.js';
@@ -243,6 +243,11 @@ router.post('/addSubGroup/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthe
 router.get('/getSubGroup/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,getSubGroup)
 router.delete('/deleteSubGroup/:subGroupId/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,deleteSubGroup)
 router.patch('/editSubGroup/:subGroupId/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,editSubGroup)
+
+router.get('/getAccountGroupAndSubGroupForIntegrated/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,accountGroupAndSubGroupForIntegrated)
+
+
+
 
 //// add party opening
 router.post('/addPartyOpening/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,addPartyOpening)

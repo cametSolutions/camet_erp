@@ -2611,7 +2611,6 @@ export const fetchGodownsAndPriceLevels = async (req, res) => {
     ]);
 
     console.log("Primary_user_id", Primary_user_id);
-    
 
     // Fetch unique subgroups from parties
     const subGroupsResult = await partyModel.aggregate([
@@ -2630,9 +2629,7 @@ export const fetchGodownsAndPriceLevels = async (req, res) => {
       },
     ]);
 
-
     console.log("subGroupsResult", subGroupsResult);
-    
 
     // Formatting results
     const godownsWithPriceLevels = godownsResult.map((item) => ({
@@ -3320,5 +3317,60 @@ export const fetchConfigurationCurrentNumber = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+export const accountGroupAndSubGroupForIntegrated = async (req, res) => {
+  const cmp_id = req.params.cmp_id;
+  const Primary_user_id = req.owner;
+
+  console.log("cmp_id", cmp_id);
+  console.log("Primary_user_id", Primary_user_id);
+
+  try {
+    const subGroupsResult = await partyModel.aggregate([
+      {
+        $match: {
+          Primary_user_id: Primary_user_id.toString(),
+          cmp_id: cmp_id,
+          subGroup_id: { $exists: true, $ne: null, $ne: "" },
+        },
+      },
+      {
+        $group: {
+          _id: "$subGroup_id",
+          subGroup: { $first: "$subGroup" }, // Taking the first occurrence
+        },
+      },
+    ]);
+
+    const accountGroupsResult = await partyModel.aggregate([
+      {
+        $match: {
+          Primary_user_id: Primary_user_id.toString(),
+          cmp_id: cmp_id,
+          accountGroup_id: { $exists: true, $ne: null, $ne: "" },
+        },
+      },
+      {
+        $group: {
+          _id: "$accountGroup_id",
+          accountGroup: { $first: "$accountGroup" }, // Taking the first occurrence
+        },
+      },
+    ]);
+
+    res.status(200).json({
+      message: "All subdetails retrieved successfully",
+      data: {
+        subGroups: subGroupsResult,
+        accountGroups: accountGroupsResult,
+      },
+    });
+  } catch (error) {
+    console.error("Error in getAllSubDetails:", error);
+    res
+      .status(500)
+      .json({ message: "An error occurred while fetching the subdetails" });
   }
 };
