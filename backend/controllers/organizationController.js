@@ -3,10 +3,13 @@
 
 import mongoose from "mongoose";
 import Organization from "../models/OragnizationModel.js";
-import { createAccountGroupsForOrganization, createDefaultGodownForOrganization, defaultConfigurations } from "../helpers/helper.js";
+import {
+  createAccountGroupsForOrganization,
+  createDefaultGodownForOrganization,
+  defaultConfigurations,
+} from "../helpers/helper.js";
 import secondaryUserModel from "../models/secondaryUserModel.js";
 import { accountGroups03 } from "../../frontend/constants/accountGroups.js";
-
 
 export const addOrganizations = async (req, res) => {
   const {
@@ -43,7 +46,6 @@ export const addOrganizations = async (req, res) => {
   session.startTransaction(); // Start the transaction
 
   console.log("batchEnabled", batchEnabled);
-  
 
   try {
     // Create the organization
@@ -115,12 +117,15 @@ export const addOrganizations = async (req, res) => {
       session,
     });
 
-    // Create default godown using the helper function
-    const defaultGodown = await createDefaultGodownForOrganization({
-      organizationId: organization[0]._id,
-      ownerId: req.pUserId || owner, // Using owner as fallback if pUserId is not available
-      session,
-    });
+    if (type === "self") {
+      // Create default godown using the helper function
+      const defaultGodown = await createDefaultGodownForOrganization({
+        organizationId: organization[0]._id,
+        ownerId: req.pUserId || owner, // Using owner as fallback if pUserId is not available
+        session,
+      });
+    }
+    
 
     if (!accountGroupsResult || !defaultGodown) {
       await session.abortTransaction();
