@@ -2,10 +2,10 @@ import axios from "axios";
 import Swal from "sweetalert2";
 
 const api = axios.create({
-  baseURL: "http://localhost:7000",
+  // baseURL: "http://localhost:7000",
   // baseURL:"https://www.erp.camet.in/"
   // baseURL:"https://www.erptest.camet.in/"
-  // baseURL:"https://www.app.camet.in/"
+  baseURL:"https://www.app.camet.in/"
 });
 
 api.interceptors.response.use(
