@@ -73,12 +73,18 @@ function EditItemForm({
       ? selectedItem[0]?.GodownList[index]
       : selectedItem[0]?.GodownList[0];
 
+  const { voucherType: voucherTypeFromRedux } = useSelector(
+    (state) => state.commonVoucherSlice
+  );
+
   const { configurations } = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
   const configuration = configurations[0];
-  const enableActualAndBilledQuantity =
-    configuration?.enableActualAndBilledQuantity || false;
+  const {
+    enableActualAndBilledQuantity = false,
+    enableNegativeStockBlockForVanInvoice = false,
+  } = configuration || {};
 
   const calculateTotal = (item, selectedPriceLevel, situation = "normal") => {
     let priceRate = 0;
@@ -374,7 +380,6 @@ function EditItemForm({
   const handleDirectQuantityChange = (value) => {
     if (
       enableActualAndBilledQuantity &&
-      // actualQuantity &&
       Number(value) > Number(actualQuantity)
     ) {
       return;
@@ -384,6 +389,14 @@ function EditItemForm({
       if (parts[1].length > 3) {
         return;
       }
+    }
+
+    if (
+      Number(value) > selectedGodown?.balance_stock &&
+      enableNegativeStockBlockForVanInvoice &&
+      voucherTypeFromRedux === "vanSale"
+    ) {
+      return;
     }
 
     setQuantity(value);
@@ -399,6 +412,14 @@ function EditItemForm({
       if (parts[1].length > 3) {
         return;
       }
+    }
+
+    if (
+      Number(value) > selectedGodown?.balance_stock &&
+      enableNegativeStockBlockForVanInvoice &&
+      voucherTypeFromRedux === "vanSale"
+    ) {
+      return;
     }
 
     setActualQuantity(value);

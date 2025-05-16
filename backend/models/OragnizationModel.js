@@ -81,6 +81,11 @@ const organizationSchema = new mongoose.Schema(
             saleOrder: false,
           },
         },
+
+        enableNegativeStockBlockForVanInvoice: {
+          type: Boolean,
+          default: false,
+        },
         enableShipTo: {
           type: Object,
           default: {

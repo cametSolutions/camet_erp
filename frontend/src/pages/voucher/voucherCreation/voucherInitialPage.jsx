@@ -61,6 +61,14 @@ function VoucherInitialPage() {
   const { _id: cmp_id } = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
+
+
+
+
+
+
+
+
   const {
     date,
     party,

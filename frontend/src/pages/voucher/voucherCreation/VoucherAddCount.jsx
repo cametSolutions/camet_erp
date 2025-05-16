@@ -66,6 +66,7 @@ function VoucherAddCount() {
   } = useSelector((state) => state.secSelectedOrganization.secSelectedOrg);
   const { addRateWithTax } = configurations[0];
   const taxInclusive = addRateWithTax["sale"] || false;
+  const { enableNegativeStockBlockForVanInvoice } = configurations[0];
 
   // Get sales data from Redux
   const {
@@ -304,10 +305,9 @@ function VoucherAddCount() {
       } else if (reduxItem?.batchEnabled && reduxItem?.gdnEnabled) {
         matchedGodown = product?.GodownList?.find(
           (g) =>
-            g?.godownMongoDbId === godown?.godownMongoDbId && g?.batch === godown?.batch
+            g?.godownMongoDbId === godown?.godownMongoDbId &&
+            g?.batch === godown?.batch
         );
-
-        
       }
 
       // Update balance stock if match found
@@ -543,9 +543,9 @@ function VoucherAddCount() {
         igstValue, // IGST percentage
         cessValue: item.cess || 0, // Standard cess percentage
         addlCessValue: item.addl_cess || 0, // Additional cess per quantity
-        cgstAmount:cgstAmt, // CGST amount
+        cgstAmount: cgstAmt, // CGST amount
         sgstAmount: sgstAmt, // SGST amount
-        igstAmount:igstAmt, // IGST amount
+        igstAmount: igstAmt, // IGST amount
         cessAmount: cessAmount, // Standard cess amount (percentage based)
         additionalCessAmount, // Additional cess amount (quantity based)
         individualTotal, // Final amount including taxes and cess
@@ -667,6 +667,14 @@ function VoucherAddCount() {
           .add(1)
           .toNumber();
         godownOrBatch.actualCount = godownOrBatch.count;
+
+        if (
+          godownOrBatch?.count > godownOrBatch?.balance_stock &&
+          voucherTypeFromRedux === "vanSale" &&
+          enableNegativeStockBlockForVanInvoice
+        ) {
+          return currentItem; // Skip if balance stock is 0
+        }
 
         // Update the specific godown/batch in the GodownList
         const updatedGodownList = currentItem.GodownList.map((godown, index) =>

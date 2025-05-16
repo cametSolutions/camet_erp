@@ -48,6 +48,12 @@ export default function VoucherProductList({
     (state) => state.commonVoucherSlice
   );
 
+  const { configurations } = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg
+  );
+
+  const { enableNegativeStockBlockForVanInvoice=false } = configurations[0];
+
   // ========== LIST HEIGHT CALCULATION ==========
   /**
    * Calculate and set the height of the product list based on window size
@@ -175,6 +181,17 @@ export default function VoucherProductList({
 
         if (itemToUpdate.GodownList[idx]) {
           const currentBatchOrGodown = { ...itemToUpdate.GodownList[idx] };
+
+          const balance_stock = currentBatchOrGodown?.balance_stock || 0;
+
+          // Check if the  has no stock for van sale
+          if (
+            balance_stock <= 0 &&
+            enableNegativeStockBlockForVanInvoice &&
+            voucherTypeFromRedux === "vanSale"
+          ) {
+            return item;
+          }
 
           // Toggle the added state or set to true if undefined
           currentBatchOrGodown.added = currentBatchOrGodown.added
