@@ -77,6 +77,7 @@ function VoucherAddCount() {
     page: pageNumberFromRedux,
     hasMore: hasMoreFromRedux,
     voucherType: voucherTypeFromRedux,
+    stockTransferFromGodown,
   } = useSelector((state) => state.commonVoucherSlice);
 
   // ===================================
@@ -171,6 +172,13 @@ function VoucherAddCount() {
 
         if (searchTerm) {
           params.append("search", searchTerm);
+        }
+
+        if (
+          voucherTypeFromRedux === "stockTransfer" &&
+          Object.keys(stockTransferFromGodown)?.length > 0
+        ) {
+          params.append("excludeGodownId", stockTransferFromGodown?._id);
         }
 
         ///// if voucher Type is sale order ,then we don not need to differentiate between has godown or batch or not

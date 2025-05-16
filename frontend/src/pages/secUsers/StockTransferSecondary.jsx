@@ -19,7 +19,7 @@ import {
 
 import HeaderTile from "../voucher/voucherCreation/HeaderTile";
 import AddItemTile from "../voucher/voucherCreation/AddItemTile";
-import AddGodown from "../../components/secUsers/AddGodown";
+import AddGodown from "../voucher/voucherCreation/AddGodownTile";
 import TitleDiv from "../../components/common/TitleDiv";
 import FooterButton from "../voucher/voucherCreation/FooterButton";
 function StockTransferSecondary() {

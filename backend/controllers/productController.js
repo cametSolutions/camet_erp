@@ -320,9 +320,14 @@ export const getProducts = async (req, res) => {
       filter["GodownList.godown"] = { $in: selectedGodowns };
     }
 
-    // If excluding a specific godown, add to filter
+    // If we need to exclude a specific godown
     if (excludeGodownId) {
-      filter["GodownList.godown"] = { $ne: excludeGodownId };
+      // Only get products with godown functionality enabled
+      filter.gdnEnabled = true;
+      
+      // MongoDB query to exclude products where any godown in GodownList matches excludeGodownId
+      // This needs a different approach since the filter above doesn't work with your data structure
+      // We'll filter the results in memory after fetching them
     }
 
     // Count total products matching the filter
@@ -351,6 +356,24 @@ export const getProducts = async (req, res) => {
         path: "Priceleveles.pricelevel",
         model: "PriceLevel",
       });
+
+    // If we need to exclude a specific godown, filter products after fetching
+    if (excludeGodownId) {
+      products = products.filter(product => {
+        // Skip products that don't have godown list or godown is not enabled
+        if (!product.gdnEnabled || !product.GodownList || product.GodownList.length === 0) {
+          return false;
+        }
+        
+        // Check if any godown matches the excludeGodownId
+        const hasExcludedGodown = product.GodownList.some(godown => 
+          godown._id && godown._id.toString() === excludeGodownId.toString()
+        );
+        
+        // Keep only products that DON'T have the excluded godown
+        return !hasExcludedGodown;
+      });
+    }
 
     // Transform products to flatten nested structures and filter godowns
     const transformedProducts = products.map((product) => {

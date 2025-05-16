@@ -2,19 +2,15 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
-import api from "../../api/api";
 import { useDispatch } from "react-redux";
-import { addSelectedGodown } from "../../../slices/stockTransferSecondary";
-
+import { addStockTransferFromGodown } from "../../../slices/voucherSlices/commonVoucherSlice";
 import GodownList from "../../components/secUsers/StockTransfer/GodownList";
-
-// import { MdCancel } from "react-icons/md";
+import useFetch from "@/customHook/useFetch";
 
 function SearchGodown() {
   const [godowns, setGodowns] = useState([]);
   const [search, setSearch] = useState("");
   const [filteredGodowns, setFilteredGodowns] = useState([]);
-  const [loading, setLoading] = useState(true);
 
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -27,29 +23,36 @@ function SearchGodown() {
     setSearch(data);
   };
 
-  useEffect(() => {
-    const fetchGodowns = async () => {
-      try {
-        const res = await api.get(`/api/sUsers/fetchGodowns/${cpm_id}`, {
-          withCredentials: true,
-        });
+  const { data, loading } =
+    useFetch(`/api/sUsers/getProductSubDetails/${cpm_id}?type=godown
+`);
 
-        setGodowns(res?.data?.data?.godowns);
-        setLoading(false);
-      } catch (error) {
-        console.log(error);
-        setLoading(false);
-      }
-    };
-    fetchGodowns();
-  }, [cpm_id]);
+  useEffect(() => {
+    if (data) {
+      setGodowns(data?.data);
+      setFilteredGodowns(data?.data);
+    }
+  }, [data]);
+
+  // useEffect(() => {
+  //   const fetchGodowns = async () => {
+  //     try {
+  //       const res = await api.get(`/api/sUsers/fetchGodowns/${cpm_id}`, {
+  //         withCredentials: true,
+  //       });
+
+  //       setGodowns(res?.data?.data?.godowns);
+  //       setLoading(false);
+  //     } catch (error) {
+  //       console.log(error);
+  //       setLoading(false);
+  //     }
+  //   };
+  //   fetchGodowns();
+  // }, [cpm_id]);
 
   const selectHandler = (el) => {
-    dispatch(addSelectedGodown(el));
-    navigate(-1);
-  };
-
-  const backHandler = () => {
+    dispatch(addStockTransferFromGodown(el));
     navigate(-1);
   };
 
@@ -67,7 +70,6 @@ function SearchGodown() {
   return (
     <div className=" ">
       <GodownList
-        backHandler={backHandler}
         searchData={searchData}
         loading={loading}
         filteredGodowns={filteredGodowns}

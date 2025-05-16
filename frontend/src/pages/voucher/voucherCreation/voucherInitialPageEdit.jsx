@@ -263,6 +263,8 @@ function VoucherInitialPageEdit() {
     fetchData();
   }, [fetchData]);
 
+
+
   // Navigation and form handlers
   const handleAddItem = () => {
     if (Object.keys(party).length === 0) {

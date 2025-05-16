@@ -17,6 +17,7 @@ export default function AdditionalChargesTile({ type, subTotal,setOpenAdditional
     allAdditionalCharges: allAdditionalChargesFromRedux,
     additionalCharges: additionalChargesFromRedux,
     items: itemsFromRedux,
+    voucherType: voucherTypeFromRedux,
   } = useSelector((state) => state.commonVoucherSlice);
 
   
@@ -173,7 +174,7 @@ export default function AdditionalChargesTile({ type, subTotal,setOpenAdditional
           <div className="flex  items-center justify-between  font-bold  text-[13px]">
             <div className="flex  items-center gap-3">
               <IoIosArrowDown className="font-bold text-sm" />
-              <p className="text-blue-800 text-xs ">Additional Charges</p>
+              <p className="text-blue-800 text-xs ">Additional Chargescc</p>
             </div>
             <button
               onClick={cancelHandler}
@@ -285,7 +286,7 @@ export default function AdditionalChargesTile({ type, subTotal,setOpenAdditional
           </div>
         </div>
       ) : (
-        type !== "stockTransfer" && (
+        voucherTypeFromRedux !== "stockTransfer" && (
           <div className=" flex justify-end items-center mt-4 font-semibold gap-1 text-violet-500 cursor-pointer pr-4">
             <div
               onClick={() => {
