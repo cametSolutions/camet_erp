@@ -205,7 +205,6 @@ export const PartyList = async (req, res) => {
     res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
-
 // @desc adding new Party
 // route POst/api/pUsers/addParty
 export const addParty = async (req, res) => {
