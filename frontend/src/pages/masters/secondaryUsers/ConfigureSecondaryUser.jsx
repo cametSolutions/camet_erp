@@ -142,9 +142,7 @@ function ConfigureSecondaryUser() {
           } = configurations[0];
 
           setSelectedGodowns(selectedGodowns || []);
-          setSelectedVanSaleSubGroups(
-            selectedVanSaleSubGroups || []
-          )
+          setSelectedVanSaleSubGroups(selectedVanSaleSubGroups || []);
           setSelectedPriceLevels(selectedPriceLevels || []);
           setSalesOrder(
             salesOrderConfiguration ? [salesOrderConfiguration] : initialConfig
@@ -228,16 +226,12 @@ function ConfigureSecondaryUser() {
   };
 
   const handleCheckboxChange = (type, value, checked) => {
-    console.log(value, checked);
-    
     const updateFunction = {
       priceLevel: setSelectedPriceLevels,
       godown: setSelectedGodowns,
       vanSaleGodown: setSelectedVanSaleGodowns,
       vanSaleSubGroup: setSelectedVanSaleSubGroups,
     }[type];
-
-    console.log(type);
 
     if (updateFunction) {
       updateFunction((prev) =>
@@ -249,7 +243,6 @@ function ConfigureSecondaryUser() {
       );
     }
   };
-
 
   const formatFieldName = (fieldName) => {
     const words = fieldName.split(/(?=[A-Z])/);
@@ -382,7 +375,6 @@ function ConfigureSecondaryUser() {
     }
 
     console.log(formData);
-    
 
     try {
       const res = await api.post(
@@ -403,9 +395,8 @@ function ConfigureSecondaryUser() {
     }
   };
 
-
   console.log(priceLevels);
-  
+  console.log(selectedPriceLevels);
 
   return (
     <div className="flex-1   ">
@@ -652,7 +643,7 @@ function ConfigureSecondaryUser() {
                        
                          space-y-2 `}
                       >
-                        {(selectedConfig === "vanSale") ? (
+                        {selectedConfig === "vanSale" ? (
                           godowns?.length > 0 ? (
                             godowns?.map((item, index) => (
                               <div key={index} className="flex items-center">
@@ -715,7 +706,8 @@ function ConfigureSecondaryUser() {
                         )}
                       </div>
                     </div>
-                    {(selectedConfig === "vanSale" || selectedConfig === "sales" ) && (
+                    {(selectedConfig === "vanSale" ||
+                      selectedConfig === "sales") && (
                       <div className="lg:col-span-1">
                         <h6 className="text-blueGray-400 text-sm mb-4 font-bold uppercase">
                           Sub Groups

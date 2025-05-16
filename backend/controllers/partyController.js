@@ -80,6 +80,8 @@ export const PartyList = async (req, res) => {
           as: "subGroupData",
         },
       },
+
+
       { $unwind: { path: "$subGroupData", preserveNullAndEmptyArrays: true } },
 
       // Flatten fields
@@ -100,6 +102,7 @@ export const PartyList = async (req, res) => {
           accountGroup_id: "$accountGroupData._id",
           subGroupName: "$subGroupData.subGroup",
           subGroup_id: "$subGroupData._id",
+          subGroup_tally_id: "$subGroupData.subGroup_id",
         },
       },
     ]);
@@ -110,6 +113,7 @@ export const PartyList = async (req, res) => {
     const vanSaleConfig = configuration?.vanSale || false;
 
     let filteredPartyList = partyList;
+    
 
     // Filter parties by selectedVanSaleSubGroups if isSale is true
     if (
@@ -118,7 +122,7 @@ export const PartyList = async (req, res) => {
       configuration.selectedVanSaleSubGroups?.length > 0
     ) {
       filteredPartyList = partyList.filter((party) =>
-        configuration.selectedVanSaleSubGroups.includes(party.subGroup_id)
+        configuration.selectedVanSaleSubGroups.includes(party.subGroup_tally_id)
       );
     }
 

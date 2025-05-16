@@ -22,7 +22,17 @@ export default function FilterContent() {
   const { selectedPriceLevel, priceLevels, vanSaleGodown, voucherType } =
     useSelector((state) => state.commonVoucherSlice);
 
-  console.log(vanSaleGodown, voucherType);
+  ///// hard coded for temporary use
+
+  const cmp_id = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg._id
+  );
+
+  let newPriceLevels = priceLevels;
+
+  if (cmp_id === "68258be10e32f4bc0451560a") {
+    newPriceLevels = priceLevels.filter((item) => item.name !== "GST");
+  }
 
   const [accordionValue, setAccordionValue] = useState("");
   const [isSheetOpen, setIsSheetOpen] = useState(false);
@@ -80,7 +90,7 @@ export default function FilterContent() {
             >
               <AccordionItem value="item-1">
                 <AccordionTrigger>Price Levels</AccordionTrigger>
-                {priceLevels?.map((level, index) => (
+                {newPriceLevels?.map((level, index) => (
                   <AccordionContent key={index}>
                     <div
                       onClick={() => handlePriceLevelSelection(level)}
