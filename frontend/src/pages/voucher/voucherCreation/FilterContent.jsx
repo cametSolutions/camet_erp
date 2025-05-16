@@ -31,7 +31,7 @@ export default function FilterContent() {
   let newPriceLevels = priceLevels;
 
   if (cmp_id === "68258be10e32f4bc0451560a") {
-    newPriceLevels = priceLevels.filter((item) => item.name !== "GST");
+    newPriceLevels = priceLevels?.filter((item) => item?.name !== "GST");
   }
 
   const [accordionValue, setAccordionValue] = useState("");
