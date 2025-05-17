@@ -226,6 +226,8 @@ function ConfigureSecondaryUser() {
   };
 
   const handleCheckboxChange = (type, value, checked) => {
+    console.log(type, value, checked);
+
     const updateFunction = {
       priceLevel: setSelectedPriceLevels,
       godown: setSelectedGodowns,
@@ -605,7 +607,7 @@ function ConfigureSecondaryUser() {
                                 id={`priceLevelCheckbox${index}`}
                                 value={item?.pricelevel}
                                 checked={selectedPriceLevels.includes(
-                                  item?.priceLevel
+                                  item?.pricelevel
                                 )}
                                 onChange={(e) =>
                                   handleCheckboxChange(
