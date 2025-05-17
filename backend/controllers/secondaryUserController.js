@@ -725,9 +725,21 @@ export const fetchFilters = async (req, res) => {
     const subcategories = await getFilters(Subcategory, "subcategory");
     const priceLevels = await getFilters(PriceLevel, "pricelevel");
 
+    const secondaryUser = await SecondaryUser.findById(req.sUserId);
+    const configuredPriceLevels = secondaryUser.configurations.find(
+      (config) => config?.organization?.toString() === cmp_id
+    )?.selectedPriceLevels;
+
+    let filteredPriceLevels = priceLevels || [];
+    if (configuredPriceLevels && configuredPriceLevels?.length > 0) {
+       filteredPriceLevels = priceLevels?.filter((priceLevel) =>
+        configuredPriceLevels?.includes(priceLevel?.name)
+      );
+    }
+
     // Sort price levels alphabetically (case-insensitive)
-    const sortedPriceLevels = [...priceLevels].sort((a, b) =>
-      a.name.toLowerCase().localeCompare(b.name.toLowerCase())
+    const sortedPriceLevels = [...filteredPriceLevels]?.sort((a, b) =>
+      a?.name?.toLowerCase()?.localeCompare(b?.name?.toLowerCase())
     );
 
     const data = {
@@ -940,7 +952,6 @@ export const fetchAdditionalDetails = async (req, res) => {
 
 export const fetchConfigurationNumber = async (req, res) => {
   const { cmp_id, title } = req.params;
-
 
   const secUserId = req.sUserId;
 
@@ -1237,7 +1248,9 @@ export const findGodownsNames = async (req, res) => {
   try {
     const secUser = await SecondaryUser.findById(selectedUser);
     if (!secUser) {
-      return res.status(404).json({ message: "Secondary user not found", data: null });
+      return res
+        .status(404)
+        .json({ message: "Secondary user not found", data: null });
     }
 
     const configuration = secUser.configurations.find(
@@ -1271,7 +1284,6 @@ export const findGodownsNames = async (req, res) => {
     res.status(500).json({ message: "Internal server error", data: null });
   }
 };
-
 
 // @desc get brands, categories, subcategories, godowns, priceLevels
 // route get/api/sUsers/getAllSubDetails

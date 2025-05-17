@@ -226,6 +226,8 @@ function ConfigureSecondaryUser() {
   };
 
   const handleCheckboxChange = (type, value, checked) => {
+    console.log(type, value, checked);
+
     const updateFunction = {
       priceLevel: setSelectedPriceLevels,
       godown: setSelectedGodowns,
@@ -395,8 +397,7 @@ function ConfigureSecondaryUser() {
     }
   };
 
-  console.log(priceLevels);
-  console.log(selectedPriceLevels);
+  
 
   return (
     <div className="flex-1   ">
@@ -605,7 +606,7 @@ function ConfigureSecondaryUser() {
                                 id={`priceLevelCheckbox${index}`}
                                 value={item?.pricelevel}
                                 checked={selectedPriceLevels.includes(
-                                  item?.priceLevel
+                                  item?.pricelevel
                                 )}
                                 onChange={(e) =>
                                   handleCheckboxChange(
@@ -682,8 +683,8 @@ function ConfigureSecondaryUser() {
                               <input
                                 type="checkbox"
                                 id={`godownCheckbox${index}`}
-                                value={item?.id}
-                                checked={selectedGodowns.includes(item?.id)}
+                                value={item?._id}
+                                checked={selectedGodowns.includes(item?._id)}
                                 onChange={(e) =>
                                   handleCheckboxChange(
                                     "godown",
