@@ -117,15 +117,13 @@ export const addOrganizations = async (req, res) => {
       session,
     });
 
-    if (type === "self") {
-      // Create default godown using the helper function
-      const defaultGodown = await createDefaultGodownForOrganization({
-        organizationId: organization[0]._id,
-        ownerId: req.pUserId || owner, // Using owner as fallback if pUserId is not available
-        session,
-      });
-    }
-    
+    // Create default godown using the helper function
+    const defaultGodown = await createDefaultGodownForOrganization({
+      organizationId: organization[0]._id,
+      ownerId: req.pUserId || owner, // Using owner as fallback if pUserId is not available
+      session,
+      type,
+    });
 
     if (!accountGroupsResult || !defaultGodown) {
       await session.abortTransaction();

@@ -139,20 +139,24 @@ export const createDefaultGodownForOrganization = async ({
   organizationId,
   ownerId,
   session,
+  type,
 }) => {
   try {
-    const defaultGodownId = new mongoose.Types.ObjectId();
-    const defaultGodown = new Godown({
-      _id: defaultGodownId,
-      godown_id: defaultGodownId.toString(),
-      godown: "Main Location",
-      cmp_id: organizationId,
-      Primary_user_id: ownerId,
-      defaultGodown: true,
-    });
+    if (type === "self") {
+      const defaultGodownId = new mongoose.Types.ObjectId();
+      const defaultGodown = new Godown({
+        _id: defaultGodownId,
+        godown_id: defaultGodownId.toString(),
+        godown: "Main Location",
+        cmp_id: organizationId,
+        Primary_user_id: ownerId,
+        defaultGodown: true,
+      });
 
-    await defaultGodown.save({ session });
-    return defaultGodown;
+      await defaultGodown.save({ session });
+      return defaultGodown;
+    }
+    return true;
   } catch (error) {
     console.error("Error creating default godown:", error);
     return null;
@@ -226,8 +230,6 @@ export const aggregateTransactions = (
   voucherNumber,
   returnFullDetails
 ) => {
-
-  
   // Define base projection fields that are always included
   const baseProjection = {
     voucherNumber: `$${voucherNumber}`,

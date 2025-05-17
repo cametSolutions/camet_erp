@@ -397,8 +397,7 @@ function ConfigureSecondaryUser() {
     }
   };
 
-  console.log(priceLevels);
-  console.log(selectedPriceLevels);
+  
 
   return (
     <div className="flex-1   ">
@@ -684,8 +683,8 @@ function ConfigureSecondaryUser() {
                               <input
                                 type="checkbox"
                                 id={`godownCheckbox${index}`}
-                                value={item?.id}
-                                checked={selectedGodowns.includes(item?.id)}
+                                value={item?._id}
+                                checked={selectedGodowns.includes(item?._id)}
                                 onChange={(e) =>
                                   handleCheckboxChange(
                                     "godown",
