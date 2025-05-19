@@ -201,9 +201,9 @@ const Routers = () => {
         <Route path='/sUsers/stockTransfer' element={<ProtectedSecRoute><VoucherInitalPage/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/searchGodown' element={<ProtectedSecRoute><SearchGodown/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/addItemStockTransfer' element={<ProtectedSecRoute><AddItemStockTransferSec/></ProtectedSecRoute>}></Route>
-        <Route path='/sUsers/StockTransferDetails/:id' element={<ProtectedSecRoute><StockTransferDetailsSecondary/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/StockTransferDetails/:id' element={<ProtectedSecRoute><VoucherDetails/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/editItemstockTransfer/:id/:godownName/:index' element={<ProtectedSecRoute><EditItemStockTransfer/></ProtectedSecRoute>}></Route>
-        <Route path='/sUsers/editStockTransfer/:id' element={<ProtectedSecRoute><EditStockTransferSecondary/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/editStockTransfer/:id' element={<ProtectedSecRoute><VoucherInitialPageEdit/></ProtectedSecRoute>}></Route>
 
 
         

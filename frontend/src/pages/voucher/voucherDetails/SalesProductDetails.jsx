@@ -31,50 +31,53 @@ function SalesProductDetails({
   return (
     <div className="rounded-lg overflow-hidden shadow-sm w-full max-w-full pb-5">
       {/* Summary Card */}
-      <div className="p-3 sm:p-4 bg-white border-b">
-        <h3 className="text-sm font-bold mb-3">Summary</h3>
 
-        <div className="space-y-2 text-xs">
-          <div className="flex items-center justify-between">
-            <p className="text-gray-600">Subtotal</p>
-            <p className="font-medium">₹ {subtotal}</p>
-          </div>
+      {data?.voucherType !== "stockTransfer" && (
+        <div className="p-3 sm:p-4 bg-white border-b">
+          <h3 className="text-sm font-bold mb-3">Summary</h3>
 
-          <div className="flex items-center justify-between">
-            <p className="text-gray-600">Additional Charges</p>
-            <p className="font-medium">
-              ₹ {additionalChargesTotal > 0 ? additionalChargesTotal : "0.00"}
-            </p>
-          </div>
-
-          {paymentSplittingData?.totalSettledAmount && (
+          <div className="space-y-2 text-xs">
             <div className="flex items-center justify-between">
-              <p className="text-gray-600">Payment Received</p>
+              <p className="text-gray-600">Subtotal</p>
+              <p className="font-medium">₹ {subtotal}</p>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <p className="text-gray-600">Additional Charges</p>
               <p className="font-medium">
-                ₹ {paymentSplittingData?.totalSettledAmount}
+                ₹ {additionalChargesTotal > 0 ? additionalChargesTotal : "0.00"}
               </p>
             </div>
-          )}
 
-          {paymentSplittingData?.balanceAmount && (
-            <div className="flex items-center justify-between">
-              <p className="text-gray-600">Balance Amount</p>
-              <p className="font-medium text-orange-600">
-                ₹ {paymentSplittingData?.balanceAmount}
-              </p>
-            </div>
-          )}
+            {paymentSplittingData?.totalSettledAmount && (
+              <div className="flex items-center justify-between">
+                <p className="text-gray-600">Payment Received</p>
+                <p className="font-medium">
+                  ₹ {paymentSplittingData?.totalSettledAmount}
+                </p>
+              </div>
+            )}
 
-          <div className="pt-2 mt-1 border-t border-gray-100">
-            <div className="flex items-center justify-between font-bold">
-              <p>Total Amount</p>
-              <p className="text-sm sm:text-base">
-                ₹ {parseInt(data?.finalAmount).toFixed(2)}
-              </p>
+            {paymentSplittingData?.balanceAmount && (
+              <div className="flex items-center justify-between">
+                <p className="text-gray-600">Balance Amount</p>
+                <p className="font-medium text-orange-600">
+                  ₹ {paymentSplittingData?.balanceAmount}
+                </p>
+              </div>
+            )}
+
+            <div className="pt-2 mt-1 border-t border-gray-100">
+              <div className="flex items-center justify-between font-bold">
+                <p>Total Amount</p>
+                <p className="text-sm sm:text-base">
+                  ₹ {parseInt(data?.finalAmount).toFixed(2)}
+                </p>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Items Section */}
       {items.length > 0 && (
@@ -110,14 +113,12 @@ function SalesProductDetails({
                         <span>Tax</span>
                         <span>({item.igst}%)</span>
                       </div>
-                     {
-                      !item?.hasGodownOrBatch && (
+                      {!item?.hasGodownOrBatch && (
                         <div className="text-right">
-                        {item?.GodownList?.[0]?.count} {item.unit} × ₹
-                        {item?.GodownList?.[0]?.selectedPriceRate || 0}
-                      </div>
-                      )
-                     }
+                          {item?.GodownList?.[0]?.count} {item.unit} × ₹
+                          {item?.GodownList?.[0]?.selectedPriceRate || 0}
+                        </div>
+                      )}
                     </div>
 
                     {item.hasGodownOrBatch ? (

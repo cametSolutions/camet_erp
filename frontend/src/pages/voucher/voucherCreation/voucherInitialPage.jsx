@@ -78,7 +78,7 @@ function VoucherInitialPage() {
     vanSaleGodown: vanSaleGodownFromRedux,
     additionalCharges: additionalChargesFromRedux = [],
     convertedFrom = [],
-    stockTransferFromGodown,
+    stockTransferToGodown,
   } = useSelector((state) => state.commonVoucherSlice);
 
   const getApiEndPoint = () => {
@@ -248,7 +248,7 @@ function VoucherInitialPage() {
       return;
     } else if (
       voucherTypeFromRedux === "stockTransfer" &&
-      Object.keys(stockTransferFromGodown).length === 0
+      Object.keys(stockTransferToGodown).length === 0
     ) {
       toast.error("Select a from godown first");
       return;
@@ -268,7 +268,7 @@ function VoucherInitialPage() {
 
     if (
       voucherTypeFromRedux === "stockTransfer" &&
-      Object.keys(stockTransferFromGodown).length === 0
+      Object.keys(stockTransferToGodown).length === 0
     ) {
       toast.error("Select a from godown first");
       return;
@@ -312,7 +312,7 @@ function VoucherInitialPage() {
           orgId: cmp_id,
 
           [voucherNumberTitle]: voucherNumber,
-          stockTransferFromGodown,
+          stockTransferToGodown,
           items,
           finalAmount: 0,
         };

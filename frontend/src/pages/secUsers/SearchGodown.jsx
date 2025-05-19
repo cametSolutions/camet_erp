@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useDispatch } from "react-redux";
-import { addStockTransferFromGodown } from "../../../slices/voucherSlices/commonVoucherSlice";
+import { addStockTransferToGodown } from "../../../slices/voucherSlices/commonVoucherSlice";
 import GodownList from "../../components/secUsers/StockTransfer/GodownList";
 import useFetch from "@/customHook/useFetch";
 
@@ -52,7 +52,7 @@ function SearchGodown() {
   // }, [cpm_id]);
 
   const selectHandler = (el) => {
-    dispatch(addStockTransferFromGodown(el));
+    dispatch(addStockTransferToGodown(el));
     navigate(-1);
   };
 

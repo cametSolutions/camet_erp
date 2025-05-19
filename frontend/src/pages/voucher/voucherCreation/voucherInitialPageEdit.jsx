@@ -1,5 +1,5 @@
 /* eslint-disable react/no-unescaped-entities */
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { toast } from "react-toastify";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -21,6 +21,7 @@ import {
   setAdditionalCharges,
   setFinalAmount,
   setInitialized,
+  addStockTransferToGodown,
 } from "../../../../slices/voucherSlices/commonVoucherSlice";
 import DespatchDetails from "./DespatchDetails";
 import HeaderTile from "./HeaderTile";
@@ -31,11 +32,13 @@ import FooterButton from "./FooterButton";
 import TitleDiv from "../../../components/common/TitleDiv";
 import AdditionalChargesTile from "./AdditionalChargesTile";
 import { formatVoucherType } from "../../../../utils/formatVoucherType";
+import AddGodownTile from "./AddGodownTile";
 
 function VoucherInitialPageEdit() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
+  const isMounted = useRef(true);
 
   // Redux selectors
   const { _id: cmp_id } = useSelector(
@@ -60,6 +63,7 @@ function VoucherInitialPageEdit() {
     finalAmount: finalAmountFromRedux,
     date: dateFromRedux,
     initialized: initializedFromRedux,
+    stockTransferToGodown: stockTransferToGodownFromRedux,
   } = useSelector((state) => state.commonVoucherSlice);
 
   // to find the current voucher
@@ -139,26 +143,35 @@ function VoucherInitialPageEdit() {
       voucherType: voucherTypeFromState,
       // convertedFrom: convertedFromFromState,
       [voucherNumberTitle]: voucherNumberFromState,
-      selectedGodownDetails: selectedGodownDetailsFromState,
-      party: partyFromState,
+      selectedGodownDetails: selectedGodownDetailsFromState = {},
+      party: partyFromState = {},
       items: itemsFromState,
-      despatchDetails: despatchDetailsFromState,
-      additionalCharges: additionalChargesFromState,
-      finalAmount: finalAmountFromState,
+      despatchDetails: despatchDetailsFromState = {},
+      additionalCharges: additionalChargesFromState = [],
+      finalAmount: finalAmountFromState = 0,
       _id: voucherIdFromState,
+      stockTransferToGodown: stockTransferToGodownFromState = {},
     } = location.state.data || {};
+
+    console.log("location state", location.state.data);
 
     try {
       if (voucherIdFromState) {
         setVoucherId(voucherIdFromState);
       }
       //  Populate Voucher Configuration Number for location state
-      if (!voucherNumberFromRedux && voucherTypeFromRedux) {
+      if (
+        !voucherNumberFromRedux &&
+        voucherTypeFromRedux &&
+        isMounted.current
+      ) {
         dispatch(addVoucherNumber(voucherNumberFromState));
         dispatch(addVoucherType(voucherTypeFromState));
         setVoucherNumber(voucherNumberFromState);
       } else {
-        setVoucherNumber(voucherNumberFromRedux);
+        if (isMounted.current) {
+          setVoucherNumber(voucherNumberFromRedux);
+        }
       }
 
       /// populate date from location state
@@ -188,10 +201,22 @@ function VoucherInitialPageEdit() {
 
       /// populate party from location state
       if (
-        Object.keys(partyFromState).length > 0 &&
-        Object.keys(partyFromRedux).length === 0
+        Object.keys(partyFromState)?.length > 0 &&
+        Object.keys(partyFromRedux)?.length === 0
       ) {
         dispatch(addParty(partyFromState));
+      }
+
+      //// populate stock transfer to godown if voucher type is stock transfer
+
+      if (
+        voucherTypeFromRedux === "stockTransfer" &&
+        stockTransferToGodownFromRedux === null &&
+        Object.keys(stockTransferToGodownFromState).length > 0
+      ) {
+        dispatch(
+          addStockTransferToGodown(stockTransferToGodownFromState || {})
+        );
       }
 
       /// populate items from location state
@@ -228,13 +253,14 @@ function VoucherInitialPageEdit() {
       // Add godownsName to Redux if voucher type is 'vanSale'
       if (
         voucherType === "vanSale" &&
-        Object.keys(vanSaleGodownFromRedux).length === 0
+        Object.keys(vanSaleGodownFromRedux).length === 0 &&
+        isMounted.current
       ) {
         dispatch(addVansSaleGodown(selectedGodownDetailsFromState || {}));
       }
 
       // Get additional charges only if needed
-      if (allAdditionalChargesFromRedux.length === 0) {
+      if (allAdditionalChargesFromRedux.length === 0 && isMounted.current) {
         const response = await api.get(
           `/api/sUsers/additionalcharges/${cmp_id}`,
           { withCredentials: true }
@@ -261,9 +287,11 @@ function VoucherInitialPageEdit() {
     if (!date) dispatch(changeDate(JSON.stringify(selectedDate)));
     localStorage.removeItem("scrollPositionAddItemSales");
     fetchData();
+
+    return () => {
+      isMounted.current = false;
+    };
   }, [fetchData]);
-
-
 
   // Navigation and form handlers
   const handleAddItem = () => {
@@ -276,8 +304,19 @@ function VoucherInitialPageEdit() {
 
   const submitHandler = async () => {
     // Validation
-    if (Object.keys(party).length === 0) {
+    if (
+      Object.keys(party).length === 0 &&
+      voucherTypeFromRedux !== "stockTransfer"
+    ) {
       toast.error("Add a party first");
+      return;
+    }
+
+    if (
+      voucherTypeFromRedux === "stockTransfer" &&
+      Object.keys(stockTransferToGodownFromRedux).length === 0
+    ) {
+      toast.error("Select a from godown first");
       return;
     }
 
@@ -318,26 +357,35 @@ function VoucherInitialPageEdit() {
       dateToSubmit = new Date().toISOString(); // Fallback to current date
     }
 
+    let formData = {};
+
     try {
-      const formData = {
-        selectedDate: dateToSubmit,
-        voucherType,
-        [voucherNumberTitle]: voucherNumber,
-        orgId: cmp_id,
-        finalAmount: Number(totalAmount.toFixed(2)),
-        party,
-        items,
-        despatchDetails,
-        priceLevelFromRedux,
-        additionalChargesFromRedux,
-        selectedGodownDetails: vanSaleGodownFromRedux,
-        // batchHeights,
-        // convertedFrom,
-        // paymentSplittingData:
-        //   Object.keys(paymentSplittingReduxData).length !== 0
-        //     ? paymentSplittingReduxData
-        //     : {},
-      };
+      if (voucherTypeFromRedux === "stockTransfer") {
+        formData = {
+          selectedDate: new Date(dateToSubmit).toISOString(),
+          voucherType,
+          orgId: cmp_id,
+
+          [voucherNumberTitle]: voucherNumber,
+          stockTransferToGodown: stockTransferToGodownFromRedux,
+          items,
+          finalAmount: 0,
+        };
+      } else {
+        formData = {
+          selectedDate: new Date(selectedDate).toISOString(),
+          voucherType,
+          [voucherNumberTitle]: voucherNumber,
+          orgId: cmp_id,
+          finalAmount: Number(totalAmount.toFixed(2)),
+          party,
+          items,
+          despatchDetails,
+          priceLevelFromRedux,
+          additionalChargesFromRedux,
+          selectedGodownDetails: vanSaleGodownFromRedux,
+        };
+      }
 
       const res = await api.post(
         `/api/sUsers/edit${voucherTypeFromRedux}/${voucherId}?vanSale=${
@@ -394,18 +442,24 @@ function VoucherInitialPageEdit() {
           />
           {/* adding party */}
 
-          <AddPartyTile
-            party={party}
-            dispatch={dispatch}
-            removeParty={removeParty}
-            link="/sUsers/searchPartySales"
-            linkBillTo="/sUsers/billToSales"
-            convertedFrom={convertedFrom}
-          />
+          {voucherTypeFromRedux === "stockTransfer" ? (
+            <AddGodownTile />
+          ) : (
+            <AddPartyTile
+              party={party}
+              dispatch={dispatch}
+              removeParty={removeParty}
+              link="/sUsers/searchPartySales"
+              linkBillTo="/sUsers/billToSales"
+              convertedFrom={convertedFrom}
+            />
+          )}
 
           {/* Despatch details */}
 
-          <DespatchDetails tab={"sales"} />
+          {voucherTypeFromRedux !== "stockTransfer" && (
+            <DespatchDetails tab={"sales"} />
+          )}
 
           {/* adding items */}
 

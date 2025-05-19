@@ -53,7 +53,11 @@ function HeaderTile({
               >
                 <IoIosAddCircle className="text-2xl" />
                 {title === "Stock Transfer" ? (
-                  <p>Transfer Stock</p>
+                  <p>
+                    {mode === "create"
+                      ? `Transfer Stock`
+                      : `Edit Transfer`}
+                  </p>
                 ) : (
                   <p>
                     {mode === "create"

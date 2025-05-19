@@ -17,6 +17,7 @@ import useFetch from "@/customHook/useFetch";
 import TitleDiv from "@/components/common/TitleDiv";
 import { formatVoucherType } from "../../../../utils/formatVoucherType";
 import VoucherDetailsActionButtons from "./actionButtons/VoucherDetailsActionButtons";
+import VoucherDetailsToGodown from "./VoucherDetailsToGodown";
 
 function VoucherDetails() {
   const [data, setData] = useState("");
@@ -27,6 +28,7 @@ function VoucherDetails() {
 
   const getEndPoint = () => {
     const pathName = location.pathname.split("/")[2];
+
     if (pathName === "vanSaleDetails" || pathName === "salesDetails") {
       return "getSalesDetails";
     } else {
@@ -79,16 +81,6 @@ function VoucherDetails() {
     setRefresh(!refresh);
   };
 
-  // const handleEdit = () => {
-  //   if (data?.isEditable === false) {
-  //     alert(
-  //       "You can't edit this voucher since it has been used to generate receipts or payments"
-  //     );
-  //     return;
-  //   }
-  //   navigate(`/sUsers/editSale/${data?._id}`);
-  // };
-
   const wholeLoading = loading || actionLoading;
   return (
     <div className="bg-[rgb(244,246,254)] flex-1  relative  pb-[70px] md:pb-0  ">
@@ -115,7 +107,11 @@ function VoucherDetails() {
             actionLoading={actionLoading}
           />
 
-          <VoucherDetailsParty data={data} />
+          {data?.voucherType === "stockTransfer" ? (
+           <VoucherDetailsToGodown data={data} />
+          ) : (
+            <VoucherDetailsParty data={data} />
+          )}
 
           <SalesProductDetails
             data={data}

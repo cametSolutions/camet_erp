@@ -13,6 +13,7 @@ const StockTransferSchema = new mongoose.Schema(
         return date;
       },
     },
+    voucherType: { type: String, default: "stockTransfer" },
     serialNumber: { type: Number },
     stockTransferNumber: { type: String, required: true },
     Primary_user_id: {
@@ -22,7 +23,7 @@ const StockTransferSchema = new mongoose.Schema(
     },
     Secondary_user_id: { type: Schema.Types.ObjectId, ref: "User" },
     cmp_id: { type: Schema.Types.ObjectId, ref: "Company", required: true },
-    stockTransferFromGodown: {
+    stockTransferToGodown: {
       _id: { type: Schema.Types.ObjectId, ref: "Godown", default: null },
       godown: { type: String, default: null },
       godown_id: { type: String, default: null },

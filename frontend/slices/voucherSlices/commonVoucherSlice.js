@@ -34,7 +34,7 @@ const initialState = {
   },
   /// godown Details for van sales
   vanSaleGodown: {},
-  stockTransferFromGodown: {},
+  stockTransferToGodown: null,
 };
 
 export const commonVoucherSlice = createSlice({
@@ -461,14 +461,14 @@ export const commonVoucherSlice = createSlice({
         state.items.push(currentProduct);
       }
     },
-    addStockTransferFromGodown: (state, action) => {
+    addStockTransferToGodown: (state, action) => {
       state.products = [];
       state.items = [];
-      state.stockTransferFromGodown = action.payload;
+      state.stockTransferToGodown = action.payload;
     },
 
-    removeStockTransferFromGodown: (state) => {
-      state.stockTransferFromGodown = {};
+    removeStockTransferToGodown: (state) => {
+      state.stockTransferToGodown = {};
     },
   },
 });
@@ -522,8 +522,8 @@ export const {
   addMode,
   setInitialized,
   addBatch,
-  addStockTransferFromGodown,
-  removeStockTransferFromGodown,
+  addStockTransferToGodown,
+  removeStockTransferToGodown,
 } = commonVoucherSlice.actions;
 
 export default commonVoucherSlice.reducer;
