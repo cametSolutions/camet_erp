@@ -388,7 +388,7 @@ function VoucherAddCount() {
 
         // purchase does not need the price level ,it is manually typed
 
-        if (voucherTypeFromRedux === "purchase") {
+        if (voucherTypeFromRedux === "purchase" || voucherTypeFromRedux === "stockTransfer") {
           defaultPriceLevel = {
             _id: null,
             name: null,

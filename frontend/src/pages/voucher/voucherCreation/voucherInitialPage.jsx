@@ -258,8 +258,19 @@ function VoucherInitialPage() {
 
   const submitHandler = async () => {
     // Validation
-    if (Object.keys(party).length === 0) {
+    if (
+      Object.keys(party).length === 0 &&
+      voucherTypeFromRedux !== "stockTransfer"
+    ) {
       toast.error("Add a party first");
+      return;
+    }
+
+    if (
+      voucherTypeFromRedux === "stockTransfer" &&
+      Object.keys(stockTransferFromGodown).length === 0
+    ) {
+      toast.error("Select a from godown first");
       return;
     }
 
@@ -291,26 +302,35 @@ function VoucherInitialPage() {
     setSubmitLoading(true);
     const voucherNumberTitle = getVoucherNumberTitle();
 
+    let formData = {};
+
     try {
-      const formData = {
-        selectedDate: new Date(selectedDate).toISOString(),
-        voucherType,
-        [voucherNumberTitle]: voucherNumber,
-        orgId: cmp_id,
-        finalAmount: Number(totalAmount.toFixed(2)),
-        party,
-        items,
-        despatchDetails,
-        priceLevelFromRedux,
-        additionalChargesFromRedux,
-        selectedGodownDetails: vanSaleGodownFromRedux,
-        // batchHeights,
-        // convertedFrom,
-        // paymentSplittingData:
-        //   Object.keys(paymentSplittingReduxData).length !== 0
-        //     ? paymentSplittingReduxData
-        //     : {},
-      };
+      if (voucherTypeFromRedux === "stockTransfer") {
+        formData = {
+          selectedDate: new Date(selectedDate).toISOString(),
+          voucherType,
+          orgId: cmp_id,
+
+          [voucherNumberTitle]: voucherNumber,
+          stockTransferFromGodown,
+          items,
+          finalAmount: 0,
+        };
+      } else {
+        formData = {
+          selectedDate: new Date(selectedDate).toISOString(),
+          voucherType,
+          [voucherNumberTitle]: voucherNumber,
+          orgId: cmp_id,
+          finalAmount: Number(totalAmount.toFixed(2)),
+          party,
+          items,
+          despatchDetails,
+          priceLevelFromRedux,
+          additionalChargesFromRedux,
+          selectedGodownDetails: vanSaleGodownFromRedux,
+        };
+      }
 
       const endPoint = getApiEndPoint();
       let params = {};

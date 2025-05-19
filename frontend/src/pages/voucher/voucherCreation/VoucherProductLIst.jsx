@@ -52,7 +52,7 @@ export default function VoucherProductList({
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
 
-  const { enableNegativeStockBlockForVanInvoice=false } = configurations[0];
+  const { enableNegativeStockBlockForVanInvoice = false } = configurations[0];
 
   // ========== LIST HEIGHT CALCULATION ==========
   /**
@@ -258,7 +258,11 @@ export default function VoucherProductList({
     setItems(updatedItems);
 
     // Navigate to edit page if no price level is selected
-    if (selectedPriceLevel?._id === null) {
+    if (
+      selectedPriceLevel?._id === null &&
+      (voucherTypeFromRedux == "purchase" ||
+        voucherTypeFromRedux == "debitNote")
+    ) {
       navigate(`/sUsers/editItemSales/${_id}/${idx}`);
     }
   };

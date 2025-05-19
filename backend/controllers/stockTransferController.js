@@ -26,10 +26,9 @@ export const createStockTransfer = async (req, res) => {
     const {
       selectedDate,
       orgId,
-      selectedGodown,
-      selectedGodownId,
+      stockTransferFromGodown,
       items,
-      lastAmount,
+      finalAmount: lastAmount,
       stockTransferNumber,
     } = req.body;
 
@@ -37,8 +36,7 @@ export const createStockTransfer = async (req, res) => {
       stockTransferNumber,
       selectedDate,
       orgId,
-      selectedGodown,
-      selectedGodownId,
+      stockTransferFromGodown,
       items,
       lastAmount,
       req,
@@ -145,15 +143,14 @@ export const editStockTransfer = async (req, res) => {
     // existingTransfer.lastAmount = lastAmount;
 
     const updateData = {
-      date: await formatToLocalDate(selectedDate,orgId),
+      date: await formatToLocalDate(selectedDate, orgId),
       orgId: orgId,
       selectedGodown: selectedGodown,
       selectedGodownId: selectedGodownId,
       items: items,
       lastAmount: lastAmount,
-      updatedAt: new Date()  // Add updatedAt if you're tracking it
+      updatedAt: new Date(), // Add updatedAt if you're tracking it
     };
-
 
     await stockTransferModel.findByIdAndUpdate(
       existingTransfer._id,

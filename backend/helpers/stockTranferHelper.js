@@ -5,15 +5,15 @@ import { formatToLocalDate } from "./stockTransferHelper.js";
 
 ///
 
-
 //////////////////////////balance stock updation asd of stock transfer ///////////////////
 
 export const processStockTransfer = async ({
   selectedDate,
-  selectedGodown,
-  selectedGodownId,
+  stockTransferFromGodown,
   items,
 }) => {
+  const selectedGodown = stockTransferFromGodown?.godown;
+  const selectedGodownId = stockTransferFromGodown?._id;
   try {
     const updatedProducts = [];
 
@@ -32,34 +32,32 @@ export const processStockTransfer = async ({
       // let totalTransferCount = 0;
 
       sourceGodowns.forEach((sourceGodown) => {
-        const transferCount = sourceGodown.count;
+        const transferCount = sourceGodown.actualCount ?? sourceGodown.count;
         // totalTransferCount += transferCount;
 
         let sourceGodownInProduct = product.GodownList.find((g) => {
-          if (sourceGodown.batch) {
+          if (item?.batchEnabled) {
             return (
-              g.godown_id === sourceGodown.godown_id &&
+              g.godown.toString() === sourceGodown.godownMongoDbId &&
               g.batch === sourceGodown.batch
             );
           } else {
-            return g.godown_id === sourceGodown.godown_id;
+            return g.godown.toString() === sourceGodown.godownMongoDbId;
           }
         });
 
         if (sourceGodownInProduct) {
           sourceGodownInProduct.balance_stock -= transferCount;
-          // console.log(
-          //   `Reduced stock from ${sourceGodown.godown_id} and batch ${sourceGodown.batch} and count ${transferCount}: new balance is ${sourceGodownInProduct.balance_stock}`
-          // );
         }
 
         let destGodown = destinationProduct.GodownList.find((g) => {
           if (sourceGodown.batch) {
             return (
-              g.godown_id === selectedGodownId && g.batch === sourceGodown.batch
+              g.godown.toString() === selectedGodownId &&
+              g.batch === sourceGodown.batch
             );
           } else {
-            return g.godown_id === selectedGodownId;
+            return g.godown.toString() === selectedGodownId;
           }
         });
 
@@ -113,8 +111,7 @@ export const handleStockTransfer = async ({
   stockTransferNumber,
   selectedDate,
   orgId,
-  selectedGodown,
-  selectedGodownId,
+  stockTransferFromGodown,
   items,
   lastAmount,
   serialNumber,
@@ -128,8 +125,7 @@ export const handleStockTransfer = async ({
       Primary_user_id: req.owner.toString(),
       Secondary_user_id: req.sUserId,
       cmp_id: orgId,
-      selectedGodown,
-      selectedGodownId,
+      stockTransferFromGodown,
       items,
       finalAmount: lastAmount,
       createdAt: new Date(),
