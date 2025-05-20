@@ -264,11 +264,11 @@ function ConfigureSecondaryUser() {
   const validateConfiguration = (config, configName) => {
     const mandatoryFields = ["currentNumber"];
     const optionalFields = [
-      "prefixDetails",
-      "suffixDetails",
+      // "prefixDetails",
+      // "suffixDetails",
       "widthOfNumericalPart",
     ];
-    const allFields = [...mandatoryFields, ...optionalFields];
+    const allFields = ["prefixDetails", "suffixDetails", "widthOfNumericalPart","currentNumber"];
 
     let errors = [];
     let hasOptionalFields = false;
