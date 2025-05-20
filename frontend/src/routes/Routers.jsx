@@ -184,7 +184,7 @@ const Routers = () => {
         <Route path='/sUsers/purchase' element={<ProtectedSecRoute><VoucherInitialPage/></ProtectedSecRoute>}></Route> 
         <Route path='/sUsers/searchPartyPurchase' element={<ProtectedSecRoute><SearchParty/></ProtectedSecRoute>}></Route> 
         <Route path='/sUsers/addItemPurchase' element={<ProtectedSecRoute><AddItemPurchase/></ProtectedSecRoute>}></Route>
-        <Route path='/sUsers/billToPurchase/:id' element={<ProtectedSecRoute><BillToPurchase/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/billToPurchase/:id' element={<ProtectedSecRoute><BillToVoucher/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/editItemPurchase/:id/:godownName/:index' element={<ProtectedSecRoute><EditItemPurchase/></ProtectedSecRoute>}></Route> 
         <Route path='/sUsers/purchaseDetails/:id' element={<ProtectedSecRoute><VoucherDetails/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/sharePurchase/:id' element={<ProtectedSecRoute><SharePurchaseSecondary/></ProtectedSecRoute>}></Route>
@@ -197,7 +197,7 @@ const Routers = () => {
         <Route path='/sUsers/editsales/:id' element={<ProtectedSecRoute><VoucherInitialPageEdit/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/editVanSale/:id' element={<ProtectedSecRoute><VoucherInitialPageEdit/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/billToSales/:id' element={<ProtectedSecRoute><BillToVoucher/></ProtectedSecRoute>}></Route>
-        <Route path='/sUsers/billToSalesOrder/:id' element={<ProtectedSecRoute><BillToSalesOrder/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/billToSalesOrder/:id' element={<ProtectedSecRoute><BillToVoucher/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/vanSale' element={<ProtectedSecRoute><VoucherInitalPage/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/stockTransfer' element={<ProtectedSecRoute><VoucherInitalPage/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/searchGodown' element={<ProtectedSecRoute><SearchGodown/></ProtectedSecRoute>}></Route>
@@ -236,7 +236,7 @@ const Routers = () => {
          {/* creditNote */}
         <Route path='/sUsers/creditNote' element={<ProtectedSecRoute><VoucherInitalPage/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/searchPartyCreditNote' element={<ProtectedSecRoute><SearchParty/></ProtectedSecRoute>}></Route>
-        <Route path='/sUsers/billToCreditNote/:id' element={<ProtectedSecRoute><BillToCreditNote/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/billToCreditNote/:id' element={<ProtectedSecRoute><BillToVoucher/></ProtectedSecRoute>}></Route>
  
         <Route path='/sUsers/creditNoteDetails/:id' element={<ProtectedSecRoute><VoucherDetails/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/editCreditNote/:id' element={<ProtectedSecRoute><VoucherInitialPageEdit/></ProtectedSecRoute>}></Route>
@@ -245,7 +245,7 @@ const Routers = () => {
          {/* debitNote */}
         <Route path='/sUsers/debitNote' element={<ProtectedSecRoute><VoucherInitalPage/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/searchPartyDebitNote' element={<ProtectedSecRoute><SearchParty/></ProtectedSecRoute>}></Route>
-        <Route path='/sUsers/billToDebitNote/:id' element={<ProtectedSecRoute><BillToDebitNote/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/billToDebitNote/:id' element={<ProtectedSecRoute><BillToVoucher/></ProtectedSecRoute>}></Route>
 
         <Route path='/sUsers/debitNoteDetails/:id' element={<ProtectedSecRoute><VoucherDetails/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/editDebitNote/:id' element={<ProtectedSecRoute><VoucherInitialPageEdit/></ProtectedSecRoute>}></Route>
