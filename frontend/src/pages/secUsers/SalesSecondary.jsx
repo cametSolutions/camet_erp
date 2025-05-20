@@ -162,7 +162,7 @@ function SalesSecondary() {
           // console.log(padedNumber);
           const finalOrderNumber = [prefixDetails, padedNumber, suffixDetails]
             .filter(Boolean)
-            .join("-");
+            .join("/");
           // console.log(finalOrderNumber);
           setSalesNumber(finalOrderNumber);
         } else {

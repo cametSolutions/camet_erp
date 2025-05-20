@@ -142,9 +142,7 @@ function ConfigureSecondaryUser() {
           } = configurations[0];
 
           setSelectedGodowns(selectedGodowns || []);
-          setSelectedVanSaleSubGroups(
-            selectedVanSaleSubGroups || []
-          )
+          setSelectedVanSaleSubGroups(selectedVanSaleSubGroups || []);
           setSelectedPriceLevels(selectedPriceLevels || []);
           setSalesOrder(
             salesOrderConfiguration ? [salesOrderConfiguration] : initialConfig
@@ -268,7 +266,12 @@ function ConfigureSecondaryUser() {
       // "suffixDetails",
       "widthOfNumericalPart",
     ];
-    const allFields = ["prefixDetails", "suffixDetails", "widthOfNumericalPart","currentNumber"];
+    const allFields = [
+      "prefixDetails",
+      "suffixDetails",
+      "widthOfNumericalPart",
+      "currentNumber",
+    ];
 
     let errors = [];
     let hasOptionalFields = false;
@@ -298,13 +301,17 @@ function ConfigureSecondaryUser() {
       }
     }
 
-    const alphanumericWithSlashRegex = /^[a-zA-Z0-9][a-zA-Z0-9/]*$/;
+    const alphanumericWithSlashHyphenRegex = /^[a-zA-Z0-9][a-zA-Z0-9/-]*$/;
+
     for (let field of allFields) {
-      if (config[field] && !alphanumericWithSlashRegex.test(config[field])) {
+      if (
+        config[field] &&
+        !alphanumericWithSlashHyphenRegex.test(config[field])
+      ) {
         errors.push(
           `${configName}: ${formatFieldName(
             field
-          )} must start with and can only contain alphanumeric characters and forward slashes`
+          )} must start with and can only contain alphanumeric characters, forward slashes, and hyphens`
         );
       }
     }
@@ -381,7 +388,6 @@ function ConfigureSecondaryUser() {
     }
 
     console.log(formData);
-    
 
     try {
       const res = await api.post(
@@ -647,7 +653,7 @@ function ConfigureSecondaryUser() {
                        
                          space-y-2 `}
                       >
-                        {(selectedConfig === "vanSale") ? (
+                        {selectedConfig === "vanSale" ? (
                           godowns?.length > 0 ? (
                             godowns?.map((item, index) => (
                               <div key={index} className="flex items-center">
@@ -710,7 +716,8 @@ function ConfigureSecondaryUser() {
                         )}
                       </div>
                     </div>
-                    {(selectedConfig === "vanSale" || selectedConfig === "sales" ) && (
+                    {(selectedConfig === "vanSale" ||
+                      selectedConfig === "sales") && (
                       <div className="lg:col-span-1">
                         <h6 className="text-blueGray-400 text-sm mb-4 font-bold uppercase">
                           Sub Groups
