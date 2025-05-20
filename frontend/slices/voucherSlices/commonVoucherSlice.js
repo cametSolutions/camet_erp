@@ -1,5 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit";
 
+
 const initialState = {
   voucherNumber: "",
   voucherType: "",
@@ -36,6 +37,7 @@ const initialState = {
   stockTransferToGodown: null,
   billToParty: {},
   shipToParty: {},
+  
 };
 
 export const commonVoucherSlice = createSlice({

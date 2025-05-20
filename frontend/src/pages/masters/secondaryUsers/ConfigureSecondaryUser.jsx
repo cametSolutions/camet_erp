@@ -264,7 +264,12 @@ function ConfigureSecondaryUser() {
       // "suffixDetails",
       "widthOfNumericalPart",
     ];
-    const allFields = ["currentNumber", "prefixDetails", "suffixDetails", "widthOfNumericalPart"];
+    const allFields = [
+      "currentNumber",
+      "prefixDetails",
+      "suffixDetails",
+      "widthOfNumericalPart",
+    ];
 
     let errors = [];
     let hasOptionalFields = false;
@@ -294,9 +299,12 @@ function ConfigureSecondaryUser() {
       }
     }
 
-    const alphanumericWithSlashRegex = /^[a-zA-Z0-9][a-zA-Z0-9/]*$/;
+    const alphanumericWithSlashHyphenRegex = /^[a-zA-Z0-9][a-zA-Z0-9/-]*$/;
     for (let field of allFields) {
-      if (config[field] && !alphanumericWithSlashRegex.test(config[field])) {
+      if (
+        config[field] &&
+        !alphanumericWithSlashHyphenRegex.test(config[field])
+      ) {
         errors.push(
           `${configName}: ${formatFieldName(
             field
@@ -396,8 +404,6 @@ function ConfigureSecondaryUser() {
       console.log(error);
     }
   };
-
-  
 
   return (
     <div className="flex-1   ">

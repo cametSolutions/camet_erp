@@ -189,7 +189,7 @@ function VoucherInitialPage() {
               suffixDetails,
             ]
               .filter(Boolean)
-              .join("-");
+              .join("/");
             setVoucherNumber(finalOrderNumber);
             if (isMounted.current) {
               dispatch(addVoucherNumber(finalOrderNumber));

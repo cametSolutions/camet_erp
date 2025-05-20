@@ -42,6 +42,8 @@ function RemoveReduxData() {
     dispatch(removeAllTally());
     dispatch(removeAllUser());
     dispatch(removeAllForCommonVoucher());
+
+    localStorage.removeItem("voucherType");
   }, [dispatch]); // Adding dispatch to the dependency array
 
   return (
