@@ -32,9 +32,10 @@ const initialState = {
     termsOfPay: "",
     termsOfDelivery: "",
   },
-  /// godown Details for van sales
   vanSaleGodown: {},
   stockTransferToGodown: null,
+  billToParty: {},
+  shipToParty: {},
 };
 
 export const commonVoucherSlice = createSlice({
@@ -283,44 +284,10 @@ export const commonVoucherSlice = createSlice({
           state.items.splice(index, 1);
         }
 
-        // currentItem.GodownList[idx].added = false;
-        // currentItem.GodownList[idx].actualCount = 0;
-        // currentItem.GodownList[idx].count = 0;
-        // currentItem.GodownList[idx].individualTotal = 0;
-
-        // const newCount = currentItem.GodownList.reduce((acc, curr) => {
-        //   if (curr.added) {
-        //     return acc + curr.count;
-        //   } else {
-        //     return acc;
-        //   }
-        // }, 0);
-
-        // const newTotal = currentItem.GodownList.reduce((acc, curr) => {
-        //   if (curr.added) {
-        //     return acc + curr.individualTotal;
-        //   } else {
-        //     return acc;
-        //   }
-        // }, 0);
-
-        // currentItem.count = newCount;
-        // currentItem.total = newTotal;
-
-        // const allAddedFalse = currentItem.GodownList.every(
-        //   (item) => item.added === false || item.added == undefined
-        // );
-
-        // // If allAddedFalse is true, set currentItem.added to false
-        // if (allAddedFalse) {
-        //   state.items.splice(index, 1);
-        // }
       }
     },
 
-    addNewAddress: (state, action) => {
-      state.party.newBillToShipTo = action.payload;
-    },
+   
 
     addDespatchDetails: (state, action) => {
       return {
@@ -470,6 +437,17 @@ export const commonVoucherSlice = createSlice({
     removeStockTransferToGodown: (state) => {
       state.stockTransferToGodown = {};
     },
+    addNewAddress: (state, action) => {
+      state.party.newAddress = action.payload;
+      state.billToParty={};
+      state.shipToParty={};
+    },
+    addBillToParty: (state, action) => {
+      state.billToParty = action.payload;
+    },
+    addShipToParty: (state, action) => {
+      state.shipToParty = action.payload;
+    }
   },
 });
 
@@ -524,6 +502,8 @@ export const {
   addBatch,
   addStockTransferToGodown,
   removeStockTransferToGodown,
+  addBillToParty,
+  addShipToParty,
 } = commonVoucherSlice.actions;
 
 export default commonVoucherSlice.reducer;

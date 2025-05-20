@@ -60,6 +60,7 @@ const vanSaleSchema = new Schema(
       accountGroup: { type: String },
       totalOutstanding: { type: Number },
       latestBillDate: { type: Date, default: null },
+      newAddress: { type: Object },
     },
 
     // priceLevel: { type: Schema.Types.ObjectId, ref: 'PriceLevel' },

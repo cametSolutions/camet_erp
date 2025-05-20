@@ -58,6 +58,7 @@ const salesSchema = new Schema(
       accountGroup: { type: String },
       totalOutstanding: { type: Number },
       latestBillDate: { type: Date, default: null },
+      newAddress: { type: Object },
     },
 
     // priceLevel: { type: Schema.Types.ObjectId, ref: 'PriceLevel' },
@@ -181,6 +182,10 @@ const salesSchema = new Schema(
         termsOfPay: "",
         termsOfDelivery: "",
       },
+    },
+
+    address: {
+      type: Object,
     },
 
     additionalCharges: [

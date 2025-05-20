@@ -1,4 +1,4 @@
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import TitleDiv from "../../../../../components/common/TitleDiv";
@@ -7,6 +7,7 @@ import CustomBarLoader from "../../../../../components/common/CustomBarLoader";
 import api from "../../../../../api/api";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
+import { updateConfiguration } from "../../../../../../slices/secSelectedOrgSlice";
 
 const DespatchForm = () => {
   const [submitLoading, setSubmitLoading] = useState(false);
@@ -31,6 +32,7 @@ const DespatchForm = () => {
 
   const location = useLocation();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   let tab;
   const path = location.pathname;
 
@@ -44,9 +46,6 @@ const DespatchForm = () => {
     default:
       tab = "saleOrder";
   }
-
-  console.log("path", path, tab);
-  
 
   const cmp_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
@@ -74,7 +73,6 @@ const DespatchForm = () => {
     setFormFields(updatedFields);
   };
 
-
   const submitHandler = async (e) => {
     e.preventDefault();
     setSubmitLoading(true);
@@ -97,6 +95,7 @@ const DespatchForm = () => {
       );
 
       toast.success(res.data.message);
+      dispatch(updateConfiguration(res.data.data));
       navigate(-1, { replace: true });
     } catch (error) {
       toast.error(error.response.data.message);

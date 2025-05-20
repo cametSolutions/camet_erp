@@ -380,7 +380,6 @@ export const updateDespatchTitles = async (req, res) => {
   const cmp_id = req?.params?.cmp_id;
   const voucher = req.query.voucher || "all";
 
-  console.log(req.body);
 
   const {
     challanNo,
@@ -452,15 +451,14 @@ export const updateDespatchTitles = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: "Failed to update despatch titles",
+        
       });
     }
 
     res.status(200).json({
       success: true,
       message: "Despatch titles updated successfully",
-      data: updatedCompany.configurations[0].despatchTitles.find(
-        (config) => config.voucher === voucher
-      ),
+      data: updatedCompany
     });
   } catch (error) {
     console.error(error);

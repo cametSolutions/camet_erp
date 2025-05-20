@@ -7,16 +7,19 @@ import { addDespatchDetails } from "../../../../slices/voucherSlices/commonVouch
 import { useDispatch, useSelector } from "react-redux";
 
 function DespatchDetails({ tab }) {
-  const despatchDetails = useSelector(
-    (state) => state?.commonVoucherSlice.despatchDetails
+  const {despatchDetails,voucherType} = useSelector(
+    (state) => state?.commonVoucherSlice
   );
+
+  console.log(voucherType);
+  
 
   /// find voucher to get corresponding despatch details from configurations
 
   let voucher;
-  if (tab === "sale") {
+  if (voucherType === "sales") {
     voucher = "sale";
-  } else if (tab === "order") {
+  } else if (voucherType === "saleOrder") {
     voucher = "saleOrder";
   } else {
     voucher = "default";
@@ -34,6 +37,9 @@ function DespatchDetails({ tab }) {
         companyDetails.configurations[0].despatchTitles.find(
           (config) => config.voucher === voucher
         );
+
+        console.log(despatchTitles);
+        
 
       if (despatchTitles) {
         setDisplayTitles(despatchTitles);

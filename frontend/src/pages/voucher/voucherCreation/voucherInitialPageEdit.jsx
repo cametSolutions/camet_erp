@@ -153,18 +153,14 @@ function VoucherInitialPageEdit() {
       stockTransferToGodown: stockTransferToGodownFromState = {},
     } = location.state.data || {};
 
-    console.log("location state", location.state.data);
 
     try {
       if (voucherIdFromState) {
         setVoucherId(voucherIdFromState);
       }
+
       //  Populate Voucher Configuration Number for location state
-      if (
-        !voucherNumberFromRedux &&
-        voucherTypeFromRedux &&
-        isMounted.current
-      ) {
+      if (!voucherNumberFromRedux) {
         dispatch(addVoucherNumber(voucherNumberFromState));
         dispatch(addVoucherType(voucherTypeFromState));
         setVoucherNumber(voucherNumberFromState);

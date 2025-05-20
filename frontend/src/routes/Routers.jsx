@@ -134,6 +134,7 @@ import VoucherInitialPage from '@/pages/voucher/voucherCreation/voucherInitialPa
 import VoucherDetails from '@/pages/voucher/voucherDetails/VoucherDetails'
 import VoucherInitialPageEdit from '@/pages/voucher/voucherCreation/voucherInitialPageEdit'
 import AccVoucherInitialPage from '@/pages/accountingVoucher/voucherCreation/AccVoucherInitialPage'
+import BillToVoucher from '@/pages/voucher/voucherCreation/BillToVoucher'
 
 const Routers = () => {
   return (
@@ -195,7 +196,7 @@ const Routers = () => {
        
         <Route path='/sUsers/editsales/:id' element={<ProtectedSecRoute><VoucherInitialPageEdit/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/editVanSale/:id' element={<ProtectedSecRoute><VoucherInitialPageEdit/></ProtectedSecRoute>}></Route>
-        <Route path='/sUsers/billToSales/:id' element={<ProtectedSecRoute><BillToSales/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/billToSales/:id' element={<ProtectedSecRoute><BillToVoucher/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/billToSalesOrder/:id' element={<ProtectedSecRoute><BillToSalesOrder/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/vanSale' element={<ProtectedSecRoute><VoucherInitalPage/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/stockTransfer' element={<ProtectedSecRoute><VoucherInitalPage/></ProtectedSecRoute>}></Route>

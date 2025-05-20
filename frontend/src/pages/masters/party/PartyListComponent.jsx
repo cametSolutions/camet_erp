@@ -14,7 +14,11 @@ import { IoMdArrowDown } from "react-icons/io";
 import { formatAmount } from "../../../../../backend/helpers/helper";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate, useLocation } from "react-router-dom";
-import { addParty } from "../../../../slices/voucherSlices/commonVoucherSlice";
+import {
+  addBillToParty,
+  addParty,
+  addShipToParty,
+} from "../../../../slices/voucherSlices/commonVoucherSlice";
 import { addParty as addPartyInAccountingVouchers } from "../../../../slices/voucherSlices/commonAccountingVoucherSlice";
 
 function PartyListComponent({ deleteHandler = () => {}, isVoucher = false }) {
@@ -163,11 +167,24 @@ function PartyListComponent({ deleteHandler = () => {}, isVoucher = false }) {
   //// dispatch to correct redux state according to vouchers
 
   const selectHandler = (el) => {
-
     const voucherType = getVoucherType();
-    if (location.pathname === "/sUsers/partyStatement/partyList") {
+
+    const pathName = location?.pathname;
+    if (location?.state?.from === "AddressForm") {
+      const addressType = location?.state?.type;
+      if (addressType === "billTo") {
+        dispatch(addBillToParty(el));
+      } else {
+        dispatch(addShipToParty(el));
+      }
+
+      navigate(-1, { replace: true });
+      return;
+    }
+
+    if (pathName === "/sUsers/partyStatement/partyList") {
       navigate("/sUsers/partyStatement", { state: el });
-    } else if (location.pathname === "/sUsers/orderPending/partyList") {
+    } else if (pathName === "/sUsers/orderPending/partyList") {
       navigate(`/sUsers/pendingOrders/${el?._id}`);
     } else if (voucherType === "receipt") {
       dispatch(addPartyInAccountingVouchers(el));
@@ -176,6 +193,8 @@ function PartyListComponent({ deleteHandler = () => {}, isVoucher = false }) {
     } else {
       //// dispatch to the correct redux state
       dispatch(addParty(el));
+      dispatch(addBillToParty(el));
+      dispatch(addShipToParty(el));
 
       navigate(-1, { replace: true });
     }
