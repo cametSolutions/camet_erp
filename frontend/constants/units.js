@@ -44,4 +44,5 @@ export const units = [
   { fullForm: "UNT-UNITS", shortForm: "UNT" },
   { fullForm: "YDS-YARDS", shortForm: "YDS" },
   { fullForm: "OTH-OTHERS", shortForm: "OTH" },
+  { fullForm: "DAYS", shortForm: "DAY" },
 ];

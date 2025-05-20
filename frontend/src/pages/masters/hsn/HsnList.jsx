@@ -1,73 +1,41 @@
 import { useEffect, useState } from "react";
 import api from "../../../api/api";
-import Pagination from "../../../components/common/Pagination";
 import { FaEdit } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { MdDelete } from "react-icons/md";
 import Swal from "sweetalert2";
-import { removeAll } from "../../../../slices/invoice";
-import { removeAllSales } from "../../../../slices/sales";
-import { useDispatch } from "react-redux";
-import { useLocation } from "react-router-dom";
-import { IoIosArrowRoundBack } from "react-icons/io";
-import { useNavigate } from "react-router-dom";
+
+import TitleDiv from "@/components/common/TitleDiv";
 
 function HsnList() {
   const [hsn, setHsn] = useState([]);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [postPerPage, setPostPerPage] = useState(6);
   const [refresh, setRefresh] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  //primary organization id
-  const orgPrimary = useSelector((state) => state.setSelectedOrganization.selectedOrg);
   ///secondary organization id
-  const orgSecondary = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg
+  const orgId = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg?._id
   );
-
-  const dispatch=useDispatch()
-  const location = useLocation();
-  const navigate = useNavigate();
-  let user;
-  let orgId;
-  let org;
-  
-  if (location?.pathname?.startsWith("/pUsers")) {
-    user = "pUsers";
-    orgId = orgPrimary._id;
-    org = orgPrimary;
-  } else {
-    user = "sUsers";
-    orgId = orgSecondary._id;
-    org = orgSecondary;
-  }
-  
-
-
-
 
   useEffect(() => {
     const fetchHsn = async () => {
+      setLoading(true);
       try {
-        const res = await api.get(`/api/${user}/fetchHsn/${orgId}`, {
+        const res = await api.get(`/api/sUsers/fetchHsn/${orgId}`, {
           withCredentials: true,
         });
 
         setHsn(res.data.data);
 
-        // console.log(res.data.organizationData);
       } catch (error) {
         console.log(error);
+      }finally {
+        setLoading(false);
       }
     };
     fetchHsn();
-    dispatch(removeAll())
-    dispatch(removeAllSales())
-
   }, [orgId, refresh]);
-
-
 
   const handleDelete = async (hsnId) => {
     const confirmResult = await Swal.fire({
@@ -83,7 +51,7 @@ function HsnList() {
     if (confirmResult.isConfirmed) {
       try {
         const res = await api.delete(
-          `/api/${user}/deleteHsn/${hsnId}`,
+          `/api/sUsers/deleteHsn/${hsnId}`,
 
           {
             withCredentials: true,
@@ -107,127 +75,60 @@ function HsnList() {
     }
   };
 
-
   return (
-     
-
-      <section className="  antialiased  text-gray-600     ">
-       
-        <div className="flex flex-col h-full ">
-          {/* <!-- Table --> */}
-          <div className="w-full   bg-white shadow-lg rounded-sm ">
-            <header className="  px-5 py-4 border-b border-gray-100 bg bg-[#261b56] text-white">
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-2">
-
-                <IoIosArrowRoundBack
-                onClick={()=>{navigate(-1,{replace:true})}}
-                 className="text-2xl"/>
-                <h2 className="font-semibold ">HSN</h2>
-                </div>
-                {/* {org.type === "self" && ( */}
-                  <Link to={`/${user}/hsn`}>
-                    <button className="flex gap-2 bg-green-500 px-2 py-1 rounded-md text-sm  hover:scale-105 duration-100 ease-in-out hover:bg-green-600">
-                      Add HSN
-                    </button>
-                  </Link>
-                {/* )} */}
-              </div>
-            </header>
-            <div className="p-3">
-              <div className="overflow-x-auto">
-                <table className="table-auto w-full">
-                  <thead className="text-xs font-semibold uppercase text-gray-400 bg-gray-50">
-                    <tr>
-                      <th className="p-2 whitespace-nowrap">
-                        <div className="font-semibold text-left"> HSN Name</div>
-                      </th>
-                      {/* <th className="p-2 whitespace-nowrap">
-                        <div className="font-semibold text-left">Place</div>
-                      </th> */}
-                      <th className="p-2 whitespace-nowrap">
-                        <div className="font-semibold text-left">IGST Rate</div>
-                      </th>
-                      <th className="p-2 whitespace-nowrap">
-                        <div className="font-semibold text-left">Edit</div>
-                      </th>
-                      <th className="p-2 whitespace-nowrap">
-                        <div className="font-semibold text-left">Delete</div>
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="text-sm leading-[40px] divide-y divide-gray-100 ">
-                    {hsn.length > 0 ? (
-                      hsn.map((item, index) => (
-                        <tr key={index}>
-                          {/* <td className="p-2 whitespace-nowrap">
-                            <div className="text-left"> {item.place}</div>
-                          </td> */}
-                          <td className="p-2 whitespace-nowrap">
-                            <div className="text-left"> {item.hsn}</div>
-                          </td>
-                          <td className="p-2 whitespace-nowrap">
-                            <div className="text-left">
-                              {" "}
-                              {`  ${item.igstRate} %`}
-                            </div>
-                          </td>
-                          {/* 
-                          <Link to={`/pUsers/editOrg/${item._id}`}> */}
-                          {/* <td className="flex items-center justify-center">
-                              <div className="h-full flex justify-center items-center">
-                                
-                              </div>
-                            </td> */}
-                          <td className="p-2 whitespace-nowrap">
-                              <div className={` text-center cursor-pointer`}>
-                                {" "}
-                            <Link to={`/${user}/editHsn/${item._id}`}>
-                                <FaEdit />
-                            </Link>
-                              </div>
-                          </td>
-                          {/* </Link> */}
-
-                          <td className="p-2 whitespace-nowrap">
-                            <div
-                              onClick={() => {
-                                handleDelete(item._id);
-                              }}
-                              className={` text-center cursor-pointer`}
-                            >
-                              {" "}
-                              <MdDelete />
-                            </div>
-                          </td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td
-                          className="text-center  "
-                          style={{ marginTop: "20px" }}
-                          colSpan={5}
+    <section className=" antialiased  text-gray-600     ">
+      <div className="flex flex-col h-full ">
+        {/* <!-- Table --> */}
+        <div className="w-full   bg-white shadow-lg rounded-sm ">
+          <TitleDiv
+          loading={loading}
+            title={"HSN List"}
+            from="/sUsers/StockItem"
+            dropdownContents={[
+              {
+                title: "Add Hsn",
+                to: "/sUsers/hsn",
+              },
+            ]}
+          />
+          {/* <div className="p-5 mt-2"> */}
+            <div className="overflow-x-auto ">
+              {hsn.length > 0 ? (
+                <div className="text-sm divide-y-4 divide-gray-100   ">
+                  {hsn.map((item, index) => (
+                    <div
+                      key={index}
+                      className="flex justify-between items-center py-6 shadow-lg p-5 bg-slate-50 mb-2 "
+                    >
+                      <div className="flex-1 flex items-center gap-2">
+                        <div className="font-bold">{item.hsn}</div>
+                        <div className="text-gray-500 font-semibold">({item.igstRate}%)</div>
+                      </div>
+                      <div className="flex gap-5">
+                        <Link
+                          to={`/sUsers/editHsn/${item._id}`}
+                          className="text-blue-500 hover:text-blue-700"
                         >
-                          No HSN found
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                          <FaEdit />
+                        </Link>
+                        <span
+                          onClick={() => handleDelete(item._id)}
+                          className="text-red-500 hover:text-red-700 cursor-pointer"
+                        >
+                          <MdDelete />
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-4">No HSN found</div>
+              )}
             </div>
-          </div>
-          <div className="mt-5">
-            <Pagination
-              postPerPage={postPerPage}
-              totalPosts={hsn.length}
-              setCurrentPage={setCurrentPage}
-              currentPage={currentPage}
-            />
-          </div>
+          {/* </div> */}
         </div>
-      </section>
+      </div>
+    </section>
   );
 }
 
