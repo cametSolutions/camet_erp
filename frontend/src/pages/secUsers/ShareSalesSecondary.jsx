@@ -139,22 +139,22 @@ function ShareSalesSecondary() {
   }, [id, navigate]);
 
   // Effect to trigger PDF printing once data is loaded
-  useEffect(() => {
-    if (!loading && data.salesNumber && contentToPrint.current) {
-      // Small delay to ensure the PDF component is fully rendered
-      const timer = setTimeout(() => {
-        // Trigger the print dialog automatically
-        handlePrint();
-      }, 1000);
+  // useEffect(() => {
+  //   if (!loading && data.salesNumber && contentToPrint.current) {
+  //     // Small delay to ensure the PDF component is fully rendered
+  //     const timer = setTimeout(() => {
+  //       // Trigger the print dialog automatically
+  //       handlePrint();
+  //     }, 1000);
 
-      return () => clearTimeout(timer);
-    }
-  }, [loading, data.salesNumber, handlePrint]);
+  //     return () => clearTimeout(timer);
+  //   }
+  // }, [loading, data.salesNumber, handlePrint]);
 
   return (
-    <div className="h-screen  flex flex-col items-center justify-center bg-gray-100">
+    <div className="h-screen  flex flex-col items-center justify-center ">
       {/* Loading Screen */}
-      <div className="flex flex-col items-center justify-center gap-6">
+      {/* <div className="flex flex-col items-center justify-center gap-6">
         <div className="text-6xl text-purple-600">
           <FaFilePdf />
         </div>
@@ -169,12 +169,11 @@ function ShareSalesSecondary() {
           <br />
           Please wait...
         </p>
-      </div>
+      </div> */}
 
       {/* Hidden PDF Content */}
-      <div
-        style={{ position: "absolute", left: "-9999px", top: 0, opacity: 0 }}
-      >
+      <div className="w-full overflow-x-scroll scrollbar-none">
+   
         <div>
           {IsIndian ? (
             <SalesPdf

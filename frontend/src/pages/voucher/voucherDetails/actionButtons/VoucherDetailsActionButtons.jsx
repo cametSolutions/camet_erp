@@ -85,6 +85,7 @@ export default function VoucherDetailsActionButtons({
         open={shareDialogOpen} 
         setOpen={setShareDialogOpen}
         voucherId={_id}
+        voucherType={voucherType}
       />
       
       <div className="flex justify-center space-x-8">

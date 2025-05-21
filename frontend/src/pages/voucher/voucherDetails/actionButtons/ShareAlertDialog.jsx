@@ -13,13 +13,13 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { Scroll } from "lucide-react";
+// import { Scroll } from "lucide-react";
 import { HiDocument } from "react-icons/hi2";
 import { IoDocumentTextSharp } from "react-icons/io5";
 import { FaWhatsapp } from "react-icons/fa";
 import { MdEmail } from "react-icons/md";
 
-export function ShareAlertDialog({ open, setOpen, voucherId }) {
+export function ShareAlertDialog({ open, setOpen, voucherId,voucherType }) {
   const [selectedFormat, setSelectedFormat] = useState("tax-invoice");
   const navigate = useNavigate();
 
@@ -28,6 +28,7 @@ export function ShareAlertDialog({ open, setOpen, voucherId }) {
       id: "tax-invoice",
       label: "Tax Invoice",
       icon: <IoDocumentTextSharp size={25} />,
+      to: "/invoice/pdf",
     },
     {
       id: "pos",
@@ -51,7 +52,7 @@ export function ShareAlertDialog({ open, setOpen, voucherId }) {
     switch (selectedFormat) {
       case "tax-invoice":
       case "pos":
-        navigate(`/invoice/pdf/${voucherId}?format=${selectedFormat}`);
+        navigate(`/sUsers/share${voucherType}/${voucherId}?format=${selectedFormat}`);
         break;
       case "mail":
         // TODO: Add your email handling logic here

@@ -38,13 +38,10 @@ import ErrorPage from '../pages/errorPages/Notfound'
 import Notfound from '../pages/errorPages/Notfound'
 import ServerError from '../pages/errorPages/ServerError'
 import ThreeInchSalesSec from '../pages/secUsers/ThreeInchSalesSec'
-import AddItemPurchase from '../pages/secUsers/AddItemPurchase'
-import EditItemPurchase from '../pages/secUsers/EditItemPurchase'
 import SharePurchaseSecondary from '../pages/secUsers/SharePurchaseSecondary'
-import EditSale from '../pages/secUsers/EditSale'
+// import EditSale from '../pages/secUsers/EditSale'
 import ThreeInchInvoiceSec from '../pages/secUsers/ThreeInchInvoiceSec'
-import BillToSales from '../pages/secUsers/BillToSales'
-import BillToSalesOrder from '../pages/secUsers/BillToSalesOrder'
+
 import AddBrand from '../pages/masters/product/productSubDetails/AddBrand'
 import AddCategory from '../pages/masters/product/productSubDetails/AddCategory'
 import AddSubCategory from '../pages/masters/product/productSubDetails/AddSubCategory'
@@ -52,26 +49,17 @@ import AddGodown from '../pages/masters/product/productSubDetails/AddGodown'
 import AddPriceLevel from '../pages/masters/product/productSubDetails/AddPriceLevel'
 import ShareVanSaleSecondary from '../pages/secUsers/ShareVanSaleSecondary'
 import ThreeInchVanSaleSec from '../pages/secUsers/ThreeInchVanSaleSec'
-import EditVanSale from '../pages/secUsers/EditVanSale'
-import StockTransferSecondary from '../pages/secUsers/StockTransferSecondary'
+// import EditVanSale from '../pages/secUsers/EditVanSale'
 import SearchGodown from '../pages/secUsers/SearchGodown'
-import AddItemStockTransferSec from '../pages/secUsers/AddItemStockTransferSec'
-import StockTransferDetailsSecondary from '../pages/secUsers/StockTransferDetailsSecondary'
-import EditStockTransferSecondary from '../pages/secUsers/EditStockTransferSecondary'
-// import StockTransferDetailsPrimary from '../pages/primaryUsers/StockTransferDetailsPrimary'
-import BillToPurchase from '../pages/secUsers/BillToPurchase'
-import EditItemStockTransfer from '../pages/secUsers/EditItemStockTransfer'
 import AddbatchInPurchase from '../pages/secUsers/AddbatchInPurchase'
 import ReceiptPrintOut from '../pages/secUsers/ReceiptPrintOut'
 import SelectVouchers from '../pages/secUsers/SelectVouchers'
-import Receipt from '../pages/secUsers/Receipt'
+// import Receipt from '../pages/secUsers/Receipt'
 import OutstandingListOfReceipt from '../pages/secUsers/OutstandingListOfReceipt'
 import PurchasePayment from '../pages/secUsers/PurchasePayment'
-import BillToCreditNote from '../pages/secUsers/BillToCreditNote'
 // import AddItemCreditNote from '../pages/secUsers/AddItemCreditNote'
 // import EditItemCreditNote from '../pages/secUsers/EditItemCreditNote'
 import ShareCreditNoteSecondary from '../pages/secUsers/ShareCreditNoteSecondary'
-import BillToDebitNote from '../pages/secUsers/BillToDebitNote'
 // import AddItemDebitNote from '../pages/secUsers/AddItemDebitNote'
 // import EditItemDebitNote from '../pages/secUsers/EditItemDebitNote'
 import ShareDebitNoteSecondary from '../pages/secUsers/ShareDebitNoteSecondary'
@@ -183,9 +171,7 @@ const Routers = () => {
        {/* purchase */}
         <Route path='/sUsers/purchase' element={<ProtectedSecRoute><VoucherInitialPage/></ProtectedSecRoute>}></Route> 
         <Route path='/sUsers/searchPartyPurchase' element={<ProtectedSecRoute><SearchParty/></ProtectedSecRoute>}></Route> 
-        <Route path='/sUsers/addItemPurchase' element={<ProtectedSecRoute><AddItemPurchase/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/billToPurchase/:id' element={<ProtectedSecRoute><BillToVoucher/></ProtectedSecRoute>}></Route>
-        <Route path='/sUsers/editItemPurchase/:id/:godownName/:index' element={<ProtectedSecRoute><EditItemPurchase/></ProtectedSecRoute>}></Route> 
         <Route path='/sUsers/purchaseDetails/:id' element={<ProtectedSecRoute><VoucherDetails/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/sharePurchase/:id' element={<ProtectedSecRoute><SharePurchaseSecondary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/addBatchPurchase/:id' element={<ProtectedSecRoute><AddbatchInPurchase/></ProtectedSecRoute>}></Route>
@@ -201,9 +187,7 @@ const Routers = () => {
         <Route path='/sUsers/vanSale' element={<ProtectedSecRoute><VoucherInitalPage/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/stockTransfer' element={<ProtectedSecRoute><VoucherInitalPage/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/searchGodown' element={<ProtectedSecRoute><SearchGodown/></ProtectedSecRoute>}></Route>
-        <Route path='/sUsers/addItemStockTransfer' element={<ProtectedSecRoute><AddItemStockTransferSec/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/StockTransferDetails/:id' element={<ProtectedSecRoute><VoucherDetails/></ProtectedSecRoute>}></Route>
-        <Route path='/sUsers/editItemstockTransfer/:id/:godownName/:index' element={<ProtectedSecRoute><EditItemStockTransfer/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/editStockTransfer/:id' element={<ProtectedSecRoute><VoucherInitialPageEdit/></ProtectedSecRoute>}></Route>
 
 

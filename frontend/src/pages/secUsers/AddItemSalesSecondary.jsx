@@ -284,7 +284,9 @@ function AddItemSalesSecondary() {
           dispatch(setPriceLevel(defaultPriceLevel));
         }
       } else {
-        const { priceLevels, brands, categories, subcategories } = res.data;
+        const { priceLevels, 
+          // brands, categories, subcategories
+         } = res.data;
 
         // setBrands(brands);
         // setCategories(categories);
