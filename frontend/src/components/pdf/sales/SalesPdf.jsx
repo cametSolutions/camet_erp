@@ -331,14 +331,19 @@ function SalesPdf({
                           <td className="   text-black pr-2 font-bold ">
                             {el.product_name}{" "}
                           </td>
-                          {configurations?.showHsn &&
+                          {/* {configurations?.showHsn &&
                             (!el?.hasGodownOrBatch ? (
                               <td className=" text-black text-right pr-2">
                                 {el?.hsn_code || ""}
                               </td>
                             ) : (
                               <td className=" text-black text-right pr-2"></td>
-                            ))}
+                            ))} */}
+                          {
+                            <td className=" text-black text-right pr-2">
+                              {el?.hsn_code || ""}
+                            </td>
+                          }
 
                           {configurations?.showTaxPercentage &&
                             (!el?.hasGodownOrBatch ? (
@@ -436,7 +441,7 @@ function SalesPdf({
                                 </td>
                                 {configurations?.showHsn && (
                                   <td className=" text-black text-right pr-2  text-[8px]">
-                                    {el?.hsn_code}
+                                    {/* {el?.hsn_code} */}
                                   </td>
                                 )}
 
@@ -534,7 +539,7 @@ function SalesPdf({
                   {configurations?.showStockWiseTaxAmount && (
                     <td className="text-right pr-1 text-black font-bold text-[9px]">
                       {" "}
-                      {calculateTotalTax()}
+                      {calculateTotalTax()?.toFixed(2)}
                     </td>
                   )}
                   {configurations?.showStockWiseTaxAmount && (
@@ -544,7 +549,7 @@ function SalesPdf({
                         (acc, el) =>
                           acc + ((el?.cessAmt || 0) + (el?.addl_cessAmt || 0)),
                         0
-                      )}
+                      )?.toFixed(2)}
                     </td>
                   )}
                   {}
