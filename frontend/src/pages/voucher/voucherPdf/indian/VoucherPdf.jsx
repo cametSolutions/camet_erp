@@ -3,38 +3,43 @@ import React, { useEffect, useState } from "react";
 
 import { useSelector } from "react-redux";
 import numberToWords from "number-to-words";
-import PdfHeader from "./PdfHeader";
-import PdfFooter from "./PdfFooter";
+import VoucherPdfFooter from "./VoucherPdfFooter";
+import VoucherPdfHeader from "./VoucherPdfHeader";
+import { defaultPrintSettings } from "../../../../../utils/defaultConfigurations";
 
-function SalesPdf({
-  data,
-  org,
-  contentToPrint,
-  bank,
-  // inWords,
-  // subTotal,
-  // additinalCharge,
-  userType,
-  tab,
-}) {
+function VoucherPdf({ data, org, contentToPrint, bank, tab }) {
   const [subTotal, setSubTotal] = useState("");
   const [additinalCharge, setAdditinalCharge] = useState("");
   const [inWords, setInWords] = useState("");
-
-  const primarySelectedOrg = useSelector(
-    (state) => state.setSelectedOrganization.selectedOrg
-  );
-  const secondarySelectedOrg = useSelector(
+  const selectedOrganization = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
-  const selectedOrganization =
-    userType === "primaryUser" ? primarySelectedOrg : secondarySelectedOrg;
 
-  const configurations = useSelector(
+  const getVoucherType = () => {
+    const currentVoucherType = data?.voucherType;
+
+    if (currentVoucherType === "sales" || currentVoucherType === "vanSale") {
+      return "sale";
+    } else if (currentVoucherType === "saleOrder") {
+      return "saleOrder";
+    } else {
+      return "default";
+    }
+  };
+
+  const allPrintConfigurations = useSelector(
     (state) =>
       state.secSelectedOrganization?.secSelectedOrg?.configurations[0]
         ?.printConfiguration
-  ).find((item) => item.voucher === "sale");
+  );
+  const voucherType = getVoucherType();
+  const matchedConfiguration = allPrintConfigurations?.find(
+    (item) => item.voucher === voucherType
+  );
+  const configurations =
+    voucherType && voucherType !== "default" && matchedConfiguration
+      ? matchedConfiguration
+      : defaultPrintSettings;
 
   const calculateTotalTax = () => {
     const totalTax = data?.items?.reduce(
@@ -250,6 +255,7 @@ function SalesPdf({
 
     return null;
   }
+  
 
   return (
     <div>
@@ -273,13 +279,15 @@ function SalesPdf({
                 {configurations?.printTitle || "Tax Invoice"}
               </div>
             </div>
-            <PdfHeader
+            <VoucherPdfHeader
               configurations={configurations}
               data={data}
               org={org}
               address={address}
               despatchDetails={despatchDetails}
               tab={tab}
+              voucherType={data?.voucherType}
+              configVoucherType={voucherType}
             />
             <table className="w-full text-left bg-slate-200">
               <thead className="border-b-2 border-t-2 border-black text-[10px] text-right ">
@@ -590,7 +598,7 @@ function SalesPdf({
               </tfoot>
             </table>
 
-            <PdfFooter
+            <VoucherPdfFooter
               bank={bank}
               org={org}
               data={data}
@@ -601,6 +609,8 @@ function SalesPdf({
               calculateTotalTax={calculateTotalTax}
               configurations={configurations}
               party={party}
+              configVoucherType={voucherType}
+
             />
 
             <div className="page-number"></div>
@@ -611,4 +621,4 @@ function SalesPdf({
   );
 }
 
-export default SalesPdf;
+export default VoucherPdf;

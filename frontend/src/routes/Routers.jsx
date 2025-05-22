@@ -123,6 +123,7 @@ import VoucherDetails from '@/pages/voucher/voucherDetails/VoucherDetails'
 import VoucherInitialPageEdit from '@/pages/voucher/voucherCreation/voucherInitialPageEdit'
 import AccVoucherInitialPage from '@/pages/accountingVoucher/voucherCreation/AccVoucherInitialPage'
 import BillToVoucher from '@/pages/voucher/voucherCreation/BillToVoucher'
+import VoucherPdfInitiator from '@/pages/voucher/voucherPdf/VoucherPdfInitiator'
 
 const Routers = () => {
   return (
@@ -145,7 +146,7 @@ const Routers = () => {
         <Route path='/sUsers/editProduct/:id' element={<ProtectedSecRoute><EditProductSecondary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/saleOrderDetails/:id' element={<ProtectedSecRoute><VoucherDetails/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/editSaleOrder/:id' element={<ProtectedSecRoute><VoucherInitialPageEdit/></ProtectedSecRoute>}></Route>
-        <Route path='/sUsers/shareInvoice/:id' element={<ProtectedSecRoute><ShareInvoiceSecondary/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/shareSaleOrder/:id' element={<ProtectedSecRoute><VoucherPdfInitiator/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/shareInvoiceThreeInch/:id' element={<ProtectedSecRoute><ThreeInchInvoiceSec/></ProtectedSecRoute>}></Route> 
 
         <Route path='/sUsers/additionalChargesList' element={<ProtectedSecRoute><AddChargesListSecondary/></ProtectedSecRoute>}></Route>
@@ -160,8 +161,8 @@ const Routers = () => {
         <Route path='/sUsers/editItemSales/:id/:index' element={<ProtectedSecRoute><EditItemSalesSecondary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/salesDetails/:id' element={<ProtectedSecRoute><VoucherDetails/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/vanSaleDetails/:id' element={<ProtectedSecRoute><VoucherDetails/></ProtectedSecRoute>}></Route>
-        <Route path='/sUsers/shareSales/:id' element={<ProtectedSecRoute><ShareSalesSecondary/></ProtectedSecRoute>}></Route> 
-        <Route path='/sUsers/shareVanSale/:id' element={<ProtectedSecRoute><ShareVanSaleSecondary/></ProtectedSecRoute>}></Route> 
+        <Route path='/sUsers/shareSales/:id' element={<ProtectedSecRoute><VoucherPdfInitiator/></ProtectedSecRoute>}></Route> 
+        <Route path='/sUsers/shareVanSale/:id' element={<ProtectedSecRoute><VoucherPdfInitiator/></ProtectedSecRoute>}></Route> 
         <Route path='/sUsers/shareSalesThreeInch/:id' element={<ProtectedSecRoute><ThreeInchSalesSec/></ProtectedSecRoute>}></Route> 
         <Route path='/sUsers/shareVanSaleThreeInch/:id' element={<ProtectedSecRoute><ThreeInchVanSaleSec/></ProtectedSecRoute>}></Route> 
         <Route path='/sUsers/sales/paymentSplitting' element={<ProtectedSecRoute><PaymentSplitting/></ProtectedSecRoute>}></Route> 
@@ -173,7 +174,7 @@ const Routers = () => {
         <Route path='/sUsers/searchPartyPurchase' element={<ProtectedSecRoute><SearchParty/></ProtectedSecRoute>}></Route> 
         <Route path='/sUsers/billToPurchase/:id' element={<ProtectedSecRoute><BillToVoucher/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/purchaseDetails/:id' element={<ProtectedSecRoute><VoucherDetails/></ProtectedSecRoute>}></Route>
-        <Route path='/sUsers/sharePurchase/:id' element={<ProtectedSecRoute><SharePurchaseSecondary/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/sharePurchase/:id' element={<ProtectedSecRoute><VoucherPdfInitiator/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/addBatchPurchase/:id' element={<ProtectedSecRoute><AddbatchInPurchase/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/editPurchase/:id' element={<ProtectedSecRoute><VoucherInitialPageEdit/></ProtectedSecRoute>}></Route>
        
@@ -224,7 +225,7 @@ const Routers = () => {
  
         <Route path='/sUsers/creditNoteDetails/:id' element={<ProtectedSecRoute><VoucherDetails/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/editCreditNote/:id' element={<ProtectedSecRoute><VoucherInitialPageEdit/></ProtectedSecRoute>}></Route>
-        <Route path='/sUsers/shareCreditNote/:id' element={<ProtectedSecRoute><ShareCreditNoteSecondary/></ProtectedSecRoute>}></Route> 
+        <Route path='/sUsers/shareCreditNote/:id' element={<ProtectedSecRoute><VoucherPdfInitiator/></ProtectedSecRoute>}></Route> 
 
          {/* debitNote */}
         <Route path='/sUsers/debitNote' element={<ProtectedSecRoute><VoucherInitalPage/></ProtectedSecRoute>}></Route>
@@ -233,7 +234,7 @@ const Routers = () => {
 
         <Route path='/sUsers/debitNoteDetails/:id' element={<ProtectedSecRoute><VoucherDetails/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/editDebitNote/:id' element={<ProtectedSecRoute><VoucherInitialPageEdit/></ProtectedSecRoute>}></Route>
-        <Route path='/sUsers/shareDebitNote/:id' element={<ProtectedSecRoute><ShareDebitNoteSecondary/></ProtectedSecRoute>}></Route> 
+        <Route path='/sUsers/shareDebitNote/:id' element={<ProtectedSecRoute><VoucherPdfInitiator/></ProtectedSecRoute>}></Route> 
 
         {/* inventory secondary */}
         {/* we are using the same page of primary to avoid page repetition */}

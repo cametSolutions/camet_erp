@@ -1,4 +1,4 @@
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import TitleDiv from "../../../../../components/common/TitleDiv";
 import { useLocation } from "react-router-dom";
 import useFetch from "../../../../../customHook/useFetch";
@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import api from "../../../../../api/api";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
+import { updateConfiguration } from "../../../../../../slices/secSelectedOrgSlice";
 
 function TermsAndConditionSettings() {
   const [termsInput, setTermsInput] = useState("");
@@ -15,6 +16,7 @@ function TermsAndConditionSettings() {
 
   const location = useLocation();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const path = location.pathname;
   let tab;
   switch (path) {
@@ -71,11 +73,12 @@ const submitHandler = async (e) => {
       );
 
       toast.success(res.data.message);
+      dispatch(updateConfiguration(res.data.data));
+      
       navigate(-1, { replace: true });
     } catch (error) {
       toast.error(error.response.data.message);
       console.log(error);
-      toast.error(error.response.data.message);
     } finally {
       setSubmitLoading(false);
     }

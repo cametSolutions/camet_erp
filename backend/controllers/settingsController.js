@@ -380,7 +380,6 @@ export const updateDespatchTitles = async (req, res) => {
   const cmp_id = req?.params?.cmp_id;
   const voucher = req.query.voucher || "all";
 
-
   const {
     challanNo,
     containerNo,
@@ -451,14 +450,13 @@ export const updateDespatchTitles = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: "Failed to update despatch titles",
-        
       });
     }
 
     res.status(200).json({
       success: true,
       message: "Despatch titles updated successfully",
-      data: updatedCompany
+      data: updatedCompany,
     });
   } catch (error) {
     console.error(error);
@@ -573,9 +571,7 @@ export const updateTermsAndConditions = async (req, res) => {
     res.status(200).json({
       success: true,
       message: "Terms and conditions updated successfully",
-      data: updatedCompany.configurations[0].termsAndConditions.find(
-        (config) => config.voucher === voucher
-      ),
+      data: updatedCompany,
     });
   } catch (error) {
     console.error(error);
@@ -770,7 +766,7 @@ export const updateFirstLayerConfiguration = async (req, res) => {
   const { fieldToUpdate, value } = req.body;
 
   const session = await mongoose.startSession();
-  
+
   try {
     // Validate inputs
     if (!cmp_id || !fieldToUpdate || value === undefined) {
@@ -799,22 +795,17 @@ export const updateFirstLayerConfiguration = async (req, res) => {
     company.configurations[0][fieldToUpdate] = value;
 
     // Special handling for gdnEnabled
-    if (fieldToUpdate === 'gdnEnabled' && value === true) {
-
+    if (fieldToUpdate === "gdnEnabled" && value === true) {
       console.log("here");
-      
+
       // Update all products for this company to enable godown
       const result = await productModel.updateMany(
-        { cmp_id: cmp_id }, 
+        { cmp_id: cmp_id },
         { $set: { gdnEnabled: true } },
         { session }
       );
       console.log("result", result);
-
-
     }
-
-    
 
     // Save the updated company
     await company.save({ session });
