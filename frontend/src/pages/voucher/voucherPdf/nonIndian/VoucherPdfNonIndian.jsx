@@ -52,7 +52,7 @@ function VoucherPdfNonIndian({ data, org, contentToPrint, bank, tab }) {
   };
   const calculateTotalCess = () => {
     const totalTax = data?.items?.reduce(
-      (acc, curr) => (acc += curr?.totalCessAmt || 0),
+      (acc, curr) => (acc += (curr?.totalCessAmt || 0) + (curr?.totalAddlCessAmt || 0)),
       0
     );
 

@@ -348,14 +348,18 @@ export const cancelTransaction = async (req, res) => {
 // route GET/api/sUsers/fetchBanks/:cmp_id
 
 export const fetchBanks = async (req, res) => {
-  const bankId = req.params.cmp_id;
+  const cmp_id = req.params.cmp_id;
   try {
     const bankData = await BankDetails.aggregate([
-      { $match: { cmp_id: bankId } },
+      { $match: { cmp_id: new mongoose.Types.ObjectId(cmp_id) } },
       {
         $project: {
           bank_name: 1,
           bank_ledname: 1,
+          ifsc: 1,
+          ac_no: 1,
+          branch: 1,
+          _id: 1,
         },
       },
     ]);
@@ -732,7 +736,7 @@ export const fetchFilters = async (req, res) => {
 
     let filteredPriceLevels = priceLevels || [];
     if (configuredPriceLevels && configuredPriceLevels?.length > 0) {
-       filteredPriceLevels = priceLevels?.filter((priceLevel) =>
+      filteredPriceLevels = priceLevels?.filter((priceLevel) =>
         configuredPriceLevels?.includes(priceLevel?.name)
       );
     }

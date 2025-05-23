@@ -1,6 +1,9 @@
 /* eslint-disable react/prop-types */
 // import QRCode from "react-qr-code";
+import useFetch from "@/customHook/useFetch";
 import TaxTable from "../../../../components/common/table/TaxTable";
+import { useEffect } from "react";
+import { useState } from "react";
 
 function VoucherPdfFooter({
   bank,
@@ -14,9 +17,18 @@ function VoucherPdfFooter({
   party,
   configVoucherType,
 }) {
+  const [selectedBank, setSelectedBank] = useState({});
   const termsAndConditions = org?.configurations?.[0]?.termsAndConditions?.find(
     (el) => el?.voucher === configVoucherType
   )?.terms;
+
+  const { data: bankData } = useFetch(`/api/sUsers/fetchBanks/${org?._id}`);
+
+  useEffect(() => {
+    if (bankData) {
+      setSelectedBank(bankData?.data?.find((bankApi) => bankApi?._id === bank));
+    }
+  }, [bankData, bank]);
 
   return (
     <div className="mb-5">
@@ -117,19 +129,19 @@ function VoucherPdfFooter({
         <div className=" w-1/2">
           {configurations?.showBankDetails &&
           bank &&
-          Object.keys(bank).length > 0 ? (
+          Object?.keys(selectedBank)?.length > 0 ? (
             <>
               <div className="text-gray-500 font-semibold text-[10px] ">
-                Bank Name: {bank?.bank_name}
+                Bank Name: {selectedBank?.bank_name}
               </div>
               <div className="text-gray-500 font-semibold text-[10px] leading-4">
-                IFSC Code: {bank?.ifsc}
+                IFSC Code: {selectedBank?.ifsc}
               </div>
               <div className="text-gray-500 font-semibold text-[10px] leading-4">
-                Account Number: {bank?.ac_no}
+                Account Number: {selectedBank?.ac_no}
               </div>
               <div className="text-gray-500 font-semibold text-[10px] leading-4">
-                Branch: {bank?.branch}
+                Branch: {selectedBank?.branch}
               </div>
               {/* <div
           style={{

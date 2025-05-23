@@ -51,7 +51,8 @@ function VoucherPdf({ data, org, contentToPrint, bank, tab }) {
   };
   const calculateTotalCess = () => {
     const totalTax = data?.items?.reduce(
-      (acc, curr) => (acc += curr?.totalCessAmt || 0),
+      (acc, curr) =>
+        (acc += (curr?.totalCessAmt || 0) + (curr?.totalAddlCessAmt || 0)),
       0
     );
 
@@ -255,7 +256,6 @@ function VoucherPdf({ data, org, contentToPrint, bank, tab }) {
 
     return null;
   }
-  
 
   return (
     <div>
@@ -610,7 +610,6 @@ function VoucherPdf({ data, org, contentToPrint, bank, tab }) {
               configurations={configurations}
               party={party}
               configVoucherType={voucherType}
-
             />
 
             <div className="page-number"></div>

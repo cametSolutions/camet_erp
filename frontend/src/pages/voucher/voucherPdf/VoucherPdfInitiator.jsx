@@ -8,7 +8,6 @@ import { useSelector } from "react-redux";
 // import { FaFilePdf } from "react-icons/fa";
 // import { BeatLoader } from "react-spinners"; // You can use any loader from react-spinners
 
-import SalesPdfNonInd from "../../../components/pdf/sales/nonIndian/SalesPdfNonInd";
 import VoucherPdf from "./indian/VoucherPdf";
 import VoucherPdfNonIndian from "./nonIndian/VoucherPdfNonIndian";
 
@@ -16,6 +15,8 @@ function VoucherPdfInitiator() {
   const [data, setData] = useState([]);
   // const [loading, setLoading] = useState(true);
   const { id } = useParams();
+
+  
 
   const IsIndian =
     useSelector(

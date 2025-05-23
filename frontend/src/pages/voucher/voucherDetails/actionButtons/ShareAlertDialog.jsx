@@ -12,46 +12,53 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useNavigate } from "react-router-dom";
-// import { Scroll } from "lucide-react";
-import { HiDocument } from "react-icons/hi2";
+import { HiDocument, HiPrinter } from "react-icons/hi2";
 import { IoDocumentTextSharp } from "react-icons/io5";
 import { FaWhatsapp } from "react-icons/fa";
 import { MdEmail } from "react-icons/md";
 
-export function ShareAlertDialog({ open, setOpen, voucherId,voucherType }) {
+export function ShareAlertDialog({ open, setOpen, voucherId, voucherType }) {
   const [selectedFormat, setSelectedFormat] = useState("tax-invoice");
+  const [selectedAction, setSelectedAction] = useState("print");
   const navigate = useNavigate();
 
   const formats = [
     {
       id: "tax-invoice",
       label: "Tax Invoice",
-      icon: <IoDocumentTextSharp size={25} />,
-      to: "/invoice/pdf",
+      icon: <IoDocumentTextSharp size={20} />,
     },
     {
       id: "pos",
       label: "POS Format",
-      icon: <HiDocument size={25} />,
+      icon: <HiDocument size={20} />,
     },
+  ];
+
+  const actions = [
     {
-      id: "mail",
-      label: "Mail",
-      icon: <MdEmail size={25} />,
+      id: "print",
+      label: "Print",
+      icon: <HiPrinter size={25} />,
     },
     {
       id: "whatsapp",
       label: "WhatsApp",
       icon: <FaWhatsapp size={25} />,
     },
+    {
+      id: "mail",
+      label: "Email",
+      icon: <MdEmail size={25} />,
+    },
   ];
 
   const handleContinue = () => {
     // Handle different cases here
-    switch (selectedFormat) {
-      case "tax-invoice":
-      case "pos":
+    switch (selectedAction) {
+      case "print":
         navigate(`/sUsers/share${voucherType}/${voucherId}?format=${selectedFormat}`);
         break;
       case "mail":
@@ -74,52 +81,84 @@ export function ShareAlertDialog({ open, setOpen, voucherId,voucherType }) {
       <AlertDialogContent className="max-w-md bg-gray-900 text-white border-gray-800">
         <AlertDialogHeader>
           <AlertDialogTitle className="text-lg font-semibold text-white">
-            Select Invoice Format
+            Share Invoice
           </AlertDialogTitle>
           <AlertDialogDescription className="text-gray-400">
-            Choose the format you want to share
+            Choose the format and sharing method
           </AlertDialogDescription>
         </AlertDialogHeader>
 
-        <div className="py-6">
-          <RadioGroup
-            value={selectedFormat}
-            onValueChange={setSelectedFormat}
-            className="flex justify-center gap-6 flex-wrap"
-          >
-            {formats.map((format) => (
-              <div
-                key={format.id}
-                className={`flex flex-col items-center cursor-pointer ${
-                  selectedFormat === format.id ? "opacity-100" : "opacity-70"
-                } hover:opacity-100 transition-all`}
-                onClick={() => setSelectedFormat(format.id)}
-              >
-                <div
-                  className={`p-4 rounded-full ${
-                    selectedFormat === format.id
-                      ? "bg-gray-700 border-2 border-white"
-                      : "bg-gray-800 border-2 border-gray-600"
-                  } mb-3`}
-                >
-                  {format.icon}
-                </div>
-                <div className="flex items-center justify-center">
-                  <RadioGroupItem
+        <div className="py-6 space-y-6">
+          {/* Format Selection */}
+          <div>
+            <Label className="text-sm font-medium text-gray-200 mb-3 block">
+              Select Format
+            </Label>
+            <Select value={selectedFormat} onValueChange={setSelectedFormat}>
+              <SelectTrigger className="w-full bg-gray-800 border-gray-600 text-white">
+                <SelectValue placeholder="Choose format" />
+              </SelectTrigger>
+              <SelectContent className="bg-gray-800 border-gray-600">
+                {formats.map((format) => (
+                  <SelectItem 
+                    key={format.id} 
                     value={format.id}
-                    id={format.id}
-                    className="hidden"
-                  />
-                  <Label
-                    htmlFor={format.id}
-                    className="text-center cursor-pointer font-medium text-gray-200"
+                    className="text-white hover:bg-gray-700 focus:bg-gray-700"
                   >
-                    {format.label}
-                  </Label>
+                    <div className="flex items-center gap-2">
+                      {format.icon}
+                      <span>{format.label}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Action Selection */}
+          <div>
+            <Label className="text-sm font-medium text-gray-200 mb-3 block">
+              Select Action
+            </Label>
+            <RadioGroup
+              value={selectedAction}
+              onValueChange={setSelectedAction}
+              className="flex justify-center gap-6 flex-wrap"
+            >
+              {actions.map((action) => (
+                <div
+                  key={action.id}
+                  className={`flex flex-col items-center cursor-pointer ${
+                    selectedAction === action.id ? "opacity-100" : "opacity-70"
+                  } hover:opacity-100 transition-all`}
+                  onClick={() => setSelectedAction(action.id)}
+                >
+                  <div
+                    className={`p-4 rounded-full ${
+                      selectedAction === action.id
+                        ? "bg-gray-700 border-2 border-white"
+                        : "bg-gray-800 border-2 border-gray-600"
+                    } mb-3`}
+                  >
+                    {action.icon}
+                  </div>
+                  <div className="flex items-center justify-center">
+                    <RadioGroupItem
+                      value={action.id}
+                      id={action.id}
+                      className="hidden"
+                    />
+                    <Label
+                      htmlFor={action.id}
+                      className="text-center cursor-pointer font-medium text-gray-200"
+                    >
+                      {action.label}
+                    </Label>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </RadioGroup>
+              ))}
+            </RadioGroup>
+          </div>
         </div>
 
         <AlertDialogFooter>

@@ -45,7 +45,6 @@ export const addOrganizations = async (req, res) => {
   const session = await mongoose.startSession(); // Start a session
   session.startTransaction(); // Start the transaction
 
-  console.log("batchEnabled", batchEnabled);
 
   try {
     // Create the organization
@@ -158,7 +157,8 @@ export const addOrganizations = async (req, res) => {
 export const getOrganizations = async (req, res) => {
   const userId = new mongoose.Types.ObjectId(req.owner);
   try {
-    const organizations = await Organization.find({ owner: userId });
+    const organizations = await Organization.find({ owner: userId }).populate('configurations.bank');
+;
     if (organizations) {
       return res.status(200).json({
         organizationData: organizations,

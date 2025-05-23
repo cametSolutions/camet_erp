@@ -33,7 +33,12 @@ const TaxTable = ({ products, org = {}, party = {}, isIndian = true }) => {
           };
         }
 
-        acc[uniqueKey].taxableAmt += product?.total || 0;
+        const totalTaxableAmt = product?.GodownList?.reduce(
+          (sum, godown) => sum + (Number(godown.taxableAmount) || 0),
+          0
+        );
+
+        acc[uniqueKey].taxableAmt += totalTaxableAmt;
         acc[uniqueKey].cgst += Number(product?.totalCgstAmt) || 0;
         acc[uniqueKey].sgst += Number(product?.totalSgstAmt) || 0;
         acc[uniqueKey].igst += Number(product?.totalIgstAmt) || 0;

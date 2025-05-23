@@ -3,6 +3,7 @@ import barcodeModel from "../models/barcodeModel.js";
 import OragnizationModel from "../models/OragnizationModel.js";
 import productModel from "../models/productModel.js";
 
+
 /**
  * @desc  add email configuration for a company
  * @route POST/api/settings/addEmailConfiguration/:cmp_id
