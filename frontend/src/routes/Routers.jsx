@@ -118,6 +118,7 @@ import VoucherInitialPageEdit from '@/pages/voucher/voucherCreation/voucherIniti
 import AccVoucherInitialPage from '@/pages/accountingVoucher/voucherCreation/AccVoucherInitialPage'
 import BillToVoucher from '@/pages/voucher/voucherCreation/BillToVoucher'
 import VoucherPdfInitiator from '@/pages/voucher/voucherPdf/VoucherPdfInitiator'
+import VoucherPdfInitiatorThreeInch from '@/pages/voucher/voucherPdf/VoucherPdfInitiatorThreeInch'
 
 const Routers = () => {
   return (
@@ -141,7 +142,7 @@ const Routers = () => {
         <Route path='/sUsers/saleOrderDetails/:id' element={<ProtectedSecRoute><VoucherDetails/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/editSaleOrder/:id' element={<ProtectedSecRoute><VoucherInitialPageEdit/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/shareSaleOrder/:id' element={<ProtectedSecRoute><VoucherPdfInitiator/></ProtectedSecRoute>}></Route>
-        <Route path='/sUsers/shareInvoiceThreeInch/:id' element={<ProtectedSecRoute><ThreeInchInvoiceSec/></ProtectedSecRoute>}></Route> 
+        <Route path='/sUsers/sharesaleOrderThreeInch/:id' element={<ProtectedSecRoute><VoucherPdfInitiatorThreeInch/></ProtectedSecRoute>}></Route> 
 
         <Route path='/sUsers/additionalChargesList' element={<ProtectedSecRoute><AddChargesListSecondary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/additionalCharges' element={<ProtectedSecRoute><AdditionalChargesSecondary/></ProtectedSecRoute>}></Route>
@@ -157,7 +158,7 @@ const Routers = () => {
         <Route path='/sUsers/vanSaleDetails/:id' element={<ProtectedSecRoute><VoucherDetails/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/shareSales/:id' element={<ProtectedSecRoute><VoucherPdfInitiator/></ProtectedSecRoute>}></Route> 
         <Route path='/sUsers/shareVanSale/:id' element={<ProtectedSecRoute><VoucherPdfInitiator/></ProtectedSecRoute>}></Route> 
-        <Route path='/sUsers/shareSalesThreeInch/:id' element={<ProtectedSecRoute><ThreeInchSalesSec/></ProtectedSecRoute>}></Route> 
+        <Route path='/sUsers/shareSalesThreeInch/:id' element={<ProtectedSecRoute><VoucherPdfInitiatorThreeInch/></ProtectedSecRoute>}></Route> 
         <Route path='/sUsers/shareVanSaleThreeInch/:id' element={<ProtectedSecRoute><ThreeInchVanSaleSec/></ProtectedSecRoute>}></Route> 
         <Route path='/sUsers/sales/paymentSplitting' element={<ProtectedSecRoute><PaymentSplitting/></ProtectedSecRoute>}></Route> 
         <Route path='/sUsers/editSale/:id/paymentSplitting' element={<ProtectedSecRoute><PaymentSplitting/></ProtectedSecRoute>}></Route> 

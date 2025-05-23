@@ -32,6 +32,9 @@ function VoucherPdfInitiator() {
   const location = useLocation();
   const pathname = location.pathname;
 
+
+   
+
   let voucherType = null;
   const params = {};
 
@@ -149,7 +152,7 @@ function VoucherPdfInitiator() {
     };
 
     getTransactionDetails();
-  }, [id, voucherType, navigate, params]);
+  }, [id, voucherType]);
 
   return (
     <div 

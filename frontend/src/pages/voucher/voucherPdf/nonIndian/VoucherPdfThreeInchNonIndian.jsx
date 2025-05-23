@@ -2,60 +2,67 @@
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import numberToWords from "number-to-words";
-import { defaultPrintSettings } from "../../../utils/defaultConfigurations";
 
-function SalesThreeInchPdf({ contentToPrint, data, org }) {
+function VoucherPdfThreeInchNonIndian({
+  contentToPrint,
+  data,
+  org,
+  userType,
+  voucherNumber,
+  tab,
+}) {
   const [subTotal, setSubTotal] = useState("");
   const [additinalCharge, setAdditinalCharge] = useState("");
   const [inWords, setInWords] = useState("");
 
-  const IsIndian =
-    useSelector(
-      (state) => state?.secSelectedOrganization?.secSelectedOrg?.country
-    ) === "India";
-
-  const voucherType = data?.voucherType;
-  const getVoucherNumber = () => {
-    if (!voucherType) return "";
-    if (voucherType === "sales" || voucherType === "vanSale") {
-      return "salesNumber";
-    } else if (voucherType === "saleOrder") {
-      return "orderNumber";
-    } else {
-      return voucherType + "Number";
-    }
-  };
-
-  const getConfigurationVoucherType = () => {
-    const currentVoucherType = data?.voucherType;
-
-    if (currentVoucherType === "sales" || currentVoucherType === "vanSale") {
-      return "sale";
-    } else if (currentVoucherType === "saleOrder") {
-      return "saleOrder";
-    } else {
-      return "default";
-    }
-  };
-
-  const allPrintConfigurations = useSelector(
+  const configurations = useSelector(
     (state) =>
       state.secSelectedOrganization?.secSelectedOrg?.configurations[0]
         ?.printConfiguration
   );
 
-  const matchedConfiguration = allPrintConfigurations?.find(
-    (item) => item.voucher === getConfigurationVoucherType()
+  const voucherConfiguration = configurations?.find(
+    (item) => item.voucher === tab
   );
 
-  const configurations =
-    voucherType && voucherType !== "default" && matchedConfiguration
-      ? matchedConfiguration
-      : defaultPrintSettings;
+  let pdfNumber;
 
-  const selectedOrganization = useSelector(
+  switch (tab) {
+    case "sale":
+      pdfNumber = data?.salesNumber;
+
+      break;
+    case "vanSale":
+      pdfNumber = data?.salesNumber;
+
+      break;
+
+    case "purchase":
+      pdfNumber = data?.purchaseNumber;
+
+      break;
+
+    case "stockTransfer":
+      pdfNumber = data?.stockTransferNumber;
+
+      break;
+
+    default:
+      pdfNumber = "";
+
+      break;
+  }
+
+  //used to fetch organization data form redux
+  const primarySelectedOrg = useSelector(
+    (state) => state.setSelectedOrganization.selectedOrg
+  );
+  const secondarySelectedOrg = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
+
+  const selectedOrganization =
+    userType === "primaryUser" ? primarySelectedOrg : secondarySelectedOrg;
 
   useEffect(() => {
     if (data && data.items) {
@@ -102,7 +109,7 @@ function SalesThreeInchPdf({ contentToPrint, data, org }) {
 
   const calculateTotalTax = () => {
     const totalTax = data?.items?.reduce(
-      (acc, curr) => (acc += curr?.totalIgstAmt || 0),
+      (acc, curr) => (acc += curr?.igstAmt || 0),
       0
     );
 
@@ -127,7 +134,7 @@ function SalesThreeInchPdf({ contentToPrint, data, org }) {
   const calculateCess = () => {
     return data?.items?.reduce((acc, curr) => {
       // Ensure curr.cess is a number, defaulting to 0 if not
-      curr.cess = Number(curr?.totalCessAmt) || 0;
+      curr.cess = Number(curr?.cessAmt) || 0;
       // Add curr.cess to the accumulator
       return acc + curr?.cess;
     }, 0); // Initialize the accumulator with 0
@@ -183,20 +190,20 @@ function SalesThreeInchPdf({ contentToPrint, data, org }) {
       <div className=" print-container  max-w-3xl mx-auto  md:block w-full ">
         <div className="flex justify-center ">
           <div className="font-bold text-md  mt-6">
-            {configurations?.printTitle || ""}
+            {voucherConfiguration?.printTitle}
           </div>
         </div>
         <div>
           <div className="flex items-center justify-between flex-col leading-4   font-bold">
             <div className="text-[12px]  tracking-wide ">
-              No: {data?.[getVoucherNumber()]}
+              No: {voucherNumber || pdfNumber}{" "}
             </div>
             <div className="text-[12px] tracking-wide">
               Date:{new Date().toDateString()}{" "}
             </div>
           </div>
         </div>
-        {configurations?.showCompanyDetails && (
+        {voucherConfiguration?.showCompanyDetails && (
           <div className="flex justify-center">
             <div className=" flex flex-col  items-center">
               <div className=" flex justify-center ">
@@ -229,7 +236,7 @@ function SalesThreeInchPdf({ contentToPrint, data, org }) {
 
                 {org?.gstNum && (
                   <div className="text-black font-semibold  text-[12px]">
-                    {IsIndian ? "Tax No:" : "Vat No:"}: {org?.gstNum}
+                    Tax No: {org?.gstNum}
                   </div>
                 )}
 
@@ -263,23 +270,19 @@ function SalesThreeInchPdf({ contentToPrint, data, org }) {
                 Items
               </th>
 
-              {configurations?.showQuantity ? (
+              {voucherConfiguration?.showQuantity && (
                 <th className="text-black font-bold uppercase text-center p-2">
                   Qty
                 </th>
-              ) : (
-                <th className="text-black font-bold uppercase text-right p-2"></th>
               )}
 
-              {configurations?.showRate ? (
+              {voucherConfiguration?.showRate && (
                 <th className="text-black font-bold uppercase text-right p-2">
                   Rate
                 </th>
-              ) : (
-                <th className="text-black font-bold uppercase text-right p-2"></th>
               )}
 
-              {configurations?.showStockWiseAmount && (
+              {voucherConfiguration?.showStockWiseAmount && (
                 <th className="text-black font-bold uppercase p-2 pr-0">
                   Amount
                 </th>
@@ -292,7 +295,7 @@ function SalesThreeInchPdf({ contentToPrint, data, org }) {
               data?.items.map((el, index) => {
                 const total = el?.total || 0;
                 // console.log("total", total);
-                const count = el?.totalCount || 0;
+                const count = el?.count || 0;
                 // console.log("count", count);
                 const rate = (total / count).toFixed(2) || 0;
 
@@ -303,29 +306,25 @@ function SalesThreeInchPdf({ contentToPrint, data, org }) {
                   >
                     <td className="py-1 text-black  font-bold  pr-2 flex ">
                       {el.product_name} <br />
-                      {configurations?.showTaxPercentage && (
+                      {voucherConfiguration?.showTaxPercentage && (
                         <p className="text-black ">({el.igst}%)</p>
                       )}
                     </td>
 
-                    {configurations?.showQuantity ? (
+                    {voucherConfiguration?.showQuantity && (
                       <td className="py-1 text-black  font-bold text-center pr-2">
-                        {el?.totalCount}
+                        {el?.count}
                         <p className="text-[10px] font-semibold">{el?.unit}</p>
                       </td>
-                    ) : (
-                      <td className="py-1 text-black  font-bold text-center pr-2"></td>
                     )}
 
-                    {configurations?.showRate ? (
+                    {voucherConfiguration?.showRate && (
                       <td className="py-1 text-black font-bold  text-right pl-2 pr-1 text-nowrap">
                         {rate || 0}
                       </td>
-                    ) : (
-                      <td className="py-1 text-black font-bold  text-right pl-2 pr-1 text-nowrap"></td>
                     )}
 
-                    {configurations?.showStockWiseAmount && (
+                    {voucherConfiguration?.showStockWiseAmount && (
                       <td className="py-1 text-black  font-bold text-right">
                         {el?.total}
                       </td>
@@ -336,29 +335,27 @@ function SalesThreeInchPdf({ contentToPrint, data, org }) {
 
             <tr
               className={`border-gray-500 font-bold text-[12px] bg-white ${
-                configurations?.showStockWiseAmount ||
-                configurations?.showQuantity
+                voucherConfiguration?.showStockWiseAmount ||
+                voucherConfiguration?.showQuantity
                   ? "border-y"
                   : ""
               }`}
             >
-              {configurations?.showStockWiseAmount ? (
+              {voucherConfiguration?.showStockWiseAmount ? (
                 <td className="py-1 text-black">Total</td>
               ) : (
                 <td className="py-1 text-black"></td>
               )}
-              {configurations?.showQuantity ? (
+              {voucherConfiguration?.showQuantity && (
                 <td className="col-span-2 py-1 text-black text-center">
                   {data?.items?.reduce(
-                    (acc, curr) => (acc += Number(curr?.totalCount)),
+                    (acc, curr) => (acc += Number(curr?.count)),
                     0
                   )}
                 </td>
-              ) : (
-                <td className="col-span-2 py-1 text-black text-center"></td>
               )}
               <td className="py-1 text-black"></td>
-              {configurations?.showStockWiseAmount && (
+              {voucherConfiguration?.showStockWiseAmount && (
                 <td className="py-1 text-black text-right">{subTotal}</td>
               )}
             </tr>
@@ -368,12 +365,9 @@ function SalesThreeInchPdf({ contentToPrint, data, org }) {
         <div className="flex justify-end">
           <div className=" mt-1  ">
             <div className="  flex flex-col items-end ">
-              {IsIndian
-                ? configurations?.showTaxAmount && (
+              {selectedOrganization?.country === "India"
+                ? voucherConfiguration?.showTaxAmount && (
                     <div className="flex flex-col items-end text-[12px] text-black font-bold gap-1">
-                      <p className={calculateTotalTax() > 0 ? "" : "hidden"}>
-                        IGST : {Number(calculateTotalTax()).toFixed(2)}
-                      </p>
                       <p className={calculateTotalTax() > 0 ? "" : "hidden"}>
                         CGST : {(calculateTotalTax() / 2).toFixed(2)}
                       </p>
@@ -392,7 +386,7 @@ function SalesThreeInchPdf({ contentToPrint, data, org }) {
                       </p>
                     </div>
                   )
-                : configurations?.showTaxAmount && (
+                : voucherConfiguration?.showTaxAmount && (
                     <div className="flex flex-col items-end text-[12px] text-black font-bold gap-1">
                       <p className={calculateTotalTax() > 0 ? "" : "hidden"}>
                         VAT : {Number(calculateTotalTax()).toFixed(2)}
@@ -427,7 +421,7 @@ function SalesThreeInchPdf({ contentToPrint, data, org }) {
               </>
             ))}
 
-            {configurations?.showNetAmount && (
+            {voucherConfiguration?.showNetAmount && (
               <div className="flex justify-end  border-black  ">
                 <div className="w-3/4"></div>
 
@@ -442,7 +436,7 @@ function SalesThreeInchPdf({ contentToPrint, data, org }) {
               </div>
             )}
 
-            {configurations?.showNetAmount && (
+            {voucherConfiguration?.showNetAmount && (
               <div className="flex  justify-end border-black pb-3 w-full ">
                 <div className="w-2/4"></div>
 
@@ -461,4 +455,4 @@ function SalesThreeInchPdf({ contentToPrint, data, org }) {
   );
 }
 
-export default SalesThreeInchPdf;
+export default VoucherPdfThreeInchNonIndian;

@@ -12,7 +12,13 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useNavigate } from "react-router-dom";
 import { HiDocument, HiPrinter } from "react-icons/hi2";
 import { IoDocumentTextSharp } from "react-icons/io5";
@@ -30,12 +36,19 @@ export function ShareAlertDialog({ open, setOpen, voucherId, voucherType }) {
       label: "Tax Invoice",
       icon: <IoDocumentTextSharp size={20} />,
     },
-    {
+  ];
+
+  if (
+    voucherType === "sales" ||
+    voucherType === "vanSale" ||
+    voucherType === "saleOrder"
+  ) {
+    formats.push({
       id: "pos",
       label: "POS Format",
       icon: <HiDocument size={20} />,
-    },
-  ];
+    });
+  }
 
   const actions = [
     {
@@ -59,7 +72,11 @@ export function ShareAlertDialog({ open, setOpen, voucherId, voucherType }) {
     // Handle different cases here
     switch (selectedAction) {
       case "print":
-        navigate(`/sUsers/share${voucherType}/${voucherId}?format=${selectedFormat}`);
+        navigate(
+          `/sUsers/share${voucherType}${
+            selectedFormat === "pos" ? "ThreeInch" : ""
+          }/${voucherId}`
+        );
         break;
       case "mail":
         // TODO: Add your email handling logic here
@@ -100,8 +117,8 @@ export function ShareAlertDialog({ open, setOpen, voucherId, voucherType }) {
               </SelectTrigger>
               <SelectContent className="bg-gray-800 border-gray-600">
                 {formats.map((format) => (
-                  <SelectItem 
-                    key={format.id} 
+                  <SelectItem
+                    key={format.id}
                     value={format.id}
                     className="text-white hover:bg-gray-700 focus:bg-gray-700"
                   >
