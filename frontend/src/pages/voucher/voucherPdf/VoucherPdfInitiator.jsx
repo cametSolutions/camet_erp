@@ -11,8 +11,7 @@ function VoucherPdfInitiator() {
   const [data, setData] = useState([]);
   const { id } = useParams();
   const [isMobile, setIsMobile] = useState(false);
-  const pdfContentRef = useRef(null);
-  const pdfFrameRef = useRef(null);
+  const pdfContainerRef = useRef(null);
 
   const IsIndian =
     useSelector(
@@ -68,70 +67,72 @@ function VoucherPdfInitiator() {
     getTransactionDetails();
   }, [id, voucherType, navigate, params]);
 
-return (
-    <div className=" w-full flex flex-col items-center justify-center bg-gray-50 p-4">
-      {/* Fixed frame container - won't zoom */}
-      <div 
-        ref={pdfFrameRef}
-        className="relative"
+  return (
+    <div 
+      className="w-full flex flex-col items-center justify-center bg-gray-50 p-4"
+      style={{
+        touchAction: isMobile ? "pan-y" : "auto", // Prevent page zoom, allow vertical scroll
+      }}
+    >
+      {/* PDF container - stays intact on mobile */}
+      <div
+        ref={pdfContainerRef}
+        className={`relative ${isMobile ? "overflow-x-hidden overflow-y-auto" : "overflow-scroll"}`}
         style={{
-          width: isMobile ? '100%' : '100%',
-          height: isMobile ? '70vh' : '100%',
-          border: isMobile ? '1px solid #e5e7eb' : 'none',
-          borderRadius: isMobile ? '8px' : '0',
-          boxShadow: isMobile ? '0 4px 6px -1px rgba(0,0,0,0.1)' : 'none',
-          backgroundColor: 'white',
-          overflow: 'hidden' // Changed from 'auto' to 'hidden'
+          width: "100%",
+          height: isMobile ? "85vh" : "100%",
+          border: isMobile ? "1px solid #e5e7eb" : "none",
+          borderRadius: isMobile ? "8px" : "0",
+          boxShadow: isMobile ? "0 4px 6px -1px rgba(0,0,0,0.1)" : "none",
+          backgroundColor: "white",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: isMobile ? "flex-start" : "center",
+          padding: isMobile ? "10px" : "0",
+          touchAction: isMobile ? "pan-y" : "auto", // Prevent container zoom
         }}
       >
-        {/* Scrollable and zoomable PDF content */}
+        {/* PDF content - only this gets scaled on mobile */}
         <div
-          className="overflow-auto w-full h-full" // Scrollable area
+          ref={contentToPrint}
           style={{
-            touchAction: isMobile ? 'manipulation' : 'auto'
+            width: "210mm", // Standard A4 width
+            minWidth: "210mm",
+            transform: isMobile ? "scale(0.44)" : "none",
+            transformOrigin: "top center", // Changed from "center center" to "top center"
+            padding: "20px",
+            touchAction: isMobile ? "pinch-zoom" : "auto", // Allow pinch zoom only on PDF content
+            margin: "0 auto",
+            display: "block",
+            backgroundColor: "white",
           }}
         >
-          {/* PDF content that will zoom */}
-          <div 
-            ref={pdfContentRef}
-            style={{
-              width: '210mm',
-              minWidth: '210mm',
-              transform: isMobile ? 'scale(0.44)' : 'none',
-              transformOrigin: 'center center',
-              padding: '20px',
-              margin: '0 auto'
-            }}
-          >
-            <div ref={contentToPrint}>
-              {IsIndian ? (
-                <VoucherPdf
-                  data={data}
-                  org={org}
-                  bank={bank}
-                  userType="secondaryUser"
-                  tab="sales"
-                />
-              ) : (
-                <VoucherPdfNonIndian
-                  data={data}
-                  org={org}
-                  bank={bank}
-                  userType="secondaryUser"
-                  tab="sales"
-                />
-              )}
-            </div>
-          </div>
+          {IsIndian ? (
+            <VoucherPdf
+              data={data}
+              org={org}
+              bank={bank}
+              userType="secondaryUser"
+              tab="sales"
+            />
+          ) : (
+            <VoucherPdfNonIndian
+              data={data}
+              org={org}
+              bank={bank}
+              userType="secondaryUser"
+              tab="sales"
+            />
+          )}
         </div>
       </div>
-      
-      {/* Fixed back button (won't zoom) */}
+
+      {/* Back button stays intact and unscaled */}
       {isMobile && (
-        <div className="mt-4 w-full text-center" style={{ transform: 'scale(1)' }}>
-          <button 
+        <div className="mt-4 w-full text-center">
+          <button
             onClick={() => navigate(-1)}
-            className="px-6 py-2 bg-gray-200 rounded-md text-sm"
+            className="px-6 py-2 bg-gray-200 rounded-md text-sm hover:bg-gray-300 transition-colors"
           >
             Go Back
           </button>
