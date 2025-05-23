@@ -35,12 +35,20 @@ function VoucherPdfInitiator() {
   let voucherType = null;
   const params = {};
 
-  if (pathname.includes("/sUsers/sharesales/")) {
+ if (pathname.includes("/sUsers/sharesales/")) {
     voucherType = "sales";
   } else if (pathname.includes("/sUsers/sharepurchase/")) {
     voucherType = "purchase";
-  } // ... other conditions
-
+  } else if (pathname.includes("/sUsers/sharesaleOrder/")) {
+    voucherType = "saleOrder";
+  } else if (pathname.includes("/sUsers/sharecreditNote/")) {
+    voucherType = "creditNote";
+  } else if (pathname.includes("/sUsers/sharedebitNote/")) {
+    voucherType = "debitNote";
+  } else if (pathname.includes("/sUsers/sharevanSale/")) {
+    voucherType = "sales";
+    params.vanSale = true;
+  }
   // Calculate distance between two touch points
   const getTouchDistance = (touches) => {
     const touch1 = touches[0];
@@ -145,7 +153,7 @@ function VoucherPdfInitiator() {
 
   return (
     <div 
-      className="w-full flex flex-col items-center justify-center bg-gray-50 p-4 "
+      className="w-full flex flex-col items-center justify-center  p-4 "
       style={{
         touchAction: isMobile ? "none" : "auto", // Prevent default touch behavior
       }}
@@ -153,7 +161,7 @@ function VoucherPdfInitiator() {
       {/* PDF container - stays intact on mobile */}
       <div
         ref={pdfContainerRef}
-        className={`relative ${isMobile ? "overflow-hidden" : "overflow-scroll overflow-x-hidden "}`}
+        className={`relative  ${isMobile ? "overflow-hidden" : "overflow-scroll overflow-x-hidden "}`}
         style={{
           width: "100%",
           height: isMobile ? "85vh" : "100%",
