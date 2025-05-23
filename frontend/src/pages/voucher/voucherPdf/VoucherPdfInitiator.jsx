@@ -10,6 +10,7 @@ import { useSelector } from "react-redux";
 
 import SalesPdfNonInd from "../../../components/pdf/sales/nonIndian/SalesPdfNonInd";
 import VoucherPdf from "./indian/VoucherPdf";
+import VoucherPdfNonIndian from "./nonIndian/VoucherPdfNonIndian";
 
 function VoucherPdfInitiator() {
   const [data, setData] = useState([]);
@@ -197,7 +198,7 @@ function VoucherPdfInitiator() {
               tab="sales"
             />
           ) : (
-            <SalesPdfNonInd
+            <VoucherPdfNonIndian
               contentToPrint={contentToPrint}
               data={data}
               org={org}
