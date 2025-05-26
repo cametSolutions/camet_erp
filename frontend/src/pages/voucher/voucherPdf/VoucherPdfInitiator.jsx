@@ -179,7 +179,7 @@ const handleDownload = () => {
   }
 
   const options = {
-    margin: [1, 1, 1, 1],
+    margin: [1, 1, 10, 1],
     filename: `${formatVoucherType(voucherType)}_${id}.pdf`,
     image: { type: "jpeg", quality: 0.98 },
     html2canvas: {
@@ -189,6 +189,7 @@ const handleDownload = () => {
       scrollX: 0,
       scrollY: 0,
       windowWidth: element.scrollWidth,
+      windowHeight: element.scrollHeight + 50,
     },
     jsPDF: {
       unit: "mm",
@@ -242,9 +243,6 @@ const handleDownload = () => {
 };
 
 
-
-  /////////////////////////////////////////////// handle print  ///////////////////////////////////////////////
-
   return (
     <div>
       <TitleDiv
@@ -263,7 +261,7 @@ const handleDownload = () => {
       <div
         className={`  ${
           loading ? "opacity-30 pointer-events-none" : ""
-        }  w-full flex flex-col items-center justify-center  p-4 `}
+        }  w-full flex flex-col items-center justify-center  p-1 `}
         style={{
           touchAction: isMobile ? "none" : "auto", // Prevent default touch behavior
         }}
@@ -276,9 +274,9 @@ const handleDownload = () => {
           }`}
           style={{
             width: "100%",
-            height: isMobile ? "85vh" : "100%",
-            border: isMobile ? "1px solid #e5e7eb" : "none",
-            borderRadius: isMobile ? "8px" : "0",
+            height: isMobile ? "75vh" : "100%",
+            border: isMobile ? "7px solid #e5e7eb" : "none",
+            borderRadius: isMobile ? "0px" : "0",
             boxShadow: isMobile ? "0 4px 6px -1px rgba(0,0,0,0.1)" : "none",
             backgroundColor: "white",
             display: "flex",
@@ -299,7 +297,7 @@ const handleDownload = () => {
               width: "210mm", // Standard A4 width
               minWidth: "210mm",
               transform: isMobile
-                ? `scale(${0.44 * zoomLevel}) translate(${panOffset.x}px, ${
+                ? `scale(${0.476 * zoomLevel}) translate(${panOffset.x}px, ${
                     panOffset.y
                   }px)`
                 : "none",
