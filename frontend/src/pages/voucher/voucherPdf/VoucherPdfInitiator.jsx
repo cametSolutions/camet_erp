@@ -55,6 +55,7 @@ function VoucherPdfInitiator() {
     voucherType = "sales";
     params.vanSale = true;
   }
+
   // Calculate distance between two touch points
   const getTouchDistance = (touches) => {
     const touch1 = touches[0];
@@ -160,23 +161,12 @@ function VoucherPdfInitiator() {
     getTransactionDetails();
   }, [id, voucherType]);
 
-  const getVoucherNumber = () => {
-    if (!voucherType) return "";
-    if (voucherType === "sales" || voucherType === "vanSale") {
-      return "salesNumber";
-    } else if (voucherType === "saleOrder") {
-      return "orderNumber";
-    } else {
-      return voucherType + "Number";
-    }
-  };
-
-  //////////////////////////////////////////////// Setup print functionality using useReactToPrint ///////////////////////////////////////////
+  // Setup print functionality using useReactToPrint
   const handlePrint = useReactToPrint({
     content: () => contentToPrint.current,
-    documentTitle: getVoucherNumber()
-      ? `${data[getVoucherNumber()]}_${data?._id?.slice(-4)}`
-      : data?._id?.slice(-4),
+    documentTitle: data.salesNumber
+      ? `${data.salesNumber}_${data._id?.slice(-4) || 'Invoice'}`
+      : "Sales_Invoice",
     pageStyle: `
       @page {
         size: A4;
@@ -184,9 +174,46 @@ function VoucherPdfInitiator() {
       }
 
       @media print {
-        body {
+        html, body {
+          height: auto !important;
+          overflow: visible !important;
           -webkit-print-color-adjust: exact;
           font-family: 'Arial', sans-serif;
+        }
+
+        /* Hide everything except print content */
+        body * {
+          visibility: hidden;
+        }
+        
+        .pdf-content-print, 
+        .pdf-content-print * {
+          visibility: visible;
+        }
+        
+        /* Position print content at top-left */
+        .pdf-content-print {
+          position: absolute !important;
+          left: 0 !important;
+          top: 0 !important;
+          width: 210mm !important;
+          min-width: 210mm !important;
+          transform: none !important;
+          margin: 0 !important;
+          padding: 20px !important;
+          background: white !important;
+          box-sizing: border-box !important;
+        }
+
+        /* Ensure mobile container doesn't interfere */
+        .mobile-pdf-container {
+          position: static !important;
+          overflow: visible !important;
+          height: auto !important;
+          border: none !important;
+          box-shadow: none !important;
+          padding: 0 !important;
+          margin: 0 !important;
         }
 
         .pdf-page {
@@ -222,29 +249,28 @@ function VoucherPdfInitiator() {
           font-size: 11px;
           color: #6b7280;
         }
-
-        @media print {
-          .print-md-layout {
-            display: flex !important;
-            flex-direction: row !important;
-          }
-          
-          /* Reset mobile transformations for print */
-          .pdf-content-print {
-            transform: none !important;
-            width: 100% !important;
-            min-width: auto !important;
-          }
-        }
       }
     `,
+    onBeforePrint: () => {
+      // Temporarily change document title for print
+      const originalTitle = document.title;
+      document.title = data.salesNumber
+        ? `${data.salesNumber}_${data._id?.slice(-4) || 'Invoice'}`
+        : "Sales_Invoice";
+      
+      // Store original title to restore later
+      window._originalTitle = originalTitle;
+    },
     onAfterPrint: () => {
+      // Restore original document title
+      if (window._originalTitle) {
+        document.title = window._originalTitle;
+        delete window._originalTitle;
+      }
       console.log("PDF printed successfully");
     },
     removeAfterPrint: true,
   });
-
-  //////////////////////////////////////////////// rendering logic ///////////////////////////////////////////
 
   return (
     <div>
@@ -271,7 +297,7 @@ function VoucherPdfInitiator() {
         {/* PDF container - stays intact on mobile */}
         <div
           ref={pdfContainerRef}
-          className={`relative  ${
+          className={`mobile-pdf-container relative  ${
             isMobile ? "overflow-hidden" : "overflow-scroll overflow-x-hidden "
           }`}
           style={{
