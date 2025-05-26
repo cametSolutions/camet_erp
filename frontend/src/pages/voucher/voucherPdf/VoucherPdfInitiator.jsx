@@ -162,73 +162,83 @@ function VoucherPdfInitiator() {
   }, [id, voucherType]);
 
   /////////////////////////////////////////////// handle download ///////////////////////////////////////////////
-  const handleDownload = () => {
-    const element = contentToPrint.current;
+const handleDownload = () => {
+  const element = contentToPrint.current;
 
-    if (!element) return;
+  if (!element) return;
 
-    // Store original styles
-    const originalTransform = element.style.transform;
-    const originalTransition = element.style.transition;
+  // Store original styles
+  const originalTransform = element.style.transform;
+  const originalTransition = element.style.transition;
 
-    // Temporarily remove mobile scaling for PDF generation
-    if (isMobile) {
-      element.style.transform = "none";
-      element.style.transition = "none";
-    }
+  // Detect mobile devices
+  const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
-    // Configure html2pdf options for better quality
-    const options = {
-      margin: [1, 1, 1, 1], // or just 5
-      filename: `${formatVoucherType(voucherType)}_${id}.pdf`,
-      image: { type: "jpeg", quality: 0.98 },
-      html2canvas: {
-        scale: 5,
-        useCORS: true,
-        letterRendering: true,
-        scrollX: 0,
-        scrollY: 0,
-        windowWidth: element.scrollWidth,
-      },
-      jsPDF: {
-        unit: "mm",
-        format: "a4",
-        orientation: "portrait",
-      },
-    };
+  // Temporarily remove mobile scaling for PDF generation
+  if (isMobile) {
+    element.style.transform = "none";
+    element.style.transition = "none";
+  }
 
-    // Generate PDF and restore original styles
-    html2pdf()
-      .from(element)
-      .set(options)
-      .outputPdf("blob")
-      .then((pdfBlob) => {
-        // Download manually
-        const downloadLink = document.createElement("a");
-        downloadLink.href = URL.createObjectURL(pdfBlob);
-        downloadLink.download = `${formatVoucherType(voucherType)}_${id}.pdf`;
-        // downloadLink.click();
+  const options = {
+    margin: [1, 1, 1, 1],
+    filename: `${formatVoucherType(voucherType)}_${id}.pdf`,
+    image: { type: "jpeg", quality: 0.98 },
+    html2canvas: {
+      scale: 5,
+      useCORS: true,
+      letterRendering: true,
+      scrollX: 0,
+      scrollY: 0,
+      windowWidth: element.scrollWidth,
+    },
+    jsPDF: {
+      unit: "mm",
+      format: "a4",
+      orientation: "portrait",
+    },
+  };
 
-        // Print via iframe
+  html2pdf()
+    .from(element)
+    .set(options)
+    .outputPdf("blob")
+    .then((pdfBlob) => {
+      // Restore original styles
+      if (isMobile) {
+        element.style.transform = originalTransform;
+        element.style.transition = originalTransition;
+      }
+
+      const blobUrl = URL.createObjectURL(pdfBlob);
+
+      if (isMobile) {
+        // ✅ Best experience on mobile: open in new tab
+        window.open(blobUrl, "_blank");
+      } else {
+        // ✅ Desktop: trigger print via iframe
         const iframe = document.createElement("iframe");
         iframe.style.display = "none";
-        iframe.src = downloadLink.href;
+        iframe.src = blobUrl;
         document.body.appendChild(iframe);
 
-        iframe.onload = function () {
+        iframe.onload = () => {
           iframe.contentWindow.focus();
           iframe.contentWindow.print();
         };
-      })
-      .catch((error) => {
-        console.error("PDF generation failed:", error);
-        // Restore styles even if PDF generation fails
-        if (isMobile) {
-          element.style.transform = originalTransform;
-          element.style.transition = originalTransition;
-        }
-      });
-  };
+      }
+    })
+    .catch((error) => {
+      console.error("PDF generation failed:", error);
+
+      // Restore styles even if PDF generation fails
+      if (isMobile) {
+        element.style.transform = originalTransform;
+        element.style.transition = originalTransition;
+      }
+    });
+};
+
 
   /////////////////////////////////////////////// handle print  ///////////////////////////////////////////////
 
