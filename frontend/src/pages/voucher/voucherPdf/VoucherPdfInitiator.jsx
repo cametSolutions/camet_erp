@@ -175,8 +175,8 @@ function VoucherPdfInitiator() {
   const handlePrint = useReactToPrint({
     content: () => contentToPrint.current,
     documentTitle: getVoucherNumber()
-      ? `${data[getVoucherNumber()]}_${data._id.slice(-4)}`
-      : data._id.slice(-4),
+      ? `${data[getVoucherNumber()]}_${data?._id?.slice(-4)}`
+      : data?._id?.slice(-4),
     pageStyle: `
       @page {
         size: A4;
