@@ -29,6 +29,7 @@
     "dayjs": "^1.11.10",
     "decimal.js": "^10.4.3",
     "html2canvas": "^1.4.1",
+    "html2pdf.js": "^0.10.3",
     "html5-qrcode": "^2.3.8",
     "jspdf": "^2.5.2",
     "lodash.debounce": "^4.0.8",

@@ -9,8 +9,8 @@ import VoucherPdfNonIndian from "./nonIndian/VoucherPdfNonIndian";
 import TitleDiv from "@/components/common/TitleDiv";
 import { formatVoucherType } from "../../../../utils/formatVoucherType";
 import { SharingMethodSelector } from "../voucherDetails/actionButtons/SharingMethodSelector";
-import { FaShareAlt, FaDownload, FaPrint } from "react-icons/fa";
-import { useReactToPrint } from "react-to-print";
+import { FaShareAlt } from "react-icons/fa";
+import html2pdf from "html2pdf.js";
 
 function VoucherPdfInitiator() {
   const [data, setData] = useState([]);
@@ -22,7 +22,6 @@ function VoucherPdfInitiator() {
   const [lastTouchDistance, setLastTouchDistance] = useState(0);
   const pdfContainerRef = useRef(null);
   const [loading, setLoading] = useState(false);
-  const [printMethod, setPrintMethod] = useState('auto'); // 'auto', 'download', 'share'
 
   const IsIndian =
     useSelector(
@@ -57,35 +56,6 @@ function VoucherPdfInitiator() {
     params.vanSale = true;
   }
 
-  // Detect mobile capabilities
-  useEffect(() => {
-    const checkMobileCapabilities = () => {
-      const isMobileDevice = window.innerWidth < 768;
-      setIsMobile(isMobileDevice);
-      
-      // Detect print support
-      if (isMobileDevice) {
-        // Check if we're in a WebView or problematic browser
-        const isWebView = window.navigator.userAgent.includes('wv') || 
-                         window.navigator.userAgent.includes('WebView') ||
-                         !window.chrome;
-        
-        const isFirefoxAndroid = window.navigator.userAgent.includes('Firefox') && 
-                                window.navigator.userAgent.includes('Android');
-        
-        if (isWebView || isFirefoxAndroid || !window.print) {
-          setPrintMethod('download'); // Force download method
-        } else {
-          setPrintMethod('auto'); // Try print, fallback to download
-        }
-      }
-    };
-
-    checkMobileCapabilities();
-    window.addEventListener("resize", checkMobileCapabilities);
-    return () => window.removeEventListener("resize", checkMobileCapabilities);
-  }, []);
-
   // Calculate distance between two touch points
   const getTouchDistance = (touches) => {
     const touch1 = touches[0];
@@ -101,10 +71,12 @@ function VoucherPdfInitiator() {
     if (!isMobile) return;
 
     if (e.touches.length === 2) {
+      // Two finger touch - prepare for zoom
       const distance = getTouchDistance(e.touches);
       setLastTouchDistance(distance);
       setIsPanning(false);
     } else if (e.touches.length === 1 && zoomLevel > 1) {
+      // Single finger touch when zoomed - prepare for pan
       setIsPanning(true);
     }
   };
@@ -115,6 +87,7 @@ function VoucherPdfInitiator() {
     e.preventDefault();
 
     if (e.touches.length === 2) {
+      // Two finger move - handle zoom
       const distance = getTouchDistance(e.touches);
       if (lastTouchDistance > 0) {
         const scale = distance / lastTouchDistance;
@@ -123,6 +96,7 @@ function VoucherPdfInitiator() {
       }
       setLastTouchDistance(distance);
     } else if (e.touches.length === 1 && isPanning && zoomLevel > 1) {
+      // Single finger move when zoomed - handle pan
       const touch = e.touches[0];
       const rect = pdfContainerRef.current.getBoundingClientRect();
       const x = touch.clientX - rect.left;
@@ -154,6 +128,18 @@ function VoucherPdfInitiator() {
     setPanOffset({ x: 0, y: 0 });
   };
 
+  // Check for mobile view
+  useEffect(() => {
+    const checkIfMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkIfMobile();
+    window.addEventListener("resize", checkIfMobile);
+
+    return () => window.removeEventListener("resize", checkIfMobile);
+  }, []);
+
   useEffect(() => {
     const getTransactionDetails = async () => {
       try {
@@ -175,154 +161,61 @@ function VoucherPdfInitiator() {
     getTransactionDetails();
   }, [id, voucherType]);
 
-  // Generate HTML content for download
-  const generatePrintableHTML = () => {
-    const printContent = contentToPrint.current;
-    if (!printContent) return '';
+  const handleDownload = () => {
+    const element = contentToPrint.current;
 
-    const html = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>${data.salesNumber ? `${data.salesNumber}_${data._id?.slice(-4) || 'Invoice'}` : "Sales_Invoice"}</title>
-          <meta charset="utf-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <style>
-            @page {
-              size: A4;
-              margin: 0mm 10mm 9mm 10mm;
-            }
-            
-            body {
-              margin: 0;
-              padding: 20px;
-              font-family: Arial, sans-serif;
-              -webkit-print-color-adjust: exact;
-              print-color-adjust: exact;
-            }
-            
-            .pdf-content {
-              width: 100%;
-              max-width: 210mm;
-              margin: 0 auto;
-            }
-            
-            @media print {
-              body { margin: 0; padding: 20px; }
-              .pdf-content { width: 100%; }
-            }
-          </style>
-        </head>
-        <body>
-          <div class="pdf-content">
-            ${printContent.innerHTML}
-          </div>
-        </body>
-      </html>
-    `;
-    return html;
-  };
+    if (!element) return;
 
-  // Download as HTML file (mobile-friendly)
-  const handleDownloadHTML = () => {
-    try {
-      const htmlContent = generatePrintableHTML();
-      const blob = new Blob([htmlContent], { type: 'text/html' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = data.salesNumber 
-        ? `${data.salesNumber}_${data._id?.slice(-4) || 'Invoice'}.html` 
-        : 'Sales_Invoice.html';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-      
-      toast.success("Invoice downloaded! Open the file and print from your browser.");
-    } catch (error) {
-      console.error('Download failed:', error);
-      toast.error("Download failed. Please try again.");
-    }
-  };
+    // Store original styles
+    const originalTransform = element.style.transform;
+    const originalTransition = element.style.transition;
 
-  // Web Share API (if available)
-  const handleWebShare = async () => {
-    if (!navigator.share) {
-      handleDownloadHTML();
-      return;
+    // Temporarily remove mobile scaling for PDF generation
+    if (isMobile) {
+      element.style.transform = "none";
+      element.style.transition = "none";
     }
 
-    try {
-      const htmlContent = generatePrintableHTML();
-      const blob = new Blob([htmlContent], { type: 'text/html' });
-      const file = new File([blob], 
-        data.salesNumber 
-          ? `${data.salesNumber}_${data._id?.slice(-4) || 'Invoice'}.html` 
-          : 'Sales_Invoice.html', 
-        { type: 'text/html' }
-      );
+    // Configure html2pdf options for better quality
+    const options = {
+      margin: [1, 1, 1, 1], // or just 5
+      filename: `${formatVoucherType(voucherType)}_${id}.pdf`,
+      image: { type: "jpeg", quality: 0.98 },
+      html2canvas: {
+        scale: 5,
+        useCORS: true,
+        letterRendering: true,
+        scrollX: 0,
+        scrollY: 0,
+        windowWidth: element.scrollWidth,
+      },
+      jsPDF: {
+        unit: "mm",
+        format: "a4",
+        orientation: "portrait",
+      },
+    };
 
-      await navigator.share({
-        title: 'Invoice',
-        text: 'Invoice document',
-        files: [file]
+    // Generate PDF and restore original styles
+    html2pdf()
+      .from(element)
+      .set(options)
+      .save()
+      .then(() => {
+        // Restore original styles after PDF generation
+        if (isMobile) {
+          element.style.transform = originalTransform;
+          element.style.transition = originalTransition;
+        }
+      })
+      .catch((error) => {
+        console.error("PDF generation failed:", error);
+        // Restore styles even if PDF generation fails
+        if (isMobile) {
+          element.style.transform = originalTransform;
+          element.style.transition = originalTransition;
+        }
       });
-    } catch (error) {
-      console.error('Share failed:', error);
-      handleDownloadHTML(); // Fallback to download
-    }
-  };
-
-  // Traditional print (for desktop and compatible mobile browsers)
-  const handlePrint = useReactToPrint({
-    content: () => contentToPrint.current,
-    documentTitle: data.salesNumber
-      ? `${data.salesNumber}_${data._id?.slice(-4) || 'Invoice'}`
-      : "Sales_Invoice",
-    pageStyle: `
-      @page {
-        size: A4;
-        margin: 0mm 10mm 9mm 10mm;
-      }
-      @media print {
-        body {
-          -webkit-print-color-adjust: exact;
-          font-family: 'Arial', sans-serif;
-        }
-        body * {
-          visibility: hidden;
-        }
-        .pdf-content-print, .pdf-content-print * {
-          visibility: visible;
-        }
-        .pdf-content-print {
-          position: absolute !important;
-          left: 0 !important;
-          top: 0 !important;
-          width: 210mm !important;
-          transform: none !important;
-        }
-      }
-    `,
-    onAfterPrint: () => console.log("PDF printed successfully"),
-  });
-
-  // Smart print handler that chooses the best method
-  const handleSmartPrint = () => {
-    if (printMethod === 'download') {
-      handleDownloadHTML();
-    } else if (printMethod === 'share' && navigator.share) {
-      handleWebShare();
-    } else {
-      // Try traditional print, fallback to download on error
-      try {
-        handlePrint();
-      } catch (error) {
-        console.error('Print failed, falling back to download:', error);
-        handleDownloadHTML();
-      }
-    }
   };
 
   return (
@@ -331,69 +224,28 @@ function VoucherPdfInitiator() {
         title={`${formatVoucherType(voucherType)} Preview`}
         rightSideContent={<FaShareAlt />}
         rightSideModalComponent={({ setShowModal }) => (
-          <div className="p-4 bg-white rounded-lg shadow-lg">
-            <h3 className="text-lg font-semibold mb-4">Print Options</h3>
-            
-            {isMobile && (
-              <div className="mb-4 p-3 bg-blue-50 rounded-md">
-                <p className="text-sm text-blue-800">
-                  📱 Mobile detected. Choose the best option for your device:
-                </p>
-              </div>
-            )}
-            
-            <div className="space-y-3">
-              <button
-                onClick={() => {
-                  handleSmartPrint();
-                  setShowModal(false);
-                }}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-              >
-                <FaPrint />
-                {printMethod === 'download' ? 'Download & Print' : 'Print'}
-              </button>
-              
-              <button
-                onClick={() => {
-                  handleDownloadHTML();
-                  setShowModal(false);
-                }}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
-              >
-                <FaDownload />
-                Download HTML
-              </button>
-              
-              {navigator.share && (
-                <button
-                  onClick={() => {
-                    handleWebShare();
-                    setShowModal(false);
-                  }}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors"
-                >
-                  <FaShareAlt />
-                  Share
-                </button>
-              )}
-            </div>
-            
-            <div className="mt-4 text-xs text-gray-500">
-              💡 Tip: Download creates an HTML file you can open and print from any browser
-            </div>
-          </div>
+          <SharingMethodSelector
+            open={true}
+            setOpen={setShowModal}
+            // handlePrint={handlePrint}
+            handleDownload={handleDownload}
+          />
         )}
       />
 
       <div
-        className={`${loading ? "opacity-30 pointer-events-none" : ""} w-full flex flex-col items-center justify-center p-4`}
-        style={{ touchAction: isMobile ? "none" : "auto" }}
+        className={`  ${
+          loading ? "opacity-30 pointer-events-none" : ""
+        }  w-full flex flex-col items-center justify-center  p-4 `}
+        style={{
+          touchAction: isMobile ? "none" : "auto", // Prevent default touch behavior
+        }}
       >
+        {/* PDF container - stays intact on mobile */}
         <div
           ref={pdfContainerRef}
-          className={`mobile-pdf-container relative ${
-            isMobile ? "overflow-hidden" : "overflow-scroll overflow-x-hidden"
+          className={`mobile-pdf-container relative  ${
+            isMobile ? "overflow-hidden" : "overflow-scroll overflow-x-hidden "
           }`}
           style={{
             width: "100%",
@@ -412,14 +264,17 @@ function VoucherPdfInitiator() {
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
         >
+          {/* PDF content - scaled and pannable on mobile */}
           <div
             ref={contentToPrint}
-            className="pdf-content-print"
+            className="pdf-content-print" // Add class for print targeting
             style={{
-              width: "210mm",
+              width: "210mm", // Standard A4 width
               minWidth: "210mm",
               transform: isMobile
-                ? `scale(${0.44 * zoomLevel}) translate(${panOffset.x}px, ${panOffset.y}px)`
+                ? `scale(${0.44 * zoomLevel}) translate(${panOffset.x}px, ${
+                    panOffset.y
+                  }px)`
                 : "none",
               transformOrigin: "top center",
               padding: "20px",
@@ -449,6 +304,7 @@ function VoucherPdfInitiator() {
           </div>
         </div>
 
+        {/* Mobile controls */}
         {isMobile && (
           <div className="mt-4 w-full flex justify-center items-center gap-4">
             <button

@@ -18,22 +18,29 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { MdPrint, MdEmail } from "react-icons/md";
+import { MdPrint, MdEmail, MdFileDownload } from "react-icons/md";
 import { FaWhatsapp } from "react-icons/fa";
 
-export function SharingMethodSelector({ open, setOpen, handlePrint }) {
-  const [selectedMethod, setSelectedMethod] = useState("print");
+export function SharingMethodSelector({ open, setOpen, handleDownload }) {
+  const [selectedMethod, setSelectedMethod] = useState("download");
 
   const methods = [
+    { id: "download", label: "Download", icon: <MdFileDownload  size={20} /> },
     { id: "print", label: "Print", icon: <MdPrint size={20} /> },
     { id: "whatsapp", label: "WhatsApp", icon: <FaWhatsapp size={20} /> },
     { id: "mail", label: "Mail", icon: <MdEmail size={20} /> },
   ];
 
   const handleContinue = () => {
+    if (selectedMethod === "download") {
+      handleDownload();
+    }
     if (selectedMethod === "print") {
-      handlePrint();
-    } else if (selectedMethod === "whatsapp") {
+      // handlePrint();
+    }
+    
+    
+    else if (selectedMethod === "whatsapp") {
       alert("This feature is not available yet.");
     } else if (selectedMethod === "mail") {
       alert("This feature is not available yet.");
