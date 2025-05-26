@@ -6,6 +6,11 @@ import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import VoucherPdf from "./indian/VoucherPdf";
 import VoucherPdfNonIndian from "./nonIndian/VoucherPdfNonIndian";
+import TitleDiv from "@/components/common/TitleDiv";
+import { formatVoucherType } from "../../../../utils/formatVoucherType";
+import { SharingMethodSelector } from "../voucherDetails/actionButtons/SharingMethodSelector";
+import { FaShareAlt } from "react-icons/fa";
+import { useReactToPrint } from "react-to-print";
 
 function VoucherPdfInitiator() {
   const [data, setData] = useState([]);
@@ -16,6 +21,7 @@ function VoucherPdfInitiator() {
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
   const [lastTouchDistance, setLastTouchDistance] = useState(0);
   const pdfContainerRef = useRef(null);
+  const [loading, setLoading] = useState(false);
 
   const IsIndian =
     useSelector(
@@ -32,13 +38,10 @@ function VoucherPdfInitiator() {
   const location = useLocation();
   const pathname = location.pathname;
 
-
-   
-
   let voucherType = null;
   const params = {};
 
- if (pathname.includes("/sUsers/sharesales/")) {
+  if (pathname.includes("/sUsers/sharesales/")) {
     voucherType = "sales";
   } else if (pathname.includes("/sUsers/sharepurchase/")) {
     voucherType = "purchase";
@@ -58,14 +61,14 @@ function VoucherPdfInitiator() {
     const touch2 = touches[1];
     return Math.sqrt(
       Math.pow(touch2.clientX - touch1.clientX, 2) +
-      Math.pow(touch2.clientY - touch1.clientY, 2)
+        Math.pow(touch2.clientY - touch1.clientY, 2)
     );
   };
 
   // Handle touch start for zoom and pan
   const handleTouchStart = (e) => {
     if (!isMobile) return;
-    
+
     if (e.touches.length === 2) {
       // Two finger touch - prepare for zoom
       const distance = getTouchDistance(e.touches);
@@ -97,12 +100,12 @@ function VoucherPdfInitiator() {
       const rect = pdfContainerRef.current.getBoundingClientRect();
       const x = touch.clientX - rect.left;
       const y = touch.clientY - rect.top;
-      
-      setPanOffset(prev => ({
+
+      setPanOffset((prev) => ({
         x: prev.x + (x - prev.lastX || 0),
         y: prev.y + (y - prev.lastY || 0),
         lastX: x,
-        lastY: y
+        lastY: y,
       }));
     }
   };
@@ -110,11 +113,11 @@ function VoucherPdfInitiator() {
   // Handle touch end
   const handleTouchEnd = (e) => {
     if (!isMobile) return;
-    
+
     if (e.touches.length === 0) {
       setIsPanning(false);
       setLastTouchDistance(0);
-      setPanOffset(prev => ({ ...prev, lastX: undefined, lastY: undefined }));
+      setPanOffset((prev) => ({ ...prev, lastX: undefined, lastY: undefined }));
     }
   };
 
@@ -139,6 +142,7 @@ function VoucherPdfInitiator() {
   useEffect(() => {
     const getTransactionDetails = async () => {
       try {
+        setLoading(true);
         const res = await api.get(
           `/api/sUsers/get${voucherType}Details/${id}`,
           { params, withCredentials: true }
@@ -148,101 +152,210 @@ function VoucherPdfInitiator() {
         console.log(error);
         toast.error(error.response?.data?.message || "An error occurred");
         setTimeout(() => navigate(-1, { replace: true }), 2000);
+      } finally {
+        setLoading(false);
       }
     };
 
     getTransactionDetails();
   }, [id, voucherType]);
 
-  return (
-    <div 
-      className="w-full flex flex-col items-center justify-center  p-4 "
-      style={{
-        touchAction: isMobile ? "none" : "auto", // Prevent default touch behavior
-      }}
-    >
-      {/* PDF container - stays intact on mobile */}
-      <div
-        ref={pdfContainerRef}
-        className={`relative  ${isMobile ? "overflow-hidden" : "overflow-scroll overflow-x-hidden "}`}
-        style={{
-          width: "100%",
-          height: isMobile ? "85vh" : "100%",
-          border: isMobile ? "1px solid #e5e7eb" : "none",
-          borderRadius: isMobile ? "8px" : "0",
-          boxShadow: isMobile ? "0 4px 6px -1px rgba(0,0,0,0.1)" : "none",
-          backgroundColor: "white",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: isMobile ? "flex-start" : "center",
-          padding: isMobile ? "10px" : "0",
-          cursor: isMobile && zoomLevel > 1 ? "grab" : "default",
-        }}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-      >
-        {/* PDF content - scaled and pannable on mobile */}
-        <div
-          ref={contentToPrint}
-          style={{
-            width: "210mm", // Standard A4 width
-            minWidth: "210mm",
-            transform: isMobile 
-              ? `scale(${0.44 * zoomLevel}) translate(${panOffset.x}px, ${panOffset.y}px)`
-              : "none",
-            transformOrigin: "top center",
-            padding: "20px",
-            margin: "0 auto",
-            display: "block",
-            backgroundColor: "white",
-            transition: isPanning ? "none" : "transform 0.1s ease-out",
-          }}
-        >
-          {IsIndian ? (
-            <VoucherPdf
-              data={data}
-              org={org}
-              bank={bank}
-              userType="secondaryUser"
-              tab="sales"
-            />
-          ) : (
-            <VoucherPdfNonIndian
-              data={data}
-              org={org}
-              bank={bank}
-              userType="secondaryUser"
-              tab="sales"
-            />
-          )}
-        </div>
-      </div>
+  const getVoucherNumber = () => {
+    if (!voucherType) return "";
+    if (voucherType === "sales" || voucherType === "vanSale") {
+      return "salesNumber";
+    } else if (voucherType === "saleOrder") {
+      return "orderNumber";
+    } else {
+      return voucherType + "Number";
+    }
+  };
 
-      {/* Mobile controls */}
-      {isMobile && (
-        <div className="mt-4 w-full flex justify-center items-center gap-4">
-          <button
-            onClick={() => navigate(-1)}
-            className="px-6 py-2 bg-gray-200 rounded-md text-sm hover:bg-gray-300 transition-colors"
+  //////////////////////////////////////////////// Setup print functionality using useReactToPrint ///////////////////////////////////////////
+  const handlePrint = useReactToPrint({
+    content: () => contentToPrint.current,
+    documentTitle: getVoucherNumber()
+      ? `${data[getVoucherNumber()]}_${data._id.slice(-4)}`
+      : data._id.slice(-4),
+    pageStyle: `
+      @page {
+        size: A4;
+        margin: 0mm 10mm 9mm 10mm;
+      }
+
+      @media print {
+        body {
+          -webkit-print-color-adjust: exact;
+          font-family: 'Arial', sans-serif;
+        }
+
+        .pdf-page {
+          page-break-after: always;
+        }
+
+        .pdf-content {
+          font-size: 19px;
+        }
+
+        .print-md-layout {
+          display: flex;
+          flex-direction: row;
+          justify-content: space-between;
+          align-items: flex-start;
+          gap: 8px;
+          padding: 1rem 2rem;
+          width: 100%;
+        }
+
+        .bill-to, .ship-to {
+          width: 50%;
+          padding-right: 1rem;
+          border-right: 1px solid #e5e7eb;
+        }
+
+        .details-table {
+          width: 50%;
+          padding-left: 1rem;
+        }
+
+        .details-table td {
+          font-size: 11px;
+          color: #6b7280;
+        }
+
+        @media print {
+          .print-md-layout {
+            display: flex !important;
+            flex-direction: row !important;
+          }
+          
+          /* Reset mobile transformations for print */
+          .pdf-content-print {
+            transform: none !important;
+            width: 100% !important;
+            min-width: auto !important;
+          }
+        }
+      }
+    `,
+    onAfterPrint: () => {
+      console.log("PDF printed successfully");
+    },
+    removeAfterPrint: true,
+  });
+
+  //////////////////////////////////////////////// rendering logic ///////////////////////////////////////////
+
+  return (
+    <div>
+      <TitleDiv
+        title={`${formatVoucherType(voucherType)} Preview`}
+        rightSideContent={<FaShareAlt />}
+        rightSideModalComponent={({ setShowModal }) => (
+          <SharingMethodSelector
+            open={true}
+            setOpen={setShowModal}
+            handlePrint={handlePrint}
+          />
+        )}
+      />
+
+      <div
+        className={`  ${
+          loading ? "opacity-30 pointer-events-none" : ""
+        }  w-full flex flex-col items-center justify-center  p-4 `}
+        style={{
+          touchAction: isMobile ? "none" : "auto", // Prevent default touch behavior
+        }}
+      >
+        {/* PDF container - stays intact on mobile */}
+        <div
+          ref={pdfContainerRef}
+          className={`relative  ${
+            isMobile ? "overflow-hidden" : "overflow-scroll overflow-x-hidden "
+          }`}
+          style={{
+            width: "100%",
+            height: isMobile ? "85vh" : "100%",
+            border: isMobile ? "1px solid #e5e7eb" : "none",
+            borderRadius: isMobile ? "8px" : "0",
+            boxShadow: isMobile ? "0 4px 6px -1px rgba(0,0,0,0.1)" : "none",
+            backgroundColor: "white",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: isMobile ? "flex-start" : "center",
+            padding: isMobile ? "10px" : "0",
+            cursor: isMobile && zoomLevel > 1 ? "grab" : "default",
+          }}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        >
+          {/* PDF content - scaled and pannable on mobile */}
+          <div
+            ref={contentToPrint}
+            className="pdf-content-print" // Add class for print targeting
+            style={{
+              width: "210mm", // Standard A4 width
+              minWidth: "210mm",
+              transform: isMobile
+                ? `scale(${0.44 * zoomLevel}) translate(${panOffset.x}px, ${
+                    panOffset.y
+                  }px)`
+                : "none",
+              transformOrigin: "top center",
+              padding: "20px",
+              margin: "0 auto",
+              display: "block",
+              backgroundColor: "white",
+              transition: isPanning ? "none" : "transform 0.1s ease-out",
+            }}
           >
-            Go Back
-          </button>
-          
-          {(zoomLevel > 1 || panOffset.x !== 0 || panOffset.y !== 0) && (
-            <button
-              onClick={resetZoom}
-              className="px-4 py-2 bg-blue-500 text-white rounded-md text-sm hover:bg-blue-600 transition-colors"
-            >
-              Reset View
-            </button>
-          )}
-          
-          <div className="text-xs text-gray-500">
-            Pinch to zoom • {Math.round(zoomLevel * 100)}%
+            {IsIndian ? (
+              <VoucherPdf
+                data={data}
+                org={org}
+                bank={bank}
+                userType="secondaryUser"
+                tab="sales"
+              />
+            ) : (
+              <VoucherPdfNonIndian
+                data={data}
+                org={org}
+                bank={bank}
+                userType="secondaryUser"
+                tab="sales"
+              />
+            )}
           </div>
         </div>
-      )}
+
+        {/* Mobile controls */}
+        {isMobile && (
+          <div className="mt-4 w-full flex justify-center items-center gap-4">
+            <button
+              onClick={() => navigate(-1)}
+              className="px-6 py-2 bg-gray-200 rounded-md text-sm hover:bg-gray-300 transition-colors"
+            >
+              Go Back
+            </button>
+
+            {(zoomLevel > 1 || panOffset.x !== 0 || panOffset.y !== 0) && (
+              <button
+                onClick={resetZoom}
+                className="px-4 py-2 bg-blue-500 text-white rounded-md text-sm hover:bg-blue-600 transition-colors"
+              >
+                Reset View
+              </button>
+            )}
+
+            <div className="text-xs text-gray-500">
+              Pinch to zoom • {Math.round(zoomLevel * 100)}%
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

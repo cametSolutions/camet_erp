@@ -3,7 +3,8 @@
 /* eslint-disable no-undef */
 import { IoIosArrowRoundBack } from "react-icons/io";
 import { Link, useNavigate } from "react-router-dom";
-import { useSelector } from "react-redux"; // Added missing import
+import { useSelector } from "react-redux";
+import { useState } from "react";
 import CustomBarLoader from "./CustomBarLoader";
 import {
   DropdownMenu,
@@ -20,10 +21,12 @@ function TitleDiv({
   from = "",
   loading = false,
   rightSideContent = null,
-  rightSideContentOnClick = () => {},
+  rightSideModalComponent = null,
+  rightSideContentOnClick = null,
   dropdownContents = [],
 }) {
   const navigate = useNavigate();
+  const [showModal, setShowModal] = useState(false);
 
   const handleNavigate = () => {
     if (from) {
@@ -36,6 +39,14 @@ function TitleDiv({
   const { type } =
     useSelector((state) => state?.secSelectedOrganization?.secSelectedOrg) ||
     "self";
+
+  const handleRightClick = () => {
+    if (rightSideContentOnClick) {
+      rightSideContentOnClick();
+    } else {
+      setShowModal(true);
+    }
+  };
 
   return (
     <div className="sticky top-0 z-50 ">
@@ -50,7 +61,7 @@ function TitleDiv({
 
         {rightSideContent && (
           <button
-            onClick={rightSideContentOnClick}
+            onClick={handleRightClick}
             className="font-bold text-sm pr-2 cursor-pointer hover:scale-105 duration-300 ease-in-out hover:text-gray-200"
           >
             {rightSideContent}
@@ -66,9 +77,7 @@ function TitleDiv({
               <DropdownMenuLabel>My Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
               {dropdownContents.map((item, index) => {
-                // Determine if this item should be disabled
                 const isDisabled = item?.typeSpecific && type !== "self";
-
                 return (
                   <Link
                     key={index}
@@ -96,6 +105,15 @@ function TitleDiv({
       </div>
 
       {loading && <CustomBarLoader />}
+
+      {/* Modal Rendering */}
+      {showModal && rightSideModalComponent && (
+        <div>
+          {typeof rightSideModalComponent === "function"
+            ? rightSideModalComponent({ setShowModal })
+            : rightSideModalComponent}
+        </div>
+      )}
     </div>
   );
 }

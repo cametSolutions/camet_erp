@@ -5,7 +5,7 @@ import { MdEdit, MdSms } from "react-icons/md";
 import CancelButton from "@/components/common/CancelButton";
 import { useNavigate } from "react-router-dom";
 import RemoveReduxData from "@/components/secUsers/RemoveReduxData";
-import { ShareAlertDialog } from "./ShareAlertDialog";
+import { ShareFormatSelector } from "./ShareFormatSelector";
 
 export default function VoucherDetailsActionButtons({
   data,
@@ -81,7 +81,7 @@ export default function VoucherDetailsActionButtons({
       <RemoveReduxData />
       
       {/* Share Dialog Component */}
-      <ShareAlertDialog 
+      <ShareFormatSelector 
         open={shareDialogOpen} 
         setOpen={setShareDialogOpen}
         voucherId={_id}

@@ -276,7 +276,7 @@ function VoucherPdf({ data, org, contentToPrint, bank, tab }) {
           <div className="pdf-page">
             <div className="flex">
               <div className="font-bold text-sm md:text-xl mb-2 mt-6">
-                {configurations?.printTitle || "Tax Invoice"}
+                {configurations?.printTitle || ""}
               </div>
             </div>
             <VoucherPdfHeader

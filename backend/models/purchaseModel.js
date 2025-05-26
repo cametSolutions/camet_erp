@@ -151,7 +151,7 @@ const purchaseSchema = new Schema(
             mrp: { type: Number },
             newBatch: { type: Boolean, default: false },
             supplierName: { type: String },
-            voucherNumber: { type: Number },
+            voucherNumber: { type: String },
             purchase_price: { type: Number },
             purchase_cost: { type: Number },
             hsn_code: { type: String },

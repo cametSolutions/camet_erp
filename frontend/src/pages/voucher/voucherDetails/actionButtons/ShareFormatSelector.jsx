@@ -9,7 +9,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,14 +19,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useNavigate } from "react-router-dom";
-import { HiDocument, HiPrinter } from "react-icons/hi2";
+import { HiDocument } from "react-icons/hi2";
 import { IoDocumentTextSharp } from "react-icons/io5";
-import { FaWhatsapp } from "react-icons/fa";
-import { MdEmail } from "react-icons/md";
+import { formatVoucherType } from "../../../../../utils/formatVoucherType";
 
-export function ShareAlertDialog({ open, setOpen, voucherId, voucherType }) {
+export function ShareFormatSelector({ open, setOpen, voucherId, voucherType }) {
   const [selectedFormat, setSelectedFormat] = useState("tax-invoice");
-  const [selectedAction, setSelectedAction] = useState("print");
   const navigate = useNavigate();
 
   const formats = [
@@ -50,46 +47,12 @@ export function ShareAlertDialog({ open, setOpen, voucherId, voucherType }) {
     });
   }
 
-  const actions = [
-    {
-      id: "print",
-      label: "Print",
-      icon: <HiPrinter size={25} />,
-    },
-    {
-      id: "whatsapp",
-      label: "WhatsApp",
-      icon: <FaWhatsapp size={25} />,
-    },
-    {
-      id: "mail",
-      label: "Email",
-      icon: <MdEmail size={25} />,
-    },
-  ];
-
   const handleContinue = () => {
-    // Handle different cases here
-    switch (selectedAction) {
-      case "print":
-        navigate(
-          `/sUsers/share${voucherType}${
-            selectedFormat === "pos" ? "ThreeInch" : ""
-          }/${voucherId}`
-        );
-        break;
-      case "mail":
-        // TODO: Add your email handling logic here
-        alert("Mailing feature coming soon.");
-        break;
-      case "whatsapp":
-        // TODO: Add your WhatsApp sharing logic here
-        alert("WhatsApp sharing feature coming soon.");
-        break;
-      default:
-        break;
-    }
-
+    navigate(
+      `/sUsers/share${voucherType}${
+        selectedFormat === "pos" ? "ThreeInch" : ""
+      }/${voucherId}`
+    );
     setOpen(false);
   };
 
@@ -98,10 +61,10 @@ export function ShareAlertDialog({ open, setOpen, voucherId, voucherType }) {
       <AlertDialogContent className="max-w-md bg-gray-900 text-white border-gray-800">
         <AlertDialogHeader>
           <AlertDialogTitle className="text-lg font-semibold text-white">
-            Share Invoice
+            Share {formatVoucherType(voucherType)}
           </AlertDialogTitle>
           <AlertDialogDescription className="text-gray-400">
-            Choose the format and sharing method
+            Choose the format
           </AlertDialogDescription>
         </AlertDialogHeader>
 
@@ -130,51 +93,6 @@ export function ShareAlertDialog({ open, setOpen, voucherId, voucherType }) {
                 ))}
               </SelectContent>
             </Select>
-          </div>
-
-          {/* Action Selection */}
-          <div>
-            <Label className="text-sm font-medium text-gray-200 mb-3 block">
-              Select Action
-            </Label>
-            <RadioGroup
-              value={selectedAction}
-              onValueChange={setSelectedAction}
-              className="flex justify-center gap-6 flex-wrap"
-            >
-              {actions.map((action) => (
-                <div
-                  key={action.id}
-                  className={`flex flex-col items-center cursor-pointer ${
-                    selectedAction === action.id ? "opacity-100" : "opacity-70"
-                  } hover:opacity-100 transition-all`}
-                  onClick={() => setSelectedAction(action.id)}
-                >
-                  <div
-                    className={`p-4 rounded-full ${
-                      selectedAction === action.id
-                        ? "bg-gray-700 border-2 border-white"
-                        : "bg-gray-800 border-2 border-gray-600"
-                    } mb-3`}
-                  >
-                    {action.icon}
-                  </div>
-                  <div className="flex items-center justify-center">
-                    <RadioGroupItem
-                      value={action.id}
-                      id={action.id}
-                      className="hidden"
-                    />
-                    <Label
-                      htmlFor={action.id}
-                      className="text-center cursor-pointer font-medium text-gray-200"
-                    >
-                      {action.label}
-                    </Label>
-                  </div>
-                </div>
-              ))}
-            </RadioGroup>
           </div>
         </div>
 
