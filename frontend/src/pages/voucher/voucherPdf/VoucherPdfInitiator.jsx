@@ -161,6 +161,7 @@ function VoucherPdfInitiator() {
     getTransactionDetails();
   }, [id, voucherType]);
 
+  /////////////////////////////////////////////// handle download ///////////////////////////////////////////////
   const handleDownload = () => {
     const element = contentToPrint.current;
 
@@ -200,13 +201,24 @@ function VoucherPdfInitiator() {
     html2pdf()
       .from(element)
       .set(options)
-      .save()
-      .then(() => {
-        // Restore original styles after PDF generation
-        if (isMobile) {
-          element.style.transform = originalTransform;
-          element.style.transition = originalTransition;
-        }
+      .outputPdf("blob")
+      .then((pdfBlob) => {
+        // Download manually
+        const downloadLink = document.createElement("a");
+        downloadLink.href = URL.createObjectURL(pdfBlob);
+        downloadLink.download = `${formatVoucherType(voucherType)}_${id}.pdf`;
+        // downloadLink.click();
+
+        // Print via iframe
+        const iframe = document.createElement("iframe");
+        iframe.style.display = "none";
+        iframe.src = downloadLink.href;
+        document.body.appendChild(iframe);
+
+        iframe.onload = function () {
+          iframe.contentWindow.focus();
+          iframe.contentWindow.print();
+        };
       })
       .catch((error) => {
         console.error("PDF generation failed:", error);
@@ -218,16 +230,18 @@ function VoucherPdfInitiator() {
       });
   };
 
+  /////////////////////////////////////////////// handle print  ///////////////////////////////////////////////
+
   return (
     <div>
       <TitleDiv
+      loading={loading}
         title={`${formatVoucherType(voucherType)} Preview`}
-        rightSideContent={<FaShareAlt />}
+        rightSideContent={<FaShareAlt size={15} />}
         rightSideModalComponent={({ setShowModal }) => (
           <SharingMethodSelector
             open={true}
             setOpen={setShowModal}
-            // handlePrint={handlePrint}
             handleDownload={handleDownload}
           />
         )}
