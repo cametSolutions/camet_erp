@@ -164,17 +164,15 @@ function VoucherPdfInitiator() {
   /////////////////////////////////////////////// handle download ///////////////////////////////////////////////
 const handleDownload = () => {
   const element = contentToPrint.current;
-
   if (!element) return;
+
+  // Detect mobile devices
+  const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
   // Store original styles
   const originalTransform = element.style.transform;
   const originalTransition = element.style.transition;
 
-  // Detect mobile devices
-  const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-
-  // Temporarily remove mobile scaling for PDF generation
   if (isMobile) {
     element.style.transform = "none";
     element.style.transition = "none";
@@ -204,19 +202,24 @@ const handleDownload = () => {
     .set(options)
     .outputPdf("blob")
     .then((pdfBlob) => {
-      // Restore original styles
+      const blobUrl = URL.createObjectURL(pdfBlob);
+
+      // Restore styles
       if (isMobile) {
         element.style.transform = originalTransform;
         element.style.transition = originalTransition;
       }
 
-      const blobUrl = URL.createObjectURL(pdfBlob);
-
       if (isMobile) {
-        // ✅ Best experience on mobile: open in new tab
-        window.open(blobUrl, "_blank");
+        // ✅ Mobile: trigger direct download
+        const downloadLink = document.createElement("a");
+        downloadLink.href = blobUrl;
+        downloadLink.download = `${formatVoucherType(voucherType)}_${id}.pdf`;
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
       } else {
-        // ✅ Desktop: trigger print via iframe
+        // ✅ Desktop: trigger print
         const iframe = document.createElement("iframe");
         iframe.style.display = "none";
         iframe.src = blobUrl;
@@ -231,13 +234,13 @@ const handleDownload = () => {
     .catch((error) => {
       console.error("PDF generation failed:", error);
 
-      // Restore styles even if PDF generation fails
       if (isMobile) {
         element.style.transform = originalTransform;
         element.style.transition = originalTransition;
       }
     });
 };
+
 
 
   /////////////////////////////////////////////// handle print  ///////////////////////////////////////////////
