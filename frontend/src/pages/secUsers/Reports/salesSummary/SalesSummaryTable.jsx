@@ -7,13 +7,12 @@ import SelectDate from "../../../../components/Filters/SelectDate";
 import { useSelector } from "react-redux";
 import useFetch from "../../../../customHook/useFetch";
 import CustomBarLoader from "../../../../components/common/CustomBarLoader";
-import * as XLSX from 'xlsx';
+import * as XLSX from "xlsx";
 import { RiFileExcel2Fill } from "react-icons/ri";
 function SalesSummaryTable() {
   const [summaryReport, setSummaryReport] = useState([]);
   const [summary, setSummary] = useState([]);
 
-  
 
   // const location = useLocation();
   // const summary = location?.state?.summary;
@@ -137,7 +136,9 @@ function SalesSummaryTable() {
       billnumber: sale?.salesNumber,
       billDate: sale?.date,
       itemName: item?.product_name,
+      hsn_code: item?.hsn_code,
       partyName: sale?.party?.partyName,
+      gstNo: sale?.party?.gstNo,
       batch: "",
       groupName: item?.brand?.name,
       categoryName: item?.category?.name,
@@ -153,7 +154,6 @@ function SalesSummaryTable() {
     return saleObject.sale;
   };
 
-
   const handleFilter = (option) => {
     let check = [];
     // let arr = []
@@ -168,9 +168,7 @@ function SalesSummaryTable() {
             if (it?.hasGodownOrBatch) {
               if (isGodownOnly(it)) {
                 processGodownMerging(it, existingParty, item);
-              } 
-              
-              else {
+              } else {
                 it.GodownList?.map((items) => {
                   if (items?.added) {
                     const { basePrice, taxAmount } = calculateTaxAndPrice(
@@ -185,6 +183,8 @@ function SalesSummaryTable() {
                       billnumber: item?.salesNumber,
                       billDate: item?.date,
                       itemName: it?.product_name,
+                      hsn_code: it?.hsn_code,
+                      gstNo: item?.party?.gstNo,
                       batch: items?.batch,
                       groupName: it?.brand?.name,
                       categoryName: it?.category?.name,
@@ -200,7 +200,7 @@ function SalesSummaryTable() {
                     // Push the new sale entry to the sale array
                     existingParty?.sale?.push(newSale);
                   }
-                })
+                });
               }
             } else {
               it.GodownList?.map((items) => {
@@ -215,6 +215,9 @@ function SalesSummaryTable() {
                   billnumber: item?.salesNumber,
                   billDate: item?.date,
                   itemName: it?.product_name,
+                  hsn_code: it?.hsn_code,
+                  gstNo: item?.party?.gstNo,
+
                   categoryName: it?.category?.name,
                   groupName: it?.brand?.name,
                   quantity: it?.count,
@@ -235,6 +238,7 @@ function SalesSummaryTable() {
           const saleObject = {
             partyName: item?.party?.partyName,
             partyId: item?.party?._id,
+            gstNo: item?.party?.gstNo,
             sale: [],
             saleAmount: 0,
           };
@@ -243,8 +247,7 @@ function SalesSummaryTable() {
             if (it?.hasGodownOrBatch) {
               if (isGodownOnly(it)) {
                 processGodownMerging(it, saleObject, item);
-              } 
-              else {
+              } else {
                 it?.GodownList?.map((items) => {
                   if (items?.added) {
                     const { basePrice, taxAmount } = calculateTaxAndPrice(
@@ -258,6 +261,9 @@ function SalesSummaryTable() {
                       billnumber: item?.salesNumber,
                       billDate: item?.date,
                       itemName: it.product_name,
+                      hsn_code: it?.hsn_code,
+                      gstNo: item?.party?.gstNo,
+
                       batch: items?.batch,
                       groupName: it?.brand?.name,
                       categoryName: it?.category.name,
@@ -289,6 +295,7 @@ function SalesSummaryTable() {
                   billnumber: item?.salesNumber,
                   billDate: item?.date,
                   itemName: it?.product_name,
+                  gstNo : item?.party?.gstNo,
                   categoryName: it?.category?.name,
                   groupName: it?.brand?.name,
                   quantity: it?.count,
@@ -337,10 +344,14 @@ function SalesSummaryTable() {
                         billnumber: item?.salesNumber,
                         billDate: item?.date,
                         itemName: h?.product_name,
+                        hsn_code: h?.hsn_code,
+
                         batch: items?.batch,
                         groupName: h?.brand?.name,
                         categoryName: h?.category?.name,
                         partyName: item?.party?.partyName,
+                        gstNo: item?.party?.gstNo,
+
                         quantity: items?.count,
                         rate: items?.selectedPriceRate,
                         discount: items?.discount,
@@ -370,9 +381,12 @@ function SalesSummaryTable() {
                     billnumber: item?.salesNumber,
                     billDate: item?.date,
                     itemName: h?.product_name,
+                    hsn_code: h?.hsn_code,
                     groupName: h?.brand?.name,
                     categoryName: h?.category?.name,
                     partyName: item?.party?.partyName,
+                    gstNo: item?.party?.gstNo,
+
                     quantity: h?.count,
                     rate: items?.selectedPriceRate,
                     discount: h?.discount,
@@ -506,10 +520,13 @@ function SalesSummaryTable() {
                         billnumber: item?.salesNumber,
                         billDate: item?.date,
                         itemName: h?.product_name,
+                        hsn_code: h?.hsn_code,
                         groupName: h?.brand?.name,
                         categoryName: h?.category?.name,
                         batch: items?.batch,
                         partyName: item?.party?.partyName,
+                        gstNo: item?.party?.gstNo,
+
                         quantity: items?.count,
                         rate: items?.selectedPriceRate,
                         discount: items?.discount,
@@ -541,7 +558,9 @@ function SalesSummaryTable() {
                     billnumber: item?.salesNumber,
                     billDate: item?.date,
                     itemName: h?.product_name,
+                    hsn_code: h?.hsn_code,
                     partyName: item?.party?.partyName,
+                    gstNo: item?.party?.gstNo,
                     categoryName: h?.category?.name,
                     groupName: h?.brand?.name,
                     quantity: h?.count,
@@ -563,9 +582,7 @@ function SalesSummaryTable() {
         });
       });
       setSummaryReport(check);
-    } 
-    
-    else if (option === "Stock Group") {
+    } else if (option === "Stock Group") {
       summary.map((item) => {
         item.items.map((h) => {
           if (h?.brand?.name) {
@@ -577,9 +594,7 @@ function SalesSummaryTable() {
               if (h?.hasGodownOrBatch) {
                 if (isGodownOnly(h)) {
                   processGodownMerging(h, existingParty, item);
-                } 
-                
-                else {
+                } else {
                   h.GodownList.map((items) => {
                     if (items.added) {
                       const { basePrice, taxAmount } = calculateTaxAndPrice(
@@ -589,13 +604,15 @@ function SalesSummaryTable() {
                         h?.igst,
                         items?.discount
                       );
-  
+
                       const newSale = {
                         billnumber: item?.salesNumber,
                         billDate: item?.date,
                         itemName: h?.product_name,
+                        hsn_code: h?.hsn_code,
                         batch: items?.batch,
                         partyName: item?.party?.partyName,
+                        gstNo: item?.party?.gstNo,
                         categoryName: h?.category?.name,
                         quantity: items?.count,
                         rate: items?.selectedPriceRate,
@@ -626,8 +643,10 @@ function SalesSummaryTable() {
                     billnumber: item?.salesNumber,
                     billDate: item?.date,
                     itemName: h?.product_name,
+                    hsn_code: h?.hsn_code,
                     categoryName: h?.category?.name,
                     partyName: item?.party?.partyName,
+                    gstNo: item?.party?.gstNo,
                     quantity: h?.count,
                     rate: items?.selectedPriceRate,
                     discount: h?.discount || 0,
@@ -666,8 +685,10 @@ function SalesSummaryTable() {
                         billnumber: item?.salesNumber,
                         billDate: item?.date,
                         itemName: h?.product_name,
+                        hsn_code: h?.hsn_code,
                         batch: items?.batch,
                         partyName: item?.party?.partyName,
+                        gstNo: item?.party?.gstNo,
                         categoryName: h?.category?.name,
                         quantity: items?.count,
                         rate: items?.selectedPriceRate,
@@ -699,7 +720,9 @@ function SalesSummaryTable() {
                     billnumber: item?.salesNumber,
                     billDate: item?.date,
                     itemName: h?.product_name,
+                    hsn_code: h?.hsn_code,
                     partyName: item?.party?.partyName,
+                    gstNo: item?.party?.gstNo,
                     categoryName: h?.category?.name,
                     quantity: h?.count,
                     rate: items?.selectedPriceRate,
@@ -720,8 +743,7 @@ function SalesSummaryTable() {
         });
       });
       setSummaryReport(check);
-    }
-    else if (option === "Stock Category") {
+    } else if (option === "Stock Category") {
       summary.map((item) => {
         item?.items?.map((h) => {
           if (h?.brand?.name) {
@@ -733,9 +755,7 @@ function SalesSummaryTable() {
               if (h.hasGodownOrBatch) {
                 if (isGodownOnly(h)) {
                   processGodownMerging(h, existingParty, item);
-                } 
-                
-                else {
+                } else {
                   h.GodownList.map((items) => {
                     if (items.added) {
                       const { basePrice, taxAmount } = calculateTaxAndPrice(
@@ -745,13 +765,16 @@ function SalesSummaryTable() {
                         h?.igst,
                         items?.discount
                       );
-  
+
                       const newSale = {
                         billnumber: item?.salesNumber,
                         billDate: item?.date,
                         itemName: h?.product_name,
+                        hsn_code: h?.hsn_code,
                         batch: items?.batch,
                         partyName: item?.party?.partyName,
+                        gstNo: item?.party?.gstNo,
+
                         categoryName: h?.category?.name,
                         quantity: items?.count,
                         rate: items?.selectedPriceRate,
@@ -782,8 +805,11 @@ function SalesSummaryTable() {
                     billnumber: item?.salesNumber,
                     billDate: item?.date,
                     itemName: h?.product_name,
+                    hsn_code: h?.hsn_code,
                     categoryName: h?.category?.name,
                     partyName: item?.party?.partyName,
+                    gstNo: item?.party?.gstNo,
+
                     quantity: h?.count,
                     rate: items?.selectedPriceRate,
                     discount: h?.discount || 0,
@@ -799,14 +825,11 @@ function SalesSummaryTable() {
               }
             } else {
               const saleObject = {
-
                 categoryName: h?.category?.name,
                 categoryId: h?.category?._id,
                 sale: [],
                 saleAmount: 0,
               };
-
-              
 
               if (h.hasGodownOrBatch) {
                 if (isGodownOnly(h)) {
@@ -825,8 +848,12 @@ function SalesSummaryTable() {
                         billnumber: item?.salesNumber,
                         billDate: item?.date,
                         itemName: h?.product_name,
+                        hsn_code: h?.hsn_code,
+
                         batch: items?.batch,
                         partyName: item?.party?.partyName,
+                        gstNo: item?.party?.gstNo,
+
                         categoryName: h?.category?.name,
                         quantity: items?.count,
                         rate: items?.selectedPriceRate,
@@ -858,7 +885,10 @@ function SalesSummaryTable() {
                     billnumber: item?.salesNumber,
                     billDate: item?.date,
                     itemName: h?.product_name,
+                    hsn_code: h?.hsn_code,
                     partyName: item?.party?.partyName,
+                    gstNo: item?.party?.gstNo,
+
                     categoryName: h?.category?.name,
                     quantity: h?.count,
                     rate: items?.selectedPriceRate,
@@ -882,106 +912,131 @@ function SalesSummaryTable() {
     }
   };
 
-
-
   ////////
 
- const exportToExcel = () => {
-  
+  const exportToExcel = () => {
     if (!summaryReport || summaryReport.length === 0) return;
-  
+
     // Function to format date
     const formatDate = (dateString) => {
-      return dateString ? new Date(dateString).toISOString().split('T')[0] : 'N/A';
+      return dateString
+        ? new Date(dateString).toISOString().split("T")[0]
+        : "N/A";
     };
-  
+
     // Function to format numbers
     const formatNumber = (number) => {
-      return number ? Number(number).toFixed(2) : '0.00';
+      return number ? Number(number).toFixed(2) : "0.00";
     };
-  
+
     // Prepare worksheet data
     const worksheetData = [];
-  
+
     // Add headers based on selectedOption
     const headers = [
       getMainHeader(selectedOption),
-      'Bill No',
-      'Bill Date',
+      "Bill No",
+      "Bill Date",
       getSecondaryHeader(selectedOption),
       getTertiaryHeader(selectedOption),
       getQuaternaryHeader(selectedOption),
-      'Batch',
-      'Quantity',
-      'Rate',
-      'Discount',
-      'Amount',
-      'Tax%',
-      'Tax Amount',
-      'Net Amount'
+      "Gst No",
+      "Hsn",
+      "Batch",
+      "Quantity",
+      "Rate",
+      "Discount",
+      "Amount",
+      "Tax%",
+      "Tax Amount",
+      "Net Amount",
     ];
     worksheetData.push(headers);
 
     console.log(summaryReport);
-    
-  
+
     // Add data rows
-    summaryReport.forEach(record => {
-      record.sale.forEach(saleItem => {
+    summaryReport.forEach((record) => {
+      record.sale.forEach((saleItem) => {
         const row = [
           // Main identifier based on selectedOption
-          selectedOption === 'Ledger' ? record.partyName :
-          selectedOption === 'Stock Group' ? record.groupName :
-          selectedOption === 'Stock Category' ? record.categoryName :
-          selectedOption === 'Stock Item' ? record.itemName : '',
-          
+          selectedOption === "Ledger"
+            ? record.partyName
+            : selectedOption === "Stock Group"
+            ? record.groupName
+            : selectedOption === "Stock Category"
+            ? record.categoryName
+            : selectedOption === "Stock Item"
+            ? record.itemName
+            : "",
+
           saleItem.billnumber,
           formatDate(saleItem.billDate),
-          
+
           // Secondary column based on selectedOption
-          selectedOption === 'Ledger' ? saleItem.itemName :
-          selectedOption === 'Stock Group' ? saleItem.categoryName :
-          selectedOption === 'Stock Category' ? saleItem.groupName :
-          selectedOption === 'Stock Item' ? saleItem.partyName : '',
-          
+          selectedOption === "Ledger"
+            ? saleItem.itemName
+            : selectedOption === "Stock Group"
+            ? saleItem.categoryName
+            : selectedOption === "Stock Category"
+            ? saleItem.groupName
+            : selectedOption === "Stock Item"
+            ? saleItem.partyName
+            : "",
+
+
+
           // Tertiary column based on selectedOption
-          selectedOption === 'Ledger' ? saleItem.categoryName :
-          selectedOption === 'Stock Group' ? saleItem.partyName :
-          selectedOption === 'Stock Category' ? saleItem.itemName :
-          selectedOption === 'Stock Item' ? saleItem.groupName : '',
-          
+          selectedOption === "Ledger"
+            ? saleItem.categoryName
+            : selectedOption === "Stock Group"
+            ? saleItem.partyName
+            : selectedOption === "Stock Category"
+            ? saleItem.itemName
+            : selectedOption === "Stock Item"
+            ? saleItem.groupName
+            : "",
+
           // Quaternary column based on selectedOption
-          selectedOption === 'Ledger' ? saleItem.groupName :
-          selectedOption === 'Stock Group' ? saleItem.itemName :
-          selectedOption === 'Stock Category' ? saleItem.partyName :
-          selectedOption === 'Stock Item' ? saleItem.categoryName : '',
-          
-          saleItem.batch || '',
+          selectedOption === "Ledger"
+            ? saleItem.groupName
+            : selectedOption === "Stock Group"
+            ? saleItem.itemName
+            : selectedOption === "Stock Category"
+            ? saleItem.partyName
+            : selectedOption === "Stock Item"
+            ? saleItem.categoryName
+            : "",
+
+          saleItem.gstNo,
+          saleItem.hsn_code,
+
+          saleItem.batch || "",
           saleItem.quantity,
           saleItem.rate,
           formatNumber(saleItem.discount),
           formatNumber(saleItem.amount),
           saleItem.taxPercentage,
           formatNumber(saleItem.taxAmount),
-          formatNumber(saleItem.netAmount)
+          formatNumber(saleItem.netAmount),
         ];
         worksheetData.push(row);
       });
-  
+
       // Add total row for each group
-      const totalRow = new Array(14).fill('');
+      const totalRow = new Array(14).fill("");
       totalRow[0] = `Total for ${getMainHeader(selectedOption)}`;
       totalRow[13] = formatNumber(record.saleAmount);
       worksheetData.push(totalRow);
-      
+
       // Add empty row for separation
-      worksheetData.push(new Array(14).fill(''));
+      worksheetData.push(new Array(14).fill(""));
     });
-  
+
     // Create workbook and worksheet
     const wb = XLSX.utils.book_new();
     const ws = XLSX.utils.aoa_to_sheet(worksheetData);
-  
+
     // Add column widths
     const colWidths = [
       { wch: 20 }, // Main identifier
@@ -990,75 +1045,102 @@ function SalesSummaryTable() {
       { wch: 20 }, // Secondary column
       { wch: 20 }, // Tertiary column
       { wch: 20 }, // Quaternary column
+      { wch: 12 }, // Gst No
+      { wch: 12 }, // Hsn
       { wch: 12 }, // Batch
       { wch: 10 }, // Quantity
       { wch: 10 }, // Rate
       { wch: 10 }, // Discount
       { wch: 12 }, // Amount
-      { wch: 8 },  // Tax%
+      { wch: 8 }, // Tax%
       { wch: 12 }, // Tax Amount
-      { wch: 12 }  // Net Amount
+      { wch: 12 }, // Net Amount
     ];
-    ws['!cols'] = colWidths;
-  
+    ws["!cols"] = colWidths;
+
     // Add the worksheet to workbook
-    XLSX.utils.book_append_sheet(wb, ws, 'Sales Summary');
-  
+    XLSX.utils.book_append_sheet(wb, ws, "Sales Summary");
+
     // Generate Excel file
-    XLSX.writeFile(wb, `Sales_Summary_${selectedOption}_${formatDate(new Date())}.xlsx`);
+    XLSX.writeFile(
+      wb,
+      `Sales_Summary_${selectedOption}_${formatDate(new Date())}.xlsx`
+    );
   };
-  
+
   // Helper functions for header names
   function getMainHeader(selectedOption) {
     switch (selectedOption) {
-      case 'Ledger': return 'Party Name';
-      case 'Stock Group': return 'Group Name';
-      case 'Stock Category': return 'Category Name';
-      case 'Stock Item': return 'Item Name';
-      default: return '';
+      case "Ledger":
+        return "Party Name";
+      case "Stock Group":
+        return "Group Name";
+      case "Stock Category":
+        return "Category Name";
+      case "Stock Item":
+        return "Item Name";
+      default:
+        return "";
     }
   }
-  
+
   function getSecondaryHeader(selectedOption) {
     switch (selectedOption) {
-      case 'Ledger': return 'Item Name';
-      case 'Stock Group': return 'Category Name';
-      case 'Stock Category': return 'Group Name';
-      case 'Stock Item': return 'Party Name';
-      default: return '';
+      case "Ledger":
+        return "Item Name";
+      case "Stock Group":
+        return "Category Name";
+      case "Stock Category":
+        return "Group Name";
+      case "Stock Item":
+        return "Party Name";
+      default:
+        return "";
     }
   }
-  
+
   function getTertiaryHeader(selectedOption) {
     switch (selectedOption) {
-      case 'Ledger': return 'Category Name';
-      case 'Stock Group': return 'Party Name';
-      case 'Stock Category': return 'Item Name';
-      case 'Stock Item': return 'Group Name';
-      default: return '';
+      case "Ledger":
+        return "Category Name";
+      case "Stock Group":
+        return "Party Name";
+      case "Stock Category":
+        return "Item Name";
+      case "Stock Item":
+        return "Group Name";
+      default:
+        return "";
     }
   }
-  
+
   function getQuaternaryHeader(selectedOption) {
     switch (selectedOption) {
-      case 'Ledger': return 'Group Name';
-      case 'Stock Group': return 'Item Name';
-      case 'Stock Category': return 'Party Name';
-      case 'Stock Item': return 'Category Name';
-      default: return '';
+      case "Ledger":
+        return "Group Name";
+      case "Stock Group":
+        return "Item Name";
+      case "Stock Category":
+        return "Party Name";
+      case "Stock Item":
+        return "Category Name";
+      default:
+        return "";
     }
   }
 
   return (
-    <div>
+    <div className="h-screen overflow-hidden">
       <div className="flex flex-col sticky top-0 ">
-        <TitleDiv title={"Sales Summary Details"} from="/sUsers/salesSummary"
-        rightSideContent={<RiFileExcel2Fill size={20} />}
-                  rightSideContentOnClick={exportToExcel}
-         />
+        <TitleDiv
+          title={"Sales Summary Details"}
+          from="/sUsers/salesSummary"
+          rightSideContent={<RiFileExcel2Fill size={20} />}
+          rightSideContentOnClick={exportToExcel}
+        />
         {/* <button onClick={()=>{exportToExcel(summaryReport,selectedOption)}}>convet</button> */}
         <SelectDate />
-        <div className="flex px-2  bg-white shadow-lg border-t shadow-lg">
+        <div className="flex px-2  bg-white shadow-lg border-t ">
           <SummmaryDropdown />
         </div>
       </div>
@@ -1067,7 +1149,7 @@ function SalesSummaryTable() {
 
       {!loading && summaryReport.length > 0 ? (
         <div className=" bg-gray-50 rounded-lg shadow-lg mt-2 ">
-          <div className=" max-h-[600px] overflow-auto text-xs pb-5">
+          <div className=" h-[calc(100vh-150px)] overflow-scroll  text-xs pb-5">
             <table className="w-full text-center border  ">
               <thead className=" bg-gray-300  ">
                 <tr className="">
@@ -1119,6 +1201,8 @@ function SalesSummaryTable() {
                       ? "Category Name"
                       : ""}
                   </th>
+                  <th className="p-2 font-semibold text-gray-600">Gst No</th>
+                  <th className="p-2 font-semibold text-gray-600">Hsn</th>
                   <th className="p-2 font-semibold text-gray-600">Batch</th>
                   <th className="p-2 font-semibold text-gray-600">Quantity</th>
                   <th className="p-2 font-semibold text-gray-600">Rate</th>
@@ -1212,6 +1296,12 @@ function SalesSummaryTable() {
                         </td>
 
                         <td className="px-1 py-2 text-gray-800 text-xs cursor-pointer">
+                          {saleItem?.gstNo}
+                        </td>
+                        <td className="px-1 py-2 text-gray-800 text-xs cursor-pointer">
+                          {saleItem?.hsn_code}
+                        </td>
+                        <td className="px-1 py-2 text-gray-800 text-xs cursor-pointer">
                           {saleItem?.batch}
                         </td>
                         <td className="px-1 py-2 text-gray-800 text-xs cursor-pointer">
@@ -1222,17 +1312,15 @@ function SalesSummaryTable() {
                         </td>
                         <td className="px-1 py-2 text-gray-800 text-xs cursor-pointer">
                           {saleItem?.discount}
-                          
                         </td>
                         <td className="px-1 py-2 text-gray-800 text-xs cursor-pointer">
-                          {Number((saleItem?.amount)).toFixed(2)}
-
+                          {Number(saleItem?.amount).toFixed(2)}
                         </td>
                         <td className="px-1 py-2 text-gray-800 text-xs cursor-pointer">
                           {saleItem?.taxPercentage}
                         </td>
                         <td className="px-1 py-2 text-gray-800 text-xs cursor-pointer">
-                          {Number((saleItem?.taxAmount)).toFixed(2)}
+                          {Number(saleItem?.taxAmount).toFixed(2)}
                         </td>
                         <td className="px-1 py-2 text-gray-800 text-xs cursor-pointer">
                           {saleItem?.netAmount}
