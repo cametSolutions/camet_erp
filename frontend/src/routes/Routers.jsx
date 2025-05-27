@@ -35,16 +35,14 @@ import ConfigureSecondaryUser from '../pages/masters/secondaryUsers/ConfigureSec
 import ErrorPage from '../pages/errorPages/Notfound'
 import Notfound from '../pages/errorPages/Notfound'
 import ServerError from '../pages/errorPages/ServerError'
-import ThreeInchSalesSec from '../pages/secUsers/ThreeInchSalesSec'
 // import EditSale from '../pages/secUsers/EditSale'
-import ThreeInchInvoiceSec from '../pages/secUsers/ThreeInchInvoiceSec'
+
 
 import AddBrand from '../pages/masters/product/productSubDetails/AddBrand'
 import AddCategory from '../pages/masters/product/productSubDetails/AddCategory'
 import AddSubCategory from '../pages/masters/product/productSubDetails/AddSubCategory'
 import AddGodown from '../pages/masters/product/productSubDetails/AddGodown'
 import AddPriceLevel from '../pages/masters/product/productSubDetails/AddPriceLevel'
-import ThreeInchVanSaleSec from '../pages/secUsers/ThreeInchVanSaleSec'
 // import EditVanSale from '../pages/secUsers/EditVanSale'
 import SearchGodown from '../pages/secUsers/SearchGodown'
 import AddbatchInPurchase from '../pages/secUsers/AddbatchInPurchase'
@@ -159,7 +157,7 @@ const Routers = () => {
         <Route path='/sUsers/shareSales/:id' element={<ProtectedSecRoute><VoucherPdfInitiator/></ProtectedSecRoute>}></Route> 
         <Route path='/sUsers/shareVanSale/:id' element={<ProtectedSecRoute><VoucherPdfInitiator/></ProtectedSecRoute>}></Route> 
         <Route path='/sUsers/shareSalesThreeInch/:id' element={<ProtectedSecRoute><VoucherPdfInitiatorThreeInch/></ProtectedSecRoute>}></Route> 
-        <Route path='/sUsers/shareVanSaleThreeInch/:id' element={<ProtectedSecRoute><ThreeInchVanSaleSec/></ProtectedSecRoute>}></Route> 
+        <Route path='/sUsers/shareVanSaleThreeInch/:id' element={<ProtectedSecRoute><VoucherPdfInitiatorThreeInch/></ProtectedSecRoute>}></Route> 
         <Route path='/sUsers/sales/paymentSplitting' element={<ProtectedSecRoute><PaymentSplitting/></ProtectedSecRoute>}></Route> 
         <Route path='/sUsers/editSale/:id/paymentSplitting' element={<ProtectedSecRoute><PaymentSplitting/></ProtectedSecRoute>}></Route> 
        

@@ -5,6 +5,13 @@ import Organization from "../models/OragnizationModel.js";
 import SecondaryUser from "../models/secondaryUserModel.js";
 import TallyData from "../models/TallyData.js";
 import Banks from "../models/bankModel.js";
+import BanksOd from "../models/bankOdModel.js";
+import Cash from "../models/cashModel.js";
+import AccountGroup from "../models/accountGroup.js";
+import CreditNote from "../models/creditNoteModel.js";
+import DebitNote from "../models/debitNoteModel.js";
+import Receipt from "../models/receiptModel.js";
+import Payment from "../models/paymentModel.js";
 import nodemailer from "nodemailer";
 import additionalChargesModel from "../models/additionalChargesModel.js";
 import hsnModel from "../models/hsnModel.js";
@@ -23,7 +30,6 @@ import {
 } from "../models/subDetails.js";
 import vanSaleModel from "../models/vanSaleModel.js";
 import TransactionModel from "../models/TransactionModel.js";
-
 
 // @desc Login Admin
 // route POST/api/admin/login
@@ -178,7 +184,7 @@ export const handlePrimaryDelete = async (req, res) => {
   try {
     // First, find the organizations owned by this user
     const organizations = await Organization.find({ owner: userId });
-    const organizationIds = organizations.map(org => org._id);
+    const organizationIds = organizations.map((org) => org._id);
 
     const deletionResults = await Promise.all([
       PrimaryUsers.findByIdAndDelete(userId),
@@ -200,7 +206,7 @@ export const handlePrimaryDelete = async (req, res) => {
       Godown.deleteMany({ Primary_user_id: userId }),
       PriceLevel.deleteMany({ Primary_user_id: userId }),
       vanSaleModel.deleteMany({ Primary_user_id: userId }),
-      TransactionModel.deleteMany({ cmp_id: { $in: organizationIds } })
+      TransactionModel.deleteMany({ cmp_id: { $in: organizationIds } }),
     ]);
 
     const [
@@ -223,7 +229,7 @@ export const handlePrimaryDelete = async (req, res) => {
       godownResult,
       priceLevelResult,
       vanSaleResult,
-      TransactionResult
+      TransactionResult,
     ] = deletionResults;
 
     if (!user) {
@@ -250,12 +256,12 @@ export const handlePrimaryDelete = async (req, res) => {
       godowns: godownResult.deletedCount,
       priceLevels: priceLevelResult.deletedCount,
       vanSales: vanSaleResult.deletedCount,
-      Transactions: TransactionResult.deletedCount
+      Transactions: TransactionResult.deletedCount,
     };
 
     res.status(200).json({
       message: "User and associated data deleted successfully",
-      deletionCounts: deletionCounts
+      deletionCounts: deletionCounts,
     });
   } catch (error) {
     console.error("Error:", error);
@@ -576,3 +582,103 @@ export const fetchSecondaryUsers = async (req, res) => {
       .json({ success: false, message: "Internal server error, try again!" });
   }
 };
+
+// @desc get secondary users list
+// route GET/api/admin/handleCompanyDelete
+
+// export const handleCompanyDelete = async (req, res) => {
+//   const companyId = req.params.id;
+
+//   try {
+//     // // First, find the organizations owned by this user
+//     // const organizations = await Organization.find({ owner: userId });
+//     // const organizationIds = organizations.map(org => org._id);
+
+//     const deletionResults = await Promise.all([
+//       // SecondaryUser.deleteMany({ primaryUser: userId }),
+//       // Organization.deleteMany({ owner: userId }),
+//       Banks.deleteMany({ cmp_id: companyId }),
+//       BanksOd.deleteMany({ cmp_id: companyId }),
+//       Cash.deleteMany({ cmp_id: companyId }),
+//       AccountGroup.deleteMany({ cmp_id: companyId }),
+//       CreditNote.deleteMany({ cmp_id: companyId }),
+//       DebitNote.deleteMany({ cmp_id: companyId }),
+//       Receipt.deleteMany({ cmp_id: companyId }),
+//       Payment.deleteMany({ cmp_id: companyId }),
+//       TallyData.deleteMany({ cmp_id: companyId }),
+//       additionalChargesModel.deleteMany({ cmp_id: companyId }),
+//       hsnModel.deleteMany({ cmp_id: companyId }),
+//       invoiceModel.deleteMany({ cmp_id: companyId }),
+//       partyModel.deleteMany({ cmp_id: companyId }),
+//       productModel.deleteMany({ cmp_id: companyId }),
+//       purchaseModel.deleteMany({ cmp_id: companyId }),
+//       salesModel.deleteMany({ cmp_id: companyId }),
+//       stockTransferModel.deleteMany({ cmp_id: companyId }),
+//       Brand.deleteMany({ cmp_id: companyId }),
+//       Category.deleteMany({ cmp_id: companyId }),
+//       Subcategory.deleteMany({ cmp_id: companyId }),
+//       Godown.deleteMany({ cmp_id: companyId }),
+//       PriceLevel.deleteMany({ cmp_id: companyId }),
+//       vanSaleModel.deleteMany({ cmp_id: companyId }),
+//       TransactionModel.deleteMany({ cmp_id: { $in: organizationIds } }),
+//     ]);
+
+//     const [
+//       user,
+//       secUserResult,
+//       orgResult,
+//       banksResult,
+//       talliesResult,
+//       additionalChargesResult,
+//       hsnResult,
+//       invoiceResult,
+//       partyResult,
+//       productResult,
+//       purchaseResult,
+//       salesResult,
+//       stockTransferResult,
+//       brandResult,
+//       categoryResult,
+//       subcategoryResult,
+//       godownResult,
+//       priceLevelResult,
+//       vanSaleResult,
+//       TransactionResult,
+//     ] = deletionResults;
+
+//     if (!user) {
+//       return res.status(404).json({ error: "User not found" });
+//     }
+
+//     const deletionCounts = {
+//       user: user ? 1 : 0,
+//       secondaryUsers: secUserResult.deletedCount,
+//       organizations: orgResult.deletedCount,
+//       banks: banksResult.deletedCount,
+//       tallies: talliesResult.deletedCount,
+//       additionalCharges: additionalChargesResult.deletedCount,
+//       hsn: hsnResult.deletedCount,
+//       invoices: invoiceResult.deletedCount,
+//       parties: partyResult.deletedCount,
+//       products: productResult.deletedCount,
+//       purchases: purchaseResult.deletedCount,
+//       sales: salesResult.deletedCount,
+//       stockTransfers: stockTransferResult.deletedCount,
+//       brands: brandResult.deletedCount,
+//       categories: categoryResult.deletedCount,
+//       subcategories: subcategoryResult.deletedCount,
+//       godowns: godownResult.deletedCount,
+//       priceLevels: priceLevelResult.deletedCount,
+//       vanSales: vanSaleResult.deletedCount,
+//       Transactions: TransactionResult.deletedCount,
+//     };
+
+//     res.status(200).json({
+//       message: "User and associated data deleted successfully",
+//       deletionCounts: deletionCounts,
+//     });
+//   } catch (error) {
+//     console.error("Error:", error);
+//     res.status(500).json({ error: "Internal server error" });
+//   }
+// };

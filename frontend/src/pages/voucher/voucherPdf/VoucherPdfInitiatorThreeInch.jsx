@@ -1,25 +1,19 @@
 import { useRef, useEffect, useState } from "react";
-import api from "../../../api/api";
 import { useLocation, useParams } from "react-router-dom";
-import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
-// import { useReactToPrint } from "react-to-print";
+import { useReactToPrint } from "react-to-print";
 // import { FaFilePdf } from "react-icons/fa";
 // import { BeatLoader } from "react-spinners"; // You can use any loader from react-spinners
-
-import VoucherPdf from "./indian/VoucherPdf";
-import VoucherPdfNonIndian from "./nonIndian/VoucherPdfNonIndian";
-import SalesThreeInchPdf from "@/components/common/SalesThreeInchPdf";
+import useFetch from "@/customHook/useFetch";
+import { IoIosArrowRoundBack } from "react-icons/io";
+import { MdPrint } from "react-icons/md";
+import CustomBarLoader from "@/components/common/CustomBarLoader";
+import VoucherThreeInchPdf from "./threeInchPdf/VoucherThreeInchPdf";
 
 function VoucherPdfInitiatorThreeInch() {
   const [data, setData] = useState([]);
-  // const [loading, setLoading] = useState(true);
   const { id } = useParams();
-
-  
-
-
 
   const org = useSelector(
     (state) => state?.secSelectedOrganization?.secSelectedOrg
@@ -50,55 +44,66 @@ function VoucherPdfInitiatorThreeInch() {
     params.vanSale = true;
   }
 
+  // useEffect(() => {
+  //   const getTransactionDetails = async () => {
+  //     try {
+  //       // Fetch invoice details
+  //       const res = await api.get(
+  //         `/api/sUsers/get${voucherType}Details/${id}`,
+
+  //         {
+  //           params,
+  //           withCredentials: true,
+  //         }
+  //       );
+  //       setData(res.data.data);
+
+  //       // Set loading to false after data is fetched
+  //       // setLoading(false);
+  //     } catch (error) {
+  //       console.log(error);
+  //       toast.error(error.response.data.message);
+  //       // setLoading(false);
+
+  //       // Navigate back if there's an error
+  //       setTimeout(() => {
+  //         navigate(-1, { replace: true });
+  //       }, 2000);
+  //     }
+  //   };
+
+  //   getTransactionDetails();
+  // }, [id, voucherType]);
+
+  const { data: voucherData, loading } = useFetch(
+    `/api/sUsers/get${voucherType}Details/${id}`,
+    params,
+    true
+  );
+
   useEffect(() => {
-    const getTransactionDetails = async () => {
-      try {
-        // Fetch invoice details
-        const res = await api.get(
-          `/api/sUsers/get${voucherType}Details/${id}`,
-         
-          {
-             params,
-            withCredentials: true,
-          }
-        );
-        setData(res.data.data);
+    if (voucherData) {
+      setData(voucherData.data);
+    }
+  }, [voucherData]);
 
-        // Set loading to false after data is fetched
-        // setLoading(false);
-      } catch (error) {
-        console.log(error);
-        toast.error(error.response.data.message);
-        // setLoading(false);
-
-        // Navigate back if there's an error
-        setTimeout(() => {
-          navigate(-1, { replace: true });
-        }, 2000);
-      }
-    };
-
-    getTransactionDetails();
-  }, [id, voucherType]);
-
-//   const handlePrint = useReactToPrint({
-//     documentTitle: `Sale Order ${data?.salesNumber}`,
-//     onBeforePrint: () => console.log("before printing..."),
-//     onAfterPrint: () => console.log("after printing..."),
-//     removeAfterPrint: true,
-//   });
-
-  const handleNavigation = () => {
-    navigate(-1, { replace: true });
-  };
-
-  
+  const handlePrint = useReactToPrint({
+    documentTitle: `Sale Order ${data?.salesNumber}`,
+    onBeforePrint: () => console.log("before printing..."),
+    onAfterPrint: () => console.log("after printing..."),
+    removeAfterPrint: true,
+  });
 
   return (
     <div>
-      {/* <div className=" nonPrintable-content bg-[#012a4a]   sticky top-0 p-3 px-5 text-white text-lg font-bold flex items-center gap-3  shadow-lg justify-between">
+      {/* <TitleDiv title="Voucher" loading={loading} /> */}
+
+      <div className=" nonPrintable-content bg-[#012a4a]   sticky top-0 p-3 px-5 text-white text-lg font-bold flex items-center gap-3  shadow-lg justify-between">
         <div className="flex gap-2 ">
-          <button onClick={handleNavigation}>
+          <button
+            onClick={() => navigate(-1, { replace: true })}
+            className="cursor-pointer"
+          >
             <IoIosArrowRoundBack className="text-3xl" />
           </button>
           <p>Share Your Order</p>
@@ -111,10 +116,11 @@ function VoucherPdfInitiatorThreeInch() {
             className="text-xl cursor-pointer "
           />
         </div>
-      </div> */}
+      </div>
+      {loading && <CustomBarLoader />}
 
       <div className="  ">
-        <SalesThreeInchPdf
+        <VoucherThreeInchPdf
           contentToPrint={contentToPrint}
           data={data}
           org={org}
