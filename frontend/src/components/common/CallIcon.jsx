@@ -1,6 +1,6 @@
 /* eslint-disable react/prop-types */
 // CallIcon.jsx
-import  { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 import { IoIosCall } from "react-icons/io";
 
 const CallIcon = ({ phoneNumber, size = 20, color = "green" }) => {
@@ -10,11 +10,11 @@ const CallIcon = ({ phoneNumber, size = 20, color = "green" }) => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth <= 768);
     };
-    
+
     checkMobile();
-    window.addEventListener('resize', checkMobile);
-    
-    return () => window.removeEventListener('resize', checkMobile);
+    window.addEventListener("resize", checkMobile);
+
+    return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
   const isValidPhoneNumber = (number) => {
@@ -25,19 +25,20 @@ const CallIcon = ({ phoneNumber, size = 20, color = "green" }) => {
 
   const handleCallClick = () => {
     // Remove any non-digit characters before validation
-    const cleanNumber = phoneNumber.replace(/\D/g, '');
+    const cleanNumber = phoneNumber.replace(/\D/g, "");
 
     if (!isValidPhoneNumber(cleanNumber)) {
-      alert('Invalid phone number. Please enter a 10-digit number.');
+      alert("Invalid phone number. Please enter a 10-digit number.");
       return;
     }
 
     if (isMobile) {
       window.location.href = `tel:${cleanNumber}`;
     } else {
-      navigator.clipboard.writeText(cleanNumber)
-        .then(() => alert('Phone number copied to clipboard!'))
-        .catch(err => console.error('Failed to copy: ', err));
+      navigator.clipboard
+        .writeText(cleanNumber)
+        .then(() => alert("Phone number copied to clipboard!"))
+        .catch((err) => console.error("Failed to copy: ", err));
     }
   };
 

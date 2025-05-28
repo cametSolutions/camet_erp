@@ -43,6 +43,8 @@ function PartyListComponent({ deleteHandler = () => {}, isVoucher = false }) {
   const getVoucherType = () => {
     if (location.pathname === "/sUsers/searchPartyReceipt") {
       return "receipt";
+    } else if (location.pathname === "/sUsers/searchPartyPayment") {
+      return "payment";
     } else if (location.pathname === "/sUsers/searchPartySales") {
       return "sale";
     } else {
@@ -186,11 +188,13 @@ function PartyListComponent({ deleteHandler = () => {}, isVoucher = false }) {
       navigate("/sUsers/partyStatement", { state: el });
     } else if (pathName === "/sUsers/orderPending/partyList") {
       navigate(`/sUsers/pendingOrders/${el?._id}`);
-    } else if (voucherType === "receipt") {
+    } else if (voucherType === "receipt" || voucherType === "payment") {
       dispatch(addPartyInAccountingVouchers(el));
 
       navigate(-1, { replace: true });
-    } else {
+    } 
+    
+    else {
       //// dispatch to the correct redux state
       dispatch(addParty(el));
       dispatch(addBillToParty(el));

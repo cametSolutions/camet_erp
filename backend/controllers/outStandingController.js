@@ -439,6 +439,7 @@ export const fetchOutstandingDetails = async (req, res) => {
         .json({ message: "No outstandings were found for user" });
     }
   } catch (error) {
+    console.log(error);
     return res
       .status(500)
       .json({ success: false, message: "Internal server error, try again!" });

@@ -117,6 +117,7 @@ import AccVoucherInitialPage from '@/pages/accountingVoucher/voucherCreation/Acc
 import BillToVoucher from '@/pages/voucher/voucherCreation/BillToVoucher'
 import VoucherPdfInitiator from '@/pages/voucher/voucherPdf/VoucherPdfInitiator'
 import VoucherPdfInitiatorThreeInch from '@/pages/voucher/voucherPdf/VoucherPdfInitiatorThreeInch'
+import OutstandingListOfAccVoucher from '@/pages/accountingVoucher/voucherCreation/OutstandingListOfAccVoucher'
 
 const Routers = () => {
   return (
@@ -192,7 +193,7 @@ const Routers = () => {
         {/* receipt */}
         <Route path='/sUsers/receipt' element={<ProtectedSecRoute><AccVoucherInitialPage/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/searchPartyReceipt' element={<ProtectedSecRoute><SearchParty/></ProtectedSecRoute>}></Route>
-        <Route path='/sUsers/receipt/addAmount/:party_id' element={<ProtectedSecRoute><OutstandingListOfReceipt/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/receipt/addAmount/:party_id' element={<ProtectedSecRoute><OutstandingListOfAccVoucher/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/receipt/sourceList/:source' element={<ProtectedSecRoute><SourceList/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/receipt/details/:id' element={<ProtectedSecRoute><ReceiptDetailsOfSale/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/receiptPrintOut' element={<ProtectedSecRoute><ReceiptPrintOut/></ProtectedSecRoute>}></Route>
@@ -201,9 +202,11 @@ const Routers = () => {
 
 
         {/* payment */}
-        <Route path='/sUsers/paymentPurchase' element={<ProtectedSecRoute><PurchasePayment/></ProtectedSecRoute>}></Route>
-        <Route path='/sUsers/searchPartyPurchasePayment' element={<ProtectedSecRoute><SearchParty/></ProtectedSecRoute>}></Route>
-        <Route path='/sUsers/purchase/addAmount/:party_id' element={<ProtectedSecRoute><OutstandingListOfPayment/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/paymentPurchase' element={<ProtectedSecRoute><AccVoucherInitialPage/></ProtectedSecRoute>}></Route>
+            <Route path='/sUsers/searchPartyPayment' element={<ProtectedSecRoute><SearchParty/></ProtectedSecRoute>}></Route>
+
+            <Route path='/sUsers/payment/addAmount/:party_id' element={<ProtectedSecRoute><OutstandingListOfAccVoucher/></ProtectedSecRoute>}></Route>
+
         <Route path='/sUsers/payment/sourceList/:source' element={<ProtectedSecRoute><SourceList/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/payment/details/:id' element={<ProtectedSecRoute><PaymtentDetails/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/paymentPrintOut' element={<ProtectedSecRoute><PaymentPrintOut/></ProtectedSecRoute>}></Route>
@@ -215,7 +218,6 @@ const Routers = () => {
         <Route path='/sUsers/creditNote' element={<ProtectedSecRoute><VoucherInitalPage/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/searchPartyCreditNote' element={<ProtectedSecRoute><SearchParty/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/billToCreditNote/:id' element={<ProtectedSecRoute><BillToVoucher/></ProtectedSecRoute>}></Route>
- 
         <Route path='/sUsers/creditNoteDetails/:id' element={<ProtectedSecRoute><VoucherDetails/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/editCreditNote/:id' element={<ProtectedSecRoute><VoucherInitialPageEdit/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/shareCreditNote/:id' element={<ProtectedSecRoute><VoucherPdfInitiator/></ProtectedSecRoute>}></Route> 

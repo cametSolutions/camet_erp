@@ -1,6 +1,7 @@
 import { removeAll } from "../../../slices/invoiceSecondary";
 import { removeAllSales } from "../../../slices/salesSecondary";
 import { removeAllSales as removeAllForCommonVoucher } from "../../../slices/voucherSlices/commonVoucherSlice";
+import { removeAll as removeAllForCommonAccountingVoucher } from "../../../slices/voucherSlices/commonAccountingVoucherSlice";
 import { removeAll as removeAllStock } from "../../../slices/stockTransferSecondary";
 import { removeAll as removeAllPurchase } from "../../../slices/purchase";
 import { removeAll as removeAllCredit } from "../../../slices/creditNote";
@@ -42,6 +43,7 @@ function RemoveReduxData() {
     dispatch(removeAllTally());
     dispatch(removeAllUser());
     dispatch(removeAllForCommonVoucher());
+    dispatch(removeAllForCommonAccountingVoucher());
 
     localStorage.removeItem("voucherType");
   }, [dispatch]); // Adding dispatch to the dependency array

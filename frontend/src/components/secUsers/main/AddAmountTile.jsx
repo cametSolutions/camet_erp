@@ -6,13 +6,11 @@ import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 
-function AddAmountTile({ tab, party, process = "add" }) {
+function AddAmountTile({ process = "add" }) {
   const navigate = useNavigate();
 
-  const selectedRedux = tab === "receipt" ? "receipt" : "payment";
-
-  const { enteredAmount, remainingAmount } = useSelector(
-    (state) => state[selectedRedux]
+  const { voucherType, enteredAmount, remainingAmount, party } = useSelector(
+    (state) => state.commonAccountingVoucherSlice
   );
 
   const handleNavigate = () => {
@@ -20,9 +18,11 @@ function AddAmountTile({ tab, party, process = "add" }) {
       toast.error("Select a party first");
       return;
     } else if (process == "add") {
-      navigate(`/sUsers/${tab}/addAmount/${party.party_master_id}`);
+      navigate(`/sUsers/${voucherType}/addAmount/${party.party_master_id}`);
     } else if (process == "edit") {
-      navigate(`/sUsers/${tab}/edit/addAmount/${party.party_master_id}`);
+      navigate(
+        `/sUsers/${voucherType}/edit/addAmount/${party.party_master_id}`
+      );
     }
   };
 

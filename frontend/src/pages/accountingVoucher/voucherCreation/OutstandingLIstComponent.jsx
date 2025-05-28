@@ -5,14 +5,14 @@ import { FaChevronDown } from "react-icons/fa";
 import { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { toast } from "react-toastify";
-import CallIcon from "../../common/CallIcon";
+import CallIcon from "../../../components/common/CallIcon";
 import { camelToNormalCase } from "../../../../utils/camelCaseToNormalCase";
 import { addSettlementData } from "../../../../slices/voucherSlices/commonAccountingVoucherSlice";
 import { useNavigate } from "react-router-dom";
 import CustomBarLoader from "@/components/common/CustomBarLoader";
 import TitleDiv from "@/components/common/TitleDiv";
 
-function OutstandingList({
+function OutstandingLIstComponent({
   loading,
   data,
   total,
@@ -265,7 +265,7 @@ function OutstandingList({
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <CallIcon size={18} color="green" />
+              <CallIcon  phoneNumber={party?.mobileNumber} size={18} color="green" />
               <p className="text-sm font-bold text-gray-500">
                 {party?.mobileNumber}
               </p>
@@ -383,4 +383,4 @@ function OutstandingList({
   );
 }
 
-export default OutstandingList;
+export default OutstandingLIstComponent;

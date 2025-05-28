@@ -7,14 +7,9 @@ import {
   addAllCashList,
   addBankPaymentDetails,
   addCashPaymentDetails,
-} from "../../../slices/receipt";
-import {
-  addAllBankList as paymentAddAllBankList,
-  addAllCashList as paymentAddAllCashList,
-  addBankPaymentDetails as paymentAddBankPaymentDetails,
-  addCashPaymentDetails as paymentAddCashPaymentDetails,
-} from "../../../slices/payment";
-import { useNavigate, useLocation, useParams } from "react-router-dom";
+} from "../../../slices/voucherSlices/commonAccountingVoucherSlice";
+
+import { useNavigate, useParams } from "react-router-dom";
 function SourceList() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -22,34 +17,19 @@ function SourceList() {
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
 
-  const { bankList, cashList } = useSelector((state) => state.receipt);
+  const { bankList, cashList } = useSelector(
+    (state) => state.commonAccountingVoucherSlice
+  );
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const location = useLocation();
   const { source } = useParams();
-
-  let voucher = "";
-
-  if (location.pathname.includes("payment")) {
-    voucher = "payment";
-  } else {
-    voucher = "receipt";
-  }
 
   const sourceSubmitHandler = (data) => {
     if (source === "Cash") {
-      if (voucher === "payment") {
-        dispatch(paymentAddCashPaymentDetails(data));
-      } else {
-        dispatch(addCashPaymentDetails(data));
-      }
+      dispatch(addCashPaymentDetails(data));
     } else {
-      if (voucher === "payment") {
-        dispatch(paymentAddBankPaymentDetails(data));
-      } else {
-        dispatch(addBankPaymentDetails(data));
-      }
+      dispatch(addBankPaymentDetails(data));
     }
     navigate(-1, { replace: true });
     // console.log(data);

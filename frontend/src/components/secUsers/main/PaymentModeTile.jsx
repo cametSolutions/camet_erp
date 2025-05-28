@@ -11,14 +11,8 @@ import {
   addChequeNumber,
   addNote,
   addIsNoteOpen,
-} from "../../../../slices/receipt";
-import {
-  addPaymentMethod as addPaymentMethodForPayment,
-  addChequeDate as addChequeDateForPayment,
-  addChequeNumber as addChequeNumberForPayment,
-  addNote as addNoteForPayment,
-  addIsNoteOpen as addIsNoteOpenForPayment,
-} from "../../../../slices/payment";
+} from "../../../../slices/voucherSlices/commonAccountingVoucherSlice";
+
 import { useDispatch } from "react-redux";
 import { useSelector } from "react-redux";
 import { PiBankBold } from "react-icons/pi";
@@ -27,7 +21,6 @@ import "react-datepicker/dist/react-datepicker.css";
 import debounce from "lodash/debounce";
 
 function PaymentModeTile({ tab }) {
-  const selectedRedux = tab === "receipt" ? "receipt" : "payment";
   ///////////////  PaymentModeTile   ////////////////
   const paymentMethods = [
     { name: "Cash", source: true },
@@ -39,7 +32,7 @@ function PaymentModeTile({ tab }) {
     paymentDetails,
     note: noteFromRedux,
     isNoteOpen: isNoteOpenFromRedux,
-  } = useSelector((state) => state[selectedRedux]);
+  } = useSelector((state) => state.commonAccountingVoucherSlice);
 
   const chequeDateFromRedux = paymentDetails?.chequeDate || "";
   const chequeNumberFromRedux = paymentDetails?.chequeNumber || "";
@@ -86,33 +79,21 @@ function PaymentModeTile({ tab }) {
   /// debounced functions
   const debouncedDispatchChequeNumber = useCallback(
     debounce((number) => {
-      if (tab === "payment") {
-        dispatch(addChequeNumberForPayment(number));
-      } else {
-        dispatch(addChequeNumber(number));
-      }
+      dispatch(addChequeNumber(number));
     }, 500), // Adjust debounce time as needed
     [dispatch]
   );
 
   const debouncedDispatchChequeDate = useCallback(
     debounce((date) => {
-      if (tab === "payment") {
-        dispatch(addChequeDateForPayment(date.toISOString()));
-      } else {
-        dispatch(addChequeDate(date.toISOString()));
-      }
+      dispatch(addChequeDate(date.toISOString()));
     }, 500), // Adjust debounce time as needed
     [dispatch]
   );
 
   const debouncedDispatchNote = useCallback(
     debounce((note) => {
-      if (tab === "payment") {
-        dispatch(addNoteForPayment(note));
-      } else {
-        dispatch(addNote(note));
-      }
+      dispatch(addNote(note));
     }, 500), // Adjust debounce time as needed
     [dispatch]
   );
@@ -136,6 +117,13 @@ function PaymentModeTile({ tab }) {
     debouncedDispatchNote(e.target.value);
   };
 
+
+  const handleToggleNote = () => {
+    setIsNoteOpen(!isNoteOpen);
+    dispatch(addIsNoteOpen(!isNoteOpen));
+  };
+  
+
   return (
     <div className="  py-3  mt-3 shadow-lg  ">
       <div className="flex justify-between items-center bg-white px-3 py-3">
@@ -148,11 +136,7 @@ function PaymentModeTile({ tab }) {
             <button
               onClick={() => {
                 setSelectedPaymentMethod(method);
-                dispatch(
-                  tab === "receipt"
-                    ? addPaymentMethod(method.name)
-                    : addPaymentMethodForPayment(method.name)
-                );
+                dispatch(addPaymentMethod(method.name));
               }}
               key={index}
               className={` ${
@@ -264,7 +248,7 @@ function PaymentModeTile({ tab }) {
                 )}
 
                 {/* Cheque details section */}
-                <section className="flex gap-4 md:flex-row px-4 pb-4 w-full mt-6 shadow-lg">
+                <section className="flex items-center gap-4 md:flex-row px-4 pb-4 w-full mt-1 shadow-lg">
                   <div className="w-1/2">
                     <input
                       onChange={handleChequeNumberChange}
@@ -272,7 +256,7 @@ function PaymentModeTile({ tab }) {
                       type="number"
                       value={chequeNumber}
                       placeholder="Cheque Number"
-                      className="w-full input-number input-field border-b-[1px] border-x-0 border-t-0 outline-none text-gray-600 text-xs"
+                      className="w-full mt-4 input-number input-field border-b-[1px] border-x-0 border-t-0 outline-none text-gray-600 text-xs"
                       style={{
                         boxShadow: "none",
                         borderColor: "#b6b6b6",
@@ -290,6 +274,7 @@ function PaymentModeTile({ tab }) {
                       wrapperClassName="w-full"
                       dateFormat="dd/MM/yyyy"
                       tabIndex="-1"
+                     
                     />
                   </div>
                 </section>
@@ -302,19 +287,14 @@ function PaymentModeTile({ tab }) {
 
       <div className="p-4 mt-4">
         <p
-          onClick={() => {
-            setIsNoteOpen(!isNoteOpen);
-            dispatch(
-              tab === "receipt" ? addNote(note) : addNoteForPayment(note)
-            );
-          }}
+          onClick={handleToggleNote}
           className="flex items-center cursor-pointer  gap-3  text-violet-500 text-xs md:text-md  font-bold "
         >
           {" "}
           <IoAddOutline size={20} /> Add Note/Description
         </p>
 
-        {isNoteOpen && (
+        {isNoteOpenFromRedux && (
           <div className="mt-3">
             <input
               value={note}
