@@ -76,9 +76,7 @@ export const updateTallyData = async (
     ])
   );
 
-
   console.log("billAmountMap", billAmountMap);
-  
 
   // Fetch the outstanding bills from TallyData for this company
   const outstandingData = await TallyData.find({
@@ -86,9 +84,7 @@ export const updateTallyData = async (
     billId: { $in: Array.from(billAmountMap.keys()) },
   }).session(session);
 
-
   console.log("outstandingData", outstandingData);
-  
 
   if (outstandingData.length === 0) {
     return;
@@ -150,7 +146,7 @@ export const createOutstandingWithAdvanceAmount = async (
       bill_no: voucherNumber,
       billId: billId.toString(),
       cmp_id,
-      party_id: party?.party_master_id,
+      party_id: party?._id,
       bill_amount: advanceAmount,
       bill_date: new Date(),
       bill_pending_amt: advanceAmount,
@@ -168,7 +164,7 @@ export const createOutstandingWithAdvanceAmount = async (
         bill_no: voucherNumber,
         billId: billId.toString(),
         Primary_user_id: Primary_user_id,
-        party_id: party?.party_master_id,
+        party_id: party?._id,
       },
       billData,
       { upsert: true, new: true, session }
@@ -297,7 +293,9 @@ export const saveSettlementData = async (
   type,
   createdAt,
   partyName,
-  session
+  session,
+  party,
+  voucherModel
 ) => {
   try {
     if (!paymentDetails._id || !paymentMethod) {
@@ -322,19 +320,19 @@ export const saveSettlementData = async (
       const settlementData = {
         voucherNumber: voucherNumber,
         voucherId: voucherId.toString(),
+        voucherType: voucherModel?.toLowerCase(),
+        voucherModel: voucherModel,
         amount: amount,
         created_at: createdAt,
         payment_mode: paymentMethod.toLowerCase(),
         type: type,
         party: partyName,
+        partyId: party._id,
       };
-
 
       const query = {
         cmp_id: orgId,
-        ...(paymentMethod === "Cash"
-          ? { _id: new mongoose.Types.ObjectId(paymentDetails._id) }
-          : { _id: new mongoose.Types.ObjectId(paymentDetails._id) }),
+        _id: new mongoose.Types.ObjectId(paymentDetails._id),
       };
 
       const update = {
@@ -360,7 +358,6 @@ export const saveSettlementData = async (
     throw error;
   }
 };
-
 
 //// revert save settlement data
 
@@ -390,10 +387,8 @@ export const revertSettlementData = async (
       default:
         throw new Error("Invalid paymentMethod");
     }
-``
+    ``;
     if (model) {
-  
-
       const query = {
         cmp_id: orgId,
         ...(paymentMethod === "Cash"
@@ -410,7 +405,6 @@ export const revertSettlementData = async (
           },
         },
       };
-
 
       const options = {
         new: true,

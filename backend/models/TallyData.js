@@ -22,7 +22,7 @@ const tallySchema = new mongoose.Schema(
     email: { type: String },
     bill_date: { type: Date, required: true },
     bill_no: { type: String, required: true },
-    billId: { type: String }, ///// id of the bill or voucher
+    billId: { type: String }, ///// id of the bill or voucher // not assigning object id because outstanding form tally does not have an object id
     bill_amount: { type: Number, required: true },
     bill_due_date: { type: Date },
     bill_pending_amt: { type: Number, required: true },
@@ -33,11 +33,6 @@ const tallySchema = new mongoose.Schema(
     appliedPayments: { type: Array, default: [] },
     createdBy: { type: String, default: "" }, ///if an outstanding is createdBy any vouchers are tagged here
     isCancelled: { type: Boolean, default: false },
-    // createdAt: {
-    //   type: Date,
-    //   default: Date.now,
-    //   immutable: false, // This allows the field to be updated
-    // },
   },
   {
     timestamps: true,

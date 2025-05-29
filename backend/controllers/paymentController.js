@@ -40,7 +40,6 @@ export const createPayment = async (req, res) => {
     paymentMethod,
     paymentDetails,
     note,
-    outstandings,
   } = req.body;
 
   const Primary_user_id = req.owner.toString();
@@ -87,7 +86,6 @@ export const createPayment = async (req, res) => {
     const newPayment = new paymentModel({
       createdAt: new Date(),
       date: await formatToLocalDate(date, cmp_id, session),
-
       paymentNumber,
       serialNumber,
       cmp_id,
@@ -100,7 +98,6 @@ export const createPayment = async (req, res) => {
       paymentMethod,
       paymentDetails,
       note,
-      outstandings,
       Primary_user_id,
       Secondary_user_id,
     });
@@ -119,7 +116,9 @@ export const createPayment = async (req, res) => {
       "payment",
       savedPayment?.date,
       savedPayment?.party?.partyName,
-      session
+      session,
+      party,
+      "Payment"
     );
 
     // Use the helper function to update TallyData
@@ -153,7 +152,7 @@ export const createPayment = async (req, res) => {
 
     res.status(200).json({
       message: "Payment created successfully",
-      payment: savedPayment,
+      data: savedPayment,
     });
   } catch (error) {
     // Abort the transaction in case of an error

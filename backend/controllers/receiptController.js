@@ -17,8 +17,6 @@ import {
 } from "../helpers/receiptHelper.js";
 import { formatToLocalDate } from "../helpers/helper.js";
 
-
-
 /**
  * @desc  create receipt
  * @route POST/api/sUsers/createReceipt
@@ -85,8 +83,8 @@ export const createReceipt = async (req, res) => {
     // Create the new receipt
     const newReceipt = new ReceiptModel({
       createdAt: new Date(),
-      date:await formatToLocalDate(date, cmp_id, session),
-      
+      date: await formatToLocalDate(date, cmp_id, session),
+
       receiptNumber,
       serialNumber,
       cmp_id,
@@ -118,7 +116,9 @@ export const createReceipt = async (req, res) => {
       "receipt",
       newReceipt?.date,
       savedReceipt?.party?.partyName,
-      session
+      session,
+      party,
+      "Receipt"
     );
 
     // Use the helper function to update TallyData
@@ -153,7 +153,7 @@ export const createReceipt = async (req, res) => {
 
     res.status(200).json({
       message: "Receipt created successfully",
-      receipt: savedReceipt,
+      data: savedReceipt,
     });
   } catch (error) {
     // Abort the transaction in case of an error
@@ -335,8 +335,6 @@ export const editReceipt = async (req, res) => {
     // Use the helper function to update TallyData
     await updateTallyData(billData, cmp_id, session, receiptNumber, receiptId);
 
-  
-
     ///update the existing receipt
     receipt.date = date;
     receipt.receiptNumber = receiptNumber;
@@ -354,20 +352,19 @@ export const editReceipt = async (req, res) => {
 
     const savedReceipt = await receipt.save({ session, new: true });
 
-
-      /// save settlement data in cash or bank collection
-      await saveSettlementData(
-        paymentMethod,
-        paymentDetails,
-        receiptNumber,
-        savedReceipt._id.toString(),
-        enteredAmount,
-        cmp_id,
-        "receipt",
-        receipt?.date,
-        receipt?.party?.partyName,
-        session
-      );
+    /// save settlement data in cash or bank collection
+    await saveSettlementData(
+      paymentMethod,
+      paymentDetails,
+      receiptNumber,
+      savedReceipt._id.toString(),
+      enteredAmount,
+      cmp_id,
+      "receipt",
+      receipt?.date,
+      receipt?.party?.partyName,
+      session
+    );
 
     if (advanceAmount > 0) {
       const outstandingWithAdvanceAmount =

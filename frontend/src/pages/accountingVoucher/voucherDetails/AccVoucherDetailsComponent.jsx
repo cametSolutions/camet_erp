@@ -1,45 +1,23 @@
 /* eslint-disable react/prop-types */
 import dayjs from "dayjs";
-import { FcCancel } from "react-icons/fc";
-import { IoMdShareAlt } from "react-icons/io";
-import { MdOutlineArrowBack, MdTextsms } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 import { PiBankBold } from "react-icons/pi";
 import { MdOutlinePayment } from "react-icons/md";
 import { PiNote } from "react-icons/pi";
 import { BsCalendar2DateFill } from "react-icons/bs";
-import { FaEdit } from "react-icons/fa";
+import VoucherDetailsActionButtons from "../../voucher/voucherDetails/actionButtons/VoucherDetailsActionButtons";
+import TitleDiv from "@/components/common/TitleDiv";
 
-function ReceiptDetailsComponent({
-  backHandler,
-  data,
-  handleCancel,
-  title,
-  voucherNumber,
-  to,
-  isPrimary = false,
-  editTo
-}) {
+function AccVoucherDetailsComponent({ data, title, voucherNumber, loading }) {
   const navigate = useNavigate();
 
-
   return (
-    <div className="flex ">
-      <div className="bg-[rgb(244,246,254)] flex-1 h-screen  relative ">
-        {/* headinh section  */}
-        <div className="flex items-center gap-3  text-white text-md p-4  bg-[#012a4a] sticky top-0 z-10">
-          <MdOutlineArrowBack
-            onClick={backHandler}
-            className="text-2xl cursor-pointer"
-          />
+    <div className="bg-[rgb(244,246,254)] flex-1 h-screen  relative ">
+      <TitleDiv title={title || "Voucher Details"} loading={loading} />
 
-          <h3 className="font-bold">{title}</h3>
-        </div>
-        {/* headinh section  */}
-
-        {/* payment details */}
-        <div className="md:grid md:grid-cols-2 gap-4 bg-white    ">
-          <div className=" mt-3 p-4">
+      <div className={`${loading && "pointer-events-none opacity-80"}`}>
+        <div className="flex items-center justify-between gap-4 bg-white pr-3 p-4  ">
+          <div className="">
             <p className="text-sm text-violet-500 font-semibold ">
               ID #{voucherNumber}
             </p>
@@ -47,60 +25,13 @@ function ReceiptDetailsComponent({
               {dayjs(data.date).format("DD/MM/YYYY")}
             </p>
           </div>
-          <div className="w-full flex justify-center bottom-0 absolute md:flex md:justify-end p-4 md:relative  gap-14 md:text-md text-violet-500 md:mr-14 bg-white ">
-            {!isPrimary && (
-              <div
-                onClick={() => handleCancel(data._id)}
-                disabled={data.isCancelled}
-                className={`flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110 cursor-pointer ${
-                  data.isCancelled ? "opacity-50 pointer-events-none" : ""
-                }`}
-              >
-                <FcCancel className="text-violet-500" />
-                <p className="text-black font-bold text-sm">
-                  {data.isCancelled ? "Cancelled" : "Cancel"}
-                </p>
-              </div>
-            )}
-
-            {!isPrimary && (
-              <div
-                onClick={() => navigate(`${editTo}/${data._id}`)}
-                disabled={data.isCancelled}
-                className={`flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110 cursor-pointer ${
-                  data.isCancelled ? "opacity-50 pointer-events-none" : ""
-                }`}
-              >
-                <FaEdit className="text-blue-500" />
-                <p className="text-black font-bold text-sm">Edit</p>
-              </div>
-            )}
-            <div
-              className={`flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110 cursor-pointer ${
-                data.isCancelled ? "opacity-50 pointer-events-none" : ""
-              }`}
-              onClick={() => {
-                navigate(to, {
-                  state: {
-                    receiptData: data,
-                  },
-                });
-              }}
-            >
-              <IoMdShareAlt />
-
-              <p className="text-black font-bold text-sm">Share</p>
-            </div>
-
-            <div className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer">
-              <MdTextsms className="text-green-500" />
-              <p className="text-black font-bold text-sm">Sms</p>
-            </div>
-          </div>
+          <VoucherDetailsActionButtons
+            data={data}
+            // reFetch={refreshHook}
+            // setActionLoading={setActionLoading}
+            // actionLoading={actionLoading}
+          />
         </div>
-        {/* payment details */}
-
-        {/* party details */}
 
         <div className="bg-white mt-2 p-4  ">
           <div className=" text-sm mb-2">
@@ -120,8 +51,6 @@ function ReceiptDetailsComponent({
             </p>
           </div>
         </div>
-        {/* party details */}
-        {/* party Total Mount */}
 
         <div className="flex flex-col gap-2 justify-center bg-white mt-2  p-4">
           <div className="flex justify-between">
@@ -224,4 +153,4 @@ function ReceiptDetailsComponent({
   );
 }
 
-export default ReceiptDetailsComponent;
+export default AccVoucherDetailsComponent;

@@ -59,7 +59,7 @@ export default function VoucherDetailsActionButtons({
       icon: PiShareFatFill,
       title: "Share",
       color: "text-green-500",
-      active: true,
+      active: voucherType !== "receipt" && voucherType !== "payment",
       onClick: handleShareClick,
     },
     {

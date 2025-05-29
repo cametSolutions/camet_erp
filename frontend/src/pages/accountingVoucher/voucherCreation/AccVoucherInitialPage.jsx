@@ -42,7 +42,6 @@ function AccVoucherInitialPage() {
     paymentMethod,
     paymentDetails,
     note,
-    outstandings,
   } = useSelector((state) => state.commonAccountingVoucherSlice);
 
   const [voucherNumber, setVoucherNumber] = useState("");
@@ -111,14 +110,21 @@ function AccVoucherInitialPage() {
     }
   }, []);
 
+  /// to get voucher number name
+
+  const getVoucherNumberTitle = () => {
+    if (!voucherTypeFromRedux) return "";
+    return voucherTypeFromRedux + "Number";
+  };
+
   const submitHandler = async () => {
     // setSubmitLoading(true);
+    const voucherNumberTitle = getVoucherNumberTitle();
 
-    
     // Form data
     const formData = {
       cmp_id,
-      voucherNumber,
+      [voucherNumberTitle]: voucherNumber,
       date: selectedDate,
       party,
       billData,
@@ -129,13 +135,9 @@ function AccVoucherInitialPage() {
       paymentMethod,
       paymentDetails,
       note,
-      outstandings,
     };
 
-
-
-
-
+    
 
     if (formData?.paymentMethod === "Online") {
       formData.paymentDetails = {
@@ -156,13 +158,12 @@ function AccVoucherInitialPage() {
       };
     }
 
-
-
-
     // Validation
-    if (!formData.voucherNumber) {
+    if (!formData[voucherNumberTitle]) {
       setSubmitLoading(false);
-      return toast.error(` ${formatVoucherType(voucherNumberRedux)}  number is required`);
+      return toast.error(
+        ` ${formatVoucherType(voucherNumberRedux)}  number is required`
+      );
     }
 
     if (!formData.party || !formData.party._id) {
@@ -241,7 +242,7 @@ function AccVoucherInitialPage() {
       console.log(res.data);
       toast.success(res.data.message);
 
-      // navigate(`/sUsers/receipt/details/${res?.data?.receipt._id}`);
+      navigate(`/sUsers/${voucherType}/details/${res?.data?.data._id}`);
       dispatch(removeAll());
     } catch (error) {
       toast.error(error.response?.data?.message || "An error occurred.");
