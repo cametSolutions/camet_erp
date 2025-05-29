@@ -158,14 +158,13 @@ export const revertTallyUpdates = async (billData, cmp_id, session,paymentId) =>
     // Create a lookup map for billNo to settled amount from billData
     const billSettledAmountMap = new Map(
       billData.map((bill) => [
-        bill.billId,
+        bill.billId.toString(),
         bill.settledAmount  // The amount that was settled
       ])
     );
 
     // Fetch the bills from TallyData that need to be reverted
     const tallyDataToRevert = await TallyData.find({
-      cmp_id,
       billId: { $in: Array.from(billSettledAmountMap.keys()) },
     }).session(session);
 

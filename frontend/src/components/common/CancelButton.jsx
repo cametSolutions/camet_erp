@@ -56,7 +56,7 @@ function CancelButton({
   const handleConfirmCancel = async () => {
     try {
       setActionLoading(true);
-      await api.post(
+      await api.put(
         `/api/sUsers/cancel${voucherType}/${id}?vanSale=${vanSale}`,
         {},
         {

@@ -184,12 +184,7 @@ export const createOutstandingWithAdvanceAmount = async (
  * @param {Object} session - mongoose session
  */
 
-export const revertTallyUpdates = async (
-  billData,
-  cmp_id,
-  session,
-  receiptId
-) => {
+export const revertTallyUpdates = async (billData, session, receiptId) => {
   // const receiptIdObj = new mongoose.Types.ObjectId(receiptId);
   // console.log("receiptId", receiptIdObj);
 
@@ -202,14 +197,15 @@ export const revertTallyUpdates = async (
     // Create a lookup map for billNo to settled amount from billData
     const billSettledAmountMap = new Map(
       billData.map((bill) => [
-        bill.billId,
+        bill.billId.toString(),
         bill.settledAmount, // The amount that was settled
       ])
     );
 
+    console.log("billSettledAmountMap", billSettledAmountMap);
+
     // Fetch the bills from TallyData that need to be reverted
     const tallyDataToRevert = await TallyData.find({
-      cmp_id,
       billId: { $in: Array.from(billSettledAmountMap.keys()) },
     }).session(session);
 
@@ -221,7 +217,8 @@ export const revertTallyUpdates = async (
     // Process updates one at a time instead of bulk
     // Process updates one at a time instead of bulk
     for (const doc of tallyDataToRevert) {
-      const settledAmount = billSettledAmountMap.get(doc.billId);
+      const settledAmount = billSettledAmountMap.get(doc.billId) || 0;
+
       await TallyData.updateOne(
         { _id: doc._id },
         {
@@ -251,7 +248,6 @@ export const revertTallyUpdates = async (
 export const deleteAdvanceReceipt = async (
   receiptNumber,
   billId,
-  cmp_id,
   Primary_user_id,
   session
 ) => {
@@ -260,7 +256,6 @@ export const deleteAdvanceReceipt = async (
   try {
     // Find and delete the advance receipt entry in TallyData
     const deletedAdvanceReceipt = await TallyData.findOneAndDelete({
-      cmp_id,
       bill_no: receiptNumber,
       billId: billId.toString(),
       Primary_user_id,
@@ -366,7 +361,6 @@ export const revertSettlementData = async (
   paymentDetails,
   voucherNumber,
   voucherId,
-  orgId,
   session
 ) => {
   try {
@@ -390,10 +384,7 @@ export const revertSettlementData = async (
     ``;
     if (model) {
       const query = {
-        cmp_id: orgId,
-        ...(paymentMethod === "Cash"
-          ? { _id: new mongoose.Types.ObjectId(paymentDetails._id) }
-          : { _id: new mongoose.Types.ObjectId(paymentDetails._id) }),
+        _id: new mongoose.Types.ObjectId(paymentDetails._id),
       };
 
       // First, pull the specified settlements

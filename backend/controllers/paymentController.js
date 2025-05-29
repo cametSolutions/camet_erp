@@ -199,7 +199,7 @@ export const cancelPayment = async (req, res) => {
     }
 
     // Revert tally updates
-    await revertTallyUpdates(payment.billData, cmp_id, session);
+    await revertTallyUpdates(payment.billData, session);
 
     /// save settlement data in cash or bank collection
     await revertSettlementData(
@@ -207,7 +207,6 @@ export const cancelPayment = async (req, res) => {
       payment?.paymentDetails,
       payment?.paymentNumber,
       payment?._id.toString(),
-      cmp_id,
       session
     );
 
@@ -216,7 +215,6 @@ export const cancelPayment = async (req, res) => {
       await deleteAdvancePayment(
         payment.paymentNumber,
         payment._id.toString(),
-        cmp_id,
         Primary_user_id,
         session
       );

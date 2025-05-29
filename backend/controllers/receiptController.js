@@ -172,7 +172,7 @@ export const createReceipt = async (req, res) => {
  */
 
 export const cancelReceipt = async (req, res) => {
-  const { receiptId, cmp_id } = req.params; // Assuming the receipt ID is passed as a URL parameter
+  const { receiptId } = req.params; // Assuming the receipt ID is passed as a URL parameter
   const Primary_user_id = req.owner.toString();
   // const cmp_id = req.body.cmp_id; // Or from req.body if available
 
@@ -202,7 +202,6 @@ export const cancelReceipt = async (req, res) => {
     // Revert tally updates
     await revertTallyUpdates(
       receipt.billData,
-      cmp_id,
       session,
       receiptId.toString()
     );
@@ -213,7 +212,6 @@ export const cancelReceipt = async (req, res) => {
       receipt?.paymentDetails,
       receipt?.receiptNumber,
       receiptId,
-      cmp_id,
       session
     );
 
@@ -222,7 +220,6 @@ export const cancelReceipt = async (req, res) => {
       await deleteAdvanceReceipt(
         receipt.receiptNumber,
         receipt._id?.toString(),
-        cmp_id,
         Primary_user_id,
         session
       );

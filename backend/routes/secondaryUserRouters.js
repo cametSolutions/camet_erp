@@ -110,35 +110,35 @@ router.get("/fetchGodowns/:cmp_id",authSecondary,secondaryIsBlocked,fetchGodowns
 router.post("/createStockTransfer",authSecondary,secondaryIsBlocked,createStockTransfer)
 router.get("/getStockTransferDetails/:id",authSecondary,secondaryIsBlocked,getStockTransferDetails)
 router.post("/editStockTransfer/:id",authSecondary,secondaryIsBlocked,editStockTransfer)
-router.post("/cancelSalesOrder/:id",authSecondary,secondaryIsBlocked,cancelSalesOrder)
-router.post("/cancelSales/:id",authSecondary,secondaryIsBlocked,cancelSale)
-router.post("/cancelstockTransfer/:id",authSecondary,secondaryIsBlocked,cancelStockTransfer)
+router.put("/cancelSalesOrder/:id",authSecondary,secondaryIsBlocked,cancelSalesOrder)
+router.put("/cancelSales/:id",authSecondary,secondaryIsBlocked,cancelSale)
+router.put("/cancelstockTransfer/:id",authSecondary,secondaryIsBlocked,cancelStockTransfer)
 
 
 ///purchase routes
 router.post('/createPurchase',authSecondary,secondaryIsBlocked,createPurchase)
 router.post('/editPurchase/:id',authSecondary,secondaryIsBlocked,editPurchase)
-router.post("/cancelpurchase/:id",authSecondary,secondaryIsBlocked,cancelPurchase)
+router.put("/cancelpurchase/:id",authSecondary,secondaryIsBlocked,cancelPurchase)
 ///credit not routes
 router.post('/createCreditNote',authSecondary,secondaryIsBlocked,createCreditNote)
 router.get('/getCreditNoteDetails/:id',authSecondary,secondaryIsBlocked,getCreditNoteDetails)
-router.post('/cancelCreditNote/:id',authSecondary,secondaryIsBlocked,cancelCreditNote)
+router.put('/cancelCreditNote/:id',authSecondary,secondaryIsBlocked,cancelCreditNote)
 router.post('/editCreditNote/:id',authSecondary,secondaryIsBlocked,editCreditNote)
 ///debit not routes
 router.post('/createDebitNote',authSecondary,secondaryIsBlocked,createDebitNote)
 router.get('/getDebitNoteDetails/:id',authSecondary,secondaryIsBlocked,getDebitNoteDetails)
-router.post('/cancelDebitNote/:id',authSecondary,secondaryIsBlocked,cancelDebitNote)
+router.put('/cancelDebitNote/:id',authSecondary,secondaryIsBlocked,cancelDebitNote)
 router.post('/editDebitNote/:id',authSecondary,secondaryIsBlocked,editDebitNote)
 ///receipt routes
 router.post('/createReceipt',authSecondary,secondaryIsBlocked,createReceipt)
 router.get('/getReceiptDetails/:id',authSecondary,secondaryIsBlocked,getReceiptDetails)
-router.post('/cancelReceipt/:receiptId/:cmp_id',authSecondary,secondaryIsBlocked,cancelReceipt)
+router.put('/cancelReceipt/:receiptId',authSecondary,secondaryIsBlocked,cancelReceipt)
 router.put('/editReceipt/:receiptId',authSecondary,secondaryIsBlocked,editReceipt)
 
 ///payment routes
 router.post('/createPayment',authSecondary,secondaryIsBlocked,createPayment)
 router.get('/getPaymentDetails/:id',authSecondary,secondaryIsBlocked,getPaymentDetails)
-router.post('/cancelPayment/:paymentId/:cmp_id',authSecondary,secondaryIsBlocked,cancelPayment)
+router.put('/cancelPayment/:paymentId',authSecondary,secondaryIsBlocked,cancelPayment)
 router.put('/editPayment/:paymentId',authSecondary,secondaryIsBlocked,editPayment)
 
 

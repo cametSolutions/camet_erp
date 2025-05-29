@@ -118,7 +118,7 @@ function AccVoucherInitialPage() {
   };
 
   const submitHandler = async () => {
-    // setSubmitLoading(true);
+    setSubmitLoading(true);
     const voucherNumberTitle = getVoucherNumberTitle();
 
     // Form data

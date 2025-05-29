@@ -1,6 +1,6 @@
 /* eslint-disable react/prop-types */
 import dayjs from "dayjs";
-import { useNavigate } from "react-router-dom";
+// import { useNavigate } from "react-router-dom";
 import { PiBankBold } from "react-icons/pi";
 import { MdOutlinePayment } from "react-icons/md";
 import { PiNote } from "react-icons/pi";
@@ -8,8 +8,16 @@ import { BsCalendar2DateFill } from "react-icons/bs";
 import VoucherDetailsActionButtons from "../../voucher/voucherDetails/actionButtons/VoucherDetailsActionButtons";
 import TitleDiv from "@/components/common/TitleDiv";
 
-function AccVoucherDetailsComponent({ data, title, voucherNumber, loading }) {
-  const navigate = useNavigate();
+function AccVoucherDetailsComponent({
+  data,
+  title,
+  voucherNumber,
+  loading,
+  setActionLoading,
+  actionLoading,
+  refreshHook,
+}) {
+  // const navigate = useNavigate();
 
   return (
     <div className="bg-[rgb(244,246,254)] flex-1 h-screen  relative ">
@@ -27,9 +35,9 @@ function AccVoucherDetailsComponent({ data, title, voucherNumber, loading }) {
           </div>
           <VoucherDetailsActionButtons
             data={data}
-            // reFetch={refreshHook}
-            // setActionLoading={setActionLoading}
-            // actionLoading={actionLoading}
+            reFetch={refreshHook}
+            setActionLoading={setActionLoading}
+            actionLoading={actionLoading}
           />
         </div>
 
