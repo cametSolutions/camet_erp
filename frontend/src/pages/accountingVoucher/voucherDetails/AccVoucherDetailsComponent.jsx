@@ -2,11 +2,12 @@
 import dayjs from "dayjs";
 // import { useNavigate } from "react-router-dom";
 import { PiBankBold } from "react-icons/pi";
-import { MdOutlinePayment } from "react-icons/md";
 import { PiNote } from "react-icons/pi";
 import { BsCalendar2DateFill } from "react-icons/bs";
 import VoucherDetailsActionButtons from "../../voucher/voucherDetails/actionButtons/VoucherDetailsActionButtons";
 import TitleDiv from "@/components/common/TitleDiv";
+import { RiSecurePaymentFill } from "react-icons/ri";
+
 
 function AccVoucherDetailsComponent({
   data,
@@ -24,7 +25,7 @@ function AccVoucherDetailsComponent({
       <TitleDiv title={title || "Voucher Details"} loading={loading} />
 
       <div className={`${loading && "pointer-events-none opacity-80"}`}>
-        <div className="flex items-center justify-between gap-4 bg-white pr-3 p-4  ">
+        <div className="flex items-center justify-between gap-4 bg-white pr-3 p-4 shadow-lg  ">
           <div className="">
             <p className="text-sm text-violet-500 font-semibold ">
               ID #{voucherNumber}
@@ -41,7 +42,7 @@ function AccVoucherDetailsComponent({
           />
         </div>
 
-        <div className="bg-white mt-2 p-4  ">
+        <div className="bg-white mt-2 p-4 shadow-md  ">
           <div className=" text-sm mb-2">
             <h2 className="font-bold  text-gray-500 md:text-md text-sm">
               PARTY NAME
@@ -60,7 +61,7 @@ function AccVoucherDetailsComponent({
           </div>
         </div>
 
-        <div className="flex flex-col gap-2 justify-center bg-white mt-2  p-4">
+        <div className="flex flex-col gap-2 justify-center bg-white mt-2  p-4 shadow-lg ">
           <div className="flex justify-between">
             <p className="font-bold md:text-md text-sm">Settled Amount</p>
             <p className="font-bold md:text-md text-sm">
@@ -90,14 +91,14 @@ function AccVoucherDetailsComponent({
         {/* party Total Mount */}
         {/* payment method */}
 
-        <div className="p-4 bg-white mt-2 flex flex-col gap-2 text-[12px] sm:text-md ">
+        <div className="p-4 bg-white mt-2 flex flex-col gap-2 text-[12px] sm:text-md  ">
           <h3 className="font-bold  md:text-md ">PAYMENT DETAILS</h3>
 
           <hr className="border" />
 
           <div className="font-semibold  mt-3 text-gray-500 flex justify-between ">
             <h1 className="flex items-center gap-3">
-              <MdOutlinePayment /> Payment Method
+              <RiSecurePaymentFill size={18} /> Payment Method
             </h1>
             <p> {data.paymentMethod}</p>
           </div>
@@ -107,7 +108,7 @@ function AccVoucherDetailsComponent({
             <>
               <div className=" font-semibold mt-1 text-gray-500 flex justify-between gap-3">
                 <p className="flex items-center gap-3">
-                  <PiBankBold /> Bank
+                  <PiBankBold size={18} /> Bank
                 </p>
                 <p> {data.paymentDetails.bank_name}</p>
               </div>
@@ -116,13 +117,13 @@ function AccVoucherDetailsComponent({
                 <>
                   <div className=" font-semibold mt-1 text-gray-500 flex justify-between gap-3">
                     <p className="flex items-center gap-3">
-                      <PiNote /> Cheque No
+                      <PiNote size={18} /> Cheque No
                     </p>
                     <p> {data.paymentDetails.chequeNumber}</p>
                   </div>
                   <div className=" font-semibold mt-1 text-gray-500 flex justify-between gap-3">
                     <p className="flex items-center gap-3">
-                      <BsCalendar2DateFill /> Cheque Date
+                      <BsCalendar2DateFill size={16} /> Cheque Date
                     </p>
                     <p>
                       {" "}

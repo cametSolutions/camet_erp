@@ -217,7 +217,7 @@ salesSchema.index({
   Secondary_user_id: 1,
   userLevelSerialNumber: -1,
 });
-salesSchema.index({ date: 1 });
+salesSchema.index({ date: -1 });
 salesSchema.index({ "party._id": 1 });
 
 export default mongoose.model("Sales", salesSchema);

@@ -5,7 +5,7 @@ const initialState = {
   voucherNumber: "",
   voucherType: "",
   mode: "create",
-  date: new Date().toISOString(),
+  date: "",
   outstandings: [],
   modifiedOutstandings: [], ////used in the case of edit
   billData: [],
@@ -134,6 +134,9 @@ export const commonAccountingVoucherSlice = createSlice({
     addVoucherType: (state, action) => {
       state.voucherType = action.payload;
     },
+    addMode : (state, action) => {
+      state.mode = action.payload;
+    }
   },
 });
 
@@ -158,7 +161,8 @@ export const {
   setModifiedOutstandings,
   addBankPaymentDetails,
   addCashPaymentDetails,
-  addVoucherType
+  addVoucherType,
+  addMode
 } = commonAccountingVoucherSlice.actions;
 
 export default commonAccountingVoucherSlice.reducer;

@@ -114,6 +114,7 @@ import VoucherPdfInitiator from '@/pages/voucher/voucherPdf/VoucherPdfInitiator'
 import VoucherPdfInitiatorThreeInch from '@/pages/voucher/voucherPdf/VoucherPdfInitiatorThreeInch'
 import OutstandingListOfAccVoucher from '@/pages/accountingVoucher/voucherCreation/OutstandingListOfAccVoucher'
 import AccVoucherDetails from '@/pages/accountingVoucher/voucherDetails/AccVoucherDetails'
+import AccVoucherInitialPageEdit from '@/pages/accountingVoucher/voucherCreation/AccVoucherInitialPageEdit'
 
 const Routers = () => {
   return (
@@ -193,7 +194,7 @@ const Routers = () => {
         <Route path='/sUsers/receipt/sourceList/:source' element={<ProtectedSecRoute><SourceList/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/receipt/details/:id' element={<ProtectedSecRoute><AccVoucherDetails/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/receiptPrintOut' element={<ProtectedSecRoute><ReceiptPrintOut/></ProtectedSecRoute>}></Route>
-        <Route path='/sUsers/editReceipt/:id' element={<ProtectedSecRoute><EditReceipt/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/editReceipt/:id' element={<ProtectedSecRoute><AccVoucherInitialPageEdit/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/receipt/edit/addAmount/:party_id' element={<ProtectedSecRoute><OutstandingListOfReceiptForEdit/></ProtectedSecRoute>}></Route>
 
 

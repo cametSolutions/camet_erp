@@ -76,7 +76,6 @@ export const transactions = async (req, res) => {
 
   const isAdmin = req.query.isAdmin === "true" ? true : false;
 
-  console.log("isAdmin", isAdmin);
   
 
   let returnFullDetails = false;
@@ -137,7 +136,7 @@ export const transactions = async (req, res) => {
     //    - If no secondary user selected → don't apply user filter
 
     const matchCriteria = {
-      // ...dateFilter,
+      ...dateFilter,
       cmp_id: new mongoose.Types.ObjectId(cmp_id),
       ...(party_id
         ? { "party._id": new mongoose.Types.ObjectId(party_id) }

@@ -73,7 +73,7 @@ function VoucherInitialPageEdit() {
     /// voucher type is assigned from the select voucher page to this page
 
     let currentVoucher = "sales";
-    let Mode = "create";
+    let Mode = "edit";
 
     const { voucherType, mode } = location.state || {};
     if (location && location.state && voucherType) {
