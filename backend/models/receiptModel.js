@@ -14,7 +14,7 @@ const receiptSchema = new mongoose.Schema(
         return date;
       },
     },
-    voucherType: { type: String,default:"receipt", required: true },
+    voucherType: { type: String, default: "receipt", required: true },
     serialNumber: { type: Number }, // Add this line to include a serial number field
     receiptNumber: { type: String, required: true }, // Changed from receiptNumber to match req.body
     Primary_user_id: {
@@ -59,6 +59,9 @@ const receiptSchema = new mongoose.Schema(
           ref: "Tally",
           required: true,
         },
+        billDate: { type: String, required: true },
+        billPending_amt: { type: Number, required: true },
+        source: { type: String, required: true },
         settledAmount: { type: Number, required: true },
         remainingAmount: { type: Number, required: true },
       },

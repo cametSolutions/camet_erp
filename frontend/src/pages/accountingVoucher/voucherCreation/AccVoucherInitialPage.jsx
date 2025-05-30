@@ -45,7 +45,7 @@ function AccVoucherInitialPage() {
   } = useSelector((state) => state.commonAccountingVoucherSlice);
 
   const [voucherNumber, setVoucherNumber] = useState("");
-  const [selectedDate, setSelectedDate] = useState(dateRedux);
+  const [selectedDate, setSelectedDate] = useState(dateRedux || new Date());
   const [loading, setLoading] = useState(false);
   const [submitLoading, setSubmitLoading] = useState(false);
 

@@ -30,7 +30,7 @@ export default function VoucherDetailsActionButtons({
 
     navigate(`/sUsers/edit${voucherType}/${_id}`, {
       state: {
-        mode: "edit ",
+        mode: "edit",
         voucherType: voucherType,
         data: data,
       },

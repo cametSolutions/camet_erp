@@ -12,28 +12,20 @@ import { useNavigate } from "react-router-dom";
 import CustomBarLoader from "@/components/common/CustomBarLoader";
 import TitleDiv from "@/components/common/TitleDiv";
 
-function OutstandingLIstComponent({
-  loading,
-  data,
-  total,
-  party,
-}) {
+function OutstandingLIstComponent({ loading, data, total, party }) {
   const {
-    enteredAmount : enteredAmountFromRedux,
-    billData:billDataFromRedux,
-    advanceAmount : advanceAmountFromRedux,
+    enteredAmount: enteredAmountFromRedux,
+    billData: billDataFromRedux,
+    advanceAmount: advanceAmountFromRedux,
   } = useSelector((state) => state.commonAccountingVoucherSlice);
- 
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-
-
-
-
   // Initialize states with saved data if available
   const [selectedBills, setSelectedBills] = useState(new Set());
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [hasUserTyped, setHasUserTyped] = useState(false);
 
   const [billSettlements, setBillSettlements] = useState(() => {
     if (billDataFromRedux?.length > 0) {
@@ -51,8 +43,12 @@ function OutstandingLIstComponent({
     return [];
   });
 
-  const [enteredAmount, setEnteredAmount] = useState(enteredAmountFromRedux || 0);
-  const [advanceAmount, setAdvanceAmount] = useState(advanceAmountFromRedux || 0);
+  const [enteredAmount, setEnteredAmount] = useState(
+    enteredAmountFromRedux || 0
+  );
+  const [advanceAmount, setAdvanceAmount] = useState(
+    advanceAmountFromRedux || 0
+  );
 
   function formatAmount(amount) {
     return amount.toLocaleString("en-IN", { maximumFractionDigits: 2 });
@@ -99,18 +95,43 @@ function OutstandingLIstComponent({
 
   // Use effect for initial setup and amount changes
   useEffect(() => {
-    if (data && data.length > 0 && enteredAmount > 0) {
-      // If we have saved bill data, use that instead of FIFO
-      if (billDataFromRedux?.length > 0) {
+    if (data && data.length > 0) {
+      // On initial load, if we have saved Redux data, use it
+      if (isInitialLoad && billDataFromRedux?.length > 0) {
         const newSelectedBills = new Set(
           billDataFromRedux.map((bill) => bill.billNo)
         );
-
         const newSelectionOrder = billDataFromRedux.map((bill) => bill.billNo);
+        const savedSettlements = new Map(
+          billDataFromRedux.map((bill) => [bill.billNo, bill.settledAmount])
+        );
 
         setSelectedBills(newSelectedBills);
         setSelectionOrder(newSelectionOrder);
-        // const newBill new Map(billDataFromRedux.map((bill) => [bill?.billNo, bill?.settledAmount]));
+        setBillSettlements(savedSettlements);
+        setEnteredAmount(enteredAmountFromRedux || 0);
+        setAdvanceAmount(advanceAmountFromRedux || 0);
+        setIsInitialLoad(false);
+      }
+      // After user starts typing, use fresh FIFO logic
+      else if (hasUserTyped && enteredAmount > 0) {
+        const newSelectedBills = new Set();
+        const newSelectionOrder = [];
+        let remainingAmount = enteredAmount;
+
+        // Fresh FIFO selection
+        for (const bill of data) {
+          const billAmount = parseFloat(bill.bill_pending_amt);
+          if (remainingAmount > 0) {
+            newSelectedBills.add(bill.bill_no);
+            newSelectionOrder.push(bill.bill_no);
+            remainingAmount -= billAmount;
+          }
+        }
+
+        setSelectedBills(newSelectedBills);
+        setSelectionOrder(newSelectionOrder);
+
         const { settlements, advanceAmount: newAdvanceAmount } =
           calculateSettlements(
             newSelectedBills,
@@ -120,48 +141,20 @@ function OutstandingLIstComponent({
 
         setBillSettlements(settlements);
         setAdvanceAmount(newAdvanceAmount);
-      } else {
-        if (advanceAmountFromRedux === enteredAmount) {
-          setAdvanceAmount(advanceAmountFromRedux);
-          return;
-        } else {
-          // FIFO selection only if no saved data
-          const newSelectedBills = new Set();
-          const newSelectionOrder = [];
-          let remainingAmount = enteredAmount;
-
-          for (const bill of data) {
-            const billAmount = parseFloat(bill.bill_pending_amt);
-            if (remainingAmount > 0) {
-              newSelectedBills.add(bill.bill_no);
-              newSelectionOrder.push(bill.bill_no);
-              remainingAmount -= billAmount;
-            }
-          }
-
-          setSelectedBills(newSelectedBills);
-          setSelectionOrder(newSelectionOrder);
-
-          const { settlements, advanceAmount: newAdvanceAmount } =
-            calculateSettlements(
-              newSelectedBills,
-              newSelectionOrder,
-              enteredAmount
-            );
-
-          setBillSettlements(settlements);
-          setAdvanceAmount(newAdvanceAmount);
-        }
       }
-    } else {
-      setSelectedBills(new Set());
-      setSelectionOrder([]);
-      setBillSettlements(new Map());
-      setAdvanceAmount(0);
+      // Clear everything when amount is 0 or invalid
+      else if (enteredAmount <= 0) {
+        setSelectedBills(new Set());
+        setSelectionOrder([]);
+        setBillSettlements(new Map());
+        setAdvanceAmount(0);
+      }
     }
-  }, [enteredAmount, data, billDataFromRedux]);
+  }, [enteredAmount, data, isInitialLoad, hasUserTyped, billDataFromRedux]);
 
   const handleAmountChange = (event) => {
+    setHasUserTyped(true);
+
     const amount = parseFloat(event.target.value) || 0;
     setEnteredAmount(amount);
   };
@@ -209,6 +202,9 @@ function OutstandingLIstComponent({
       return {
         billNo: bill?.bill_no,
         billId: bill?.billId,
+        billDate: bill?.bill_date,
+        billPending_amt: Number(billAmount?.toFixed(2)),
+        source: bill?.source,
         settledAmount: Number(settledAmount?.toFixed(2)),
         remainingAmount: Number((billAmount - settledAmount)?.toFixed(2)),
       };
@@ -265,7 +261,11 @@ function OutstandingLIstComponent({
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <CallIcon  phoneNumber={party?.mobileNumber} size={18} color="green" />
+              <CallIcon
+                phoneNumber={party?.mobileNumber}
+                size={18}
+                color="green"
+              />
               <p className="text-sm font-bold text-gray-500">
                 {party?.mobileNumber}
               </p>
