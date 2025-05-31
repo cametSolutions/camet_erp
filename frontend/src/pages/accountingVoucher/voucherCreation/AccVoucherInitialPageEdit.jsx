@@ -18,6 +18,11 @@ import {
   addChequeNumber,
   addChequeDate,
   addNote,
+  addEnteredAmount,
+  addTotalBillAmount,
+  addAdvanceAmount,
+  addRemainingAmount,
+  addBillData,
 } from "../../../../slices/voucherSlices/commonAccountingVoucherSlice";
 import AddPartyTile from "../../voucher/voucherCreation/AddPartyTile";
 import AddAmountTile from "../../../components/secUsers/main/AddAmountTile";
@@ -53,6 +58,7 @@ function AccVoucherInitialPageEdit() {
     paymentMethod,
     paymentDetails,
     note,
+    mode,
   } = useSelector((state) => state.commonAccountingVoucherSlice);
 
   const [voucherNumber, setVoucherNumber] = useState("");
@@ -91,7 +97,7 @@ function AccVoucherInitialPageEdit() {
   };
 
   const fetchData = useCallback(async () => {
-    // setLoading(true);
+    setLoading(true);
     const voucherNumberTitle = getVoucherNumberTitle();
     const {
       [voucherNumberTitle]: voucherNumberFromLocation,
@@ -123,44 +129,51 @@ function AccVoucherInitialPageEdit() {
     }
 
     ////// set party
-    if (
-      Object.keys(partyFromLocation).length > 0 &&
-      Object.keys(party).length === 0
-    ) {
+    if (Object.keys(partyFromLocation).length > 0 && party === null) {
       dispatch(addParty(partyFromLocation));
     } else {
       dispatch(addParty(party));
     }
 
     //// set bill data
-    if (
-      Object.keys(billDataFromLocation).length > 0 &&
-      Object.keys(billData).length === 0
-    ) {
-      const billData = billDataFromLocation;
-      const totalBillAmount = totalBillAmountFromLocation;
-      const enteredAmount = enteredAmountFromLocation;
-      const advanceAmount = advanceAmountFromLocation;
-      const remainingAmount = remainingAmountFromLocation;
-      const settlementData = {
-        billData,
-        totalBillAmount,
-        enteredAmount,
-        advanceAmount,
-        remainingAmount,
-      };
-      dispatch(addSettlementData(settlementData));
+    if (Object.keys(billDataFromLocation).length > 0 && billData === null) {
+      dispatch(addBillData(billDataFromLocation));
     } else {
-      dispatch(
-        addSettlementData({
-          billData,
-          totalBillAmount,
-          enteredAmount,
-          advanceAmount,
-          remainingAmount,
-        })
-      );
+      dispatch(addBillData(billData));
     }
+
+    if (enteredAmountFromLocation && enteredAmount === null) {
+      dispatch(addEnteredAmount(enteredAmountFromLocation));
+    } else {
+      dispatch(addEnteredAmount(enteredAmount));
+    }
+
+    if (totalBillAmountFromLocation && totalBillAmount === null) {
+      dispatch(addTotalBillAmount(totalBillAmountFromLocation));
+    } else {
+      dispatch(addTotalBillAmount(totalBillAmount));
+    }
+
+    if (advanceAmountFromLocation && advanceAmount === null) {
+      dispatch(addAdvanceAmount(advanceAmountFromLocation));
+    } else {
+      dispatch(addAdvanceAmount(advanceAmount));
+    }
+
+    if (remainingAmountFromLocation && remainingAmount === null) {
+      dispatch(addRemainingAmount(remainingAmountFromLocation));
+    } else {
+      dispatch(addRemainingAmount(remainingAmount));
+    }
+    // dispatch(
+    //   addSettlementData({
+    //     billData,
+    //     totalBillAmount,
+    //     enteredAmount,
+    //     advanceAmount,
+    //     remainingAmount,
+    //   })
+    // );
 
     /////   set payment details
     if (
@@ -196,9 +209,9 @@ function AccVoucherInitialPageEdit() {
     }
 
     if (noteFromLocation && note === "") {
-        
       dispatch(addNote(note));
     }
+    setLoading(false);
   }, [location]);
 
   useEffect(() => {
@@ -319,17 +332,23 @@ function AccVoucherInitialPageEdit() {
 
     // If validation passes, proceed with the form submission
     try {
-      const res = await api.post(`/api/sUsers/create${voucherType}`, formData, {
-        headers: {
-          "Content-Type": "application/json",
-        },
-        withCredentials: true,
-      });
+      const res = await api.put(
+        `/api/sUsers/edit${voucherTypeFromRedux}/${location?.state?.data?._id}`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+          withCredentials: true,
+        }
+      );
 
       console.log(res.data);
       toast.success(res.data.message);
 
-      navigate(`/sUsers/${voucherType}/details/${res?.data?.data._id}`);
+      navigate(
+        `/sUsers/${voucherTypeFromRedux}/details/${res?.data?.data._id}`
+      );
       dispatch(removeAll());
     } catch (error) {
       toast.error(error.response?.data?.message || "An error occurred.");
@@ -359,6 +378,7 @@ function AccVoucherInitialPageEdit() {
           removeAll={removeAll}
           tab="add"
           loading={submitLoading}
+          mode={mode}
         />
 
         <AddPartyTile

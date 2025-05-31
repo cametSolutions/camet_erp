@@ -200,11 +200,7 @@ export const cancelReceipt = async (req, res) => {
     }
 
     // Revert tally updates
-    await revertTallyUpdates(
-      receipt.billData,
-      session,
-      receiptId.toString()
-    );
+    await revertTallyUpdates(receipt.billData, session, receiptId.toString());
 
     /// save settlement data in cash or bank collection
     await revertSettlementData(
@@ -301,12 +297,7 @@ export const editReceipt = async (req, res) => {
     }
 
     // Revert tally updates
-    await revertTallyUpdates(
-      receipt.billData,
-      cmp_id,
-      session,
-      receiptId.toString()
-    );
+    await revertTallyUpdates(receipt.billData, session, receiptId.toString());
 
     /// revert settlement data in cash or bank collection
     await revertSettlementData(
@@ -314,7 +305,6 @@ export const editReceipt = async (req, res) => {
       receipt?.paymentDetails,
       receipt?.receiptNumber,
       receiptId,
-      cmp_id,
       session
     );
 
@@ -323,7 +313,6 @@ export const editReceipt = async (req, res) => {
       await deleteAdvanceReceipt(
         receipt.receiptNumber,
         receipt._id?.toString(),
-        cmp_id,
         Primary_user_id,
         session
       );
@@ -360,7 +349,9 @@ export const editReceipt = async (req, res) => {
       "receipt",
       receipt?.date,
       receipt?.party?.partyName,
-      session
+      session,
+      party,
+      "Receipt"
     );
 
     if (advanceAmount > 0) {
@@ -387,7 +378,7 @@ export const editReceipt = async (req, res) => {
     res.status(200).json({
       success: true,
       message: "Receipt updated successfully",
-      receipt: receipt,
+      data: receipt,
     });
   } catch (error) {
     await session.abortTransaction();

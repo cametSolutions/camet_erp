@@ -64,6 +64,7 @@ function VoucherInitialPageEdit() {
     date: dateFromRedux,
     initialized: initializedFromRedux,
     stockTransferToGodown: stockTransferToGodownFromRedux,
+    mode,
   } = useSelector((state) => state.commonVoucherSlice);
 
   // to find the current voucher
@@ -152,7 +153,6 @@ function VoucherInitialPageEdit() {
       _id: voucherIdFromState,
       stockTransferToGodown: stockTransferToGodownFromState = {},
     } = location.state.data || {};
-
 
     try {
       if (voucherIdFromState) {
@@ -435,6 +435,7 @@ function VoucherInitialPageEdit() {
             submitHandler={submitHandler}
             removeAll={removeAll}
             isLoading={submitLoading}
+            mode={mode}
           />
           {/* adding party */}
 

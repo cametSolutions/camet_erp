@@ -79,6 +79,7 @@ function VoucherInitialPage() {
     additionalCharges: additionalChargesFromRedux = [],
     convertedFrom = [],
     stockTransferToGodown,
+    mode
   } = useSelector((state) => state.commonVoucherSlice);
 
   const getApiEndPoint = () => {
@@ -387,6 +388,7 @@ function VoucherInitialPage() {
             removeAll={removeAll}
             tab="add"
             isLoading={submitLoading}
+            mode={mode}
           />
           {/* adding party */}
 

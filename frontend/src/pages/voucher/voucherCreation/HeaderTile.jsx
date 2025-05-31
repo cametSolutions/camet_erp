@@ -1,6 +1,5 @@
 /* eslint-disable react/prop-types */
 import { IoIosAddCircle } from "react-icons/io";
-import { useSelector } from "react-redux";
 
 function HeaderTile({
   title,
@@ -12,8 +11,8 @@ function HeaderTile({
   submitHandler,
   removeAll,
   loading,
+  mode
 }) {
-  const { mode } = useSelector((state) => state.commonVoucherSlice);
 
   const titleText =
     title.split("")[0]?.toUpperCase()?.concat(title.slice(1)) || "Title";

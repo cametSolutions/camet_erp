@@ -8,12 +8,12 @@ const initialState = {
   date: "",
   outstandings: [],
   modifiedOutstandings: [], ////used in the case of edit
-  billData: [],
-  party: {},
+  billData: null,
+  party: null,
   totalBillAmount: 0,
-  enteredAmount: 0,
-  advanceAmount: 0,
-  remainingAmount: 0,
+  enteredAmount: null,
+  advanceAmount: null,
+  remainingAmount: null,
   paymentMethod: "",
   paymentDetails: {
     _id: null,
@@ -136,7 +136,22 @@ export const commonAccountingVoucherSlice = createSlice({
     },
     addMode : (state, action) => {
       state.mode = action.payload;
-    }
+    },
+    addEnteredAmount: (state, action) => {
+      state.enteredAmount = action.payload;
+    },
+    addRemainingAmount: (state, action) => {
+      state.remainingAmount = action.payload;
+    },
+    addAdvanceAmount: (state, action) => {
+      state.advanceAmount = action.payload;
+    },
+    addTotalBillAmount: (state, action) => {
+      state.totalBillAmount = action.payload;
+    },
+    addBillData: (state, action) => {
+      state.billData = action.payload;
+    },
   },
 });
 
@@ -162,7 +177,12 @@ export const {
   addBankPaymentDetails,
   addCashPaymentDetails,
   addVoucherType,
-  addMode
+  addMode,
+  addEnteredAmount,
+  addRemainingAmount,
+  addAdvanceAmount,
+  addTotalBillAmount,
+  addBillData
 } = commonAccountingVoucherSlice.actions;
 
 export default commonAccountingVoucherSlice.reducer;

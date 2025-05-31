@@ -42,6 +42,7 @@ function AccVoucherInitialPage() {
     paymentMethod,
     paymentDetails,
     note,
+    mode
   } = useSelector((state) => state.commonAccountingVoucherSlice);
 
   const [voucherNumber, setVoucherNumber] = useState("");
@@ -272,6 +273,7 @@ function AccVoucherInitialPage() {
           removeAll={removeAll}
           tab="add"
           loading={submitLoading}
+          mode={mode}
         />
 
         <AddPartyTile

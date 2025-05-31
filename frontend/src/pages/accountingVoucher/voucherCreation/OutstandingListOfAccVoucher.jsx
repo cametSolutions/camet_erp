@@ -88,7 +88,6 @@ function OutstandingListOfAccVoucher() {
     }
   }, [apiData, mode]);
 
-  console.log(data);
 
   return (
     <OutstandingLIstComponent

@@ -234,6 +234,9 @@ function OutstandingLIstComponent({ loading, data, total, party }) {
       remainingAmount: remainingAmount || 0,
     };
 
+    console.log(settlementData);
+    
+
     dispatch(addSettlementData(settlementData));
 
     navigate(-1, { replace: true });
