@@ -284,7 +284,6 @@ function ProductListSecondary() {
     );
   };
 
-  console.log(hasMore);
   
 
   return (
