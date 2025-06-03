@@ -602,12 +602,12 @@ export const removeNewBatchCreatedByThisPurchase = async (
       return godown?.created_by?.voucher_id?.toString() !== purchase_id.toString();
     });
 
-    console.log( product.GodownList);
+    // console.log( product.GodownList);
     
     
     const removedCount = originalLength - product.GodownList.length;
 
-    console.log("removedCount",removedCount);
+    // console.log("removedCount",removedCount);
 
     
     if (removedCount > 0) {

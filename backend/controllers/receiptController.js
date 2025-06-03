@@ -387,3 +387,50 @@ export const editReceipt = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
+
+/**
+ * @desc  get receipt details
+ * @route GET/api/sUsers/getReceiptDetails
+ * @access Public
+ */
+
+export const getReceiptDetails = async (req, res) => {
+  const receiptNumber = req.params.id;
+  try {
+    const receiptDoc = await ReceiptModel.findById(receiptNumber);
+
+    if (!receiptDoc) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Receipt not found" });
+    }
+
+    const receipt = receiptDoc.toObject(); // Convert to plain object
+
+    // Check if any advance receipt is present with this receipt
+    const advanceReceipt = await TallyData.findOne({
+      billId: receipt._id.toString(),
+      source: "advanceReceipt",
+    });
+
+    // Determine cancellation status
+    let isCancellationAllowed = true;
+    if (advanceReceipt?.appliedPayments?.length > 0) {
+      isCancellationAllowed = false;
+    }
+
+    // Attach the field
+    receipt.cancellationAllowed = isCancellationAllowed;
+
+    return res.status(200).json({
+      receipt: receipt,
+      message: "Receipt details fetched",
+    });
+  } catch (error) {
+    console.error(error);
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error, try again!" });
+  }
+};

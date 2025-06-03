@@ -1,18 +1,10 @@
 /* eslint-disable react/prop-types */
 import { IoIosAddCircle } from "react-icons/io";
-import { useSelector } from "react-redux";
 
-function FooterButton({ submitHandler,  title, loading }) {
-  const { mode } = useSelector((state) => state.commonVoucherSlice);
-
-  
-
+function FooterButton({ submitHandler, title, loading ,mode}) {
   const titleText =
     title.split("")[0]?.toUpperCase()?.concat(title.slice(1)) || "Title";
 
-
-    console.log(title);
-    
   return (
     <div>
       <div className="  sm:hidden  fixed bottom-0 left-0 w-full bg-white shadow-lg z-50  ">

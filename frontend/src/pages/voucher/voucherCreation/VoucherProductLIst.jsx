@@ -720,6 +720,8 @@ export default function VoucherProductList({
               tab={tab}
               handleRemoveBatch={handleRemoveBatch}
               loadingIndex={loadingIndex}
+              gdnEnabled={el?.gdnEnabled || false}
+              batchEnabled={el?.batchEnabled || false}
             />
           </div>
         )}

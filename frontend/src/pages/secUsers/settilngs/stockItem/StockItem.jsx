@@ -35,6 +35,8 @@ const StockItem = () => {
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
 
+  
+
   useEffect(() => {
     setSettingsOptions([
       {
@@ -50,7 +52,7 @@ const StockItem = () => {
         description: "Add location tracking for all vouchers",
         icon: <FiMapPin />,
         to: "/sUsers/godown",
-        active: true,
+        active: configurations[0]?.gdnEnabled,
       },
       {
         title: "Enable Location",
@@ -58,7 +60,7 @@ const StockItem = () => {
         icon: <FiMapPin />,
         active: true,
         toggle: true,
-        toggleValue: configurations[0].gdnEnabled,
+        toggleValue: configurations[0]?.gdnEnabled,
         dbField: "gdnEnabled",
       },
       {
@@ -69,7 +71,7 @@ const StockItem = () => {
         to: "/sUsers/addBatchSettings",
         active: true,
         toggle: true,
-        toggleValue: configurations[0].batchEnabled,
+        toggleValue: configurations[0]?.batchEnabled,
         dbField: "batchEnabled",
       },
       {

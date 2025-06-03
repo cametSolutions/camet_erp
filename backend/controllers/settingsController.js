@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import barcodeModel from "../models/barcodeModel.js";
 import OragnizationModel from "../models/OragnizationModel.js";
 import productModel from "../models/productModel.js";
+import { Godown } from "../models/subDetails.js";
 
 
 /**
@@ -796,17 +797,41 @@ export const updateFirstLayerConfiguration = async (req, res) => {
     company.configurations[0][fieldToUpdate] = value;
 
     // Special handling for gdnEnabled
-    if (fieldToUpdate === "gdnEnabled" && value === true) {
-      console.log("here");
+if (fieldToUpdate === "gdnEnabled" && value === true) {
+  const defaultGodown = await Godown.findOne({
+    cmp_id: cmp_id,
+    defaultGodown: true,
+  }).session(session);
 
-      // Update all products for this company to enable godown
-      const result = await productModel.updateMany(
-        { cmp_id: cmp_id },
-        { $set: { gdnEnabled: true } },
-        { session }
-      );
-      console.log("result", result);
-    }
+  console.log("defaultGodown", defaultGodown);
+
+  if (!defaultGodown) {
+    throw new Error("Default godown not found");
+  }
+
+  // Update all products: set gdnEnabled and update GodownList
+  const result = await productModel.updateMany(
+    { cmp_id: cmp_id },
+    [
+      {
+        $set: {
+          gdnEnabled: true,
+          GodownList: {
+            $map: {
+              input: "$GodownList",
+              as: "item",
+              in: {
+                $mergeObjects: ["$$item", { godown: defaultGodown._id }],
+              },
+            },
+          },
+        },
+      },
+    ],
+    { session }
+  );
+}
+
 
     // Save the updated company
     await company.save({ session });

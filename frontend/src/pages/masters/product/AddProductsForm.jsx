@@ -61,8 +61,12 @@ function AddProductForm({
   const [defaultGodown, setDefaultGodown] = useState(null);
 
   // Get godown enable status from Redux store
-  const { gdnEnabled = false, batchEnabled: isBatchEnabledInCompany = false } =
-    useSelector((state) => state.secSelectedOrganization.secSelectedOrg);
+  const { configurations } = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg
+  );
+
+  const { batchEnabled: isBatchEnabledInCompany = false, gdnEnabled = false } =
+    configurations[0] || {};
 
   // Handle input change
   const handleInputChange = (e) => {

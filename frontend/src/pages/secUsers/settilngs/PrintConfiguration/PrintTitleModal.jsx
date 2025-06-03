@@ -1,19 +1,30 @@
 /* eslint-disable react/prop-types */
 import { useEffect, useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import CustomBarLoader from "../../../../components/common/CustomBarLoader";
 
 function PrintTitleModal({ isOpen, onClose, onSubmit, data = {}, loading }) {
   const [printTitle, setPrintTitle] = useState("");
+
   useEffect(() => {
-    setPrintTitle(data?.printTitle);
+    setPrintTitle(data?.printTitle || "");
   }, [data]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    if(!printTitle) {
+    if (!printTitle) {
       window.alert("Please enter print title");
-      return
+      return;
     }
     onSubmit(printTitle);
     setPrintTitle("");
@@ -22,60 +33,61 @@ function PrintTitleModal({ isOpen, onClose, onSubmit, data = {}, loading }) {
     }, 1000);
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="relative">
-      <div className="sm:w-[calc(100%-150px)] sm:ml-[150px] justify-center items-center flex overflow-x-hidden overflow-y-auto fixed inset-0 z-50 outline-none focus:outline-none">
-        <div className="relative  my-6  w-[330px] sm:w-[400px] bg-white rounded-lg shadow-lg">
-          <div className="flex justify-between items-center p-4 border-b border-gray-200 bg-[#0a9396] text-white">
-            <h3 className="text-lg font-bold">Enter Print Title</h3>
-            <button
-              className="text-gray-600 hover:text-gray-900"
-              onClick={onClose}
-            >
-              &#x2715;
-            </button>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[420px] w-[340px] sm:w-full bg-gray-900 border-slate-700 text-white">
+        <DialogHeader className="flex flex-row items-center space-y-0 pb-4">
+          <div className="bg-blue-600 rounded-full p-2 mr-3">
+            <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4zM18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" />
+            </svg>
           </div>
-          {loading && <CustomBarLoader />}
+          <div>
+            <DialogTitle className="text-xl font-semibold text-white">
+              Enter Print Title
+            </DialogTitle>
+            <p className="text-sm text-slate-400 mt-1">
+              Choose a title to configure for your print
+            </p>
+          </div>
+        </DialogHeader>
+        
+        {loading && <CustomBarLoader />}
 
-          <form onSubmit={handleSubmit} className="p-6">
-            <div className="mb-4">
-              <label
-                htmlFor="printTitle"
-                className="block text-sm font-medium text-gray-700 "
-              >
-                Print Title
-              </label>
-              <input
-                type="text"
-                id="printTitle"
-                value={printTitle}
-                onChange={(e) => setPrintTitle(e.target.value)}
-                placeholder="Enter title"
-                className="mt-3  block w-full p-2 rounded-md    shadow-xl sm:text-sm border border-gray-100"
-              />
-            </div>
-            <div className="flex justify-end ">
-              <button
-                type="button"
-                onClick={onClose}
-                className="mr-3 inline-flex justify-center px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-pink-500 rounded-md hover:bg-pink-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-              >
-                Submit
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-      <div className="opacity-25 fixed inset-0 z-40 bg-black"></div>
-    </div>
+        <form onSubmit={handleSubmit} className="space-y-6 py-2">
+          <div className="space-y-3">
+            <Label htmlFor="printTitle" className="text-sm font-medium text-white">
+              Print Title
+            </Label>
+            <Input
+              id="printTitle"
+              type="text"
+              value={printTitle}
+              onChange={(e) => setPrintTitle(e.target.value)}
+              placeholder="Enter your print title..."
+              className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-400 focus:border-slate-500 focus:ring-slate-500 h-12"
+            />
+          </div>
+
+          <DialogFooter className="flex justify-end space-x-3 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              className="bg-transparent border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white px-6 py-2"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              className="bg-blue-600 text-white hover:bg-blue-700 font-medium px-6 py-2"
+            >
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
 

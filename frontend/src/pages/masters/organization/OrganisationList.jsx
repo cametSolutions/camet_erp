@@ -3,14 +3,12 @@ import api from "../../../api/api";
 import { toast } from "react-toastify";
 import { FaEdit } from "react-icons/fa";
 import { Link } from "react-router-dom";
-import { IoIosArrowRoundBack } from "react-icons/io";
-import { useNavigate } from "react-router-dom";
 import CustomBarLoader from "../../../components/common/CustomBarLoader";
+import TitleDiv from "@/components/common/TitleDiv";
 
 function OrganisationList() {
   const [organizations, setOrganizations] = useState([]);
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchOrganiszations = async () => {
@@ -32,22 +30,16 @@ function OrganisationList() {
 
   return (
     <section className="flex-1 text-gray-600">
-      <div className="sticky top-0 bg-[#201450] text-white p-3 flex items-center gap-3 text-lg">
-        <IoIosArrowRoundBack
-          onClick={() => {
-            navigate("/sUsers/dashboard");
-          }}
-          className="block cursor-pointer  text-3xl"
-        />
-        <div className="flex items-center justify-between w-full  font-bold">
-          <p>Your Companies</p>
-          <Link to="/sUsers/addOrganization">
-            <button className="flex gap-2 bg-[#3f2e81] shadow-lg px-2 py-1 rounded-xs text-sm hover:scale-105 duration-100 ease-in-out hover:bg-[#553fae] mr-3">
-              Add Company
-            </button>
-          </Link>
-        </div>
-      </div>
+      <TitleDiv
+        title="Your Companies"
+        from="/sUsers/dashboard"
+        dropdownContents={[
+          {
+            title: "Add Company",
+            to: "/sUsers/addOrganization",
+          },
+        ]}
+      />
 
       {loading && <CustomBarLoader />}
 

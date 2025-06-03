@@ -91,7 +91,7 @@ function TitleDiv({
                     <DropdownMenuItem
                       className={`${
                         isDisabled ? "cursor-not-allowed" : "cursor-pointer"
-                      }`}
+                      }   `}
                       onClick={isDisabled ? undefined : item.onClick}
                     >
                       {item.title}

@@ -34,8 +34,6 @@ import OragnizationModel from "../models/OragnizationModel.js";
 import nodemailer from "nodemailer";
 import barcodeModel from "../models/barcodeModel.js";
 
-
-
 // @desc to  get stock transfer details
 // route get/api/sUsers/getStockTransferDetails;
 export const getStockTransferDetails = async (req, res) => {
@@ -56,8 +54,6 @@ export const getStockTransferDetails = async (req, res) => {
   }
 };
 
-
-
 // @desc to  get transactions
 // route get/api/sUsers/transactions
 export const transactions = async (req, res) => {
@@ -75,8 +71,6 @@ export const transactions = async (req, res) => {
   } = req.query;
 
   const isAdmin = req.query.isAdmin === "true" ? true : false;
-
-  
 
   let returnFullDetails = false;
   if (fullDetails === "true") {
@@ -292,61 +286,9 @@ export const transactions = async (req, res) => {
 };
 
 
-/**
- * @desc  get receipt details
- * @route GET/api/sUsers/getReceiptDetails
- * @access Public
- */
 
-export const getReceiptDetails = async (req, res) => {
-  const receiptNumber = req.params.id;
-  try {
-    const receipt = await receiptModel.findById(receiptNumber);
-    if (receipt) {
-      return res.status(200).json({
-        receipt: receipt,
-        message: "receipt details fetched",
-      });
-    } else {
-      return res
-        .status(404)
-        .json({ success: false, message: "Receipt not found" });
-    }
-  } catch (error) {
-    console.error(error);
-    return res
-      .status(500)
-      .json({ success: false, message: "Internal server error, try again!" });
-  }
-};
 
-/**
- * @desc  get payment details
- * @route GET/api/sUsers/getPaymentDetails
- * @access Public
- */
 
-export const getPaymentDetails = async (req, res) => {
-  const paymentId = req.params.id;
-  try {
-    const payment = await paymentModel.findById(paymentId);
-    if (payment) {
-      return res.status(200).json({
-        payment: payment,
-        message: "payment details fetched",
-      });
-    } else {
-      return res
-        .status(404)
-        .json({ success: false, message: "payment not found" });
-    }
-  } catch (error) {
-    console.error(error);
-    return res
-      .status(500)
-      .json({ success: false, message: "Internal server error, try again!" });
-  }
-};
 
 // @desc adding new Hsn
 // route POst/api/pUsers/addHsn

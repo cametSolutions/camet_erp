@@ -93,6 +93,8 @@ function OutstandingLIstComponent({ loading, data, total, party }) {
     return Math.abs(totalSettled - enteredAmount) < 0.01;
   };
 
+  console.log(data);
+
   // Use effect for initial setup and amount changes
   useEffect(() => {
     if (data && data.length > 0) {
@@ -149,6 +151,8 @@ function OutstandingLIstComponent({ loading, data, total, party }) {
         setBillSettlements(new Map());
         setAdvanceAmount(0);
       }
+    } else {
+      setAdvanceAmount(enteredAmount);
     }
   }, [enteredAmount, data, isInitialLoad, hasUserTyped, billDataFromRedux]);
 
@@ -235,7 +239,6 @@ function OutstandingLIstComponent({ loading, data, total, party }) {
     };
 
     console.log(settlementData);
-    
 
     dispatch(addSettlementData(settlementData));
 

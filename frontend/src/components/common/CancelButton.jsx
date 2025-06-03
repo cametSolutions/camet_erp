@@ -27,6 +27,7 @@ function CancelButton({
   setActionLoading,
   reFetch,
   actionLoading,
+  cancellationAllowed,
 }) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -54,6 +55,13 @@ function CancelButton({
   };
 
   const handleConfirmCancel = async () => {
+    if (!cancellationAllowed) {
+      window.alert(
+        "Cancellation not allowed: This entry is associated with another voucher."
+      );
+      setIsDialogOpen(false);
+      return;
+    }
     try {
       setActionLoading(true);
       await api.put(

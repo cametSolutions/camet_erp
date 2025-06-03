@@ -26,12 +26,12 @@ import { createPurchase,editPurchase,cancelPurchase } from '../controllers/purch
 import { createCreditNote,cancelCreditNote ,editCreditNote, getCreditNoteDetails} from '../controllers/creditNoteController.js';
 import {createSale,editSale,cancelSale, getSalesDetails,} from '../controllers/saleController.js';
 import { cancelDebitNote, createDebitNote, editDebitNote, getDebitNoteDetails } from '../controllers/debitNoteController.js';
-import { getStockTransferDetails,transactions,getReceiptDetails,getPaymentDetails,addHsn,getSingleHsn,editHsn,deleteHsn,getPurchaseDetails,getOpeningBalances, sendPdfViaEmail} from '../controllers/commonController.js';
+import { getStockTransferDetails,transactions,addHsn,getSingleHsn,editHsn,deleteHsn,getPurchaseDetails,getOpeningBalances, sendPdfViaEmail} from '../controllers/commonController.js';
 import { authSecondary } from '../middlewares/authSecUsers.js';
 import { secondaryIsBlocked } from '../middlewares/isBlocked.js';
 import { companyAuthentication } from '../middlewares/authCompany.js';
-import { createReceipt,cancelReceipt,editReceipt } from '../controllers/receiptController.js';
-import { createPayment,cancelPayment, editPayment } from '../controllers/paymentController.js';
+import { createReceipt,cancelReceipt,editReceipt, getReceiptDetails } from '../controllers/receiptController.js';
+import { createPayment,cancelPayment, editPayment, getPaymentDetails } from '../controllers/paymentController.js';
 import { createInvoice,editInvoice,cancelSalesOrder, PartyListWithOrderPending, getInvoiceDetails } from '../controllers/saleOrderController.js';
 import { createStockTransfer,editStockTransfer, cancelStockTransfer } from '../controllers/stockTransferController.js';
 import { addBankPaymentDetails } from '../../frontend/slices/payment.js';

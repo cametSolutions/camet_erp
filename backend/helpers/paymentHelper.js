@@ -48,7 +48,6 @@ export const updatePaymentNumber = async (orgId, secondaryUser, session) => {
   }
 };
 
-
 /**
  * Deletes the advance receipt entry from TallyData if it exists
  * @param {String} paymentNumber - receipt number for the advance receipt
@@ -57,23 +56,29 @@ export const updatePaymentNumber = async (orgId, secondaryUser, session) => {
  * @param {Object} session - mongoose session
  */
 
-
-export const deleteAdvancePayment = async (paymentNumber,billId, cmp_id, Primary_user_id, session) => {
-
+export const deleteAdvancePayment = async (
+  paymentNumber,
+  billId,
+  Primary_user_id,
+  session
+) => {
   // console.log(paymentNumber, cmp_id, Primary_user_id, session);
-  
+
   try {
     // Find and delete the advance receipt entry in TallyData
     const deletedAdvancePayment = await TallyData.findOneAndDelete({
-      cmp_id,
       bill_no: paymentNumber,
-      billId:billId.toString(),
+      billId: billId.toString(),
       Primary_user_id,
-      source: "advancePayment"
+      source: "advancePayment",
     }).session(session);
 
+    console.log("deletedAdvancePayment", deletedAdvancePayment);
+
     if (!deletedAdvancePayment) {
-      console.log(`No advance payment found for payment number: ${paymentNumber}`);
+      console.log(
+        `No advance payment found for payment number: ${paymentNumber}`
+      );
       return;
     }
 
@@ -83,7 +88,6 @@ export const deleteAdvancePayment = async (paymentNumber,billId, cmp_id, Primary
     throw error;
   }
 };
-
 
 /**
  * Creates a new outstanding record for a given party with the advance amount.
@@ -95,16 +99,25 @@ export const deleteAdvancePayment = async (paymentNumber,billId, cmp_id, Primary
  * @param {Number} advanceAmount - advance amount for this outstanding record
  */
 
-
-export const updateTallyData = async (billData, cmp_id, session, paymentNumber,_id) => {
+export const updateTallyData = async (
+  billData,
+  session,
+  paymentNumber,
+  _id
+) => {
   // Create a lookup map for billNo to remainingAmount and settledAmount from billData
   const billAmountMap = new Map(
-    billData.map((bill) => [bill.billId, { remainingAmount: bill.remainingAmount, settledAmount: bill.settledAmount }])
+    billData.map((bill) => [
+      bill.billId,
+      {
+        remainingAmount: bill.remainingAmount,
+        settledAmount: bill.settledAmount,
+      },
+    ])
   );
 
   // Fetch the outstanding bills from TallyData for this company
   const outstandingData = await TallyData.find({
-    cmp_id,
     billId: { $in: Array.from(billAmountMap.keys()) },
   }).session(session);
 
@@ -125,10 +138,10 @@ export const updateTallyData = async (billData, cmp_id, session, paymentNumber,_
           },
           $push: {
             appliedPayments: {
-              _id,  // Add the _id of the receipt
-              paymentNumber,  // Add the receipt number
-              settledAmount,  // Add the settled amount directly from billData
-              date: new Date(),  // Optional: Timestamp when this receipt was applied
+              _id, // Add the _id of the receipt
+              paymentNumber, // Add the receipt number
+              settledAmount, // Add the settled amount directly from billData
+              date: new Date(), // Optional: Timestamp when this receipt was applied
             },
           },
         },
@@ -147,8 +160,12 @@ export const updateTallyData = async (billData, cmp_id, session, paymentNumber,_
  * @param {Object} session - mongoose session
  */
 
-
-export const revertTallyUpdates = async (billData, cmp_id, session,paymentId) => {
+export const revertTallyUpdates = async (
+  billData,
+  cmp_id,
+  session,
+  paymentId
+) => {
   try {
     if (!billData || billData.length === 0) {
       console.log("No bill data to revert");
@@ -159,7 +176,7 @@ export const revertTallyUpdates = async (billData, cmp_id, session,paymentId) =>
     const billSettledAmountMap = new Map(
       billData.map((bill) => [
         bill.billId.toString(),
-        bill.settledAmount  // The amount that was settled
+        bill.settledAmount, // The amount that was settled
       ])
     );
 
@@ -174,8 +191,8 @@ export const revertTallyUpdates = async (billData, cmp_id, session,paymentId) =>
     }
 
     // Process updates one at a time instead of bulk
-     // Process updates one at a time instead of bulk
-     for (const doc of tallyDataToRevert) {
+    // Process updates one at a time instead of bulk
+    for (const doc of tallyDataToRevert) {
       const settledAmount = billSettledAmountMap.get(doc.billId);
       await TallyData.updateOne(
         { _id: doc._id },
@@ -183,7 +200,7 @@ export const revertTallyUpdates = async (billData, cmp_id, session,paymentId) =>
           $inc: { bill_pending_amt: settledAmount },
           $pull: {
             appliedPayments: { _id: paymentId },
-          }
+          },
         }
       ).session(session);
     }
@@ -194,13 +211,3 @@ export const revertTallyUpdates = async (billData, cmp_id, session,paymentId) =>
     throw error;
   }
 };
-
-
-
-
-
-
-
-
-
-

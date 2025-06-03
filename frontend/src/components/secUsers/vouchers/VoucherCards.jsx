@@ -25,6 +25,7 @@ import stockRegister from "../../../assets/images/clipboard.png";
 import peding from "../../../assets/images/pending.png";
 
 import { IoAlertCircle } from "react-icons/io5";
+import { useSelector } from "react-redux";
 
 const salesTiles = [
   {
@@ -195,6 +196,10 @@ const popular = [
 ];
 
 const VoucherCards = ({ tab }) => {
+  const { configurations } = useSelector(
+    (state) => state?.secSelectedOrganization?.secSelectedOrg
+  );
+
   const [selectedTab, setSelectedTab] = useState(null);
   const navigate = useNavigate();
 
@@ -213,6 +218,14 @@ const VoucherCards = ({ tab }) => {
 
   const handleNavigate = (item) => {
     if (item.active) {
+      if (
+        item.voucherType === "stockTransfer" &&
+        configurations[0]?.gdnEnabled === false
+      ) {
+        alert("Enable Godown to use this feature.");
+        return;
+      }
+
       navigate(item.to, {
         state: {
           voucherType: item.voucherType,

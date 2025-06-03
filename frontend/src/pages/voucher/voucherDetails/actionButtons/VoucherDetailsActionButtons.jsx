@@ -23,6 +23,7 @@ export default function VoucherDetailsActionButtons({
     isEditable,
     isConverted = false,
     voucherType,
+    cancellationAllowed=true
   } = data || {};
 
   const handleEditClick = () => {
@@ -99,6 +100,7 @@ export default function VoucherDetailsActionButtons({
           isConverted={isConverted}
           setActionLoading={setActionLoading}
           actionLoading={actionLoading}
+          cancellationAllowed={cancellationAllowed}
         />
 
         {actions.map((action, index) => {

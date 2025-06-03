@@ -54,9 +54,7 @@ import SelectVouchers from '../pages/secUsers/SelectVouchers'
 // import AddItemDebitNote from '../pages/secUsers/AddItemDebitNote'
 // import EditItemDebitNote from '../pages/secUsers/EditItemDebitNote'
 import PaymentPrintOut from '../pages/secUsers/PaymentPrintOut'
-import EditReceipt from '../pages/secUsers/EditReceipt'
 import OutstandingListOfReceiptForEdit from '../pages/secUsers/OutstandingListOfReceiptForEdit'
-import EditPayment from '../pages/secUsers/EditPayment'
 import OutstandingListOfPaymentForEdit from '../pages/secUsers/OutstandingListOfPaymentForEdit'
 import Reports from '../pages/secUsers/Reports'
 import PartyStatement from '../pages/secUsers/Reports/PartyStatement/PartyStatement'
@@ -207,7 +205,7 @@ const Routers = () => {
         <Route path='/sUsers/payment/sourceList/:source' element={<ProtectedSecRoute><SourceList/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/payment/details/:id' element={<ProtectedSecRoute><AccVoucherDetails/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/paymentPrintOut' element={<ProtectedSecRoute><PaymentPrintOut/></ProtectedSecRoute>}></Route>
-        <Route path='/sUsers/editPayment/:id' element={<ProtectedSecRoute><EditPayment/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/editPayment/:id' element={<ProtectedSecRoute><AccVoucherInitialPageEdit/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/payment/edit/addAmount/:party_id' element={<ProtectedSecRoute><OutstandingListOfPaymentForEdit/></ProtectedSecRoute>}></Route>
 
 {/* bank payment */}

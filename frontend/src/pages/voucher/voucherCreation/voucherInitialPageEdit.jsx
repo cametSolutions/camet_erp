@@ -504,6 +504,7 @@ function VoucherInitialPageEdit() {
             submitHandler={submitHandler}
             title={formatVoucherType(voucherTypeFromRedux)}
             isLoading={submitLoading || isLoading}
+            mode={mode}
           />
         </div>
       </div>

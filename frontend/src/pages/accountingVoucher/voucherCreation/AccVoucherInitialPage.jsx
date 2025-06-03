@@ -292,6 +292,7 @@ function AccVoucherInitialPage() {
           tab="add"
           title={formatVoucherType(voucherTypeFromRedux)}
           loading={submitLoading || loading}
+          mode={mode}
         />
       </div>
     </div>

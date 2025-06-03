@@ -29,20 +29,24 @@ const tallySchema = new mongoose.Schema(
     user_id: { type: String },
     source: { type: String },
     classification: { type: String },
-    appliedReceipts: {
-      _id: { type: mongoose.Schema.Types.ObjectId, ref: "Receipt" },
-      receiptNumber: { type: Number },
-      settledAmount: { type: Number },
-      date: { type: Date },
-      default: [],
-    },
-    appliedPayments: {
-      _id: { type: mongoose.Schema.Types.ObjectId, ref: "Payment" },
-      paymentNumber: { type: Number },
-      settledAmount: { type: Number },
-      date: { type: Date },
-      default: [],
-    },
+    appliedReceipts: [
+      {
+        _id: { type: mongoose.Schema.Types.ObjectId, ref: "Receipt" },
+        receiptNumber: { type: Number },
+        settledAmount: { type: Number },
+        date: { type: Date },
+      },
+    ],
+
+    appliedPayments: [
+      {
+        _id: { type: mongoose.Schema.Types.ObjectId, ref: "Payment" },
+        paymentNumber: { type: Number },
+        settledAmount: { type: Number },
+        date: { type: Date },
+      },
+    ],
+
     createdBy: { type: String, default: "" }, ///if an outstanding is createdBy any vouchers are tagged here
     isCancelled: { type: Boolean, default: false },
   },

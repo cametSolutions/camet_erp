@@ -11,7 +11,6 @@ import {
   addVoucherType,
   addMode,
   addParty,
-  addSettlementData,
   addCashPaymentDetails,
   addBankPaymentDetails,
   addPaymentMethod,
@@ -397,6 +396,7 @@ function AccVoucherInitialPageEdit() {
           tab="add"
           title={formatVoucherType(voucherTypeFromRedux)}
           loading={submitLoading || loading}
+          mode={mode}
         />
       </div>
     </div>

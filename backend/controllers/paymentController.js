@@ -105,7 +105,7 @@ export const createPayment = async (req, res) => {
     // Save the payment in the transaction session
     const savedPayment = await newPayment.save({ session, new: true });
 
-    /// save settlement data in cash or bank collection
+    // /// save settlement data in cash or bank collection
     await saveSettlementData(
       paymentMethod,
       paymentDetails,
@@ -121,10 +121,9 @@ export const createPayment = async (req, res) => {
       "Payment"
     );
 
-    // Use the helper function to update TallyData
+    // // Use the helper function to update TallyData
     await updateTallyData(
       billData,
-      cmp_id,
       session,
       paymentNumber,
       savedPayment._id.toString()
@@ -199,7 +198,7 @@ export const cancelPayment = async (req, res) => {
     }
 
     // Revert tally updates
-    await revertTallyUpdates(payment.billData, session);
+    await revertTallyUpdates(payment.billData, cmp_id, session);
 
     /// save settlement data in cash or bank collection
     await revertSettlementData(
@@ -304,7 +303,6 @@ export const editPayment = async (req, res) => {
       payment?.paymentDetails,
       payment?.paymentNumber,
       payment?._id.toString(),
-      cmp_id,
       session
     );
 
@@ -322,7 +320,6 @@ export const editPayment = async (req, res) => {
     // Use the helper function to update TallyData
     await updateTallyData(
       billData,
-      cmp_id,
       session,
       paymentNumber,
       payment._id.toString()
@@ -356,7 +353,9 @@ export const editPayment = async (req, res) => {
       "payment",
       savedPayment?.date,
       savedPayment?.party?.partyName,
-      session
+      session,
+      party,
+      "Payment"
     );
 
     if (advanceAmount > 0) {
@@ -383,12 +382,57 @@ export const editPayment = async (req, res) => {
     res.status(200).json({
       success: true,
       message: "Receipt updated successfully",
-      payment: payment,
+      data: payment,
     });
   } catch (error) {
     await session.abortTransaction();
     session.endSession();
     console.error("Error editing payment:", error);
     res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+/**
+ * @desc  get payment details
+ * @route GET/api/sUsers/getPaymentDetails
+ * @access Public
+ */
+
+export const getPaymentDetails = async (req, res) => {
+  const paymentId = req.params.id;
+  try {
+    const paymentDoc = await paymentModel.findById(paymentId);
+
+    if (!paymentDoc) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Payment not found" });
+    }
+
+    const payment = paymentDoc.toObject(); // Convert to plain object
+
+    // Check if any advance receipt is present with this receipt
+    const advancePayment = await TallyData.findOne({
+      billId: paymentDoc._id.toString(),
+      source: "advancePayment",
+    });
+
+    // Determine if cancellation is allowed
+    let isCancellationAllowed = true;
+    if (advancePayment?.appliedReceipts?.length > 0) {
+      isCancellationAllowed = false;
+    }
+
+    payment.cancellationAllowed = isCancellationAllowed;
+
+    return res.status(200).json({
+      payment: payment,
+      message: "Payment details fetched",
+    });
+  } catch (error) {
+    console.error(error);
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error, try again!" });
   }
 };

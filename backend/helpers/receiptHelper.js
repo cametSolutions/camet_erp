@@ -202,7 +202,6 @@ export const revertTallyUpdates = async (billData, session, receiptId) => {
       ])
     );
 
-    console.log("billSettledAmountMap", billSettledAmountMap);
 
     // Fetch the bills from TallyData that need to be reverted
     const tallyDataToRevert = await TallyData.find({
@@ -214,7 +213,6 @@ export const revertTallyUpdates = async (billData, session, receiptId) => {
       return;
     }
 
-    // Process updates one at a time instead of bulk
     // Process updates one at a time instead of bulk
     for (const doc of tallyDataToRevert) {
       const settledAmount = billSettledAmountMap.get(doc.billId) || 0;
@@ -251,23 +249,34 @@ export const deleteAdvanceReceipt = async (
   Primary_user_id,
   session
 ) => {
-  // console.log(receiptNumber, cmp_id, Primary_user_id, session);
-
   try {
-    // Find and delete the advance receipt entry in TallyData
-    const deletedAdvanceReceipt = await TallyData.findOneAndDelete({
+    // First, find the advance receipt entry
+    const advanceReceipt = await TallyData.findOne({
       bill_no: receiptNumber,
       billId: billId.toString(),
       Primary_user_id,
       source: "advanceReceipt",
     }).session(session);
 
-    if (!deletedAdvanceReceipt) {
-      console.log(
-        `No advance receipt found for receipt number: ${receiptNumber}`
-      );
-      return;
+    // If not found, throw an error
+    if (!advanceReceipt) {
+      throw new Error(`No advance receipt found for receipt number: ${receiptNumber}`);
     }
+
+    // Check if appliedPayments exists and has any entries
+    if (
+      Array.isArray(advanceReceipt.appliedPayments) &&
+      advanceReceipt.appliedPayments.length > 0
+    ) {
+      throw new Error(
+        `Receipt ${receiptNumber} cannot be cancelled because it has applied payments.`
+      );
+    }
+
+    // Proceed to delete the advance receipt
+    const deletedAdvanceReceipt = await TallyData.findOneAndDelete({
+      _id: advanceReceipt._id
+    }).session(session);
 
     console.log(`Advance receipt deleted for receipt number: ${receiptNumber}`);
   } catch (error) {
@@ -275,6 +284,8 @@ export const deleteAdvanceReceipt = async (
     throw error;
   }
 };
+
+
 
 ///// save payment details in payment collection
 

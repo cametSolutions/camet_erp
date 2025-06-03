@@ -50,12 +50,6 @@ export const addProduct = async (req, res) => {
       cmp_id,
     });
 
-    // Check for existing product by code and cmp_id
-    const existingProductByCode = await productModel.findOne({
-      product_code: { $regex: new RegExp(`^${product_code}$`, "i") },
-      cmp_id,
-    });
-
     if (existingProductByName) {
       return res.status(400).json({
         success: false,
@@ -63,13 +57,22 @@ export const addProduct = async (req, res) => {
       });
     }
 
-    if (existingProductByCode) {
-      return res.status(400).json({
-        success: false,
-        message:
-          "Product with this product code already exists for this company.",
+    // Check for existing product by code and cmp_id
+    if (product_code) {
+      const existingProductByCode = await productModel.findOne({
+        product_code: { $regex: new RegExp(`^${product_code}$`, "i") },
+        cmp_id,
       });
+
+      if (existingProductByCode) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Product with this product code already exists for this company.",
+        });
+      }
     }
+
     // Prepare data to save
     const dataToSave = {
       cmp_id,
@@ -324,10 +327,7 @@ export const getProducts = async (req, res) => {
     if (excludeGodownId) {
       // Only get products with godown functionality enabled
       filter.gdnEnabled = true;
-      
-      // MongoDB query to exclude products where any godown in GodownList matches excludeGodownId
-      // This needs a different approach since the filter above doesn't work with your data structure
-      // We'll filter the results in memory after fetching them
+
     }
 
     // Count total products matching the filter
@@ -359,17 +359,22 @@ export const getProducts = async (req, res) => {
 
     // If we need to exclude a specific godown, filter products after fetching
     if (excludeGodownId) {
-      products = products.filter(product => {
+      products = products.filter((product) => {
         // Skip products that don't have godown list or godown is not enabled
-        if (!product.gdnEnabled || !product.GodownList || product.GodownList.length === 0) {
+        if (
+          !product.gdnEnabled ||
+          !product.GodownList ||
+          product.GodownList.length === 0
+        ) {
           return false;
         }
-        
+
         // Check if any godown matches the excludeGodownId
-        const hasExcludedGodown = product.GodownList.some(godown => 
-          godown._id && godown._id.toString() === excludeGodownId.toString()
+        const hasExcludedGodown = product.GodownList.some(
+          (godown) =>
+            godown._id && godown._id.toString() === excludeGodownId.toString()
         );
-        
+
         // Keep only products that DON'T have the excluded godown
         return !hasExcludedGodown;
       });
@@ -414,6 +419,18 @@ export const getProducts = async (req, res) => {
               !godownItem.godown ||
               godownItem.godown._id.toString() !== excludeGodownId.toString()
           );
+        }
+
+        // NEW: Filter out Primary Batch items with zero balance_stock when GodownList has more than 1 item
+        if (productObject.GodownList.length > 1) {
+          filteredGodownList = filteredGodownList.filter((godownItem) => {
+            // If batch is "Primary Batch" and balance_stock is exactly 0, remove it
+            if (godownItem.batch === "Primary Batch" && godownItem.balance_stock === 0) {
+              return false;
+            }
+            // Keep all other items (including Primary Batch with positive/negative balance_stock)
+            return true;
+          });
         }
 
         // Flatten the filtered godowns

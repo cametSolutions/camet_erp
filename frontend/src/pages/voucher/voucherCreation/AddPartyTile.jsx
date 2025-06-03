@@ -16,7 +16,6 @@ function AddPartyTile({
 }) {
   const location = useLocation();
 
-  console.log(party);
 
   return (
     <div>

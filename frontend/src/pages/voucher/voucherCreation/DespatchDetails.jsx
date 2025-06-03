@@ -6,13 +6,10 @@ import _ from "lodash";
 import { addDespatchDetails } from "../../../../slices/voucherSlices/commonVoucherSlice";
 import { useDispatch, useSelector } from "react-redux";
 
-function DespatchDetails({ tab }) {
-  const {despatchDetails,voucherType} = useSelector(
+function DespatchDetails() {
+  const { despatchDetails, voucherType } = useSelector(
     (state) => state?.commonVoucherSlice
   );
-
-  console.log(voucherType);
-  
 
   /// find voucher to get corresponding despatch details from configurations
 
@@ -38,9 +35,6 @@ function DespatchDetails({ tab }) {
           (config) => config.voucher === voucher
         );
 
-        console.log(despatchTitles);
-        
-
       if (despatchTitles) {
         setDisplayTitles(despatchTitles);
       }
@@ -59,30 +53,6 @@ function DespatchDetails({ tab }) {
 
   const debouncedDispatch = useCallback(
     _.debounce((newFormValues) => {
-      // let selectedDispatch;
-      // switch (tab) {
-      //   case "sale":
-      //     selectedDispatch = addInSales;
-      //     break;
-
-      //   case "order":
-      //     selectedDispatch = addInOrder;
-      //     break;
-
-      //   case "purchase":
-      //     selectedDispatch = addInPurchase;
-      //     break;
-      //   case "creditNote":
-      //     selectedDispatch = addInCreditNote;
-      //     break;
-
-      //   case "debitNote":
-      //     selectedDispatch = addInDebitNote;
-      //     break;
-
-      //   default:
-      //     break;
-      // }
       dispatch(addDespatchDetails(newFormValues));
       return;
     }, 500),

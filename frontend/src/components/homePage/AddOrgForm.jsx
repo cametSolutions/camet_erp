@@ -31,8 +31,8 @@ function AddOrgForm({ onSubmit, orgData = {} }) {
   const [pan, setPan] = useState("");
   const [financialYear, setFinancialYear] = useState("");
   const [type, setType] = useState("self");
-  const [batchEnabled, setBatchEnabled] = useState(false);
-  const [gdnEnabled, setGdnEnabled] = useState(false);
+  // const [batchEnabled, setBatchEnabled] = useState(false);
+  // const [gdnEnabled, setGdnEnabled] = useState(false);
   const [industry, setIndustry] = useState("");
   const [currencyName, setCurrencyName] = useState("Rupee");
   const [currency, setCurrency] = useState("INR");
@@ -103,8 +103,8 @@ function AddOrgForm({ onSubmit, orgData = {} }) {
       setType(type);
       setPan(pan);
       setFinancialYear(financialYear);
-      setBatchEnabled(batchEnabled);
-      setGdnEnabled(gdnEnabled);
+      // setBatchEnabled(batchEnabled);
+      // setGdnEnabled(gdnEnabled);
       setIndustry(industry);
       setCurrency(currency);
       setCurrencyName(currencyName);
@@ -242,8 +242,8 @@ function AddOrgForm({ onSubmit, orgData = {} }) {
       pan,
       financialYear,
       type,
-      batchEnabled,
-      gdnEnabled,
+      // batchEnabled,
+      // gdnEnabled,
       industry,
       currency,
       currencyName,
@@ -820,7 +820,7 @@ function AddOrgForm({ onSubmit, orgData = {} }) {
               </div>
             </div>
           </div>
-          <div className="flex items-center  mt-8 px-4 gap-3">
+          {/* <div className="flex items-center  mt-8 px-4 gap-3">
             <div className="flex items-center mr-4">
               <input
                 type="checkbox"
@@ -849,7 +849,9 @@ function AddOrgForm({ onSubmit, orgData = {} }) {
                 Batch Enabled
               </label>
             </div>
-          </div>
+          </div> */}
+
+           
           <div className="flex items-center  gap-0 mt-12 m-4 relative ">
             {logo && !loader && (
               <label htmlFor="photoInput" className="cursor-pointer">

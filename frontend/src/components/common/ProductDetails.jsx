@@ -1,8 +1,8 @@
 /* eslint-disable react/no-unknown-property */
 /* eslint-disable react/prop-types */
 import { CircleX, LoaderCircle } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
-import { useDispatch } from "react-redux";
+import { useEffect, useRef } from "react";
+import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 
 const ProductDetails = ({
@@ -15,9 +15,16 @@ const ProductDetails = ({
   handleRemoveBatch,
   heights,
   tab = "",
-  loadingIndex
+  loadingIndex,
+  gdnEnabled = false,
+  batchEnabled = false,
 }) => {
   const detailsRef = useRef();
+
+  const { voucherType, voucherNumber } = useSelector(
+    (state) => state.commonVoucherSlice
+  );
+
   const batchOrGodownList = details?.GodownList;
   useEffect(() => {
     if (detailsRef.current) {
@@ -26,9 +33,27 @@ const ProductDetails = ({
   }, [details, heights, setHeight]);
 
   const navigate = useNavigate();
-  // const dispatch = useDispatch();
 
+  console.log(voucherNumber);
+  
 
+  const showRemoveBatchButton = (item) => {
+    console.log(item);
+    
+    if (voucherType === "purchase") {
+      if (
+        item?.newBatch &&
+        item?.voucherNumber === voucherNumber 
+     
+      ) {
+        return true;
+      } else {
+        return false;
+      }
+    } else {
+      return false;
+    }
+  };
 
   return (
     <div
@@ -38,7 +63,8 @@ const ProductDetails = ({
       {batchOrGodownList.map((item, index) => (
         <div key={index}>
           <div className="mb-4 flex justify-between items-center mt-3 px-[40px] md:px-[64px] relative">
-            {item?.newBatch &&
+            {showRemoveBatchButton(item) &&
+              voucherType === "purchase" &&
               (loadingIndex === index ? (
                 <button className="animate-spin absolute left-2 top-10 w-6 h-6 rounded-full text-gray-500 flex items-center justify-center">
                   <LoaderCircle size={18} strokeWidth={2} />
@@ -54,18 +80,18 @@ const ProductDetails = ({
               ))}
 
             <div className="flex flex-col gap-1">
-              {item?.batch && (
+              {item?.batch && batchEnabled && (
                 <p className="font-bold text-sm md:text-sm">{item?.batch}</p>
               )}
 
               {/* <p className="font-bold text-xs md:text-sm">Batch {item?.batch}</p> */}
-              {item?.godown && item?.batch && (
+              {item?.godown && item?.batch && gdnEnabled && batchEnabled && (
                 <p className="text-gray-500 text-sm md:text-xs">
                   ( {item.godown} )
                 </p>
               )}
 
-              {item?.godown && !item?.batch && (
+              {item?.godown && !batchEnabled && gdnEnabled && (
                 <p className="text-black font-bold text-sm md:text-sm">
                   {item.godown}
                 </p>
