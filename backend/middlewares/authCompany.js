@@ -3,7 +3,6 @@ import Organization from "../models/OragnizationModel.js";
 export const companyAuthentication = async (req, res, next) => {
     const cmp_id = req.params.cmp_id;
 
-    console.log("cmp_id", cmp_id);
     
     
     try {

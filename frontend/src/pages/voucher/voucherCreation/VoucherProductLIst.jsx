@@ -470,10 +470,7 @@ export default function VoucherProductList({
   const Row = ({ index, style }) => {
     if (!isItemLoaded(index) && !isScanOn) {
       return (
-        <div
-          style={style}
-          className="bg-white p-4 pb-6 drop-shadow-lg mt-4 flex flex-col rounded-sm"
-        >
+        <div className="bg-white px-4 pb-6 drop-shadow-lg  flex flex-col rounded-sm">
           <div className="animate-pulse flex space-x-4">
             <div className="flex-1 space-y-4 py-1">
               <div className="h-4 bg-gray-200 rounded w-3/4"></div>

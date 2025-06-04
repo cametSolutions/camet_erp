@@ -2,7 +2,7 @@
 /* eslint-disable react/no-unknown-property */
 import { useEffect, useState, useCallback, useRef } from "react";
 import api from "../../../../api/api";
-import { FixedSizeList as List } from "react-window";
+import { VariableSizeList as List } from "react-window";
 import InfiniteLoader from "react-window-infinite-loader";
 import { useSelector } from "react-redux";
 import SearchBar from "../../../../components/common/SearchBar";
@@ -20,7 +20,6 @@ function StockRegister() {
   const [searchTerm, setSearchTerm] = useState("");
   const [listHeight, setListHeight] = useState(0);
   const [heights, setHeights] = useState({});
-
 
   const listRef = useRef();
   const searchTimeoutRef = useRef(null);
@@ -110,7 +109,7 @@ function StockRegister() {
 
   useEffect(() => {
     const calculateHeight = () => {
-      const newHeight = window.innerHeight - 95;
+      const newHeight = window.innerHeight - 105;
       setListHeight(newHeight);
     };
 
@@ -160,26 +159,38 @@ function StockRegister() {
     });
   }, []);
 
-    const getItemSize = (index) => {
+  const getItemSize = (index) => {
     const product = products[index];
     const isExpanded = product?.isExpanded || false;
     const baseHeight = isExpanded ? heights[index] || 250 : 195; // Base height for unexpanded and expanded items
-    const extraHeight = isExpanded ? 230 : 0; // Extra height for expanded items
-
-    console.log("baseHeight", baseHeight);
-    console.log("extraHeight", extraHeight);
-    
+    const extraHeight = isExpanded ? 207 : 0; // Extra height for expanded items
 
     return baseHeight + extraHeight || 0;
     // return
   };
 
-
   const Row = ({ index, style }) => {
+    if (!isItemLoaded(index)) {
+      return (
+        <div
+          className="bg-white p-4 shadow-xl mb-2  flex flex-col rounded-sm"
+        >
+          <div className="animate-pulse flex space-x-4">
+            <div className="flex-1 space-y-4 py-1">
+              <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+              <div className="space-y-2">
+                <div className="h-4 bg-gray-200 rounded"></div>
+                <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
     const el = products[index];
     const adjustedStyle = {
       ...style,
-      marginTop: "16px",
+      marginTop: "4px",
       height: "150px",
     };
 
@@ -209,13 +220,14 @@ function StockRegister() {
                 <p className=" text-gray-400"> {`${el?.igst} %`}</p>
               </div>
 
-              {el?.item_mrp && (
-                <div className="flex gap-2    ">
+              {el?.item_mrp > 0 && (
+                <div className="flex gap-2 ">
                   <p className=" text-gray-400">MRP :</p>
                   <p className=" text-gray-400"> {`${el?.item_mrp}`}</p>
                 </div>
               )}
             </div>
+
             <div>
               <div className="flex flex-col gap-1 ">
                 <div className="flex items-center justify-end">
@@ -259,7 +271,7 @@ function StockRegister() {
           </div>
 
           {el?.hasGodownOrBatch && (
-            <div className="px-4 shadow-lg pb-3 ">
+            <div className="px-4 shadow-lg pb-3 bg-white ">
               <div
                 onClick={() => {
                   handleExpansion(el?._id);
@@ -268,7 +280,6 @@ function StockRegister() {
                 className="p-2  border-gray-300 border rounded-md w-full text-violet-500 mt-4 font-semibold flex items-center justify-center gap-3"
               >
                 {el?.isExpanded ? "Hide Details" : "Show Details"}
-
                 {el?.isExpanded ? <IoIosArrowUp /> : <IoIosArrowDown />}
               </div>
             </div>
@@ -279,6 +290,8 @@ function StockRegister() {
               details={el}
               tab={"inventory"}
               setHeight={(height) => setHeight(index, height)}
+              gdnEnabled={el?.gdnEnabled || false}
+              batchEnabled={el?.batchEnabled || false}
             />
           )}
 
@@ -292,47 +305,39 @@ function StockRegister() {
 
   return (
     <>
-      <div className="flex-1 bg-slate-50  h-screen overflow-hidden  ">
-        <div className="sticky top-0 z-20 ">
-          <TitleDiv loading={loader} title="Stock Register" />
+      <div className="  h-[calc(100vh-10px)] overflow-hidden ">
+        <TitleDiv loading={loader} title="Stock Register" />
+        <SearchBar onType={searchData} />
+        <hr />
 
-          <SearchBar onType={searchData} />
-        </div>
-
-        {!loader && !isLoading && products.length === 0 && (
-          <div className="flex justify-center items-center mt-20 overflow-hidden font-bold text-gray-500">
-            Oops!!.No Products Found
+        {products.length === 0 && !loader ? (
+          <div className="bg-white p-4 py-2 pb-6 mt-7 flex justify-center items-center rounded-sm cursor-pointer  ">
+            <p>No products available</p>
           </div>
-        )}
-
-        <div className="pb-4">
-          <InfiniteLoader
-            isItemLoaded={isItemLoaded}
-            itemCount={hasMore ? products.length + 1 : products.length}
-            loadMoreItems={loadMoreItems}
-            threshold={10}
-          >
-            {({ onItemsRendered, ref }) => (
-              <List
-                className="pb-4"
-                height={listHeight}
-                itemCount={hasMore ? products.length + 1 : products.length}
-                itemSize={getItemSize}
-                onItemsRendered={onItemsRendered}
-                ref={(listInstance) => {
-                  ref(listInstance);
-                  listRef.current = listInstance;
-                }}
-              >
-                {Row}
-              </List>
-            )}
-          </InfiniteLoader>
-        </div>
-
-        {isLoading && !loader && (
-          <div className="flex justify-center items-center py-4">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+        ) : (
+          <div className="pb-4">
+            <InfiniteLoader
+              isItemLoaded={isItemLoaded}
+              itemCount={hasMore ? products.length + 1 : products.length}
+              loadMoreItems={loadMoreItems}
+              threshold={10}
+            >
+              {({ onItemsRendered, ref }) => (
+                <List
+                  className="pb-4"
+                  height={listHeight}
+                  itemCount={hasMore ? products.length + 1 : products.length}
+                  itemSize={getItemSize}
+                  onItemsRendered={onItemsRendered}
+                  ref={(listInstance) => {
+                    ref(listInstance);
+                    listRef.current = listInstance;
+                  }}
+                >
+                  {Row}
+                </List>
+              )}
+            </InfiniteLoader>
           </div>
         )}
       </div>

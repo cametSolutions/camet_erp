@@ -19,12 +19,12 @@ export const  authSecondary = async (req, res, next) => {
     // console.log(decodedToken);
 
     // console.log("decodedToken",decodedToken.userId);
-    req.sUserId = decodedToken.userId;
+    req.sUserId = decodedToken?.userId;
 
 
     const secUser = await secondaryUserModel.findById(req.sUserId);
     // console.log("secUser", secUser);
-    const owner=secUser.primaryUser;
+    const owner=secUser?.primaryUser;
     req.owner=owner;
 
     next();
