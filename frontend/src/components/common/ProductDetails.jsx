@@ -3,7 +3,7 @@
 import { CircleX, LoaderCircle } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 const ProductDetails = ({
   details,
@@ -20,6 +20,11 @@ const ProductDetails = ({
   batchEnabled = false,
 }) => {
   const detailsRef = useRef();
+  const location = useLocation();
+
+  const { pathname } = location;
+
+  const isInventory = pathname.includes("Inventory");
 
   const { voucherType, voucherNumber } = useSelector(
     (state) => state.commonVoucherSlice
@@ -34,18 +39,9 @@ const ProductDetails = ({
 
   const navigate = useNavigate();
 
-  console.log(voucherNumber);
-  
-
   const showRemoveBatchButton = (item) => {
-    console.log(item);
-    
     if (voucherType === "purchase") {
-      if (
-        item?.newBatch &&
-        item?.voucherNumber === voucherNumber 
-     
-      ) {
+      if (item?.newBatch && item?.voucherNumber === voucherNumber) {
         return true;
       } else {
         return false;
@@ -58,11 +54,13 @@ const ProductDetails = ({
   return (
     <div
       ref={detailsRef}
-      className={`product-details mb-6 mt-8 w-full shadow-lg p-3 bg-gray-50 border-2 `}
+      className={`product-details mb-6 ${
+        isInventory ? "mt-2" : "mt-8"
+      }    w-full shadow-lg p-3 bg-gray-50 border-2 `}
     >
       {batchOrGodownList.map((item, index) => (
         <div key={index}>
-          <div className="mb-4 flex justify-between items-center mt-3 px-[40px] md:px-[64px] relative">
+          <div className={`mb-4 flex justify-between items-center mt-3 ${showRemoveBatchButton(item) ? " pl-8 pr-4 " : " px-6 "}  relative`}>
             {showRemoveBatchButton(item) &&
               voucherType === "purchase" &&
               (loadingIndex === index ? (
@@ -73,7 +71,7 @@ const ProductDetails = ({
                 <button
                   disabled={loadingIndex !== null}
                   onClick={() => handleRemoveBatch(details?._id, index)}
-                  className="absolute left-2 top-10 w-6 h-6 rounded-full text-gray-500 flex items-center justify-center hover:text-black"
+                  className="absolute left-[-4px] top-10 w-6 h-6 rounded-full text-gray-500 flex items-center justify-center hover:text-black"
                 >
                   <CircleX size={18} strokeWidth={2} />
                 </button>
@@ -120,7 +118,7 @@ const ProductDetails = ({
                       </>
                     )}
                   </div>
-                  <p className="text-gray-500 font-normal text-sm md:text-sm">
+                  <p className="text-gray-500 font-normal text-sm ">
                     Stock: {item.balance_stock} /
                     <span className="text-black ml-1">
                       {details?.unit || ""}
@@ -218,7 +216,7 @@ const ProductDetails = ({
                   )}
                 </div>
               ) : (
-                <p className="text-gray-500 font-semibold text-[9px] md:text-sm">
+                <p className="text-gray-500 font-semibold  md:text-sm">
                   {" "}
                   Stock: {item.balance_stock}
                 </p>

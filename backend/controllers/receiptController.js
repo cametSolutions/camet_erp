@@ -133,6 +133,7 @@ export const createReceipt = async (req, res) => {
     if (advanceAmount > 0 && savedReceipt) {
       const outstandingWithAdvanceAmount =
         await createOutstandingWithAdvanceAmount(
+          date,
           cmp_id,
           savedReceipt.receiptNumber,
           savedReceipt._id.toString(),

@@ -149,7 +149,7 @@ function OutstandingSummary() {
           <div className="text-right">
             {new Date(row?.bill_due_date)?.toLocaleDateString() || ""}
           </div>
-          <div className="text-right">{row?.age_of_bill || ""} days</div>
+          <div className="text-right">{row?.age_of_bill || "0"} days</div>
         </div>
       );
     }

@@ -15,7 +15,7 @@ export const getOutstandingSummary = async (req, res) => {
 
     const summary = await TallyData.aggregate([
       // Match documents by company ID
-      { $match: { cmp_id: cmp_id } },
+      { $match: { cmp_id: new mongoose.Types.ObjectId(cmp_id) } },
 
       // Add computed fields for bill age
       {
@@ -111,7 +111,7 @@ export const getOutstandingSummary = async (req, res) => {
 export const fetchOutstandingTotal = async (req, res) => {
   const { cmp_id } = req.params;
   const { type } = req.query; // "ledger", "group", "payables", "receivables"
-  const Primary_user_id = req.owner.toString();
+  const Primary_user_id = req?.owner;
 
   try {
     if (type === "ledger") {
@@ -198,7 +198,7 @@ export const fetchOutstandingTotal = async (req, res) => {
       const outstandingData = await TallyData.aggregate([
         {
           $match: {
-            cmp_id,
+            cmp_id: new mongoose.Types.ObjectId(cmp_id),
             Primary_user_id,
             classification: matchClassification,
           },
@@ -386,7 +386,7 @@ export const fetchOutstandingTotal = async (req, res) => {
     return res.status(400).json({ message: "Invalid type parameter provided" });
   } catch (error) {
     console.log(error);
-    
+
     return res.status(500).json({
       success: false,
       message: "Internal server error, try again!",

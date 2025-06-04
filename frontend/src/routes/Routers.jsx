@@ -113,6 +113,7 @@ import VoucherPdfInitiatorThreeInch from '@/pages/voucher/voucherPdf/VoucherPdfI
 import OutstandingListOfAccVoucher from '@/pages/accountingVoucher/voucherCreation/OutstandingListOfAccVoucher'
 import AccVoucherDetails from '@/pages/accountingVoucher/voucherDetails/AccVoucherDetails'
 import AccVoucherInitialPageEdit from '@/pages/accountingVoucher/voucherCreation/AccVoucherInitialPageEdit'
+import StockRegister from '@/pages/secUsers/Reports/stockRegister/StockRegister'
 
 const Routers = () => {
   return (
@@ -142,7 +143,7 @@ const Routers = () => {
         <Route path='/sUsers/additionalCharges' element={<ProtectedSecRoute><AdditionalChargesSecondary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/editAdditionalCharge/:id' element={<ProtectedSecRoute><AdditionalChargesSecondary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/OrderConfigurations' element={<ProtectedSecRoute><OrderConfigurationsSecondary/></ProtectedSecRoute>}></Route>
-        <Route path='/sUsers/Inventory' element={<ProtectedSecRoute><InventorySecondaryUser/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/Inventory' element={<ProtectedSecRoute><StockRegister/></ProtectedSecRoute>}></Route>
 
         <Route path='/sUsers/sales' element={<ProtectedSecRoute><VoucherInitialPage/></ProtectedSecRoute>}></Route>
          <Route path='/sUsers/searchPartySales' element={<ProtectedSecRoute><SearchParty/></ProtectedSecRoute>}></Route>

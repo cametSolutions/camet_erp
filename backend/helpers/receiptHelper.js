@@ -129,6 +129,7 @@ export const updateTallyData = async (
  */
 
 export const createOutstandingWithAdvanceAmount = async (
+  date,
   cmp_id,
   voucherNumber,
   billId,
@@ -148,7 +149,8 @@ export const createOutstandingWithAdvanceAmount = async (
       cmp_id,
       party_id: party?._id,
       bill_amount: advanceAmount,
-      bill_date: new Date(),
+      bill_date: new Date(date),
+      bill_due_date: new Date(date),
       bill_pending_amt: advanceAmount,
       email: party?.emailID,
       mobile_no: party?.mobileNumber,

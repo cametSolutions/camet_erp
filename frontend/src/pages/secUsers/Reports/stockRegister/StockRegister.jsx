@@ -1,87 +1,117 @@
 /* eslint-disable react/prop-types */
 /* eslint-disable react/no-unknown-property */
 import { useEffect, useState, useCallback, useRef } from "react";
-import api from "../../api/api";
-import { Link } from "react-router-dom";
-
-import { HashLoader } from "react-spinners";
-
+import api from "../../../../api/api";
 import { VariableSizeList as List } from "react-window";
+import InfiniteLoader from "react-window-infinite-loader";
 import { useSelector } from "react-redux";
-import { IoIosArrowRoundBack } from "react-icons/io";
+import SearchBar from "../../../../components/common/SearchBar";
+import TitleDiv from "@/components/common/TitleDiv";
+import { truncateToNDecimals } from "../../../../../../backend/helpers/helper";
+import { IoIosArrowDown, IoIosArrowUp } from "react-icons/io";
+import ProductDetails from "@/components/common/ProductDetails";
 
-import { useDispatch } from "react-redux";
-import { removeAll } from "../../../slices/invoiceSecondary";
-import SearchBar from "../../components/common/SearchBar";
-import { IoIosArrowDown } from "react-icons/io";
-import { IoIosArrowUp } from "react-icons/io";
-import ProductDetails from "../../components/common/ProductDetails";
-
-function InventorySecondaryUser() {
+function StockRegister() {
   const [products, setProducts] = useState([]);
-
-  const [loader, setLoader] = useState(true);
-  const [search, setSearch] = useState("");
-  const [filteredProducts, setFilteredProducts] = useState([]);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [loader, setLoader] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
   const [listHeight, setListHeight] = useState(0);
-
   const [heights, setHeights] = useState({});
+
+  const listRef = useRef();
+  const searchTimeoutRef = useRef(null);
+  const limit = 60; // Number of products per page
 
   const cmp_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
-  const type = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg.type
-  );
-  const dispatch = useDispatch();
-  const listRef = useRef(null);
 
+  // Debounced search function
   const searchData = (data) => {
-    setSearch(data);
+    // Clear any existing timeout
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    // Set a new timeout to update the search term after 500ms
+    searchTimeoutRef.current = setTimeout(() => {
+      setSearchTerm(data);
+      // Reset pagination when searching
+      setPage(1);
+      setProducts([]);
+      setHasMore(true);
+    }, 500);
   };
 
-
-  // getting godowns data
-
+  // Cleanup timeout on component unmount
   useEffect(() => {
-    const fetchProducts = async () => {
-      setLoader(true);
-      try {
-        const res = await api.get(`/api/sUsers/getProducts/${cmp_id}`, {
-          params: { stockTransfer: true },
-          withCredentials: true,
-        });
-        setLoader(true);
-        setProducts(res.data.productData);
-      } catch (error) {
-        console.log(error);
-        // toast.error(error.response.data.message);
-      } finally {
-        setLoader(false);
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
       }
     };
-    fetchProducts();
-    dispatch(removeAll());
-  }, [cmp_id]);
+  }, []);
+
+  const fetchProducts = useCallback(
+    async (pageNumber = 1, searchTerm = "") => {
+      if (isLoading) return;
+
+      setIsLoading(true);
+      setLoader(pageNumber === 1);
+
+      try {
+        const params = new URLSearchParams({
+          page: pageNumber,
+          limit,
+        });
+
+        if (searchTerm) {
+          params.append("search", searchTerm);
+        }
+
+        const res = await api.get(
+          `/api/sUsers/getProducts/${cmp_id}?${params}`,
+          {
+            withCredentials: true,
+          }
+        );
+
+        if (pageNumber === 1) {
+          setProducts(res.data.productData);
+        } else {
+          setProducts((prevProducts) => [
+            ...prevProducts,
+            ...res.data.productData,
+          ]);
+        }
+
+        setHasMore(res.data.pagination.hasMore);
+        setPage(pageNumber);
+      } catch (error) {
+        console.log(error);
+        setHasMore(false);
+        // toast.error("Failed to load products");
+      } finally {
+        setIsLoading(false);
+        setLoader(false);
+      }
+    },
+    [cmp_id]
+  );
 
   useEffect(() => {
-    if (search === "") {
-      setFilteredProducts(products);
-    } else {
-      const filtered = products.filter((el) =>
-        el.product_name.toLowerCase().includes(search.toLowerCase())
-      );
-      setFilteredProducts(filtered);
-    }
-  }, [search, products]);
+    // Fetch products whenever searchTerm changes (debounced)
+    fetchProducts(1, searchTerm);
+  }, [fetchProducts, searchTerm]);
 
   useEffect(() => {
     const calculateHeight = () => {
-      const newHeight = window.innerHeight - 117;
+      const newHeight = window.innerHeight - 105;
       setListHeight(newHeight);
     };
-
-    console.log(window.innerHeight);
 
     // Calculate the height on component mount and whenever the window is resized
     calculateHeight();
@@ -91,8 +121,19 @@ function InventorySecondaryUser() {
     return () => window.removeEventListener("resize", calculateHeight);
   }, []);
 
+  // Items loaded status for InfiniteLoader
+  const isItemLoaded = (index) => index < products.length;
+
+  // Load more items when reaching the end
+  const loadMoreItems = () => {
+    if (!isLoading && hasMore) {
+      return fetchProducts(page + 1, searchTerm);
+    }
+    return Promise.resolve();
+  };
+
   const handleExpansion = (id) => {
-    const updatedItems = [...filteredProducts];
+    const updatedItems = [...products];
     const index = updatedItems.findIndex((item) => item._id === id);
 
     const itemToUpdate = { ...updatedItems[index] };
@@ -102,7 +143,7 @@ function InventorySecondaryUser() {
 
       updatedItems[index] = itemToUpdate;
     }
-    setFilteredProducts(updatedItems);
+    setProducts(updatedItems);
     setTimeout(() => listRef.current.resetAfterIndex(index), 0);
   };
 
@@ -119,28 +160,37 @@ function InventorySecondaryUser() {
   }, []);
 
   const getItemSize = (index) => {
-    const product = filteredProducts[index];
+    const product = products[index];
     const isExpanded = product?.isExpanded || false;
     const baseHeight = isExpanded ? heights[index] || 250 : 195; // Base height for unexpanded and expanded items
-    const extraHeight = isExpanded ? 230 : 0; // Extra height for expanded items
+    const extraHeight = isExpanded ? 207 : 0; // Extra height for expanded items
 
-    return baseHeight + extraHeight;
+    return baseHeight + extraHeight || 0;
     // return
   };
 
-  const truncateToNDecimals = (num, n) => {
-    const parts = num.toString().split(".");
-    if (parts.length === 1) return num; // No decimal part
-    parts[1] = parts[1].substring(0, n);
-    console.log(parseFloat(parts.join("."))); // Truncate the decimal part
-    return parseFloat(parts.join("."));
-  };
-
   const Row = ({ index, style }) => {
-    const el = filteredProducts[index];
+    if (!isItemLoaded(index)) {
+      return (
+        <div
+          className="bg-white p-4 shadow-xl mb-2  flex flex-col rounded-sm"
+        >
+          <div className="animate-pulse flex space-x-4">
+            <div className="flex-1 space-y-4 py-1">
+              <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+              <div className="space-y-2">
+                <div className="h-4 bg-gray-200 rounded"></div>
+                <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    const el = products[index];
     const adjustedStyle = {
       ...style,
-      marginTop: "16px",
+      marginTop: "4px",
       height: "150px",
     };
 
@@ -159,8 +209,6 @@ function InventorySecondaryUser() {
             </div>
           </div>
 
-          
-
           <div className=" text-sm  px-5 flex justify-between items-center mt-3   ">
             <div className="flex-col font-semibold text-sm">
               <div className="flex gap-2 text-nowrap">
@@ -172,13 +220,14 @@ function InventorySecondaryUser() {
                 <p className=" text-gray-400"> {`${el?.igst} %`}</p>
               </div>
 
-              {el?.item_mrp && (
-                <div className="flex gap-2    ">
+              {el?.item_mrp > 0 && (
+                <div className="flex gap-2 ">
                   <p className=" text-gray-400">MRP :</p>
                   <p className=" text-gray-400"> {`${el?.item_mrp}`}</p>
                 </div>
               )}
             </div>
+
             <div>
               <div className="flex flex-col gap-1 ">
                 <div className="flex items-center justify-end">
@@ -222,7 +271,7 @@ function InventorySecondaryUser() {
           </div>
 
           {el?.hasGodownOrBatch && (
-            <div className="px-4 shadow-lg pb-3 ">
+            <div className="px-4 shadow-lg pb-3 bg-white ">
               <div
                 onClick={() => {
                   handleExpansion(el?._id);
@@ -231,7 +280,6 @@ function InventorySecondaryUser() {
                 className="p-2  border-gray-300 border rounded-md w-full text-violet-500 mt-4 font-semibold flex items-center justify-center gap-3"
               >
                 {el?.isExpanded ? "Hide Details" : "Show Details"}
-
                 {el?.isExpanded ? <IoIosArrowUp /> : <IoIosArrowDown />}
               </div>
             </div>
@@ -242,6 +290,8 @@ function InventorySecondaryUser() {
               details={el}
               tab={"inventory"}
               setHeight={(height) => setHeight(index, height)}
+              gdnEnabled={el?.gdnEnabled || false}
+              batchEnabled={el?.batchEnabled || false}
             />
           )}
 
@@ -254,54 +304,45 @@ function InventorySecondaryUser() {
   };
 
   return (
-    <div className="flex-1   ">
-      <div className="sticky top-0 z-20 h-[117px]">
-        <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3  flex justify-between items-center  ">
-          <div className="flex items-center justify-center gap-2">
-            <Link to={"/sUsers/reports"}>
-              <IoIosArrowRoundBack className="text-3xl text-white cursor-pointer " />
-            </Link>
-            <p className="text-white text-lg   font-bold ">Stock Register</p>
-          </div>
-        </div>
-
+    <>
+      <div className="  h-[calc(100vh-10px)] overflow-hidden ">
+        <TitleDiv loading={loader} title="Stock Register" />
         <SearchBar onType={searchData} />
+        <hr />
+
+        {products.length === 0 && !loader ? (
+          <div className="bg-white p-4 py-2 pb-6 mt-7 flex justify-center items-center rounded-sm cursor-pointer  ">
+            <p>No products available</p>
+          </div>
+        ) : (
+          <div className="pb-4">
+            <InfiniteLoader
+              isItemLoaded={isItemLoaded}
+              itemCount={hasMore ? products.length + 1 : products.length}
+              loadMoreItems={loadMoreItems}
+              threshold={10}
+            >
+              {({ onItemsRendered, ref }) => (
+                <List
+                  className="pb-4"
+                  height={listHeight}
+                  itemCount={hasMore ? products.length + 1 : products.length}
+                  itemSize={getItemSize}
+                  onItemsRendered={onItemsRendered}
+                  ref={(listInstance) => {
+                    ref(listInstance);
+                    listRef.current = listInstance;
+                  }}
+                >
+                  {Row}
+                </List>
+              )}
+            </InfiniteLoader>
+          </div>
+        )}
       </div>
-
-      {/* adding party */}
-
-      {loader ? (
-        // Show loader while data is being fetched
-        <div className="flex justify-center items-center h-screen">
-          <HashLoader color="#363ad6" />
-        </div>
-      ) : filteredProducts.length > 0 ? (
-        // Show product list if products are available
-        <div
-          style={{
-            scrollbarWidth: "thin",
-            scrollbarColor: "transparent transparent",
-          }}
-        >
-          <List
-            ref={listRef}
-            className=""
-            height={listHeight} // Specify the height of your list
-            itemCount={filteredProducts.length} // Specify the total number of items
-            itemSize={getItemSize} // Specify the height of each item
-            width="100%" // Specify the width of your list
-          >
-            {Row}
-          </List>
-        </div>
-      ) : (
-        // Show message if no products are available
-        <div className="font-bold flex justify-center items-center mt-12 text-gray-500">
-          No Products !!!
-        </div>
-      )}
-    </div>
+    </>
   );
 }
 
-export default InventorySecondaryUser;
+export default StockRegister;
