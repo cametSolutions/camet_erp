@@ -66,7 +66,7 @@ const paymentSchema = new mongoose.Schema(
 
     totalBillAmount: { type: Number, required: true },
     enteredAmount: { type: Number, required: true },
-    advanceAmount: { type: Number, required: true },
+    advanceAmount: { type: Number,default:0 },
     remainingAmount: { type: Number, required: true },
     paymentMethod: {
       type: String,

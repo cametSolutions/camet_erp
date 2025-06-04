@@ -11,8 +11,6 @@ import { startOfDay, endOfDay, parseISO } from "date-fns";
 
 export const findSourceBalance = async (req, res) => {
     const cmp_id = new mongoose.Types.ObjectId(req.params.cmp_id);
-
-
   const { startOfDayParam, endOfDayParam } = req.query;
 
   // Initialize dateFilter for settlements.created_at
@@ -387,35 +385,35 @@ export const findSourceTransactions = async (req, res) => {
                     $switch: {
                       branches: [
                         {
-                          case: { $eq: ["$$settlement.type", "receipt"] },
+                          case: { $eq: ["$$settlement.voucherType", "receipt"] },
                           then: "Receipt",
                         },
                         {
-                          case: { $eq: ["$$settlement.type", "payment"] },
+                          case: { $eq: ["$$settlement.voucherType", "payment"] },
                           then: "Payment",
                         },
                         {
-                          case: { $eq: ["$$settlement.type", "sale"] },
+                          case: { $eq: ["$$settlement.voucherType", "sale"] },
                           then: "Tax Invoice",
                         },
                         {
-                          case: { $eq: ["$$settlement.type", "vanSale"] },
+                          case: { $eq: ["$$settlement.voucherType", "vanSale"] },
                           then: "Van Sale",
                         },
                         {
-                          case: { $eq: ["$$settlement.type", "purchase"] },
+                          case: { $eq: ["$$settlement.voucherType", "purchase"] },
                           then: "Purchase",
                         },
                         {
-                          case: { $eq: ["$$settlement.type", "creditNote"] },
+                          case: { $eq: ["$$settlement.voucherType", "creditNote"] },
                           then: "Credit Note",
                         },
                         {
-                          case: { $eq: ["$$settlement.type", "debitNote"] },
+                          case: { $eq: ["$$settlement.voucherType", "debitNote"] },
                           then: "Debit Note",
                         },
                       ],
-                      default: "$$settlement.type",
+                      default: "$$settlement.voucherType",
                     },
                   },
                 },

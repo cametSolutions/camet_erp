@@ -58,8 +58,7 @@ const BalancePage = () => {
     }
   }, [sourceData]);
 
-  console.log("sourceData", sourceData);
-  console.log("balanceDetails", balanceDetails);
+
 
   return (
     <>
