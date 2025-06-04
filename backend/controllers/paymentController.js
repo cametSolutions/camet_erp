@@ -132,6 +132,7 @@ export const createPayment = async (req, res) => {
     if (advanceAmount > 0 && savedPayment) {
       const outstandingWithAdvanceAmount =
         await createOutstandingWithAdvanceAmount(
+          date,
           cmp_id,
           savedPayment.paymentNumber,
           savedPayment._id.toString(),

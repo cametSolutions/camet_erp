@@ -284,7 +284,7 @@ function Outstanding() {
               <option value="ledger">Ledger</option>
               <option value="payables">Payables</option>
               <option value="receivables">Receivables</option>
-              <option value="group">Group</option>
+              {/* <option value="group">Group</option> */}
             </select>
           </div>
 
@@ -319,7 +319,7 @@ function Outstanding() {
         !loading &&
         finalData?.length > 0 ? (
           <div
-            className={`  grid grid-cols-1 gap-4 pt-2 text-center md:px-2 cursor-pointer w-full  `}
+            className={`  flex flex-col gap-2 pt-2 text-center md:px-2 cursor-pointer w-full mt-4 `}
           >
             {finalData.map((el, index) => (
               <div

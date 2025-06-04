@@ -479,6 +479,8 @@ export const updateTallyData = async (
       subGroup: party?.subGroup_id,
       bill_amount: Number(lastAmount),
       bill_date: new Date(selectedDate),
+      bill_due_date: new Date(selectedDate),
+
       bill_pending_amt: Number(valueToUpdateInTally),
       email: party?.emailID,
       mobile_no: party?.mobileNumber,
