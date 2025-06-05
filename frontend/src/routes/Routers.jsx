@@ -1,11 +1,11 @@
 
 import {Route,Routes} from 'react-router-dom'
 import SecHome from '../pages/secUsers/SecHome'
-import Outstanding from '../pages/secUsers/Outstanding'
-import OutstandingDetails from '../pages/secUsers/OutstandingDetails'
+import Outstanding from '../pages/voucherReports/outstanding/Outstanding'
+import OutstandingDetails from '../pages/voucherReports/outstanding/OutstandingDetails'
 import PaymentSec from '../pages/secUsers/Payment'
 import ProtectedSecRoute from './ProtectedSecRoute'
-import Transaction from '../pages/secUsers/Transaction'
+import Transaction from '../pages/voucherReports/DayBook/Transaction'
 import EditOrg from '../pages/masters/organization/EditOrg'
 import DashboardSec from '../pages/secUsers/Dashboard'
 import Hsn from '../pages/masters/hsn/Hsn'
@@ -26,7 +26,6 @@ import AddChargesListSecondary from '../pages/secUsers/settilngs/serviceLedger/A
 import AdditionalChargesSecondary from '../pages/secUsers/settilngs/serviceLedger/AdditionalChargesSecondary'
 import OrderConfigurationsSecondary from '../pages/secUsers/OrderConfigurationsSecondary'
 // inventory 
-import InventorySecondaryUser from '../pages/secUsers/InventorySecondaryUser'
 // import SalesSecondary from '../pages/secUsers/SalesSecondary'
 import SearchParty from '../pages/secUsers/SearchParty'
 import EditItemSalesSecondary from '../pages/secUsers/EditItemSalesSecondary'
@@ -57,7 +56,7 @@ import PaymentPrintOut from '../pages/secUsers/PaymentPrintOut'
 import OutstandingListOfReceiptForEdit from '../pages/secUsers/OutstandingListOfReceiptForEdit'
 import OutstandingListOfPaymentForEdit from '../pages/secUsers/OutstandingListOfPaymentForEdit'
 import Reports from '../pages/secUsers/Reports'
-import PartyStatement from '../pages/secUsers/Reports/PartyStatement/PartyStatement'
+import PartyStatement from '../pages/voucherReports/PartyStatement/PartyStatement'
 import DateRange from '../components/Filters/DateRange'
 import VouchersList from '../components/common/Reports/VouchersList'
 import SalesSummary from '../pages/secUsers/Reports/salesSummary/SalesSummary'
@@ -113,7 +112,7 @@ import VoucherPdfInitiatorThreeInch from '@/pages/voucher/voucherPdf/VoucherPdfI
 import OutstandingListOfAccVoucher from '@/pages/accountingVoucher/voucherCreation/OutstandingListOfAccVoucher'
 import AccVoucherDetails from '@/pages/accountingVoucher/voucherDetails/AccVoucherDetails'
 import AccVoucherInitialPageEdit from '@/pages/accountingVoucher/voucherCreation/AccVoucherInitialPageEdit'
-import StockRegister from '@/pages/secUsers/Reports/stockRegister/StockRegister'
+import StockRegister from '@/pages/voucherReports/stockRegister/StockRegister'
 
 const Routers = () => {
   return (

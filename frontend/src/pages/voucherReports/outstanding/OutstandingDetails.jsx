@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import dayjs from "dayjs";
 import { useParams, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
-import TitleDiv from "../../components/common/TitleDiv";
-import useFetch from "../../customHook/useFetch";
+import TitleDiv from "../../../components/common/TitleDiv";
+import useFetch from "../../../customHook/useFetch";
 
 function OutStandingDetails() {
   const [data, setData] = useState([]);
