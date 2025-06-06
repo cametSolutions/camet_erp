@@ -113,6 +113,8 @@ import OutstandingListOfAccVoucher from '@/pages/accountingVoucher/voucherCreati
 import AccVoucherDetails from '@/pages/accountingVoucher/voucherDetails/AccVoucherDetails'
 import AccVoucherInitialPageEdit from '@/pages/accountingVoucher/voucherCreation/AccVoucherInitialPageEdit'
 import StockRegister from '@/pages/voucherReports/stockRegister/StockRegister'
+import VoucherSeriesSettings from '@/pages/secUsers/settilngs/dataEntry/voucherSettings/VoucherSeriesSettings'
+import VoucherSeriesForm from '@/pages/secUsers/settilngs/dataEntry/voucherSettings/voucherSeries/VoucherSeriesForm'
 
 const Routers = () => {
   return (
@@ -302,6 +304,8 @@ const Routers = () => {
         <Route path='/sUsers/barcodeFormat' element={<ProtectedSecRoute><BarcodeFormat/></ProtectedSecRoute>}></Route>
         {/* date entry settings */}
         <Route path='/sUsers/VoucherSettings' element={<ProtectedSecRoute><VoucherSettings/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/VoucherSeriesSettings' element={<ProtectedSecRoute>< VoucherSeriesSettings/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/createVoucherSeries' element={<ProtectedSecRoute>< VoucherSeriesForm/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/OrderSettings' element={<ProtectedSecRoute><OrderSettings/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/InvoiceSettings' element={<ProtectedSecRoute><InvoiceSettings/></ProtectedSecRoute>}></Route>
         {/* voucher settings */}
