@@ -70,7 +70,7 @@ const salesSchema = new Schema(
 
     items: [
       {
-        _id: { type: Schema.Types.ObjectId, ref: "Product" },
+        _id: { type: Schema.Types.ObjectId, ref: "Product", },
         product_name: { type: String },
         cmp_id: { type: Schema.Types.ObjectId, ref: "Company" },
         product_code: { type: String },
@@ -219,5 +219,5 @@ salesSchema.index({
 });
 salesSchema.index({ date: -1 });
 salesSchema.index({ "party._id": 1 });
-
+salesSchema.index({salesNumber:-1,cmp_id:1},{unique:true});
 export default mongoose.model("Sales", salesSchema);

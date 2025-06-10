@@ -102,7 +102,7 @@ const receiptSchema = new mongoose.Schema(
 // Add indexes for better query performance
 receiptSchema.index({ cmp_id: 1, date: -1 });
 receiptSchema.index({ "party._id": 1 });
-receiptSchema.index({ voucherNumber: 1, cmp_id: 1 }, { unique: true });
+receiptSchema.index({ receiptNumber: 1, cmp_id: 1 }, { unique: true });
 receiptSchema.index({ createdAt: -1 });
 
 export default mongoose.model("Receipt", receiptSchema);

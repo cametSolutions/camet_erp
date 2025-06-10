@@ -14,6 +14,8 @@ import {
   addVoucherNumber,
   addAllAdditionalCharges,
   addVansSaleGodown,
+  addVoucherSeries,
+  addSelectedVoucherSeries
 } from "../../../../slices/voucherSlices/commonVoucherSlice";
 import DespatchDetails from "./DespatchDetails";
 import HeaderTile from "./HeaderTile";
@@ -31,6 +33,7 @@ function VoucherInitialPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const isMounted = useRef(true);
+
 
   // to find the current voucher
   const getVoucherType = () => {
@@ -79,8 +82,11 @@ function VoucherInitialPage() {
     additionalCharges: additionalChargesFromRedux = [],
     convertedFrom = [],
     stockTransferToGodown,
-    mode
+    mode,
+    voucherSeries: voucherSeriesFromRedux,
   } = useSelector((state) => state.commonVoucherSlice);
+
+  
 
   const getApiEndPoint = () => {
     if (voucherTypeFromRedux) {
@@ -114,6 +120,7 @@ function VoucherInitialPage() {
 
   // API calls wrapped in promises
   const fetchData = useCallback(async () => {
+     if (isLoading) return; // Prevent multiple simultaneous calls
     setIsLoading(true);
 
     try {
@@ -122,7 +129,7 @@ function VoucherInitialPage() {
 
       // Additional Charges
       let additionalCharges = allAdditionalChargesFromRedux;
-      if (additionalCharges && additionalCharges.length === 0) {
+      if ( additionalCharges.length === 0 ) {
         apiRequests.additionalChargesRequest = api.get(
           `/api/sUsers/additionalcharges/${cmp_id}`,
           { withCredentials: true }
@@ -130,9 +137,9 @@ function VoucherInitialPage() {
       }
 
       // Configuration Number
-      if (!voucherNumberFromRedux && voucherTypeFromRedux) {
+      if (voucherSeriesFromRedux === null && voucherTypeFromRedux) {
         apiRequests.configNumberRequest = api.get(
-          `/api/sUsers/fetchConfigurationNumber/${cmp_id}/${voucherTypeFromRedux}`,
+          `/api/sUsers/getSeriesByVoucher/${cmp_id}?voucherType=${voucherTypeFromRedux}`,
           { withCredentials: true }
         );
       } else {
@@ -172,34 +179,40 @@ function VoucherInitialPage() {
       if (responses.configNumberRequest) {
         const configData = responses.configNumberRequest.data;
 
-        if (configData.message === "default" && isMounted.current) {
-          const voucherNumber = configData.configurationNumber;
-          setVoucherNumber(voucherNumber);
-          dispatch(addVoucherNumber(voucherNumber));
-        } else {
-          const { configDetails, configurationNumber } = configData;
-          if (configDetails) {
-            const { widthOfNumericalPart, prefixDetails, suffixDetails } =
-              configDetails;
-            const paddedNumber = configurationNumber
-              .toString()
-              .padStart(widthOfNumericalPart, 0);
-            const finalOrderNumber = [
-              prefixDetails,
-              paddedNumber,
-              suffixDetails,
-            ]
-              .filter(Boolean)
-              .join("/");
-            setVoucherNumber(finalOrderNumber);
-            if (isMounted.current) {
-              dispatch(addVoucherNumber(finalOrderNumber));
-            }
-          } else {
-            setVoucherNumber(configurationNumber);
-            dispatch(addVoucherNumber(configurationNumber));
-          }
+        if (isMounted.current && voucherSeriesFromRedux === null) {
+          dispatch(addVoucherSeries(configData.series));
         }
+
+        // console.log(configData);
+
+        // if ( isMounted.current) {
+        //   const voucherNumber = configData.configurationNumber;
+        //   setVoucherNumber(voucherNumber);
+        //   dispatch(addVoucherNumber(voucherNumber));
+        // } else {
+        //   const { configDetails, configurationNumber } = configData;
+        //   if (configDetails) {
+        //     const { widthOfNumericalPart, prefixDetails, suffixDetails } =
+        //       configDetails;
+        //     const paddedNumber = configurationNumber
+        //       .toString()
+        //       .padStart(widthOfNumericalPart, 0);
+        //     const finalOrderNumber = [
+        //       prefixDetails,
+        //       paddedNumber,
+        //       suffixDetails,
+        //     ]
+        //       .filter(Boolean)
+        //       .join("/");
+        //     setVoucherNumber(finalOrderNumber);
+        //     if (isMounted.current) {
+        //       dispatch(addVoucherNumber(finalOrderNumber));
+        //     }
+        //   } else {
+        //     setVoucherNumber(configurationNumber);
+        //     dispatch(addVoucherNumber(configurationNumber));
+        //   }
+        // }
       }
 
       // Process Godowns data if requested
@@ -224,7 +237,7 @@ function VoucherInitialPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [cmp_id, voucherTypeFromRedux]);
+  }, [cmp_id, voucherTypeFromRedux,allAdditionalChargesFromRedux]);
 
   // Initialize component
   useEffect(() => {
@@ -233,11 +246,15 @@ function VoucherInitialPage() {
     if (!date) dispatch(changeDate(JSON.stringify(selectedDate)));
     localStorage.removeItem("scrollPositionAddItemSales");
     fetchData();
+  }, [fetchData]);
 
+  //// cleanup function for isMounted
+
+  useEffect(() => {
     return () => {
       isMounted.current = false;
     };
-  }, [fetchData]);
+  }, []);
 
   // Navigation and form handlers
   const handleAddItem = () => {
@@ -389,6 +406,9 @@ function VoucherInitialPage() {
             tab="add"
             isLoading={submitLoading}
             mode={mode}
+            voucherSeries={voucherSeriesFromRedux}
+            addSelectedVoucherSeries={addSelectedVoucherSeries}
+            
           />
           {/* adding party */}
 

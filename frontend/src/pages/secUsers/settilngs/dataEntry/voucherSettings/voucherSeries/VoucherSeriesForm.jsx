@@ -1,30 +1,46 @@
 import TitleDiv from "@/components/common/TitleDiv";
 import { LoaderCircle } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { formatVoucherType } from "../../../../../../../utils/formatVoucherType";
+import api from "@/api/api";
+import { useSelector } from "react-redux";
+import { toast } from "react-toastify";
 
 // Mock TitleDiv component
 
 const VoucherSeriesForm = () => {
-
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     seriesName: "",
     prefix: "",
     suffix: "",
-    currentNumber: "",
-    widthOfNumericalPart: "",
+    currentNumber: "1",
+    widthOfNumericalPart: "1",
   });
   const [errors, setErrors] = useState({});
 
+  const location = useLocation();
+  const navigate = useNavigate();
 
-  const location=useLocation();
-  const navigate=useNavigate();
+  const { from: voucherType, series = {}, mode = "add" } = location.state;
 
-  const voucherType=location?.state?.from
+  useEffect(() => {
+    if (mode === "edit") {
+      setFormData((prev) => ({
+        ...prev,
+        seriesName: series.seriesName || "",
+        prefix: series.prefix || "",
+        suffix: series.suffix || "",
+        currentNumber: series.currentNumber || "1",
+        widthOfNumericalPart: series.widthOfNumericalPart || "1",
+      }));
+    }
+  }, [mode, series]);
 
-  
+  const cmp_id = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg._id
+  );
 
   const validateForm = () => {
     const newErrors = {};
@@ -74,41 +90,55 @@ const VoucherSeriesForm = () => {
     return `${prefix || ""}${paddedNumber}${suffix || ""}`;
   };
 
-  const onSubmit = async (e) => {
-    e.preventDefault();
+const onSubmit = async (e) => {
+  e.preventDefault();
 
-    if (!validateForm()) {
-      return;
-    }
+  if (!validateForm()) return;
 
-    setLoading(true);
+  setLoading(true);
 
-    const payload = {
-      ...formData,
-      voucherType,
+  let payload = {};
+  let url = "";
+  let method = "post"; // default is POST
+
+  if (mode === "add") {
+    payload = {
+      voucherType: voucherType,
+      newSeries: formData,
     };
+    url = `/api/sUsers/createVoucherSeries/${cmp_id}`;
+  } else {
+    payload = {
+      seriesId: series._id,
+      updatedSeries: formData,
+    };
+    url = `/api/sUsers/editVoucherSeriesById/${cmp_id}`;
+    method = "put";
+  }
 
-    try {
-      console.log("Submitting: ", payload);
-      // Replace with your API call:
-      // await api.post("/api/voucher-series", payload);
-    //   setFormData({
-    //     seriesName: "",
-    //     prefix: "",
-    //     suffix: "",
-    //     currentNumber: "",
-    //     widthOfNumericalPart: "",
-    //   });
-    } catch (err) {
-      console.error("Error submitting form", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  try {
+    console.log("Submitting:", payload);
+
+    await api[method](url, payload, { withCredentials: true });
+
+    toast.success(`Series ${mode === "add" ? "created" : "updated"} successfully`);
+
+    navigate("/sUsers/voucherSeriesList", {
+      state: { from: voucherType },
+      replace: true,
+    });
+  } catch (err) {
+    console.error("Error submitting form", err);
+    toast.error(err?.response?.data?.message || "Failed to submit");
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   return (
     <>
-      <TitleDiv title="Voucher Series" />
+      <TitleDiv title={`${formatVoucherType(voucherType)} Series`} />
       <div className="min-h-screen bg-gradient-to-br p-4 flex items-center justify-center">
         <div className="w-full bg-white shadow-xl border border-slate-300 overflow-hidden ">
           {/* Header */}

@@ -4,6 +4,8 @@ import { createSlice } from "@reduxjs/toolkit";
 const initialState = {
   voucherNumber: "",
   voucherType: "",
+  voucherSeries:null,
+  selectedVoucherSeries: null,
   mode: "create",
   initialized: false,
   date: "",
@@ -449,7 +451,15 @@ export const commonVoucherSlice = createSlice({
     },
     addShipToParty: (state, action) => {
       state.shipToParty = action.payload;
-    }
+    },
+
+    addVoucherSeries: (state, action) => {
+      state.voucherSeries = action.payload;
+    },
+
+    addSelectedVoucherSeries: (state, action) => {
+      state.selectedVoucherSeries = action.payload;
+    },
   },
 });
 
@@ -506,6 +516,8 @@ export const {
   removeStockTransferToGodown,
   addBillToParty,
   addShipToParty,
+  addVoucherSeries,
+  addSelectedVoucherSeries
 } = commonVoucherSlice.actions;
 
 export default commonVoucherSlice.reducer;

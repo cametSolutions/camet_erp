@@ -17,7 +17,7 @@ const VoucherSeriesSettings = () => {
       title: "Sale Order",
       description: "Configure voucher series for Sale Orders",
       icon: <TbFileInvoice />,
-      to: "/sUsers/createVoucherSeries",
+      to: "/sUsers/voucherSeriesList",
       active: true,
       from:"saleOrder"
     },
@@ -25,16 +25,16 @@ const VoucherSeriesSettings = () => {
       title: "Sale",
       description: "Configure voucher series for Sales",
       icon: <TbShoppingCart />,
-      to: "/sUsers/createVoucherSeries",
+      to: "/sUsers/voucherSeriesList",
       active: true,
-      from:"sale"
+      from:"sales"
 
     },
     {
       title: "Van Sale",
       description: "Configure voucher series for Van Sales",
       icon: <TbTruckDelivery />,
-      to: "/sUsers/createVoucherSeries",
+      to: "/sUsers/voucherSeriesList",
       active: true,
       from:"vanSale"
     },
@@ -42,7 +42,7 @@ const VoucherSeriesSettings = () => {
       title: "Purchase",
       description: "Configure voucher series for Purchases",
       icon: <TbShoppingBag />,
-      to: "/sUsers/createVoucherSeries",
+      to: "/sUsers/voucherSeriesList",
       active: true,
       from:"purchase"
     },
@@ -50,7 +50,7 @@ const VoucherSeriesSettings = () => {
       title: "Credit Note",
       description: "Configure voucher series for Credit Notes",
       icon: <TbArrowBigUpLines />,
-      to: "/sUsers/createVoucherSeries",
+      to: "/sUsers/voucherSeriesList",
       active: true,
       from:"creditNote"
     },
@@ -58,7 +58,7 @@ const VoucherSeriesSettings = () => {
       title: "Debit Note",
       description: "Configure voucher series for Debit Notes",
       icon: <TbArrowBigDownLines />,
-      to: "/sUsers/createVoucherSeries",
+      to: "/sUsers/voucherSeriesList",
       active: true,
       from:"debitNote"
     },
@@ -66,7 +66,7 @@ const VoucherSeriesSettings = () => {
       title: "Stock Transfer",
       description: "Configure voucher series for Stock Transfers",
       icon: <TbArrowsExchange />,
-      to: "/sUsers/createVoucherSeries",
+      to: "/sUsers/voucherSeriesList",
       active: true,
       from:"stockTransfer"
     },

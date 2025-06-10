@@ -31,33 +31,12 @@ const organizationSchema = new mongoose.Schema(
     levelNames: { type: Array },
     locations: { type: Array },
     type: { type: String, default: "self" },
-    orderNumber: { type: Number, default: 1 },
-    OrderNumberValue: { type: String },
-    OrderNumberDetails: { type: Object },
-    salesNumber: { type: Number, default: 1 },
-    purchaseNumber: { type: Number, default: 1 },
-    vanSalesNumber: { type: Number, default: 1 },
-    stockTransferNumber: { type: Number, default: 1 },
-    receiptNumber: { type: Number, default: 1 },
-    paymentNumber: { type: Number, default: 1 },
-    creditNoteNumber: { type: Number, default: 1 },
-    debitNoteNumber: { type: Number, default: 1 },
-    salesNumberDetails: { type: Object },
     currency: { type: String },
     currencyName: { type: String },
     subunit: { type: String },
     symbol: { type: String },
     batchEnabled: { type: Boolean, default: false, required: true },
     gdnEnabled: { type: Boolean, default: false, required: true },
-    additionalCharges: [
-      {
-        name: { type: String, required: true },
-        hsn: { type: String },
-        taxPercentage: { type: String },
-      },
-    ],
-    printTitle: { type: String },
-
     configurations: [
       {
         bank: { type: mongoose.Schema.Types.ObjectId, ref: "BankDetails" },
@@ -145,5 +124,8 @@ const organizationSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+organizationSchema.index({ owner: 1, name: 1 }, { unique: true });
+organizationSchema.index({ owner: 1 });
 
 export default mongoose.model("Organization", organizationSchema);

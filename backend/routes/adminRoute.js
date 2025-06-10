@@ -3,7 +3,9 @@ const router = express.Router();
 import { adminLogin ,logout,getAdminData,getPrimaryUsers,
     handlePrimaryApprove,handlePrimaryBlock,handleSecondaryBlock,
     getOrganizationsAdmin,getOrganizations,fetchSecondaryUsers,
-    handleSubscription,handleSms,handleWhatsApp,handleOrganizationApprove,handlePrimaryDelete} from '../controllers/adminController.js';
+    handleSubscription,handleSms,handleWhatsApp,handleOrganizationApprove,handlePrimaryDelete,
+    handleCompanyDelete,
+    syncIndexes} from '../controllers/adminController.js';
 import { authAdmin } from '../middlewares/authAdmin.js';
 
 router.post('/adminLogin',adminLogin);
@@ -21,6 +23,8 @@ router.post('/handleSubscription/:id',authAdmin,handleSubscription);
 router.post('/handleSms/:id',authAdmin,handleSms);
 router.post('/handleWhatsApp/:id',authAdmin,handleWhatsApp);
 router.post('/handleOrganizationApprove/:id',authAdmin,handleOrganizationApprove);
+router.delete('/deleteCompanyData/:cmp_id',authAdmin,handleCompanyDelete);
+router.post('/syncIndexes',syncIndexes);
 
 
 
