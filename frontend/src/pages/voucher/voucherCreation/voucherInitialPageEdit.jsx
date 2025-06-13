@@ -22,6 +22,8 @@ import {
   setFinalAmount,
   setInitialized,
   addStockTransferToGodown,
+  addVoucherSeries,
+  addSelectedVoucherSeriesForEdit,
 } from "../../../../slices/voucherSlices/commonVoucherSlice";
 import DespatchDetails from "./DespatchDetails";
 import HeaderTile from "./HeaderTile";
@@ -65,6 +67,7 @@ function VoucherInitialPageEdit() {
     initialized: initializedFromRedux,
     stockTransferToGodown: stockTransferToGodownFromRedux,
     mode,
+    voucherSeries: voucherSeriesFromRedux,
   } = useSelector((state) => state.commonVoucherSlice);
 
   // to find the current voucher
@@ -142,6 +145,7 @@ function VoucherInitialPageEdit() {
     const {
       date: selectedDateFromState,
       voucherType: voucherTypeFromState,
+      seriesDetails: seriesDetailsFromState = {},
       // convertedFrom: convertedFromFromState,
       [voucherNumberTitle]: voucherNumberFromState,
       selectedGodownDetails: selectedGodownDetailsFromState = {},
@@ -153,6 +157,7 @@ function VoucherInitialPageEdit() {
       _id: voucherIdFromState,
       stockTransferToGodown: stockTransferToGodownFromState = {},
     } = location.state.data || {};
+
 
     try {
       if (voucherIdFromState) {
@@ -266,6 +271,29 @@ function VoucherInitialPageEdit() {
         dispatch(addAllAdditionalCharges(additionalCharges));
       }
 
+      /// store the series details in redux from state
+
+      if (seriesDetailsFromState) {
+        dispatch(addSelectedVoucherSeriesForEdit(seriesDetailsFromState));
+      }
+
+      // Configuration Number
+      if (voucherSeriesFromRedux === null && voucherTypeFromRedux) {
+        const configNumberResponse = await api.get(
+          `/api/sUsers/getSeriesByVoucher/${cmp_id}?voucherType=${voucherTypeFromRedux}`,
+          { withCredentials: true }
+        );
+        const configData = configNumberResponse?.data;
+
+        if (isMounted.current && voucherSeriesFromRedux === null) {
+          dispatch(addVoucherSeries(configData?.series));
+        }
+      } else {
+        if (isMounted.current) {
+          setVoucherNumber(voucherNumberFromRedux);
+        }
+      }
+
       if (!initializedFromRedux) {
         dispatch(setInitialized(true));
       }
@@ -283,11 +311,13 @@ function VoucherInitialPageEdit() {
     if (!date) dispatch(changeDate(JSON.stringify(selectedDate)));
     localStorage.removeItem("scrollPositionAddItemSales");
     fetchData();
+  }, [fetchData]);
 
+  useEffect(() => {
     return () => {
       isMounted.current = false;
     };
-  }, [fetchData]);
+  }, []);
 
   // Navigation and form handlers
   const handleAddItem = () => {
@@ -427,7 +457,7 @@ function VoucherInitialPageEdit() {
 
           <HeaderTile
             title={formatVoucherType(voucherTypeFromRedux)}
-            number={voucherNumber}
+            number={voucherNumberFromRedux}
             selectedDate={selectedDate}
             setSelectedDate={setSelectedDate}
             dispatch={dispatch}

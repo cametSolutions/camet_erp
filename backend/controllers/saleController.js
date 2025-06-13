@@ -20,6 +20,10 @@ import salesModel from "../models/salesModel.js";
 import vanSaleModel from "../models/vanSaleModel.js";
 import TallyData from "../models/TallyData.js";
 import { formatToLocalDate } from "../helpers/helper.js";
+import {
+  generateVoucherNumber,
+  getSeriesDetailsById,
+} from "../helpers/voucherHelper.js";
 
 /**
  * @desc To createSale
@@ -36,7 +40,7 @@ export const createSale = async (req, res) => {
       orgId,
       items,
       additionalChargesFromRedux,
-      salesNumber,
+      series_id,
       party,
       finalAmount: lastAmount,
       paymentSplittingData,
@@ -48,22 +52,14 @@ export const createSale = async (req, res) => {
 
     const Secondary_user_id = req.sUserId;
 
-    /// check if the sales number already exists in the database
-    const NumberExistence = await checkForNumberExistence(
-      req.query.vanSale === "true" ? vanSaleModel : salesModel,
-      "salesNumber",
-      salesNumber,
-      req.body.orgId,
-      session
-    );
-
-    /// if sales number already exists then abort the transaction and return error
-    if (NumberExistence) {
-      await session.abortTransaction();
-      session.endSession();
-      return res.status(400).json({
-        message: "Sales with the same number already exists",
-      });
+    /// generate voucher number(sales number)
+    const { voucherNumber: salesNumber, usedSeriesNumber } =
+      await generateVoucherNumber(orgId, voucherType, series_id, session);
+    if (salesNumber) {
+      req.body.salesNumber = salesNumber;
+    }
+    if (usedSeriesNumber) {
+      req.body.usedSeriesNumber = usedSeriesNumber;
     }
 
     const secondaryUser = await secondaryUserModel
@@ -81,14 +77,6 @@ export const createSale = async (req, res) => {
 
     const configuration = secondaryUser.configurations.find(
       (config) => config.organization.toString() === orgId
-    );
-
-    const updatedSalesNumber = await updateSalesNumber(
-      orgId,
-      req.query.vanSale,
-      secondaryUser,
-      configuration,
-      session
     );
 
     // const updatedItems = processSaleItems(items);
@@ -238,19 +226,9 @@ export const editSale = async (req, res) => {
       const secondaryMobile = secondaryUser?.mobile;
 
       await revertSaleStockUpdates(existingSale.items, session);
-
-      // const updatedItems = processSaleItems(
-      //   items,
-      //   priceLevelFromRedux,
-      //   additionalChargesFromRedux
-      // );
       await handleSaleStockUpdates(items, session);
 
       const updateData = {
-        // selectedGodownId: selectedGodownId || existingSale.selectedGodownId,
-        // selectedGodownName: selectedGodownName
-        //   ? selectedGodownName[0]
-        //   : existingSale.selectedGodownName,
         _id: existingSale._id,
         serialNumber: existingSale.serialNumber,
         cmp_id: orgId,
@@ -325,7 +303,7 @@ export const editSale = async (req, res) => {
         transactionType: "sale",
         secondaryMobile,
         selectedDate,
-        classification:"Dr"
+        classification: "Dr",
       });
 
       //// updating the payment splitting data
@@ -584,6 +562,18 @@ export const getSalesDetails = async (req, res) => {
         select: "godown", // populate godown name
       })
       .lean();
+
+    const seriesDetails = await getSeriesDetailsById(
+      saleDetails?.series_id,
+      saleDetails?.cmp_id,
+      saleDetails?.voucherType
+    );
+
+    seriesDetails.currentNumber = saleDetails?.usedSeriesNumber;
+
+    if (seriesDetails) {
+      saleDetails.seriesDetails = seriesDetails;
+    }
 
     if (!saleDetails) {
       return res.status(404).json({ error: "Sale not found" });

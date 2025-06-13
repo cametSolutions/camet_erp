@@ -38,11 +38,15 @@ function VoucherSeriesModal({
     voucherSeries: voucherSeriesFromCommonVoucher,
     selectedVoucherSeries: selectedVoucherSeriesFromCommon,
     voucherType: voucherTypeFromCommonVoucher,
+    selectedVoucherSeriesForEdit: selectedVoucherSeriesForEditFromCommon,
+    mode: modeFromCommonVoucher,
   } = useSelector((state) => state.commonVoucherSlice);
   const {
     voucherSeries: voucherSeriesFromCommonAccVoucher,
     selectedVoucherSeries: selectedVoucherSeriesFromAccounting,
     voucherType: voucherTypeFromCommonAccVoucher,
+    selectedVoucherSeriesForEdit: selectedVoucherSeriesForEditFromAccounting,
+    mode: modeFromCommonAccVoucher,
   } = useSelector((state) => state.commonAccountingVoucherSlice);
 
   // Determine which slice to use based on location path
@@ -58,24 +62,59 @@ function VoucherSeriesModal({
     ? selectedVoucherSeriesFromAccounting
     : selectedVoucherSeriesFromCommon;
 
+  const selectedVoucherSeriesForEdit = isReceiptOrPayment
+    ? selectedVoucherSeriesForEditFromAccounting
+    : selectedVoucherSeriesForEditFromCommon;
+
+  const mode = isReceiptOrPayment
+    ? modeFromCommonAccVoucher
+    : modeFromCommonVoucher;
+
+  // Update current voucher series for edit mode
+  const getUpdatedVoucherSeries = () => {
+    if (mode === "edit" && selectedVoucherSeriesForEdit && Object.keys(selectedVoucherSeriesForEdit).length > 0) {
+      return currentVoucherSeries?.map(series => {
+        if (series._id === selectedVoucherSeriesForEdit._id) {
+          return {
+            ...series,
+            currentNumber: selectedVoucherSeriesForEdit.currentNumber
+          };
+        }
+        return series;
+      });
+    }
+    return currentVoucherSeries;
+  };
+
+  const updatedVoucherSeries = getUpdatedVoucherSeries();
+
   useEffect(() => {
     // Only proceed if selectedVoucherSeries is null
     if (
       currentSelectedVoucherSeries === null &&
-      currentVoucherSeries?.length > 0
+      updatedVoucherSeries?.length > 0
     ) {
-      // Check if any series has currentlySelected === true
-      const currentlySelectedSeries = currentVoucherSeries.find(
-        (series) => series.currentlySelected === true
-      );
-
       let seriesToSelect;
-      if (currentlySelectedSeries) {
-        // Use the currently selected series
+
+      // Priority 1: If selectedVoucherSeriesForEdit exists, use it
+      if (selectedVoucherSeriesForEdit && Object.keys(selectedVoucherSeriesForEdit).length > 0) {
+        // Find the matching series from updatedVoucherSeries
+        seriesToSelect = updatedVoucherSeries.find(
+          (series) => series._id === selectedVoucherSeriesForEdit._id
+        );
+      }
+
+      // Priority 2: Check if any series has currentlySelected === true
+      if (!seriesToSelect) {
+        const currentlySelectedSeries = updatedVoucherSeries.find(
+          (series) => series.currentlySelected === true
+        );
         seriesToSelect = currentlySelectedSeries;
-      } else {
-        // Use the 0th series if no currently selected series found
-        seriesToSelect = currentVoucherSeries[0];
+      }
+
+      // Priority 3: Use the 0th series if no other option found
+      if (!seriesToSelect) {
+        seriesToSelect = updatedVoucherSeries[0];
       }
 
       setSelectedSeries(seriesToSelect);
@@ -92,11 +131,18 @@ function VoucherSeriesModal({
       }
     }
   }, [
-    currentVoucherSeries,
+    updatedVoucherSeries,
     currentSelectedVoucherSeries,
+    selectedVoucherSeriesForEdit,
     isReceiptOrPayment,
     dispatch,
   ]);
+
+  useEffect(() => {
+    if (currentSelectedVoucherSeries) {
+      setSelectedSeries(currentSelectedVoucherSeries);
+    }
+  }, [currentSelectedVoucherSeries]);
 
   // Generate series format preview
   const generateSeriesFormat = (series) => {
@@ -156,8 +202,8 @@ function VoucherSeriesModal({
     voucherType?.split("")[0]?.toUpperCase()?.concat(voucherType?.slice(1)) ||
     "Voucher";
 
-  // Use the current voucher series for rendering
-  const seriesToRender = currentVoucherSeries || voucherSeries;
+  // Use the updated voucher series for rendering
+  const seriesToRender = updatedVoucherSeries || voucherSeries;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>

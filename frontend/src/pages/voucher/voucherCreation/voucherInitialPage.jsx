@@ -11,11 +11,9 @@ import {
   changeDate,
   removeParty,
   addVoucherType,
-  addVoucherNumber,
   addAllAdditionalCharges,
   addVansSaleGodown,
   addVoucherSeries,
-  addSelectedVoucherSeries
 } from "../../../../slices/voucherSlices/commonVoucherSlice";
 import DespatchDetails from "./DespatchDetails";
 import HeaderTile from "./HeaderTile";
@@ -84,6 +82,7 @@ function VoucherInitialPage() {
     stockTransferToGodown,
     mode,
     voucherSeries: voucherSeriesFromRedux,
+    selectedVoucherSeries: selectedVoucherSeriesFromRedux
   } = useSelector((state) => state.commonVoucherSlice);
 
   
@@ -130,7 +129,7 @@ function VoucherInitialPage() {
       // Additional Charges
       let additionalCharges = allAdditionalChargesFromRedux;
       if ( additionalCharges.length === 0 ) {
-        apiRequests.additionalChargesRequest = api.get(
+        apiRequests.additionalChargesRequest =await api.get(
           `/api/sUsers/additionalcharges/${cmp_id}`,
           { withCredentials: true }
         );
@@ -138,7 +137,7 @@ function VoucherInitialPage() {
 
       // Configuration Number
       if (voucherSeriesFromRedux === null && voucherTypeFromRedux) {
-        apiRequests.configNumberRequest = api.get(
+        apiRequests.configNumberRequest =await api.get(
           `/api/sUsers/getSeriesByVoucher/${cmp_id}?voucherType=${voucherTypeFromRedux}`,
           { withCredentials: true }
         );
@@ -339,6 +338,8 @@ function VoucherInitialPage() {
           selectedDate: new Date(selectedDate).toISOString(),
           voucherType,
           [voucherNumberTitle]: voucherNumber,
+          series_id:selectedVoucherSeriesFromRedux?._id,
+          usedSeriesNumber:selectedVoucherSeriesFromRedux?.currentNumber,
           orgId: cmp_id,
           finalAmount: Number(totalAmount.toFixed(2)),
           party,
@@ -359,6 +360,9 @@ function VoucherInitialPage() {
       }
 
       console.log(endPoint);
+
+      console.log(formData);
+      
 
       const res = await api.post(
         `/api/sUsers/${endPoint}?${new URLSearchParams(params)}`,
@@ -396,7 +400,7 @@ function VoucherInitialPage() {
 
           <HeaderTile
             title={formatVoucherType(voucherTypeFromRedux)}
-            number={voucherNumber}
+            number={voucherNumberFromRedux}
             selectedDate={selectedDate}
             setSelectedDate={setSelectedDate}
             dispatch={dispatch}
@@ -406,8 +410,7 @@ function VoucherInitialPage() {
             tab="add"
             isLoading={submitLoading}
             mode={mode}
-            voucherSeries={voucherSeriesFromRedux}
-            addSelectedVoucherSeries={addSelectedVoucherSeries}
+          
             
           />
           {/* adding party */}

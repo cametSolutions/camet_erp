@@ -6,6 +6,7 @@ const initialState = {
   voucherType: "",
   voucherSeries:null,
   selectedVoucherSeries: null,
+  selectedVoucherSeriesForEdit: null, /// for edit we need to track the voucher series which is selected while created the voucher
   mode: "create",
   initialized: false,
   date: "",
@@ -460,6 +461,9 @@ export const commonVoucherSlice = createSlice({
     addSelectedVoucherSeries: (state, action) => {
       state.selectedVoucherSeries = action.payload;
     },
+    addSelectedVoucherSeriesForEdit: (state, action) => {
+      state.selectedVoucherSeriesForEdit = action.payload;
+    },
   },
 });
 
@@ -517,7 +521,8 @@ export const {
   addBillToParty,
   addShipToParty,
   addVoucherSeries,
-  addSelectedVoucherSeries
+  addSelectedVoucherSeries,
+  addSelectedVoucherSeriesForEdit,
 } = commonVoucherSlice.actions;
 
 export default commonVoucherSlice.reducer;

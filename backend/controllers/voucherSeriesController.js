@@ -1,3 +1,4 @@
+import { checkSeriesNumberExists } from "../helpers/voucherHelper.js";
 import VoucherSeries from "../models/VoucherSeriesModel.js";
 
 // Separate validation function for checking duplicate voucher series
@@ -43,7 +44,7 @@ const checkForDuplicateSeries = (
 /// @desc for giving voucher series
 export const getSeriesByVoucher = async (req, res) => {
   try {
-    const { voucherType } = req.query;
+    const { voucherType, excludeSeriesId } = req.query;
     const cmp_id = req.params.cmp_id;
 
     if (!voucherType || !cmp_id) {
@@ -63,7 +64,14 @@ export const getSeriesByVoucher = async (req, res) => {
         .json({ message: "No series found for this voucher type" });
     }
 
-    return res.status(200).json({ series: seriesDoc.series });
+    let series = seriesDoc.series;
+
+    // Exclude the specified series if excludeSeriesId is provided
+    if (excludeSeriesId) {
+      series = series.filter(s => s._id.toString() !== excludeSeriesId);
+    }
+
+    return res.status(200).json({ series });
   } catch (error) {
     console.error("Error fetching series:", error);
     return res.status(500).json({ message: "Server error" });
@@ -90,6 +98,23 @@ export const createVoucherSeries = async (req, res) => {
     });
   }
 
+  // Validate voucher type
+  const voucherTypes = [
+    "sales",
+    "saleOrder",
+    "vanSale",
+    "purchase",
+    "creditNote",
+    "debitNote",
+    "stockTransfer",
+    "receipt",
+    "payment",
+  ];
+
+  if (!voucherTypes.includes(voucherType)) {
+    console.log("Invalid voucher type:", voucherType);
+  }
+
   try {
     // Step 2: Check if a voucherType already exists for this company
     const doc = await VoucherSeries.findOne({ cmp_id, voucherType });
@@ -106,7 +131,27 @@ export const createVoucherSeries = async (req, res) => {
         });
       }
 
-      // Step 4: Push the new series into the existing series array
+      // Step 4: Check if currentNumber is already used in vouchers
+      const currentNumber = newSeries.currentNumber || 1;
+
+      // We need to check against all existing series in this document
+      // for (const series of doc.series) {
+      //   const numberExists = await checkSeriesNumberExists(
+      //     cmp_id,
+      //     series._id,
+      //     currentNumber,
+      //     voucherType
+      //   );
+
+      //   if (numberExists) {
+      //     return res.status(409).json({
+      //       success: false,
+      //       message: `Series number ${currentNumber} is already used in existing vouchers. Please choose a different starting number.`,
+      //     });
+      //   }
+      // }
+
+      // Step 5: Push the new series into the existing series array
       doc.series.push({
         ...newSeries,
         currentNumber: newSeries.currentNumber || 1, // Default current number to 1 if not provided
@@ -228,6 +273,20 @@ export const editVoucherSeriesById = async (req, res) => {
       });
     }
 
+    const isNumberExists = await checkSeriesNumberExists(
+      cmp_id,
+      seriesId,
+      updatedSeries.currentNumber,
+      doc.voucherType
+    );
+
+    if (isNumberExists) {
+      return res.status(409).json({
+        success: false,
+        message: `Series number ${updatedSeries.currentNumber} is already used in existing vouchers. Please choose a different starting number.`,
+      });
+    }
+
     // Proceed with the update if no duplicates found
     const updatedDoc = await VoucherSeries.findOneAndUpdate(
       {
@@ -262,7 +321,6 @@ export const editVoucherSeriesById = async (req, res) => {
 };
 
 /// to make the series as currently selected so that it will be selected automatically in the next voucher creation
-
 export const makeTheSeriesAsCurrentlySelected = async (req, res) => {
   const { cmp_id } = req.params;
   const { seriesId, voucherType } = req.body;

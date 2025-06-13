@@ -5,10 +5,9 @@ import { MdDateRange } from "react-icons/md";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import VoucherSeriesModal from "./VoucherSeriesModal";
-import { useSelector } from "react-redux";
 
 // Custom input component for the date picker
-const CustomInput = ({ value, onClick }) => (
+const CustomInput = ({ onClick }) => (
   <div
     className="flex items-center cursor-pointer hover:text-violet-500 transition-colors"
     onClick={onClick}
@@ -29,11 +28,12 @@ function HeaderTile({
   mode,
   voucherSeries,
   addSelectedVoucherSeries,
+  number
 }) {
   const [isSeriesModalOpen, setIsSeriesModalOpen] = useState(false);
   const [selectedSeries, setSelectedSeries] = useState(null);
 
-  const { voucherNumber } = useSelector((state) => state.commonVoucherSlice);
+
 
   const titleText =
     title.split("")[0]?.toUpperCase()?.concat(title.slice(1)) || "Title";
@@ -60,7 +60,7 @@ function HeaderTile({
             className="text-sm font-semibold text-violet-400 cursor-pointer hover:text-violet-600 transition-colors"
             onClick={() => setIsSeriesModalOpen(true)}
           >
-            {titleText} No:#{voucherNumber}
+            {titleText} No:#{number}
           </p>
 
           <div className="flex items-center gap-2">
@@ -151,7 +151,7 @@ function HeaderTile({
       <div id="date-picker-portal"></div>
 
       {/* Custom styles for the date picker */}
-      <style jsx global>{`
+      <style >{`
         .react-datepicker-popper {
           z-index: 9999 !important;
         }

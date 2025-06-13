@@ -25,6 +25,8 @@ const VoucherSeriesSchema = new mongoose.Schema(
         "creditNote",
         "debitNote",
         "stockTransfer",
+        "receipt",
+        "payment",
       ],
     },
     series: [SeriesSchema],

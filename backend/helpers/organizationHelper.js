@@ -11,6 +11,8 @@ export const createDefaultVoucherSeries = async ({ companyId, ownerId, session }
     "creditNote",
     "debitNote",
     "stockTransfer",
+    "receipt",
+    "payment",
   ];
 
   const seriesDocs = voucherTypes.map((voucherType) => ({

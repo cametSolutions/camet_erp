@@ -10,6 +10,10 @@ import {
   TbArrowBigDownLines,
   TbArrowsExchange,
 } from "react-icons/tb";
+import { IoReceiptSharp } from "react-icons/io5";
+import { MdReceipt } from "react-icons/md";
+
+
 
 const VoucherSeriesSettings = () => {
   const voucherOptions = [
@@ -19,7 +23,7 @@ const VoucherSeriesSettings = () => {
       icon: <TbFileInvoice />,
       to: "/sUsers/voucherSeriesList",
       active: true,
-      from:"saleOrder"
+      from: "saleOrder",
     },
     {
       title: "Sale",
@@ -27,8 +31,7 @@ const VoucherSeriesSettings = () => {
       icon: <TbShoppingCart />,
       to: "/sUsers/voucherSeriesList",
       active: true,
-      from:"sales"
-
+      from: "sales",
     },
     {
       title: "Van Sale",
@@ -36,7 +39,7 @@ const VoucherSeriesSettings = () => {
       icon: <TbTruckDelivery />,
       to: "/sUsers/voucherSeriesList",
       active: true,
-      from:"vanSale"
+      from: "vanSale",
     },
     {
       title: "Purchase",
@@ -44,7 +47,7 @@ const VoucherSeriesSettings = () => {
       icon: <TbShoppingBag />,
       to: "/sUsers/voucherSeriesList",
       active: true,
-      from:"purchase"
+      from: "purchase",
     },
     {
       title: "Credit Note",
@@ -52,7 +55,7 @@ const VoucherSeriesSettings = () => {
       icon: <TbArrowBigUpLines />,
       to: "/sUsers/voucherSeriesList",
       active: true,
-      from:"creditNote"
+      from: "creditNote",
     },
     {
       title: "Debit Note",
@@ -60,7 +63,23 @@ const VoucherSeriesSettings = () => {
       icon: <TbArrowBigDownLines />,
       to: "/sUsers/voucherSeriesList",
       active: true,
-      from:"debitNote"
+      from: "debitNote",
+    },
+    {
+      title: "Receipt",
+      description: "Configure voucher series for Receipts",
+      icon: <IoReceiptSharp />,
+      to: "/sUsers/voucherSeriesList",
+      active: true,
+      from: "receipt",
+    },
+    {
+      title: "Payment",
+      description: "Configure voucher series for payments",
+      icon: <MdReceipt />,
+      to: "/sUsers/voucherSeriesList",
+      active: true,
+      from: "payment",
     },
     {
       title: "Stock Transfer",
@@ -68,7 +87,7 @@ const VoucherSeriesSettings = () => {
       icon: <TbArrowsExchange />,
       to: "/sUsers/voucherSeriesList",
       active: true,
-      from:"stockTransfer"
+      from: "stockTransfer",
     },
   ];
 
