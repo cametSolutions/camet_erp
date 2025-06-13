@@ -68,6 +68,7 @@ function VoucherInitialPageEdit() {
     stockTransferToGodown: stockTransferToGodownFromRedux,
     mode,
     voucherSeries: voucherSeriesFromRedux,
+    selectedVoucherSeries: selectedVoucherSeriesFromRedux,
   } = useSelector((state) => state.commonVoucherSlice);
 
   // to find the current voucher
@@ -157,7 +158,6 @@ function VoucherInitialPageEdit() {
       _id: voucherIdFromState,
       stockTransferToGodown: stockTransferToGodownFromState = {},
     } = location.state.data || {};
-
 
     try {
       if (voucherIdFromState) {
@@ -262,6 +262,7 @@ function VoucherInitialPageEdit() {
 
       // Get additional charges only if needed
       if (allAdditionalChargesFromRedux.length === 0 && isMounted.current) {
+        setIsLoading(true);
         const response = await api.get(
           `/api/sUsers/additionalcharges/${cmp_id}`,
           { withCredentials: true }
@@ -279,6 +280,7 @@ function VoucherInitialPageEdit() {
 
       // Configuration Number
       if (voucherSeriesFromRedux === null && voucherTypeFromRedux) {
+        setIsLoading(true);
         const configNumberResponse = await api.get(
           `/api/sUsers/getSeriesByVoucher/${cmp_id}?voucherType=${voucherTypeFromRedux}`,
           { withCredentials: true }
@@ -391,6 +393,8 @@ function VoucherInitialPageEdit() {
           selectedDate: new Date(dateToSubmit).toISOString(),
           voucherType,
           orgId: cmp_id,
+          series_id: selectedVoucherSeriesFromRedux?._id,
+          usedSeriesNumber: selectedVoucherSeriesFromRedux?.currentNumber,
 
           [voucherNumberTitle]: voucherNumber,
           stockTransferToGodown: stockTransferToGodownFromRedux,
@@ -410,8 +414,14 @@ function VoucherInitialPageEdit() {
           priceLevelFromRedux,
           additionalChargesFromRedux,
           selectedGodownDetails: vanSaleGodownFromRedux,
+          series_id: selectedVoucherSeriesFromRedux?._id,
+          usedSeriesNumber: selectedVoucherSeriesFromRedux?.currentNumber,
         };
       }
+
+
+      console.log(formData);
+      
 
       const res = await api.post(
         `/api/sUsers/edit${voucherTypeFromRedux}/${voucherId}?vanSale=${

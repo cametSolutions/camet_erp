@@ -8,6 +8,8 @@ const SeriesSchema = new mongoose.Schema({
   widthOfNumericalPart: { type: Number, required: true, min: 1 },
   isDefault: { type: Boolean, default: false },
   currentlySelected: { type: Boolean, default: false },
+  lastUsedNumber: { type: Number, default: 1, min: 1 }
+
 });
 
 const VoucherSeriesSchema = new mongoose.Schema(

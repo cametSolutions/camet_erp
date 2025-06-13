@@ -43,14 +43,18 @@ export const generateVoucherNumber = async (
   if (!series) throw new Error("Series not found");
 
   // 2. Format the number (using current value before increment)
-  const currentNumber = series.currentNumber;
-  const paddedNumber = currentNumber
+  // 3.currently current number is editable ,so for consistency currently for incrimination we use lastUsedNumber(not editable by user) as reference
+  const lastUsedNumber = series.lastUsedNumber;
+  const paddedNumber = lastUsedNumber
     .toString()
     .padStart(series.widthOfNumericalPart || 2, "0");
   const voucherNumber = `${series.prefix || ""}${paddedNumber}${
     series.suffix || ""
   }`;
-  const usedSeriesNumber = currentNumber;
+  const usedSeriesNumber = lastUsedNumber;
+
+  const updatedLastUsedNumber=lastUsedNumber+1;
+  const updatedCurrentNumber=updatedLastUsedNumber;
 
   // 3. Increment for next use
   await VoucherSeriesModel.updateOne(
@@ -59,7 +63,7 @@ export const generateVoucherNumber = async (
       voucherType,
       "series._id": seriesId,
     },
-    { $inc: { "series.$.currentNumber": 1 } },
+    { $set:{ "series.$.lastUsedNumber": updatedLastUsedNumber, "series.$.currentNumber": updatedCurrentNumber} },
     options
   );
 
@@ -88,7 +92,8 @@ export const checkSeriesNumberExists = async (
   cmp_id,
   series_id,
   currentNumber,
-  voucherType
+  voucherType,
+  seriesName
 ) => {
   const VoucherModel = getVoucherModel(voucherType);
 

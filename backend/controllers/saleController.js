@@ -184,7 +184,7 @@ export const createSale = async (req, res) => {
  * @access Public
  */
 
-const MAX_RETRIES = 5;
+const MAX_RETRIES = 1;
 const RETRY_DELAY_MS = 1000;
 
 export const editSale = async (req, res) => {
@@ -197,10 +197,12 @@ export const editSale = async (req, res) => {
     priceLevelFromRedux,
     additionalChargesFromRedux,
     finalAmount: lastAmount,
-    salesNumber,
+
     selectedDate,
     paymentSplittingData = {},
   } = req.body;
+
+  let { salesNumber, series_id, usedSeriesNumber } = req.body;
 
   const isVanSale = req.query.vanSale === "true";
   const model = isVanSale ? vanSaleModel : salesModel;
@@ -225,8 +227,22 @@ export const editSale = async (req, res) => {
         .session(session);
       const secondaryMobile = secondaryUser?.mobile;
 
+      if (existingSale?.series_id?.toString() !== series_id?.toString()) {
+        const { voucherNumber, usedSeriesNumber: newUsedSeriesNumber } =
+          await generateVoucherNumber(
+            orgId,
+            existingSale.voucherType,
+            series_id,
+            session
+          );
+
+        salesNumber = voucherNumber; // Always update when series changes
+        usedSeriesNumber = newUsedSeriesNumber; // Always update when series changes
+      }
       await revertSaleStockUpdates(existingSale.items, session);
       await handleSaleStockUpdates(items, session);
+
+      console.log("salesNumber", salesNumber);
 
       const updateData = {
         _id: existingSale._id,
@@ -241,7 +257,9 @@ export const editSale = async (req, res) => {
         finalAmount: lastAmount,
         Primary_user_id: req.owner,
         Secondary_user_id: req.secondaryUserId,
-        salesNumber: salesNumber,
+        salesNumber,
+        series_id,
+        usedSeriesNumber,
         date: await formatToLocalDate(selectedDate, orgId, session),
         createdAt: existingSale.createdAt,
         paymentSplittingData,

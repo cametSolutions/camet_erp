@@ -32,7 +32,6 @@ function VoucherInitialPage() {
   const location = useLocation();
   const isMounted = useRef(true);
 
-
   // to find the current voucher
   const getVoucherType = () => {
     if (voucherTypeFromRedux) return;
@@ -82,10 +81,8 @@ function VoucherInitialPage() {
     stockTransferToGodown,
     mode,
     voucherSeries: voucherSeriesFromRedux,
-    selectedVoucherSeries: selectedVoucherSeriesFromRedux
+    selectedVoucherSeries: selectedVoucherSeriesFromRedux,
   } = useSelector((state) => state.commonVoucherSlice);
-
-  
 
   const getApiEndPoint = () => {
     if (voucherTypeFromRedux) {
@@ -119,7 +116,7 @@ function VoucherInitialPage() {
 
   // API calls wrapped in promises
   const fetchData = useCallback(async () => {
-     if (isLoading) return; // Prevent multiple simultaneous calls
+    if (isLoading) return; // Prevent multiple simultaneous calls
     setIsLoading(true);
 
     try {
@@ -128,8 +125,8 @@ function VoucherInitialPage() {
 
       // Additional Charges
       let additionalCharges = allAdditionalChargesFromRedux;
-      if ( additionalCharges.length === 0 ) {
-        apiRequests.additionalChargesRequest =await api.get(
+      if (additionalCharges.length === 0) {
+        apiRequests.additionalChargesRequest = await api.get(
           `/api/sUsers/additionalcharges/${cmp_id}`,
           { withCredentials: true }
         );
@@ -137,7 +134,7 @@ function VoucherInitialPage() {
 
       // Configuration Number
       if (voucherSeriesFromRedux === null && voucherTypeFromRedux) {
-        apiRequests.configNumberRequest =await api.get(
+        apiRequests.configNumberRequest = await api.get(
           `/api/sUsers/getSeriesByVoucher/${cmp_id}?voucherType=${voucherTypeFromRedux}`,
           { withCredentials: true }
         );
@@ -236,7 +233,7 @@ function VoucherInitialPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [cmp_id, voucherTypeFromRedux,allAdditionalChargesFromRedux]);
+  }, [cmp_id, voucherTypeFromRedux, allAdditionalChargesFromRedux]);
 
   // Initialize component
   useEffect(() => {
@@ -338,8 +335,8 @@ function VoucherInitialPage() {
           selectedDate: new Date(selectedDate).toISOString(),
           voucherType,
           [voucherNumberTitle]: voucherNumber,
-          series_id:selectedVoucherSeriesFromRedux?._id,
-          usedSeriesNumber:selectedVoucherSeriesFromRedux?.currentNumber,
+          series_id: selectedVoucherSeriesFromRedux?._id,
+          usedSeriesNumber: selectedVoucherSeriesFromRedux?.currentNumber,
           orgId: cmp_id,
           finalAmount: Number(totalAmount.toFixed(2)),
           party,
@@ -358,11 +355,6 @@ function VoucherInitialPage() {
           vanSale: true,
         };
       }
-
-      console.log(endPoint);
-
-      console.log(formData);
-      
 
       const res = await api.post(
         `/api/sUsers/${endPoint}?${new URLSearchParams(params)}`,
@@ -410,8 +402,6 @@ function VoucherInitialPage() {
             tab="add"
             isLoading={submitLoading}
             mode={mode}
-          
-            
           />
           {/* adding party */}
 

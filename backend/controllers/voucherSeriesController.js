@@ -68,7 +68,7 @@ export const getSeriesByVoucher = async (req, res) => {
 
     // Exclude the specified series if excludeSeriesId is provided
     if (excludeSeriesId) {
-      series = series.filter(s => s._id.toString() !== excludeSeriesId);
+      series = series.filter((s) => s._id.toString() !== excludeSeriesId);
     }
 
     return res.status(200).json({ series });
@@ -83,6 +83,8 @@ export const createVoucherSeries = async (req, res) => {
   const { voucherType, newSeries } = req.body;
   const cmp_id = req.params.cmp_id;
   const ownerId = req.owner;
+
+  newSeries.lastUsedNumber = newSeries.currentNumber;
 
   // Step 1: Basic validation
   if (
@@ -133,23 +135,6 @@ export const createVoucherSeries = async (req, res) => {
 
       // Step 4: Check if currentNumber is already used in vouchers
       const currentNumber = newSeries.currentNumber || 1;
-
-      // We need to check against all existing series in this document
-      // for (const series of doc.series) {
-      //   const numberExists = await checkSeriesNumberExists(
-      //     cmp_id,
-      //     series._id,
-      //     currentNumber,
-      //     voucherType
-      //   );
-
-      //   if (numberExists) {
-      //     return res.status(409).json({
-      //       success: false,
-      //       message: `Series number ${currentNumber} is already used in existing vouchers. Please choose a different starting number.`,
-      //     });
-      //   }
-      // }
 
       // Step 5: Push the new series into the existing series array
       doc.series.push({
