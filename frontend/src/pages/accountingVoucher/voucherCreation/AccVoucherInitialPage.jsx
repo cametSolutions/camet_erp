@@ -4,11 +4,11 @@ import api from "../../../api/api";
 import HeaderTile from "../../voucher/voucherCreation/HeaderTile";
 import { useDispatch } from "react-redux";
 import {
-  addVoucherNumber,
   changeDate,
   removeAll,
   removeParty,
   addVoucherType,
+  addVoucherSeries,
 } from "../../../../slices/voucherSlices/commonAccountingVoucherSlice";
 import AddPartyTile from "../../voucher/voucherCreation/AddPartyTile";
 import AddAmountTile from "../../../components/secUsers/main/AddAmountTile";
@@ -42,7 +42,8 @@ function AccVoucherInitialPage() {
     paymentMethod,
     paymentDetails,
     note,
-    mode
+    mode,
+    voucherSeries: voucherSeriesFromRedux,
   } = useSelector((state) => state.commonAccountingVoucherSlice);
 
   const [voucherNumber, setVoucherNumber] = useState("");
@@ -60,45 +61,56 @@ function AccVoucherInitialPage() {
 
   // ////////////for fetching configuration number
   useEffect(() => {
-    if (voucherNumberRedux === "") {
+    if (voucherSeriesFromRedux ===null) {
       const fetchConfigurationNumber = async () => {
         setLoading(true);
         try {
           const res = await api.get(
-            `/api/sUsers/fetchConfigurationNumber/${cmp_id}/${voucherType}`,
+            `/api/sUsers/getSeriesByVoucher/${cmp_id}/?voucherType=${voucherType}`,
 
             {
               withCredentials: true,
             }
           );
 
+          
+
+          const configData = res?.data;
+
+          console.log(configData);
+          
+
+          if (voucherSeriesFromRedux === null) {
+            dispatch(addVoucherSeries(configData.series));
+          }
+
           // console.log(res.data);
-          if (res.data.message === "default") {
-            const { configurationNumber } = res.data;
-            setVoucherNumber(configurationNumber);
-            return;
-          }
+          // if (res.data.message === "default") {
+          //   const { configurationNumber } = res.data;
+          //   setVoucherNumber(configurationNumber);
+          //   return;
+          // }
 
-          const { configDetails, configurationNumber } = res.data;
+          // const { configDetails, configurationNumber } = res.data;
 
-          if (configDetails) {
-            const { widthOfNumericalPart, prefixDetails, suffixDetails } =
-              configDetails;
-            const newOrderNumber = configurationNumber.toString();
+          // if (configDetails) {
+          //   const { widthOfNumericalPart, prefixDetails, suffixDetails } =
+          //     configDetails;
+          //   const newOrderNumber = configurationNumber.toString();
 
-            const padedNumber = newOrderNumber.padStart(
-              widthOfNumericalPart,
-              0
-            );
-            const finalOrderNumber = [prefixDetails, padedNumber, suffixDetails]
-              .filter(Boolean)
-              .join("-");
-            setVoucherNumber(finalOrderNumber);
-            dispatch(addVoucherNumber(finalOrderNumber));
-          } else {
-            setVoucherNumber(voucherNumber);
-            dispatch(addVoucherNumber(voucherNumber));
-          }
+          //   const padedNumber = newOrderNumber.padStart(
+          //     widthOfNumericalPart,
+          //     0
+          //   );
+          //   const finalOrderNumber = [prefixDetails, padedNumber, suffixDetails]
+          //     .filter(Boolean)
+          //     .join("-");
+          //   setVoucherNumber(finalOrderNumber);
+          //   dispatch(addVoucherNumber(finalOrderNumber));
+          // } else {
+          //   setVoucherNumber(voucherNumber);
+          //   dispatch(addVoucherNumber(voucherNumber));
+          // }
         } catch (error) {
           console.log(error);
         } finally {
@@ -137,8 +149,6 @@ function AccVoucherInitialPage() {
       paymentDetails,
       note,
     };
-
-    
 
     if (formData?.paymentMethod === "Online") {
       formData.paymentDetails = {
@@ -264,7 +274,7 @@ function AccVoucherInitialPage() {
       <div className={`${loading ? "pointer-events-none opacity-70" : ""}`}>
         <HeaderTile
           title={formatVoucherType(voucherTypeFromRedux)}
-          number={voucherNumber}
+          number={voucherNumberRedux}
           selectedDate={selectedDate}
           setSelectedDate={setSelectedDate}
           dispatch={dispatch}

@@ -20,6 +20,7 @@ const useFetch = (url, params) => {
         setLoading(false)
         setData(res)
       })
+      // eslint-disable-next-line no-unused-vars
       .catch((err) => {
         setLoading(false)
         setError("Something went wrong!")

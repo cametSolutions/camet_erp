@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
 import { IoIosArrowRoundBack } from "react-icons/io";
-import { formatAmount } from "../../../../backend/helpers/helper";
+import { formatAmount } from "../../../../../backend/helpers/helper";
 import {
   addGroupData,
   addLedgerData,
@@ -18,10 +18,10 @@ import {
   addPayableTotal,
   addReceivableTotal,
   addScrollPosition,
-} from "../../../slices/tallyDataSlice";
-import SearchBar from "../../components/common/SearchBar";
-import CustomBarLoader from "../../components/common/CustomBarLoader";
-import useFetch from "../../customHook/useFetch";
+} from "../../../../slices/tallyDataSlice";
+import SearchBar from "../../../components/common/SearchBar";
+import CustomBarLoader from "../../../components/common/CustomBarLoader";
+import useFetch from "../../../customHook/useFetch";
 
 function Outstanding() {
   // ---------- Redux & Router Hooks ----------

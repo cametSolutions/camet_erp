@@ -2,7 +2,7 @@
 /* eslint-disable react/prop-types */
 /* eslint-disable no-undef */
 import { IoIosArrowRoundBack } from "react-icons/io";
-import { Link, useNavigate } from "react-router-dom";
+import {  useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useState } from "react";
 import CustomBarLoader from "./CustomBarLoader";
@@ -48,6 +48,14 @@ function TitleDiv({
     }
   };
 
+  const handleDropdownClick = (item) => {
+    navigate(item?.to,{
+      state: {
+        from: item?.from
+      }
+    })
+  };
+
   return (
     <div className="sticky top-0 z-50 ">
       <div className="bg-[#012a4a] text-white p-3 flex items-center gap-3 text-lg justify-between">
@@ -79,9 +87,9 @@ function TitleDiv({
               {dropdownContents.map((item, index) => {
                 const isDisabled = item?.typeSpecific && type !== "self";
                 return (
-                  <Link
+                  <div
                     key={index}
-                    to={item.to}
+                    onClick={() => handleDropdownClick(item)}
                     style={
                       isDisabled
                         ? { pointerEvents: "none", opacity: "0.5" }
@@ -96,7 +104,7 @@ function TitleDiv({
                     >
                       {item.title}
                     </DropdownMenuItem>
-                  </Link>
+                  </div>
                 );
               })}
             </DropdownMenuContent>

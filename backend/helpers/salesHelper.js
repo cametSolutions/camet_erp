@@ -165,7 +165,7 @@ export const handleSaleStockUpdates = async (items, session) => {
           }
         }
         ////// handling  batch and godown updates
-        else if(item?.batchEnabled && item?.gdnEnabled) {
+        else if (item?.batchEnabled && item?.gdnEnabled) {
           const godownIndex = product.GodownList.findIndex(
             (g) =>
               g.batch === godown.batch &&
@@ -383,6 +383,8 @@ export const createSaleRecord = async (
       paymentSplittingData,
       convertedFrom = [],
       voucherType,
+      series_id,
+      usedSeriesNumber,
     } = req.body;
 
     const Primary_user_id = req.owner;
@@ -420,6 +422,8 @@ export const createSaleRecord = async (
     const sales = new model({
       selectedGodownDetails,
       serialNumber: newSerialNumber,
+      series_id,
+      usedSeriesNumber,
       voucherType,
       userLevelSerialNumber: newUserLevelSerial,
       cmp_id: orgId,
@@ -908,7 +912,7 @@ export const updateOutstandingBalance = async ({
   transactionType,
   secondaryMobile,
   selectedDate,
-  classification
+  classification,
 }) => {
   // Calculate old bill balance
   let oldBillBalance;
@@ -957,7 +961,6 @@ export const updateOutstandingBalance = async ({
     await TallyData.findByIdAndDelete(matchedOutStanding._id).session(session);
   }
 
-
   const updatedTallyData = await updateTallyData(
     orgId,
     voucherNumber,
@@ -971,7 +974,6 @@ export const updateOutstandingBalance = async ({
     selectedDate,
     existingVoucher?.voucherType,
     classification
-
   );
 };
 

@@ -8,6 +8,8 @@ import api from "@/api/api";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import { updateConfiguration } from "../../../../../slices/secSelectedOrgSlice";
+import { SiSteelseries } from "react-icons/si";
+
 
 const VoucherSettings = () => {
   const { _id: cmp_id, configurations } = useSelector(
@@ -21,6 +23,14 @@ const VoucherSettings = () => {
 
   useEffect(() => {
     setSettingsOptions([
+      {
+        title: "Voucher Series",
+        description:
+          "Configure  series for your vouchers ",
+        icon: <SiSteelseries />,
+        to: "/sUsers/VoucherSeriesSettings",
+        active: true,
+      },
       {
         title: "Email",
         description:

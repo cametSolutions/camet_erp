@@ -15,11 +15,12 @@ const salesSchema = new Schema(
     },
     selectedDate: { type: String },
     voucherType: { type: String },
-    voucherNumber: { type: Number },
     convertedFrom: { type: Array, default: [] },
     serialNumber: { type: Number },
     userLevelSerialNumber: { type: Number },
     salesNumber: { type: String, required: true },
+    series_id: { type:  Schema.Types.ObjectId, ref: "VoucherSeries", required: true },
+    usedSeriesNumber:{type: Number, required: true},
     Primary_user_id: {
       type: Schema.Types.ObjectId,
       ref: "User",
@@ -70,7 +71,7 @@ const salesSchema = new Schema(
 
     items: [
       {
-        _id: { type: Schema.Types.ObjectId, ref: "Product" },
+        _id: { type: Schema.Types.ObjectId, ref: "Product", },
         product_name: { type: String },
         cmp_id: { type: Schema.Types.ObjectId, ref: "Company" },
         product_code: { type: String },
@@ -209,15 +210,40 @@ const salesSchema = new Schema(
   }
 );
 
-salesSchema.index({ cmp_id: 1 });
-salesSchema.index({ Secondary_user_id: 1 });
+// 1. Primary unique identifier (sales number per company)
+salesSchema.index({ cmp_id: 1, salesNumber: -1 }, { unique: true });
+
+// 2. Secondary unique sequence (series-based numbering)
+salesSchema.index({ cmp_id: 1, series_id: 1, series_id: -1 }, { unique: true });
+
+// 3. Most common query pattern (company + date sorting)
+salesSchema.index({ cmp_id: 1, date: -1 });
+
+// 4. Party reference queries
+salesSchema.index({ cmp_id: 1, "party._id": 1 });
+
+// 5. User-specific workflows
+salesSchema.index({ cmp_id: 1, Secondary_user_id: 1 });
+
+// 6. Sequential document access
 salesSchema.index({ cmp_id: 1, serialNumber: -1 });
-salesSchema.index({
-  cmp_id: 1,
-  Secondary_user_id: 1,
-  userLevelSerialNumber: -1,
+
+// 7. User-level document sequences (alternative to index #2 if needed)
+salesSchema.index({ 
+  cmp_id: 1, 
+  Secondary_user_id: 1, 
+  userLevelSerialNumber: -1 
 });
-salesSchema.index({ date: -1 });
-salesSchema.index({ "party._id": 1 });
+
+// NEW INDEX: For fast validation of usedSeriesNumber existence
+salesSchema.index({ 
+  cmp_id: 1, 
+  series_id: 1, 
+  usedSeriesNumber: 1 
+}, { 
+  name: "series_number_validation_idx",
+  background: true 
+});
+
 
 export default mongoose.model("Sales", salesSchema);

@@ -3,12 +3,12 @@ import { useLocation } from "react-router-dom";
 import React, { useMemo } from "react";
 import { BarLoader } from "react-spinners";
 
-import PartyTile from "../../../../components/common/Reports/PartyTile";
+import PartyTile from "../../../components/common/Reports/PartyTile";
 // import SelectDate from    ""
-import TitleDiv from "../../../../components/common/TitleDiv";
-import ReportTable from "../../../../components/common/Reports/ReportTable";
-import useFetch from "../../../../customHook/useFetch";
-import SelectDate from "../../../../components/Filters/SelectDate";
+import TitleDiv from "../../../components/common/TitleDiv";
+import ReportTable from "../../../components/common/Reports/ReportTable";
+import useFetch from "../../../customHook/useFetch";
+import SelectDate from "../../../components/Filters/SelectDate";
 
 function PartyStatement() {
   const location = useLocation();

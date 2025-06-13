@@ -48,6 +48,7 @@ import { addOrganizations, editOrg, getOrganizations } from '../controllers/orga
 import { addParty, addSubGroup, deleteParty, deleteSubGroup, editParty, editSubGroup, getSinglePartyDetails, getSubGroup, PartyList } from '../controllers/partyController.js';
 import { addBankEntry, addCash,  editBankEntry, editCash, findSourceBalance, findSourceDetails, findSourceTransactions, getBankEntryDetails, getCashDetails } from '../controllers/bankAndCashController.js';
 import { addAditionalCharge, deleteAdditionalCharge, EditAditionalCharge, fetchAdditionalCharges, fetchSingleAdditionalCharge } from '../controllers/additionalChargeContoller.js';
+import { createVoucherSeries, getSeriesByVoucher,deleteVoucherSeriesById, editVoucherSeriesById, makeTheSeriesAsCurrentlySelected } from '../controllers/voucherSeriesController.js';
 
 router.post('/login',login)
 router.post('/sendOtp',sendOtp)
@@ -255,6 +256,16 @@ router.patch('/editSubGroup/:subGroupId/:cmp_id',authSecondary,secondaryIsBlocke
 router.post('/addPartyOpening/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,addPartyOpening)
 router.put('/editPartyOpening/:cmp_id/:partyId',authSecondary,secondaryIsBlocked,companyAuthentication,editPartyOpening)
 router.get('/getPartyOpening/:cmp_id/:partyId',authSecondary,secondaryIsBlocked,companyAuthentication,getPartyOpening)
+
+
+/// voucher series rotes
+router.get('/getSeriesByVoucher/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,getSeriesByVoucher)
+router.post('/createVoucherSeries/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,createVoucherSeries)
+router.delete('/deleteVoucherSeriesById/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,deleteVoucherSeriesById)
+router.put('/editVoucherSeriesById/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,editVoucherSeriesById)
+router.put('/makeTheSeriesAsCurrentlySelected/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,makeTheSeriesAsCurrentlySelected)
+
+
 
 //// testing routes
 

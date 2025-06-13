@@ -1,12 +1,14 @@
 /* eslint-disable react/prop-types */
+import { useState } from "react";
 import { IoIosAddCircle } from "react-icons/io";
 import { MdDateRange } from "react-icons/md";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import VoucherSeriesModal from "./VoucherSeriesModal";
 
 // Custom input component for the date picker
-const CustomInput = ({ value, onClick }) => (
-  <div 
+const CustomInput = ({ onClick }) => (
+  <div
     className="flex items-center cursor-pointer hover:text-violet-500 transition-colors"
     onClick={onClick}
   >
@@ -16,7 +18,6 @@ const CustomInput = ({ value, onClick }) => (
 
 function HeaderTile({
   title,
-  number,
   selectedDate,
   setSelectedDate,
   dispatch,
@@ -24,24 +25,41 @@ function HeaderTile({
   submitHandler,
   removeAll,
   loading,
-  mode
+  mode,
+  voucherSeries,
+  addSelectedVoucherSeries,
+  number
 }) {
+  const [isSeriesModalOpen, setIsSeriesModalOpen] = useState(false);
+  const [selectedSeries, setSelectedSeries] = useState(null);
+
+
 
   const titleText =
     title.split("")[0]?.toUpperCase()?.concat(title.slice(1)) || "Title";
 
   // Handle date change
   const handleDateChange = (date) => {
-    const dateString = date.toISOString().split('T')[0]; // Convert to YYYY-MM-DD format
+    const dateString = date.toISOString().split("T")[0]; // Convert to YYYY-MM-DD format
     setSelectedDate(dateString);
     dispatch(changeDate(dateString));
+  };
+
+  // Handle series selection
+  const handleSeriesSelect = (series) => {
+    setSelectedSeries(series);
+    // Here you can dispatch an action to update the selected series
+    // dispatch(updateSelectedSeries(series));
   };
 
   return (
     <div>
       <div className="flex justify-between p-4 bg-white drop-shadow-lg items-center text-xs md:text-base">
         <div className="flex flex-col gap-1 justify-center">
-          <p className="text-sm font-semibold text-violet-400">
+          <p
+            className="text-sm font-semibold text-violet-400 cursor-pointer hover:text-violet-600 transition-colors"
+            onClick={() => setIsSeriesModalOpen(true)}
+          >
             {titleText} No:#{number}
           </p>
 
@@ -80,7 +98,7 @@ function HeaderTile({
             />
           </div>
         </div>
-        
+
         <div className="">
           <div className="flex gap-5 items-center">
             <div className="hidden sm:block">
@@ -97,7 +115,9 @@ function HeaderTile({
                   </p>
                 ) : (
                   <p>
-                    {mode === "create" ? `Generate ${titleText}` : `Edit ${titleText}`}
+                    {mode === "create"
+                      ? `Generate ${titleText}`
+                      : `Edit ${titleText}`}
                   </p>
                 )}
               </button>
@@ -115,72 +135,82 @@ function HeaderTile({
           </div>
         </div>
       </div>
-      
+
+      {/* Voucher Series Modal */}
+      <VoucherSeriesModal
+        isOpen={isSeriesModalOpen}
+        onClose={() => setIsSeriesModalOpen(false)}
+        voucherType={title}
+        onSeriesSelect={handleSeriesSelect}
+        currentSelectedSeries={selectedSeries}
+        voucherSeries={voucherSeries}
+        addSelectedVoucherSeries={addSelectedVoucherSeries}
+      />
+
       {/* Add portal div for date picker */}
       <div id="date-picker-portal"></div>
-      
+
       {/* Custom styles for the date picker */}
-      <style jsx global>{`
+      <style >{`
         .react-datepicker-popper {
           z-index: 9999 !important;
         }
-        
+
         .react-datepicker {
-       
           font-family: inherit;
           border: 1px solid #e5e7eb;
           border-radius: 0.5rem;
           box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
           z-index: 9999 !important;
         }
-        
+
         .react-datepicker__header {
-          background-color: #6D28D9;
+          background-color: #6d28d9;
           border-bottom: 1px solid #e5e7eb;
           border-radius: 0.5rem 0.5rem 0 0;
         }
-        
+
         .react-datepicker__current-month {
           color: white;
           font-weight: 600;
         }
-        
+
         .react-datepicker__day-name {
           color: white;
           font-weight: 500;
         }
-        
+
         .react-datepicker__navigation {
           top: 12px;
         }
-        
+
         .react-datepicker__navigation--previous {
           border-right-color: white;
         }
-        
+
         .react-datepicker__navigation--next {
           border-left-color: white;
         }
-        
+
         .react-datepicker__day:hover {
           background-color: #f3f4f6;
         }
-        
+
         .react-datepicker__day--selected {
           background-color: #8b5cf6;
           color: white;
         }
-        
+
         .react-datepicker__day--today {
           background-color: #e0e7ff;
           color: #3730a3;
           font-weight: 600;
         }
-        
+
         .react-datepicker__day--keyboard-selected {
           background-color: #c7d2fe;
         }
-        
+
         @media (max-width: 640px) {
           .react-datepicker {
             transform: scale(0.9);

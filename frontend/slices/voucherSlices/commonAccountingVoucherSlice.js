@@ -4,6 +4,8 @@ const initialState = {
   _id: "",
   voucherNumber: "",
   voucherType: "",
+  voucherSeries: null,
+  selectedVoucherSeries: null,
   mode: "create",
   date: "",
   outstandings: [],
@@ -50,9 +52,14 @@ export const commonAccountingVoucherSlice = createSlice({
       state.enteredAmount = 0;
     },
     addSettlementData: (state, action) => {
-      const { billData, totalBillAmount, enteredAmount,advanceAmount, remainingAmount } = action.payload;
+      const {
+        billData,
+        totalBillAmount,
+        enteredAmount,
+        advanceAmount,
+        remainingAmount,
+      } = action.payload;
       console.log(advanceAmount);
-      
 
       state.billData = billData;
       state.totalBillAmount = totalBillAmount;
@@ -134,7 +141,7 @@ export const commonAccountingVoucherSlice = createSlice({
     addVoucherType: (state, action) => {
       state.voucherType = action.payload;
     },
-    addMode : (state, action) => {
+    addMode: (state, action) => {
       state.mode = action.payload;
     },
     addEnteredAmount: (state, action) => {
@@ -151,6 +158,13 @@ export const commonAccountingVoucherSlice = createSlice({
     },
     addBillData: (state, action) => {
       state.billData = action.payload;
+    },
+    addVoucherSeries: (state, action) => {
+      state.voucherSeries = action.payload;
+    },
+
+    addSelectedVoucherSeries: (state, action) => {
+      state.selectedVoucherSeries = action.payload;
     },
   },
 });
@@ -182,7 +196,9 @@ export const {
   addRemainingAmount,
   addAdvanceAmount,
   addTotalBillAmount,
-  addBillData
+  addBillData,
+  addVoucherSeries,
+  addSelectedVoucherSeries,
 } = commonAccountingVoucherSlice.actions;
 
 export default commonAccountingVoucherSlice.reducer;

@@ -4,6 +4,9 @@ import { createSlice } from "@reduxjs/toolkit";
 const initialState = {
   voucherNumber: "",
   voucherType: "",
+  voucherSeries:null,
+  selectedVoucherSeries: null,
+  selectedVoucherSeriesForEdit: null, /// for edit we need to track the voucher series which is selected while created the voucher
   mode: "create",
   initialized: false,
   date: "",
@@ -449,7 +452,18 @@ export const commonVoucherSlice = createSlice({
     },
     addShipToParty: (state, action) => {
       state.shipToParty = action.payload;
-    }
+    },
+
+    addVoucherSeries: (state, action) => {
+      state.voucherSeries = action.payload;
+    },
+
+    addSelectedVoucherSeries: (state, action) => {
+      state.selectedVoucherSeries = action.payload;
+    },
+    addSelectedVoucherSeriesForEdit: (state, action) => {
+      state.selectedVoucherSeriesForEdit = action.payload;
+    },
   },
 });
 
@@ -506,6 +520,9 @@ export const {
   removeStockTransferToGodown,
   addBillToParty,
   addShipToParty,
+  addVoucherSeries,
+  addSelectedVoucherSeries,
+  addSelectedVoucherSeriesForEdit,
 } = commonVoucherSlice.actions;
 
 export default commonVoucherSlice.reducer;

@@ -18,7 +18,11 @@ function SettingsCard({
       } else if (option.toggle) {
         return;
       } else {
-        navigate(option?.to);
+        navigate(option?.to,{
+          state: {
+            from: option?.from
+          },
+        });
       }
     } else {
       return;

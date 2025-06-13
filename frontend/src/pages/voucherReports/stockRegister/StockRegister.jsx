@@ -1,13 +1,13 @@
 /* eslint-disable react/prop-types */
 /* eslint-disable react/no-unknown-property */
 import { useEffect, useState, useCallback, useRef } from "react";
-import api from "../../../../api/api";
+import api from "../../../api/api";
 import { VariableSizeList as List } from "react-window";
 import InfiniteLoader from "react-window-infinite-loader";
 import { useSelector } from "react-redux";
-import SearchBar from "../../../../components/common/SearchBar";
+import SearchBar from "../../../components/common/SearchBar";
 import TitleDiv from "@/components/common/TitleDiv";
-import { truncateToNDecimals } from "../../../../../../backend/helpers/helper";
+import { truncateToNDecimals } from "../../../../../backend/helpers/helper";
 import { IoIosArrowDown, IoIosArrowUp } from "react-icons/io";
 import ProductDetails from "@/components/common/ProductDetails";
 

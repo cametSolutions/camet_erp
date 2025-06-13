@@ -22,6 +22,8 @@ import {
   setFinalAmount,
   setInitialized,
   addStockTransferToGodown,
+  addVoucherSeries,
+  addSelectedVoucherSeriesForEdit,
 } from "../../../../slices/voucherSlices/commonVoucherSlice";
 import DespatchDetails from "./DespatchDetails";
 import HeaderTile from "./HeaderTile";
@@ -65,6 +67,8 @@ function VoucherInitialPageEdit() {
     initialized: initializedFromRedux,
     stockTransferToGodown: stockTransferToGodownFromRedux,
     mode,
+    voucherSeries: voucherSeriesFromRedux,
+    selectedVoucherSeries: selectedVoucherSeriesFromRedux,
   } = useSelector((state) => state.commonVoucherSlice);
 
   // to find the current voucher
@@ -142,6 +146,7 @@ function VoucherInitialPageEdit() {
     const {
       date: selectedDateFromState,
       voucherType: voucherTypeFromState,
+      seriesDetails: seriesDetailsFromState = {},
       // convertedFrom: convertedFromFromState,
       [voucherNumberTitle]: voucherNumberFromState,
       selectedGodownDetails: selectedGodownDetailsFromState = {},
@@ -257,6 +262,7 @@ function VoucherInitialPageEdit() {
 
       // Get additional charges only if needed
       if (allAdditionalChargesFromRedux.length === 0 && isMounted.current) {
+        setIsLoading(true);
         const response = await api.get(
           `/api/sUsers/additionalcharges/${cmp_id}`,
           { withCredentials: true }
@@ -264,6 +270,30 @@ function VoucherInitialPageEdit() {
 
         const additionalCharges = response.data?.additionalCharges || [];
         dispatch(addAllAdditionalCharges(additionalCharges));
+      }
+
+      /// store the series details in redux from state
+
+      if (seriesDetailsFromState) {
+        dispatch(addSelectedVoucherSeriesForEdit(seriesDetailsFromState));
+      }
+
+      // Configuration Number
+      if (voucherSeriesFromRedux === null && voucherTypeFromRedux) {
+        setIsLoading(true);
+        const configNumberResponse = await api.get(
+          `/api/sUsers/getSeriesByVoucher/${cmp_id}?voucherType=${voucherTypeFromRedux}`,
+          { withCredentials: true }
+        );
+        const configData = configNumberResponse?.data;
+
+        if (isMounted.current && voucherSeriesFromRedux === null) {
+          dispatch(addVoucherSeries(configData?.series));
+        }
+      } else {
+        if (isMounted.current) {
+          setVoucherNumber(voucherNumberFromRedux);
+        }
       }
 
       if (!initializedFromRedux) {
@@ -283,11 +313,13 @@ function VoucherInitialPageEdit() {
     if (!date) dispatch(changeDate(JSON.stringify(selectedDate)));
     localStorage.removeItem("scrollPositionAddItemSales");
     fetchData();
+  }, [fetchData]);
 
+  useEffect(() => {
     return () => {
       isMounted.current = false;
     };
-  }, [fetchData]);
+  }, []);
 
   // Navigation and form handlers
   const handleAddItem = () => {
@@ -361,6 +393,8 @@ function VoucherInitialPageEdit() {
           selectedDate: new Date(dateToSubmit).toISOString(),
           voucherType,
           orgId: cmp_id,
+          series_id: selectedVoucherSeriesFromRedux?._id,
+          usedSeriesNumber: selectedVoucherSeriesFromRedux?.currentNumber,
 
           [voucherNumberTitle]: voucherNumber,
           stockTransferToGodown: stockTransferToGodownFromRedux,
@@ -380,8 +414,14 @@ function VoucherInitialPageEdit() {
           priceLevelFromRedux,
           additionalChargesFromRedux,
           selectedGodownDetails: vanSaleGodownFromRedux,
+          series_id: selectedVoucherSeriesFromRedux?._id,
+          usedSeriesNumber: selectedVoucherSeriesFromRedux?.currentNumber,
         };
       }
+
+
+      console.log(formData);
+      
 
       const res = await api.post(
         `/api/sUsers/edit${voucherTypeFromRedux}/${voucherId}?vanSale=${
@@ -427,7 +467,7 @@ function VoucherInitialPageEdit() {
 
           <HeaderTile
             title={formatVoucherType(voucherTypeFromRedux)}
-            number={voucherNumber}
+            number={voucherNumberFromRedux}
             selectedDate={selectedDate}
             setSelectedDate={setSelectedDate}
             dispatch={dispatch}

@@ -6,8 +6,9 @@ import Organization from "../models/OragnizationModel.js";
 import {
   createAccountGroupsForOrganization,
   createDefaultGodownForOrganization,
+  createDefaultVoucherSeries,
   defaultConfigurations,
-} from "../helpers/helper.js";
+} from "../helpers/organizationHelper.js";
 import secondaryUserModel from "../models/secondaryUserModel.js";
 import { accountGroups03 } from "../../frontend/constants/accountGroups.js";
 
@@ -45,7 +46,6 @@ export const addOrganizations = async (req, res) => {
   const session = await mongoose.startSession(); // Start a session
   session.startTransaction(); // Start the transaction
 
-
   try {
     // Create the organization
     const organization = await Organization.create(
@@ -73,7 +73,6 @@ export const addOrganizations = async (req, res) => {
           batchEnabled,
           gdnEnabled,
           industry,
-          printTitle,
           currency,
           currencyName,
           symbol,
@@ -124,7 +123,16 @@ export const addOrganizations = async (req, res) => {
       type,
     });
 
-    if (!accountGroupsResult || !defaultGodown) {
+    const voucherSeriesResult = await createDefaultVoucherSeries({
+      companyId: organization[0]._id,
+      ownerId: owner,
+      session,
+    });
+
+
+    
+
+    if (!accountGroupsResult || !defaultGodown || !voucherSeriesResult) {
       await session.abortTransaction();
       session.endSession();
       return res.status(400).json({
@@ -157,8 +165,9 @@ export const addOrganizations = async (req, res) => {
 export const getOrganizations = async (req, res) => {
   const userId = new mongoose.Types.ObjectId(req.owner);
   try {
-    const organizations = await Organization.find({ owner: userId }).populate('configurations.bank');
-;
+    const organizations = await Organization.find({ owner: userId }).populate(
+      "configurations.bank"
+    );
     if (organizations) {
       return res.status(200).json({
         organizationData: organizations,

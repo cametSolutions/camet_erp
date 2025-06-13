@@ -99,7 +99,7 @@ const paymentSchema = new mongoose.Schema(
 // Add indexes for better query performance
 paymentSchema.index({ cmp_id: 1, date: -1 });
 paymentSchema.index({ "party._id": 1 });
-paymentSchema.index({ voucherNumber: 1, cmp_id: 1 }, { unique: true });
+paymentSchema.index({ paymentNumber: 1, cmp_id: 1 }, { unique: true });
 paymentSchema.index({ createdAt: -1 });
 
 export default mongoose.model("Payment", paymentSchema);
