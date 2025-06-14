@@ -47,9 +47,8 @@ export const handlePurchaseStockUpdates = async (
           godown.actualCount !== undefined ? godown.actualCount : godown.count;
 
         if (godown.newBatch) {
-
           console.log("godown.batch", godown.batch);
-          
+
           if (godownCount > 0) {
             // Handle new batch logic
             const newBatchStock = truncateToNDecimals(godownCount, 3);
@@ -76,9 +75,7 @@ export const handlePurchaseStockUpdates = async (
               newGodownEntry.godown = godown?.godownMongoDbId;
             }
 
-
             console.log("newGodownEntry", newGodownEntry);
-            
 
             const existingBatchIndex = product.GodownList.findIndex((g) => {
               if (godown.godownMongoDbId) {
@@ -240,6 +237,8 @@ export const createPurchaseRecord = async (
       despatchDetails,
       finalAmount: lastAmount,
       selectedDate,
+      series_id,
+      usedSeriesNumber,
     } = req.body;
 
     const Primary_user_id = req.owner;
@@ -274,6 +273,8 @@ export const createPurchaseRecord = async (
       Primary_user_id,
       Secondary_user_id,
       PurchaseNumber,
+      series_id,
+      usedSeriesNumber,
       date: await formatToLocalDate(selectedDate, orgId, session),
       createdAt: new Date(),
     });
@@ -596,23 +597,25 @@ export const removeNewBatchCreatedByThisPurchase = async (
   // For each product, remove ALL godown entries that match this purchase_id
   for (const product of products) {
     const originalLength = product.GodownList?.length || 0;
-    
+
     // Filter out all batches created by this purchase
-    product.GodownList = product.GodownList.filter(godown => {
-      return godown?.created_by?.voucher_id?.toString() !== purchase_id.toString();
+    product.GodownList = product.GodownList.filter((godown) => {
+      return (
+        godown?.created_by?.voucher_id?.toString() !== purchase_id.toString()
+      );
     });
 
     // console.log( product.GodownList);
-    
-    
+
     const removedCount = originalLength - product.GodownList.length;
 
     // console.log("removedCount",removedCount);
 
-    
     if (removedCount > 0) {
-      console.log(`Removed ${removedCount} batches from product ${product._id}`);
-      
+      console.log(
+        `Removed ${removedCount} batches from product ${product._id}`
+      );
+
       productUpdates.push({
         updateOne: {
           filter: { _id: product._id },

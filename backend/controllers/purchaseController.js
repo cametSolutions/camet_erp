@@ -18,6 +18,7 @@ import { checkForNumberExistence } from "../helpers/secondaryHelper.js";
 import purchaseModel from "../models/purchaseModel.js";
 import secondaryUserModel from "../models/secondaryUserModel.js";
 import TallyData from "../models/TallyData.js";
+import { generateVoucherNumber, getSeriesDetailsById } from "../helpers/voucherHelper.js";
 
 // @desc create purchase
 // route GET/api/sUsers/createPurchase
@@ -36,26 +37,21 @@ export const createPurchase = async (req, res) => {
       despatchDetails,
       additionalChargesFromRedux,
       finalAmount: lastAmount,
-      purchaseNumber,
       selectedDate,
+      voucherType,
+      series_id
     } = req.body;
 
     const Secondary_user_id = req.sUserId;
 
-    const NumberExistence = await checkForNumberExistence(
-      purchaseModel,
-      "purchaseNumber",
-      purchaseNumber,
-      req.body.orgId,
-      session
-    );
-
-    if (NumberExistence) {
-      await session.abortTransaction();
-      session.endSession();
-      return res.status(400).json({
-        message: "Purchase  with the same number already exists",
-      });
+    /// generate voucher number(purchase number)
+    const { voucherNumber: purchaseNumber, usedSeriesNumber } =
+      await generateVoucherNumber(orgId, voucherType, series_id, session);
+    if (purchaseNumber) {
+      req.body.purchaseNumber = purchaseNumber;
+    }
+    if (usedSeriesNumber) {
+      req.body.usedSeriesNumber = usedSeriesNumber;
     }
 
     const secondaryUser = await secondaryUserModel
@@ -161,17 +157,17 @@ export const editPurchase = async (req, res) => {
   try {
     const purchaseId = req.params.id; // Assuming saleId is passed in the URL parameters
     const {
-      selectedGodownId,
-      selectedGodownName,
       orgId,
       party,
       items,
       despatchDetails,
       additionalChargesFromRedux,
       finalAmount: lastAmount,
-      purchaseNumber,
       selectedDate,
     } = req.body;
+
+    let { purchaseNumber, series_id, usedSeriesNumber } = req.body;
+
     // Fetch existing Purchase
     const existingPurchase = await purchaseModel
       .findById(purchaseId)
@@ -184,11 +180,28 @@ export const editPurchase = async (req, res) => {
         .json({ success: false, message: "Purchase not found" });
     }
 
+    if (existingPurchase?.series_id?.toString() !== series_id?.toString()) {
+      const { voucherNumber, usedSeriesNumber: newUsedSeriesNumber } =
+        await generateVoucherNumber(
+          orgId,
+          existingPurchase.voucherType,
+          series_id,
+          session
+        );
+
+      purchaseNumber = voucherNumber; // Always update when series changes
+      usedSeriesNumber = newUsedSeriesNumber; // Always update when series changes
+    }
+
     // Revert existing stock updates
     await removeNewBatchCreatedByThisPurchase(existingPurchase, session);
     await revertPurchaseStockUpdates(existingPurchase.items, session);
-    await handlePurchaseStockUpdates(items, session,  existingPurchase?.purchaseNumber,
-      existingPurchase?._id);
+    await handlePurchaseStockUpdates(
+      items,
+      session,
+      existingPurchase?.purchaseNumber,
+      existingPurchase?._id
+    );
 
     // Update existing sale record
     const updateData = {
@@ -205,6 +218,8 @@ export const editPurchase = async (req, res) => {
       Primary_user_id: req.owner,
       Secondary_user_id: req.secondaryUserId,
       purchaseNumber: purchaseNumber,
+      series_id,
+      usedSeriesNumber,
       date: await formatToLocalDate(selectedDate, orgId, session),
       createdAt: existingPurchase.createdAt,
     };
@@ -269,7 +284,7 @@ export const editPurchase = async (req, res) => {
     res.status(200).json({
       success: true,
       message: "purchase edited successfully",
-      data:existingPurchase
+      data: existingPurchase,
     });
   } catch (error) {
     await session.abortTransaction();
@@ -315,7 +330,6 @@ export const cancelPurchase = async (req, res) => {
       // Revert existing stock updates
       await removeNewBatchCreatedByThisPurchase(existingPurchase, session);
       await revertPurchaseStockUpdates(existingPurchase.items, session);
-
 
       //// revert settlement data
       /// revert it
@@ -382,3 +396,106 @@ export const cancelPurchase = async (req, res) => {
     message: "Failed to cancel purchase after multiple retries",
   });
 };
+
+// @desc toget the details of transaction or purchase
+// route get/api/sUsers/getPurchaseDetails
+
+export const getPurchaseDetails = async (req, res) => {
+  const purchaseId = req.params.id;
+
+
+
+  try {
+    // First, get the sale details with populated references
+    let purchaseDetails = await purchaseModel
+      .findById(purchaseId)
+      .populate({
+        path: "party._id",
+        select: "partyName", // get only the name or other fields as needed
+      })
+      .populate({
+        path: "items._id",
+        select: "product_name", // populate item details
+      })
+      .populate({
+        path: "items.GodownList.godownMongoDbId",
+        select: "godown", // populate godown name
+      })
+      .lean();
+
+    const seriesDetails = await getSeriesDetailsById(
+      purchaseDetails?.series_id,
+      purchaseDetails?.cmp_id,
+      purchaseDetails?.voucherType
+    );
+
+    seriesDetails.currentNumber = purchaseDetails?.usedSeriesNumber;
+
+    if (seriesDetails) {
+      purchaseDetails.seriesDetails = seriesDetails;
+    }
+
+    if (!purchaseDetails) {
+      return res.status(404).json({ error: "Sale not found" });
+    }
+
+    // Update the party name if it exists and restore original ID structure
+    if (purchaseDetails.party?._id?.partyName) {
+      // Update the party name with the latest value
+      purchaseDetails.partyAccount = purchaseDetails.party._id.partyName;
+      purchaseDetails.party.partyName = purchaseDetails.party._id.partyName;
+
+      // Restore ID to original format
+      const partyId = purchaseDetails.party._id._id;
+      purchaseDetails.party._id = partyId;
+    }
+
+    // Update product names in items array
+    if (purchaseDetails.items && purchaseDetails.items.length > 0) {
+      purchaseDetails.items.forEach((item) => {
+        if (item._id?.product_name) {
+          // Update the product name with the latest value
+          item.product_name = item._id.product_name;
+
+          // Restore ID to original format
+          const itemId = item._id._id;
+          item._id = itemId;
+        }
+
+        // Update godown names in GodownList array
+        if (item.GodownList && item.GodownList.length > 0) {
+          item.GodownList.forEach((godown) => {
+            if (godown.godownMongoDbId?.godown) {
+              // Update the godown name with the latest value
+              godown.godown = godown.godownMongoDbId.godown;
+
+              // Restore ID to original format
+              const godownId = godown.godownMongoDbId._id;
+              godown.godownMongoDbId = godownId;
+            }
+          });
+        }
+      });
+    }
+
+    // Find the outstanding for this sale
+    const outstandingOfPurchase = await TallyData.findOne({
+      billId: purchaseDetails._id.toString(),
+      bill_no: purchaseDetails.salesNumber,
+      cmp_id: purchaseDetails.cmp_id,
+      Primary_user_id: purchaseDetails.Primary_user_id,
+    });
+
+    const isEditable =
+      !outstandingOfPurchase || outstandingOfPurchase?.appliedPayments?.length === 0;
+    purchaseDetails.isEditable = isEditable;
+
+    res
+      .status(200)
+      .json({ message: "Purchase details fetched", data: purchaseDetails });
+  } catch (error) {
+    console.error("Error fetching purchase details:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
