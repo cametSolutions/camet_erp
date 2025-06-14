@@ -1,5 +1,3 @@
-
-
 import mongoose from "mongoose";
 const { Schema } = mongoose;
 
@@ -22,6 +20,12 @@ const vanSaleSchema = new Schema(
     serialNumber: { type: Number },
     userLevelSerialNumber: { type: Number },
     salesNumber: { type: String, required: true },
+    series_id: {
+      type: Schema.Types.ObjectId,
+      ref: "VoucherSeries",
+      required: true,
+    },
+    usedSeriesNumber: { type: Number, required: true },
     Primary_user_id: {
       type: Schema.Types.ObjectId,
       ref: "User",
@@ -207,15 +211,39 @@ const vanSaleSchema = new Schema(
   }
 );
 
-vanSaleSchema.index({ cmp_id: 1 });
-vanSaleSchema.index({ Secondary_user_id: 1 });
+// 1. Primary unique identifier (sales number per company)
+vanSaleSchema.index({ cmp_id: 1, salesNumber: -1 }, { unique: true });
+
+// 2. Secondary unique sequence (series-based numbering)
+vanSaleSchema.index({ cmp_id: 1, series_id: 1, series_id: -1 }, { unique: true });
+
+// 3. Most common query pattern (company + date sorting)
+vanSaleSchema.index({ cmp_id: 1, date: -1 });
+
+// 4. Party reference queries
+vanSaleSchema.index({ cmp_id: 1, "party._id": 1 });
+
+// 5. User-specific workflows
+vanSaleSchema.index({ cmp_id: 1, Secondary_user_id: 1 });
+
+// 6. Sequential document access
 vanSaleSchema.index({ cmp_id: 1, serialNumber: -1 });
-vanSaleSchema.index({
-  cmp_id: 1,
-  Secondary_user_id: 1,
-  userLevelSerialNumber: -1,
+
+// 7. User-level document sequences (alternative to index #2 if needed)
+vanSaleSchema.index({ 
+  cmp_id: 1, 
+  Secondary_user_id: 1, 
+  userLevelSerialNumber: -1 
 });
-vanSaleSchema.index({ date: 1 });
-vanSaleSchema.index({ "party._id": 1 });
+
+// NEW INDEX: For fast validation of usedSeriesNumber existence
+vanSaleSchema.index({ 
+  cmp_id: 1, 
+  series_id: 1, 
+  usedSeriesNumber: 1 
+}, { 
+  name: "series_number_validation_idx",
+  background: true 
+});
 
 export default mongoose.model("vanSale", vanSaleSchema);
