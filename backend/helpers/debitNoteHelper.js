@@ -185,6 +185,8 @@ export const createDebitNoteRecord = async (
       despatchDetails,
       finalAmount: lastAmount,
       selectedDate,
+      usedSeriesNumber,
+      series_id,
     } = req.body;
 
     const Primary_user_id = req.owner;
@@ -208,6 +210,8 @@ export const createDebitNoteRecord = async (
       selectedGodownName: selectedGodownName ? selectedGodownName[0] : "",
       serialNumber: newSerialNumber,
       debitNoteNumber: debitNoteNumber,
+      usedSeriesNumber,
+      series_id,
       cmp_id: orgId,
       partyAccount: party?.partyName,
       party,

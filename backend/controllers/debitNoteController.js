@@ -19,6 +19,7 @@ import debitNoteModel from "../models/debitNoteModel.js";
 import secondaryUserModel from "../models/secondaryUserModel.js";
 import mongoose from "mongoose";
 import TallyData from "../models/TallyData.js";
+import { generateVoucherNumber, getSeriesDetailsById } from "../helpers/voucherHelper.js";
 
 // @desc create credit note
 // route GET/api/sUsers/createDebitNote
@@ -33,28 +34,22 @@ export const createDebitNote = async (req, res) => {
       items,
       additionalChargesFromRedux,
       finalAmount: lastAmount,
-      debitNoteNumber,
       selectedDate,
-      voucherType
+      voucherType,
+      series_id,
     } = req.body;
     // debitNoteNumber,
 
     const Secondary_user_id = req.sUserId;
 
-    const NumberExistence = await checkForNumberExistence(
-      debitNoteModel,
-      "debitNoteNumber",
-      debitNoteNumber,
-      req.body.orgId,
-      session
-    );
-
-    if (NumberExistence) {
-      await session.abortTransaction();
-      session.endSession();
-      return res.status(400).json({
-        message: "Debit Note with the same number already exists",
-      });
+    /// generate voucher number(debitNote number)
+    const { voucherNumber: debitNoteNumber, usedSeriesNumber } =
+      await generateVoucherNumber(orgId, voucherType, series_id, session);
+    if (debitNoteNumber) {
+      req.body.debitNoteNumber = debitNoteNumber;
+    }
+    if (usedSeriesNumber) {
+      req.body.usedSeriesNumber = usedSeriesNumber;
     }
 
     const secondaryUser = await secondaryUserModel
@@ -231,9 +226,10 @@ export const editDebitNote = async (req, res) => {
       despatchDetails,
       additionalChargesFromRedux,
       finalAmount: lastAmount,
-      debitNoteNumber,
       selectedDate,
     } = req.body;
+
+    let { debitNoteNumber, series_id, usedSeriesNumber } = req.body;
 
     const existingDebitNote = await debitNoteModel
       .findById(debitNoteId)
@@ -246,12 +242,20 @@ export const editDebitNote = async (req, res) => {
         .json({ success: false, message: "Debit Note not found" });
     }
 
-    await revertDebitNoteStockUpdates(existingDebitNote.items, session);
+    if (existingDebitNote?.series_id?.toString() !== series_id?.toString()) {
+      const { voucherNumber, usedSeriesNumber: newUsedSeriesNumber } =
+        await generateVoucherNumber(
+          orgId,
+          existingDebitNote.voucherType,
+          series_id,
+          session
+        );
 
-    // const updatedItems = await processDebitNoteItems(
-    //   items,
-    //   additionalChargesFromRedux
-    // );
+      debitNoteNumber = voucherNumber; // Always update when series changes
+      usedSeriesNumber = newUsedSeriesNumber; // Always update when series changes
+    }
+
+    await revertDebitNoteStockUpdates(existingDebitNote.items, session);
 
     await handleDebitNoteStockUpdates(items, session);
 
@@ -269,6 +273,8 @@ export const editDebitNote = async (req, res) => {
       Primary_user_id: req.owner,
       Secondary_user_id: req.secondaryUserId,
       debitNoteNumber: debitNoteNumber,
+      series_id,
+      usedSeriesNumber,
       date: await formatToLocalDate(selectedDate, orgId, session),
       createdAt: existingDebitNote.createdAt,
     };
@@ -324,8 +330,7 @@ export const editDebitNote = async (req, res) => {
       transactionType: "debitNote",
       secondaryMobile,
       selectedDate,
-      classification:"Dr"
-
+      classification: "Dr",
     });
 
     await session.commitTransaction();
@@ -348,8 +353,6 @@ export const editDebitNote = async (req, res) => {
     await session.endSession();
   }
 };
-
-
 
 // @desc to  get details of debit note
 // route get/api/sUsers/getCreditNoteDetails
@@ -375,6 +378,18 @@ export const getDebitNoteDetails = async (req, res) => {
 
     if (!details) {
       return res.status(404).json({ error: "Debit Note Details not found" });
+    }
+
+    const seriesDetails = await getSeriesDetailsById(
+      details?.series_id,
+      details?.cmp_id,
+      details?.voucherType
+    );
+
+    seriesDetails.currentNumber = details?.usedSeriesNumber;
+
+    if (seriesDetails) {
+      details.seriesDetails = seriesDetails;
     }
 
     // Update party name and restore _id
@@ -427,4 +442,4 @@ export const getDebitNoteDetails = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
-``
+``;

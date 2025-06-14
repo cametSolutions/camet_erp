@@ -179,7 +179,6 @@ export const createCreditNoteRecord = async (
       series_id,
     } = req.body;
 
-    console.log("lastAmount", lastAmount);
 
     const Primary_user_id = req.owner;
     const Secondary_user_id = req.sUserId;
