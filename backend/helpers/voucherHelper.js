@@ -51,10 +51,18 @@ export const generateVoucherNumber = async (
   const voucherNumber = `${series.prefix || ""}${paddedNumber}${
     series.suffix || ""
   }`;
+
+  if (
+    voucherNumber === null ||
+    voucherNumber === "" ||
+    voucherNumber === undefined
+  ) {
+    throw new Error("Voucher series not found");
+  }
   const usedSeriesNumber = lastUsedNumber;
 
-  const updatedLastUsedNumber=lastUsedNumber+1;
-  const updatedCurrentNumber=updatedLastUsedNumber;
+  const updatedLastUsedNumber = lastUsedNumber + 1;
+  const updatedCurrentNumber = updatedLastUsedNumber;
 
   // 3. Increment for next use
   await VoucherSeriesModel.updateOne(
@@ -63,7 +71,12 @@ export const generateVoucherNumber = async (
       voucherType,
       "series._id": seriesId,
     },
-    { $set:{ "series.$.lastUsedNumber": updatedLastUsedNumber, "series.$.currentNumber": updatedCurrentNumber} },
+    {
+      $set: {
+        "series.$.lastUsedNumber": updatedLastUsedNumber,
+        "series.$.currentNumber": updatedCurrentNumber,
+      },
+    },
     options
   );
 
@@ -123,18 +136,18 @@ export const getSeriesDetailsById = async (seriesId, cmp_id, voucherType) => {
     const doc = await VoucherSeriesModel.findOne({
       cmp_id,
       voucherType,
-    
     });
 
     if (!doc) {
       throw new Error("Voucher series not found");
     }
 
-    const series = doc.series.find((s) => s._id.toString() === seriesId.toString());
+    const series = doc.series.find(
+      (s) => s._id.toString() === seriesId.toString()
+    );
     if (!series) {
       throw new Error("Series not found");
     }
-
 
     return series;
   } catch (error) {
