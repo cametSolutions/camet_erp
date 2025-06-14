@@ -19,7 +19,10 @@ import creditNoteModel from "../models/creditNoteModel.js";
 import secondaryUserModel from "../models/secondaryUserModel.js";
 import mongoose from "mongoose";
 import TallyData from "../models/TallyData.js";
-import { generateVoucherNumber } from "../helpers/voucherHelper.js";
+import {
+  generateVoucherNumber,
+  getSeriesDetailsById,
+} from "../helpers/voucherHelper.js";
 
 // @desc create credit note
 // route GET/api/sUsers/createCreditNote
@@ -36,7 +39,7 @@ export const createCreditNote = async (req, res) => {
       finalAmount: lastAmount,
       selectedDate,
       voucherType,
-      series_id
+      series_id,
     } = req.body;
 
     const Secondary_user_id = req.sUserId;
@@ -248,9 +251,11 @@ export const editCreditNote = async (req, res) => {
       despatchDetails,
       additionalChargesFromRedux,
       finalAmount: lastAmount,
-      creditNoteNumber,
       selectedDate,
     } = req.body;
+
+    let { creditNoteNumber, series_id, usedSeriesNumber } = req.body;
+
     // Fetch existing Purchase
     const existingCreditNote = await creditNoteModel
       .findById(creditNoteId)
@@ -263,14 +268,21 @@ export const editCreditNote = async (req, res) => {
         .json({ success: false, message: "Purchase not found" });
     }
 
+    if (existingCreditNote?.series_id?.toString() !== series_id?.toString()) {
+      const { voucherNumber, usedSeriesNumber: newUsedSeriesNumber } =
+        await generateVoucherNumber(
+          orgId,
+          existingCreditNote.voucherType,
+          series_id,
+          session
+        );
+
+      creditNoteNumber = voucherNumber; // Always update when series changes
+      usedSeriesNumber = newUsedSeriesNumber; // Always update when series changes
+    }
+
     // Revert existing stock updates
     await revertCreditNoteStockUpdates(existingCreditNote.items, session);
-    // Process new sale items and update stock
-    // const updatedItems = await processCreditNoteItems(
-    //   items,
-    //   additionalChargesFromRedux
-    // );
-
     await handleCreditNoteStockUpdates(items, session);
 
     // Update existing sale record
@@ -288,6 +300,8 @@ export const editCreditNote = async (req, res) => {
       Primary_user_id: req.owner,
       Secondary_user_id: req.secondaryUserId,
       creditNoteNumber: creditNoteNumber,
+      series_id,
+      usedSeriesNumber,
       date: await formatToLocalDate(selectedDate, orgId, session),
       createdAt: existingCreditNote.createdAt,
     };
@@ -393,6 +407,18 @@ export const getCreditNoteDetails = async (req, res) => {
 
     if (!details) {
       return res.status(404).json({ error: "Credit Note Details not found" });
+    }
+
+    const seriesDetails = await getSeriesDetailsById(
+      details?.series_id,
+      details?.cmp_id,
+      details?.voucherType
+    );
+
+    seriesDetails.currentNumber = details?.usedSeriesNumber;
+
+    if (seriesDetails) {
+      details.seriesDetails = seriesDetails;
     }
 
     // Populate party name and restore _id
